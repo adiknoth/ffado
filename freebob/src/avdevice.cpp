@@ -21,9 +21,13 @@
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "avdevice.h"
+#include "avdevicepool.h"
 #include "avdevicesubunit.h"
 #include "avdeviceaudiosubunit.h"
 #include "avdevicemusicsubunit.h"
+
+#undef AVC1394_GET_RESPONSE_OPERAN
+#define AVC1394_GET_RESPONSE_OPERAND(x, n) (((x) & (0xFF000000 >> (((n)%4)*8))) >> (((3-(n))%4)*8))
 
 AvDevice::AvDevice(octlet_t oGuid)
     : m_iNodeId( -1 )
@@ -40,7 +44,23 @@ AvDevice::AvDevice(octlet_t oGuid)
     , m_iNbExtDestinationPlugs( 0 )
     , m_iNbExtSourcePlugs( 0 )
 {
-    setDebugLevel( DEBUG_LEVEL_ALL );
+    setDebugLevel( DEBUG_LEVEL_MODERATE );
+    AvDevicePool::instance()->registerAvDevice( this );
+}
+
+
+AvDevice::~AvDevice()
+{
+    vector<AvDeviceSubunit *>::iterator it;
+    for( it = cSubUnits.begin(); it != cSubUnits.end(); it++ ) {
+	delete *it;
+    }
+
+    if ( m_handle ) {
+	raw1394_destroy_handle( m_handle );
+	m_handle = 0;
+    }
+    AvDevicePool::instance()->unregisterAvDevice( this );
 }
 
 FBReturnCodes
@@ -67,19 +87,6 @@ AvDevice::initialize()
 bool AvDevice::isInitialised()
 {
     return m_bInitialised;
-}
-
-AvDevice::~AvDevice()
-{
-    vector<AvDeviceSubunit *>::iterator it;
-    for( it = cSubUnits.begin(); it != cSubUnits.end(); it++ ) {
-	delete *it;
-    }
-
-    if ( m_handle ) {
-	raw1394_destroy_handle( m_handle );
-	m_handle = 0;
-    }
 }
 
 FBReturnCodes AvDevice::create1394RawHandle()
@@ -134,7 +141,6 @@ AvDevice::enumerateSubUnits()
     request[1] = 0x02020606;
     response = request;
     if ( response ) {
-
 	m_iNbIsoDestinationPlugs
 	    = AVC1394_GET_RESPONSE_OPERAND( response[1], 0 );
 	m_iNbIsoSourcePlugs
@@ -143,13 +149,6 @@ AvDevice::enumerateSubUnits()
 	    = AVC1394_GET_RESPONSE_OPERAND( response[1], 2 );
 	m_iNbExtSourcePlugs
 	    = AVC1394_GET_RESPONSE_OPERAND( response[1], 3 );
-
-	/*
-	m_iNbIsoDestinationPlugs = (unsigned char) ((response[1]>>24) & 0xff);
-	m_iNbIsoSourcePlugs = (unsigned char) ((response[1]>>16) & 0xff);
-	m_iNbExtDestinationPlugs = (unsigned char) ((response[1]>>8) & 0xff);
-	m_iNbExtSourcePlugs = (unsigned char) ((response[1]>>0) & 0xff);
-	*/
     }
 
     request[0] = AVC1394_CTYPE_STATUS
@@ -158,10 +157,12 @@ AvDevice::enumerateSubUnits()
 		 | AVC1394_COMMAND_PLUG_INFO
 		 | 0x01;
     request[1] = 0xFFFFFFFF;
-    response = avcExecuteTransaction(request, 2, 2);
-    if (response != NULL) {
-	m_iNbAsyncDestinationPlugs= (unsigned char) ((response[1]>>24) & 0xff);
-	m_iNbAsyncSourcePlugs= (unsigned char) ((response[1]>>16) & 0xff);
+    response = avcExecuteTransaction( request, 2, 2 );
+    if ( response != NULL ) {
+	m_iNbAsyncDestinationPlugs
+            = AVC1394_GET_RESPONSE_OPERAND( response[1], 0 );
+	m_iNbAsyncSourcePlugs
+            = AVC1394_GET_RESPONSE_OPERAND( response[1], 1 );
     }
 
     debugPrint( DEBUG_LEVEL_DEVICE,
