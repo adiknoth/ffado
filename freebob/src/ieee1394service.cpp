@@ -206,7 +206,7 @@ Ieee1394Service::printAvcUnitInfo( int iNodeId )
             avc1394_check_subunit_type( m_handle, iNodeId,
                                         AVC1394_SUBUNIT_TYPE_BULLETIN_BOARD ) ?
             "yes":"no" );
-    printf( "AVC: vendor specificr?...%s\n",
+    printf( "AVC: vendor specific?....%s\n",
             avc1394_check_subunit_type( m_handle, iNodeId,
                                         AVC1394_SUBUNIT_TYPE_VENDOR_UNIQUE ) ?
             "yes":"no" );
@@ -217,6 +217,10 @@ Ieee1394Service::printAvcUnitInfo( int iNodeId )
     printf( "AVC: unit?...............%s\n",
             avc1394_check_subunit_type( m_handle, iNodeId,
                                         AVC1394_SUBUNIT_TYPE_UNIT ) ?
+            "yes":"no" );
+    printf( "AVC: music?..............%s\n",
+            avc1394_check_subunit_type( m_handle, iNodeId,
+                                        AVC1394_SUBUNIT_TYPE_MUSIC ) ?
             "yes":"no" );
 }
 
