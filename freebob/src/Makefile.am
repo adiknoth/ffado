@@ -40,6 +40,8 @@ freebob_SOURCES = \
 	avdevicepool.h \
 	avdevicepool.cpp \
 	threads.h \
+	workerthread.h \
+	workerthread.cpp \
 	avdescriptor.h \
 	avdescriptor.cpp \
 	avmusicidentifierdescriptor.h \
