@@ -22,18 +22,37 @@
 
 #include "freebob.h"
 #include <vector>
+#include <libraw1394/raw1394.h> // octlet_t
 
 class AvDevice;
 
 class AvDevicePool {
  public:
+    static AvDevicePool* instance();
+
+    FBReturnCodes registerAvDevice( AvDevice* pAvDevice );
+    FBReturnCodes unregisterAvDevice( AvDevice* pAvDevice );
+
+    AvDevice* getAvDevice( octlet_t oGuid );
+
+    /**
+     * Remove devices in pool which where (physically) removed 
+     * from the bus.
+     *
+     * All devices which have a lower generation count smaller
+     * than iGeneration are removed from the pool
+     *
+     * @param iGeneration Current generation count.
+     * @return see FBReturnCodes.
+     */
+    FBReturnCodes removeObsoleteDevices( unsigned int iGeneration );
+ private:
     AvDevicePool();
     ~AvDevicePool();
 
-    FBReturnCodes registerAvDevice(AvDevice* pAvDevice);
-    FBReturnCodes unregisterAvDevice(AvDevice* pAvDevice);
- private:
-    typedef std::vector<AvDevice*> AvDeviceVector;
+    static AvDevicePool* m_pInstance;
+
+    typedef std::vector< AvDevice* > AvDeviceVector;
     AvDeviceVector m_avDevices;
 };
 

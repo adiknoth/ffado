@@ -56,7 +56,7 @@ class Ieee1394Service {
     void shutdown();
 
     static Ieee1394Service* instance();
-    FBReturnCodes discoveryDevices();
+    FBReturnCodes discoveryDevices( unsigned int iGenerationCount );
 
     unsigned int getGenerationCount();
 
@@ -71,6 +71,8 @@ class Ieee1394Service {
 
     void printAvcUnitInfo( int iNodeId );
     void printRomDirectory( int iNodeId,  rom1394_directory* pRomDir );
+
+    void avDeviceTests( octlet_t oGuid, int iPort, int iNodeId );
  private:
     Ieee1394Service();
     ~Ieee1394Service();
@@ -78,7 +80,7 @@ class Ieee1394Service {
     static Ieee1394Service* m_pInstance;
     raw1394handle_t m_handle;
     raw1394handle_t m_rhHandle;
-    int m_iPort;
+    int m_iPort;                  // XXX dw: port in 1394 service makes no sense
     bool m_bInitialised;
     pthread_t m_thread;
     pthread_mutex_t m_mutex;

@@ -18,27 +18,39 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
+#ifndef AVDEVICE_H
+#define AVDEVICE_H
 
 #include "ieee1394service.h"
 
 #include <vector>
 using std::vector;
 
-
-#ifndef AVDEVICE_H
-#define AVDEVICE_H
-
 class AvDeviceSubunit;
 
 class AvDevice {
  public:
-    AvDevice(int node,int port);
+    AvDevice( octlet_t oGuid );
     virtual ~AvDevice();
 
-    quadlet_t * avcExecuteTransaction(quadlet_t *request, unsigned int request_len, unsigned int response_len);
+    void setNodeId( int iNodeId ) 
+	{ m_iNodeId = iNodeId; }
+    int getNodeId()
+	{ return m_iNodeId; }
+    void setPort( int iPort )
+	{ m_iPort = iPort; }
+    void setGeneration( unsigned int iGeneration )
+	{ m_iGeneration = iGeneration; }
+    unsigned int getGeneration()
+	{ return m_iGeneration; }
+    octlet_t getGuid()
+	{ return m_oGuid; }
 
-    FBReturnCodes Initialize();
-
+    quadlet_t * avcExecuteTransaction( quadlet_t *request, 
+				       unsigned int request_len, 
+				       unsigned int response_len );
+    
+    FBReturnCodes initialize();
     bool isInitialised();
 
     FBReturnCodes setInputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf);
@@ -55,26 +67,25 @@ class AvDevice {
     unsigned char getNbIsoDestinationPlugs() { return iNbIsoDestinationPlugs; } ; // iPCR
     unsigned char getNbExtSourcePlugs() { return iNbExtSourcePlugs; } ;
     unsigned char getNbExtDestinationPlugs() { return iNbExtDestinationPlugs; } ;
-    
-    int getNodeId() { return iNodeId; } ;
 
  protected:
  	AvDeviceSubunit *getSubunit(unsigned char type, unsigned char id);
  
  private:
-	int iNodeId;
-	raw1394handle_t m_handle;
-	int m_iPort;
-	bool m_bInitialised;
-	vector<AvDeviceSubunit *> cSubUnits;
-
-	unsigned char iNbAsyncDestinationPlugs;
-	unsigned char iNbAsyncSourcePlugs;
-	unsigned char iNbIsoDestinationPlugs;
-	unsigned char iNbIsoSourcePlugs;
-	unsigned char iNbExtDestinationPlugs;
-	unsigned char iNbExtSourcePlugs;
-
+    int m_iNodeId;
+    raw1394handle_t m_handle;
+    int m_iPort;
+    bool m_bInitialised;
+    octlet_t m_oGuid;
+    unsigned int m_iGeneration;  //Which generation this device belongs to
+    vector< AvDeviceSubunit * > cSubUnits;
+    
+    unsigned char iNbAsyncDestinationPlugs;
+    unsigned char iNbAsyncSourcePlugs;
+    unsigned char iNbIsoDestinationPlugs;
+    unsigned char iNbIsoSourcePlugs;
+    unsigned char iNbExtDestinationPlugs;
+    unsigned char iNbExtSourcePlugs;
 };
 
 #endif

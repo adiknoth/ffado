@@ -23,9 +23,10 @@
 #include <libavc1394/avc1394_vcr.h>
 #include <libiec61883/iec61883.h>
 
-
 #include "ieee1394service.h"
+#include "threads.h"
 #include "debugmodule.h"
+#include "avdevicepool.h"
 
 #include "avdevice.h"
 #include "avdescriptor.h"
@@ -103,8 +104,10 @@ Ieee1394Service::initialize()
 
         startRHThread();
 
-        discoveryDevices();
         m_bInitialised = true;
+
+        asyncCall( this, &Ieee1394Service::discoveryDevices,
+                   m_iGenerationCount);
     }
     return eFBRC_Success;
 }
@@ -125,7 +128,7 @@ Ieee1394Service::instance()
 }
 
 FBReturnCodes
-Ieee1394Service::discoveryDevices()
+Ieee1394Service::discoveryDevices( unsigned int iGeneration )
 {
     //scan bus
     int iNodeCount = raw1394_get_nodecount( m_handle );
@@ -151,34 +154,30 @@ Ieee1394Service::discoveryDevices()
             if ( avc1394_check_subunit_type( m_handle, iNodeId,
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
 
-                // XXX
-                // create avcDevice which discovers itself :)
+                octlet_t oGuid = rom1394_get_guid( m_handle, iNodeId );
+                AvDevice* pAvDevice
+                    = AvDevicePool::instance()->getAvDevice( oGuid );
+                if ( !pAvDevice ) {
+                    pAvDevice = new AvDevice( oGuid );
+                }
+                pAvDevice->setNodeId( iNodeId );
+                pAvDevice->setPort( m_iPort );
 
-		// PP: just a static try, don't want to mess with the device manager yet...
-		// Remark: the AvDevice and AvDescriptor aren't debugged thouroughly yet!
-		//         the following code is the only debug I had time for... to be continued! (later this week)
-            	debugPrint (DEBUG_LEVEL_INFO, "  Trying to create an AvDevice...\n");
+		if ( !pAvDevice->isInitialised() ) {
+                    FBReturnCodes eStatus = pAvDevice->initialize();
+                    if ( eStatus != eFBRC_Success ) {
+                        debugError( "AvDevice with GUID 0x%08x%08x could "
+                                    "not be initialized\n",
+                                    (quadlet_t) (oGuid>>32),
+                                    (quadlet_t) (oGuid & 0xffffffff) );
 
-		AvDevice *test=new AvDevice(m_iPort, iNodeId);
-      		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
-		test->Initialize();
-		if (test->isInitialised()) {
-			unsigned char fmt;
-			quadlet_t fdf;
-			test->getInputPlugSignalFormat(0,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->getInputPlugSignalFormat(1,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->getOutputPlugSignalFormat(0,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->getOutputPlugSignalFormat(1,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->printConnections();
-		}
-		
-		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
-		delete test;
+                        delete pAvDevice;
+                        return eStatus;
+                    }
+                }
 
+                // XXX Pieter's test code.
+                avDeviceTests( oGuid, m_iPort, iNodeId );
 	    }
             break;
 	case ROM1394_NODE_TYPE_SBP2:
@@ -194,8 +193,43 @@ Ieee1394Service::discoveryDevices()
                         "No matching node type found for node %d\n", iNodeId);
 	}
     }
+
+    AvDevicePool::instance()->removeObsoleteDevices( iGeneration );
     return eFBRC_Success;
 }
+
+
+void
+Ieee1394Service::avDeviceTests(octlet_t oGuid, int iPort, int iNodeId)
+{
+    // PP: just a static try, don't want to mess with the device manager yet...
+    // Remark: the AvDevice and AvDescriptor aren't debugged thouroughly yet!
+    //         the following code is the only debug I had time for... to be continued! (later this week)
+            	debugPrint (DEBUG_LEVEL_INFO, "  Trying to create an AvDevice...\n");
+
+                AvDevice *test=new AvDevice(oGuid);
+                test->setNodeId( iNodeId );
+                test->setPort( iPort );
+      		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
+		test->initialize();
+		if (test->isInitialised()) {
+			unsigned char fmt;
+			quadlet_t fdf;
+			test->getInputPlugSignalFormat(0,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->getInputPlugSignalFormat(1,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->getOutputPlugSignalFormat(0,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->getOutputPlugSignalFormat(1,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->printConnections();
+		}
+
+		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
+		delete test;
+}
+
 
 void
 Ieee1394Service::printAvcUnitInfo( int iNodeId )
@@ -308,6 +342,10 @@ Ieee1394Service::resetHandler( raw1394handle_t handle,
     Ieee1394Service* pInstance
         = (Ieee1394Service*) raw1394_get_userdata (handle);
     pInstance->setGenerationCount( iGeneration );
+
+    // dw: let's rescan the bus.  this might not the correct order
+    // of commands.
+    asyncCall( pInstance, &Ieee1394Service::discoveryDevices, iGeneration );
     return 0;
 }
 

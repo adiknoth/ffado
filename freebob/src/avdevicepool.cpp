@@ -18,7 +18,12 @@
  * MA 02111-1307 USA.
  */
 
+#include <queue>
+
+#include "avdevice.h"
 #include "avdevicepool.h"
+
+AvDevicePool* AvDevicePool::m_pInstance = 0;
 
 AvDevicePool::AvDevicePool()
 {
@@ -26,6 +31,15 @@ AvDevicePool::AvDevicePool()
 
 AvDevicePool::~AvDevicePool()
 {
+}
+
+AvDevicePool*
+AvDevicePool::instance()
+{
+    if ( !m_pInstance ) {
+        m_pInstance = new AvDevicePool;
+    }
+    return m_pInstance;
 }
 
 FBReturnCodes
@@ -57,3 +71,42 @@ AvDevicePool::unregisterAvDevice(AvDevice* pAvDevice)
     return eFBRC_Success;
 }
 
+AvDevice*
+AvDevicePool::getAvDevice(octlet_t oGuid)
+{
+    AvDevice* pAvDevice = 0;
+    for ( AvDeviceVector::iterator iter = m_avDevices.begin();
+          iter != m_avDevices.end();
+          ++iter )
+    {
+        if ( ( *iter )->getGuid() == oGuid ) {
+            pAvDevice = *iter;
+            break;
+        }
+    }
+    return pAvDevice;
+}
+
+FBReturnCodes
+AvDevicePool::removeObsoleteDevices( unsigned int iGeneration )
+{
+    // XXX dw: removing elements can be done more elegant.
+    std::queue< AvDevice* > deleteQueue;
+
+    for ( AvDeviceVector::iterator iter = m_avDevices.begin();
+          iter != m_avDevices.end();
+          ++iter )
+    {
+        if ( ( *iter )->getGeneration() < iGeneration ) {
+            deleteQueue.push( *iter );
+        }
+    }
+
+    while ( !deleteQueue.empty() ) {
+        AvDevice* pAvDevice = deleteQueue.front();
+        deleteQueue.pop();
+        delete pAvDevice;
+    }
+
+    return eFBRC_Success;
+}

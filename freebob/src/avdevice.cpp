@@ -26,26 +26,15 @@
 #include "avdeviceaudiosubunit.h"
 #include "avdevicemusicsubunit.h"
 
-AvDevice::AvDevice(int port, int node)
+AvDevice::AvDevice(octlet_t oGuid)
 {
-	iNodeId=node;
-	m_iPort=port;
-
-	// check to see if a device is really present?
-
-	// probably initialisation would be better done here
-
-        // Port and node id are not distinct.  The node id
-        // can change after a bus reset, therefore the
-        // device id has to be taken for identifiction.
+    m_oGuid = oGuid;
 }
 
 FBReturnCodes
-AvDevice::Initialize() {
-	
- 	if (!m_bInitialised) {
-
-	m_handle = raw1394_new_handle();
+AvDevice::initialize() {
+    if (!m_bInitialised) {
+        m_handle = raw1394_new_handle();
 	if ( !m_handle ) {
 	    if ( !errno ) {
 		debugPrint(DEBUG_LEVEL_DEVICE,  "libraw1394 not compatible.\n" );
@@ -160,7 +149,7 @@ AvDevice::Initialize() {
        							debugPrint (DEBUG_LEVEL_DEVICE, "  isReserved?: %d\n",tmpAvDeviceSubunit->isReserved());
 							tmpAvDeviceSubunit->unReserve();
 							//setDebugLevel(DEBUG_LEVEL_MODERATE);
-							
+
 
 						} else {
 							if (tmpAvDeviceSubunit) {
@@ -207,7 +196,7 @@ quadlet_t * AvDevice::avcExecuteTransaction(quadlet_t *request, unsigned int req
 	quadlet_t *response;
 	unsigned char *request_pos;
 	unsigned int i;
-	response = avc1394_transaction_block(m_handle, iNodeId, request, request_len, 2);
+	response = avc1394_transaction_block(m_handle, m_iNodeId, request, request_len, 2);
 	if (request != NULL) {
             	debugPrint (DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION START -------\n");
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"  REQUEST:     ");
@@ -274,9 +263,9 @@ FBReturnCodes AvDevice::setInputPlugSignalFormat(unsigned char plug, unsigned ch
 	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
 	response = avcExecuteTransaction(request, 2, 2);
 	if (response != NULL) {
-	
-	}
 
+	}
+        return eFBRC_Success;
 }
 
 FBReturnCodes AvDevice::getInputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf) {
@@ -291,8 +280,9 @@ FBReturnCodes AvDevice::getInputPlugSignalFormat(unsigned char plug, unsigned ch
 		*fmt=((response[1] >> 24) & 0x3F);
 		*fdf=response[1]& 0x00FFFFFF;
 	}
-
+        return eFBRC_Success;
 }
+
 FBReturnCodes AvDevice::setOutputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf) {
 	quadlet_t request[6];
 	quadlet_t *response;
@@ -302,9 +292,9 @@ FBReturnCodes AvDevice::setOutputPlugSignalFormat(unsigned char plug, unsigned c
 	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
 	response = avcExecuteTransaction(request, 2, 2);
 	if (response != NULL) {
-	
-	}
 
+	}
+        return eFBRC_Success;
 }
 
 FBReturnCodes AvDevice::getOutputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf) {
@@ -319,7 +309,7 @@ FBReturnCodes AvDevice::getOutputPlugSignalFormat(unsigned char plug, unsigned c
 		*fmt=((response[1] >> 24) & 0x3F);
 		*fdf=response[1]& 0x00FFFFFF;
 	}
-
+        return eFBRC_Success;
 }
 
 AvDeviceSubunit *AvDevice::getSubunit(unsigned char type, unsigned char id) {
@@ -339,125 +329,125 @@ void AvDevice::printConnections() {
 	quadlet_t request[6];
 	quadlet_t *response;
 			//setDebugLevel(DEBUG_LEVEL_ALL);
-			
-	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: ISO source connections:\n");	
+
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: ISO source connections:\n");
 
 	for (unsigned int i=0;i<getNbIsoSourcePlugs();i++) {
 		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
 		request[1]=0xFFFEFF00 | ((i & 0xFF));
-		
+
 		response = avcExecuteTransaction(request, 2, 2);
-	
+
 		if (response != NULL) {
 			unsigned char output_status=(response[0]&0xE0) >> 5;
 			unsigned char conv=(response[0]&0x10) >> 4;
 			unsigned char signal_status=(response[0]&0x0F);
-			
+
 			unsigned int signal_source=((response[1]>>16)&0xFFFF);
-			
+
 			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
 			unsigned char source_subunit_id=(signal_source>>8)&0x07;
 			unsigned char source_plug=signal_source&0xFF;
-			
+
 			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   OPCR 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);
-			// find the subunit this plug is connected to 
+			// find the subunit this plug is connected to
 			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
 			if(tmpSubunit) {
 				tmpSubunit->printSourcePlugConnections(source_plug);
 			}
-			
+
 		}
 	}
-	
-	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: External source connections:\n");	
+
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: External source connections:\n");
 
 	for (unsigned int i=0;i<getNbExtSourcePlugs();i++) {
 		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
 		request[1]=0xFFFEFF00 | ((i & 0xFF)|0x80);
-		
+
 		response = avcExecuteTransaction(request, 2, 2);
-	
+
 		if (response != NULL) {
 			unsigned char output_status=(response[0]&0xE0) >> 5;
 			unsigned char conv=(response[0]&0x10) >> 4;
 			unsigned char signal_status=(response[0]&0x0F);
-			
+
 			unsigned int signal_source=((response[1]>>16)&0xFFFF);
-			
+
 			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
 			unsigned char source_subunit_id=(signal_source>>8)&0x07;
 			unsigned char source_plug=signal_source&0xFF;
-			
-			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   EXTOUT 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);	
-			
-			// find the subunit this plug is connected to 
+
+			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   EXTOUT 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);
+
+			// find the subunit this plug is connected to
 			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
 			if(tmpSubunit) {
 				tmpSubunit->printSourcePlugConnections(source_plug);
-			}			
+			}
 		}
 	}
 
-	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: ISO sink connections:\n");	
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: ISO sink connections:\n");
 
 	for (unsigned int i=0;i<getNbIsoDestinationPlugs();i++) {
 		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
 		request[1]=0xFFFEFF00 | ((i & 0xFF));
-		
+
 		response = avcExecuteTransaction(request, 2, 2);
-	
+
 		if (response != NULL) {
 			unsigned char output_status=(response[0]&0xE0) >> 5;
 			unsigned char conv=(response[0]&0x10) >> 4;
 			unsigned char signal_status=(response[0]&0x0F);
-			
+
 			unsigned int signal_source=((response[1]>>16)&0xFFFF);
-			
+
 			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
 			unsigned char source_subunit_id=(signal_source>>8)&0x07;
 			unsigned char source_plug=signal_source&0xFF;
-			
+
 			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   OPCR 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);
-			// find the subunit this plug is connected to 
+			// find the subunit this plug is connected to
 			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
 			if(tmpSubunit) {
 				//tmpSubunit->printDestinationPlugConnections(source_plug);
 			}
-			
+
 		}
 	}
-	
-	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: External sink connections:\n");	
+
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: External sink connections:\n");
 
 	for (unsigned int i=0;i<getNbExtDestinationPlugs();i++) {
 		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
 		request[1]=0xFFFEFF00 | ((i & 0xFF)|0x80);
-		
+
 		response = avcExecuteTransaction(request, 2, 2);
-	
+
 		if (response != NULL) {
 			unsigned char output_status=(response[0]&0xE0) >> 5;
 			unsigned char conv=(response[0]&0x10) >> 4;
 			unsigned char signal_status=(response[0]&0x0F);
-			
+
 			unsigned int signal_source=((response[1]>>16)&0xFFFF);
-			
+
 			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
 			unsigned char source_subunit_id=(signal_source>>8)&0x07;
 			unsigned char source_plug=signal_source&0xFF;
-			
-			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   EXTOUT 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);	
-			
-			// find the subunit this plug is connected to 
+
+			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   EXTOUT 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);
+
+			// find the subunit this plug is connected to
 			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
 			if(tmpSubunit) {
 				//tmpSubunit->printDestinationPlugConnections(source_plug);
-			}			
+			}
 		}
 	}
-	
+
 }
