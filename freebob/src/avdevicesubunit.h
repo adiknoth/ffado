@@ -36,14 +36,14 @@ class AvDeviceSubunit {
     
  protected:
  	bool bValid;    
-   
- private:
  	unsigned char iNbDestinationPlugs;
  	unsigned char iNbSourcePlugs;
 
     unsigned char iTarget;
     unsigned char iId;
     AvDevice *cParent;
+   
+ private:
 
 };
 

@@ -107,6 +107,9 @@ AvDevice::Initialize() {
 		
 		if (response != NULL) {
 			// this way of processing the table entries assumes that the subunit type is not "extended"
+				
+			// stop processing when a "not implemented" is received (according to spec)
+			if((response[0]&0xFF000000) == AVC1394_RESPONSE_NOT_IMPLEMENTED) break;
 			
 			// warning: don't do unsigned int j! comparison >= 0 is always true for uint
 			for (int j=3;j>=0;j--) { // cycle through the 8 pages (max 32 subunits; 4 subunits/page)
@@ -128,6 +131,12 @@ AvDevice::Initialize() {
 							break;
 							case 0x0C: // music subunit
 								tmpAvDeviceSubunit=new AvDeviceMusicSubunit(this,subunit_id);
+								{ // just a test
+								AvDeviceMusicSubunit tmpAvDeviceSubunit2(this,subunit_id);
+								tmpAvDeviceSubunit2.printMusicPlugInfo();
+								tmpAvDeviceSubunit2.printMusicPlugConfigurations();
+								tmpAvDeviceSubunit2.test();
+								}
 							break;
 							
 							default: // generic
@@ -137,6 +146,8 @@ AvDevice::Initialize() {
 						
 						if(tmpAvDeviceSubunit && tmpAvDeviceSubunit->isValid()) {
 							cSubUnits.push_back(tmpAvDeviceSubunit);
+							
+							
 						} else {
 							if (tmpAvDeviceSubunit) {
 								debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: Unsupported AvDeviceSubunit encountered. Page %d, item %d: Table entry=0x%02X, subunit_maxid=0x%02X, subunit_type=0x%02X, subunit_id=%0x02X\n",i,j,table_entry,subunit_maxid,subunit_id);
@@ -184,7 +195,7 @@ quadlet_t * AvDevice::avcExecuteTransaction(quadlet_t *request, unsigned int req
 	unsigned int i;
 	response = avc1394_transaction_block(m_handle, iNodeId, request, request_len, 2);
 	if (request != NULL) {
-            	debugPrint (DEBUG_LEVEL_TRANSFERS, "    Created...\n");
+            	debugPrint (DEBUG_LEVEL_TRANSFERS, "\n------- TRANSACTION START -------\n");
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"  REQUEST:     ");
 		/* request is in machine byte order. this function is for intel architecure */
 		for (i=0;i<request_len;i++) {
@@ -235,6 +246,7 @@ quadlet_t * AvDevice::avcExecuteTransaction(quadlet_t *request, unsigned int req
 		debugPrint (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",(response[0]>>19)&0x1F,(response[0]>>16)&0x07,(response[0]>>8)&0xFF);
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
 	}
+        debugPrint (DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n");
 	return response;
 
 }
