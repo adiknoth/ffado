@@ -34,6 +34,8 @@
 #include "avaudioinfoblock.h"
 #include "avmidiinfoblock.h"
 #include "avaudiosyncinfoblock.h"
+#include "avsourcepluginfoblock.h"
+#include "avoutputplugstatusinfoblock.h"
 
 Ieee1394Service* Ieee1394Service::m_pInstance = 0;
 
@@ -293,7 +295,23 @@ Ieee1394Service::discoveryDevices()
 			delete testblock4;
 			delete testblock5;
 			delete testblock6;
-									
+			
+			// now try to parse a full source plug entry
+			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvSourcePlugInfoBlock...\n");
+			AvSourcePlugInfoBlock *testblock7=new AvSourcePlugInfoBlock(testdesc_mid2,0x13);
+			
+			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvSourcePlugInfoBlock...\n");
+			
+			delete testblock7;
+			
+			// now try to parse the full music output plug status infoblock
+			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvOutputPlugStatusInfoBlock...\n");
+			AvOutputPlugStatusInfoBlock *testblock8=new AvOutputPlugStatusInfoBlock(testdesc_mid2,0x0C);
+			
+			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvOutputPlugStatusInfoBlock...\n");
+			
+			delete testblock8;
+			
 		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicStatusDescriptor...\n");
 			delete testdesc_mid2;			
 		}

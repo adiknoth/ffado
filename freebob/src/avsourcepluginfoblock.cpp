@@ -1,0 +1,133 @@
+/* avsourcepluginfoblock.cpp
+ * Copyright (C) 2004 by Pieter Palmers
+ *
+ * This file is part of FreeBob.
+ *
+ * FreeBob is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * FreeBob is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FreeBob; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA.
+ */
+
+
+#include <string.h>
+#include <errno.h>
+#include <libavc1394/avc1394.h>
+#include <libavc1394/avc1394_vcr.h>
+#include "debugmodule.h"
+
+#include "avdescriptor.h"
+#include "avinfoblock.h"
+#include "avnameinfoblock.h"
+#include "avsourcepluginfoblock.h"
+
+AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+	// do some more valid checks
+	if (getType() != 0x8102) {
+		bValid=false;
+	}
+	
+	unsigned int next_block_position=address+7;
+	
+	AvInfoBlock *tmpInfoBlock=NULL;
+	
+	cAudioInfoBlock=NULL;
+	cMidiInfoBlock=NULL;
+	cAudioSyncInfoBlock=NULL;
+	
+	debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating... length=0x%04X\n",getLength());
+
+	// parse the child info blocks
+	while ((next_block_position<getLength())) {
+		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating tmpInfoBlock\n");
+
+		tmpInfoBlock=new AvInfoBlock(parent,next_block_position);
+		
+		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: testing tmpInfoBlock\n");
+		if (tmpInfoBlock && tmpInfoBlock->isValid()) {
+			// read the type of the block
+			// note: only one block instance per type is supported (according to the specs)
+			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: position=0x%04X  type=0x%04X\n",next_block_position,tmpInfoBlock->getType());
+			switch (tmpInfoBlock->getType()) {
+				case 0x8103:
+				debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating AudioInfoBlock\n");
+					if(cAudioInfoBlock) {
+						debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: deleting duplicate cAudioInfoBlock. Non-conformant info block!\n");
+						delete cAudioInfoBlock;
+					}
+					cAudioInfoBlock=new AvAudioInfoBlock(parent, next_block_position);
+				break;
+				case 0x8104:
+					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating MidiInfoBlock\n");
+					if(cMidiInfoBlock) {
+						debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: deleting duplicate cMidiInfoBlock. Non-conformant info block!\n");
+						delete cMidiInfoBlock;
+					}
+					cMidiInfoBlock=new AvMidiInfoBlock(parent, next_block_position);
+				break;
+				case 0x8105:
+					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Skipping SMPTE block, unsupported.\n");
+				break;
+				case 0x8106:
+					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Skipping SampleCount block, unsupported.\n");
+				break;
+				case 0x8107:
+					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating AudioSyncInfoBlock\n");
+					if(cAudioSyncInfoBlock) {
+						debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: deleting duplicate cAudioSyncInfoBlock. Non-conformant info block!\n");
+						delete cAudioSyncInfoBlock;
+					}
+					cAudioSyncInfoBlock=new AvAudioSyncInfoBlock(parent, next_block_position);
+				break;
+				default:
+					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Skipping unknown block\n");
+				break;
+				
+			}
+			// update the block position pointer
+			next_block_position+=tmpInfoBlock->getLength()+2;
+			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Advancing to position=0x%04X\n",next_block_position);
+			
+		} else {
+			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Parse error!\n");
+			bValid=false;
+			break;
+		}
+		
+		if (tmpInfoBlock) {
+			delete tmpInfoBlock;
+			tmpInfoBlock=NULL;
+		}
+	}
+	
+	if (tmpInfoBlock) {
+		delete tmpInfoBlock;
+		tmpInfoBlock=NULL;
+	}
+	
+	debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Created\n");
+	
+}
+
+AvSourcePlugInfoBlock::~AvSourcePlugInfoBlock() {
+	if(cAudioInfoBlock) delete cAudioInfoBlock;
+	if(cMidiInfoBlock) delete cMidiInfoBlock;
+	if(cAudioSyncInfoBlock) delete cAudioSyncInfoBlock;
+}
+
+unsigned int AvSourcePlugInfoBlock::getPlugNumber() {
+	if(isValid()) {
+		return readByte(6);
+	} else {
+		return 0;
+	}
+}

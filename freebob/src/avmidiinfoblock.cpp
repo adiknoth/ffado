@@ -40,6 +40,8 @@ AvMidiInfoBlock::AvMidiInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 	unsigned int position=0;
 	AvNameInfoBlock *tmpNameBlock;
 	
+	debugPrint(DEBUG_LEVEL_INFO,"AvMidiInfoBlock: Creating... length=0x%04X\n",getLength());
+	
 	if (nb_streams>0) {
 		position=address+7;
 		for (unsigned int i=0;i<nb_streams;i++) {
@@ -59,6 +61,7 @@ AvMidiInfoBlock::AvMidiInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 		}
 		
 	}
+	debugPrint(DEBUG_LEVEL_INFO,"AvMidiInfoBlock: Created\n");
 	
 	// no optional info blocks please...
 	
