@@ -41,6 +41,7 @@ AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type
 	iLength=0;
 	bOpen=false;
 	iAccessType=0;
+	bValid=false; // don't know yet what I'm going to do with this in the generic descriptor
 }
 
 AvDescriptor::~AvDescriptor()
@@ -247,6 +248,7 @@ bool AvDescriptor::isPresent() {
 
 	if (((response[0] & 0xFF000000)==AVC1394_RESPONSE_NOT_IMPLEMENTED) || ((response[1] & 0xFF000000)==0x04)) { 
 		fprintf(stderr,"Descriptor not present.\n");
+		bValid=false;
 		return false;
 	} 
 	return true;
@@ -262,6 +264,11 @@ bool AvDescriptor::isOpen() {
 bool AvDescriptor::isLoaded() {
 	return bLoaded;
 }
+
+bool AvDescriptor::isValid() {
+	return bValid;
+}
+
 
 unsigned int AvDescriptor::getLength() {
 	return iLength;

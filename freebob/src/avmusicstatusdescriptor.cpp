@@ -20,7 +20,16 @@
 
 #include "avdevice.h"
 #include "avdescriptor.h"
+#include "avmusicidentifierdescriptor.h"
 #include "avmusicstatusdescriptor.h"
+#include "avinfoblock.h"
+#include "avgeneralmusicstatusinfoblock.h"
+#include "avnameinfoblock.h"
+#include "avaudioinfoblock.h"
+#include "avmidiinfoblock.h"
+#include "avaudiosyncinfoblock.h"
+#include "avsourcepluginfoblock.h"
+#include "avoutputplugstatusinfoblock.h"
 
 AvMusicStatusDescriptor::AvMusicStatusDescriptor(AvDevice *parent) : AvDescriptor(parent, AVC1394_SUBUNIT_TYPE_MUSIC | AVC1394_SUBUNIT_ID_0,0x80) {
 
@@ -37,28 +46,70 @@ void AvMusicStatusDescriptor::printCapabilities() {
 	}
 	
 	if (!(this->AvDescriptor::isOpen())) {
-		fprintf(stderr,"AvMusicStatusDescriptor: Opening descriptor...\n");
+		debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor: Opening descriptor...\n");
 		this->AvDescriptor::OpenReadOnly();
 		if (!(this->AvDescriptor::isOpen()) ) {
 			fprintf(stderr,"AvMusicStatusDescriptor:   Failed!\n");
+			bValid=false;
 			return;
 		}
 	}
 	
 	if (!(this->AvDescriptor::isLoaded())) {
-		fprintf(stderr,"AvMusicStatusDescriptor: Loading descriptor...\n");
+		debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor: Loading descriptor...\n");
 		this->AvDescriptor::Load();
 		if (!(this->AvDescriptor::isLoaded())) {
 			fprintf(stderr,"AvMusicStatusDescriptor:   Failed!\n");
+			bValid=false;
 			return;
 		}
 	}
 	
-	fprintf(stderr,"AvMusicStatusDescriptor: \n");
-	// PP: calculate the offset to accomodate for the presence of root lists [not implemented]
+	unsigned int offset=0; // update offset when beginning at a new table in the specs for easy reading
+	cGeneralMusicInfoBlock=NULL;
+	cOutputPlugStatusInfoBlock=NULL;
 	
-	//int offset=2; // update offset when beginning at a new table in the specs for easy reading
+	debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor: Creating AvGeneralMusicStatusInfoBlock... (offset=0x%04X)\n",offset);
+	cGeneralMusicInfoBlock=new AvGeneralMusicInfoBlock(this,offset);
+	if (!(cGeneralMusicInfoBlock) || !(cGeneralMusicInfoBlock->isValid())) {
+		debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  AvGeneralMusicStatusInfoBlock not found!\n");
+		bValid=false;
+		return;
+	}
+	debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  AvGeneralMusicStatusInfoBlock found: length=0x%04X\n",cGeneralMusicInfoBlock->getLength());
 	
-	// start parsing the optional capability stuff
+	offset += cGeneralMusicInfoBlock->getLength()+2;
+	
+	
+	debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor: Creating AvOutputPlugStatusInfoBlock... (offset=0x%04X)\n",offset);
+	cOutputPlugStatusInfoBlock=new AvOutputPlugStatusInfoBlock(this,offset);
+	if (!(cOutputPlugStatusInfoBlock) || !(cOutputPlugStatusInfoBlock->isValid())) {
+		debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  AvOutputPlugStatusInfoBlock not found!\n");
+		bValid=false;
+		return;
+	}
+	debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  AvOutputPlugStatusInfoBlock found: length=0x%04X\n",cOutputPlugStatusInfoBlock->getLength());
+	
+	offset += cOutputPlugStatusInfoBlock->getLength()+2;
+	
+	// start parsing the optional infoblock(s)
+	AvInfoBlock *tmpInfoBlock = NULL;
+	debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor: Parsing optional infoblocks...\n");
+	
+	while (offset < getLength()) {
+		debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  Optional block found...\n");
+		tmpInfoBlock = new AvInfoBlock(this,offset);
+		if (tmpInfoBlock && tmpInfoBlock->isValid()) {
+			debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  Optional block of type 0x%04X with length 0x%04X found\n",tmpInfoBlock->getType(), tmpInfoBlock->getLength());
+			
+			offset += tmpInfoBlock->getLength()+2;
+		} else {
+			debugPrint (DEBUG_LEVEL_INFO, "AvMusicStatusDescriptor:  error parsing optional infoblock\n");
+			bValid=false;
+			return;
+		}
+		
+	}
+	
 	
 }

@@ -40,6 +40,7 @@ class AvDescriptor {
     void Close();
     bool isOpen();
     bool canWrite();
+    bool isValid();
     
  protected:
     AvDevice *cParent;
@@ -47,6 +48,7 @@ class AvDescriptor {
     unsigned char *aContents;
     bool bLoaded;
     bool bOpen;
+    bool bValid;
     unsigned int iAccessType;
     unsigned int iLength;
     quadlet_t qTarget;

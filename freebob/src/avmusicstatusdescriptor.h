@@ -30,6 +30,9 @@
 #define AVMUSICSTATUSDESCRIPTOR_H
 
 
+class AvGeneralMusicInfoBlock;
+class AvOutputPlugStatusInfoBlock;
+
 class AvMusicStatusDescriptor : public AvDescriptor {
  public:
     AvMusicStatusDescriptor(AvDevice *parent);
@@ -38,6 +41,8 @@ class AvMusicStatusDescriptor : public AvDescriptor {
     void printCapabilities();
 
  protected:
+       AvGeneralMusicInfoBlock      *cGeneralMusicInfoBlock;
+       AvOutputPlugStatusInfoBlock  *cOutputPlugStatusInfoBlock;
        
  private:
 
