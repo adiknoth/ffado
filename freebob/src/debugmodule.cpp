@@ -25,6 +25,8 @@
 #undef debugPrint
 #undef debugPrintShort
 
+DebugAnsiColor m_debug;
+
 ////////////////////////////////////////////////////////////////
 DebugBase::DebugBase()
   : m_level( 0 )

@@ -46,6 +46,9 @@ public:
 	unsigned char getStreamFormat() {return readByte(0x06);};
 	unsigned char getPortType() {return readByte(0x07);};
 	unsigned char getNbSignals() {return readByte(0x08);};
+	
+	unsigned char getPosition(unsigned int signal);
+	unsigned char getLocation(unsigned int signal);
 
 	void printSignalInfo(unsigned char idx);
 	void printName();

@@ -155,7 +155,9 @@ class DebugHtml : public DebugBase {
 
 // XXX To change the debug module the header has to be edited
 // which sucks big time
-#define DECLARE_DEBUG_MODULE DebugAnsiColor m_debug
+//#define DECLARE_DEBUG_MODULE DebugAnsiColor m_debug
+#define DECLARE_DEBUG_MODULE
+extern DebugAnsiColor m_debug;
 
 // For static functions
 #define DECLARE_GLOBAL_DEBUG_MODULE DebugAnsiColor gGlobalDebugModule

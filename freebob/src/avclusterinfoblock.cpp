@@ -110,3 +110,21 @@ void AvClusterInfoBlock::printName() {
 	}
 
 }
+
+unsigned char AvClusterInfoBlock::getPosition(unsigned int idx) {
+	if ( ( idx < getNbSignals() ) && ( ( unsigned int )( 0x09+idx*4 ) < getLength() ) ) {
+		return readByte(0x09+idx*4+2);
+	} else {
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d not present!\n",idx);
+		return 0;
+	}
+}
+
+unsigned char  AvClusterInfoBlock::getLocation(unsigned int idx) {
+	if ( ( idx < getNbSignals() ) && ( ( unsigned int )( 0x09+idx*4 ) < getLength() ) ) {
+		return readByte(0x09+idx*4+3);
+	} else {
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d not present!\n",idx);
+		return 0;
+	}
+}

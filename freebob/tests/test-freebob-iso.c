@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
-
+#include <errno.h>
 #include <time.h>
 	
 	#define QUATAFIRE_DEFAULT_SAMPLE_RATE 48000
@@ -93,8 +93,8 @@ iso_handler(raw1394handle_t handle, unsigned char *data,
         return RAW1394_ISO_OK;
 }
 
-enum raw1394_iso_dma_recv_mode mode = RAW1394_DMA_DEFAULT;
-//enum raw1394_iso_dma_recv_mode mode = RAW1394_DMA_BUFFERFILL;
+//enum raw1394_iso_dma_recv_mode mode = RAW1394_DMA_DEFAULT;
+enum raw1394_iso_dma_recv_mode mode = RAW1394_DMA_BUFFERFILL;
 //enum raw1394_iso_dma_recv_mode mode = RAW1394_DMA_PACKET_PER_BUFFER;
 //#define BUFFER 1000
 //#define IRQ 20
@@ -204,7 +204,7 @@ int main (int argc, char *argv[])
 		raw1394_iso_shutdown(handle);
 		raw1394_destroy_handle(handle);
 	} else {
-		fprintf (stderr, "Failed to get libraw1394 handle\n");
+		fprintf (stderr, "Failed to get libraw1394 handle\n %d: %s\n",errno,strerror(errno));
 		return -1;
 	}
 	

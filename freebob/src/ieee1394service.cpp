@@ -52,8 +52,9 @@ Ieee1394Service::Ieee1394Service()
     , m_bRHThreadRunning( false )
     , m_iGenerationCount( 0 )
 {
-    setDebugLevel( DEBUG_LEVEL_ALL & ~DEBUG_LEVEL_TRANSFERS );
+    setDebugLevel( DEBUG_LEVEL_ALL );
     pthread_mutex_init( &m_mutex, NULL );
+    pthread_mutex_init( &m_transaction_mutex, NULL );
 }
 
 Ieee1394Service::~Ieee1394Service()
@@ -252,12 +253,17 @@ Ieee1394Service::avcExecuteTransaction( int node_id,
     quadlet_t* response;
     unsigned char* request_pos;
     unsigned int i;
-
+    
+    // make this function thread safe
+    
+    pthread_mutex_lock( &m_transaction_mutex );
+    
     response = avc1394_transaction_block( m_handle,
 					  node_id,
 					  request,
 					  request_len,
 					  2 );
+    
     if ( request ) {
 	debugPrint( DEBUG_LEVEL_TRANSFERS,
 		    "------- TRANSACTION START -------\n" );
@@ -287,6 +293,7 @@ Ieee1394Service::avcExecuteTransaction( int node_id,
 	debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
     }
 
+    
     if ( response ) {
 	/* response is in order of receiving, i.e. msb first */
 	debugPrint(DEBUG_LEVEL_TRANSFERS, "  -> RESPONSE: " );
@@ -330,6 +337,9 @@ Ieee1394Service::avcExecuteTransaction( int node_id,
 	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
     }
     debugPrint( DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n" );
+    
+    pthread_mutex_unlock( &m_transaction_mutex );
+    
     return response;
 }
 

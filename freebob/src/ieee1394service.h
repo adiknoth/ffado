@@ -57,9 +57,6 @@ class Ieee1394Service {
 
     void avDeviceTests( octlet_t oGuid, int iPort, int iNodeId );
 
-
-
-
  private:
     Ieee1394Service();
     ~Ieee1394Service();
@@ -74,6 +71,9 @@ class Ieee1394Service {
     bool m_bRHThreadRunning;
     unsigned int m_iGenerationCount;
 
+    pthread_mutex_t m_transaction_mutex;
+
+    
     DECLARE_DEBUG_MODULE;
 };
 

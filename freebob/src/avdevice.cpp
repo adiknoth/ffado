@@ -18,6 +18,7 @@
  * MA 02111-1307 USA.
  */
 #include <errno.h>
+#include <stdio.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "threads.h"
@@ -26,6 +27,10 @@
 #include "avdevicesubunit.h"
 #include "avdeviceaudiosubunit.h"
 #include "avdevicemusicsubunit.h"
+#include "avmusicstatusdescriptor.h"
+#include "avclusterinfoblock.h"
+#include "avpluginfoblock.h"
+
 #include "cmhandler.h"
 
 #undef AVC1394_GET_RESPONSE_OPERAN
@@ -70,7 +75,7 @@ AvDevice::execute( EStates state )
             // Put ourself to sleep until a something happends
             sleepCall( this, &AvDevice::execute, eCheckState );
         } else {
-            debugError( "Device discovry failed\n" );
+            debugError( "Device discovery failed\n" );
 
             asyncCall( this, &AvDevice::execute, eDestroy );
         }
@@ -97,7 +102,7 @@ AvDevice::initialize()
     if ( !m_bInitialised ) {
 	FBReturnCodes eStatus = enumerateSubUnits();
 	if ( eStatus != eFBRC_Success ) {
-	    debugError( "Could not enumrate SubUnits\n" );
+	    debugError( "Could not enumerate SubUnits\n" );
 	    return eStatus;
 	}
 
@@ -495,21 +500,328 @@ void AvDevice::printConnections() {
 	}
     }
 }
+void AvDevice::test() {
+    quadlet_t request[6];
+    quadlet_t *response;
+    setDebugLevel(DEBUG_LEVEL_ALL);
+
+
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x00000000;
+	request[2]=0xFF000000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+	
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x00000001;
+	request[2]=0xFF000000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x00000000;
+	request[2]=0xFF060000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+	
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x00000001;
+	request[2]=0xFF060000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x10000000;
+	request[2]=0xFF050000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+	
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x10000001;
+	request[2]=0xFF050000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+	
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x00000000;
+	request[2]=0xFF010000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}
+	
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+	request[1]=0x00000001;
+	request[2]=0xFF010000;
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 20);
+
+	if ( response ) {
+
+	}	
+}
+
+#define FREEBOB_DIRTY_XML_CHILD_ADD(XparentX,XnodeX,XvalueX)  if ( !xmlNewChild( XparentX, 0, BAD_CAST XnodeX, BAD_CAST XvalueX ) ) { debugError( "Couldn't create " XnodeX "node\n" ); return eFBRC_CreatingXMLDocFailed; }
 
 FBReturnCodes
-AvDevice::addConnectionsToXml( xmlNodePtr root )
+AvDevice::addConnectionsToXml( xmlNodePtr root )    
 {
-    for ( unsigned int i = 0;
-          i < getNbIsoSourcePlugs();
-          ++i )
-    {
-
-    }
-    xmlNodePtr node = xmlNewChild( root, 0, BAD_CAST "ConnectionSet", 0 );
-    if ( !node ) {
-        debugError( "Couldn't create connection set node\n" );
+	char tmpbuff[256];
+	
+	// At this point only plug 0 is used by the firmware for audio i/o
+	int plug=0;
+	
+	// obtain the music subunit (no beauty contests for this one :)
+	AvDeviceSubunit *tmpSubunit=getSubunit(0x0C,0);
+	AvDeviceMusicSubunit *musicSubunit;
+	AvMusicStatusDescriptor *statusDescriptor;
+	AvPlugInfoBlock* plugInfo;
+	
+	if(tmpSubunit && (tmpSubunit->getType()==0x0C)) {	
+		musicSubunit=(AvDeviceMusicSubunit *)tmpSubunit;
+	} else {
+		debugError( "Could not find music subunit\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	statusDescriptor=musicSubunit->getMusicStatusDescriptor();
+	
+	if(!statusDescriptor) {
+		debugError( "Could not find music status descriptor\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	plugInfo=statusDescriptor->getDestinationPlugInfoBlock(plug);
+	if(!plugInfo) {
+		debugError( "Could not find destination plug info block\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	
+    // only one connection in each direction for the moment
+    
+    // prepare the device->host connection
+    xmlNodePtr connectionSet = xmlNewChild( root, 0, BAD_CAST "ConnectionSet", 0 );
+    if ( !connectionSet ) {
+        debugError( "Couldn't create connection set node for direction 1 (playback)\n" );
         return eFBRC_CreatingXMLDocFailed;
     }
+    
+    if ( !xmlNewChild( connectionSet,
+                       0,
+                       BAD_CAST "Direction",
+                       BAD_CAST "1" ) ) {
+        debugError( "Couldn't create direction node\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    xmlNodePtr connection = xmlNewChild( connectionSet, 0, BAD_CAST "Connection", 0 );
+    if ( !connection ) {
+        debugError( "Couldn't create connection node for direction 1 (playback)\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    sprintf(tmpbuff,"%d",getGuid());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getPort());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Port",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getNodeId());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Node",tmpbuff);
+   
+    sprintf(tmpbuff,"%d",plug); 
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Plug",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",48000);
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Samplerate",tmpbuff);
+ 
+    sprintf(tmpbuff,"%d",plugInfo->getNbChannels());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Dimension",tmpbuff);
+
+    xmlNodePtr streams=xmlNewChild( connection, 0, BAD_CAST "Streams", 0 );
+    if ( !streams ) {
+	debugError( "Couldn't create streams node for direction 1 (playback)\n");
+	return eFBRC_CreatingXMLDocFailed;
+    }
+    
+	for (unsigned int i=0; i<plugInfo->getNbClusters(); i++) {
+		AvClusterInfoBlock *clusterInfo=plugInfo->getCluster(i);
+
+		if (!clusterInfo) {
+			debugError( "Could not find destination plug routing cluster %d\n",i );
+			return eFBRC_CreatingXMLDocFailed;
+		}	
+		for (unsigned int j=0;j<clusterInfo->getNbSignals();j++) {
+			xmlNodePtr stream = xmlNewChild( streams, 0, BAD_CAST "Stream", 0 );
+			if ( !stream ) {
+				debugError( "Couldn't create stream node for direction 1 (playback), cluster %d, signal %d\n",i ,j);
+				return eFBRC_CreatingXMLDocFailed;
+			}
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getStreamFormat());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Format",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPortType());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Type",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPosition(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Position",tmpbuff);
+
+			sprintf(tmpbuff,"%d",clusterInfo->getLocation(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Location",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",0);
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
+			
+			sprintf(tmpbuff,"playback_%d_%d",i,j);
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",tmpbuff);
+		}
+	}
+    // prepare the host->device connection
+	plugInfo=statusDescriptor->getSourcePlugInfoBlock(plug);
+	if(!plugInfo) {
+		debugError( "Could not find destination plug info block\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	
+    // only one connection in each direction for the moment
+    
+    connectionSet = xmlNewChild( root, 0, BAD_CAST "ConnectionSet", 0 );
+    if ( !connectionSet ) {
+        debugError( "Couldn't create connection set node for direction 0 (record)\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    if ( !xmlNewChild( connectionSet,
+                       0,
+                       BAD_CAST "Direction",
+                       BAD_CAST "0" ) ) {
+        debugError( "Couldn't create direction node\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    connection = xmlNewChild( connectionSet, 0, BAD_CAST "Connection", 0 );
+    if ( !connection ) {
+        debugError( "Couldn't create connection node for direction 0 (record)\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    sprintf(tmpbuff,"%d",getGuid());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getPort());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Port",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getNodeId());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Node",tmpbuff);
+   
+    sprintf(tmpbuff,"%d",plug); 
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Plug",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",48000);
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Samplerate",tmpbuff);
+ 
+    sprintf(tmpbuff,"%d",plugInfo->getNbChannels());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Dimension",tmpbuff);
+
+    streams=xmlNewChild( connection, 0, BAD_CAST "Streams", 0 );
+    if ( !streams ) {
+	debugError( "Couldn't create streams node for direction 1 (playback)\n");
+	return eFBRC_CreatingXMLDocFailed;
+    }
+    
+	for (unsigned int i=0; i<plugInfo->getNbClusters(); i++) {
+		AvClusterInfoBlock *clusterInfo=plugInfo->getCluster(i);
+
+		if (!clusterInfo) {
+			debugError( "Could not find destination plug routing cluster %d\n",i );
+			return eFBRC_CreatingXMLDocFailed;
+		}	
+		for (unsigned int j=0;j<clusterInfo->getNbSignals();j++) {
+			xmlNodePtr stream = xmlNewChild( streams, 0, BAD_CAST "Stream", 0 );
+			if ( !stream ) {
+				debugError( "Couldn't create stream node for direction 1 (playback), cluster %d, signal %d\n",i ,j);
+				return eFBRC_CreatingXMLDocFailed;
+			}
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getStreamFormat());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Format",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPortType());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Type",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPosition(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Position",tmpbuff);
+
+			sprintf(tmpbuff,"%d",clusterInfo->getLocation(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Location",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",0);
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
+			
+			sprintf(tmpbuff,"playback_%d_%d",i,j);
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",tmpbuff);
+		}
+	}
 
     return eFBRC_Success;
 }

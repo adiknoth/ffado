@@ -51,12 +51,15 @@ class AvDevice {
 	{ return m_iNodeId; }
     void setPort( int iPort )
 	{ m_iPort = iPort; }
+    int getPort()
+	{ return m_iPort; }
     octlet_t getGuid()
 	{ return m_configRom.getGuid(); }
     const std::string getVendorName() const
 	{ return m_configRom.getVendorName(); }
     const std::string getModelName() const
 	{ return m_configRom.getModelName(); }
+
 
 
     void execute( EStates state );
@@ -79,6 +82,7 @@ class AvDevice {
     
     //	getSourcePlugConnection();
     void printConnections();
+    void test();
     FBReturnCodes addConnectionsToXml( xmlNodePtr root );
 	    
     unsigned char getNbAsyncSourcePlugs() 

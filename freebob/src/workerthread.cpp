@@ -25,7 +25,7 @@ WorkerThread* WorkerThread::m_pInstance = 0;
 
 WorkerThread::WorkerThread()
 {
-    setDebugLevel( DEBUG_LEVEL_SCHEDULER );
+   // setDebugLevel( DEBUG_LEVEL_SCHEDULER );
 
     pthread_create( &m_thread, NULL, workerThread, this );
     pthread_mutex_init( &m_mutex, NULL );

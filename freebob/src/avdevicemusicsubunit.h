@@ -36,6 +36,9 @@ class AvDeviceMusicSubunit : public AvDeviceSubunit {
 
     void test();
 
+    AvMusicStatusDescriptor *getMusicStatusDescriptor() {return cStatusDescriptor;};
+    AvMusicIdentifierDescriptor *getMusicIdentifierDescriptor() {return cIdentifierDescriptor;};
+    
     // functions to demonstrate the usage of the commands defined by the specs
     // we'll see later what to do with them exactly
     void printMusicPlugInfo();

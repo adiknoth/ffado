@@ -21,6 +21,7 @@
 #include "avdescriptor.h"
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 
@@ -132,14 +133,20 @@ void AvDescriptor::Close() {
 
         response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
-	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) { // should always be accepted according to spec
-		bOpen=false;
+        if (response) {
+		if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) { // should always be accepted according to spec
+			bOpen=false;
+		}
+	} else {
+		// parent probably died
 	}
 }
 
 /* Load the descriptor
  * no error checking yet
  */
+
+#define MAX_RETRIES 10
 
 void AvDescriptor::Load() {
 	quadlet_t *response;
@@ -149,6 +156,7 @@ void AvDescriptor::Load() {
 	unsigned char *databuffer;
 	unsigned char read_result_status;
 	unsigned int data_length_read;
+	int retries=0;
 
 	if (!cParent) {
 		return;
@@ -215,20 +223,35 @@ void AvDescriptor::Load() {
 		//  (total descriptor length - number of bytes already read) + 2 overlap with previous read
 		request[1] = 0xFFFF0000 | (iLength-bytes_read+2)&0xFFFF;
 		request[2] = (((bytes_read)&0xFFFF) << 16) |0x0000FFFF;
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"%08X %08X %08X \n", request[0],request[1],request[2]);
 
 		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
-
-		databuffer=(unsigned char *)(response+3);
-
-		for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
-			*(aContents+bytes_read)=*(databuffer+i);
-			bytes_read++;
+		//debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"%02X\n", read_result_status);
+		
+		if (((response[0]>>24)&0xFF) == 0x09) {
+			databuffer=(unsigned char *)(response+3);
+	
+			for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
+				*(aContents+bytes_read)=*(databuffer+i);
+				bytes_read++;
+			}
+			retries=0;
+		} else {
+			if(retries<MAX_RETRIES) {
+				retries++;
+			} else {
+				debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"Maximum number of read retries exceeded!\n");
+				bLoaded=false;
+				delete aContents;
+				aContents=NULL;
+				return;
+			}
 		}
-
+		
 	}
-	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"\n");
+	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"done\n");
 
 
 	bLoaded=true;
