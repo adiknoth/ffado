@@ -99,7 +99,12 @@ static void sighandler (int sig)
 	g_done = 1;
 }
 
-int fill_packet(char *data, int nevents, unsigned int dropped, void *callback_data)
+int fill_packet(iec61883_amdtp_t amdtp, 
+		char *data, 
+		int nevents, 
+		unsigned int dbc,
+		unsigned int dropped, 
+		void *callback_data)
 {
 
 	snd_seq_event_t *ev;
@@ -117,8 +122,6 @@ int fill_packet(char *data, int nevents, unsigned int dropped, void *callback_da
 	static unsigned char work_buffer[MIDI_TRANSMIT_BUFFER_SIZE];
 	
 	int current_midi_port;
-	
-	static int dbc=0; // try and calculate the DBC myself
 	
 	for (i=0; i < nevents; ++i) { // cycle through all events requested
 		
@@ -206,8 +209,6 @@ int fill_packet(char *data, int nevents, unsigned int dropped, void *callback_da
 
   total_packets++;
   
-  dbc += nevents; // update the dbc
-  
   if ((total_packets & 0xfff) == 0) {
     fprintf (stderr, "\r%10d packets", total_packets);
     fflush (stderr);
@@ -216,11 +217,12 @@ int fill_packet(char *data, int nevents, unsigned int dropped, void *callback_da
   return 0;
 }
 
-static int read_packet(char *data, int nevents, int dimension, int rate,
-	enum iec61883_amdtp_format format, 
-	enum iec61883_amdtp_sample_format sample_format,
-	unsigned int dropped,
-	void *callback_data)
+static int read_packet(iec61883_amdtp_t amdtp, 
+		       char *data, 
+		       int nsamples, 
+		       unsigned int dbc,
+		       unsigned int dropped,
+		       void *callback_data)
 {
 	freebob_midi_ports_t *f = (freebob_midi_ports_t*) callback_data;
 	snd_seq_event_t ev;
@@ -230,21 +232,22 @@ static int read_packet(char *data, int nevents, int dimension, int rate,
 	
 	static int total_packets = 0;
 	
-	int i;
+	int i, dimension;
 	
+	dimension = iec61883_amdtp_get_dimension(amdtp);
+
 	// as long as the device sends clusters of 8 events, the dbc=0 is ok
 	// DBC should be available though
-	static int dbc=0;
 	
 	if (total_packets == 0)
-		fprintf (stderr, "format=0x%x sample_format=0x%x channels=%d rate=%d\n",
-			format, sample_format, dimension, rate);
+		fprintf (stderr, "channels=%d",
+			dimension);
 			
 	if (f) { // if the callback data pointer is valid
-		for (i=0; i<nevents;i++) { // cycle through the events
+		for (i=0; i<nsamples;i += dimension) { // cycle through the events
 		
 			// select the midi stream data from the current event
-			this_event=events[(i*dimension)+QUATAFIRE_MIDI_IN_STREAM_POSITION];
+			this_event=events[i + QUATAFIRE_MIDI_IN_STREAM_POSITION];
 			
 			// calculate the midi port for this data
 			// XXX: I'm not sure if this should be (DBC+i)%8 or DBC%8 according to spec
@@ -293,7 +296,7 @@ static int read_packet(char *data, int nevents, int dimension, int rate,
 	total_packets++;
 	
 	if ((total_packets & 0xfff) == 0) {
-		fprintf (stderr, "\r%10d packets, %d events/packet (last packet)", total_packets,nevents);
+		fprintf (stderr, "\r%10d packets, %d samples/packet (last packet)", total_packets,nsamples);
 		fflush (stderr);
 	}
 	return 0;
@@ -340,8 +343,12 @@ static void amdtp_transmit( raw1394handle_t handle, freebob_midi_ports_t *f, int
 {	
 	iec61883_amdtp_t amdtp;
 		
-	amdtp = iec61883_amdtp_xmit_init (handle, QUATAFIRE_DEFAULT_SAMPLE_RATE, IEC61883_AMDTP_FORMAT_RAW,
-		IEC61883_MODE_BLOCKING, QUATAFIRE_OUT_DIMENSION, fill_packet, (void *)f );
+	amdtp = iec61883_amdtp_xmit_init (handle, QUATAFIRE_DEFAULT_SAMPLE_RATE, 
+					  IEC61883_AMDTP_FORMAT_RAW, 
+					  IEC61883_AMDTP_INPUT_LE24,
+					  IEC61883_MODE_BLOCKING, 
+					  QUATAFIRE_OUT_DIMENSION, 
+					  fill_packet, (void *)f );
 	
 	if (amdtp && iec61883_amdtp_xmit_start (amdtp, channel) == 0)
 	{
