@@ -34,8 +34,8 @@ AvAudioSyncInfoBlock::AvAudioSyncInfoBlock(AvDescriptor *parent, int address) : 
 	if (getType() != 0x8107) {
 		bValid=false;
 	}
-	debugPrint(DEBUG_LEVEL_INFO,"AvAudioSyncInfoBlock: Creating... length=0x%04X\n",getLength());
-	debugPrint(DEBUG_LEVEL_INFO,"AvAudioSyncInfoBlock: Created\n");
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvAudioSyncInfoBlock: Creating... length=0x%04X\n",getLength());
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvAudioSyncInfoBlock: Created\n");
 
 }
 

@@ -44,61 +44,61 @@ AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) 
 	cMidiInfoBlock=NULL;
 	cAudioSyncInfoBlock=NULL;
 	
-	debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating... length=0x%04X\n",getLength());
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating... length=0x%04X\n",getLength());
 
 	// parse the child info blocks
 	while ((next_block_position<address+getLength())) {
-		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating tmpInfoBlock\n");
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating tmpInfoBlock\n");
 
 		tmpInfoBlock=new AvInfoBlock(parent,next_block_position);
 		
-		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: testing tmpInfoBlock\n");
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: testing tmpInfoBlock\n");
 		if (tmpInfoBlock && tmpInfoBlock->isValid()) {
 			// read the type of the block
 			// note: only one block instance per type is supported (according to the specs)
-			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: position=0x%04X  type=0x%04X\n",next_block_position,tmpInfoBlock->getType());
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: position=0x%04X  type=0x%04X\n",next_block_position,tmpInfoBlock->getType());
 			switch (tmpInfoBlock->getType()) {
 				case 0x8103:
-				debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating AudioInfoBlock\n");
+				debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating AudioInfoBlock\n");
 					if(cAudioInfoBlock) {
-						debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: deleting duplicate cAudioInfoBlock. Non-conformant info block!\n");
+						debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: deleting duplicate cAudioInfoBlock. Non-conformant info block!\n");
 						delete cAudioInfoBlock;
 					}
 					cAudioInfoBlock=new AvAudioInfoBlock(parent, next_block_position);
 				break;
 				case 0x8104:
-					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating MidiInfoBlock\n");
+					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating MidiInfoBlock\n");
 					if(cMidiInfoBlock) {
-						debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: deleting duplicate cMidiInfoBlock. Non-conformant info block!\n");
+						debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: deleting duplicate cMidiInfoBlock. Non-conformant info block!\n");
 						delete cMidiInfoBlock;
 					}
 					cMidiInfoBlock=new AvMidiInfoBlock(parent, next_block_position);
 				break;
 				case 0x8105:
-					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Skipping SMPTE block, unsupported.\n");
+					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Skipping SMPTE block, unsupported.\n");
 				break;
 				case 0x8106:
-					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Skipping SampleCount block, unsupported.\n");
+					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Skipping SampleCount block, unsupported.\n");
 				break;
 				case 0x8107:
-					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating AudioSyncInfoBlock\n");
+					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating AudioSyncInfoBlock\n");
 					if(cAudioSyncInfoBlock) {
-						debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: deleting duplicate cAudioSyncInfoBlock. Non-conformant info block!\n");
+						debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: deleting duplicate cAudioSyncInfoBlock. Non-conformant info block!\n");
 						delete cAudioSyncInfoBlock;
 					}
 					cAudioSyncInfoBlock=new AvAudioSyncInfoBlock(parent, next_block_position);
 				break;
 				default:
-					debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Skipping unknown block\n");
+					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Skipping unknown block\n");
 				break;
 				
 			}
 			// update the block position pointer
 			next_block_position+=tmpInfoBlock->getLength()+2;
-			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Advancing to position=0x%04X\n",next_block_position);
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Advancing to position=0x%04X\n",next_block_position);
 			
 		} else {
-			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Parse error!\n");
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Parse error!\n");
 			bValid=false;
 			break;
 		}
@@ -114,7 +114,7 @@ AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) 
 		tmpInfoBlock=NULL;
 	}
 	
-	debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Created\n");
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Created\n");
 	
 }
 
@@ -134,16 +134,16 @@ unsigned int AvSourcePlugInfoBlock::getPlugNumber() {
 
 void AvSourcePlugInfoBlock::printContents() {
 	if(cAudioInfoBlock) {
-		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: AudioInfoBlock: %s\n",cAudioInfoBlock->getName());
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: AudioInfoBlock: %s\n",cAudioInfoBlock->getName());
 	}
 	if(cMidiInfoBlock) {
-		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: MidiInfoBlock %d streams\n",cMidiInfoBlock->getNbStreams());
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: MidiInfoBlock %d streams\n",cMidiInfoBlock->getNbStreams());
 		for (unsigned int i=0;i<cMidiInfoBlock->getNbStreams();i++) {
-			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: MidiInfoBlock stream %d: %s\n",i,cMidiInfoBlock->getName(i));
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: MidiInfoBlock stream %d: %s\n",i,cMidiInfoBlock->getName(i));
 		}
 	}
 	if(cAudioSyncInfoBlock) {
-		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: AudioSyncInfoBlock can sync to: Bus? %s / External? %s\n",
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: AudioSyncInfoBlock can sync to: Bus? %s / External? %s\n",
 			cAudioSyncInfoBlock->canSyncBus()?"yes":"no",
 			cAudioSyncInfoBlock->canSyncExternal()?"yes":"no"
 			);

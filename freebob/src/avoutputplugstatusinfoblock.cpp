@@ -40,16 +40,16 @@ AvOutputPlugStatusInfoBlock::AvOutputPlugStatusInfoBlock(AvDescriptor *parent, i
 	unsigned int nb_sourceplugs=readByte(6);
 	AvSourcePlugInfoBlock *tmpAvSourcePlugInfoBlock=NULL;
 
-	debugPrint(DEBUG_LEVEL_INFO,"AvOutputPlugStatusInfoBlock: Creating... length=0x%04X\n",getLength());
-	debugPrint(DEBUG_LEVEL_INFO,"AvOutputPlugStatusInfoBlock:   Number of source plugs=%d\n",nb_sourceplugs);
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: Creating... length=0x%04X\n",getLength());
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock:   Number of source plugs=%d\n",nb_sourceplugs);
 		
 	if (nb_sourceplugs>0) {
 		for (unsigned int i=0;i<nb_sourceplugs;i++) {
-			debugPrint(DEBUG_LEVEL_INFO,"AvOutputPlugStatusInfoBlock: source plug=%d\n",i);
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: source plug=%d\n",i);
 			tmpAvSourcePlugInfoBlock=new AvSourcePlugInfoBlock(parent, next_block_position);
 			
 			if (tmpAvSourcePlugInfoBlock && (tmpAvSourcePlugInfoBlock->isValid())) {
-				//debugPrint(DEBUG_LEVEL_INFO,"AvOutputPlugStatusInfoBlock: source plug type=0x%04X\n",tmpAvSourcePlugInfoBlock->getType());
+				//debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: source plug type=0x%04X\n",tmpAvSourcePlugInfoBlock->getType());
 				next_block_position+=tmpAvSourcePlugInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
 				
 				// add to child list
@@ -58,7 +58,7 @@ AvOutputPlugStatusInfoBlock::AvOutputPlugStatusInfoBlock(AvDescriptor *parent, i
 				tmpAvSourcePlugInfoBlock->printContents();
 				
 			} else {
-				debugPrint(DEBUG_LEVEL_INFO,"AvOutputPlugStatusInfoBlock: Invalid block... parse error!\n");
+				debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: Invalid block... parse error!\n");
 				bValid=false;
 				break; // what to do now?
 			}
@@ -66,7 +66,7 @@ AvOutputPlugStatusInfoBlock::AvOutputPlugStatusInfoBlock(AvDescriptor *parent, i
 		}
 	}
 	
-	debugPrint(DEBUG_LEVEL_INFO,"AvOutputPlugStatusInfoBlock: Created\n");
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: Created\n");
 	
 }
 

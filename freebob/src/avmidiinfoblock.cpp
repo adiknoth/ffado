@@ -40,7 +40,7 @@ AvMidiInfoBlock::AvMidiInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 	unsigned int position=0;
 	AvNameInfoBlock *tmpNameBlock;
 	
-	debugPrint(DEBUG_LEVEL_INFO,"AvMidiInfoBlock: Creating... length=0x%04X\n",getLength());
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMidiInfoBlock: Creating... length=0x%04X\n",getLength());
 	
 	if (nb_streams>0) {
 		position=address+7;
@@ -54,14 +54,14 @@ AvMidiInfoBlock::AvMidiInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 				// add to child list
 				cNameInfoBlocks.push_back(tmpNameBlock);
 			} else {
-				debugPrint(DEBUG_LEVEL_INFO,"Invalid name block in Midi info Block...\n");
+				debugPrint(DEBUG_LEVEL_INFOBLOCK,"Invalid name block in Midi info Block...\n");
 				bValid=false;
 				break; // what to do now?
 			}
 		}
 		
 	}
-	debugPrint(DEBUG_LEVEL_INFO,"AvMidiInfoBlock: Created\n");
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMidiInfoBlock: Created\n");
 	
 	// no optional info blocks please...
 	

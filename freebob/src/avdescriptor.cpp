@@ -163,7 +163,7 @@ void AvDescriptor::Load() {
 
 	iLength=response[2] & 0xFFFF;
 	
-	fprintf(stderr,"Descriptor length=0x%04X %d\n",iLength,iLength);	
+	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d\n",iLength,iLength);	
 
 	// now get the rest of the descriptor
 	aContents=new unsigned char[iLength];
@@ -182,7 +182,7 @@ void AvDescriptor::Load() {
 	
 	// first read
 	if(bytes_read<iLength) {
-		fprintf(stderr,".");	
+		debugPrint(DEBUG_LEVEL_DESCRIPTOR,".");	
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -207,7 +207,7 @@ void AvDescriptor::Load() {
 	
 	// now do the remaining reads
 	while(bytes_read<iLength) {
-		fprintf(stderr,".");	
+		debugPrint(DEBUG_LEVEL_DESCRIPTOR,".");	
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -228,7 +228,7 @@ void AvDescriptor::Load() {
 		}
 		
 	}
-	fprintf(stderr,"\n");	
+	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\n");	
 	
 	
 	bLoaded=true;
@@ -247,7 +247,7 @@ bool AvDescriptor::isPresent() {
 	response =  cParent->avcExecuteTransaction(request, 2, 2);
 
 	if (((response[0] & 0xFF000000)==AVC1394_RESPONSE_NOT_IMPLEMENTED) || ((response[1] & 0xFF000000)==0x04)) { 
-		fprintf(stderr,"Descriptor not present.\n");
+		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor not present.\n");
 		bValid=false;
 		return false;
 	} 

@@ -35,11 +35,11 @@ AvAudioInfoBlock::AvAudioInfoBlock(AvDescriptor *parent, int address) : AvInfoBl
 	if (getType() != 0x8103) {
 		bValid=false;
 	}	
-	debugPrint(DEBUG_LEVEL_INFO,"AvAudioInfoBlock: Creating... length=0x%04X\n",getLength());
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvAudioInfoBlock: Creating... length=0x%04X\n",getLength());
 	
 	// PP: I assume that there is only an audio block, no optional blocks.
 	cNameInfoBlock=new AvNameInfoBlock(parent, address+7);
-	debugPrint(DEBUG_LEVEL_INFO,"AvAudioInfoBlock: Created\n");
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvAudioInfoBlock: Created\n");
 	
 }
 

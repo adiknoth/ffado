@@ -1,4 +1,4 @@
-/* avmusicstatusdescriptor.h
+/* avdeviceaudiosubunit.h
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -17,34 +17,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
- 
+
+#include "ieee1394service.h"
 #include "avdevice.h"
-#include "avdescriptor.h"
-#include <string.h>
-#include <errno.h>
-#include <libavc1394/avc1394.h>
-#include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
+#include "avdevicesubunit.h"
 
-#ifndef AVMUSICSTATUSDESCRIPTOR_H
-#define AVMUSICSTATUSDESCRIPTOR_H
+#ifndef AVDEVICEAUDIOSUBUNIT_H
+#define AVDEVICEAUDIOSUBUNIT_H
 
-
-class AvGeneralMusicInfoBlock;
-class AvOutputPlugStatusInfoBlock;
-
-class AvMusicStatusDescriptor : public AvDescriptor {
+class AvDeviceAudioSubunit : public AvDeviceSubunit {
  public:
-    AvMusicStatusDescriptor(AvDevice *parent, unsigned char id);
-    ~AvMusicStatusDescriptor();
-    
-    void printCapabilities();
+    AvDeviceAudioSubunit(AvDevice *parent, unsigned char id);
+    virtual ~AvDeviceAudioSubunit();
 
- protected:
-       AvGeneralMusicInfoBlock      *cGeneralMusicInfoBlock;
-       AvOutputPlugStatusInfoBlock  *cOutputPlugStatusInfoBlock;
-       
+   
  private:
+
 
 };
 

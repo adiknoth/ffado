@@ -32,7 +32,7 @@
 
 class AvMusicIdentifierDescriptor : public AvDescriptor {
  public:
-    AvMusicIdentifierDescriptor(AvDevice *parent);
+    AvMusicIdentifierDescriptor(AvDevice *parent, unsigned char id);
     ~AvMusicIdentifierDescriptor();
     
     void printCapabilities();

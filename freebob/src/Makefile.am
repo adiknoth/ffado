@@ -31,6 +31,12 @@ freebob_SOURCES = \
 	ieee1394service.cpp \
 	avdevice.h \
 	avdevice.cpp \
+	avdevicesubunit.h \
+	avdevicesubunit.cpp \
+	avdeviceaudiosubunit.h \
+	avdeviceaudiosubunit.cpp \
+	avdevicemusicsubunit.h \
+	avdevicemusicsubunit.cpp \
 	avdevicepool.h \
 	avdevicepool.cpp \
 	threads.h \

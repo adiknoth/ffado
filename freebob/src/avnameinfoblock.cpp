@@ -65,7 +65,7 @@ unsigned char * AvNameInfoBlock::getName() {
 		nameBuffer=new unsigned char[primary_field_length_textblock_1];
 		
 		if((readlen=readBuffer(0x10,primary_field_length_textblock_1,nameBuffer))<primary_field_length_textblock_1) {
-           		debugPrint (DEBUG_LEVEL_INFO, "      truncated????\n");
+           		debugPrint (DEBUG_LEVEL_INFOBLOCK, "      truncated????\n");
 			
 			nameBuffer[primary_field_length_textblock_1-1]=0; // make sure the string converter doesn't read past the buffer
 		}

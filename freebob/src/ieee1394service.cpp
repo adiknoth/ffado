@@ -160,6 +160,7 @@ Ieee1394Service::discoveryDevices()
       		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
 		test->Initialize();
 		if (test->isInitialised()) {
+#if 0	// the commented out code enables some tests of the several decriptor/infoblock classes
             		debugPrint (DEBUG_LEVEL_INFO, "   Init successfull...\n");
             		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvDescriptor...\n");
 			AvDescriptor *testdesc=new AvDescriptor(test,AVC1394_SUBUNIT_TYPE_MUSIC | AVC1394_SUBUNIT_ID_0,0x00);
@@ -211,7 +212,7 @@ Ieee1394Service::discoveryDevices()
 			
 			// test the AvMusicIdentifierDescriptor
            		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicIdentifierDescriptor...\n");
-			AvMusicIdentifierDescriptor *testdesc_mid=new AvMusicIdentifierDescriptor(test);
+			AvMusicIdentifierDescriptor *testdesc_mid=new AvMusicIdentifierDescriptor(test,0x00);
             		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
 			testdesc_mid->printCapabilities();
 		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicIdentifierDescriptor...\n");
@@ -219,10 +220,10 @@ Ieee1394Service::discoveryDevices()
 			
 			// test the AvMusicStatusDescriptor
            		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicStatusDescriptor...\n");
-			AvMusicStatusDescriptor *testdesc_mid2=new AvMusicStatusDescriptor(test);
+			AvMusicStatusDescriptor *testdesc_mid2=new AvMusicStatusDescriptor(test,0x00);
             		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
 			testdesc_mid2->printCapabilities();
-#if 0			
+			
 			// test the AvInfoBlock
            		debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvInfoBlock...\n");
 			
@@ -311,9 +312,9 @@ Ieee1394Service::discoveryDevices()
 			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvOutputPlugStatusInfoBlock...\n");
 			
 			delete testblock8;
-#endif			
 		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicStatusDescriptor...\n");
 			delete testdesc_mid2;			
+#endif			
 		}
       		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
 		delete test;

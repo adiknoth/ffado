@@ -1,5 +1,6 @@
 /* avdevice.cpp
- * Copyright (C) 2004 by Daniel Wagner
+ * Copyright (C) 2004 by Daniel Wagner, Pieter Palmers
+ *                       
  *
  * This file is part of FreeBob.
  *
@@ -22,6 +23,9 @@
 #include <libavc1394/avc1394_vcr.h>
 #include "debugmodule.h"
 #include "avdevice.h"
+#include "avdevicesubunit.h"
+#include "avdeviceaudiosubunit.h"
+#include "avdevicemusicsubunit.h"
 
 AvDevice::AvDevice(int port, int node)
 {
@@ -29,6 +33,8 @@ AvDevice::AvDevice(int port, int node)
 	m_iPort=port;
 
 	// check to see if a device is really present?
+	
+	// probably initialisation would be better done here
 }
 
 FBReturnCodes
@@ -38,10 +44,10 @@ AvDevice::Initialize() {
 	m_handle = raw1394_new_handle();
         if ( !m_handle ) {
             if ( !errno ) {
-                fprintf( stderr,  "libraw1394 not compatible.\n" );
+                debugPrint(DEBUG_LEVEL_DEVICE,  "libraw1394 not compatible.\n" );
             } else {
                 perror ("Could not get 1394 handle");
-                fprintf (stderr, "Is ieee1394 and raw1394 driver loaded?\n");
+                debugPrint(DEBUG_LEVEL_DEVICE, "Is ieee1394 and raw1394 driver loaded?\n");
             }
             return eFBRC_Creating1394HandleFailed;
         }
@@ -54,6 +60,98 @@ AvDevice::Initialize() {
         }
    }
    
+   // enumerate the subunits present in this device, create an AvDeviceSubunit for them, and add this object to the cSubUnits vector
+	unsigned char table_entry;
+	unsigned char subunit_maxid;
+	unsigned char subunit_type;
+	quadlet_t table_entries; // buffer these table entries, because the memory content pointed to by 
+				 // the response pointer can change due to other libraw operations on this handle
+	
+	quadlet_t request[6];
+	quadlet_t *response;
+	AvDeviceSubunit *tmpAvDeviceSubunit=NULL;
+	
+	// check the number of I/O plugs
+	
+	request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_PLUG_INFO | 0x00;
+	request[1] = 0xFFFFFFFF;
+	response = avcExecuteTransaction(request, 2, 2);
+	if (response != NULL) {
+		iNbIsoDestinationPlugs= (unsigned char) ((response[1]>>24) & 0xff);
+		iNbIsoSourcePlugs= (unsigned char) ((response[1]>>16) & 0xff);
+		iNbExtDestinationPlugs= (unsigned char) ((response[1]>>8) & 0xff);
+		iNbExtSourcePlugs= (unsigned char) ((response[1]>>0) & 0xff);
+	}
+	request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_PLUG_INFO | 0x01;
+	request[1] = 0xFFFFFFFF;
+	response = avcExecuteTransaction(request, 2, 2);
+	if (response != NULL) {
+		iNbAsyncDestinationPlugs= (unsigned char) ((response[1]>>24) & 0xff);
+		iNbAsyncSourcePlugs= (unsigned char) ((response[1]>>16) & 0xff);
+	}
+	
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: %d Isochronous source plugs, %d Isochronous destination plugs\n",iNbIsoSourcePlugs,iNbIsoDestinationPlugs);
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: %d External source plugs, %d External destination plugs\n",iNbExtSourcePlugs,iNbExtDestinationPlugs);
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: %d Asynchronous source plugs, %d Asynchronous destination plugs\n",iNbAsyncSourcePlugs,iNbAsyncDestinationPlugs);
+	
+	// create the subunits
+	for (unsigned int i=0;i<8;i++) { // cycle through the 8 pages (max 32 subunits; 4 subunits/page)
+		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+				| AVC1394_COMMAND_SUBUNIT_INFO | ((i<<4) & 0xF0) | 0x07;
+		request[1] = 0xFFFFFFFF;
+		response = avcExecuteTransaction(request, 6, 2);
+		
+		table_entries=response[1];
+		
+		if (response != NULL) {
+			// this way of processing the table entries assumes that the subunit type is not "extended"
+			
+			// warning: don't do unsigned int j! comparison >= 0 is always true for uint
+			for (int j=3;j>=0;j--) { // cycle through the 8 pages (max 32 subunits; 4 subunits/page)
+				table_entry=(table_entries >> (j*8)) & 0xFF;
+				subunit_maxid=table_entry& 0x07;
+				subunit_type=(table_entry >> 3) & 0x1F;
+				//debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: Page %d, item %d: Table entry=0x%02X, subunit_maxid=0x%02X, subunit_type=0x%02X\n",i,j,table_entry,subunit_maxid,subunit_type);
+				
+				// according to spec we could stop processing
+				// at the first 0xFF entry, but doing it this way
+				// is a little more robust
+				if (table_entry != 0xFF) {
+					for (unsigned char subunit_id=0;subunit_id<subunit_maxid+1;subunit_id++) {
+						
+						// only two types of specific subunits are supported: audio and music
+						switch (subunit_type) {
+							case 0x01: // audio subunit
+								tmpAvDeviceSubunit=new AvDeviceAudioSubunit(this,subunit_id);
+							break;
+							case 0x0C: // music subunit
+								tmpAvDeviceSubunit=new AvDeviceMusicSubunit(this,subunit_id);
+							break;
+							
+							default: // generic
+								tmpAvDeviceSubunit=new AvDeviceSubunit(this,subunit_type,subunit_id);
+							break;
+						} 
+						
+						if(tmpAvDeviceSubunit && tmpAvDeviceSubunit->isValid()) {
+							cSubUnits.push_back(tmpAvDeviceSubunit);
+						} else {
+							if (tmpAvDeviceSubunit) {
+								debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: Unsupported AvDeviceSubunit encountered. Page %d, item %d: Table entry=0x%02X, subunit_maxid=0x%02X, subunit_type=0x%02X, subunit_id=%0x02X\n",i,j,table_entry,subunit_maxid,subunit_id);
+	
+								delete tmpAvDeviceSubunit;
+							} else {
+								debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: Could not create AvDeviceSubunit object.\n");
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+   
    m_bInitialised = true;
    return eFBRC_Success;
 	
@@ -65,6 +163,12 @@ bool AvDevice::isInitialised() {
 
 AvDevice::~AvDevice()
 {
+
+	vector<AvDeviceSubunit *>::iterator it;
+	for( it = cSubUnits.begin(); it != cSubUnits.end(); it++ ) {
+		delete *it;
+	}
+
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
         m_handle = 0;

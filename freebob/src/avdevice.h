@@ -1,5 +1,6 @@
 /* avdevice.h
- * Copyright (C) 2004 by Daniel Wagner
+ * Copyright (C) 2004 by Daniel Wagner, Pieter Palmers
+ *                       
  *
  * This file is part of FreeBob.
  *
@@ -18,10 +19,16 @@
  * MA 02111-1307 USA.
  */
 
+#include "ieee1394service.h"
+
+#include <vector>
+using std::vector;
+
+
 #ifndef AVDEVICE_H
 #define AVDEVICE_H
 
-#include "ieee1394service.h"
+class AvDeviceSubunit;
 
 class AvDevice {
  public:
@@ -39,6 +46,15 @@ class AvDevice {
 	raw1394handle_t m_handle;
         int m_iPort;
 	bool m_bInitialised;
+	vector<AvDeviceSubunit *> cSubUnits;
+	
+ 	unsigned char iNbAsyncDestinationPlugs;
+ 	unsigned char iNbAsyncSourcePlugs;
+ 	unsigned char iNbIsoDestinationPlugs;
+ 	unsigned char iNbIsoSourcePlugs;
+ 	unsigned char iNbExtDestinationPlugs;
+ 	unsigned char iNbExtSourcePlugs;
+	
 };
 
 #endif

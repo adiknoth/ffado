@@ -24,13 +24,25 @@
 #include <stdio.h>
 #include "ieee1394service.h"
 
-#define DEBUG_LEVEL_INFO     	  5
-#define DEBUG_LEVEL_TRANSFERS     6
+#define DEBUG_LEVEL_INFO		(1<<0)
+#define DEBUG_LEVEL_DEVICE     		(1<<1)
+#define DEBUG_LEVEL_SUBUNIT    		(1<<2)
+#define DEBUG_LEVEL_DESCRIPTOR     	(1<<3)
+#define DEBUG_LEVEL_INFOBLOCK     	(1<<4)
 
-#define DEBUG_LEVEL DEBUG_LEVEL_INFO
+#define DEBUG_LEVEL_TRANSFERS     	(1<<5)
 
-#define debugError(format, args...) fprintf( stderr, format,  ##args )
-#define debugPrint(Level, format, args...) if(DEBUG_LEVEL>=Level) printf( format, ##args );
+#define DEBUG_LEVEL  (DEBUG_LEVEL_INFO | DEBUG_LEVEL_DEVICE | DEBUG_LEVEL_SUBUNIT)
+#define DEBUG
+
+#ifdef DEBUG
+	#define debugError(format, args...) fprintf( stderr, format,  ##args )
+//	#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & Level) { int idebug=Level; while(idebug) {printf(" "); idebug=idebug>>1;} printf( format, ##args ); }
+	#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & Level) { printf( format, ##args ); }
+#else
+	#define debugError(format, args...) 
+	#define debugPrint(Level, format, args...) 
+#endif
 
 unsigned char toAscii(unsigned char c);
 void quadlet2char(quadlet_t quadlet,unsigned char* buff);
