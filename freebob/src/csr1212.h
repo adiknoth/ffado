@@ -30,6 +30,9 @@
 #ifndef __CSR1212_H__
 #define __CSR1212_H__
 
+#ifdef __cplusplus 
+  extern "C" {
+#endif
 
 /* Compatibility layer */
 #ifdef __KERNEL__
@@ -289,7 +292,7 @@ struct csr1212_csr {
 	size_t crc_len;		/* crc length in bytes */
 	u_int32_t *bus_info_data;	/* bus info data incl bus name and EUI */
 
-	void *private;		/* private, bus specific data */
+	void *private_data;		/* private_data, bus specific data */
 	struct csr1212_bus_ops *ops;
 
 	struct csr1212_keyval *root_kv;
@@ -306,24 +309,24 @@ struct csr1212_bus_ops {
 	 * entries located in the Units Space.  Must return 0 on success
 	 * anything else indicates an error. */
 	int (*bus_read) (struct csr1212_csr *csr, u_int64_t addr,
-			 u_int16_t length, void *buffer, void *private);
+			 u_int16_t length, void *buffer, void *private_data);
 
 	/* This function is used by csr1212 to allocate a region in units space
 	 * in the event that Config ROM entries don't all fit in the predefined
-	 * 1K region.  The void *private parameter is private member of struct
+	 * 1K region.  The void *private_data parameter is private_data member of struct
 	 * csr1212_csr. */
 	u_int64_t (*allocate_addr_range) (u_int64_t size, u_int32_t alignment,
-					  void *private);
+					  void *private_data);
 
 
 	/* This function is used by csr1212 to release a region in units space
 	 * that is no longer needed. */
-	void (*release_addr) (u_int64_t addr, void *private);
+	void (*release_addr) (u_int64_t addr, void *private_data);
 
 	/* This function is used by csr1212 to determine the max read request
 	 * supported by a remote node when reading the ConfigROM space.  Must
 	 * return 0, 1, or 2 per IEEE 1212.  */
-	int (*get_max_rom) (u_int32_t *bus_info, void *private);
+	int (*get_max_rom) (u_int32_t *bus_info, void *private_data);
 };
 
 
@@ -541,7 +544,7 @@ static inline u_int32_t *CSR1212_ICON_DESCRIPTOR_LEAF_PIXELS(struct csr1212_keyv
  * ROM trees - namely data for the bus information block. */
 extern struct csr1212_csr *csr1212_create_csr(struct csr1212_bus_ops *ops,
 					      size_t bus_info_size,
-					      void *private);
+					      void *private_data);
 extern void csr1212_init_local_csr(struct csr1212_csr *csr,
 				   const u_int32_t *bus_info_data, int max_rom);
 
@@ -647,7 +650,7 @@ static inline struct csr1212_csr_rom_cache *csr1212_rom_cache_malloc(u_int32_t o
 {
 	struct csr1212_csr_rom_cache *cache;
 
-	cache = CSR1212_MALLOC(sizeof(struct csr1212_csr_rom_cache) + size);
+	cache = (struct csr1212_csr_rom_cache*)CSR1212_MALLOC(sizeof(struct csr1212_csr_rom_cache) + size);
 	if (!cache)
 		return NULL;
 
@@ -723,5 +726,9 @@ static inline void csr1212_release_keyval(struct csr1212_keyval *kv)
 		     (_kv = csr1212_get_keyval((_csr), _kv->associate)))
 
 
+
+#ifdef __cplusplus
+   } 
+#endif
 
 #endif /* __CSR1212_H__ */

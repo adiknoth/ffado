@@ -165,7 +165,7 @@ static inline struct csr1212_keyval *csr1212_find_keyval_offset(struct csr1212_k
 
 /* Creation Routines */
 struct csr1212_csr *csr1212_create_csr(struct csr1212_bus_ops *ops,
-				       size_t bus_info_size, void *private)
+				       size_t bus_info_size, void *private_data)
 {
 	struct csr1212_csr *csr;
 
@@ -195,7 +195,7 @@ struct csr1212_csr *csr1212_create_csr(struct csr1212_bus_ops *ops,
 	csr->bus_info_len = bus_info_size;
 	csr->crc_len = bus_info_size;
 	csr->ops = ops;
-	csr->private = private;
+	csr->private_data = private_data;
 	csr->cache_tail = csr->cache_head;
 
 	return csr;
@@ -766,32 +766,32 @@ static int csr1212_append_new_cache(struct csr1212_csr *csr, size_t romsize)
 	/* ROM size must be a multiple of csr->max_rom */
 	romsize = (romsize + (csr->max_rom - 1)) & ~(csr->max_rom - 1);
 
-	csr_addr = csr->ops->allocate_addr_range(romsize, csr->max_rom, csr->private);
+	csr_addr = csr->ops->allocate_addr_range(romsize, csr->max_rom, csr->private_data);
 	if (csr_addr == ~0ULL) {
 		return CSR1212_ENOMEM;
 	}
 	if (csr_addr < CSR1212_REGISTER_SPACE_BASE) {
 		/* Invalid address returned from allocate_addr_range(). */
-		csr->ops->release_addr(csr_addr, csr->private);
+		csr->ops->release_addr(csr_addr, csr->private_data);
 		return CSR1212_ENOMEM;
 	}
 
 	cache = csr1212_rom_cache_malloc(csr_addr - CSR1212_REGISTER_SPACE_BASE, romsize);
 	if (!cache) {
-		csr->ops->release_addr(csr_addr, csr->private);
+		csr->ops->release_addr(csr_addr, csr->private_data);
 		return CSR1212_ENOMEM;
 	}
 
 	cache->ext_rom = csr1212_new_keyval(CSR1212_KV_TYPE_LEAF, CSR1212_KV_ID_EXTENDED_ROM);
 	if (!cache->ext_rom) {
-		csr->ops->release_addr(csr_addr, csr->private);
+		csr->ops->release_addr(csr_addr, csr->private_data);
 		CSR1212_FREE(cache);
 		return CSR1212_ENOMEM;
 	}
 
 	if (csr1212_attach_keyval_to_directory(csr->root_kv, cache->ext_rom) != CSR1212_SUCCESS) {
 		csr1212_release_keyval(cache->ext_rom);
-		csr->ops->release_addr(csr_addr, csr->private);
+		csr->ops->release_addr(csr_addr, csr->private_data);
 		CSR1212_FREE(cache);
 		return CSR1212_ENOMEM;
 	}
@@ -1204,7 +1204,7 @@ static int csr1212_parse_bus_info_block(struct csr1212_csr *csr)
 		ret = csr->ops->bus_read(csr, CSR1212_CONFIG_ROM_SPACE_BASE + i,
 					 sizeof(csr1212_quad_t),
 					 &csr->cache_head->data[bytes_to_quads(i)],
-					 csr->private);
+					 csr->private_data);
 		if (ret != CSR1212_SUCCESS)
 			return ret;
 	}
@@ -1218,7 +1218,7 @@ static int csr1212_parse_bus_info_block(struct csr1212_csr *csr)
 		ret = csr->ops->bus_read(csr, CSR1212_CONFIG_ROM_SPACE_BASE + i,
 					 sizeof(csr1212_quad_t),
 					 &csr->cache_head->data[bytes_to_quads(i)],
-					 csr->private);
+					 csr->private_data);
 		if (ret != CSR1212_SUCCESS)
 			return ret;
 	}
@@ -1421,7 +1421,7 @@ int _csr1212_read_keyval(struct csr1212_csr *csr, struct csr1212_keyval *kv)
 
 		if (csr->ops->bus_read(csr,
 				       CSR1212_REGISTER_SPACE_BASE + kv->offset,
-				       sizeof(csr1212_quad_t), &q, csr->private)) {
+				       sizeof(csr1212_quad_t), &q, csr->private_data)) {
 			return CSR1212_EIO;
 		}
 
@@ -1495,7 +1495,7 @@ int _csr1212_read_keyval(struct csr1212_csr *csr, struct csr1212_keyval *kv)
 			cr->offset_end) & ~(csr->max_rom - 1);
 
 		if (csr->ops->bus_read(csr, addr, csr->max_rom, cache_ptr,
-				       csr->private)) {
+				       csr->private_data)) {
 			if (csr->max_rom == 4)
 				/* We've got problems! */
 				return CSR1212_EIO;
@@ -1561,7 +1561,7 @@ int csr1212_parse_csr(struct csr1212_csr *csr)
 		csr->max_rom = mr_map[0];	/* default value */
 	else
 		csr->max_rom = mr_map[csr->ops->get_max_rom(csr->bus_info_data,
-							    csr->private)];
+							    csr->private_data)];
 
 	csr->cache_head->layout_head = csr->root_kv;
 	csr->cache_head->layout_tail = csr->root_kv;

@@ -48,9 +48,6 @@ AC_CHECK_LIB(raw1394, raw1394_new_handle, ,
 AC_CHECK_LIB(avc1394, avc1394_vcr_record, ,
              [AC_MSG_ERROR([Unable to link with libavc1394. Check that you have libavc1394 installed and that the version is 0.4.1 or newer])])
 
-AC_CHECK_LIB(rom1394, rom1394_get_node_type, ,
-             [AC_MSG_ERROR([Unable to link with librom1394. Check that your have librom1394 installed (usually part of libavc1394) and that the version is 0.4.1 or newer])])
-
 AC_CHECK_LIB(pthread, pthread_create,,
 [
 	AC_ERROR(You need the pthread library to compile freebob)

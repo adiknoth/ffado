@@ -1,5 +1,5 @@
 /* ieee1394service.h
- * Copyright (C) 2004 by Daniel Wagner
+ * Copyright (C) 2004,05 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -21,35 +21,11 @@
 #define IEEE1394SERVICE_H
 
 #include <libraw1394/raw1394.h>
-#include <libavc1394/rom1394.h>
 #include <pthread.h>
 
 #include "freebob.h"
 #include "debugmodule.h"
-
-/* XXX: add those to avc1394.h */
-#define AVC1394_SUBUNIT_TYPE_AUDIO (1 <<19) 	 
-#define AVC1394_SUBUNIT_TYPE_PRINTER (2 <<19) 	 
-#define AVC1394_SUBUNIT_TYPE_CA (6 <<19) 	 
-#define AVC1394_SUBUNIT_TYPE_PANEL (9 <<19) 	 
-#define AVC1394_SUBUNIT_TYPE_BULLETIN_BOARD (0xA <<19) 	 
-#define AVC1394_SUBUNIT_TYPE_CAMERA_STORAGE (0xB <<19) 	 
-#define AVC1394_SUBUNIT_TYPE_MUSIC (0xC <<19) 	 
-  	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_GENERAL     (1<<0) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIO       (1<<1) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_MIDI        (1<<2) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_SMPTE       (1<<3) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_SAMPLECOUNT (1<<4) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC   (1<<5) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_RESERVED    (1<<6) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_MORE        (1<<7) 	 
-  	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_NONBLOCKING (1<<0) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_BLOCKING    (1<<1) 	 
-  	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC_BUS      (1<<0) 	 
-#define AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC_EXTERNAL (1<<0) 	 
+#include "csr1212.h"
  
 class Ieee1394Service {
  public:
@@ -66,6 +42,8 @@ class Ieee1394Service {
 				       unsigned int request_len, 
 				       unsigned int response_len );
 
+
+
  protected:
     static int resetHandler( raw1394handle_t handle,
 			     unsigned int iGeneration );
@@ -76,9 +54,12 @@ class Ieee1394Service {
     static void* rHThread( void* arg );
 
     void printAvcUnitInfo( int iNodeId );
-    void printRomDirectory( int iNodeId,  rom1394_directory* pRomDir );
 
     void avDeviceTests( octlet_t oGuid, int iPort, int iNodeId );
+
+
+
+
  private:
     Ieee1394Service();
     ~Ieee1394Service();

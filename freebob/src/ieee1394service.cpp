@@ -1,5 +1,5 @@
 /* ieee1394service.cpp
- * Copyright (C) 2004 by Daniel Wagner
+ * Copyright (C) 2004,05 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -39,10 +39,12 @@
 #include "avaudiosyncinfoblock.h"
 #include "avsourcepluginfoblock.h"
 #include "avoutputplugstatusinfoblock.h"
+#include "configrom.h"
 
 USE_GLOBAL_DEBUG_MODULE;
 
 Ieee1394Service* Ieee1394Service::m_pInstance = 0;
+
 
 Ieee1394Service::Ieee1394Service()
     : m_iPort( 0 )
@@ -135,32 +137,15 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
     //scan bus
     int iNodeCount = raw1394_get_nodecount( m_handle );
     for ( int iNodeId = 0; iNodeId < iNodeCount; ++iNodeId ) {
-        rom1394_directory romDir;
-        rom1394_get_directory( m_handle, iNodeId, &romDir );
-        if ( pMainArguments->verbose ) {
-            printRomDirectory( iNodeId, &romDir );
-        }
-
-        switch (rom1394_get_node_type( &romDir )) {
-	case ROM1394_NODE_TYPE_UNKNOWN:
-            debugPrint( DEBUG_LEVEL_INFO,
-                        "Node %d has node type UNKNOWN\n", iNodeId );
-            break;
-	case ROM1394_NODE_TYPE_DC:
-            debugPrint( DEBUG_LEVEL_INFO,
-                        "Node %d has node type DC\n", iNodeId );
-            break;
-	case ROM1394_NODE_TYPE_AVC:
-            debugPrint( DEBUG_LEVEL_INFO,
-                        "Node %d has node type AVC\n", iNodeId );
-
+        ConfigRom configRom = ConfigRom( m_handle,  iNodeId );
+        if (configRom.isAvcDevice()) {
             if ( pMainArguments->verbose ) {
                 printAvcUnitInfo( iNodeId );
             }
 
             if ( avc1394_check_subunit_type( m_handle, iNodeId,
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
-                octlet_t oGuid = rom1394_get_guid( m_handle, iNodeId );
+                octlet_t oGuid = configRom.getGuid();
 
                 AvDevice* pAvDevice = new AvDevice( oGuid );
                 if ( !pAvDevice ) {
@@ -177,60 +162,13 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
                 asyncCall( pAvDevice, &AvDevice::execute,
                            AvDevice::eDeviceDiscovery );
 
-                // XXX Pieter's test code.
-                // avDeviceTests( oGuid, m_iPort, iNodeId );
 	    }
-            break;
-	case ROM1394_NODE_TYPE_SBP2:
-            debugPrint( DEBUG_LEVEL_INFO,
-                        "Node %d has node type SBP2\n", iNodeId);
-            break;
-	case ROM1394_NODE_TYPE_CPU:
-            debugPrint( DEBUG_LEVEL_INFO,
-                        "Node %d has node type CPU\n", iNodeId);
-            break;
-	default:
-            debugPrint( DEBUG_LEVEL_INFO,
-                        "No matching node type found for node %d\n", iNodeId);
 	}
     }
     // XXX dw: removed: AvDevicePool::instance()->removeObsoleteDevices()
     // check if this is still code here is still correct.
     return eFBRC_Success;
 }
-
-
-void
-Ieee1394Service::avDeviceTests(octlet_t oGuid, int iPort, int iNodeId)
-{
-    // PP: just a static try, don't want to mess with the device manager yet...
-    // Remark: the AvDevice and AvDescriptor aren't debugged thouroughly yet!
-    //         the following code is the only debug I had time for... to be continued! (later this week)
-            	debugPrint (DEBUG_LEVEL_INFO, "  Trying to create an AvDevice...\n");
-
-                AvDevice *test=new AvDevice(oGuid);
-                test->setNodeId( iNodeId );
-                test->setPort( iPort );
-      		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
-		test->initialize();
-		if (test->isInitialised()) {
-			unsigned char fmt;
-			quadlet_t fdf;
-			test->getInputPlugSignalFormat(0,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->getInputPlugSignalFormat(1,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->getOutputPlugSignalFormat(0,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->getOutputPlugSignalFormat(1,&fmt,&fdf);
-      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
-			test->printConnections();
-		}
-
-		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
-		delete test;
-}
-
 
 void
 Ieee1394Service::printAvcUnitInfo( int iNodeId )
@@ -299,38 +237,6 @@ Ieee1394Service::printAvcUnitInfo( int iNodeId )
             avc1394_check_subunit_type( m_handle, iNodeId,
                                         AVC1394_SUBUNIT_TYPE_MUSIC ) ?
             "yes":"no" );
-}
-
-void
-Ieee1394Service::printRomDirectory( int iNodeId,  rom1394_directory* pRomDir )
-{
-    int iBusInfoBlockLength
-        = rom1394_get_bus_info_block_length( m_handle,  iNodeId );
-    int iBusId = rom1394_get_bus_id( m_handle,  iNodeId );
-    octlet_t oGuid = rom1394_get_guid( m_handle, iNodeId );
-    rom1394_bus_options busOptions;
-    rom1394_get_bus_options( m_handle, iNodeId, &busOptions );
-
-    printf( "\nNode %d: \n", iNodeId );
-    printf( "-------------------------------------------------\n" );
-    printf( "bus info block length = %d\n", iBusInfoBlockLength);
-    printf( "bus id = 0x%08x\n", iBusId );
-    printf( "bus options:\n" );
-    printf( "  isochronous resource manager capable: %d\n", busOptions.irmc );
-    printf ("  cycle master capable                : %d\n", busOptions.cmc );
-    printf ("  isochronous capable                 : %d\n", busOptions.isc );
-    printf ("  bus manager capable                 : %d\n", busOptions.bmc );
-    printf ("  cycle master clock accuracy         : %d ppm\n", busOptions.cyc_clk_acc );
-    printf( "  maximum asynchronous record size    : %d bytes\n", busOptions.max_rec );
-    printf("GUID: 0x%08x%08x\n", (quadlet_t) (oGuid>>32),
-           (quadlet_t) (oGuid & 0xffffffff) );
-    printf( "directory:\n");
-    printf( "  node capabilities    : 0x%08x\n", pRomDir->node_capabilities );
-    printf( "  vendor id            : 0x%08x\n", pRomDir->vendor_id );
-    printf( "  unit spec id         : 0x%08x\n", pRomDir->unit_spec_id );
-    printf( "  unit software version: 0x%08x\n", pRomDir->unit_sw_version );
-    printf( "  model id             : 0x%08x\n", pRomDir->model_id );
-    printf( "  textual leaves       : %s\n",     pRomDir->label );
 }
 
 int
@@ -498,3 +404,4 @@ Ieee1394Service::avcExecuteTransaction( int node_id,
     debugPrint( DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n" );
     return response;
 }
+

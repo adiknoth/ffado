@@ -75,7 +75,11 @@ freebob_SOURCES = \
 	ipchandler.cpp \
 	ipchandler.h \
 	debugmodule.cpp \
-	main.cpp 
+	main.cpp \
+	csr1212.h \
+	csr1212.c \
+	configrom.h \
+	configrom.cpp
 
 freebob_LDFLAGS = \
 	$(LIBSIGC_LIBS) $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS) $(LIBLO_LIBS) $(LIBXML_LIBS)
