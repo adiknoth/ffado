@@ -15,7 +15,7 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = src
+SUBDIRS = src tests
 
 $(srcdir)/configure: configure.ac aclocal.m4
 	cd $(srcdir) && autoconf

@@ -88,6 +88,8 @@ AC_SUBST([CXXFLAGS])
 PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.1.0)
 PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 0.1.0)
 
+PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
+
 AC_SUBST([LIBSIGC_CFLAGS])
 AC_SUBST([LIBSIGC_LIBS])
 AC_SUBST([LIBRAW1394_CFLAGS])
@@ -98,7 +100,8 @@ LIBAVC_LIBS="-lrom1394 -lavc1394"
 AC_SUBST([LIBAVC_LIBS])
 
 AC_CONFIG_FILES([Makefile
-		 src/Makefile])
+		 src/Makefile
+		 tests/Makefile])
 AC_OUTPUT
 
 # Print a summary so that important information isn't missed.
