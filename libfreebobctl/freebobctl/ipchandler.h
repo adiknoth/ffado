@@ -1,4 +1,4 @@
-// xmlparser.h
+// ipchandler.h
 //
 /****************************************************************************
    libfreebobctl - Freebob Control API
@@ -25,23 +25,10 @@
 
 *****************************************************************************/
 
-#ifndef __FREEBOBCTL_XMLPARSER_H
-#define __FREEBOBCTL_XMLPARSER_H
+#ifndef __FREEBOBCTL_IPCHANDLER_H
+#define __FREEBOBCTL_IPCHANDLER_H
 
-#include <libxml/xmlmemory.h>
-#include <libxml/parser.h>
-
-#include "freebobctl/freebobctl.h"
-
-void freebobctl_xmlparse_file(char *filename);
-
-freebob_connection_info_t * freebobctl_xmlparse_get_connection_info_from_file(char *filename, int direction);
-freebob_connection_info_t * freebobctl_xmlparse_get_connection_info_from_mem(char *buffer, int direction);
-
-freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(xmlDocPtr doc, int direction);
+char * freebobctl_ipc_request_connection_info(char *url);
 
 
-#endif // __FREEBOBCTL_XMLPARSER_H
-
-// end of xmlparser.h
-
+#endif //__FREEBOBCTL_IPCHANDLER_H

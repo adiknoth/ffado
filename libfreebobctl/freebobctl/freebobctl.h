@@ -84,6 +84,7 @@ struct _freebob_connection_info {
 
 
 freebob_connection_info_t *freebobctl_get_connection_info_from_xml_file(char *xmlfile, int direction);
+freebob_connection_info_t *freebobctl_get_connection_info_from_osc(char *osc_url, int direction);
 
 void freebobctl_free_connection_info(freebob_connection_info_t *);
 void freebobctl_free_connection_spec(freebob_connection_spec_t *connection_spec);

@@ -317,29 +317,20 @@ freebobctl_xmlparse_get_connectionset_node(xmlDocPtr doc, xmlNodePtr cur, int di
 	return NULL;
 }
 
-freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(char *filename, int direction) {
-	xmlDocPtr doc;
+freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(xmlDocPtr doc, int direction) {
+	
 	xmlNodePtr cur;
 	freebob_connection_info_t *connection_info;
 
-	doc = xmlParseFile(filename);
-	
-	if (doc == NULL ) {
-		fprintf(stderr,"Document not parsed successfully. \n");
-		return NULL;
-	}
-	
 	cur = xmlDocGetRootElement(doc);
 	
 	if (cur == NULL) {
 		fprintf(stderr,"empty document\n");
-		xmlFreeDoc(doc);
 		return NULL;
 	}
 	
 	if (xmlStrcmp(cur->name, (const xmlChar *) "FreeBobConnectionInfo")) {
 		fprintf(stderr,"document of the wrong type, root node != FreeBobConnectionInfo\n");
-		xmlFreeDoc(doc);
 		return NULL;
 	}
 	
@@ -350,12 +341,51 @@ freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(char *filena
 	connection_info=freebobctl_xmlparse_connectionset (doc, cur);
 	
 	freebobctl_print_connection_info(connection_info);
+
+	return connection_info;
+
+}
+
+
+freebob_connection_info_t * freebobctl_xmlparse_get_connection_info_from_file(char *filename, int direction) {
+	xmlDocPtr doc;
+	freebob_connection_info_t *connection_info;
+
+	doc = xmlParseFile(filename);
+	
+	if (doc == NULL ) {
+		fprintf(stderr,"Document not parsed successfully. \n");
+		return NULL;
+	}
+	
+	connection_info=freebobctl_xmlparse_get_connection_info(doc, direction);
 	
 	xmlFreeDoc(doc);
 	return connection_info;
 
 }
 
+freebob_connection_info_t * freebobctl_xmlparse_get_connection_info_from_mem(char *buffer, int direction) {
+	xmlDocPtr doc;
+	freebob_connection_info_t *connection_info;
+	
+	// convert the char * buffer into an xmlchar buffer
+	xmlChar * xmlCharBuffer=xmlCharStrdup(buffer);
+	
+	doc=xmlParseDoc (xmlCharBuffer);
+	
+	if (doc == NULL ) {
+		fprintf(stderr,"Document not parsed successfully. \n");
+		return NULL;
+	}
+	
+	connection_info=freebobctl_xmlparse_get_connection_info(doc, direction);
+	
+	xmlFreeDoc(doc);
+	xmlFree(xmlCharBuffer);
+	return connection_info;
+
+}
 
 void
 freebobctl_xmlparse_file(char *filename) {

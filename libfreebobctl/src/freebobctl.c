@@ -33,14 +33,27 @@
 #include "freebobctl/version.h"
 #include "freebobctl/freebobctl.h"
 #include "freebobctl/xmlparser.h"
+#include "freebobctl/ipchandler.h"
 
 const char * freebobctl_get_version() {
 	return FREEBOBCTL_VERSION" (Build "__DATE__" - "__TIME__")";
 }
 
+freebob_connection_info_t *freebobctl_get_connection_info_from_osc(char *osc_url, int direction) {
+	char *buffer=NULL;
+	freebob_connection_info_t *conn_info=NULL;
+	
+	buffer=freebobctl_ipc_request_connection_info(osc_url);
+	
+	if (buffer) {
+		conn_info=freebobctl_xmlparse_get_connection_info_from_mem(buffer, direction);
+		free(buffer);
+	} 
+	return conn_info;
+}
 
 freebob_connection_info_t *freebobctl_get_connection_info_from_xml_file(char *xmlfile, int direction) {
-	return freebobctl_xmlparse_get_connection_info(xmlfile, direction);
+	return freebobctl_xmlparse_get_connection_info_from_file(xmlfile, direction);
 }
 
 void freebobctl_free_connection_info(freebob_connection_info_t *connection_info) {
