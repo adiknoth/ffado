@@ -22,12 +22,14 @@ INCLUDES = \
 bin_PROGRAMS = freebob
 
 freebob_SOURCES = \
+	cmhandler.h  \
+	cmhandler.cpp \
 	freebob.h \
-	freebob.cpp \
-	ieee1394io.h \
-	ieee1394io.cpp \
-	busmgr.h \
-	busmgr.cpp 
+	streamprocess.h  \
+	streamprocess.cpp \
+	ieee1394service.h \
+	ieee1394service.cpp \
+	main.cpp 
 
 freebob_LDFLAGS = \
 	$(LIBSIGC_LIBS) $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)

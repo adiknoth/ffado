@@ -1,4 +1,4 @@
-/* freebob.h
+/* debugmodule.h
  * Copyright (C) 2004 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,19 +18,14 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef FREEBOB_H
-#define FREEBOB_H
+#ifndef DEBUGMODULE_H
+#define DEBUGMODULE_H
 
-/**
- * Error Codes
- */
-typedef enum {
-  eFBRC_Success                      =   0,
-  eFBRC_Creating1394HandleFailed     =  -1,
-  eFBRC_Setting1394PortFailed        =  -2,
-  eFBRC_Scaning1394BusFailed         =  -3,
-  eFBRC_AddBusResetObserverFailed    =  -4,
-  eFBRC_InitializeCMHandlerFailed    =  -5,
-} FBReturnCodes;
+#include <stdio.h>
+
+#define DEBUG_LEVEL_INFO     5
+
+#define debugError(format, args...) fprintf( stderr, format,  ##args )
+#define debugPrint(Level, format, args...) printf( format, ##args )
 
 #endif

@@ -1,4 +1,4 @@
-/* freebob.h
+/* streamprocess.h
  * Copyright (C) 2004 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,19 +18,24 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef FREEBOB_H
-#define FREEBOB_H
+#ifndef STREAMPROCESS_H
+#define STREAMPROCESS_H
 
-/**
- * Error Codes
+#include "cmhandler.h"
+
+/** StreamProcess
+ * Simulates a higherlayer application using the FreeBob driver.
  */
-typedef enum {
-  eFBRC_Success                      =   0,
-  eFBRC_Creating1394HandleFailed     =  -1,
-  eFBRC_Setting1394PortFailed        =  -2,
-  eFBRC_Scaning1394BusFailed         =  -3,
-  eFBRC_AddBusResetObserverFailed    =  -4,
-  eFBRC_InitializeCMHandlerFailed    =  -5,
-} FBReturnCodes;
+class StreamProcess {
+ public:
+    StreamProcess();
+    ~StreamProcess();
+
+    void run();
+ private:
+    CMHandler* m_pCMHandler;
+};
+
+
 
 #endif

@@ -1,4 +1,4 @@
-/* freebob.h
+/* cmhandler.h
  * Copyright (C) 2004 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,19 +18,26 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef FREEBOB_H
-#define FREEBOB_H
+#ifndef CMHANDLER_H
+#define CMHANDLER_H
 
-/**
- * Error Codes
- */
-typedef enum {
-  eFBRC_Success                      =   0,
-  eFBRC_Creating1394HandleFailed     =  -1,
-  eFBRC_Setting1394PortFailed        =  -2,
-  eFBRC_Scaning1394BusFailed         =  -3,
-  eFBRC_AddBusResetObserverFailed    =  -4,
-  eFBRC_InitializeCMHandlerFailed    =  -5,
-} FBReturnCodes;
+#include "freebob.h"
+
+class Ieee1394Service;
+
+class CMHandler
+{
+public:
+    CMHandler();
+    ~CMHandler();
+
+    FBReturnCodes initialize();
+
+    static CMHandler* instance();
+private:
+    static CMHandler* m_pInstance;
+    Ieee1394Service* m_pIeee1394Service;
+    bool m_bInitialised;
+};
 
 #endif
