@@ -29,9 +29,9 @@ class Functor;
 class WorkerThread {
  public:
     static WorkerThread* instance();
-    
+
     void addFunctor( Functor* pFunctor );
-    
+
  protected:
     static void* workerThread( void* arg );
     void run();
@@ -41,11 +41,10 @@ class WorkerThread {
     virtual ~WorkerThread();
 
     static WorkerThread* m_pInstance;
-    
+
     pthread_t m_thread;
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
-    pthread_mutex_t m_cond_mutex;
     std::queue< Functor* > m_queue;
 };
 

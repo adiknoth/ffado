@@ -29,14 +29,17 @@ WorkerThread::WorkerThread()
     pthread_create( &m_thread, NULL, workerThread, this );
     pthread_mutex_init( &m_mutex, NULL );
     pthread_cond_init( &m_cond,  NULL );
-    pthread_mutex_init( &m_cond_mutex,  NULL );
 }
 
 WorkerThread::~WorkerThread()
 {
+    while ( !m_queue.empty() ) {
+        Functor* pFunctor = m_queue.front();
+        m_queue.pop();
+        delete pFunctor;
+    }
     pthread_cancel (m_thread);
     pthread_join (m_thread, NULL);
-    pthread_mutex_destroy( &m_cond_mutex );
     pthread_cond_destroy( &m_cond );
     pthread_mutex_destroy( &m_mutex );
 }
@@ -47,8 +50,8 @@ WorkerThread::instance()
     // We assume here is no race condition
     // because the hole driver is single threaded...
     if ( !m_pInstance ) {
-        debugPrint( DEBUG_LEVEL_INFO,  "WorkerThread instance created.\n" );
-        m_pInstance = new WorkerThread();
+	debugPrint( DEBUG_LEVEL_INFO,  "WorkerThread instance created.\n" );
+	m_pInstance = new WorkerThread();
     }
     return m_pInstance;
 }
@@ -60,32 +63,31 @@ WorkerThread::addFunctor( Functor* pFunctor )
     m_queue.push( pFunctor );
     pthread_mutex_unlock( &m_mutex );
     pthread_cond_signal( &m_cond );
-    debugPrint( DEBUG_LEVEL_INFO,  "Functor added to WorkerThread.\n" );
 }
 
 void
 WorkerThread::run()
 {
     while ( true ) {
-        pthread_mutex_lock( &m_cond_mutex );
-        debugPrint( DEBUG_LEVEL_INFO, "Waiting on condition variable.\n" );
-        pthread_cond_wait( &m_cond,  &m_cond_mutex );
-        debugPrint( DEBUG_LEVEL_INFO, "Awoken from condition wait.\n" );
-        pthread_mutex_unlock( &m_cond_mutex );
-        pthread_testcancel();
-
-        while ( !m_queue.empty() ) {
-            pthread_mutex_lock( &m_mutex );
-            Functor* pFunctor = m_queue.front();
-            m_queue.pop();
-            pthread_mutex_unlock( &m_mutex );
-
-            debugPrint( DEBUG_LEVEL_INFO, "execute functor.\n" );
-            ( *pFunctor )();
-            delete pFunctor;
-
-            pthread_testcancel();
+	pthread_mutex_lock( &m_mutex );
+        if ( m_queue.empty() ) {
+            debugPrint( DEBUG_LEVEL_INFO, "Waiting on condition variable.\n" );
+            pthread_cond_wait( &m_cond,  &m_mutex );
+            debugPrint( DEBUG_LEVEL_INFO, "Awoken from condition wait.\n" );
         }
+	pthread_mutex_unlock( &m_mutex );
+
+	while ( !m_queue.empty() ) {
+	    pthread_mutex_lock( &m_mutex );
+	    Functor* pFunctor = m_queue.front();
+	    m_queue.pop();
+	    pthread_mutex_unlock( &m_mutex );
+
+	    ( *pFunctor )();
+	    delete pFunctor;
+
+	    pthread_testcancel();
+	}
     }
 }
 
