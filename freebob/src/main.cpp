@@ -22,7 +22,10 @@
 #include <stdlib.h>
 
 #include <config.h>
+#include "debugmodule.h"
 #include "streamprocess.h"
+
+DECLARE_GLOBAL_DEBUG_MODULE;
 
 const char *argp_program_version = PACKAGE_STRING;
 const char *argp_program_bug_address = PACKAGE_BUGREPORT;
@@ -100,6 +103,8 @@ main( int argc,  char** argv )
         fprintf( stderr, "LISTEN_TIME could not be parsed\n" );
         return -1;
     }
+
+    setGlobalDebugLevel( DEBUG_LEVEL_ALL );
 
     StreamProcess* pStreamProcess = new StreamProcess();
     pStreamProcess->run( timeToListen );
