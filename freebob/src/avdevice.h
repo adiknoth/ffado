@@ -92,7 +92,6 @@ class AvDevice {
  
  private:
     int m_iNodeId;
-    raw1394handle_t m_handle;
     int m_iPort;
     bool m_bInitialised;
     octlet_t m_oGuid;

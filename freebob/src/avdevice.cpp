@@ -32,7 +32,6 @@
 
 AvDevice::AvDevice(octlet_t oGuid)
     : m_iNodeId( -1 )
-    , m_handle( 0 )
     , m_iPort( -1 )
     , m_bInitialised( false )
     , m_oGuid( oGuid )
@@ -55,11 +54,6 @@ AvDevice::~AvDevice()
     vector<AvDeviceSubunit *>::iterator it;
     for( it = cSubUnits.begin(); it != cSubUnits.end(); it++ ) {
 	delete *it;
-    }
-
-    if ( m_handle ) {
-	raw1394_destroy_handle( m_handle );
-	m_handle = 0;
     }
     AvDevicePool::instance()->unregisterAvDevice( this );
 }
@@ -96,13 +90,7 @@ FBReturnCodes
 AvDevice::initialize()
 {
     if ( !m_bInitialised ) {
-	FBReturnCodes eStatus = create1394RawHandle();
-	if ( eStatus != eFBRC_Success ) {
-	    debugError( "Could not create 1394 raw handle\n" );
-	    return eStatus;
-	}
-
-	eStatus = enumerateSubUnits();
+	FBReturnCodes eStatus = enumerateSubUnits();
 	if ( eStatus != eFBRC_Success ) {
 	    debugError( "Could not enumrate SubUnits\n" );
 	    return eStatus;
@@ -116,30 +104,6 @@ AvDevice::initialize()
 bool AvDevice::isInitialised()
 {
     return m_bInitialised;
-}
-
-FBReturnCodes AvDevice::create1394RawHandle()
-{
-    m_handle = raw1394_new_handle();
-    if ( !m_handle ) {
-	if ( !errno ) {
-	    debugPrint( DEBUG_LEVEL_DEVICE,
-			"libraw1394 not compatible.\n" );
-	} else {
-	    perror( "Could not get 1394 handle" );
-	    debugPrint(DEBUG_LEVEL_DEVICE,
-		       "Is ieee1394 and raw1394 driver loaded?\n");
-	}
-	return eFBRC_Creating1394HandleFailed;
-    }
-
-    raw1394_set_userdata( m_handle, this );
-
-    if ( raw1394_set_port( m_handle,  m_iPort ) < 0 ) {
-	perror( "Could not set port" );
-	return eFBRC_Setting1394PortFailed;
-    }
-    return eFBRC_Success;
 }
 
 FBReturnCodes
