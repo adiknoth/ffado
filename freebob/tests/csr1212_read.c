@@ -19,6 +19,8 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <libraw1394/raw1394.h>
 #include "../src/csr1212.h"
 
@@ -41,14 +43,16 @@ freebob_bus_read(struct csr1212_csr* csr, u_int64_t addr, u_int16_t length,
     retval=raw1394_read(csr_info->handle, csr_info->node_id, addr,
 			length, buffer); 
     if (retval) {
-	fprintf(stdout,"read failed.\n");
+	perror("read failed");
     } else {
-	fprintf(stdout,"read succeeded. Data follows (hex):\n");
-	int i;
-	for (i=0; i < length; i++) {
-	    fprintf(stdout,(i+1) % 4?"%.2X ":"%.2X\n", ((unsigned char*)buffer)[i]);
-	}
-	if (i % 4) fprintf(stdout,"\n");
+	#if 0
+	    fprintf(stdout,"read succeeded. Data follows (hex):\n");
+	    int i;
+	    for (i=0; i < length; i++) {
+		fprintf(stdout,(i+1) % 4?"%.2X ":"%.2X\n", ((unsigned char*)buffer)[i]);
+	    }
+	    if (i % 4) fprintf(stdout,"\n");
+	#endif
     }
 
     return retval;
@@ -68,12 +72,23 @@ static struct csr1212_bus_ops freebob_csr_ops = {
 int
 main(int argc, char* argv[])
 {
-    raw1394handle_t handle;
+    if (argc != 2) {
+	printf("usage: %s NODE_ID\n", argv[0]);
+	return 0;
+    }
+    errno = 0;
+    char* tail;
+    int node_id = strtol(argv[1], &tail, 0);
+    if (errno) {
+	perror("argument parsing failed:");
+	return -1;
+    }
 
+    raw1394handle_t handle;
     handle = raw1394_new_handle ();
     if (!handle) {
 	if (!errno) {
-	    fprintf(stderr, "lib1394raw not compatable.\n");
+	    perror("lib1394raw not compatable\n");
 	} else {
 	    fprintf(stderr, "Could not get 1394 handle");
 	    fprintf(stderr, "Is ieee1394, driver, and raw1394 loaded?\n");
@@ -89,10 +104,12 @@ main(int argc, char* argv[])
 
     struct freebob_csr_info csr_info;
     csr_info.handle = handle;
-    csr_info.node_id = 0;
+    csr_info.node_id = 0xffc0 | node_id;
     
     struct csr1212_csr* csr;
-    csr = csr1212_create_csr(&freebob_csr_ops, 0, &csr_info);
+    csr = csr1212_create_csr(&freebob_csr_ops, 
+			     5 * sizeof(quadlet_t), 
+			     &csr_info);
     if (!csr || csr1212_parse_csr(csr) != CSR1212_SUCCESS) {
 	fprintf(stderr, "couldn't parse config rom\n");
 	if (csr) {
@@ -101,10 +118,8 @@ main(int argc, char* argv[])
 	return -1;
     }
 
-    // do something fancy here.
-
-    printf("could read config rom\n");
-    
+    // still no fancy stuff here...
+        
     csr1212_destroy_csr(csr);
 
     return 0;
