@@ -33,6 +33,9 @@ freebob_SOURCES = \
 	avdevice.cpp \
 	avdevicepool.h \
 	avdevicepool.cpp \
+	avdescriptor.h \
+	avdescriptor.cpp \
+	debugmodule.cpp \
 	main.cpp 
 
 freebob_LDFLAGS = \

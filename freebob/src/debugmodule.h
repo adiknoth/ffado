@@ -22,6 +22,7 @@
 #define DEBUGMODULE_H
 
 #include <stdio.h>
+#include "ieee1394service.h"
 
 #define DEBUG_LEVEL_INFO     5
 

@@ -21,10 +21,24 @@
 #ifndef AVDEVICE_H
 #define AVDEVICE_H
 
+#include "ieee1394service.h"
+
 class AvDevice {
  public:
-    AvDevice();
+    AvDevice(int node,int port);
     virtual ~AvDevice();
+    
+    quadlet_t * avcExecuteTransaction(quadlet_t *request, unsigned int request_len, unsigned int response_len);
+    
+    FBReturnCodes AvDevice::Initialize();
+    
+    bool AvDevice::isInitialised();
+    
+ private:
+ 	int iNodeId;
+	raw1394handle_t m_handle;
+        int m_iPort;
+	bool m_bInitialised;
 };
 
 #endif
