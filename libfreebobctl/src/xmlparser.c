@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
@@ -225,6 +226,8 @@ freebobctl_xmlparse_connectionset (xmlDocPtr doc, xmlNodePtr node) {
 	
 	freebob_connection_info_t *connection_info;
 	
+	assert(node != NULL);
+	
 	// allocate memory
 	connection_info=malloc(sizeof(freebob_connection_info_t));
 	if (!connection_info) {
@@ -335,8 +338,18 @@ freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(xmlDocPtr do
 	}
 	
 	cur = cur->xmlChildrenNode;
-	
+
+	if (cur == NULL) {
+		fprintf(stderr,"Root node has no children!\n");
+		return NULL;
+	}
+		
 	cur = freebobctl_xmlparse_get_connectionset_node(doc, cur, direction);
+	
+	if (cur == NULL) {
+		fprintf(stderr,"Could not get a connection set for direction %d\n",direction);
+		return NULL;
+	}
 	
 	connection_info=freebobctl_xmlparse_connectionset (doc, cur);
 	
