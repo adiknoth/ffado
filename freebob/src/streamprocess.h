@@ -32,7 +32,7 @@ class StreamProcess {
     StreamProcess();
     ~StreamProcess();
 
-    void run();
+    void run( int timeToListen );
  private:
     CMHandler* m_pCMHandler;
     

@@ -33,7 +33,7 @@ StreamProcess::~StreamProcess()
 }
 
 void
-StreamProcess::run()
+StreamProcess::run( int timeToListen )
 {
     m_pCMHandler = CMHandler::instance();
     if ( !m_pCMHandler ) {
@@ -48,7 +48,7 @@ StreamProcess::run()
     }
 
     printf( "Waiting: " );
-    for ( int i = 0; i < 10; ++i ) {
+    for ( int i = 0; i < timeToListen; ++i ) {
         printf( "." );
         fflush( stdout );
         sleep( 1 );
