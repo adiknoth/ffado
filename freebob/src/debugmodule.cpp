@@ -42,7 +42,7 @@ DebugStandard::~DebugStandard()
 {}
 
 void
-DebugStandard::debugError( const char* file,
+DebugStandard::error( const char* file,
                            const char* function,
                            unsigned int line,
                            const char* format, ... ) const
@@ -56,7 +56,7 @@ DebugStandard::debugError( const char* file,
 }
 
 void
-DebugStandard::debugPrint( int level,
+DebugStandard::print( int level,
                            const char* file,
                            const char* function,
                            unsigned int line,
@@ -73,7 +73,7 @@ DebugStandard::debugPrint( int level,
 }
 
 void
-DebugStandard::debugPrintShort( int level,
+DebugStandard::printShort( int level,
                                 const char* format, ... ) const
 {
     if (level & m_level) {
@@ -94,10 +94,10 @@ DebugAnsiColor::~DebugAnsiColor()
 {}
 
 void
-DebugAnsiColor::debugError( const char* file,
-                            const char* function,
-                            unsigned int line,
-                            const char* format, ... ) const
+DebugAnsiColor::error( const char* file,
+                       const char* function,
+                       unsigned int line,
+                       const char* format, ... ) const
 {
     va_list arg;
 
@@ -110,11 +110,11 @@ DebugAnsiColor::debugError( const char* file,
 }
 
 void
-DebugAnsiColor::debugPrint( int level,
-                            const char* file,
-                            const char* function,
-                            unsigned int line,
-                            const char* format, ... ) const
+DebugAnsiColor::print( int level,
+                       const char* file,
+                       const char* function,
+                       unsigned int line,
+                       const char* format, ... ) const
 {
     if (level & m_level) {
         va_list arg;
@@ -129,8 +129,8 @@ DebugAnsiColor::debugPrint( int level,
 }
 
 void
-DebugAnsiColor::debugPrintShort( int level,
-                                 const char* format, ... ) const
+DebugAnsiColor::printShort( int level,
+                            const char* format, ... ) const
 {
     if (level & m_level) {
         va_list arg;
@@ -182,10 +182,10 @@ DebugHtml::~DebugHtml()
 {}
 
 void
-DebugHtml::debugError( const char* file,
-                       const char* function,
-                       unsigned int line,
-                       const char* format, ... ) const
+DebugHtml::error( const char* file,
+                  const char* function,
+                  unsigned int line,
+                  const char* format, ... ) const
 {
     va_list arg;
 
@@ -198,11 +198,11 @@ DebugHtml::debugError( const char* file,
 }
 
 void
-DebugHtml::debugPrint( int level,
-                       const char* file,
-                       const char* function,
-                       unsigned int line,
-                       const char* format, ... ) const
+DebugHtml::print( int level,
+                  const char* file,
+                  const char* function,
+                  unsigned int line,
+                  const char* format, ... ) const
 {
     if (level & m_level) {
         va_list arg;
@@ -217,7 +217,7 @@ DebugHtml::debugPrint( int level,
 }
 
 void
-DebugHtml::debugPrintShort( int level, const char* format, ... ) const
+DebugHtml::printShort( int level, const char* format, ... ) const
 {
     if (level & m_level) {
         va_list( arg );

@@ -32,11 +32,24 @@
 #define DEBUG_LEVEL_INFOBLOCK       (1<<4)
 #define DEBUG_LEVEL_TRANSFERS       (1<<5)
 
+#define DEBUG_LEVEL_SCHEDULER       (1<<6)
+
 // convenience defines
-#define DEBUG_LEVEL_ALL      (DEBUG_LEVEL_INFO | DEBUG_LEVEL_DEVICE | DEBUG_LEVEL_SUBUNIT | DEBUG_LEVEL_DESCRIPTOR | DEBUG_LEVEL_INFOBLOCK | DEBUG_LEVEL_TRANSFERS )
-#define DEBUG_LEVEL_LOW      (DEBUG_LEVEL_INFO | DEBUG_LEVEL_DEVICE)
-#define DEBUG_LEVEL_MODERATE (DEBUG_LEVEL_INFO | DEBUG_LEVEL_DEVICE | DEBUG_LEVEL_SUBUNIT)
-#define DEBUG_LEVEL_HIGH     (DEBUG_LEVEL_MODERATE | DEBUG_LEVEL_DESCRIPTOR | DEBUG_LEVEL_INFOBLOCK)
+#define DEBUG_LEVEL_ALL      (  DEBUG_LEVEL_INFO \
+			      | DEBUG_LEVEL_DEVICE \
+			      | DEBUG_LEVEL_SUBUNIT \
+			      | DEBUG_LEVEL_DESCRIPTOR \
+			      | DEBUG_LEVEL_INFOBLOCK \
+			      | DEBUG_LEVEL_TRANSFERS \
+			      | DEBUG_LEVEL_SCHEDULER )
+#define DEBUG_LEVEL_LOW      (  DEBUG_LEVEL_INFO \
+                              | DEBUG_LEVEL_DEVICE )
+#define DEBUG_LEVEL_MODERATE (  DEBUG_LEVEL_INFO \
+			      | DEBUG_LEVEL_DEVICE \
+			      | DEBUG_LEVEL_SUBUNIT )
+#define DEBUG_LEVEL_HIGH     (  DEBUG_LEVEL_MODERATE \
+                              | DEBUG_LEVEL_DESCRIPTOR \
+                              | DEBUG_LEVEL_INFOBLOCK )
 
 unsigned char toAscii( unsigned char c );
 void quadlet2char( quadlet_t quadlet, unsigned char* buff );
@@ -47,20 +60,20 @@ class DebugBase {
     DebugBase();
     virtual ~DebugBase();
 
-    void setDebugLevel( int level )
+    void setLevel( int level )
 	{ m_level = level; }
 
-    virtual void debugError( const char* file, 
-			     const char* function, 
-			     unsigned int line, 
+    virtual void error( const char* file, 
+			const char* function, 
+			unsigned int line, 
+			const char* format, ... ) const = 0;
+    virtual void print( int level, 
+			const char* file, 
+			const char* function, 
+			unsigned int line, 
+			const char* format, ... ) const = 0;
+    virtual void printShort( int level, 
 			     const char* format, ... ) const = 0;
-    virtual void debugPrint( int level, 
-			     const char* file, 
-			     const char* function, 
-			     unsigned int line, 
-			     const char* format, ... ) const = 0;
-    virtual void debugPrintShort( int level, 
-				  const char* format, ... ) const = 0;
 
  protected:
     int m_level;
@@ -71,17 +84,17 @@ class DebugStandard : public DebugBase {
     DebugStandard();
     virtual ~DebugStandard();
 
-    virtual void debugError( const char* file, 
-			     const char* function, 
-			     unsigned int line, 
+    virtual void error( const char* file, 
+			const char* function, 
+			unsigned int line, 
+			const char* format, ... ) const;
+    virtual void print( int level, 
+			const char* file, 
+			const char* function, 
+			unsigned int line, 
+			const char* format, ... ) const;
+    virtual void printShort( int level, 
 			     const char* format, ... ) const;
-    virtual void debugPrint( int level, 
-			     const char* file, 
-			     const char* function, 
-			     unsigned int line, 
-			     const char* format, ... ) const;
-    virtual void debugPrintShort( int level, 
-				  const char* format, ... ) const;
 };
 
 class DebugAnsiColor : public DebugBase {
@@ -89,18 +102,18 @@ class DebugAnsiColor : public DebugBase {
     DebugAnsiColor();
     virtual ~DebugAnsiColor();
 
-    virtual void debugError( const char* file, 
-			     const char* function, 
-			     unsigned int line, 
+    virtual void error( const char* file, 
+			const char* function, 
+			unsigned int line, 
+			const char* format, ... ) const;
+    virtual void print( int level, 
+			const char* file, 
+			const char* function, 
+			unsigned int line, 
+			const char* format, ... ) const;
+    virtual void printShort( int level, 
 			     const char* format, ... ) const;
-    virtual void debugPrint( int level, 
-			     const char* file, 
-			     const char* function, 
-			     unsigned int line, 
-			     const char* format, ... ) const;
-    virtual void debugPrintShort( int level, 
-				  const char* format, ... ) const;
-
+    
  protected:
     const char* getLevelColor( int level ) const;
 };
@@ -110,17 +123,17 @@ class DebugHtml : public DebugBase {
     DebugHtml();
     virtual ~DebugHtml();
 
-    void debugError( const char* file, 
-		     const char* function, 
-		     unsigned int line, 
+    void error( const char* file, 
+		const char* function, 
+		unsigned int line, 
+		const char* format, ... ) const;
+    void print( int level, 
+		const char* file, 
+		const char* function, 
+		unsigned int line, 
+		const char* format, ... ) const;
+    void printShort( int level, 
 		     const char* format, ... ) const;
-    void debugPrint( int level, 
-		     const char* file, 
-		     const char* function, 
-		     unsigned int line, 
-		     const char* format, ... ) const;
-    void debugPrintShort( int level, 
-			  const char* format, ... ) const;
 
  protected:
     const char* getLevelColor( int level ) const;
@@ -128,14 +141,23 @@ class DebugHtml : public DebugBase {
 
 #ifdef DEBUG
 
-#define setDebugLevel(x) m_debug.setDebugLevel( x )
-#define debugError(format, args...) m_debug.debugError( __FILE__, __FUNCTION__, __LINE__, format, ##args )
-#define debugPrint(level, format, args...) m_debug.debugPrint( level, __FILE__, __FUNCTION__, __LINE__, format, ##args )
-#define debugPrintShort(level, format, args...) m_debug.debugPrintShort( level, format, ##args )
+#define setDebugLevel(x) m_debug.setLevel( x )
+#define debugError(format, args...) m_debug.error( __FILE__, __FUNCTION__, __LINE__, format, ##args )
+#define debugPrint(level, format, args...) m_debug.print( level, __FILE__, __FUNCTION__, __LINE__, format, ##args )
+#define debugPrintShort(level, format, args...) m_debug.printShort( level, format, ##args )
+
+#define setGlobalDebugLevel(x) gGlobalDebugModule.setLevel( x )
+#define debugGlobalError(format, args...) gGlobalDebugModule.error( __FILE__, __FUNCTION__, __LINE__, format, ##args )
+#define debugGlobalPrint(level, format, args...) gGlobalDebugModule.print( level, __FILE__, __FUNCTION__, __LINE__, format, ##args )
+#define debugGlobalPrintShort(level, format, args...) gGlobalDebugModule.printShort( level, format, ##args )
 
 // XXX To change the debug module the header has to be edited
 // which sucks big time
 #define DECLARE_DEBUG_MODULE DebugAnsiColor m_debug
+
+// For static functions
+#define DECLARE_GLOBAL_DEBUG_MODULE DebugAnsiColor gGlobalDebugModule
+#define USE_GLOBAL_DEBUG_MODULE extern DebugAnsiColor gGlobalDebugModule
 
 #else /* !DEBUG */
 
