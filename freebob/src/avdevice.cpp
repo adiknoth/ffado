@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
+#include "threads.h"
 #include "avdevice.h"
 #include "avdevicepool.h"
 #include "avdevicesubunit.h"
@@ -61,6 +62,34 @@ AvDevice::~AvDevice()
 	m_handle = 0;
     }
     AvDevicePool::instance()->unregisterAvDevice( this );
+}
+
+void
+AvDevice::execute( EStates state )
+{
+    switch ( state ) {
+    case eScanAndCreate:
+        if ( initialize() == eFBRC_Success ) {
+            // Put ourself to sleep until a something happends
+            sleepCall( this, &AvDevice::execute, eCheckState );
+        } else {
+            asyncCall( this, &AvDevice::execute, eDestroy );
+        }
+        break;
+    case eCheckState:
+        {
+            if ( m_iGeneration
+                 != Ieee1394Service::instance()->getGenerationCount() ) {
+                asyncCall( this, &AvDevice::execute, eDestroy );
+            }
+        }
+        break;
+    case eDestroy:
+        destroyCall( this );
+        break;
+    default:
+        debugError( "Invalid state: %d\n", state );
+    }
 }
 
 FBReturnCodes
@@ -177,6 +206,9 @@ AvDevice::enumerateSubUnits()
 		"AvDevice: %d Asynchronous source plugs, "
 		"%d Asynchronous destination plugs\n",
 		m_iNbAsyncSourcePlugs, m_iNbAsyncDestinationPlugs);
+
+
+    return eFBRC_Success;
 
     // create the subunits
     for (unsigned int i = 0; i < 8; i++ ) {

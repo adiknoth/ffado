@@ -32,10 +32,11 @@ class AvDeviceSubunit;
 
 class AvDevice {
  public:
-    enum {
+    enum EStates {
 	eScanAndCreate = 0,
-	eDestroy       = 1
-    } EStates;
+	eCheckState    = 1,  // put this instance to the sleep queue
+	eDestroy       = 2
+    };
 
     AvDevice( octlet_t oGuid );
     virtual ~AvDevice();
@@ -48,6 +49,8 @@ class AvDevice {
 	{ m_iPort = iPort; }
     octlet_t getGuid()
 	{ return m_oGuid; }
+
+    void execute( EStates state );
 
     quadlet_t * avcExecuteTransaction( quadlet_t *request, 
 				       unsigned int request_len, 

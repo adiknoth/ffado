@@ -40,6 +40,8 @@
 #include "avsourcepluginfoblock.h"
 #include "avoutputplugstatusinfoblock.h"
 
+USE_GLOBAL_DEBUG_MODULE;
+
 Ieee1394Service* Ieee1394Service::m_pInstance = 0;
 
 Ieee1394Service::Ieee1394Service()
@@ -172,19 +174,11 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
                 pAvDevice->setNodeId( iNodeId );
                 pAvDevice->setPort( m_iPort );
 
-                FBReturnCodes eStatus = pAvDevice->initialize();
-                if ( eStatus != eFBRC_Success ) {
-                    debugError( "AvDevice with GUID 0x%08x%08x could "
-                                "not be initialized\n",
-                                (quadlet_t) (oGuid>>32),
-                                (quadlet_t) (oGuid & 0xffffffff) );
-
-                    delete pAvDevice;
-                    return eStatus;
-                }
+                asyncCall( pAvDevice, &AvDevice::execute,
+                           AvDevice::eScanAndCreate );
 
                 // XXX Pieter's test code.
-//                avDeviceTests( oGuid, m_iPort, iNodeId );
+                // avDeviceTests( oGuid, m_iPort, iNodeId );
 	    }
             break;
 	case ROM1394_NODE_TYPE_SBP2:
@@ -343,11 +337,16 @@ int
 Ieee1394Service::resetHandler( raw1394handle_t handle,
                                unsigned int iGeneration )
 {
+    debugGlobalPrint( DEBUG_LEVEL_SCHEDULER,
+                      "Bus reset occured: generation count = %d\n",
+                      iGeneration );
+
     raw1394_update_generation (handle, iGeneration);
     Ieee1394Service* pInstance
         = (Ieee1394Service*) raw1394_get_userdata (handle);
     pInstance->setGenerationCount( iGeneration );
 
+    WorkerThread::instance()->wakeSleepers();
     asyncCall( pInstance, &Ieee1394Service::discoveryDevices, iGeneration );
     return 0;
 }
