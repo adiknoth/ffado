@@ -100,8 +100,8 @@ class AvDevice {
     
     unsigned char m_iNbAsyncDestinationPlugs;
     unsigned char m_iNbAsyncSourcePlugs;
-    unsigned char m_iNbIsoDestinationPlugs; // iPCR
-    unsigned char m_iNbIsoSourcePlugs; // oPCR
+    unsigned char m_iNbIsoDestinationPlugs;   // iPCR
+    unsigned char m_iNbIsoSourcePlugs;        // oPCR
     unsigned char m_iNbExtDestinationPlugs;
     unsigned char m_iNbExtSourcePlugs;
 

@@ -26,6 +26,7 @@
 #include "avdevicesubunit.h"
 #include "avdeviceaudiosubunit.h"
 #include "avdevicemusicsubunit.h"
+#include "cmhandler.h"
 
 #undef AVC1394_GET_RESPONSE_OPERAN
 #define AVC1394_GET_RESPONSE_OPERAND(x, n) (((x) & (0xFF000000 >> (((n)%4)*8))) >> (((3-(n))%4)*8))
@@ -64,9 +65,16 @@ AvDevice::execute( EStates state )
     switch ( state ) {
     case eScanAndCreate:
         if ( initialize() == eFBRC_Success ) {
+            // Initiate connection
+            asyncCall( CMHandler::instance(),
+                       &CMHandler::createConnection,
+                       this );
             // Put ourself to sleep until a something happends
             sleepCall( this, &AvDevice::execute, eCheckState );
         } else {
+            asyncCall( CMHandler::instance(),
+                       &CMHandler::destroyConnection,
+                       this );
             asyncCall( this, &AvDevice::execute, eDestroy );
         }
         break;

@@ -25,6 +25,7 @@
 #include "debugmodule.h"
 
 class Ieee1394Service;
+class AvDevice;
 
 class CMHandler
 {
@@ -33,6 +34,9 @@ public:
     void shutdown();
 
     static CMHandler* instance();
+    FBReturnCodes createConnection( AvDevice* avDevice );
+    FBReturnCodes destroyConnection( AvDevice* avDevice );
+
 private:
     CMHandler();
     ~CMHandler();

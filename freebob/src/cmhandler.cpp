@@ -20,6 +20,7 @@
 
 #include "cmhandler.h"
 #include "ieee1394service.h"
+#include "avdevice.h"
 
 CMHandler* CMHandler::m_pInstance = 0;
 
@@ -70,4 +71,64 @@ CMHandler::instance()
         m_pInstance = new CMHandler;
     }
     return m_pInstance;
+}
+
+FBReturnCodes
+CMHandler::createConnection( AvDevice* avDevice )
+{
+
+    // First start with the play direction.
+    unsigned int iNoOfIPCR = avDevice->getNbIsoDestinationPlugs();
+
+    if ( iNoOfIPCR == 0 ) {
+        debugError( "No iPCR found\n" );
+        return eFBRC_NoOfIPCRNotCorrect;
+    }
+
+    // BeBob devices have two iPCR
+    // iPCR 0: IsoStream/AudioInput
+    // iPCR 1: Synch/SynchInput
+
+    if ( iNoOfIPCR != 2 ) {
+        debugError( "Not correct number iPCR founds on target. "
+                    "Expected 2, found %d\n",  iNoOfIPCR );
+        return eFBRC_NoOfIPCRNotCorrect;
+    }
+
+    // Create external connection
+
+
+
+    // Internal connection are not configureable on BeBob device... gladly
+
+
+
+    // Second configure record direction.
+    unsigned int iNoOfOPCR = avDevice->getNbIsoSourcePlugs();
+
+    if ( iNoOfOPCR == 0 ) {
+        debugError( "No oPCR found\n" );
+        return eFBRC_NoOfOPCRNotCorrect;
+    }
+
+    // BeBob devices have two iPCR
+    // oPCR 0: IsoStream/Output
+    // oPCR 1: Synch/SynchOut
+
+    if ( iNoOfOPCR != 2 ) {
+        debugError( "Not correct number oPCR founds on target. "
+                    "Expected 2, found %d\n",  iNoOfOPCR );
+        return eFBRC_NoOfOPCRNotCorrect;
+    }
+
+
+    debugPrint( DEBUG_LEVEL_INFO, "Connection established\n" );
+    return eFBRC_Success;
+}
+
+FBReturnCodes
+CMHandler::destroyConnection( AvDevice* avDevice )
+{
+
+    return eFBRC_Success;
 }
