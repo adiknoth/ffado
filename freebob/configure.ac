@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(freebob, 0.0, wagi@monom.org)
+AC_INIT(freebob, 0.1, <freebob-devel@lists.sourceforge.net>)
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/main.cpp])
