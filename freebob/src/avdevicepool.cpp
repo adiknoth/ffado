@@ -27,6 +27,7 @@ AvDevicePool* AvDevicePool::m_pInstance = 0;
 
 AvDevicePool::AvDevicePool()
 {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 }
 
 AvDevicePool::~AvDevicePool()
@@ -46,6 +47,11 @@ FBReturnCodes
 AvDevicePool::registerAvDevice(AvDevice* pAvDevice)
 {
     m_avDevices.push_back( pAvDevice );
+
+    debugPrint( DEBUG_LEVEL_INFO, "AvDevice 0x%08x added to device pool.\n",
+                pAvDevice );
+    debugPrint( DEBUG_LEVEL_INFO, "Pool size = %d\n", m_avDevices.size() );
+
     return eFBRC_Success;
 }
 
@@ -59,7 +65,13 @@ AvDevicePool::unregisterAvDevice(AvDevice* pAvDevice)
           ++iter )
     {
         if ( ( *iter ) == pAvDevice ) {
+            debugPrint( DEBUG_LEVEL_INFO,
+                        "AvDevice 0x%08x removing from device pool\n",
+                        ( *iter ) );
             m_avDevices.erase( iter );
+            debugPrint( DEBUG_LEVEL_INFO,
+                        "Pool size = %d\n",
+                        m_avDevices.size() );
             return eFBRC_Success;
         }
     }

@@ -21,6 +21,7 @@
 #define AVDEVICEPOOL_H
 
 #include "freebob.h"
+#include "debugmodule.h"
 #include <vector>
 #include <libraw1394/raw1394.h> // octlet_t
 
@@ -54,6 +55,8 @@ class AvDevicePool {
 
     typedef std::vector< AvDevice* > AvDeviceVector;
     AvDeviceVector m_avDevices;
+
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif
