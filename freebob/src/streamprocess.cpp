@@ -24,6 +24,7 @@
 #include "debugmodule.h"
 
 StreamProcess::StreamProcess()
+    : m_pCMHandler( 0 )
 {
 }
 
