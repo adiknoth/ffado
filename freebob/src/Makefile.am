@@ -17,7 +17,7 @@
 
 
 INCLUDES = \
-        $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) 
+        $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) $(LIBAVC_CFLAGS) $(LIBLO_CFLAGS) 
 
 bin_PROGRAMS = freebob
 
@@ -72,8 +72,10 @@ freebob_SOURCES = \
 	avmusicpluginfoblock.cpp \
 	avclusterinfoblock.h \
 	avclusterinfoblock.cpp \
+	ipchandler.cpp \
+	ipchandler.h \
 	debugmodule.cpp \
 	main.cpp 
 
 freebob_LDFLAGS = \
-	$(LIBSIGC_LIBS) $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
+	$(LIBSIGC_LIBS) $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS) $(LIBLO_LIBS)

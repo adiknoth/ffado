@@ -21,6 +21,7 @@
 #include "cmhandler.h"
 #include "ieee1394service.h"
 #include "avdevice.h"
+#include "ipchandler.h"
 
 CMHandler* CMHandler::m_pInstance = 0;
 
@@ -35,6 +36,9 @@ CMHandler::~CMHandler()
     if ( m_pIeee1394Service ) {
         m_pIeee1394Service->shutdown();
     }
+    if ( m_pIPCHandler ) {
+        m_pIPCHandler->shutdown();
+    }    
     m_pInstance = 0;
 }
 
@@ -53,6 +57,25 @@ CMHandler::initialize()
             debugError( "Initialising of 1394 service failed.\n" );
             return eStatus;
         }
+	
+        m_pIPCHandler = IPCHandler::instance();
+        if ( !m_pIPCHandler ) {
+            debugError( "Could not get an valid instance of IPC handler.\n" );
+            return eFBRC_InitializeCMHandlerFailed;
+        }
+	
+        eStatus = m_pIPCHandler->initialize();
+        if ( eStatus != eFBRC_Success ) {
+            debugError( "Initialising of IPC handler failed.\n" );
+            return eStatus;
+        }	
+	
+        eStatus = m_pIPCHandler->start();
+        if ( eStatus != eFBRC_Success ) {
+            debugError( "Start of IPC handler failed.\n" );
+            return eStatus;
+        }	
+	
         m_bInitialised = true;
     }
     return eFBRC_Success;

@@ -70,6 +70,16 @@ AC_CHECK_HEADER([libavc1394/rom1394.h], ,
 AC_CHECK_HEADER(execinfo.h, [AC_DEFINE(HAVE_EXECINFO_H, 1, Wheter or not execinfo.h is present)
 	EXTRA_LIBS="$EXTRA_LIBS -rdynamic"])
 
+# Check for libXML2
+PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
+AC_SUBST([LIBXML_LIBS])
+AC_SUBST([LIBXML_CFLAGS])
+
+# Check for liblo
+PKG_CHECK_MODULES(LIBLO, liblo >= 0.17)
+AC_SUBST([LIBLO_LIBS])
+AC_SUBST([LIBLO_CFLAGS])	
+	
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CANONICAL_HOST
 AC_C_CONST

@@ -1,5 +1,5 @@
-/* cmhandler.h
- * Copyright (C) 2004 by Daniel Wagner
+/* ipchandler.h
+ * Copyright (C) 2005 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -16,39 +16,45 @@
  * along with FreeBob; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
+ *
  */
+#ifndef IPCHANDLER_H
+#define IPCHANDLER_H
 
-#ifndef CMHANDLER_H
-#define CMHANDLER_H
+#include <lo/lo.h>
 
-#include "freebob.h"
 #include "debugmodule.h"
+#include "freebob.h"
 
-class Ieee1394Service;
-class AvDevice;
-class IPCHandler;
-
-class CMHandler
-{
+class IPCHandler {
 public:
+   
+    void setListenPort(int aPort);
+    int getListenPort();
+    
     FBReturnCodes initialize();
     void shutdown();
 
-    static CMHandler* instance();
-    FBReturnCodes createConnection( AvDevice* avDevice );
-    FBReturnCodes destroyConnection( AvDevice* avDevice );
+    static IPCHandler* instance();
 
-private:
-    CMHandler();
-    ~CMHandler();
-
-    static CMHandler* m_pInstance;
-    Ieee1394Service* m_pIeee1394Service;
-    IPCHandler * m_pIPCHandler;
+    FBReturnCodes start();
+    FBReturnCodes stop();
     
-    bool m_bInitialised;
+    int genericHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg);
+    int requestHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg);
+    
+private:
 
+    	IPCHandler();
+    	virtual ~IPCHandler();
+ 
+	static IPCHandler *m_pInstance;
+    
+	int m_listenPort;
+	lo_server_thread m_serverThread;
+	
     DECLARE_DEBUG_MODULE;
+
 };
 
-#endif
+#endif // IPCHANDLER_H

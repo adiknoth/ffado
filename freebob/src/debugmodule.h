@@ -33,6 +33,7 @@
 #define DEBUG_LEVEL_TRANSFERS       (1<<5)
 
 #define DEBUG_LEVEL_SCHEDULER       (1<<6)
+#define DEBUG_LEVEL_IPC	            (1<<7)
 
 // convenience defines
 #define DEBUG_LEVEL_ALL      (  DEBUG_LEVEL_INFO \
@@ -41,7 +42,8 @@
 			      | DEBUG_LEVEL_DESCRIPTOR \
 			      | DEBUG_LEVEL_INFOBLOCK \
 			      | DEBUG_LEVEL_TRANSFERS \
-			      | DEBUG_LEVEL_SCHEDULER )
+			      | DEBUG_LEVEL_SCHEDULER \
+			      | DEBUG_LEVEL_IPC )
 #define DEBUG_LEVEL_LOW      (  DEBUG_LEVEL_INFO \
                               | DEBUG_LEVEL_DEVICE )
 #define DEBUG_LEVEL_MODERATE (  DEBUG_LEVEL_INFO \

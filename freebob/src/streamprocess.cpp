@@ -22,6 +22,7 @@
 
 #include "streamprocess.h"
 
+
 StreamProcess::StreamProcess()
     : m_pCMHandler( 0 )
 {

@@ -35,6 +35,8 @@ typedef enum {
   eFBRC_CreatingAvDeviceFailed       =  -7,
   eFBRC_NoOfIPCRNotCorrect           =  -8,
   eFBRC_NoOfOPCRNotCorrect           =  -9,
+  eFBRC_CreatingIPCServerFailed      =  -10,
+  eFBRC_IPCServerInvalid             =  -11,
 } FBReturnCodes;
 
 // Used by `main' to communicate with `parse_opt'.
