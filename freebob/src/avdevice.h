@@ -60,8 +60,11 @@ class AvDevice {
     const std::string getModelName() const
 	{ return m_configRom.getModelName(); }
 
-
-
+    std::string getInputPlugChannelName(unsigned int plug, unsigned int channel)
+	{ return getPlugChannelName(0x00,plug,channel); }
+    std::string getOutputPlugChannelName(unsigned int plug, unsigned int channel)
+	{ return getPlugChannelName(0x01,plug,channel); }
+    
     void execute( EStates state );
     
     FBReturnCodes initialize();
@@ -84,7 +87,7 @@ class AvDevice {
     void printConnections();
     void test();
     FBReturnCodes addConnectionsToXml( xmlNodePtr root );
-	    
+
     unsigned char getNbAsyncSourcePlugs() 
 	{ return m_iNbAsyncSourcePlugs; }
     unsigned char getNbAsyncDestinationPlugs() 
@@ -98,12 +101,15 @@ class AvDevice {
     unsigned char getNbExtDestinationPlugs() 
 	{ return m_iNbExtDestinationPlugs; }
 
- protected:
+ 
+protected:
     AvDeviceSubunit *getSubunit(unsigned char type, unsigned char id);
 
     FBReturnCodes create1394RawHandle();
     FBReturnCodes enumerateSubUnits();
- 
+
+    std::string getPlugChannelName(unsigned int direction, unsigned int plug, unsigned int channel);
+     
  private:
     ConfigRom m_configRom;
     int m_iNodeId;

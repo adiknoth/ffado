@@ -618,12 +618,54 @@ void AvDevice::test() {
 	}	
 }
 
+std::string AvDevice::getPlugChannelName(unsigned int direction, unsigned int plug, unsigned int channel) {
+    quadlet_t request[6];
+    quadlet_t *response;
+	std::string str;
+
+	request[0] = AVC1394_CTYPE_STATUS
+		     | AVC1394_SUBUNIT_TYPE_UNIT
+		     | AVC1394_SUBUNIT_ID_IGNORE
+		     | AVC1394_COMMAND_PLUG_INFO
+		     | 0xC0;
+		   
+	request[1]=0x00000000 | ((direction &0xFF)<<24) | (plug & 0xFF);
+	request[2]=0xFF040000 | ((channel & 0xFF) << 8);
+
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 3);
+
+	if ( response ) {
+		unsigned namelen=response[3]&0xFF;
+		char *buff=NULL;
+		
+		buff=new char[namelen+1];
+		if (!buff) {
+			debugError( "Could not allocate memory for temporary name buffer\n" );
+			return str;
+		}
+		
+		if(!strncpy(buff, (const char *)(response+3), namelen)) {
+			buff[0]=0;
+			debugError( "Could not copy name\n" );
+			str="";
+		} else {
+			buff[namelen]=0;
+			str=buff;
+		}
+		delete buff;
+	}
+
+	return str;
+}
+
+
 #define FREEBOB_DIRTY_XML_CHILD_ADD(XparentX,XnodeX,XvalueX)  if ( !xmlNewChild( XparentX, 0, BAD_CAST XnodeX, BAD_CAST XvalueX ) ) { debugError( "Couldn't create " XnodeX "node\n" ); return eFBRC_CreatingXMLDocFailed; }
 
 FBReturnCodes
 AvDevice::addConnectionsToXml( xmlNodePtr root )    
 {
 	char tmpbuff[256];
+	std::string name;
 	
 	// At this point only plug 0 is used by the firmware for audio i/o
 	int plug=0;
@@ -731,8 +773,10 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
 			sprintf(tmpbuff,"%d",0);
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
 			
-			sprintf(tmpbuff,"playback_%d_%d",i,j);
-			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",tmpbuff);
+			name=getInputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			xmlChar *enc_name=xmlEncodeEntitiesReentrant(root->doc, BAD_CAST name.c_str());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
+			xmlFree(enc_name);
 		}
 	}
     // prepare the host->device connection
@@ -818,8 +862,11 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
 			sprintf(tmpbuff,"%d",0);
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
 			
-			sprintf(tmpbuff,"playback_%d_%d",i,j);
-			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",tmpbuff);
+			name=getOutputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+	
+			xmlChar *enc_name=xmlEncodeEntitiesReentrant(root->doc, BAD_CAST name.c_str());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
+			xmlFree(enc_name);
 		}
 	}
 

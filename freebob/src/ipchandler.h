@@ -42,6 +42,7 @@ public:
     
     int genericHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg);
     int requestHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg);
+    int requestHandlerDebug(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg);
     
 private:
 

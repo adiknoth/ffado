@@ -27,12 +27,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <libavc1394/avc1394.h>
+#include <libavc1394/avc1394_vcr.h>
 
 #include "debugmodule.h"
 #include "ipchandler.h"
 #include "avdevice.h"
 #include "avdevicepool.h"
 #include "cmhandler.h"
+#include "ieee1394service.h"
 
 IPCHandler* IPCHandler::m_pInstance = 0;
 
@@ -61,6 +64,17 @@ int request_handler(const char *path, const char *types, lo_arg **argv, int argc
 	}
 
 	return handler->requestHandler(path, types,argv, argc, msg);
+}
+
+int request_handler_debug(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg, void *user_data) {
+	IPCHandler *handler=(IPCHandler *)user_data;
+
+	if (!user_data) {
+		printf("user_data not valid\n");
+		return -1;
+	}
+
+	return handler->requestHandlerDebug(path, types,argv, argc, msg);
 }
 
 IPCHandler::IPCHandler() {
@@ -101,6 +115,9 @@ FBReturnCodes IPCHandler::initialize()
     lo_server_thread_add_method(m_serverThread, NULL, NULL, generic_handler, (void *)this);
 
     lo_server_thread_add_method(m_serverThread, "/freebob/request", "s", request_handler, (void *)this);
+    lo_server_thread_add_method(m_serverThread, "/freebob/debug", "s", request_handler_debug, (void *)this);
+    lo_server_thread_add_method(m_serverThread, "/freebob/debug", "sii", request_handler_debug, (void *)this);
+    lo_server_thread_add_method(m_serverThread, "/freebob/debug", "si", request_handler_debug, (void *)this);
 
     return eFBRC_Success;
 }
@@ -193,6 +210,65 @@ IPCHandler::requestHandler(const char *path,
                 }
             }
         }
+    }
+    return 0;
+}
+
+int
+IPCHandler::requestHandlerDebug(const char *path,
+                           const char *types,
+                           lo_arg **argv,
+                           int argc,
+                           lo_message msg)
+{
+    lo_address src=lo_message_get_source ( msg );
+
+    debugPrint(DEBUG_LEVEL_IPC,"request from %s port %s (%s)\n", lo_address_get_hostname(src), lo_address_get_port(src), lo_address_get_url ( src ) );
+    debugPrint(DEBUG_LEVEL_IPC,"to path: <%s>\n", path);
+
+    if(argc >= 1) {
+        if(strcasecmp(&argv[0]->s,"AvDevice.test")==0) {
+            if ( AvDevicePool::instance()->m_avDevices.size() ) {
+                AvDevice* pAvDevice
+                    = AvDevicePool::instance()->m_avDevices.front();
+
+                if ( pAvDevice ) {
+                    pAvDevice->test();
+                }
+            }
+        } else if((strcasecmp(&argv[0]->s,"setDebugLevel")==0) && argc==2) {
+        
+		setDebugLevel(argv[1]->i);
+		
+        } else if((strcasecmp(&argv[0]->s,"plugInfo")==0) && argc==3) {
+		quadlet_t request[6];
+		quadlet_t *response;
+
+		if ( AvDevicePool::instance()->m_avDevices.size() ) {
+			AvDevice* pAvDevice
+			= AvDevicePool::instance()->m_avDevices.front();
+	
+			if ( pAvDevice ) {
+				request[0] = AVC1394_CTYPE_STATUS
+					| AVC1394_SUBUNIT_TYPE_UNIT
+					| AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_PLUG_INFO
+					| 0xC0;
+				request[1]=argv[1]->i;
+				request[2]=argv[2]->i;
+			
+				response = Ieee1394Service::instance()->avcExecuteTransaction(pAvDevice->getNodeId(), request, 3, 20);
+			
+				if ( response ) {
+					hexDump( (unsigned char *)response, 20 *sizeof(quadlet_t));
+			
+				}
+			}
+		}
+					
+
+        }
+        
     }
     return 0;
 }
