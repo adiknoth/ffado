@@ -140,34 +140,34 @@ Ieee1394Service::discoveryDevices()
 
                 // XXX
                 // create avcDevice which discovers itself :)
-		
+
 		// PP: just a static try, don't want to mess with the device manager yet...
 		// Remark: the AvDevice and AvDescriptor aren't debugged thouroughly yet!
 		//         the following code is the only debug I had time for... to be continued! (later this week)
-		
-            	debugPrint (DEBUG_LEVEL_INFO, "  Trying to create an AvDevice...\n","");
+
+            	debugPrint (DEBUG_LEVEL_INFO, "  Trying to create an AvDevice...\n");
 		AvDevice *test=new AvDevice(m_iPort, iNodeId);
-      		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n","");
+      		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
 		test->Initialize();
 		if (test->isInitialised()) {
-            		debugPrint (DEBUG_LEVEL_INFO, "   Init successfull...\n","");
-            		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvDescriptor...\n","");
+            		debugPrint (DEBUG_LEVEL_INFO, "   Init successfull...\n");
+            		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvDescriptor...\n");
 			AvDescriptor *testdesc=new AvDescriptor(test,AVC1394_SUBUNIT_TYPE_MUSIC | AVC1394_SUBUNIT_ID_0,0x00);
-            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n","");
-            		debugPrint (DEBUG_LEVEL_INFO, "    Opening...\n","");
+            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
+            		debugPrint (DEBUG_LEVEL_INFO, "    Opening...\n");
 			testdesc->OpenReadOnly();
 
-			            		
-			debugPrint (DEBUG_LEVEL_INFO, "    Closing...\n","");
+
+			debugPrint (DEBUG_LEVEL_INFO, "    Closing...\n");
 			testdesc->Close();
-			
-	      		debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvDescriptor...\n","");
+
+	      		debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvDescriptor...\n");
 			delete testdesc;
-			
+
 		}
-      		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n","");
+      		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
 		delete test;
-		
+
 	    }
             break;
 	case ROM1394_NODE_TYPE_SBP2:
