@@ -208,7 +208,7 @@ static void amdtp_transmit( raw1394handle_t handle, FILE *f, int channel)
 					  48000,
 					  IEC61883_AMDTP_FORMAT_RAW,
 					  IEC61883_AMDTP_INPUT_LE24,
-					  IEC61883_MODE_BLOCKING, 
+					  IEC61883_MODE_BLOCKING_EMPTY, 
 					  QUATAFIRE_OUT_DIMENSION, 
 					  fill_packet, (void *)f );
 	
@@ -249,6 +249,9 @@ int main (int argc, char *argv[])
 	int i;
 	int channel;
 	int bandwidth = -1;
+
+	int iplug=-1;
+	int oplug=-1;	
 	
 	for (i = 1; i < argc; i++) {
 		
@@ -289,11 +292,11 @@ int main (int argc, char *argv[])
 				f = stdin;
 			if (node_specified) {
 				channel = iec61883_cmp_connect (handle,
-					raw1394_get_local_id (handle), node, &bandwidth);
+					raw1394_get_local_id (handle),  &oplug, node, &iplug, &bandwidth);
 				if (channel > -1) {
 					amdtp_transmit (handle, f, channel);
 					iec61883_cmp_disconnect (handle,
-						raw1394_get_local_id (handle), node, channel, bandwidth);
+						raw1394_get_local_id (handle), oplug, node, iplug, channel, bandwidth);
 				} else {
 					fprintf (stderr, "Connect failed, reverting to broadcast channel 63.\n");
 					amdtp_transmit (handle, f, 63);
@@ -307,12 +310,12 @@ int main (int argc, char *argv[])
 			if (f == NULL)
 				f = stdout;
 			if (node_specified) {
-				channel = iec61883_cmp_connect (handle, node, 
-					raw1394_get_local_id (handle), &bandwidth);
+				channel = iec61883_cmp_connect (handle, node, &oplug,
+					raw1394_get_local_id (handle), &iplug, &bandwidth);
 				if (channel > -1) {
 					amdtp_receive (handle, f, channel);
-					iec61883_cmp_disconnect (handle, node, 
-						raw1394_get_local_id (handle), channel, bandwidth);
+					iec61883_cmp_disconnect (handle, node, oplug,
+						raw1394_get_local_id (handle), iplug, channel, bandwidth);
 				} else {
 					fprintf (stderr, "Connect failed, reverting to broadcast channel 63.\n");
 					amdtp_receive (handle, f, 63);
