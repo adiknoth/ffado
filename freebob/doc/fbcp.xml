@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+    <!ENTITY rfc2119 PUBLIC ''
+      'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml'>
+]>
+
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+
+<?rfc toc="yes" ?>
+<?rfc symrefs="yes" ?>
+<?rfc sortrefs="yes"?>
+<?rfc iprnotified="no" ?>
+<?rfc strict="yes" ?>
+
+<rfc category="std" ipr="full2026" docName="fbcp.txt">
+    <front>
+        <title>Freebob Control Protocol</title>
+        <author initials='D.W.' surname="Wagner" fullname='D. Wagner'>
+            <organization>
+            </organization>
+            <address>
+                <postal>
+                    <street></street>
+		    <code></code>
+                    <city></city>
+                    <country></country>
+                </postal>
+                <email>wagi at monom dot org</email>
+            </address>
+        </author>
+        <date month="Feb" year="2005"/>
+        <workgroup>Freebob Developers</workgroup>
+        <keyword>FBCP</keyword>
+        <abstract>
+            <t>The FreeBob Control Protocol (FBCP) is an
+            application-level protocol primarily intended for local
+            and remote controlling the connection management driver
+            for FreeBob, which is a driver for IEEE1394 based breakout
+            boxes.
+            </t>
+        </abstract> 
+    </front>
+
+    <middle>
+        <section title="Requirements notation">
+            <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL",
+            "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY",
+            and "OPTIONAL" in this document are to be interpreted as
+            described in <xref target="RFC2119"/>.</t>
+
+            <t>This protocol is always case-sensitive if not explicitly
+            claimed the opposite.</t>
+
+            <t>In examples, "C:" and "S:" indicate lines sent by the
+            client (JACK, ALSA driver) and server (Connection Manager
+            CM) respectively. Lines in examples must be interpreted as
+            every line being CRLF terminated (carriage return
+            character followed by line feed character as defined in
+            the ASCII standard), thus the following example:
+	    </t>
+
+            <t>
+                <list>
+                    <t>C: "some line"</t>
+                    <t>&nbsp;&nbsp;&nbsp;"another line"</t>
+                </list>
+            </t>
+
+            <t>must actually be interpreted as client sending the following
+            message:</t>
+
+            <t>
+                <list>
+                    <t>"some line&lt;CR&gt;&lt;LF&gt;another
+                    line&lt;CR&gt;&lt;LF&gt;"</t>
+                </list>
+            </t>
+
+            <t>where &lt;CR&gt; symbolizes the carriage return character and
+            &lt;LF&gt; the line feed character as defined in the ASCII
+            standard.</t>
+
+            <t>Due to technical reasons, messages can arbitrary be
+            fragmented, means the following example:</t>
+
+            <t>
+                <list>
+                    <t>S: "abcd"</t>
+                </list>
+            </t>
+
+            <t>could also happen to be sent in three messages like in the
+            following sequence scenario:</t>
+
+            <t>
+                <list style="symbols">
+                    <t>server sending message "a"</t>
+                    <t>followed by a delay (pause) with
+                    arbitrary duration</t>
+                    <t>followed by server sending message
+                    "bcd&lt;CR&gt;"</t>
+                    <t>again followed by a delay (pause) with arbitrary
+                    duration</t>
+                    <t>followed by server sending the message
+                    "&lt;LF&gt;"</t>
+                </list>
+            </t>
+
+            <t>where again &lt;CR&gt; and &lt;LF&gt; symbolize the carriage
+            return and line feed characters respectively.</t>
+        </section>
+        <section title="Introduction">
+            <t>FreeBob is a userland audio driver for Linux based
+            systems.  It supports FireWire (IEEE1394) based breakout
+            boxes.  
+            </t>
+        </section>
+
+        <section title="Focus of this protocol">
+            <t>Main focus of this protocol is to provide a way to
+            discover and configure IEEE1394 audio devices from a
+            running connection managert. 
+	    </t>
+        </section>
+
+        <section title="Communication Overview">
+            <t>There are two distinct methods of communication between
+            a running instance of the connection manager and one or
+            more audio processing backends, so called "back-ends": a
+            simple request/response communication method used by the
+            clients to give commands to the server as well as to
+            inquire about server's status and a subscribe/notify
+            communication method used by the client to subscribe to
+            and receive notifications of certain events as they happen
+            on the server. The latter needs more effort to be
+            implemented in the front-end application. The two
+            communication methods will be described next.</t>
+
+            <section title="Request/response communication method">
+                <t>This simple communication method is based on TCP. The
+                front-end application establishes a TCP connection to the
+                CM instance on a certain host system. Then the
+                back-end application will send certain ASCII based commands
+                as defined in this document (every command line must be CRLF
+                terminated - see "Conventions used in this document" at the
+                beginning of this document) and the CM application
+                will response after a certain process time with an
+                appropriate ASCII based answer, also as defined in this
+                document. So this TCP communication is simply based on query
+                and answer paradigm. That way CM is only able to
+                answer on queries from back-ends, but not able to
+                automatically send messages to the client if it's not asked
+                to. The back-end should not reconnect to CM for
+                every single command, instead it should keep the connection
+                established and simply resend message(s) for subsequent
+                commands. To keep information in the back-end up-to-date
+                the back-end has to periodically send new requests to get
+                the current information from the CM instance. This
+                is often referred to as "polling". While polling is simple
+                to implement and may be OK to use in some cases, there may
+                be disadvantages to polling such as network traffic overhead
+                and information being out of date.
+                It is possible for a client or several clients to open more
+                than one connection to the server at the same time. It is
+                also possible to send more than one request to the server
+                at the same time but if those requests are sent over the
+                same connection server MUST execute them sequentially. Upon
+                executing a request server will produce a result set and
+                send it to the client. Each and every request made by the
+                client MUST result in a result set being sent back to the
+                client. No other data other than a result set may be sent by
+                a server to a client. No result set may be sent to a client
+                without the client sending request to the server first. On
+                any particular connection, result sets MUST be sent in their
+                entirety without being interrupted by other result sets. If
+                several requests got queued up at the server they MUST be
+                processed in the order they were received and result sets
+                MUST be sent back in the same order.</t>
+
+                <section title="Result format">
+                    <t>Result set could be one of the following types:</t>
+                    <t>
+                        <list style="numbers">
+                            <t>Normal</t>
+                            <t>Warning</t>
+                            <t>Error</t>
+                        </list>
+                    </t>
+                    <t>Warning and Error result sets MUST be single line and
+                    have the following format:</t>
+                    <t>
+                        <list style="symbols">
+			    <t>"WRN:&lt;warning-code&gt;:&lt;warning-message&gt;"</t>
+			    <t>"ERR:&lt;error-code&gt;:&lt;error-message&gt;"</t>
+                        </list>
+                    </t>
+                    <t>Where &lt;warning-code&gt; and &lt;error-code&gt; are
+                    numeric unique identifiers of the warning or error and
+                    &lt;warning-message&gt; and &lt;error-message&gt; are
+                    human readable descriptions of the warning or error
+                    respectively.</t>
+                    <t>Normal result sets could be:</t>
+                    <t>
+                        <list style="numbers">
+                            <t>Empty</t>
+                            <t>Single line</t>
+                            <t>Multi-line</t>
+                        </list>
+                    </t>
+                    <t> Empty result set is issued when the server only
+                    needed to acknowledge the fact that the request was
+                    received and it was processed successfully and no
+                    additional information is available. This result set has
+                    the following format:</t>
+                    <t>
+                        <list>
+                            <t>"OK"</t>
+                        </list>
+                    </t>
+                    <t>Single line result sets are command specific. One
+                    example of a single line result set is an empty line.
+                    Multi-line result sets are command specific and may
+                    include one or more lines of information. They MUST
+                    always end with the following line:</t>
+                    <t>
+                        <list>
+                            <t>"."</t>
+                        </list>
+                    </t>
+                    <t>Each line of the result set MUST end with
+                    &lt;CRLF&gt;.</t>
+                </section>
+            </section>
+            <section title="Subscribe/notify communication method">
+                <t>This more sophisticated communication method is actually
+                only an extension of the simple request/response
+                communication method. The back-end still uses a TCP
+                connection and sends the same commands on the TCP
+                connection. Two extra commands are SUBSCRIBE and UNSUBSCRIBE
+                commands that allow a client to tell the server that it is
+                interested in receiving notifications about certain events
+                as they happen on the server. The SUBSCRIBE command has the
+                following syntax:</t>
+
+                <t>
+                    <list>
+                        <t>SUBSCRIBE &lt;event-id&gt;</t>
+                    </list>
+                </t>
+
+                <t>where &lt;event-id&gt; will be replaced by the respective
+                event that client wants to subscribe to. Upon receiving such
+                request, server SHOULD respond with OK and start sending
+                EVENT notifications when a given even has occurred to the
+                front-end when an event has occurred. It MAY be possible
+                certain events may be sent before OK response during real
+                time nature of their generation. Event messages have the
+                following format:</t>
+
+                <t>
+                    <list>
+                        <t>NOTIFY:&lt;event-id&gt;:&lt;custom-event-data&gt;</t>
+                    </list>
+                </t>
+
+                <t>where &lt;event-id&gt; uniquely identifies the event that
+                has occurred and &lt;custom-event-data&gt; is event
+                specific.</t>
+
+                <t>Several rules must be followed by the server when
+                generating events:</t>
+
+                <t>
+                    <list style="numbers">
+                        <t>Events MUST NOT be sent to any client who has not
+                        issued an appropriate SUBSCRIBE command.</t>
+                        <t>Events MUST only be sent using the same
+                        connection that was used to subscribe to them.</t>
+                        <t>When response is being sent to the client, event
+                        MUST be inserted in the stream before or after the
+                        response, but NOT in the middle. Same is true about
+                        the response. It should never be inserted in the
+                        middle of the event message as well as any other
+                        response.</t>
+                    </list>
+                </t>
+
+                <t>If the client is not interested in a particular event
+                anymore it MAY issue UNSUBSCRIBE command using the following
+                syntax:</t>
+
+                <t>
+                    <list>
+                        <t>UNSUBSCRIBE &lt;event-id&gt;</t>
+                    </list>
+                </t>
+
+                <t>where &lt;event-id&gt; will be replace by the respective
+                event that client is no longer interested in receiving. For
+                a list of supported events see chapter XXX.</t>
+
+                <t>Clients may choose to open more than one connection to
+                the server and use some connections to receive notifications
+                while using other connections to issue commands to the
+                server. This is entirely legal and up to the
+                implementation. This does not change the protocol in any way
+                and no special restrictions exist on the server to allow or
+                disallow this or to track what connections belong to what
+                back-ends. Server will listen on a single port, accept
+                multiple connections and support protocol described in this
+                specification in it's entirety on this single port on each
+                connection that it accepted.</t>
+
+                <t>Due to the fact that TCP is used for this communication,
+                dead peers will be detected automatically by the OS TCP
+                stack. While it may take a while to detect dead peers if no
+                traffic is being sent from server to client (TCP keep-alive
+                timer is set to 2 hours on many OSes) it will not be an
+                issue here as when notifications are sent by the server,
+                dead client will be detected quickly.</t>
+
+                <t>When connection is closed for any reason server MUST
+                forget all subscriptions that were made on this connection.
+                If client reconnects it MUST resubscribe to all events that
+                it wants to receive.</t>
+
+            </section>
+        </section>
+
+        <section title="Description for control commands">
+            <t>This chapter will describe the available control
+            commands that can be sent on the TCP connection in
+            detail. Some certain commands (e.g. XXX) lead to
+            multiple-line responses. In this case CM signals the end
+            of the response by a "." (single dot) line.</t>
+
+            <section title="Ignored lines and comments">
+                <t>White lines, that is lines which only contain space and
+                tabulator characters, and lines that start with a "#"
+                character are ignored, thus it's possible for example to
+                group commands and to place comments in a FBCP script
+                file.</t>
+            </section>
+
+            <section title="Retrieve Device Information">
+                <t>Note: examples in this chapter showing particular
+                parameters of drivers are not meant as specification of the
+                drivers' parameters. Driver implementations in LinuxSampler
+                might have complete different parameter names and meanings
+                than shown in these examples or might change in future, so
+                these examples are only meant for showing how to retrieve
+                what parameters drivers are offering, how to retrieve their
+                possible values, etc.</t>
+
+                <section title="Getting all available devices">
+                    <t>Use the following command to list all device
+                    available on the IEEE1394 bus:</t>
+                    <t>
+                        <list>
+                            <t>GET AVAILABLE_DEVICES</t>
+                        </list>
+                    </t>
+                    <t>Possible Answers:</t>
+                    <t>
+                        <list>
+                            <t>XXX: CM will answer by sending comma
+                            separated character strings, each symbolizing an
+                            audio output driver.</t>
+                        </list>
+                    </t>
+                    <t>Example:</t>
+                    <t>
+                        <list>
+                            <t>C: "GET AVAILABLE_AUDIO_OUTPUT_DRIVERS"</t>
+                            <t>S: "ALSA,JACK"</t>
+                        </list>
+                    </t>
+                </section>
+	    </section>
+	</section>
+
+        <section title="Security Considerations">
+            <t>As there is so far no method of authentication and authorization
+            defined and so not required for a client applications to succeed to
+            connect, running CM might be a security risk for the host
+            system the CM instance is running on.</t>
+        </section>
+
+        <section title="Acknowledgments">
+            <t>This document is based on the LCSP document.</t>
+        </section>
+
+    </middle>
+
+    <back>
+         <references>&rfc2119;</references>
+    </back>
+
+</rfc>
