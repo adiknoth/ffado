@@ -39,6 +39,11 @@ class AvDeviceMusicSubunit : public AvDeviceSubunit {
     // we'll see later what to do with them exactly
     void printMusicPlugInfo();
     void printMusicPlugConfigurations();
+	
+	virtual void printSourcePlugConnections(unsigned char plug);
+	
+ protected:
+ 	
     
  private:
 	AvMusicStatusDescriptor		*cStatusDescriptor;

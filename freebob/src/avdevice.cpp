@@ -42,7 +42,8 @@ AvDevice::AvDevice(int port, int node)
 
 FBReturnCodes
 AvDevice::Initialize() {
-   if (!m_bInitialised) {
+	
+ 	if (!m_bInitialised) {
 
 	m_handle = raw1394_new_handle();
 	if ( !m_handle ) {
@@ -153,7 +154,13 @@ AvDevice::Initialize() {
 
 						if(tmpAvDeviceSubunit && tmpAvDeviceSubunit->isValid()) {
 							cSubUnits.push_back(tmpAvDeviceSubunit);
-
+							//setDebugLevel(DEBUG_LEVEL_ALL);
+      							debugPrint (DEBUG_LEVEL_DEVICE, "Trying to reserve the subunit...\n");
+							tmpAvDeviceSubunit->reserve(0x01);
+       							debugPrint (DEBUG_LEVEL_DEVICE, "  isReserved?: %d\n",tmpAvDeviceSubunit->isReserved());
+							tmpAvDeviceSubunit->unReserve();
+							//setDebugLevel(DEBUG_LEVEL_MODERATE);
+							
 
 						} else {
 							if (tmpAvDeviceSubunit) {
@@ -202,58 +209,255 @@ quadlet_t * AvDevice::avcExecuteTransaction(quadlet_t *request, unsigned int req
 	unsigned int i;
 	response = avc1394_transaction_block(m_handle, iNodeId, request, request_len, 2);
 	if (request != NULL) {
-            	debugPrint (DEBUG_LEVEL_TRANSFERS, "\n------- TRANSACTION START -------\n");
+            	debugPrint (DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION START -------\n");
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"  REQUEST:     ");
 		/* request is in machine byte order. this function is for intel architecure */
 		for (i=0;i<request_len;i++) {
 			request_pos=(unsigned char *)(request+i);
-			debugPrint (DEBUG_LEVEL_TRANSFERS, "0x%02X%02X%02X%02X ", *(request_pos),*(request_pos+1),*(request_pos+2),*(request_pos+3));
+			debugPrintShort (DEBUG_LEVEL_TRANSFERS, "0x%02X%02X%02X%02X ", *(request_pos),*(request_pos+1),*(request_pos+2),*(request_pos+3));
 		}
-		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"      => ");
-		debugPrint (DEBUG_LEVEL_TRANSFERS,"                     ");
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS,"                     ");
 		request_pos=(unsigned char *)(request);
-		debugPrint (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",((*(request_pos+1))>>3)&0x1F,(*(request_pos+1))&0x07,(*(request_pos+2))&0xFF);
-		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",((*(request_pos+1))>>3)&0x1F,(*(request_pos+1))&0x07,(*(request_pos+2))&0xFF);
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
 	}
 	if (response != NULL) {
 		/* response is in order of receiving, i.e. msb first */
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"  -> RESPONSE: ");
 		for (i=0;i<response_len;i++) {
-			debugPrint (DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i]);
+			debugPrintShort (DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i]);
 		}
-		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
 		debugPrint (DEBUG_LEVEL_TRANSFERS,"      => ");
 		switch (response[0]&0xFF000000) {
 			case AVC1394_RESPONSE_NOT_IMPLEMENTED:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Not Implemented      ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Not Implemented      ");
 			break;
 			case AVC1394_RESPONSE_ACCEPTED:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Accepted             ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Accepted             ");
 			break;
 			case AVC1394_RESPONSE_REJECTED:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Rejected             ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Rejected             ");
 			break;
 			case AVC1394_RESPONSE_IN_TRANSITION:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"In Transition        ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"In Transition        ");
 			break;
 			case AVC1394_RESPONSE_IMPLEMENTED:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Implemented / Stable ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Implemented / Stable ");
 			break;
 			case AVC1394_RESPONSE_CHANGED:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Changed              ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Changed              ");
 			break;
 			case AVC1394_RESPONSE_INTERIM:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Interim              ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Interim              ");
 			break;
 			default:
-				debugPrint (DEBUG_LEVEL_TRANSFERS,"Unknown response     ");
+				debugPrintShort (DEBUG_LEVEL_TRANSFERS,"Unknown response     ");
 			break;
 		}
-		debugPrint (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",(response[0]>>19)&0x1F,(response[0]>>16)&0x07,(response[0]>>8)&0xFF);
-		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",(response[0]>>19)&0x1F,(response[0]>>16)&0x07,(response[0]>>8)&0xFF);
+		debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
 	}
         debugPrint (DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n");
 	return response;
 
+}
+
+FBReturnCodes AvDevice::setInputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf) {
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	request[0] = AVC1394_CTYPE_CONTROL | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | plug;
+	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
+	response = avcExecuteTransaction(request, 2, 2);
+	if (response != NULL) {
+	
+	}
+
+}
+
+FBReturnCodes AvDevice::getInputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf) {
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | plug;
+	request[1] = 0xFFFFFFFF;
+	response = avcExecuteTransaction(request, 2, 2);
+	if (response != NULL) {
+		*fmt=((response[1] >> 24) & 0x3F);
+		*fdf=response[1]& 0x00FFFFFF;
+	}
+
+}
+FBReturnCodes AvDevice::setOutputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf) {
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	request[0] = AVC1394_CTYPE_CONTROL | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_OUTPUT_PLUG_SIGNAL_FORMAT | plug;
+	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
+	response = avcExecuteTransaction(request, 2, 2);
+	if (response != NULL) {
+	
+	}
+
+}
+
+FBReturnCodes AvDevice::getOutputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf) {
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+					| AVC1394_COMMAND_OUTPUT_PLUG_SIGNAL_FORMAT | plug;
+	request[1] = 0xFFFFFFFF;
+	response = avcExecuteTransaction(request, 2, 2);
+	if (response != NULL) {
+		*fmt=((response[1] >> 24) & 0x3F);
+		*fdf=response[1]& 0x00FFFFFF;
+	}
+
+}
+
+AvDeviceSubunit *AvDevice::getSubunit(unsigned char type, unsigned char id) {
+	vector<AvDeviceSubunit *>::iterator it;
+	for( it = cSubUnits.begin(); it != cSubUnits.end(); it++ ) {
+		if ((*it) && ((*it)->getType()==type) && ((*it)->getId()==id)) {
+			return *it;
+		}
+	}
+	return NULL;
+
+}
+
+#define AVC1394_COMMAND_SIGNAL_SOURCE 0x00001A00
+
+void AvDevice::printConnections() {
+	quadlet_t request[6];
+	quadlet_t *response;
+			//setDebugLevel(DEBUG_LEVEL_ALL);
+			
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: ISO source connections:\n");	
+
+	for (unsigned int i=0;i<getNbIsoSourcePlugs();i++) {
+		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
+		request[1]=0xFFFEFF00 | ((i & 0xFF));
+		
+		response = avcExecuteTransaction(request, 2, 2);
+	
+		if (response != NULL) {
+			unsigned char output_status=(response[0]&0xE0) >> 5;
+			unsigned char conv=(response[0]&0x10) >> 4;
+			unsigned char signal_status=(response[0]&0x0F);
+			
+			unsigned int signal_source=((response[1]>>16)&0xFFFF);
+			
+			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
+			unsigned char source_subunit_id=(signal_source>>8)&0x07;
+			unsigned char source_plug=signal_source&0xFF;
+			
+			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   OPCR 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);
+			// find the subunit this plug is connected to 
+			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
+			if(tmpSubunit) {
+				tmpSubunit->printSourcePlugConnections(source_plug);
+			}
+			
+		}
+	}
+	
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: External source connections:\n");	
+
+	for (unsigned int i=0;i<getNbExtSourcePlugs();i++) {
+		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
+		request[1]=0xFFFEFF00 | ((i & 0xFF)|0x80);
+		
+		response = avcExecuteTransaction(request, 2, 2);
+	
+		if (response != NULL) {
+			unsigned char output_status=(response[0]&0xE0) >> 5;
+			unsigned char conv=(response[0]&0x10) >> 4;
+			unsigned char signal_status=(response[0]&0x0F);
+			
+			unsigned int signal_source=((response[1]>>16)&0xFFFF);
+			
+			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
+			unsigned char source_subunit_id=(signal_source>>8)&0x07;
+			unsigned char source_plug=signal_source&0xFF;
+			
+			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   EXTOUT 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);	
+			
+			// find the subunit this plug is connected to 
+			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
+			if(tmpSubunit) {
+				tmpSubunit->printSourcePlugConnections(source_plug);
+			}			
+		}
+	}
+
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: ISO sink connections:\n");	
+
+	for (unsigned int i=0;i<getNbIsoDestinationPlugs();i++) {
+		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
+		request[1]=0xFFFEFF00 | ((i & 0xFF));
+		
+		response = avcExecuteTransaction(request, 2, 2);
+	
+		if (response != NULL) {
+			unsigned char output_status=(response[0]&0xE0) >> 5;
+			unsigned char conv=(response[0]&0x10) >> 4;
+			unsigned char signal_status=(response[0]&0x0F);
+			
+			unsigned int signal_source=((response[1]>>16)&0xFFFF);
+			
+			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
+			unsigned char source_subunit_id=(signal_source>>8)&0x07;
+			unsigned char source_plug=signal_source&0xFF;
+			
+			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   OPCR 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);
+			// find the subunit this plug is connected to 
+			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
+			if(tmpSubunit) {
+				//tmpSubunit->printDestinationPlugConnections(source_plug);
+			}
+			
+		}
+	}
+	
+	debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice: External sink connections:\n");	
+
+	for (unsigned int i=0;i<getNbExtDestinationPlugs();i++) {
+		request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
+						| AVC1394_COMMAND_SIGNAL_SOURCE | 0xFF;
+		request[1]=0xFFFEFF00 | ((i & 0xFF)|0x80);
+		
+		response = avcExecuteTransaction(request, 2, 2);
+	
+		if (response != NULL) {
+			unsigned char output_status=(response[0]&0xE0) >> 5;
+			unsigned char conv=(response[0]&0x10) >> 4;
+			unsigned char signal_status=(response[0]&0x0F);
+			
+			unsigned int signal_source=((response[1]>>16)&0xFFFF);
+			
+			unsigned char source_subunit_type=(signal_source>>11)&0x1F;
+			unsigned char source_subunit_id=(signal_source>>8)&0x07;
+			unsigned char source_plug=signal_source&0xFF;
+			
+			debugPrint (DEBUG_LEVEL_DEVICE,"AvDevice:   EXTOUT 0x%02X <- subunit: 0x%02X/0x%02X, plug: 0x%02X (0x%02X / %d / 0x%02X)\n",i, source_subunit_type,source_subunit_id,source_plug,output_status,conv,signal_status);	
+			
+			// find the subunit this plug is connected to 
+			AvDeviceSubunit *tmpSubunit=getSubunit(source_subunit_type,source_subunit_id);
+			if(tmpSubunit) {
+				//tmpSubunit->printDestinationPlugConnections(source_plug);
+			}			
+		}
+	}
+	
 }

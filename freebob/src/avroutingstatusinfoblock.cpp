@@ -39,9 +39,9 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 	}
 
 	unsigned int next_block_position=address+0x0A;
-	unsigned int nb_source_plugs=readByte(6);
-	unsigned int nb_dest_plugs=readByte(7);
-	unsigned int nb_music_plugs=readWord(8);
+	unsigned int nb_dest_plugs=readByte(0x06);
+	unsigned int nb_source_plugs=readByte(0x07);
+	unsigned int nb_music_plugs=readWord(0x08);
 	AvPlugInfoBlock *tmpAvPlugInfoBlock=NULL;
 	AvMusicPlugInfoBlock *tmpAvMusicPlugInfoBlock=NULL;
 
@@ -50,10 +50,9 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock:   Number of destination plugs=%d\n",nb_dest_plugs);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock:   Number of music plugs=%d\n",nb_music_plugs);
 
-		
-	if (nb_source_plugs>0) {
-		for (unsigned int i=0;i<nb_source_plugs;i++) {
-			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: source plug=%d\n",i);
+	if (nb_dest_plugs>0) {
+		for (unsigned int i=0;i<nb_dest_plugs;i++) {
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: destination plug=%d\n",i);
 			tmpAvPlugInfoBlock=new AvPlugInfoBlock(parent, next_block_position);
 			
 			if (tmpAvPlugInfoBlock && (tmpAvPlugInfoBlock->isValid())) {
@@ -61,7 +60,7 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 				next_block_position+=tmpAvPlugInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
 				
 				// add to child list
-				cSourcePlugInfoBlocks.push_back(tmpAvPlugInfoBlock);
+				cDestinationPlugInfoBlocks.push_back(tmpAvPlugInfoBlock);
 				
 				//tmpAvPlugInfoBlock->printContents();
 				
@@ -77,10 +76,10 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 			
 		}
 	}
-
-	if (nb_dest_plugs>0) {
-		for (unsigned int i=0;i<nb_dest_plugs;i++) {
-			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: destination plug=%d\n",i);
+	
+	if (nb_source_plugs>0) {
+		for (unsigned int i=0;i<nb_source_plugs;i++) {
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: source plug=%d\n",i);
 			tmpAvPlugInfoBlock=new AvPlugInfoBlock(parent, next_block_position);
 			
 			if (tmpAvPlugInfoBlock && (tmpAvPlugInfoBlock->isValid())) {
@@ -88,7 +87,7 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 				next_block_position+=tmpAvPlugInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
 				
 				// add to child list
-				cDestinationPlugInfoBlocks.push_back(tmpAvPlugInfoBlock);
+				cSourcePlugInfoBlocks.push_back(tmpAvPlugInfoBlock);
 				
 				//tmpAvPlugInfoBlock->printContents();
 				
@@ -152,3 +151,24 @@ AvRoutingStatusInfoBlock::~AvRoutingStatusInfoBlock() {
 
 }
 
+AvPlugInfoBlock * AvRoutingStatusInfoBlock::getSourcePlugInfoBlock(unsigned char plug) {
+	vector<AvPlugInfoBlock *>::iterator it;
+	for( it = cSourcePlugInfoBlocks.begin(); it != cSourcePlugInfoBlocks.end(); it++ ) {
+		if((*it) && ((*it)->getPlugId() == plug)) {
+			return *it;
+		}
+	}
+	return NULL;
+
+}
+
+AvPlugInfoBlock * AvRoutingStatusInfoBlock::getDestinationPlugInfoBlock(unsigned char plug) {
+	vector<AvPlugInfoBlock *>::iterator it;
+	for( it = cDestinationPlugInfoBlocks.begin(); it != cDestinationPlugInfoBlocks.end(); it++ ) {
+		if((*it) && ((*it)->getPlugId() == plug)) {
+			return *it;
+		}
+	}
+	return NULL;
+
+}

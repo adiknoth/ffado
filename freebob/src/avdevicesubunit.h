@@ -32,9 +32,18 @@ class AvDeviceSubunit {
     unsigned char getNbDestinationPlugs();
     unsigned char getNbSourcePlugs();
 
-    virtual void test();
-    void printOutputPlugConnections();
+    int reserve(unsigned char priority);
+    int unReserve();
+    int isReserved();
     
+	unsigned char getType() {return iTarget;} ;
+	unsigned char getId() {return iId;} ;
+	
+    virtual void test();
+    virtual void printOutputPlugConnections();
+    
+	virtual void printSourcePlugConnections(unsigned char plug);
+	
  protected:
  	bool bValid;    
  	unsigned char iNbDestinationPlugs;

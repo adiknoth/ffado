@@ -53,7 +53,7 @@ AvMusicPlugInfoBlock::AvMusicPlugInfoBlock(AvDescriptor *parent, int address) : 
 	unsigned int destination_stream_location=readByte(0x13);
 
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock: Creating... length=0x%04X\n",getLength());
-	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock:   Music plug id=0x%02X\n",plug_id);
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock:   Music plug id=0x%04X\n",plug_id);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock:   Plug type=0x%02X\n",plug_type);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock:   routing support=0x%02X\n",routing_support);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock:   source plug: type=0x%02X - id=0x%02X - fb_id=0x%02X - pos=%d - loc=%d\n",source_plug_function_type,

@@ -73,6 +73,12 @@ void AvDeviceSubunit::printOutputPlugConnections() {
 
 }
 
+void AvDeviceSubunit::printSourcePlugConnections(unsigned char plug) {
+			debugPrint(DEBUG_LEVEL_SUBUNIT," No internal connection information available.\n");
+	
+}
+
+
 AvDeviceSubunit::AvDeviceSubunit(AvDevice *parent, unsigned char target, unsigned char  id)
 {
 	unsigned char byte;
@@ -127,3 +133,94 @@ unsigned char AvDeviceSubunit::getNbDestinationPlugs() {
 unsigned char AvDeviceSubunit::getNbSourcePlugs() {
 	return iNbSourcePlugs;
 }
+
+int AvDeviceSubunit::reserve(unsigned char priority) {
+	unsigned char byte;
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	if (!cParent) {
+		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: parent == NULL!\n");
+		bValid=false;
+		return -1;
+	}
+
+	request[0] = AVC1394_CTYPE_CONTROL | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
+					| AVC1394_COMMAND_RESERVE | priority;
+	request[1] = 0xFFFFFFFF;
+	request[2] = 0xFFFFFFFF;
+	request[3] = 0xFFFFFFFF;
+	response = cParent->avcExecuteTransaction(request, 4, 4);
+	if (response != NULL) {
+		if((AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_ACCEPTED) || (AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_IMPLEMENTED))  {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit reserve successfull.\n");
+			return priority;
+		} else {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit reserve not successfull.\n");
+			return -1;
+		}
+	}
+
+}
+ 
+int AvDeviceSubunit::isReserved() {
+	unsigned char byte;
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	if (!cParent) {
+		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: parent == NULL!\n");
+		bValid=false;
+		return -1; // the device isn't usable, not due to reservation, but anyway...
+	}
+
+	request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
+					| AVC1394_COMMAND_RESERVE | 0xFF;
+	request[1] = 0xFFFFFFFF;
+	request[2] = 0xFFFFFFFF;
+	request[3] = 0xFFFFFFFF;
+	response = cParent->avcExecuteTransaction(request, 4, 4);
+	if (response != NULL) {
+		if((AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_ACCEPTED) || (AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_IMPLEMENTED))  {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit reserve check successfull.\n");
+			return (response[0]&0x000000FF);
+		} else {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit reserve check not successfull.\n");
+			
+			return -1;
+		}
+	}
+
+}
+
+int AvDeviceSubunit::unReserve() {
+	unsigned char byte;
+	quadlet_t request[6];
+	quadlet_t *response;
+
+	if (!cParent) {
+		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: parent == NULL!\n");
+		bValid=false;
+		return -1;
+	}
+
+	request[0] = AVC1394_CTYPE_CONTROL | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
+					| AVC1394_COMMAND_RESERVE | 0x00;
+	request[1] = 0xFFFFFFFF;
+	request[2] = 0xFFFFFFFF;
+	request[3] = 0xFFFFFFFF;
+	response = cParent->avcExecuteTransaction(request, 4, 4);
+	if (response != NULL) {
+		if((AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_ACCEPTED) || (AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_IMPLEMENTED))  {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit unreserve successfull.\n");
+			return 0;
+		} else {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit unreserve not successfull.\n");
+			return -1;
+		}
+	}
+
+}
+ 
+
+

@@ -43,7 +43,12 @@ class AvClusterInfoBlock : public AvInfoBlock {
 public:
 	AvClusterInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
 	virtual ~AvClusterInfoBlock();
+	unsigned char getStreamFormat() {return readByte(0x06);};
+	unsigned char getPortType() {return readByte(0x07);};
+	unsigned char getNbSignals() {return readByte(0x08);};
 
+	void printSignalInfo(unsigned char idx);
+	void printName();
 	
 protected:
 	

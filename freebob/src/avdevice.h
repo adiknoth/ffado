@@ -37,10 +37,30 @@ class AvDevice {
 
     quadlet_t * avcExecuteTransaction(quadlet_t *request, unsigned int request_len, unsigned int response_len);
 
-    FBReturnCodes AvDevice::Initialize();
+    FBReturnCodes Initialize();
 
-    bool AvDevice::isInitialised();
+    bool isInitialised();
 
+    FBReturnCodes setInputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf);
+    FBReturnCodes getInputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf);  
+    FBReturnCodes setOutputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf);
+    FBReturnCodes getOutputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf);  
+    
+//	getSourcePlugConnection();
+	void printConnections();
+	    
+	unsigned char getNbAsyncSourcePlugs() { return iNbAsyncSourcePlugs; } ;
+    unsigned char getNbAsyncDestinationPlugs() { return iNbAsyncDestinationPlugs; } ;
+    unsigned char getNbIsoSourcePlugs() { return iNbIsoSourcePlugs; } ; // oPCR
+    unsigned char getNbIsoDestinationPlugs() { return iNbIsoDestinationPlugs; } ; // iPCR
+    unsigned char getNbExtSourcePlugs() { return iNbExtSourcePlugs; } ;
+    unsigned char getNbExtDestinationPlugs() { return iNbExtDestinationPlugs; } ;
+    
+    int getNodeId() { return iNodeId; } ;
+
+ protected:
+ 	AvDeviceSubunit *getSubunit(unsigned char type, unsigned char id);
+ 
  private:
 	int iNodeId;
 	raw1394handle_t m_handle;

@@ -31,6 +31,7 @@
 #include "avsourcepluginfoblock.h"
 #include "avoutputplugstatusinfoblock.h"
 #include "avroutingstatusinfoblock.h"
+#include "avpluginfoblock.h"
 
 AvMusicStatusDescriptor::AvMusicStatusDescriptor(AvDevice *parent, unsigned char id) : AvDescriptor(parent, AVC1394_SUBUNIT_TYPE_MUSIC | (id << 16),0x80) {
 	if (!(this->AvDescriptor::isPresent())) {
@@ -118,6 +119,19 @@ AvMusicStatusDescriptor::AvMusicStatusDescriptor(AvDevice *parent, unsigned char
 		}
 		
 	}
+
+}
+	
+AvPlugInfoBlock *AvMusicStatusDescriptor::getSourcePlugInfoBlock(unsigned char plug) {
+	if (cRoutingStatusInfoBlock) {
+		return cRoutingStatusInfoBlock->getSourcePlugInfoBlock(plug);
+	} else return NULL;
+}
+
+AvPlugInfoBlock *AvMusicStatusDescriptor::getDestinationPlugInfoBlock(unsigned char plug) {
+	if (cRoutingStatusInfoBlock) {
+		return cRoutingStatusInfoBlock->getDestinationPlugInfoBlock(plug);
+	} else return NULL;
 
 }
 

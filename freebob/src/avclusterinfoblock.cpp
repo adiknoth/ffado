@@ -47,9 +47,9 @@ AvClusterInfoBlock::AvClusterInfoBlock(AvDescriptor *parent, int address) : AvIn
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Number of signals=%d\n",nb_signals);
 
 	for(unsigned int i=0;i<nb_signals;i++) {
-		unsigned int plug_info=readWord(0x0A+i*4);
-		unsigned char stream_position=readByte(0x0A+i*4+2);
-		unsigned char stream_location=readByte(0x0A+i*4+3);
+		unsigned int plug_info=readWord(0x09+i*4);
+		unsigned char stream_position=readByte(0x09+i*4+2);
+		unsigned char stream_location=readByte(0x09+i*4+3);
 		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d: plug_info=0x%04X, stream_position=0x%02X, stream_location=0x%02X\n",i,plug_info,stream_position,stream_location);
 		
 	}
@@ -79,3 +79,34 @@ AvClusterInfoBlock::~AvClusterInfoBlock() {
 
 }
 
+void AvClusterInfoBlock::printSignalInfo(unsigned char idx) {
+	if (idx<getNbSignals() && (0x09+idx*4<getLength())) {
+		unsigned int plug_info=readWord(0x09+idx*4);
+		unsigned char stream_position=readByte(0x09+idx*4+2);
+		unsigned char stream_location=readByte(0x09+idx*4+3);
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d: plug_info=0x%04X, stream_position=0x%02X, stream_location=0x%02X\n",idx,plug_info,stream_position,stream_location);
+	} else {
+		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d not present!\n",idx);
+	
+	}
+}
+
+void AvClusterInfoBlock::printName() {
+	unsigned int next_block_position=iBaseAddress+0x06+readWord(0x04);
+	
+	if(next_block_position<iBaseAddress+getLength()) {
+		// parse the optional name block
+		AvNameInfoBlock *tmpNameInfoBlock=new AvNameInfoBlock(cParent,next_block_position);
+		if (tmpNameInfoBlock && (tmpNameInfoBlock->isValid())) {
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Name: %s\n",tmpNameInfoBlock->getName());
+		
+		} else {
+			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   no name block present\n");
+		}
+		if(tmpNameInfoBlock) {
+			delete tmpNameInfoBlock;
+			tmpNameInfoBlock=NULL;
+		}
+	}
+
+}

@@ -163,7 +163,7 @@ void AvDescriptor::Load() {
 
 	iLength=response[2] & 0xFFFF;
 	
-	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d\n",iLength,iLength);	
+	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d ",iLength,iLength);	
 
 	// now get the rest of the descriptor
 	aContents=new unsigned char[iLength];
@@ -182,7 +182,7 @@ void AvDescriptor::Load() {
 	
 	// first read
 	if(bytes_read<iLength) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR,".");	
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");	
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -207,7 +207,7 @@ void AvDescriptor::Load() {
 	
 	// now do the remaining reads
 	while(bytes_read<iLength) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR,".");	
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");	
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -228,7 +228,7 @@ void AvDescriptor::Load() {
 		}
 		
 	}
-	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\n");	
+	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"\n");	
 	
 	
 	bLoaded=true;

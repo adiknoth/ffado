@@ -21,6 +21,9 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
+#include <libiec61883/iec61883.h>
+
+
 #include "ieee1394service.h"
 #include "debugmodule.h"
 
@@ -160,164 +163,20 @@ Ieee1394Service::discoveryDevices()
       		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
 		test->Initialize();
 		if (test->isInitialised()) {
-#if 0	// the commented out code enables some tests of the several decriptor/infoblock classes
-            		debugPrint (DEBUG_LEVEL_INFO, "   Init successfull...\n");
-            		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvDescriptor...\n");
-			AvDescriptor *testdesc=new AvDescriptor(test,AVC1394_SUBUNIT_TYPE_MUSIC | AVC1394_SUBUNIT_ID_0,0x00);
-            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
-            		debugPrint (DEBUG_LEVEL_INFO, "    Opening...\n");
-			testdesc->OpenReadOnly();
-            		
-			debugPrint (DEBUG_LEVEL_INFO, "    Loading...\n");
-
-			testdesc->Load();
-			            		
-           		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create another AvDescriptor...\n");
-			AvDescriptor *testdesc2=new AvDescriptor(test,AVC1394_SUBUNIT_TYPE_MUSIC | AVC1394_SUBUNIT_ID_0,0x80);
-            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
-            		debugPrint (DEBUG_LEVEL_INFO, "    Opening...\n");
-			testdesc2->OpenReadOnly();
-            		
-			debugPrint (DEBUG_LEVEL_INFO, "    Loading...\n");
-
-			testdesc2->Load();
-			
-			unsigned char *buff=new unsigned char[testdesc->getLength()];
-			
-			testdesc->readBuffer(0,testdesc->getLength(),buff);
-			debugPrint (DEBUG_LEVEL_INFO, "    AvDescriptor 1 Contents:\n");
-			
-			hexDump(buff,testdesc->getLength());
-			
-			delete buff;
-			
-			buff=new unsigned char[testdesc2->getLength()];
-			
-			testdesc2->readBuffer(0,testdesc2->getLength(),buff);
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    AvDescriptor 2 Contents:\n");
-			hexDump(buff,testdesc2->getLength());
-			delete buff;
-			
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    Closing AvDescriptors...\n");
-
-			testdesc->Close();
-			testdesc2->Close();
-			
-	      		debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvDescriptors...\n");
-
-			delete testdesc;
-			delete testdesc2;
-			
-			// test the AvMusicIdentifierDescriptor
-           		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicIdentifierDescriptor...\n");
-			AvMusicIdentifierDescriptor *testdesc_mid=new AvMusicIdentifierDescriptor(test,0x00);
-            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
-			testdesc_mid->printCapabilities();
-		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicIdentifierDescriptor...\n");
-			delete testdesc_mid;
-#endif
-			
-			// test the AvMusicStatusDescriptor
-           		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicStatusDescriptor...\n");
-			AvMusicStatusDescriptor *testdesc_mid2=new AvMusicStatusDescriptor(test,0x00);
-            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
-			testdesc_mid2->printCapabilities();
-#if 0	
-			// test the AvInfoBlock
-           		debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvInfoBlock...\n");
-			
-			AvInfoBlock *testblock1=new AvInfoBlock(testdesc_mid2,0);
-           		debugPrint (DEBUG_LEVEL_INFO, "      Length: 0x%04X (%d)  Type: 0x%04X\n",testblock1->getLength(),testblock1->getLength(),testblock1->getType());
-           		
-			debugPrint (DEBUG_LEVEL_INFO, "    Trying to fetch next block...\n");
-			// PP: might be better to have something like AvInfoBlock::moveToNextBlock();
-			AvInfoBlock *testblock2=new AvInfoBlock(testdesc_mid2,2+testblock1->getLength());
-			
-          		debugPrint (DEBUG_LEVEL_INFO, "      Length: 0x%04X (%d)  Type: 0x%04X\n",testblock2->getLength(),testblock2->getLength(),testblock2->getType());
-		
-			// test the general status info block
-           		debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvGeneralMusicStatusInfoBlock...\n");
-			AvGeneralMusicInfoBlock *testblock3=new AvGeneralMusicInfoBlock(testdesc_mid2,0);
-			
-			// PP: the next tests could fail because of the difference in hardware.
-			// these classes are intended to be used in the parser. I use hardcoded addresses in the test code,
-			// instead of derived addresses based on the parent descriptors.
-			// this is only intended to debug the base classes before using them in the parser.
-			
-			
-			// this one should be valid (on my config)
-           		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock3->isValid()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canTransmitBlocking? %s\n",(testblock3->canTransmitBlocking()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canTransmitNonblocking? %s\n",(testblock3->canTransmitNonblocking()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canReceiveBlocking? %s\n",(testblock3->canReceiveBlocking()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canReceiveNonblocking? %s\n",(testblock3->canReceiveNonblocking()?"yes":"no"));
-			
-			delete testblock3;
-			// this one shouldn't be valid
-			testblock3=new AvGeneralMusicInfoBlock(testdesc_mid2,2+testblock1->getLength());
-           		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock3->isValid()?"yes":"no"));
-          		debugPrint (DEBUG_LEVEL_INFO, "      canTransmitBlocking? %s\n",(testblock3->canTransmitBlocking()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canTransmitNonblocking? %s\n",(testblock3->canTransmitNonblocking()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canReceiveBlocking? %s\n",(testblock3->canReceiveBlocking()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canReceiveNonblocking? %s\n",(testblock3->canReceiveNonblocking()?"yes":"no"));
-           		
-			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvAudioInfoBlock...\n");
-			
-			AvAudioInfoBlock *testblock4=new AvAudioInfoBlock(testdesc_mid2,0x01A);
-           		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock4->isValid()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      Length? 0x%04X (%d)\n",testblock4->getLength(),testblock4->getLength());
-           		debugPrint (DEBUG_LEVEL_INFO, "      streams: %d\n",testblock4->getNbStreams());
-           		debugPrint (DEBUG_LEVEL_INFO, "      Name: %s\n",testblock4->getName());
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvMidiInfoBlock...\n");
-
-			AvMidiInfoBlock *testblock5=new AvMidiInfoBlock(testdesc_mid2,0x099);
-           		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock5->isValid()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      Length? 0x%04X (%d)\n",testblock5->getLength(),testblock5->getLength());
-           		unsigned int nb_midi_streams=testblock5->getNbStreams();
-			debugPrint (DEBUG_LEVEL_INFO, "      streams: %d\n",nb_midi_streams);
-			for (unsigned int i=0;i<nb_midi_streams;i++) {
-           			debugPrint (DEBUG_LEVEL_INFO, "       stream %d name: %s\n",i,testblock5->getName(i));
-			}
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvAudioSyncInfoBlock...\n");
-			AvAudioSyncInfoBlock *testblock6=new AvAudioSyncInfoBlock(testdesc_mid2,0x0262);
-           		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock6->isValid()?"yes":"no"));
-          		debugPrint (DEBUG_LEVEL_INFO, "      canSyncBus? %s\n",(testblock6->canSyncBus()?"yes":"no"));
-           		debugPrint (DEBUG_LEVEL_INFO, "      canSyncExternal? %s\n",(testblock6->canSyncExternal()?"yes":"no"));
-           		
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvInfoBlocks...\n");
-			
-			delete testblock1;
-			delete testblock2;
-			delete testblock3;
-			delete testblock4;
-			delete testblock5;
-			delete testblock6;
-			
-			// now try to parse a full source plug entry
-			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvSourcePlugInfoBlock...\n");
-			AvSourcePlugInfoBlock *testblock7=new AvSourcePlugInfoBlock(testdesc_mid2,0x13);
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvSourcePlugInfoBlock...\n");
-			
-			delete testblock7;
-			
-			// now try to parse the full music output plug status infoblock
-			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvOutputPlugStatusInfoBlock...\n");
-			AvOutputPlugStatusInfoBlock *testblock8=new AvOutputPlugStatusInfoBlock(testdesc_mid2,0x0C);
-			
-			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvOutputPlugStatusInfoBlock...\n");
-			
-			delete testblock8;
-		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicStatusDescriptor...\n");
-#endif			
-			delete testdesc_mid2;			
+			unsigned char fmt;
+			quadlet_t fdf;
+			test->getInputPlugSignalFormat(0,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->getInputPlugSignalFormat(1,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->getOutputPlugSignalFormat(0,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->getOutputPlugSignalFormat(1,&fmt,&fdf);
+      			debugPrint (DEBUG_LEVEL_INFO, "   fmt=%02X fdf=%08X\n",fmt,fdf);
+			test->printConnections();
 		}
-      		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
+		
+		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
 		delete test;
 
 	    }

@@ -42,6 +42,12 @@ public:
 	AvRoutingStatusInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
 	virtual ~AvRoutingStatusInfoBlock();
 
+	unsigned char getNbDestinationPlugs() {return readByte(0x06);};
+	unsigned char getNbSourcePlugs() {return readByte(0x07);};
+	unsigned int getNbMusicPlugs() {return readWord(0x08);};
+	
+	AvPlugInfoBlock *getSourcePlugInfoBlock(unsigned char plug);
+	AvPlugInfoBlock *getDestinationPlugInfoBlock(unsigned char plug);
 	
 protected:
 	vector<AvPlugInfoBlock *> cDestinationPlugInfoBlocks;

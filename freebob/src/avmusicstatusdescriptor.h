@@ -33,6 +33,7 @@
 class AvGeneralMusicInfoBlock;
 class AvOutputPlugStatusInfoBlock;
 class AvRoutingStatusInfoBlock;
+class AvPlugInfoBlock;
 
 class AvMusicStatusDescriptor : public AvDescriptor {
  public:
@@ -41,6 +42,9 @@ class AvMusicStatusDescriptor : public AvDescriptor {
     
     void printCapabilities();
 
+	AvPlugInfoBlock *getSourcePlugInfoBlock(unsigned char plug);
+	AvPlugInfoBlock *getDestinationPlugInfoBlock(unsigned char plug);
+	
  protected:
        AvGeneralMusicInfoBlock      	*cGeneralMusicInfoBlock;
        AvOutputPlugStatusInfoBlock  	*cOutputPlugStatusInfoBlock;

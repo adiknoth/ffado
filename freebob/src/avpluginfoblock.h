@@ -46,6 +46,15 @@ public:
 	AvPlugInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
 	virtual ~AvPlugInfoBlock();
 
+	unsigned char getPlugId() { return readByte(0x06); };
+	unsigned int getSignalFormat() { return readWord(0x07); };
+	unsigned char getPlugType() { return readByte(0x09); };
+	unsigned int getNbClusters() { return readWord(0x0A); };
+	unsigned int getNbChannels() { return readWord(0x0C); };
+	
+	AvClusterInfoBlock *getCluster(unsigned int idx);
+	
+	void printConnections();
 	
 protected:
 	vector<AvClusterInfoBlock *> cClusterInfoBlocks;

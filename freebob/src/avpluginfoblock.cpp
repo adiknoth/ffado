@@ -112,4 +112,18 @@ AvPlugInfoBlock::~AvPlugInfoBlock() {
 
 
 }
+	
+AvClusterInfoBlock *AvPlugInfoBlock::getCluster(unsigned int idx) {
+	if ((idx < getNbClusters()) && (idx < cClusterInfoBlocks.size())) {
+		return cClusterInfoBlocks.at(idx);
+	} else return NULL;
+}
 
+void AvPlugInfoBlock::printConnections() {
+	for (unsigned int i=0; i<getNbClusters();i++) {
+		AvClusterInfoBlock *tmpCluster=getCluster(i);
+		if (tmpCluster) {
+			tmpCluster->printName();
+		}
+	}
+}

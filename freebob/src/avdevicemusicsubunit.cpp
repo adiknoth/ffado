@@ -26,6 +26,8 @@
 #include "avdevicemusicsubunit.h"
 #include "avmusicstatusdescriptor.h"
 #include "avmusicidentifierdescriptor.h"
+#include "avpluginfoblock.h"
+#include "avclusterinfoblock.h"
 
 #define CORRECT_INTEGER_ENDIANNESS(value) (((((value)>>8) & 0xFF)) | ((((value)) & 0xFF)<<8))
 
@@ -154,6 +156,24 @@ void AvDeviceMusicSubunit::printMusicPlugInfo() {
 	}
 
 }
+
+void AvDeviceMusicSubunit::printSourcePlugConnections(unsigned char plug) {
+	if(cStatusDescriptor) {
+		AvPlugInfoBlock *plugInfo=cStatusDescriptor->getSourcePlugInfoBlock(plug);
+		
+		if(plugInfo) {
+			plugInfo->printConnections();
+		} else {
+			debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceMusicSubunit: could not find source plug 0x%02X in the descriptor.\n",plug);
+		}
+		
+			
+	} else {
+		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceMusicSubunit: no Status Descriptor present!\n");
+	}
+	
+}
+
 
 
 AvDeviceMusicSubunit::AvDeviceMusicSubunit(AvDevice *parent, unsigned char  id) : AvDeviceSubunit(parent,0x0C,id)

@@ -74,24 +74,24 @@ void AvMusicIdentifierDescriptor::printCapabilities() {
 	// PP: #defines in ieee1394service.h for the moment
 	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\t   -> capabilities: ");
 	if ((capability_attributes & AVC1394_SUBUNIT_MUSIC_CAPABILITY_GENERAL)) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR," general ");
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR," general ");
 	}
 	if ((capability_attributes & AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIO)) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR," audio ");
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR," audio ");
 	}
 	if ((capability_attributes & AVC1394_SUBUNIT_MUSIC_CAPABILITY_MIDI)) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR," midi ");
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR," midi ");
 	}
 	if ((capability_attributes & AVC1394_SUBUNIT_MUSIC_CAPABILITY_SMPTE)) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR," smtpe ");
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR," smtpe ");
 	}
 	if ((capability_attributes & AVC1394_SUBUNIT_MUSIC_CAPABILITY_SAMPLECOUNT)) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR," samplecount ");
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR," samplecount ");
 	}
 	if ((capability_attributes & AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC)) {
-		debugPrint(DEBUG_LEVEL_DESCRIPTOR," audiosync ");
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR," audiosync ");
 	}
-	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\n");
+	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"\n");
 	
 	// start parsing the optional capability stuff
 	offset=15;
