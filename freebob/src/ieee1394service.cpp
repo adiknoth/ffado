@@ -175,7 +175,7 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
                 pAvDevice->setPort( m_iPort );
 
                 asyncCall( pAvDevice, &AvDevice::execute,
-                           AvDevice::eScanAndCreate );
+                           AvDevice::eDeviceDiscovery );
 
                 // XXX Pieter's test code.
                 // avDeviceTests( oGuid, m_iPort, iNodeId );

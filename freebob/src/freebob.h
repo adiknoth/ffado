@@ -37,13 +37,14 @@ typedef enum {
   eFBRC_NoOfOPCRNotCorrect           =  -9,
   eFBRC_CreatingIPCServerFailed      =  -10,
   eFBRC_IPCServerInvalid             =  -11,
+  eFBRC_CreatingXMLDocFailed         =  -12,
 } FBReturnCodes;
 
 // Used by `main' to communicate with `parse_opt'.
 struct arguments
 {
     char* args[1];           // LISTEN_TIME
-    int silent, verbose;
+    int silent, verbose, xml;
 };
 
 extern struct arguments* pMainArguments;

@@ -35,9 +35,8 @@ public:
     void shutdown();
 
     static CMHandler* instance();
-    FBReturnCodes createConnection( AvDevice* avDevice );
-    FBReturnCodes destroyConnection( AvDevice* avDevice );
 
+    char* getXmlConnectionInfo( octlet_t oGuid );
 private:
     CMHandler();
     ~CMHandler();

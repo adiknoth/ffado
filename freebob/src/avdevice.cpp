@@ -63,18 +63,15 @@ void
 AvDevice::execute( EStates state )
 {
     switch ( state ) {
-    case eScanAndCreate:
+    case eDeviceDiscovery:
         if ( initialize() == eFBRC_Success ) {
-            // Initiate connection
-            asyncCall( CMHandler::instance(),
-                       &CMHandler::createConnection,
-                       this );
+            debugPrint( DEBUG_LEVEL_INFO, "Device discovery successful\n" );
+
             // Put ourself to sleep until a something happends
             sleepCall( this, &AvDevice::execute, eCheckState );
         } else {
-            asyncCall( CMHandler::instance(),
-                       &CMHandler::destroyConnection,
-                       this );
+            debugError( "Device discovry failed\n" );
+
             asyncCall( this, &AvDevice::execute, eDestroy );
         }
         break;
@@ -497,4 +494,23 @@ void AvDevice::printConnections() {
 	    }
 	}
     }
+}
+
+FBReturnCodes
+AvDevice::addConnectionsToXml( xmlNodePtr root )
+{
+    for ( unsigned int i = 0;
+          i < getNbIsoSourcePlugs();
+          ++i )
+    {
+
+    }
+
+    xmlNodePtr node = xmlNewChild( root, 0, BAD_CAST "ConnectionSet", 0 );
+    if ( !node ) {
+        debugError( "Couldn't create connection set node\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+
+    return eFBRC_Success;
 }

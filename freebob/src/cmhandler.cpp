@@ -22,6 +22,10 @@
 #include "ieee1394service.h"
 #include "avdevice.h"
 #include "ipchandler.h"
+#include "avdevicepool.h"
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 CMHandler* CMHandler::m_pInstance = 0;
 
@@ -38,7 +42,7 @@ CMHandler::~CMHandler()
     }
     if ( m_pIPCHandler ) {
         m_pIPCHandler->shutdown();
-    }    
+    }
     m_pInstance = 0;
 }
 
@@ -57,25 +61,25 @@ CMHandler::initialize()
             debugError( "Initialising of 1394 service failed.\n" );
             return eStatus;
         }
-	
+
         m_pIPCHandler = IPCHandler::instance();
         if ( !m_pIPCHandler ) {
             debugError( "Could not get an valid instance of IPC handler.\n" );
             return eFBRC_InitializeCMHandlerFailed;
         }
-	
+
         eStatus = m_pIPCHandler->initialize();
         if ( eStatus != eFBRC_Success ) {
             debugError( "Initialising of IPC handler failed.\n" );
             return eStatus;
-        }	
-	
+        }
+
         eStatus = m_pIPCHandler->start();
         if ( eStatus != eFBRC_Success ) {
             debugError( "Start of IPC handler failed.\n" );
             return eStatus;
-        }	
-	
+        }
+
         m_bInitialised = true;
     }
     return eFBRC_Success;
@@ -96,62 +100,57 @@ CMHandler::instance()
     return m_pInstance;
 }
 
-FBReturnCodes
-CMHandler::createConnection( AvDevice* avDevice )
+
+char*
+CMHandler::getXmlConnectionInfo( octlet_t oGuid )
 {
-
-    // First start with the play direction.
-    unsigned int iNoOfIPCR = avDevice->getNbIsoDestinationPlugs();
-
-    if ( iNoOfIPCR == 0 ) {
-        debugError( "No iPCR found\n" );
-        return eFBRC_NoOfIPCRNotCorrect;
+    AvDevice* pAvDevice = AvDevicePool::instance()->getAvDevice( oGuid );
+    if ( !pAvDevice ) {
+        debugError( "No AV device found with given GUID 0x%08x%08x\n",
+                    (quadlet_t) (oGuid>>32),
+                    (quadlet_t) (oGuid & 0xffffffff) );
+        return 0;
     }
 
-    // BeBob devices have two iPCR
-    // iPCR 0: IsoStream/AudioInput
-    // iPCR 1: Synch/SynchInput
-
-    if ( iNoOfIPCR != 2 ) {
-        debugError( "Not correct number iPCR founds on target. "
-                    "Expected 2, found %d\n",  iNoOfIPCR );
-        return eFBRC_NoOfIPCRNotCorrect;
+    xmlDocPtr doc = xmlNewDoc( BAD_CAST "1.0" );
+    if ( !doc ) {
+        debugError( "Couldn't create new xml doc\n" );
+        return 0;
     }
 
-    // Create external connection
+    xmlNodePtr rootNode = xmlNewNode( 0,  BAD_CAST "FreeBobConnectionInfo" );
+    if ( !rootNode ) {
+        debugError( "Couldn't create root node\n" );
+        xmlFreeDoc( doc );
+        xmlCleanupParser();
+        return 0;
+    }
+    xmlDocSetRootElement( doc,  rootNode );
 
-
-
-    // Internal connection are not configureable on BeBob device... gladly
-
-
-
-    // Second configure record direction.
-    unsigned int iNoOfOPCR = avDevice->getNbIsoSourcePlugs();
-
-    if ( iNoOfOPCR == 0 ) {
-        debugError( "No oPCR found\n" );
-        return eFBRC_NoOfOPCRNotCorrect;
+    if ( !xmlNewChild( rootNode,
+                       0,
+                       BAD_CAST "Comment",
+                       BAD_CAST "Connection Information for XXX configuration" ) ) {
+        debugError( "Couldn't create comment node\n" );
+        xmlFreeDoc( doc );
+        xmlCleanupParser();
+        return 0;
     }
 
-    // BeBob devices have two iPCR
-    // oPCR 0: IsoStream/Output
-    // oPCR 1: Synch/SynchOut
-
-    if ( iNoOfOPCR != 2 ) {
-        debugError( "Not correct number oPCR founds on target. "
-                    "Expected 2, found %d\n",  iNoOfOPCR );
-        return eFBRC_NoOfOPCRNotCorrect;
+    FBReturnCodes eStatus = pAvDevice->addConnectionsToXml( rootNode );
+    if ( eStatus != eFBRC_Success ) {
+        debugError( "Could not add connection information to XML document\n" );
+        xmlFreeDoc( doc );
+        xmlCleanupParser();
+        return 0;
     }
 
+    // Dump xml document to stdout
+    xmlSaveFormatFileEnc( "-", doc, "UTF-8", 1 );
 
-    debugPrint( DEBUG_LEVEL_INFO, "Connection established\n" );
-    return eFBRC_Success;
-}
+    // Cleanup
+    xmlFreeDoc( doc );
+    xmlCleanupParser();
 
-FBReturnCodes
-CMHandler::destroyConnection( AvDevice* avDevice )
-{
-
-    return eFBRC_Success;
+    return 0;
 }

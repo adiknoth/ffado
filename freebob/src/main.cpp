@@ -41,6 +41,7 @@ static struct argp_option options[] = {
     {"verbose",  'v', 0,      0,  "Produce verbose output" },
     {"quiet",    'q', 0,      0,  "Don't produce any output" },
     {"silent",   's', 0,      OPTION_ALIAS },
+    {"xml",      'x', 0,      0,  "XML document generation test"},
     { 0 }
 };
 
@@ -58,6 +59,9 @@ parse_opt( int key, char* arg, struct argp_state* state )
         break;
     case 'v':
         arguments->verbose = 1;
+        break;
+    case 'x':
+        arguments->xml = 1;
         break;
     case ARGP_KEY_ARG:
         if ( state->arg_num >= 1 ) {
@@ -92,6 +96,7 @@ main( int argc,  char** argv )
     // Default values.
     arguments.silent = 0;
     arguments.verbose = 0;
+    arguments.xml = 0;
 
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
@@ -105,6 +110,11 @@ main( int argc,  char** argv )
     }
 
     setGlobalDebugLevel( DEBUG_LEVEL_ALL );
+
+    if ( arguments.xml ) {
+        CMHandler::instance()->getXmlConnectionInfo(0);
+        return 0;
+    }
 
     StreamProcess* pStreamProcess = new StreamProcess();
     pStreamProcess->run( timeToListen );

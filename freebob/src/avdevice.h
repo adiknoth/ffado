@@ -24,6 +24,8 @@
 #include "ieee1394service.h"
 #include "debugmodule.h"
 
+#include <libxml/tree.h>
+
 #include <vector>
 using std::vector;
 
@@ -33,9 +35,9 @@ class AvDeviceSubunit;
 class AvDevice {
  public:
     enum EStates {
-	eScanAndCreate = 0,
-	eCheckState    = 1,  // put this instance to the sleep queue
-	eDestroy       = 2
+	eDeviceDiscovery = 0,
+	eCheckState      = 1,  // put this instance to the sleep queue
+	eDestroy         = 2
     };
 
     AvDevice( octlet_t oGuid );
@@ -70,6 +72,7 @@ class AvDevice {
     
     //	getSourcePlugConnection();
     void printConnections();
+    FBReturnCodes addConnectionsToXml( xmlNodePtr root );
 	    
     unsigned char getNbAsyncSourcePlugs() 
 	{ return m_iNbAsyncSourcePlugs; }
