@@ -26,6 +26,9 @@
 
 #include "avdevice.h"
 #include "avdescriptor.h"
+#include "avmusicidentifierdescriptor.h"
+#include "avmusicstatusdescriptor.h"
+#include "avinfoblock.h"
 
 Ieee1394Service* Ieee1394Service::m_pInstance = 0;
 
@@ -144,8 +147,8 @@ Ieee1394Service::discoveryDevices()
 		// PP: just a static try, don't want to mess with the device manager yet...
 		// Remark: the AvDevice and AvDescriptor aren't debugged thouroughly yet!
 		//         the following code is the only debug I had time for... to be continued! (later this week)
-
             	debugPrint (DEBUG_LEVEL_INFO, "  Trying to create an AvDevice...\n");
+
 		AvDevice *test=new AvDevice(m_iPort, iNodeId);
       		debugPrint (DEBUG_LEVEL_INFO, "   Created...\n");
 		test->Initialize();
@@ -156,14 +159,81 @@ Ieee1394Service::discoveryDevices()
             		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
             		debugPrint (DEBUG_LEVEL_INFO, "    Opening...\n");
 			testdesc->OpenReadOnly();
+            		
+			debugPrint (DEBUG_LEVEL_INFO, "    Loading...\n");
 
+			testdesc->Load();
+			            		
+           		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create another AvDescriptor...\n");
+			AvDescriptor *testdesc2=new AvDescriptor(test,AVC1394_SUBUNIT_TYPE_MUSIC | AVC1394_SUBUNIT_ID_0,0x80);
+            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
+            		debugPrint (DEBUG_LEVEL_INFO, "    Opening...\n");
+			testdesc2->OpenReadOnly();
+            		
+			debugPrint (DEBUG_LEVEL_INFO, "    Loading...\n");
 
-			debugPrint (DEBUG_LEVEL_INFO, "    Closing...\n");
+			testdesc2->Load();
+			
+			unsigned char *buff=new unsigned char[testdesc->getLength()];
+			
+			testdesc->readBuffer(0,testdesc->getLength(),buff);
+			debugPrint (DEBUG_LEVEL_INFO, "    AvDescriptor 1 Contents:\n");
+			
+			hexDump(buff,testdesc->getLength());
+			
+			delete buff;
+			
+			buff=new unsigned char[testdesc2->getLength()];
+			
+			testdesc2->readBuffer(0,testdesc2->getLength(),buff);
+			
+			debugPrint (DEBUG_LEVEL_INFO, "    AvDescriptor 2 Contents:\n");
+			hexDump(buff,testdesc2->getLength());
+			delete buff;
+			
+			
+			debugPrint (DEBUG_LEVEL_INFO, "    Closing AvDescriptors...\n");
+
 			testdesc->Close();
+			testdesc2->Close();
+			
+	      		debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvDescriptors...\n");
 
-	      		debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvDescriptor...\n");
 			delete testdesc;
-
+			delete testdesc2;
+			
+			// test the AvMusicIdentifierDescriptor
+           		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicIdentifierDescriptor...\n");
+			AvMusicIdentifierDescriptor *testdesc_mid=new AvMusicIdentifierDescriptor(test);
+            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
+			testdesc_mid->printCapabilities();
+		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicIdentifierDescriptor...\n");
+			delete testdesc_mid;
+			
+			// test the AvMusicStatusDescriptor
+           		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicStatusDescriptor...\n");
+			AvMusicStatusDescriptor *testdesc_mid2=new AvMusicStatusDescriptor(test);
+            		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
+			testdesc_mid2->printCapabilities();
+			
+			// test the AvInfoBlock
+           		debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvInfoBlock...\n");
+			
+			AvInfoBlock *testblock1=new AvInfoBlock(testdesc_mid2,0);
+           		debugPrint (DEBUG_LEVEL_INFO, "      Length: 0x%04X (%d)  Type: 0x%04X\n",testblock1->getLength(),testblock1->getLength(),testblock1->getType());
+           		
+			debugPrint (DEBUG_LEVEL_INFO, "    Trying to fetch next block...\n");
+			// PP: might be better to have something like AvInfoBlock::moveToNextBlock();
+			AvInfoBlock *testblock2=new AvInfoBlock(testdesc_mid2,2+testblock1->getLength());
+			
+          		debugPrint (DEBUG_LEVEL_INFO, "      Length: 0x%04X (%d)  Type: 0x%04X\n",testblock2->getLength(),testblock2->getLength(),testblock2->getType());
+ 			
+			debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvInfoBlocks...\n");
+			delete testblock1;
+			delete testblock2;
+			
+		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicStatusDescriptor...\n");
+			delete testdesc_mid2;			
 		}
       		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
 		delete test;

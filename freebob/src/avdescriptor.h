@@ -41,7 +41,7 @@ class AvDescriptor {
     bool isOpen();
     bool canWrite();
     
- private:
+ protected:
     AvDevice *cParent;
     unsigned int iType;
     unsigned char *aContents;

@@ -1,5 +1,5 @@
-/* debugmodule.h
- * Copyright (C) 2004 by Daniel Wagner
+/* avmusicidentifierdescriptor.h
+ * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -17,24 +17,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
+ 
+#include "avdevice.h"
+#include "avdescriptor.h"
+#include <string.h>
+#include <errno.h>
+#include <libavc1394/avc1394.h>
+#include <libavc1394/avc1394_vcr.h>
+#include "debugmodule.h"
 
-#ifndef DEBUGMODULE_H
-#define DEBUGMODULE_H
+#ifndef AVMUSICIDENTIFIERDESCRIPTOR_H
+#define AVMUSICIDENTIFIERDESCRIPTOR_H
 
-#include <stdio.h>
-#include "ieee1394service.h"
 
-#define DEBUG_LEVEL_INFO     	  5
-#define DEBUG_LEVEL_TRANSFERS     6
+class AvMusicIdentifierDescriptor : public AvDescriptor {
+ public:
+    AvMusicIdentifierDescriptor(AvDevice *parent);
+    ~AvMusicIdentifierDescriptor();
+    
+    void printCapabilities();
 
-#define DEBUG_LEVEL DEBUG_LEVEL_INFO
+ protected:
+        
+ private:
 
-#define debugError(format, args...) fprintf( stderr, format,  ##args )
-#define debugPrint(Level, format, args...) if(DEBUG_LEVEL>=Level) printf( format, ##args );
-
-unsigned char toAscii(unsigned char c);
-void quadlet2char(quadlet_t quadlet,unsigned char* buff);
-void hexDump(unsigned char *data_start, unsigned int length);
-
+};
 
 #endif

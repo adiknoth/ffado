@@ -162,12 +162,13 @@ void AvDescriptor::Load() {
 
 	iLength=response[2] & 0xFFFF;
 	
-	//fprintf(stderr,"Descriptor length=0x%04X %d\n",*descriptor_length,*descriptor_length);	
+	fprintf(stderr,"Descriptor length=0x%04X %d\n",iLength,iLength);	
 
 	// now get the rest of the descriptor
 	aContents=new unsigned char[iLength];
 	
 	while(bytes_read<iLength) {
+		fprintf(stderr,".");	
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -183,9 +184,31 @@ void AvDescriptor::Load() {
 			bytes_read++;
 		}
 	}
+	fprintf(stderr,"\n");	
+	
 	
 	bLoaded=true;
 }
+
+bool AvDescriptor::isPresent() {
+	quadlet_t *response;
+	quadlet_t request[2];	
+	
+	if (!cParent) {
+		return false;
+	}
+	
+	request[0] = AVC1394_CTYPE_STATUS | qTarget | AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
+	request[1] = 0xFFFFFFFF;
+	response =  cParent->avcExecuteTransaction(request, 2, 2);
+
+	if (((response[0] & 0xFF000000)==AVC1394_RESPONSE_NOT_IMPLEMENTED) || ((response[1] & 0xFF000000)==0x04)) { 
+		fprintf(stderr,"Descriptor not present.\n");
+		return false;
+	} 
+	return true;
+}
+
 
 bool AvDescriptor::isOpen() {
 	// maybe we should check this on the device instead of mirroring locally...
@@ -214,7 +237,7 @@ unsigned int AvDescriptor::readWord(unsigned int address) {
 	
 	if(cParent && bLoaded && aContents) {
 		word=(*(aContents+address)<<8)+*(aContents+address+1);
-		return *(aContents+address);
+		return word;
 	} else {
 		return 0; // what to do with this?
 	}

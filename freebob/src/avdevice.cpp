@@ -80,55 +80,56 @@ quadlet_t * AvDevice::avcExecuteTransaction(quadlet_t *request, unsigned int req
 	unsigned int i;
 	response = avc1394_transaction_block(m_handle, iNodeId, request, request_len, 2);
 	if (request != NULL) {
-		fprintf(stderr,"  REQUEST:     ");
+            	debugPrint (DEBUG_LEVEL_TRANSFERS, "    Created...\n");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"  REQUEST:     ");
 		/* request is in machine byte order. this function is for intel architecure */
 		for (i=0;i<request_len;i++) {
 			request_pos=(unsigned char *)(request+i);
-			fprintf(stderr, "0x%02X%02X%02X%02X ", *(request_pos),*(request_pos+1),*(request_pos+2),*(request_pos+3));
+			debugPrint (DEBUG_LEVEL_TRANSFERS, "0x%02X%02X%02X%02X ", *(request_pos),*(request_pos+1),*(request_pos+2),*(request_pos+3));
 		}
-		fprintf(stderr,"\n");
-		fprintf(stderr,"      => ");
-		fprintf(stderr,"                     ");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"      => ");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"                     ");
 		request_pos=(unsigned char *)(request);
-		fprintf(stderr, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",((*(request_pos+1))>>3)&0x1F,(*(request_pos+1))&0x07,(*(request_pos+2))&0xFF);
-		fprintf(stderr,"\n");
+		debugPrint (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",((*(request_pos+1))>>3)&0x1F,(*(request_pos+1))&0x07,(*(request_pos+2))&0xFF);
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
 	}	
 	if (response != NULL) {
 		/* response is in order of receiving, i.e. msb first */
-		fprintf(stderr,"  -> RESPONSE: ");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"  -> RESPONSE: ");
 		for (i=0;i<response_len;i++) {
-			fprintf(stderr, "0x%08X ", response[i]);
+			debugPrint (DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i]);
 		}
-		fprintf(stderr,"\n");
-		fprintf(stderr,"      => ");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"      => ");
 		switch (response[0]&0xFF000000) {
 			case AVC1394_RESPONSE_NOT_IMPLEMENTED:
-				fprintf(stderr,"Not Implemented      ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Not Implemented      ");
 			break;
 			case AVC1394_RESPONSE_ACCEPTED:
-				fprintf(stderr,"Accepted             ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Accepted             ");
 			break;
 			case AVC1394_RESPONSE_REJECTED:
-				fprintf(stderr,"Rejected             ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Rejected             ");
 			break;
 			case AVC1394_RESPONSE_IN_TRANSITION:
-				fprintf(stderr,"In Transition        ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"In Transition        ");
 			break;
 			case AVC1394_RESPONSE_IMPLEMENTED:
-				fprintf(stderr,"Implemented / Stable ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Implemented / Stable ");
 			break;
 			case AVC1394_RESPONSE_CHANGED:
-				fprintf(stderr,"Changed              ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Changed              ");
 			break;
 			case AVC1394_RESPONSE_INTERIM:		
-				fprintf(stderr,"Interim              ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Interim              ");
 			break;
 			default:
-				fprintf(stderr,"Unknown response     ");
+				debugPrint (DEBUG_LEVEL_TRANSFERS,"Unknown response     ");
 			break;
 		}
-		fprintf(stderr, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",(response[0]>>19)&0x1F,(response[0]>>16)&0x07,(response[0]>>8)&0xFF);
-		fprintf(stderr,"\n");
+		debugPrint (DEBUG_LEVEL_TRANSFERS, "subunit_type=%02X  subunit_id=%02X  opcode=%02X",(response[0]>>19)&0x1F,(response[0]>>16)&0x07,(response[0]>>8)&0xFF);
+		debugPrint (DEBUG_LEVEL_TRANSFERS,"\n");
 	}
 	return response;
 
