@@ -111,7 +111,10 @@ public:
     virtual void operator() ()
         { 
 	    ( ( *m_pCallee ).*m_pMemFun )( m_parm0 ); 
-	    if (bDelete) {
+	    if ( m_pSem ) {
+		sem_post( m_pSem);
+	    }
+	    if (m_bDelete) {
 		delete this;
 	    }
 	}
@@ -147,6 +150,7 @@ inline Functor* deferCall( const CalleePtr& pCallee,
 
 ////////////////////////////////////////////////////////////////////////
 
+// 0 params
 template< typename CalleePtr, typename Callee,  typename Ret >
 inline void asyncCall( const CalleePtr& pCallee,
 		       Ret( Callee::*pFunction )( ) )
@@ -154,8 +158,18 @@ inline void asyncCall( const CalleePtr& pCallee,
     WorkerThread::instance()->addFunctor(new MemberFunctor0< CalleePtr, Ret ( Callee::* )( ) > ( pCallee,  pFunction ));
 }
 
+// 1 params
+template< typename CalleePtr, typename Callee, typename Ret, typename Parm0 >
+inline void asyncCall( const CalleePtr& pCallee,
+		       Ret( Callee::*pFunction )( Parm0 ),
+		       Parm0 parm0 )
+{
+    WorkerThread::instance()->addFunctor(new MemberFunctor1< CalleePtr, Ret ( Callee::* )( Parm0 ), Parm0 > ( pCallee,  pFunction, parm0 ));
+}
+
 ////////////////////////////////////////////////////////////////////////
 
+// 0 params
 template< typename CalleePtr, typename Callee,  typename Ret >
 inline void syncCall( const CalleePtr& pCallee,
 		      Ret( Callee::*pFunction )( ) )
