@@ -22,6 +22,10 @@ AC_CHECK_FUNCS(strdup strtok_r memset memmove socket connect bind listen setsock
 # Checks for pthread library.
 AC_CHECK_LIB(pthread, pthread_create)
 
+PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
+AC_SUBST([LIBXML_LIBS])
+AC_SUBST([LIBXML_CFLAGS])
+
 AC_ENABLE_STATIC(no)
 AC_ENABLE_SHARED(yes)
 
@@ -29,5 +33,5 @@ AC_ENABLE_SHARED(yes)
 AC_CHECK_PROG(ac_doxygen, doxygen, [doc], [])
 AC_SUBST(ac_doxygen)
 
-AC_OUTPUT(Makefile src/Makefile freebobctl/Makefile examples/Makefile doc/Makefile freebobctl/version.h doc/libfreebobctl.doxygen freebobctl.pc libfreebobctl.spec)
+AC_OUTPUT(Makefile src/Makefile freebobctl/Makefile examples/Makefile doc/Makefile freebobctl/version.h doc/libfreebobctl.doxygen libfreebobctl.pc libfreebobctl.spec)
 

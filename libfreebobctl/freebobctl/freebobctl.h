@@ -27,12 +27,16 @@
 
 #ifndef __FREEBOBCTL_FREEBOBCTL_H
 #define __FREEBOBCTL_FREEBOBCTL_H
- 
+
+
+
+#define FREEBOBCTL_MAX_NAME_LEN 256
 /*
  * Buffer specification
  */
 
 typedef struct _freebob_stream_spec freebob_stream_spec_t;
+typedef struct _freebob_stream_info freebob_stream_info_t;
 typedef struct _freebob_connection_spec freebob_connection_spec_t;
 typedef struct _freebob_connection_info freebob_connection_info_t;
 
@@ -45,9 +49,13 @@ struct _freebob_stream_spec {
 	int format;
 	int type;
 	int destination_port;
-	char name[IEC61883_MAX_NAME_LEN];
+	char name[FREEBOBCTL_MAX_NAME_LEN];
 };
 
+struct _freebob_stream_info {
+	int nb_streams;
+	freebob_stream_spec_t **streams;
+};
 /* 
  * Connection specification
  */
@@ -58,11 +66,10 @@ struct _freebob_connection_spec {
 	int plug;
 	
 	int dimension; // due to the midi stuff, the dimension isn't equal to the number of streams
-	int nb_streams;
 	
 	int samplerate; // this should be equal for all connections when using jack. maybe not when using other api's
 	
-	freebob_stream_spec_t *streams;	
+	freebob_stream_info_t *stream_info;
 };
 
 /* 
@@ -70,13 +77,22 @@ struct _freebob_connection_spec {
  */
 
 struct _freebob_connection_info {
+	int direction;
 	int nb_connections;
-	freebob_connection_spec_t *connections;
+	freebob_connection_spec_t **connections;
 };
 
 
-freebob_connection_spec_t *freebob_get_connections(enum freebob_connection_direction);
-void freebob_free_connections(freebob_connection_spec_t *);
+freebob_connection_info_t *freebobctl_get_connection_info(int direction);
+
+void freebobctl_free_connection_info(freebob_connection_info_t *);
+void freebobctl_free_connection_spec(freebob_connection_spec_t *connection_spec);
+void freebobctl_free_stream_info(freebob_stream_info_t *stream_info);
+void freebobctl_free_stream_spec(freebob_stream_spec_t *stream_spec);
+
+void freebobctl_print_connection_info(freebob_connection_info_t *connection_info);
+
+const char * freebobctl_get_version();
 
 #endif // __FREEBOBCTL_FREEBOBCTL_H
 

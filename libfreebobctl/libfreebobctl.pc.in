@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: freebobctl
 Description: FreeBob control API
 Version: @VERSION@
-Libs: -L${libdir} -llscp
+Libs: -L${libdir} -lfreebobctl
 Cflags: -I${includedir}

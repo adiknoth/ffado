@@ -1,4 +1,4 @@
 SUBDIRS = src freebobctl examples @ac_doxygen@
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = freebobctl.pc
+pkgconfig_DATA = libfreebobctl.pc
