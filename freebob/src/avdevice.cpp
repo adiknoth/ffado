@@ -31,11 +31,11 @@
 #undef AVC1394_GET_RESPONSE_OPERAN
 #define AVC1394_GET_RESPONSE_OPERAND(x, n) (((x) & (0xFF000000 >> (((n)%4)*8))) >> (((3-(n))%4)*8))
 
-AvDevice::AvDevice(const char* modelName, octlet_t oGuid)
-    : m_iNodeId( -1 )
+AvDevice::AvDevice(ConfigRom& configRom)
+    : m_configRom( ConfigRom( configRom ) )
+    , m_iNodeId( -1 )
     , m_iPort( -1 )
     , m_bInitialised( false )
-    , m_oGuid( oGuid )
     , m_iGeneration( 0 )
     , cSubUnits( 0 )
     , m_iNbAsyncDestinationPlugs( 0 )
@@ -44,7 +44,6 @@ AvDevice::AvDevice(const char* modelName, octlet_t oGuid)
     , m_iNbIsoSourcePlugs( 0 )
     , m_iNbExtDestinationPlugs( 0 )
     , m_iNbExtSourcePlugs( 0 )
-    , m_modelName( modelName )
 {
     setDebugLevel( DEBUG_LEVEL_MODERATE );
     AvDevicePool::instance()->registerAvDevice( this );

@@ -1,3 +1,4 @@
+
 /* avdevice.h
  * Copyright (C) 2004 by Daniel Wagner, Pieter Palmers
  *
@@ -23,6 +24,7 @@
 
 #include "ieee1394service.h"
 #include "debugmodule.h"
+#include "configrom.h"
 
 #include <libxml/tree.h>
 
@@ -40,7 +42,7 @@ class AvDevice {
 	eDestroy         = 2
     };
 
-    AvDevice( const char* modelName, octlet_t oGuid );
+    AvDevice( ConfigRom& configRom);
     virtual ~AvDevice();
 
     void setNodeId( int iNodeId ) 
@@ -50,9 +52,12 @@ class AvDevice {
     void setPort( int iPort )
 	{ m_iPort = iPort; }
     octlet_t getGuid()
-	{ return m_oGuid; }
-    const char* getModelName() const
-	{ return m_modelName; }
+	{ return m_configRom.getGuid(); }
+    const std::string getVendorName() const
+	{ return m_configRom.getVendorName(); }
+    const std::string getModelName() const
+	{ return m_configRom.getModelName(); }
+
 
     void execute( EStates state );
     
@@ -90,12 +95,13 @@ class AvDevice {
 	{ return m_iNbExtDestinationPlugs; }
 
  protected:
- 	AvDeviceSubunit *getSubunit(unsigned char type, unsigned char id);
+    AvDeviceSubunit *getSubunit(unsigned char type, unsigned char id);
 
-	FBReturnCodes create1394RawHandle();
-	FBReturnCodes enumerateSubUnits();
+    FBReturnCodes create1394RawHandle();
+    FBReturnCodes enumerateSubUnits();
  
  private:
+    ConfigRom m_configRom;
     int m_iNodeId;
     int m_iPort;
     bool m_bInitialised;

@@ -20,8 +20,11 @@
 #ifndef CONFIGROM_H
 #define CONFIGROM_H
 
+#include <string>
+
 #include <libraw1394/raw1394.h>
 #include "csr1212.h"
+
 
 class ConfigRom {
 public:
@@ -32,8 +35,8 @@ public:
 
     const bool isAvcDevice() const;
     const octlet_t getGuid() const;
-    const char* getModelName() const;
-    const char* getVendorName() const;
+    const std::string getModelName() const;
+    const std::string getVendorName() const;
 
 protected:
 
@@ -47,8 +50,10 @@ protected:
     int m_iNodeId;
     bool m_bAvcDevice;
     octlet_t m_guid;
-    char* m_vendorName;
-    char* m_modelName;
+    std::string m_vendorName;
+    std::string m_modelName;
+
+    /* only used during parsing */
     struct csr1212_keyval* m_vendorNameKv;
     struct csr1212_keyval* m_modelNameKv;
     struct csr1212_csr* m_csr;

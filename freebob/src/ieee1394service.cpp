@@ -144,7 +144,7 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
                 octlet_t oGuid = configRom.getGuid();
 
-                AvDevice* pAvDevice = new AvDevice( configRom.getModelName(), oGuid );
+                AvDevice* pAvDevice = new AvDevice( configRom );
                 if ( !pAvDevice ) {
                     debugError( "Could not create AvDevice instance for "
                                 "device with GUID 0x%08x%08x\n",

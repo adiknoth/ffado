@@ -128,20 +128,15 @@ CMHandler::getXmlConnectionInfo( octlet_t oGuid )
     }
     xmlDocSetRootElement( doc,  rootNode );
 
-    char* res;
-    if ( asprintf( &res,
-                   "Connecton Informaton for %s configuration",
-                   pAvDevice->getModelName() ) < 0)
-    {
-        debugError( "Could't format string\n" );
-        xmlFreeDoc( doc );
-        xmlCleanupParser();
-        return 0;
-    }
+    std::string res = "Connection Information for "
+                      + pAvDevice->getVendorName()
+                      +", "
+                      + pAvDevice->getModelName()
+                      + " configuration";
     if ( !xmlNewChild( rootNode,
                        0,
                        BAD_CAST "Comment",
-                       BAD_CAST res ) ) {
+                       BAD_CAST res.c_str() ) ) {
         debugError( "Couldn't create comment node\n" );
         xmlFreeDoc( doc );
         xmlCleanupParser();

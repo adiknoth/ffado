@@ -49,8 +49,8 @@ ConfigRom::ConfigRom( raw1394handle_t raw1394Handle, int iNodeId )
     : m_raw1394Handle( raw1394Handle )
     , m_iNodeId( iNodeId )
     , m_bAvcDevice( false )
-    , m_vendorName( 0 )
-    , m_modelName( 0 )
+    , m_vendorName( "" )
+    , m_modelName( "" )
     , m_vendorNameKv( 0 )
     , m_modelNameKv( 0 )
 {
@@ -58,19 +58,6 @@ ConfigRom::ConfigRom( raw1394handle_t raw1394Handle, int iNodeId )
 
 ConfigRom::~ConfigRom()
 {
-    delete m_vendorName;
-    m_vendorName = 0;
-    delete m_modelName;
-    m_modelName = 0;
-    if ( m_vendorNameKv ) {
-        csr1212_release_keyval( m_vendorNameKv );
-    }
-    if ( m_modelNameKv ) {
-        csr1212_release_keyval( m_modelNameKv );
-    }
-    if ( m_csr ) {
-        csr1212_destroy_csr(m_csr);
-    }
 }
 
 bool
@@ -96,26 +83,40 @@ ConfigRom::initialize()
 
     if ( m_vendorNameKv ) {
         int len = ( m_vendorNameKv->value.leaf.len - 2 ) * sizeof( quadlet_t );
-        m_vendorName = new char[len];
-        memcpy( m_vendorName,
+        char* vendorName = new char[len];
+        memcpy( vendorName,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_vendorNameKv ),
                 len );
-        m_vendorName[len] = '\0';
-        printf( "Vendor name: %s\n", m_vendorName );
+        vendorName[len] = '\0';
+        printf( "Vendor name: %s\n", vendorName );
+        m_vendorName = vendorName;
     }
     if ( m_modelNameKv ) {
         int len = ( m_modelNameKv->value.leaf.len - 2 ) * sizeof( quadlet_t );
-        m_modelName = new char[len];
-        memcpy( m_modelName,
+        char* modelName = new char[len];
+        memcpy( modelName,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_modelNameKv ),
                 len );
-        m_modelName[len] = '\0';
-        printf( "Model name: %s\n", m_modelName );
+        modelName[len] = '\0';
+        printf( "Model name: %s\n", modelName );
+        m_modelName = modelName;
     }
 
     m_guid =  ((u_int64_t)CSR1212_BE32_TO_CPU(m_csr->bus_info_data[3]) << 32)
               | CSR1212_BE32_TO_CPU(m_csr->bus_info_data[4]);
 
+    if ( m_vendorNameKv ) {
+        csr1212_release_keyval( m_vendorNameKv );
+        m_vendorNameKv = 0;
+    }
+    if ( m_modelNameKv ) {
+        csr1212_release_keyval( m_modelNameKv );
+        m_modelNameKv = 0;
+    }
+    if ( m_csr ) {
+        csr1212_destroy_csr(m_csr);
+        m_csr = 0;
+    }
     return true;
 }
 
@@ -285,13 +286,13 @@ ConfigRom::getGuid() const
     return m_guid;
 }
 
-const char*
+const std::string
 ConfigRom::getModelName() const
 {
     return m_modelName;
 }
 
-const char*
+const std::string
 ConfigRom::getVendorName() const
 {
     return m_vendorName;
