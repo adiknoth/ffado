@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
- 
+
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
@@ -41,8 +41,8 @@ public:
 
 protected:
 	AvNameInfoBlock *cNameInfoBlock;
-private:	
-	
+private:
+
 };
 
 #endif

@@ -27,13 +27,13 @@
 #include "freebob.h"
 
 /* XXX: add those to avc1394.h */
-#define AVC1394_SUBUNIT_TYPE_AUDIO (1 <<19) 
-#define AVC1394_SUBUNIT_TYPE_PRINTER (2 <<19) 
-#define AVC1394_SUBUNIT_TYPE_CA (6 <<19) 
-#define AVC1394_SUBUNIT_TYPE_PANEL (9 <<19) 
-#define AVC1394_SUBUNIT_TYPE_BULLETIN_BOARD (0xA <<19) 
-#define AVC1394_SUBUNIT_TYPE_CAMERA_STORAGE (0xB <<19) 
-#define AVC1394_SUBUNIT_TYPE_MUSIC (0xC <<19) 
+#define AVC1394_SUBUNIT_TYPE_AUDIO (1 <<19)
+#define AVC1394_SUBUNIT_TYPE_PRINTER (2 <<19)
+#define AVC1394_SUBUNIT_TYPE_CA (6 <<19)
+#define AVC1394_SUBUNIT_TYPE_PANEL (9 <<19)
+#define AVC1394_SUBUNIT_TYPE_BULLETIN_BOARD (0xA <<19)
+#define AVC1394_SUBUNIT_TYPE_CAMERA_STORAGE (0xB <<19)
+#define AVC1394_SUBUNIT_TYPE_MUSIC (0xC <<19)
 
 #define AVC1394_SUBUNIT_MUSIC_CAPABILITY_GENERAL     (1<<0)
 #define AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIO       (1<<1)
@@ -52,11 +52,8 @@
 
 class Ieee1394Service {
  public:
-    Ieee1394Service();
-    ~Ieee1394Service();
-
     FBReturnCodes initialize();
-    void shutdown(); 
+    void shutdown();
 
     static Ieee1394Service* instance();
     FBReturnCodes discoveryDevices();
@@ -64,7 +61,7 @@ class Ieee1394Service {
     unsigned int getGenerationCount();
 
  protected:
-    static int resetHandler( raw1394handle_t handle, 
+    static int resetHandler( raw1394handle_t handle,
 			     unsigned int iGeneration );
     void setGenerationCount( unsigned int iGeneration );
 
@@ -75,6 +72,9 @@ class Ieee1394Service {
     void printAvcUnitInfo( int iNodeId );
     void printRomDirectory( int iNodeId,  rom1394_directory* pRomDir );
  private:
+    Ieee1394Service();
+    ~Ieee1394Service();
+
     static Ieee1394Service* m_pInstance;
     raw1394handle_t m_handle;
     raw1394handle_t m_rhHandle;

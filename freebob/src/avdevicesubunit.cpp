@@ -35,25 +35,25 @@ AvDeviceSubunit::AvDeviceSubunit(AvDevice *parent, unsigned char target, unsigne
 	unsigned char byte;
 	quadlet_t request[6];
 	quadlet_t *response;
-	
+
 	cParent=parent;
 	iTarget=target;
 	iId=id;
 	iNbDestinationPlugs=0;
 	iNbSourcePlugs=0;
-	
+
 	debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit target=%02X id=%02X created\n",target,id);
-	
+
 	if (!cParent) {
 		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: parent == NULL!\n");
 		bValid=false;
 		return;
 	}
-	
+
 	bValid=true;
-	
+
 	// check the number of I/O plugs
-	
+
 	request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
 					| AVC1394_COMMAND_PLUG_INFO | 0x00;
 	request[1] = 0xFFFFFFFF;
@@ -63,8 +63,8 @@ AvDeviceSubunit::AvDeviceSubunit(AvDevice *parent, unsigned char target, unsigne
 		iNbSourcePlugs= (unsigned char) ((response[1]>>16) & 0xff);
 	}
 	debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: %d source plugs, %d destination plugs\n",iNbSourcePlugs,iNbDestinationPlugs);
-	
-	
+
+
 }
 
 AvDeviceSubunit::~AvDeviceSubunit()
@@ -84,4 +84,3 @@ unsigned char AvDeviceSubunit::getNbDestinationPlugs() {
 unsigned char AvDeviceSubunit::getNbSourcePlugs() {
 	return iNbSourcePlugs;
 }
-

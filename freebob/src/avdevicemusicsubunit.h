@@ -34,6 +34,7 @@ class AvDeviceMusicSubunit : public AvDeviceSubunit {
     virtual ~AvDeviceMusicSubunit();
 
     void test();
+
     // functions to demonstrate the usage of the commands defined by the specs
     // we'll see later what to do with them exactly
     void printMusicPlugInfo();
@@ -41,7 +42,7 @@ class AvDeviceMusicSubunit : public AvDeviceSubunit {
     
  private:
 	AvMusicStatusDescriptor		*cStatusDescriptor;
-	AvMusicIdentifierDescriptor 	*cIdentifierDescriptor;
+	AvMusicIdentifierDescriptor	*cIdentifierDescriptor;
 };
 
 #endif

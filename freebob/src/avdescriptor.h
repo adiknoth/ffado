@@ -27,7 +27,7 @@ class AvDescriptor {
  public:
     AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type);
     virtual ~AvDescriptor();
-    
+
     void Load();
     bool isLoaded();
     bool isPresent();
@@ -41,7 +41,7 @@ class AvDescriptor {
     bool isOpen();
     bool canWrite();
     bool isValid();
-    
+
  protected:
     AvDevice *cParent;
     unsigned int iType;

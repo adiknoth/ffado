@@ -1,6 +1,6 @@
 /* avdevice.h
  * Copyright (C) 2004 by Daniel Wagner, Pieter Palmers
- *                       
+ *
  *
  * This file is part of FreeBob.
  *
@@ -34,27 +34,27 @@ class AvDevice {
  public:
     AvDevice(int node,int port);
     virtual ~AvDevice();
-    
+
     quadlet_t * avcExecuteTransaction(quadlet_t *request, unsigned int request_len, unsigned int response_len);
-    
+
     FBReturnCodes AvDevice::Initialize();
-    
+
     bool AvDevice::isInitialised();
-    
+
  private:
- 	int iNodeId;
+	int iNodeId;
 	raw1394handle_t m_handle;
-        int m_iPort;
+	int m_iPort;
 	bool m_bInitialised;
 	vector<AvDeviceSubunit *> cSubUnits;
-	
- 	unsigned char iNbAsyncDestinationPlugs;
- 	unsigned char iNbAsyncSourcePlugs;
- 	unsigned char iNbIsoDestinationPlugs;
- 	unsigned char iNbIsoSourcePlugs;
- 	unsigned char iNbExtDestinationPlugs;
- 	unsigned char iNbExtSourcePlugs;
-	
+
+	unsigned char iNbAsyncDestinationPlugs;
+	unsigned char iNbAsyncSourcePlugs;
+	unsigned char iNbIsoDestinationPlugs;
+	unsigned char iNbIsoSourcePlugs;
+	unsigned char iNbExtDestinationPlugs;
+	unsigned char iNbExtSourcePlugs;
+
 };
 
 #endif

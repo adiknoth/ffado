@@ -30,7 +30,7 @@ class AvDeviceAudioSubunit : public AvDeviceSubunit {
     AvDeviceAudioSubunit(AvDevice *parent, unsigned char id);
     virtual ~AvDeviceAudioSubunit();
 
-   
+
  private:
 
 

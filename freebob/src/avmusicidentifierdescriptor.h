@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
- 
+
 #include "avdevice.h"
 #include "avdescriptor.h"
 #include <string.h>
@@ -34,11 +34,11 @@ class AvMusicIdentifierDescriptor : public AvDescriptor {
  public:
     AvMusicIdentifierDescriptor(AvDevice *parent, unsigned char id);
     ~AvMusicIdentifierDescriptor();
-    
+
     void printCapabilities();
 
  protected:
-        
+
  private:
 
 };
