@@ -30,7 +30,8 @@ class WorkerThread {
  public:
     static WorkerThread* instance();
 
-    void addFunctor( Functor* pFunctor );
+    void addFunctor( Functor* pFunctor, bool sleeper = false );
+    bool wakeSleepers();
 
  protected:
     static void* workerThread( void* arg );
@@ -46,6 +47,7 @@ class WorkerThread {
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
     std::queue< Functor* > m_queue;
+    std::queue< Functor* > m_sleepQueue;
 
     DECLARE_DEBUG_MODULE;
 };

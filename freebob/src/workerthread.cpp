@@ -25,7 +25,7 @@ WorkerThread* WorkerThread::m_pInstance = 0;
 
 WorkerThread::WorkerThread()
 {
-    setDebugLevel( DEBUG_LEVEL_ALL );
+    setDebugLevel( DEBUG_LEVEL_SCHEDULER );
 
     pthread_create( &m_thread, NULL, workerThread, this );
     pthread_mutex_init( &m_mutex, NULL );
@@ -57,12 +57,33 @@ WorkerThread::instance()
 }
 
 void
-WorkerThread::addFunctor( Functor* pFunctor )
+WorkerThread::addFunctor( Functor* pFunctor, bool sleeper )
 {
     pthread_mutex_lock( &m_mutex );
-    m_queue.push( pFunctor );
+    if ( !sleeper ) {
+        m_queue.push( pFunctor );
+    } else {
+        m_sleepQueue.push( pFunctor );
+    }
     pthread_mutex_unlock( &m_mutex );
     pthread_cond_signal( &m_cond );
+}
+
+bool
+WorkerThread::wakeSleepers()
+{
+    debugPrint( DEBUG_LEVEL_SCHEDULER,
+                "Wake sleeping functors (nr = %d).\n",
+                m_sleepQueue.size() );
+    while ( !m_sleepQueue.empty() ) {
+        pthread_mutex_lock( &m_mutex );
+        Functor* pFunctor = m_sleepQueue.front();
+        m_sleepQueue.pop();
+        m_queue.push( pFunctor );
+        pthread_mutex_unlock( &m_mutex );
+    }
+    pthread_cond_signal( &m_cond );
+    return true;
 }
 
 void
@@ -71,9 +92,11 @@ WorkerThread::run()
     while ( true ) {
 	pthread_mutex_lock( &m_mutex );
         if ( m_queue.empty() ) {
-            debugPrint( DEBUG_LEVEL_INFO, "Waiting on condition variable.\n" );
+            debugPrint( DEBUG_LEVEL_SCHEDULER,
+                        "Waiting on condition variable.\n" );
             pthread_cond_wait( &m_cond,  &m_mutex );
-            debugPrint( DEBUG_LEVEL_INFO, "Awoken from condition wait.\n" );
+            debugPrint( DEBUG_LEVEL_SCHEDULER,
+                        "Awoken from condition wait.\n" );
         }
 	pthread_mutex_unlock( &m_mutex );
 
