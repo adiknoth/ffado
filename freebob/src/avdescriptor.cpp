@@ -167,22 +167,65 @@ void AvDescriptor::Load() {
 	// now get the rest of the descriptor
 	aContents=new unsigned char[iLength];
 	
+	/* there is a gap in the read data, because of the two bytes 
+	 * that are before the third quadlet (why did 1394TA do that?)
+	 * 
+	 * proposed solution:
+	 * 1) the first read is OK, because the length of the descriptor is in these two bytes,
+	 *    so execute a read from address 0 with length=iLength
+	 * 2) process the bytes starting from response[3]
+	 * 3) the next reads should start from the end of the previous read minus 2. this way we 
+	 *    can discard these two problem bytes, because they are already read in the previous 
+	 *    run.
+	 */
+	
+	// first read
+	if(bytes_read<iLength) {
+		fprintf(stderr,".");	
+		// apparently the lib modifies the request, so redefine it completely
+		request[0] = AVC1394_CTYPE_CONTROL | qTarget
+						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
+		// the amount of bytes we want to read is:
+		//  total descriptor length + 2 bytes of the descriptor length field (i.e. the overlap bytes for this read)
+		request[1] = 0xFFFF0000 | (iLength)&0xFFFF;
+		request[2] = ((0) << 16) |0x0000FFFF;
+		
+		response =  cParent->avcExecuteTransaction(request, 3, 3);
+		data_length_read=(response[1]&0xFFFF);
+		read_result_status=((response[1]>>24)&0xFF);
+		
+		databuffer=(unsigned char *)(response+3);
+		
+		// the buffer starting at databuffer is two bytes smaller that the amount of bytes read
+		for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
+			*(aContents+bytes_read)=*(databuffer+i);
+			bytes_read++;
+		}
+		
+	}
+	
+	// now do the remaining reads
 	while(bytes_read<iLength) {
 		fprintf(stderr,".");	
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
-		request[1] = 0xFFFF0000 | (iLength-bytes_read)&0xFFFF;
+		// the amount of bytes we want to read is:
+		//  (total descriptor length - number of bytes already read) + 2 overlap with previous read
+		request[1] = 0xFFFF0000 | (iLength-bytes_read+2)&0xFFFF;
 		request[2] = (((bytes_read)&0xFFFF) << 16) |0x0000FFFF;
+		
 		response =  cParent->avcExecuteTransaction(request, 3, 3);
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
+		
 		databuffer=(unsigned char *)(response+3);
 		
-		for (i=0;(i<data_length_read) && (bytes_read < iLength);i++) {
+		for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
 			*(aContents+bytes_read)=*(databuffer+i);
 			bytes_read++;
 		}
+		
 	}
 	fprintf(stderr,"\n");	
 	
@@ -255,4 +298,3 @@ unsigned int AvDescriptor::readBuffer(unsigned int address, unsigned int length,
 		return 0;
 	}
 }
-   

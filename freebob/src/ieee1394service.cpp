@@ -271,7 +271,7 @@ Ieee1394Service::discoveryDevices()
 			
 			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvMidiInfoBlock...\n");
 
-			AvMidiInfoBlock *testblock5=new AvMidiInfoBlock(testdesc_mid2,0x097);
+			AvMidiInfoBlock *testblock5=new AvMidiInfoBlock(testdesc_mid2,0x099);
            		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock5->isValid()?"yes":"no"));
            		debugPrint (DEBUG_LEVEL_INFO, "      Length? 0x%04X (%d)\n",testblock5->getLength(),testblock5->getLength());
            		unsigned int nb_midi_streams=testblock5->getNbStreams();
@@ -281,7 +281,7 @@ Ieee1394Service::discoveryDevices()
 			}
 			
 			debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvAudioSyncInfoBlock...\n");
-			AvAudioSyncInfoBlock *testblock6=new AvAudioSyncInfoBlock(testdesc_mid2,0x0260);
+			AvAudioSyncInfoBlock *testblock6=new AvAudioSyncInfoBlock(testdesc_mid2,0x0262);
            		debugPrint (DEBUG_LEVEL_INFO, "     isValid? %s\n",(testblock6->isValid()?"yes":"no"));
           		debugPrint (DEBUG_LEVEL_INFO, "      canSyncBus? %s\n",(testblock6->canSyncBus()?"yes":"no"));
            		debugPrint (DEBUG_LEVEL_INFO, "      canSyncExternal? %s\n",(testblock6->canSyncExternal()?"yes":"no"));

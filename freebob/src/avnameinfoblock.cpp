@@ -49,15 +49,14 @@ unsigned char * AvNameInfoBlock::getName() {
 
 	// PP: Can't find this in the specs I have... going to look around a bit for the spec this is in.
 	//     (AV/C Information Block Types Specification Version 1.0)
-	unsigned int namelen;
 	unsigned int readlen=0;
 	if (isValid()) {
 		// PP: we should parse some raw_text_info_blocks here, but the music spec indicates that there are maximum 3 of these
 		//     so I do it manually here. 
 		// PP: for my device apparently one block is sufficient.
 		// PP: one strange thing remains, that is that there are some NULL characters in the buffer.
-		unsigned int length_of_textblock_1=readWord(0x0A);
-		unsigned int type_of_textblock_1=readWord(0x0C); // = 0x000A ?
+		// unsigned int length_of_textblock_1=readWord(0x0A);
+		// unsigned int type_of_textblock_1=readWord(0x0C); // = 0x000A ?
 		unsigned int primary_field_length_textblock_1=readWord(0x0E); // ?? I guess ??
 		
 		if (nameBuffer) {

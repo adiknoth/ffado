@@ -44,6 +44,8 @@ public:
 	virtual ~AvSourcePlugInfoBlock();
 	unsigned int getPlugNumber();
 
+	void printContents(); // to debug the parse process
+	
 protected:
 	//vector<AvNameInfoBlock*> cNameInfoBlocks;
 	

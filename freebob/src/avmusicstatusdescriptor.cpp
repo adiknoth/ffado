@@ -57,7 +57,7 @@ void AvMusicStatusDescriptor::printCapabilities() {
 	fprintf(stderr,"AvMusicStatusDescriptor: \n");
 	// PP: calculate the offset to accomodate for the presence of root lists [not implemented]
 	
-	int offset=2; // update offset when beginning at a new table in the specs for easy reading
+	//int offset=2; // update offset when beginning at a new table in the specs for easy reading
 	
 	// start parsing the optional capability stuff
 	

@@ -47,7 +47,7 @@ AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) 
 	debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating... length=0x%04X\n",getLength());
 
 	// parse the child info blocks
-	while ((next_block_position<getLength())) {
+	while ((next_block_position<address+getLength())) {
 		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: Creating tmpInfoBlock\n");
 
 		tmpInfoBlock=new AvInfoBlock(parent,next_block_position);
@@ -129,5 +129,23 @@ unsigned int AvSourcePlugInfoBlock::getPlugNumber() {
 		return readByte(6);
 	} else {
 		return 0;
+	}
+}
+
+void AvSourcePlugInfoBlock::printContents() {
+	if(cAudioInfoBlock) {
+		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: AudioInfoBlock: %s\n",cAudioInfoBlock->getName());
+	}
+	if(cMidiInfoBlock) {
+		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: MidiInfoBlock %d streams\n",cMidiInfoBlock->getNbStreams());
+		for (unsigned int i=0;i<cMidiInfoBlock->getNbStreams();i++) {
+			debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: MidiInfoBlock stream %d: %s\n",i,cMidiInfoBlock->getName(i));
+		}
+	}
+	if(cAudioSyncInfoBlock) {
+		debugPrint(DEBUG_LEVEL_INFO,"AvSourcePlugInfoBlock: AudioSyncInfoBlock can sync to: Bus? %s / External? %s\n",
+			cAudioSyncInfoBlock->canSyncBus()?"yes":"no",
+			cAudioSyncInfoBlock->canSyncExternal()?"yes":"no"
+			);
 	}
 }
