@@ -28,14 +28,14 @@ class Ieee1394Service;
 class CMHandler
 {
 public:
-    CMHandler();
-    ~CMHandler();
-
     FBReturnCodes initialize();
     void shutdown();
 
     static CMHandler* instance();
 private:
+    CMHandler();
+    ~CMHandler();
+
     static CMHandler* m_pInstance;
     Ieee1394Service* m_pIeee1394Service;
     bool m_bInitialised;
