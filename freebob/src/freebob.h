@@ -35,4 +35,13 @@ typedef enum {
   eFBRC_CreatingAvDeviceFailed       =  -7,
 } FBReturnCodes;
 
+// Used by `main' to communicate with `parse_opt'.
+struct arguments
+{
+    char* args[1];           // LISTEN_TIME
+    int silent, verbose;
+};
+
+extern struct arguments* pMainArguments;
+
 #endif
