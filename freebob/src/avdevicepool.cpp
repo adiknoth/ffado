@@ -1,4 +1,4 @@
-/* freebob.h
+/* avdevicepool.cpp
  * Copyright (C) 2004 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,20 +18,42 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef FREEBOB_H
-#define FREEBOB_H
+#include "avdevicepool.h"
 
-/**
- * Error Codes
- */
-typedef enum {
-  eFBRC_Success                      =   0,
-  eFBRC_Creating1394HandleFailed     =  -1,
-  eFBRC_Setting1394PortFailed        =  -2,
-  eFBRC_Scaning1394BusFailed         =  -3,
-  eFBRC_AddBusResetObserverFailed    =  -4,
-  eFBRC_InitializeCMHandlerFailed    =  -5,
-  eFBRC_AvDeviceNotFound             =  -6,
-} FBReturnCodes;
+AvDevicePool::AvDevicePool()
+{
+}
 
-#endif
+AvDevicePool::~AvDevicePool()
+{
+}
+
+FBReturnCodes
+AvDevicePool::registerAvDevice(AvDevice* pAvDevice)
+{
+    m_avDevices.push_back( pAvDevice );
+    return eFBRC_Success;
+}
+
+
+FBReturnCodes
+AvDevicePool::unregisterAvDevice(AvDevice* pAvDevice)
+{
+    AvDeviceVector::iterator iter;
+    for ( iter = m_avDevices.begin();
+          iter != m_avDevices.end();
+          ++iter )
+    {
+        if ( ( *iter ) == pAvDevice ) {
+            m_avDevices.erase( iter );
+            return eFBRC_Success;
+        }
+    }
+
+    if ( iter == m_avDevices.end() ) {
+        return eFBRC_AvDeviceNotFound;
+    }
+
+    return eFBRC_Success;
+}
+

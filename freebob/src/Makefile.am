@@ -29,6 +29,10 @@ freebob_SOURCES = \
 	streamprocess.cpp \
 	ieee1394service.h \
 	ieee1394service.cpp \
+	avdevice.h \
+	avdevice.cpp \
+	avdevicepool.h \
+	avdevicepool.cpp \
 	main.cpp 
 
 freebob_LDFLAGS = \

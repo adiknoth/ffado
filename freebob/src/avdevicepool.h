@@ -1,4 +1,4 @@
-/* freebob.h
+/* avdevicepool.h
  * Copyright (C) 2004 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -17,21 +17,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
+#ifndef AVDEVICEPOOL_H
+#define AVDEVICEPOOL_H
 
-#ifndef FREEBOB_H
-#define FREEBOB_H
+#include "freebob.h"
+#include <vector>
 
-/**
- * Error Codes
- */
-typedef enum {
-  eFBRC_Success                      =   0,
-  eFBRC_Creating1394HandleFailed     =  -1,
-  eFBRC_Setting1394PortFailed        =  -2,
-  eFBRC_Scaning1394BusFailed         =  -3,
-  eFBRC_AddBusResetObserverFailed    =  -4,
-  eFBRC_InitializeCMHandlerFailed    =  -5,
-  eFBRC_AvDeviceNotFound             =  -6,
-} FBReturnCodes;
+class AvDevice;
+
+class AvDevicePool {
+ public:
+    AvDevicePool();
+    ~AvDevicePool();
+
+    FBReturnCodes registerAvDevice(AvDevice* pAvDevice);
+    FBReturnCodes unregisterAvDevice(AvDevice* pAvDevice);
+ private:
+    typedef std::vector<AvDevice*> AvDeviceVector;
+    AvDeviceVector m_avDevices;
+};
 
 #endif

@@ -22,7 +22,7 @@
 
 #include <libraw1394/raw1394.h>
 #include <libavc1394/rom1394.h>
-#include <boost/signals.hpp>
+#include <pthread.h>
 
 #include "freebob.h"
 
@@ -40,21 +40,17 @@ class Ieee1394Service {
     ~Ieee1394Service();
 
     FBReturnCodes initialize();
-    void shutdown();
+    void shutdown(); 
 
     static Ieee1394Service* instance();
     FBReturnCodes discoveryDevices();
 
-    /**
-     * Current generation count.
-     *
-     * If the count is increased a bus reset has occurred.
-     */
-    boost::signal<void (unsigned int)>sigGenerationCount;
+    unsigned int getGenerationCount();
 
  protected:
     static int resetHandler( raw1394handle_t handle, 
 			     unsigned int iGeneration );
+    void setGenerationCount( unsigned int iGeneration );
 
     bool startRHThread();
     void stopRHThread();
@@ -71,6 +67,7 @@ class Ieee1394Service {
     pthread_t m_thread;
     pthread_mutex_t m_mutex;
     bool m_bRHThreadRunning;
+    unsigned int m_iGenerationCount;
 };
 
 #endif

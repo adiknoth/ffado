@@ -16,9 +16,12 @@ Dependencies
 
 You need following libraries in order to build FreeBob:
 
-libraw1394 (>= 0.10.0), http://www.linux1394.org
-libiec61883, http://www.linux1394.org
-libavc1394, http://sourceforge.net/projects/libavc1394
+libraw1394  (>= rev 149), http://www.linux1394.org
+libiec61883 (>= rev 32),  http://www.linux1394.org (only available from svn)
+libavc1394  (>= 0.4.1),   http://sourceforge.net/projects/libavc1394
+
+Generally, this project depends on the latest available version (even
+svn/cvs).  In short: latest is greates.
 
 How to build
 ------------

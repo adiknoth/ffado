@@ -30,6 +30,7 @@ Ieee1394Service::Ieee1394Service()
     : m_iPort( 0 )
     , m_bInitialised( false )
     , m_bRHThreadRunning( false )
+    , m_iGenerationCount( 0 )
 {
     pthread_mutex_init( &m_mutex, NULL );
 }
@@ -133,6 +134,7 @@ Ieee1394Service::discoveryDevices()
 
             if ( avc1394_check_subunit_type( m_handle, iNodeId,
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
+
                 // XXX
                 // create avcDevice which discovers itself :)
 	    }
@@ -228,26 +230,26 @@ Ieee1394Service::printRomDirectory( int iNodeId,  rom1394_directory* pRomDir )
     rom1394_bus_options busOptions;
     rom1394_get_bus_options( m_handle, iNodeId, &busOptions );
 
-    printf ( "\nNode %d: \n", iNodeId);
-    printf ( "-------------------------------------------------\n");
-    printf ("bus info block length = %d\n", iBusInfoBlockLength);
-    printf ("bus id = 0x%08x\n", iBusId);
-    printf ("bus options:\n");
-    printf ("    isochronous resource manager capable: %d\n", busOptions.irmc);
-    printf ("    cycle master capable                : %d\n", busOptions.cmc);
-    printf ("    isochronous capable                 : %d\n", busOptions.isc);
-    printf ("    bus manager capable                 : %d\n", busOptions.bmc);
-    printf ("    cycle master clock accuracy         : %d ppm\n", busOptions.cyc_clk_acc);
-    printf ("    maximum asynchronous record size    : %d bytes\n", busOptions.max_rec);
-    printf ("GUID: 0x%08x%08x\n", (quadlet_t) (oGuid>>32),
-            (quadlet_t) (oGuid & 0xffffffff));
-    printf ("directory:\n");
-    printf ("    node capabilities    : 0x%08x\n", pRomDir->node_capabilities);
-    printf ("    vendor id            : 0x%08x\n", pRomDir->vendor_id);
-    printf ("    unit spec id         : 0x%08x\n", pRomDir->unit_spec_id);
-    printf ("    unit software version: 0x%08x\n", pRomDir->unit_sw_version);
-    printf ("    model id             : 0x%08x\n", pRomDir->model_id);
-    printf ("    textual leaves       : %s\n",     pRomDir->label);
+    printf( "\nNode %d: \n", iNodeId );
+    printf( "-------------------------------------------------\n" );
+    printf( "bus info block length = %d\n", iBusInfoBlockLength);
+    printf( "bus id = 0x%08x\n", iBusId );
+    printf( "bus options:\n" );
+    printf( "    isochronous resource manager capable: %d\n", busOptions.irmc );
+    printf ("    cycle master capable                : %d\n", busOptions.cmc );
+    printf ("    isochronous capable                 : %d\n", busOptions.isc );
+    printf ("    bus manager capable                 : %d\n", busOptions.bmc );
+    printf ("    cycle master clock accuracy         : %d ppm\n", busOptions.cyc_clk_acc );
+    printf( "    maximum asynchronous record size    : %d bytes\n", busOptions.max_rec );
+    printf("GUID: 0x%08x%08x\n", (quadlet_t) (oGuid>>32),
+           (quadlet_t) (oGuid & 0xffffffff) );
+    printf( "directory:\n");
+    printf( "    node capabilities    : 0x%08x\n", pRomDir->node_capabilities );
+    printf( "    vendor id            : 0x%08x\n", pRomDir->vendor_id );
+    printf( "    unit spec id         : 0x%08x\n", pRomDir->unit_spec_id );
+    printf( "    unit software version: 0x%08x\n", pRomDir->unit_sw_version );
+    printf( "    model id             : 0x%08x\n", pRomDir->model_id );
+    printf( "    textual leaves       : %s\n",     pRomDir->label );
 }
 
 int
@@ -259,7 +261,7 @@ Ieee1394Service::resetHandler( raw1394handle_t handle,
     raw1394_update_generation (handle, iGeneration);
     Ieee1394Service* pInstance
         = (Ieee1394Service*) raw1394_get_userdata (handle);
-    pInstance->sigGenerationCount( iGeneration );
+    pInstance->setGenerationCount( iGeneration );
     return 0;
 }
 
@@ -303,4 +305,16 @@ Ieee1394Service::rHThread( void* arg )
     }
 
     return NULL;
+}
+
+void
+Ieee1394Service::setGenerationCount( unsigned int iGeneration )
+{
+    m_iGenerationCount = iGeneration;
+}
+
+unsigned int
+Ieee1394Service::getGenerationCount()
+{
+    return m_iGenerationCount;
 }

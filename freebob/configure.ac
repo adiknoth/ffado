@@ -85,13 +85,8 @@ AC_SUBST([CXXFLAGS])
 # Create links for header file.
 
 # Checks for library functions.
-PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 0.10)
+PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.1.0)
 PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 0.1.0)
-AC_CHECK_HEADER(boost/signals.hpp, , [
-	AC_MSG_ERROR([cannot find boost headers. Make sure boost (http://www.boost.org) is installed; if the headers are in a non-standard location, set the CPPFLAGS environment variable to contain -I<headerdir>])])
-AC_HAVE_LIBRARY(boost_signals, , [
-	AC_MSG_ERROR([cannot find boost libraries. Make sure boost (http://www.boost.org) is installed; if the libraries are in a non-standard location, set the LDFLAGS environment variable to contain -L<librarydir>])])
-
 
 AC_SUBST([LIBSIGC_CFLAGS])
 AC_SUBST([LIBSIGC_LIBS])
