@@ -1,3 +1,3 @@
 libfreebobctlincludedir = $(includedir)/freebobctl
 
-libfreebobctlinclude_HEADERS = 
+libfreebobctlinclude_HEADERS = freebobctl.h
