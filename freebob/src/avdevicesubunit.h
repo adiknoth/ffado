@@ -33,6 +33,7 @@ class AvDeviceSubunit {
     unsigned char getNbSourcePlugs();
 
     virtual void test();
+    void printOutputPlugConnections();
     
  protected:
  	bool bValid;    

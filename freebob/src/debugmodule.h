@@ -36,14 +36,14 @@
 
 #define DEBUG_LEVEL_MODERATE (DEBUG_LEVEL_INFO | DEBUG_LEVEL_DEVICE | DEBUG_LEVEL_SUBUNIT)
 
-#define DEBUG_LEVEL DEBUG_LEVEL_MODERATE
+#define DEBUG_LEVEL DEBUG_LEVEL_MODERATE 
 
 #define DEBUG
 
 #ifdef DEBUG
         #define debugError(format, args...) fprintf( stderr, "%s %s %d: " format,  __FILE__, __FUNCTION__, __LINE__, ##args )
 //	#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & Level) { int idebug=Level; while(idebug) {printf(" "); idebug=idebug>>1;} printf( format, ##args ); }
-        #define debugPrint(Level, format, args...) if(DEBUG_LEVEL>=Level) printf("DEBUG %s %s %d :"  format, __FILE__, __FUNCTION__, __LINE__, ##args );
+        #define debugPrint(Level, format, args...) if(DEBUG_LEVEL & Level) printf("DEBUG %s %s %d :"  format, __FILE__, __FUNCTION__, __LINE__, ##args );
 
 #else
 	#define debugError(format, args...) 

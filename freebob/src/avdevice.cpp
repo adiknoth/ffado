@@ -131,6 +131,9 @@ AvDevice::Initialize() {
 						switch (subunit_type) {
 							case 0x01: // audio subunit
 								tmpAvDeviceSubunit=new AvDeviceAudioSubunit(this,subunit_id);
+								if (tmpAvDeviceSubunit) { // test code
+									//tmpAvDeviceSubunit->printOutputPlugConnections();
+								}
 							break;
 							case 0x0C: // music subunit
 								tmpAvDeviceSubunit=new AvDeviceMusicSubunit(this,subunit_id);
@@ -138,6 +141,7 @@ AvDevice::Initialize() {
 								AvDeviceMusicSubunit tmpAvDeviceSubunit2(this,subunit_id);
 								tmpAvDeviceSubunit2.printMusicPlugInfo();
 								tmpAvDeviceSubunit2.printMusicPlugConfigurations();
+								tmpAvDeviceSubunit2.printOutputPlugConnections();
 								tmpAvDeviceSubunit2.test();
 								}
 							break;

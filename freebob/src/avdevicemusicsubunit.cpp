@@ -34,44 +34,30 @@ void AvDeviceMusicSubunit::test() {
 	quadlet_t request[6];
 	quadlet_t *response;
 	
-	unsigned char opcr=0;
-	
-	debugPrint(DEBUG_LEVEL_SUBUNIT,"AvDeviceMusicSubunit: Serial bus iso output plug connections:\n");
-	for(opcr=0;opcr<0x1E;opcr++) {	
-		request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
-						| (0x1A << 8) | 0xFF;
-		//request[1] = ((iTarget & 0x1F) << 27) | ((iId & 0x07) << 24) | 0x00FF7F;
-		request[1]=0xFFFEFF00 | opcr;
-		response = cParent->avcExecuteTransaction(request, 2, 4);
-		if ((response != NULL) && ((response[0]&0xFF000000)==0x0C000000)) {
-			unsigned char output_status=(response[0]&0xE0) >> 5;
-			unsigned char conv=(response[0]&0x10) >> 4;
-			unsigned char signal_status=(response[0]&0x0F);
-			
-			unsigned int signal_source=((response[1]>>16)&0xFFFF);
-			unsigned int signal_destination=((response[1])&0xFFFF);
-			debugPrint(DEBUG_LEVEL_SUBUNIT,"  oPCR %d: output_status=%d,conv=%d,signal_status=%d,signal_source=0x%04X,signal_destination=0x%04X\n",opcr,output_status,conv,signal_status,signal_source,signal_destination);
-		}
-	}
-	debugPrint(DEBUG_LEVEL_SUBUNIT,"AvDeviceMusicSubunit: Serial bus external output plug connections:\n");
-	for(opcr=0x80;opcr<0x9E;opcr++) {	
-		request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
-						| (0x1A << 8) | 0xFF;
-		//request[1] = ((iTarget & 0x1F) << 27) | ((iId & 0x07) << 24) | 0x00FF7F;
-		request[1]=0xFFFEFF00 | opcr;
-		response = cParent->avcExecuteTransaction(request, 2, 4);
-		if ((response != NULL) && ((response[0]&0xFF000000)==0x0C000000)) {
-			unsigned char output_status=(response[0]&0xE0) >> 5;
-			unsigned char conv=(response[0]&0x10) >> 4;
-			unsigned char signal_status=(response[0]&0x0F);
-			
-			unsigned int signal_source=((response[1]>>16)&0xFFFF);
-			unsigned int signal_destination=((response[1])&0xFFFF);
-			debugPrint(DEBUG_LEVEL_SUBUNIT,"  oPCR %02X: output_status=%d,conv=%d,signal_status=%d,signal_source=0x%04X,signal_destination=0x%04X\n",opcr,output_status,conv,signal_status,signal_source,signal_destination);
-		}
-	}
+	unsigned char ipcr=0;
 
+	debugPrint(DEBUG_LEVEL_SUBUNIT,"AvDeviceMusicSubunit: Input Select status (iso channels):\n");
+	for(ipcr=0;ipcr<0x1E;ipcr++) {	
+		request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
+						| (0x1B << 8) | 0xFF;
+		//request[1] = ((iTarget & 0x1F) << 27) | ((iId & 0x07) << 24) | 0x00FF7F;
+		request[1]=0xFFFFFFFF;
+		request[2]= (ipcr<<24)| 0xFFFEFF;
+		response = cParent->avcExecuteTransaction(request, 3, 4);
+		
+		if ((response != NULL) && ((response[0]&0xFF000000)==0x0C000000)) {
+			unsigned char output_status=(response[1]&0xF0000000) >> 28;
+			unsigned char output_plug=(response[1]&0xFF);
+			unsigned char input_plug=((response[2]>>24)&0xFF);
+			
+			unsigned int node_id=((response[1]>>8)&0xFFFF);
+			unsigned int signal_destination=((response[2]>>8)&0xFFFF);
+			debugPrint(DEBUG_LEVEL_SUBUNIT,"  iPCR %d: output_status=0x%01X,node_id=%02d,output_plug=0x%02X,input_plug=0x%02X,signal_destination=0x%04X\n",ipcr,output_status,node_id,output_plug,input_plug,signal_destination);
+		}
+	}
 }
+
+
 void AvDeviceMusicSubunit::printMusicPlugConfigurations() {
 	unsigned char byte;
 	quadlet_t request[6];
