@@ -28,8 +28,12 @@ public:
     ConfigRom( raw1394handle_t raw1394Handle, int iNodeId );
     virtual ~ConfigRom();
 
-    bool isAvcDevice();
-    octlet_t getGuid();
+    bool initialize();
+
+    const bool isAvcDevice() const;
+    const octlet_t getGuid() const;
+    const char* getModelName() const;
+    const char* getVendorName() const;
 
 protected:
 
@@ -42,6 +46,12 @@ protected:
     raw1394handle_t m_raw1394Handle;
     int m_iNodeId;
     bool m_bAvcDevice;
+    octlet_t m_guid;
+    char* m_vendorName;
+    char* m_modelName;
+    struct csr1212_keyval* m_vendorNameKv;
+    struct csr1212_keyval* m_modelNameKv;
+    struct csr1212_csr* m_csr;
 };
 
 

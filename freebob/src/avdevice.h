@@ -40,7 +40,7 @@ class AvDevice {
 	eDestroy         = 2
     };
 
-    AvDevice( octlet_t oGuid );
+    AvDevice( const char* modelName, octlet_t oGuid );
     virtual ~AvDevice();
 
     void setNodeId( int iNodeId ) 
@@ -51,6 +51,8 @@ class AvDevice {
 	{ m_iPort = iPort; }
     octlet_t getGuid()
 	{ return m_oGuid; }
+    const char* getModelName() const
+	{ return m_modelName; }
 
     void execute( EStates state );
     
@@ -107,6 +109,8 @@ class AvDevice {
     unsigned char m_iNbIsoSourcePlugs;        // oPCR
     unsigned char m_iNbExtDestinationPlugs;
     unsigned char m_iNbExtSourcePlugs;
+
+    const char* m_modelName;
 
     DECLARE_DEBUG_MODULE;
 };

@@ -52,7 +52,7 @@ Ieee1394Service::Ieee1394Service()
     , m_bRHThreadRunning( false )
     , m_iGenerationCount( 0 )
 {
-    setDebugLevel( DEBUG_LEVEL_ALL );
+    setDebugLevel( DEBUG_LEVEL_ALL & ~DEBUG_LEVEL_TRANSFERS );
     pthread_mutex_init( &m_mutex, NULL );
 }
 
@@ -138,16 +138,13 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
     int iNodeCount = raw1394_get_nodecount( m_handle );
     for ( int iNodeId = 0; iNodeId < iNodeCount; ++iNodeId ) {
         ConfigRom configRom = ConfigRom( m_handle,  iNodeId );
+        configRom.initialize();
         if (configRom.isAvcDevice()) {
-            if ( pMainArguments->verbose ) {
-                printAvcUnitInfo( iNodeId );
-            }
-
             if ( avc1394_check_subunit_type( m_handle, iNodeId,
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
                 octlet_t oGuid = configRom.getGuid();
 
-                AvDevice* pAvDevice = new AvDevice( oGuid );
+                AvDevice* pAvDevice = new AvDevice( configRom.getModelName(), oGuid );
                 if ( !pAvDevice ) {
                     debugError( "Could not create AvDevice instance for "
                                 "device with GUID 0x%08x%08x\n",
@@ -168,75 +165,6 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
     // XXX dw: removed: AvDevicePool::instance()->removeObsoleteDevices()
     // check if this is still code here is still correct.
     return eFBRC_Success;
-}
-
-void
-Ieee1394Service::printAvcUnitInfo( int iNodeId )
-{
-    printf( "AVC: video monitor?......%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_VIDEO_MONITOR ) ?
-            "yes":"no" );
-    printf( "AVC: audio?..............%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_AUDIO ) ?
-            "yes":"no" );
-    printf( "AVC; printer?............%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_PRINTER ) ?
-            "yes":"no" );
-    printf( "AVC: disk recorder?......%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_DISC_RECORDER ) ?
-            "yes":"no" );
-    printf( "AVC: video recorder?.....%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_TAPE_RECORDER ) ?
-            "yes":"no" );
-    printf( "AVC: vcr?................%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_VCR ) ?
-            "yes":"no" );
-    printf( "AVC: tuner?..............%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_TUNER ) ?
-            "yes":"no" );
-    printf( "AVC: CA?.................%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_CA ) ?
-            "yes":"no" );
-    printf( "AVC: video camera?.......%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_VIDEO_CAMERA ) ?
-            "yes":"no" );
-    printf( "AVC: panel?..............%s\n",
-            avc1394_check_subunit_type(m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_PANEL ) ?
-            "yes":"no" );
-    printf( "AVC: camera storage?.....%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_CAMERA_STORAGE ) ?
-            "yes":"no" );
-    printf( "AVC: bulletin board?.....%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_BULLETIN_BOARD ) ?
-            "yes":"no" );
-    printf( "AVC: vendor specific?....%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_VENDOR_UNIQUE ) ?
-            "yes":"no" );
-    printf( "AVC: extended?...........%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_EXTENDED ) ?
-            "yes":"no" );
-    printf( "AVC: unit?...............%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_UNIT ) ?
-            "yes":"no" );
-    printf( "AVC: music?..............%s\n",
-            avc1394_check_subunit_type( m_handle, iNodeId,
-                                        AVC1394_SUBUNIT_TYPE_MUSIC ) ?
-            "yes":"no" );
 }
 
 int

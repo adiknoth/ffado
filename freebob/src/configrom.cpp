@@ -19,6 +19,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "configrom.h"
 
 static int busRead(struct csr1212_csr* csr,
@@ -48,36 +49,79 @@ ConfigRom::ConfigRom( raw1394handle_t raw1394Handle, int iNodeId )
     : m_raw1394Handle( raw1394Handle )
     , m_iNodeId( iNodeId )
     , m_bAvcDevice( false )
+    , m_vendorName( 0 )
+    , m_modelName( 0 )
+    , m_vendorNameKv( 0 )
+    , m_modelNameKv( 0 )
 {
 }
 
 ConfigRom::~ConfigRom()
 {
+    delete m_vendorName;
+    m_vendorName = 0;
+    delete m_modelName;
+    m_modelName = 0;
+    if ( m_vendorNameKv ) {
+        csr1212_release_keyval( m_vendorNameKv );
+    }
+    if ( m_modelNameKv ) {
+        csr1212_release_keyval( m_modelNameKv );
+    }
+    if ( m_csr ) {
+        csr1212_destroy_csr(m_csr);
+    }
 }
 
 bool
-ConfigRom::isAvcDevice()
+ConfigRom::initialize()
 {
     struct config_csr_info csr_info;
     csr_info.handle = m_raw1394Handle;
     csr_info.node_id = 0xffc0 | m_iNodeId;
 
-    struct csr1212_csr* csr;
-    csr = csr1212_create_csr(&configrom_csr1212_ops,
+    m_csr = csr1212_create_csr(&configrom_csr1212_ops,
 			     5 * sizeof(quadlet_t),
 			     &csr_info);
-    if (!csr || csr1212_parse_csr(csr) != CSR1212_SUCCESS) {
+    if (!m_csr || csr1212_parse_csr(m_csr) != CSR1212_SUCCESS) {
 	fprintf(stderr, "couldn't parse config rom\n");
-	if (csr) {
-	    csr1212_destroy_csr(csr);
+	if (m_csr) {
+	    csr1212_destroy_csr(m_csr);
+            m_csr = 0;
 	}
-	return -1;
+	return false;
     }
 
-    processRootDirectory(csr);
+    processRootDirectory(m_csr);
 
-    csr1212_destroy_csr(csr);
+    if ( m_vendorNameKv ) {
+        int len = ( m_vendorNameKv->value.leaf.len - 2 ) * sizeof( quadlet_t );
+        m_vendorName = new char[len];
+        memcpy( m_vendorName,
+                ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_vendorNameKv ),
+                len );
+        m_vendorName[len] = '\0';
+        printf( "Vendor name: %s\n", m_vendorName );
+    }
+    if ( m_modelNameKv ) {
+        int len = ( m_modelNameKv->value.leaf.len - 2 ) * sizeof( quadlet_t );
+        m_modelName = new char[len];
+        memcpy( m_modelName,
+                ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_modelNameKv ),
+                len );
+        m_modelName[len] = '\0';
+        printf( "Model name: %s\n", m_modelName );
+    }
 
+    m_guid =  ((u_int64_t)CSR1212_BE32_TO_CPU(m_csr->bus_info_data[3]) << 32)
+              | CSR1212_BE32_TO_CPU(m_csr->bus_info_data[4]);
+
+    return true;
+}
+
+const bool
+ConfigRom::isAvcDevice() const
+{
     return m_bAvcDevice;;
 }
 
@@ -165,9 +209,11 @@ ConfigRom::processUnitDirectory(struct csr1212_csr* csr,
 		    switch (last_key_id) {
 			case CSR1212_KV_ID_VENDOR:
 			    csr1212_keep_keyval(kv);
+                            m_vendorNameKv = kv;
 			    break;
 
 			case CSR1212_KV_ID_MODEL:
+                            m_modelNameKv = kv;
 			    csr1212_keep_keyval(kv);
 			    break;
 
@@ -220,7 +266,9 @@ ConfigRom::processRootDirectory(struct csr1212_csr* csr)
 			CSR1212_DESCRIPTOR_LEAF_SPECIFIER_ID(kv) == 0 &&
 			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_WIDTH(kv) == 0 &&
 			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_CHAR_SET(kv) == 0 &&
-			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_LANGUAGE(kv) == 0) {
+			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_LANGUAGE(kv) == 0)
+                    {
+                        m_vendorNameKv = kv;
 			csr1212_keep_keyval(kv);
 		    }
 		}
@@ -231,8 +279,20 @@ ConfigRom::processRootDirectory(struct csr1212_csr* csr)
 
 }
 
-octlet_t
-ConfigRom::getGuid()
+const octlet_t
+ConfigRom::getGuid() const
 {
-    return 0x1234;
+    return m_guid;
+}
+
+const char*
+ConfigRom::getModelName() const
+{
+    return m_modelName;
+}
+
+const char*
+ConfigRom::getVendorName() const
+{
+    return m_vendorName;
 }

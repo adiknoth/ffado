@@ -161,60 +161,38 @@ int IPCHandler::genericHandler(const char *path, const char *types, lo_arg **arg
 	return 1;
 }
 
-int IPCHandler::requestHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg) {
+int
+IPCHandler::requestHandler(const char *path,
+                           const char *types,
+                           lo_arg **argv,
+                           int argc,
+                           lo_message msg)
+{
+    lo_address src=lo_message_get_source ( msg );
 
-	lo_address src=lo_message_get_source ( msg );
+    debugPrint(DEBUG_LEVEL_IPC,"request from %s port %s (%s)\n", lo_address_get_hostname(src), lo_address_get_port(src), lo_address_get_url ( src ) );
+    debugPrint(DEBUG_LEVEL_IPC,"to path: <%s>\n", path);
 
-	debugPrint(DEBUG_LEVEL_IPC,"request from %s port %s (%s)\n", lo_address_get_hostname(src), lo_address_get_port(src), lo_address_get_url ( src ) );
-	debugPrint(DEBUG_LEVEL_IPC,"to path: <%s>\n", path);
-
-	if(argc==1) {
-		if(strcasecmp(&argv[0]->s,"connection_info")==0) {
-                    // give back first device found
-                    if ( AvDevicePool::instance()->m_avDevices.size() ) {
-                        AvDevice* pAvDevice
-                            = AvDevicePool::instance()->m_avDevices.front();
-                        if ( pAvDevice ) {
-                            char* pConnectionInfo
-                                = CMHandler::instance()->getXmlConnectionInfo( pAvDevice->getGuid() );
-                            if (pConnectionInfo
-                            && ( lo_send(src, "/response", "s", pConnectionInfo ) == -1 ) )
-                            {
-                                debugError("OSC error %d: %s\n",
-                                           lo_address_errno(src),
-                                           lo_address_errstr(src));
-                            }
-                            CMHandler::instance()->freeXmlConnectionInfo( pConnectionInfo );
-                        }
+    if(argc==1) {
+        if(strcasecmp(&argv[0]->s,"connection_info")==0) {
+            // give back first device found
+            if ( AvDevicePool::instance()->m_avDevices.size() ) {
+                AvDevice* pAvDevice
+                    = AvDevicePool::instance()->m_avDevices.front();
+                if ( pAvDevice ) {
+                    char* pConnectionInfo
+                        = CMHandler::instance()->getXmlConnectionInfo( pAvDevice->getGuid() );
+                    if (pConnectionInfo
+                        && ( lo_send(src, "/response", "s", pConnectionInfo ) == -1 ) )
+                    {
+                        debugError("OSC error %d: %s\n",
+                                   lo_address_errno(src),
+                                   lo_address_errstr(src));
                     }
-/*
-                    // send fixed XML description for now
-
-			int fd=open("test.xml",O_RDONLY);
-			if (fd<0) {
-				printf("Could not open file\n");
-				return 0;
-			}
-			int length=lseek(fd,0,SEEK_END);
-			lseek(fd,0,SEEK_SET);
-
-			char *buff=(char *)calloc(length,1); // also clears memory
-			if((read(fd,(void *)buff,length)) < length) {
-				printf("Didn't read all bytes\n");
-			}
-
-			close(fd);
-
-			//respond
-  			if (lo_send(src, "/response", "s", buff) == -1) {
-				printf("OSC error %d: %s\n", lo_address_errno(src), lo_address_errstr(src));
-			}
-
-			free(buff);
-*/
-		}
-	}
-
-
-	return 0;
+                    CMHandler::instance()->freeXmlConnectionInfo( pConnectionInfo );
+                }
+            }
+        }
+    }
+    return 0;
 }

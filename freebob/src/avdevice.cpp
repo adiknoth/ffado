@@ -31,7 +31,7 @@
 #undef AVC1394_GET_RESPONSE_OPERAN
 #define AVC1394_GET_RESPONSE_OPERAND(x, n) (((x) & (0xFF000000 >> (((n)%4)*8))) >> (((3-(n))%4)*8))
 
-AvDevice::AvDevice(octlet_t oGuid)
+AvDevice::AvDevice(const char* modelName, octlet_t oGuid)
     : m_iNodeId( -1 )
     , m_iPort( -1 )
     , m_bInitialised( false )
@@ -44,6 +44,7 @@ AvDevice::AvDevice(octlet_t oGuid)
     , m_iNbIsoSourcePlugs( 0 )
     , m_iNbExtDestinationPlugs( 0 )
     , m_iNbExtSourcePlugs( 0 )
+    , m_modelName( modelName )
 {
     setDebugLevel( DEBUG_LEVEL_MODERATE );
     AvDevicePool::instance()->registerAvDevice( this );
@@ -505,7 +506,6 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
     {
 
     }
-
     xmlNodePtr node = xmlNewChild( root, 0, BAD_CAST "ConnectionSet", 0 );
     if ( !node ) {
         debugError( "Couldn't create connection set node\n" );
