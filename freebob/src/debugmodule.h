@@ -41,9 +41,10 @@
 #define DEBUG
 
 #ifdef DEBUG
-	#define debugError(format, args...) fprintf( stderr, format,  ##args )
+        #define debugError(format, args...) fprintf( stderr, "%s %s %d: " format,  __FILE__, __FUNCTION__, __LINE__, ##args )
 //	#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & Level) { int idebug=Level; while(idebug) {printf(" "); idebug=idebug>>1;} printf( format, ##args ); }
-	#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & Level) { printf( format, ##args ); }
+        #define debugPrint(Level, format, args...) if(DEBUG_LEVEL>=Level) printf("DEBUG %s %s %d :"  format, __FILE__, __FUNCTION__, __LINE__, ##args );
+
 #else
 	#define debugError(format, args...) 
 	#define debugPrint(Level, format, args...) 
@@ -52,6 +53,5 @@
 unsigned char toAscii(unsigned char c);
 void quadlet2char(quadlet_t quadlet,unsigned char* buff);
 void hexDump(unsigned char *data_start, unsigned int length);
-
 
 #endif
