@@ -135,7 +135,9 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
     for ( int iNodeId = 0; iNodeId < iNodeCount; ++iNodeId ) {
         rom1394_directory romDir;
         rom1394_get_directory( m_handle, iNodeId, &romDir );
-        printRomDirectory( iNodeId, &romDir );
+        if ( pMainArguments->verbose ) {
+            printRomDirectory( iNodeId, &romDir );
+        }
 
         switch (rom1394_get_node_type( &romDir )) {
 	case ROM1394_NODE_TYPE_UNKNOWN:
@@ -149,7 +151,10 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
 	case ROM1394_NODE_TYPE_AVC:
             debugPrint( DEBUG_LEVEL_INFO,
                         "Node %d has node type AVC\n", iNodeId );
-            printAvcUnitInfo( iNodeId );
+
+            if ( pMainArguments->verbose ) {
+                printAvcUnitInfo( iNodeId );
+            }
 
             if ( avc1394_check_subunit_type( m_handle, iNodeId,
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
