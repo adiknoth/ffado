@@ -1,5 +1,5 @@
 /* avpluginfoblock.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
 #include "avdescriptor.h"
 #include "avinfoblock.h"
@@ -32,11 +31,12 @@
 #include "avclusterinfoblock.h"
 
 AvPlugInfoBlock::AvPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 	// do some more valid checks
 	if (getType() != 0x8109) {
 		bValid=false;
 	}
-	
+
 
 
 	unsigned int next_block_position=address+0x0E;
@@ -45,10 +45,10 @@ AvPlugInfoBlock::AvPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 	unsigned int plug_type=readByte(0x09);
 	unsigned int nb_clusters=readWord(0x0A);
 	unsigned int nb_channels=readWord(0x0C);
-	
+
 	AvClusterInfoBlock *tmpAvClusterInfoBlock=NULL;
 	AvInfoBlock *tmpInfoBlock=NULL;
-	
+
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock: Creating... length=0x%04X\n",getLength());
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock:   Subunit plug id=0x%02X\n",subunit_plug_id);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock:   Signal format=0x%04X\n",signal_format);
@@ -56,21 +56,21 @@ AvPlugInfoBlock::AvPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock:   Number of clusters=%d\n",nb_clusters);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock:   Number of channels=%d\n",nb_channels);
 
-		
+
 	if (nb_clusters>0) {
 		for (unsigned int i=0;i<nb_clusters;i++) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock: cluster=%d\n",i);
 			tmpAvClusterInfoBlock=new AvClusterInfoBlock(parent, next_block_position);
-			
+
 			if (tmpAvClusterInfoBlock && (tmpAvClusterInfoBlock->isValid())) {
 
 				next_block_position+=tmpAvClusterInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
-				
+
 				// add to child list
 				cClusterInfoBlocks.push_back(tmpAvClusterInfoBlock);
-				
+
 				//tmpAvPlugInfoBlock->printContents();
-				
+
 			} else {
 				debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock: Invalid block... parse error!\n");
 				if(tmpAvClusterInfoBlock) {
@@ -80,16 +80,16 @@ AvPlugInfoBlock::AvPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 				bValid=false;
 				break; // what to do now?
 			}
-			
+
 		}
 	}
-	
+
 	if(next_block_position<address+getLength()) {
 		// parse the optional name block
 		tmpInfoBlock=new AvInfoBlock(parent,next_block_position);
 		if (tmpInfoBlock && (tmpInfoBlock->isValid())) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock:   extra block of type=0x%04X present\n",tmpInfoBlock->getType());
-		
+
 		} else {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock:   invalid extra block present\n");
 		}
@@ -97,11 +97,11 @@ AvPlugInfoBlock::AvPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 			delete tmpInfoBlock;
 			tmpInfoBlock=NULL;
 		}
-	
+
 	}
-	
+
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvPlugInfoBlock: Created\n");
-	
+
 }
 
 AvPlugInfoBlock::~AvPlugInfoBlock() {
@@ -112,7 +112,7 @@ AvPlugInfoBlock::~AvPlugInfoBlock() {
 
 
 }
-	
+
 AvClusterInfoBlock *AvPlugInfoBlock::getCluster(unsigned int idx) {
 	if ((idx < getNbClusters()) && (idx < cClusterInfoBlocks.size())) {
 		return cClusterInfoBlocks.at(idx);

@@ -1,5 +1,5 @@
 /* avdescriptor.h
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -22,6 +22,7 @@
 #define AVDESCRIPTOR_H
 
 #include "avdevice.h"
+#include "debugmodule.h"
 
 class AvDescriptor {
  public:
@@ -52,6 +53,8 @@ class AvDescriptor {
     unsigned int iAccessType;
     unsigned int iLength;
     quadlet_t qTarget;
+
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif

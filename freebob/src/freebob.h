@@ -32,6 +32,7 @@ typedef enum {
   eFBRC_AddBusResetObserverFailed    =  -4,
   eFBRC_InitializeCMHandlerFailed    =  -5,
   eFBRC_AvDeviceNotFound             =  -6,
+  eFBRC_CreatingAvDeviceFailed       =  -7,
 } FBReturnCodes;
 
 #endif

@@ -1,5 +1,5 @@
 /* workerthread.h
- * Copyright (C) 2004 by Daniel Wagner
+ * Copyright (C) 2004,05 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -21,8 +21,8 @@
 #define WORKERTHREAD_H
 
 #include <queue>
-
 #include <pthread.h>
+#include "debugmodule.h"
 
 class Functor;
 
@@ -46,6 +46,8 @@ class WorkerThread {
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
     std::queue< Functor* > m_queue;
+
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif

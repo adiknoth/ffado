@@ -1,5 +1,5 @@
 /* workerthread.cpp
- * Copyright (C) 2004 by Daniel Wagner
+ * Copyright (C) 2004,05 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -20,12 +20,13 @@
 
 #include "threads.h"
 #include "workerthread.h"
-#include "debugmodule.h"
 
 WorkerThread* WorkerThread::m_pInstance = 0;
 
 WorkerThread::WorkerThread()
 {
+    setDebugLevel( DEBUG_LEVEL_ALL );
+
     pthread_create( &m_thread, NULL, workerThread, this );
     pthread_mutex_init( &m_mutex, NULL );
     pthread_cond_init( &m_cond,  NULL );
@@ -50,7 +51,6 @@ WorkerThread::instance()
     // We assume here is no race condition
     // because the hole driver is single threaded...
     if ( !m_pInstance ) {
-	debugPrint( DEBUG_LEVEL_INFO,  "WorkerThread instance created.\n" );
 	m_pInstance = new WorkerThread();
     }
     return m_pInstance;
@@ -93,9 +93,7 @@ WorkerThread::run()
 void*
 WorkerThread::workerThread( void* arg )
 {
-    debugPrint( DEBUG_LEVEL_INFO, "Starting WorkerThread main loop.\n" );
     WorkerThread* pWorkerThread = ( WorkerThread* ) arg;
     pWorkerThread->run();
-    debugPrint( DEBUG_LEVEL_INFO, "WorkerThread main loop exited.\n" );
     return NULL;
 }

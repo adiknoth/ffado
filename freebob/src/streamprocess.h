@@ -22,6 +22,7 @@
 #define STREAMPROCESS_H
 
 #include "cmhandler.h"
+#include "debugmodule.h"
 
 /** StreamProcess
  * Simulates a higherlayer application using the FreeBob driver.
@@ -34,6 +35,8 @@ class StreamProcess {
     void run();
  private:
     CMHandler* m_pCMHandler;
+    
+    DECLARE_DEBUG_MODULE;
 };
 
 

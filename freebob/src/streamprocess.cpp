@@ -21,11 +21,11 @@
 #include <unistd.h>
 
 #include "streamprocess.h"
-#include "debugmodule.h"
 
 StreamProcess::StreamProcess()
     : m_pCMHandler( 0 )
 {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 }
 
 StreamProcess::~StreamProcess()

@@ -1,5 +1,5 @@
 /* avdevicemusicsubunit.h
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -21,6 +21,7 @@
 #include "ieee1394service.h"
 #include "avdevice.h"
 #include "avdevicesubunit.h"
+#include "debugmodule.h"
 
 #ifndef AVDEVICEMUSICSUBUNIT_H
 #define AVDEVICEMUSICSUBUNIT_H
@@ -43,11 +44,12 @@ class AvDeviceMusicSubunit : public AvDeviceSubunit {
 	virtual void printSourcePlugConnections(unsigned char plug);
 	
  protected:
- 	
     
  private:
 	AvMusicStatusDescriptor		*cStatusDescriptor;
 	AvMusicIdentifierDescriptor	*cIdentifierDescriptor;
+
+ 	DECLARE_DEBUG_MODULE;
 };
 
 #endif

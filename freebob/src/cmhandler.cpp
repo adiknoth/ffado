@@ -20,13 +20,13 @@
 
 #include "cmhandler.h"
 #include "ieee1394service.h"
-#include "debugmodule.h"
 
 CMHandler* CMHandler::m_pInstance = 0;
 
 CMHandler::CMHandler()
     : m_bInitialised( false )
 {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 }
 
 CMHandler::~CMHandler()

@@ -1,5 +1,5 @@
 /* avaudiosyncinfoblock.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,13 +23,13 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
 #include "avdescriptor.h"
 #include "avinfoblock.h"
 #include "avaudiosyncinfoblock.h"
 
 AvAudioSyncInfoBlock::AvAudioSyncInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 	// do some more valid checks
 	if (getType() != 0x8107) {
 		bValid=false;
@@ -56,7 +56,7 @@ bool AvAudioSyncInfoBlock::canSyncExternal() {
 	if(isValid()) {
 		unsigned char capability=readByte(6);
 		return (capability & AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC_EXTERNAL);
-	
+
 	} else {
 		return false;
 	}

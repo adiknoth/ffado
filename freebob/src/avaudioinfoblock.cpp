@@ -1,5 +1,5 @@
 /* avaudioinfoblock.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -18,12 +18,10 @@
  * MA 02111-1307 USA.
  */
 
-
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
 #include "avdescriptor.h"
 #include "avinfoblock.h"
@@ -31,16 +29,17 @@
 #include "avaudioinfoblock.h"
 
 AvAudioInfoBlock::AvAudioInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 	// do some more valid checks
 	if (getType() != 0x8103) {
 		bValid=false;
-	}	
+	}
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvAudioInfoBlock: Creating... length=0x%04X\n",getLength());
-	
+
 	// PP: I assume that there is only an audio block, no optional blocks.
 	cNameInfoBlock=new AvNameInfoBlock(parent, address+7);
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvAudioInfoBlock: Created\n");
-	
+
 }
 
 AvAudioInfoBlock::~AvAudioInfoBlock() {

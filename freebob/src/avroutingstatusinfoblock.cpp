@@ -1,5 +1,5 @@
 /* avroutingstatusinfoblock.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
 #include "avdescriptor.h"
 #include "avinfoblock.h"
@@ -33,6 +32,7 @@
 #include "avmusicpluginfoblock.h"
 
 AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 	// do some more valid checks
 	if (getType() != 0x8108) {
 		bValid=false;
@@ -54,16 +54,16 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 		for (unsigned int i=0;i<nb_dest_plugs;i++) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: destination plug=%d\n",i);
 			tmpAvPlugInfoBlock=new AvPlugInfoBlock(parent, next_block_position);
-			
+
 			if (tmpAvPlugInfoBlock && (tmpAvPlugInfoBlock->isValid())) {
 				//debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: source plug type=0x%04X\n",tmpAvSourcePlugInfoBlock->getType());
 				next_block_position+=tmpAvPlugInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
-				
+
 				// add to child list
 				cDestinationPlugInfoBlocks.push_back(tmpAvPlugInfoBlock);
-				
+
 				//tmpAvPlugInfoBlock->printContents();
-				
+
 			} else {
 				debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: Invalid block... parse error!\n");
 				if(tmpAvPlugInfoBlock) {
@@ -73,24 +73,24 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 				bValid=false;
 				break; // what to do now?
 			}
-			
+
 		}
 	}
-	
+
 	if (nb_source_plugs>0) {
 		for (unsigned int i=0;i<nb_source_plugs;i++) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: source plug=%d\n",i);
 			tmpAvPlugInfoBlock=new AvPlugInfoBlock(parent, next_block_position);
-			
+
 			if (tmpAvPlugInfoBlock && (tmpAvPlugInfoBlock->isValid())) {
 				//debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: source plug type=0x%04X\n",tmpAvSourcePlugInfoBlock->getType());
 				next_block_position+=tmpAvPlugInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
-				
+
 				// add to child list
 				cSourcePlugInfoBlocks.push_back(tmpAvPlugInfoBlock);
-				
+
 				//tmpAvPlugInfoBlock->printContents();
-				
+
 			} else {
 				debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: Invalid block... parse error!\n");
 				if(tmpAvPlugInfoBlock) {
@@ -100,24 +100,24 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 				bValid=false;
 				break; // what to do now?
 			}
-			
+
 		}
 	}
-	
+
 	if (nb_music_plugs>0) {
 		for (unsigned int i=0;i<nb_music_plugs;i++) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: music plug=%d\n",i);
 			tmpAvMusicPlugInfoBlock=new AvMusicPlugInfoBlock(parent, next_block_position);
-			
+
 			if (tmpAvMusicPlugInfoBlock && (tmpAvMusicPlugInfoBlock->isValid())) {
 				//debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvOutputPlugStatusInfoBlock: source plug type=0x%04X\n",tmpAvSourcePlugInfoBlock->getType());
 				next_block_position+=tmpAvMusicPlugInfoBlock->getLength()+2; // the 2 is due to the fact that the length of the length field of the infoblock isn't accounted for;
-				
+
 				// add to child list
 				cMusicPlugInfoBlocks.push_back(tmpAvMusicPlugInfoBlock);
-				
+
 				//tmpAvPlugInfoBlock->printContents();
-				
+
 			} else {
 				debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: Invalid block... parse error!\n");
 				if(tmpAvMusicPlugInfoBlock) {
@@ -127,13 +127,13 @@ AvRoutingStatusInfoBlock::AvRoutingStatusInfoBlock(AvDescriptor *parent, int add
 				bValid=false;
 				break; // what to do now?
 			}
-			
-		}
-	}			
 
-	
+		}
+	}
+
+
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvRoutingStatusInfoBlock: Created\n");
-	
+
 }
 
 AvRoutingStatusInfoBlock::~AvRoutingStatusInfoBlock() {

@@ -1,5 +1,5 @@
 /* avmidiinfoblock.h
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,6 +23,7 @@
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include <vector>
+
 using std::vector;
 
 #include "debugmodule.h"
@@ -44,7 +45,8 @@ public:
 
 protected:
 	vector<AvNameInfoBlock*> cNameInfoBlocks;
-private:	
+	
+	DECLARE_DEBUG_MODULE;
 	
 };
 

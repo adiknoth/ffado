@@ -1,5 +1,5 @@
 /* avclusterinfoblock.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
 #include "avdescriptor.h"
 #include "avinfoblock.h"
@@ -31,13 +30,14 @@
 #include "avclusterinfoblock.h"
 
 AvClusterInfoBlock::AvClusterInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 	// do some more valid checks
 	if (getType() != 0x810A) {
 		bValid=false;
 	}
-	
+
 	unsigned int next_block_position=address+0x06+readWord(0x04);
-	
+
 	unsigned int stream_format=readByte(0x06);
 	unsigned int port_type=readByte(0x07);
 	unsigned int nb_signals=readByte(0x08);
@@ -51,15 +51,15 @@ AvClusterInfoBlock::AvClusterInfoBlock(AvDescriptor *parent, int address) : AvIn
 		unsigned char stream_position=readByte(0x09+i*4+2);
 		unsigned char stream_location=readByte(0x09+i*4+3);
 		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d: plug_info=0x%04X, stream_position=0x%02X, stream_location=0x%02X\n",i,plug_info,stream_position,stream_location);
-		
+
 	}
-	
+
 	if(next_block_position<address+getLength()) {
 		// parse the optional name block
 		AvNameInfoBlock *tmpNameInfoBlock=new AvNameInfoBlock(parent,next_block_position);
 		if (tmpNameInfoBlock && (tmpNameInfoBlock->isValid())) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Name info=%s\n",tmpNameInfoBlock->getName());
-		
+
 		} else {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   invalid extra name block present\n");
 		}
@@ -69,9 +69,9 @@ AvClusterInfoBlock::AvClusterInfoBlock(AvDescriptor *parent, int address) : AvIn
 		}
 	}
 
-	
+
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock: Created\n");
-	
+
 }
 
 AvClusterInfoBlock::~AvClusterInfoBlock() {
@@ -80,26 +80,26 @@ AvClusterInfoBlock::~AvClusterInfoBlock() {
 }
 
 void AvClusterInfoBlock::printSignalInfo(unsigned char idx) {
-	if (idx<getNbSignals() && (0x09+idx*4<getLength())) {
+	if ( ( idx < getNbSignals() ) && ( ( unsigned int )( 0x09+idx*4 ) < getLength() ) ) {
 		unsigned int plug_info=readWord(0x09+idx*4);
 		unsigned char stream_position=readByte(0x09+idx*4+2);
 		unsigned char stream_location=readByte(0x09+idx*4+3);
 		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d: plug_info=0x%04X, stream_position=0x%02X, stream_location=0x%02X\n",idx,plug_info,stream_position,stream_location);
 	} else {
 		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Signal %d not present!\n",idx);
-	
+
 	}
 }
 
 void AvClusterInfoBlock::printName() {
 	unsigned int next_block_position=iBaseAddress+0x06+readWord(0x04);
-	
+
 	if(next_block_position<iBaseAddress+getLength()) {
 		// parse the optional name block
 		AvNameInfoBlock *tmpNameInfoBlock=new AvNameInfoBlock(cParent,next_block_position);
 		if (tmpNameInfoBlock && (tmpNameInfoBlock->isValid())) {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   Name: %s\n",tmpNameInfoBlock->getName());
-		
+
 		} else {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvClusterInfoBlock:   no name block present\n");
 		}

@@ -1,5 +1,5 @@
 /* avdescriptor.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,25 +23,25 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
-/* should probably be attached to an AVC device, 
+/* should probably be attached to an AVC device,
    a descriptor is attached to an AVC device anyway.
-   
+
    a descriptor also always has a type
 */
 
 AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type)
+    : cParent( parent )
+    , iType( type )
+    , aContents( 0 )
+    , bLoaded( false )
+    , bOpen( false )
+    , bValid( false )  // don't know yet what I'm going to do with this in the generic descriptor
+    , iAccessType( 0 )
+    , iLength( 0 )
+    , qTarget( target )
 {
-	cParent=parent;
-	iType=type;
-	qTarget=target;
-	aContents=NULL;
-	bLoaded=false;
-	iLength=0;
-	bOpen=false;
-	iAccessType=0;
-	bValid=false; // don't know yet what I'm going to do with this in the generic descriptor
+    setDebugLevel( DEBUG_LEVEL_ALL );
 }
 
 AvDescriptor::~AvDescriptor()
@@ -57,23 +57,23 @@ AvDescriptor::~AvDescriptor()
 
 void AvDescriptor::OpenReadOnly() {
 	quadlet_t *response;
-	quadlet_t request[3];	
-	
+	quadlet_t request[3];
+
 	if (!cParent) {
 		return;
 	}
-	
+
 	if(isOpen()) {
 		Close();
 	}
-	
+
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0x01FFFFFF;
 	//fprintf(stderr, "Opening descriptor\n");
-	
+
         response =  cParent->avcExecuteTransaction(request, 2, 2);
-	
+
 	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) {
 		bOpen=true;
 		iAccessType=0x01;
@@ -85,23 +85,23 @@ void AvDescriptor::OpenReadOnly() {
 
 void AvDescriptor::OpenReadWrite() {
 	quadlet_t *response;
-	quadlet_t request[3];	
-	
+	quadlet_t request[3];
+
 	if (!cParent) {
 		return;
 	}
-	
+
 	if(isOpen()) {
 		Close();
 	}
-		
+
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0x03FFFFFF;
 	//fprintf(stderr, "Opening descriptor\n");
-	
+
         response =  cParent->avcExecuteTransaction(request, 2, 2);
-	
+
 	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) {
 		bOpen=true;
 		iAccessType=0x03;
@@ -121,17 +121,17 @@ bool AvDescriptor::canWrite() {
 
 void AvDescriptor::Close() {
 	quadlet_t *response;
-	quadlet_t request[3];	
+	quadlet_t request[3];
 	if (!cParent) {
 		return;
-	}	
+	}
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0x00FFFFFF;
 	//fprintf(stderr, "Opening descriptor\n");
-	
+
         response =  cParent->avcExecuteTransaction(request, 2, 2);
-	
+
 	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) { // should always be accepted according to spec
 		bOpen=false;
 	}
@@ -143,17 +143,17 @@ void AvDescriptor::Close() {
 
 void AvDescriptor::Load() {
 	quadlet_t *response;
-	quadlet_t request[3];	
+	quadlet_t request[3];
 	unsigned int i=0;
 	unsigned int bytes_read=0;
 	unsigned char *databuffer;
 	unsigned char read_result_status;
 	unsigned int data_length_read;
-	
+
 	if (!cParent) {
 		return;
 	}
-	
+
 	/* First determine the descriptor length */
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -162,27 +162,27 @@ void AvDescriptor::Load() {
 	response =  cParent->avcExecuteTransaction(request, 3, 3);
 
 	iLength=response[2] & 0xFFFF;
-	
-	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d ",iLength,iLength);	
+
+	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d ",iLength,iLength);
 
 	// now get the rest of the descriptor
 	aContents=new unsigned char[iLength];
-	
-	/* there is a gap in the read data, because of the two bytes 
+
+	/* there is a gap in the read data, because of the two bytes
 	 * that are before the third quadlet (why did 1394TA do that?)
-	 * 
+	 *
 	 * proposed solution:
 	 * 1) the first read is OK, because the length of the descriptor is in these two bytes,
 	 *    so execute a read from address 0 with length=iLength
 	 * 2) process the bytes starting from response[3]
-	 * 3) the next reads should start from the end of the previous read minus 2. this way we 
-	 *    can discard these two problem bytes, because they are already read in the previous 
+	 * 3) the next reads should start from the end of the previous read minus 2. this way we
+	 *    can discard these two problem bytes, because they are already read in the previous
 	 *    run.
 	 */
-	
+
 	// first read
 	if(bytes_read<iLength) {
-		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");	
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -190,24 +190,24 @@ void AvDescriptor::Load() {
 		//  total descriptor length + 2 bytes of the descriptor length field (i.e. the overlap bytes for this read)
 		request[1] = 0xFFFF0000 | (iLength)&0xFFFF;
 		request[2] = ((0) << 16) |0x0000FFFF;
-		
+
 		response =  cParent->avcExecuteTransaction(request, 3, 3);
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
-		
+
 		databuffer=(unsigned char *)(response+3);
-		
+
 		// the buffer starting at databuffer is two bytes smaller that the amount of bytes read
 		for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
 			*(aContents+bytes_read)=*(databuffer+i);
 			bytes_read++;
 		}
-		
+
 	}
-	
+
 	// now do the remaining reads
 	while(bytes_read<iLength) {
-		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");	
+		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
@@ -215,42 +215,42 @@ void AvDescriptor::Load() {
 		//  (total descriptor length - number of bytes already read) + 2 overlap with previous read
 		request[1] = 0xFFFF0000 | (iLength-bytes_read+2)&0xFFFF;
 		request[2] = (((bytes_read)&0xFFFF) << 16) |0x0000FFFF;
-		
+
 		response =  cParent->avcExecuteTransaction(request, 3, 3);
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
-		
+
 		databuffer=(unsigned char *)(response+3);
-		
+
 		for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
 			*(aContents+bytes_read)=*(databuffer+i);
 			bytes_read++;
 		}
-		
+
 	}
-	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"\n");	
-	
-	
+	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"\n");
+
+
 	bLoaded=true;
 }
 
 bool AvDescriptor::isPresent() {
 	quadlet_t *response;
-	quadlet_t request[2];	
-	
+	quadlet_t request[2];
+
 	if (!cParent) {
 		return false;
 	}
-	
+
 	request[0] = AVC1394_CTYPE_STATUS | qTarget | AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0xFFFFFFFF;
 	response =  cParent->avcExecuteTransaction(request, 2, 2);
 
-	if (((response[0] & 0xFF000000)==AVC1394_RESPONSE_NOT_IMPLEMENTED) || ((response[1] & 0xFF000000)==0x04)) { 
+	if (((response[0] & 0xFF000000)==AVC1394_RESPONSE_NOT_IMPLEMENTED) || ((response[1] & 0xFF000000)==0x04)) {
 		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor not present.\n");
 		bValid=false;
 		return false;
-	} 
+	}
 	return true;
 }
 
@@ -284,7 +284,7 @@ unsigned char AvDescriptor::readByte(unsigned int address) {
 
 unsigned int AvDescriptor::readWord(unsigned int address) {
 	unsigned int word;
-	
+
 	if(cParent && bLoaded && aContents) {
 		word=(*(aContents+address)<<8)+*(aContents+address+1);
 		return word;
@@ -300,7 +300,7 @@ unsigned int AvDescriptor::readBuffer(unsigned int address, unsigned int length,
 		}
 		memcpy((void*)buffer, (void*)(aContents+address), length);
 		return length;
-		
+
 	} else {
 		return 0;
 	}

@@ -22,14 +22,21 @@
 #define AVDEVICE_H
 
 #include "ieee1394service.h"
+#include "debugmodule.h"
 
 #include <vector>
 using std::vector;
 
 class AvDeviceSubunit;
 
+
 class AvDevice {
  public:
+    enum {
+	eScanAndCreate = 0,
+	eDestroy       = 1
+    } EStates;
+
     AvDevice( octlet_t oGuid );
     virtual ~AvDevice();
 
@@ -39,10 +46,6 @@ class AvDevice {
 	{ return m_iNodeId; }
     void setPort( int iPort )
 	{ m_iPort = iPort; }
-    void setGeneration( unsigned int iGeneration )
-	{ m_iGeneration = iGeneration; }
-    unsigned int getGeneration()
-	{ return m_iGeneration; }
     octlet_t getGuid()
 	{ return m_oGuid; }
 
@@ -53,23 +56,40 @@ class AvDevice {
     FBReturnCodes initialize();
     bool isInitialised();
 
-    FBReturnCodes setInputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf);
-    FBReturnCodes getInputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf);  
-    FBReturnCodes setOutputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf);
-    FBReturnCodes getOutputPlugSignalFormat(unsigned char plug, unsigned char *fmt, quadlet_t *fdf);  
+    FBReturnCodes setInputPlugSignalFormat( unsigned char plug, 
+					    unsigned char fmt, 
+					    quadlet_t fdf );
+    FBReturnCodes getInputPlugSignalFormat( unsigned char plug, 
+					    unsigned char *fmt, 
+					    quadlet_t *fdf );  
+    FBReturnCodes setOutputPlugSignalFormat( unsigned char plug, 
+					     unsigned char fmt, 
+					     quadlet_t fdf );
+    FBReturnCodes getOutputPlugSignalFormat( unsigned char plug, 
+					     unsigned char *fmt, 
+					     quadlet_t *fdf );  
     
-//	getSourcePlugConnection();
-	void printConnections();
+    //	getSourcePlugConnection();
+    void printConnections();
 	    
-	unsigned char getNbAsyncSourcePlugs() { return iNbAsyncSourcePlugs; } ;
-    unsigned char getNbAsyncDestinationPlugs() { return iNbAsyncDestinationPlugs; } ;
-    unsigned char getNbIsoSourcePlugs() { return iNbIsoSourcePlugs; } ; // oPCR
-    unsigned char getNbIsoDestinationPlugs() { return iNbIsoDestinationPlugs; } ; // iPCR
-    unsigned char getNbExtSourcePlugs() { return iNbExtSourcePlugs; } ;
-    unsigned char getNbExtDestinationPlugs() { return iNbExtDestinationPlugs; } ;
+    unsigned char getNbAsyncSourcePlugs() 
+	{ return m_iNbAsyncSourcePlugs; }
+    unsigned char getNbAsyncDestinationPlugs() 
+	{ return m_iNbAsyncDestinationPlugs; }
+    unsigned char getNbIsoSourcePlugs() 
+	{ return m_iNbIsoSourcePlugs; } 
+    unsigned char getNbIsoDestinationPlugs() 
+	{ return m_iNbIsoDestinationPlugs; } 
+    unsigned char getNbExtSourcePlugs() 
+	{ return m_iNbExtSourcePlugs; }
+    unsigned char getNbExtDestinationPlugs() 
+	{ return m_iNbExtDestinationPlugs; }
 
  protected:
  	AvDeviceSubunit *getSubunit(unsigned char type, unsigned char id);
+
+	FBReturnCodes create1394RawHandle();
+	FBReturnCodes enumerateSubUnits();
  
  private:
     int m_iNodeId;
@@ -80,12 +100,14 @@ class AvDevice {
     unsigned int m_iGeneration;  //Which generation this device belongs to
     vector< AvDeviceSubunit * > cSubUnits;
     
-    unsigned char iNbAsyncDestinationPlugs;
-    unsigned char iNbAsyncSourcePlugs;
-    unsigned char iNbIsoDestinationPlugs;
-    unsigned char iNbIsoSourcePlugs;
-    unsigned char iNbExtDestinationPlugs;
-    unsigned char iNbExtSourcePlugs;
+    unsigned char m_iNbAsyncDestinationPlugs;
+    unsigned char m_iNbAsyncSourcePlugs;
+    unsigned char m_iNbIsoDestinationPlugs; // iPCR
+    unsigned char m_iNbIsoSourcePlugs; // oPCR
+    unsigned char m_iNbExtDestinationPlugs;
+    unsigned char m_iNbExtSourcePlugs;
+
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif

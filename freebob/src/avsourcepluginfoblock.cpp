@@ -1,5 +1,5 @@
 /* avsourcepluginfoblock.cpp
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
-#include "debugmodule.h"
 
 #include "avdescriptor.h"
 #include "avinfoblock.h"
@@ -31,19 +30,20 @@
 #include "avsourcepluginfoblock.h"
 
 AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+    setDebugLevel( DEBUG_LEVEL_ALL );
 	// do some more valid checks
 	if (getType() != 0x8102) {
 		bValid=false;
 	}
-	
+
 	unsigned int next_block_position=address+7;
-	
+
 	AvInfoBlock *tmpInfoBlock=NULL;
-	
+
 	cAudioInfoBlock=NULL;
 	cMidiInfoBlock=NULL;
 	cAudioSyncInfoBlock=NULL;
-	
+
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating... length=0x%04X\n",getLength());
 
 	// parse the child info blocks
@@ -51,7 +51,7 @@ AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) 
 		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Creating tmpInfoBlock\n");
 
 		tmpInfoBlock=new AvInfoBlock(parent,next_block_position);
-		
+
 		debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: testing tmpInfoBlock\n");
 		if (tmpInfoBlock && tmpInfoBlock->isValid()) {
 			// read the type of the block
@@ -91,31 +91,31 @@ AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) 
 				default:
 					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Skipping unknown block type 0x%04X\n",tmpInfoBlock->getType());
 				break;
-				
+
 			}
 			// update the block position pointer
 			next_block_position+=tmpInfoBlock->getLength()+2;
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Advancing to position=0x%04X\n",next_block_position);
-			
+
 		} else {
 			debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Parse error!\n");
 			bValid=false;
 			break;
 		}
-		
+
 		if (tmpInfoBlock) {
 			delete tmpInfoBlock;
 			tmpInfoBlock=NULL;
 		}
 	}
-	
+
 	if (tmpInfoBlock) {
 		delete tmpInfoBlock;
 		tmpInfoBlock=NULL;
 	}
-	
+
 	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Created\n");
-	
+
 }
 
 AvSourcePlugInfoBlock::~AvSourcePlugInfoBlock() {

@@ -22,6 +22,7 @@
 #define CMHANDLER_H
 
 #include "freebob.h"
+#include "debugmodule.h"
 
 class Ieee1394Service;
 
@@ -39,6 +40,8 @@ private:
     static CMHandler* m_pInstance;
     Ieee1394Service* m_pIeee1394Service;
     bool m_bInitialised;
+
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif

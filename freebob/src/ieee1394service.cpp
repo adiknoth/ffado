@@ -25,7 +25,6 @@
 
 #include "ieee1394service.h"
 #include "threads.h"
-#include "debugmodule.h"
 #include "avdevicepool.h"
 
 #include "avdevice.h"
@@ -49,6 +48,7 @@ Ieee1394Service::Ieee1394Service()
     , m_bRHThreadRunning( false )
     , m_iGenerationCount( 0 )
 {
+    setDebugLevel( DEBUG_LEVEL_ALL );
     pthread_mutex_init( &m_mutex, NULL );
 }
 
@@ -139,45 +139,47 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
 
         switch (rom1394_get_node_type( &romDir )) {
 	case ROM1394_NODE_TYPE_UNKNOWN:
-            debugPrint (DEBUG_LEVEL_INFO,
-                        "Node %d has node type UNKNOWN\n", iNodeId);
+            debugPrint( DEBUG_LEVEL_INFO,
+                        "Node %d has node type UNKNOWN\n", iNodeId );
             break;
 	case ROM1394_NODE_TYPE_DC:
-            debugPrint (DEBUG_LEVEL_INFO,
-                        "Node %d has node type DC\n", iNodeId);
+            debugPrint( DEBUG_LEVEL_INFO,
+                        "Node %d has node type DC\n", iNodeId );
             break;
 	case ROM1394_NODE_TYPE_AVC:
-            debugPrint (DEBUG_LEVEL_INFO,
-                        "Node %d has node type AVC\n", iNodeId);
+            debugPrint( DEBUG_LEVEL_INFO,
+                        "Node %d has node type AVC\n", iNodeId );
             printAvcUnitInfo( iNodeId );
 
             if ( avc1394_check_subunit_type( m_handle, iNodeId,
                                              AVC1394_SUBUNIT_TYPE_AUDIO ) ) {
-
                 octlet_t oGuid = rom1394_get_guid( m_handle, iNodeId );
-                AvDevice* pAvDevice
-                    = AvDevicePool::instance()->getAvDevice( oGuid );
+
+                AvDevice* pAvDevice = new AvDevice( oGuid );
                 if ( !pAvDevice ) {
-                    pAvDevice = new AvDevice( oGuid );
+                    debugError( "Could not create AvDevice instance for "
+                                "device with GUID 0x%08x%08x\n",
+                                (quadlet_t) (oGuid>>32),
+                                (quadlet_t) (oGuid & 0xffffffff) );
+
+                    return eFBRC_CreatingAvDeviceFailed;
                 }
                 pAvDevice->setNodeId( iNodeId );
                 pAvDevice->setPort( m_iPort );
 
-		if ( !pAvDevice->isInitialised() ) {
-                    FBReturnCodes eStatus = pAvDevice->initialize();
-                    if ( eStatus != eFBRC_Success ) {
-                        debugError( "AvDevice with GUID 0x%08x%08x could "
-                                    "not be initialized\n",
-                                    (quadlet_t) (oGuid>>32),
-                                    (quadlet_t) (oGuid & 0xffffffff) );
+                FBReturnCodes eStatus = pAvDevice->initialize();
+                if ( eStatus != eFBRC_Success ) {
+                    debugError( "AvDevice with GUID 0x%08x%08x could "
+                                "not be initialized\n",
+                                (quadlet_t) (oGuid>>32),
+                                (quadlet_t) (oGuid & 0xffffffff) );
 
-                        delete pAvDevice;
-                        return eStatus;
-                    }
+                    delete pAvDevice;
+                    return eStatus;
                 }
 
                 // XXX Pieter's test code.
-                avDeviceTests( oGuid, m_iPort, iNodeId );
+//                avDeviceTests( oGuid, m_iPort, iNodeId );
 	    }
             break;
 	case ROM1394_NODE_TYPE_SBP2:
@@ -193,8 +195,8 @@ Ieee1394Service::discoveryDevices( unsigned int iGeneration )
                         "No matching node type found for node %d\n", iNodeId);
 	}
     }
-
-    AvDevicePool::instance()->removeObsoleteDevices( iGeneration );
+    // XXX dw: removed: AvDevicePool::instance()->removeObsoleteDevices()
+    // check if this is still code here is still correct.
     return eFBRC_Success;
 }
 
@@ -336,15 +338,11 @@ int
 Ieee1394Service::resetHandler( raw1394handle_t handle,
                                unsigned int iGeneration )
 {
-    debugPrint( DEBUG_LEVEL_INFO,
-                "Bus reset has occurred (generation = %d).\n", iGeneration );
     raw1394_update_generation (handle, iGeneration);
     Ieee1394Service* pInstance
         = (Ieee1394Service*) raw1394_get_userdata (handle);
     pInstance->setGenerationCount( iGeneration );
 
-    // dw: let's rescan the bus.  this might not the correct order
-    // of commands.
     asyncCall( pInstance, &Ieee1394Service::discoveryDevices, iGeneration );
     return 0;
 }

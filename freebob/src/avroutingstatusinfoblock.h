@@ -1,5 +1,5 @@
 /* avroutingstatusinfoblock.h
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -54,7 +54,7 @@ protected:
 	vector<AvPlugInfoBlock *> cSourcePlugInfoBlocks;
 	vector<AvMusicPlugInfoBlock *> cMusicPlugInfoBlocks;
 	
-private:	
+	DECLARE_DEBUG_MODULE;
 	
 };
 

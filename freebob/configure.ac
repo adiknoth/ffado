@@ -74,8 +74,8 @@ AC_CHECK_HEADER(execinfo.h, [AC_DEFINE(HAVE_EXECINFO_H, 1, Wheter or not execinf
 AC_CANONICAL_HOST
 AC_C_CONST
 AC_C_VOLATILE
-CFLAGS="$CFLAGS -Wall"
-CXXFLAGS="$CXXFLAGS -Wall"
+CFLAGS="$CFLAGS -Wall -DDEBUG"       # XXX DEBUG should not always be set
+CXXFLAGS="$CXXFLAGS -Wall -DDEBUG"   # XXX DEBUG should not always be set
 
 AC_SUBST([CFLAGS])
 AC_SUBST([CXXFLAGS])

@@ -1,5 +1,5 @@
 /* avmusicpluginfoblock.h
- * Copyright (C) 2004 by Pieter Palmers
+ * Copyright (C) 2004,05 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -46,8 +46,7 @@ public:
 
 	
 protected:
-	
-private:	
+	DECLARE_DEBUG_MODULE;
 	
 };
 

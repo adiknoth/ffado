@@ -86,27 +86,3 @@ AvDevicePool::getAvDevice(octlet_t oGuid)
     }
     return pAvDevice;
 }
-
-FBReturnCodes
-AvDevicePool::removeObsoleteDevices( unsigned int iGeneration )
-{
-    // XXX dw: removing elements can be done more elegant.
-    std::queue< AvDevice* > deleteQueue;
-
-    for ( AvDeviceVector::iterator iter = m_avDevices.begin();
-          iter != m_avDevices.end();
-          ++iter )
-    {
-        if ( ( *iter )->getGeneration() < iGeneration ) {
-            deleteQueue.push( *iter );
-        }
-    }
-
-    while ( !deleteQueue.empty() ) {
-        AvDevice* pAvDevice = deleteQueue.front();
-        deleteQueue.pop();
-        delete pAvDevice;
-    }
-
-    return eFBRC_Success;
-}
