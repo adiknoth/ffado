@@ -72,7 +72,7 @@ void AvDescriptor::OpenReadOnly() {
 	request[1] = 0x01FFFFFF;
 	//fprintf(stderr, "Opening descriptor\n");
 
-        response =  cParent->avcExecuteTransaction(request, 2, 2);
+        response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
 	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) {
 		bOpen=true;
@@ -100,7 +100,7 @@ void AvDescriptor::OpenReadWrite() {
 	request[1] = 0x03FFFFFF;
 	//fprintf(stderr, "Opening descriptor\n");
 
-        response =  cParent->avcExecuteTransaction(request, 2, 2);
+        response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
 	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) {
 		bOpen=true;
@@ -130,7 +130,7 @@ void AvDescriptor::Close() {
 	request[1] = 0x00FFFFFF;
 	//fprintf(stderr, "Opening descriptor\n");
 
-        response =  cParent->avcExecuteTransaction(request, 2, 2);
+        response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
 	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) { // should always be accepted according to spec
 		bOpen=false;
@@ -159,7 +159,7 @@ void AvDescriptor::Load() {
 					| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0xFFFF0000 | (0x02);
 	request[2] = (((0)&0xFFFF) << 16) |0x0000FFFF;
-	response =  cParent->avcExecuteTransaction(request, 3, 3);
+	response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
 
 	iLength=response[2] & 0xFFFF;
 
@@ -191,7 +191,7 @@ void AvDescriptor::Load() {
 		request[1] = 0xFFFF0000 | (iLength)&0xFFFF;
 		request[2] = ((0) << 16) |0x0000FFFF;
 
-		response =  cParent->avcExecuteTransaction(request, 3, 3);
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
 
@@ -216,7 +216,7 @@ void AvDescriptor::Load() {
 		request[1] = 0xFFFF0000 | (iLength-bytes_read+2)&0xFFFF;
 		request[2] = (((bytes_read)&0xFFFF) << 16) |0x0000FFFF;
 
-		response =  cParent->avcExecuteTransaction(request, 3, 3);
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
 
@@ -244,7 +244,7 @@ bool AvDescriptor::isPresent() {
 
 	request[0] = AVC1394_CTYPE_STATUS | qTarget | AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0xFFFFFFFF;
-	response =  cParent->avcExecuteTransaction(request, 2, 2);
+	response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
 	if (((response[0] & 0xFF000000)==AVC1394_RESPONSE_NOT_IMPLEMENTED) || ((response[1] & 0xFF000000)==0x04)) {
 		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor not present.\n");

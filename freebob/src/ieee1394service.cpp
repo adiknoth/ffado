@@ -316,21 +316,21 @@ Ieee1394Service::printRomDirectory( int iNodeId,  rom1394_directory* pRomDir )
     printf( "bus info block length = %d\n", iBusInfoBlockLength);
     printf( "bus id = 0x%08x\n", iBusId );
     printf( "bus options:\n" );
-    printf( "    isochronous resource manager capable: %d\n", busOptions.irmc );
-    printf ("    cycle master capable                : %d\n", busOptions.cmc );
-    printf ("    isochronous capable                 : %d\n", busOptions.isc );
-    printf ("    bus manager capable                 : %d\n", busOptions.bmc );
-    printf ("    cycle master clock accuracy         : %d ppm\n", busOptions.cyc_clk_acc );
-    printf( "    maximum asynchronous record size    : %d bytes\n", busOptions.max_rec );
+    printf( "  isochronous resource manager capable: %d\n", busOptions.irmc );
+    printf ("  cycle master capable                : %d\n", busOptions.cmc );
+    printf ("  isochronous capable                 : %d\n", busOptions.isc );
+    printf ("  bus manager capable                 : %d\n", busOptions.bmc );
+    printf ("  cycle master clock accuracy         : %d ppm\n", busOptions.cyc_clk_acc );
+    printf( "  maximum asynchronous record size    : %d bytes\n", busOptions.max_rec );
     printf("GUID: 0x%08x%08x\n", (quadlet_t) (oGuid>>32),
            (quadlet_t) (oGuid & 0xffffffff) );
     printf( "directory:\n");
-    printf( "    node capabilities    : 0x%08x\n", pRomDir->node_capabilities );
-    printf( "    vendor id            : 0x%08x\n", pRomDir->vendor_id );
-    printf( "    unit spec id         : 0x%08x\n", pRomDir->unit_spec_id );
-    printf( "    unit software version: 0x%08x\n", pRomDir->unit_sw_version );
-    printf( "    model id             : 0x%08x\n", pRomDir->model_id );
-    printf( "    textual leaves       : %s\n",     pRomDir->label );
+    printf( "  node capabilities    : 0x%08x\n", pRomDir->node_capabilities );
+    printf( "  vendor id            : 0x%08x\n", pRomDir->vendor_id );
+    printf( "  unit spec id         : 0x%08x\n", pRomDir->unit_spec_id );
+    printf( "  unit software version: 0x%08x\n", pRomDir->unit_sw_version );
+    printf( "  model id             : 0x%08x\n", pRomDir->model_id );
+    printf( "  textual leaves       : %s\n",     pRomDir->label );
 }
 
 int
@@ -403,4 +403,98 @@ unsigned int
 Ieee1394Service::getGenerationCount()
 {
     return m_iGenerationCount;
+}
+
+/* Function to execute an AVC transaction, i.e. send command/status
+ * and get response main purpose is wrapping the avc1394 function call
+ * to output some debugging comments.
+ */
+quadlet_t*
+Ieee1394Service::avcExecuteTransaction( int node_id,
+                                        quadlet_t* request,
+                                        unsigned int request_len,
+                                        unsigned int response_len )
+{
+    quadlet_t* response;
+    unsigned char* request_pos;
+    unsigned int i;
+
+    response = avc1394_transaction_block( m_handle,
+					  node_id,
+					  request,
+					  request_len,
+					  2 );
+    if ( request ) {
+	debugPrint( DEBUG_LEVEL_TRANSFERS,
+		    "------- TRANSACTION START -------\n" );
+	debugPrint( DEBUG_LEVEL_TRANSFERS,"  REQUEST:     " );
+	/* request is in machine byte order. this function is for
+	 * intel architecure */
+	for ( i = 0; i < request_len; i++ ) {
+	    request_pos = (unsigned char *)(request+i);
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS,
+			     "0x%02X%02X%02X%02X ",
+			     *(request_pos),
+			     *(request_pos+1),
+			     *(request_pos+2),
+			     *(request_pos+3));
+	}
+	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
+	debugPrint( DEBUG_LEVEL_TRANSFERS, "      => " );
+	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "                     " );
+
+	request_pos = (unsigned char *)(request);
+
+	debugPrintShort( DEBUG_LEVEL_TRANSFERS,
+			 "subunit_type=%02X  subunit_id=%02X  opcode=%02X",
+			 ((*(request_pos+1))>>3)&0x1F,
+			 (*(request_pos+1))&0x07,
+			 (*(request_pos+2))&0xFF );
+	debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
+    }
+
+    if ( response ) {
+	/* response is in order of receiving, i.e. msb first */
+	debugPrint(DEBUG_LEVEL_TRANSFERS, "  -> RESPONSE: " );
+	for ( i = 0; i < response_len; i++ ) {
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i] );
+	}
+
+	debugPrintShort( DEBUG_LEVEL_TRANSFERS,"\n" );
+	debugPrint( DEBUG_LEVEL_TRANSFERS,"      => " );
+	switch (response[0]&0xFF000000) {
+	case AVC1394_RESPONSE_NOT_IMPLEMENTED:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Not Implemented      " );
+	    break;
+	case AVC1394_RESPONSE_ACCEPTED:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Accepted             " );
+	    break;
+	case AVC1394_RESPONSE_REJECTED:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Rejected             " );
+	    break;
+	case AVC1394_RESPONSE_IN_TRANSITION:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "In Transition        " );
+	    break;
+	case AVC1394_RESPONSE_IMPLEMENTED:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Implemented / Stable " );
+	    break;
+	case AVC1394_RESPONSE_CHANGED:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Changed              " );
+	    break;
+	case AVC1394_RESPONSE_INTERIM:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Interim              " );
+	    break;
+	default:
+	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Unknown response     " );
+	    break;
+	}
+	debugPrintShort( DEBUG_LEVEL_TRANSFERS,
+			 "subunit_type=%02X  subunit_id=%02X  opcode=%02X",
+			 (response[0]>>19)&0x1F,
+			 (response[0]>>16)&0x07,
+			 (response[0]>>8)&0xFF );
+	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
+    }
+    debugPrint( DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n" );
+    return response;
 }

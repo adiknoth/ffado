@@ -61,6 +61,11 @@ class Ieee1394Service {
 
     unsigned int getGenerationCount();
 
+    quadlet_t * avcExecuteTransaction( int node_id,
+				       quadlet_t *request, 
+				       unsigned int request_len, 
+				       unsigned int response_len );
+
  protected:
     static int resetHandler( raw1394handle_t handle,
 			     unsigned int iGeneration );

@@ -44,7 +44,7 @@ void AvDeviceMusicSubunit::test() {
 		//request[1] = ((iTarget & 0x1F) << 27) | ((iId & 0x07) << 24) | 0x00FF7F;
 		request[1]=0xFFFFFFFF;
 		request[2]= (ipcr<<24)| 0xFFFEFF;
-		response = cParent->avcExecuteTransaction(request, 3, 4);
+		response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 4);
 
 		if ((response != NULL) && ((response[0]&0xFF000000)==0x0C000000)) {
 			unsigned char output_status=(response[1]&0xF0000000) >> 28;
@@ -75,7 +75,7 @@ void AvDeviceMusicSubunit::printMusicPlugConfigurations() {
 		request[1] = 0xFFFFFF00;
 		request[2] = 0x0000FFFF;
 		request[3] = 0xFFFFFFFF;
-		response = cParent->avcExecuteTransaction(request, 1, 4);
+		response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 1, 4);
 		if (response != NULL) {
 
 			unsigned int start_of_music_plug_ID=CORRECT_INTEGER_ENDIANNESS(response[1]);
@@ -105,7 +105,7 @@ void AvDeviceMusicSubunit::printMusicPlugConfigurations() {
 		request[1] = 0xFFFFFF00;
 		request[2] = 0x0000FFFF;
 		request[3] = 0xFFFFFFFF;
-		response = cParent->avcExecuteTransaction(request, 1, 4);
+		response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 1, 4);
 		if (response != NULL) {
 
 			unsigned int start_of_music_plug_ID=CORRECT_INTEGER_ENDIANNESS(response[1]);
@@ -139,7 +139,7 @@ void AvDeviceMusicSubunit::printMusicPlugInfo() {
 	// get music plug info (verified & working)
 	request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
 					| (0xC0 << 8) | 0xFF;
-	response = cParent->avcExecuteTransaction(request, 1, 4);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 1, 4);
 
 	if (response != NULL) {
 		unsigned char *buffer=(unsigned char *) response;

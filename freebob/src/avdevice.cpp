@@ -159,6 +159,8 @@ AvDevice::enumerateSubUnits()
     quadlet_t *response;
     AvDeviceSubunit *tmpAvDeviceSubunit=NULL;
 
+    Ieee1394Service* p1394Service = Ieee1394Service::instance();
+
     // check the number of I/O plugs
     request[0] = AVC1394_CTYPE_STATUS
 		 | AVC1394_SUBUNIT_TYPE_UNIT
@@ -166,7 +168,7 @@ AvDevice::enumerateSubUnits()
 		 | AVC1394_COMMAND_PLUG_INFO
 		 | 0x0000;
     request[1] = 0xFFFFFFFF;
-    response = avcExecuteTransaction( request, 2, 2 );
+    response = p1394Service->avcExecuteTransaction( m_iNodeId, request, 2, 2 );
     request[1] = 0x02020606;
     response = request;
     if ( response ) {
@@ -186,7 +188,7 @@ AvDevice::enumerateSubUnits()
 		 | AVC1394_COMMAND_PLUG_INFO
 		 | 0x01;
     request[1] = 0xFFFFFFFF;
-    response = avcExecuteTransaction( request, 2, 2 );
+    response = p1394Service->avcExecuteTransaction( m_iNodeId, request, 2, 2 );
     if ( response != NULL ) {
 	m_iNbAsyncDestinationPlugs
             = AVC1394_GET_RESPONSE_OPERAND( response[1], 0 );
@@ -220,7 +222,7 @@ AvDevice::enumerateSubUnits()
 		     | AVC1394_COMMAND_SUBUNIT_INFO
 		     | ((i<<4) & 0xF0) | 0x07;
 	request[1] = 0xFFFFFFFF;
-	response = avcExecuteTransaction( request, 6, 2 );
+	response = p1394Service->avcExecuteTransaction( m_iNodeId, request, 6, 2 );
 
 	table_entries=response[1]; /// XXX buggy code! response could be 0!
 
@@ -314,98 +316,6 @@ AvDevice::enumerateSubUnits()
     return eFBRC_Success;
 }
 
-/* Function to execute an AVC transaction, i.e. send command/status
- * and get response main purpose is wrapping the avc1394 function call
- * to output some debugging comments.
- */
-quadlet_t*
-AvDevice::avcExecuteTransaction( quadlet_t* request,
-				 unsigned int request_len,
-				 unsigned int response_len )
-{
-    quadlet_t* response;
-    unsigned char* request_pos;
-    unsigned int i;
-
-    response = avc1394_transaction_block( m_handle,
-					  m_iNodeId,
-					  request,
-					  request_len,
-					  2 );
-    if ( request ) {
-	debugPrint( DEBUG_LEVEL_TRANSFERS,
-		    "------- TRANSACTION START -------\n" );
-	debugPrint( DEBUG_LEVEL_TRANSFERS,"  REQUEST:     " );
-	/* request is in machine byte order. this function is for
-	 * intel architecure */
-	for ( i = 0; i < request_len; i++ ) {
-	    request_pos = (unsigned char *)(request+i);
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS,
-			     "0x%02X%02X%02X%02X ",
-			     *(request_pos),
-			     *(request_pos+1),
-			     *(request_pos+2),
-			     *(request_pos+3));
-	}
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
-	debugPrint( DEBUG_LEVEL_TRANSFERS, "      => " );
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "                     " );
-
-	request_pos = (unsigned char *)(request);
-
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS,
-			 "subunit_type=%02X  subunit_id=%02X  opcode=%02X",
-			 ((*(request_pos+1))>>3)&0x1F,
-			 (*(request_pos+1))&0x07,
-			 (*(request_pos+2))&0xFF );
-	debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
-    }
-
-    if ( response ) {
-	/* response is in order of receiving, i.e. msb first */
-	debugPrint(DEBUG_LEVEL_TRANSFERS, "  -> RESPONSE: " );
-	for ( i = 0; i < response_len; i++ ) {
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i] );
-	}
-
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS,"\n" );
-	debugPrint( DEBUG_LEVEL_TRANSFERS,"      => " );
-	switch (response[0]&0xFF000000) {
-	case AVC1394_RESPONSE_NOT_IMPLEMENTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Not Implemented      " );
-	    break;
-	case AVC1394_RESPONSE_ACCEPTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Accepted             " );
-	    break;
-	case AVC1394_RESPONSE_REJECTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Rejected             " );
-	    break;
-	case AVC1394_RESPONSE_IN_TRANSITION:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "In Transition        " );
-	    break;
-	case AVC1394_RESPONSE_IMPLEMENTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Implemented / Stable " );
-	    break;
-	case AVC1394_RESPONSE_CHANGED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Changed              " );
-	    break;
-	case AVC1394_RESPONSE_INTERIM:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Interim              " );
-	    break;
-	default:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Unknown response     " );
-	    break;
-	}
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS,
-			 "subunit_type=%02X  subunit_id=%02X  opcode=%02X",
-			 (response[0]>>19)&0x1F,
-			 (response[0]>>16)&0x07,
-			 (response[0]>>8)&0xFF );
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
-    }
-    debugPrint( DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n" );
-    return response;
-}
 
 FBReturnCodes AvDevice::setInputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf) {
 	quadlet_t request[6];
@@ -414,7 +324,7 @@ FBReturnCodes AvDevice::setInputPlugSignalFormat(unsigned char plug, unsigned ch
 	request[0] = AVC1394_CTYPE_CONTROL | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 					| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | plug;
 	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction( m_iNodeId, request, 2, 2);
 	if (response != NULL) {
 
 	}
@@ -428,7 +338,7 @@ FBReturnCodes AvDevice::getInputPlugSignalFormat(unsigned char plug, unsigned ch
 	request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 					| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | plug;
 	request[1] = 0xFFFFFFFF;
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction( m_iNodeId, request, 2, 2);
 	if (response != NULL) {
 		*fmt=((response[1] >> 24) & 0x3F);
 		*fdf=response[1]& 0x00FFFFFF;
@@ -443,7 +353,7 @@ FBReturnCodes AvDevice::setOutputPlugSignalFormat(unsigned char plug, unsigned c
 	request[0] = AVC1394_CTYPE_CONTROL | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 					| AVC1394_COMMAND_OUTPUT_PLUG_SIGNAL_FORMAT | plug;
 	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 2, 2);
 	if (response != NULL) {
 
 	}
@@ -457,7 +367,7 @@ FBReturnCodes AvDevice::getOutputPlugSignalFormat(unsigned char plug, unsigned c
 	request[0] = AVC1394_CTYPE_STATUS | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
 					| AVC1394_COMMAND_OUTPUT_PLUG_SIGNAL_FORMAT | plug;
 	request[1] = 0xFFFFFFFF;
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 2, 2);
 	if (response != NULL) {
 		*fmt=((response[1] >> 24) & 0x3F);
 		*fdf=response[1]& 0x00FFFFFF;
@@ -492,7 +402,7 @@ void AvDevice::printConnections() {
 		     | 0x00FF;
 	request[1]=0xFFFEFF00 | ((i & 0xFF));
 
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 2, 2);
 
 	if ( response ) {
 	    unsigned char output_status=(response[0]&0xE0) >> 5;
@@ -525,7 +435,7 @@ void AvDevice::printConnections() {
 		     | 0x00FF;
 	request[1]=0xFFFEFF00 | ((i & 0xFF)|0x80);
 
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 2, 2);
 
 	if ( response ) {
 	    unsigned char output_status=(response[0]&0xE0) >> 5;
@@ -558,7 +468,7 @@ void AvDevice::printConnections() {
 		     | 0x00FF;
 	request[1] = 0xFFFEFF00 | ((i & 0xFF));
 
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 2, 2);
 
 	if ( response ) {
 	    unsigned char output_status=(response[0]&0xE0) >> 5;
@@ -592,7 +502,7 @@ void AvDevice::printConnections() {
 		     | 0x00FF;
 	request[1]=0xFFFEFF00 | ((i & 0xFF)|0x80);
 
-	response = avcExecuteTransaction(request, 2, 2);
+	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 2, 2);
 
 	if ( response ) {
 	    unsigned char output_status=(response[0]&0xE0) >> 5;

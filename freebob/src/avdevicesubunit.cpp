@@ -43,7 +43,7 @@ void AvDeviceSubunit::printOutputPlugConnections()
                      | (0x1A << 8) | 0xFF;
         //request[1] = ((iTarget & 0x1F) << 27) | ((iId & 0x07) << 24) | 0x00FF7F;
         request[1]=0xFFFEFF00 | opcr;
-        response = cParent->avcExecuteTransaction(request, 2, 4);
+        response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 4);
         if ((response != NULL) && ((response[0]&0xFF000000)==0x0C000000)) {
             unsigned char output_status=(response[0]&0xE0) >> 5;
             unsigned char conv=(response[0]&0x10) >> 4;
@@ -60,7 +60,7 @@ void AvDeviceSubunit::printOutputPlugConnections()
                      | (0x1A << 8) | 0xFF;
         //request[1] = ((iTarget & 0x1F) << 27) | ((iId & 0x07) << 24) | 0x00FF7F;
         request[1]=0xFFFEFF00 | opcr;
-        response = cParent->avcExecuteTransaction(request, 2, 4);
+        response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 4);
         if ((response != NULL) && ((response[0]&0xFF000000)==0x0C000000)) {
             unsigned char output_status=(response[0]&0xE0) >> 5;
             unsigned char conv=(response[0]&0x10) >> 4;
@@ -109,7 +109,7 @@ AvDeviceSubunit::AvDeviceSubunit(AvDevice *parent, unsigned char target, unsigne
     request[0] = AVC1394_CTYPE_STATUS | ((iTarget & 0x1F) << 19) | ((iId & 0x07) << 16)
                  | AVC1394_COMMAND_PLUG_INFO | 0x00;
     request[1] = 0xFFFFFFFF;
-    response = cParent->avcExecuteTransaction(request, 2, 2);
+    response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
     if (response != NULL) {
         iNbDestinationPlugs= (unsigned char) ((response[1]>>24) & 0xff);
         iNbSourcePlugs= (unsigned char) ((response[1]>>16) & 0xff);
@@ -153,7 +153,7 @@ int AvDeviceSubunit::reserve(unsigned char priority) {
     request[1] = 0xFFFFFFFF;
     request[2] = 0xFFFFFFFF;
     request[3] = 0xFFFFFFFF;
-    response = cParent->avcExecuteTransaction(request, 4, 4);
+    response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 4, 4);
     if (response != NULL) {
         if((AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_ACCEPTED) || (AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_IMPLEMENTED))  {
             debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit reserve successfull.\n");
@@ -182,7 +182,7 @@ int AvDeviceSubunit::isReserved() {
     request[1] = 0xFFFFFFFF;
     request[2] = 0xFFFFFFFF;
     request[3] = 0xFFFFFFFF;
-    response = cParent->avcExecuteTransaction(request, 4, 4);
+    response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 4, 4);
     if (response != NULL) {
         if((AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_ACCEPTED) || (AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_IMPLEMENTED))  {
             debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit reserve check successfull.\n");
@@ -213,7 +213,7 @@ int AvDeviceSubunit::unReserve()
     request[1] = 0xFFFFFFFF;
     request[2] = 0xFFFFFFFF;
     request[3] = 0xFFFFFFFF;
-    response = cParent->avcExecuteTransaction(request, 4, 4);
+    response = Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 4, 4);
     if (response != NULL) {
         if((AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_ACCEPTED) || (AVC1394_MASK_RESPONSE(response[0]) == AVC1394_RESPONSE_IMPLEMENTED))  {
             debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceSubunit: subunit unreserve successfull.\n");

@@ -51,10 +51,6 @@ class AvDevice {
 	{ return m_oGuid; }
 
     void execute( EStates state );
-
-    quadlet_t * avcExecuteTransaction( quadlet_t *request, 
-				       unsigned int request_len, 
-				       unsigned int response_len );
     
     FBReturnCodes initialize();
     bool isInitialised();
