@@ -31,9 +31,11 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
+#include "freebobctl/freebobctl.h"
+
 void freebobctl_xmlparse_file(char *filename);
 
-freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(int direction);
+freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(char *filename, int direction);
 
 
 

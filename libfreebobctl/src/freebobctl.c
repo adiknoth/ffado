@@ -39,10 +39,8 @@ const char * freebobctl_get_version() {
 }
 
 
-freebob_connection_info_t *freebobctl_get_connection_info(int direction) {
-
-
-	return NULL;
+freebob_connection_info_t *freebobctl_get_connection_info_from_xml_file(char *xmlfile, int direction) {
+	return freebobctl_xmlparse_get_connection_info(xmlfile, direction);
 }
 
 void freebobctl_free_connection_info(freebob_connection_info_t *connection_info) {

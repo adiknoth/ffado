@@ -22,6 +22,14 @@ main(int argc, char **argv) {
 
 	docname = argv[1];
 
-	freebobctl_xmlparse_file(docname);
+//	freebobctl_xmlparse_file(docname);
+
+	freebob_connection_info_t *test_info=freebobctl_get_connection_info_from_xml_file(docname, 0);
+	freebobctl_free_connection_info(test_info);
+	
+	test_info=freebobctl_get_connection_info_from_xml_file(docname, 1);
+	freebobctl_free_connection_info(test_info);
+	
+	
 	return (1);
 }

@@ -296,6 +296,7 @@ freebobctl_xmlparse_get_connectionset_node(xmlDocPtr doc, xmlNodePtr cur, int di
 
 	xmlNodePtr cur2;
 	int tmp_direction;
+	xmlChar *key;
 
 	while (cur != NULL) {
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"ConnectionSet"))) {
@@ -316,7 +317,7 @@ freebobctl_xmlparse_get_connectionset_node(xmlDocPtr doc, xmlNodePtr cur, int di
 	return NULL;
 }
 
-freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(int direction) {
+freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(char *filename, int direction) {
 	xmlDocPtr doc;
 	xmlNodePtr cur;
 	freebob_connection_info_t *connection_info;
@@ -325,7 +326,7 @@ freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(int directio
 	
 	if (doc == NULL ) {
 		fprintf(stderr,"Document not parsed successfully. \n");
-		return;
+		return NULL;
 	}
 	
 	cur = xmlDocGetRootElement(doc);
@@ -333,13 +334,13 @@ freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(int directio
 	if (cur == NULL) {
 		fprintf(stderr,"empty document\n");
 		xmlFreeDoc(doc);
-		return;
+		return NULL;
 	}
 	
 	if (xmlStrcmp(cur->name, (const xmlChar *) "FreeBobConnectionInfo")) {
 		fprintf(stderr,"document of the wrong type, root node != FreeBobConnectionInfo\n");
 		xmlFreeDoc(doc);
-		return;
+		return NULL;
 	}
 	
 	cur = cur->xmlChildrenNode;
