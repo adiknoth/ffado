@@ -1,4 +1,4 @@
-/* avinfoblock.h
+/* avaudioinfoblock.cpp
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -17,39 +17,49 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
- 
- #include "avdevice.h"
-#include "avdescriptor.h"
+
+
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "debugmodule.h"
 
-#ifndef AVINFOBLOCK_H
-#define AVINFOBLOCK_H
+#include "avdescriptor.h"
+#include "avinfoblock.h"
+#include "avnameinfoblock.h"
+#include "avaudioinfoblock.h"
 
-class AvInfoBlock {
-public:
-	AvInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
-	virtual ~AvInfoBlock();
-
-	bool isValid();
-	unsigned int getLength();
-	unsigned int getType();
-
-    	virtual unsigned char readByte(unsigned int address);
-    	virtual unsigned int readWord(unsigned int address);
-    	virtual unsigned int readBuffer(unsigned int address, unsigned int length, unsigned char *buffer);
-		
-protected:
-	AvDescriptor *cParent;
-	unsigned int iLength;
-	unsigned int iBaseAddress;
-	unsigned int iType;
-	bool bValid;
-private:	
+AvAudioInfoBlock::AvAudioInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+	// do some more valid checks
+	if (getType() != 0x8103) {
+		bValid=false;
+	}	
 	
-};
+	// PP: I assume that there is only an audio block, no optional blocks.
+	cNameInfoBlock=new AvNameInfoBlock(parent, address+7);
+	
+}
 
-#endif
+AvAudioInfoBlock::~AvAudioInfoBlock() {
+
+	if(cNameInfoBlock) {
+		delete cNameInfoBlock;
+	}
+}
+
+unsigned int AvAudioInfoBlock::getNbStreams() {
+	if(isValid()) {
+		return readByte(6);
+	} else {
+		return 0;
+	}
+}
+
+unsigned char *AvAudioInfoBlock::getName() {
+	if (cNameInfoBlock && cNameInfoBlock->isValid()) {
+		unsigned char * name=cNameInfoBlock->getName();
+		return name;
+	}
+	return NULL;
+}

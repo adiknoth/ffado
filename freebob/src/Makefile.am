@@ -42,6 +42,16 @@ freebob_SOURCES = \
 	avmusicstatusdescriptor.cpp \
 	avinfoblock.h \
 	avinfoblock.cpp \
+	avgeneralmusicstatusinfoblock.h \
+	avgeneralmusicstatusinfoblock.cpp \
+	avnameinfoblock.h \
+	avnameinfoblock.cpp \
+	avaudioinfoblock.h \
+	avaudioinfoblock.cpp \
+	avmidiinfoblock.h \
+	avmidiinfoblock.cpp \
+	avaudiosyncinfoblock.h \
+	avaudiosyncinfoblock.cpp \
 	debugmodule.cpp \
 	main.cpp 
 

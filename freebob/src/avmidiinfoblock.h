@@ -1,4 +1,4 @@
-/* avinfoblock.h
+/* avmidiinfoblock.h
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -18,36 +18,32 @@
  * MA 02111-1307 USA.
  */
  
- #include "avdevice.h"
-#include "avdescriptor.h"
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
+#include <vector>
+using std::vector;
+
 #include "debugmodule.h"
 
-#ifndef AVINFOBLOCK_H
-#define AVINFOBLOCK_H
+#include "avdevice.h"
+#include "avdescriptor.h"
+#include "avinfoblock.h"
+#include "avnameinfoblock.h"
 
-class AvInfoBlock {
+#ifndef AVMIDIINFOBLOCK_H
+#define AVMIDIINFOBLOCK_H
+
+class AvMidiInfoBlock : public AvInfoBlock {
 public:
-	AvInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
-	virtual ~AvInfoBlock();
+	AvMidiInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
+	virtual ~AvMidiInfoBlock();
+	unsigned int getNbStreams();
+	unsigned char *getName(unsigned int streamIndex);
 
-	bool isValid();
-	unsigned int getLength();
-	unsigned int getType();
-
-    	virtual unsigned char readByte(unsigned int address);
-    	virtual unsigned int readWord(unsigned int address);
-    	virtual unsigned int readBuffer(unsigned int address, unsigned int length, unsigned char *buffer);
-		
 protected:
-	AvDescriptor *cParent;
-	unsigned int iLength;
-	unsigned int iBaseAddress;
-	unsigned int iType;
-	bool bValid;
+	vector<AvNameInfoBlock*> cNameInfoBlocks;
 private:	
 	
 };

@@ -1,4 +1,4 @@
-/* avinfoblock.h
+/* avaudiosyncinfoblock.cpp
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -17,39 +17,45 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
- 
- #include "avdevice.h"
-#include "avdescriptor.h"
+
+
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "debugmodule.h"
 
-#ifndef AVINFOBLOCK_H
-#define AVINFOBLOCK_H
+#include "avdescriptor.h"
+#include "avinfoblock.h"
+#include "avaudiosyncinfoblock.h"
 
-class AvInfoBlock {
-public:
-	AvInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
-	virtual ~AvInfoBlock();
+AvAudioSyncInfoBlock::AvAudioSyncInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+	// do some more valid checks
+	if (getType() != 0x8107) {
+		bValid=false;
+	}
+}
 
-	bool isValid();
-	unsigned int getLength();
-	unsigned int getType();
+AvAudioSyncInfoBlock::~AvAudioSyncInfoBlock() {
 
-    	virtual unsigned char readByte(unsigned int address);
-    	virtual unsigned int readWord(unsigned int address);
-    	virtual unsigned int readBuffer(unsigned int address, unsigned int length, unsigned char *buffer);
-		
-protected:
-	AvDescriptor *cParent;
-	unsigned int iLength;
-	unsigned int iBaseAddress;
-	unsigned int iType;
-	bool bValid;
-private:	
+}
+
+bool AvAudioSyncInfoBlock::canSyncBus() {
+	if(isValid()) {
+		unsigned char capability=readByte(6);
+		return (capability & AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC_BUS);
+	} else {
+		return false;
+	}
+}
+
+bool AvAudioSyncInfoBlock::canSyncExternal() {
+	if(isValid()) {
+		unsigned char capability=readByte(6);
+		return (capability & AVC1394_SUBUNIT_MUSIC_CAPABILITY_AUDIOSYNC_EXTERNAL);
 	
-};
+	} else {
+		return false;
+	}
 
-#endif
+}

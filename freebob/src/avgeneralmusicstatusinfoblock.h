@@ -1,4 +1,4 @@
-/* avinfoblock.h
+/* avgeneralmusicstatusinfoblock.h
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -26,28 +26,20 @@
 #include <libavc1394/avc1394_vcr.h>
 #include "debugmodule.h"
 
-#ifndef AVINFOBLOCK_H
-#define AVINFOBLOCK_H
+#ifndef AVGENERALMUSICSTATUSINFOBLOCK_H
+#define AVGENERALMUSICSTATUSINFOBLOCK_H
 
-class AvInfoBlock {
+class AvGeneralMusicInfoBlock : public AvInfoBlock {
 public:
-	AvInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
-	virtual ~AvInfoBlock();
-
-	bool isValid();
-	unsigned int getLength();
-	unsigned int getType();
-
-    	virtual unsigned char readByte(unsigned int address);
-    	virtual unsigned int readWord(unsigned int address);
-    	virtual unsigned int readBuffer(unsigned int address, unsigned int length, unsigned char *buffer);
-		
+	AvGeneralMusicInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
+	virtual ~AvGeneralMusicInfoBlock();
+	bool canTransmitBlocking();
+	bool canTransmitNonblocking();
+	bool canReceiveBlocking();
+	bool canReceiveNonblocking();
+	//int getLatency();
 protected:
-	AvDescriptor *cParent;
-	unsigned int iLength;
-	unsigned int iBaseAddress;
-	unsigned int iType;
-	bool bValid;
+
 private:	
 	
 };

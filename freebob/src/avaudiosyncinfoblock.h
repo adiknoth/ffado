@@ -1,4 +1,4 @@
-/* avinfoblock.h
+/* avaudiosyncinfoblock.h
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -18,36 +18,28 @@
  * MA 02111-1307 USA.
  */
  
- #include "avdevice.h"
-#include "avdescriptor.h"
+
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "debugmodule.h"
+#include "avdevice.h"
+#include "avdescriptor.h"
+#include "avinfoblock.h"
 
-#ifndef AVINFOBLOCK_H
-#define AVINFOBLOCK_H
+#ifndef AVAUDIOSYNCINFOBLOCK_H
+#define AVAUDIOSYNCINFOBLOCK_H
 
-class AvInfoBlock {
+class AvAudioSyncInfoBlock : public AvInfoBlock {
 public:
-	AvInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
-	virtual ~AvInfoBlock();
+	AvAudioSyncInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
+	virtual ~AvAudioSyncInfoBlock();
+	bool canSyncExternal();
+	bool canSyncBus();
 
-	bool isValid();
-	unsigned int getLength();
-	unsigned int getType();
-
-    	virtual unsigned char readByte(unsigned int address);
-    	virtual unsigned int readWord(unsigned int address);
-    	virtual unsigned int readBuffer(unsigned int address, unsigned int length, unsigned char *buffer);
-		
 protected:
-	AvDescriptor *cParent;
-	unsigned int iLength;
-	unsigned int iBaseAddress;
-	unsigned int iType;
-	bool bValid;
+
 private:	
 	
 };

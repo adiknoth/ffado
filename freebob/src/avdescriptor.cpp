@@ -248,7 +248,7 @@ unsigned int AvDescriptor::readBuffer(unsigned int address, unsigned int length,
 		if(address+length>iLength) {
 			length=iLength-address;
 		}
-		memcpy((void*)buffer, (void*)aContents, length);
+		memcpy((void*)buffer, (void*)(aContents+address), length);
 		return length;
 		
 	} else {
