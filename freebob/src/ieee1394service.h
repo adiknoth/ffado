@@ -22,11 +22,17 @@
 
 #include <libraw1394/raw1394.h>
 #include <libavc1394/rom1394.h>
-#include <sigc++/sigc++.h>
+#include <boost/signals.hpp>
 
 #include "freebob.h"
 
-typedef unsigned int GenerationT;
+/* XXX: add those to avc1394.h */
+#define AVC1394_SUBUNIT_TYPE_AUDIO (1 <<19) 
+#define AVC1394_SUBUNIT_TYPE_PRINTER (2 <<19) 
+#define AVC1394_SUBUNIT_TYPE_CA (6 <<19) 
+#define AVC1394_SUBUNIT_TYPE_PANEL (9 <<19) 
+#define AVC1394_SUBUNIT_TYPE_BULLETIN_BOARD (0xA <<19) 
+#define AVC1394_SUBUNIT_TYPE_CAMERA_STORAGE (0xB <<19) 
 
 class Ieee1394Service {
  public:
@@ -34,6 +40,7 @@ class Ieee1394Service {
     ~Ieee1394Service();
 
     FBReturnCodes initialize();
+    void shutdown();
 
     static Ieee1394Service* instance();
     FBReturnCodes discoveryDevices();
@@ -43,7 +50,7 @@ class Ieee1394Service {
      *
      * If the count is increased a bus reset has occurred.
      */
-    sigc::signal<void,GenerationT>sigGenerationCount;
+    boost::signal<void (unsigned int)>sigGenerationCount;
 
  protected:
     static int resetHandler( raw1394handle_t handle, 
@@ -52,9 +59,13 @@ class Ieee1394Service {
     bool startRHThread();
     void stopRHThread();
     static void* rHThread( void* arg );
+
+    void printAvcUnitInfo( int iNodeId );
+    void printRomDirectory( int iNodeId,  rom1394_directory* pRomDir );
  private:
     static Ieee1394Service* m_pInstance;
     raw1394handle_t m_handle;
+    raw1394handle_t m_rhHandle;
     int m_iPort;
     bool m_bInitialised;
     pthread_t m_thread;

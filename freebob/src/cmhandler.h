@@ -32,6 +32,7 @@ public:
     ~CMHandler();
 
     FBReturnCodes initialize();
+    void shutdown();
 
     static CMHandler* instance();
 private:

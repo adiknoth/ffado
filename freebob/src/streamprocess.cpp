@@ -54,4 +54,5 @@ StreamProcess::run()
     }
     printf( "\n" );
 
+    m_pCMHandler->shutdown();
 }

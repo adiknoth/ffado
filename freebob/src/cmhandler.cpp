@@ -31,6 +31,10 @@ CMHandler::CMHandler()
 
 CMHandler::~CMHandler()
 {
+    if ( m_pIeee1394Service ) {
+        m_pIeee1394Service->shutdown();
+    }
+    m_pInstance = 0;
 }
 
 FBReturnCodes
@@ -51,6 +55,12 @@ CMHandler::initialize()
         m_bInitialised = true;
     }
     return eFBRC_Success;
+}
+
+void
+CMHandler::shutdown()
+{
+    delete this;
 }
 
 CMHandler*

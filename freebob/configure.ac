@@ -22,9 +22,10 @@ AC_PREREQ(2.57)
 AC_INIT(freebob, 0.0, wagi@monom.org)
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
-AC_CONFIG_SRCDIR([src/freebob.cpp])
+AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_GNU_SOURCE
+AC_LANG(C++)
 
 maintainer_mode=${enable_maintainer_mode-no}
 
@@ -84,9 +85,13 @@ AC_SUBST([CXXFLAGS])
 # Create links for header file.
 
 # Checks for library functions.
-PKG_CHECK_MODULES(LIBSIGC, sigc++-2.0 >= 2.0.3)
 PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 0.10)
 PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 0.1.0)
+AC_CHECK_HEADER(boost/signals.hpp, , [
+	AC_MSG_ERROR([cannot find boost headers. Make sure boost (http://www.boost.org) is installed; if the headers are in a non-standard location, set the CPPFLAGS environment variable to contain -I<headerdir>])])
+AC_HAVE_LIBRARY(boost_signals, , [
+	AC_MSG_ERROR([cannot find boost libraries. Make sure boost (http://www.boost.org) is installed; if the libraries are in a non-standard location, set the LDFLAGS environment variable to contain -L<librarydir>])])
+
 
 AC_SUBST([LIBSIGC_CFLAGS])
 AC_SUBST([LIBSIGC_LIBS])
@@ -108,6 +113,5 @@ FreeBob is now configured for $canonical_host_type
 
   Source directory:     $srcdir
   Installation prefix:  $prefix
-  C compiler:           $CC $XTRA_CFLAGS $WARN_CFLAGS $CFLAGS
   C++ compiler:         $CXX $XTRA_CXXFLAGS $WARN_CXXFLAGS $CXXFLAGS
 ])
