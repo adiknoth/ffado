@@ -84,7 +84,6 @@ WorkerThread::run()
 	    pthread_mutex_unlock( &m_mutex );
 
 	    ( *pFunctor )();
-	    delete pFunctor;
 
 	    pthread_testcancel();
 	}
