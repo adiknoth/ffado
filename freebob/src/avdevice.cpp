@@ -208,8 +208,6 @@ AvDevice::enumerateSubUnits()
 		m_iNbAsyncSourcePlugs, m_iNbAsyncDestinationPlugs);
 
 
-    return eFBRC_Success;
-
     // create the subunits
     for (unsigned int i = 0; i < 8; i++ ) {
 	// cycle through the 8 pages (max 32 subunits; 4
