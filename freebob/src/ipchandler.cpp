@@ -18,7 +18,7 @@
  * MA 02111-1307 USA.
  *
  */
- 
+
 #include <lo/lo.h>
 #include <stdio.h>
 #include <strings.h>
@@ -30,6 +30,9 @@
 
 #include "debugmodule.h"
 #include "ipchandler.h"
+#include "avdevice.h"
+#include "avdevicepool.h"
+#include "cmhandler.h"
 
 IPCHandler* IPCHandler::m_pInstance = 0;
 
@@ -40,23 +43,23 @@ void ipc_error(int num, const char *msg, const char *path)
 
 int generic_handler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg, void *user_data) {
 	IPCHandler *handler=(IPCHandler *)user_data;
-	
+
 	if (!user_data) {
 		printf("user_data not valid\n");
-		return -1;	
+		return -1;
 	}
-	
+
 	return handler->genericHandler(path, types,argv, argc, msg);
 }
 
 int request_handler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg, void *user_data) {
 	IPCHandler *handler=(IPCHandler *)user_data;
-	
+
 	if (!user_data) {
 		printf("user_data not valid\n");
-		return -1;	
+		return -1;
 	}
-	
+
 	return handler->requestHandler(path, types,argv, argc, msg);
 }
 
@@ -81,10 +84,11 @@ int IPCHandler::getListenPort() {
 FBReturnCodes IPCHandler::initialize()
 {
     debugPrint(DEBUG_LEVEL_IPC,"enter\n");
-    
+
     char portnumber[64];
     snprintf(portnumber,64,"%d",m_listenPort);
-    
+    portnumber[63] = '\0';
+
     /* start a new server */
     m_serverThread = lo_server_thread_new(portnumber, ipc_error);
 
@@ -92,7 +96,7 @@ FBReturnCodes IPCHandler::initialize()
     	debugPrint(DEBUG_LEVEL_IPC,"could not create ipc server thread\n");
     	return eFBRC_CreatingIPCServerFailed;
     }
-    
+
     /* add method that will match any path and args */
     lo_server_thread_add_method(m_serverThread, NULL, NULL, generic_handler, (void *)this);
 
@@ -103,7 +107,7 @@ FBReturnCodes IPCHandler::initialize()
 
 FBReturnCodes IPCHandler::start() {
     debugPrint(DEBUG_LEVEL_IPC,"enter\n");
-    
+
     if(!m_serverThread) {
     	debugPrint(DEBUG_LEVEL_IPC,"ipc server thread not valid\n");
     	return eFBRC_IPCServerInvalid;
@@ -115,7 +119,7 @@ FBReturnCodes IPCHandler::start() {
 
 FBReturnCodes IPCHandler::stop() {
     debugPrint(DEBUG_LEVEL_IPC,"enter\n");
-    
+
     if(!m_serverThread) {
     	debugPrint(DEBUG_LEVEL_IPC,"ipc server thread not valid\n");
     	return eFBRC_IPCServerInvalid;
@@ -144,7 +148,7 @@ IPCHandler::instance()
 int IPCHandler::genericHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg) {
 	int i;
 	lo_address src=lo_message_get_source ( msg );
-	
+
 	debugPrint(DEBUG_LEVEL_IPC,"message from %s port %s (%s)\n", lo_address_get_hostname(src), lo_address_get_port(src), lo_address_get_url ( src ) );
 	debugPrint(DEBUG_LEVEL_IPC,"to path: <%s>\n", path);
 	for (i=0; i<argc; i++) {
@@ -153,21 +157,39 @@ int IPCHandler::genericHandler(const char *path, const char *types, lo_arg **arg
 		debugPrintShort(DEBUG_LEVEL_IPC,"\n");
 	}
 	debugPrint(DEBUG_LEVEL_IPC,"\n");
-	
+
 	return 1;
 }
 
 int IPCHandler::requestHandler(const char *path, const char *types, lo_arg **argv, int argc, lo_message msg) {
 
 	lo_address src=lo_message_get_source ( msg );
-	
+
 	debugPrint(DEBUG_LEVEL_IPC,"request from %s port %s (%s)\n", lo_address_get_hostname(src), lo_address_get_port(src), lo_address_get_url ( src ) );
 	debugPrint(DEBUG_LEVEL_IPC,"to path: <%s>\n", path);
-	
+
 	if(argc==1) {
 		if(strcasecmp(&argv[0]->s,"connection_info")==0) {
-			// send fixed XML description for now
-			
+                    // give back first device found
+                    if ( AvDevicePool::instance()->m_avDevices.size() ) {
+                        AvDevice* pAvDevice
+                            = AvDevicePool::instance()->m_avDevices.front();
+                        if ( pAvDevice ) {
+                            char* pConnectionInfo
+                                = CMHandler::instance()->getXmlConnectionInfo( pAvDevice->getGuid() );
+                            if (pConnectionInfo
+                            && ( lo_send(src, "/response", "s", pConnectionInfo ) == -1 ) )
+                            {
+                                debugError("OSC error %d: %s\n",
+                                           lo_address_errno(src),
+                                           lo_address_errstr(src));
+                            }
+                            CMHandler::instance()->freeXmlConnectionInfo( pConnectionInfo );
+                        }
+                    }
+/*
+                    // send fixed XML description for now
+
 			int fd=open("test.xml",O_RDONLY);
 			if (fd<0) {
 				printf("Could not open file\n");
@@ -175,24 +197,24 @@ int IPCHandler::requestHandler(const char *path, const char *types, lo_arg **arg
 			}
 			int length=lseek(fd,0,SEEK_END);
 			lseek(fd,0,SEEK_SET);
-			
+
 			char *buff=(char *)calloc(length,1); // also clears memory
 			if((read(fd,(void *)buff,length)) < length) {
 				printf("Didn't read all bytes\n");
 			}
-			
+
 			close(fd);
-			
+
 			//respond
-			if (lo_send(src, "/response", "s", buff) == -1) {
+  			if (lo_send(src, "/response", "s", buff) == -1) {
 				printf("OSC error %d: %s\n", lo_address_errno(src), lo_address_errstr(src));
-			}	
-			
+			}
+
 			free(buff);
-			
+*/
 		}
 	}
-	
-	
+
+
 	return 0;
 }

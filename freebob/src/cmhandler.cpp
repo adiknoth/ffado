@@ -88,6 +88,7 @@ CMHandler::initialize()
 void
 CMHandler::shutdown()
 {
+    m_pIPCHandler->stop();
     delete this;
 }
 
@@ -145,12 +146,20 @@ CMHandler::getXmlConnectionInfo( octlet_t oGuid )
         return 0;
     }
 
-    // Dump xml document to stdout
-    xmlSaveFormatFileEnc( "-", doc, "UTF-8", 1 );
+    xmlChar* xmlbuff;
+    int buffersize;
+    xmlDocDumpFormatMemory( doc, &xmlbuff, &buffersize, 1 );
 
     // Cleanup
     xmlFreeDoc( doc );
     xmlCleanupParser();
 
-    return 0;
+    return ( char* )xmlbuff;
+}
+
+FBReturnCodes
+CMHandler::freeXmlConnectionInfo( char* buff )
+{
+    xmlFree( ( xmlChar* )buff );
+    return eFBRC_Success;
 }

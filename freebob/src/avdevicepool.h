@@ -47,14 +47,15 @@ class AvDevicePool {
      * @return see FBReturnCodes.
      */
     FBReturnCodes removeObsoleteDevices( unsigned int iGeneration );
+
+    typedef std::vector< AvDevice* > AvDeviceVector;
+    AvDeviceVector m_avDevices;
  private:
     AvDevicePool();
     ~AvDevicePool();
 
     static AvDevicePool* m_pInstance;
 
-    typedef std::vector< AvDevice* > AvDeviceVector;
-    AvDeviceVector m_avDevices;
 
     DECLARE_DEBUG_MODULE;
 };

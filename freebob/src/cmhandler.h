@@ -37,6 +37,8 @@ public:
     static CMHandler* instance();
 
     char* getXmlConnectionInfo( octlet_t oGuid );
+    FBReturnCodes freeXmlConnectionInfo( char* buff );
+
 private:
     CMHandler();
     ~CMHandler();

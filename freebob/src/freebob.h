@@ -43,8 +43,7 @@ typedef enum {
 // Used by `main' to communicate with `parse_opt'.
 struct arguments
 {
-    char* args[1];           // LISTEN_TIME
-    int silent, verbose, xml;
+    int silent, verbose, time;
 };
 
 extern struct arguments* pMainArguments;

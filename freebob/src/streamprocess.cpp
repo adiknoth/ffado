@@ -48,13 +48,18 @@ StreamProcess::run( int timeToListen )
         return;
     }
 
-    printf( "Waiting: " );
-    for ( int i = 0; i < timeToListen; ++i ) {
-        printf( "." );
-        fflush( stdout );
-        sleep( 1 );
+    if ( timeToListen == -1 ) {
+        printf( "Press Ctrl-C to stop freebob daemon\n" );
+        while ( 1 ) sleep( 1 );
+    } else {
+        printf( "Waiting for %d seconds: ", timeToListen );
+        for ( int i = 0; i < timeToListen; ++i ) {
+            printf( "." );
+            fflush( stdout );
+            sleep( 1 );
+        }
+        printf( "\n" );
     }
-    printf( "\n" );
 
     m_pCMHandler->shutdown();
 }
