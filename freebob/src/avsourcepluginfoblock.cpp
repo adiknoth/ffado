@@ -89,7 +89,7 @@ AvSourcePlugInfoBlock::AvSourcePlugInfoBlock(AvDescriptor *parent, int address) 
 					cAudioSyncInfoBlock=new AvAudioSyncInfoBlock(parent, next_block_position);
 				break;
 				default:
-					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Skipping unknown block\n");
+					debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvSourcePlugInfoBlock: Skipping unknown block type 0x%04X\n",tmpInfoBlock->getType());
 				break;
 				
 			}

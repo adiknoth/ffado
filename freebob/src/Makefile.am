@@ -64,6 +64,14 @@ freebob_SOURCES = \
 	avsourcepluginfoblock.cpp \
 	avoutputplugstatusinfoblock.h \
 	avoutputplugstatusinfoblock.cpp \
+	avroutingstatusinfoblock.h \
+	avroutingstatusinfoblock.cpp \
+	avpluginfoblock.h \
+	avpluginfoblock.cpp \
+	avmusicpluginfoblock.h \
+	avmusicpluginfoblock.cpp \
+	avclusterinfoblock.h \
+	avclusterinfoblock.cpp \
 	debugmodule.cpp \
 	main.cpp 
 

@@ -1,4 +1,4 @@
-/* avmusicstatusdescriptor.h
+/* avroutingstatusinfoblock.h
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -18,35 +18,38 @@
  * MA 02111-1307 USA.
  */
  
-#include "avdevice.h"
-#include "avdescriptor.h"
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
+#include <vector>
+using std::vector;
+
 #include "debugmodule.h"
 
-#ifndef AVMUSICSTATUSDESCRIPTOR_H
-#define AVMUSICSTATUSDESCRIPTOR_H
+#include "avdevice.h"
+#include "avdescriptor.h"
+#include "avinfoblock.h"
 
+#ifndef AVROUTINGSTATUSINFOBLOCK_H
+#define AVROUTINGSTATUSINFOBLOCK_H
 
-class AvGeneralMusicInfoBlock;
-class AvOutputPlugStatusInfoBlock;
-class AvRoutingStatusInfoBlock;
+class AvPlugInfoBlock;
+class AvMusicPlugInfoBlock;
 
-class AvMusicStatusDescriptor : public AvDescriptor {
- public:
-    AvMusicStatusDescriptor(AvDevice *parent, unsigned char id);
-    ~AvMusicStatusDescriptor();
-    
-    void printCapabilities();
+class AvRoutingStatusInfoBlock : public AvInfoBlock {
+public:
+	AvRoutingStatusInfoBlock(AvDescriptor *parent, int address); // read an infoblock from a parent starting from a specific position
+	virtual ~AvRoutingStatusInfoBlock();
 
- protected:
-       AvGeneralMusicInfoBlock      	*cGeneralMusicInfoBlock;
-       AvOutputPlugStatusInfoBlock  	*cOutputPlugStatusInfoBlock;
-       AvRoutingStatusInfoBlock		*cRoutingStatusInfoBlock;
- private:
-
+	
+protected:
+	vector<AvPlugInfoBlock *> cDestinationPlugInfoBlocks;
+	vector<AvPlugInfoBlock *> cSourcePlugInfoBlocks;
+	vector<AvMusicPlugInfoBlock *> cMusicPlugInfoBlocks;
+	
+private:	
+	
 };
 
 #endif

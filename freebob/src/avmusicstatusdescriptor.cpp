@@ -30,6 +30,7 @@
 #include "avaudiosyncinfoblock.h"
 #include "avsourcepluginfoblock.h"
 #include "avoutputplugstatusinfoblock.h"
+#include "avroutingstatusinfoblock.h"
 
 AvMusicStatusDescriptor::AvMusicStatusDescriptor(AvDevice *parent, unsigned char id) : AvDescriptor(parent, AVC1394_SUBUNIT_TYPE_MUSIC | (id << 16),0x80) {
 	if (!(this->AvDescriptor::isPresent())) {
@@ -83,6 +84,17 @@ AvMusicStatusDescriptor::AvMusicStatusDescriptor(AvDevice *parent, unsigned char
 	debugPrint (DEBUG_LEVEL_DESCRIPTOR, "AvMusicStatusDescriptor:  AvOutputPlugStatusInfoBlock found: length=0x%04X\n",cOutputPlugStatusInfoBlock->getLength());
 	
 	offset += cOutputPlugStatusInfoBlock->getLength()+2;
+	
+	debugPrint (DEBUG_LEVEL_DESCRIPTOR, "AvMusicStatusDescriptor: Creating AvRoutingStatusInfoBlock... (offset=0x%04X)\n",offset);
+	cRoutingStatusInfoBlock=new AvRoutingStatusInfoBlock(this,offset);
+	if (!(cRoutingStatusInfoBlock) || !(cRoutingStatusInfoBlock->isValid())) {
+		debugPrint (DEBUG_LEVEL_DESCRIPTOR, "AvMusicStatusDescriptor:  AvRoutingStatusInfoBlock not found!\n");
+		bValid=false;
+		return;
+	}
+	debugPrint (DEBUG_LEVEL_DESCRIPTOR, "AvMusicStatusDescriptor:  AvRoutingStatusInfoBlock found: length=0x%04X\n",cRoutingStatusInfoBlock->getLength());
+	
+	offset += cRoutingStatusInfoBlock->getLength()+2;
 	
 	// start parsing the optional infoblock(s)
 	AvInfoBlock *tmpInfoBlock = NULL;

@@ -217,13 +217,14 @@ Ieee1394Service::discoveryDevices()
 			testdesc_mid->printCapabilities();
 		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicIdentifierDescriptor...\n");
 			delete testdesc_mid;
+#endif
 			
 			// test the AvMusicStatusDescriptor
            		debugPrint (DEBUG_LEVEL_INFO, "   Trying to create an AvMusicStatusDescriptor...\n");
 			AvMusicStatusDescriptor *testdesc_mid2=new AvMusicStatusDescriptor(test,0x00);
             		debugPrint (DEBUG_LEVEL_INFO, "    Created...\n");
 			testdesc_mid2->printCapabilities();
-			
+#if 0	
 			// test the AvInfoBlock
            		debugPrint (DEBUG_LEVEL_INFO, "    Trying to create an AvInfoBlock...\n");
 			
@@ -313,8 +314,8 @@ Ieee1394Service::discoveryDevices()
 			
 			delete testblock8;
 		      	debugPrint (DEBUG_LEVEL_INFO, "    Deleting AvMusicStatusDescriptor...\n");
-			delete testdesc_mid2;			
 #endif			
+			delete testdesc_mid2;			
 		}
       		debugPrint (DEBUG_LEVEL_INFO, "   Deleting AvDevice...\n");
 		delete test;

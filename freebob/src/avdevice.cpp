@@ -137,13 +137,13 @@ AvDevice::Initialize() {
 							break;
 							case 0x0C: // music subunit
 								tmpAvDeviceSubunit=new AvDeviceMusicSubunit(this,subunit_id);
-								{ // just a test
+								/*{ // just a test
 								AvDeviceMusicSubunit tmpAvDeviceSubunit2(this,subunit_id);
 								tmpAvDeviceSubunit2.printMusicPlugInfo();
 								tmpAvDeviceSubunit2.printMusicPlugConfigurations();
 								tmpAvDeviceSubunit2.printOutputPlugConnections();
 								tmpAvDeviceSubunit2.test();
-								}
+								}*/
 							break;
 
 							default: // generic

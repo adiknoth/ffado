@@ -1,4 +1,4 @@
-/* avmusicstatusdescriptor.h
+/* avmusicpluginfoblock.cpp
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -17,36 +17,35 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
- 
-#include "avdevice.h"
-#include "avdescriptor.h"
+
+
 #include <string.h>
 #include <errno.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "debugmodule.h"
 
-#ifndef AVMUSICSTATUSDESCRIPTOR_H
-#define AVMUSICSTATUSDESCRIPTOR_H
+#include "avdescriptor.h"
+#include "avinfoblock.h"
+#include "avnameinfoblock.h"
+#include "avmusicpluginfoblock.h"
+
+AvMusicPlugInfoBlock::AvMusicPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
+	// do some more valid checks
+	if (getType() != 0x810B) {
+		bValid=false;
+	}
+	
+
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock: Creating... length=0x%04X\n",getLength());
+
+	
+	debugPrint(DEBUG_LEVEL_INFOBLOCK,"AvMusicPlugInfoBlock: Created\n");
+	
+}
+
+AvMusicPlugInfoBlock::~AvMusicPlugInfoBlock() {
 
 
-class AvGeneralMusicInfoBlock;
-class AvOutputPlugStatusInfoBlock;
-class AvRoutingStatusInfoBlock;
+}
 
-class AvMusicStatusDescriptor : public AvDescriptor {
- public:
-    AvMusicStatusDescriptor(AvDevice *parent, unsigned char id);
-    ~AvMusicStatusDescriptor();
-    
-    void printCapabilities();
-
- protected:
-       AvGeneralMusicInfoBlock      	*cGeneralMusicInfoBlock;
-       AvOutputPlugStatusInfoBlock  	*cOutputPlugStatusInfoBlock;
-       AvRoutingStatusInfoBlock		*cRoutingStatusInfoBlock;
- private:
-
-};
-
-#endif
