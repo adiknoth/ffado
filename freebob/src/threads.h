@@ -21,6 +21,8 @@
 #ifndef THREADS_H
 #define THREADS_H
 
+#include "workerthread.h"
+
 class Functor
 {
 public:
@@ -95,12 +97,10 @@ inline Functor* deferCall( const CalleePtr& pCallee,
 ////////////////////////////////////////////////////////////////////////
 
 template< typename CalleePtr, typename Callee,  typename Ret >
-inline Functor* asyncCall( const CalleePtr& pCallee,
+inline void asyncCall( const CalleePtr& pCallee,
                            Ret( Callee::*pFunction )( ) )
 {
-    // XXX dw: the functor has to be added to worker thread.  this here
-    // is just an idea.
-    StreamProcess::instance()->addToQueue(new MemberFunctor0< CalleePtr, Ret ( Callee::* )( ) > ( pCallee,  pFunction ));
+    WorkerThread::instance()->addFunctor(new MemberFunctor0< CalleePtr, Ret ( Callee::* )( ) > ( pCallee,  pFunction ));
 }
 
 #endif
