@@ -129,6 +129,36 @@ private:
 
 ////////////////////////////////////////////////////////////////////////
 
+template< typename CalleePtr >
+class DestroyFunctor
+    : public Functor
+{
+public:
+    DestroyFunctor( const CalleePtr& pCallee, 
+		    bool bDelete = true )
+        : m_pCallee( pCallee )
+	, m_bDelete( bDelete )
+        {}
+
+    virtual ~DestroyFunctor()
+        {}
+
+    virtual void operator() ()
+        { 
+	    delete m_pCallee;
+	    
+	    if (m_bDelete) {
+		delete this;
+	    }
+	}
+
+private:
+    CalleePtr  m_pCallee;
+    bool       m_bDelete;
+};
+
+////////////////////////////////////////////////////////////////////////
+
 // 0 params
 template< typename CalleePtr, typename Callee,  typename Ret >
 inline Functor* deferCall( const CalleePtr& pCallee,
@@ -182,6 +212,35 @@ inline void syncCall( const CalleePtr& pCallee,
     sem_wait( &sem );
     sem_destroy( &sem );
 }
+
+////////////////////////////////////////////////////////////////////////
+
+// 0 params
+template< typename CalleePtr, typename Callee,  typename Ret >
+inline void sleepCall( const CalleePtr& pCallee,
+		       Ret( Callee::*pFunction )( ) )
+{
+    WorkerThread::instance()->addFunctor(new MemberFunctor0< CalleePtr, Ret ( Callee::* )( ) > ( pCallee,  pFunction ), true);
+}
+
+// 1 params
+template< typename CalleePtr, typename Callee, typename Ret, typename Parm0 >
+inline void sleepCall( const CalleePtr& pCallee,
+		       Ret( Callee::*pFunction )( Parm0 ),
+		       Parm0 parm0 )
+{
+    WorkerThread::instance()->addFunctor(new MemberFunctor1< CalleePtr, Ret ( Callee::* )( Parm0 ), Parm0 > ( pCallee,  pFunction, parm0 ), true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+// 0 params
+template< typename CalleePtr >
+inline void destroyCall( const CalleePtr& pCallee )
+{
+    WorkerThread::instance()->addFunctor(new DestroyFunctor< CalleePtr> ( pCallee));
+}
+
 
 #endif
 
