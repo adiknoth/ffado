@@ -1,9 +1,10 @@
 
-noinst_PROGRAMS = byte_order detect_avc_unit \
+noinst_PROGRAMS = byte_order detect_avc_unit stream_format \
                   test-freebob-midi test-freebob-audio test-freebob-iso csr1212_read
 
 byte_order_SOURCES = byte_order.c
 detect_avc_unit_SOURCES = detect_avc_unit.c
+stream_format = stream_format.c
 test_freebob_midi_SOURCES = test-freebob-midi.c
 test_freebob_audio_SOURCES = test-freebob-audio.c
 test_freebob_iso_SOURCES = test-freebob-iso.c
