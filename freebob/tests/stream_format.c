@@ -29,6 +29,11 @@
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_INPUT  0x00
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_OUTPUT 0x01
 
+// BridgeCo extensions
+#define AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_SINGLE_REQUEST 0xC0
+#define AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_LIST_REQUEST   0xC1
+
+
 #define AVC1394_STREAM_FORMAT_HIERARCHY_ROOT_DVCR       0x80
 #define AVC1394_STREAM_FORMAT_HIERARCHY_ROOT_AUDIOMUSIC 0x90
 
@@ -79,7 +84,7 @@ decode_response(quadlet_t response)
 }
 
 
-#define STREAM_FORMAT_REQUEST_SIZE 7
+#define STREAM_FORMAT_REQUEST_SIZE 10
 
 int
 parse_stream_format(raw1394handle_t handle, int node_id, int plug_id)
@@ -97,17 +102,11 @@ parse_stream_format(raw1394handle_t handle, int node_id, int plug_id)
 	| AVC1394_SUBUNIT_TYPE_UNIT 
 	| AVC1394_SUBUNIT_ID_IGNORE 
 	| AVC1394_STREAM_FORMAT_SUPPORT
-	| AVC1394_STREAM_FORMAT_SUBFUNCTION_OUTPUT;
+	| AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_LIST_REQUEST;
     request[1] =
-	  (plug_id << 24)
-        | (0xff << 16)
-	| (AVC1394_STREAM_FORMAT_HIERARCHY_ROOT_AUDIOMUSIC << 8)
-	| AVC1394_STREAM_FORMAT_HIERARCHY_LEVEL_1_AUDIOMUSIC_AM824;
-    request[2] =
-  	  (AVC1394_STREAM_FORMAT_HIERARCHY_LEVEL_2_AM824_MULTI_BIT_LINEAR_AUDIO_RAW << 24)
-	| (0x00 << 16) // reserved
-	| (((0x04 << 4) | (0x00 << 1) | (0x00)) << 8) // sample frequency: 48 kHz, don't care, supported
-	| 0x00; // reserved
+	0x00000000; 
+    request[2] = 
+	0xffff0000;
 
     puts("request:");
     for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; i++) {
@@ -122,6 +121,8 @@ parse_stream_format(raw1394handle_t handle, int node_id, int plug_id)
 	for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; i++) {
 	    printf("  %2d: 0x%08x\n", i, response[i]);
 	}
+    } else {
+	printf("no response\n");
     }
 
     return 0;
