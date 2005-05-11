@@ -27,6 +27,12 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 
+#include <vector>
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
+
 #define AVC1394_STREAM_FORMAT_SUPPORT            (0x2F<<8)
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_INPUT  0x00
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_OUTPUT 0x01
@@ -70,6 +76,17 @@
 #define AVC1394_STREAM_FORMAT_HIERARCHY_LEVEL_2_AM824_SYNC_STREAM                           0x40
 #define AVC1394_STREAM_FORMAT_HIERARCHY_LEVEL_2_AM824_DONT_CARE                             0xFF
 
+#define AVC1394_STREAM_FORMAT_AM824_IEC60968_3                            0x00
+#define AVC1394_STREAM_FORMAT_AM824_IEC61937_3                            0x01
+#define AVC1394_STREAM_FORMAT_AM824_IEC61937_4                            0x02
+#define AVC1394_STREAM_FORMAT_AM824_IEC61937_5                            0x03
+#define AVC1394_STREAM_FORMAT_AM824_IEC61937_6                            0x04
+#define AVC1394_STREAM_FORMAT_AM824_IEC61937_7                            0x05
+#define AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW            0x06
+#define AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_DVD_AUDIO      0x07
+#define AVC1394_STREAM_FORMAT_AM824_HIGH_PRECISION_MULTIBIT_LINEAR_AUDIO  0x0C
+#define AVC1394_STREAM_FORMAT_AM824_MIDI_CONFORMANT                       0x0D
+#define AVC1394_STREAM_FORMAT_AM824_DONT_CARE                             0xFF
 
 /*
 // As defined in 'AV/C Stream Format Information Specification 1.0 TA Document 2001002'
@@ -121,7 +138,7 @@ protected:
 
     inline bool parseResponse( byte_t response )
         {
-            m_eResponse = static_cast<EResponse> ( response );
+            m_eResponse = static_cast<EResponse>( response );
             return true;
         }
 
@@ -129,33 +146,172 @@ private:
     EResponse m_eResponse;
 };
 
-typedef unsigned char plug_type_t;
-typedef unsigned char plug_id_t;
-typedef unsigned char reserved_t;
-typedef unsigned char function_block_type_t;
-typedef unsigned char function_block_id_t;
-typedef unsigned char plug_direction_t;
-typedef unsigned char plug_address_mode_t;
-typedef unsigned char status_t;
+typedef byte_t plug_type_t;
+typedef byte_t plug_id_t;
+typedef byte_t reserved_t;
+typedef byte_t function_block_type_t;
+typedef byte_t function_block_id_t;
+typedef byte_t plug_direction_t;
+typedef byte_t plug_address_mode_t;
+typedef byte_t status_t;
+
+///////////////////////////////////////////////////////////
+//////////////// De/Serialize Stuff ///////////////////////
+///////////////////////////////////////////////////////////
+
+class IOSSerialize {
+public:
+    virtual bool write( byte_t value, const char* name = "" ) = 0;
+    virtual bool write( quadlet_t value, const char* name = "" ) = 0;
+};
+
+class CoutSerializer: public IOSSerialize {
+public:
+    virtual bool write( byte_t value, const char* name = "" );
+    virtual bool write( quadlet_t value,  const char* name = "" );
+};
+
+bool
+CoutSerializer::write( byte_t d, const char* name )
+{
+    cout << name << ": 0x" << setfill( '0' ) << hex << static_cast<unsigned int>( d ) << endl;
+    return true;
+}
+
+bool
+CoutSerializer::write( quadlet_t d, const char* name )
+{
+    cout << name << ": 0x" << setfill( '0' ) << setw( 8 ) << hex << d << endl;
+    return true;
+}
+
+class BufferSerialize: public IOSSerialize {
+public:
+    BufferSerialize( unsigned char* buffer, size_t length )
+        : m_buffer( buffer )
+        , m_curPos( m_buffer )
+        , m_length( length )
+        {}
+
+    virtual bool write( byte_t value, const char* name = "" );
+    virtual bool write( quadlet_t value,  const char* name = "" );
+
+protected:
+    inline bool isCurPosValid() const;
+
+private:
+    unsigned char* m_buffer;
+    unsigned char* m_curPos;
+    size_t m_length;
+};
+
+bool
+BufferSerialize::write( byte_t value, const char* name )
+{
+    bool result = false;
+    if ( isCurPosValid() ) {
+        *m_curPos = value;
+        m_curPos += sizeof( byte_t );
+        result = true;
+    }
+    return result;
+}
+
+bool
+BufferSerialize::write( quadlet_t value,  const char* name )
+{
+    bool result = false;
+    if ( isCurPosValid() ) {
+        * ( quadlet_t* )m_curPos = value;
+        m_curPos += sizeof( quadlet_t );
+        result = true;
+    }
+    return result;
+}
+
+bool
+BufferSerialize::isCurPosValid() const
+{
+    if ( static_cast<size_t>( ( m_curPos - m_buffer ) ) >= m_length ) {
+        return false;
+    }
+    return true;
+}
+
+//////////////////////////////////////////////////
+
+class IISDeserialize {
+public:
+    virtual bool read( byte_t* value ) = 0;
+    virtual bool read( quadlet_t* value ) = 0;
+};
+
+class BufferDeserialize: public IISDeserialize {
+public:
+    BufferDeserialize( const unsigned char* buffer, size_t length )
+        : m_buffer( const_cast<unsigned char*>( buffer ) )
+        , m_curPos( m_buffer )
+        , m_length( length )
+        {}
+
+    virtual bool read( byte_t* value );
+    virtual bool read( quadlet_t* value );
+
+protected:
+    inline bool isCurPosValid() const;
+
+private:
+    unsigned char* m_buffer; // start of the buffer
+    unsigned char* m_curPos; // current read pos
+    size_t m_length; // length of buffer
+};
+
+bool
+BufferDeserialize::read( byte_t* value )
+{
+    bool result = false;
+    if ( isCurPosValid() ) {
+        *value = *m_curPos;
+        m_curPos += sizeof( byte_t );
+        result = true;
+    }
+    return result;
+}
+
+bool
+BufferDeserialize::read( quadlet_t* value )
+{
+    bool result = false;
+    if ( isCurPosValid() ) {
+        *value = *m_curPos;
+        m_curPos += sizeof( quadlet_t );
+        result = true;;
+    }
+    return result;
+}
+
+bool
+BufferDeserialize::isCurPosValid() const
+{
+    if ( static_cast<size_t>( ( m_curPos - m_buffer ) ) >= m_length ) {
+        return false;
+    }
+    return true;
+}
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
 
 
 class IBusData {
 public:
-    virtual bool serialize( byte_t** operands ) = 0;
-    virtual bool deserialize( byte_t** operands ) = 0;
+    virtual bool serialize( IOSSerialize& se ) = 0;
+    virtual bool deserialize( IISDeserialize& de ) = 0;
+
     virtual IBusData* clone() const = 0;
-
-    static bool writeOperand( byte_t** operand, byte_t value );
 };
-
-bool
-IBusData::writeOperand( byte_t** operand, byte_t value )
-{
-    **operand = value;
-    ( *operand )++;
-    return true;
-}
-
 
 class PlugAddressData : public IBusData {
 };
@@ -169,25 +325,20 @@ public:
         , m_reserved( 0xff )
         {}
 
-    /*
-    UnitPlugAddress( const UnitPlugAddress& upa)
-    	: m_plugType( upa.m_plugType )
-    	, m_plugId( upa.m_plugId )
-    	, m_reserved( upa.m_reserved )
-    	{
-    	}
-    */
-    virtual bool serialize( byte_t** operands )
+    virtual bool serialize( IOSSerialize& se )
         {
-            writeOperand( operands, m_plugType );
-            writeOperand( operands, m_plugId );
-            writeOperand( operands, m_reserved );
+            se.write( m_plugType, "UnitPlugAddress plugType" );
+            se.write( m_plugId, "UnitPlugAddress plugId" );
+            se.write( m_reserved, "UnitPlugAddress reserved" );
             return true;
         }
-    virtual bool deserialize( byte_t** operands )
+
+    virtual bool deserialize( IISDeserialize& de )
         {
-            // not suported
-            return false;
+            de.read( &m_plugType );
+            de.read( &m_plugId );
+            de.read( &m_reserved );
+            return true;
         }
 
     virtual UnitPlugAddress* clone() const
@@ -208,24 +359,21 @@ public:
        , m_reserved0( 0xff )
        , m_reserved1( 0xff )
         {}
-/*
-    SubunitPlugAddress( const SubunitPlugAddress& spa )
-    	: m_plugId( spa.m_plugId )
-    	, m_reserved0( spa.m_reserved0 )
-    	, m_reserved1( spa.m_reserved1 )
-    	{}
-*/
-    virtual bool serialize( byte_t** operands )
+
+    virtual bool serialize( IOSSerialize& se )
         {
-            writeOperand( operands, m_plugId );
-            writeOperand( operands, m_reserved0 );
-            writeOperand( operands, m_reserved1 );
+            se.write( m_plugId, "SubunitPlugAddress plugId" );
+            se.write( m_reserved0, "SubunitPlugAddress reserved0" );
+            se.write( m_reserved1, "SubunitPlugAddress reserved1" );
             return true;
         }
-    virtual bool deserialize( byte_t** operands )
+
+    virtual bool deserialize( IISDeserialize& de )
         {
-            // not suported
-            return false;
+            de.read( &m_plugId );
+            de.read( &m_reserved0 );
+            de.read( &m_reserved1 );
+            return true;
         }
 
     virtual SubunitPlugAddress* clone() const
@@ -249,24 +397,20 @@ public:
         , m_plugId( plugId )
         {}
 
-    /*
-    FunctionBlockPlugAddress( const FunctionBlockPlugAddress& fbpa )
-    	: m_functionBlockType( fbpa.m_functionBlockType )
-    	, m_functionBlockId( fbpa.m_functionBlockId )
-    	, m_plugId( fbpa.m_plugId )
-    	{}
-    */
-    virtual bool serialize( byte_t** operands )
+    virtual bool serialize( IOSSerialize& se )
         {
-            writeOperand( operands, m_functionBlockType );
-            writeOperand( operands, m_functionBlockId );
-            writeOperand( operands, m_plugId );
+            se.write( m_functionBlockType, "FunctionBlockPlugAddress functionBlockType" );
+            se.write( m_functionBlockId, "FunctionBlockPlugAddress functionBlockId" );
+            se.write( m_plugId, "FunctionBlockPlugAddress plugId" );
             return true;
         }
-    virtual bool deserialize( byte_t** operands )
+
+    virtual bool deserialize( IISDeserialize& de )
         {
-            // not suported
-            return false;
+            de.read( &m_functionBlockType );
+            de.read( &m_functionBlockId );
+            de.read( &m_plugId );
+            return true;
         }
 
     virtual FunctionBlockPlugAddress* clone() const
@@ -311,10 +455,10 @@ public:
 
     PlugAddress( const PlugAddress& pa );
 
-	virtual ~PlugAddress();
+    virtual ~PlugAddress();
 
-    virtual bool serialize( byte_t** operands );
-    virtual bool deserialize( byte_t** operands );
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
 
     virtual PlugAddress* clone() const
     	{
@@ -326,7 +470,6 @@ public:
 
     PlugAddressData*    m_plugAddressData;
 };
-
 
 PlugAddress::PlugAddress( plug_direction_t plugDirection,
                           plug_address_mode_t plugAddressMode,
@@ -369,32 +512,76 @@ PlugAddress::~PlugAddress()
 }
 
 bool
-PlugAddress::serialize( byte_t** operands )
+PlugAddress::serialize( IOSSerialize& se )
 {
-    writeOperand( operands, m_plugDirection );
-    writeOperand( operands, m_addressMode );
-    return m_plugAddressData->serialize( operands );
+    se.write( m_plugDirection, "PlugAddress plugDirection" );
+    se.write( m_addressMode, "PlugAddress addressMode" );
+    return m_plugAddressData->serialize( se );
 }
 
 bool
-PlugAddress::deserialize( byte_t** operands )
+PlugAddress::deserialize( IISDeserialize& de )
 {
-    // not suported
-    return false;
+    de.read( &m_plugDirection );
+    de.read( &m_addressMode );
+    return m_plugAddressData->deserialize( de );
 }
 
+
+class StreamFormatInfo: public IBusData
+{
+public:
+    StreamFormatInfo();
+
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
+
+    virtual StreamFormatInfo* clone() const;
+
+    byte_t m_numberOfChannels;
+    byte_t m_streamFormat;
+};
+
+StreamFormatInfo::StreamFormatInfo()
+    : IBusData()
+{
+}
+
+bool
+StreamFormatInfo::serialize( IOSSerialize& se )
+{
+    se.write( m_numberOfChannels, "StreamFormatInfo numberOfChannels" );
+    se.write( m_streamFormat, "StreamFormatInfo streamFormat" );
+    return true;
+}
+
+bool
+StreamFormatInfo::deserialize( IISDeserialize& de )
+{
+    de.read( &m_numberOfChannels );
+    de.read( &m_streamFormat );
+    return true;
+}
+
+
+StreamFormatInfo*
+StreamFormatInfo::clone() const
+{
+    return new StreamFormatInfo( *this );
+}
 
 class FormatInformationStreams: public IBusData
 {
 };
 
+// just empty declaration of sync stream
 class FormatInformationStreamsSync: public FormatInformationStreams
 {
 public:
     FormatInformationStreamsSync();
 
-    virtual bool serialize( byte_t** operands );
-    virtual bool deserialize( byte_t** operands );
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
     virtual FormatInformationStreamsSync* clone() const;
 };
 
@@ -404,14 +591,13 @@ FormatInformationStreamsSync::FormatInformationStreamsSync()
 }
 
 bool
-FormatInformationStreamsSync::serialize( byte_t** operands )
+FormatInformationStreamsSync::serialize( IOSSerialize& se )
 {
-    // not supported
-    return false;
+    return true;
 }
 
 bool
-FormatInformationStreamsSync::deserialize( byte_t** operands )
+FormatInformationStreamsSync::deserialize( IISDeserialize& de )
 {
     return true;
 }
@@ -422,31 +608,88 @@ FormatInformationStreamsSync::clone() const
     return new FormatInformationStreamsSync( *this );
 }
 
+// Who's the owner of this enum?
+enum ESamplingFrequency {
+    eSF_22050Hz = 0x00,
+    eSF_24000Hz = 0x01,
+    eSF_32000Hz = 0x02,
+    eSF_44100Hz = 0x03,
+    eSF_48000Hz = 0x04,
+    eSF_88200Hz = 0x0A,
+    eSF_96000Hz = 0x05,
+    eSF_176400Hz = 0x06,
+    eSF_192000Hz = 0x07,
+    eSF_DontCare = 0x0F,
+};
+
+enum ERateControl {
+    eRC_Supported = 0x00,
+    eRC_DontCare  = 0x01,
+};
+
 class FormatInformationStreamsCompound: public FormatInformationStreams
 {
 public:
     FormatInformationStreamsCompound();
+    virtual ~FormatInformationStreamsCompound();
 
-    virtual bool serialize( byte_t** operands );
-    virtual bool deserialize( byte_t** operands );
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
     virtual FormatInformationStreamsCompound* clone() const;
+
+    byte_t m_samplingFrequency;
+    byte_t m_rateControl;
+    byte_t m_numberOfStreamFormatInfos;
+    typedef std::vector< StreamFormatInfo* > StreamFormatInfoVector;
+    StreamFormatInfoVector m_streamFormatInfos;
 };
 
 FormatInformationStreamsCompound::FormatInformationStreamsCompound()
     : FormatInformationStreams()
+    , m_samplingFrequency( eSF_DontCare )
+    , m_rateControl( eRC_DontCare )
+    , m_numberOfStreamFormatInfos( 0 )
 {
 }
 
-bool
-FormatInformationStreamsCompound::serialize( byte_t** operands )
+FormatInformationStreamsCompound::~FormatInformationStreamsCompound()
 {
-    // not supported
-    return false;
+    for ( StreamFormatInfoVector::iterator it = m_streamFormatInfos.begin();
+          it != m_streamFormatInfos.end();
+          ++it )
+    {
+        delete *it;
+    }
 }
 
 bool
-FormatInformationStreamsCompound::deserialize( byte_t** operands )
+FormatInformationStreamsCompound::serialize( IOSSerialize& se )
 {
+    se.write( m_samplingFrequency, "FormatInformationStreamsCompound samplingFrequency" );
+    se.write( m_rateControl, "FormatInformationStreamsCompound rateControl" );
+    se.write( m_numberOfStreamFormatInfos, "FormatInformationStreamsCompound numberOfStreamFormatInfos" );
+    for ( StreamFormatInfoVector::iterator it = m_streamFormatInfos.begin();
+          it != m_streamFormatInfos.end();
+          ++it )
+    {
+        ( *it )->serialize( se );
+    }
+    return true;
+}
+
+bool
+FormatInformationStreamsCompound::deserialize( IISDeserialize& de )
+{
+    de.read( &m_samplingFrequency );
+    de.read( &m_rateControl );
+    de.read( &m_numberOfStreamFormatInfos );
+    for ( int i = 0; i < m_numberOfStreamFormatInfos; ++i ) {
+        StreamFormatInfo* streamFormatInfo = new StreamFormatInfo;
+        if ( !streamFormatInfo->deserialize( de ) ) {
+            return false;
+        }
+        m_streamFormatInfos.push_back( streamFormatInfo );
+    }
     return true;
 }
 
@@ -501,8 +744,8 @@ public:
     FormatInformation();
     virtual ~FormatInformation();
 
-    virtual bool serialize( byte_t** operands );
-    virtual bool deserialize( byte_t** operands );
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
 
     virtual FormatInformation* clone() const;
 
@@ -522,54 +765,59 @@ FormatInformation::~FormatInformation()
 }
 
 bool
-FormatInformation::serialize( byte_t** operands )
+FormatInformation::serialize( IOSSerialize& se )
 {
-    // not supported
-    return false;
+    if ( m_streams ) {
+        return m_streams->serialize( se );
+    }
+    return true;
 }
 
 bool
-FormatInformation::deserialize( byte_t** operands )
+FormatInformation::deserialize( IISDeserialize& de )
 {
+    bool result = false;
+
     // this code just parses BeBoB replies.
-    EFormatHierarchyRoot level0 = static_cast<EFormatHierarchyRoot> ( **operands );
-    ( *operands )++;
+    byte_t level0;
+    de.read( &level0 );
 
     // just parse an audio and music hierarchy
     if ( level0 == eFHR_AudioMusic ) {
-        EFomatHierarchyLevel1 level1 = static_cast<EFomatHierarchyLevel1> ( **operands );
-        ( *operands )++;
+        byte_t level1;
+        de.read( &level1 );
 
         switch ( level1 ) {
         case eFHL1_AUDIOMUSIC_AM824:
         {
             // note: compound streams don't have a second level
-            EFormatHierarchyLevel2 level2 = static_cast<EFormatHierarchyLevel2> ( **operands );
-            ( *operands )++;
+
+            byte_t level2;
+            de.read( &level2 );
+
             if (level2 == eFHL2_AM824_SYNC_STREAM ) {
-                // this is a sync stream
-//                m_streams = new F
                 printf( "...sync stream...\n" );
+                m_streams = new FormatInformationStreamsSync();
+                result = m_streams->deserialize( de );
             } else {
                 // anything but the sync stream workds currently.
                 printf( "could not parse format information. (format hierarchy level 2 not recognized)\n" );
-                return false;
             }
         }
         break;
         case  eFHL1_AUDIOMUSIC_AM824_COMPOUND:
         {
             printf( "..compound stream...\n" );
-
+            m_streams = new FormatInformationStreamsCompound();
+            result = m_streams->deserialize( de );
         }
         break;
         default:
             printf( "could not parse format information. (format hierarchy level 1 not recognized)\n" );
-            return false;
         }
     }
 
-    return true;
+    return result;
 }
 
 FormatInformation*
@@ -600,15 +848,17 @@ public:
 
     bool setPlugAddress( const PlugAddress& plugAddress );
     bool setIndexInStreamFormat( const int index );
-    bool serializeCmdHeader( quadlet_t* operands );
-    bool serializeCmdOperands( byte_t* operands );
+
+    bool serialize( IOSSerialize& se );
+    bool serialize2( IOSSerialize& se );
+    bool deserialize( IISDeserialize& de );
 
     virtual bool fire( raw1394handle_t handle, unsigned int node_id );
 
 protected:
     ESubFunction m_eSubFunction;
     PlugAddress* m_plugAddress;
-    int          m_indexInStreamFormat;
+    byte_t       m_indexInStreamFormat;
     FormatInformation* m_formatInformation;
 };
 
@@ -647,35 +897,34 @@ ExtendedStreamFormatCmd::setIndexInStreamFormat( const int index )
 }
 
 bool
-ExtendedStreamFormatCmd::serializeCmdHeader( quadlet_t* header )
+ExtendedStreamFormatCmd::serialize( IOSSerialize& se )
 {
-    // STATUS: request current/supported stream formats
-    // CONTROL: set stream format
-    // SPECIFIC_INQUIRY: ask device if format is supported
-
-    *header =
-          AVC1394_CTYPE_STATUS
+    quadlet_t header =
+        AVC1394_CTYPE_STATUS
 	| AVC1394_SUBUNIT_TYPE_UNIT
 	| AVC1394_SUBUNIT_ID_IGNORE
 	| AVC1394_STREAM_FORMAT_SUPPORT
         | m_eSubFunction;
 
+    se.write( header, "AVC header" );
+    m_plugAddress->serialize( se );
+    if ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandListRequest ) {
+        se.write( m_indexInStreamFormat, "indexInStreamFormat" );
+    }
     return true;
 }
 
 bool
-ExtendedStreamFormatCmd::serializeCmdOperands( byte_t* operands )
+ExtendedStreamFormatCmd::serialize2( IOSSerialize& se )
 {
-    m_plugAddress->serialize( &operands );
-
-    if ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandListRequest ) {
-        operands++; // skip status field
-        *operands = m_indexInStreamFormat;
-    }
-
-    return true;
+    return m_formatInformation->serialize( se );
 }
 
+bool
+ExtendedStreamFormatCmd::deserialize( IISDeserialize& de )
+{
+    return m_formatInformation->deserialize( de );
+}
 
 
 bool
@@ -697,14 +946,10 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
     // set first quadlet (which holds the header, the opcode and the first operand.
     // the first operand is handle here to avoid complicated reordering (endian problems)
     // later on.
-    if ( !serializeCmdHeader( req.quadlet ) ) {
-        printf( "Error: failed to serialize commando header\n" );
-        return false;
-    }
 
-    // set all operands but the first one (byte oriented)
-    if (!serializeCmdOperands( &req.byte[4] ) ) {
-        printf( "Error: failed to serialize the data\n" );
+    BufferSerialize se( req.byte, sizeof( req ) );
+    if ( !serialize( se ) ) {
+        printf(  "ExtendedStreamFormatCmd::fire: Could not serialize comanndo\n" );
         return false;
     }
 
@@ -765,17 +1010,21 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
                 printf( "unknown status\n" );
             }
 
-            // let's parse the answer
-            if (!m_formatInformation ) {
-                m_formatInformation = new FormatInformation;
+            // maybe auto pointers might a better idea
+            if (m_formatInformation ) {
+                delete m_formatInformation;
             }
+            m_formatInformation = new FormatInformation;
+
+            // let's parse the answer
             byte_t* ptr;
             if ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandSingleRequest ) {
                 ptr = &( resp->byte[AVC_CMD_HEADER_SIZE + 7] );
             } else {
                 ptr = &( resp->byte[AVC_CMD_HEADER_SIZE + 8] );
             }
-            m_formatInformation->deserialize( &ptr );
+            BufferDeserialize de( ptr, resp->byte - ptr );
+            m_formatInformation->deserialize( de );
         } else if ( ( getResponse() == eR_Rejected )
                     && ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandListRequest ) ) {
             printf( "no futher stream formats defined\n" );
@@ -855,6 +1104,10 @@ main(int argc, char **argv)
                                                           unitPlugAddress ) );
     extendedStreamFormatCmdS.fire( handle, node_id );
 
+    CoutSerializer se;
+    extendedStreamFormatCmdS.serialize2( se );
+
     raw1394_destroy_handle( handle );
+
     return 0;
 }
