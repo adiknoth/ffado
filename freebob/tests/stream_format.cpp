@@ -33,13 +33,13 @@
 
 using namespace std;
 
-#define AVC1394_STREAM_FORMAT_SUPPORT            (0x2F<<8)
+#define AVC1394_STREAM_FORMAT_SUPPORT            0x2F
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_INPUT  0x00
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_OUTPUT 0x01
 
 // BridgeCo extensions
-#define AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_SINGLE_REQUEST 0xC0
-#define AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_LIST_REQUEST   0xC1
+#define AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT      0xC0
+#define AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_LIST 0xC1
 
 
 #define AVC1394_STREAM_FORMAT_HIERARCHY_ROOT_DVCR       0x80
@@ -108,44 +108,10 @@ using namespace std;
 
 #define AVC1394_SET_OPERAND(x, n, v) x = (((x) & ~(0xFF000000 >> ((n)%4)*8 ) ) | ((v) << (((3-(n))%4)*8)))
 
-class AVCCommand
-{
-public:
-    enum EResponse {
-        eR_Unknown        = 0,
-        eR_NotImplemented = AVC1394_RESP_NOT_IMPLEMENTED,
-        eR_Accepted       = AVC1394_RESP_ACCEPTED,
-        eR_Rejected       = AVC1394_RESP_REJECTED,
-        eR_InTransition   = AVC1394_RESP_IN_TRANSITION,
-        eR_Implemented    = AVC1394_RESP_IMPLEMENTED,
-        eR_Changed        = AVC1394_RESP_CHANGED,
-        eR_Interim        = AVC1394_RESP_INTERIM,
-    };
-
-    virtual bool fire( raw1394handle_t handle, unsigned int node_id ) = 0;
-
-    inline EResponse getResponse()
-        {
-            return m_eResponse;
-        }
-
-protected:
-    AVCCommand()
-        : m_eResponse( eR_Unknown )
-        {}
-    virtual ~AVCCommand()
-        {}
-
-    inline bool parseResponse( byte_t response )
-        {
-            m_eResponse = static_cast<EResponse>( response );
-            return true;
-        }
-
-private:
-    EResponse m_eResponse;
-};
-
+// defs which different classes are using
+typedef byte_t ctype_t;
+typedef byte_t subunit_t;
+typedef byte_t opcode_t;
 typedef byte_t plug_type_t;
 typedef byte_t plug_id_t;
 typedef byte_t reserved_t;
@@ -154,6 +120,30 @@ typedef byte_t function_block_id_t;
 typedef byte_t plug_direction_t;
 typedef byte_t plug_address_mode_t;
 typedef byte_t status_t;
+typedef byte_t number_of_channels_t;
+typedef byte_t stream_format_t;
+typedef byte_t sampling_frequency_t;
+typedef byte_t rate_control_t;
+typedef byte_t number_of_stream_format_infos_t;
+
+enum ESamplingFrequency {
+    eSF_22050Hz = 0x00,
+    eSF_24000Hz = 0x01,
+    eSF_32000Hz = 0x02,
+    eSF_44100Hz = 0x03,
+    eSF_48000Hz = 0x04,
+    eSF_88200Hz = 0x0A,
+    eSF_96000Hz = 0x05,
+    eSF_176400Hz = 0x06,
+    eSF_192000Hz = 0x07,
+    eSF_DontCare = 0x0F,
+};
+
+enum ERateControl {
+    eRC_Supported = 0x00,
+    eRC_DontCare  = 0x01,
+};
+
 
 ///////////////////////////////////////////////////////////
 //////////////// De/Serialize Stuff ///////////////////////
@@ -303,8 +293,6 @@ BufferDeserialize::isCurPosValid() const
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 
-
-
 class IBusData {
 public:
     virtual bool serialize( IOSSerialize& se ) = 0;
@@ -313,8 +301,12 @@ public:
     virtual IBusData* clone() const = 0;
 };
 
+////////////////////////////////////////////////////////////
+
 class PlugAddressData : public IBusData {
 };
+
+////////////////////////////////////////////////////////////
 
 class UnitPlugAddress : public PlugAddressData
 {
@@ -351,6 +343,8 @@ public:
     reserved_t  m_reserved;
 };
 
+////////////////////////////////////////////////////////////
+
 class SubunitPlugAddress : public PlugAddressData
 {
 public:
@@ -385,6 +379,8 @@ public:
     reserved_t m_reserved0;
     reserved_t m_reserved1;
 };
+
+////////////////////////////////////////////////////////////
 
 class FunctionBlockPlugAddress : public PlugAddressData
 {
@@ -422,6 +418,8 @@ public:
     function_block_id_t   m_functionBlockId;
     plug_id_t             m_plugId;
 };
+
+////////////////////////////////////////////////////////////
 
 class PlugAddress : public IBusData {
 public:
@@ -527,6 +525,7 @@ PlugAddress::deserialize( IISDeserialize& de )
     return m_plugAddressData->deserialize( de );
 }
 
+////////////////////////////////////////////////////////////
 
 class StreamFormatInfo: public IBusData
 {
@@ -538,8 +537,8 @@ public:
 
     virtual StreamFormatInfo* clone() const;
 
-    byte_t m_numberOfChannels;
-    byte_t m_streamFormat;
+    number_of_channels_t m_numberOfChannels;
+    stream_format_t m_streamFormat;
 };
 
 StreamFormatInfo::StreamFormatInfo()
@@ -570,9 +569,16 @@ StreamFormatInfo::clone() const
     return new StreamFormatInfo( *this );
 }
 
+////////////////////////////////////////////////////////////
+
 class FormatInformationStreams: public IBusData
 {
+public:
+    FormatInformationStreams() {}
+    virtual ~FormatInformationStreams() {}
 };
+
+////////////////////////////////////////////////////////////
 
 // just empty declaration of sync stream
 class FormatInformationStreamsSync: public FormatInformationStreams
@@ -602,30 +608,14 @@ FormatInformationStreamsSync::deserialize( IISDeserialize& de )
     return true;
 }
 
+////////////////////////////////////////////////////////////
+
 FormatInformationStreamsSync*
 FormatInformationStreamsSync::clone() const
 {
     return new FormatInformationStreamsSync( *this );
 }
 
-// Who's the owner of this enum?
-enum ESamplingFrequency {
-    eSF_22050Hz = 0x00,
-    eSF_24000Hz = 0x01,
-    eSF_32000Hz = 0x02,
-    eSF_44100Hz = 0x03,
-    eSF_48000Hz = 0x04,
-    eSF_88200Hz = 0x0A,
-    eSF_96000Hz = 0x05,
-    eSF_176400Hz = 0x06,
-    eSF_192000Hz = 0x07,
-    eSF_DontCare = 0x0F,
-};
-
-enum ERateControl {
-    eRC_Supported = 0x00,
-    eRC_DontCare  = 0x01,
-};
 
 class FormatInformationStreamsCompound: public FormatInformationStreams
 {
@@ -637,9 +627,9 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual FormatInformationStreamsCompound* clone() const;
 
-    byte_t m_samplingFrequency;
-    byte_t m_rateControl;
-    byte_t m_numberOfStreamFormatInfos;
+    sampling_frequency_t m_samplingFrequency;
+    rate_control_t m_rateControl;
+    number_of_stream_format_infos_t m_numberOfStreamFormatInfos;
     typedef std::vector< StreamFormatInfo* > StreamFormatInfoVector;
     StreamFormatInfoVector m_streamFormatInfos;
 };
@@ -699,6 +689,8 @@ FormatInformationStreamsCompound::clone() const
     return new FormatInformationStreamsCompound( *this );
 }
 
+////////////////////////////////////////////////////////////
+
 class FormatInformation: public IBusData
 {
 public:
@@ -741,6 +733,10 @@ public:
         eFHL2_AM824_DONT_CARE = AVC1394_STREAM_FORMAT_HIERARCHY_LEVEL_2_AM824_DONT_CARE,
     };
 
+    typedef byte_t format_hierarchy_root_t;
+    typedef byte_t format_hierarchy_level1_t;
+    typedef byte_t format_hierarchy_level2_t;
+
     FormatInformation();
     virtual ~FormatInformation();
 
@@ -749,11 +745,17 @@ public:
 
     virtual FormatInformation* clone() const;
 
+    format_hierarchy_root_t m_root;
+    format_hierarchy_level1_t m_level1;
+    format_hierarchy_level2_t m_level2;
     FormatInformationStreams* m_streams;
 };
 
 FormatInformation::FormatInformation()
     : IBusData()
+    , m_root( eFHR_Invalid )
+    , m_level1( eFHL1_AUDIOMUSIC_DONT_CARE )
+    , m_level2( eFHL2_AM824_DONT_CARE )
     , m_streams( 0 )
 {
 }
@@ -767,6 +769,15 @@ FormatInformation::~FormatInformation()
 bool
 FormatInformation::serialize( IOSSerialize& se )
 {
+    if ( m_root != eFHR_Invalid ) {
+        se.write( m_root, "FormatInformation hierarchy root" );
+        if ( m_level1 != eFHL1_AUDIOMUSIC_DONT_CARE ) {
+            se.write( m_level1, "FormatInformation hierarchy level 1" );
+            if ( m_level2 != eFHL2_AM824_DONT_CARE ) {
+                se.write( m_level2, "FormatInformation hierarchy level 2" );
+            }
+        }
+    }
     if ( m_streams ) {
         return m_streams->serialize( se );
     }
@@ -778,25 +789,26 @@ FormatInformation::deserialize( IISDeserialize& de )
 {
     bool result = false;
 
+    delete m_streams;
+    m_streams = 0;
+
     // this code just parses BeBoB replies.
-    byte_t level0;
-    de.read( &level0 );
+    de.read( &m_root );
 
     // just parse an audio and music hierarchy
-    if ( level0 == eFHR_AudioMusic ) {
-        byte_t level1;
-        de.read( &level1 );
+    if ( m_root == eFHR_AudioMusic ) {
+        de.read( &m_level1 );
 
-        switch ( level1 ) {
+        switch ( m_level1 ) {
         case eFHL1_AUDIOMUSIC_AM824:
         {
             // note: compound streams don't have a second level
+            de.read( &m_level2 );
 
-            byte_t level2;
-            de.read( &level2 );
-
-            if (level2 == eFHL2_AM824_SYNC_STREAM ) {
-                printf( "...sync stream...\n" );
+            if (m_level2 == eFHL2_AM824_SYNC_STREAM ) {
+                printf( "+-------------------+\n" );
+                printf( "|  sync stream      |\n" );
+                printf( "+-------------------+\n" );
                 m_streams = new FormatInformationStreamsSync();
                 result = m_streams->deserialize( de );
             } else {
@@ -807,7 +819,9 @@ FormatInformation::deserialize( IISDeserialize& de )
         break;
         case  eFHL1_AUDIOMUSIC_AM824_COMPOUND:
         {
-            printf( "..compound stream...\n" );
+            printf( "+-------------------+\n" );
+            printf( "|  compound stream  |\n" );
+            printf( "+-------------------+\n" );
             m_streams = new FormatInformationStreamsCompound();
             result = m_streams->deserialize( de );
         }
@@ -826,14 +840,110 @@ FormatInformation::clone() const
     return new FormatInformation( *this );
 }
 
+
+///////////////////////////////////////////////////////////
+////////////////// AVC Commands ///////////////////////////
+///////////////////////////////////////////////////////////
+
+class AVCCommand
+{
+public:
+    enum EResponse {
+        eR_Unknown        = 0,
+        eR_NotImplemented = AVC1394_RESP_NOT_IMPLEMENTED,
+        eR_Accepted       = AVC1394_RESP_ACCEPTED,
+        eR_Rejected       = AVC1394_RESP_REJECTED,
+        eR_InTransition   = AVC1394_RESP_IN_TRANSITION,
+        eR_Implemented    = AVC1394_RESP_IMPLEMENTED,
+        eR_Changed        = AVC1394_RESP_CHANGED,
+        eR_Interim        = AVC1394_RESP_INTERIM,
+    };
+
+    enum ECommandType {
+        eCT_Control         = AVC1394_CTYP_CONTROL,
+        eCT_Status          = AVC1394_CTYP_STATUS,
+        eCT_SpecificInquiry = AVC1394_CTYP_SPECIFIC_INQUIRY,
+        eCT_Notify          = AVC1394_CTYP_NOTIFY,
+        eCT_GeneralInquiry  = AVC1394_CTYP_GENERAL_INQUIRY,
+        eCT_Unknown         = 0xff,
+    };
+    typedef byte_t subfunction_t;
+    typedef byte_t opcode_t;
+
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
+    virtual bool fire(ECommandType commandType,
+                      raw1394handle_t handle,
+                      unsigned int node_id ) = 0;
+
+    inline EResponse getResponse();
+
+protected:
+    AVCCommand()
+        : m_ctype( eCT_Unknown )
+        , m_subunit( 0xff )
+        , m_eResponse( eR_Unknown )
+        {}
+    virtual ~AVCCommand()
+        {}
+
+    inline bool parseResponse( byte_t response );
+    bool setCommandType( ECommandType commandType );
+
+private:
+    ctype_t   m_ctype;
+    subunit_t m_subunit; // Can't be set/get ATM (doesn't matter anyway because it's almost
+                         // every time 0xff.
+
+    EResponse m_eResponse;
+};
+
+bool
+AVCCommand::serialize( IOSSerialize& se )
+{
+    se.write( m_ctype, "AVCCommand ctype" );
+    se.write( m_subunit, "AVCCommand subunit" );
+    return true;
+}
+
+bool
+AVCCommand::deserialize( IISDeserialize& de )
+{
+    de.read( &m_ctype );
+    de.read( &m_subunit );
+    return true;
+}
+
+bool
+AVCCommand::setCommandType( ECommandType commandType )
+{
+    m_ctype = commandType;
+    return true;
+}
+
+AVCCommand::EResponse
+AVCCommand::getResponse()
+{
+    return m_eResponse;
+}
+
+bool
+AVCCommand::parseResponse( byte_t response )
+{
+    m_eResponse = static_cast<EResponse>( response );
+    return true;
+}
+
+///////////////////////////////////////////////////////////
+
 class ExtendedStreamFormatCmd: public AVCCommand
 {
 public:
     enum ESubFunction {
         eSF_Input                                               = AVC1394_STREAM_FORMAT_SUBFUNCTION_INPUT,
         eSF_Output                                              = AVC1394_STREAM_FORMAT_SUBFUNCTION_OUTPUT,
-        eSF_ExtendedStreamFormatInformationCommandSingleRequest = AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_SINGLE_REQUEST,
-        eSF_ExtendedStreamFormatInformationCommandListRequest   = AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_LIST_REQUEST,
+        eSF_ExtendedStreamFormatInformationCommand              = AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT,
+        eSF_ExtendedStreamFormatInformationCommandList          = AVC1394_STREAM_FORMAT_SUBFUNCTION_EXTENDED_STREAM_FORMAT_LIST,
     };
 
     enum EStatus {
@@ -849,25 +959,32 @@ public:
     bool setPlugAddress( const PlugAddress& plugAddress );
     bool setIndexInStreamFormat( const int index );
 
-    bool serialize( IOSSerialize& se );
-    bool serialize2( IOSSerialize& se );
-    bool deserialize( IISDeserialize& de );
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire( raw1394handle_t handle, unsigned int node_id );
+    virtual bool fire( ECommandType commandType,
+                       raw1394handle_t handle,
+                       unsigned int node_id );
 
 protected:
-    ESubFunction m_eSubFunction;
+    typedef byte_t index_in_stream_format_t;
+    typedef byte_t status_t;
+
+    opcode_t m_opcode;
+    subfunction_t m_subFunction;
     PlugAddress* m_plugAddress;
-    byte_t       m_indexInStreamFormat;
+    status_t m_status;
+    index_in_stream_format_t m_indexInStreamFormat;
     FormatInformation* m_formatInformation;
 };
 
 ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( ESubFunction eSubFunction )
     : AVCCommand()
-    , m_eSubFunction( eSubFunction )
-//    , m_plugAddress( new PlugAddress( PlugAddress::eM_Subunit, PlugAddress::ePD_Input, UnitPlugAddress( 0x00, 0x00 ) ) )
+    , m_opcode( AVC1394_STREAM_FORMAT_SUPPORT )
+    , m_subFunction( eSubFunction )
+    , m_status( eS_NotUsed )
     , m_indexInStreamFormat( 0 )
-    , m_formatInformation( 0 )
+    , m_formatInformation( new FormatInformation )
 {
     UnitPlugAddress unitPlugAddress( 0x00, 0x00 );
     m_plugAddress = new PlugAddress( PlugAddress::eM_Subunit, PlugAddress::ePD_Input, unitPlugAddress );
@@ -899,37 +1016,40 @@ ExtendedStreamFormatCmd::setIndexInStreamFormat( const int index )
 bool
 ExtendedStreamFormatCmd::serialize( IOSSerialize& se )
 {
-    quadlet_t header =
-        AVC1394_CTYPE_STATUS
-	| AVC1394_SUBUNIT_TYPE_UNIT
-	| AVC1394_SUBUNIT_ID_IGNORE
-	| AVC1394_STREAM_FORMAT_SUPPORT
-        | m_eSubFunction;
-
-    se.write( header, "AVC header" );
+    AVCCommand::serialize( se );
+    se.write( m_opcode, "ExtendedStreamFormatCmd opcode" );
+    se.write( m_subFunction, "ExtendedStreamFormatCmd subFunction" );
     m_plugAddress->serialize( se );
-    if ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandListRequest ) {
+    se.write( m_status, "ExtendedStreamFormatCmd status" );
+    if ( m_subFunction == eSF_ExtendedStreamFormatInformationCommandList ) {
         se.write( m_indexInStreamFormat, "indexInStreamFormat" );
     }
+    m_formatInformation->serialize( se );
     return true;
-}
-
-bool
-ExtendedStreamFormatCmd::serialize2( IOSSerialize& se )
-{
-    return m_formatInformation->serialize( se );
 }
 
 bool
 ExtendedStreamFormatCmd::deserialize( IISDeserialize& de )
 {
-    return m_formatInformation->deserialize( de );
+    AVCCommand::deserialize( de );
+    de.read( &m_opcode );
+    de.read( &m_subFunction );
+    m_plugAddress->deserialize( de );
+    de.read( &m_status );
+    if ( m_subFunction == eSF_ExtendedStreamFormatInformationCommandList ) {
+        de.read( &m_indexInStreamFormat );
+    }
+    m_formatInformation->deserialize( de );
+    return true;
 }
 
-
 bool
-ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
+ExtendedStreamFormatCmd::fire( ECommandType commandType,
+                               raw1394handle_t handle,
+                               unsigned int node_id )
 {
+    bool result = false;
+
     #define STREAM_FORMAT_REQUEST_SIZE 10 // XXX random length
     union UPacket {
         quadlet_t     quadlet[STREAM_FORMAT_REQUEST_SIZE];
@@ -940,12 +1060,10 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
     packet_t  req;
     packet_t* resp;
 
+    setCommandType( commandType );
+
     // initialize complete packet
     memset( &req,  0xff,  sizeof( req ) );
-
-    // set first quadlet (which holds the header, the opcode and the first operand.
-    // the first operand is handle here to avoid complicated reordering (endian problems)
-    // later on.
 
     BufferSerialize se( req.byte, sizeof( req ) );
     if ( !serialize( se ) ) {
@@ -954,8 +1072,7 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
     }
 
     // reorder the bytes to the correct layout
-    // note that the first quadlet is already in the correct order
-    for (int i = 1; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
+    for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
         req.quadlet[i] = ntohl( req.quadlet[i] );
     }
 
@@ -967,15 +1084,18 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
 
     resp = reinterpret_cast<packet_t*> ( avc1394_transaction_block( handle, node_id, req.quadlet, STREAM_FORMAT_REQUEST_SIZE,  1 ) );
     if ( resp ) {
-        for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
-            resp->quadlet[i] = htonl( resp->quadlet[i] );
-        }
-
         // debug output
         puts("response:");
         for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
 	    printf( "  %2d: 0x%08x\n", i, resp->quadlet[i] );
 	}
+
+        // reorder the bytes to the correct layout
+        for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
+            resp->quadlet[i] = htonl( resp->quadlet[i] );
+        }
+
+        // a more detailed debug output
         printf( "\n" );
         printf( " idx type                       value\n" );
         printf( "-------------------------------------\n" );
@@ -987,60 +1107,72 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle, unsigned int node_id )
             printf( "  %02d                operand %2d: 0x%02x\n", i, i-3, resp->byte[i] );
         }
 
-        // check output
+        // parse output
         parseResponse( resp->byte[0] );
-        if ( getResponse() == eR_Implemented ) {
-            // deserialize here
-            #define AVC_CMD_HEADER_SIZE 3
-            #define EXTENDED_STREAM_FORMAT_OPERAND_POS_STATUS 6
-            switch ( resp->byte[AVC_CMD_HEADER_SIZE + EXTENDED_STREAM_FORMAT_OPERAND_POS_STATUS] ) {
-            case eS_Active:
-                printf( "format is set and a signal is streaming through or to the plug\n" );
-                break;
-            case eS_Inactive:
-                printf( "format is set but no signal is stremaing through the plug\n" );
-                break;
-            case eS_NoStreamFormat:
-                printf( "there is no stream format set, plug has no streaming capabilities\n" );
-                break;
-            case eS_NotUsed:
-                printf( "not used: used for specific inquiry response\n" );
+        switch ( getResponse() )
+        {
+            case eR_Implemented:
+            {
+                BufferDeserialize de( resp->byte, sizeof( req ) );
+                deserialize( de );
+                result = true;
+            }
+            break;
+            case eR_Rejected:
+                if ( m_subFunction == eSF_ExtendedStreamFormatInformationCommandList ) {
+                    printf( "no futher stream formats defined\n" );
+                    result = true;
+                } else {
+                    printf( "request rejected\n" );
+                }
                 break;
             default:
-                printf( "unknown status\n" );
-            }
-
-            // maybe auto pointers might a better idea
-            if (m_formatInformation ) {
-                delete m_formatInformation;
-            }
-            m_formatInformation = new FormatInformation;
-
-            // let's parse the answer
-            byte_t* ptr;
-            if ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandSingleRequest ) {
-                ptr = &( resp->byte[AVC_CMD_HEADER_SIZE + 7] );
-            } else {
-                ptr = &( resp->byte[AVC_CMD_HEADER_SIZE + 8] );
-            }
-            BufferDeserialize de( ptr, resp->byte - ptr );
-            m_formatInformation->deserialize( de );
-        } else if ( ( getResponse() == eR_Rejected )
-                    && ( m_eSubFunction == eSF_ExtendedStreamFormatInformationCommandListRequest ) ) {
-            printf( "no futher stream formats defined\n" );
-        } else {
-            printf( "unexpected response received\n" );
+                printf( "unexpected response received (0x%x)\n", getResponse() );
         }
     } else {
-	printf("no response\n");
+	printf( "no response\n" );
     }
-    return true;
+
+    return result;
 }
 
 
 ////////////////////////////////////////
 // Test application
-///////////////////////////////////////
+////////////////////////////////////////
+void
+doTests(raw1394handle_t handle, int node_id, int plug_id)
+{
+
+    ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+    UnitPlugAddress unitPlugAddress( 0x00,  plug_id );
+    extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
+                                                         PlugAddress::ePD_Input,
+                                                         unitPlugAddress ) );
+    extendedStreamFormatCmd.setIndexInStreamFormat( 0 );
+    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.setIndexInStreamFormat( 1 );
+    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.setIndexInStreamFormat( 2 );
+    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.setIndexInStreamFormat( 3 );
+    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.setIndexInStreamFormat( 4 );
+    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+
+    ExtendedStreamFormatCmd extendedStreamFormatCmdS = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+    extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
+                                                          PlugAddress::ePD_Input,
+                                                          unitPlugAddress ) );
+    if ( extendedStreamFormatCmdS.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
+        CoutSerializer se;
+        extendedStreamFormatCmdS.serialize( se );
+    }
+
+    return;
+}
+
+///////////////////////////////////////////////////////////////
 
 int
 main(int argc, char **argv)
@@ -1081,33 +1213,31 @@ main(int argc, char **argv)
 	return -1;
     }
 
-    ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandListRequest );
-    UnitPlugAddress unitPlugAddress( 0x00,  plug_id );
-    extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                         PlugAddress::ePD_Input,
-                                                         unitPlugAddress ) );
-/*
-    extendedStreamFormatCmd.setIndexInStreamFormat( 0 );
-    extendedStreamFormatCmd.fire( handle, node_id );
-    extendedStreamFormatCmd.setIndexInStreamFormat( 1 );
-    extendedStreamFormatCmd.fire( handle, node_id );
-    extendedStreamFormatCmd.setIndexInStreamFormat( 2 );
-    extendedStreamFormatCmd.fire( handle, node_id );
-    extendedStreamFormatCmd.setIndexInStreamFormat( 3 );
-    extendedStreamFormatCmd.fire( handle, node_id );
-    extendedStreamFormatCmd.setIndexInStreamFormat( 4 );
-    extendedStreamFormatCmd.fire( handle, node_id );
-*/
-    ExtendedStreamFormatCmd extendedStreamFormatCmdS = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandSingleRequest );
-    extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                          PlugAddress::ePD_Input,
-                                                          unitPlugAddress ) );
-    extendedStreamFormatCmdS.fire( handle, node_id );
-
-    CoutSerializer se;
-    extendedStreamFormatCmdS.serialize2( se );
-
+    doTests( handle, node_id,  plug_id );
     raw1394_destroy_handle( handle );
 
     return 0;
 }
+
+/* random stuff which might be still useful
+
+            #define AVC_CMD_HEADER_SIZE 3
+            #define EXTENDED_STREAM_FORMAT_OPERAND_POS_STATUS 6
+            switch ( resp->byte[AVC_CMD_HEADER_SIZE + EXTENDED_STREAM_FORMAT_OPERAND_POS_STATUS] ) {
+            case eS_Active:
+                printf( "format is set and a signal is streaming through or to the plug\n" );
+                break;
+            case eS_Inactive:
+                printf( "format is set but no signal is stremaing through the plug\n" );
+                break;
+            case eS_NoStreamFormat:
+                printf( "there is no stream format set, plug has no streaming capabilities\n" );
+                break;
+            case eS_NotUsed:
+                printf( "not used: used for specific inquiry response\n" );
+                break;
+            default:
+                printf( "unknown status\n" );
+            }
+
+*/
