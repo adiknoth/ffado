@@ -37,6 +37,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <sys/poll.h>
 #include <errno.h>
 #include <time.h>
 	
@@ -45,6 +46,75 @@
 	#define QUATAFIRE_IN_DIMENSION 7
 	#define QUATAFIRE_INPUT_TARGET_CHANNEL 1
 	#define QUATAFIRE_MIDI_OUT_STREAM_POSITION 10 
+#if __BYTE_ORDER == __BIG_ENDIAN
+
+struct iso_packet_header {
+	unsigned int data_length : 16;
+	unsigned int tag         : 2;
+	unsigned int channel     : 6;
+	unsigned int tcode       : 4;
+	unsigned int sy          : 4;
+};
+
+struct iec61883_packet {
+	/* First quadlet */
+	unsigned int dbs      : 8;
+	unsigned int eoh0     : 2;
+	unsigned int sid      : 6;
+
+	unsigned int dbc      : 8;
+	unsigned int fn       : 2;
+	unsigned int qpc      : 3;
+	unsigned int sph      : 1;
+	unsigned int reserved : 2;
+
+	/* Second quadlet */
+	unsigned int fdf      : 8;
+	unsigned int eoh1     : 2;
+	unsigned int fmt      : 6;
+
+	unsigned int syt      : 16;
+
+	unsigned char data[0];
+};
+
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+
+struct iso_packet_header {
+	unsigned int data_length : 16;
+	unsigned int channel     : 6;
+	unsigned int tag         : 2;
+	unsigned int sy          : 4;
+	unsigned int tcode       : 4;
+};
+
+struct iec61883_packet {
+	/* First quadlet */
+	unsigned int sid      : 6;
+	unsigned int eoh0     : 2;
+	unsigned int dbs      : 8;
+
+	unsigned int reserved : 2;
+	unsigned int sph      : 1;
+	unsigned int qpc      : 3;
+	unsigned int fn       : 2;
+	unsigned int dbc      : 8;
+
+	/* Second quadlet */
+	unsigned int fmt      : 6;
+	unsigned int eoh1     : 2;
+	unsigned int fdf      : 8;
+
+	unsigned int syt      : 16;
+
+	unsigned char data[0];
+};
+
+#else
+
+#error Unknown bitfield type
+
+#endif
 
 inline unsigned long currentTime2() {
 	struct timeval now;
@@ -68,9 +138,12 @@ iso_handler(raw1394handle_t handle, unsigned char *data,
         int ret;
         static unsigned int counter = 0;
 
-        if (++counter % 1000 == 0)
-                 fprintf(stderr, "\r    %uK packets", counter/1000);
-
+	struct iec61883_packet *packet = (struct iec61883_packet *) data;
+	
+	if (counter++>16) {
+		printf("FDF code = %X. SYT = %10d, DBS = %10d, DBC = %10d\n", packet->fdf,packet->syt,packet->dbs,packet->dbc);
+		counter=0;
+	}
         /* write header */
  /*       write(file, &length, sizeof(length));
         write(file, &channel, sizeof(channel));
@@ -116,6 +189,11 @@ int main (int argc, char *argv[])
 	int irq=100;
 	int BUFFER=1000;
 	int PACKET_MAX=1024;
+	int retval;
+
+
+	int fd=raw1394_get_fd(handle);
+        struct pollfd pfd;
 
 	u_int64_t listen_channels=0xFFFFFFFF;
 	unsigned long which_port;
@@ -146,6 +224,10 @@ int main (int argc, char *argv[])
 			PACKET_MAX = atoi (argv[++i]);
 		} else if (strncmp (argv[i], "-i", 2) == 0) {
 			irq = atoi (argv[++i]);
+		} else if (strncmp (argv[i], "-j", 2) == 0) {
+			iplug = atoi (argv[++i]);
+		} else if (strncmp (argv[i], "-k", 2) == 0) {
+			oplug = atoi (argv[++i]);
 		} else if (!node_specified) {
 			is_transmit = 1;
 		}
@@ -175,7 +257,8 @@ int main (int argc, char *argv[])
 		raw1394_iso_recv_start(handle, -1, -1, 0);
 
 		fprintf (stderr, "Create CMP connection...\n");
-		channel = iec61883_cmp_connect (handle, raw1394_get_local_id (handle),  &oplug, node, &iplug, &bandwidth);
+		//channel = iec61883_cmp_connect (handle, raw1394_get_local_id (handle),  &oplug, node, &iplug, &bandwidth);
+		channel = iec61883_cmp_connect (handle, node ,  &oplug, raw1394_get_local_id (handle), &iplug, &bandwidth);
 		if (channel > -1) {
 			//amdtp_receive (handle, f, channel);
 		} else {
@@ -183,17 +266,45 @@ int main (int argc, char *argv[])
 		}
 	
 		fprintf (stderr, "Running raw1394_loop_iterate()...\n");
+		
+		int packetcount=0;
 
-		while ((raw1394_loop_iterate(handle) == 0) && !g_done) {
-			if(heartbeat) {
-				fprintf (stderr, "\r°");
-				heartbeat=0;
-			} else {
-				fprintf (stderr, "\r*");
-				heartbeat=1;
+// polled receive loop
+		while (!g_done) {
+			int i=0;
+			while ((raw1394_loop_iterate(handle) == 0) && (i<packetcount)) {
+
+				i++;
 			}
+			//fprintf(stderr, "  %d packets received",i);
+			
+			pfd.fd = raw1394_get_fd(handle);
+			pfd.events = POLLIN;
+			pfd.revents = 0;
+			/*retval = poll(&pfd, 1, 10);
+			if (retval < 1) {
+				fprintf(stderr, " - poll() timeout");
 
+			} else {
+				//packetcount=raw1394_iso_recv_packetcount(handle);
+				fprintf(stderr, " - %d packets available after poll()",packetcount);
+			}
+			fprintf(stderr, "\r");*/
 		}
+
+/*
+// simple receive loop
+			while ((raw1394_loop_iterate(handle) == 0) && !g_done) {
+				if(heartbeat) {
+					fprintf (stderr, "\r°");
+					heartbeat=0;
+				} else {
+					fprintf (stderr, "\r*");
+					heartbeat=1;
+				}
+	
+			}
+*/
 
 		fprintf (stderr, "Closing CMP connection...\n");
 		iec61883_cmp_disconnect (handle, raw1394_get_local_id (handle), oplug, node, iplug, channel, bandwidth);
