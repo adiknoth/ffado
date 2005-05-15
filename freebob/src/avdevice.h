@@ -87,6 +87,8 @@ class AvDevice {
     void printConnections();
     void test();
     FBReturnCodes addConnectionsToXml( xmlNodePtr root );
+    FBReturnCodes addPlaybackConnectionsToXml( xmlNodePtr root );
+    FBReturnCodes addCaptureConnectionsToXml( xmlNodePtr root );
 
     unsigned char getNbAsyncSourcePlugs() 
 	{ return m_iNbAsyncSourcePlugs; }

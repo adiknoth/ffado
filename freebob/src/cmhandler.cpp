@@ -49,6 +49,8 @@ CMHandler::~CMHandler()
 FBReturnCodes
 CMHandler::initialize()
 {
+	FBReturnCodes eStatus;
+	
     if ( !m_bInitialised ) {
         m_pIeee1394Service = Ieee1394Service::instance();
 
@@ -56,7 +58,16 @@ CMHandler::initialize()
             debugError( "Could not get an valid instance of 1394 service.\n" );
             return eFBRC_InitializeCMHandlerFailed;
         }
-        FBReturnCodes eStatus = m_pIeee1394Service->initialize();
+        //FIXME: the port setting is based upon a global variable, not good!
+        //NOTE: we should have an Ieee1394Service for each port
+        eStatus = m_pIeee1394Service->setPort(pMainArguments->port);
+        if ( eStatus != eFBRC_Success ) {
+            debugError( "setPort of 1394 service failed.\n" );
+            return eStatus;
+        }
+
+        
+        eStatus = m_pIeee1394Service->initialize();
         if ( eStatus != eFBRC_Success ) {
             debugError( "Initialising of 1394 service failed.\n" );
             return eStatus;
@@ -161,6 +172,128 @@ CMHandler::getXmlConnectionInfo( octlet_t oGuid )
 
     return ( char* )xmlbuff;
 }
+
+char*
+CMHandler::getXmlConnectionInfo()
+{
+    xmlDocPtr doc = xmlNewDoc( BAD_CAST "1.0" );
+    if ( !doc ) {
+        debugError( "Couldn't create new xml doc\n" );
+        return 0;
+    }
+
+    xmlNodePtr rootNode = xmlNewNode( 0,  BAD_CAST "FreeBobConnectionInfo" );
+    if ( !rootNode ) {
+        debugError( "Couldn't create root node\n" );
+        xmlFreeDoc( doc );
+        xmlCleanupParser();
+        return 0;
+    }
+    xmlDocSetRootElement( doc,  rootNode );
+	
+	// iterate over all devices, giving back the playback connections
+    xmlNodePtr connectionSet = xmlNewChild( rootNode, 0, BAD_CAST "ConnectionSet", 0 );
+    if ( !connectionSet ) {
+        debugError( "Couldn't create connection set node for direction 1 (playback)\n" );
+        return 0;
+    }
+    
+    if ( !xmlNewChild( connectionSet,
+                       0,
+                       BAD_CAST "Direction",
+                       BAD_CAST "1" ) ) {
+        debugError( "Couldn't create direction node\n" );
+        return 0;
+    }
+	
+	AvDeviceVectorIterator iter=AvDevicePool::instance()->m_avDevices.begin();
+	for(;iter<AvDevicePool::instance()->m_avDevices.end();iter++) {
+		AvDevice* pAvDevice = *iter;
+			
+		if ( pAvDevice ) {
+			std::string res = "Connection Information for "
+							+ pAvDevice->getVendorName()
+							+", "
+							+ pAvDevice->getModelName()
+							+ " (playback)";
+			if ( !xmlNewChild( connectionSet,
+							0,
+							BAD_CAST "Comment",
+							BAD_CAST res.c_str() ) ) {
+				debugError( "Couldn't create comment node\n" );
+				xmlFreeDoc( doc );
+				xmlCleanupParser();
+				return 0;
+			}			
+
+			FBReturnCodes eStatus = pAvDevice->addPlaybackConnectionsToXml( connectionSet );
+			if ( eStatus != eFBRC_Success ) {
+				debugError( "Could not add connection information to XML document\n" );
+				xmlFreeDoc( doc );
+				xmlCleanupParser();
+				return 0;
+			}
+		}
+	}
+	
+	// iterate over all devices, giving back the capture connections
+    connectionSet = xmlNewChild( rootNode, 0, BAD_CAST "ConnectionSet", 0 );
+    if ( !connectionSet ) {
+        debugError( "Couldn't create connection set node for direction 0 (capture)\n" );
+        return 0;
+    }
+    
+    if ( !xmlNewChild( connectionSet,
+                       0,
+                       BAD_CAST "Direction",
+                       BAD_CAST "0" ) ) {
+        debugError( "Couldn't create direction node\n" );
+        return 0;
+    }
+	
+	iter=AvDevicePool::instance()->m_avDevices.begin();
+	for(;iter<AvDevicePool::instance()->m_avDevices.end();iter++) {
+		AvDevice* pAvDevice = *iter;
+			
+		if ( pAvDevice ) {
+			std::string res = "Connection Information for "
+							+ pAvDevice->getVendorName()
+							+", "
+							+ pAvDevice->getModelName()
+							+ " (capture)";
+			if ( !xmlNewChild( connectionSet,
+							0,
+							BAD_CAST "Comment",
+							BAD_CAST res.c_str() ) ) {
+				debugError( "Couldn't create comment node\n" );
+				xmlFreeDoc( doc );
+				xmlCleanupParser();
+				return 0;
+			}			
+
+			FBReturnCodes eStatus = pAvDevice->addCaptureConnectionsToXml( connectionSet );
+			if ( eStatus != eFBRC_Success ) {
+				debugError( "Could not add connection information to XML document\n" );
+				xmlFreeDoc( doc );
+				xmlCleanupParser();
+				return 0;
+			}
+			
+		}
+	}
+	
+	
+    xmlChar* xmlbuff;
+    int buffersize;
+    xmlDocDumpFormatMemory( doc, &xmlbuff, &buffersize, 1 );
+
+    // Cleanup
+    xmlFreeDoc( doc );
+    xmlCleanupParser();
+
+    return ( char* )xmlbuff;
+}
+
 
 FBReturnCodes
 CMHandler::freeXmlConnectionInfo( char* buff )

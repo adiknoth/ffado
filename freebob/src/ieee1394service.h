@@ -41,7 +41,9 @@ class Ieee1394Service {
 				       quadlet_t *request, 
 				       unsigned int request_len, 
 				       unsigned int response_len );
-
+	
+	FBReturnCodes setPort(int port);
+	int getPort();
 
 
  protected:

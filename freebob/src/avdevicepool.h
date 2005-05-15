@@ -27,6 +27,9 @@
 
 class AvDevice;
 
+typedef std::vector< AvDevice* > AvDeviceVector;
+typedef std::vector< AvDevice* >::iterator AvDeviceVectorIterator;
+
 class AvDevicePool {
  public:
     static AvDevicePool* instance();
@@ -48,7 +51,6 @@ class AvDevicePool {
      */
     FBReturnCodes removeObsoleteDevices( unsigned int iGeneration );
 
-    typedef std::vector< AvDevice* > AvDeviceVector;
     AvDeviceVector m_avDevices;
  private:
     AvDevicePool();

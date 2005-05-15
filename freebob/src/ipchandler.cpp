@@ -193,6 +193,7 @@ IPCHandler::requestHandler(const char *path,
     if(argc==1) {
         if(strcasecmp(&argv[0]->s,"connection_info")==0) {
             // give back first device found
+            /*
             if ( AvDevicePool::instance()->m_avDevices.size() ) {
                 AvDevice* pAvDevice
                     = AvDevicePool::instance()->m_avDevices.front();
@@ -209,6 +210,21 @@ IPCHandler::requestHandler(const char *path,
                     CMHandler::instance()->freeXmlConnectionInfo( pConnectionInfo );
                 }
             }
+            */
+            // get info for all devices found
+            if ( AvDevicePool::instance()->m_avDevices.size() ) {
+				char* pConnectionInfo
+					= CMHandler::instance()->getXmlConnectionInfo( );
+				if (pConnectionInfo
+					&& ( lo_send(src, "/response", "s", pConnectionInfo ) == -1 ) )
+				{
+					debugError("OSC error %d: %s\n",
+								lo_address_errno(src),
+								lo_address_errstr(src));
+				}
+				CMHandler::instance()->freeXmlConnectionInfo( pConnectionInfo );
+            }
+                        
         }
     }
     return 0;

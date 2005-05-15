@@ -75,6 +75,23 @@ Ieee1394Service::~Ieee1394Service()
 }
 
 FBReturnCodes
+Ieee1394Service::setPort(int port)
+{
+    if ( !m_bInitialised ) {
+    	m_iPort = port;
+	    return eFBRC_Success;
+	} else {
+		return eFBRC_DeviceAlreadyInitialized;
+	}
+}
+
+int
+Ieee1394Service::getPort()
+{
+   	return m_iPort;
+}
+
+FBReturnCodes
 Ieee1394Service::initialize()
 {
     if ( !m_bInitialised ) {
@@ -253,91 +270,99 @@ Ieee1394Service::avcExecuteTransaction( int node_id,
     quadlet_t* response;
     unsigned char* request_pos;
     unsigned int i;
+    int retry=5;
     
     // make this function thread safe
     
     pthread_mutex_lock( &m_transaction_mutex );
-    
-    response = avc1394_transaction_block( m_handle,
-					  node_id,
-					  request,
-					  request_len,
-					  2 );
-    
-    if ( request ) {
 	debugPrint( DEBUG_LEVEL_TRANSFERS,
-		    "------- TRANSACTION START -------\n" );
-	debugPrint( DEBUG_LEVEL_TRANSFERS,"  REQUEST:     " );
-	/* request is in machine byte order. this function is for
-	 * intel architecure */
-	for ( i = 0; i < request_len; i++ ) {
-	    request_pos = (unsigned char *)(request+i);
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS,
-			     "0x%02X%02X%02X%02X ",
-			     *(request_pos),
-			     *(request_pos+1),
-			     *(request_pos+2),
-			     *(request_pos+3));
+			"------- TRANSACTION START -------\n" );
+    while(retry>0) {
+		response = avc1394_transaction_block( m_handle,
+						node_id,
+						request,
+						request_len,
+						10 );
+		
+		if ( request ) {
+			debugPrint( DEBUG_LEVEL_TRANSFERS,"  REQUEST:     " );
+			/* request is in machine byte order. this function is for
+			* intel architecure */
+			for ( i = 0; i < request_len; i++ ) {
+				request_pos = (unsigned char *)(request+i);
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS,
+						"0x%02X%02X%02X%02X ",
+						*(request_pos),
+						*(request_pos+1),
+						*(request_pos+2),
+						*(request_pos+3));
+			}
+		
+			debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
+			debugPrint( DEBUG_LEVEL_TRANSFERS, "      => " );
+			debugPrintShort( DEBUG_LEVEL_TRANSFERS, "                     " );
+		
+			request_pos = (unsigned char *)(request);
+		
+			debugPrintShort( DEBUG_LEVEL_TRANSFERS,
+					"subunit_type=%02X  subunit_id=%02X  opcode=%02X",
+					((*(request_pos+1))>>3)&0x1F,
+					(*(request_pos+1))&0x07,
+					(*(request_pos+2))&0xFF );
+			debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
+		}
+	
+		
+		if ( (response != 0) ) {
+			/* response is in order of receiving, i.e. msb first */
+			debugPrint(DEBUG_LEVEL_TRANSFERS, "  -> RESPONSE: " );
+			for ( i = 0; i < response_len; i++ ) {
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i] );
+			}
+		
+			debugPrintShort( DEBUG_LEVEL_TRANSFERS,"\n" );
+			debugPrint( DEBUG_LEVEL_TRANSFERS,"      => " );
+			switch (response[0]&0xFF000000) {
+			case AVC1394_RESPONSE_NOT_IMPLEMENTED:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Not Implemented      " );
+				break;
+			case AVC1394_RESPONSE_ACCEPTED:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Accepted             " );
+				break;
+			case AVC1394_RESPONSE_REJECTED:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Rejected             " );
+				break;
+			case AVC1394_RESPONSE_IN_TRANSITION:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "In Transition        " );
+				break;
+			case AVC1394_RESPONSE_IMPLEMENTED:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Implemented / Stable " );
+				break;
+			case AVC1394_RESPONSE_CHANGED:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Changed              " );
+				break;
+			case AVC1394_RESPONSE_INTERIM:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Interim              " );
+				break;
+			default:
+				debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Unknown response     " );
+				break;
+			}
+			debugPrintShort( DEBUG_LEVEL_TRANSFERS,
+					"subunit_type=%02X  subunit_id=%02X  opcode=%02X",
+					(response[0]>>19)&0x1F,
+					(response[0]>>16)&0x07,
+					(response[0]>>8)&0xFF );
+			debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
+			retry=0;
+		}
+		retry--;
 	}
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
-	debugPrint( DEBUG_LEVEL_TRANSFERS, "      => " );
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "                     " );
-
-	request_pos = (unsigned char *)(request);
-
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS,
-			 "subunit_type=%02X  subunit_id=%02X  opcode=%02X",
-			 ((*(request_pos+1))>>3)&0x1F,
-			 (*(request_pos+1))&0x07,
-			 (*(request_pos+2))&0xFF );
-	debugPrintShort (DEBUG_LEVEL_TRANSFERS,"\n");
-    }
-
-    
-    if ( response ) {
-	/* response is in order of receiving, i.e. msb first */
-	debugPrint(DEBUG_LEVEL_TRANSFERS, "  -> RESPONSE: " );
-	for ( i = 0; i < response_len; i++ ) {
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "0x%08X ", response[i] );
+	
+	if (response == 0 ) {
+		debugPrint( DEBUG_LEVEL_TRANSFERS, "  !! TRANSACTION FAILED !!\n" );
 	}
-
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS,"\n" );
-	debugPrint( DEBUG_LEVEL_TRANSFERS,"      => " );
-	switch (response[0]&0xFF000000) {
-	case AVC1394_RESPONSE_NOT_IMPLEMENTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Not Implemented      " );
-	    break;
-	case AVC1394_RESPONSE_ACCEPTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Accepted             " );
-	    break;
-	case AVC1394_RESPONSE_REJECTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Rejected             " );
-	    break;
-	case AVC1394_RESPONSE_IN_TRANSITION:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "In Transition        " );
-	    break;
-	case AVC1394_RESPONSE_IMPLEMENTED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Implemented / Stable " );
-	    break;
-	case AVC1394_RESPONSE_CHANGED:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Changed              " );
-	    break;
-	case AVC1394_RESPONSE_INTERIM:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Interim              " );
-	    break;
-	default:
-	    debugPrintShort( DEBUG_LEVEL_TRANSFERS, "Unknown response     " );
-	    break;
-	}
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS,
-			 "subunit_type=%02X  subunit_id=%02X  opcode=%02X",
-			 (response[0]>>19)&0x1F,
-			 (response[0]>>16)&0x07,
-			 (response[0]>>8)&0xFF );
-	debugPrintShort( DEBUG_LEVEL_TRANSFERS, "\n" );
-    }
-    debugPrint( DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n" );
-    
+	debugPrint( DEBUG_LEVEL_TRANSFERS, "------- TRANSACTION END -------\n" );
     pthread_mutex_unlock( &m_transaction_mutex );
     
     return response;

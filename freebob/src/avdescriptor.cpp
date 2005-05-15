@@ -167,8 +167,20 @@ void AvDescriptor::Load() {
 					| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
 	request[1] = 0xFFFF0000 | (0x02);
 	request[2] = (((0)&0xFFFF) << 16) |0x0000FFFF;
-	response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
 
+	response=0;
+	retries=0;
+		
+	while (((response == 0) || ((response[0]  & 0xFF000000) != 0x09000000)) && retries<MAX_RETRIES) {
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
+		retries++;
+	}
+	if ((response == 0) || ((response[0]  & 0xFF000000) !=0x09000000)) {
+		debugError("Could not read descriptor! Max retries exceeded.");
+		bLoaded=false;
+		return;
+	}
+	
 	iLength=response[2] & 0xFFFF;
 
 	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d ",iLength,iLength);
@@ -199,7 +211,19 @@ void AvDescriptor::Load() {
 		request[1] = 0xFFFF0000 | (iLength)&0xFFFF;
 		request[2] = ((0) << 16) |0x0000FFFF;
 
-		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
+		response=0;
+		retries=0;
+		
+		while (((response == 0) || ((response[0]  & 0xFF000000) != 0x09000000)) && retries<MAX_RETRIES) {
+			response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
+			retries++;
+		}
+		if ((response == 0) || ((response[0] & 0xFF000000) !=0x09000000)) {
+			debugError("Could not read descriptor! Max retries exceeded.");
+			bLoaded=false;
+			return;
+		}
+			
 		data_length_read=(response[1]&0xFFFF);
 		read_result_status=((response[1]>>24)&0xFF);
 

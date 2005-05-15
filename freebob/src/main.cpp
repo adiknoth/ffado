@@ -42,7 +42,8 @@ static struct argp_option options[] = {
     {"verbose",  'v', 0,    0,  "Produce verbose output" },
     {"quiet",    'q', 0,    0,  "Don't produce any output" },
     {"silent",   's', 0,    OPTION_ALIAS },
-    {"time",     't', 0,    0,  "Time in seconds until daemon stops itself" },
+    {"time",     't', "sec",    0,  "Time in seconds until daemon stops itself" },
+    {"port",     'p', "nr",    0,  "IEEE1394 Port to use" },
     { 0 }
 };
 
@@ -63,11 +64,32 @@ parse_opt( int key, char* arg, struct argp_state* state )
         arguments->verbose = 1;
         break;
     case 't':
-        arguments->time = strtol( arg, &tail, 0 );
-        if ( errno ) {
-            debugGlobalError( "Could not parse 'time' argument\n" );
-            return ARGP_ERR_UNKNOWN;
-        }
+        if (arg) {
+        	arguments->time = strtol( arg, &tail, 0 );
+			if ( errno ) {
+				debugGlobalError( "Could not parse 'time' argument\n" );
+				return ARGP_ERR_UNKNOWN;
+			}
+		} else {
+			if ( errno ) {
+				debugGlobalError( "Could not parse 'time' argument\n" );
+				return ARGP_ERR_UNKNOWN;
+			}
+		}
+        break;
+    case 'p':
+        if (arg) {
+			arguments->port = strtol( arg, &tail, 0 );
+			if ( errno ) {
+				debugGlobalError( "Could not parse 'port' argument\n" );
+				return ARGP_ERR_UNKNOWN;
+			}
+		} else {
+			if ( errno ) {
+				debugGlobalError( "Could not parse 'port' argument\n" );
+				return ARGP_ERR_UNKNOWN;
+			}
+		}
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -90,6 +112,7 @@ main( int argc,  char** argv )
     arguments.silent = 0;
     arguments.verbose = 0;
     arguments.time = -1;
+    arguments.port = 0;
 
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.

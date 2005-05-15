@@ -263,6 +263,7 @@ AvDevice::enumerateSubUnits()
 			{
 			    cSubUnits.push_back(tmpAvDeviceSubunit);
 			    //setDebugLevel(DEBUG_LEVEL_ALL);
+			    /*
 			    debugPrint( DEBUG_LEVEL_DEVICE,
 					"Trying to reserve the "
 					"subunit...\n" );
@@ -271,6 +272,7 @@ AvDevice::enumerateSubUnits()
 					"  isReserved?: %d\n",
 					tmpAvDeviceSubunit->isReserved());
 			    tmpAvDeviceSubunit->unReserve();
+			    */
 			    //setDebugLevel(DEBUG_LEVEL_MODERATE);
 			} else {
 			    if ( tmpAvDeviceSubunit ) {
@@ -290,14 +292,45 @@ AvDevice::enumerateSubUnits()
     return eFBRC_Success;
 }
 
+#define AVC1394_COMMAND_STREAM_FORMAT_SUPPORT 0x00002F00
+
+#define AVC1394_COMMAND_STREAM_FORMAT_SUPPORT_INPUT            0x00000000
+#define AVC1394_COMMAND_STREAM_FORMAT_SUPPORT_OUTPUT           0x00000001
+#define AVC1394_COMMAND_STREAM_FORMAT_SUPPORT_SINGLE_REQUEST   0x000000C0
+#define AVC1394_COMMAND_STREAM_FORMAT_SUPPORT_LIST_REQUEST     0x000000C1
+
+#define AVC1394_STREAM_FORMAT_DVCR         0x80
+#define AVC1394_STREAM_FORMAT_AUDIO_MUSIC  0x90
+
+#define AVC1394_STREAM_FORMAT_AM_AM824          0x00
+#define AVC1394_STREAM_FORMAT_AM_AUDIOPACK      0x01
+#define AVC1394_STREAM_FORMAT_AM_FLOAT          0x02
+#define AVC1394_STREAM_FORMAT_AM_AM824_COMPOUND 0x40
+
+#define AVC1394_STREAM_FORMAT_AM_AM824C_22K05 0x00
+#define AVC1394_STREAM_FORMAT_AM_AM824C_24K   0x01
+#define AVC1394_STREAM_FORMAT_AM_AM824C_32K   0x02
+#define AVC1394_STREAM_FORMAT_AM_AM824C_44K1  0x03
+#define AVC1394_STREAM_FORMAT_AM_AM824C_48K   0x04
+#define AVC1394_STREAM_FORMAT_AM_AM824C_96K   0x05
+#define AVC1394_STREAM_FORMAT_AM_AM824C_176K4 0x06
+#define AVC1394_STREAM_FORMAT_AM_AM824C_192K  0x07
+#define AVC1394_STREAM_FORMAT_AM_AM824C_88K2  0x0A
+
+#define AVC1394_STREAM_FORMAT_AM_AM824C_CBR_SUPPORTED     0x00
+#define AVC1394_STREAM_FORMAT_AM_AM824C_CBR_NOT_SUPPORTED 0x02
+#define AVC1394_STREAM_FORMAT_AM_AM824C_CBR_DONT_CARE     0x01
 
 FBReturnCodes AvDevice::setInputPlugSignalFormat(unsigned char plug, unsigned char fmt, quadlet_t fdf) {
 	quadlet_t request[6];
 	quadlet_t *response;
 
 	request[0] = AVC1394_CTYPE_CONTROL | AVC1394_SUBUNIT_TYPE_UNIT | AVC1394_SUBUNIT_ID_IGNORE
-					| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | plug;
-	request[1] = (0x80000000) | ((fmt & 0x3F)<<24) | (fdf & 0x00FFFFFF);
+					| AVC1394_COMMAND_STREAM_FORMAT_SUPPORT 
+					| AVC1394_COMMAND_STREAM_FORMAT_SUPPORT_SINGLE_REQUEST;
+	request[1] = 0x00000000;
+	request[2] = 0xFFFF0000 | (AVC1394_STREAM_FORMAT_AUDIO_MUSIC << 8) | AVC1394_STREAM_FORMAT_AM_AM824_COMPOUND;
+	
 	response = Ieee1394Service::instance()->avcExecuteTransaction( m_iNodeId, request, 2, 2);
 	if (response != NULL) {
 
@@ -773,7 +806,17 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
 			sprintf(tmpbuff,"%d",0);
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
 			
+			// apparently this can fail 
 			name=getInputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			if (name=="") { // retry
+				name=getInputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			}
+			if (name=="") { // give up
+				sprintf(tmpbuff,"out_%d_%d",clusterInfo->getPosition(j),clusterInfo->getLocation(j));
+				name=tmpbuff;
+			}
+			debugError( " --> %s\n",name.c_str());
+
 			xmlChar *enc_name=xmlEncodeEntitiesReentrant(root->doc, BAD_CAST name.c_str());
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
 			xmlFree(enc_name);
@@ -862,9 +905,249 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
 			sprintf(tmpbuff,"%d",0);
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
 			
+			// apparently this can fail 
 			name=getOutputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
-	
+			if (name=="") { // retry
+				name=getInputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			}
+			if (name=="") { // give up
+				sprintf(tmpbuff,"in_%d_%d",clusterInfo->getPosition(j),clusterInfo->getLocation(j));
+				name=tmpbuff;
+			}
+
+			debugError( " --> %s\n",name.c_str());
+			
 			xmlChar *enc_name=xmlEncodeEntitiesReentrant(root->doc, BAD_CAST name.c_str());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
+			xmlFree(enc_name);
+		}
+	}
+
+    return eFBRC_Success;
+}
+
+FBReturnCodes
+AvDevice::addPlaybackConnectionsToXml( xmlNodePtr connectionSet )    
+{
+	char tmpbuff[256];
+	std::string name;
+	
+	// At this point only plug 0 is used by the firmware for audio i/o
+	int plug=0;
+	
+	// obtain the music subunit (no beauty contests for this one :)
+	AvDeviceSubunit *tmpSubunit=getSubunit(0x0C,0);
+	AvDeviceMusicSubunit *musicSubunit;
+	AvMusicStatusDescriptor *statusDescriptor;
+	AvPlugInfoBlock* plugInfo;
+	
+	if(tmpSubunit && (tmpSubunit->getType()==0x0C)) {	
+		musicSubunit=(AvDeviceMusicSubunit *)tmpSubunit;
+	} else {
+		debugError( "Could not find music subunit\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	statusDescriptor=musicSubunit->getMusicStatusDescriptor();
+	
+	if(!statusDescriptor) {
+		debugError( "Could not find music status descriptor\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	plugInfo=statusDescriptor->getDestinationPlugInfoBlock(plug);
+	if(!plugInfo) {
+		debugError( "Could not find destination plug info block\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	
+    xmlNodePtr connection = xmlNewChild( connectionSet, 0, BAD_CAST "Connection", 0 );
+    if ( !connection ) {
+        debugError( "Couldn't create connection node for direction 1 (playback)\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    sprintf(tmpbuff,"%d",getGuid());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getPort());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Port",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getNodeId());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Node",tmpbuff);
+   
+    sprintf(tmpbuff,"%d",plug); 
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Plug",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",48000);
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Samplerate",tmpbuff);
+ 
+    sprintf(tmpbuff,"%d",plugInfo->getNbChannels());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Dimension",tmpbuff);
+
+    xmlNodePtr streams=xmlNewChild( connection, 0, BAD_CAST "Streams", 0 );
+    if ( !streams ) {
+	debugError( "Couldn't create streams node for direction 1 (playback)\n");
+	return eFBRC_CreatingXMLDocFailed;
+    }
+    
+	for (unsigned int i=0; i<plugInfo->getNbClusters(); i++) {
+		AvClusterInfoBlock *clusterInfo=plugInfo->getCluster(i);
+
+		if (!clusterInfo) {
+			debugError( "Could not find destination plug routing cluster %d\n",i );
+			return eFBRC_CreatingXMLDocFailed;
+		}	
+		for (unsigned int j=0;j<clusterInfo->getNbSignals();j++) {
+			xmlNodePtr stream = xmlNewChild( streams, 0, BAD_CAST "Stream", 0 );
+			if ( !stream ) {
+				debugError( "Couldn't create stream node for direction 1 (playback), cluster %d, signal %d\n",i ,j);
+				return eFBRC_CreatingXMLDocFailed;
+			}
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getStreamFormat());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Format",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPortType());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Type",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPosition(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Position",tmpbuff);
+
+			sprintf(tmpbuff,"%d",clusterInfo->getLocation(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Location",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",0);
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
+			
+			// apparently this can fail 
+			name=getInputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			if (name=="") { // retry
+				name=getInputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			}
+			if (name=="") { // give up
+				sprintf(tmpbuff,"out_%d_%d",clusterInfo->getPosition(j),clusterInfo->getLocation(j));
+				name=tmpbuff;
+			}
+			debugError( " --> %s\n",name.c_str());
+
+			xmlChar *enc_name=xmlEncodeEntitiesReentrant(connectionSet->doc, BAD_CAST name.c_str());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
+			xmlFree(enc_name);
+		}
+	}
+
+    return eFBRC_Success;
+}
+
+FBReturnCodes
+AvDevice::addCaptureConnectionsToXml( xmlNodePtr connectionSet )    
+{
+	char tmpbuff[256];
+	std::string name;
+	
+	// At this point only plug 0 is used by the firmware for audio i/o
+	int plug=0;
+	
+	// obtain the music subunit (no beauty contests for this one :)
+	AvDeviceSubunit *tmpSubunit=getSubunit(0x0C,0);
+	AvDeviceMusicSubunit *musicSubunit;
+	AvMusicStatusDescriptor *statusDescriptor;
+	AvPlugInfoBlock* plugInfo;
+	
+	if(tmpSubunit && (tmpSubunit->getType()==0x0C)) {	
+		musicSubunit=(AvDeviceMusicSubunit *)tmpSubunit;
+	} else {
+		debugError( "Could not find music subunit\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	statusDescriptor=musicSubunit->getMusicStatusDescriptor();
+	
+	if(!statusDescriptor) {
+		debugError( "Could not find music status descriptor\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	plugInfo=statusDescriptor->getSourcePlugInfoBlock(plug);
+	if(!plugInfo) {
+		debugError( "Could not find source plug info block\n" );
+		return eFBRC_CreatingXMLDocFailed;
+	}
+	
+	
+    xmlNodePtr connection = xmlNewChild( connectionSet, 0, BAD_CAST "Connection", 0 );
+    if ( !connection ) {
+        debugError( "Couldn't create connection node for direction 0 (capture)\n" );
+        return eFBRC_CreatingXMLDocFailed;
+    }
+    
+    sprintf(tmpbuff,"%d",getGuid());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getPort());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Port",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",getNodeId());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Node",tmpbuff);
+   
+    sprintf(tmpbuff,"%d",plug); 
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Plug",tmpbuff);
+    
+    sprintf(tmpbuff,"%d",48000);
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Samplerate",tmpbuff);
+ 
+    sprintf(tmpbuff,"%d",plugInfo->getNbChannels());
+    FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Dimension",tmpbuff);
+
+    xmlNodePtr streams=xmlNewChild( connection, 0, BAD_CAST "Streams", 0 );
+    if ( !streams ) {
+	debugError( "Couldn't create streams node for direction 0 (capture)\n");
+	return eFBRC_CreatingXMLDocFailed;
+    }
+    
+	for (unsigned int i=0; i<plugInfo->getNbClusters(); i++) {
+		AvClusterInfoBlock *clusterInfo=plugInfo->getCluster(i);
+
+		if (!clusterInfo) {
+			debugError( "Could not find destination plug routing cluster %d\n",i );
+			return eFBRC_CreatingXMLDocFailed;
+		}	
+		for (unsigned int j=0;j<clusterInfo->getNbSignals();j++) {
+			xmlNodePtr stream = xmlNewChild( streams, 0, BAD_CAST "Stream", 0 );
+			if ( !stream ) {
+				debugError( "Couldn't create stream node for direction 1 (playback), cluster %d, signal %d\n",i ,j);
+				return eFBRC_CreatingXMLDocFailed;
+			}
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getStreamFormat());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Format",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPortType());
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Type",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",clusterInfo->getPosition(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Position",tmpbuff);
+
+			sprintf(tmpbuff,"%d",clusterInfo->getLocation(j));
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Location",tmpbuff);
+			
+			sprintf(tmpbuff,"%d",0);
+			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "DestinationPort",tmpbuff);
+			
+			// apparently this can fail 
+			name=getOutputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			if (name=="") { // retry
+				name=getOutputPlugChannelName(plug, clusterInfo->getPosition(j)+1);
+			}
+			if (name=="") { // give up
+				sprintf(tmpbuff,"in_%d_%d",clusterInfo->getPosition(j),clusterInfo->getLocation(j));
+				name=tmpbuff;
+			}
+			debugError( " --> %s\n",name.c_str());
+
+			xmlChar *enc_name=xmlEncodeEntitiesReentrant(connectionSet->doc, BAD_CAST name.c_str());
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
 			xmlFree(enc_name);
 		}
