@@ -53,38 +53,38 @@ freebobctl_xmlparse_stream(xmlDocPtr doc, xmlNodePtr cur) {
 	while (cur != NULL) {
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Position"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\t\tposition: %s\n", key);
+// 		    printf("\t\tposition: %s\n", key);
 		    stream_spec->position=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Location"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\t\tlocation: %s\n", key);
+// 		    printf("\t\tlocation: %s\n", key);
 		    stream_spec->location=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Format"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\t\tformat: %s\n", key);
+// 		    printf("\t\tformat: %s\n", key);
 		    stream_spec->format=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Type"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\t\ttype: %s\n", key);
+// 		    printf("\t\ttype: %s\n", key);
 		    stream_spec->type=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"DestinationPort"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\t\tdestination_port: %s\n", key);
+// 		    printf("\t\tdestination_port: %s\n", key);
 		    stream_spec->destination_port=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Name"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\t\tname: %s\n", key);
+// 		    printf("\t\tname: %s\n", key);
 		    strncpy(stream_spec->name,key,FREEBOBCTL_MAX_NAME_LEN);
 		    xmlFree(key);
  	    }
@@ -170,38 +170,38 @@ freebobctl_xmlparse_connection (xmlDocPtr doc, xmlNodePtr cur) {
 	while (cur != NULL) {
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Id"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\tid: %s\n", key);
+// 		    printf("\tid: %s\n", key);
 		    connection_spec->id=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Node"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\tnode: %s\n", key);
+// 		    printf("\tnode: %s\n", key);
 		    connection_spec->node=strtol(key, (char **)NULL, 10);
 		    
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Port"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\tport: %s\n", key);
+// 		    printf("\tport: %s\n", key);
 		    connection_spec->port=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Plug"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\tplug: %s\n", key);
+// 		    printf("\tplug: %s\n", key);
 		    connection_spec->plug=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Dimension"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\tdimension: %s\n", key);
+// 		    printf("\tdimension: %s\n", key);
 		    connection_spec->dimension=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
 	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Samplerate"))) {
 		    key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		    printf("\tsamplerate: %s\n", key);
+// 		    printf("\tsamplerate: %s\n", key);
 		    connection_spec->samplerate=strtol(key, (char **)NULL, 10);
 		    xmlFree(key);
  	    }
@@ -239,16 +239,16 @@ freebobctl_xmlparse_connectionset (xmlDocPtr doc, xmlNodePtr node) {
 	connection_info->nb_connections=0;
 	cur = node->xmlChildrenNode;
 	while (cur != NULL) {
-		printf("%s\n",cur->name);
+// 		printf("%s\n",cur->name);
 		
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"Connection"))) {
 			connection_info->nb_connections=connection_info->nb_connections+1;
-			printf("nb_connections: %d\n", connection_info->nb_connections);
+// 			printf("nb_connections: %d\n", connection_info->nb_connections);
 		}
 		
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"Direction"))) {
 			key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-			printf("\tdirection: %s\n", key);
+// 			printf("\tdirection: %s\n", key);
 			connection_info->direction=strtol(key, (char **)NULL, 10);
 			xmlFree(key);
 		}
@@ -353,7 +353,7 @@ freebob_connection_info_t * freebobctl_xmlparse_get_connection_info(xmlDocPtr do
 	
 	connection_info=freebobctl_xmlparse_connectionset (doc, cur);
 	
-	freebobctl_print_connection_info(connection_info);
+	//freebobctl_print_connection_info(connection_info);
 
 	return connection_info;
 

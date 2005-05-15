@@ -12,6 +12,7 @@
 int
 main(int argc, char **argv) {
 	char *url;
+	freebob_connection_info_t *test_info;
 	
 	printf("Using freebob control library version: %s\n",freebobctl_get_version());
 		
@@ -22,11 +23,17 @@ main(int argc, char **argv) {
 
 	url = argv[1];
 
-	freebob_connection_info_t *test_info=freebobctl_get_connection_info_from_osc(url, 0);
+	// capture
+	printf("CAPTURE DIRECTION\n"); 
+	test_info=freebobctl_get_connection_info_from_osc(url, 0);
+	freebobctl_print_connection_info(test_info);
 	freebobctl_free_connection_info(test_info);
-	
-	//test_info=freebobctl_get_connection_info_from_xml_file(docname, 1);
-	//freebobctl_free_connection_info(test_info);
+
+	printf("PLAYBACK DIRECTION\n"); 
+	test_info=freebobctl_get_connection_info_from_osc(url, 1);
+	freebobctl_print_connection_info(test_info);
+	freebobctl_free_connection_info(test_info);
+
 	
 	
 	return (1);
