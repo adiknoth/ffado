@@ -1,5 +1,6 @@
 noinst_PROGRAMS = byte_order detect_avc_unit stream_format get-xml-description \
-                  test-freebob-midi test-freebob-audio test-freebob-iso test-freebob-synctransfer csr1212_read
+                  test-freebob-midi test-freebob-audio test-freebob-iso test-freebob-synctransfer csr1212_read \
+                  test-freebob-bounce
 
 
 byte_order_SOURCES = byte_order.c
@@ -8,6 +9,7 @@ stream_format_SOURCES = stream_format.cpp
 test_freebob_midi_SOURCES = test-freebob-midi.c
 test_freebob_audio_SOURCES = test-freebob-audio.c
 test_freebob_iso_SOURCES = test-freebob-iso.c
+test_freebob_bounce_SOURCES = test-freebob-bounce.c
 test_freebob_synctransfer_SOURCES = test-freebob-synctransfer.c
 csr1212_read_SOURCES = ../src/csr1212.c ../src/csr1212.h csr1212_read.c
 get_xml_description_SOURCES = get-xml-description.c
