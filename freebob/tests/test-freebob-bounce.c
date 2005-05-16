@@ -435,9 +435,12 @@ int main (int argc, char *argv[])
 	iec61883_plug_opcr_add (plug_handle, 1,IEC61883_OVERHEAD_512,2048);
 	iec61883_plug_opcr_add (plug_handle, 1,IEC61883_OVERHEAD_512,2048);
 	
+	int g_incoming=0;
+	int g_outgoing=0;
+	
 	fprintf (stderr, "Wait for plug connections...\n");
-	while ((raw1394_loop_iterate(plug_handle) == 0)) {
-		fprintf (stderr, "something happened at the plugs...\n");
+	while (!g_done && (!g_incoming || !g_outgoing) ) {
+		fprintf (stderr, "something happened at the plugs: %d ...\n", raw1394_loop_iterate(plug_handle));
 	}	
 
 //#define TABLE_SIZE 4
