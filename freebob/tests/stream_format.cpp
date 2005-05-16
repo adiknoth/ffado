@@ -21,6 +21,7 @@
 #include <libavc1394/avc1394.h>
 #include <libraw1394/raw1394.h>
 
+#include <argp.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -30,6 +31,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <iterator>
 
 using namespace std;
 
@@ -139,10 +141,126 @@ enum ESamplingFrequency {
     eSF_DontCare = 0x0F,
 };
 
+ostream& operator<<( ostream& stream, ESamplingFrequency freq )
+{
+    char* str;
+    switch ( freq ) {
+    case eSF_22050Hz:
+        str = "22050";
+        break;
+    case eSF_24000Hz:
+        str = "24000";
+        break;
+    case eSF_32000Hz:
+        str = "32000";
+        break;
+    case eSF_44100Hz:
+        str = "44100";
+        break;
+    case eSF_48000Hz:
+        str = "48000";
+        break;
+    case eSF_88200Hz:
+        str = "88200";
+        break;
+    case eSF_96000Hz:
+        str = "96000";
+        break;
+    case eSF_176400Hz:
+        str = "176400";
+        break;
+    case eSF_192000Hz:
+        str = "192000";
+        break;
+    case eSF_DontCare:
+    default:
+        str = "unknown";
+    }
+    return stream << str;
+};
+
 enum ERateControl {
     eRC_Supported = 0x00,
     eRC_DontCare  = 0x01,
 };
+
+
+////////////////////////////////////////////////
+// arg parsing
+////////////////////////////////////////////////
+const char *argp_program_version = "stream_format 0.1";
+const char *argp_program_bug_address = "<freebob-devel@lists.sf.net>";
+static char doc[] = "stream_format -- get/set test program for FreeBob";
+static char args_doc[] = "NODE_ID PLUG_ID";
+static struct argp_option options[] = {
+    {"verbose",   'v', 0,           0,            "Produce verbose output" },
+    {"test",      't', 0,           0,            "Do tests instead get/set action" },
+    {"frequency", 'f', "FREQUENCY", 0,  "Set frequency" },
+    { 0 }
+};
+
+struct arguments
+{
+    arguments()
+        : verbose( false )
+        , test( false )
+        , frequency( 0 )
+        {
+            args[0] = 0;
+            args[1] = 0;
+        }
+
+    char* args[2];
+    bool  verbose;
+    bool  test;
+    int   frequency;
+} arguments;
+
+// Parse a single option.
+static error_t
+parse_opt( int key, char* arg, struct argp_state* state )
+{
+    // Get the input argument from `argp_parse', which we
+    // know is a pointer to our arguments structure.
+    struct arguments* arguments = ( struct arguments* ) state->input;
+
+    char* tail;
+    switch (key) {
+    case 'v':
+        arguments->verbose = true;
+        break;
+    case 't':
+        arguments->test = true;
+        break;
+    case 'f':
+        errno = 0;
+        arguments->frequency = strtol(arg, &tail, 0);
+        if (errno) {
+            perror("argument parsing failed:");
+            return errno;
+        }
+    case ARGP_KEY_ARG:
+        if (state->arg_num >= 2) {
+            // Too many arguments.
+            argp_usage (state);
+        }
+        arguments->args[state->arg_num] = arg;
+        break;
+    case ARGP_KEY_END:
+        if (state->arg_num < 2) {
+            // Not enough arguments.
+            argp_usage (state);
+        }
+        break;
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+static struct argp argp = { options, parse_opt, args_doc, doc };
+
+////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////
@@ -538,7 +656,7 @@ public:
     virtual StreamFormatInfo* clone() const;
 
     number_of_channels_t m_numberOfChannels;
-    stream_format_t m_streamFormat;
+    stream_format_t      m_streamFormat;
 };
 
 StreamFormatInfo::StreamFormatInfo()
@@ -590,11 +708,10 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual FormatInformationStreamsSync* clone() const;
 
-
-    reserved_t m_reserved0;
+    reserved_t           m_reserved0;
     sampling_frequency_t m_samplingFrequency;
-    rate_control_t m_rateControl;
-    reserved_t m_reserved1;
+    rate_control_t       m_rateControl;
+    reserved_t           m_reserved1;
 };
 
 FormatInformationStreamsSync::FormatInformationStreamsSync()
@@ -655,11 +772,12 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual FormatInformationStreamsCompound* clone() const;
 
-    sampling_frequency_t m_samplingFrequency;
-    rate_control_t m_rateControl;
-    number_of_stream_format_infos_t m_numberOfStreamFormatInfos;
+    sampling_frequency_t                     m_samplingFrequency;
+    rate_control_t                           m_rateControl;
+    number_of_stream_format_infos_t          m_numberOfStreamFormatInfos;
+
     typedef std::vector< StreamFormatInfo* > StreamFormatInfoVector;
-    StreamFormatInfoVector m_streamFormatInfos;
+    StreamFormatInfoVector                   m_streamFormatInfos;
 };
 
 FormatInformationStreamsCompound::FormatInformationStreamsCompound()
@@ -834,9 +952,11 @@ FormatInformation::deserialize( IISDeserialize& de )
             de.read( &m_level2 );
 
             if (m_level2 == eFHL2_AM824_SYNC_STREAM ) {
-                printf( "+-------------------+\n" );
-                printf( "|  sync stream      |\n" );
-                printf( "+-------------------+\n" );
+                if ( arguments.verbose ) {
+                    printf( "+-------------------+\n" );
+                    printf( "|  sync stream      |\n" );
+                    printf( "+-------------------+\n" );
+                }
                 m_streams = new FormatInformationStreamsSync();
                 result = m_streams->deserialize( de );
             } else {
@@ -847,9 +967,11 @@ FormatInformation::deserialize( IISDeserialize& de )
         break;
         case  eFHL1_AUDIOMUSIC_AM824_COMPOUND:
         {
-            printf( "+-------------------+\n" );
-            printf( "|  compound stream  |\n" );
-            printf( "+-------------------+\n" );
+            if ( arguments.verbose ) {
+                printf( "+-------------------+\n" );
+                printf( "|  compound stream  |\n" );
+                printf( "+-------------------+\n" );
+            }
             m_streams = new FormatInformationStreamsCompound();
             result = m_streams->deserialize( de );
         }
@@ -980,12 +1102,15 @@ public:
         eS_NoStreamFormat = AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NO_STREAM_FORMAT,
         eS_NotUsed        = AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NOT_USED,
     };
+    typedef byte_t status_t;
+    typedef byte_t index_in_stream_format_t;
 
-    ExtendedStreamFormatCmd( ESubFunction eSubFunction );
+    ExtendedStreamFormatCmd( ESubFunction eSubFunction = eSF_ExtendedStreamFormatInformationCommand );
     virtual ~ExtendedStreamFormatCmd();
 
     bool setPlugAddress( const PlugAddress& plugAddress );
     bool setIndexInStreamFormat( const int index );
+    bool setSubFunction( ESubFunction subFunction );
 
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
@@ -994,10 +1119,11 @@ public:
                        raw1394handle_t handle,
                        unsigned int node_id );
 
-protected:
-    typedef byte_t index_in_stream_format_t;
-    typedef byte_t status_t;
+    inline status_t getStatus();
+    FormatInformation* getFormatInformation();
+    inline index_in_stream_format_t getIndex();
 
+protected:
     opcode_t m_opcode;
     subfunction_t m_subFunction;
     PlugAddress* m_plugAddress;
@@ -1104,35 +1230,41 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
         req.quadlet[i] = ntohl( req.quadlet[i] );
     }
 
-    // debug output
-    puts("request:");
-    for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
-          printf("  %2d: 0x%08x\n", i, req.quadlet[i]);
+    if ( arguments.verbose ) {
+        // debug output
+        puts("request:");
+        for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
+            printf("  %2d: 0x%08x\n", i, req.quadlet[i]);
+        }
     }
 
     resp = reinterpret_cast<packet_t*> ( avc1394_transaction_block( handle, node_id, req.quadlet, STREAM_FORMAT_REQUEST_SIZE,  1 ) );
     if ( resp ) {
-        // debug output
-        puts("response:");
-        for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
-	    printf( "  %2d: 0x%08x\n", i, resp->quadlet[i] );
-	}
+        if ( arguments.verbose ) {
+            // debug output
+            puts("response:");
+            for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
+                printf( "  %2d: 0x%08x\n", i, resp->quadlet[i] );
+            }
+        }
 
         // reorder the bytes to the correct layout
         for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
             resp->quadlet[i] = htonl( resp->quadlet[i] );
         }
 
-        // a more detailed debug output
-        printf( "\n" );
-        printf( " idx type                       value\n" );
-        printf( "-------------------------------------\n" );
-        printf( "  %02d                     ctype: 0x%02x\n", 0, resp->byte[0] );
-        printf( "  %02d subunit_type + subunit_id: 0x%02x\n", 1, resp->byte[1] );
-        printf( "  %02d                    opcode: 0x%02x\n", 2, resp->byte[2] );
+        if ( arguments.verbose ) {
+            // a more detailed debug output
+            printf( "\n" );
+            printf( " idx type                       value\n" );
+            printf( "-------------------------------------\n" );
+            printf( "  %02d                     ctype: 0x%02x\n", 0, resp->byte[0] );
+            printf( "  %02d subunit_type + subunit_id: 0x%02x\n", 1, resp->byte[1] );
+            printf( "  %02d                    opcode: 0x%02x\n", 2, resp->byte[2] );
 
-        for ( int i = 3; i < STREAM_FORMAT_REQUEST_SIZE * 4; ++i ) {
-            printf( "  %02d                operand %2d: 0x%02x\n", i, i-3, resp->byte[i] );
+            for ( int i = 3; i < STREAM_FORMAT_REQUEST_SIZE * 4; ++i ) {
+                printf( "  %02d                operand %2d: 0x%02x\n", i, i-3, resp->byte[i] );
+            }
         }
 
         // parse output
@@ -1148,7 +1280,9 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
             break;
             case eR_Rejected:
                 if ( m_subFunction == eSF_ExtendedStreamFormatInformationCommandList ) {
-                    printf( "no futher stream formats defined\n" );
+                    if ( arguments.verbose ) {
+                        printf( "no futher stream formats defined\n" );
+                    }
                     result = true;
                 } else {
                     printf( "request rejected\n" );
@@ -1164,12 +1298,36 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
     return result;
 }
 
+status_t
+ExtendedStreamFormatCmd::getStatus()
+{
+    return m_status;
+}
+
+FormatInformation*
+ExtendedStreamFormatCmd::getFormatInformation()
+{
+    return m_formatInformation;
+}
+
+ExtendedStreamFormatCmd::index_in_stream_format_t
+ExtendedStreamFormatCmd::getIndex()
+{
+    return m_indexInStreamFormat;
+}
+
+bool
+ExtendedStreamFormatCmd::setSubFunction( ESubFunction subFunction )
+{
+    m_subFunction = subFunction;
+    return true;
+}
 
 ////////////////////////////////////////
 // Test application
 ////////////////////////////////////////
 void
-doTests(raw1394handle_t handle, int node_id, int plug_id)
+doTest(raw1394handle_t handle, int node_id, int plug_id)
 {
 
     ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
@@ -1188,7 +1346,7 @@ doTests(raw1394handle_t handle, int node_id, int plug_id)
     extendedStreamFormatCmd.setIndexInStreamFormat( 4 );
     extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
 
-    ExtendedStreamFormatCmd extendedStreamFormatCmdS = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+    ExtendedStreamFormatCmd extendedStreamFormatCmdS = ExtendedStreamFormatCmd();
     extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                           PlugAddress::ePD_Input,
                                                           unitPlugAddress ) );
@@ -1200,29 +1358,224 @@ doTests(raw1394handle_t handle, int node_id, int plug_id)
     return;
 }
 
+////////////////////////////////////////
+// Main application
+////////////////////////////////////////
+struct FormatInfo {
+    FormatInfo()
+        : m_freq( eSF_DontCare )
+        , m_format( 0 )
+        , m_audioChannels( 0 )
+        , m_midiChannels( 0 )
+        , m_index( 0 )
+        {}
+
+    ESamplingFrequency m_freq;
+    int                m_format; // 0 = compound, 1 = sync
+    int                m_audioChannels;
+    int                m_midiChannels;
+    int                m_index;
+};
+typedef vector< struct FormatInfo > FormatInfoVector;
+
+ostream& operator<<( ostream& stream, FormatInfo info )
+{
+    stream << info.m_freq << " Hz (";
+    if ( info.m_format ) {
+            stream << "sync ";
+    } else {
+        stream << "compound ";
+    }
+    stream << "stream, ";
+    stream << "audio channels: " << info.m_audioChannels
+           << ", midi channels: " << info.m_midiChannels << ")";
+    return stream;
+}
+
+
+FormatInfo
+createFormatInfo( ExtendedStreamFormatCmd& cmd )
+{
+    FormatInfo fi;
+
+    FormatInformationStreamsSync* syncStream
+        = dynamic_cast< FormatInformationStreamsSync* > ( cmd.getFormatInformation()->m_streams );
+    if ( syncStream ) {
+        fi.m_freq = static_cast<ESamplingFrequency>( syncStream->m_samplingFrequency );
+        fi.m_format = 1;
+    }
+
+    FormatInformationStreamsCompound* compoundStream
+        = dynamic_cast< FormatInformationStreamsCompound* > ( cmd.getFormatInformation()->m_streams );
+    if ( compoundStream ) {
+        fi.m_freq = static_cast<ESamplingFrequency>( compoundStream->m_samplingFrequency );
+        fi.m_format = 0;
+        for ( int j = 0; j < compoundStream->m_numberOfStreamFormatInfos; ++j )
+        {
+            switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
+            case AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW:
+                fi.m_audioChannels += compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                break;
+            case AVC1394_STREAM_FORMAT_AM824_MIDI_CONFORMANT:
+                fi.m_midiChannels += compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                break;
+            default:
+                cout << "addStreamFormat: unknown stream format for channel" << endl;
+            }
+        }
+    }
+    fi.m_index = cmd.getIndex();
+    return fi;
+}
+
+
+bool
+doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequency = eSF_DontCare)
+{
+    ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+    UnitPlugAddress unitPlugAddress( 0x00,  plug_id );
+    extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
+                                                         PlugAddress::ePD_Input,
+                                                         unitPlugAddress ) );
+
+    int i = 0;
+    FormatInfoVector supportedFormatInfos;
+    bool cmdSuccess = false;
+
+    do {
+        extendedStreamFormatCmd.setIndexInStreamFormat( i );
+        cmdSuccess = extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle,  node_id );
+        if ( cmdSuccess
+             && ( extendedStreamFormatCmd.getResponse() == AVCCommand::eR_Implemented ) )
+        {
+            supportedFormatInfos.push_back( createFormatInfo( extendedStreamFormatCmd ) );
+        }
+        ++i;
+    } while ( cmdSuccess && ( extendedStreamFormatCmd.getResponse() ==  ExtendedStreamFormatCmd::eR_Implemented ) );
+
+    if ( !cmdSuccess ) {
+        cerr << "Failed to retrieve format infos" << endl;
+        return false;
+    }
+
+    cout << "Supported frequencies:" << endl;
+    for ( FormatInfoVector::iterator it = supportedFormatInfos.begin();
+          it != supportedFormatInfos.end();
+          ++it )
+    {
+        cout << "  " << *it << endl;
+    }
+
+    if ( frequency != eSF_DontCare ) {
+        cout << "Trying to set frequency (" << frequency << "): " << endl;
+
+        FormatInfoVector::iterator it;
+        for ( it = supportedFormatInfos.begin();
+              it != supportedFormatInfos.end();
+              ++it )
+        {
+            if ( it->m_freq == frequency ) {
+                cout << "  - frequency " << frequency << " is supported" << endl;
+
+                ExtendedStreamFormatCmd setFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+                setFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
+                                                          PlugAddress::ePD_Input,
+                                                          unitPlugAddress ) );
+
+                setFormatCmd.setIndexInStreamFormat( it->m_index );
+                if ( !setFormatCmd.fire( AVCCommand::eCT_Status, handle,  node_id ) ) {
+                    cout << "  - failed to retrieve format for index " << it->m_index << endl;
+                    return false;
+                }
+
+                cout << "  - " << createFormatInfo( setFormatCmd ) << endl;
+
+                setFormatCmd.setSubFunction( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+                if ( !setFormatCmd.fire( AVCCommand::eCT_Control,  handle,  node_id ) ) {
+                    cout << "  - failed to set new format" << endl;
+                    return false;
+                }
+                cout << "  - configuration operation succedded" << endl;
+                break;
+            }
+        }
+        if ( it == supportedFormatInfos.end() ) {
+            cout << "  - frequency not supported by device. Operation failed" << endl;
+        }
+    }
+
+    ExtendedStreamFormatCmd currentFormat = ExtendedStreamFormatCmd();
+    currentFormat.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
+                                               PlugAddress::ePD_Input,
+                                               unitPlugAddress ) );
+
+    if ( currentFormat.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
+        cout << "Configured frequency: " << createFormatInfo( currentFormat ) << endl;
+    }
+
+    return true;
+}
+
 ///////////////////////////////////////////////////////////////
+ESamplingFrequency
+parseFrequencyString( int frequency )
+{
+    ESamplingFrequency efreq;
+    switch ( frequency ) {
+    case 22050:
+        efreq = eSF_22050Hz;
+        break;
+    case 24000:
+        efreq = eSF_24000Hz;
+        break;
+    case 32000:
+        efreq = eSF_32000Hz;
+        break;
+    case 44100:
+        efreq = eSF_44100Hz;
+        break;
+    case 48000:
+        efreq = eSF_48000Hz;
+        break;
+    case 88200:
+        efreq = eSF_88200Hz;
+        break;
+    case 96000:
+        efreq = eSF_96000Hz;
+        break;
+    case 176400:
+        efreq = eSF_176400Hz;
+        break;
+    case 192000:
+        efreq = eSF_192000Hz;
+        break;
+    default:
+        efreq = eSF_DontCare;
+    }
+
+    return efreq;
+}
 
 int
 main(int argc, char **argv)
 {
-    if (argc < 3) {
-	printf("usage: %s <NODE_ID> <PLUG_ID>\n", argv[0]);
-	return 0;
-    }
+    // arg parsing
+    argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
     errno = 0;
     char* tail;
-    int node_id = strtol(argv[1], &tail, 0);
+    int node_id = strtol(arguments.args[0], &tail, 0);
     if (errno) {
 	perror("argument parsing failed:");
 	return -1;
     }
-    int plug_id = strtol(argv[2], &tail, 0);
+    int plug_id = strtol(arguments.args[1], &tail, 0);
     if (errno) {
 	perror("argument parsing failed:");
 	return -1;
     }
 
+    // create raw1394handle
     raw1394handle_t handle;
     handle = raw1394_new_handle ();
     if (!handle) {
@@ -1241,31 +1594,14 @@ main(int argc, char **argv)
 	return -1;
     }
 
-    doTests( handle, node_id,  plug_id );
+    if ( arguments.test ) {
+        doTest( handle, node_id,  plug_id );
+    } else {
+        ESamplingFrequency efreq = parseFrequencyString( arguments.frequency );
+        doApp( handle, node_id, plug_id, efreq );
+    }
+
     raw1394_destroy_handle( handle );
 
     return 0;
 }
-
-/* random stuff which might be still useful
-
-            #define AVC_CMD_HEADER_SIZE 3
-            #define EXTENDED_STREAM_FORMAT_OPERAND_POS_STATUS 6
-            switch ( resp->byte[AVC_CMD_HEADER_SIZE + EXTENDED_STREAM_FORMAT_OPERAND_POS_STATUS] ) {
-            case eS_Active:
-                printf( "format is set and a signal is streaming through or to the plug\n" );
-                break;
-            case eS_Inactive:
-                printf( "format is set but no signal is stremaing through the plug\n" );
-                break;
-            case eS_NoStreamFormat:
-                printf( "there is no stream format set, plug has no streaming capabilities\n" );
-                break;
-            case eS_NotUsed:
-                printf( "not used: used for specific inquiry response\n" );
-                break;
-            default:
-                printf( "unknown status\n" );
-            }
-
-*/
