@@ -196,7 +196,8 @@ static struct argp_option options[] = {
     {"verbose",   'v', 0,           0,            "Produce verbose output" },
     {"test",      't', 0,           0,            "Do tests instead get/set action" },
     {"frequency", 'f', "FREQUENCY", 0,  "Set frequency" },
-    { 0 }
+    {"port",      'p', "PORT",      0,  "Set port" },
+   { 0 }
 };
 
 struct arguments
@@ -205,6 +206,7 @@ struct arguments
         : verbose( false )
         , test( false )
         , frequency( 0 )
+        , port( 0 )
         {
             args[0] = 0;
             args[1] = 0;
@@ -214,6 +216,7 @@ struct arguments
     bool  verbose;
     bool  test;
     int   frequency;
+    int   port;
 } arguments;
 
 // Parse a single option.
@@ -235,6 +238,13 @@ parse_opt( int key, char* arg, struct argp_state* state )
     case 'f':
         errno = 0;
         arguments->frequency = strtol(arg, &tail, 0);
+        if (errno) {
+            perror("argument parsing failed:");
+            return errno;
+        }
+    case 'p':
+        errno = 0;
+        arguments->port = strtol(arg, &tail, 0);
         if (errno) {
             perror("argument parsing failed:");
             return errno;
@@ -1588,7 +1598,7 @@ main(int argc, char **argv)
 	return -1;
     }
 
-    if (raw1394_set_port(handle, 0) < 0) {
+    if (raw1394_set_port(handle, arguments.port) < 0) {
 	fprintf(stderr, "Could not set port");
 	raw1394_destroy_handle (handle);
 	return -1;
