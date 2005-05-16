@@ -56,6 +56,7 @@
 unsigned char toAscii( unsigned char c );
 void quadlet2char( quadlet_t quadlet, unsigned char* buff );
 void hexDump( unsigned char *data_start, unsigned int length );
+void hexDumpQuadlets( quadlet_t *data_start, unsigned int length );
 
 class DebugBase {
  public:

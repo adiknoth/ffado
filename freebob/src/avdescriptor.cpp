@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
+#include <netinet/in.h>
 
 /* should probably be attached to an AVC device,
    a descriptor is attached to an AVC device anyway.
@@ -468,11 +469,15 @@ void AvDescriptor::Load() {
 	quadlet_t request[8];
 	unsigned int i=0;
 	unsigned int bytes_read=0;
+	unsigned int bytes_read_this_loop=0;
 	unsigned char *databuffer;
 	unsigned char read_result_status;
 	unsigned int data_length_read;
 	int specifier_len=0;
-
+	int bytes_to_copy;
+	quadlet_t *databuffer_quadlets;
+	size_t aContents_size;
+	
 	int retries=0;
 	int data_length=0;
 	int address=0;
@@ -561,7 +566,10 @@ void AvDescriptor::Load() {
 	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d (0x%04X) %d %d ",iLength,iLength,(response[1]&0xFFFF),specifier_len/4,specifier_len);
 
 	// now get the rest of the descriptor
-	aContents=new unsigned char[iLength];
+	// allocate space for the decriptor
+	// we want a multiple of sizeof(quadlet_t's)
+	aContents_size = (iLength/sizeof(quadlet_t)+1)*sizeof(quadlet_t);
+	aContents=new unsigned char[aContents_size];
 
 	/* there is a gap in the read data, because of the two bytes
 	 * that are before the third quadlet (why did 1394TA do that?)
@@ -586,8 +594,36 @@ void AvDescriptor::Load() {
 		//  total descriptor length 
 		
 		data_length=iLength;
-		address=0;
+		if (data_length < 4) {
+			data_length=4;
+		}
+		
+		
+		
 		specifier_len=ConstructDescriptorSpecifier(request);
+		
+		// plz see below if you want to understand this
+		// basically what this does is skip the length field (first two bytes)
+		// in the descriptor, with arbitrary specifier_len values.
+		switch(specifier_len %4) {
+			case 0:
+				//address=1;
+				debugError("unsupported");
+				address=0;
+				
+				break;
+			case 1:
+				address=0;
+				break;
+			case 2:
+				address=1;
+				break;
+			case 3:
+				address=2;
+			
+				break;
+		}
+		//address=(((4-((3+specifier_len+1+1+2+2)%4))%4)-2)+0;
 		
 		switch (specifier_len) { // can be generalised I guess, but not yet...
 			case 0:
@@ -631,7 +667,7 @@ void AvDescriptor::Load() {
 		retries=0;
 		
 		while (((response == 0) || ((response[0]  & 0xFF000000) != 0x09000000)) && retries<MAX_RETRIES) {
-			response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
+			response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3+data_length/sizeof(quadlet_t));
 			retries++;
 		}
 		if ((response == 0) || ((response[0] & 0xFF000000) !=0x09000000)) {
@@ -639,6 +675,7 @@ void AvDescriptor::Load() {
 			bLoaded=false;
 			return;
 		}
+			hexDumpQuadlets(response,10);
 		
 		switch(specifier_len % 4) { 
 		case 0:
@@ -658,6 +695,16 @@ void AvDescriptor::Load() {
 			read_result_status=((response[1+specifier_len/4]>>8)&0xFF);
 			break;
 		}
+		/* This is a very messy part, let's describe it a bit:
+		 * 
+		 * The data we get from the avcExecuteTransaction is an array of quadlet_t's in host order
+		 * what we want is an byte adressable array aContents. Therefore we have to convert the
+		 * host order into the byte addressable (big endian).
+		 * To make things worse, the specifier_len's can be any size (also non-even)
+		 * We solve this by overlapping between reads so that the data we need
+		 * starts on a quadlet_t boundary
+		 */
+		
 		// this is addressed in bytes, so accounting for the specifier_len is easier.
 		databuffer=(unsigned char *)(response);
 		// 3 bytes for the response header
@@ -670,25 +717,65 @@ void AvDescriptor::Load() {
 		
 		// we want to start copying the buffer on a quadlet boundary
 		// in order to facilitate endian conversion.
-		// this means that we have to add 4-((3+specifier_len+1+1+2+2)%4) bytes extra
-		data_buffer_boundary_offset=4-((3+specifier_len+1+1+2+2)%4);
+		// this means that we have to add (4-((3+specifier_len+1+1+2+2)%4))%4 bytes extra
+		data_buffer_boundary_offset=(4-((3+specifier_len+1+1+2+2)%4))%4;
 		databuffer += data_buffer_boundary_offset;
 		
 		//data_length_read=(response[1]&0xFFFF);
 		//read_result_status=((response[1]>>24)&0xFF);
 		//databuffer=(unsigned char *)(response+3);
 
-
-		// the buffer starting at databuffer is data_buffer_boundary_offset bytes smaller that the amount of bytes read
-		for (i=0;(i<data_length_read-data_buffer_boundary_offset) && (bytes_read < iLength);i++) {
-			*(aContents+bytes_read)=*(databuffer+i);
-			bytes_read++;
+		bytes_to_copy=0;
+		bytes_to_copy=data_length_read-data_buffer_boundary_offset;
+		if(bytes_read+bytes_to_copy>iLength) {
+			bytes_to_copy=iLength-bytes_read;
 		}
+		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"data_length_read %d, data_buffer_boundary_offset %d, bytes_to_copy %d, specifier_len %d",data_length_read,data_buffer_boundary_offset, bytes_to_copy, specifier_len);
+		
+		databuffer_quadlets=(quadlet_t *)databuffer;
+		
+		bytes_read_this_loop=0;
+		
+		for (i=0;i<bytes_to_copy/sizeof(quadlet_t);i++) {
+			quadlet_t *dst=(quadlet_t*)(aContents+bytes_read+i*sizeof(quadlet_t));
+			if(!((unsigned char *)dst<=(aContents+aContents_size))) {
+				debugPrint(DEBUG_LEVEL_DESCRIPTOR,"%p %p",dst,aContents+aContents_size);
+				
+				assert(0);
+			};
+			*dst=ntohl(*(databuffer_quadlets + i));
+			bytes_read_this_loop+=sizeof(quadlet_t);
+		}
+		
+		if(bytes_to_copy-bytes_read_this_loop > 0) {
+			quadlet_t *dst=(quadlet_t*)(aContents+bytes_read+(bytes_to_copy/sizeof(quadlet_t))*sizeof(quadlet_t));
+			assert(bytes_to_copy/sizeof(quadlet_t) == i);
+			if(!((unsigned char *)dst<=(aContents+aContents_size))) {
+				debugPrint(DEBUG_LEVEL_DESCRIPTOR,"%p %p",dst,aContents+aContents_size);
+				
+				assert(0);
+			};
+			*dst=ntohl(*(databuffer_quadlets + i));
+			bytes_read_this_loop+=sizeof(quadlet_t);		
+		}
+		
+		if(bytes_read+bytes_read_this_loop<iLength) {
+			bytes_read+=bytes_read_this_loop;
+		} else {
+			bytes_read=iLength;
+		}
+		// OLD: the buffer starting at databuffer is data_buffer_boundary_offset bytes smaller that the amount of bytes read
+		/*
+		for (i=0;(i<data_length_read-data_buffer_boundary_offset) && (bytes_read < iLength);i++) {
+			*(aContents+bytes_read)=(*(databuffer+i));
+			bytes_read++;
+		}*/
 
 	}
 
 	// now do the remaining reads
 	while(bytes_read<iLength) {
+		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"bytes_read %d, iLength %d ",bytes_read,iLength);
 		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
@@ -697,8 +784,30 @@ void AvDescriptor::Load() {
 		//  (total descriptor length - number of bytes already read) + data_buffer_boundary_offset overlap with previous read
 
 		data_length=(iLength-bytes_read+data_buffer_boundary_offset);
-		address=bytes_read;
+		if (data_length < 4) {
+			data_length=4;
+		}
 		specifier_len=ConstructDescriptorSpecifier(request);
+		
+		switch(specifier_len %4) {
+			case 0:
+				//address=1;
+				debugError("unsupported");
+				address=0;
+				
+				break;
+			case 1:
+				address=0+bytes_read;
+				break;
+			case 2:
+				address=1+bytes_read;
+				break;
+			case 3:
+				address=2+bytes_read;
+			
+				break;
+		}
+		//address=((4-((3+specifier_len+1+1+2+2)%4))%4-2)+bytes_read;
 		
 		switch (specifier_len) { // can be generalised I guess, but not yet...
 			case 0:
@@ -737,9 +846,9 @@ void AvDescriptor::Load() {
 				request[3] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
 			break;
 		}				
-		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"%08X %08X %08X \n", request[0],request[1],request[2]);
-
-		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
+		//debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"%08X %08X %08X \n", request[0],request[1],request[2]);
+	
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3+data_length/sizeof(quadlet_t));
 		
 		if (((response[0]>>24)&0xFF) == 0x09) {
 			switch(specifier_len % 4) { 
@@ -760,6 +869,16 @@ void AvDescriptor::Load() {
 				read_result_status=((response[1+specifier_len/4]>>8)&0xFF);
 				break;
 			}
+			/* This is a very messy part, let's describe it a bit:
+			* 
+			* The data we get from the avcExecuteTransaction is an array of quadlet_t's in host order
+			* what we want is an byte adressable array aContents. Therefore we have to convert the
+			* host order into the byte addressable (big endian).
+			* To make things worse, the specifier_len's can be any size (also non-even)
+			* We solve this by overlapping between reads so that the data we need
+			* starts on a quadlet_t boundary
+			*/
+			
 			// this is addressed in bytes, so accounting for the specifier_len is easier.
 			databuffer=(unsigned char *)(response);
 			// 3 bytes for the response header
@@ -773,13 +892,48 @@ void AvDescriptor::Load() {
 			// we want to start copying the buffer on a quadlet boundary
 			// in order to facilitate endian conversion.
 			// this means that we have to add 4-((3+specifier_len+1+1+2+2)%4) bytes extra
-			data_buffer_boundary_offset=4-((3+specifier_len+1+1+2+2)%4);
+			data_buffer_boundary_offset=(4-((3+specifier_len+1+1+2+2)%4))%4;
 			databuffer += data_buffer_boundary_offset;
 			
-			for (i=0;(i<data_length_read-data_buffer_boundary_offset) && (bytes_read < iLength);i++) {
-				*(aContents+bytes_read)=*(databuffer+i);
-				bytes_read++;
+			//data_length_read=(response[1]&0xFFFF);
+			//read_result_status=((response[1]>>24)&0xFF);
+			//databuffer=(unsigned char *)(response+3);
+	
+			bytes_to_copy=0;
+			bytes_to_copy=data_length_read-data_buffer_boundary_offset;
+			//debugPrint(DEBUG_LEVEL_DESCRIPTOR,"data_length_read %d, data_buffer_boundary_offset %d, bytes_to_copy %d, specifier_len %d",data_length_read,data_buffer_boundary_offset, bytes_to_copy, specifier_len);
+
+			
+			databuffer_quadlets=(quadlet_t *)databuffer;
+			bytes_read_this_loop=0;
+			
+			for (i=0;i<bytes_to_copy/sizeof(quadlet_t);i++) {
+				quadlet_t *dst=(quadlet_t*)(aContents+bytes_read+i*sizeof(quadlet_t));
+				if(!((unsigned char *)dst<=(aContents+aContents_size))) {
+					debugPrint(DEBUG_LEVEL_DESCRIPTOR,"%p %p",dst,aContents+aContents_size);
+					
+					assert(0);
+				};
+				*dst=ntohl(*(databuffer_quadlets + i));
+				bytes_read_this_loop+=sizeof(quadlet_t);
 			}
+			if(bytes_to_copy-bytes_read_this_loop > 0) {
+				quadlet_t *dst=(quadlet_t*)(aContents+bytes_read+(bytes_to_copy/sizeof(quadlet_t))*sizeof(quadlet_t));
+				assert(bytes_to_copy/sizeof(quadlet_t) == i);
+				if(!((unsigned char *)dst<=(aContents+aContents_size))) {
+					debugPrint(DEBUG_LEVEL_DESCRIPTOR,"%p %p",dst,aContents+aContents_size);
+					
+					assert(0);
+				};
+				*dst=ntohl(*(databuffer_quadlets + i));
+				bytes_read_this_loop+=sizeof(quadlet_t);		
+			}
+			if(bytes_read+bytes_read_this_loop<iLength) {
+				bytes_read+=bytes_read_this_loop;
+			} else {
+				bytes_read=iLength;
+			}
+			
 			retries=0;
 		} else {
 			if(retries<MAX_RETRIES) {
@@ -795,7 +949,8 @@ void AvDescriptor::Load() {
 		
 	}
 	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"done\n");
-
+	hexDump(aContents,iLength);
+	
 	bLoaded=true;
 }
 

@@ -19,6 +19,7 @@
  */
 #include <errno.h>
 #include <stdio.h>
+#include <netinet/in.h>
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include "threads.h"
@@ -30,7 +31,6 @@
 #include "avmusicstatusdescriptor.h"
 #include "avclusterinfoblock.h"
 #include "avpluginfoblock.h"
-
 #include "cmhandler.h"
 
 #undef AVC1394_GET_RESPONSE_OPERAN
@@ -663,29 +663,52 @@ std::string AvDevice::getPlugChannelName(unsigned int direction, unsigned int pl
 		     | 0xC0;
 		   
 	request[1]=0x00000000 | ((direction &0xFF)<<24) | (plug & 0xFF);
-	request[2]=0xFF040000 | ((channel & 0xFF) << 8);
+	request[2]=0xFF040000 | ((channel & 0xFF) << 8) | 0xFF;
 
 	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 3);
 
 	if ( response ) {
-		unsigned namelen=response[3]&0xFF;
+		int i;
+		unsigned namelen=response[2]&0xFF;
 		char *buff=NULL;
+		int buff_pos=0;
 		
+		//debugPrint(DEBUG_LEVEL_TRANSFERS,"namelen 1 %d\n",namelen);
+		
+		//debugPrint(DEBUG_LEVEL_TRANSFERS,"namelen 2 %d\n",namelen);
+				
 		buff=new char[namelen+1];
 		if (!buff) {
 			debugError( "Could not allocate memory for temporary name buffer\n" );
 			return str;
 		}
+		//hexDump((unsigned char *)response,namelen+4*3);
+		//hexDump((unsigned char *)buff,namelen);
+		char *src=(char *)(response+3);
 		
-		if(!strncpy(buff, (const char *)(response+3), namelen)) {
+		for(i=0;i<namelen/sizeof(quadlet_t);i++) {
+			*((quadlet_t *)(buff+buff_pos))=ntohl(*(response+3+i));
+			buff_pos+=sizeof(quadlet_t);
+		}
+		
+		// apparently the last part isn't htonl()'ed if it is smaller than one quadlet.
+		for(i=buff_pos;i<namelen;i++) {
+			buff[i]=src[i];
+		}
+	//	hexDump((unsigned char *)buff,namelen);
+		
+/*		if(!strncpy(buff, (const char *)(response+3), namelen)) {
 			buff[0]=0;
 			debugError( "Could not copy name\n" );
 			str="";
-		} else {
+			delete buff;
+		} else {*/
 			buff[namelen]=0;
 			str=buff;
-		}
+
+/*		}*/
 		delete buff;
+		
 	}
 
 	return str;
@@ -815,7 +838,7 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
 				sprintf(tmpbuff,"out_%d_%d",clusterInfo->getPosition(j),clusterInfo->getLocation(j));
 				name=tmpbuff;
 			}
-			debugError( " --> %s\n",name.c_str());
+			debugPrint(DEBUG_LEVEL_DEVICE, " --> %s\n",name.c_str());
 
 			xmlChar *enc_name=xmlEncodeEntitiesReentrant(root->doc, BAD_CAST name.c_str());
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
@@ -915,7 +938,7 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
 				name=tmpbuff;
 			}
 
-			debugError( " --> %s\n",name.c_str());
+			debugPrint(DEBUG_LEVEL_DEVICE, " --> %s\n",name.c_str());
 			
 			xmlChar *enc_name=xmlEncodeEntitiesReentrant(root->doc, BAD_CAST name.c_str());
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);
@@ -1030,7 +1053,7 @@ AvDevice::addPlaybackConnectionsToXml( xmlNodePtr connectionSet )
 				sprintf(tmpbuff,"out_%d_%d",clusterInfo->getPosition(j),clusterInfo->getLocation(j));
 				name=tmpbuff;
 			}
-			debugError( " --> %s\n",name.c_str());
+			debugPrint(DEBUG_LEVEL_DEVICE, " --> %s\n",name.c_str());
 
 			xmlChar *enc_name=xmlEncodeEntitiesReentrant(connectionSet->doc, BAD_CAST name.c_str());
 			FREEBOB_DIRTY_XML_CHILD_ADD(stream, "Name",enc_name);

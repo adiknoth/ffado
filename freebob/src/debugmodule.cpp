@@ -19,6 +19,7 @@
  */
 #include <stdarg.h>
 #include "debugmodule.h"
+#include <netinet/in.h>
 
 #undef setDebugLevel
 #undef debugError
@@ -344,4 +345,21 @@ hexDump( unsigned char *data_start, unsigned int length )
 
     printf( "]" );
     printf( "\n" );
+}
+
+void
+hexDumpQuadlets( quadlet_t *data, unsigned int length )
+{
+    unsigned int i=0;
+    unsigned int byte_pos;
+    unsigned int bytes_left;
+    //printf("hexdump: %p %d\n",data_start,length);
+
+    if ( length <= 0 ) {
+        return;
+    }
+    for (i=0;i<length;i+=1) {
+            printf( "%02d %04X: %08X (%08X)"
+                    "\n", i, i*4, data[i],ntohl(data[i]));
+    }
 }
