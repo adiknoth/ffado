@@ -24,10 +24,37 @@
 #include "avdevice.h"
 #include "avdevicesubunit.h"
 #include "avdeviceaudiosubunit.h"
+#include "avaudiosubunitidentifierdescriptor.h"
 
 AvDeviceAudioSubunit::AvDeviceAudioSubunit(AvDevice *parent, unsigned char  id) : AvDeviceSubunit(parent,0x01,id)
 {
+    	setDebugLevel( DEBUG_LEVEL_ALL );
 	debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceAudioSubunit id=%02X created\n",id);
+
+	bValid=false;
+
+	// parse descriptors
+	//cStatusDescriptor=NULL;
+	cIdentifierDescriptor=NULL;
+/*
+	cStatusDescriptor = new AvMusicStatusDescriptor(parent,id);
+
+	if(cStatusDescriptor) {
+		cStatusDescriptor->printCapabilities();
+	} else {
+		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceMusicSubunit: could not create AvMusicStatusDescriptor object\n");
+	}
+*/
+	cIdentifierDescriptor = new AvAudioSubunitIdentifierDescriptor(parent,id);
+	if(cIdentifierDescriptor) {
+		cIdentifierDescriptor->printCapabilities();
+
+	} else {
+		debugPrint (DEBUG_LEVEL_SUBUNIT,"AvDeviceAudioSubunit: could not create AvAudioSubunitIdentifierDescriptor object\n");
+	}
+
+	bValid=true;
+
 
 }
 

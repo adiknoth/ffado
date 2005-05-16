@@ -79,7 +79,9 @@ freebob_SOURCES = \
 	csr1212.h \
 	csr1212.c \
 	configrom.h \
-	configrom.cpp
+	configrom.cpp \
+	avaudiosubunitidentifierdescriptor.h \
+	avaudiosubunitidentifierdescriptor.cpp
 
 freebob_LDFLAGS = \
 	$(LIBSIGC_LIBS) $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS) $(LIBLO_LIBS) $(LIBXML_LIBS)

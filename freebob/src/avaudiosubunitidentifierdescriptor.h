@@ -1,4 +1,4 @@
-/* avdeviceaudiosubunit.h
+/* avaudiosubunitidentifierdescriptor.h
  * Copyright (C) 2004 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -18,27 +18,28 @@
  * MA 02111-1307 USA.
  */
 
-#include "ieee1394service.h"
 #include "avdevice.h"
-#include "avdevicesubunit.h"
+#include "avdescriptor.h"
+#include <string.h>
+#include <errno.h>
+#include <libavc1394/avc1394.h>
+#include <libavc1394/avc1394_vcr.h>
+#include "debugmodule.h"
 
-#ifndef AVDEVICEAUDIOSUBUNIT_H
-#define AVDEVICEAUDIOSUBUNIT_H
+#ifndef AVAUDIOSUBUNITIDENTIFIERDESCRIPTOR_H
+#define AVAUDIOSUBUNITIDENTIFIERDESCRIPTOR_H
 
-//class AvMusicStatusDescriptor;
-class AvAudioSubunitIdentifierDescriptor;
 
-class AvDeviceAudioSubunit : public AvDeviceSubunit {
+class AvAudioSubunitIdentifierDescriptor : public AvDescriptor {
  public:
-    AvDeviceAudioSubunit(AvDevice *parent, unsigned char id);
-    virtual ~AvDeviceAudioSubunit();
+    AvAudioSubunitIdentifierDescriptor(AvDevice *parent, unsigned char id);
+    ~AvAudioSubunitIdentifierDescriptor();
 
+    void printCapabilities();
+
+ protected:
 
  private:
-
-	AvAudioSubunitIdentifierDescriptor *cIdentifierDescriptor;
-	
- 	DECLARE_DEBUG_MODULE;
 
 };
 
