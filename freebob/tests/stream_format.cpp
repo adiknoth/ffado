@@ -242,6 +242,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
             perror("argument parsing failed:");
             return errno;
         }
+        break;
     case 'p':
         errno = 0;
         arguments->port = strtol(arg, &tail, 0);
@@ -249,6 +250,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
             perror("argument parsing failed:");
             return errno;
         }
+        break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= 2) {
             // Too many arguments.
