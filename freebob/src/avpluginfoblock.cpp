@@ -31,7 +31,7 @@
 #include "avclusterinfoblock.h"
 
 AvPlugInfoBlock::AvPlugInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
-    setDebugLevel( DEBUG_LEVEL_ALL );
+    setDebugLevel( DEBUG_LEVEL_MODERATE );
 	// do some more valid checks
 	if (getType() != 0x8109) {
 		bValid=false;

@@ -24,9 +24,27 @@
 #include "avdevice.h"
 #include "debugmodule.h"
 
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_IDENTIFIER                 0x00
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_LIST_BY_ID                 0x10
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_LIST_BY_TYPE               0x11
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_ENTRY_BY_POSITION_IN_LIST  0x20
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_ENTRY_BY_ID_IN_LIST        0x21
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_ENTRY_BY_TYPE              0x22
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_ENTRY_BY_ID                0x23
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_INFOBLOCK_BY_TYPE          0x30
+#define AVC_DESCRIPTOR_SPECIFIER_TYPE_INFOBLOCK_BY_POSITION      0x31
+
+#define AVC_DESCRIPTOR_SUBFUNCTION_CLOSE                         0x00
+#define AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY                 0x01
+#define AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE                0x03
+
 class AvDescriptor {
  public:
     AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type);
+    AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type, unsigned int list_id, unsigned int list_id_size);
+    AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type, unsigned int list_id, unsigned int list_id_size,
+                                                     unsigned int object_id, unsigned int object_id_size,
+                                                     unsigned int position, unsigned int position_size);
     virtual ~AvDescriptor();
 
     void Load();
@@ -53,7 +71,17 @@ class AvDescriptor {
     unsigned int iAccessType;
     unsigned int iLength;
     quadlet_t qTarget;
+    
+    unsigned int iListId;
+    unsigned int iListIdSize;
+    
+    unsigned int iObjectId;
+    unsigned int iObjectIdSize;
+    unsigned int iPosition;
+    unsigned int iPositionSize;
 
+    int ConstructDescriptorSpecifier(quadlet_t *request);
+    
     DECLARE_DEBUG_MODULE;
 };
 

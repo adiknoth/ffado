@@ -45,6 +45,44 @@ AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type
     setDebugLevel( DEBUG_LEVEL_ALL );
 }
 
+AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type, unsigned int list_id, unsigned int list_id_size) 
+    : cParent( parent )
+    , iType( type )
+    , aContents( 0 )
+    , bLoaded( false )
+    , bOpen( false )
+    , bValid( false )  // don't know yet what I'm going to do with this in the generic descriptor
+    , iAccessType( 0 )
+    , iLength( 0 )
+    , qTarget( target )
+    , iListId( list_id )
+    , iListIdSize( list_id_size )
+{
+    setDebugLevel( DEBUG_LEVEL_ALL );
+}
+
+AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type, unsigned int list_id, unsigned int list_id_size,
+                                                     unsigned int object_id, unsigned int object_id_size,
+                                                     unsigned int position, unsigned int position_size)
+    : cParent( parent )
+    , iType( type )
+    , aContents( 0 )
+    , bLoaded( false )
+    , bOpen( false )
+    , bValid( false )  // don't know yet what I'm going to do with this in the generic descriptor
+    , iAccessType( 0 )
+    , iLength( 0 )
+    , qTarget( target )
+    , iListId( list_id )
+    , iListIdSize( list_id_size )
+	, iObjectId( object_id )
+	, iObjectIdSize( object_id_size) 
+	, iPosition( position )
+	, iPositionSize( position_size) 
+{
+    setDebugLevel( DEBUG_LEVEL_ALL );
+}
+
 AvDescriptor::~AvDescriptor()
 {
 	if (bOpen) {
@@ -56,10 +94,149 @@ AvDescriptor::~AvDescriptor()
 
 }
 
+int AvDescriptor::ConstructDescriptorSpecifier(quadlet_t *request) {
+	int specifier_len=0;
+	
+	assert(request);
+	
+	switch(iType) { // only a subset of the spec is supported
+		case AVC_DESCRIPTOR_SPECIFIER_TYPE_IDENTIFIER:
+			request[1] = 0xFFFFFFFF;
+			specifier_len=1;
+			break;
+		case AVC_DESCRIPTOR_SPECIFIER_TYPE_LIST_BY_ID:
+			request[1] = 0x00000000;
+			switch (iListIdSize) {
+				case 1:
+					request[1]=request[1] | ((iListId & 0xFF) << 24);
+					specifier_len=2;
+					break;				
+				case 2:
+					request[1]=request[1] | ((iListId & 0xFFFF) << 16);
+					specifier_len=3;
+					break;				
+				case 3:
+					request[1]=request[1] | ((iListId & 0xFFFFFF)<<8);
+					specifier_len=4;
+					break;				
+				default: // we don't support more than 3 byte long ID's (yet?)
+					specifier_len=0;
+					debugError("Invalid list_id size!\n");
+					break;				
+			}
+		
+			break;
+		case AVC_DESCRIPTOR_SPECIFIER_TYPE_ENTRY_BY_POSITION_IN_LIST:
+			request[1] = 0x00000000;
+			switch (iListIdSize) {
+				case 1:
+					request[1]=request[1] | ((iListId & 0xFF) << 24);
+					switch(iPositionSize) {
+						case 1:
+							request[1]=request[1] | ((iPosition & 0xFF) << 16);
+							specifier_len=3;
+							break;
+						case 2:
+							request[1]=request[1] | ((iPosition & 0xFFFF)<<8);
+							specifier_len=4;
+							break;
+						case 3:
+							request[1]=request[1] | ((iPosition & 0xFFFFFF));
+							specifier_len=5;
+							break;
+						default:
+							debugError("Invalid position size!\n");
+							specifier_len=0;
+							break;
+					}
+					break;				
+				case 2:
+					request[1]=request[1] | ((iListId & 0xFFFF) << 16);
+					switch(iPositionSize) {
+						case 1:
+							request[1]=request[1] | ((iPosition & 0xFF)<<8);
+							specifier_len=4;
+							break;
+						case 2:
+							request[1]=request[1] | (((iPosition) & 0xFFFF));
+							specifier_len=5;
+							break;
+						case 3:
+							request[1]=request[1] | (((iPosition >> 8) & 0xFFFF));
+							request[2]=0x00000000 | ((iPosition & 0xFF) << 24);
+							specifier_len=6;
+							break;
+						default:
+							specifier_len=0;
+							debugError("Invalid position size!\n");
+							break;
+					}
+					break;				
+				case 3:
+					request[1]=request[1] | ((iListId & 0xFFFFFF)<<8);
+					switch(iPositionSize) {
+						case 1:
+							request[1]=request[1] | ((iPosition & 0xFF));
+							specifier_len=5;
+							break;
+						case 2:
+							request[1]=request[1] | (((iPosition >> 8) & 0xFF));
+							request[2]=0x00000000 | ((iPosition & 0xFF) << 24);
+							specifier_len=6;
+							break;
+						case 3:
+							request[1]=request[1] | (((iPosition >> 16) & 0xFF));
+							request[2]=0x00000000 | ((iPosition & 0xFFFF) << 16);
+							specifier_len=7;
+							break;
+						default:
+							specifier_len=0;
+							debugError("Invalid position size!\n");
+							break;
+					}
+					break;				
+				default: // we don't support more than 3 byte long ID's (yet?)
+					specifier_len=0;
+					debugError("Invalid object_id size!\n");
+					break;				
+			}
+			break;
+			
+		case AVC_DESCRIPTOR_SPECIFIER_TYPE_ENTRY_BY_ID:
+			request[1] = 0x00000000;
+			switch (iObjectIdSize) {
+				case 1:
+					request[1]=request[1] | ((iObjectId & 0xFF) << 24);
+					specifier_len=2;
+					break;				
+				case 2:
+					request[1]=request[1] | ((iObjectId & 0xFFFF) << 16);
+					specifier_len=3;
+					break;				
+				case 3:
+					request[1]=request[1] | ((iObjectId & 0xFFFFFF)<<8);
+					specifier_len=4;
+					break;				
+				default: // we don't support more than 3 byte long ID's (yet?)
+					specifier_len=0;
+					debugError("Invalid object_id size!\n");
+					break;				
+			}
+			break;
+		default:
+			specifier_len=1;
+			request[1] = 0xFFFFFFFF;
+			break;
+	}
+	return specifier_len;
+	
+}
+
 void AvDescriptor::OpenReadOnly() {
 	quadlet_t *response;
-	quadlet_t request[3];
-
+	quadlet_t request[5];
+	int specifier_len;
+	
 	if (!cParent) {
 		return;
 	}
@@ -70,15 +247,73 @@ void AvDescriptor::OpenReadOnly() {
 
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
-	request[1] = 0x01FFFFFF;
-	//fprintf(stderr, "Opening descriptor\n");
+	
+	// construct the description specifier structure
+	specifier_len=ConstructDescriptorSpecifier(request);
+	
+	// set the subfunction
+	switch(specifier_len % 4) { 
+	case 0:
+		request[specifier_len/4] &= 0xFFFFFF00;
+		request[specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY);
+		break;
+	case 1:
+		request[1+specifier_len/4] &= 0x00FFFFFF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY << 24);
+		break;
+	case 2:
+		request[1+specifier_len/4] &= 0xFF00FFFF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY << 16);
+		break;
+	case 3:
+		request[1+specifier_len/4] &= 0xFFFF00FF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY << 8);
+		break;
+	}	
+	
+	// set the subfunction
+	//request[1] |= 0x00FFFFFF | (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY << 24);
 
-        response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
+	
+	response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
-	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) {
+	if (response && ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED)) {
 		bOpen=true;
-		iAccessType=0x01;
+		iAccessType=AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READONLY;
 	} else {
+		// try and figure out the problem:
+		request[0] = AVC1394_CTYPE_STATUS | qTarget
+						| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
+						
+		specifier_len=ConstructDescriptorSpecifier(request);
+		
+		// set the subfunction
+		switch(specifier_len % 4) { 
+		case 0:
+			request[specifier_len/4] &= 0xFFFFFF00;
+			request[specifier_len/4] |= (0xFF);
+			request[specifier_len/4+1] = (0xFFFFFF00);
+			break;
+		case 1:
+			request[1+specifier_len/4] &= 0x00000000;
+			request[1+specifier_len/4] |= (0xFF << 24) | 0xFFFFFF;
+			break;
+		case 2:
+			request[1+specifier_len/4] &= 0xFF000000;
+			request[1+specifier_len/4] |= (0xFF << 16) | 0xFFFF;
+			request[1+specifier_len/4+1] = (0xFF << 24);
+			break;
+		case 3:
+			request[1+specifier_len/4] &= 0xFFFF0000;
+			request[1+specifier_len/4] |= (0xFF << 8) | 0xFF;
+			request[1+specifier_len/4+1] = (0xFFFF << 16);
+			break;
+		}				
+		//request[1] |= 0x00FFFFFF | (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE << 24);
+		//fprintf(stderr, "Opening descriptor\n");
+	
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, specifier_len/4+2, specifier_len/4+2);
+	
 		Close();
 		bOpen=false;
 	}
@@ -86,8 +321,9 @@ void AvDescriptor::OpenReadOnly() {
 
 void AvDescriptor::OpenReadWrite() {
 	quadlet_t *response;
-	quadlet_t request[3];
-
+	quadlet_t request[5];
+	int specifier_len;
+	
 	if (!cParent) {
 		return;
 	}
@@ -98,22 +334,78 @@ void AvDescriptor::OpenReadWrite() {
 
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
-	request[1] = 0x03FFFFFF;
+					
+	specifier_len=ConstructDescriptorSpecifier(request);
+	
+	// set the subfunction
+	switch(specifier_len % 4) { 
+	case 0:
+		request[specifier_len/4] &= 0xFFFFFF00;
+		request[specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE);
+		break;
+	case 1:
+		request[1+specifier_len/4] &= 0x00FFFFFF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE << 24);
+		break;
+	case 2:
+		request[1+specifier_len/4] &= 0xFF00FFFF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE << 16);
+		break;
+	case 3:
+		request[1+specifier_len/4] &= 0xFFFF00FF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE << 8);
+		break;
+	}				
+	//request[1] |= 0x00FFFFFF | (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE << 24);
 	//fprintf(stderr, "Opening descriptor\n");
 
-        response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
+    response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
-	if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) {
+	if (response && ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED)) {
 		bOpen=true;
-		iAccessType=0x03;
+		iAccessType=AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE;
 	} else {
+		// try and figure out the problem:
+		request[0] = AVC1394_CTYPE_STATUS | qTarget
+						| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
+						
+		specifier_len=ConstructDescriptorSpecifier(request);
+		
+		// set the subfunction
+		switch(specifier_len % 4) { 
+		case 0:
+			request[specifier_len/4] &= 0xFFFFFF00;
+			request[specifier_len/4] |= (0xFF);
+			request[specifier_len/4+1] = (0xFFFFFF00);
+			break;
+		case 1:
+			request[1+specifier_len/4] &= 0x00000000;
+			request[1+specifier_len/4] |= (0xFF << 24) | 0xFFFFFF;
+			break;
+		case 2:
+			request[1+specifier_len/4] &= 0xFF000000;
+			request[1+specifier_len/4] |= (0xFF << 16) | 0xFFFF;
+			request[1+specifier_len/4+1] = (0xFF << 24);
+			break;
+		case 3:
+			request[1+specifier_len/4] &= 0xFFFF0000;
+			request[1+specifier_len/4] |= (0xFF << 8) | 0xFF;
+			request[1+specifier_len/4+1] = (0xFFFF << 16);
+			break;
+		}				
+		//request[1] |= 0x00FFFFFF | (AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE << 24);
+		//fprintf(stderr, "Opening descriptor\n");
+	
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, specifier_len/4+2, specifier_len/4+2);
+	
+	
 		Close();
 		bOpen=false;
 	}
 }
 
 bool AvDescriptor::canWrite() {
-	if(bOpen && (iAccessType==0x03) && cParent) {
+	if(bOpen && (iAccessType==AVC_DESCRIPTOR_SUBFUNCTION_OPEN_READWRITE) && cParent) {
 		return true;
 	} else {
 		return false;
@@ -122,23 +414,46 @@ bool AvDescriptor::canWrite() {
 
 void AvDescriptor::Close() {
 	quadlet_t *response;
-	quadlet_t request[3];
+	quadlet_t request[5];
+	
+	int specifier_len;
+	
 	if (!cParent) {
 		return;
 	}
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_OPEN_DESCRIPTOR | (iType & 0xFF);
-	request[1] = 0x00FFFFFF;
+	
+	specifier_len=ConstructDescriptorSpecifier(request);
+	
+	// set the subfunction
+	switch(specifier_len % 4) { 
+	case 0:
+		request[specifier_len/4] &= 0xFFFFFF00;
+		request[specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_CLOSE);
+		break;
+	case 1:
+		request[1+specifier_len/4] &= 0x00FFFFFF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_CLOSE << 24);
+		break;
+	case 2:
+		request[1+specifier_len/4] &= 0xFF00FFFF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_CLOSE << 16);
+		break;
+	case 3:
+		request[1+specifier_len/4] &= 0xFFFF00FF;
+		request[1+specifier_len/4] |= (AVC_DESCRIPTOR_SUBFUNCTION_CLOSE << 8);
+		break;
+	}	
+	
+	
 	//fprintf(stderr, "Opening descriptor\n");
 
         response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 2, 2);
 
-        if (response) {
-		if ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED) { // should always be accepted according to spec
-			bOpen=false;
-		}
-	} else {
-		// parent probably died
+	if (response && ((response[0]&0xFF000000)==AVC1394_RESPONSE_ACCEPTED)) {
+		bOpen=false;
+		iAccessType=AVC_DESCRIPTOR_SUBFUNCTION_CLOSE;
 	}
 }
 
@@ -150,13 +465,17 @@ void AvDescriptor::Close() {
 
 void AvDescriptor::Load() {
 	quadlet_t *response;
-	quadlet_t request[3];
+	quadlet_t request[8];
 	unsigned int i=0;
 	unsigned int bytes_read=0;
 	unsigned char *databuffer;
 	unsigned char read_result_status;
 	unsigned int data_length_read;
+	int specifier_len=0;
+
 	int retries=0;
+	int data_length=0;
+	int address=0;
 
 	if (!cParent) {
 		return;
@@ -165,14 +484,55 @@ void AvDescriptor::Load() {
 	/* First determine the descriptor length */
 	request[0] = AVC1394_CTYPE_CONTROL | qTarget
 					| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
-	request[1] = 0xFFFF0000 | (0x02);
-	request[2] = (((0)&0xFFFF) << 16) |0x0000FFFF;
+	
+	
+	data_length=8;
+	address=0;
+	specifier_len=ConstructDescriptorSpecifier(request);
+	
+	switch (specifier_len) { // can be generalised I guess, but not yet...
+		case 0:
+		break;
+		
+		case 1:
+			request[1] = 0xFFFF0000 | (data_length);
+			request[2] = (((address)&0xFFFF) << 16) |0x0000FFFF;
+		break;
+		
+		case 2:
+			request[1] |= 0x00FFFF00 | ((data_length>>8) & 0xFF);
+			request[2] = (((data_length) & 0xFF)<<24) | (((address)&0xFFFF) << 8) | 0x000000FF;
+		break;
+		
+		case 3:
+			request[1] |= 0x0000FFFF;
+			request[2] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
+		break;
+		case 4:
+			request[1] |= 0x000000FF;
+			request[2] = 0xFF000000 | ((data_length & 0xFFFF)<<8) | (((address>>8)&0xFF));
+			request[3] = (((address)&0xFF)<<24) | 0x00FFFFFF;
+		break;
+		case 5:
+		
+			request[2] = 0xFFFF0000 | (data_length);
+			request[3] = (((address)&0xFFFF) << 16) |0x0000FFFF;
+		break;
+		case 6:
+			request[2] |= 0x00FFFF00 | ((data_length>>8) & 0xFF);
+			request[3] = (((data_length) & 0xFF)<<24) | (((address)&0xFFFF) << 8) | 0x000000FF;
+		break;
+		case 7:
+			request[2] |= 0x0000FFFF;
+			request[3] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
+		break;
+	}
 
 	response=0;
 	retries=0;
 		
 	while (((response == 0) || ((response[0]  & 0xFF000000) != 0x09000000)) && retries<MAX_RETRIES) {
-		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
+		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 4);
 		retries++;
 	}
 	if ((response == 0) || ((response[0]  & 0xFF000000) !=0x09000000)) {
@@ -181,9 +541,24 @@ void AvDescriptor::Load() {
 		return;
 	}
 	
-	iLength=response[2] & 0xFFFF;
-
-	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d ",iLength,iLength);
+	// this is a more general approach
+	// assumes that integer division is floored (not rounded)
+	switch(specifier_len % 4) { 
+	case 0:
+		iLength=((response[2+specifier_len/4]>>8) & 0xFFFF);
+		break;
+	case 1:
+		iLength=response[2+specifier_len/4] & 0xFFFF;
+		break;
+	case 2:
+		iLength=(((response[2+specifier_len/4]) & 0xFF)<<8)|(((response[2+(specifier_len/4)+1]) >> 24) & 0xFF);
+		break;
+	case 3:
+		iLength=(((response[2+(specifier_len/4)+1]) >> 16) & 0xFFFF);
+		break;
+	}
+	
+	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"Descriptor length=0x%04X %d (0x%04X) %d %d ",iLength,iLength,(response[1]&0xFFFF),specifier_len/4,specifier_len);
 
 	// now get the rest of the descriptor
 	aContents=new unsigned char[iLength];
@@ -201,15 +576,56 @@ void AvDescriptor::Load() {
 	 */
 
 	// first read
+	int data_buffer_boundary_offset;
 	if(bytes_read<iLength) {
 		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");
 		// apparently the lib modifies the request, so redefine it completely
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
 		// the amount of bytes we want to read is:
-		//  total descriptor length + 2 bytes of the descriptor length field (i.e. the overlap bytes for this read)
-		request[1] = 0xFFFF0000 | (iLength)&0xFFFF;
-		request[2] = ((0) << 16) |0x0000FFFF;
+		//  total descriptor length 
+		
+		data_length=iLength;
+		address=0;
+		specifier_len=ConstructDescriptorSpecifier(request);
+		
+		switch (specifier_len) { // can be generalised I guess, but not yet...
+			case 0:
+			break;
+			
+			case 1:
+				request[1] = 0xFFFF0000 | (data_length);
+				request[2] = (((address)&0xFFFF) << 16) |0x0000FFFF;
+			break;
+			
+			case 2:		
+				request[1] |= 0x00FFFF00 | ((data_length>>8) & 0xFF);
+				request[2] = (((data_length) & 0xFF)<<24) | (((address)&0xFFFF) << 8) | 0x000000FF;
+			break;
+			
+			case 3:
+				request[1] |= 0x0000FFFF;
+				request[2] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
+			break;
+			case 4:
+				request[1] |= 0x000000FF;
+				request[2] = 0xFF000000 | ((data_length & 0xFFFF)<<8) | (((address>>8)&0xFF));
+				request[3] = (((address)&0xFF)<<24) | 0x00FFFFFF;
+			break;
+			case 5:
+			
+				request[2] = 0xFFFF0000 | (data_length);
+				request[3] = (((address)&0xFFFF) << 16) |0x0000FFFF;
+			break;
+			case 6:
+				request[2] |= 0x00FFFF00 | ((data_length>>8) & 0xFF);
+				request[3] = (((data_length) & 0xFF)<<24) | (((address)&0xFFFF) << 8) | 0x000000FF;
+			break;
+			case 7:
+				request[2] |= 0x0000FFFF;
+				request[3] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
+			break;
+		}
 
 		response=0;
 		retries=0;
@@ -223,14 +639,48 @@ void AvDescriptor::Load() {
 			bLoaded=false;
 			return;
 		}
-			
-		data_length_read=(response[1]&0xFFFF);
-		read_result_status=((response[1]>>24)&0xFF);
+		
+		switch(specifier_len % 4) { 
+		case 0:
+			data_length_read=((response[1+specifier_len/4]>>8) & 0xFFFF);
+			read_result_status=((response[specifier_len/4])&0xFF);
+			break;
+		case 1:
+			data_length_read=response[1+specifier_len/4] & 0xFFFF;
+			read_result_status=((response[1+specifier_len/4]>>24)&0xFF);
+			break;
+		case 2:
+			data_length_read=(((response[1+specifier_len/4]) & 0xFF)<<8)|(((response[1+(specifier_len/4)+1]) >> 24) & 0xFF);
+			read_result_status=((response[1+specifier_len/4]>>16)&0xFF);
+			break;
+		case 3:
+			data_length_read=(((response[1+(specifier_len/4)+1]) >> 16) & 0xFFFF);
+			read_result_status=((response[1+specifier_len/4]>>8)&0xFF);
+			break;
+		}
+		// this is addressed in bytes, so accounting for the specifier_len is easier.
+		databuffer=(unsigned char *)(response);
+		// 3 bytes for the response header
+		// the length of the specifier (incl type)
+		// 1 byte for read_result_status
+		// 1 reserved byte
+		// 2 bytes for data length
+		// 2 bytes for address
+		databuffer+=3+specifier_len+1+1+2+2;
+		
+		// we want to start copying the buffer on a quadlet boundary
+		// in order to facilitate endian conversion.
+		// this means that we have to add 4-((3+specifier_len+1+1+2+2)%4) bytes extra
+		data_buffer_boundary_offset=4-((3+specifier_len+1+1+2+2)%4);
+		databuffer += data_buffer_boundary_offset;
+		
+		//data_length_read=(response[1]&0xFFFF);
+		//read_result_status=((response[1]>>24)&0xFF);
+		//databuffer=(unsigned char *)(response+3);
 
-		databuffer=(unsigned char *)(response+3);
 
-		// the buffer starting at databuffer is two bytes smaller that the amount of bytes read
-		for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
+		// the buffer starting at databuffer is data_buffer_boundary_offset bytes smaller that the amount of bytes read
+		for (i=0;(i<data_length_read-data_buffer_boundary_offset) && (bytes_read < iLength);i++) {
 			*(aContents+bytes_read)=*(databuffer+i);
 			bytes_read++;
 		}
@@ -244,20 +694,89 @@ void AvDescriptor::Load() {
 		request[0] = AVC1394_CTYPE_CONTROL | qTarget
 						| AVC1394_COMMAND_READ_DESCRIPTOR | (iType & 0xFF);
 		// the amount of bytes we want to read is:
-		//  (total descriptor length - number of bytes already read) + 2 overlap with previous read
-		request[1] = 0xFFFF0000 | (iLength-bytes_read+2)&0xFFFF;
-		request[2] = (((bytes_read)&0xFFFF) << 16) |0x0000FFFF;
+		//  (total descriptor length - number of bytes already read) + data_buffer_boundary_offset overlap with previous read
+
+		data_length=(iLength-bytes_read+data_buffer_boundary_offset);
+		address=bytes_read;
+		specifier_len=ConstructDescriptorSpecifier(request);
+		
+		switch (specifier_len) { // can be generalised I guess, but not yet...
+			case 0:
+			break;
+			
+			case 1:
+				request[1] = 0xFFFF0000 | (data_length);
+				request[2] = (((address)&0xFFFF) << 16) |0x0000FFFF;
+			break;
+			
+			case 2:		
+				request[1] |= 0x00FFFF00 | ((data_length>>8) & 0xFF);
+				request[2] = (((data_length) & 0xFF)<<24) | (((address)&0xFFFF) << 8) | 0x000000FF;
+			break;
+			
+			case 3:
+				request[1] |= 0x0000FFFF;
+				request[2] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
+			break;
+			case 4:
+				request[1] |= 0x000000FF;
+				request[2] = 0xFF000000 | ((data_length & 0xFFFF)<<8) | (((address>>8)&0xFF));
+				request[3] = (((address)&0xFF)<<24) | 0x00FFFFFF;
+			break;
+			case 5:
+			
+				request[2] = 0xFFFF0000 | (data_length);
+				request[3] = (((address)&0xFFFF) << 16) |0x0000FFFF;
+			break;
+			case 6:
+				request[2] |= 0x00FFFF00 | ((data_length>>8) & 0xFF);
+				request[3] = (((data_length) & 0xFF)<<24) | (((address)&0xFFFF) << 8) | 0x000000FF;
+			break;
+			case 7:
+				request[2] |= 0x0000FFFF;
+				request[3] = ((data_length & 0xFFFF)<<16) | (((address)&0xFFFF));
+			break;
+		}				
 		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"%08X %08X %08X \n", request[0],request[1],request[2]);
 
 		response =  Ieee1394Service::instance()->avcExecuteTransaction(cParent->getNodeId(), request, 3, 3);
-		data_length_read=(response[1]&0xFFFF);
-		read_result_status=((response[1]>>24)&0xFF);
-		//debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"%02X\n", read_result_status);
 		
 		if (((response[0]>>24)&0xFF) == 0x09) {
-			databuffer=(unsigned char *)(response+3);
-	
-			for (i=0;(i<data_length_read-2) && (bytes_read < iLength);i++) {
+			switch(specifier_len % 4) { 
+			case 0:
+				data_length_read=((response[1+specifier_len/4]>>8) & 0xFFFF);
+				read_result_status=((response[specifier_len/4])&0xFF);
+				break;
+			case 1:
+				data_length_read=response[1+specifier_len/4] & 0xFFFF;
+				read_result_status=((response[1+specifier_len/4]>>24)&0xFF);
+				break;
+			case 2:
+				data_length_read=(((response[1+specifier_len/4]) & 0xFF)<<8)|(((response[1+(specifier_len/4)+1]) >> 24) & 0xFF);
+				read_result_status=((response[1+specifier_len/4]>>16)&0xFF);
+				break;
+			case 3:
+				data_length_read=(((response[1+(specifier_len/4)+1]) >> 16) & 0xFFFF);
+				read_result_status=((response[1+specifier_len/4]>>8)&0xFF);
+				break;
+			}
+			// this is addressed in bytes, so accounting for the specifier_len is easier.
+			databuffer=(unsigned char *)(response);
+			// 3 bytes for the response header
+			// the length of the specifier (incl type)
+			// 1 byte for read_result_status
+			// 1 reserved byte
+			// 2 bytes for data length
+			// 2 bytes for address
+			databuffer+=3+specifier_len+1+1+2+2;
+			
+			// we want to start copying the buffer on a quadlet boundary
+			// in order to facilitate endian conversion.
+			// this means that we have to add 4-((3+specifier_len+1+1+2+2)%4) bytes extra
+			data_buffer_boundary_offset=4-((3+specifier_len+1+1+2+2)%4);
+			databuffer += data_buffer_boundary_offset;
+			
+			for (i=0;(i<data_length_read-data_buffer_boundary_offset) && (bytes_read < iLength);i++) {
 				*(aContents+bytes_read)=*(databuffer+i);
 				bytes_read++;
 			}
@@ -276,7 +795,6 @@ void AvDescriptor::Load() {
 		
 	}
 	debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,"done\n");
-
 
 	bLoaded=true;
 }
@@ -352,3 +870,4 @@ unsigned int AvDescriptor::readBuffer(unsigned int address, unsigned int length,
 		return 0;
 	}
 }
+

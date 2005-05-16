@@ -30,7 +30,7 @@
 #include "avclusterinfoblock.h"
 
 AvClusterInfoBlock::AvClusterInfoBlock(AvDescriptor *parent, int address) : AvInfoBlock(parent,address) {
-    setDebugLevel( DEBUG_LEVEL_ALL );
+    setDebugLevel( DEBUG_LEVEL_MODERATE );
 	// do some more valid checks
 	if (getType() != 0x810A) {
 		bValid=false;

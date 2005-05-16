@@ -36,7 +36,9 @@ class AvAudioSubunitIdentifierDescriptor : public AvDescriptor {
     ~AvAudioSubunitIdentifierDescriptor();
 
     void printCapabilities();
-
+	char * getFunctionBlockTypeName(int type);
+	char * getFunctionBlockName(int id);
+	
  protected:
 
  private:
