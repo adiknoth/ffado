@@ -589,22 +589,50 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
     virtual FormatInformationStreamsSync* clone() const;
+
+
+    reserved_t m_reserved0;
+    sampling_frequency_t m_samplingFrequency;
+    rate_control_t m_rateControl;
+    reserved_t m_reserved1;
 };
 
 FormatInformationStreamsSync::FormatInformationStreamsSync()
     : FormatInformationStreams()
+    , m_reserved0( 0xff )
+    , m_samplingFrequency( eSF_DontCare )
+    , m_rateControl( eRC_DontCare )
+    , m_reserved1( 0xff )
 {
 }
 
 bool
 FormatInformationStreamsSync::serialize( IOSSerialize& se )
 {
+    se.write( m_reserved0, "FormatInformationStreamsSync reserved" );
+
+    // we have to clobber some bits
+    byte_t operand = ( m_samplingFrequency << 4 ) | 0x0e;
+    if ( m_rateControl == eRC_DontCare) {
+        operand |= 0x1;
+    }
+    se.write( operand, "FormatInformationStreamsSync sampling frequency and rate control" );
+
+    se.write( m_reserved1, "FormatInformationStreamsSync reserved" );
     return true;
 }
 
 bool
 FormatInformationStreamsSync::deserialize( IISDeserialize& de )
 {
+    de.read( &m_reserved0 );
+
+    byte_t operand;
+    de.read( &operand );
+    m_samplingFrequency = operand >> 4;
+    m_rateControl = operand & 0x01;
+
+    de.read( &m_reserved1 );
     return true;
 }
 
