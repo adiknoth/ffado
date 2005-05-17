@@ -25,6 +25,7 @@
 #include <libavc1394/avc1394.h>
 #include <libavc1394/avc1394_vcr.h>
 #include <netinet/in.h>
+#include <assert.h>
 
 /* should probably be attached to an AVC device,
    a descriptor is attached to an AVC device anyway.
