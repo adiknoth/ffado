@@ -143,8 +143,6 @@ AvDevice::enumerateSubUnits()
 		 | 0x0000;
     request[1] = 0xFFFFFFFF;
     response = p1394Service->avcExecuteTransaction( m_iNodeId, request, 2, 2 );
-    request[1] = 0x02020606;
-    response = request;
     if ( response ) {
 	m_iNbIsoDestinationPlugs
 	    = AVC1394_GET_RESPONSE_OPERAND( response[1], 0 );
