@@ -5,7 +5,7 @@ noinst_PROGRAMS = byte_order detect_avc_unit stream_format get-xml-description \
 
 byte_order_SOURCES = byte_order.c
 detect_avc_unit_SOURCES = detect_avc_unit.c
-stream_format_SOURCES = stream_format.cpp
+stream_format_SOURCES = stream_format.cpp avc_extended_stream_format.cpp serialize.cpp
 test_freebob_midi_SOURCES = test-freebob-midi.c
 test_freebob_audio_SOURCES = test-freebob-audio.c
 test_freebob_iso_SOURCES = test-freebob-iso.c
