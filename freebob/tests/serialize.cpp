@@ -101,6 +101,17 @@ BufferDeserialize::read( quadlet_t* value )
 }
 
 bool
+BufferDeserialize::peek( byte_t* value )
+{
+    bool result = false;
+    if ( isCurPosValid() ) {
+        *value = *( m_curPos + sizeof( byte_t ) );
+        result = true;
+    }
+    return result;
+}
+
+bool
 BufferDeserialize::isCurPosValid() const
 {
     if ( static_cast<size_t>( ( m_curPos - m_buffer ) ) >= m_length ) {

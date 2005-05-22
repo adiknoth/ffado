@@ -48,8 +48,7 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire( ECommandType commandType,
-                       raw1394handle_t handle,
+    virtual bool fire( raw1394handle_t handle,
                        unsigned int node_id );
 
 

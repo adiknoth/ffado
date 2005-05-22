@@ -470,8 +470,7 @@ ExtendedStreamFormatCmd::deserialize( IISDeserialize& de )
 }
 
 bool
-ExtendedStreamFormatCmd::fire( ECommandType commandType,
-                               raw1394handle_t handle,
+ExtendedStreamFormatCmd::fire( raw1394handle_t handle,
                                unsigned int node_id )
 {
     bool result = false;
@@ -485,8 +484,6 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
 
     packet_t  req;
     packet_t* resp;
-
-    setCommandType( commandType );
 
     // initialize complete packet
     memset( &req,  0xff,  sizeof( req ) );

@@ -63,8 +63,9 @@ public:
 
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
-    virtual bool fire(ECommandType commandType,
-                      raw1394handle_t handle,
+
+    virtual bool setCommandType( ECommandType commandType );
+    virtual bool fire(raw1394handle_t handle,
                       unsigned int node_id ) = 0;
 
     EResponse getResponse();
@@ -77,12 +78,14 @@ public:
 
     bool setVerbose( bool enable );
     bool isVerbose();
+
+
 protected:
     AVCCommand( opcode_t opcode );
     virtual ~AVCCommand() {}
 
     bool parseResponse( byte_t response );
-    bool setCommandType( ECommandType commandType );
+    ECommandType getCommandType();
 
 private:
     ctype_t   m_ctype;

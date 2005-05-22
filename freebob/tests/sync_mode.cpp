@@ -20,6 +20,7 @@
 
 #include "avc_extended_stream_format.h"
 #include "avc_plug_info.h"
+#include "avc_signal_source.h"
 #include "serialize.h"
 
 #include <argp.h>
@@ -125,20 +126,37 @@ doTest( raw1394handle_t handle, int node_id )
                                                          PlugAddress::ePD_Input,
                                                          unitPlugAddress ) );
     extendedStreamFormatCmd.setVerbose( arguments.verbose );
-    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
-    */
+    extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+    extendedStreamFormatCmd.fire( handle, node_id );
 
     PlugInfoCmd plugInfoCmd;
     plugInfoCmd.setVerbose( arguments.verbose );
-    if ( plugInfoCmd.fire( AVCCommand::eCT_Status, handle,  node_id ) ) {
+    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    if ( plugInfoCmd.fire( handle,  node_id ) ) {
         CoutSerializer se;
         plugInfoCmd.serialize( se );
     }
 
     plugInfoCmd.setSubFunction( PlugInfoCmd::eSF_SerialBusAsynchonousPlug );
-    if ( plugInfoCmd.fire( AVCCommand::eCT_Status, handle,  node_id ) ) {
+    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    if ( plugInfoCmd.fire( handle,  node_id ) ) {
         CoutSerializer se;
         plugInfoCmd.serialize( se );
+    }
+    */
+
+    SignalSourceCmd signalSourceCmd;
+    SignalUnitAddress dest;
+    dest.m_plugId = 0x00;
+    signalSourceCmd.setSignalDestination( dest );
+    signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
+    signalSourceCmd.setVerbose( arguments.verbose );
+
+    CoutSerializer se;
+    signalSourceCmd.serialize( se );
+
+    if ( signalSourceCmd.fire( handle, node_id ) ) {
+        signalSourceCmd.serialize( se );
     }
 
     return true;
@@ -155,7 +173,8 @@ doApp( raw1394handle_t handle, int node_id )
     // Every one of them is possible a sync source
     PlugInfoCmd plugInfoCmd;
     plugInfoCmd.setVerbose( arguments.verbose );
-    if ( plugInfoCmd.fire( AVCCommand::eCT_Status, handle,  node_id ) ) {
+    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    if ( plugInfoCmd.fire( handle,  node_id ) ) {
         for ( int plugIdx = 0;
               plugIdx < plugInfoCmd.m_externalInputPlugs;
               ++plugIdx )
@@ -166,8 +185,9 @@ doApp( raw1394handle_t handle, int node_id )
             extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                                  PlugAddress::ePD_Input,
                                                                  unitPlugAddress ) );
+            extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
             extendedStreamFormatCmd.setVerbose( arguments.verbose );
-            if ( extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
+            if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
                 cout << "plug idx: " << plugIdx << endl;
                 CoutSerializer se;
                 extendedStreamFormatCmd.serialize( se );

@@ -35,6 +35,7 @@ class IISDeserialize {
 public:
     virtual bool read( byte_t* value ) = 0;
     virtual bool read( quadlet_t* value ) = 0;
+    virtual bool peek( byte_t* value ) = 0;
 };
 
 // Specialized implementations of previously defined interfaces
@@ -75,6 +76,7 @@ public:
 
     virtual bool read( byte_t* value );
     virtual bool read( quadlet_t* value );
+    virtual bool peek( byte_t* value );
 
 protected:
     inline bool isCurPosValid() const;

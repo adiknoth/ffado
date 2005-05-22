@@ -134,25 +134,27 @@ doTest(raw1394handle_t handle, int node_id, int plug_id)
                                                          PlugAddress::ePD_Input,
                                                          unitPlugAddress ) );
     extendedStreamFormatCmd.setVerbose( arguments.verbose );
+    extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
 
     extendedStreamFormatCmd.setIndexInStreamFormat( 0 );
-    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.fire( handle, node_id );
     extendedStreamFormatCmd.setIndexInStreamFormat( 1 );
-    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.fire( handle, node_id );
     extendedStreamFormatCmd.setIndexInStreamFormat( 2 );
-    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.fire( handle, node_id );
     extendedStreamFormatCmd.setIndexInStreamFormat( 3 );
-    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.fire( handle, node_id );
     extendedStreamFormatCmd.setIndexInStreamFormat( 4 );
-    extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
+    extendedStreamFormatCmd.fire( handle, node_id );
 
     ExtendedStreamFormatCmd extendedStreamFormatCmdS = ExtendedStreamFormatCmd();
     extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                           PlugAddress::ePD_Input,
                                                           unitPlugAddress ) );
     extendedStreamFormatCmdS.setVerbose( arguments.verbose );
+    extendedStreamFormatCmdS.setCommandType( AVCCommand::eCT_Status );
 
-    if ( extendedStreamFormatCmdS.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
+    if ( extendedStreamFormatCmdS.fire( handle, node_id ) ) {
         CoutSerializer se;
         extendedStreamFormatCmdS.serialize( se );
     }
@@ -245,7 +247,8 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequ
 
     do {
         extendedStreamFormatCmd.setIndexInStreamFormat( i );
-        cmdSuccess = extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle,  node_id );
+        extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+        cmdSuccess = extendedStreamFormatCmd.fire( handle,  node_id );
         if ( cmdSuccess
              && ( extendedStreamFormatCmd.getResponse() == AVCCommand::eR_Implemented ) )
         {
@@ -285,7 +288,8 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequ
                                                           unitPlugAddress ) );
 
                 setFormatCmd.setIndexInStreamFormat( it->m_index );
-                if ( !setFormatCmd.fire( AVCCommand::eCT_Status, handle,  node_id ) ) {
+                setFormatCmd.setCommandType( AVCCommand::eCT_Status );
+                if ( !setFormatCmd.fire( handle,  node_id ) ) {
                     std::cout << "  - failed to retrieve format for index " << it->m_index << std::endl;
                     return false;
                 }
@@ -293,7 +297,8 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequ
                 std::cout << "  - " << createFormatInfo( setFormatCmd ) << std::endl;
 
                 setFormatCmd.setSubFunction( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
-                if ( !setFormatCmd.fire( AVCCommand::eCT_Control,  handle,  node_id ) ) {
+                setFormatCmd.setCommandType( AVCCommand::eCT_Control );
+                if ( !setFormatCmd.fire( handle,  node_id ) ) {
                     std::cout << "  - failed to set new format" << std::endl;
                     return false;
                 }
@@ -311,8 +316,9 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequ
                                                PlugAddress::ePD_Input,
                                                unitPlugAddress ) );
     currentFormat.setVerbose( arguments.verbose );
+    currentFormat.setCommandType( AVCCommand::eCT_Status );
 
-    if ( currentFormat.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
+    if ( currentFormat.fire( handle, node_id ) ) {
         std::cout << "Configured frequency: " << createFormatInfo( currentFormat ) << std::endl;
     }
 
