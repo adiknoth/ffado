@@ -23,47 +23,7 @@
 
 #include <netinet/in.h>
 
-std::ostream& operator<<( std::ostream& stream, ESamplingFrequency freq )
-{
-    char* str;
-    switch ( freq ) {
-    case eSF_22050Hz:
-        str = "22050";
-        break;
-    case eSF_24000Hz:
-        str = "24000";
-        break;
-    case eSF_32000Hz:
-        str = "32000";
-        break;
-    case eSF_44100Hz:
-        str = "44100";
-        break;
-    case eSF_48000Hz:
-        str = "48000";
-        break;
-    case eSF_88200Hz:
-        str = "88200";
-        break;
-    case eSF_96000Hz:
-        str = "96000";
-        break;
-    case eSF_176400Hz:
-        str = "176400";
-        break;
-    case eSF_192000Hz:
-        str = "192000";
-        break;
-    case eSF_DontCare:
-    default:
-        str = "unknown";
-    }
-    return stream << str;
-};
-
-////////////////////////////////////////////////////////////
-
-UnitPlugAddress::UnitPlugAddress( plug_id_t plugType,  plug_type_t plugId )
+UnitPlugAddress::UnitPlugAddress( EPlugType plugType,  plug_type_t plugId )
     : m_plugType( plugType )
     , m_plugId( plugId )
     , m_reserved( 0xff )
@@ -447,60 +407,14 @@ FormatInformation::clone() const
 
 ////////////////////////////////////////////////////////////
 
-AVCCommand::AVCCommand()
-    : m_ctype( eCT_Unknown )
-    , m_subunit( 0xff )
-    , m_eResponse( eR_Unknown )
-{
-}
-
-bool
-AVCCommand::serialize( IOSSerialize& se )
-{
-    se.write( m_ctype, "AVCCommand ctype" );
-    se.write( m_subunit, "AVCCommand subunit" );
-    return true;
-}
-
-bool
-AVCCommand::deserialize( IISDeserialize& de )
-{
-    de.read( &m_ctype );
-    de.read( &m_subunit );
-    return true;
-}
-
-bool
-AVCCommand::setCommandType( ECommandType commandType )
-{
-    m_ctype = commandType;
-    return true;
-}
-
-AVCCommand::EResponse
-AVCCommand::getResponse()
-{
-    return m_eResponse;
-}
-
-bool
-AVCCommand::parseResponse( byte_t response )
-{
-    m_eResponse = static_cast<EResponse>( response );
-    return true;
-}
-
-////////////////////////////////////////////////////////////
-
 ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( ESubFunction eSubFunction )
-    : AVCCommand()
-    , m_opcode( AVC1394_STREAM_FORMAT_SUPPORT )
+    : AVCCommand( AVC1394_STREAM_FORMAT_SUPPORT )
     , m_subFunction( eSubFunction )
     , m_status( eS_NotUsed )
     , m_indexInStreamFormat( 0 )
     , m_formatInformation( new FormatInformation )
 {
-    UnitPlugAddress unitPlugAddress( 0x00, 0x00 );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0x00 );
     m_plugAddress = new PlugAddress( PlugAddress::eM_Subunit, PlugAddress::ePD_Input, unitPlugAddress );
 }
 
@@ -531,7 +445,6 @@ bool
 ExtendedStreamFormatCmd::serialize( IOSSerialize& se )
 {
     AVCCommand::serialize( se );
-    se.write( m_opcode, "ExtendedStreamFormatCmd opcode" );
     se.write( m_subFunction, "ExtendedStreamFormatCmd subFunction" );
     m_plugAddress->serialize( se );
     se.write( m_status, "ExtendedStreamFormatCmd status" );
@@ -546,7 +459,6 @@ bool
 ExtendedStreamFormatCmd::deserialize( IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
-    de.read( &m_opcode );
     de.read( &m_subFunction );
     m_plugAddress->deserialize( de );
     de.read( &m_status );
@@ -581,7 +493,7 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
 
     BufferSerialize se( req.byte, sizeof( req ) );
     if ( !serialize( se ) ) {
-        printf(  "ExtendedStreamFormatCmd::fire: Could not serialize comanndo\n" );
+        printf(  "ExtendedStreamFormatCmd::fire: Could not serialize\n" );
         return false;
     }
 
@@ -590,7 +502,7 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
         req.quadlet[i] = ntohl( req.quadlet[i] );
     }
 
-    if ( m_verbose ) {
+    if ( isVerbose() ) {
         // debug output
         puts("request:");
         for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
@@ -600,7 +512,7 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
 
     resp = reinterpret_cast<packet_t*> ( avc1394_transaction_block( handle, node_id, req.quadlet, STREAM_FORMAT_REQUEST_SIZE,  1 ) );
     if ( resp ) {
-        if ( m_verbose ) {
+        if ( isVerbose() ) {
             // debug output
             puts("response:");
             for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
@@ -613,7 +525,7 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
             resp->quadlet[i] = htonl( resp->quadlet[i] );
         }
 
-        if ( m_verbose ) {
+        if ( isVerbose() ) {
             // a more detailed debug output
             printf( "\n" );
             printf( " idx type                       value\n" );
@@ -640,7 +552,7 @@ ExtendedStreamFormatCmd::fire( ECommandType commandType,
             break;
             case eR_Rejected:
                 if ( m_subFunction == eSF_ExtendedStreamFormatInformationCommandList ) {
-                    if ( m_verbose ) {
+                    if ( isVerbose() ) {
                         printf( "no futher stream formats defined\n" );
                     }
                     result = true;
@@ -681,10 +593,4 @@ ExtendedStreamFormatCmd::setSubFunction( ESubFunction subFunction )
 {
     m_subFunction = subFunction;
     return true;
-}
-
-void
-ExtendedStreamFormatCmd::setVerboseMode(bool enable)
-{
-    m_verbose = enable;
 }

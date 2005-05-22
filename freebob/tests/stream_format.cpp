@@ -129,11 +129,11 @@ doTest(raw1394handle_t handle, int node_id, int plug_id)
 {
 
     ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
-    UnitPlugAddress unitPlugAddress( 0x00,  plug_id );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,  plug_id );
     extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                          PlugAddress::ePD_Input,
                                                          unitPlugAddress ) );
-    extendedStreamFormatCmd.setVerboseMode( arguments.verbose );
+    extendedStreamFormatCmd.setVerbose( arguments.verbose );
 
     extendedStreamFormatCmd.setIndexInStreamFormat( 0 );
     extendedStreamFormatCmd.fire( AVCCommand::eCT_Status, handle, node_id );
@@ -150,7 +150,7 @@ doTest(raw1394handle_t handle, int node_id, int plug_id)
     extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                           PlugAddress::ePD_Input,
                                                           unitPlugAddress ) );
-    extendedStreamFormatCmdS.setVerboseMode( arguments.verbose );
+    extendedStreamFormatCmdS.setVerbose( arguments.verbose );
 
     if ( extendedStreamFormatCmdS.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
         CoutSerializer se;
@@ -233,11 +233,11 @@ bool
 doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequency = eSF_DontCare)
 {
     ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
-    UnitPlugAddress unitPlugAddress( 0x00,  plug_id );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,  plug_id );
     extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                          PlugAddress::ePD_Input,
                                                          unitPlugAddress ) );
-    extendedStreamFormatCmd.setVerboseMode( arguments.verbose );
+    extendedStreamFormatCmd.setVerbose( arguments.verbose );
 
     int i = 0;
     FormatInfoVector supportedFormatInfos;
@@ -279,7 +279,7 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequ
                 std::cout << "  - frequency " << frequency << " is supported" << std::endl;
 
                 ExtendedStreamFormatCmd setFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
-                setFormatCmd.setVerboseMode( arguments.verbose );
+                setFormatCmd.setVerbose( arguments.verbose );
                 setFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                           PlugAddress::ePD_Input,
                                                           unitPlugAddress ) );
@@ -310,7 +310,7 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequ
     currentFormat.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
                                                PlugAddress::ePD_Input,
                                                unitPlugAddress ) );
-    currentFormat.setVerboseMode( arguments.verbose );
+    currentFormat.setVerbose( arguments.verbose );
 
     if ( currentFormat.fire( AVCCommand::eCT_Status, handle, node_id ) ) {
         std::cout << "Configured frequency: " << createFormatInfo( currentFormat ) << std::endl;

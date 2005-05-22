@@ -21,13 +21,11 @@
 #ifndef AVCExtendedStreamFormat_h
 #define AVCExtendedStreamFormat_h
 
-#include <libavc1394/avc1394.h>
+#include "avc_generic.h"
 
+#include <libavc1394/avc1394.h>
 #include <iostream>
 #include <vector>
-
-class IOSSerialize;
-class IISDeserialize;
 
 #define AVC1394_STREAM_FORMAT_SUPPORT            0x2F
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_INPUT  0x00
@@ -101,51 +99,12 @@ class IISDeserialize;
 #define AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NO_STREAM_FORMAT 0x02
 #define AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NOT_USED         0xff
 
-typedef byte_t ctype_t;
-typedef byte_t subunit_t;
-typedef byte_t opcode_t;
-typedef byte_t plug_type_t;
-typedef byte_t plug_id_t;
-typedef byte_t reserved_t;
-typedef byte_t function_block_type_t;
-typedef byte_t function_block_id_t;
-typedef byte_t plug_direction_t;
-typedef byte_t plug_address_mode_t;
-typedef byte_t status_t;
-typedef byte_t number_of_channels_t;
-typedef byte_t stream_format_t;
-typedef byte_t sampling_frequency_t;
-typedef byte_t rate_control_t;
-typedef byte_t number_of_stream_format_infos_t;
-
-enum ESamplingFrequency {
-    eSF_22050Hz = 0x00,
-    eSF_24000Hz = 0x01,
-    eSF_32000Hz = 0x02,
-    eSF_44100Hz = 0x03,
-    eSF_48000Hz = 0x04,
-    eSF_88200Hz = 0x0A,
-    eSF_96000Hz = 0x05,
-    eSF_176400Hz = 0x06,
-    eSF_192000Hz = 0x07,
-    eSF_DontCare = 0x0F,
-};
-
-std::ostream& operator<<( std::ostream& stream, ESamplingFrequency freq );
+class IOSSerialize;
+class IISDeserialize;
 
 enum ERateControl {
     eRC_Supported = 0x00,
     eRC_DontCare  = 0x01,
-};
-
-////////////////////////////////////////////////////////////
-
-class IBusData {
-public:
-    virtual bool serialize( IOSSerialize& se ) = 0;
-    virtual bool deserialize( IISDeserialize& de ) = 0;
-
-    virtual IBusData* clone() const = 0;
 };
 
 ////////////////////////////////////////////////////////////
@@ -158,8 +117,14 @@ class PlugAddressData : public IBusData {
 class UnitPlugAddress : public PlugAddressData
 {
 public:
-    UnitPlugAddress( plug_id_t plugType,  plug_type_t plugId );
-    
+    enum EPlugType {
+        ePT_PCR              = 0x00,
+        ePT_ExternalPlug     = 0x01,
+        ePT_AsynchronousPlug = 0x02,
+    };
+
+    UnitPlugAddress( EPlugType plugType,  plug_type_t plugId );
+
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
     virtual UnitPlugAddress* clone() const;
@@ -372,59 +337,6 @@ public:
     FormatInformationStreams* m_streams;
 };
 
-
-///////////////////////////////////////////////////////////
-////////////////// AVC Commands ///////////////////////////
-///////////////////////////////////////////////////////////
-
-class AVCCommand
-{
-public:
-    enum EResponse {
-        eR_Unknown        = 0,
-        eR_NotImplemented = AVC1394_RESP_NOT_IMPLEMENTED,
-        eR_Accepted       = AVC1394_RESP_ACCEPTED,
-        eR_Rejected       = AVC1394_RESP_REJECTED,
-        eR_InTransition   = AVC1394_RESP_IN_TRANSITION,
-        eR_Implemented    = AVC1394_RESP_IMPLEMENTED,
-        eR_Changed        = AVC1394_RESP_CHANGED,
-        eR_Interim        = AVC1394_RESP_INTERIM,
-    };
-
-    enum ECommandType {
-        eCT_Control         = AVC1394_CTYP_CONTROL,
-        eCT_Status          = AVC1394_CTYP_STATUS,
-        eCT_SpecificInquiry = AVC1394_CTYP_SPECIFIC_INQUIRY,
-        eCT_Notify          = AVC1394_CTYP_NOTIFY,
-        eCT_GeneralInquiry  = AVC1394_CTYP_GENERAL_INQUIRY,
-        eCT_Unknown         = 0xff,
-    };
-    typedef byte_t subfunction_t;
-    typedef byte_t opcode_t;
-
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
-    virtual bool fire(ECommandType commandType,
-                      raw1394handle_t handle,
-                      unsigned int node_id ) = 0;
-
-    EResponse getResponse();
-
-protected:
-    AVCCommand();
-    virtual ~AVCCommand() {}
-
-    inline bool parseResponse( byte_t response );
-    bool setCommandType( ECommandType commandType );
-
-private:
-    ctype_t   m_ctype;
-    subunit_t m_subunit; // Can't be set/get ATM (doesn't matter anyway because it's almost
-                         // every time 0xff.
-
-    EResponse m_eResponse;
-};
-
 ///////////////////////////////////////////////////////////
 
 class ExtendedStreamFormatCmd: public AVCCommand
@@ -464,15 +376,12 @@ public:
     FormatInformation* getFormatInformation();
     index_in_stream_format_t getIndex();
 
-    void setVerboseMode(bool enable);
 protected:
-    opcode_t m_opcode;
-    subfunction_t m_subFunction;
-    PlugAddress* m_plugAddress;
-    status_t m_status;
+    subfunction_t            m_subFunction;
+    PlugAddress*             m_plugAddress;
+    status_t                 m_status;
     index_in_stream_format_t m_indexInStreamFormat;
-    FormatInformation* m_formatInformation;
-    bool m_verbose;
+    FormatInformation*       m_formatInformation;
 };
 
 #endif // AVCExtendedStreamFormat_h

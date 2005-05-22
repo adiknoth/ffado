@@ -1,11 +1,12 @@
-noinst_PROGRAMS = byte_order detect_avc_unit stream_format get-xml-description \
+noinst_PROGRAMS = byte_order detect_avc_unit stream_format sync_mode get-xml-description \
                   test-freebob-midi test-freebob-audio test-freebob-iso test-freebob-synctransfer csr1212_read \
                   test-freebob-bounce
 
 
 byte_order_SOURCES = byte_order.c
 detect_avc_unit_SOURCES = detect_avc_unit.c
-stream_format_SOURCES = stream_format.cpp avc_extended_stream_format.cpp serialize.cpp
+stream_format_SOURCES = stream_format.cpp avc_extended_stream_format.cpp serialize.cpp avc_generic.cpp avc_definitions.cpp
+sync_mode_SOURCES = sync_mode.cpp avc_extended_stream_format.cpp serialize.cpp avc_generic.cpp avc_plug_info.cpp avc_definitions.cpp
 test_freebob_midi_SOURCES = test-freebob-midi.c
 test_freebob_audio_SOURCES = test-freebob-audio.c
 test_freebob_iso_SOURCES = test-freebob-iso.c
