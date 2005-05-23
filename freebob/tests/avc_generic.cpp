@@ -69,9 +69,11 @@ AVCCommand::parseResponse( byte_t response )
 }
 
 bool
-AVCCommand::setSubunitType(subunit_type_t subunitType)
+AVCCommand::setSubunitType(ESubunitType subunitType)
 {
-    m_subunit = ( subunitType << 3 ) | ( m_subunit & 0x7 );
+    byte_t subT = subunitType;
+
+    m_subunit = ( subT << 3 ) | ( m_subunit & 0x7 );
     return true;
 }
 
@@ -80,6 +82,18 @@ AVCCommand::setSubunitId(subunit_id_t subunitId)
 {
     m_subunit = ( subunitId & 0x7 ) | ( m_subunit & 0xf8 );
     return true;
+}
+
+AVCCommand::ESubunitType
+AVCCommand::getSubunitType()
+{
+    return static_cast<ESubunitType>( ( m_subunit >> 3 ) );
+}
+
+subunit_id_t
+AVCCommand::getSubunitId()
+{
+    return m_subunit & 0x7;
 }
 
 bool

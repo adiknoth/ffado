@@ -22,11 +22,9 @@
 #define AVCSignalSource_h
 
 #include "avc_generic.h"
+#include "avc_definitions.h"
 
 #include <libavc1394/avc1394.h>
-
-#define AVC1394_SUBUNIT_RESERVED 0x1E
-#define AVC1394_SUBUNIT_ID_RESERVED 0x06
 
 class SignalAddress: public IBusData
 {

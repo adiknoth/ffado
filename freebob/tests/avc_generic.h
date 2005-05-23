@@ -58,8 +58,25 @@ public:
         eCT_GeneralInquiry  = AVC1394_CTYP_GENERAL_INQUIRY,
         eCT_Unknown         = 0xff,
     };
-    typedef byte_t subfunction_t;
-    typedef byte_t opcode_t;
+
+    enum ESubunitType {
+        eST_Monitor       = AVC1394_SUBUNIT_VIDEO_MONITOR,
+        eST_Audio         = AVC1394_SUBUNIT_AUDIO,
+        eST_Printer       = AVC1394_SUBUNIT_PRINTER,
+        eST_Disc          = AVC1394_SUBUNIT_DISC_RECORDER,
+        eST_VCR           = AVC1394_SUBUNIT_VCR,
+        eST_Tuner         = AVC1394_SUBUNIT_TUNER,
+        eST_CA            = AVC1394_SUBUNIT_CA,
+        eST_Camera        = AVC1394_SUBUNIT_VIDEO_CAMERA,
+        eST_Panel         = AVC1394_SUBUNIT_PANEL,
+        eST_BulltinBoard  = AVC1394_SUBUNIT_BULLETIN_BOARD,
+        eST_CameraStorage = AVC1394_SUBUNIT_CAMERA_STORAGE,
+        eST_Music         = AVC1394_SUBUNIT_MUSIC,
+        eST_VendorUnique  = AVC1394_SUBUNIT_VENDOR_UNIQUE,
+        eST_Reserved      = AVC1394_SUBUNIT_RESERVED,
+        eST_Extended      = AVC1394_SUBUNIT_EXTENDED,
+        eST_Unit          = AVC1394_SUBUNIT_UNIT,
+    };
 
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
@@ -70,11 +87,11 @@ public:
 
     EResponse getResponse();
 
-    typedef byte_t subunit_type_t;
-    typedef byte_t subunit_id_t;
-
-    bool setSubunitType(subunit_type_t subunitType);
+    bool setSubunitType(ESubunitType subunitType);
     bool setSubunitId(subunit_id_t subunitId);
+
+    ESubunitType getSubunitType();
+    subunit_id_t getSubunitId();
 
     bool setVerbose( bool enable );
     bool isVerbose();

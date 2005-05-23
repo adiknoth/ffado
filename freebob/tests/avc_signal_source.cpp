@@ -118,49 +118,54 @@ bool
 SignalSourceCmd::serialize( IOSSerialize& se )
 {
     AVCCommand::serialize( se );
-    switch( getCommandType() ) {
-    case eCT_Control:
+    switch( getSubunitType() ) {
+    case eST_Unit:
         {
-            byte_t reserved = 0x0f;
-            se.write( reserved, "SignalSourceCmd reserved" );
+            byte_t operand = m_resultStatus & 0xf;
+            se.write( operand, "SignalSourceCmd resultStatus" );
+
             if ( m_signalSource ) {
                 m_signalSource->serialize( se );
             } else {
-                cerr << "No signal source address provided" << endl;
-                return false;
-            }
-            if ( m_signalDestination ) {
-                m_signalDestination->serialize( se );
-            } else {
-                cerr << "No signal destination address provided" << endl;
-                return false;
-            }
-        }
-        break;
-    case eCT_Status:
-        {
-            if ( m_signalSource ) {
-                cerr << "Unexpected signal source address provided" << endl;
-                return false;
+                byte_t reserved = 0xff;
+                se.write( reserved, "SignalSourceCmd" );
+                se.write( reserved, "SignalSourceCmd" );
             }
 
-            byte_t reserved = 0xff;
-            se.write( reserved, "SignalSourceCmd" );
-            se.write( reserved, "SignalSourceCmd" );
-            se.write( reserved, "SignalSourceCmd" );
             if ( m_signalDestination ) {
                 m_signalDestination->serialize( se );
             } else {
-                cerr << "No signal destination address provided" << endl;
-                return false;
+                byte_t reserved = 0xff;
+                se.write( reserved, "SignalSourceCmd" );
+                se.write( reserved, "SignalSourceCmd" );
             }
         }
         break;
-    case eCT_SpecificInquiry:
-        cout << "Specific inquiry is not implemented yet" << endl;
+    case eST_Audio:
+    case eST_Music:
+        {
+            byte_t operand = ( m_outputStatus << 5 ) | ( ( m_conv & 0x1 ) << 4 ) | ( m_signalStatus & 0x7 );
+            se.write( operand, "SignalSourceCmd outputStatus & conv & signalStatus" );
+
+            if ( m_signalSource ) {
+                m_signalSource->serialize( se );
+            } else {
+                byte_t reserved = 0xff;
+                se.write( reserved, "SignalSourceCmd" );
+                se.write( reserved, "SignalSourceCmd" );
+            }
+
+            if ( m_signalDestination ) {
+                m_signalDestination->serialize( se );
+            } else {
+                byte_t reserved = 0xff;
+                se.write( reserved, "SignalSourceCmd" );
+                se.write( reserved, "SignalSourceCmd" );
+            }
+        }
         break;
     default:
-        cerr << "Can't handle command type " << getCommandType() << endl;
+        cerr << "Can't handle subunit type " << getSubunitType() << endl;
         return false;
     }
 
@@ -176,10 +181,8 @@ SignalSourceCmd::deserialize( IISDeserialize& de )
     m_signalDestination = 0;
 
     AVCCommand::deserialize( de );
-    switch( getCommandType() ) {
-
-        // XXX command type is lost...
-    case eCT_Control:
+    switch( getSubunitType() ) {
+    case eST_Unit:
         {
             byte_t operand;
 
@@ -203,7 +206,8 @@ SignalSourceCmd::deserialize( IISDeserialize& de )
             m_signalDestination->deserialize( de );
         }
         break;
-    case eCT_Status:
+    case eST_Audio:
+    case eST_Music:
         {
             byte_t operand;
 
@@ -230,10 +234,8 @@ SignalSourceCmd::deserialize( IISDeserialize& de )
             m_signalDestination->deserialize( de );
         }
         break;
-    case eCT_SpecificInquiry:
-        break;
     default:
-        cerr << "Can't handle command type " << getCommandType() << endl;
+        cerr << "Can't handle subunit type " << getSubunitType() << endl;
         return false;
     }
 

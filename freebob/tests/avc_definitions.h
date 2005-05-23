@@ -41,6 +41,9 @@ typedef byte_t sampling_frequency_t;
 typedef byte_t rate_control_t;
 typedef byte_t number_of_stream_format_infos_t;
 typedef byte_t nr_of_plugs_t;
+typedef byte_t subunit_id_t;
+typedef byte_t subfunction_t;
+typedef byte_t opcode_t;
 
 enum ESamplingFrequency {
     eSF_22050Hz = 0x00,
@@ -56,5 +59,16 @@ enum ESamplingFrequency {
 };
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency freq );
+
+#define AVC1394_SUBUNIT_AUDIO 1
+#define AVC1394_SUBUNIT_PRINTER 2
+#define AVC1394_SUBUNIT_CA 6
+#define AVC1394_SUBUNIT_PANEL 9
+#define AVC1394_SUBUNIT_BULLETIN_BOARD 0xA
+#define AVC1394_SUBUNIT_CAMERA_STORAGE 0xB
+#define AVC1394_SUBUNIT_MUSIC 0xC
+#define AVC1394_SUBUNIT_RESERVED 0x1D
+
+#define AVC1394_SUBUNIT_ID_RESERVED 0x06
 
 #endif // AVCDefinitions_h
