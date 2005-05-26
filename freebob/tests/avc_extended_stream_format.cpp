@@ -415,7 +415,7 @@ ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( ESubFunction eSubFunction )
     , m_formatInformation( new FormatInformation )
 {
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0x00 );
-    m_plugAddress = new PlugAddress( PlugAddress::eM_Subunit, PlugAddress::ePD_Input, unitPlugAddress );
+    m_plugAddress = new PlugAddress(  PlugAddress::ePD_Output, PlugAddress::eM_Subunit, unitPlugAddress );
 }
 
 ExtendedStreamFormatCmd::~ExtendedStreamFormatCmd()

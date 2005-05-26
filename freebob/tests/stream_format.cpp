@@ -43,6 +43,7 @@ static char args_doc[] = "NODE_ID PLUG_ID";
 static struct argp_option options[] = {
     {"verbose",   'v', 0,           0,            "Produce verbose output" },
     {"test",      't', 0,           0,            "Do tests instead get/set action" },
+    {"direction", 'd', "DIRECTION", 0,  "Specify plug direction [0 = Input plug (playback), 1 = Output plug (capture)]" },
     {"frequency", 'f', "FREQUENCY", 0,  "Set frequency" },
     {"port",      'p', "PORT",      0,  "Set port" },
    { 0 }
@@ -54,6 +55,7 @@ struct arguments
         : verbose( false )
         , test( false )
         , frequency( 0 )
+        , direction ( 0 )
         , port( 0 )
         {
             args[0] = 0;
@@ -64,6 +66,7 @@ struct arguments
     bool  verbose;
     bool  test;
     int   frequency;
+    int   direction;
     int   port;
 } arguments;
 
@@ -94,6 +97,14 @@ parse_opt( int key, char* arg, struct argp_state* state )
     case 'p':
         errno = 0;
         arguments->port = strtol(arg, &tail, 0);
+        if (errno) {
+            perror("argument parsing failed:");
+            return errno;
+        }
+        break;
+    case 'd':
+        errno = 0;
+        arguments->direction = strtol(arg, &tail, 0);
         if (errno) {
             perror("argument parsing failed:");
             return errno;
@@ -223,7 +234,7 @@ createFormatInfo( ExtendedStreamFormatCmd& cmd )
                 fi.m_midiChannels += compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
                 break;
             default:
-                std::cout << "addStreamFormat: unknown stream format for channel" << std::endl;
+                std::cout << "addStreamFormat: unknown stream format for channel (" << j << ")" << std::endl;
             }
         }
     }
@@ -232,12 +243,13 @@ createFormatInfo( ExtendedStreamFormatCmd& cmd )
 }
 
 bool
-doApp(raw1394handle_t handle, int node_id, int plug_id, ESamplingFrequency frequency = eSF_DontCare)
+doApp(raw1394handle_t handle, int node_id, int plug_id, PlugAddress::EPlugDirection direction = PlugAddress::ePD_Input , ESamplingFrequency frequency = eSF_DontCare)
 {
     ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,  plug_id );
-    extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                         PlugAddress::ePD_Input,
+
+    extendedStreamFormatCmd.setPlugAddress( PlugAddress( direction,
+                                                         PlugAddress::eM_Subunit,
                                                          unitPlugAddress ) );
     extendedStreamFormatCmd.setVerbose( arguments.verbose );
 
@@ -365,6 +377,24 @@ parseFrequencyString( int frequency )
     return efreq;
 }
 
+PlugAddress::EPlugDirection
+parseDirectionString( int frequency )
+{
+    PlugAddress::EPlugDirection edir;
+    switch ( frequency ) {
+    case 0:
+        edir = PlugAddress::ePD_Input;
+        break;
+    case 1:
+        edir = PlugAddress::ePD_Output;
+        break;
+    default:
+        edir = PlugAddress::ePD_Input;
+    }
+
+    return edir;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -407,7 +437,9 @@ main(int argc, char **argv)
         doTest( handle, node_id,  plug_id );
     } else {
         ESamplingFrequency efreq = parseFrequencyString( arguments.frequency );
-        doApp( handle, node_id, plug_id, efreq );
+        PlugAddress::EPlugDirection edir = parseDirectionString( arguments.direction );
+        
+        doApp( handle, node_id, plug_id, edir, efreq );
     }
 
     raw1394_destroy_handle( handle );
