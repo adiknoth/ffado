@@ -55,9 +55,11 @@ public:
     nr_of_plugs_t m_serialBusIsochronousInputPlugs;
     nr_of_plugs_t m_serialBusIsochronousOutputPlugs;
     nr_of_plugs_t m_externalInputPlugs;
-    nr_of_plugs_t m_externalOuputPlugs;
+    nr_of_plugs_t m_externalOutputPlugs;
     nr_of_plugs_t m_serialBusAsynchronousInputPlugs;
     nr_of_plugs_t m_serialBusAsynchronousOuputPlugs;
+    nr_of_plugs_t m_destinationPlugs;
+    nr_of_plugs_t m_sourcePlugs;
 
     bool setSubFunction( ESubFunction subFunction );
 

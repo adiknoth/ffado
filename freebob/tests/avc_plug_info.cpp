@@ -28,6 +28,14 @@ using namespace std;
 
 PlugInfoCmd::PlugInfoCmd( ESubFunction eSubFunction )
     : AVCCommand( AVC1394_CMD_PLUG_INFO )
+    , m_serialBusIsochronousInputPlugs( 0xff )
+    , m_serialBusIsochronousOutputPlugs( 0xff )
+    , m_externalInputPlugs( 0xff )
+    , m_externalOutputPlugs( 0xff )
+    , m_serialBusAsynchronousInputPlugs( 0xff )
+    , m_serialBusAsynchronousOuputPlugs( 0xff )
+    , m_destinationPlugs( 0xff )
+    , m_sourcePlugs( 0xff )
     , m_subFunction( eSubFunction )
 {
 }
@@ -39,22 +47,35 @@ PlugInfoCmd::~PlugInfoCmd()
 bool
 PlugInfoCmd::serialize( IOSSerialize& se )
 {
+    byte_t reserved = 0xff;
+
     AVCCommand::serialize( se );
     se.write( m_subFunction, "PlugInfoCmd subFunction" );
-    switch( m_subFunction ) {
-    case eSF_SerialBusIsochronousAndExternalPlug:
-        se.write( m_serialBusIsochronousInputPlugs, "PlugInfoCmd serialBusIsochronousInputPlugs" );
-        se.write( m_serialBusIsochronousOutputPlugs, "PlugInfoCmd serialBusIsochronousOutputPlugs" );
-        se.write( m_externalInputPlugs, "PlugInfoCmd externalInputPlugs" );
-        se.write( m_externalOuputPlugs, "PlugInfoCmd externalOuputPlugs" );
-        break;
-    case eSF_SerialBusAsynchonousPlug:
-        se.write( m_serialBusAsynchronousInputPlugs, "PlugInfoCmd serialBusAsynchronousInputPlugs" );
-        se.write( m_serialBusAsynchronousOuputPlugs, "PlugInfoCmd serialBusAsynchronousOuputPlugs" );
+    switch( getSubunitType() ) {
+    case eST_Unit:
+        switch( m_subFunction ) {
+        case eSF_SerialBusIsochronousAndExternalPlug:
+            se.write( m_serialBusIsochronousInputPlugs, "PlugInfoCmd serialBusIsochronousInputPlugs" );
+            se.write( m_serialBusIsochronousOutputPlugs, "PlugInfoCmd serialBusIsochronousOutputPlugs" );
+            se.write( m_externalInputPlugs, "PlugInfoCmd externalInputPlugs" );
+            se.write( m_externalOutputPlugs, "PlugInfoCmd externalOutputPlugs" );
+            break;
+        case eSF_SerialBusAsynchonousPlug:
+            se.write( m_serialBusAsynchronousInputPlugs, "PlugInfoCmd serialBusAsynchronousInputPlugs" );
+            se.write( m_serialBusAsynchronousOuputPlugs, "PlugInfoCmd serialBusAsynchronousOuputPlugs" );
+            se.write( reserved, "PlugInfoCmd" );
+            se.write( reserved, "PlugInfoCmd" );
+            break;
+        default:
+            cerr << "Could not serialize with subfucntion " << m_subFunction << endl;
+            return false;
+        }
         break;
     default:
-        cerr << "Could not serialize with subfucntion " << m_subFunction << endl;
-        return false;
+        se.write( m_destinationPlugs, "PlugInfoCmd destinationPlugs" );
+        se.write( m_sourcePlugs, "PlugInfoCmd sourcePlugs" );
+        se.write( reserved, "PlugInfoCmd" );
+        se.write( reserved, "PlugInfoCmd" );
     }
     return true;
 }
@@ -62,22 +83,35 @@ PlugInfoCmd::serialize( IOSSerialize& se )
 bool
 PlugInfoCmd::deserialize( IISDeserialize& de )
 {
+    byte_t reserved;
+
     AVCCommand::deserialize( de );
     de.read( &m_subFunction );
-    switch ( m_subFunction ) {
-    case eSF_SerialBusIsochronousAndExternalPlug:
-        de.read( &m_serialBusIsochronousInputPlugs );
-        de.read( &m_serialBusIsochronousOutputPlugs );
-        de.read( &m_externalInputPlugs );
-        de.read( &m_externalOuputPlugs );
-        break;
-    case eSF_SerialBusAsynchonousPlug:
-        de.read( &m_serialBusAsynchronousInputPlugs );
-        de.read( &m_serialBusAsynchronousOuputPlugs );
+    switch ( getSubunitType() ) {
+    case eST_Unit:
+        switch ( m_subFunction ) {
+        case eSF_SerialBusIsochronousAndExternalPlug:
+            de.read( &m_serialBusIsochronousInputPlugs );
+            de.read( &m_serialBusIsochronousOutputPlugs );
+            de.read( &m_externalInputPlugs );
+            de.read( &m_externalOutputPlugs );
+            break;
+        case eSF_SerialBusAsynchonousPlug:
+            de.read( &m_serialBusAsynchronousInputPlugs );
+            de.read( &m_serialBusAsynchronousOuputPlugs );
+            de.read( &reserved );
+            de.read( &reserved );
+            break;
+        default:
+            cerr << "Could not deserialize with subfucntion " << m_subFunction << endl;
+            return false;
+        }
         break;
     default:
-        cerr << "Could not deserialize with subfucntion " << m_subFunction << endl;
-        return false;
+        de.read( &m_destinationPlugs );
+        de.read( &m_sourcePlugs );
+        de.read( &reserved );
+        de.read( &reserved );
     }
     return true;
 }
