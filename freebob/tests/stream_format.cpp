@@ -141,8 +141,8 @@ doTest(raw1394handle_t handle, int node_id, int plug_id)
 
     ExtendedStreamFormatCmd extendedStreamFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,  plug_id );
-    extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                         PlugAddress::ePD_Input,
+    extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                         PlugAddress::ePAM_Unit,
                                                          unitPlugAddress ) );
     extendedStreamFormatCmd.setVerbose( arguments.verbose );
     extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
@@ -159,8 +159,8 @@ doTest(raw1394handle_t handle, int node_id, int plug_id)
     extendedStreamFormatCmd.fire( handle, node_id );
 
     ExtendedStreamFormatCmd extendedStreamFormatCmdS = ExtendedStreamFormatCmd();
-    extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                          PlugAddress::ePD_Input,
+    extendedStreamFormatCmdS.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                          PlugAddress::ePAM_Unit,
                                                           unitPlugAddress ) );
     extendedStreamFormatCmdS.setVerbose( arguments.verbose );
     extendedStreamFormatCmdS.setCommandType( AVCCommand::eCT_Status );
@@ -249,7 +249,7 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, PlugAddress::EPlugDirect
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,  plug_id );
 
     extendedStreamFormatCmd.setPlugAddress( PlugAddress( direction,
-                                                         PlugAddress::eM_Subunit,
+                                                         PlugAddress::ePAM_Unit,
                                                          unitPlugAddress ) );
     extendedStreamFormatCmd.setVerbose( arguments.verbose );
 
@@ -295,8 +295,8 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, PlugAddress::EPlugDirect
 
                 ExtendedStreamFormatCmd setFormatCmd = ExtendedStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
                 setFormatCmd.setVerbose( arguments.verbose );
-                setFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                          PlugAddress::ePD_Input,
+                setFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                          PlugAddress::ePAM_Unit,
                                                           unitPlugAddress ) );
 
                 setFormatCmd.setIndexInStreamFormat( it->m_index );
@@ -324,8 +324,8 @@ doApp(raw1394handle_t handle, int node_id, int plug_id, PlugAddress::EPlugDirect
     }
 
     ExtendedStreamFormatCmd currentFormat = ExtendedStreamFormatCmd();
-    currentFormat.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                               PlugAddress::ePD_Input,
+    currentFormat.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                               PlugAddress::ePAM_Unit,
                                                unitPlugAddress ) );
     currentFormat.setVerbose( arguments.verbose );
     currentFormat.setCommandType( AVCCommand::eCT_Status );
@@ -438,7 +438,7 @@ main(int argc, char **argv)
     } else {
         ESamplingFrequency efreq = parseFrequencyString( arguments.frequency );
         PlugAddress::EPlugDirection edir = parseDirectionString( arguments.direction );
-        
+
         doApp( handle, node_id, plug_id, edir, efreq );
     }
 
