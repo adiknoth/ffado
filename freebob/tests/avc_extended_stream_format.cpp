@@ -125,8 +125,8 @@ FunctionBlockPlugAddress:: clone() const
 
 ////////////////////////////////////////////////////////////
 
-PlugAddress::PlugAddress( plug_direction_t plugDirection,
-                          plug_address_mode_t plugAddressMode,
+PlugAddress::PlugAddress( EPlugDirection plugDirection,
+                          EPlugAddressMode plugAddressMode,
                           UnitPlugAddress& unitPlugAddress )
     : m_plugDirection( plugDirection )
     , m_addressMode( plugAddressMode )
@@ -134,8 +134,8 @@ PlugAddress::PlugAddress( plug_direction_t plugDirection,
 {
 }
 
-PlugAddress::PlugAddress( plug_direction_t plugDirection,
-                          plug_address_mode_t plugAddressMode,
+PlugAddress::PlugAddress( EPlugDirection plugDirection,
+                          EPlugAddressMode plugAddressMode,
                           SubunitPlugAddress& subUnitPlugAddress )
     : m_plugDirection( plugDirection )
     , m_addressMode( plugAddressMode )
@@ -143,8 +143,8 @@ PlugAddress::PlugAddress( plug_direction_t plugDirection,
 {
 }
 
-PlugAddress::PlugAddress( plug_direction_t plugDirection,
-                          plug_address_mode_t plugAddressMode,
+PlugAddress::PlugAddress( EPlugDirection plugDirection,
+                          EPlugAddressMode plugAddressMode,
                           FunctionBlockPlugAddress& functionBlockPlugAddress )
     : m_plugDirection( plugDirection )
     , m_addressMode( plugAddressMode )
@@ -415,7 +415,7 @@ ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( ESubFunction eSubFunction )
     , m_formatInformation( new FormatInformation )
 {
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0x00 );
-    m_plugAddress = new PlugAddress(  PlugAddress::ePD_Output, PlugAddress::eM_Subunit, unitPlugAddress );
+    m_plugAddress = new PlugAddress(  PlugAddress::ePD_Output, PlugAddress::ePAM_Unit, unitPlugAddress );
 }
 
 ExtendedStreamFormatCmd::~ExtendedStreamFormatCmd()

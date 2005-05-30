@@ -172,11 +172,6 @@ public:
 
 class PlugAddress : public IBusData {
 public:
-    enum EMode {
-        eM_Subunit = 0x00,
-        eM_Plugin  = 0x01,
-    };
-
     enum EPlugDirection {
         ePD_Input  = 0x00,
         ePD_Output = 0x01,
@@ -188,14 +183,14 @@ public:
         ePAM_FunctionBlock = 0x02,
     };
 
-    PlugAddress( plug_direction_t plugDirection,
-                 plug_address_mode_t plugAddressMode,
+    PlugAddress( EPlugDirection plugDirection,
+                 EPlugAddressMode plugAddressMode,
                  UnitPlugAddress& unitPlugAddress );
-    PlugAddress( plug_direction_t plugDirection,
-                 plug_address_mode_t plugAddressMode,
+    PlugAddress( EPlugDirection plugDirection,
+                 EPlugAddressMode plugAddressMode,
                  SubunitPlugAddress& subUnitPlugAddress );
-    PlugAddress( plug_direction_t plugDirection,
-                 plug_address_mode_t plugAddressMode,
+    PlugAddress( EPlugDirection plugDirection,
+                 EPlugAddressMode plugAddressMode,
                  FunctionBlockPlugAddress& functionBlockPlugAddress );
     PlugAddress( const PlugAddress& pa );
 
