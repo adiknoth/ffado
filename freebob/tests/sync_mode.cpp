@@ -169,29 +169,84 @@ doTest( raw1394handle_t handle, int node_id )
 bool
 doApp( raw1394handle_t handle, int node_id )
 {
-    // First, find out how many external input plugs exits.
+    // Following sync sources always exists:
+    // - Unit input plug 0 = SYT match
+    // - Unit input plut 1 = sync stream
+    // - Music subunit sync output plug = internal sync (CSP)
+    //
+    // Following sync sources are device specific:
+    // - All unit external input plugs which have a sync information (WS, SPDIF, ...)
+
+
+    // First we have to find the music subunit sync input plug (address)
+    {
+        PlugInfoCmd plugInfoCmd;
+        plugInfoCmd.setVerbose( arguments.verbose );
+        plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+        plugInfoCmd.setSubunitType( AVCCommand::eST_Music );
+        plugInfoCmd.setSubunitId( 0x00 );
+
+        if ( plugInfoCmd.fire( handle,  node_id ) ) {
+            for ( int plugIdx = 0;
+                  plugIdx < plugInfoCmd.m_destinationPlugs;
+                  ++plugIdx )
+            {
+                // Find out the format of all plugs
+                ExtendedStreamFormatCmd extendedStreamFormatCmd;
+
+                SubunitPlugAddress subunitPlugAddress( plugIdx );
+                extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                                     PlugAddress::ePAM_Subunit,
+                                                                     subunitPlugAddress ) );
+                extendedStreamFormatCmd.setSubunitType( AVCCommand::eST_Music );
+                extendedStreamFormatCmd.setSubunitId( 0x00 );
+                extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+                extendedStreamFormatCmd.setVerbose( arguments.verbose );
+
+                if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
+                    FormatInformation* formatInformation = extendedStreamFormatCmd.getFormatInformation();
+                    if ( formatInformation
+                         && ( formatInformation->m_root   == FormatInformation::eFHR_AudioMusic )
+                         && ( formatInformation->m_level1 == FormatInformation::eFHL1_AUDIOMUSIC_AM824 )
+                         && ( formatInformation->m_level2 == FormatInformation::eFHL2_AM824_SYNC_STREAM ) )
+                    {
+                        cout << "sync plug in music subunit is plug " << plugIdx << endl;
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
+
+    // Find out how many external input plugs exits.
     // Every one of them is possible a sync source
-    PlugInfoCmd plugInfoCmd;
-    plugInfoCmd.setVerbose( arguments.verbose );
-    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    if ( plugInfoCmd.fire( handle,  node_id ) ) {
-        for ( int plugIdx = 0;
-              plugIdx < plugInfoCmd.m_externalInputPlugs;
-              ++plugIdx )
-        {
-            // Find out the format of all plugs
-            ExtendedStreamFormatCmd extendedStreamFormatCmd;
-            UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_ExternalPlug, plugIdx );
-            extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::eM_Subunit,
-                                                                 PlugAddress::ePD_Input,
-                                                                 unitPlugAddress ) );
-            extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-            extendedStreamFormatCmd.setVerbose( arguments.verbose );
-            if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
-                cout << "plug idx: " << plugIdx << endl;
-                CoutSerializer se;
-                extendedStreamFormatCmd.serialize( se );
-                cout << endl;
+    {
+        PlugInfoCmd plugInfoCmd;
+        plugInfoCmd.setVerbose( arguments.verbose );
+        plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+
+        if ( plugInfoCmd.fire( handle, node_id ) ) {
+            for ( int plugIdx = 0;
+                  plugIdx < plugInfoCmd.m_externalInputPlugs;
+                  ++plugIdx )
+            {
+                // Find out the format of all plugs
+                ExtendedStreamFormatCmd extendedStreamFormatCmd;
+
+                UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_ExternalPlug, plugIdx );
+                extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                                     PlugAddress::ePAM_Unit,
+                                                                     unitPlugAddress ) );
+
+                extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+                extendedStreamFormatCmd.setVerbose( arguments.verbose );
+                if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
+                    cout << "plug idx: " << plugIdx << endl;
+                    CoutSerializer se;
+                    extendedStreamFormatCmd.serialize( se );
+                    cout << endl;
+                }
             }
         }
     }
