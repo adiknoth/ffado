@@ -22,6 +22,7 @@
 #include "avc_plug_info.h"
 #include "avc_signal_source.h"
 #include "serialize.h"
+#include "convert.h"
 
 #include <argp.h>
 #include <stdio.h>
@@ -166,17 +167,104 @@ doTest( raw1394handle_t handle, int node_id )
 // Main application
 ////////////////////////////////////////
 
+struct PlugInfo {
+    PlugInfo()
+        : m_name( "" )
+        , m_subunitType( AVCCommand::eST_Reserved )
+        , m_subunitId( 0xff )
+        , m_plugId( 0xff )
+        {}
+    PlugInfo( string name, AVCCommand::ESubunitType subunitType, byte_t subunitId, byte_t plugId )
+        : m_name( name )
+        , m_subunitType( subunitType )
+        , m_subunitId( subunitId )
+        , m_plugId( plugId )
+        {}
+
+    string m_name;
+    AVCCommand::ESubunitType m_subunitType;
+    byte_t       m_subunitId;
+    byte_t       m_plugId;
+};
+
+ostream& operator << ( ostream& stream, PlugInfo& info )
+{
+    return stream << info.m_name
+                  << ", subunitType " << info.m_subunitType
+                  << ", subunitId " << ( int )info.m_subunitId
+                  << ", plugId " << ( int )info.m_plugId;
+}
+
+struct SyncConnectionInfo {
+    SyncConnectionInfo( string name, PlugInfo sourcePlug, PlugInfo destinationPlug )
+        : m_name( name )
+        , m_sourcePlug( sourcePlug )
+        , m_destinationPlug( destinationPlug )
+        {}
+
+    string m_name;
+    PlugInfo m_sourcePlug;
+    PlugInfo m_destinationPlug;
+};
+typedef vector<SyncConnectionInfo> SyncConnectionInfos;
+
+
+
+static
+bool inquireConnection( raw1394handle_t handle,
+                        int node_id,
+                        SyncConnectionInfos& syncConnectionInfos,
+                        const PlugInfo& sourcePlug,
+                        const PlugInfo& destPlug,
+                        const string connectionName )
+{
+        SignalSourceCmd signalSourceCmd;
+        signalSourceCmd.setSubunitType( destPlug.m_subunitType );
+        signalSourceCmd.setSubunitId( destPlug.m_subunitId );
+        signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
+        signalSourceCmd.setVerbose( arguments.verbose );
+
+        SignalSubunitAddress signalSubunitAddressSource;
+        signalSubunitAddressSource.m_subunitType = sourcePlug.m_subunitType;
+        signalSubunitAddressSource.m_subunitId = sourcePlug.m_subunitId;
+        signalSubunitAddressSource.m_plugId = sourcePlug.m_plugId;
+        signalSourceCmd.setSignalSource( signalSubunitAddressSource );
+
+        SignalSubunitAddress signalSubunitAddressDestination;
+        signalSubunitAddressDestination.m_subunitType = destPlug.m_subunitType;
+        signalSubunitAddressDestination.m_subunitId = destPlug.m_subunitId;
+        signalSubunitAddressDestination.m_plugId = destPlug.m_plugId;
+        signalSourceCmd.setSignalDestination( signalSubunitAddressDestination );
+
+        if ( signalSourceCmd.fire( handle,  node_id ) ) {
+            if ( signalSourceCmd.getResponse() == AVCCommand::eR_Implemented ) {
+                syncConnectionInfos.push_back( SyncConnectionInfo( connectionName, sourcePlug, destPlug ) );
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+}
+
 bool
 doApp( raw1394handle_t handle, int node_id )
 {
     // Following sync sources always exists:
+    // - Music subunit sync output plug = internal sync (CSP)
     // - Unit input plug 0 = SYT match
     // - Unit input plut 1 = sync stream
-    // - Music subunit sync output plug = internal sync (CSP)
+
     //
     // Following sync sources are device specific:
     // - All unit external input plugs which have a sync information (WS, SPDIF, ...)
 
+
+
+    PlugInfo syncInputPlug;
+    PlugInfo syncOutputPlug;
+
+    SyncConnectionInfos syncConnectionInfos;
 
     // First we have to find the music subunit sync input plug (address)
     {
@@ -186,12 +274,13 @@ doApp( raw1394handle_t handle, int node_id )
         plugInfoCmd.setSubunitType( AVCCommand::eST_Music );
         plugInfoCmd.setSubunitId( 0x00 );
 
+        // find input sync plug
         if ( plugInfoCmd.fire( handle,  node_id ) ) {
+            usleep( 1000 ); // Don't overload device with requests
             for ( int plugIdx = 0;
                   plugIdx < plugInfoCmd.m_destinationPlugs;
                   ++plugIdx )
             {
-                // Find out the format of all plugs
                 ExtendedStreamFormatCmd extendedStreamFormatCmd;
 
                 SubunitPlugAddress subunitPlugAddress( plugIdx );
@@ -210,14 +299,83 @@ doApp( raw1394handle_t handle, int node_id )
                          && ( formatInformation->m_level1 == FormatInformation::eFHL1_AUDIOMUSIC_AM824 )
                          && ( formatInformation->m_level2 == FormatInformation::eFHL2_AM824_SYNC_STREAM ) )
                     {
-                        cout << "sync plug in music subunit is plug " << plugIdx << endl;
+                        syncInputPlug.m_name = "sync input plug";
+                        syncInputPlug.m_subunitType = AVCCommand::eST_Music;
+                        syncInputPlug.m_subunitId = 0x00;
+                        syncInputPlug.m_plugId = plugIdx;
                     }
                 }
+                usleep( 1000 ); // Don't overload device with requests
             }
+
+            // find output sync plug
+            for ( int plugIdx = 0;
+                  plugIdx < plugInfoCmd.m_sourcePlugs;
+                  ++plugIdx )
+            {
+                ExtendedStreamFormatCmd extendedStreamFormatCmd;
+
+                SubunitPlugAddress subunitPlugAddress( plugIdx );
+                extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
+                                                                     PlugAddress::ePAM_Subunit,
+                                                                     subunitPlugAddress ) );
+                extendedStreamFormatCmd.setSubunitType( AVCCommand::eST_Music );
+                extendedStreamFormatCmd.setSubunitId( 0x00 );
+                extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+                extendedStreamFormatCmd.setVerbose( arguments.verbose );
+
+                if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
+                    FormatInformation* formatInformation = extendedStreamFormatCmd.getFormatInformation();
+                    if ( formatInformation
+                         && ( formatInformation->m_root   == FormatInformation::eFHR_AudioMusic )
+                         && ( formatInformation->m_level1 == FormatInformation::eFHL1_AUDIOMUSIC_AM824 )
+                         && ( formatInformation->m_level2 == FormatInformation::eFHL2_AM824_SYNC_STREAM ) )
+                    {
+                        syncOutputPlug.m_name = "sync output plug";
+                        syncOutputPlug.m_subunitType = AVCCommand::eST_Music;
+                        syncOutputPlug.m_subunitId = 0x00;
+                        syncOutputPlug.m_plugId = plugIdx;
+                    }
+                }
+                usleep( 1000 ); // Don't overload device with requests
+
+            }
+        }
+
+        if ( arguments.verbose ) {
+            cout << syncInputPlug << endl;
+            cout << syncOutputPlug << endl;
         }
     }
 
-    return true;
+    // - Music subunit sync output plug = internal sync (CSP)
+    inquireConnection( handle,
+                       node_id,
+                       syncConnectionInfos,
+                       syncOutputPlug,
+                       syncInputPlug,
+                       "internal (CSP)" );
+    usleep( 1000 ); // Don't overload device with requests
+
+    // - Unit input plug 0 = SYT match
+    PlugInfo iPCR0( "iPCR[0]", AVCCommand::eST_Unit, 0xff, 0x00 );
+    inquireConnection( handle,
+                       node_id,
+                       syncConnectionInfos,
+                       iPCR0,
+                       syncInputPlug,
+                       "SYT match" );
+    usleep( 1000 ); // Don't overload device with requests
+
+    // - Unit input plut 1 = sync stream
+    PlugInfo iPCR1( "iPCR[1]", AVCCommand::eST_Unit, 0xff, 0x01 );
+    inquireConnection( handle,
+                       node_id,
+                       syncConnectionInfos,
+                       iPCR1,
+                       syncInputPlug,
+                       "sync stream" );
+    usleep( 1000 ); // Don't overload device with requests
 
     // Find out how many external input plugs exits.
     // Every one of them is possible a sync source
@@ -231,24 +389,31 @@ doApp( raw1394handle_t handle, int node_id )
                   plugIdx < plugInfoCmd.m_externalInputPlugs;
                   ++plugIdx )
             {
-                // Find out the format of all plugs
-                ExtendedStreamFormatCmd extendedStreamFormatCmd;
-
-                UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_ExternalPlug, plugIdx );
-                extendedStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
-                                                                     PlugAddress::ePAM_Unit,
-                                                                     unitPlugAddress ) );
-
-                extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-                extendedStreamFormatCmd.setVerbose( arguments.verbose );
-                if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
-                    cout << "plug idx: " << plugIdx << endl;
-                    CoutSerializer se;
-                    extendedStreamFormatCmd.serialize( se );
-                    cout << endl;
-                }
+                // If we want to know what plug it is we have to
+                // parse the descriptor which is a overkill ATM.
+                // Let's keep it simple.
+                string plugName = "external plug " + stringify( plugIdx );
+                PlugInfo externalPlug( plugName,
+                                       AVCCommand::eST_Unit,
+                                       0xff,
+                                       0x80 + plugIdx );
+                inquireConnection( handle,
+                                   node_id,
+                                   syncConnectionInfos,
+                                   externalPlug,
+                                   syncInputPlug,
+                                   plugName);
+                usleep( 1000 ); // Don't overload device with requests
             }
         }
+    }
+
+    cout << "Supported sync modes:" << endl;
+    for ( SyncConnectionInfos::iterator it = syncConnectionInfos.begin();
+          it != syncConnectionInfos.end();
+          ++it )
+    {
+        cout << " - " << it->m_name << endl;
     }
 
     return true;

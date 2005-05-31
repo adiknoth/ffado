@@ -313,15 +313,16 @@ SignalSourceCmd::fire( raw1394handle_t handle,
         parseResponse( resp->byte[0] );
         switch ( getResponse() )
         {
-            case eR_Implemented:
+        case eR_Implemented:
+        case eR_NotImplemented:
             {
                 BufferDeserialize de( resp->byte, sizeof( req ) );
                 deserialize( de );
                 result = true;
             }
             break;
-            default:
-                printf( "unexpected response received (0x%x)\n", getResponse() );
+        default:
+            printf( "unexpected response received (0x%x)\n", getResponse() );
         }
     } else {
 	printf( "no response\n" );
