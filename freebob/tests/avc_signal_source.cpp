@@ -315,6 +315,8 @@ SignalSourceCmd::fire( raw1394handle_t handle,
         {
         case eR_Implemented:
         case eR_NotImplemented:
+        case eR_Accepted:
+        case eR_Rejected:
             {
                 BufferDeserialize de( resp->byte, sizeof( req ) );
                 deserialize( de );
@@ -369,4 +371,16 @@ SignalSourceCmd::setSignalDestination( SignalSubunitAddress& signalAddress )
     }
     m_signalDestination = signalAddress.clone();
     return true;
+}
+
+SignalAddress*
+SignalSourceCmd::getSignalSource()
+{
+    return m_signalSource;
+}
+
+SignalAddress*
+SignalSourceCmd::getSignalDestination()
+{
+    return m_signalDestination;
 }

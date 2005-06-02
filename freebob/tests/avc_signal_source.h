@@ -79,6 +79,9 @@ public:
     bool setSignalDestination( SignalUnitAddress& signalAddress );
     bool setSignalDestination( SignalSubunitAddress& signalAddress );
 
+    SignalAddress* getSignalSource();
+    SignalAddress* getSignalDestination();
+
     // Control response
     byte_t m_resultStatus;
 
