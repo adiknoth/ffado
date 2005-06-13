@@ -123,5 +123,7 @@ main( int argc,  char** argv )
     StreamProcess* pStreamProcess = new StreamProcess();
     pStreamProcess->run( arguments.time );
 
+    delete pStreamProcess;
+    
     return 0;
 }

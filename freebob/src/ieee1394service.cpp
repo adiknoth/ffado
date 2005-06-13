@@ -137,6 +137,9 @@ Ieee1394Service::initialize()
 void
 Ieee1394Service::shutdown()
 {
+	
+	WorkerThread::instance()->shutdown();
+	
     delete this;
 }
 

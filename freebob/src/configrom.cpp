@@ -71,12 +71,12 @@ ConfigRom::initialize()
 			     5 * sizeof(quadlet_t),
 			     &csr_info);
     if (!m_csr || csr1212_parse_csr(m_csr) != CSR1212_SUCCESS) {
-	fprintf(stderr, "couldn't parse config rom\n");
-	if (m_csr) {
-	    csr1212_destroy_csr(m_csr);
-            m_csr = 0;
-	}
-	return false;
+		fprintf(stderr, "couldn't parse config rom\n");
+		if (m_csr) {
+			csr1212_destroy_csr(m_csr);
+			m_csr = 0;
+		}
+		return false;
     }
 
     processRootDirectory(m_csr);
@@ -87,9 +87,10 @@ ConfigRom::initialize()
         memcpy( vendorName,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_vendorNameKv ),
                 len );
-        vendorName[len] = '\0';
+        vendorName[len-1] = '\0';
         printf( "Vendor name: %s\n", vendorName );
         m_vendorName = vendorName;
+        delete[] vendorName;
     }
     if ( m_modelNameKv ) {
         int len = ( m_modelNameKv->value.leaf.len - 2 ) * sizeof( quadlet_t );
@@ -97,9 +98,10 @@ ConfigRom::initialize()
         memcpy( modelName,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_modelNameKv ),
                 len );
-        modelName[len] = '\0';
+        modelName[len-1] = '\0';
         printf( "Model name: %s\n", modelName );
         m_modelName = modelName;
+        delete[] modelName;
     }
 
     m_guid =  ((u_int64_t)CSR1212_BE32_TO_CPU(m_csr->bus_info_data[3]) << 32)

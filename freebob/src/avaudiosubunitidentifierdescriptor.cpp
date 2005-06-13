@@ -22,6 +22,7 @@
 #include "avaudiosubunitidentifierdescriptor.h"
 
 AvAudioSubunitIdentifierDescriptor::AvAudioSubunitIdentifierDescriptor(AvDevice *parent, unsigned char id) : AvDescriptor(parent, AVC1394_SUBUNIT_TYPE_AUDIO | (id<<16),0x00) {
+	
 	if (!(this->AvDescriptor::isPresent())) {
 		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"AvAudioSubunitIdentifierDescriptor: Descriptor not present!\n");
 		return;
@@ -44,6 +45,7 @@ AvAudioSubunitIdentifierDescriptor::AvAudioSubunitIdentifierDescriptor(AvDevice 
 			return;
 		}
 	}
+	printf("--------------- %d\n",aContents);
 }
 
 AvAudioSubunitIdentifierDescriptor::~AvAudioSubunitIdentifierDescriptor()  {

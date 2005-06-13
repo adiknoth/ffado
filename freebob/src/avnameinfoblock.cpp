@@ -42,7 +42,7 @@ AvNameInfoBlock::AvNameInfoBlock(AvDescriptor *parent, int address) : AvInfoBloc
 AvNameInfoBlock::~AvNameInfoBlock() {
 
 	if(nameBuffer) {
-		delete nameBuffer;
+		delete[] nameBuffer;
 	}
 }
 

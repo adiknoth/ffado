@@ -33,6 +33,8 @@ class WorkerThread {
     void addFunctor( Functor* pFunctor, bool sleeper = false );
     bool wakeSleepers();
 
+    void shutdown();
+    
  protected:
     static void* workerThread( void* arg );
     void run();

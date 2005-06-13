@@ -196,9 +196,10 @@ AvDevice::enumerateSubUnits()
 	request[1] = 0xFFFFFFFF;
 	response = p1394Service->avcExecuteTransaction( m_iNodeId, request, 6, 2 );
 
-	table_entries=response[1]; /// XXX buggy code! response could be 0!
 
 	if ( response != NULL ) {
+		table_entries=response[1]; /// XXX buggy code! response could be 0!
+	    
 	    // this way of processing the table entries assumes that
 	    // the subunit type is not "extended"
 

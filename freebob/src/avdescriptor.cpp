@@ -36,7 +36,7 @@
 AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type)
     : cParent( parent )
     , iType( type )
-    , aContents( 0 )
+    , aContents( NULL )
     , bLoaded( false )
     , bOpen( false )
     , bValid( false )  // don't know yet what I'm going to do with this in the generic descriptor
@@ -50,7 +50,7 @@ AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type
 AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type, unsigned int list_id, unsigned int list_id_size) 
     : cParent( parent )
     , iType( type )
-    , aContents( 0 )
+    , aContents( NULL )
     , bLoaded( false )
     , bOpen( false )
     , bValid( false )  // don't know yet what I'm going to do with this in the generic descriptor
@@ -68,7 +68,7 @@ AvDescriptor::AvDescriptor(AvDevice *parent, quadlet_t target, unsigned int type
                                                      unsigned int position, unsigned int position_size)
     : cParent( parent )
     , iType( type )
-    , aContents( 0 )
+    , aContents( NULL )
     , bLoaded( false )
     , bOpen( false )
     , bValid( false )  // don't know yet what I'm going to do with this in the generic descriptor
@@ -91,7 +91,7 @@ AvDescriptor::~AvDescriptor()
 		Close();
 	}
 	if (aContents) {
-		delete aContents;
+		delete[] aContents;
 	}
 
 }
@@ -570,6 +570,7 @@ void AvDescriptor::Load() {
 	// allocate space for the decriptor
 	// we want a multiple of sizeof(quadlet_t's)
 	aContents_size = (iLength/sizeof(quadlet_t)+1)*sizeof(quadlet_t);
+	aContents=NULL;
 	aContents=new unsigned char[aContents_size];
 
 	/* there is a gap in the read data, because of the two bytes

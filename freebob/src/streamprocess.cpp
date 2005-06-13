@@ -19,9 +19,16 @@
  */
 
 #include <unistd.h>
+#include <signal.h>
 
 #include "streamprocess.h"
 
+int g_done = 0;
+
+void sighandler (int sig)
+{
+	g_done = 1;
+}
 
 StreamProcess::StreamProcess()
     : m_pCMHandler( 0 )
@@ -50,7 +57,10 @@ StreamProcess::run( int timeToListen )
 
     if ( timeToListen == -1 ) {
         printf( "Press Ctrl-C to stop freebob daemon\n" );
-        while ( 1 ) sleep( 1 );
+        g_done=0;
+		signal (SIGINT, sighandler);
+		signal (SIGPIPE, sighandler);
+		while ( !g_done ) sleep( 1 );
     } else {
         printf( "Waiting for %d seconds: ", timeToListen );
         for ( int i = 0; i < timeToListen; ++i ) {

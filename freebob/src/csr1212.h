@@ -72,7 +72,7 @@
 
 #include <sys/types.h>
 #include <malloc.h>
-#define CSR1212_MALLOC(size)		malloc(size)
+#define CSR1212_MALLOC(size)		calloc(1,size)
 #define CSR1212_FREE(ptr)		free(ptr)
 #include <endian.h>
 #if __BYTE_ORDER == __LITTLE_ENDIAN

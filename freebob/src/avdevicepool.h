@@ -33,6 +33,7 @@ typedef std::vector< AvDevice* >::iterator AvDeviceVectorIterator;
 class AvDevicePool {
  public:
     static AvDevicePool* instance();
+    void shutdown();
 
     FBReturnCodes registerAvDevice( AvDevice* pAvDevice );
     FBReturnCodes unregisterAvDevice( AvDevice* pAvDevice );
@@ -52,6 +53,7 @@ class AvDevicePool {
     FBReturnCodes removeObsoleteDevices( unsigned int iGeneration );
 
     AvDeviceVector m_avDevices;
+    
  private:
     AvDevicePool();
     ~AvDevicePool();

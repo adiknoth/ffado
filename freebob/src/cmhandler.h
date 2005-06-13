@@ -27,6 +27,7 @@
 class Ieee1394Service;
 class AvDevice;
 class IPCHandler;
+class AvDevicePool;
 
 class CMHandler
 {
@@ -47,6 +48,7 @@ private:
     static CMHandler* m_pInstance;
     Ieee1394Service* m_pIeee1394Service;
     IPCHandler * m_pIPCHandler;
+    AvDevicePool *m_pAvDevicePool;
     
     bool m_bInitialised;
 

@@ -32,6 +32,12 @@ AvDevicePool::AvDevicePool()
 
 AvDevicePool::~AvDevicePool()
 {
+  AvDeviceVectorIterator it = m_avDevices.begin();
+
+  for(; it < m_avDevices.end(); it++) {
+	delete *it;
+  }
+
 }
 
 AvDevicePool*
@@ -41,6 +47,12 @@ AvDevicePool::instance()
         m_pInstance = new AvDevicePool;
     }
     return m_pInstance;
+}
+
+void
+AvDevicePool::shutdown()
+{
+	delete this;
 }
 
 FBReturnCodes

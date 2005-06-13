@@ -37,6 +37,9 @@ CMHandler::CMHandler()
 
 CMHandler::~CMHandler()
 {
+    if ( m_pAvDevicePool ) {
+        m_pAvDevicePool->shutdown();
+    }
     if ( m_pIeee1394Service ) {
         m_pIeee1394Service->shutdown();
     }
@@ -91,6 +94,12 @@ CMHandler::initialize()
             return eStatus;
         }
 
+        m_pAvDevicePool = AvDevicePool::instance();
+        if ( !m_pAvDevicePool ) {
+            debugError( "Could not get an valid instance of the AV device pool.\n" );
+            return eFBRC_InitializeCMHandlerFailed;
+        }
+        
         m_bInitialised = true;
     }
     return eFBRC_Success;

@@ -167,12 +167,13 @@ static inline struct csr1212_keyval *csr1212_find_keyval_offset(struct csr1212_k
 struct csr1212_csr *csr1212_create_csr(struct csr1212_bus_ops *ops,
 				       size_t bus_info_size, void *private_data)
 {
-	struct csr1212_csr *csr;
+	struct csr1212_csr *csr=NULL;
 
 	csr = CSR1212_MALLOC(sizeof(*csr));
+	
 	if (!csr)
 		return NULL;
-
+	
 	csr->cache_head =
 		csr1212_rom_cache_malloc(CSR1212_CONFIG_ROM_SPACE_OFFSET,
 					 CSR1212_CONFIG_ROM_SPACE_SIZE);
@@ -1211,7 +1212,7 @@ static int csr1212_parse_bus_info_block(struct csr1212_csr *csr)
 
 	bi = (struct csr1212_bus_info_block_img*)csr->cache_head->data;
 	csr->crc_len = quads_to_bytes(bi->crc_length);
-
+	
 	/* IEEE 1212 recommends that crc_len be equal to bus_info_len, but that is not
 	 * always the case, so read the rest of the crc area 1 quadlet at a time. */
 	for (i = csr->bus_info_len; i <= csr->crc_len; i += sizeof(csr1212_quad_t)) {

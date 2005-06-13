@@ -34,13 +34,24 @@ WorkerThread::WorkerThread()
 
 WorkerThread::~WorkerThread()
 {
+	//wakeSleepers();
+	
+	pthread_mutex_lock( &m_mutex );
     while ( !m_queue.empty() ) {
         Functor* pFunctor = m_queue.front();
         m_queue.pop();
         delete pFunctor;
     }
+    while ( !m_sleepQueue.empty() ) {
+        Functor* pFunctor = m_sleepQueue.front();
+        m_sleepQueue.pop();
+        delete pFunctor;
+    }
+	pthread_mutex_unlock( &m_mutex );
+    
     pthread_cancel (m_thread);
     pthread_join (m_thread, NULL);
+    
     pthread_cond_destroy( &m_cond );
     pthread_mutex_destroy( &m_mutex );
 }
@@ -54,6 +65,12 @@ WorkerThread::instance()
 	m_pInstance = new WorkerThread();
     }
     return m_pInstance;
+}
+
+void
+WorkerThread::shutdown()
+{
+    delete this;
 }
 
 void
@@ -90,26 +107,26 @@ void
 WorkerThread::run()
 {
     while ( true ) {
-	pthread_mutex_lock( &m_mutex );
-        if ( m_queue.empty() ) {
-            debugPrint( DEBUG_LEVEL_SCHEDULER,
-                        "Waiting on condition variable.\n" );
-            pthread_cond_wait( &m_cond,  &m_mutex );
-            debugPrint( DEBUG_LEVEL_SCHEDULER,
-                        "Awoken from condition wait.\n" );
-        }
-	pthread_mutex_unlock( &m_mutex );
-
-	while ( !m_queue.empty() ) {
-	    pthread_mutex_lock( &m_mutex );
-	    Functor* pFunctor = m_queue.front();
-	    m_queue.pop();
-	    pthread_mutex_unlock( &m_mutex );
-
-	    ( *pFunctor )();
-
-	    pthread_testcancel();
-	}
+		pthread_mutex_lock( &m_mutex );
+		if ( m_queue.empty() ) {
+			debugPrint( DEBUG_LEVEL_SCHEDULER,
+						"Waiting on condition variable.\n" );
+			pthread_cond_wait( &m_cond,  &m_mutex );
+			debugPrint( DEBUG_LEVEL_SCHEDULER,
+						"Awoken from condition wait.\n" );
+		}
+		pthread_mutex_unlock( &m_mutex );
+	
+		while ( !m_queue.empty() ) {
+			pthread_mutex_lock( &m_mutex );
+			Functor* pFunctor = m_queue.front();
+			m_queue.pop();
+			pthread_mutex_unlock( &m_mutex );
+	
+			( *pFunctor )();
+	
+			pthread_testcancel();
+		}
     }
 }
 

@@ -60,5 +60,7 @@ AvDeviceAudioSubunit::AvDeviceAudioSubunit(AvDevice *parent, unsigned char  id) 
 
 AvDeviceAudioSubunit::~AvDeviceAudioSubunit()
 {
-
+	if(cIdentifierDescriptor) {
+		delete cIdentifierDescriptor;
+	}
 }

@@ -138,6 +138,7 @@ AvPlugInfoBlock *AvMusicStatusDescriptor::getDestinationPlugInfoBlock(unsigned c
 AvMusicStatusDescriptor::~AvMusicStatusDescriptor()  {
 	if (cGeneralMusicInfoBlock) delete cGeneralMusicInfoBlock;
 	if (cOutputPlugStatusInfoBlock) delete cOutputPlugStatusInfoBlock;
+	if (cRoutingStatusInfoBlock) delete cRoutingStatusInfoBlock;
 }
 
 void AvMusicStatusDescriptor::printCapabilities() {
