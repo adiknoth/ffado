@@ -473,7 +473,7 @@ void AvDescriptor::Load() {
 	unsigned int bytes_read_this_loop=0;
 	unsigned char *databuffer;
 	unsigned char read_result_status;
-	unsigned int data_length_read;
+	unsigned int data_length_read=0;
 	int specifier_len=0;
 	int bytes_to_copy;
 	quadlet_t *databuffer_quadlets;
@@ -585,7 +585,8 @@ void AvDescriptor::Load() {
 	 */
 
 	// first read
-	int data_buffer_boundary_offset;
+	int data_buffer_boundary_offset=0;
+	
 	if(bytes_read<iLength) {
 		debugPrintShort(DEBUG_LEVEL_DESCRIPTOR,".");
 		// apparently the lib modifies the request, so redefine it completely

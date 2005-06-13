@@ -666,7 +666,7 @@ std::string AvDevice::getPlugChannelName(unsigned int direction, unsigned int pl
 	response = Ieee1394Service::instance()->avcExecuteTransaction(m_iNodeId, request, 3, 3);
 
 	if ( response ) {
-		int i;
+		unsigned int i;
 		unsigned namelen=response[2]&0xFF;
 		char *buff=NULL;
 		int buff_pos=0;
@@ -774,7 +774,7 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
         return eFBRC_CreatingXMLDocFailed;
     }
     
-    sprintf(tmpbuff,"%d",getGuid());
+    sprintf(tmpbuff,"pbk_%lX",(long)getGuid());
     FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
     
     sprintf(tmpbuff,"%d",getPort());
@@ -873,7 +873,7 @@ AvDevice::addConnectionsToXml( xmlNodePtr root )
         return eFBRC_CreatingXMLDocFailed;
     }
     
-    sprintf(tmpbuff,"%d",getGuid());
+    sprintf(tmpbuff,"cap_%lX",(long)getGuid());
     FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
     
     sprintf(tmpbuff,"%d",getPort());
@@ -989,7 +989,7 @@ AvDevice::addPlaybackConnectionsToXml( xmlNodePtr connectionSet )
         return eFBRC_CreatingXMLDocFailed;
     }
     
-    sprintf(tmpbuff,"%d",getGuid());
+    sprintf(tmpbuff,"pbk_%lX",(long)getGuid());
     FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
     
     sprintf(tmpbuff,"%d",getPort());
@@ -1104,7 +1104,7 @@ AvDevice::addCaptureConnectionsToXml( xmlNodePtr connectionSet )
         return eFBRC_CreatingXMLDocFailed;
     }
     
-    sprintf(tmpbuff,"%d",getGuid());
+    sprintf(tmpbuff,"cap_%lX",(long)getGuid());
     FREEBOB_DIRTY_XML_CHILD_ADD(connection, "Id",tmpbuff);
     
     sprintf(tmpbuff,"%d",getPort());

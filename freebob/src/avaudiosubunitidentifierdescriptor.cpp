@@ -93,10 +93,12 @@ void AvAudioSubunitIdentifierDescriptor::printCapabilities() {
 	int i=0;
 	
 	int size_of_list_ID=readByte(offset+1);
-	int size_of_object_ID=readByte(offset+2);
+	int size_of_object_ID=0; // removes compiler warning
+	size_of_object_ID=readByte(offset+2);
 	int size_of_oject_position=readByte(offset+3);
 	int nb_root_object_lists=readWord(offset+4);
-	int root_list_id;
+	int root_list_id=0;
+	
 	
 	debugPrint(DEBUG_LEVEL_DESCRIPTOR,"AvAudioSubunitIdentifierDescriptor: \n");
 	hexDump(aContents, iLength);
@@ -140,7 +142,7 @@ void AvAudioSubunitIdentifierDescriptor::printCapabilities() {
 		debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\t nb configurations:          0x%04X %03d\n",nb_configurations,nb_configurations);
 		offset+=4;
 		for (i=0;i<nb_configurations;i++) {
-			int nb_channels;
+			int nb_channels=0;
 			int config_len=readWord(offset);
 			debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\t configuration %d length %04X\n",i,config_len);
 			debugPrint(DEBUG_LEVEL_DESCRIPTOR,"\t   configuration id: %04X\n", readWord(offset+2));

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <lo/lo.h>
+#include <freebobctl/freebobctl.h>
 
 void freebobctl_ipc_error(int num, const char *m, const char *path) {
     fprintf(stderr,"liblo server error %d in path %s: %s\n", num, path, m);
@@ -25,7 +26,7 @@ int freebobctl_ipc_response_handler(const char *path, const char *types, lo_arg 
 	char **buffer=(char **)user_data;
 	if(buffer) {
 		if((argc>0) && (types[0]=='s')) {
-			*buffer=strdup(&argv[0]->s);
+			*buffer=(char *)strdup(&argv[0]->s);
 		} else {
 			*buffer=NULL;
 		}
@@ -117,7 +118,7 @@ main(int argc, char **argv) {
 	printf("Using freebob control library version: %s\n",freebobctl_get_version());
 		
 	if (argc <= 1) {
-		printf("Usage: test-freebobctl-osc url\n", argv[0]);
+		printf("Usage: test-freebobctl-osc url\n");
 		return(0);
 	}
 

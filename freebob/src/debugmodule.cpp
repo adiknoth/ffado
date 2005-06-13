@@ -351,9 +351,6 @@ void
 hexDumpQuadlets( quadlet_t *data, unsigned int length )
 {
     unsigned int i=0;
-    unsigned int byte_pos;
-    unsigned int bytes_left;
-    //printf("hexdump: %p %d\n",data_start,length);
 
     if ( length <= 0 ) {
         return;
