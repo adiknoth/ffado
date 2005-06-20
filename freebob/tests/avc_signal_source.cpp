@@ -118,35 +118,30 @@ bool
 SignalSourceCmd::serialize( IOSSerialize& se )
 {
     AVCCommand::serialize( se );
+
+    byte_t operand;
+    switch ( getCommandType() ) {
+    case eCT_Status:
+        operand = ( m_outputStatus << 5 )
+                  | ( ( m_conv & 0x1 ) << 4 )
+                  | ( m_signalStatus & 0xf );
+        se.write( operand, "SignalSourceCmd outputStatus & conv & signalStatus" );
+        break;
+    case eCT_Control:
+    case eCT_SpecificInquiry:
+        operand = m_resultStatus & 0xf;
+        se.write( operand, "SignalSourceCmd resultStatus" );
+        break;
+    default:
+        cerr << "Can't handle command type " << getCommandType() << endl;
+        return false;
+    }
+
     switch( getSubunitType() ) {
     case eST_Unit:
-        {
-            byte_t operand = m_resultStatus & 0xf;
-            se.write( operand, "SignalSourceCmd resultStatus" );
-
-            if ( m_signalSource ) {
-                m_signalSource->serialize( se );
-            } else {
-                byte_t reserved = 0xff;
-                se.write( reserved, "SignalSourceCmd" );
-                se.write( reserved, "SignalSourceCmd" );
-            }
-
-            if ( m_signalDestination ) {
-                m_signalDestination->serialize( se );
-            } else {
-                byte_t reserved = 0xff;
-                se.write( reserved, "SignalSourceCmd" );
-                se.write( reserved, "SignalSourceCmd" );
-            }
-        }
-        break;
     case eST_Audio:
     case eST_Music:
         {
-            byte_t operand = ( m_outputStatus << 5 ) | ( ( m_conv & 0x1 ) << 4 ) | ( m_signalStatus & 0x7 );
-            se.write( operand, "SignalSourceCmd outputStatus & conv & signalStatus" );
-
             if ( m_signalSource ) {
                 m_signalSource->serialize( se );
             } else {
@@ -181,41 +176,31 @@ SignalSourceCmd::deserialize( IISDeserialize& de )
     m_signalDestination = 0;
 
     AVCCommand::deserialize( de );
+
+    byte_t operand;
+    switch ( getCommandType() ) {
+    case eCT_Status:
+        de.read( &operand );
+        m_outputStatus = operand >> 5;
+        m_conv = ( operand & 0x10 ) >> 4;
+        m_signalStatus = operand & 0xf;
+        break;
+    case eCT_Control:
+    case eCT_SpecificInquiry:
+        de.read( &operand );
+        m_resultStatus = operand & 0xf;
+        break;
+    default:
+        cerr << "Can't handle command type " << getCommandType() << endl;
+        return false;
+    }
+
     switch( getSubunitType() ) {
     case eST_Unit:
-        {
-            byte_t operand;
-
-            de.read( &operand );
-            m_resultStatus = operand & 0xf;
-
-            de.peek( &operand );
-            if ( operand == 0xff ) {
-                m_signalSource = new SignalUnitAddress;
-            } else {
-                m_signalSource = new SignalSubunitAddress;
-            }
-            m_signalSource->deserialize( de );
-
-            de.peek( &operand );
-            if ( operand == 0xff ) {
-                m_signalDestination = new SignalUnitAddress;
-            } else {
-                m_signalDestination = new SignalSubunitAddress;
-            }
-            m_signalDestination->deserialize( de );
-        }
-        break;
     case eST_Audio:
     case eST_Music:
         {
             byte_t operand;
-
-            de.read( &operand );
-            m_outputStatus = operand >> 5;
-            m_conv = ( operand & 0x10 ) >> 4;
-            m_signalStatus = operand & 0xf;
-
             de.peek( &operand );
             if ( operand == 0xff ) {
                 m_signalSource = new SignalUnitAddress;
@@ -248,7 +233,7 @@ SignalSourceCmd::fire( raw1394handle_t handle,
 {
     bool result = false;
 
-    #define STREAM_FORMAT_REQUEST_SIZE 10 // XXX random length
+    #define STREAM_FORMAT_REQUEST_SIZE 5 // XXX random length
     union UPacket {
         quadlet_t     quadlet[STREAM_FORMAT_REQUEST_SIZE];
         unsigned char byte[STREAM_FORMAT_REQUEST_SIZE*4];

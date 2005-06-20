@@ -105,11 +105,12 @@ protected:
     ECommandType getCommandType();
 
 private:
-    ctype_t   m_ctype;
-    subunit_t m_subunit;
-    opcode_t  m_opcode;
-    EResponse m_eResponse;
-    bool      m_verbose;
+    ctype_t      m_ctype;
+    subunit_t    m_subunit;
+    opcode_t     m_opcode;
+    EResponse    m_eResponse;
+    bool         m_verbose;
+    ECommandType m_commandType;
 };
 
 #endif // AVCGeneric_h

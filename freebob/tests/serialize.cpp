@@ -105,7 +105,7 @@ BufferDeserialize::peek( byte_t* value )
 {
     bool result = false;
     if ( isCurPosValid() ) {
-        *value = *( m_curPos + sizeof( byte_t ) );
+        *value = *m_curPos;
         result = true;
     }
     return result;

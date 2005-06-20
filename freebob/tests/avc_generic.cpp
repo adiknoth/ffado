@@ -52,7 +52,14 @@ bool
 AVCCommand::setCommandType( ECommandType commandType )
 {
     m_ctype = commandType;
+    m_commandType = commandType;
     return true;
+}
+
+AVCCommand::ECommandType
+AVCCommand::getCommandType()
+{
+    return m_commandType;
 }
 
 AVCCommand::EResponse
@@ -107,10 +114,4 @@ bool
 AVCCommand::isVerbose()
 {
     return m_verbose;
-}
-
-AVCCommand::ECommandType
-AVCCommand::getCommandType()
-{
-    return static_cast<ECommandType>( m_ctype );
 }

@@ -232,8 +232,7 @@ bool inquireConnection( raw1394handle_t handle,
                         const string connectionName )
 {
     SignalSourceCmd signalSourceCmd;
-    signalSourceCmd.setSubunitType( destPlug.m_subunitType );
-    signalSourceCmd.setSubunitId( destPlug.m_subunitId );
+    signalSourceCmd.setSubunitType( AVCCommand::eST_Unit );
     signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
     signalSourceCmd.setVerbose( arguments.verbose );
 
@@ -250,7 +249,6 @@ bool inquireConnection( raw1394handle_t handle,
     signalSourceCmd.setSignalDestination( signalSubunitAddressDestination );
 
     if ( signalSourceCmd.fire( handle,  node_id ) ) {
-        usleep( 10000 );
         if ( signalSourceCmd.getResponse() == AVCCommand::eR_Implemented ) {
             syncConnectionInfos.push_back( SyncConnectionInfo( connectionName, syncConnectionInfos.size(), sourcePlug, destPlug ) );
         }
@@ -284,14 +282,12 @@ findSyncPlugs( raw1394handle_t handle, int node_id, PlugInfo& syncInputPlug, Plu
 {
     // First we have to find the music subunit sync input plug (address)
     PlugInfoCmd plugInfoCmd;
-    plugInfoCmd.setVerbose( arguments.verbose );
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     plugInfoCmd.setSubunitType( AVCCommand::eST_Music );
     plugInfoCmd.setSubunitId( 0x00 );
 
     // find input sync plug
     if ( plugInfoCmd.fire( handle,  node_id ) ) {
-        usleep( 10000 );
         for ( int plugIdx = 0;
               plugIdx < plugInfoCmd.m_destinationPlugs;
               ++plugIdx )
@@ -305,10 +301,8 @@ findSyncPlugs( raw1394handle_t handle, int node_id, PlugInfo& syncInputPlug, Plu
             extendedStreamFormatCmd.setSubunitType( AVCCommand::eST_Music );
             extendedStreamFormatCmd.setSubunitId( 0x00 );
             extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-            extendedStreamFormatCmd.setVerbose( arguments.verbose );
 
             if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
-                usleep( 10000 );
                 FormatInformation* formatInformation = extendedStreamFormatCmd.getFormatInformation();
                 if ( formatInformation
                      && ( formatInformation->m_root   == FormatInformation::eFHR_AudioMusic )
@@ -337,10 +331,8 @@ findSyncPlugs( raw1394handle_t handle, int node_id, PlugInfo& syncInputPlug, Plu
             extendedStreamFormatCmd.setSubunitType( AVCCommand::eST_Music );
             extendedStreamFormatCmd.setSubunitId( 0x00 );
             extendedStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-            extendedStreamFormatCmd.setVerbose( arguments.verbose );
 
             if ( extendedStreamFormatCmd.fire( handle, node_id ) ) {
-                usleep( 10000 );
                 FormatInformation* formatInformation = extendedStreamFormatCmd.getFormatInformation();
                 if ( formatInformation
                      && ( formatInformation->m_root   == FormatInformation::eFHR_AudioMusic )
@@ -372,40 +364,47 @@ findSupportedConnections( raw1394handle_t handle,
                           SyncConnectionInfos& syncConnectionInfos )
 {
     // - Music subunit sync output plug = internal sync (CSP)
-    inquireConnection( handle,
-                       node_id,
-                       syncConnectionInfos,
-                       syncOutputPlug,
-                       syncInputPlug,
-                       "internal (CSP)" );
+    if ( !inquireConnection( handle,
+                             node_id,
+                             syncConnectionInfos,
+                             syncOutputPlug,
+                             syncInputPlug,
+                             "internal (CSP)" ) )
+    {
+        return false;
+    }
 
     // - Unit input plug 0 = SYT match
     PlugInfo iPCR0( "iPCR[0]", AVCCommand::eST_Unit, 0xff, 0x00 );
-    inquireConnection( handle,
-                       node_id,
-                       syncConnectionInfos,
-                       iPCR0,
-                       syncInputPlug,
-                       "SYT match" );
+    if ( !inquireConnection( handle,
+                             node_id,
+                             syncConnectionInfos,
+                             iPCR0,
+                             syncInputPlug,
+                             "SYT match" ) )
+    {
+        return false;
+    }
 
     // - Unit input plut 1 = sync stream
     PlugInfo iPCR1( "iPCR[1]", AVCCommand::eST_Unit, 0xff, 0x01 );
-    inquireConnection( handle,
-                       node_id,
-                       syncConnectionInfos,
-                       iPCR1,
-                       syncInputPlug,
-                       "sync stream" );
+    if ( !inquireConnection( handle,
+                             node_id,
+                             syncConnectionInfos,
+                             iPCR1,
+                             syncInputPlug,
+                             "sync stream" ) )
+    {
+        return false;
+    }
 
     // Find out how many external input plugs exits.
     // Every one of them is possible a sync source
     {
         PlugInfoCmd plugInfoCmd;
-        plugInfoCmd.setVerbose( arguments.verbose );
         plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
 
         if ( plugInfoCmd.fire( handle, node_id ) ) {
-            usleep( 10000 ); // Don't overload device with requests
             for ( int plugIdx = 0;
                   plugIdx < plugInfoCmd.m_externalInputPlugs;
                   ++plugIdx )
@@ -418,13 +417,18 @@ findSupportedConnections( raw1394handle_t handle,
                                        AVCCommand::eST_Unit,
                                        0xff,
                                        0x80 + plugIdx );
-                inquireConnection( handle,
-                                   node_id,
-                                   syncConnectionInfos,
-                                   externalPlug,
-                                   syncInputPlug,
-                                   plugName);
+                if ( !inquireConnection( handle,
+                                         node_id,
+                                         syncConnectionInfos,
+                                         externalPlug,
+                                         syncInputPlug,
+                                         plugName) )
+                {
+                    return false;
+                }
             }
+        } else {
+            return false;
         }
     }
     return true;
@@ -453,8 +457,7 @@ setCurrentActive( raw1394handle_t handle,
     bool result = false;
     if ( info ) {
         SignalSourceCmd signalSourceCmd;
-        signalSourceCmd.setSubunitType( syncInputPlug.m_subunitType );
-        signalSourceCmd.setSubunitId( syncInputPlug.m_subunitId );
+        signalSourceCmd.setSubunitType( AVCCommand::eST_Unit );
         signalSourceCmd.setCommandType( AVCCommand::eCT_Control );
         signalSourceCmd.setVerbose( arguments.verbose );
 
@@ -477,7 +480,6 @@ setCurrentActive( raw1394handle_t handle,
         signalSourceCmd.setSignalDestination( signalSubunitAddressDestination );
 
         if ( signalSourceCmd.fire( handle, node_id ) ) {
-            usleep( 10000 );
             switch ( signalSourceCmd.getResponse() )
             {
             case AVCCommand::eR_Accepted:
@@ -526,8 +528,7 @@ printCurrentActive( raw1394handle_t handle,
                     PlugInfo& syncInputPlug )
 {
     SignalSourceCmd signalSourceCmd;
-    signalSourceCmd.setSubunitType( syncInputPlug.m_subunitType );
-    signalSourceCmd.setSubunitId( syncInputPlug.m_subunitId );
+    signalSourceCmd.setSubunitType( AVCCommand::eST_Unit );
     signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
     signalSourceCmd.setVerbose( arguments.verbose );
 
@@ -544,7 +545,6 @@ printCurrentActive( raw1394handle_t handle,
     signalSourceCmd.setSignalDestination( signalSubunitAddressDestination );
 
     if ( signalSourceCmd.fire( handle, node_id ) ) {
-        usleep( 10000 );
         if ( signalSourceCmd.getResponse() == AVCCommand::eR_Implemented ) {
             cout << endl << "Currently activated mode:" << endl;
 
@@ -553,20 +553,20 @@ printCurrentActive( raw1394handle_t handle,
                 signalUnitAddress = dynamic_cast<SignalUnitAddress*>( signalSourceCmd.getSignalSource() );
             } catch ( bad_cast ) { }
 
-            SignalSubunitAddress* signalSubnitAddress = 0;
+            SignalSubunitAddress* signalSubunitAddress = 0;
             try {
-                signalSubnitAddress = dynamic_cast<SignalSubunitAddress*>( signalSourceCmd.getSignalSource() );
+                signalSubunitAddress = dynamic_cast<SignalSubunitAddress*>( signalSourceCmd.getSignalSource() );
             } catch ( bad_cast ) { }
 
             PlugInfo sourcePlug;
             if ( signalUnitAddress ) {
                 sourcePlug.m_subunitType = AVCCommand::eST_Unit;
-                sourcePlug.m_subunitId = 0x00;
+                sourcePlug.m_subunitId = 0xff;
                 sourcePlug.m_plugId = signalUnitAddress->m_plugId;
-            } else if ( signalSubnitAddress ) {
-                sourcePlug.m_subunitType = static_cast<AVCCommand::ESubunitType>( signalSubnitAddress->m_subunitType );
-                sourcePlug.m_subunitId = signalSubnitAddress->m_subunitId;
-                sourcePlug.m_plugId = signalSubnitAddress->m_plugId;
+            } else if ( signalSubunitAddress ) {
+                sourcePlug.m_subunitType = static_cast<AVCCommand::ESubunitType>( signalSubunitAddress->m_subunitType );
+                sourcePlug.m_subunitId = signalSubunitAddress->m_subunitId;
+                sourcePlug.m_plugId = signalSubunitAddress->m_plugId;
             }
 
             SyncConnectionInfo* info = getSyncConnectionInfo( syncConnectionInfos, sourcePlug );
@@ -574,6 +574,8 @@ printCurrentActive( raw1394handle_t handle,
                 cout << " (" << info->m_id << ") " << info->m_name << endl;
             }
         }
+    } else {
+        return false;
     }
 
     return true;
@@ -595,16 +597,28 @@ doApp( raw1394handle_t handle, int node_id, int sync_mode_id )
     PlugInfo syncOutputPlug;
     SyncConnectionInfos syncConnectionInfos;
 
-    findSyncPlugs( handle, node_id, syncInputPlug, syncOutputPlug );
-    findSupportedConnections( handle, node_id, syncInputPlug, syncOutputPlug, syncConnectionInfos );
+    if ( !findSyncPlugs( handle, node_id, syncInputPlug, syncOutputPlug ) ) {
+        cerr << "Could not discover sync plugs" << endl;
+        return false;
+    }
 
+    if ( !findSupportedConnections( handle, node_id, syncInputPlug, syncOutputPlug, syncConnectionInfos ) ) {
+        cerr << "Could not find supported connections" << endl;
+        return false;
+    }
+
+    bool result = false;
     printSupportedModes( handle, node_id, syncConnectionInfos );
     if ( sync_mode_id != -1 ) {
-        setCurrentActive( handle, node_id, syncInputPlug, syncConnectionInfos, sync_mode_id );
+        if ( !setCurrentActive( handle, node_id, syncInputPlug, syncConnectionInfos, sync_mode_id ) ) {
+            cerr << "Could not set new sync mode" << endl;
+        } else {
+            result = true;
+        }
     }
     printCurrentActive( handle, node_id, syncConnectionInfos, syncInputPlug );
 
-    return true;
+    return result;
 }
 
 int

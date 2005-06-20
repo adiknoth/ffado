@@ -475,7 +475,7 @@ ExtendedStreamFormatCmd::fire( raw1394handle_t handle,
 {
     bool result = false;
 
-    #define STREAM_FORMAT_REQUEST_SIZE 10 // XXX random length
+    #define STREAM_FORMAT_REQUEST_SIZE 6 // XXX random length
     union UPacket {
         quadlet_t     quadlet[STREAM_FORMAT_REQUEST_SIZE];
         unsigned char byte[STREAM_FORMAT_REQUEST_SIZE*4];

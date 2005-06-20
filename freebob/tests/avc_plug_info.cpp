@@ -103,7 +103,7 @@ PlugInfoCmd::deserialize( IISDeserialize& de )
             de.read( &reserved );
             break;
         default:
-            cerr << "Could not deserialize with subfucntion " << m_subFunction << endl;
+            cerr << "Could not deserialize with subfunction " << m_subFunction << endl;
             return false;
         }
         break;
@@ -122,7 +122,7 @@ PlugInfoCmd::fire( raw1394handle_t handle,
 {
     bool result = false;
 
-    #define STREAM_FORMAT_REQUEST_SIZE 10 // XXX random length
+    #define STREAM_FORMAT_REQUEST_SIZE 5 // XXX random length
     union UPacket {
         quadlet_t     quadlet[STREAM_FORMAT_REQUEST_SIZE];
         unsigned char byte[STREAM_FORMAT_REQUEST_SIZE*4];
