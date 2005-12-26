@@ -1,0 +1,4 @@
+- xml output is a bit wierd -> generate a more generic output
+- correct string encoding
+- position information of channel in stream: bebob indexes from 1 
+  but iec61883 expects it from 0. see todo in avdevice.cpp
