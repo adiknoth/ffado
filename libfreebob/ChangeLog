@@ -1,3 +1,9 @@
+2005-12-27  Daniel Wagner  <wagi@monom.org>
+
+	* src/libfreebobavc/avc_extended_plug_info.cpp (serialize): 
+	Do cast of the length field to let the compiler know which version
+	of the serializing code it has to take.
+
 2005-12-26  Daniel Wagner  <wagi@monom.org>
 
 	* Initial check-in and first beta relase 'late x-mass gift'.
