@@ -100,7 +100,7 @@ AC_CHECK_LIB(raw1394, raw1394_new_handle, ,
             [AC_MSG_ERROR([Unable to link with libraw1394. Check that you have libraw1394 installed])])
 
 AC_CHECK_LIB(avc1394, avc1394_vcr_record, ,
-             [AC_MSG_ERROR([Unable to link with libavc1394. Check that you have libavc1394 installed and that the version is 0.4.1 or newer])])
+             [AC_MSG_ERROR([Unable to link with libavc1394. Check that you have libavc1394 installed and that the version is 0.5.1 or newer])])
 
 AC_CHECK_LIB(pthread, pthread_create,,
 [
@@ -159,8 +159,8 @@ AC_ENABLE_SHARED(yes)
 # Create links for header file.
 
 # Checks for library functions.
-PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.1.0)
-PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 0.1.0)
+PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.0)
+PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
 
 PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
 

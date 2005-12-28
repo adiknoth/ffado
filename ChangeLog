@@ -1,3 +1,19 @@
+2005-12-28  Daniel Wagner  <wagi@monom.org>
+
+	* tests/test-freebob.c (main): Debug info added.
+
+	* src/libfreebobavc/ieee1394service.cpp (initialize): Use 
+	raw1394_new_handle_on_port instead of raw1394_new_handle and
+	raw1394_set_port.
+
+	* src/devicemanager.cpp (initialize): After deleteing 1394 service 
+	clear also pointer.
+
+	* libfreebob/freebob.h: freebob_direction enum names changed
+	members which jack backed freebob needs to freebob_connection added
+	
+	* configure.ac: Update library version depency.
+
 2005-12-27  Daniel Wagner  <wagi@monom.org>
 
 	* src/libfreebobavc/avc_extended_plug_info.cpp (serialize): 

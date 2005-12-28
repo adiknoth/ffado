@@ -24,6 +24,11 @@
 
 #define FREEBOB_MAX_NAME_LEN 256
 
+enum freebob_direction {
+    FREEBOB_CAPTURE  = 0,
+    FREEBOB_PLAYBACK = 1,
+};
+
 typedef struct freebob_handle* freebob_handle_t;
 
 /*
@@ -63,6 +68,9 @@ struct _freebob_connection_spec {
                     /* to the number of streams */
     int samplerate; /* this should be equal for all connections when */
                     /* using jack. maybe not when using other api's */
+    int iso_channel;
+    enum freebob_direction direction;
+    int is_master;
     freebob_stream_info_t* stream_info;
 };
 
@@ -75,10 +83,6 @@ struct _freebob_connection_info {
     freebob_connection_spec_t** connections;
 };
 
-enum freebob_direction {
-    fb_direction_capture  = 0,
-    fb_direction_playback = 1,
-};
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,24 +98,24 @@ int
 freebob_discover_devices( freebob_handle_t freebob_handle );
 
 
-freebob_connection_info_t* 
-freebob_get_connection_info( freebob_handle_t freebob_handle, 
+freebob_connection_info_t*
+freebob_get_connection_info( freebob_handle_t freebob_handle,
 			     int node_id,
 			     enum freebob_direction direction );
 
-void 
+void
 freebob_free_connection_info( freebob_connection_info_t* connection_info );
-void 
+void
 freebob_free_connection_spec( freebob_connection_spec_t* connection_spec );
-void 
+void
 freebob_free_stream_info( freebob_stream_info_t* stream_info );
-void 
+void
 freebob_free_stream_spec( freebob_stream_spec_t* stream_spec );
 
-void 
+void
 freebob_print_connection_info( freebob_connection_info_t* connection_info );
 
-const char* 
+const char*
 freebob_get_version();
 
 #ifdef __cplusplus
