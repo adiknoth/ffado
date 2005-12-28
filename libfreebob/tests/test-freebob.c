@@ -143,6 +143,7 @@ main( int argc, char **argv )
 
     printf( "Using freebob library version: %s\n\n", freebob_get_version() );
 
+    printf("  port = %d, node_id = %d\n", arguments.port, arguments.node_id);
     if ( strcmp( arguments.args[0], "discover" ) == 0 ) {
 	freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
 	if ( !fb_handle ) {

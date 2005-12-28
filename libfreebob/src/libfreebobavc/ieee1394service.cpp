@@ -40,19 +40,14 @@ Ieee1394Service::~Ieee1394Service()
 bool
 Ieee1394Service::initialize( int port )
 {
-    m_handle = raw1394_new_handle();
+    m_handle = raw1394_new_handle_on_port( port );
     if ( !m_handle ) {
         if ( !errno ) {
             cerr << "libraw1394 not compatible" << endl;
         } else {
-            perror( "Could not get 1394 handle" );
+            perror( "Ieee1394Service::initialize: Could not get 1394 handle" );
             cerr << "Is ieee1394 and raw1394 driver loaded?" << endl;
         }
-        return false;
-    }
-
-    if ( raw1394_set_port( m_handle,  port ) < 0 ) {
-        perror( "Could not set port" );
         return false;
     }
 

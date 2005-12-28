@@ -62,6 +62,7 @@ DeviceManager::initialize(int port)
     if ( !m_1394Service->initialize( port ) ) {
         debugFatal( "Could not initialize Ieee1349Service object\n" );
         delete m_1394Service;
+        m_1394Service = 0;
         return false;
     }
 
