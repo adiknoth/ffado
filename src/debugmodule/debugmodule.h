@@ -90,20 +90,42 @@ typedef short debug_level_t;
 
 #else
 
-    #define debugFatal( format, args... )
-    #define debugError( format, args... )
-    #define debugWarning( format, args... )
+    #define debugFatal( format, args... )                      \
+                m_debugModule.print( DebugModule::eDL_Fatal,   \
+                                     __FILE__,                 \
+                                     __FUNCTION__,             \
+                                     __LINE__,                 \
+                                     format,                   \
+                                     ##args )
+    #define debugError( format, args... )                      \
+                m_debugModule.print( DebugModule::eDL_Error,   \
+                                     __FILE__,                 \
+                                     __FUNCTION__,             \
+                                     __LINE__,                 \
+                                     format,                   \
+                                     ##args )
+    #define debugWarning( format, args... )                    \
+                m_debugModule.print( DebugModule::eDL_Warning, \
+                                     __FILE__,                 \
+                                     __FUNCTION__,             \
+                                     __LINE__,                 \
+                                    format,                    \
+                                    ##args )
     #define debugOutput( level, format, args... )
     #define debugFatalShort( format, args... )
     #define debugErrorShort( format, args... )
     #define debugWarningShort( format, args... )
     #define debugOutputShort( level, format, args... )
 
-    #define DECLARE_DEBUG_MODULE
-    #define IMPL_DEBUG_MODULE( ClassName, RegisterName, Level )
+    #define DECLARE_DEBUG_MODULE static DebugModule m_debugModule
+    #define IMPL_DEBUG_MODULE( ClassName, RegisterName, Level ) \
+                DebugModule ClassName::m_debugModule = \
+                    DebugModule( #RegisterName, Level )
 
-    #define DECLARE_GLOBAL_DEBUG_MODULE
-    #define IMPL_GLOBAL_DEBUG_MODULE( RegisterName, Level )
+    #define DECLARE_GLOBAL_DEBUG_MODULE extern DebugModule m_debugModule
+    #define IMPL_GLOBAL_DEBUG_MODULE( RegisterName, Level ) \
+                DebugModule m_debugModule = \
+		    DebugModule( #RegisterName, Level )
 
 #endif
 
