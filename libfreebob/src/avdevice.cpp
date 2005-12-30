@@ -1058,7 +1058,12 @@ AvDevice::discoverStep9()
                 if ( clusterInfo->m_nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
                 {
-                    debugError( "discoverStep9: Number of channels mismatch\n" );
+                    debugError( "discoverStep9: Number of channels "
+                                "mismatch: plug discovring reported "
+                                "%d channels, while stream format "
+                                "reported %d\n",
+                                clusterInfo->m_nrOfChannels,
+                                streamFormatInfo->m_numberOfChannels );
                     return false;
                 }
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;

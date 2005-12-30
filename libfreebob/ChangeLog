@@ -1,3 +1,10 @@
+2005-12-30  Daniel Wagner  <wagi@monom.org>
+
+	* src/avdevice.cpp (discoverStep9): Error message extended.
+
+	* src/debugmodule/debugmodule.h: Enable debugFatal, debugError and 
+	also in the release case.
+
 2005-12-28  Daniel Wagner  <wagi@monom.org>
 
 	* tests/test-freebob.c (main): Debug info added.
