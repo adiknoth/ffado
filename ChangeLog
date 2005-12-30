@@ -1,6 +1,10 @@
 2005-12-30  Daniel Wagner  <wagi@monom.org>
 
+	* src/libfreebobavc/avc_extended_stream_format.cpp (fire): Buffer
+	length increased.
+
 	* src/avdevice.cpp (discoverStep9): Error message extended.
+	More debug info added.
 
 	* src/debugmodule/debugmodule.h: Enable debugFatal, debugError and 
 	also in the release case.

@@ -1059,19 +1059,22 @@ AvDevice::discoverStep9()
                      streamFormatInfo->m_numberOfChannels )
                 {
                     debugError( "discoverStep9: Number of channels "
-                                "mismatch: plug discovring reported "
-                                "%d channels, while stream format "
+                                "mismatch: iso input plug %d discovering reported "
+                                "%d channels for cluster '%s', while stream format "
                                 "reported %d\n",
+                                isoInputPlug->getPlugId(),
                                 clusterInfo->m_nrOfChannels,
-                                streamFormatInfo->m_numberOfChannels );
+                                clusterInfo->m_name.c_str(),
+                                streamFormatInfo->m_numberOfChannels);
                     return false;
                 }
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso input plug %d cluster info %d: stream format %d\n",
+                             "iso input plug %d cluster info %d ('%s'): stream format %d\n",
                              isoInputPlug->getPlugId(),
                              i,
+                             clusterInfo->m_name.c_str(),
                              clusterInfo->m_streamFormat );
             }
         }
@@ -1157,15 +1160,23 @@ AvDevice::discoverStep9()
                 if ( clusterInfo->m_nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
                 {
-                    debugError( "discoverStep9: Number of channels mismatch\n" );
+                    debugError( "discoverStep9: Number of channels "
+                                "mismatch: iso output plug %d discovering reported "
+                                "%d channels for cluster '%s', while stream format "
+                                "reported %d\n",
+                                isoOutputPlug->getPlugId(),
+                                clusterInfo->m_nrOfChannels,
+                                clusterInfo->m_name.c_str(),
+                                streamFormatInfo->m_numberOfChannels);
                     return false;
                 }
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso output plug %d cluster info %d: stream format %d\n",
+                             "iso output plug %d cluster info %d ('%s'): stream format %d\n",
                              isoOutputPlug->getPlugId(),
                              i,
+                             clusterInfo->m_name.c_str(),
                              clusterInfo->m_streamFormat );
             }
         }
