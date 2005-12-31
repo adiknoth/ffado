@@ -176,6 +176,7 @@ freebob_xmlparse_connection( xmlDocPtr doc, xmlNodePtr cur )
         ConnectionSpecParseNode( "Plug", plug );
         ConnectionSpecParseNode( "Dimension", dimension );
         ConnectionSpecParseNode( "Samplerate", samplerate );
+	ConnectionSpecParseNode( "IsoChannel", iso_channel );
 
         if ( !xmlStrcmp( cur->name, (const xmlChar*) "Streams" ) ) {
             connection_spec->stream_info

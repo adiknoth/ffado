@@ -1396,13 +1396,28 @@ AvDevice::addPlugToXmlDescription( AvPlug& plug,
                                    xmlNodePtr connectionSet )
 {
     char* result;
-    asprintf( &result, "%d", plug.getPlugDirection() );
+
+    int direction;
+    switch ( plug.getPlugDirection() ) {
+        case 0:
+            direction = FREEBOB_PLAYBACK;
+            break;
+        case 1:
+            direction = FREEBOB_CAPTURE;
+            break;
+    default:
+        debugError( "plug direction invalid (%d)\n",
+                    plug.getPlugDirection() );
+        return false;
+    }
+
+    asprintf( &result, "%d",  direction );
     if ( !xmlNewChild( connectionSet,
                        0,
                        BAD_CAST "Direction",
                        BAD_CAST result ) )
     {
-        debugError( "Couldn't create direction node\n" );
+        debugError( "Couldn't create 'Direction' node\n" );
         return false;
     }
 
@@ -1448,6 +1463,13 @@ AvDevice::addPlugToXmlDescription( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Samplerate",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Samplerate' node\n" );
+        return false;
+    }
+
+    if ( !xmlNewChild( connection,  0,
+                       BAD_CAST "IsoChannel", BAD_CAST "-1" ) )
+    {
+        debugError( "Couldn't create 'IsoChannel' node\n" );
         return false;
     }
 
