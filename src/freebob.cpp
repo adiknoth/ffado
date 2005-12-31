@@ -168,14 +168,16 @@ freebob_print_connection_info( freebob_connection_info_t* connection_info )
 
 
 	if ( connection_spec ) {
-	    printf("  Connection %2d\n", i );
-	    printf("  -------------\n");
-	    printf("    [%2d] Id:         %d\n", i, connection_spec->id );
-	    printf("    [%2d] Port:       %d\n", i, connection_spec->port );
-	    printf("    [%2d] Node:       %d\n", i, connection_spec->node );
-	    printf("    [%2d] Plug:       %d\n", i, connection_spec->plug );
-	    printf("    [%2d] Dimension:  %d\n", i, connection_spec->dimension );
-	    printf("    [%2d] Samplerate: %d\n", i, connection_spec->samplerate );
+	    printf( "  Connection %2d\n", i );
+	    printf( "  -------------\n" );
+	    printf( "    [%2d] Id:         %d\n", i, connection_spec->id );
+	    printf( "    [%2d] Port:       %d\n", i, connection_spec->port );
+	    printf( "    [%2d] Node:       %d\n", i, connection_spec->node );
+	    printf( "    [%2d] Plug:       %d\n", i, connection_spec->plug );
+	    printf( "    [%2d] Dimension:  %d\n", i, connection_spec->dimension );
+	    printf( "    [%2d] Samplerate: %d\n", i, connection_spec->samplerate );
+            printf( "    [%2d] IsoChannel: %d\n", i, connection_spec->iso_channel );
+            printf( "    [%2d] IsMaster:   %d\n", i, connection_spec->is_master );
 
 	    if ( connection_info->connections[i]->stream_info ) {
 		printf("    [%2d] Number of stream infos: %d\n\n",
