@@ -42,6 +42,7 @@ struct arguments
     short verbose;
     int   port;
     int   node_id;
+    int   node_id_set;
     char* args[1];  // ARG1
 };
 
@@ -94,6 +95,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
                 fprintf( stderr,  "Could not parse 'node' argument\n" );
                 return ARGP_ERR_UNKNOWN;
             }
+            arguments->node_id_set=1;
         } else {
             if ( errno ) {
                 fprintf( stderr, "Could not parse 'node' argumen\n" );
@@ -129,10 +131,11 @@ main( int argc, char **argv )
     struct arguments arguments;
 
     // Default values.
-    arguments.silent  = 0;
-    arguments.verbose = 0;
-    arguments.port    = 0;
-    arguments.node_id = 0;
+    arguments.silent      = 0;
+    arguments.verbose     = 0;
+    arguments.port        = 0;
+    arguments.node_id     = 0;
+    arguments.node_id_set = 0; // if we don't specify a node, discover all
 
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
@@ -143,37 +146,150 @@ main( int argc, char **argv )
 
     printf( "Using freebob library version: %s\n\n", freebob_get_version() );
 
-    printf("  port = %d, node_id = %d\n", arguments.port, arguments.node_id);
     if ( strcmp( arguments.args[0], "discover" ) == 0 ) {
-	freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
-	if ( !fb_handle ) {
-	    fprintf( stderr, "Could not create freebob handle\n" );
-	    return -1;
-	}
+		freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
+		if ( !fb_handle ) {
+			fprintf( stderr, "Could not create freebob handle\n" );
+			return -1;
+		}
+		
+		if ( freebob_discover_devices( fb_handle ) != 0 ) {
+			fprintf( stderr, "Could not discover devices\n" );
+			freebob_destroy_handle( fb_handle );
+			return -1;
+		}
 	
-	if ( freebob_discover_devices( fb_handle ) != 0 ) {
-	    fprintf( stderr, "Could not discover devices\n" );
-	    freebob_destroy_handle( fb_handle );
-	    return -1;
-	}
+		freebob_connection_info_t* test_info;
+	
+		if(arguments.node_id_set) {
+		    printf("  port = %d, node_id = %d\n", arguments.port, arguments.node_id);
+			test_info = freebob_get_connection_info( fb_handle, 
+								arguments.node_id, 
+								0 );
+			freebob_print_connection_info( test_info );
+			freebob_free_connection_info( test_info );
+		
+			printf("\n");
+		
+			test_info = freebob_get_connection_info( fb_handle, 
+								arguments.node_id,
+								1 );
+			freebob_print_connection_info( test_info );
+			freebob_free_connection_info( test_info );
+		} else {
+			int i=0;
+			
+			int devices_on_bus = freebob_get_nb_devices_on_bus(fb_handle);
+    		printf("  port = %d, devices_on_bus = %d\n", arguments.port, devices_on_bus);
+			
+			for(i=0;i<devices_on_bus;i++) {
+				int node_id=freebob_get_device_node_id(fb_handle, i);
+    			printf("  get info for device = %d, node = %d\n", i, node_id);
+				
+				test_info = freebob_get_connection_info( fb_handle, 
+									node_id, 
+									0 );
+				freebob_print_connection_info( test_info );
+				freebob_free_connection_info( test_info );
+			
+				printf("\n");
+			
+				test_info = freebob_get_connection_info( fb_handle, 
+									node_id,
+									1 );
+				freebob_print_connection_info( test_info );
+				freebob_free_connection_info( test_info );
+			}
+		}
+		
+		freebob_destroy_handle( fb_handle );
+		
+    } else if ( strcmp( arguments.args[0], "setsamplerate" ) == 0 ) {
+		freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
+		if ( !fb_handle ) {
+			fprintf( stderr, "Could not create freebob handle\n" );
+			return -1;
+		}
+		
+		if ( freebob_discover_devices( fb_handle ) != 0 ) {
+			fprintf( stderr, "Could not discover devices\n" );
+			freebob_destroy_handle( fb_handle );
+			return -1;
+		}
+	
+		if(arguments.node_id_set) {
+			if (! freebob_set_samplerate(fb_handle, arguments.node_id, 44100)) {
+				fprintf( stderr, "Could not send samplerate\n" );
+				freebob_destroy_handle( fb_handle );
+				return -1;
+			}
 
-	freebob_connection_info_t* test_info;
+		} else {
+			int i=0;
+			
+			int devices_on_bus = freebob_get_nb_devices_on_bus(fb_handle);
+    		printf("  port = %d, devices_on_bus = %d\n", arguments.port, devices_on_bus);
+			
+			for(i=0;i<devices_on_bus;i++) {
+				int node_id=freebob_get_device_node_id(fb_handle, i);
+    			printf("  set samplerate for device = %d, node = %d\n", i, node_id);
+				
+				if (! freebob_set_samplerate(fb_handle, node_id, 44100)) {
+					fprintf( stderr, "Could not send samplerate\n" );
+					freebob_destroy_handle( fb_handle );
+					return -1;
+				}
+			}
 
-	test_info = freebob_get_connection_info( fb_handle, 
-						 arguments.node_id, 
-						 0 );
-	freebob_print_connection_info( test_info );
-	freebob_free_connection_info( test_info );
-
-	printf("\n");
-
-	test_info = freebob_get_connection_info( fb_handle, 
-						 arguments.node_id,
-						 1 );
-	freebob_print_connection_info( test_info );
-	freebob_free_connection_info( test_info );
-
-	freebob_destroy_handle( fb_handle );
+		}
+		
+		freebob_destroy_handle( fb_handle );
+		
+    } else if ( strcmp( arguments.args[0], "xmldump" ) == 0 ) {
+		freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
+		if ( !fb_handle ) {
+			fprintf( stderr, "Could not create freebob handle\n" );
+			return -1;
+		}
+		
+		if ( freebob_discover_devices( fb_handle ) != 0 ) {
+			fprintf( stderr, "Could not discover devices\n" );
+			freebob_destroy_handle( fb_handle );
+			return -1;
+		}
+	
+		if(arguments.node_id_set) {
+			freebob_print_xml_description( fb_handle, 
+								arguments.node_id, 
+								0 );
+		
+			printf("\n");
+		
+			freebob_print_xml_description( fb_handle, 
+								arguments.node_id,
+								1 );
+		} else {
+			int i=0;
+			
+			int devices_on_bus = freebob_get_nb_devices_on_bus(fb_handle);
+			
+			for(i=0;i<devices_on_bus;i++) {
+				int node_id=freebob_get_device_node_id(fb_handle, i);
+ 				
+				freebob_print_xml_description( fb_handle, 
+									node_id, 
+									0 );
+				printf("\n");
+			
+				freebob_print_xml_description( fb_handle, 
+									node_id,
+									1 );
+			}
+		}
+		
+		freebob_destroy_handle( fb_handle );
+		    
+    
     } else {
         printf( "unknown operation\n" );
     }
