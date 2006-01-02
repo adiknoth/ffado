@@ -285,7 +285,7 @@ ExtendedPlugInfoPlugChannelNameSpecificData::deserialize( IISDeserialize& de )
     }
     name[m_stringLength] = '\0';
     m_plugChannelName = name;
-    delete name;
+    delete[] name;
 
     return true;
 }
@@ -469,7 +469,7 @@ ExtendedPlugInfoClusterInfoSpecificData::deserialize( IISDeserialize& de )
     }
     name[m_stringLength] = '\0';
     m_clusterName = name;
-    delete name;
+    delete[] name;
 
     return true;
 }

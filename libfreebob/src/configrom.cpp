@@ -93,7 +93,7 @@ ConfigRom::initialize()
 
     if ( m_vendorNameKv ) {
         int len = ( m_vendorNameKv->value.leaf.len - 2) * sizeof( quadlet_t );
-        char* buf = new char[len];
+        char* buf = new char[len+2];
         memcpy( buf,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_vendorNameKv ),
                 len );
@@ -113,7 +113,7 @@ ConfigRom::initialize()
     }
     if ( m_modelNameKv ) {
         int len = ( m_modelNameKv->value.leaf.len - 2) * sizeof( quadlet_t );
-        char* buf = new char[len];
+        char* buf = new char[len+2];
         memcpy( buf,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_modelNameKv ),
                 len );
