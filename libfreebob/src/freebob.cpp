@@ -96,6 +96,24 @@ freebob_get_connection_info( freebob_handle_t freebob_handle,
     return freebob_xmlparse_get_connection_info( doc, node_id, direction );
 }
 
+int freebob_node_is_valid_freebob_device(freebob_handle_t freebob_handle, int node_id) {
+	
+	return freebob_handle->m_deviceManager->isValidNode(node_id);
+}
+
+int freebob_get_nb_devices_on_bus(freebob_handle_t freebob_handle) {
+	
+	return freebob_handle->m_deviceManager->getNbDevices();
+}
+
+int freebob_get_device_node_id(freebob_handle_t freebob_handle, int device_nr) {
+	return freebob_handle->m_deviceManager->getDeviceNodeId(device_nr);
+}
+
+int freebob_set_samplerate(freebob_handle_t freebob_handle, int node_id, int samplerate) {
+	return freebob_handle->m_deviceManager->setNodeSampleFrequency(node_id, samplerate);
+}
+
 void
 freebob_free_connection_info( freebob_connection_info_t* connection_info )
 {
@@ -211,3 +229,26 @@ freebob_print_connection_info( freebob_connection_info_t* connection_info )
     return;
 }
 
+/* debug function */
+void
+freebob_print_xml_description( freebob_handle_t freebob_handle,
+                             int node_id,
+                             enum freebob_direction direction )
+{
+    xmlDocPtr doc;
+    doc = freebob_handle->m_deviceManager->getXmlDescription();
+    if ( !doc ) {
+        debugFatal( "Could not get XML description\n" );
+        return;
+    }
+    
+    xmlChar* xmlbuff;
+    int buffersize;
+    xmlDocDumpFormatMemory( doc, &xmlbuff, &buffersize, 1 );
+	
+	printf("%s\n",(char *)xmlbuff);
+	
+	xmlFree(xmlbuff);
+	xmlFree(doc);
+    return;
+}
