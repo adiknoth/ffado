@@ -289,6 +289,35 @@ main( int argc, char **argv )
 		
 		freebob_destroy_handle( fb_handle );
 		    
+    } else if ( strcmp( arguments.args[0], "testmultidevicediscovery" ) == 0 ) {
+		freebob_connection_info_t* test_info;
+		freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
+		if ( !fb_handle ) {
+			fprintf( stderr, "Could not create freebob handle\n" );
+			return -1;
+		}
+		
+		if ( freebob_discover_devices( fb_handle ) != 0 ) {
+			fprintf( stderr, "Could not discover devices\n" );
+			freebob_destroy_handle( fb_handle );
+			return -1;
+		}
+		
+		test_info = freebob_get_connection_info( fb_handle, 
+							-1, 
+							0 );
+		freebob_print_connection_info( test_info );
+		freebob_free_connection_info( test_info );
+	
+		printf("\n");
+	
+		test_info = freebob_get_connection_info( fb_handle, 
+							-1,
+							1 );
+		freebob_print_connection_info( test_info );
+		freebob_free_connection_info( test_info );		
+		
+		freebob_destroy_handle( fb_handle );
     
     } else {
         printf( "unknown operation\n" );
