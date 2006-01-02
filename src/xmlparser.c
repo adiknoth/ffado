@@ -340,46 +340,180 @@ freebob_xmlparse_get_connection_set_by_node_id( xmlDocPtr doc,
     return 0;
 }
 
+xmlNodePtr
+freebob_xmlparse_get_connection_set_by_device( xmlDocPtr doc,
+                                                xmlNodePtr cur,
+                                                int device )
+{
+    int count=0;
+    while ( count < device ) {
+    	if(!cur) {
+    		return NULL;
+    	}
+    	
+    	if(!xmlStrcmp( cur->name, (const xmlChar*) "Device" )) {
+    		count++;
+    	}
+    	cur=cur->next;
+    }
+    
+	if ( !xmlStrcmp( cur->name, (const xmlChar*) "Device" ) ) {
+		xmlNodePtr cur3 = cur->xmlChildrenNode;
+		while ( cur3 ) {
+			if ( !xmlStrcmp( cur3->name,
+								(const xmlChar*) "ConnectionSet" ) )
+			{
+				return cur3;
+			}
+			cur3 = cur3->next;
+		}
+	} else {
+		return NULL;
+	}
+    
+    return NULL;
+}
+
+
+// a side effect is that both old connection info's are freed, unless NULL is returned!
+freebob_connection_info_t*
+freebob_xmlparse_append_connectionset(freebob_connection_info_t* connection_info, freebob_connection_info_t* cinfo) 
+{
+    if(connection_info==NULL) return cinfo;
+    if(cinfo==NULL) return connection_info;
+    
+    if (connection_info->direction != cinfo->direction) {
+    	// direction mismatch
+    	return NULL;
+    }
+    
+    freebob_connection_info_t *tmpci=calloc(1,sizeof(freebob_connection_info_t));
+    if (!tmpci) {
+    	return NULL;
+    }
+    
+    tmpci->nb_connections=connection_info->nb_connections+cinfo->nb_connections;
+    tmpci->connections = calloc( tmpci->nb_connections, sizeof(freebob_connection_spec_t*));
+    
+    int i=0;
+    int c=0;
+    for(i=0;i<connection_info->nb_connections;i++) {
+    	tmpci->connections[c]=connection_info->connections[i]; // these are pointers
+    	c++;
+    }
+    for(i=0;i<cinfo->nb_connections;i++) {
+    	tmpci->connections[c]=cinfo->connections[i]; // these are pointers
+    	c++;
+    }
+    
+    free(connection_info->connections);
+    free(cinfo->connections);
+    
+    free(connection_info);
+    free(cinfo);
+    
+    connection_info->connections=NULL;
+    cinfo->connections=NULL;
+    connection_info=NULL;
+    cinfo=NULL;
+    
+    return tmpci;
+}
+
+int 
+freebob_xmlparse_get_nb_devices( xmlDocPtr doc,
+                                 xmlNodePtr cur)
+{
+	int count=0;
+	while (cur != NULL) {
+	    if ((!xmlStrcmp(cur->name, (const xmlChar *)"Device"))) {
+			count++;
+ 	    }
+		cur = cur->next;
+	}
+	return count;
+}
+
 freebob_connection_info_t*
 freebob_xmlparse_get_connection_info( xmlDocPtr doc,
                                       int node_id,
                                       int direction )
 {
-    xmlNodePtr cur = xmlDocGetRootElement(doc);
-    if ( !cur ) {
+    xmlNodePtr base = xmlDocGetRootElement(doc);
+    xmlNodePtr cur;
+    
+    if ( !base ) {
         fprintf( stderr, "empty document\n");
         return 0;
     }
 
-    if ( xmlStrcmp( cur->name, (const xmlChar*) "FreeBobConnectionInfo") ) {
+    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBobConnectionInfo") ) {
         fprintf( stderr,
                  "document of the wrong type, root node "
                  "!= FreeBobConnectionInfo\n" );
         return 0;
     }
 
-    cur = cur->xmlChildrenNode;
-    if ( !cur ) {
+    base = base->xmlChildrenNode;
+    if ( !base ) {
         fprintf( stderr, "Root node has no children!\n" );
         return 0;
     }
+	
+	if( node_id > -1) {
+		cur = freebob_xmlparse_get_connection_set_by_node_id( doc, base, node_id );
+		if ( !cur ) {
+			fprintf( stderr,
+					"Could not get find description for node id %d\n", node_id );
+			return 0;
+		}
+		cur = freebob_xmlparse_get_connectionset_node( doc, cur, direction );
+		if ( !cur ) {
+			fprintf( stderr,
+					"Could not get a connection set for direction %d\n",
+					direction );
+			return 0;
+		}
 
-    cur = freebob_xmlparse_get_connection_set_by_node_id( doc, cur, node_id );
-    if ( !cur ) {
-        fprintf( stderr,
-                 "Could not get find description for node id %d\n", node_id );
-        return 0;
-    }
-    cur = freebob_xmlparse_get_connectionset_node( doc, cur, direction );
-    if ( !cur ) {
-        fprintf( stderr,
-                 "Could not get a connection set for direction %d\n",
-                 direction );
-        return 0;
-    }
+		freebob_connection_info_t* connection_info =
+			freebob_xmlparse_connectionset( doc, cur );
 
-    freebob_connection_info_t* connection_info =
-        freebob_xmlparse_connectionset( doc, cur );
-
-    return connection_info;
+	    return connection_info;
+	} else {
+		freebob_connection_info_t* connection_info=NULL;
+		
+		int device_nr=0;
+		
+		int nb_devices=freebob_xmlparse_get_nb_devices(doc, base);
+		
+		fprintf( stderr,
+					"Nb devices %d\n",
+					nb_devices );
+					
+		
+		for(device_nr=0;device_nr<nb_devices;device_nr++) {
+		
+			cur = freebob_xmlparse_get_connection_set_by_device( doc, base, device_nr );
+			if ( !cur ) {
+				fprintf( stderr,
+						"Could not get find description for device %d\n", device_nr );
+				return 0;
+			}
+			
+			cur = freebob_xmlparse_get_connectionset_node( doc, cur, direction );
+			if ( !cur ) {
+				fprintf( stderr,
+						"Could not get a connection set for direction %d\n",
+						direction );
+				return 0;
+			}
+	
+			freebob_connection_info_t* cinfo = freebob_xmlparse_connectionset( doc, cur );
+			connection_info=freebob_xmlparse_append_connectionset(connection_info,cinfo);
+		}
+		
+	    return connection_info;
+	
+	}
 }
+
