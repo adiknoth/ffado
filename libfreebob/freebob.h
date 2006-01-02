@@ -115,6 +115,18 @@ freebob_free_stream_spec( freebob_stream_spec_t* stream_spec );
 void
 freebob_print_connection_info( freebob_connection_info_t* connection_info );
 
+int freebob_node_is_valid_freebob_device(freebob_handle_t fb_handle, int node_id);
+int freebob_get_nb_devices_on_bus(freebob_handle_t fb_handle);
+
+int freebob_get_device_node_id(freebob_handle_t fb_handle, int device_nr);
+int freebob_set_samplerate(freebob_handle_t freebob_handle, int node_id, int samplerate);
+
+/* debug function */
+void
+freebob_print_xml_description( freebob_handle_t freebob_handle,
+                             int node_id,
+                             enum freebob_direction direction );
+
 const char*
 freebob_get_version();
 
