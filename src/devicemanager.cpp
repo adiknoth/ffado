@@ -116,6 +116,58 @@ DeviceManager::discover()
     return true;
 }
 
+bool DeviceManager::isValidNode(int node) {
+    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+          it != m_avDevices.end();
+          ++it )
+    {
+        AvDevice* avDevice = *it;
+        
+        if (avDevice->getNodeId() == node) {
+        	return true;
+        }
+	}
+	return false;
+}
+
+int DeviceManager::getNbDevices() {
+	return m_avDevices.size();
+}
+
+int DeviceManager::getDeviceNodeId(int device_nr) {
+	if ( ! (device_nr < getNbDevices()) ) {
+		cerr << "Device number out of range ( "
+				<< device_nr << ")" << endl;
+		return -1;
+	}
+	
+	AvDevice* avDevice = m_avDevices.at(device_nr);
+	
+	if ( !avDevice ) {
+		cerr << "Could not get device at position ( "
+				<< device_nr << ")" << endl;
+		return -1;
+	
+	}
+	
+	return avDevice->getNodeId();
+	
+}
+
+bool DeviceManager::setNodeSampleFrequency(int node, int samplerate) {
+    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+          it != m_avDevices.end();
+          ++it )
+    {
+        AvDevice* avDevice = *it;
+        
+        if (avDevice->getNodeId() == node) {
+			return avDevice->setSampleFrequency(samplerate);
+        }
+	}
+	return false;
+}
+
 xmlDocPtr DeviceManager::getXmlDescription()
 {
     xmlDocPtr doc = xmlNewDoc( BAD_CAST "1.0" );
@@ -167,6 +219,43 @@ xmlDocPtr DeviceManager::getXmlDescription()
                            BAD_CAST "Comment",
                            BAD_CAST res.c_str() ) ) {
             debugError( "Couldn't create comment node\n" );
+            xmlFreeDoc( doc );
+            xmlCleanupParser();
+            return 0;
+        }
+        
+        res = avDevice->getVendorName();
+        
+        if ( !xmlNewChild( deviceNode,
+                           0,
+                           BAD_CAST "Vendor",
+                           BAD_CAST res.c_str() ) ) {
+            debugError( "Couldn't create vendor node\n" );
+            xmlFreeDoc( doc );
+            xmlCleanupParser();
+            return 0;
+        }
+        
+        res = avDevice->getModelName();
+        
+        if ( !xmlNewChild( deviceNode,
+                           0,
+                           BAD_CAST "Model",
+                           BAD_CAST res.c_str() ) ) {
+            debugError( "Couldn't create model node\n" );
+            xmlFreeDoc( doc );
+            xmlCleanupParser();
+            return 0;
+        }
+        
+        res = "";
+        res = avDevice->getGuid();
+        
+        if ( !xmlNewChild( deviceNode,
+                           0,
+                           BAD_CAST "GUID",
+                           BAD_CAST res.c_str() ) ) {
+            debugError( "Couldn't create GUID node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
             return 0;

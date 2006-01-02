@@ -47,10 +47,15 @@ public:
 
     std::string getVendorName();
     std::string getModelName();
-
+	
+	uint64_t getGuid();
+	
     bool addXmlDescription( xmlNodePtr deviceNode );
     int getNodeId()
         { return m_nodeId; }
+
+	bool setSampleFrequency(int sr);
+	
 
 protected:
     bool discoverStep1();
