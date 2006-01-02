@@ -137,7 +137,7 @@ AvPlug::getClusterInfoByIndex(int index)
 }
 
 int
-AvPlug::getNrOfChannels()
+AvPlug::getNrOfStreams()
 {
     int nrOfChannels = 0;
     for ( ClusterInfoVector::const_iterator it = m_clusterInfos.begin();
@@ -148,6 +148,12 @@ AvPlug::getNrOfChannels()
         nrOfChannels += clusterInfo->m_nrOfChannels;
     }
     return nrOfChannels;
+}
+
+int
+AvPlug::getNrOfChannels()
+{
+    return m_nrOfChannels;
 }
 
 int

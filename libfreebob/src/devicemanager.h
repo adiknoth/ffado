@@ -43,6 +43,12 @@ class DeviceManager{
 
     bool discover();
 
+	bool isValidNode(int node);
+	int  getNbDevices();
+	int  getDeviceNodeId(int device_nr);
+	
+	bool setNodeSampleFrequency(int node_id, int samplerate);
+
     xmlDocPtr getXmlDescription();
  protected:
     Ieee1394Service* m_1394Service;

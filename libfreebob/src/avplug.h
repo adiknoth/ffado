@@ -51,6 +51,7 @@ public:
 	{ return m_samplingFrequency; }
     int getSampleRate(); // 22050, 24000, 32000, ...
     int getNrOfChannels();
+    int getNrOfStreams();
     
     plug_type_t          m_plugType;
     plug_id_t            m_plugId;

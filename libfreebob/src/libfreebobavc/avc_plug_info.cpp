@@ -123,7 +123,7 @@ PlugInfoCmd::fire()
 {
     bool result = false;
 
-    #define STREAM_FORMAT_REQUEST_SIZE 5 // XXX random length
+    #define STREAM_FORMAT_REQUEST_SIZE 20 // XXX random length
     union UPacket {
         quadlet_t     quadlet[STREAM_FORMAT_REQUEST_SIZE];
         unsigned char byte[STREAM_FORMAT_REQUEST_SIZE*4];

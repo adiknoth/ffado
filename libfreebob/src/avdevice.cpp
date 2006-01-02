@@ -1061,7 +1061,7 @@ AvDevice::discoverStep9()
                     // 8 logical midi channels fit into 1 channel
                     nrOfChannels = ( nrOfChannels / 8 );
                 }
-
+/*
                 // sanity checks
                 if (  nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
@@ -1071,11 +1071,12 @@ AvDevice::discoverStep9()
                                 "%d channels for cluster '%s', while stream format "
                                 "reported %d\n",
                                 isoInputPlug->getPlugId(),
-                                clusterInfo->m_nrOfChannels,
+                                nrOfChannels,
                                 clusterInfo->m_name.c_str(),
                                 streamFormatInfo->m_numberOfChannels);
                     return false;
                 }
+*/
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,
@@ -1171,7 +1172,7 @@ AvDevice::discoverStep9()
                     // 8 logical midi channels fit into 1 channel
                     nrOfChannels = ( nrOfChannels / 8 );
                 }
-
+/*
                 // sanity checks
                 if (  nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
@@ -1181,11 +1182,12 @@ AvDevice::discoverStep9()
                                 "%d channels for cluster '%s', while stream format "
                                 "reported %d\n",
                                 isoOutputPlug->getPlugId(),
-                                clusterInfo->m_nrOfChannels,
+                                nrOfChannels,
                                 clusterInfo->m_name.c_str(),
                                 streamFormatInfo->m_numberOfChannels);
                     return false;
                 }
+*/
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,
@@ -1407,6 +1409,12 @@ AvDevice::getModelName()
     return m_configRom->getVendorName();
 }
 
+uint64_t
+AvDevice::getGuid()
+{
+    return m_configRom->getGuid();
+}
+
 bool
 AvDevice::addPlugToXmlDescription( AvPlug& plug,
                                    xmlNodePtr connectionSet )
@@ -1463,8 +1471,8 @@ AvDevice::addPlugToXmlDescription( AvPlug& plug,
 
     asprintf( &result, "%d",  m_nodeId);
     if ( !xmlNewChild( connection,  0,
-                       BAD_CAST "NodeId",  BAD_CAST result ) ) {
-        debugError( "Couldn't create 'NodeId' node\n" );
+                       BAD_CAST "Node",  BAD_CAST result ) ) {
+        debugError( "Couldn't create 'Node' node\n" );
         return false;
     }
 
@@ -1628,3 +1636,15 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
 
     return true;
 }
+
+bool
+AvDevice::setSampleFrequency(int sr)
+{
+
+	std::cout << "Trying to set frequency (" << sr << "): " << std::endl;
+
+	std::cout << "Not implemented yet" << std::endl;
+
+    return true;
+}
+

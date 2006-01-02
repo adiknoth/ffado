@@ -123,6 +123,7 @@ public:
     number_of_channels_t m_numberOfChannels;
     stream_format_t      m_streamFormat;
 };
+std::ostream& operator<<( std::ostream& stream, StreamFormatInfo info );
 
 ////////////////////////////////////////////////////////////
 
@@ -169,6 +170,7 @@ public:
     typedef std::vector< StreamFormatInfo* > StreamFormatInfoVector;
     StreamFormatInfoVector                   m_streamFormatInfos;
 };
+std::ostream& operator<<( std::ostream& stream, FormatInformationStreamsCompound info );
 
 
 ////////////////////////////////////////////////////////////

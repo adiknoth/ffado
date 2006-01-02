@@ -24,8 +24,22 @@
 
 #include <netinet/in.h>
 
-
-////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+std::ostream& operator<<( std::ostream& stream, StreamFormatInfo info )
+{
+/*    stream << info.m_freq << " Hz (";
+    if ( info.m_format ) {
+            stream << "sync ";
+    } else {
+        stream << "compound ";
+    }
+    stream << "stream, ";
+    stream << "audio channels: " << info.m_audioChannels
+           << ", midi channels: " << info.m_midiChannels << ")";
+*/
+ 	stream << "  NbChannels " << (int)info.m_numberOfChannels << ", Format " << (int)info.m_streamFormat;
+    return stream;
+}
 
 StreamFormatInfo::StreamFormatInfo()
     : IBusData()
@@ -102,6 +116,21 @@ FormatInformationStreamsSync::clone() const
 }
 
 ////////////////////////////////////////////////////////////
+std::ostream& operator<<( std::ostream& stream, FormatInformationStreamsCompound info )
+{
+    stream << (int)info.m_samplingFrequency << " Hz (rate control: ";
+	stream << (int)info.m_rateControl << ")" << std::endl;
+	
+	for ( FormatInformationStreamsCompound::StreamFormatInfoVector::iterator it = info.m_streamFormatInfos.begin();
+		it != info.m_streamFormatInfos.end();
+		++it )
+	{
+		StreamFormatInfo* sfi=*it;
+		stream << "     > " << *sfi << std::endl;
+	}
+
+    return stream;
+}
 
 FormatInformationStreamsCompound::FormatInformationStreamsCompound()
     : FormatInformationStreams()
