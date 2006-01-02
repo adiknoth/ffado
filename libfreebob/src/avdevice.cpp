@@ -1054,8 +1054,16 @@ AvDevice::discoverStep9()
                 StreamFormatInfo* streamFormatInfo =
                     compoundStream->m_streamFormatInfos[ i - 1 ];
 
+                int nrOfChannels = clusterInfo->m_nrOfChannels;
+                if ( clusterInfo->m_streamFormat ==
+                     FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
+                {
+                    // 8 logical midi channels fit into 1 channel
+                    nrOfChannels = ( nrOfChannels / 8 );
+                }
+
                 // sanity checks
-                if ( clusterInfo->m_nrOfChannels !=
+                if (  nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
                 {
                     debugError( "discoverStep9: Number of channels "
@@ -1156,8 +1164,16 @@ AvDevice::discoverStep9()
                 StreamFormatInfo* streamFormatInfo =
                     compoundStream->m_streamFormatInfos[ i - 1 ];
 
+                int nrOfChannels = clusterInfo->m_nrOfChannels;
+                if ( clusterInfo->m_streamFormat ==
+                     FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
+                {
+                    // 8 logical midi channels fit into 1 channel
+                    nrOfChannels = ( nrOfChannels / 8 );
+                }
+
                 // sanity checks
-                if ( clusterInfo->m_nrOfChannels !=
+                if (  nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
                 {
                     debugError( "discoverStep9: Number of channels "
