@@ -85,10 +85,15 @@ DeviceManager::discover()
     {
         ConfigRom* configRom = new ConfigRom( m_1394Service, nodeId );
         if ( !configRom->initialize() ) {
-            cerr << "Could not read config rom from device (Node ID "
-                 << nodeId << ")" << endl;
+            // \todo If a PHY on the bus in power safe mode than
+            // the config rom is missing. So this might be just
+            // such a case and we can safely skip it. But it might
+            // be there is a real software problem on our side.
+            // This should be handled more carefuly.
+            cout << "Could not read config rom from device (Node ID "
+                 << nodeId << "). Skip device discovering." << endl;
             delete configRom;
-            return false;
+            continue;
         }
 
         if ( !configRom->isAvcDevice() ) {
@@ -122,7 +127,7 @@ bool DeviceManager::isValidNode(int node) {
           ++it )
     {
         AvDevice* avDevice = *it;
-        
+
         if (avDevice->getNodeId() == node) {
         	return true;
         }
@@ -140,18 +145,18 @@ int DeviceManager::getDeviceNodeId(int device_nr) {
 				<< device_nr << ")" << endl;
 		return -1;
 	}
-	
+
 	AvDevice* avDevice = m_avDevices.at(device_nr);
-	
+
 	if ( !avDevice ) {
 		cerr << "Could not get device at position ( "
 				<< device_nr << ")" << endl;
 		return -1;
-	
+
 	}
-	
+
 	return avDevice->getNodeId();
-	
+
 }
 
 bool DeviceManager::setNodeSampleFrequency(int node, int samplerate) {
@@ -160,7 +165,7 @@ bool DeviceManager::setNodeSampleFrequency(int node, int samplerate) {
           ++it )
     {
         AvDevice* avDevice = *it;
-        
+
         if (avDevice->getNodeId() == node) {
 			return avDevice->setSampleFrequency(samplerate);
         }
@@ -223,9 +228,9 @@ xmlDocPtr DeviceManager::getXmlDescription()
             xmlCleanupParser();
             return 0;
         }
-        
+
         res = avDevice->getVendorName();
-        
+
         if ( !xmlNewChild( deviceNode,
                            0,
                            BAD_CAST "Vendor",
@@ -235,9 +240,9 @@ xmlDocPtr DeviceManager::getXmlDescription()
             xmlCleanupParser();
             return 0;
         }
-        
+
         res = avDevice->getModelName();
-        
+
         if ( !xmlNewChild( deviceNode,
                            0,
                            BAD_CAST "Model",
@@ -247,10 +252,10 @@ xmlDocPtr DeviceManager::getXmlDescription()
             xmlCleanupParser();
             return 0;
         }
-        
+
         res = "";
         res = avDevice->getGuid();
-        
+
         if ( !xmlNewChild( deviceNode,
                            0,
                            BAD_CAST "GUID",

@@ -1,3 +1,48 @@
+2006-01-03  Daniel Wagner  <wagi@monom.org>
+
+	* src/devicemanager.cpp (discover): If config rom initializing
+	failes just skip this device. The PHY might be in power safe 
+	mode and then there is no config rom to be discovered.
+
+2006-01-02  Pieter Palmer <pieterpalmers@users.sourceforge.net>
+
+	* tests/test-freebob.c: Added support for scanning the whole bus.
+	Added xmldump operation to dump an XML description of the FW bus.
+
+	* src/freebob.cpp src/freebob.h: Added freebob_print_xml_description 
+	to print an XML description of the bus.
+	Added freebob_node_is_valid_freebob_device().
+	Added freebob_get_nb_devices_on_bus().
+	Added freebob_get_device_node_id().
+	Added freebob_set_samplerate() as a dummy (unimplemented)
+
+	* src/libfreebobavc/avc_connect.cpp 
+	src/libfreebobavc/avc_extended_stream_format.cpp
+	src/libfreebobavc/avc_extended_stream_format.h
+	src/libfreebobavc/avc_plug_info.cpp
+	src/libfreebobavc/avc_signal_source.cpp
+	src/avcdevice.cpp 
+	src/avdevice.h 
+	src/avplug.cpp 
+	src/avplug.h
+	src/devicemanager.cpp
+	src/devicemanager.h:
+	Fixed NodeId bug.
+	Commented out sanity check that failed for midi channels.
+	Fixed Dimension bug.
+	Increased all "XXX random length" requests.
+	Made a mess of clean code ;)
+
+	* configure.ac: Bumped library verson
+
+	* src/xmlparser.c
+	tests/test-freeebob.c: Added support to detect & use 
+	multiple devices on the bus.
+
+	* src/libfreebobavc/avc_extendec_plug_info.cpp
+	src/configrom.cpp:
+	Some small memory access bugfixes.
+	
 2006-01-02  Daniel Wagner  <wagi@monom.org>
 
 	* src/avdevice.cpp (discoverStep9): Sanity check: 8 logical
