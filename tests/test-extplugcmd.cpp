@@ -1,5 +1,5 @@
 /* test-extplugcmd.cpp
- * Copyright (C) 2005 by Daniel Wagner
+ * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -25,19 +25,17 @@
 
 #include <argp.h>
 
-
 using namespace std;
 
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "test-extplugcmd 0.1";
+const char *argp_program_version = "test-extplugcmd 0.2";
 const char *argp_program_bug_address = "<freebob-devel@lists.sf.net>";
-static char doc[] = "test-extplugcmd -- get extended plug info";
-static char args_doc[] = "NODE_ID PLUG_ID";
+static char doc[] = "test-extplugcmd -- tests some extended plug info commands on a BeBoB device";
+static char args_doc[] = "NODE_ID";
 static struct argp_option options[] = {
-    {"verbose",   'v', 0,           0,            "Produce verbose output" },
-    {"test",      't', 0,           0,            "Do tests instead get/set action" },
+    {"verbose",   'v', 0,           0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
    { 0 }
 };
@@ -50,10 +48,9 @@ struct arguments
         , port( 0 )
         {
             args[0] = 0;
-            args[1] = 0;
         }
 
-    char* args[2];
+    char* args[1];
     bool  verbose;
     bool  test;
     int   port;
@@ -84,14 +81,14 @@ parse_opt( int key, char* arg, struct argp_state* state )
         }
         break;
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 2) {
+        if (state->arg_num >= 1) {
             // Too many arguments.
             argp_usage (state);
         }
         arguments->args[state->arg_num] = arg;
         break;
     case ARGP_KEY_END:
-        if (state->arg_num < 2) {
+        if (state->arg_num < 1) {
             // Not enough arguments.
             argp_usage (state);
         }
@@ -105,32 +102,15 @@ parse_opt( int key, char* arg, struct argp_state* state )
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
 ////////////////////////////////////////
-// Test application
-////////////////////////////////////////
-void
-doTest(Ieee1394Service& ieee1394service, int node_id, int plug_id)
-{
-    PlugInfoCmd plugInfoCmd( &ieee1394service );
-    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    plugInfoCmd.setNodeId( node_id );
-    plugInfoCmd.setVerbose( true );
-
-    if ( !plugInfoCmd.fire() ) {
-        return;
-    }
-    return;
-}
-
-////////////////////////////////////////
 // Application
 ////////////////////////////////////////
 
 bool
-doApp(Ieee1394Service& ieee1394service, int node_id, int plug_id )
+doPlugType( Ieee1394Service& ieee1394service, int node_id )
 {
     ExtendedPlugInfoCmd extPlugInfoCmd( &ieee1394service );
-    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, plug_id );
-    extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
+    extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                 PlugAddress::ePAM_Unit,
                                                 unitPlugAddress ) );
     extPlugInfoCmd.setNodeId( node_id );
@@ -145,16 +125,69 @@ doApp(Ieee1394Service& ieee1394service, int node_id, int plug_id )
         extPlugInfoCmd.serialize( se );
     }
 
-    ExtendedPlugInfoInfoType extendedPlugInfoInfoType2( ExtendedPlugInfoInfoType::eIT_PlugName );
+    ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+    if ( infoType
+         && infoType->m_plugType )
+    {
+            plug_type_t plugType = infoType->m_plugType->m_plugType;
+
+            printf( "iso input plug %d is of type %d (%s)\n",
+                    0,
+                    plugType,
+                    extendedPlugInfoPlugTypeToString( plugType ) );
+    } else {
+        fprintf( stderr, "Not plug name specific data found\n" );
+        return false;
+    }
+
+    return true;
+}
+
+
+bool
+doPlugName( Ieee1394Service& ieee1394service, int node_id )
+{
+    ExtendedPlugInfoCmd extPlugInfoCmd( &ieee1394service );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
+    extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                PlugAddress::ePAM_Unit,
+                                                unitPlugAddress ) );
+    extPlugInfoCmd.setNodeId( node_id );
+    extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    extPlugInfoCmd.setVerbose( arguments.verbose );
+    ExtendedPlugInfoInfoType extendedPlugInfoInfoType( ExtendedPlugInfoInfoType::eIT_PlugName );
     extendedPlugInfoInfoType.initialize();
-    extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType2 );
+    extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+
     if ( extPlugInfoCmd.fire() ) {
         CoutSerializer se;
         extPlugInfoCmd.serialize( se );
     }
 
+    ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+    if ( infoType
+         && infoType->m_plugName )
+    {
+        printf( "iso input plug %d has name '%s'\n",
+                0,
+               infoType->m_plugName->m_name.c_str() );
+    } else {
+        fprintf( stderr, "Not plug name specific data found\n" );
+        return false;
+    }
 
     return true;
+}
+
+bool
+doApp(Ieee1394Service& ieee1394service, int node_id )
+{
+    bool success;
+
+    success = doPlugType( ieee1394service, node_id );
+    success &= doPlugName( ieee1394service, node_id );
+
+    return success;
 }
 
 ///////////////////////////
@@ -173,23 +206,13 @@ main(int argc, char **argv)
 	perror("argument parsing failed:");
 	return -1;
     }
-    int plug_id = strtol(arguments.args[1], &tail, 0);
-    if (errno) {
-	perror("argument parsing failed:");
-	return -1;
-    }
-
     Ieee1394Service ieee1394service;
     if ( !ieee1394service.initialize( arguments.port ) ) {
         fprintf( stderr, "could not set port on ieee1394service\n" );
         return -1;
     }
 
-    if ( arguments.test ) {
-        doTest( ieee1394service, node_id, plug_id );
-    } else {
-        doApp( ieee1394service, node_id, plug_id );
-    }
+    doApp( ieee1394service, node_id );
 
     return 0;
 }

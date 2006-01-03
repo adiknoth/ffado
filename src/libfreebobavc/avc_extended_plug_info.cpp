@@ -95,9 +95,10 @@ ExtendedPlugInfoPlugNameSpecificData::~ExtendedPlugInfoPlugNameSpecificData()
 bool
 ExtendedPlugInfoPlugNameSpecificData::serialize( IOSSerialize& se )
 {
-    se.write( ( byte_t ) m_name.length(),
+    byte_t length = strlen( m_name.c_str() );
+    se.write( length,
               "ExtendedPlugInfoPlugNameSpecificData: string length" );
-    for ( unsigned int i = 0; i < m_name.length(); ++i ) {
+    for ( unsigned int i = 0; i < length; ++i ) {
         se.write( static_cast<byte_t>( m_name[i] ),
                   "ExtendedPlugInfoPlugNameSpecificData: char" );
     }
