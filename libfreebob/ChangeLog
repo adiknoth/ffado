@@ -1,3 +1,13 @@
+2006-01-04  Daniel Wagner  <wagi@monom.org>
+
+	* tests/test-extplugcmd.cpp: Changed test application
+	to use PlugType and PlugName command for testing.
+
+	* src/libfreebobavc/avc_extended_plug_info.cpp (serialize): 
+	The string.length() thing did not work as expected. A workaround
+	added which converts the C++ string into a C string before strlen
+	is used.
+
 2006-01-03  Daniel Wagner  <wagi@monom.org>
 
 	* src/devicemanager.cpp (discover): If config rom initializing
