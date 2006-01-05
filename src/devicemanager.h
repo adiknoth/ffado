@@ -38,16 +38,16 @@ class DeviceManager{
     DeviceManager();
     ~DeviceManager();
 
-    bool initialize(int port);
+    bool initialize( int port );
     bool deinitialize();
 
     bool discover();
 
-	bool isValidNode(int node);
-	int  getNbDevices();
-	int  getDeviceNodeId(int device_nr);
-	
-	bool setNodeSampleFrequency(int node_id, int samplerate);
+    bool isValidNode( int node );
+    int getNbDevices();
+    int getDeviceNodeId( int deviceNr );
+
+    AvDevice* getAvDevice( int nodeId );
 
     xmlDocPtr getXmlDescription();
  protected:

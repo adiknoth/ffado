@@ -1,5 +1,20 @@
 2006-01-06  Daniel Wagner  <wagi@monom.org>
 
+	* src/avdevice.h 
+	src/avdevice.cpp (setSampleRate): Implementation added.
+
+	* src/devicemanager.cpp 
+	src/devicemanager.h (getAvDevice): New functions
+	(setNodeSampleFrequency): removed.
+
+	* src/freebob.cpp (parseSampleRate): New function.
+	(freebob_set_samplerate): Use AvDevice directly
+	for setting samplerate.
+
+	* src/libfreebobavc/avc_definitions.h
+	src/libfreebobavc/avc_definitions.cpp: Changed ESampleFrequency
+	to ESampleRate.
+
 	* tests/test-freebob.c: Info added about OPERATION arguments.
 	Parse sample rate for setsamplerate command.
 	Let emacs reindent code. Sorry Pieter :)

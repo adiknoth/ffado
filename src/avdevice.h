@@ -23,6 +23,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libfreebobavc/avc_definitions.h"
+#include "libfreebobavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
 
 #include "avplug.h"
@@ -47,15 +48,14 @@ public:
 
     std::string getVendorName();
     std::string getModelName();
-	
-	uint64_t getGuid();
-	
+
+    uint64_t getGuid();
+
     bool addXmlDescription( xmlNodePtr deviceNode );
     int getNodeId()
         { return m_nodeId; }
 
-	bool setSampleFrequency(int sr);
-	
+    bool setSampleRate( ESampleRate sampleRate );
 
 protected:
     bool discoverStep1();
@@ -83,6 +83,9 @@ protected:
     AvPlug* getPlugById( AvPlugVector& plugs, int id );
     bool addPlugToXmlDescription( AvPlug& plug, xmlNodePtr conectionSet );
 
+    bool setSampleRatePlug( AvPlug& plug,
+                            PlugAddress::EPlugDirection direction,
+                            ESampleRate sampleRate );
 protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;

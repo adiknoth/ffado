@@ -27,6 +27,7 @@
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
 #include "devicemanager.h"
+#include "avdevice.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +38,44 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 IMPL_GLOBAL_DEBUG_MODULE( FreeBob, DEBUG_LEVEL_VERBOSE );
 
+ESampleRate
+parseSampleRate( int sampleRate )
+{
+    ESampleRate efreq;
+    switch ( sampleRate ) {
+    case 22050:
+        efreq = eSF_22050Hz;
+        break;
+    case 24000:
+        efreq = eSF_24000Hz;
+        break;
+    case 32000:
+        efreq = eSF_32000Hz;
+        break;
+    case 44100:
+        efreq = eSF_44100Hz;
+        break;
+    case 48000:
+        efreq = eSF_48000Hz;
+        break;
+    case 88200:
+        efreq = eSF_88200Hz;
+        break;
+    case 96000:
+        efreq = eSF_96000Hz;
+        break;
+    case 176400:
+        efreq = eSF_176400Hz;
+        break;
+    case 192000:
+        efreq = eSF_192000Hz;
+        break;
+    default:
+        efreq = eSF_DontCare;
+    }
+
+    return efreq;
+}
 
 const char*
 freebob_get_version() {
@@ -96,22 +135,32 @@ freebob_get_connection_info( freebob_handle_t freebob_handle,
     return freebob_xmlparse_get_connection_info( doc, node_id, direction );
 }
 
-int freebob_node_is_valid_freebob_device(freebob_handle_t freebob_handle, int node_id) {
-	
-	return freebob_handle->m_deviceManager->isValidNode(node_id);
+int
+freebob_node_is_valid_freebob_device( freebob_handle_t freebob_handle, int node_id )
+{
+    return freebob_handle->m_deviceManager->isValidNode( node_id );
 }
 
-int freebob_get_nb_devices_on_bus(freebob_handle_t freebob_handle) {
-	
-	return freebob_handle->m_deviceManager->getNbDevices();
+int
+freebob_get_nb_devices_on_bus( freebob_handle_t freebob_handle )
+{
+    return freebob_handle->m_deviceManager->getNbDevices();
 }
 
-int freebob_get_device_node_id(freebob_handle_t freebob_handle, int device_nr) {
-	return freebob_handle->m_deviceManager->getDeviceNodeId(device_nr);
+int
+freebob_get_device_node_id( freebob_handle_t freebob_handle, int device_nr )
+{
+    return freebob_handle->m_deviceManager->getDeviceNodeId(device_nr);
 }
 
-int freebob_set_samplerate(freebob_handle_t freebob_handle, int node_id, int samplerate) {
-	return freebob_handle->m_deviceManager->setNodeSampleFrequency(node_id, samplerate);
+int
+freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int samplerate )
+{
+    AvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
+    if ( avDevice ) {
+        return avDevice->setSampleRate( parseSampleRate( samplerate ) )? 1 : 0;
+    }
+    return 0;
 }
 
 void
@@ -241,13 +290,13 @@ freebob_print_xml_description( freebob_handle_t freebob_handle,
         debugFatal( "Could not get XML description\n" );
         return;
     }
-    
+
     xmlChar* xmlbuff;
     int buffersize;
     xmlDocDumpFormatMemory( doc, &xmlbuff, &buffersize, 1 );
-	
+
 	printf("%s\n",(char *)xmlbuff);
-	
+
 	xmlFree(xmlbuff);
 	xmlFree(doc);
     return;
