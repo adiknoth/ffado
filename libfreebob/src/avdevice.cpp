@@ -1591,7 +1591,7 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
     //  connection
     //    id
     //    port
-    //    node
+   //    node
     //    plug
     //    dimension
     //    samplerate
@@ -1638,13 +1638,119 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
 }
 
 bool
-AvDevice::setSampleFrequency(int sr)
+AvDevice::setSampleRatePlug( AvPlug& plug,
+                             PlugAddress::EPlugDirection direction,
+                             ESampleRate sampleRate )
 {
+    ExtendedStreamFormatCmd extStreamFormatCmd( m_1394Service,
+                                                ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                     plug.getPlugId() );
+    extStreamFormatCmd.setPlugAddress( PlugAddress( direction,
+                                                    PlugAddress::ePAM_Unit,
+                                                    unitPlugAddress ) );
 
-	std::cout << "Trying to set frequency (" << sr << "): " << std::endl;
+    extStreamFormatCmd.setNodeId( m_nodeId );
+    extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+    //extStreamFormatCmd.setVerbose( true );
 
-	std::cout << "Not implemented yet" << std::endl;
+    int i = 0;
+    bool cmdSuccess = false;
+    bool correctFormatFound = false;
 
+    do {
+        extStreamFormatCmd.setIndexInStreamFormat( i );
+        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+
+        cmdSuccess = extStreamFormatCmd.fire();
+        if ( cmdSuccess
+             && ( extStreamFormatCmd.getResponse() == AVCCommand::eR_Implemented ) )
+        {
+            ESampleRate foundRate = eSF_DontCare;
+
+            FormatInformation* formatInfo =
+                extStreamFormatCmd.getFormatInformation();
+            FormatInformationStreamsCompound* compoundStream
+                = dynamic_cast< FormatInformationStreamsCompound* > (
+                    formatInfo->m_streams );
+            if ( compoundStream ) {
+                foundRate = static_cast<ESampleRate>( compoundStream->m_samplingFrequency );
+            }
+
+            FormatInformationStreamsSync* syncStream
+                = dynamic_cast< FormatInformationStreamsSync* > (
+                    formatInfo->m_streams );
+            if ( syncStream ) {
+                foundRate = static_cast<ESampleRate>( compoundStream->m_samplingFrequency );
+            }
+
+            if (  foundRate == sampleRate )
+            {
+                correctFormatFound = true;
+                break;
+            }
+        }
+
+        ++i;
+    } while ( cmdSuccess && ( extStreamFormatCmd.getResponse()
+                              == ExtendedStreamFormatCmd::eR_Implemented ) );
+
+    if ( !cmdSuccess ) {
+        debugError( "setSampleRatePlug: Failed to retrieve format info\n" );
+        return false;
+    }
+
+    if ( !correctFormatFound ) {
+        debugError( "setSampleRatePlug: %s plug %d does not support sample rate %d\n",
+                    plug.getName(),
+                    plug.getPlugId(),
+                    sampleRate );
+        return false;
+    }
+
+    extStreamFormatCmd.setSubFunction(
+        ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+    extStreamFormatCmd.setCommandType( AVCCommand::eCT_Control );
+
+    if ( !extStreamFormatCmd.fire() ) {
+        debugError( "setSampleRate: Could not set sample rate %d "
+                    "to %s plug %d\n",
+                    sampleRate,
+                    plug.getName(),
+                    plug.getPlugId() );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+AvDevice::setSampleRate( ESampleRate sampleRate )
+{
+    AvPlug* plug = getPlugById( m_isoInputPlugs, 0 );
+    if ( !plug ) {
+        debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
+        return false;
+    }
+
+    if ( !setSampleRatePlug( *plug, PlugAddress::ePD_Input, sampleRate ) ) {
+        debugError( "setSampleRate: Setting sample rate failed\n" );
+        return false;
+    }
+
+    plug = getPlugById( m_isoOutputPlugs, 0 );
+    if ( !plug ) {
+        debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
+        return false;
+    }
+
+    if ( !setSampleRatePlug( *plug, PlugAddress::ePD_Output, sampleRate ) ) {
+        debugError( "setSampleRate: Setting sample rate failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "setSampleRate: Set sample rate to %d\n",  sampleRate );
     return true;
 }
 

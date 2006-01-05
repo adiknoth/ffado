@@ -139,41 +139,41 @@ int DeviceManager::getNbDevices() {
 	return m_avDevices.size();
 }
 
-int DeviceManager::getDeviceNodeId(int device_nr) {
-	if ( ! (device_nr < getNbDevices()) ) {
-		cerr << "Device number out of range ( "
-				<< device_nr << ")" << endl;
-		return -1;
-	}
+int
+DeviceManager::getDeviceNodeId( int deviceNr )
+{
+    if ( ! ( deviceNr < getNbDevices() ) ) {
+        debugError( "Device number out of range (%d)\n", deviceNr );
+        return -1;
+    }
 
-	AvDevice* avDevice = m_avDevices.at(device_nr);
+    AvDevice* avDevice = m_avDevices.at( deviceNr );
 
-	if ( !avDevice ) {
-		cerr << "Could not get device at position ( "
-				<< device_nr << ")" << endl;
-		return -1;
+    if ( !avDevice ) {
+        debugError( "Could not get device at position (%d)\n",  deviceNr );
+    }
 
-	}
-
-	return avDevice->getNodeId();
-
+    return avDevice->getNodeId();
 }
 
-bool DeviceManager::setNodeSampleFrequency(int node, int samplerate) {
+AvDevice*
+DeviceManager::getAvDevice( int nodeId )
+{
     for ( AvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
         AvDevice* avDevice = *it;
-
-        if (avDevice->getNodeId() == node) {
-			return avDevice->setSampleFrequency(samplerate);
+        if ( avDevice->getNodeId() == nodeId ) {
+            return avDevice;
         }
-	}
-	return false;
+    }
+
+    return 0;
 }
 
-xmlDocPtr DeviceManager::getXmlDescription()
+xmlDocPtr
+DeviceManager::getXmlDescription()
 {
     xmlDocPtr doc = xmlNewDoc( BAD_CAST "1.0" );
     if ( !doc ) {
