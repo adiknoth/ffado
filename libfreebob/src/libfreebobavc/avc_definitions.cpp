@@ -20,10 +20,10 @@
 
 #include "avc_definitions.h"
 
-std::ostream& operator<<( std::ostream& stream, ESamplingFrequency freq )
+std::ostream& operator<<( std::ostream& stream, ESampleRate sampleRate )
 {
     char* str;
-    switch ( freq ) {
+    switch ( sampleRate ) {
     case eSF_22050Hz:
         str = "22050";
         break;
