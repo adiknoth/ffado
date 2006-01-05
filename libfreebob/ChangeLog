@@ -1,3 +1,9 @@
+2006-01-06  Daniel Wagner  <wagi@monom.org>
+
+	* tests/test-freebob.c: Info added about OPERATION arguments.
+	Parse sample rate for setsamplerate command.
+	Let emacs reindent code. Sorry Pieter :)
+
 2006-01-04  Daniel Wagner  <wagi@monom.org>
 
 	* tests/test-extplugcmd.cpp: Changed test application
