@@ -1,5 +1,19 @@
 2006-01-06  Daniel Wagner  <wagi@monom.org>
 
+	* tests/test-freebob.c (main): setsamplerate on all
+	devices takes now the samplerate argument.
+
+	* src/freebob.cpp (freebob_set_samplerate): After setting
+	sampling rate rediscover devices.
+
+	* src/devicemanager.cpp (discover): Clear vector as well after
+	delete all elements. Cout and cerr replaced with debugModule.
+
+	* src/avdevice.cpp (discoverStep8): Skip sync plug.
+	(discoverStep9): Sanity check fixed and reenabled.
+
+	* configure.ac: New micro version.
+
 	* src/avdevice.h 
 	src/avdevice.cpp (setSampleRate): Implementation added.
 

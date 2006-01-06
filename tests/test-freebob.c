@@ -232,7 +232,7 @@ main( int argc, char **argv )
 	
 	if(arguments.node_id_set) {
 	    if (! freebob_set_samplerate(fb_handle, arguments.node_id, samplerate)) {
-		fprintf( stderr, "Could not send samplerate\n" );
+		fprintf( stderr, "Could not set samplerate\n" );
 		freebob_destroy_handle( fb_handle );
 		return -1;
 	    }
@@ -247,8 +247,8 @@ main( int argc, char **argv )
 		int node_id=freebob_get_device_node_id(fb_handle, i);
 		printf("  set samplerate for device = %d, node = %d\n", i, node_id);
 				
-		if (! freebob_set_samplerate(fb_handle, node_id, 44100)) {
-		    fprintf( stderr, "Could not send samplerate\n" );
+		if (! freebob_set_samplerate(fb_handle, node_id, samplerate)) {
+		    fprintf( stderr, "Could not set samplerate\n" );
 		    freebob_destroy_handle( fb_handle );
 		    return -1;
 		}
