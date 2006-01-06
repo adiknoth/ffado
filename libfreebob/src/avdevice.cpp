@@ -867,6 +867,21 @@ AvDevice::discoverStep8()
             continue;
         }
 
+        if ( isoInputPlug->getPlugType()
+             == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
+        {
+            // If the plug is of type sync it is either a normal 2 channel
+            // stream (not compound stream) or it is a compound stream
+            // with exactly one cluster. This depends on the
+            // extended stream format command version which is used.
+            // We are not interested in this plug so we skip it.
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "%s plug %d is of type sync -> skip\n",
+                         isoInputPlug->getName(),
+                         isoInputPlug->getPlugId() );
+            continue;
+        }
+
         for ( AvPlug::ClusterInfoVector::iterator clit =
                   isoInputPlug->m_clusterInfos.begin();
               clit != isoInputPlug->m_clusterInfos.end();
@@ -929,11 +944,18 @@ AvDevice::discoverStep8()
             continue;
         }
 
-        // XXX Don't know why plug 1 can't be questioned about the cluster info.
-        // Until I know why this is not working, it's better to skip this then to
-        // break the discovering.
-        if ( isoOutputPlug->getPlugId() > 0 ) {
-            debugWarning( "Skipping plugs with id > 0. Further investigation needed\n" );
+        if ( isoOutputPlug->getPlugType()
+             == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
+        {
+            // If the plug is of type sync it is either a normal 2 channel
+            // stream (not compound stream) or it is a compound stream
+            // with exactly one cluster. This depends on the
+            // extended stream format command version which is used.
+            // We are not interested in this plug so we skip it.
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "%s plug %d is of type sync -> skip\n",
+                         isoOutputPlug->getName(),
+                         isoOutputPlug->getPlugId() );
             continue;
         }
 
@@ -1055,13 +1077,12 @@ AvDevice::discoverStep9()
                     compoundStream->m_streamFormatInfos[ i - 1 ];
 
                 int nrOfChannels = clusterInfo->m_nrOfChannels;
-                if ( clusterInfo->m_streamFormat ==
+                if ( streamFormatInfo->m_streamFormat ==
                      FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
                 {
                     // 8 logical midi channels fit into 1 channel
-                    nrOfChannels = ( nrOfChannels / 8 );
+                    nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
                 }
-/*
                 // sanity checks
                 if (  nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
@@ -1076,7 +1097,6 @@ AvDevice::discoverStep9()
                                 streamFormatInfo->m_numberOfChannels);
                     return false;
                 }
-*/
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,
@@ -1166,16 +1186,15 @@ AvDevice::discoverStep9()
                     compoundStream->m_streamFormatInfos[ i - 1 ];
 
                 int nrOfChannels = clusterInfo->m_nrOfChannels;
-                if ( clusterInfo->m_streamFormat ==
+                if ( streamFormatInfo->m_streamFormat ==
                      FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
                 {
                     // 8 logical midi channels fit into 1 channel
-                    nrOfChannels = ( nrOfChannels / 8 );
+                    nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
                 }
-/*
                 // sanity checks
                 if (  nrOfChannels !=
-                     streamFormatInfo->m_numberOfChannels )
+                      streamFormatInfo->m_numberOfChannels )
                 {
                     debugError( "discoverStep9: Number of channels "
                                 "mismatch: iso output plug %d discovering reported "
@@ -1187,7 +1206,6 @@ AvDevice::discoverStep9()
                                 streamFormatInfo->m_numberOfChannels);
                     return false;
                 }
-*/
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,

@@ -78,6 +78,7 @@ DeviceManager::discover()
     {
         delete *it;
     }
+    m_avDevices.clear();
 
     for ( fb_nodeid_t nodeId = 0;
           nodeId < m_1394Service->getNodeCount();
@@ -90,8 +91,10 @@ DeviceManager::discover()
             // such a case and we can safely skip it. But it might
             // be there is a real software problem on our side.
             // This should be handled more carefuly.
-            cout << "Could not read config rom from device (Node ID "
-                 << nodeId << "). Skip device discovering." << endl;
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                         "Could not read config rom from device (noe id %d). "
+                         "Skip device discovering for this node\n",
+                         nodeId );
             delete configRom;
             continue;
         }
@@ -103,14 +106,14 @@ DeviceManager::discover()
 
         AvDevice* avDevice = new AvDevice( m_1394Service, configRom, nodeId );
         if ( !avDevice ) {
-            cerr << "Could not allocate AvDevice " << endl;
+            debugError( "discover: Could not allocate AvDevice\n" );
             delete configRom;
             return false;
         }
 
         if ( !avDevice->discover() ) {
-            cerr << "Could not discover device (Node ID "
-                 << nodeId << ")" << endl;
+            debugError( "discover: Could not discover device (node id %d)\n",
+                        nodeId );
             delete avDevice;
             return false;
         }
@@ -121,7 +124,9 @@ DeviceManager::discover()
     return true;
 }
 
-bool DeviceManager::isValidNode(int node) {
+bool
+DeviceManager::isValidNode(int node)
+{
     for ( AvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -135,8 +140,10 @@ bool DeviceManager::isValidNode(int node) {
 	return false;
 }
 
-int DeviceManager::getNbDevices() {
-	return m_avDevices.size();
+int
+DeviceManager::getNbDevices()
+{
+    return m_avDevices.size();
 }
 
 int
