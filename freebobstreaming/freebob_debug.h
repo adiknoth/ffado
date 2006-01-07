@@ -61,7 +61,7 @@ static unsigned long debugGetCurrentUTime() {
 #define DEBUG_LEVEL_THREADS				(1<<18)
 #define DEBUG_LEVEL_STREAMS				(1<<19)
 
-
+#define DEBUG
 #ifdef DEBUG
 //#if 0
 	#define printMessage(format, args...) fprintf( stderr, "FREEBOB MSG: %s:%d (%s): " format, basename(__FILE__), __LINE__, __FUNCTION__, ##args )

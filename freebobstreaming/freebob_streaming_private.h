@@ -193,6 +193,56 @@ void *freebob_streaming_watchdog_thread (void *arg);
 int freebob_streaming_start_watchdog (freebob_device_t *dev);
 void freebob_streaming_stop_watchdog (freebob_device_t *dev);
 
+/**
+ * freebob_encode_stream_to_events
+ *
+ * Encodes events from a buffer to AM824 events, according to a specific stream specification.
+ *	
+ * This will read nsamples samples from the stream ringbuffer, and encode them into events conform
+ * the stream specification.
+ *
+ * NOTE: the buffer has to be big enough
+ * 
+ *  connection    : The connection the stream belongs to
+ *	stream        : Contains the stream structure
+ *  events        : Pointer to a buffer that will hold the encoded events
+ *  nsamples      : The number of samples to encode
+ *  dbc           : Data Block Counter, needed for mux of midi streams
+ */
+/* are static inline now
+int 
+freebob_encode_stream_to_events(freebob_connection_t *connection,
+								freebob_stream_t *stream, 
+								quadlet_t* events, 
+								unsigned int nsamples,
+								unsigned int dbc
+								);
+*/
+/**
+ * freebob_decode_events_to_stream
+ *
+ * Decodes events from a buffer of AM824 events, to samples of the correct type in a stream structure.
+ * Skips events marked as empty.
+ *	
+ * This will decode nframes at maximum.
+ *
+ *  connection    : The connection the stream belongs to
+ *	stream        : Contains the stream structure
+ *  events        : Pointer to a buffer that holds the encoded events
+ *  nsamples      : The number of samples available
+ *  dbc           : Data Block Counter, needed for demux of midi streams
+ */
+/* are static inline now
+
+int 
+freebob_decode_events_to_stream(freebob_connection_t *connection,
+								freebob_stream_t *stream, 
+								quadlet_t* events, 
+								unsigned int nsamples,
+								unsigned int dbc
+								);
+*/
+
 #ifdef __cplusplus
 }
 #endif

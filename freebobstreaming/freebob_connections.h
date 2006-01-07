@@ -167,6 +167,7 @@ typedef struct _freebob_connection_status {
 	int packets;
 	int events;
 	//int total_packets;
+	int total_packets_prev;
 	int total_events;
 
 	int frames_left;
@@ -180,6 +181,8 @@ typedef struct _freebob_connection_status {
 	
 	int fdf;
 	
+	int last_cycle;	
+
 	int packet_info_table_size;
 	packet_info_t *packet_info_table;
 	
@@ -258,56 +261,6 @@ void freebob_streaming_cleanup_stream(freebob_device_t* dev, freebob_stream_t *d
 
 /* put a stream into a known state */
 int freebob_streaming_reset_stream(freebob_device_t* dev, freebob_stream_t *dst);
-
-
-/**
- * freebob_encode_stream_to_events
- *
- * Encodes events from a buffer to AM824 events, according to a specific stream specification.
- *	
- * This will read nsamples samples from the stream ringbuffer, and encode them into events conform
- * the stream specification.
- *
- * NOTE: the buffer has to be big enough
- * 
- *  connection    : The connection the stream belongs to
- *	stream        : Contains the stream structure
- *  events        : Pointer to a buffer that will hold the encoded events
- *  nsamples      : The number of samples to encode
- *  dbc           : Data Block Counter, needed for mux of midi streams
- */
- 
-int 
-freebob_encode_stream_to_events(freebob_connection_t *connection,
-								freebob_stream_t *stream, 
-								quadlet_t* events, 
-								unsigned int nsamples,
-								unsigned int dbc
-								);
-
-/**
- * freebob_decode_events_to_stream
- *
- * Decodes events from a buffer of AM824 events, to samples of the correct type in a stream structure.
- * Skips events marked as empty.
- *	
- * This will decode nframes at maximum.
- *
- *  connection    : The connection the stream belongs to
- *	stream        : Contains the stream structure
- *  events        : Pointer to a buffer that holds the encoded events
- *  nsamples      : The number of samples available
- *  dbc           : Data Block Counter, needed for demux of midi streams
- */
-
-int 
-freebob_decode_events_to_stream(freebob_connection_t *connection,
-								freebob_stream_t *stream, 
-								quadlet_t* events, 
-								unsigned int nsamples,
-								unsigned int dbc
-								);
-
 
 int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection_t *connection);
 int freebob_streaming_cleanup_connection(freebob_device_t * dev, freebob_connection_t *connection);

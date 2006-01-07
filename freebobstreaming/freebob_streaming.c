@@ -133,12 +133,47 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		printError("FREEBOB: cannot create libfreebob handle\n");
 		return NULL;
 	}
+
 	if (freebob_discover_devices(dev->fb_handle)!=0) {
 		freebob_destroy_handle(dev->fb_handle);
 		free(dev);
 		printError("FREEBOB: device discovering failed\n");
 		return NULL;
 	}
+
+	/* Try and set the samplerate
+ 	 * This should be done after device discovery
+	 * but before reading the bus description as the device capabilities can change
+	 */
+
+	if(options.node_id > -1) {
+	    if (! freebob_set_samplerate(dev->fb_handle, options.node_id, options.sample_rate)) {
+		freebob_destroy_handle(dev->fb_handle);
+		free(dev);
+		printError("FREEBOB: Failed to set samplerate...\n");
+		return NULL;
+	    }
+
+	} else {
+	    int devices_on_bus = freebob_get_nb_devices_on_bus(dev->fb_handle);
+	    debugPrint(DEBUG_LEVEL_STARTUP,"port = %d, devices_on_bus = %d\n", options.port, devices_on_bus);
+			
+	    for(i=0;i<devices_on_bus;i++) {
+		int node_id=freebob_get_device_node_id(dev->fb_handle, i);
+		debugPrint(DEBUG_LEVEL_STARTUP,"set samplerate for device = %d, node = %d\n", i, node_id);
+				
+		if (! freebob_set_samplerate(dev->fb_handle, node_id, options.sample_rate)) {
+			freebob_destroy_handle(dev->fb_handle);
+			free(dev);
+			printError("FREEBOB: Failed to set samplerate...\n");
+			return NULL;
+		}
+	    }
+
+	}
+
+	/* Read the connection specification
+ 	 */
 	
 	libfreebob_capture_connections=freebob_get_connection_info(dev->fb_handle, options.node_id, 0);
 	libfreebob_playback_connections=freebob_get_connection_info(dev->fb_handle, options.node_id, 1);
@@ -1338,12 +1373,22 @@ freebob_streaming_period_reset (freebob_device_t *dev) {
 }
 
 static inline int
+freebob_streaming_xrun_detected_on_connection (freebob_device_t *dev, freebob_connection_t *connection) {
+	assert((connection));
+	if (connection->status.xruns>0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+static inline int
 freebob_streaming_xrun_detected (freebob_device_t *dev, freebob_connection_t **connections, int nb_connections) {
 	int i;
 	
 	for(i=0; i < nb_connections; i++) {
 		assert((connections[i]));
-		if (connections[i]->status.xruns>0) {
+
+		if (freebob_streaming_xrun_detected_on_connection (dev, connections[i])) {
 			return TRUE;
 		}
 	}
@@ -1576,7 +1621,6 @@ void * freebob_iso_packet_iterator(void *arg)
 	int i=0;
 	int err;
 // 	int cycle=0;
-// 	unsigned int c;
 	int underrun_detected=0;
 	
 	int notdone=TRUE;
@@ -1639,7 +1683,7 @@ void * freebob_iso_packet_iterator(void *arg)
 					err = raw1394_loop_iterate (connection->raw_handle);
 					
 					// detect underruns on the connection
-					if (freebob_streaming_xrun_detected(dev,&connection,1)) {
+					if (freebob_streaming_xrun_detected_on_connection(dev,connection)) {
 						printError("Xrun on connection %d\n", connection->spec.id);
 						underrun_detected=TRUE;
 						break; // we can exit as the underrun handler will flush the buffers anyway
@@ -1733,6 +1777,7 @@ void * freebob_iso_packet_iterator(void *arg)
 		// notify the waiting thread
 #ifdef DEBUG
 		debugPrint(DEBUG_LEVEL_HANDLERS, "Post semaphore ");
+		int c;
 		for(c=0; c<dev->nb_connections; c++) {
 			connection = &(dev->connections[c]);
 			debugPrintShort(DEBUG_LEVEL_HANDLERS,"[%d: %d]",c,connection->status.frames_left);
@@ -1975,6 +2020,8 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 	//connection->status.packets+=dropped;
 	connection->status.dropped+=dropped;
 	
+	connection->status.last_cycle=cycle;
+
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
 		
@@ -2155,6 +2202,8 @@ iso_master_transmit_handler(raw1394handle_t handle,
 	freebob_timestamp_t tstamp;
 	
 // 	unsigned int syt;
+
+	connection->status.last_cycle=cycle;
 	
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	
@@ -2230,10 +2279,10 @@ iso_master_transmit_handler(raw1394handle_t handle,
 
 	if(packet->dbs) {
 		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-								"MASTER XMT: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d %d\n", cycle, 
+								"MASTER XMT: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d\n", cycle, 
 								connection->iso.iso_channel,  packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, *length,((*length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
 								connection->status.packets, connection->status.events, connection->status.frames_left, 
-								nevents, nsamples,xrun);
+								nevents, nsamples);
 	}
 	// TODO: the -100 should be derrived from the buffer size
 	if((connection->status.frames_left<=0)) {
@@ -2347,10 +2396,10 @@ static enum raw1394_iso_disposition
 
 	if(packet->dbs) {
 		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-								"SLAVE XMT: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d %d\n", cycle, 
+								"SLAVE XMT: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d\n", cycle, 
 								connection->iso.iso_channel,  packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, *length,((*length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
 								connection->status.packets, connection->status.events, connection->status.frames_left, 
-								nevents, nsamples,xrun);
+								nevents, nsamples);
 	}
 		
 	if((connection->status.frames_left<=0)) {
@@ -2363,6 +2412,221 @@ static enum raw1394_iso_disposition
 	return retval;
 
 }
+
+/*
+ * Decoders and encoders
+ */
+	
+static inline int  
+freebob_decode_events_to_stream(freebob_connection_t *connection,
+								freebob_stream_t *stream, 
+								quadlet_t* events, 
+								unsigned int nsamples,
+								unsigned int dbc
+								) {
+	quadlet_t *target_event;
+	int do_ringbuffer_write=0;
+	
+	assert (stream);
+	assert (connection);
+	assert (events);
+	assert (stream->spec.position < connection->spec.dimension);
+		
+	freebob_sample_t *buffer=NULL;
+	float *floatbuff=NULL;
+
+	const float multiplier = 1.0f / (float)(1 << 23);
+	
+	assert(stream->user_buffer);
+	
+	switch(stream->buffer_type) {
+		case freebob_buffer_type_per_stream:
+		default:
+//			assert(nsamples < dev->options.period_size);
+			
+			// use the preallocated buffer (at init time)
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=1;
+			break;
+				
+		case freebob_buffer_type_uint24:
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=0;
+			break;
+				
+		case freebob_buffer_type_float:
+			floatbuff=((float *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=0;
+			break;
+	}
+	
+	int j=0;
+	int written=0;
+	
+	if (stream->spec.format== IEC61883_STREAM_TYPE_MBLA) {
+		target_event=(quadlet_t *)(events + stream->spec.position);
+		
+		// TODO: convert this into function pointer based
+		switch(stream->buffer_type) {
+			default:
+			case freebob_buffer_type_uint24:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+					buffer++;
+					target_event+=connection->spec.dimension;
+				}
+				break;
+			case freebob_buffer_type_float:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples		
+
+					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+					// sign-extend highest bit of 24-bit int
+					int tmp = (int)(v << 8) / 256;
+		
+					*floatbuff = tmp * multiplier;
+				
+					floatbuff++;
+					target_event+=connection->spec.dimension;
+				}
+				break;
+		}
+
+// 		fprintf(stderr,"rb write [%02d: %08p %08p]\n",stream->spec.position, stream, stream->buffer);
+	
+// 	fprintf(stderr,"rb write [%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
+		if(do_ringbuffer_write) {
+			// reset the buffer pointer
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			written=freebob_ringbuffer_write(stream->buffer, (char *)(buffer), nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		} else {
+			written=nsamples;
+		}
+		
+// 	fprintf(stderr,"rb write1[%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
+		
+		return written;
+	
+	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
+		return nsamples; // for midi streams we always indicate a full write
+	
+	} else {//if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
+		return nsamples; // for unsupported we always indicate a full read
+	
+	}
+	
+	return 0;
+
+
+}
+
+static inline int 
+freebob_encode_stream_to_events(freebob_connection_t *connection,
+								freebob_stream_t *stream,
+								quadlet_t* events,
+								unsigned int nsamples,
+								unsigned int dbc
+								) {
+	quadlet_t *target_event;
+	//freebob_sample_t buff[nsamples];
+	int do_ringbuffer_read=0;
+	
+	freebob_sample_t *buffer=NULL;
+	float *floatbuff=NULL;
+
+	const float multiplier = (float)(1u << 31);
+	
+	unsigned int j=0;
+	unsigned int read=0;
+
+	assert (stream);
+	assert (connection);
+	assert (events);
+	assert (stream->spec.position < connection->spec.dimension);
+	
+	switch(stream->buffer_type) {
+		case freebob_buffer_type_per_stream:
+		default:
+//			assert(nsamples < dev->options.period_size);
+			// use the preallocated buffer (at init time)
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=1;
+			break;
+				
+		case freebob_buffer_type_uint24:
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=0;
+			break;
+				
+		case freebob_buffer_type_float:
+			floatbuff=((float *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=0;
+			break;
+	}
+	
+	
+	if(stream->spec.format == IEC61883_STREAM_TYPE_MBLA) { // MBLA
+		target_event=(quadlet_t *)(events + (stream->spec.position));
+		
+		if(do_ringbuffer_read) {
+			read=freebob_ringbuffer_read(stream->buffer, (char *)buffer, nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		} else {
+			read=nsamples;
+		}
+		
+		// TODO: convert this into function pointer based
+		switch(stream->buffer_type) {
+			default:
+			case freebob_buffer_type_uint24:
+				for(j = 0; j < read; j += 1) { // decode max nsamples
+					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
+					buffer++;
+					target_event+=connection->spec.dimension;
+					
+		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+
+				}
+				break;
+			case freebob_buffer_type_float:
+				for(j = 0; j < read; j += 1) { // decode max nsamples
+					// don't care for overflow
+					float v = *floatbuff * multiplier;  // v: -231 .. 231
+					unsigned int tmp = ((int)v);
+					*target_event = htonl((tmp >> 8) | 0x40000000);
+					
+					floatbuff++;
+					target_event += connection->spec.dimension;
+				}
+				break;
+		}
+		
+		/*		
+		for(j = 0; j < nsamples; j+=1) {
+			*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
+			buffer++;
+			target_event+=connection->spec.dimension;
+		}
+		*/
+		
+		return read;
+		
+	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
+		return nsamples; // for midi we always indicate a full read
+	
+	} else { //if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
+		return nsamples; // for unsupported we always indicate a full read
+	
+	}
+	return 0;
+
+}
+
 
 /* 
  * write received events to the stream ringbuffers.
