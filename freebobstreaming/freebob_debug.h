@@ -35,6 +35,8 @@ extern "C" {
 
 #include "freebob_streaming.h"
 
+#include <libgen.h>
+
 unsigned long getCurrentUTime();
 
 static unsigned long debugGetCurrentUTime() {
@@ -58,28 +60,28 @@ static unsigned long debugGetCurrentUTime() {
 #define DEBUG_LEVEL_STREAMS				(1<<19)
 
 // default debug level
-#define DEBUG_LEVEL 0
+// #define DEBUG_LEVEL 0
 // #define DEBUG_LEVEL (DEBUG_LEVEL_BUFFERS | DEBUG_LEVEL_RUN_CYCLE | (DEBUG_LEVEL_XRUN_RECOVERY)| DEBUG_LEVEL_STARTUP | DEBUG_LEVEL_WAIT | DEBUG_LEVEL_PACKETCOUNTER)
 //#define DEBUG_LEVEL (DEBUG_LEVEL_BUFFERS | DEBUG_LEVEL_RUN_CYCLE | (DEBUG_LEVEL_XRUN_RECOVERY)| DEBUG_LEVEL_STARTUP )
 //#define DEBUG_LEVEL (DEBUG_LEVEL_RUN_CYCLE | (DEBUG_LEVEL_XRUN_RECOVERY)| DEBUG_LEVEL_STARTUP | DEBUG_LEVEL_PACKETCOUNTER| DEBUG_LEVEL_WAIT)
-//#define DEBUG_LEVEL (  DEBUG_LEVEL_RUN_CYCLE | DEBUG_LEVEL_XRUN_RECOVERY | \
-					   DEBUG_LEVEL_STARTUP | DEBUG_LEVEL_WAIT | \
-					   DEBUG_LEVEL_HANDLERS_LOWLEVEL | DEBUG_LEVEL_STREAMS )
+#define DEBUG_LEVEL (  DEBUG_LEVEL_RUN_CYCLE | DEBUG_LEVEL_XRUN_RECOVERY | \
+					   DEBUG_LEVEL_STARTUP | DEBUG_LEVEL_PACKETCOUNTER | \
+					   DEBUG_LEVEL_STREAMS)
 
 //#define DEBUG_LEVEL (DEBUG_LEVEL_XRUN_RECOVERY | DEBUG_LEVEL_STARTUP | DEBUG_LEVEL_PACKETCOUNTER)
 
 #ifdef DEBUG
 //#if 0
-	#define printMessage(format, args...) fprintf( stderr, "FREEBOB MSG: %s:%d (%s): " format,  __FILE__, __LINE__, __FUNCTION__, ##args )
-	#define printError(format, args...) fprintf( stderr, "FREEBOB ERR: %s:%d (%s): " format,  __FILE__, __LINE__, __FUNCTION__, ##args )
+#define printMessage(format, args...) fprintf( stderr, "FREEBOB MSG: %s:%d (%s): " format, basename(__FILE__), __LINE__, __FUNCTION__, ##args )
+#define printError(format, args...) fprintf( stderr, "FREEBOB ERR: %s:%d (%s): " format,  basename(__FILE__), __LINE__, __FUNCTION__, ##args )
 	
 //	#define printEnter() fprintf( stderr, "FREEBOB ENTERS: %s (%s)\n", __FUNCTION__,  __FILE__)
 //	#define printExit() fprintf( stderr, "FREEBOB EXITS: %s (%s)\n", __FUNCTION__,  __FILE__)
 	#define printEnter() 
 	#define printExit() 
 	
-	#define debugError(format, args...) fprintf( stderr, "FREEBOB ERR: %s:%d (%s): " format,  __FILE__, __LINE__, __FUNCTION__, ##args )
-	#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & (Level))  fprintf( stderr,"DEBUG %s:%d (%s): "  format, __FILE__, __LINE__, __FUNCTION__, ##args );
+#define debugError(format, args...) fprintf( stderr, "FREEBOB ERR: %s:%d (%s): " format,  basename(__FILE__), __LINE__, __FUNCTION__, ##args )
+#define debugPrint(Level, format, args...) if(DEBUG_LEVEL & (Level))  fprintf( stderr,"DEBUG %s:%d (%s): "  format, basename(__FILE__), __LINE__, __FUNCTION__, ##args );
 	#define debugPrintShort(Level, format, args...) if(DEBUG_LEVEL & (Level))  fprintf( stderr, format,##args );
 	#define debugPrintWithTimeStamp(Level, format, args...) if(DEBUG_LEVEL & (Level)) fprintf( stderr, "%16lu: "format, debugGetCurrentUTime(),##args );
 	#define SEGFAULT int *test=NULL;	*test=1;

@@ -36,7 +36,7 @@
 #define __FREEBOB_STREAMING_PRIVATE_H__
 
 #ifndef DEBUG
-#define DEBUG
+//#define DEBUG
 #endif
 
 #ifdef __cplusplus
@@ -49,14 +49,17 @@ extern "C" {
 #define IEC61883_STREAM_TYPE_MBLA   0x06
 
 #define IEC61883_AM824_LABEL_MASK 			0xFF000000
-#define IEC61883_AM824_GET_LABEL(x) 		((x & 0xFF000000) >> 24)
+#define IEC61883_AM824_GET_LABEL(x) 		(((x) & 0xFF000000) >> 24)
+#define IEC61883_AM824_SET_LABEL(x,y) 		((x) | ((y)<<24))
 
 #define IEC61883_AM824_LABEL_MIDI_NO_DATA 	0x80 
 #define IEC61883_AM824_LABEL_MIDI_1X      	0x81 
 #define IEC61883_AM824_LABEL_MIDI_2X      	0x82
 #define IEC61883_AM824_LABEL_MIDI_3X      	0x83
 
-#include <freebobctl/freebobctl.h>
+#define SAMPLE_MAX_24BIT  8388608.0f
+
+#include <libfreebob/freebob.h>
 #include <libraw1394/raw1394.h>
 #include <libiec61883/iec61883.h>
 #include <pthread.h>
@@ -76,12 +79,19 @@ extern "C" {
 #include <assert.h>
 
 #include "ringbuffer.h"
-#include "freebob_streams.h"
 #include "freebob_connections.h"
 
 #define FALSE 0
 #define TRUE 1
 
+/*
+#define DBC_MASK 0xFF
+#define DBC_SHIFT 16
+
+#define FREEBOB_STREAMING_EXTRACT_DBC(xx) ((xx & (DBC_MASK << DBC_SHIFT))>>DBC_SHIFT)
+#define FREEBOB_STREAMING_REMOVE_DBC(xx) (xx & ~(DBC_MASK << DBC_SHIFT))
+#define FREEBOB_STREAMING_INSERT_DBC(xx,yy) (yy | (((yy%8) & DBC_MASK) << DBC_SHIFT))
+*/
 
 /**
  * Structure to keep track of the packetizer thread status
@@ -93,7 +103,10 @@ struct _freebob_packetizer_status {
 	sem_t transfer_ack;
 	int retval;
 	int status;
-	int run;	
+	int run;
+	
+	int realtime;
+	int priority;
 	
 	pthread_t transfer_thread;
 
@@ -107,7 +120,8 @@ struct _freebob_device
 {	
 
 	freebob_device_info_t device_info;
-
+	freebob_handle_t fb_handle;
+	
 	freebob_options_t options;
 
 	int xrun_detected;
@@ -116,6 +130,10 @@ struct _freebob_device
 	/* packet transfer thread */
 	freebob_packetizer_status_t packetizer;
 
+	/* watchdog thread */
+	int watchdog_check;
+	pthread_t watchdog_thread;
+	
 	/* ISO connections */
 	freebob_connection_t *sync_master_connection;
 	
@@ -138,6 +156,13 @@ struct _freebob_device
 	int nb_synced_playback_streams;
 	freebob_stream_t **synced_playback_streams;
 
+	/*
+	 * the fd map for polling
+	 */
+	int                  nfds;
+	struct pollfd        *pfds;
+	freebob_connection_t **fdmap;
+	
 }; 
 
 
@@ -145,6 +170,9 @@ int freebob_streaming_prefill_playback_streams(freebob_device_t *dev);
 
 int freebob_streaming_stop_iso(freebob_device_t *dev);
 int freebob_streaming_start_iso(freebob_device_t *dev);
+
+int freebob_streaming_set_stream_buffer(freebob_device_t *dev,  freebob_stream_t *dst, char *b, freebob_streaming_buffer_type t);
+void freebob_streaming_free_stream_buffer(freebob_device_t* dev, freebob_stream_t *dst);
 
 /**
  * Registers the stream in the stream list
@@ -155,17 +183,15 @@ void freebob_streaming_register_playback_stream(freebob_device_t *dev, freebob_s
 /**
  * Thread related
  */
-int
-freebob_streaming_create_thread (pthread_t* thread,
-			   int priority,
-			   int realtime,
-			   void*(*start_routine)(void*),
-			   void* arg);
 			   
 int freebob_streaming_start_thread(freebob_device_t *dev);
 int freebob_streaming_stop_thread(freebob_device_t *dev);
 			   
 void * freebob_iso_packet_iterator(void *arg);
+
+void *freebob_streaming_watchdog_thread (void *arg);
+int freebob_streaming_start_watchdog (freebob_device_t *dev);
+void freebob_streaming_stop_watchdog (freebob_device_t *dev);
 
 #ifdef __cplusplus
 }

@@ -51,6 +51,9 @@ extern "C" {
  *     freebob_streaming_reset();
  *     continue;
  *   }
+ *
+ *   freebob_streaming_transfer_buffers(dev);
+ *
  *   for(all channels) {
  *     switch (channel_type) {
  *     case audio:
@@ -78,20 +81,11 @@ typedef unsigned int freebob_sample_t;
 
 typedef unsigned int freebob_nframes_t;
 
-/**
- * Structure describing the Freebob device 
- */
-typedef enum {
-  freebob_invalid                      =   -1,
-  freebob_unknown                      =   0,
-  freebob_osc                          =   1,
-  freebob_file                         =   2,
-} freebob_device_info_location_type;
 
 typedef struct freebob_device_info {
 	/* TODO: How is the device specification done? */
-	char xml_location[FREEBOB_STREAMING_MAX_URL_LENGTH]; // can be an osc url or an XML filename
-	freebob_device_info_location_type location_type;
+//	char xml_location[FREEBOB_STREAMING_MAX_URL_LENGTH]; // can be an osc url or an XML filename
+//	freebob_device_info_location_type location_type;
 } freebob_device_info_t;
 
 /**
@@ -99,7 +93,9 @@ typedef struct freebob_device_info {
  */
 typedef struct freebob_options {
 	/* driver related setup */
-	int sample_rate; 	/* this is acutally dictated by the device */
+	int sample_rate; 		/* this is acutally dictated by the device
+							 * you can specify a value here or -1 to autodetect
+						 	 */
 
 	/* buffer setup */
 	int period_size; 	/* one period is the amount of frames that
@@ -113,6 +109,15 @@ typedef struct freebob_options {
 	int iso_buffers;
 	int iso_prebuffers;
 	int iso_irq_interval;
+	
+	/* packetizer thread options */
+	int realtime;
+	int packetizer_priority;
+	
+	/* libfreebob related setup */
+	int node_id;
+	int port;
+	
 } freebob_options_t;
 
 /**
@@ -128,11 +133,25 @@ typedef struct freebob_options {
  *
  */
 typedef enum {
-  freebob_invalid                      =   -1,
-  freebob_unknown                      =   0,
-  freebob_audio                        =   1,
-  freebob_midi                         =   2,
+	freebob_stream_type_invalid                      =   -1,
+  	freebob_stream_type_unknown                      =   0,
+  	freebob_stream_type_audio                        =   1,
+  	freebob_stream_type_midi                         =   2,
 } freebob_streaming_stream_type;
+
+/**
+ * 
+ * Buffer types known to the API
+ * 
+ */
+typedef enum {
+	freebob_buffer_type_per_stream          =   -1, // use this to use the per-stream read functions
+	freebob_buffer_type_uint24           =   0,
+	freebob_buffer_type_float            =   1,
+// 	freebob_buffer_type_uint32           =   2,
+// 	freebob_buffer_type_double           =   3,
+// 	...
+} freebob_streaming_buffer_type;
 
 /**
  * Initializes the streaming from/to a FreeBob device. A FreeBob device
@@ -222,7 +241,42 @@ freebob_streaming_stream_type freebob_streaming_get_capture_stream_type(freebob_
  *
  * @return the channel type 
  */
-freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob_device_t *dev, int channel);
+freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob_device_t *dev, int number);
+/*
+ *
+ * Note: buffer handling will change in order to allow setting the sample type for *_read and *_write
+ * and separately indicate if you want to use a user buffer or a managed buffer.
+ *
+ */
+/**
+ * Sets the decode buffer for the stream. This allows for zero-copy decoding.
+ * The call to freebob_streaming_transfer_buffers will decode one period of the stream to
+ * this buffer. Make sure it is large enough. 
+ * 
+ * @param dev the freebob device
+ * @param number the stream number
+ * @param buff a pointer to the sample buffer, make sure it is large enough 
+ *             i.e. sizeof(your_sample_type)*period_size
+ * @param t   the type of the buffer. this determines sample type and the decode function used.
+ *
+ * @return -1 on error, 0 on success
+ */
+int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int number, char *buff, freebob_streaming_buffer_type t);
+
+/**
+ * Sets the encode buffer for the stream. This allows for zero-copy encoding (directly to the events).
+ * The call to freebob_streaming_transfer_buffers will encode one period of the stream from
+ * this buffer to the event buffer.
+ * 
+ * @param dev the freebob device
+ * @param number the stream number
+ * @param buff a pointer to the sample buffer
+ * @param t   the type of the buffer. this determines sample type and the decode function used.
+ *
+ * @return -1 on error, 0 on success
+ */
+int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int number, char *buff, freebob_streaming_buffer_type t);
+
 
 /**
  * Starts the streaming operation. This initiates the connections to the FreeBob devices and
@@ -289,6 +343,72 @@ int freebob_streaming_read(freebob_device_t *dev, int number, freebob_sample_t *
  * @return the amount of samples actually written. -1 on error.
  */
 int freebob_streaming_write(freebob_device_t *dev, int number, freebob_sample_t *buffer, int nsamples);
+
+/**
+ * Transfer & decode the events from the packet buffer to the sample buffers
+ * 
+ * This should be called after the wait call returns, before reading/writing the sample buffers
+ * with freebob_streaming_[read|write].
+ * 
+ * The purpose is to allow more precise timing information. freebob_streaming_wait returns as soon as the 
+ * period boundary is crossed, and can therefore be used to determine the time instant of this crossing (e.g. jack DLL).
+ *
+ * The actual decoding work is done in this function and can therefore be omitted in this timing calculation.
+ * Note that you HAVE to call this function in order for the buffers not to overflow, and only call it when
+ * freebob_streaming_wait doesn't indicate a buffer xrun (xrun handler resets buffer).
+ * 
+ * If user supplied playback buffers are specified with freebob_streaming_set_playback_buffers
+ * their contents should be valid before calling this function.
+ * If user supplied capture buffers are specified with freebob_streaming_set_capture_buffers
+ * their contents are updated in this function.
+ * 
+ * Use either freebob_streaming_transfer_buffers to transfer all buffers at once, or use 
+ * freebob_streaming_transfer_playback_buffers and freebob_streaming_transfer_capture_buffers 
+ * to have more control. Don't use both.
+ * 
+ * @param dev the freebob device
+ * @return  -1 on error.
+ */
+ 
+int freebob_streaming_transfer_buffers(freebob_device_t *dev);
+
+/**
+ * Transfer & encode the events from the sample buffers to the packet buffer
+ * 
+ * This should be called after the wait call returns, after writing the sample buffers
+ * with freebob_streaming_write.
+ * 
+ * If user supplied playback buffers are specified with freebob_streaming_set_playback_buffers
+ * their contents should be valid before calling this function.
+ * 
+ * Use either freebob_streaming_transfer_buffers to transfer all buffers at once, or use 
+ * freebob_streaming_transfer_playback_buffers and freebob_streaming_transfer_capture_buffers 
+ * to have more control. Don't use both.
+ * 
+ * @param dev the freebob device
+ * @return  -1 on error.
+ */
+ 
+int freebob_streaming_transfer_playback_buffers(freebob_device_t *dev);
+
+/**
+ * Transfer & decode the events from the packet buffer to the sample buffers
+ * 
+ * This should be called after the wait call returns, before reading the sample buffers
+ * with freebob_streaming_read.
+ * 
+ * If user supplied capture buffers are specified with freebob_streaming_set_capture_buffers
+ * their contents are updated in this function.
+ * 
+ * Use either freebob_streaming_transfer_buffers to transfer all buffers at once, or use 
+ * freebob_streaming_transfer_playback_buffers and freebob_streaming_transfer_capture_buffers 
+ * to have more control. Don't use both.
+ * 
+ * @param dev the freebob device
+ * @return  -1 on error.
+ */
+
+int freebob_streaming_transfer_capture_buffers(freebob_device_t *dev);
 
 /**
  * Returns the packetizer thread to allow RT enabling by the host.

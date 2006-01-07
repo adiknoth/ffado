@@ -1,5 +1,6 @@
 /*
-  
+  Modifications (C) 2005 Pieter Palmers
+    
   Copied from the jackd sources
   function names changed in order to avoid naming problems when using this in
   a jackd backend.
@@ -25,7 +26,7 @@
   This is safe for the case of one read thread and one write thread.
 */
 
-#include <config.h>
+//#include <config.h>
 
 #include <stdlib.h>
 #include <string.h>

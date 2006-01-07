@@ -37,7 +37,6 @@
 #include "freebob_streaming.h"
 #include "freebob_streaming_private.h"
 #include "freebob_connections.h"
-#include "freebob_streams.h"
 #include "freebob_debug.h"
 
 raw1394handle_t freebob_open_raw1394 (int port)
@@ -105,6 +104,12 @@ int freebob_streaming_reset_connection(freebob_device_t * dev, freebob_connectio
 		
 	}
 	
+	// reset the event buffer, discard all content
+	freebob_ringbuffer_reset(connection->event_buffer);
+	
+	// reset the timestamp buffer, discard all content
+	freebob_ringbuffer_reset(connection->timestamp_buffer);
+	
 	// reset the event counter
 	connection->status.events=0;
 	
@@ -125,7 +130,9 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 	int s=0;
 	
 	connection->status.frames_left=0;
-					
+	
+	connection->parent=dev;
+		
 	// create raw1394 handles
 	connection->raw_handle=freebob_open_raw1394(connection->spec.port);
 	if (!connection->raw_handle) {
@@ -143,27 +150,31 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 	
 	connection->iso.bandwidth=-1;
 	connection->iso.startcycle=-1;
-	/*
-	connection->status.packet_info_table_size=dev->options.table_size;
 	
- 	connection->status.packet_info_table=calloc(connection->status.packet_info_table_size,sizeof(packet_info_t));
- 	if(!connection->status.packet_info_table) {
-		printError("FREEBOB: Could not allocate dma buffer memory for connection_info->packet_info_table");
+	// allocate the event ringbuffer
+	if( !(connection->event_buffer=freebob_ringbuffer_create(
+			(connection->spec.dimension * dev->options.nb_buffers * dev->options.period_size) * sizeof(quadlet_t)))) {
+		printError("Could not allocate memory event ringbuffer");
+		return -ENOMEM;
+			
+	}
+	// allocate the temporary cluster buffer
+	if( !(connection->cluster_buffer=(char *)calloc(connection->spec.dimension,sizeof(quadlet_t)))) {
+		printError("Could not allocate temporary cluster buffer");
+		freebob_ringbuffer_free(connection->event_buffer);
 		return -ENOMEM;
 	}
-	debugPrintWithTimeStamp(DEBUG_LEVEL_BUFFERS, "Allocated packet table of %d bytes\n",connection->status.packet_info_table_size*sizeof(packet_info_t));
-	*/
-	/*
-	new_trigger_value=2*(period_size%(sample_rate*connection->table_size/8000));
 	
-	if (new_trigger_value>client->trigger) {
-		client->trigger=new_trigger_value;
-	}		
-	debugPrint(DEBUG_LEVEL_STARTUP,"Trigger set to %d\n",client->trigger);
+	// allocate the timestamp buffer
+	if( !(connection->timestamp_buffer=freebob_ringbuffer_create(TIMESTAMP_BUFFER_SIZE * sizeof(freebob_timestamp_t)))) {
+		printError("Could not allocate timestamp ringbuffer");
+		freebob_ringbuffer_free(connection->event_buffer);
+		free(connection->cluster_buffer);
+		return -ENOMEM;
+	}
 	
-	*/
+	connection->total_delay=0;
 	
-	// init the streams present
 	/*
 	 * init the streams this connection is composed of
 	 */
@@ -174,9 +185,11 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 	
 	if(!connection->streams) {
 		printError("Could not allocate memory for streams");
+		free(connection->cluster_buffer);
+		freebob_ringbuffer_free(connection->event_buffer);
 		return -ENOMEM;
 	}
-	
+		
 	err=0;
 	for (s=0;s<connection->nb_streams;s++) {
 		err=freebob_streaming_init_stream(dev,&connection->streams[s],connection->spec.stream_info->streams[s]);
@@ -194,7 +207,7 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 		} else {
 			freebob_streaming_register_playback_stream(dev, &connection->streams[s]);
 		}
-	}
+	}	
 	if (err) {
 		debugPrint(DEBUG_LEVEL_STARTUP,"  Cleaning up streams...\n");
 		while(s--) { // TODO: check if this counts correctly
@@ -203,7 +216,9 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 		}
 		
 		free(connection->streams);
-// 		free(connection->status.packet_info_table);
+		free(connection->cluster_buffer);
+		freebob_ringbuffer_free(connection->event_buffer);
+		freebob_ringbuffer_free(connection->timestamp_buffer);
 		
 		return err;		
 	}
@@ -227,7 +242,11 @@ int freebob_streaming_cleanup_connection(freebob_device_t * dev, freebob_connect
 	}
 	
 	free(connection->streams);
-			
+	free(connection->cluster_buffer);
+	freebob_ringbuffer_free(connection->event_buffer);
+	freebob_ringbuffer_free(connection->timestamp_buffer);
+	
+	raw1394_destroy_handle(connection->raw_handle);
 /*
 	assert(connection->status.packet_info_table);
 	free(connection->status.packet_info_table);
@@ -242,14 +261,27 @@ int freebob_streaming_cleanup_connection(freebob_device_t * dev, freebob_connect
  * Initializes a stream_t based upon an stream_info_t 
  */
 int freebob_streaming_init_stream(freebob_device_t* dev, freebob_stream_t *dst, freebob_stream_spec_t *src) {
-
+	assert(dev);
+	assert(dst);
+	assert(src);
+	
 	memcpy(&dst->spec,src,sizeof(freebob_stream_spec_t));
 	
 	// allocate the ringbuffer
 	// the lock free ringbuffer needs one extra frame 
 	// it can only be filled to size-1 bytes
+
+	// keep the ringbuffer aligned by adding sizeof(sample_t) bytes instead of just 1
 	int buffer_size_frames=dev->options.nb_buffers*dev->options.period_size+1;
 	dst->buffer=freebob_ringbuffer_create(buffer_size_frames*sizeof(freebob_sample_t));
+	
+	
+	// initialize the decoder stuff to use the per-stream read functions
+	dst->buffer_type=freebob_buffer_type_per_stream;
+	dst->user_buffer=NULL;
+	
+	// create any data structures for the decode buffers
+	freebob_streaming_set_stream_buffer(dev, dst, NULL, freebob_buffer_type_per_stream);
 	
 	// no other init needed
 	return 0;
@@ -260,6 +292,12 @@ int freebob_streaming_init_stream(freebob_device_t* dev, freebob_stream_t *dst, 
   * destroys a stream_t 
   */
 void freebob_streaming_cleanup_stream(freebob_device_t* dev, freebob_stream_t *dst) {
+	assert(dev);
+	assert(dst);
+	assert(dst->user_buffer);
+	
+	freebob_streaming_free_stream_buffer(dev, dst);
+		
 	freebob_ringbuffer_free(dst->buffer);
 	return;
 	
@@ -314,59 +352,122 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 								unsigned int dbc
 								) {
 	quadlet_t *target_event;
+	int do_ringbuffer_write=0;
 	
-	// temporary buffer
-	freebob_sample_t buff[nsamples];
-	freebob_sample_t *buffer=buff;
+	assert (stream);
+	assert (connection);
+	assert (events);
+	assert (stream->spec.position < connection->spec.dimension);
+		
+	freebob_sample_t *buffer=NULL;
+	float *floatbuff=NULL;
+	
+	assert(stream->user_buffer);
+	
+	switch(stream->buffer_type) {
+		case freebob_buffer_type_per_stream:
+		default:
+//			assert(nsamples < dev->options.period_size);
+			
+			// use the preallocated buffer (at init time)
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=1;
+			break;
+				
+		case freebob_buffer_type_uint24:
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=0;
+			break;
+				
+		case freebob_buffer_type_float:
+			floatbuff=((float *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=0;
+			break;
+	}
 	
 	unsigned int j=0;
 	int written=0;
 	
-	assert (stream);
-	assert (stream->spec.position < connection->spec.dimension);
-
 	if (stream->spec.format== IEC61883_STREAM_TYPE_MBLA) {
 		target_event=(quadlet_t *)(events + stream->spec.position);
-			
-		for(j = 0; j < nsamples; j += 1) { // decode max nsamples
-			*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
-//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
-			buffer++;
-			target_event+=connection->spec.dimension;
+		
+		// TODO: convert this into function pointer based
+		switch(stream->buffer_type) {
+			default:
+			case freebob_buffer_type_uint24:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+					buffer++;
+					target_event+=connection->spec.dimension;
+				}
+				break;
+			case freebob_buffer_type_float:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+					unsigned int sample_int=(ntohl((*target_event) ) & 0x00FFFFFF);
+// 					sample_int=sample_int/256; // this is to get 2's complement right
+// 					*floatbuff=((float)sample_int)/(0x007FFFFF*1.0);
+					
+					int x;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+					memcpy((char*)&x + 1, &sample_int, 3);
+#elif __BYTE_ORDER == __BIG_ENDIAN
+					memcpy(&x, &sample_int, 3);
+#endif
+					x >>= 8;
+					*floatbuff = x / SAMPLE_MAX_24BIT;
+					floatbuff++;
+		
+					//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+					
+					target_event+=connection->spec.dimension;
+				}
+				break;
 		}
 
 // 		fprintf(stderr,"rb write [%02d: %08p %08p]\n",stream->spec.position, stream, stream->buffer);
 	
 // 	fprintf(stderr,"rb write [%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
-		
-		written=freebob_ringbuffer_write(stream->buffer, (char *)buff, nsamples*sizeof(freebob_sample_t));
+		if(do_ringbuffer_write) {
+			// reset the buffer pointer
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			written=freebob_ringbuffer_write(stream->buffer, (char *)(buffer), nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		} else {
+			written=nsamples;
+		}
 		
 // 	fprintf(stderr,"rb write1[%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
 		
-		return written/sizeof(freebob_sample_t);
+		return written;
 	
 	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
 		/* idea:
 		spec says: current_midi_port=(dbc+j)%8;
-		assume dbc=0, if we keep the nframes a multiple of 8
-		=> if we start at (stream->location-1) [due to location_min=1], 
+		=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
 			we'll start at the right event for the midi port.
 		=> if we increment j with 8, we stay at the right event.
 		*/
-		
-/*		for(j = stream->spec.location-1; j < nsamples; j += 8) {
+		/*		
+		for(j = (dbc+stream->spec.location-1)%8; j < nsamples; j += 8) {
 			target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
+			unsigned int sample_int=(ntohl((*target_event) ) & 0x00FFFFFF);
 			
-			if(IEC61883_AM824_GET_LABEL(*target_event) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-				*(((quadlet_t *)buffer) + written)=ntohl(*target_event);
+			if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
+				*(((quadlet_t *)buffer) + written)=sample_int;
 
 				written++;
-
-			}
+ 			}
 		}
 		
-		freebob_ringbuffer_write(stream->buffer, (char *)buffer, written*sizeof(freebob_sample_t));
-	*/	
+		if(do_ringbuffer_write) {
+			// reset the buffer pointer
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			written=freebob_ringbuffer_write(stream->buffer, (char *)(buffer), written*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		}
+		*/
 		return nsamples; // for midi streams we always indicate a full write
 	
 	} else {//if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
@@ -381,30 +482,107 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 
 int 
 freebob_encode_stream_to_events(freebob_connection_t *connection,
-								freebob_stream_t *stream, 
-								quadlet_t* events, 
+								freebob_stream_t *stream,
+								quadlet_t* events,
 								unsigned int nsamples,
 								unsigned int dbc
 								) {
 	quadlet_t *target_event;
-	freebob_sample_t buff[nsamples];
-	freebob_sample_t *buffer=buff;
+	//freebob_sample_t buff[nsamples];
+	int do_ringbuffer_read=0;
+	
+	freebob_sample_t *buffer=NULL;
+	float *floatbuff=NULL;
+	
+	
 	unsigned int j=0;
 	unsigned int read=0;
-	
+	long long y;
+
 	assert (stream);
+	assert (connection);
+	assert (events);
 	assert (stream->spec.position < connection->spec.dimension);
+	
+	switch(stream->buffer_type) {
+		case freebob_buffer_type_per_stream:
+		default:
+//			assert(nsamples < dev->options.period_size);
+			// use the preallocated buffer (at init time)
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=1;
+			break;
+				
+		case freebob_buffer_type_uint24:
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=0;
+			break;
+				
+		case freebob_buffer_type_float:
+			floatbuff=((float *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=0;
+			break;
+	}
+	
 	
 	if(stream->spec.format == IEC61883_STREAM_TYPE_MBLA) { // MBLA
 		target_event=(quadlet_t *)(events + (stream->spec.position));
 		
-		read=freebob_ringbuffer_read(stream->buffer, (char *)buffer, nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		if(do_ringbuffer_read) {
+			read=freebob_ringbuffer_read(stream->buffer, (char *)buffer, nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		} else {
+			read=nsamples;
+		}
 		
+		// TODO: convert this into function pointer based
+		switch(stream->buffer_type) {
+			default:
+			case freebob_buffer_type_uint24:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
+					buffer++;
+					target_event+=connection->spec.dimension;
+					
+				//	*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+					//buffer++;
+					//target_event+=connection->spec.dimension;
+				}
+				break;
+			case freebob_buffer_type_float:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+	// convert from float to integer
+					y = (long long)(*floatbuff * SAMPLE_MAX_24BIT);
+
+					if (y > (INT_MAX >> 8 )) {
+						y = (INT_MAX >> 8);
+					} else if (y < (INT_MIN >> 8 )) {
+						y = (INT_MIN >> 8 );
+					}
+					#if __BYTE_ORDER == __LITTLE_ENDIAN
+							memcpy (target_event, &y, 3);
+					#elif __BYTE_ORDER == __BIG_ENDIAN
+							memcpy (target_event, (char *)&y + 5, 3);
+					#endif
+					*target_event = htonl((*target_event & 0x00FFFFFF) | 0x40000000);
+					
+					floatbuff++;
+					target_event+=connection->spec.dimension;
+				}
+				break;
+		}
+		
+		/*		
 		for(j = 0; j < nsamples; j+=1) {
 			*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
 			buffer++;
 			target_event+=connection->spec.dimension;
 		}
+		*/
+		
 		return read;
 		
 	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {

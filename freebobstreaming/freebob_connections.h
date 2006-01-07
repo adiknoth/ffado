@@ -36,7 +36,7 @@
 
 #include "cip.h"
 
-#include <freebobctl/freebobctl.h>
+#include <libfreebob/freebob.h>
 #include "ringbuffer.h"
 #include <errno.h>
 #include <stdio.h>
@@ -45,6 +45,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define TIMESTAMP_BUFFER_SIZE 512
 
 /*
  * ISO/AM824 packet structures
@@ -132,6 +134,15 @@ struct packet_info {
 #error Unknown bitfield type
 
 #endif
+typedef struct _freebob_timestamp freebob_timestamp_t;
+
+/**
+ * Timestamp structure
+ */
+struct _freebob_timestamp {
+	unsigned int syt;
+	unsigned int cycle;
+};
 
 /*
  * Connection definition
@@ -174,6 +185,8 @@ typedef struct _freebob_connection_status {
 	
 	struct _freebob_connection_status *master;
 
+	freebob_timestamp_t last_timestamp;	
+	
 #ifdef DEBUG
 	int total_packets_prev;
 
@@ -184,9 +197,15 @@ typedef struct _freebob_stream freebob_stream_t;
 typedef struct _freebob_connection freebob_connection_t;
 
 struct _freebob_connection {
+	freebob_device_t *parent;
+	
 	freebob_connection_spec_t spec;
+// 	freebob_stream_info_t stream_info;
 	freebob_connection_status_t status;
 	freebob_iso_status_t iso;
+	
+	/* pointer to the pollfd structure for this connection */
+	struct pollfd *pfd;
 	
 	/*
 	 * The streams this connection is composed of
@@ -194,18 +213,22 @@ struct _freebob_connection {
 	int nb_streams;
  	freebob_stream_t *streams;
 	
-	/* 
-	 * This buffers between the packet thread and the read/write routines
-	 */
-	//jack_ringbuffer_t * dma_buffer;
-	
 	/*
-	 * This is a temporary buffer to decode/encode from samples from/to events
+	 * This is the buffer to decode/encode from samples from/to events
 	 */
-	//quadlet_t *event_buffer;
-
+	freebob_ringbuffer_t * event_buffer;
+	char * cluster_buffer;
+	
 	raw1394handle_t raw_handle;
 		
+	
+	/*
+	 * This is the info needed for time stamp processing
+	 */
+
+	unsigned int total_delay; // = transfer delay + processing delay
+	freebob_ringbuffer_t *timestamp_buffer;
+	
 };
 
 /** 
@@ -218,6 +241,10 @@ struct _freebob_stream {
 	freebob_ringbuffer_t *buffer;
 	freebob_connection_t *parent;
 	
+	freebob_streaming_buffer_type buffer_type;
+	char *user_buffer;
+	unsigned int user_buffer_position;
+	int midi_counter;
 };
 
 /* Initializes a stream_t based upon an stream_info_t */
