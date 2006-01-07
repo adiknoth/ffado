@@ -69,7 +69,7 @@ freebob_thread_proxy (void* varg)
 	freebob_thread_arg_t* arg = (freebob_thread_arg_t*) varg;
 	void* (*work)(void*);
 	void* warg;
-	freebob_device_t* dev = arg->device;
+// 	freebob_device_t* dev = arg->device;
 
 	if (arg->realtime) {
 		freebob_acquire_real_time_scheduling (pthread_self(), arg->priority);
@@ -210,7 +210,7 @@ freebob_acquire_real_time_scheduling (pthread_t thread, int priority)
 		printError ("cannot use real-time scheduling (FIFO at priority %d) "
 			    "[for thread %d, from thread %d] (%d: %s)", 
 			    rtparam.sched_priority, 
-			    thread, pthread_self(),
+			    (int)thread, (int)pthread_self(),
 			    x, strerror (x));
 		return -1;
 	}

@@ -411,7 +411,7 @@ int freebob_streaming_set_stream_buffer(freebob_device_t *dev,  freebob_stream_t
 			return -1;
 			
 	}
-
+	return 0;
 }
 
 void freebob_streaming_free_stream_buffer(freebob_device_t* dev, freebob_stream_t *dst)
@@ -912,7 +912,7 @@ int freebob_streaming_reset(freebob_device_t *dev) {
 	// we should transfer nb_buffers-1 periods of playback from the stream buffers to the event buffer
 	for (i=0;i<dev->options.nb_buffers-1;i++) {
  		freebob_streaming_transfer_playback_buffers(dev);
-		debugPrint(DEBUG_LEVEL_XRUN_RECOVERY, "XRUN xfer %d\n",i);
+		debugPrint(DEBUG_LEVEL_XRUN_RECOVERY, "XRUN xfer %lu\n",i);
 	}
 			
 	// clear the xrun flag
@@ -986,7 +986,7 @@ int freebob_streaming_transfer_capture_buffers(freebob_device_t *dev) {
 		*  Make sure that we cannot end up on a non-cluster aligned position!
 			*/
 		int cluster_size=connection->spec.dimension*sizeof(quadlet_t);
-		unsigned int frames2read=events2read/connection->spec.dimension;
+// 		unsigned int frames2read=events2read/connection->spec.dimension;
 			
 		while(bytes2read>0) {
 			unsigned int framesread=(dev->options.period_size*cluster_size-bytes2read)/cluster_size;
@@ -1088,7 +1088,7 @@ int freebob_streaming_transfer_playback_buffers(freebob_device_t *dev) {
 		*  Make sure that we cannot end up on a non-cluster aligned position!
 		*/
 		int cluster_size=connection->spec.dimension*sizeof(quadlet_t);
-		unsigned int frames2write=events2write/connection->spec.dimension;
+// 		unsigned int frames2write=events2write/connection->spec.dimension;
 			
 		while(bytes2write>0) {
 			int byteswritten=0;
@@ -1437,6 +1437,7 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 			return err;
 		}
 	}
+	return 0;
 }
 
 int freebob_streaming_stop_iso_connection(freebob_device_t *dev, freebob_connection_t *connection) {
@@ -1453,7 +1454,8 @@ int freebob_streaming_stop_iso_connection(freebob_device_t *dev, freebob_connect
 	debugPrint(DEBUG_LEVEL_STARTUP, "Shutdown connection on channel %d ...\n", connection->iso.iso_channel);
 		
 	raw1394_iso_shutdown(connection->raw_handle);
-
+	
+	return 0;
 }
 
 int freebob_streaming_wait_for_sync_stream(freebob_device_t *dev, freebob_connection_t *connection) {
@@ -1496,7 +1498,7 @@ int freebob_streaming_wait_for_sync_stream(freebob_device_t *dev, freebob_connec
 int freebob_streaming_start_iso(freebob_device_t *dev) {
 	freebob_connection_t *connection=NULL;
 	unsigned int c;
-	int err;
+// 	int err;
 
 	// when starting the thread, we should wait with iterating the slave connections
 	// until the master connection has processed some samples, because the devices
@@ -1573,8 +1575,8 @@ void * freebob_iso_packet_iterator(void *arg)
 	freebob_device_t * dev=(freebob_device_t *) arg;
 	int i=0;
 	int err;
-	int cycle=0;
-	unsigned int c;
+// 	int cycle=0;
+// 	unsigned int c;
 	int underrun_detected=0;
 	
 	int notdone=TRUE;
@@ -1784,7 +1786,7 @@ void * freebob_iso_packet_iterator(void *arg)
 
 void freebob_streaming_append_master_timestamp(freebob_device_t *dev, freebob_timestamp_t *t) {
 	int c;
-	int retval;
+// 	int retval;
 	freebob_connection_t *connection;
 	
 	assert(dev);
@@ -1959,9 +1961,9 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
         unsigned int dropped)
 {
     enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
-	static quadlet_t cntr=0;
+// 	static quadlet_t cntr=0;
 	
-	int xrun=0;
+// 	int xrun=0;
 
 	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
 	assert(connection);
@@ -1991,7 +1993,7 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 // 		}
 		
 		if (freebob_ringbuffer_write(
-				connection->event_buffer,data+8,
+				connection->event_buffer,(char *)(data+8),
 				nevents*sizeof(quadlet_t)*connection->spec.dimension) < 
 				nevents*sizeof(quadlet_t)*connection->spec.dimension) 
 		{
@@ -2055,7 +2057,7 @@ static enum raw1394_iso_disposition
 	* will be ok.
 	*/
 	 	
-	int xrun=0;
+// 	int xrun=0;
 
 	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
 	assert(connection);
@@ -2076,7 +2078,7 @@ static enum raw1394_iso_disposition
 		assert(connection->spec.dimension == packet->dbs);
 
 		if (freebob_ringbuffer_write(
-				  	connection->event_buffer,data+8,
+				  	connection->event_buffer,(char *)(data+8),
 					nevents*sizeof(quadlet_t)*connection->spec.dimension) < 
 			nevents*sizeof(quadlet_t)*connection->spec.dimension) 
 		{
@@ -2146,13 +2148,13 @@ iso_master_transmit_handler(raw1394handle_t handle,
 	
 	// construct the packet cip
 	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
-	int xrun=0;
+// 	int xrun=0;
 	int nsamples=0;
 	int bytes_read;
 	
 	freebob_timestamp_t tstamp;
 	
-	unsigned int syt;
+// 	unsigned int syt;
 	
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	
@@ -2191,7 +2193,7 @@ iso_master_transmit_handler(raw1394handle_t handle,
 
 		assert(connection->spec.dimension == packet->dbs);
 
-		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,data+8,nsamples*sizeof(quadlet_t)*connection->spec.dimension)) < 
+		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,(char *)(data+8),nsamples*sizeof(quadlet_t)*connection->spec.dimension)) < 
 				   nsamples*sizeof(quadlet_t)*connection->spec.dimension) 
 		{
 			printError("MASTER XMT: Buffer underrun! (%d / %d) (%d / %d )\n",
@@ -2262,13 +2264,13 @@ static enum raw1394_iso_disposition
 	
 	// construct the packet cip
 	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
-	int xrun=0;
+// 	int xrun=0;
 	int nsamples=0;
 	int bytes_read;
 	
 	freebob_timestamp_t tstamp;
 	
-	unsigned int syt;
+// 	unsigned int syt;
 	
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	
@@ -2307,7 +2309,7 @@ static enum raw1394_iso_disposition
 
 		assert(connection->spec.dimension == packet->dbs);
 
-		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,data+8,nsamples*sizeof(quadlet_t)*connection->spec.dimension)) < 
+		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,(char *)(data+8),nsamples*sizeof(quadlet_t)*connection->spec.dimension)) < 
 			nsamples*sizeof(quadlet_t)*connection->spec.dimension) 
 		{
 			printError("SLAVE XMT: Buffer underrun! (%d / %d) (%d / %d )\n",

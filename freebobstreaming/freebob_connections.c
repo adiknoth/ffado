@@ -388,8 +388,9 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 			break;
 	}
 	
-	unsigned int j=0;
+	int j=0;
 	int written=0;
+	const float multiplier = (float)(1u << 31);
 	
 	if (stream->spec.format== IEC61883_STREAM_TYPE_MBLA) {
 		target_event=(quadlet_t *)(events + stream->spec.position);
@@ -406,24 +407,15 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 				}
 				break;
 			case freebob_buffer_type_float:
-				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
-					unsigned int sample_int=(ntohl((*target_event) ) & 0x00FFFFFF);
-// 					sample_int=sample_int/256; // this is to get 2's complement right
-// 					*floatbuff=((float)sample_int)/(0x007FFFFF*1.0);
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples		
+					// don't care for overflow
+					float v = *floatbuff * multiplier;  // v: -231 .. 231
+					unsigned int tmp = ((int)v);
+					*target_event = htonl((tmp >> 8) | 0x40000000);
 					
-					int x;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-					memcpy((char*)&x + 1, &sample_int, 3);
-#elif __BYTE_ORDER == __BIG_ENDIAN
-					memcpy(&x, &sample_int, 3);
-#endif
-					x >>= 8;
-					*floatbuff = x / SAMPLE_MAX_24BIT;
 					floatbuff++;
-		
-					//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
-					
-					target_event+=connection->spec.dimension;
+					target_event += connection->spec.dimension;
+
 				}
 				break;
 		}
@@ -444,30 +436,6 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 		return written;
 	
 	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
-		/* idea:
-		spec says: current_midi_port=(dbc+j)%8;
-		=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
-			we'll start at the right event for the midi port.
-		=> if we increment j with 8, we stay at the right event.
-		*/
-		/*		
-		for(j = (dbc+stream->spec.location-1)%8; j < nsamples; j += 8) {
-			target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
-			unsigned int sample_int=(ntohl((*target_event) ) & 0x00FFFFFF);
-			
-			if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-				*(((quadlet_t *)buffer) + written)=sample_int;
-
-				written++;
- 			}
-		}
-		
-		if(do_ringbuffer_write) {
-			// reset the buffer pointer
-			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
-			written=freebob_ringbuffer_write(stream->buffer, (char *)(buffer), written*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
-		}
-		*/
 		return nsamples; // for midi streams we always indicate a full write
 	
 	} else {//if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
@@ -494,10 +462,10 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 	freebob_sample_t *buffer=NULL;
 	float *floatbuff=NULL;
 	
+	const float multiplier = 1.0f / (float)(1 << 23);
 	
 	unsigned int j=0;
 	unsigned int read=0;
-	long long y;
 
 	assert (stream);
 	assert (connection);
@@ -541,34 +509,24 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 		switch(stream->buffer_type) {
 			default:
 			case freebob_buffer_type_uint24:
-				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+				for(j = 0; j < read; j += 1) { // decode max nsamples
 					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
 					buffer++;
 					target_event+=connection->spec.dimension;
 					
 				//	*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
 		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
-					//buffer++;
-					//target_event+=connection->spec.dimension;
+
 				}
 				break;
 			case freebob_buffer_type_float:
-				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
-	// convert from float to integer
-					y = (long long)(*floatbuff * SAMPLE_MAX_24BIT);
-
-					if (y > (INT_MAX >> 8 )) {
-						y = (INT_MAX >> 8);
-					} else if (y < (INT_MIN >> 8 )) {
-						y = (INT_MIN >> 8 );
-					}
-					#if __BYTE_ORDER == __LITTLE_ENDIAN
-							memcpy (target_event, &y, 3);
-					#elif __BYTE_ORDER == __BIG_ENDIAN
-							memcpy (target_event, (char *)&y + 5, 3);
-					#endif
-					*target_event = htonl((*target_event & 0x00FFFFFF) | 0x40000000);
-					
+				for(j = 0; j < read; j += 1) { // decode max nsamples
+					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+					// sign-extend highest bit of 24-bit int
+					int tmp = (int)(v << 8) / 256;
+		
+					*floatbuff = tmp * multiplier;
+				
 					floatbuff++;
 					target_event+=connection->spec.dimension;
 				}
@@ -586,26 +544,6 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 		return read;
 		
 	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
-	/*	int base=stream->spec.location-1;
-		// due to the mux of the midi channel
-		int max_midi_events=nsamples/8;
-		
-		read=freebob_ringbuffer_read(stream->buffer, (char *)buffer, max_midi_events*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
-
-		for(j = 0; j < read; j += 1) {
-			quadlet_t tmp;
-			target_event=(quadlet_t *)(events + ((base + j * 8 * connection->spec.dimension) + stream->spec.position));
-			tmp=*(buffer+j) | 0x81000000; // only MIDI X1
-			*target_event=htonl(tmp);
-		}
-		
-		for(; j < max_midi_events; j += 1) {
-			quadlet_t tmp;
-			target_event=(quadlet_t *)(events + ((base + j * 8 * connection->spec.dimension) + stream->spec.position));
-			tmp=0x80000000; // MIDI NO-DATA
-			*target_event=htonl(tmp);
-		}
-		*/
 		return nsamples; // for midi we always indicate a full read
 	
 	} else { //if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
