@@ -38,6 +38,8 @@ typedef struct _freebob_stream_spec freebob_stream_spec_t;
 typedef struct _freebob_stream_info freebob_stream_info_t;
 typedef struct _freebob_connection_spec freebob_connection_spec_t;
 typedef struct _freebob_connection_info freebob_connection_info_t;
+typedef struct _freebob_supported_stream_format_spec freebob_supported_stream_format_spec_t;
+typedef struct _freebob_supported_stream_format_info freebob_supported_stream_format_info_t;
 
 /*
  * Stream specification
@@ -83,6 +85,21 @@ struct _freebob_connection_info {
     freebob_connection_spec_t** connections;
 };
 
+/*
+ * Supported stream formats
+ */
+struct _freebob_supported_stream_format_spec {
+    int samplerate;
+    int nb_audio_channels;
+    int nb_midi_channels;
+};
+
+struct _freebob_supported_stream_format_info {
+    int direction;
+    int nb_formats;
+    freebob_supported_stream_format_spec_t** formats;
+};
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +120,11 @@ freebob_get_connection_info( freebob_handle_t freebob_handle,
 			     int node_id,
 			     enum freebob_direction direction );
 
+freebob_supported_stream_format_info_t*
+freebob_get_supported_stream_format_info( freebob_handle_t freebob_handle,
+					  int node_id,
+					  enum freebob_direction direction );
+
 void
 freebob_free_connection_info( freebob_connection_info_t* connection_info );
 void
@@ -111,9 +133,17 @@ void
 freebob_free_stream_info( freebob_stream_info_t* stream_info );
 void
 freebob_free_stream_spec( freebob_stream_spec_t* stream_spec );
+void
+freebob_free_supported_stream_format_info( freebob_supported_stream_format_info_t* stream_info );
+void
+freebob_free_supported_stream_format_spec( freebob_supported_stream_format_spec_t* stream_spec );
+
+
 
 void
 freebob_print_connection_info( freebob_connection_info_t* connection_info );
+void
+freebob_print_supported_stream_format_info( freebob_supported_stream_format_info_t* stream_info );
 
 int freebob_node_is_valid_freebob_device(freebob_handle_t fb_handle, int node_id);
 int freebob_get_nb_devices_on_bus(freebob_handle_t fb_handle);
@@ -124,8 +154,8 @@ int freebob_set_samplerate(freebob_handle_t freebob_handle, int node_id, int sam
 /* debug function */
 void
 freebob_print_xml_description( freebob_handle_t freebob_handle,
-                             int node_id,
-                             enum freebob_direction direction );
+			       int node_id,
+			       enum freebob_direction direction );
 
 const char*
 freebob_get_version();

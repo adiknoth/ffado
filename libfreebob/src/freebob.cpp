@@ -96,6 +96,21 @@ freebob_get_connection_info( freebob_handle_t freebob_handle,
     return freebob_xmlparse_get_connection_info( doc, node_id, direction );
 }
 
+freebob_supported_stream_format_info_t*
+freebob_get_supported_stream_format_info( freebob_handle_t freebob_handle,
+                                          int node_id,
+                                          enum freebob_direction direction )
+{
+    xmlDocPtr doc;
+    doc = freebob_handle->m_deviceManager->getXmlDescription();
+    if ( !doc ) {
+        debugFatal( "Could not get XML description\n" );
+        return 0;
+    }
+
+    return freebob_xmlparse_get_stream_formats( doc, node_id, direction );
+}
+
 int
 freebob_node_is_valid_freebob_device( freebob_handle_t freebob_handle, int node_id )
 {
@@ -176,6 +191,31 @@ void freebob_free_stream_spec( freebob_stream_spec_t* stream_spec )
 }
 
 void
+freebob_free_supported_stream_format_info( freebob_supported_stream_format_info_t* stream_info )
+{
+    if ( !stream_info ) {
+	return;
+    }
+
+    for ( int i = 0; i < stream_info->nb_formats; ++i ) {
+	freebob_free_supported_stream_format_spec( stream_info->formats[i] );
+    }
+
+    free(stream_info->formats);
+    free(stream_info);
+}
+
+void
+freebob_free_supported_stream_format_spec( freebob_supported_stream_format_spec_t* stream_spec )
+{
+    if ( !stream_spec ) {
+	return;
+    }
+
+    free( stream_spec );
+}
+
+void
 freebob_print_connection_info( freebob_connection_info_t* connection_info )
 {
     if ( !connection_info ) {
@@ -236,6 +276,34 @@ freebob_print_connection_info( freebob_connection_info_t* connection_info )
 	    }
 	}
         printf( "\n" );
+    }
+
+    return;
+}
+
+void
+freebob_print_supported_stream_format_info( freebob_supported_stream_format_info_t* stream_info )
+{
+    if ( !stream_info ) {
+	fprintf( stderr, "stream_info==NULL\n" );
+	return;
+    }
+
+    printf( "Direction:              %d (%s)\n\n", stream_info->direction,
+            stream_info->direction? "playback" : "capture" );
+
+    printf( "Samplerate AudioChannels MidiChannels\n" );
+    printf( "-------------------------------------\n" );
+    for ( int i = 0; i < stream_info->nb_formats; ++i) {
+	freebob_supported_stream_format_spec_t* format_spec
+	    = stream_info->formats[i];
+
+	if ( format_spec ) {
+            printf( "%05d      %02d            %02d\n",
+                    format_spec->samplerate,
+                    format_spec->nb_audio_channels,
+                    format_spec->nb_midi_channels );
+        }
     }
 
     return;
