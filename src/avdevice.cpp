@@ -368,31 +368,33 @@ AvDevice::discoverStep3()
 }
 
 bool
-AvDevice::discoverStep4()
+AvDevice::discoverStep4Plug( AvPlugVector& isoPlugs )
 {
     //////////////////////////////////////////////
     // Step 4: For all ISO plugs with valid internal connections:
     // get type of data stream flowing through plug.
     // Stream type of interest: iso stream & sync stream
 
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
+    for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
           ++it )
     {
-        AvPlug* isoInputPlug = *it;
+        AvPlug* isoPlug = *it;
 
-        AvPlugConnection* plugConnection = getPlugConnection( *isoInputPlug );
+        AvPlugConnection* plugConnection = getPlugConnection( *isoPlug );
         if ( !plugConnection ) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoInputPlug->getPlugId() );
+                         "plug %d has no valid connecton -> skip\n",
+                         isoPlug->getPlugId() );
             continue;
         }
 
         ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
         UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoInputPlug->getPlugId() );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                         isoPlug->getPlugId() );
+        PlugAddress::EPlugDirection direction =
+            static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+        extPlugInfoCmd.setPlugAddress( PlugAddress( direction,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
         extPlugInfoCmd.setNodeId( m_nodeId );
@@ -404,7 +406,7 @@ AvDevice::discoverStep4()
         extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
         if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverStep4: plug type command failed\n" );
+            debugError( "discoverStep4Plug: plug type command failed\n" );
             return false;
         }
 
@@ -415,316 +417,200 @@ AvDevice::discoverStep4()
             plug_type_t plugType = infoType->m_plugType->m_plugType;
 
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d is of type %d (%s)\n",
-                         isoInputPlug->getPlugId(),
+                         "plug %d is of type %d (%s)\n",
+                         isoPlug->getPlugId(),
                          plugType,
                          extendedPlugInfoPlugTypeToString( plugType ) );
 
-            isoInputPlug->m_plugType = plugType;
+            isoPlug->m_plugType = plugType;
         }
     }
 
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
+   return true;
+}
+
+bool
+AvDevice::discoverStep4()
+{
+    bool success;
+    success  = discoverStep4Plug( m_isoInputPlugs );
+    success &= discoverStep4Plug( m_isoOutputPlugs );
+
+    return success;
+}
+
+bool
+AvDevice::discoverStep5Plug( AvPlugVector& isoPlugs )
+{
+    //////////////////////////////////////////////
+    // Step 5: For all ISO plugs with valid internal connections:
+    // get data block size of the stream flowing through the plug
+
+    for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
           ++it )
     {
-        AvPlug* isoOutputPlug = *it;
+        AvPlug* isoPlug = *it;
 
-        AvPlugConnection* plugConnection = getPlugConnection( *isoOutputPlug );
+        AvPlugConnection* plugConnection = getPlugConnection( *isoPlug );
         if ( !plugConnection ) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoOutputPlug->getPlugId() );
+                         "plug %d has no valid connecton -> skip\n",
+                         isoPlug->getPlugId() );
             continue;
         }
 
         ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
         UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoOutputPlug->getPlugId() );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
+                                         isoPlug->getPlugId() );
+        PlugAddress::EPlugDirection direction =
+            static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+        extPlugInfoCmd.setPlugAddress( PlugAddress( direction,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
         extPlugInfoCmd.setNodeId( m_nodeId );
         extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
         //extPlugInfoCmd.setVerbose( true );
         ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-            ExtendedPlugInfoInfoType::eIT_PlugType );
+            ExtendedPlugInfoInfoType::eIT_NoOfChannels );
         extendedPlugInfoInfoType.initialize();
         extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
         if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverStep4: plug type command failed\n" );
+            debugError( "discoverStep5Plug: number of channels command failed\n" );
             return false;
         }
 
         ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
         if ( infoType
-             && infoType->m_plugType )
+             && infoType->m_plugNrOfChns )
         {
-            plug_type_t plugType = infoType->m_plugType->m_plugType;
+            nr_of_channels_t nrOfChannels
+                = infoType->m_plugNrOfChns->m_nrOfChannels;
 
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso output plug %d is of type %d (%s)\n",
-                         isoOutputPlug->getPlugId(),
-                         plugType,
-                         extendedPlugInfoPlugTypeToString( plugType ) );
+                         "plug %d has %d channels\n",
+                         isoPlug->getPlugId(),
+                         nrOfChannels );
 
-            isoOutputPlug->m_plugType = plugType;
+            isoPlug->m_nrOfChannels = nrOfChannels;
         }
     }
 
     return true;
 }
 
+
 bool
 AvDevice::discoverStep5()
 {
+    bool success;
+    success  = discoverStep5Plug( m_isoInputPlugs );
+    success &= discoverStep5Plug( m_isoOutputPlugs );
+
+    return success;
+}
+
+bool
+AvDevice::discoverStep6Plug( AvPlugVector& isoPlugs )
+{
     //////////////////////////////////////////////
-    // Step 5: For all ISO plugs with valid internal connections:
-    // get data block size of the stream flowing through the plug
+    // Step 6: For all ISO plugs with valid internal connections:
+    // get position of channels within data block
 
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
+    for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
           ++it )
     {
-        AvPlug* isoInputPlug = *it;
+        AvPlug* isoPlug = *it;
 
-        AvPlugConnection* plugConnection = getPlugConnection( *isoInputPlug );
+        AvPlugConnection* plugConnection = getPlugConnection( *isoPlug );
         if ( !plugConnection ) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoInputPlug->getPlugId() );
+                         "plug %d has no valid connecton -> skip\n",
+                         isoPlug->getPlugId() );
             continue;
         }
 
         ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
         UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoInputPlug->getPlugId() );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                         isoPlug->getPlugId() );
+        PlugAddress::EPlugDirection direction =
+            static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+        extPlugInfoCmd.setPlugAddress( PlugAddress( direction,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
         extPlugInfoCmd.setNodeId( m_nodeId );
         extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
         //extPlugInfoCmd.setVerbose( true );
         ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-            ExtendedPlugInfoInfoType::eIT_NoOfChannels );
+            ExtendedPlugInfoInfoType::eIT_ChannelPosition );
         extendedPlugInfoInfoType.initialize();
         extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
         if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverStep5: number of channels command failed\n" );
+            debugError( "discoverStep6Plug: channels position command failed\n" );
             return false;
         }
 
         ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
         if ( infoType
-             && infoType->m_plugNrOfChns )
+             && infoType->m_plugChannelPosition )
         {
-            nr_of_channels_t nrOfChannels
-                = infoType->m_plugNrOfChns->m_nrOfChannels;
+            if ( !isoPlug->copyClusterInfo(
+                     *( infoType->m_plugChannelPosition ) ) )
+            {
+                debugError( "discoverStep6Plug: Could not copy channel position "
+                            "information\n" );
+                return false;
+            }
 
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has %d channels\n",
-                         isoInputPlug->getPlugId(),
-                         nrOfChannels );
+                         "plug %d: channel position information "
+                         "retrieved\n",
+                         isoPlug->getPlugId() );
 
-            isoInputPlug->m_nrOfChannels = nrOfChannels;
+            isoPlug->debugOutputClusterInfos( DEBUG_LEVEL_VERBOSE );
         }
     }
 
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
-          ++it )
-    {
-        AvPlug* isoOutputPlug = *it;
-
-        AvPlugConnection* plugConnection = getPlugConnection( *isoOutputPlug );
-        if ( !plugConnection ) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoOutputPlug->getPlugId() );
-            continue;
-        }
-
-        ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoOutputPlug->getPlugId() );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
-                                                    PlugAddress::ePAM_Unit,
-                                                    unitPlugAddress ) );
-        extPlugInfoCmd.setNodeId( m_nodeId );
-        extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-        //extPlugInfoCmd.setVerbose( true );
-        ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-            ExtendedPlugInfoInfoType::eIT_NoOfChannels );
-        extendedPlugInfoInfoType.initialize();
-        extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-
-        if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverStep5: nubmer of channels command failed\n" );
-            return false;
-        }
-
-        ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-        if ( infoType
-             && infoType->m_plugNrOfChns )
-        {
-            nr_of_channels_t nrOfChannels
-                = infoType->m_plugNrOfChns->m_nrOfChannels;
-
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso output plug %d has %d channels\n",
-                         isoOutputPlug->getPlugId(),
-                         nrOfChannels );
-
-            isoOutputPlug->m_nrOfChannels = nrOfChannels;
-        }
-    }
     return true;
 }
 
 bool
 AvDevice::discoverStep6()
 {
-    //////////////////////////////////////////////
-    // Step 6: For all ISO plugs with valid internal connections:
-    // get position of channels within data block
+    bool success;
+    success  = discoverStep6Plug( m_isoInputPlugs );
+    success &= discoverStep6Plug( m_isoOutputPlugs );
 
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
-          ++it )
-    {
-        AvPlug* isoInputPlug = *it;
-
-        AvPlugConnection* plugConnection = getPlugConnection( *isoInputPlug );
-        if ( !plugConnection ) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoInputPlug->getPlugId() );
-            continue;
-        }
-
-        ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoInputPlug->getPlugId() );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
-                                                    PlugAddress::ePAM_Unit,
-                                                    unitPlugAddress ) );
-        extPlugInfoCmd.setNodeId( m_nodeId );
-        extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-        //extPlugInfoCmd.setVerbose( true );
-        ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-            ExtendedPlugInfoInfoType::eIT_ChannelPosition );
-        extendedPlugInfoInfoType.initialize();
-        extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-
-        if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverStep6: channels position command failed\n" );
-            return false;
-        }
-
-        ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-        if ( infoType
-             && infoType->m_plugChannelPosition )
-        {
-            if ( !isoInputPlug->copyClusterInfo(
-                     *( infoType->m_plugChannelPosition ) ) )
-            {
-                debugError( "discoverStep6: Could not copy channel position "
-                            "information\n" );
-                return false;
-            }
-
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d: channel position information "
-                         "retrieved\n",
-                         isoInputPlug->getPlugId() );
-
-            isoInputPlug->debugOutputClusterInfos( DEBUG_LEVEL_VERBOSE );
-        }
-    }
-
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
-          ++it )
-    {
-        AvPlug* isoOutputPlug = *it;
-
-        AvPlugConnection* plugConnection = getPlugConnection( *isoOutputPlug );
-        if ( !plugConnection ) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoOutputPlug->getPlugId() );
-            continue;
-        }
-
-        ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoOutputPlug->getPlugId() );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
-                                                    PlugAddress::ePAM_Unit,
-                                                    unitPlugAddress ) );
-        extPlugInfoCmd.setNodeId( m_nodeId );
-        extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-        //extPlugInfoCmd.setVerbose( true );
-        ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-            ExtendedPlugInfoInfoType::eIT_ChannelPosition );
-        extendedPlugInfoInfoType.initialize();
-        extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-
-        if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverStep6: channel position command failed\n" );
-            return false;
-        }
-
-        ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-        if ( infoType
-             && infoType->m_plugChannelPosition )
-        {
-            if ( !isoOutputPlug->copyClusterInfo(
-                     *( infoType->m_plugChannelPosition ) ) )
-            {
-                debugError( "discoverStep6: Could not copy channel position "
-                            "information\n" );
-                return false;
-            }
-
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso output plug %d: channel position information "
-                         "retrieved\n",
-                         isoOutputPlug->getPlugId() );
-
-            isoOutputPlug->debugOutputClusterInfos( DEBUG_LEVEL_VERBOSE );
-        }
-    }
-
-    return true;
+    return success;
 }
 
 bool
-AvDevice::discoverStep7()
+AvDevice::discoverStep7Plug( AvPlugVector& isoPlugs )
 {
     //////////////////////////////////////////////
     // Step 7: For all ISO plugs with valid internal connections:
     // get hardware name of channel
 
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
+    for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
           ++it )
     {
-        AvPlug* isoInputPlug = *it;
+        AvPlug* isoPlug = *it;
 
-        AvPlugConnection* plugConnection = getPlugConnection( *isoInputPlug );
+        AvPlugConnection* plugConnection = getPlugConnection( *isoPlug );
         if ( !plugConnection ) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoInputPlug->getPlugId() );
+                         "plug %d has no valid connecton -> skip\n",
+                         isoPlug->getPlugId() );
             continue;
         }
 
         for ( AvPlug::ClusterInfoVector::iterator clit =
-                  isoInputPlug->m_clusterInfos.begin();
-              clit != isoInputPlug->m_clusterInfos.end();
+                  isoPlug->m_clusterInfos.begin();
+              clit != isoPlug->m_clusterInfos.end();
               ++clit )
         {
             AvPlug::ClusterInfo* clitInfo = &*clit;
@@ -738,8 +624,10 @@ AvDevice::discoverStep7()
 
                 ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
                 UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                                 isoInputPlug->getPlugId() );
-                extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                 isoPlug->getPlugId() );
+                PlugAddress::EPlugDirection direction =
+                    static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+                extPlugInfoCmd.setPlugAddress( PlugAddress( direction,
                                                             PlugAddress::ePAM_Unit,
                                                             unitPlugAddress ) );
                 extPlugInfoCmd.setNodeId( m_nodeId );
@@ -765,9 +653,9 @@ AvDevice::discoverStep7()
                      && infoType->m_plugChannelName )
                 {
                     debugOutput( DEBUG_LEVEL_VERBOSE,
-                                 "iso input plug %d stream "
+                                 "plug %d stream "
                                  "position %d: channel name = %s\n",
-                                 isoInputPlug->getPlugId(),
+                                 isoPlug->getPlugId(),
                                  channelInfo->m_streamPosition,
                                  infoType->m_plugChannelName->m_plugChannelName.c_str() );
                     channelInfo->m_name =
@@ -778,72 +666,102 @@ AvDevice::discoverStep7()
         }
     }
 
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
+    return true;
+}
+bool
+AvDevice::discoverStep7()
+{
+    bool success;
+    success  = discoverStep7Plug( m_isoInputPlugs );
+    success &= discoverStep7Plug( m_isoOutputPlugs );
+
+    return success;
+}
+
+bool
+AvDevice::discoverStep8Plug( AvPlugVector& isoPlugs )
+{
+    //////////////////////////////////////////////
+    // Step 8: For all ISO plugs with valid internal connections:
+    // get logical input and output streams provided by the device
+
+    for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
           ++it )
     {
-        AvPlug* isoOutputPlug = *it;
+        AvPlug* isoPlug = *it;
 
-        AvPlugConnection* plugConnection = getPlugConnection( *isoOutputPlug );
+        AvPlugConnection* plugConnection = getPlugConnection( *isoPlug );
         if ( !plugConnection ) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso output plug %d has no valid connecton -> skip\n",
-                         isoOutputPlug->getPlugId() );
+                         "%s plug %d has no valid connecton -> skip\n",
+                         isoPlug->getName(),
+                         isoPlug->getPlugId() );
             continue;
         }
 
+        if ( isoPlug->getPlugType()
+             == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
+        {
+            // If the plug is of type sync it is either a normal 2 channel
+            // stream (not compound stream) or it is a compound stream
+            // with exactly one cluster. This depends on the
+            // extended stream format command version which is used.
+            // We are not interested in this plug so we skip it.
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "%s plug %d is of type sync -> skip\n",
+                         isoPlug->getName(),
+                         isoPlug->getPlugId() );
+            continue;
+        }
 
         for ( AvPlug::ClusterInfoVector::iterator clit =
-                  isoOutputPlug->m_clusterInfos.begin();
-              clit != isoOutputPlug->m_clusterInfos.end();
+                  isoPlug->m_clusterInfos.begin();
+              clit != isoPlug->m_clusterInfos.end();
               ++clit )
         {
-            AvPlug::ClusterInfo* clitInfo = &*clit;
+            AvPlug::ClusterInfo* clusterInfo = &*clit;
 
-            for ( AvPlug::ChannelInfoVector::iterator pit =
-                      clitInfo->m_channelInfos.begin();
-                  pit != clitInfo->m_channelInfos.end();
-                  ++pit )
+            ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
+            UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                             isoPlug->getPlugId() );
+            PlugAddress::EPlugDirection direction =
+                static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+            extPlugInfoCmd.setPlugAddress( PlugAddress( direction,
+                                                        PlugAddress::ePAM_Unit,
+                                                        unitPlugAddress ) );
+            extPlugInfoCmd.setNodeId( m_nodeId );
+            extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+            //extPlugInfoCmd.setVerbose( true );
+            ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
+                ExtendedPlugInfoInfoType::eIT_ClusterInfo );
+            extendedPlugInfoInfoType.initialize();
+            extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+
+            extPlugInfoCmd.getInfoType()->m_plugClusterInfo->m_clusterIndex =
+                clusterInfo->m_index;
+
+            if ( !extPlugInfoCmd.fire() ) {
+                debugError( "discoverStep8Plug: cluster info command failed\n" );
+                return false;
+            }
+
+            ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+            if ( infoType
+                 && infoType->m_plugClusterInfo )
             {
-                AvPlug::ChannelInfo* channelInfo = &*pit;
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "%s plug %d: cluster index = %d, "
+                             "portType %s, cluster name = %s\n",
+                             isoPlug->getName(),
+                             isoPlug->getPlugId(),
+                             infoType->m_plugClusterInfo->m_clusterIndex,
+                             extendedPlugInfoClusterInfoPortTypeToString(
+                                 infoType->m_plugClusterInfo->m_portType ),
+                             infoType->m_plugClusterInfo->m_clusterName.c_str() );
 
-                ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
-                UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                                 isoOutputPlug->getPlugId() );
-                extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
-                                                            PlugAddress::ePAM_Unit,
-                                                            unitPlugAddress ) );
-                extPlugInfoCmd.setNodeId( m_nodeId );
-                extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-                //extPlugInfoCmd.setVerbose( true );
-                ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-                    ExtendedPlugInfoInfoType::eIT_ChannelName );
-                extendedPlugInfoInfoType.initialize();
-                extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-
-                ExtendedPlugInfoInfoType* infoType =
-                    extPlugInfoCmd.getInfoType();
-                if ( infoType ) {
-                    infoType->m_plugChannelName->m_streamPosition =
-                        channelInfo->m_streamPosition;
-                }
-                if ( !extPlugInfoCmd.fire() ) {
-                    debugError( "discoverStep7: channel name command failed\n" );
-                    return false;
-                }
-                infoType = extPlugInfoCmd.getInfoType();
-                if ( infoType
-                     && infoType->m_plugChannelName )
-                {
-                    debugOutput( DEBUG_LEVEL_VERBOSE,
-                                 "iso output plug %d stream "
-                                 "position %d: channel name = %s\n",
-                                 isoOutputPlug->getPlugId(),
-                                 channelInfo->m_streamPosition,
-                                 infoType->m_plugChannelName->m_plugChannelName.c_str() );
-                    channelInfo->m_name =
-                        infoType->m_plugChannelName->m_plugChannelName;
-                }
+                clusterInfo->m_portType = infoType->m_plugClusterInfo->m_portType;
+                clusterInfo->m_name = infoType->m_plugClusterInfo->m_clusterName;
             }
         }
     }
@@ -854,192 +772,41 @@ AvDevice::discoverStep7()
 bool
 AvDevice::discoverStep8()
 {
-    //////////////////////////////////////////////
-    // Step 8: For all ISO plugs with valid internal connections:
-    // get logical input and output streams provided by the device
+    bool success;
+    success  = discoverStep8Plug( m_isoInputPlugs );
+    success &= discoverStep8Plug( m_isoOutputPlugs );
 
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
-          ++it )
-    {
-        AvPlug* isoInputPlug = *it;
-
-        AvPlugConnection* plugConnection = getPlugConnection( *isoInputPlug );
-        if ( !plugConnection ) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoInputPlug->getPlugId() );
-            continue;
-        }
-
-        if ( isoInputPlug->getPlugType()
-             == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
-        {
-            // If the plug is of type sync it is either a normal 2 channel
-            // stream (not compound stream) or it is a compound stream
-            // with exactly one cluster. This depends on the
-            // extended stream format command version which is used.
-            // We are not interested in this plug so we skip it.
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "%s plug %d is of type sync -> skip\n",
-                         isoInputPlug->getName(),
-                         isoInputPlug->getPlugId() );
-            continue;
-        }
-
-        for ( AvPlug::ClusterInfoVector::iterator clit =
-                  isoInputPlug->m_clusterInfos.begin();
-              clit != isoInputPlug->m_clusterInfos.end();
-              ++clit )
-        {
-            AvPlug::ClusterInfo* clusterInfo = &*clit;
-
-            ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
-            UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                             isoInputPlug->getPlugId() );
-            extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
-                                                        PlugAddress::ePAM_Unit,
-                                                        unitPlugAddress ) );
-            extPlugInfoCmd.setNodeId( m_nodeId );
-            extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-            //extPlugInfoCmd.setVerbose( true );
-            ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-                ExtendedPlugInfoInfoType::eIT_ClusterInfo );
-            extendedPlugInfoInfoType.initialize();
-            extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-
-            extPlugInfoCmd.getInfoType()->m_plugClusterInfo->m_clusterIndex =
-                clusterInfo->m_index;
-
-            if ( !extPlugInfoCmd.fire() ) {
-                debugError( "discoverStep8: cluster info command failed\n" );
-                return false;
-            }
-
-            ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-            if ( infoType
-                 && infoType->m_plugClusterInfo )
-            {
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso input plug %d: cluster index = %d, "
-                             "portType %s, cluster name = %s\n",
-                             isoInputPlug->getPlugId(),
-                             infoType->m_plugClusterInfo->m_clusterIndex,
-                             extendedPlugInfoClusterInfoPortTypeToString(
-                                 infoType->m_plugClusterInfo->m_portType ),
-                             infoType->m_plugClusterInfo->m_clusterName.c_str() );
-
-                clusterInfo->m_portType = infoType->m_plugClusterInfo->m_portType;
-                clusterInfo->m_name = infoType->m_plugClusterInfo->m_clusterName;
-            }
-        }
-    }
-
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
-          ++it )
-    {
-        AvPlug* isoOutputPlug = *it;
-
-        AvPlugConnection* plugConnection = getPlugConnection( *isoOutputPlug );
-        if ( !plugConnection ) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso output plug %d has no valid connecton -> skip\n",
-                         isoOutputPlug->getPlugId() );
-            continue;
-        }
-
-        if ( isoOutputPlug->getPlugType()
-             == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
-        {
-            // If the plug is of type sync it is either a normal 2 channel
-            // stream (not compound stream) or it is a compound stream
-            // with exactly one cluster. This depends on the
-            // extended stream format command version which is used.
-            // We are not interested in this plug so we skip it.
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "%s plug %d is of type sync -> skip\n",
-                         isoOutputPlug->getName(),
-                         isoOutputPlug->getPlugId() );
-            continue;
-        }
-
-        for ( AvPlug::ClusterInfoVector::iterator clit =
-                  isoOutputPlug->m_clusterInfos.begin();
-              clit != isoOutputPlug->m_clusterInfos.end();
-              ++clit )
-        {
-            AvPlug::ClusterInfo* clusterInfo = &*clit;
-
-            ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
-            UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                             isoOutputPlug->getPlugId() );
-            extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
-                                                        PlugAddress::ePAM_Unit,
-                                                        unitPlugAddress ) );
-            extPlugInfoCmd.setNodeId( m_nodeId );
-            extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-            //extPlugInfoCmd.setVerbose( true );
-            ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-                ExtendedPlugInfoInfoType::eIT_ClusterInfo );
-            extendedPlugInfoInfoType.initialize();
-            extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-
-            extPlugInfoCmd.getInfoType()->m_plugClusterInfo->m_clusterIndex =
-                clusterInfo->m_index;
-
-            if ( !extPlugInfoCmd.fire() ) {
-                debugError( "discoverStep8: cluster info command failed\n" );
-                return false;
-            }
-
-            ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-            if ( infoType
-                 && infoType->m_plugClusterInfo )
-            {
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso output plug %d: cluster index = %d, "
-                             "portType %s, cluster name = %s\n",
-                             isoOutputPlug->getPlugId(),
-                             infoType->m_plugClusterInfo->m_clusterIndex,
-                             extendedPlugInfoClusterInfoPortTypeToString(
-                                 infoType->m_plugClusterInfo->m_portType ),
-                             infoType->m_plugClusterInfo->m_clusterName.c_str() );
-
-                clusterInfo->m_portType = infoType->m_plugClusterInfo->m_portType;
-                clusterInfo->m_name = infoType->m_plugClusterInfo->m_clusterName;
-            }
-        }
-    }
-
-    return true;
+    return success;
 }
 
 bool
-AvDevice::discoverStep9()
+AvDevice::discoverStep9Plug( AvPlugVector& isoPlugs )
 {
     //////////////////////////////////////////////
     // Step 9: For all ISO plugs with valid internal connections:
     // get current stream format
 
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
+    for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
           ++it )
     {
-        AvPlug* isoInputPlug = *it;
+        AvPlug* isoPlug = *it;
 
-        AvPlugConnection* plugConnection = getPlugConnection( *isoInputPlug );
+        AvPlugConnection* plugConnection = getPlugConnection( *isoPlug );
         if ( !plugConnection ) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso input plug %d has no valid connecton -> skip\n",
-                         isoInputPlug->getPlugId() );
+                         "%s plug %d has no valid connecton -> skip\n",
+                         isoPlug->getName(),
+                         isoPlug->getPlugId() );
             continue;
         }
 
         ExtendedStreamFormatCmd extStreamFormatCmd( m_1394Service );
         UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoInputPlug->getPlugId() );
-        extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                         isoPlug->getPlugId() );
+        PlugAddress::EPlugDirection direction =
+            static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+        extStreamFormatCmd.setPlugAddress( PlugAddress( direction,
                                                         PlugAddress::ePAM_Unit,
                                                         unitPlugAddress ) );
 
@@ -1048,7 +815,7 @@ AvDevice::discoverStep9()
         //extStreamFormatCmd.setVerbose( true );
 
         if ( !extStreamFormatCmd.fire() ) {
-            debugError( "discoverStep9: stream format command failed\n" );
+            debugError( "discoverStep9Plug: stream format command failed\n" );
             return false;
         }
 
@@ -1058,23 +825,24 @@ AvDevice::discoverStep9()
             = dynamic_cast< FormatInformationStreamsCompound* > (
                 formatInfo->m_streams );
         if ( compoundStream ) {
-            isoInputPlug->m_samplingFrequency =
+            isoPlug->m_samplingFrequency =
                 compoundStream->m_samplingFrequency;
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "discoverStep9: iso input plug %d uses "
+                         "discoverStep9Plug: %s plug %d uses "
                          "sampling frequency %d\n",
-                         isoInputPlug->getPlugId(),
-                         isoInputPlug->m_samplingFrequency );
+                         isoPlug->getName(),
+                         isoPlug->getPlugId(),
+                         isoPlug->m_samplingFrequency );
 
             for ( int i = 1;
                   i <= compoundStream->m_numberOfStreamFormatInfos;
                   ++i )
             {
                 AvPlug::ClusterInfo* clusterInfo =
-                    isoInputPlug->getClusterInfoByIndex( i );
+                    isoPlug->getClusterInfoByIndex( i );
 
                 if ( !clusterInfo ) {
-                    debugError( "discoverStep9: No matching cluster info found "
+                    debugError( "discoverStep9Plug: No matching cluster info found "
                                 "for index %d\n",  i );
                     return false;
                 }
@@ -1092,11 +860,12 @@ AvDevice::discoverStep9()
                 if (  nrOfChannels !=
                      streamFormatInfo->m_numberOfChannels )
                 {
-                    debugError( "discoverStep9: Number of channels "
-                                "mismatch: iso input plug %d discovering reported "
+                    debugError( "discoverStep9Plug: Number of channels "
+                                "mismatch: %s plug %d discovering reported "
                                 "%d channels for cluster '%s', while stream format "
                                 "reported %d\n",
-                                isoInputPlug->getPlugId(),
+                                isoPlug->getName(),
+                                isoPlug->getPlugId(),
                                 nrOfChannels,
                                 clusterInfo->m_name.c_str(),
                                 streamFormatInfo->m_numberOfChannels);
@@ -1105,8 +874,9 @@ AvDevice::discoverStep9()
                 clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso input plug %d cluster info %d ('%s'): stream format %d\n",
-                             isoInputPlug->getPlugId(),
+                             "%s plug %d cluster info %d ('%s'): stream format %d\n",
+                             isoPlug->getName(),
+                             isoPlug->getPlugId(),
                              i,
                              clusterInfo->m_name.c_str(),
                              clusterInfo->m_streamFormat );
@@ -1117,130 +887,32 @@ AvDevice::discoverStep9()
             = dynamic_cast< FormatInformationStreamsSync* > (
                 formatInfo->m_streams );
         if ( syncStream ) {
-            isoInputPlug->m_samplingFrequency =
+            isoPlug->m_samplingFrequency =
                 syncStream->m_samplingFrequency;
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso input plug %d is sync stream with sampling frequency %d\n",
-                             isoInputPlug->getPlugId(),
-                             isoInputPlug->m_samplingFrequency );
+                             "%s plug %d is sync stream with sampling frequency %d\n",
+                             isoPlug->getName(),
+                             isoPlug->getPlugId(),
+                             isoPlug->m_samplingFrequency );
         }
 
         if ( !compoundStream && !syncStream ) {
-            debugError( "discoverStep9: Unsupported stream format\n" );
-            return false;
-        }
-    }
-
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
-          ++it )
-    {
-        AvPlug* isoOutputPlug = *it;
-
-        AvPlugConnection* plugConnection = getPlugConnection( *isoOutputPlug );
-        if ( !plugConnection ) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "iso output plug %d has no valid connecton -> skip\n",
-                         isoOutputPlug->getPlugId() );
-            continue;
-        }
-
-        ExtendedStreamFormatCmd extStreamFormatCmd( m_1394Service );
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         isoOutputPlug->getPlugId() );
-        extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Output,
-                                                        PlugAddress::ePAM_Unit,
-                                                        unitPlugAddress ) );
-
-        extStreamFormatCmd.setNodeId( m_nodeId );
-        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-        //extStreamFormatCmd.setVerbose( true );
-
-        if ( !extStreamFormatCmd.fire() ) {
-            debugError( "discoverStep9: stream format command failed\n" );
-            return false;
-        }
-
-        FormatInformation* formatInfo =
-            extStreamFormatCmd.getFormatInformation();
-        FormatInformationStreamsCompound* compoundStream
-            = dynamic_cast< FormatInformationStreamsCompound* > (
-                formatInfo->m_streams );
-        if ( compoundStream ) {
-            isoOutputPlug->m_samplingFrequency =
-                compoundStream->m_samplingFrequency;
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "discoverStep9: iso output plug %d uses "
-                         "sampling frequency %d\n",
-                         isoOutputPlug->getPlugId(),
-                         isoOutputPlug->m_samplingFrequency );
-
-            for ( int i = 1;
-                  i <= compoundStream->m_numberOfStreamFormatInfos;
-                  ++i )
-            {
-                AvPlug::ClusterInfo* clusterInfo =
-                    isoOutputPlug->getClusterInfoByIndex( i );
-
-                if ( !clusterInfo ) {
-                    debugError( "discoverStep9: No matching cluster info found "
-                                "for index %d\n",  i );
-                    return false;
-                }
-                StreamFormatInfo* streamFormatInfo =
-                    compoundStream->m_streamFormatInfos[ i - 1 ];
-
-                int nrOfChannels = clusterInfo->m_nrOfChannels;
-                if ( streamFormatInfo->m_streamFormat ==
-                     FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
-                {
-                    // 8 logical midi channels fit into 1 channel
-                    nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
-                }
-                // sanity checks
-                if (  nrOfChannels !=
-                      streamFormatInfo->m_numberOfChannels )
-                {
-                    debugError( "discoverStep9: Number of channels "
-                                "mismatch: iso output plug %d discovering reported "
-                                "%d channels for cluster '%s', while stream format "
-                                "reported %d\n",
-                                isoOutputPlug->getPlugId(),
-                                nrOfChannels,
-                                clusterInfo->m_name.c_str(),
-                                streamFormatInfo->m_numberOfChannels);
-                    return false;
-                }
-                clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
-
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso output plug %d cluster info %d ('%s'): stream format %d\n",
-                             isoOutputPlug->getPlugId(),
-                             i,
-                             clusterInfo->m_name.c_str(),
-                             clusterInfo->m_streamFormat );
-            }
-        }
-
-        FormatInformationStreamsSync* syncStream
-            = dynamic_cast< FormatInformationStreamsSync* > (
-                formatInfo->m_streams );
-        if ( syncStream ) {
-            isoOutputPlug->m_samplingFrequency =
-                syncStream->m_samplingFrequency;
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "iso output plug %d is sync stream with sampling frequency %d\n",
-                             isoOutputPlug->getPlugId(),
-                             isoOutputPlug->m_samplingFrequency );
-        }
-
-        if ( !compoundStream && !syncStream ) {
-            debugError( "discoverStep9: Unsupported stream format\n" );
+            debugError( "discoverStep9Plug: Unsupported stream format\n" );
             return false;
         }
     }
 
     return true;
+}
+
+bool
+AvDevice::discoverStep9()
+{
+    bool success;
+    success  = discoverStep9Plug( m_isoInputPlugs );
+    success &= discoverStep9Plug( m_isoOutputPlugs );
+
+    return success;
 }
 
 bool
@@ -1717,7 +1389,6 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     return true;
 }
 
-
 bool
 AvDevice::addXmlDescriptionStreamFormats( AvPlug& plug,
                                           xmlNodePtr streamFormatNode )
@@ -1996,4 +1667,3 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
                  "setSampleRate: Set sample rate to %d\n",  convertESamplingFrequency( samplingFrequency ) );
     return true;
 }
-

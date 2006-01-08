@@ -62,11 +62,17 @@ protected:
     bool discoverStep2();
     bool discoverStep3();
     bool discoverStep4();
+    bool discoverStep4Plug( AvPlugVector& isoPlugs );
     bool discoverStep5();
+    bool discoverStep5Plug( AvPlugVector& isoPlugs );
     bool discoverStep6();
+    bool discoverStep6Plug( AvPlugVector& isoPlugs );
     bool discoverStep7();
+    bool discoverStep7Plug( AvPlugVector& isoPlugs );
     bool discoverStep8();
+    bool discoverStep8Plug( AvPlugVector& isoPlugs );
     bool discoverStep9();
+    bool discoverStep9Plug( AvPlugVector& isoPlugs );
     bool discoverStep10();
     bool discoverStep10Plug( AvPlugVector& isoPlugs );
 
