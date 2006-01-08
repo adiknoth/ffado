@@ -47,12 +47,12 @@ public:
 	{ return m_name.c_str(); }
     plug_direction_t getPlugDirection()
 	{ return m_direction; }
-    sampling_frequency_t getSamplingFrequency() 
+    sampling_frequency_t getSamplingFrequency()
 	{ return m_samplingFrequency; }
     int getSampleRate(); // 22050, 24000, 32000, ...
     int getNrOfChannels();
     int getNrOfStreams();
-    
+
     plug_type_t          m_plugType;
     plug_id_t            m_plugId;
     subunit_type_t       m_subunitType;
@@ -63,6 +63,8 @@ public:
     sampling_frequency_t m_samplingFrequency;
 
 
+    // ---
+    // Channel & Cluster Info
     struct ChannelInfo {
         stream_position_t          m_streamPosition;
         stream_position_location_t m_location;
@@ -83,6 +85,26 @@ public:
 
     ClusterInfoVector        m_clusterInfos;
 
+    // ---
+    // Stream Format
+    struct FormatInfo {
+        FormatInfo()
+            : m_samplingFrequency( eSF_DontCare )
+            , m_isSyncStream( false )
+            , m_audioChannels( 0 )
+            , m_midiChannels( 0 )
+            , m_index( 0xff )
+            {}
+	sampling_frequency_t  m_samplingFrequency;
+	bool                  m_isSyncStream;
+	number_of_channels_t  m_audioChannels;
+	number_of_channels_t  m_midiChannels;
+	byte_t                m_index;
+    };
+    typedef std::vector<FormatInfo> FormatInfoVector;
+
+    FormatInfoVector         m_formatInfos;
+    // ---
 
     void debugOutputClusterInfos( int debugLevel );
 
@@ -90,7 +112,7 @@ public:
                          channelPositionData );
 
     ClusterInfo* getClusterInfoByIndex(int index);
-    ClusterInfoVector& getClusterInfos() 
+    ClusterInfoVector& getClusterInfos()
 	{ return m_clusterInfos; }
 
 

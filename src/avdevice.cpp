@@ -28,6 +28,7 @@
 #include "libfreebobavc/avc_extended_stream_format.h"
 #include "libfreebobavc/serialize.h"
 #include "libfreebobavc/ieee1394service.h"
+#include "libfreebobavc/avc_definitions.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -118,6 +119,10 @@ AvDevice::discover()
     }
     if ( !discoverStep9() ) {
         debugError( "Discover step 9 failed\n" );
+        return false;
+    }
+    if ( !discoverStep10() ) {
+        debugError( "Discover step 10 failed\n" );
         return false;
     }
 
@@ -1238,8 +1243,123 @@ AvDevice::discoverStep9()
     return true;
 }
 
-bool AvDevice::discoverPlugConnection( AvPlug& srcPlug,
-                                       SubunitPlugSpecificDataPlugAddress& subunitPlugAddress )
+bool
+AvDevice::discoverStep10Plug( AvPlugVector& isoPlugs )
+{
+   for ( AvPlugVector::iterator it = isoPlugs.begin();
+          it != isoPlugs.end();
+          ++it )
+    {
+        AvPlug* isoPlug = *it;
+        ExtendedStreamFormatCmd extStreamFormatCmd( m_1394Service,
+                                                    ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList);
+        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                         isoPlug->getPlugId() );
+        PlugAddress::EPlugDirection direction =
+            static_cast<PlugAddress::EPlugDirection>( isoPlug->getPlugDirection() );
+        extStreamFormatCmd.setPlugAddress( PlugAddress( direction,
+                                                        PlugAddress::ePAM_Unit,
+                                                        unitPlugAddress ) );
+
+        extStreamFormatCmd.setNodeId( m_nodeId );
+        //extStreamFormatCmd.setVerbose( true );
+
+        int i = 0;
+        bool cmdSuccess = false;
+
+        do {
+            extStreamFormatCmd.setIndexInStreamFormat( i );
+            extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+            cmdSuccess = extStreamFormatCmd.fire();
+            if ( cmdSuccess
+                 && ( extStreamFormatCmd.getResponse() == AVCCommand::eR_Implemented ) )
+            {
+                AvPlug::FormatInfo formatInfo;
+                formatInfo.m_index = i;
+
+                FormatInformationStreamsSync* syncStream
+                    = dynamic_cast< FormatInformationStreamsSync* >
+                    ( extStreamFormatCmd.getFormatInformation()->m_streams );
+                if ( syncStream ) {
+                    formatInfo.m_samplingFrequency =
+                        syncStream->m_samplingFrequency;
+                    formatInfo.m_isSyncStream = true ;
+                }
+
+                FormatInformationStreamsCompound* compoundStream
+                    = dynamic_cast< FormatInformationStreamsCompound* >
+                    ( extStreamFormatCmd.getFormatInformation()->m_streams );
+                if ( compoundStream ) {
+                    formatInfo.m_samplingFrequency =
+                        compoundStream->m_samplingFrequency;
+                    formatInfo.m_isSyncStream = false;
+                    for ( int j = 0;
+                          j < compoundStream->m_numberOfStreamFormatInfos;
+                          ++j )
+                    {
+                        switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
+                        case AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW:
+                            formatInfo.m_audioChannels +=
+                                compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                            break;
+                        case AVC1394_STREAM_FORMAT_AM824_MIDI_CONFORMANT:
+                            formatInfo.m_midiChannels +=
+                                compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                            break;
+                        default:
+                            debugWarning( "discoverStep10Plug: unknown stream "
+                                          "format for channel (%d)\n", j );
+                        }
+                    }
+                }
+
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_samplingFrequency = %d\n",
+                             isoPlug->getName(), isoPlug->getPlugId(),
+                             i, formatInfo.m_samplingFrequency );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_isSyncStream = %d\n",
+                             isoPlug->getName(), isoPlug->getPlugId(),
+                             i, formatInfo.m_isSyncStream );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_audioChannels = %d\n",
+                             isoPlug->getName(), isoPlug->getPlugId(),
+                             i, formatInfo.m_audioChannels );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_midiChannels = %d\n",
+                             isoPlug->getName(), isoPlug->getPlugId(),
+                             i, formatInfo.m_midiChannels );
+
+                isoPlug->m_formatInfos.push_back( formatInfo );
+            }
+
+            ++i;
+        } while ( cmdSuccess && ( extStreamFormatCmd.getResponse()
+                                  == ExtendedStreamFormatCmd::eR_Implemented ) );
+    }
+
+   return true;
+}
+
+
+bool
+AvDevice::discoverStep10()
+{
+    //////////////////////////////////////////////
+    // Step 10: For all ISO plugs: get all stream
+    // supported formats
+
+    bool success;
+
+    success  = discoverStep10Plug( m_isoInputPlugs );
+    success &= discoverStep10Plug( m_isoOutputPlugs );
+
+    return success;
+}
+
+bool
+AvDevice::discoverPlugConnection( AvPlug& srcPlug,
+                                  SubunitPlugSpecificDataPlugAddress& subunitPlugAddress )
 {
     AvDeviceSubunit* subunit = getSubunit( subunitPlugAddress.m_subunitType,
                                            subunitPlugAddress.m_subunitId );
@@ -1300,18 +1420,14 @@ AvDevice::enumerateSubUnits()
     for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
         subunit_type_t subunit_type
             = subUnitInfoCmd.m_table[i].m_subunit_type;
-        max_subunit_id_t max_subunit_id
-            = subUnitInfoCmd.m_table[i].m_max_subunit_id;
 
         unsigned int subunitId = getNrOfSubunits( subunit_type );
 
         debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "subunit_id = %2d, subunit_type = %2d (%s), "
-                     "max_subunit_ID = %d\n",
+                     "subunit_id = %2d, subunit_type = %2d (%s)\n",
                      subunitId,
                      subunit_type,
-                     subunitTypeToString( subunit_type ),
-                     max_subunit_id );
+                     subunitTypeToString( subunit_type ) );
 
         AvDeviceSubunit* subunit = 0;
         switch( subunit_type ) {
@@ -1418,13 +1534,13 @@ AvDevice::getPlugById( AvPlugVector& plugs, int id )
 std::string
 AvDevice::getVendorName()
 {
-    return m_configRom->getModelName();
+    return m_configRom->getVendorName();
 }
 
 std::string
 AvDevice::getModelName()
 {
-    return m_configRom->getVendorName();
+    return m_configRom->getModelName();
 }
 
 uint64_t
@@ -1434,8 +1550,8 @@ AvDevice::getGuid()
 }
 
 bool
-AvDevice::addPlugToXmlDescription( AvPlug& plug,
-                                   xmlNodePtr connectionSet )
+AvDevice::addXmlDescriptionPlug( AvPlug& plug,
+                                 xmlNodePtr connectionSet )
 {
     char* result;
 
@@ -1601,6 +1717,78 @@ AvDevice::addPlugToXmlDescription( AvPlug& plug,
     return true;
 }
 
+
+bool
+AvDevice::addXmlDescriptionStreamFormats( AvPlug& plug,
+                                          xmlNodePtr streamFormatNode )
+{
+    int direction;
+    switch ( plug.getPlugDirection() ) {
+        case 0:
+            direction = FREEBOB_PLAYBACK;
+            break;
+        case 1:
+            direction = FREEBOB_CAPTURE;
+            break;
+    default:
+        debugError( "addXmlDescriptionStreamFormats: plug direction invalid (%d)\n",
+                    plug.getPlugDirection() );
+        return false;
+    }
+
+    char* result;
+    asprintf( &result, "%d",  direction );
+    if ( !xmlNewChild( streamFormatNode,
+                       0,
+                       BAD_CAST "Direction",
+                       BAD_CAST result ) )
+    {
+        debugError( "addXmlDescriptionStreamFormats: Could not  create 'Direction' node\n" );
+        return false;
+    }
+
+    for ( AvPlug::FormatInfoVector::iterator it =
+              plug.m_formatInfos.begin();
+          it != plug.m_formatInfos.end();
+          ++it )
+    {
+        AvPlug::FormatInfo formatInfo = *it;
+        xmlNodePtr formatNode = xmlNewChild( streamFormatNode, 0,
+                                             BAD_CAST "Format", 0 );
+        if ( !formatNode ) {
+            debugError( "addXmlDescriptionStreamFormats: Could not create 'Format' node\n" );
+            return false;
+        }
+
+        asprintf( &result, "%d",
+                  convertESamplingFrequency( static_cast<ESamplingFrequency>( formatInfo.m_samplingFrequency ) ) );
+        if ( !xmlNewChild( formatNode,  0,
+                           BAD_CAST "Samplerate",  BAD_CAST result ) )
+        {
+            debugError( "Couldn't create 'Samplerate' node\n" );
+            return false;
+        }
+
+        asprintf( &result, "%d",  formatInfo.m_audioChannels );
+        if ( !xmlNewChild( formatNode,  0,
+                           BAD_CAST "AudioChannels",  BAD_CAST result ) )
+        {
+            debugError( "Couldn't create 'AudioChannels' node\n" );
+            return false;
+        }
+
+        asprintf( &result, "%d",  formatInfo.m_midiChannels );
+        if ( !xmlNewChild( formatNode,  0,
+                           BAD_CAST "MidiChannels",  BAD_CAST result ) )
+        {
+            debugError( "Couldn't create 'MidiChannels' node\n" );
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool
 AvDevice::addXmlDescription( xmlNodePtr deviceNode )
 {
@@ -1609,46 +1797,83 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
     //  connection
     //    id
     //    port
-   //    node
+    //    node
     //    plug
     //    dimension
     //    samplerate
     //    streams
     //      stream
 
+
+    ///////////
+    // get plugs
+
+    AvPlug* inputPlug = getPlugById( m_isoInputPlugs, 0 );
+    if ( !inputPlug ) {
+        debugError( "addXmlDescription: No iso input plug found with id %d\n" );
+        return false;
+    }
+    AvPlug* outputPlug = getPlugById( m_isoOutputPlugs, 0 );
+    if ( !outputPlug ) {
+        debugError( "addXmlDescription: No iso output plug found with id %d\n" );
+        return false;
+    }
+
+    ///////////
+    // add connection set output
+
     xmlNodePtr connectionSet = xmlNewChild( deviceNode, 0,
                                             BAD_CAST "ConnectionSet", 0 );
     if ( !connectionSet ) {
-        debugError( "Couldn't create connection set node for "
+        debugError( "addXmlDescription:: Could not create 'ConnnectionSet' node for "
                     "direction 1 (playback)\n" );
         return false;
     }
 
-    AvPlug* inputPlug = getPlugById( m_isoInputPlugs, 0 );
-    if ( !inputPlug ) {
-        debugError( "No iso input plug found with id %d\n" );
+    if ( !addXmlDescriptionPlug( *inputPlug, connectionSet ) ) {
+        debugError( "addXmlDescription: Could not add iso input plug 0 to XML description\n" );
         return false;
     }
-    if ( !addPlugToXmlDescription( *inputPlug, connectionSet ) ) {
-        debugError( "Could not add iso input plug 0 to XML description\n" );
-        return false;
-    }
+
+    // add connection set input
 
     connectionSet = xmlNewChild( deviceNode, 0,
                                  BAD_CAST "ConnectionSet", 0 );
     if ( !connectionSet ) {
-        debugError( "Couldn't create connection set node for "
+        debugError( "addXmlDescription: Couldn't create 'ConnectionSet' node for "
                     "direction 0 (recorder)\n" );
         return false;
     }
 
-    AvPlug* outputPlug = getPlugById( m_isoOutputPlugs, 0 );
-    if ( !outputPlug ) {
-        debugError( "No iso output plug found with id %d\n" );
+    if ( !addXmlDescriptionPlug( *outputPlug, connectionSet ) ) {
+        debugError( "addXmlDescription: Could not add iso output plug 0 to XML description\n" );
         return false;
     }
-    if ( !addPlugToXmlDescription( *outputPlug, connectionSet ) ) {
-        debugError( "Could not add iso output plug 0 to XML description\n" );
+
+    ////////////
+    // add stream format
+
+    xmlNodePtr streamFormatNode = xmlNewChild( deviceNode, 0,
+                                               BAD_CAST "StreamFormats", 0 );
+    if ( !streamFormatNode ) {
+        debugError( "addXmlDescription: Could not create 'StreamFormats' node\n" );
+        return false;
+    }
+
+    if ( !addXmlDescriptionStreamFormats( *inputPlug, streamFormatNode ) ) {
+        debugError( "addXmlDescription:: Could not add stream format info\n" );
+        return false;
+    }
+
+    streamFormatNode= xmlNewChild( deviceNode, 0,
+                                 BAD_CAST "StreamFormats", 0 );
+    if ( !streamFormatNode ) {
+        debugError( "addXmlDescription: Could not create 'StreamFormat' node\n" );
+        return false;
+    }
+
+    if ( !addXmlDescriptionStreamFormats( *outputPlug, streamFormatNode ) ) {
+        debugError( "addXmlDescription:: Could not add stream format info\n" );
         return false;
     }
 
@@ -1656,9 +1881,9 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
 }
 
 bool
-AvDevice::setSampleRatePlug( AvPlug& plug,
-                             PlugAddress::EPlugDirection direction,
-                             ESampleRate sampleRate )
+AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
+                                    PlugAddress::EPlugDirection direction,
+                                    ESamplingFrequency samplingFrequency )
 {
     ExtendedStreamFormatCmd extStreamFormatCmd( m_1394Service,
                                                 ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
@@ -1684,7 +1909,7 @@ AvDevice::setSampleRatePlug( AvPlug& plug,
         if ( cmdSuccess
              && ( extStreamFormatCmd.getResponse() == AVCCommand::eR_Implemented ) )
         {
-            ESampleRate foundRate = eSF_DontCare;
+            ESamplingFrequency foundFreq = eSF_DontCare;
 
             FormatInformation* formatInfo =
                 extStreamFormatCmd.getFormatInformation();
@@ -1692,17 +1917,17 @@ AvDevice::setSampleRatePlug( AvPlug& plug,
                 = dynamic_cast< FormatInformationStreamsCompound* > (
                     formatInfo->m_streams );
             if ( compoundStream ) {
-                foundRate = static_cast<ESampleRate>( compoundStream->m_samplingFrequency );
+                foundFreq = static_cast<ESamplingFrequency>( compoundStream->m_samplingFrequency );
             }
 
             FormatInformationStreamsSync* syncStream
                 = dynamic_cast< FormatInformationStreamsSync* > (
                     formatInfo->m_streams );
             if ( syncStream ) {
-                foundRate = static_cast<ESampleRate>( compoundStream->m_samplingFrequency );
+                foundFreq = static_cast<ESamplingFrequency>( compoundStream->m_samplingFrequency );
             }
 
-            if (  foundRate == sampleRate )
+            if (  foundFreq == samplingFrequency )
             {
                 correctFormatFound = true;
                 break;
@@ -1722,7 +1947,7 @@ AvDevice::setSampleRatePlug( AvPlug& plug,
         debugError( "setSampleRatePlug: %s plug %d does not support sample rate %d\n",
                     plug.getName(),
                     plug.getPlugId(),
-                    sampleRate );
+                    convertESamplingFrequency( samplingFrequency ) );
         return false;
     }
 
@@ -1733,7 +1958,7 @@ AvDevice::setSampleRatePlug( AvPlug& plug,
     if ( !extStreamFormatCmd.fire() ) {
         debugError( "setSampleRate: Could not set sample rate %d "
                     "to %s plug %d\n",
-                    sampleRate,
+                    convertESamplingFrequency( samplingFrequency ),
                     plug.getName(),
                     plug.getPlugId() );
         return false;
@@ -1743,7 +1968,7 @@ AvDevice::setSampleRatePlug( AvPlug& plug,
 }
 
 bool
-AvDevice::setSampleRate( ESampleRate sampleRate )
+AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
     AvPlug* plug = getPlugById( m_isoInputPlugs, 0 );
     if ( !plug ) {
@@ -1751,7 +1976,7 @@ AvDevice::setSampleRate( ESampleRate sampleRate )
         return false;
     }
 
-    if ( !setSampleRatePlug( *plug, PlugAddress::ePD_Input, sampleRate ) ) {
+    if ( !setSamplingFrequencyPlug( *plug, PlugAddress::ePD_Input, samplingFrequency ) ) {
         debugError( "setSampleRate: Setting sample rate failed\n" );
         return false;
     }
@@ -1762,13 +1987,13 @@ AvDevice::setSampleRate( ESampleRate sampleRate )
         return false;
     }
 
-    if ( !setSampleRatePlug( *plug, PlugAddress::ePD_Output, sampleRate ) ) {
+    if ( !setSamplingFrequencyPlug( *plug, PlugAddress::ePD_Output, samplingFrequency ) ) {
         debugError( "setSampleRate: Setting sample rate failed\n" );
         return false;
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE,
-                 "setSampleRate: Set sample rate to %d\n",  sampleRate );
+                 "setSampleRate: Set sample rate to %d\n",  convertESamplingFrequency( samplingFrequency ) );
     return true;
 }
 

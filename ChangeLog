@@ -1,3 +1,38 @@
+2006-01-08  Daniel Wagner  <wagi@monom.org>
+
+	* src/avdevice.cpp (getModelName): 
+	Return model name and not vendor name.
+	(getVendorName): 
+	Return vendor name and not model name.
+	(discoverStep10Plug): Implementation added.
+	(enumerateSubUnits): max_subunit_id removed.
+	(addXmlDescription): Add stream format infos.
+
+	* src/avdevice.h: discoverStep10 added.
+	Renaming of addPlugToXmlDescription to addXmlDescriptionPlug.
+	ESampleRate to ESamplingFrequency changes.
+
+	* src/avplug.cpp (getSampleRate): 
+	Use convertESamplingFrequency instead of
+	local implementation.
+
+	* src/avplug.h: 
+	ESampleRate to ESamplingFrequency changes.
+	Added FormatInfo struct.
+
+	* src/devicemanager.cpp (getXmlDescription): 
+	Print GUID correctly.
+
+	* src/freebob.cpp (parseSampleRate): 
+	Moved to avc_definitions.cpp
+
+	* src/libfreebobavc/avc_definitions.h
+	src/libfreebobavc/avc_definitions.cpp: 
+	Renamed ESampleRate back to ESamlingFrequency.
+	Added connvert functions for ESamplingFrequency.
+
+	* configure.ac: New micro version.
+
 2006-01-06  Daniel Wagner  <wagi@monom.org>
 
 	* tests/test-freebob.c (main): setsamplerate on all

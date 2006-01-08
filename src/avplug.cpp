@@ -21,6 +21,7 @@
 #include "avplug.h"
 
 #include "libfreebobavc/avc_extended_plug_info.h"
+#include "libfreebobavc/avc_definitions.h"
 
 IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_VERBOSE );
 
@@ -159,40 +160,7 @@ AvPlug::getNrOfChannels()
 int
 AvPlug::getSampleRate()
 {
-    int value = 0;
-    switch ( m_samplingFrequency ) {
-    case eSF_22050Hz:
-        value = 22050;
-        break;
-    case eSF_24000Hz:
-        value = 24000;
-        break;
-    case eSF_32000Hz:
-        value = 32000;
-        break;
-    case eSF_44100Hz:
-        value = 44100;
-        break;
-    case eSF_48000Hz:
-        value = 48000;
-        break;
-    case eSF_88200Hz:
-        value = 88200;
-        break;
-    case eSF_96000Hz:
-        value = 96000;
-        break;
-    case eSF_176400Hz:
-        value = 176400;
-        break;
-    case eSF_192000Hz:
-        value = 192000;
-        break;
-    default:
-        value = 0;
-    }
-
-    return value;
+    return convertESamplingFrequency( static_cast<ESamplingFrequency>( m_samplingFrequency ) );
 }
 
 ////////////////////////////////////
