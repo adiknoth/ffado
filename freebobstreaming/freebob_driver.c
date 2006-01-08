@@ -48,6 +48,11 @@
 
 static int freebob_driver_stop (freebob_driver_t *driver);
 
+#ifdef FREEBOB_DRIVER_WITH_MIDI
+	static freebob_driver_midi_handle_t *freebob_driver_midi_init(freebob_driver_t *driver);
+	static void freebob_driver_midi_finish (freebob_driver_midi_handle_t *m);
+#endif
+
 static int
 freebob_driver_attach (freebob_driver_t *driver)
 {
@@ -209,18 +214,22 @@ freebob_driver_read (freebob_driver_t * driver, jack_nframes_t nframes)
 	jack_port_t* port;
 	
 	freebob_sample_t nullbuffer[nframes];
+
+	freebob_streaming_stream_type stream_type;
 	
 	printEnter();
 	
-	
 	for (chn = 0, node = driver->capture_ports; node; node = jack_slist_next (node), chn++) {
-		if(freebob_streaming_get_capture_stream_type(driver->dev, chn) == freebob_stream_type_audio) {
+		stream_type = freebob_streaming_get_capture_stream_type(driver->dev, chn);
+		if(stream_type == freebob_stream_type_audio) {
 			port = (jack_port_t *) node->data;
 
 			buf = jack_port_get_buffer (port, nframes);
 			if(!buf) buf=nullbuffer;
 				
 			freebob_streaming_set_capture_stream_buffer(driver->dev, chn, (char *)(buf), freebob_buffer_type_float);
+		} else if(stream_type == freebob_stream_type_midi) {
+			// these should be read/written with the per-stream functions
 
 		} else { // empty other buffers without doing something with them
 			freebob_streaming_set_capture_stream_buffer(driver->dev, chn, (char *)(nullbuffer), freebob_buffer_type_uint24);
@@ -230,32 +239,6 @@ freebob_driver_read (freebob_driver_t * driver, jack_nframes_t nframes)
 	// now transfer the buffers
 	freebob_streaming_transfer_capture_buffers(driver->dev);
 	
-	
-#if 0	
-// old code using stream buffers
-	freebob_streaming_transfer_capture_buffers(driver->dev);
-	
-	for (chn = 0, node = driver->capture_ports; node;
-			node = jack_slist_next (node), chn++) {
-		if(freebob_streaming_get_capture_stream_type(driver->dev, chn) == freebob_stream_type_audio) {
-			port = (jack_port_t *) node->data;
-		
-	// 		if (!jack_port_connected (port)) {
-	// 			/* no-copy optimization */
-	// 			continue;
-	// 		}
-	
-			buf = jack_port_get_buffer (port, nframes);
-			
-			freebob_driver_read_from_channel (driver, chn,
-				buf,nframes);
-		} else { // empty other buffers without doing something with them
-			freebob_sample_t buffer[nframes];
-			freebob_streaming_read(driver->dev, chn, buffer, nframes);	
-		}
-	}
-#endif
-
 	printExit();
 	
 	return 0;
@@ -302,11 +285,12 @@ freebob_driver_write (freebob_driver_t * driver, jack_nframes_t nframes)
 	channel_t chn;
 	JSList *node;
 	jack_default_audio_sample_t* buf;
-// 	snd_pcm_sframes_t nwritten;
+
 	jack_port_t *port;
 
-	freebob_sample_t nullbuffer[nframes];
+	freebob_streaming_stream_type stream_type;
 
+	freebob_sample_t nullbuffer[nframes];
 
 	memset(&nullbuffer,0,nframes*sizeof(freebob_sample_t));
 
@@ -316,18 +300,22 @@ freebob_driver_write (freebob_driver_t * driver, jack_nframes_t nframes)
 
 	assert(driver->dev);
 
-// 	if (!driver->playback_handle || driver->engine->freewheeling) {
-// 		return 0;
-// 	}
+ 	if (driver->engine->freewheeling) {
+ 		return 0;
+ 	}
 
 	for (chn = 0, node = driver->playback_ports; node; node = jack_slist_next (node), chn++) {
-		if(freebob_streaming_get_playback_stream_type(driver->dev, chn) == freebob_stream_type_audio) {
+		stream_type=freebob_streaming_get_playback_stream_type(driver->dev, chn);
+		if(stream_type == freebob_stream_type_audio) {
 			port = (jack_port_t *) node->data;
 
 			buf = jack_port_get_buffer (port, nframes);
 			if(!buf) buf=nullbuffer;
 				
 			freebob_streaming_set_playback_stream_buffer(driver->dev, chn, (char *)(buf), freebob_buffer_type_float);
+
+		} else if(stream_type == freebob_stream_type_midi) {
+			// these should be read/written with the per-stream functions
 
 		} else { // empty other buffers without doing something with them
 			freebob_streaming_set_playback_stream_buffer(driver->dev, chn, (char *)(nullbuffer), freebob_buffer_type_uint24);
@@ -336,29 +324,6 @@ freebob_driver_write (freebob_driver_t * driver, jack_nframes_t nframes)
 
 	freebob_streaming_transfer_playback_buffers(driver->dev);
 
-#if 0	
-// old code using stream buffers
-	nwritten = 0;
-
-	for (chn = 0, node = driver->playback_ports;
-	     node;
-	     node = jack_slist_next (node), chn++) {
-		if(freebob_streaming_get_playback_stream_type(driver->dev, chn) == freebob_stream_type_audio) {
-
-			port = (jack_port_t *) node->data;
-
-			buf = jack_port_get_buffer (port, nframes);
-		
-			freebob_driver_write_to_channel (driver, chn,
-				buf, nframes);
-		} else {
-			// we don't have to do anything for other stream types
-		}
-	}
-	
-	freebob_streaming_transfer_playback_buffers(driver->dev);
-#endif
-	
 	printExit();
 	
 	return 0;
@@ -370,8 +335,8 @@ freebob_driver_wait (freebob_driver_t *driver, int extra_fd, int *status,
 		   float *delayed_usecs)
 {
 	int nframes;
-    jack_time_t                   wait_enter;
-    jack_time_t                   wait_ret;
+	jack_time_t                   wait_enter;
+	jack_time_t                   wait_ret;
 	
 	printEnter();
 
@@ -460,6 +425,8 @@ freebob_driver_null_cycle (freebob_driver_t* driver, jack_nframes_t nframes)
 	JSList *node;
 	snd_pcm_sframes_t nwritten;
 
+	freebob_streaming_stream_type stream_type;
+
 	jack_default_audio_sample_t buff[nframes];
 	jack_default_audio_sample_t* buffer=(jack_default_audio_sample_t*)buff;
 	
@@ -469,16 +436,21 @@ freebob_driver_null_cycle (freebob_driver_t* driver, jack_nframes_t nframes)
 	
 	assert(driver->dev);
 
-// 	if (!driver->playback_handle || driver->engine->freewheeling) {
-// 		return 0;
-// 	}
+ 	if (driver->engine->freewheeling) {
+ 		return 0;
+ 	}
 
 	// write silence to buffer
 	nwritten = 0;
 
 	for (chn = 0, node = driver->playback_ports; node; node = jack_slist_next (node), chn++) {
-		if(freebob_streaming_get_playback_stream_type(driver->dev, chn) == freebob_stream_type_audio) {
+		stream_type=freebob_streaming_get_playback_stream_type(driver->dev, chn);
+
+		if(stream_type == freebob_stream_type_audio) {
 			freebob_streaming_set_playback_stream_buffer(driver->dev, chn, (char *)(buffer), freebob_buffer_type_float);
+
+		} else if(stream_type == freebob_stream_type_midi) {
+			// these should be read/written with the per-stream functions
 
 		} else { // empty other buffers without doing something with them
 			freebob_streaming_set_playback_stream_buffer(driver->dev, chn, (char *)(buffer), freebob_buffer_type_uint24);
@@ -489,8 +461,11 @@ freebob_driver_null_cycle (freebob_driver_t* driver, jack_nframes_t nframes)
 	
 	// read & discard from input ports
 	for (chn = 0, node = driver->capture_ports; node; node = jack_slist_next (node), chn++) {
-		if(freebob_streaming_get_capture_stream_type(driver->dev, chn) == freebob_stream_type_audio) {
+		stream_type=freebob_streaming_get_capture_stream_type(driver->dev, chn);
+		if(stream_type == freebob_stream_type_audio) {
 			freebob_streaming_set_capture_stream_buffer(driver->dev, chn, (char *)(buffer), freebob_buffer_type_float);
+
+		} else if(stream_type == freebob_stream_type_midi) {
 
 		} else { // empty other buffers without doing something with them
 		}
@@ -507,7 +482,6 @@ static int
 freebob_driver_start (freebob_driver_t *driver)
 {
 	jack_error("Driver start...\n");
-	
 	return freebob_streaming_start(driver->dev);
 
 }
@@ -592,8 +566,8 @@ freebob_driver_new (jack_client_t * client,
 
 	/* packetizer thread options */
 
-	device_options.realtime=1;
-	device_options.packetizer_priority=60;
+	device_options.realtime=FREEBOB_USE_RT;
+	device_options.packetizer_priority=FREEBOB_RT_PRIORITY_PACKETIZER;
 	
 	driver->dev=freebob_streaming_init(&device_info,device_options);
 
@@ -603,6 +577,16 @@ freebob_driver_new (jack_client_t * client,
 		free (driver);
 		return NULL;
 	}
+
+#ifdef FREEBOB_DRIVER_WITH_MIDI
+	driver->midi_handle=freebob_driver_midi_init(driver);
+	if(!driver->midi_handle) {
+		jack_error("FREEBOB: Error creating midi device");
+		jack_driver_nt_finish ((jack_driver_nt_t *) driver);
+		free (driver);
+		return NULL;
+	}
+#endif
 
 	jack_error("FREEBOB: Driver compiled on %s %s", __DATE__, __TIME__);
 	jack_error("FREEBOB: Created driver %s", name);
@@ -615,6 +599,8 @@ freebob_driver_new (jack_client_t * client,
 		jack_error("            running without Realtime scheduling");
 	}
 
+
+
 	return (freebob_driver_t *) driver;
 
 }
@@ -624,12 +610,310 @@ freebob_driver_delete (freebob_driver_t *driver)
 {
 
 	freebob_streaming_finish(driver->dev);
-	
+
+#ifdef FREEBOB_DRIVER_WITH_MIDI
+	freebob_driver_midi_finish(driver->midi_handle);	
+#endif	
+
 	jack_driver_nt_finish ((jack_driver_nt_t *) driver);
 	free (driver);
 }
 
+#ifdef FREEBOB_DRIVER_WITH_MIDI
+/*
+ * MIDI support
+ */ 
 
+// the thread that will queue the midi events from the seq to the stream buffers
+
+void * freebob_driver_midi_queue_thread(void *arg)
+{
+	freebob_driver_midi_handle_t *m=(freebob_driver_midi_handle_t *)arg;
+	assert(m);
+	snd_seq_event_t *ev;
+	unsigned char work_buffer[MIDI_TRANSMIT_BUFFER_SIZE];
+	int bytes_to_send;
+	int b;
+	int i;
+
+	jack_error ("FREEBOB: MIDI queue thread started");
+
+	while(1) {
+		// get next event, if one is present
+		while ((snd_seq_event_input(m->seq_handle, &ev) > 0)) {
+			// get the port this event is originated from
+			freebob_midi_port_t *port=NULL;
+			for (i=0;i<m->nb_output_ports;i++) {
+				if(m->output_ports[i]->seq_port_nr == ev->dest.port) {
+					port=m->output_ports[i];
+					break;
+				}
+			}
+	
+			if(!port) {
+				jack_error ("FREEBOB: Could not find target port for event: dst=%d src=%d\n", ev->dest.port, ev->source.port);
+
+				break;
+			}
+			
+			// decode it to the work buffer
+			if((bytes_to_send = snd_midi_event_decode ( port->parser, 
+				work_buffer,
+				MIDI_TRANSMIT_BUFFER_SIZE, 
+				ev))<0) 
+			{ // failed
+				jack_error ("FREEBOB: Error decoding event for port %d (errcode=%d)\n", port->seq_port_nr,bytes_to_send);
+				bytes_to_send=0;
+				//return -1;
+			}
+	
+			for(b=0;b<bytes_to_send;b++) {
+				freebob_sample_t tmp_event=work_buffer[b];
+				if(freebob_streaming_write(m->dev, port->stream_nr, &tmp_event, 1)<1) {
+					jack_error ("FREEBOB: Midi send buffer overrun\n");
+				}
+			}
+	
+		}
+
+		// sleep for some time
+		usleep(MIDI_THREAD_SLEEP_TIME_USECS);
+	}
+	return NULL;
+}
+
+// the dequeue thread (maybe we need one thread per stream)
+void *freebob_driver_midi_dequeue_thread (void *arg) {
+	freebob_driver_midi_handle_t *m=(freebob_driver_midi_handle_t *)arg;
+
+	int i;
+	int s;
+	
+	int samples_read;
+
+	assert(m);
+
+	while(1) {
+		// read incoming events
+	
+		for (i=0;i<m->nb_input_ports;i++) {
+			unsigned int buff[64];
+	
+			freebob_midi_port_t *port=m->input_ports[i];
+		
+			if(!port) {
+				jack_error("FREEBOB: something went wrong when setting up the midi input port map (%d)",i);
+			}
+		
+			do {
+				samples_read=freebob_streaming_read(m->dev, port->stream_nr, buff, 64);
+			
+				for (s=0;s<samples_read;s++) {
+					unsigned int *byte=(buff+s) ;
+					snd_seq_event_t ev;
+					if ((snd_midi_event_encode_byte(port->parser,(*byte) & 0xFF, &ev)) > 0) {
+						// a midi message is complete, send it out to ALSA
+						snd_seq_ev_set_subs(&ev);  
+						snd_seq_ev_set_direct(&ev);
+						snd_seq_ev_set_source(&ev, port->seq_port_nr);
+						snd_seq_event_output_direct(port->seq_handle, &ev);						
+					}
+				}
+			} while (samples_read>0);
+		}
+
+		// sleep for some time
+		usleep(MIDI_THREAD_SLEEP_TIME_USECS);
+	}
+	return NULL;
+}
+
+static freebob_driver_midi_handle_t *freebob_driver_midi_init(freebob_driver_t *driver) {
+// 	int err;
+
+	char buf[256];
+	channel_t chn;
+	int nchannels;
+	int i=0;
+
+	freebob_device_t *dev=driver->dev;
+
+	assert(dev);
+
+	freebob_driver_midi_handle_t *m=calloc(1,sizeof(freebob_driver_midi_handle_t));
+	if (!m) {
+		jack_error("FREEBOB: not enough memory to create midi structure");
+		return NULL;
+	}
+
+	if (snd_seq_open(&m->seq_handle, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK) < 0) {
+		jack_error("FREEBOB: Error opening ALSA sequencer.");
+		free(m);
+		return NULL;
+	}
+
+	snd_seq_set_client_name(m->seq_handle, "FreeBoB Jack MIDI");
+
+	// find out the number of midi in/out ports we need to setup
+	nchannels=freebob_streaming_get_nb_capture_streams(dev);
+
+	m->nb_input_ports=0;
+
+	for (chn = 0; chn < nchannels; chn++) {	
+		if(freebob_streaming_get_capture_stream_type(dev, chn) == freebob_stream_type_midi) {
+			m->nb_input_ports++;
+		}
+	}
+
+	m->input_ports=calloc(m->nb_input_ports,sizeof(freebob_midi_port_t *));
+	if(!m->input_ports) {
+		jack_error("FREEBOB: not enough memory to create midi structure");
+		free(m);
+		return NULL;
+	}
+
+	i=0;
+	for (chn = 0; chn < nchannels; chn++) {
+		if(freebob_streaming_get_capture_stream_type(dev, chn) == freebob_stream_type_midi) {
+			m->input_ports[i]=calloc(1,sizeof(freebob_midi_port_t));
+			if(!m->input_ports[i]) {
+				// fixme
+				jack_error("FREEBOB: Could not allocate memory for seq port");
+				continue;
+			}
+
+	 		freebob_streaming_get_capture_stream_name(dev, chn, buf, sizeof(buf) - 1);
+			jack_error("FREEBOB: Register MIDI IN port %s\n", buf);
+
+			m->input_ports[i]->seq_port_nr=snd_seq_create_simple_port(m->seq_handle, buf,
+				SND_SEQ_PORT_CAP_READ|SND_SEQ_PORT_CAP_SUBS_READ,
+				SND_SEQ_PORT_TYPE_MIDI_GENERIC);
+
+			if(m->input_ports[i]->seq_port_nr<0) {
+				jack_error("FREEBOB: Could not create seq port");
+				m->input_ports[i]->stream_nr=-1;
+				m->input_ports[i]->seq_port_nr=-1;
+			} else {
+				m->input_ports[i]->stream_nr=chn;
+				m->input_ports[i]->seq_handle=m->seq_handle;
+				if (snd_midi_event_new  ( ALSA_SEQ_BUFF_SIZE, &(m->input_ports[i]->parser)) < 0) {
+					fprintf(stderr, "FREEBOB: could not init parser for MIDI IN port %d\n",i);
+					m->input_ports[i]->stream_nr=-1;
+					m->input_ports[i]->seq_port_nr=-1;
+				}
+			}
+
+			i++;
+		}
+	}
+
+	// playback
+	nchannels=freebob_streaming_get_nb_playback_streams(dev);
+
+	m->nb_output_ports=0;
+
+	for (chn = 0; chn < nchannels; chn++) {	
+		if(freebob_streaming_get_playback_stream_type(dev, chn) == freebob_stream_type_midi) {
+			m->nb_output_ports++;
+		}
+	}
+
+	m->output_ports=calloc(m->nb_output_ports,sizeof(freebob_midi_port_t *));
+	if(!m->output_ports) {
+		jack_error("FREEBOB: not enough memory to create midi structure");
+		for (i = 0; i < m->nb_input_ports; i++) {	
+			free(m->input_ports[i]);
+		}
+		free(m->input_ports);
+		free(m);
+		return NULL;
+	}
+
+	i=0;
+	for (chn = 0; chn < nchannels; chn++) {
+		if(freebob_streaming_get_playback_stream_type(dev, chn) == freebob_stream_type_midi) {
+			m->output_ports[i]=calloc(1,sizeof(freebob_midi_port_t));
+			if(!m->output_ports[i]) {
+				// fixme
+				jack_error("FREEBOB: Could not allocate memory for seq port");
+				continue;
+			}
+
+	 		freebob_streaming_get_playback_stream_name(dev, chn, buf, sizeof(buf) - 1);
+			jack_error("FREEBOB: Register MIDI OUT port %s\n", buf);
+
+			m->output_ports[i]->seq_port_nr=snd_seq_create_simple_port(m->seq_handle, buf,
+				SND_SEQ_PORT_CAP_WRITE|SND_SEQ_PORT_CAP_SUBS_WRITE,
+              			SND_SEQ_PORT_TYPE_MIDI_GENERIC);
+
+
+			if(m->output_ports[i]->seq_port_nr<0) {
+				jack_error("FREEBOB: Could not create seq port");
+				m->output_ports[i]->stream_nr=-1;
+				m->output_ports[i]->seq_port_nr=-1;
+			} else {
+				m->output_ports[i]->stream_nr=chn;
+				m->output_ports[i]->seq_handle=m->seq_handle;
+				if (snd_midi_event_new  ( ALSA_SEQ_BUFF_SIZE, &(m->output_ports[i]->parser)) < 0) {
+					fprintf(stderr, "FREEBOB: could not init parser for MIDI OUT port %d\n",i);
+					m->output_ports[i]->stream_nr=-1;
+					m->output_ports[i]->seq_port_nr=-1;
+				}
+			}
+
+			i++;
+		}
+	}
+
+
+	// start threads
+	m->dev=dev;
+
+ 	m->queue_thread_priority=FREEBOB_RT_PRIORITY_MIDI;
+	m->queue_thread_realtime=FREEBOB_USE_RT;
+
+	if (jack_client_create_thread(NULL, &m->queue_thread, m->queue_thread_priority, m->queue_thread_realtime, freebob_driver_midi_queue_thread, (void *)m)) {
+		jack_error("FREEBOB: cannot create midi queueing thread");
+		free(m);
+		return NULL;
+	}
+
+	if (jack_client_create_thread(NULL, &m->dequeue_thread, m->queue_thread_priority, m->queue_thread_realtime, freebob_driver_midi_dequeue_thread, (void *)m)) {
+		jack_error("FREEBOB: cannot create midi dequeueing thread");
+		free(m);
+		return NULL;
+	}
+	return m;
+}
+
+static void
+freebob_driver_midi_finish (freebob_driver_midi_handle_t *m)
+{
+	assert(m);
+
+	int i;
+
+	pthread_cancel (m->queue_thread);
+	pthread_join (m->queue_thread, NULL);
+
+	pthread_cancel (m->dequeue_thread);
+	pthread_join (m->dequeue_thread, NULL);
+
+
+	for (i=0;i<m->nb_input_ports;i++) {
+		free(m->input_ports[i]);
+
+	}
+	free(m->input_ports);
+
+	for (i=0;i<m->nb_output_ports;i++) {
+		free(m->output_ports[i]);
+	}
+	free(m->output_ports);
+
+	free(m);
+}
+#endif	
 /*
  * dlopen plugin stuff
  */

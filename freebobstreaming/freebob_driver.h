@@ -31,6 +31,7 @@
 #ifndef __JACK_FREEBOB_DRIVER_H__
 #define __JACK_FREEBOB_DRIVER_H__
 
+#define FREEBOB_DRIVER_WITH_MIDI
 
 #include <libfreebob/freebob.h>
 
@@ -66,6 +67,13 @@
 //#define DEBUG
 #endif
 
+#define FREEBOB_USE_RT 			1
+#define FREEBOB_RT_PRIORITY_PACKETIZER 	60
+// midi priority should be higher than the audio priority in order to
+// make sure events are not only delivered on period boundarys
+// but I think it should be smaller than the packetizer thread in order not 
+// to lose any packets
+#define FREEBOB_RT_PRIORITY_MIDI 	59
 
 unsigned long getCurrentUTime();
 
@@ -159,7 +167,42 @@ struct _freebob_jack_settings {
         freebob_handle_t fb_handle;
 };
 
+#ifdef FREEBOB_DRIVER_WITH_MIDI
 
+#define ALSA_SEQ_BUFF_SIZE 1024
+#define MIDI_TRANSMIT_BUFFER_SIZE 1024
+#define MIDI_THREAD_SLEEP_TIME_USECS 100
+
+typedef struct {
+	int stream_nr;
+	int seq_port_nr;
+	snd_midi_event_t *parser;
+	snd_seq_t *seq_handle;
+} freebob_midi_port_t;
+
+typedef struct _freebob_driver_midi_handle {
+	freebob_device_t *dev;
+	
+	snd_seq_t *seq_handle;
+	
+	pthread_t queue_thread;
+	pthread_t dequeue_thread;
+	int queue_thread_realtime;
+	int queue_thread_priority;
+
+	int nb_input_ports;
+	int nb_output_ports;
+
+	freebob_midi_port_t **input_ports;
+	freebob_midi_port_t **output_ports;
+
+	freebob_midi_port_t **input_stream_port_map;
+	int *output_port_stream_map;
+
+
+} freebob_driver_midi_handle_t;
+
+#endif
 /*
  * JACK driver structure
  */
@@ -197,6 +240,11 @@ struct _freebob_driver
     channel_t                     playback_nchannels;
     channel_t                     capture_nchannels;
     	
+
+#ifdef FREEBOB_DRIVER_WITH_MIDI
+	freebob_driver_midi_handle_t *midi_handle;
+#endif
+
 }; 
 
 

@@ -2,6 +2,8 @@
   Copied from the jackd sources
   function names changed in order to avoid naming problems when using this in
   a jackd backend.
+  
+  Modifications for FreeBoB by Pieter Palmers
     
     Copyright (C) 2000 Paul Davis
     Copyright (C) 2003 Rohan Drape

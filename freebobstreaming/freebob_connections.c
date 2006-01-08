@@ -116,9 +116,16 @@ int freebob_streaming_reset_connection(freebob_device_t * dev, freebob_connectio
 	// reset the boundary counter
 	connection->status.frames_left = 0;
 	
-	// reset the xrun counter
+	// reset the counters
 	connection->status.xruns = 0;
+	connection->status.packets=0;	
+	connection->status.dropped=0;
 	
+	// make sure the connection is polled next time
+	if(connection->pfd) { // this can be called before everything is init'ed
+		connection->pfd->events=POLLIN;
+	}
+
 	printExit();
 	
 	return 0;

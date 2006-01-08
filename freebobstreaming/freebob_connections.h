@@ -171,6 +171,7 @@ typedef struct _freebob_connection_status {
 	int total_events;
 
 	int frames_left;
+
 	int iso_channel;
 	
 	int xruns;

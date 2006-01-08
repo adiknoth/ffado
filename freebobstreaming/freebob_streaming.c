@@ -37,6 +37,7 @@
 #include "freebob_connections.h"
 #include "freebob_debug.h"
 #include "thread.h"
+#include "messagebuffer.h"
 
 #include <signal.h>
 #include <unistd.h>
@@ -84,6 +85,8 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	int err=0;
 	freebob_device_t* dev=NULL;
 	
+	freebob_messagebuffer_init();
+		
 	assert(device_info);
 	
 	printMessage("FreeBob Streaming Device Init\n");
@@ -333,6 +336,8 @@ void freebob_streaming_finish(freebob_device_t *dev) {
 	free(dev->fdmap);
 	free(dev->connections);
 	free(dev);
+	
+	freebob_messagebuffer_exit();
 	
 	return;
 }
@@ -822,9 +827,11 @@ int freebob_streaming_start(freebob_device_t *dev) {
 	}
 		
 	// we should transfer nb_buffers-1 periods of playback from the stream buffers to the event buffer
-	for (i=0;i<dev->options.nb_buffers-1;i++) {
+	for (i=0;i<dev->options.nb_buffers;i++) {
 		freebob_streaming_transfer_playback_buffers(dev);
 	}
+
+	freebob_streaming_print_bufferfill(dev);
 		
 	debugPrint(DEBUG_LEVEL_STARTUP,"Armed...\n");
 	
@@ -887,6 +894,15 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 	return 0;
 }
 
+void freebob_streaming_print_bufferfill(freebob_device_t *dev) {
+	int i=0;
+	for(i=0; i < dev->nb_connections; i++) {
+		freebob_connection_t *connection= &(dev->connections[i]);
+		debugPrint(DEBUG_LEVEL_XRUN_RECOVERY, "%i: %d\n",i,freebob_ringbuffer_read_space(connection->event_buffer));
+	}
+	
+}
+
 int freebob_streaming_prefill_playback_streams(freebob_device_t *dev) {
 	int i;
 	int err=0;
@@ -921,6 +937,8 @@ int freebob_streaming_reset(freebob_device_t *dev) {
 	unsigned long i;
 	int err;
 	assert(dev);
+
+	debugPrint(DEBUG_LEVEL_XRUN_RECOVERY, "Resetting streams...\n");
 	
 	if((err=freebob_streaming_stop_thread(dev))<0) {
 		printError("Could not stop packetizer thread.\n");
@@ -945,15 +963,15 @@ int freebob_streaming_reset(freebob_device_t *dev) {
 	}
 	
 	// we should transfer nb_buffers-1 periods of playback from the stream buffers to the event buffer
-	for (i=0;i<dev->options.nb_buffers-1;i++) {
+	for (i=0;i<dev->options.nb_buffers;i++) {
  		freebob_streaming_transfer_playback_buffers(dev);
-		debugPrint(DEBUG_LEVEL_XRUN_RECOVERY, "XRUN xfer %lu\n",i);
 	}
 			
 	// clear the xrun flag
 	dev->xrun_detected=FALSE;
 	
 	//freebob_streaming_start_iso(dev);
+	freebob_streaming_print_bufferfill(dev);
 	
 	if((err=freebob_streaming_start_thread(dev))<0) {
 		printError("Could not start packetizer thread.\n");
@@ -1400,6 +1418,8 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 
 	err=0;
 	if (connection->spec.direction == FREEBOB_CAPTURE) {
+		connection->status.packets=0;	
+		connection->status.dropped=0;		
 		if (connection->spec.is_master) { //master connection
 			debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO master receive handler on channel %d...\n",connection->iso.iso_channel);
 			debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
@@ -1468,7 +1488,7 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 					RAW1394_ISO_SPEED_400, 
 					connection->iso.irq_interval);
 		}		
-		debugPrintWithTimeStamp(DEBUG_LEVEL_STARTUP, "Start ISO transmit for connection on channel %d at cycle %d\n", connection->iso.iso_channel, connection->iso.startcycle);
+		debugPrint(DEBUG_LEVEL_STARTUP, "Start ISO transmit for connection on channel %d at cycle %d\n", connection->iso.iso_channel, connection->iso.startcycle);
 			
 		err=raw1394_iso_xmit_start(
 				connection->raw_handle, 
@@ -1618,7 +1638,6 @@ void * freebob_iso_packet_iterator(void *arg)
 {
 
 	freebob_device_t * dev=(freebob_device_t *) arg;
-	int i=0;
 	int err;
 // 	int cycle=0;
 	int underrun_detected=0;
@@ -1635,11 +1654,13 @@ void * freebob_iso_packet_iterator(void *arg)
 	
  	freebob_streaming_start_iso(dev);
 
+	freebob_streaming_print_bufferfill(dev);
 	// start xmit/receive
 	debugPrint(DEBUG_LEVEL_STARTUP, "Go Go Go!!!\n");
 	
 	//sem_post(&dev->packetizer.transfer_ack);
-
+#define POLL_BASED	
+#ifdef POLL_BASED 
 	while (dev->packetizer.run && !underrun_detected) {
 		//sem_wait(&dev->packetizer.transfer_ack);
 		
@@ -1663,14 +1684,16 @@ void * freebob_iso_packet_iterator(void *arg)
 				notdone=FALSE;
 				break;
 			}
+			
+			int i=0;
 		
 			for (i = 0; i < dev->nfds; i++) {
 				if (dev->pfds[i].revents & POLLERR) {
-					printError ("error on fd for %d",i);
+					printError ("error on fd for %d\n",i);
 				}
 
 				if (dev->pfds[i].revents & POLLHUP) {
-					printError ("hangup on fd for %d",i);
+					printError ("hangup on fd for %d\n",i);
 				}
 				
 //				if(dev->pfds[i].revents & (POLLIN | POLLPRI)) {
@@ -1690,16 +1713,16 @@ void * freebob_iso_packet_iterator(void *arg)
 					}
 				
 					if (err == -1) {
-						printError ("possible raw1394 error: %s", strerror (errno));
+						printError ("possible raw1394 error: %s\n", strerror (errno));
 						dev->packetizer.status = -2;
 						dev->packetizer.retval = 0;
 						notdone=FALSE;
 						break;
 					}
-					
-					dev->pfds[i].revents=0;
-					
 				}
+
+				
+
 			}
 
 			notdone=(!freebob_streaming_period_complete(dev) && !underrun_detected && (dev->packetizer.run)) && notdone;
@@ -1710,11 +1733,18 @@ void * freebob_iso_packet_iterator(void *arg)
 			//underrun_detected=0;
 		}
 
-#if 0 
-// old code (non-poll based)
-		while((	!freebob_streaming_period_complete(dev) 
-				&& !underrun_detected
-				&& (dev->packetizer.run))) {
+#else
+	while (dev->packetizer.run && !underrun_detected) {
+		//sem_wait(&dev->packetizer.transfer_ack);
+		
+		freebob_streaming_period_reset(dev);
+			
+		dev->watchdog_check = 1;
+			
+		notdone=TRUE;
+			
+		while(notdone) {
+				
 			err=0;
 			
 			// this makes sure the sync_master finishes before the others finish
@@ -1725,10 +1755,11 @@ void * freebob_iso_packet_iterator(void *arg)
 				
 				if (err == -1) {
 					printError("Possible raw1394 error: %s on sync master connection: %d\n",
-						strerror (errno),connection->spec.id);
+							strerror (errno),connection->spec.id);
 						
 					dev->packetizer.status = -2;
 					dev->packetizer.retval = 0;
+					notdone=FALSE;
 					break;
 				}
 				
@@ -1739,23 +1770,28 @@ void * freebob_iso_packet_iterator(void *arg)
 					break; // we can exit as the underrun handler will flush the buffers anyway
 				}
 			}
+				
+			
 			// now iterate on the slave connections
-		
+			int c;
 			for(c=0; c<dev->nb_connections; c++) {
 
 				connection = &(dev->connections[c]);
 				
 				// skip the sync master and the connections that are finished
-				if ((connection == dev->sync_master_connection) || (connection->status.frames_left <= 0))
-					continue;
+				//if ((connection == dev->sync_master_connection) || (connection->status.frames_left <= 0))
+					
+				if ((connection == dev->sync_master_connection))
+						continue;
 				
 				err=raw1394_loop_iterate(connection->raw_handle);
 				
 				if (err == -1) {
 					printError("Possible raw1394 error: %s on connection: %d\n",
-						strerror (errno),connection->spec.id);
+							strerror (errno),connection->spec.id);
 					dev->packetizer.status = -2;
 					dev->packetizer.retval = 0;
+					notdone=FALSE;
 				}
 				
 				// detect underruns
@@ -1765,14 +1801,15 @@ void * freebob_iso_packet_iterator(void *arg)
 					break; // we can exit as the underrun handler will flush the buffers anyway
 				}
 			}
-			
-			cycle++;
+				
+			notdone=(!freebob_streaming_period_complete(dev) && !underrun_detected && (dev->packetizer.run)) && notdone;
 		}
 		
 		if(underrun_detected) {
 			dev->xrun_detected=TRUE;
-			//underrun_detected=0;
+				//underrun_detected=0;
 		}
+	
 #endif
 		// notify the waiting thread
 #ifdef DEBUG
@@ -1788,9 +1825,9 @@ void * freebob_iso_packet_iterator(void *arg)
 		sem_post(&dev->packetizer.transfer_boundary);
 
 #ifdef DEBUG
-			// update the packet counter
-		if((dev->sync_master_connection->status.packets - dev->sync_master_connection->status.total_packets_prev) > 1024*4) {
-	//	if(1) {
+		// update the packet counter
+		if((dev->sync_master_connection->status.packets - dev->sync_master_connection->status.total_packets_prev) > 1024*2) {
+// 		if(1) {
 			unsigned int i;
 			debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER,"\r -> ");
 			
@@ -1801,17 +1838,17 @@ void * freebob_iso_packet_iterator(void *arg)
 				/* Debug info format:
 				* [direction, packetcount, bufferfill, packetdrop
 				*/
-				debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER,"[%s, %02d, %12d, %4d, (R: %06d | W: %06d)]", 
+				debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER,"[%s, %02d, %10d, %04d, %4d, (R: %04d)]", 
 					(connection->spec.direction==FREEBOB_CAPTURE ? "C" : "P"),
 					connection->status.fdf,
 					connection->status.packets,
+					connection->status.last_cycle,
 					connection->status.dropped,
-					freebob_ringbuffer_read_space(connection->event_buffer)/(sizeof(quadlet_t)*connection->spec.dimension),
-					freebob_ringbuffer_write_space(connection->event_buffer)/(sizeof(quadlet_t)*connection->spec.dimension)
+					freebob_ringbuffer_read_space(connection->event_buffer)/(sizeof(quadlet_t)*connection->spec.dimension)
 				   );
 			}
 	
-			debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER," XRUNS (%4d)",dev->xrun_count);	
+			debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER," XRUNS (%2d)",dev->xrun_count);	
 			fflush (stderr);
 			
 			dev->sync_master_connection->status.total_packets_prev=dev->sync_master_connection->status.packets;
@@ -1901,7 +1938,11 @@ int freebob_streaming_decode_midi(freebob_connection_t *connection,
 					written++;
  				}
 			}
-			written=freebob_ringbuffer_write(stream->buffer, (char *)(stream->user_buffer), written*sizeof(quadlet_t))/sizeof(quadlet_t);
+			
+			int written_to_rb=freebob_ringbuffer_write(stream->buffer, (char *)(stream->user_buffer), written*sizeof(quadlet_t))/sizeof(quadlet_t);
+			if(written_to_rb<written) {
+				printMessage("MIDI OUT bytes lost (%d/%d)",written_to_rb,written);
+			}
 // 			debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER, "]\n");
 			
 			
@@ -1977,9 +2018,9 @@ int freebob_streaming_encode_midi(freebob_connection_t *connection,
 					*target_event=htonl(IEC61883_AM824_SET_LABEL((*buffer)<<16,IEC61883_AM824_LABEL_MIDI_1X));
 					stream->midi_counter=3; // only if we send a byte, we reset the counter
 				}
+			} else {
+				stream->midi_counter--;
 			}
-			stream->midi_counter--;
-			stream->midi_counter %= 3;
 			/*			
 			for(j=0; (j < nsamples); j++) {
 				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
@@ -2072,14 +2113,18 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 
 	// one packet received
 	connection->status.packets++;
+
 	if(packet->dbs) {
+		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
 		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-			"MASTER RCV: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %6d\n", 
-			cycle,
+			"MASTER RCV: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d\n", 
+			cycle, 
 			channel, packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, length,
-			((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped);
-	}
-	
+			((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
+			connection->status.packets, connection->status.events, connection->status.frames_left, 
+			nevents);
+	}	
+
 	if((connection->status.frames_left<=0)) {
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
@@ -2115,6 +2160,9 @@ static enum raw1394_iso_disposition
 	// FIXME: dropped packets are very bad when transmitting and the other side is sync'ing on that!
 	//connection->status.packets+=dropped;
 	connection->status.dropped+=dropped;
+
+	connection->status.last_cycle=cycle;
+
 	
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
@@ -2312,6 +2360,9 @@ static enum raw1394_iso_disposition
 	assert(sy);	
 	
 	// construct the packet cip
+	struct iec61883_cip old_cip;
+	memcpy(&old_cip,&connection->status.cip,sizeof(struct iec61883_cip));
+	
 	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
 // 	int xrun=0;
 	int nsamples=0;
@@ -2320,6 +2371,7 @@ static enum raw1394_iso_disposition
 	freebob_timestamp_t tstamp;
 	
 // 	unsigned int syt;
+	connection->status.last_cycle=cycle;
 	
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	
@@ -2351,22 +2403,43 @@ static enum raw1394_iso_disposition
 	connection->status.dropped += dropped;
 		
 	if (nsamples > 0) {
-		
+		int bytes_to_read=nsamples*sizeof(quadlet_t)*connection->spec.dimension;
+
 		if(freebob_ringbuffer_read(connection->timestamp_buffer,(char *)&tstamp,sizeof(freebob_timestamp_t))) {
 			packet->syt=tstamp.syt+connection->total_delay;
 		}
 
 		assert(connection->spec.dimension == packet->dbs);
 
-		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,(char *)(data+8),nsamples*sizeof(quadlet_t)*connection->spec.dimension)) < 
-			nsamples*sizeof(quadlet_t)*connection->spec.dimension) 
+		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,(char *)(data+8),bytes_to_read)) < 
+			bytes_to_read) 
 		{
-			printError("SLAVE XMT: Buffer underrun! (%d / %d) (%d / %d )\n",
-					   bytes_read,nsamples*sizeof(quadlet_t)*connection->spec.dimension,
+			/* there is no more data in the ringbuffer */
+			
+			/* If there are already more than on period
+			* of frames transfered to the XMIT buffer, there is no xrun.
+			* 
+			*/
+			if(connection->status.frames_left<=0) {
+				// we stop processing this untill the next period boundary
+				// that's when new data is ready
+				
+				connection->pfd->events=0;
+				
+				// reset the cip to the old value
+				memcpy(&connection->status.cip,&old_cip,sizeof(struct iec61883_cip));
+
+				// retry this packed 
+				retval=RAW1394_ISO_AGAIN;
+				nsamples=0;
+			} else {
+				printError("SLAVE XMT : Buffer underrun! %d (%d / %d) (%d / %d )\n",
+					   connection->status.frames_left, bytes_read,bytes_to_read,
 					   freebob_ringbuffer_read_space(connection->event_buffer),0);
-			connection->status.xruns++;
-			retval=RAW1394_ISO_DEFER;
-			nsamples=0;
+				connection->status.xruns++;
+				retval=RAW1394_ISO_DEFER;
+				nsamples=0;
+ 			}
 		} else {
 			retval=RAW1394_ISO_OK;
 			// we cannot offload midi encoding due to the need for a dbc value
@@ -2375,13 +2448,6 @@ static enum raw1394_iso_disposition
 // 		hexDumpQuadlets( data,nsamples*connection->spec.dimension+2);
 	}
 	
-// 	if (xrun) {
-// 		printError("SLAVE XMT: Buffer underrun!\n");
-// 		connection->status.xruns++;
-// 		retval=RAW1394_ISO_DEFER;
-// 		nsamples=0;
-// 	}
-
 	*length = nsamples * connection->spec.dimension * sizeof (quadlet_t) + 8;
 	*tag = IEC61883_TAG_WITH_CIP;
 	*sy = 0;
@@ -2396,19 +2462,20 @@ static enum raw1394_iso_disposition
 
 	if(packet->dbs) {
 		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-								"SLAVE XMT: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d\n", cycle, 
+								"SLAVE XMT : %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d\n", cycle, 
 								connection->iso.iso_channel,  packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, *length,((*length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
 								connection->status.packets, connection->status.events, connection->status.frames_left, 
 								nevents, nsamples);
 	}
-		
-	if((connection->status.frames_left<=0)) {
+
+/*	if((connection->status.frames_left<=0)) {
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-	if( (!(connection->status.packets % 2))) {
+*/
+/*	if( (!(connection->status.packets % 2))) {
 		return RAW1394_ISO_DEFER;
-	}
+	}*/
 	return retval;
 
 }

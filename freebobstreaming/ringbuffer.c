@@ -1,5 +1,5 @@
 /*
-  Modifications (C) 2005 Pieter Palmers
+  Modifications for FreeBoB by Pieter Palmers
     
   Copied from the jackd sources
   function names changed in order to avoid naming problems when using this in

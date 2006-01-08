@@ -1,6 +1,6 @@
 /*
 
-  Modifications (C) 2005 Pieter Palmers
+  Modifications for FreeBoB by Pieter Palmers
   
   Capabilities code removed
   
