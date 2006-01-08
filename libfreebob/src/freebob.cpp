@@ -38,45 +38,6 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 IMPL_GLOBAL_DEBUG_MODULE( FreeBob, DEBUG_LEVEL_VERBOSE );
 
-ESampleRate
-parseSampleRate( int sampleRate )
-{
-    ESampleRate efreq;
-    switch ( sampleRate ) {
-    case 22050:
-        efreq = eSF_22050Hz;
-        break;
-    case 24000:
-        efreq = eSF_24000Hz;
-        break;
-    case 32000:
-        efreq = eSF_32000Hz;
-        break;
-    case 44100:
-        efreq = eSF_44100Hz;
-        break;
-    case 48000:
-        efreq = eSF_48000Hz;
-        break;
-    case 88200:
-        efreq = eSF_88200Hz;
-        break;
-    case 96000:
-        efreq = eSF_96000Hz;
-        break;
-    case 176400:
-        efreq = eSF_176400Hz;
-        break;
-    case 192000:
-        efreq = eSF_192000Hz;
-        break;
-    default:
-        efreq = eSF_DontCare;
-    }
-
-    return efreq;
-}
-
 const char*
 freebob_get_version() {
     return PACKAGE_STRING;
@@ -158,7 +119,7 @@ freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int sample
 {
     AvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
-        if ( avDevice->setSampleRate( parseSampleRate( samplerate ) ) ) {
+        if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
             return freebob_handle->m_deviceManager->discover()? 1 : 0;
         }
     }

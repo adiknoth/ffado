@@ -55,7 +55,7 @@ public:
     int getNodeId()
         { return m_nodeId; }
 
-    bool setSampleRate( ESampleRate sampleRate );
+    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
 
 protected:
     bool discoverStep1();
@@ -67,6 +67,8 @@ protected:
     bool discoverStep7();
     bool discoverStep8();
     bool discoverStep9();
+    bool discoverStep10();
+    bool discoverStep10Plug( AvPlugVector& isoPlugs );
 
     bool discoverPlugConnection( AvPlug& srcPlug,
                                  SubunitPlugSpecificDataPlugAddress& subunitPlugAddress );
@@ -81,11 +83,12 @@ protected:
 
 
     AvPlug* getPlugById( AvPlugVector& plugs, int id );
-    bool addPlugToXmlDescription( AvPlug& plug, xmlNodePtr conectionSet );
+    bool addXmlDescriptionPlug( AvPlug& plug, xmlNodePtr conectionSet );
+    bool addXmlDescriptionStreamFormats( AvPlug& plug, xmlNodePtr streamFormats );
 
-    bool setSampleRatePlug( AvPlug& plug,
-                            PlugAddress::EPlugDirection direction,
-                            ESampleRate sampleRate );
+    bool setSamplingFrequencyPlug( AvPlug& plug,
+                                   PlugAddress::EPlugDirection direction,
+                                   ESamplingFrequency samplingFrequency );
 protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;

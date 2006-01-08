@@ -61,7 +61,7 @@ typedef byte_t number_of_output_plugs_t;
 
 typedef quadlet_t company_id_t;
 
-enum ESampleRate {
+enum ESamplingFrequency {
     eSF_22050Hz = 0x00,
     eSF_24000Hz = 0x01,
     eSF_32000Hz = 0x02,
@@ -74,7 +74,10 @@ enum ESampleRate {
     eSF_DontCare = 0x0F,
 };
 
-std::ostream& operator<<( std::ostream& stream, ESampleRate sampleRate );
+int convertESamplingFrequency(ESamplingFrequency freq);
+ESamplingFrequency parseSampleRate( int sampleRate );
+
+std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
 
 #define AVC1394_SUBUNIT_AUDIO 1
 #define AVC1394_SUBUNIT_PRINTER 2

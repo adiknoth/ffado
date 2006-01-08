@@ -260,17 +260,15 @@ DeviceManager::getXmlDescription()
             return 0;
         }
 
-        res = "";
-        res = avDevice->getGuid();
-
-        if ( !xmlNewChild( deviceNode,
-                           0,
-                           BAD_CAST "GUID",
-                           BAD_CAST res.c_str() ) ) {
-            debugError( "Couldn't create GUID node\n" );
+        asprintf( &result, "%08x%08x",
+                  ( quadlet_t )( avDevice->getGuid() >> 32 ),
+                  ( quadlet_t )( avDevice->getGuid() & 0xfffffff ) );
+        if ( !xmlNewChild( deviceNode,  0,
+                           BAD_CAST "GUID",  BAD_CAST result ) ) {
+            debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            return 0;
+            return false;
         }
 
         if ( !avDevice->addXmlDescription( deviceNode ) ) {
