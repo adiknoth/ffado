@@ -36,6 +36,10 @@ freebob_xmlparse_get_connection_info( xmlDocPtr doc,
 				      int node_id,
                                       int direction );
 
+freebob_supported_stream_format_info_t*
+freebob_xmlparse_get_stream_formats( xmlDocPtr doc, 
+				     int node_id, 
+				     int direction );
 #ifdef __cplusplus
 }
 #endif

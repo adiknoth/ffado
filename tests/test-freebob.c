@@ -35,7 +35,8 @@ static char doc[] = "FreeBob -- a driver for BeBob devices (test application)\n\
                     "OPERATION: discover\n"
                     "           setsamplerate\n"
                     "           xmldump\n"
-                    "           testmultidevicediscovery\n";
+                    "           testmultidevicediscovery\n"
+                    "           streamformats\n";
 
 // A description of the arguments we accept.
 static char args_doc[] = "OPERATION";
@@ -315,7 +316,6 @@ main( int argc, char **argv )
 	    freebob_destroy_handle( fb_handle );
 	    return -1;
 	}
-		
 	test_info = freebob_get_connection_info( fb_handle, 
 						 -1, 
 						 0 );
@@ -332,6 +332,64 @@ main( int argc, char **argv )
 		
 	freebob_destroy_handle( fb_handle );
     
+    } else if ( strcmp( arguments.args[0], "streamformats" ) == 0 ) {
+	freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
+	if ( !fb_handle ) {
+	    fprintf( stderr, "Could not create freebob handle\n" );
+	    return -1;
+	}
+		
+	if ( freebob_discover_devices( fb_handle ) != 0 ) {
+	    fprintf( stderr, "Could not discover devices\n" );
+	    freebob_destroy_handle( fb_handle );
+	    return -1;
+	}
+
+	freebob_supported_stream_format_info_t* stream_info;
+	if(arguments.node_id_set) {
+	    printf("  port = %d, node_id = %d\n", arguments.port, arguments.node_id);
+	    stream_info = freebob_get_supported_stream_format_info( fb_handle, 
+								  arguments.node_id, 
+								  0 );
+	    freebob_print_supported_stream_format_info( stream_info );
+	    freebob_free_supported_stream_format_info( stream_info );
+		
+	    printf("\n");
+		
+	    stream_info = freebob_get_supported_stream_format_info( fb_handle, 
+								  arguments.node_id,
+								  1 );
+	    freebob_print_supported_stream_format_info( stream_info );
+	    freebob_free_supported_stream_format_info( stream_info );
+
+	} else {
+	    int i=0;
+			
+	    int devices_on_bus = freebob_get_nb_devices_on_bus(fb_handle);
+	    printf("  port = %d, devices_on_bus = %d\n", arguments.port, devices_on_bus);
+			
+	    for(i=0;i<devices_on_bus;i++) {
+		int node_id=freebob_get_device_node_id(fb_handle, i);
+		printf("  get info for device = %d, node = %d\n", i, node_id);
+				
+		stream_info = freebob_get_supported_stream_format_info( fb_handle, 
+									node_id, 
+									0 );
+		freebob_print_supported_stream_format_info( stream_info );
+		freebob_free_supported_stream_format_info( stream_info );
+		
+		printf("\n");
+		
+		stream_info = freebob_get_supported_stream_format_info( fb_handle, 
+									node_id,
+									1 );
+		freebob_print_supported_stream_format_info( stream_info );
+		freebob_free_supported_stream_format_info( stream_info );
+	    }
+	}
+		
+	freebob_destroy_handle( fb_handle );
+
     } else {
         printf( "unknown operation\n" );
     }

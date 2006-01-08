@@ -1,5 +1,12 @@
 2006-01-08  Daniel Wagner  <wagi@monom.org>
 
+	*  libfreebob/freebob.h
+	libfreebob/xmlparser.h
+	src/avdevice.cpp
+	src/xmlparser.c
+	tests/test-freebob.c:
+	Add stream format info support.
+
         * src/avdevice.h
 	src/avdevice.cpp: 
 	Refactoring and code duplication removal.
