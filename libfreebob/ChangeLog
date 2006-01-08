@@ -1,5 +1,9 @@
 2006-01-08  Daniel Wagner  <wagi@monom.org>
 
+        * src/avdevice.h
+	src/avdevice.cpp: 
+	Refactoring and code duplication removal.
+	
 	* src/avdevice.cpp (getModelName): 
 	Return model name and not vendor name.
 	(getVendorName): 
