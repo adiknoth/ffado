@@ -33,6 +33,7 @@
 #include "debugmodule/debugmodule.h"
 
 #include <iostream>
+#include <stdint.h>
 
 using namespace std;
 
