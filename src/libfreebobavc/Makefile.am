@@ -43,7 +43,9 @@ libfreebobavc_la_SOURCES =  				\
 		ieee1394service.h       		\
 		ieee1394service.cpp
 
-INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS)
-libfreebobavc_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
+INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) $(LIBAVC1394_CFLAGS) \
+	-I$(top_srcdir)/src
+libfreebobavc_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) \
+	$(LIBAVC1394_LIBS)
 
 MAINTAINERCLEANFILES = Makefile.in

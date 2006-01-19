@@ -82,6 +82,12 @@ AC_PATH_PROG([SORT], [sort], :)
 # Checks for libraries.
 AC_PROG_LIBTOOL
 
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CANONICAL_HOST
+AC_C_CONST
+AC_C_VOLATILE
+AC_TYPE_SIZE_T
+
 # XXX Debian specific hack:
 # by Marcelo Magallon <mmagallo@efis.ucr.ac.cr>
 # Turn around -rpath problem with libtool 1.0c
@@ -96,38 +102,17 @@ case ${host} in
   ;;
 esac
 
-AC_CHECK_LIB(raw1394, raw1394_new_handle, ,
-            [AC_MSG_ERROR([Unable to link with libraw1394. Check that you have libraw1394 installed])])
-
-AC_CHECK_LIB(avc1394, avc1394_vcr_record, ,
-             [AC_MSG_ERROR([Unable to link with libavc1394. Check that you have libavc1394 installed and that the version is 0.5.1 or newer])])
-
 AC_CHECK_LIB(pthread, pthread_create,,
 [
         AC_ERROR(You need the pthread library to compile freebob)
 ])
 
-# Checks for header files.
-AC_CHECK_HEADERS([libraw1394/raw1394.h], ,
-    [AC_MSG_ERROR([raw1394.h not found install libraw1394-devel])
-])
-
-AC_CHECK_HEADER([libavc1394/avc1394.h], ,
-	[AC_MSG_ERROR([avc1394.h not found, install libavc1394-devel])
-])
-AC_CHECK_HEADER(execinfo.h, [AC_DEFINE(HAVE_EXECINFO_H, 1, Wheter or not execinfo.h is present)
-	EXTRA_LIBS="$EXTRA_LIBS -rdynamic"])
-
-# Check for libXML2
+# Check for dependencies
+PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.0)
+PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
+PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.2)
+PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
-AC_SUBST([LIBXML_LIBS])
-AC_SUBST([LIBXML_CFLAGS])
-	
-# Checks for typedefs, structures, and compiler characteristics.
-AC_CANONICAL_HOST
-AC_C_CONST
-AC_C_VOLATILE
-AC_TYPE_SIZE_T
 
 # Setup CFLAGS and CXXFLAGS
 AC_ARG_ENABLE(debug,
@@ -156,24 +141,18 @@ AC_SUBST([CXXFLAGS])
 AC_ENABLE_STATIC(yes)
 AC_ENABLE_SHARED(yes)
 
-# Create links for header file.
-
-# Checks for library functions.
-PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.0)
-PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
-
-PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
-
 AC_SUBST([LIBSIGC_CFLAGS])
 AC_SUBST([LIBSIGC_LIBS])
+AC_SUBST([ALSA_CFLAGS])
+AC_SUBST([ALSA_LIBS])
 AC_SUBST([LIBRAW1394_CFLAGS])
 AC_SUBST([LIBRAW1394_LIBS])
 AC_SUBST([LIBIEC61883_CFLAGS])
 AC_SUBST([LIBIEC61883_LIBS])
-AC_SUBST([ALSA_CFLAGS])
-AC_SUBST([ALSA_LIBS])
-LIBAVC_LIBS="-lrom1394 -lavc1394"
-AC_SUBST([LIBAVC_LIBS])
+AC_SUBST([LIBAVC1394_CFLAGS])
+AC_SUBST([LIBAVC1394_LIBS])
+AC_SUBST([LIBXML_LIBS])
+AC_SUBST([LIBXML_CFLAGS])
 
 AC_CONFIG_FILES([Makefile
 		 libfreebob/Makefile

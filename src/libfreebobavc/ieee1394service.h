@@ -21,7 +21,7 @@
 #ifndef FREEBOBIEEE1394SERVICE_H
 #define FREEBOBIEEE1394SERVICE_H
 
-#include "src/fbtypes.h"
+#include "fbtypes.h"
 
 #include <libraw1394/raw1394.h>
 

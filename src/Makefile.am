@@ -17,7 +17,9 @@
 
 SUBDIRS = debugmodule libfreebobavc
 
-INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) $(LIBAVC_CFLAGS) $(LIBLO_CFLAGS) $(LIBXML_CFLAGS)
+INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
+	$(LIBAVC1394_CFLAGS) $(LIBLO_CFLAGS) $(LIBXML_CFLAGS) \
+	-I$(top_srcdir) -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libfreebob.la
 
@@ -38,5 +40,8 @@ libfreebob_la_SOURCES = 	\
 	csr1212.c		\
 	fbtypes.h
 
-libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS) $(LIBLO_LIBS) $(LIBXML_LIBS) debugmodule/libdebugmodule.la libfreebobavc/libfreebobavc.la -safe-temps
+libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
+	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
+	$(LIBLO_LIBS) $(LIBXML_LIBS) debugmodule/libdebugmodule.la \
+	libfreebobavc/libfreebobavc.la -safe-temps
 

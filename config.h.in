@@ -12,23 +12,11 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Wheter or not execinfo.h is present */
-#undef HAVE_EXECINFO_H
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `avc1394' library (-lavc1394). */
-#undef HAVE_LIBAVC1394
-
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
-
-/* Define to 1 if you have the `raw1394' library (-lraw1394). */
-#undef HAVE_LIBRAW1394
-
-/* Define to 1 if you have the <libraw1394/raw1394.h> header file. */
-#undef HAVE_LIBRAW1394_RAW1394_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
