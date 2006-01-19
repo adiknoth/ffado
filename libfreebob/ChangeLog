@@ -1,3 +1,24 @@
+2006-01-19  Daniel Wagner  <wagi@monom.org>
+
+        * This patch cleans up the external dependency detection for 
+	libfreebob. At present, building libfreebob is not possible 
+	if libraries are outside the system include/library paths 
+	(ie /usr/ and /usr/local). Use the results of pkg-config to 
+	specify the correct paths to the automake system.
+
+	Becuase we're using pkgconfig, there's no real need to use 
+	AC_CHECK_LIB or AC_CHECK_HEADERS. However, these could 
+	potentially be reinstated, but need to be fixed to check in 
+	the locations specified by pkgconfig.
+
+	* It is not currently possible to build freebob in a directory 
+	outside the source dir (ie, builddir != srcdir). This patch 
+	fixes the include paths to allow this. (it's handy for keeping 
+	the source tree clean, or when building on multiple architectures 
+	- I use a build dir of $srcdir/obj-$arch-$os)
+
+	Both patches are written by Jeremy Kerr <jk@ozlabs.org>
+
 2006-01-12  Daniel Wagner  <wagi@monom.org>
 
 	* src/avdevice.cpp: Include stdint.h.
