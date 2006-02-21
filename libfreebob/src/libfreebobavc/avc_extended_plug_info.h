@@ -40,7 +40,7 @@ public:
         eEPIPT_Analog      = 0x4,
         eEPIPT_Digital     = 0x5,
 
-        eEPIPT_Unknown     = 0x6,
+        eEPIPT_Unknown     = 0xff,
     };
 
     ExtendedPlugInfoPlugTypeSpecificData( EExtendedPlugInfoPlugType ePlugType =  eEPIPT_Unknown);
@@ -251,6 +251,7 @@ public:
     };
 
     ExtendedPlugInfoInfoType(EInfoType eInfoType);
+    ExtendedPlugInfoInfoType( const ExtendedPlugInfoInfoType& rhs );
     virtual ~ExtendedPlugInfoInfoType();
 
     bool initialize();
@@ -288,6 +289,7 @@ public:
 
     ExtendedPlugInfoCmd( Ieee1394Service* ieee1394service,
                          ESubFunction eSubFunction = eSF_ExtendedPlugInfoCmd );
+    ExtendedPlugInfoCmd( const ExtendedPlugInfoCmd& rhs );
     virtual ~ExtendedPlugInfoCmd();
 
     virtual bool serialize( IOSSerialize& se );

@@ -42,6 +42,20 @@ PlugInfoCmd::PlugInfoCmd( Ieee1394Service* ieee1394service,
 {
 }
 
+PlugInfoCmd::PlugInfoCmd( const PlugInfoCmd& rhs )
+    : AVCCommand( rhs )
+    , m_serialBusIsochronousInputPlugs( rhs.m_serialBusIsochronousInputPlugs )
+    , m_serialBusIsochronousOutputPlugs( rhs.m_serialBusIsochronousOutputPlugs )
+    , m_externalInputPlugs( rhs.m_externalInputPlugs )
+    , m_externalOutputPlugs( rhs.m_externalOutputPlugs )
+    , m_serialBusAsynchronousInputPlugs( rhs.m_serialBusAsynchronousInputPlugs )
+    , m_serialBusAsynchronousOuputPlugs( rhs.m_serialBusAsynchronousOuputPlugs )
+    , m_destinationPlugs( rhs.m_destinationPlugs )
+    , m_sourcePlugs( rhs.m_sourcePlugs )
+    , m_subFunction( rhs.m_subFunction )
+{
+}
+
 PlugInfoCmd::~PlugInfoCmd()
 {
 }

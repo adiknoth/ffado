@@ -30,15 +30,18 @@ libfreebob_la_SOURCES = 	\
 	devicemanager.cpp       \
 	avdevice.h              \
 	avdevice.cpp		\
+	avdevicexml.cpp		\
 	avdevicesubunit.h	\
 	avdevicesubunit.cpp	\
 	avplug.h                \
 	avplug.cpp		\
+	avplugxml.cpp		\
 	configrom.h		\
 	configrom.cpp		\
 	csr1212.h		\
 	csr1212.c		\
-	fbtypes.h
+	fbtypes.h		
+
 
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
