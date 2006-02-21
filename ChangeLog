@@ -1,3 +1,30 @@
+2006-02-22  Daniel Wagner  <wagi@monom.org>
+
+	*  configure.ac
+	src/Makefile.am
+        src/avdevice.cpp
+        src/avdevice.h
+        src/avdevicesubunit.cpp
+        src/avdevicesubunit.h
+        src/avdevicexml.cpp
+        src/avplug.cpp
+	src/avplug.h
+        src/avplugxml.cpp
+        src/libfreebobavc/avc_extended_plug_info.cpp
+        src/libfreebobavc/avc_extended_plug_info.h
+        src/libfreebobavc/avc_extended_stream_format.cpp
+        src/libfreebobavc/avc_extended_stream_format.h
+        src/libfreebobavc/avc_plug_info.cpp
+        src/libfreebobavc/avc_plug_info.h:
+	Refactoring: plug discovering is now part of AvPlug
+	instead of AvDevice.
+	All plugs of music and audio subunit are now also
+	discovered.
+	libfreebobavc: Copy constructor added.
+
+	The overhaul is not finished. This is the first
+	version which works again.
+
 2006-01-19  Daniel Wagner  <wagi@monom.org>
 
         * This patch cleans up the external dependency detection for 

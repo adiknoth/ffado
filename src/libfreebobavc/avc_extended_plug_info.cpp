@@ -524,6 +524,54 @@ ExtendedPlugInfoInfoType::ExtendedPlugInfoInfoType(EInfoType eInfoType)
 {
 }
 
+ExtendedPlugInfoInfoType::ExtendedPlugInfoInfoType( const ExtendedPlugInfoInfoType& rhs )
+    : IBusData()
+    , m_infoType( rhs.m_infoType )
+    , m_plugType( 0 )
+    , m_plugName( 0 )
+    , m_plugNrOfChns( 0 )
+    , m_plugChannelPosition( 0 )
+    , m_plugChannelName( 0 )
+    , m_plugInput( 0 )
+    , m_plugOutput( 0 )
+    , m_plugClusterInfo( 0 )
+{
+    switch( m_infoType ) {
+    case eIT_PlugType:
+        m_plugType =
+            new ExtendedPlugInfoPlugTypeSpecificData( *rhs.m_plugType );
+        break;
+    case eIT_PlugName:
+        m_plugName =
+            new ExtendedPlugInfoPlugNameSpecificData( *rhs.m_plugName );
+        break;
+    case eIT_NoOfChannels:
+        m_plugNrOfChns =
+            new ExtendedPlugInfoPlugNumberOfChannelsSpecificData( *rhs.m_plugNrOfChns );
+        break;
+    case eIT_ChannelPosition:
+        m_plugChannelPosition =
+            new ExtendedPlugInfoPlugChannelPositionSpecificData( *rhs.m_plugChannelPosition );
+        break;
+    case eIT_ChannelName:
+        m_plugChannelName =
+            new ExtendedPlugInfoPlugChannelNameSpecificData( *rhs.m_plugChannelName );
+        break;
+    case eIT_PlugInput:
+        m_plugInput =
+            new ExtendedPlugInfoPlugInputSpecificData( *rhs.m_plugInput );
+        break;
+    case eIT_PlugOutput:
+        m_plugOutput =
+            new ExtendedPlugInfoPlugOutputSpecificData( *rhs.m_plugOutput );
+        break;
+    case eIT_ClusterInfo:
+        m_plugClusterInfo =
+            new ExtendedPlugInfoClusterInfoSpecificData( *rhs.m_plugClusterInfo );
+        break;
+    }
+}
+
 ExtendedPlugInfoInfoType::~ExtendedPlugInfoInfoType()
 {
     delete( m_plugType );
@@ -714,6 +762,14 @@ ExtendedPlugInfoCmd::ExtendedPlugInfoCmd( Ieee1394Service* ieee1394service,
     m_infoType->initialize();
 }
 
+ExtendedPlugInfoCmd::ExtendedPlugInfoCmd( const ExtendedPlugInfoCmd& rhs )
+    : AVCCommand( rhs )
+{
+    m_subFunction = rhs.m_subFunction;
+    m_plugAddress = new PlugAddress( *rhs.m_plugAddress );
+    m_infoType = new ExtendedPlugInfoInfoType( *rhs.m_infoType );
+}
+
 ExtendedPlugInfoCmd::~ExtendedPlugInfoCmd()
 {
     delete m_plugAddress;
@@ -766,6 +822,19 @@ ExtendedPlugInfoCmd::fire()
     if ( !serialize( se ) ) {
         printf(  "ExtendedPlugInfoCmd::fire: Could not serialize\n" );
         return false;
+    }
+
+    if ( isVerbose() ) {
+        printf( "\n" );
+        printf( " idx type                       value\n" );
+        printf( "-------------------------------------\n" );
+        printf( "  %02d                     ctype: 0x%02x\n", 0, req.byte[0] );
+        printf( "  %02d subunit_type + subunit_id: 0x%02x\n", 1, req.byte[1] );
+        printf( "  %02d                    opcode: 0x%02x\n", 2, req.byte[2] );
+
+        for ( int i = 3; i < STREAM_FORMAT_REQUEST_SIZE * 4; ++i ) {
+            printf( "  %02d                operand %2d: 0x%02x\n", i, i-3, req.byte[i] );
+        }
     }
 
     // reorder the bytes to the correct layout
