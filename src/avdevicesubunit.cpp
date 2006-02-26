@@ -65,8 +65,35 @@ AvDeviceSubunit::discover()
         return false;
     }
 
+    debugOutput( DEBUG_LEVEL_NORMAL, "\n"
+                 "\tnumber of source plugs = %d\n "
+                 "\tnumber of destination output plugs = %d\n",
+                 plugInfoCmd.m_sourcePlugs,
+                 plugInfoCmd.m_destinationPlugs );
+
+    if ( !discoverPlugs(  PlugAddress::ePD_Input,
+                          plugInfoCmd.m_destinationPlugs ) )
+    {
+        debugError( "discover: destination plug discovering failed\n" );
+        return false;
+    }
+
+    if ( !discoverPlugs(  PlugAddress::ePD_Output,
+                          plugInfoCmd.m_sourcePlugs ) )
+    {
+        debugError( "discover: source plug discovering failed\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+AvDeviceSubunit::discoverPlugs(PlugAddress::EPlugDirection plugDirection,
+                               plug_id_t plugMaxId )
+{
     for ( int plugIdx = 0;
-          plugIdx < plugInfoCmd.m_destinationPlugs;
+          plugIdx < plugMaxId;
           ++plugIdx )
     {
         AVCCommand::ESubunitType subunitType =
@@ -75,36 +102,18 @@ AvDeviceSubunit::discover()
                                    m_avDevice->getNodeId(),
                                    subunitType,
                                    getSubunitId(),
-                                   PlugAddress::ePD_Input,
+                                   AvPlug::eAP_SubunitPlug,
+                                   plugDirection,
                                    plugIdx );
         if ( !plug || !plug->discover() ) {
-            debugError( "discover: plug discover failed\n" );
+            debugError( "discoverPlugs: plug discover failed\n" );
             return false;
         }
 
+        debugOutput( DEBUG_LEVEL_NORMAL, "discoverPlugs: plug '%s' found\n",
+                     plug->getName() );
         m_plugs.push_back( plug );
     }
-
-    for ( int plugIdx = 0;
-          plugIdx < plugInfoCmd.m_sourcePlugs;
-          ++plugIdx )
-    {
-        AVCCommand::ESubunitType subunitType =
-            static_cast<AVCCommand::ESubunitType>( getSubunitType() );
-        AvPlug* plug = new AvPlug( *m_avDevice->get1394Service(),
-                                   m_avDevice->getNodeId(),
-                                   subunitType,
-                                   getSubunitId(),
-                                   PlugAddress::ePD_Output,
-                                   plugIdx );
-        if ( !plug || !plug->discover() ) {
-            debugError( "discover: plug discover failed\n" );
-            return false;
-        }
-
-        m_plugs.push_back( plug );
-    }
-
     return true;
 }
 

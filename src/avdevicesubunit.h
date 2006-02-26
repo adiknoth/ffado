@@ -47,6 +47,10 @@ class AvDeviceSubunit {
 	{ return m_sbType; }
 
  protected:
+    bool discoverPlugs(PlugAddress::EPlugDirection plugDirection,
+                       plug_id_t plugMaxId );
+
+ protected:
     AvDevice*      m_avDevice;
     AVCCommand::ESubunitType m_sbType;
     subunit_t      m_sbId;

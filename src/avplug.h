@@ -34,10 +34,19 @@ class Ieee1394Service;
 
 class AvPlug {
 public:
+
+    enum EAvPlugType {
+	eAP_PCR,
+	eAP_ExternalPlug,
+	eAP_AsynchronousPlug,
+	eAP_SubunitPlug,
+    };
+
     AvPlug( Ieee1394Service& ieee1394Service,
 	    int m_nodeId,
 	    AVCCommand::ESubunitType subunitType,
 	    subunit_id_t subunitId,
+	    EAvPlugType plugType,
 	    PlugAddress::EPlugDirection plugDirection,
 	    plug_id_t plugId );
     AvPlug( const AvPlug& rhs );
@@ -45,9 +54,6 @@ public:
 
     bool discover();
 
-    ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType
-	getPlugType()
-	{ return m_type; }
     plug_id_t      getPlugId()
 	{ return m_id; }
     AVCCommand::ESubunitType getSubunitType()
@@ -91,11 +97,12 @@ private:
     int                          m_nodeId;
     AVCCommand::ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;
+    EAvPlugType                  m_type;
     PlugAddress::EPlugDirection  m_direction;
     plug_id_t                    m_id;
 
-    // Plug type
-    ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType m_type;
+    // Info plug type
+    ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType m_infoPlugType;
 
     // Number of channels
     nr_of_channels_t             m_nrOfChannels;
