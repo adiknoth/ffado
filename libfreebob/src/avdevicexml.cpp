@@ -44,12 +44,12 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
     ///////////
     // get plugs
 
-    AvPlug* inputPlug = getPlugById( m_isoInputPlugs, 0 );
+    AvPlug* inputPlug = getPlugById( m_isoPlugs, PlugAddress::ePD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "addXmlDescription: No iso input plug found with id %d\n" );
         return false;
     }
-    AvPlug* outputPlug = getPlugById( m_isoOutputPlugs, 0 );
+    AvPlug* outputPlug = getPlugById( m_isoPlugs, PlugAddress::ePD_Output, 0 );
     if ( !outputPlug ) {
         debugError( "addXmlDescription: No iso output plug found with id %d\n" );
         return false;

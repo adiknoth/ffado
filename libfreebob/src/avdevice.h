@@ -58,15 +58,16 @@ public:
 	{ return m_1394Service; }
 
 protected:
+    bool enumerateSubUnits();
+
     bool discoverPlugs();
-    bool discoverPlugConnectionsInput();
-    bool discoverPlugConnectionsOutput();
+    bool discoverPlugsIso( PlugAddress::EPlugDirection plugDirection,
+                           plug_id_t plugMaxId );
+    bool discoverPlugsExternal( PlugAddress::EPlugDirection plugDirection,
+                                plug_id_t plugMaxId );
+    bool discoverPlugConnections();
     bool discoverSyncModes();
 
-    bool discoverPlugConnection( AvPlug& srcPlug,
-                                 SubunitPlugSpecificDataPlugAddress& subunitPlugAddress );
-
-    bool enumerateSubUnits();
 
     AvDeviceSubunit* getSubunit( subunit_type_t subunitType,
                                  subunit_id_t subunitId ) const;
@@ -76,7 +77,9 @@ protected:
 
     AvPlug* getSyncPlug( int maxPlugId, PlugAddress::EPlugDirection );
 
-    AvPlug* getPlugById( AvPlugVector& plugs, int id );
+    AvPlug* getPlugById( AvPlugVector& plugs,
+                         PlugAddress::EPlugDirection plugDireciton,
+                         int id );
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    PlugAddress::EPlugDirection direction,
@@ -86,18 +89,13 @@ protected:
     ConfigRom*       m_configRom;
     int              m_nodeId;
 
-    AvPlugVector     m_isoInputPlugs;
-    AvPlugVector     m_isoOutputPlugs;
+    AvPlugVector     m_isoPlugs;
     AvPlugVector     m_externalPlugs;
-
     AvPlugVector     m_syncPlugs;
 
     AvPlugConnectionVector m_plugConnections;
 
     AvDeviceSubunitVector  m_subunits;
-
-    nr_of_plugs_t m_serialBusIsochronousInputPlugs;
-    nr_of_plugs_t m_serialBusIsochronousOutputPlugs;
 
     DECLARE_DEBUG_MODULE;
 };

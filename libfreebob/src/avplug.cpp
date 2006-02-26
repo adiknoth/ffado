@@ -24,20 +24,24 @@
 #include "libfreebobavc/serialize.h"
 
 
-IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_NORMAL );
 
 AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 int nodeId,
                 AVCCommand::ESubunitType subunitType,
                 subunit_id_t subunitId,
+                EAvPlugType plugType,
                 PlugAddress::EPlugDirection plugDirection,
                 plug_id_t plugId )
     : m_1394Service( &ieee1394Service )
     , m_nodeId( nodeId )
     , m_subunitType( subunitType )
     , m_subunitId( subunitId )
+    , m_type( plugType )
     , m_direction( plugDirection )
     , m_id( plugId )
+    , m_infoPlugType( ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Unknown )
+    , m_nrOfChannels( 0 )
 {
 }
 
@@ -46,8 +50,14 @@ AvPlug::AvPlug( const AvPlug& rhs )
     , m_nodeId( rhs.m_nodeId )
     , m_subunitType( rhs.m_subunitType )
     , m_subunitId( rhs.m_subunitId )
+    , m_type( rhs.m_type )
     , m_direction( rhs.m_direction )
     , m_id( rhs.m_id )
+    , m_infoPlugType( rhs.m_infoPlugType )
+    , m_nrOfChannels( rhs.m_nrOfChannels )
+    , m_name( rhs.m_name )
+    , m_clusterInfos( rhs.m_clusterInfos )
+    , m_formatInfos( rhs.m_formatInfos )
 {
 }
 
@@ -166,7 +176,7 @@ AvPlug::discoverPlugType()
                      m_id,
                      plugType,
                      extendedPlugInfoPlugTypeToString( plugType ) );
-        m_type = static_cast<ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType>( plugType );
+        m_infoPlugType = static_cast<ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType>( plugType );
     }
 
    return true;
@@ -324,7 +334,7 @@ AvPlug::discoverChannelName()
 bool
 AvPlug::discoverClusterInfo()
 {
-    if ( m_type == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
+    if ( m_infoPlugType == ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync )
     {
         // If the plug is of type sync it is either a normal 2 channel
         // stream (not compound stream) or it is a compound stream
@@ -401,10 +411,11 @@ AvPlug::discoverStreamFormat()
             compoundStream->m_samplingFrequency;
         debugOutput( DEBUG_LEVEL_VERBOSE,
                      "discoverStreamFormat: %s plug %d uses "
-                     "sampling frequency %d\n",
+                     "sampling frequency %d, nr of stream infos = %d\n",
                      m_name.c_str(),
                      m_id,
-                     m_samplingFrequency );
+                     m_samplingFrequency,
+                     compoundStream->m_numberOfStreamFormatInfos );
 
         for ( int i = 1;
               i <= compoundStream->m_numberOfStreamFormatInfos;
@@ -421,6 +432,11 @@ AvPlug::discoverStreamFormat()
             StreamFormatInfo* streamFormatInfo =
                 compoundStream->m_streamFormatInfos[ i - 1 ];
 
+            debugOutput( DEBUG_LEVEL_VERBOSE, "discoverStreamFormat: "
+                         "number of channels = %d, stream format = %d\n",
+                         streamFormatInfo->m_numberOfChannels,
+                         streamFormatInfo->m_streamFormat );
+
             int nrOfChannels = clusterInfo->m_nrOfChannels;
             if ( streamFormatInfo->m_streamFormat ==
                  FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
@@ -429,11 +445,10 @@ AvPlug::discoverStreamFormat()
                 nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
             }
             // sanity checks
-            if (  nrOfChannels !=
-                  streamFormatInfo->m_numberOfChannels )
+            if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
             {
                 debugError( "discoverStreamFormat: Number of channels "
-                            "mismatch: %s plug %d discovering reported "
+                            "mismatch: '%s' plug %d discovering reported "
                             "%d channels for cluster '%s', while stream "
                             "format reported %d\n",
                             m_name.c_str(),
@@ -570,7 +585,21 @@ AvPlug::setPlugAddrToPlugInfoCmd()
     switch( m_subunitType ) {
     case AVCCommand::eST_Unit:
         {
-            UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+            UnitPlugAddress::EPlugType ePlugType = UnitPlugAddress::ePT_Unknown;
+            switch ( m_type ) {
+                case eAP_PCR:
+                    ePlugType = UnitPlugAddress::ePT_PCR;
+                    break;
+                case eAP_ExternalPlug:
+                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
+                    break;
+                case eAP_AsynchronousPlug:
+                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
+                    break;
+                default:
+                    ePlugType = UnitPlugAddress::ePT_Unknown;
+            }
+            UnitPlugAddress unitPlugAddress( ePlugType,
                                              m_id );
             extPlugInfoCmd.setPlugAddress( PlugAddress( m_direction,
                                                         PlugAddress::ePAM_Unit,
@@ -605,7 +634,21 @@ AvPlug::setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFu
     switch( m_subunitType ) {
     case AVCCommand::eST_Unit:
     {
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+            UnitPlugAddress::EPlugType ePlugType = UnitPlugAddress::ePT_Unknown;
+            switch ( m_type ) {
+                case eAP_PCR:
+                    ePlugType = UnitPlugAddress::ePT_PCR;
+                    break;
+                case eAP_ExternalPlug:
+                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
+                    break;
+                case eAP_AsynchronousPlug:
+                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
+                    break;
+                default:
+                    ePlugType = UnitPlugAddress::ePT_Unknown;
+            }
+        UnitPlugAddress unitPlugAddress( ePlugType,
                                          m_id );
         extStreamFormatInfoCmd.setPlugAddress( PlugAddress( m_direction,
                                                             PlugAddress::ePAM_Unit,

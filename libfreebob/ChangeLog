@@ -1,3 +1,17 @@
+2006-02-26  Daniel Wagner  <wagi@monom.org>
+
+	* src/avdevice.cpp: Some more refactoring (m_isoInputPlugs and m_isoOutputPlugs
+	unified into m_isoPlugs). Discovering of unit external plugs.
+	* src/avdevice.h: Likewise.
+	* src/avdevicexml.cpp: Likewise.
+	* src/avdevicesubunit.cpp: Likewise.
+	* src/avdevicesubunit.h: Likewise.
+	* src/avplug.cpp: Likewise.
+	* src/avplug.h: Likewise.
+
+	* src/libfreebobavc/avc_extended_cmd_generic.h (class UnitPlugAddress): 
+	ePT_Unknown enum added.
+
 2006-02-22  Daniel Wagner  <wagi@monom.org>
 
 	*  configure.ac

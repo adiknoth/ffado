@@ -64,14 +64,20 @@ AvDevice::~AvDevice()
     {
         delete *it;
     }
-    for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
-          it != m_isoInputPlugs.end();
+    for ( AvPlugVector::iterator it = m_isoPlugs.begin();
+          it != m_isoPlugs.end();
           ++it )
     {
         delete *it;
     }
-    for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
-          it != m_isoOutputPlugs.end();
+    for ( AvPlugVector::iterator it = m_externalPlugs.begin();
+          it != m_externalPlugs.end();
+          ++it )
+    {
+        delete *it;
+    }
+    for ( AvPlugVector::iterator it = m_syncPlugs.begin();
+          it != m_syncPlugs.end();
           ++it )
     {
         delete *it;
@@ -85,17 +91,12 @@ AvDevice::discover()
         debugError( "discover: Could not enumarate sub units\n" );
         return false;
     }
-
     if ( !discoverPlugs() ) {
         debugError( "discover: detecting plugs failed\n" );
         return false;
     }
-    if ( !discoverPlugConnectionsInput() ) {
-        debugError( "discover: detecting input plug connections failed\n" );
-        return false;
-    }
-    if ( !discoverPlugConnectionsOutput() ) {
-        debugError( "discover: detecting output plug connecions failed\n" );
+    if ( !discoverPlugConnections() ) {
+        debugError( "discover: detecting plug connections failed\n" );
         return false;
     }
     if ( !discoverSyncModes() ) {
@@ -118,61 +119,113 @@ AvDevice::discoverPlugs()
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
 
     if ( !plugInfoCmd.fire() ) {
-        debugError( "discoverPlugs: plug info command failed (step 1)\n" );
+        debugError( "discoverPlugs: plug info command failed\n" );
         return false;
     }
 
-    for ( int plugId = 0;
-          plugId < plugInfoCmd.m_serialBusIsochronousInputPlugs;
-          ++plugId )
-    {
-        AvPlug* plug  = new AvPlug( *m_1394Service,
-                                    m_nodeId,
-                                    AVCCommand::eST_Unit,
-                                    0xff,
-                                    PlugAddress::ePD_Input,
-                                    plugId );
-        if ( !plug || !plug->discover() ) {
-            debugError( "discoverPlugs: plug discovering failed\n" );
-            return false;
-        }
-
-        m_isoInputPlugs.push_back( plug );
-    }
-
-    for ( int plugId = 0;
-          plugId < plugInfoCmd.m_serialBusIsochronousOutputPlugs;
-          ++plugId )
-    {
-        AvPlug* plug  = new AvPlug( *m_1394Service,
-                                    m_nodeId,
-                                    AVCCommand::eST_Unit,
-                                    0xff,
-                                    PlugAddress::ePD_Output,
-                                    plugId );
-        if ( !plug || !plug->discover() ) {
-            debugError( "discover: plug discovering failed\n" );
-            return false;
-        }
-
-        m_isoOutputPlugs.push_back( plug );
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE,
-                 "number of iso input plugs = %d, "
-                 "number of iso output plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_NORMAL, "\n"
+                 "\tnumber of iso input plugs = %d\n"
+                 "\tnumber of iso output plugs = %d\n"
+                 "\tnumber of external input plugs = %d\n "
+                 "\tnumber of external output plugs = %d\n",
                  plugInfoCmd.m_serialBusIsochronousInputPlugs,
-                 plugInfoCmd.m_serialBusIsochronousOutputPlugs );
+                 plugInfoCmd.m_serialBusIsochronousOutputPlugs,
+                 plugInfoCmd.m_externalInputPlugs,
+                 plugInfoCmd.m_externalOutputPlugs );
+
+
+    if ( !discoverPlugsIso( PlugAddress::ePD_Input,
+                            plugInfoCmd.m_serialBusIsochronousInputPlugs ) )
+    {
+        debugError( "discoverPlugs: iso input plug discovering failed\n" );
+        return false;
+    }
+
+    if ( !discoverPlugsIso( PlugAddress::ePD_Output,
+                            plugInfoCmd.m_serialBusIsochronousOutputPlugs ) )
+    {
+        debugError( "discoverPlugs: iso output plug discovering failed\n" );
+        return false;
+    }
+
+    if ( !discoverPlugsExternal( PlugAddress::ePD_Input,
+                                 plugInfoCmd.m_externalInputPlugs ) )
+    {
+        debugError( "discoverPlugs: external input plug discovering failed\n" );
+        return false;
+    }
+
+    if ( !discoverPlugsExternal( PlugAddress::ePD_Output,
+                                 plugInfoCmd.m_externalOutputPlugs ) )
+    {
+        debugError( "discoverPlugs: external output plug discovering failed\n" );
+        return false;
+    }
 
     return true;
 }
 
 bool
-AvDevice::discoverPlugConnectionsInput()
+AvDevice::discoverPlugsIso( PlugAddress::EPlugDirection plugDirection,
+                            plug_id_t plugMaxId )
 {
-    //////////////////////////////////////////////
-    // Step 2: For each ISO input plug: get internal
-    // output connections (data sink) of the ISO input plug
+    for ( int plugId = 0;
+          plugId < plugMaxId;
+          ++plugId )
+    {
+        AvPlug* plug  = new AvPlug( *m_1394Service,
+                                    m_nodeId,
+                                    AVCCommand::eST_Unit,
+                                    0xff,
+                                    AvPlug::eAP_PCR,
+                                    plugDirection,
+                                    plugId );
+        if ( !plug || !plug->discover() ) {
+            debugError( "discoverPlugsIso: plug discovering failed\n" );
+            return false;
+        }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "discoverPlugsIso: plug '%s' found\n",
+                     plug->getName() );
+        m_isoPlugs.push_back( plug );
+    }
+
+    return true;
+}
+
+bool
+AvDevice::discoverPlugsExternal( PlugAddress::EPlugDirection plugDirection,
+                                 plug_id_t plugMaxId )
+{
+    for ( int plugId = 0;
+          plugId < plugMaxId;
+          ++plugId )
+    {
+        AvPlug* plug  = new AvPlug( *m_1394Service,
+                                    m_nodeId,
+                                    AVCCommand::eST_Unit,
+                                    0xff,
+                                    AvPlug::eAP_ExternalPlug,
+                                    plugDirection,
+                                    plugId );
+        if ( !plug || !plug->discover() ) {
+            debugError( "discoverPlugsExternal: plug discovering failed\n" );
+            return false;
+        }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "discoverPlugsExternal: plug '%s' found\n",
+                     plug->getName() );
+        m_isoPlugs.push_back( plug );
+        m_externalPlugs.push_back( plug );
+    }
+
+    return true;
+}
+
+bool
+AvDevice::discoverPlugConnections()
+{
+
 
     /*
     for ( AvPlugVector::iterator it = m_isoInputPlugs.begin();
@@ -274,6 +327,7 @@ AvDevice::discoverPlugConnectionsInput()
     return true;
 }
 
+/*
 bool
 AvDevice::discoverPlugConnectionsOutput()
 {
@@ -281,7 +335,6 @@ AvDevice::discoverPlugConnectionsOutput()
     // Step 3: For each ISO output plug: get internal
     // intput connections (data source) of the ISO output plug
 
-    /*
     for ( AvPlugVector::iterator it = m_isoOutputPlugs.begin();
           it != m_isoOutputPlugs.end();
           ++it )
@@ -356,9 +409,11 @@ AvDevice::discoverPlugConnectionsOutput()
             return false;
         }
     }
-    */
+
     return true;
 }
+    */
+
 
 bool
 AvDevice::discoverSyncModes()
@@ -385,11 +440,11 @@ AvDevice::discoverSyncModes()
     return true;
 }
 
+    /*
 bool
 AvDevice::discoverPlugConnection( AvPlug& srcPlug,
                                   SubunitPlugSpecificDataPlugAddress& subunitPlugAddress )
 {
-    /*
     AvDeviceSubunit* subunit = getSubunit( subunitPlugAddress.m_subunitType,
                                            subunitPlugAddress.m_subunitId );
 
@@ -425,10 +480,11 @@ AvDevice::discoverPlugConnection( AvPlug& srcPlug,
                      "found plug address points to unhandled  "
                      "subunit -> ignored\n" );
     }
-    */
 
     return true;
 }
+    */
+
 
 bool
 AvDevice::enumerateSubUnits()
@@ -556,14 +612,16 @@ AvDevice::getPlugConnection( AvPlug& srcPlug ) const
 }
 
 AvPlug*
-AvDevice::getPlugById( AvPlugVector& plugs, int id )
+AvDevice::getPlugById( AvPlugVector& plugs, PlugAddress::EPlugDirection plugDirection, int id )
 {
     for ( AvPlugVector::iterator it = plugs.begin();
           it != plugs.end();
           ++it )
     {
         AvPlug* plug = *it;
-        if ( id == plug->getPlugId() ) {
+        if ( ( id == plug->getPlugId() )
+             && ( plugDirection == plug->getPlugDirection() ) )
+        {
             return plug;
         }
     }
@@ -598,7 +656,7 @@ AvDevice::getGuid()
 bool
 AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
-    AvPlug* plug = getPlugById( m_isoInputPlugs, 0 );
+    AvPlug* plug = getPlugById( m_isoPlugs, PlugAddress::ePD_Input, 0 );
     if ( !plug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
         return false;
@@ -609,7 +667,7 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
         return false;
     }
 
-    plug = getPlugById( m_isoOutputPlugs, 0 );
+    plug = getPlugById( m_isoPlugs, PlugAddress::ePD_Output,  0 );
     if ( !plug ) {
         debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
         return false;
