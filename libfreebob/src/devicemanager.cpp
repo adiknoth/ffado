@@ -1,5 +1,5 @@
 /* devicemanager.cpp
- * Copyright (C) 2005 by Daniel Wagner
+ * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -33,8 +33,9 @@ using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_VERBOSE );
 
-DeviceManager::DeviceManager()
+DeviceManager::DeviceManager( bool verbose )
     : m_1394Service( 0 )
+    , m_verbose( verbose )
 {
 }
 
@@ -51,7 +52,7 @@ DeviceManager::~DeviceManager()
 }
 
 bool
-DeviceManager::initialize(int port)
+DeviceManager::initialize( int port )
 {
     m_1394Service = new Ieee1394Service();
     if ( !m_1394Service ) {
@@ -116,6 +117,9 @@ DeviceManager::discover()
                         nodeId );
             delete avDevice;
             return false;
+        }
+        if ( m_verbose ) {
+            avDevice->showDevice();
         }
 
         m_avDevices.push_back( avDevice );

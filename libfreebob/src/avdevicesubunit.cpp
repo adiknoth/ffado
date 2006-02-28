@@ -61,7 +61,7 @@ AvDeviceSubunit::discover()
     plugInfoCmd.setSubunitId( m_sbId );
 
     if ( !plugInfoCmd.fire() ) {
-        debugError( "discover: plug info command failed\n" );
+        debugError( "plug info command failed\n" );
         return false;
     }
 
@@ -74,14 +74,14 @@ AvDeviceSubunit::discover()
     if ( !discoverPlugs(  PlugAddress::ePD_Input,
                           plugInfoCmd.m_destinationPlugs ) )
     {
-        debugError( "discover: destination plug discovering failed\n" );
+        debugError( "destination plug discovering failed\n" );
         return false;
     }
 
     if ( !discoverPlugs(  PlugAddress::ePD_Output,
                           plugInfoCmd.m_sourcePlugs ) )
     {
-        debugError( "discover: source plug discovering failed\n" );
+        debugError( "source plug discovering failed\n" );
         return false;
     }
 
@@ -100,17 +100,18 @@ AvDeviceSubunit::discoverPlugs(PlugAddress::EPlugDirection plugDirection,
             static_cast<AVCCommand::ESubunitType>( getSubunitType() );
         AvPlug* plug = new AvPlug( *m_avDevice->get1394Service(),
                                    m_avDevice->getNodeId(),
+                                   m_avDevice->getPlugManager(),
                                    subunitType,
                                    getSubunitId(),
                                    AvPlug::eAP_SubunitPlug,
                                    plugDirection,
                                    plugIdx );
         if ( !plug || !plug->discover() ) {
-            debugError( "discoverPlugs: plug discover failed\n" );
+            debugError( "plug discover failed\n" );
             return false;
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "discoverPlugs: plug '%s' found\n",
+        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
                      plug->getName() );
         m_plugs.push_back( plug );
     }
@@ -123,6 +124,24 @@ AvDeviceSubunit::addPlug( AvPlug& plug )
 {
     m_plugs.push_back( &plug );
     return true;
+}
+
+
+AvPlug*
+AvDeviceSubunit::getPlug(PlugAddress::EPlugDirection direction, plug_id_t plugId)
+{
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it != m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+        if ( ( plug->getPlugId() == plugId )
+            && ( plug->getDirection() == direction ) )
+        {
+            return plug;
+        }
+    }
+    return 0;
 }
 
 ////////////////////////////////////////////

@@ -21,6 +21,7 @@
 #ifndef AVPLUG_H
 #define AVPLUG_H
 
+#include "libfreebobavc/avc_signal_source.h"
 #include "libfreebobavc/avc_extended_stream_format.h"
 #include "libfreebobavc/avc_extended_plug_info.h"
 #include "libfreebobavc/avc_extended_cmd_generic.h"
@@ -31,6 +32,11 @@
 #include "debugmodule/debugmodule.h"
 
 class Ieee1394Service;
+
+class AvPlugManager;
+class AvPlug;
+
+typedef std::vector<AvPlug*> AvPlugVector;
 
 class AvPlug {
 public:
@@ -44,6 +50,7 @@ public:
 
     AvPlug( Ieee1394Service& ieee1394Service,
 	    int m_nodeId,
+            AvPlugManager& plugManager,
 	    AVCCommand::ESubunitType subunitType,
 	    subunit_id_t subunitId,
 	    EAvPlugType plugType,
@@ -53,6 +60,9 @@ public:
     virtual ~AvPlug();
 
     bool discover();
+    bool discoverConnections();
+
+    bool inquireConnnection( AvPlug& plug );
 
     plug_id_t      getPlugId()
 	{ return m_id; }
@@ -70,6 +80,16 @@ public:
     int getNrOfChannels();
     int getNrOfStreams();
 
+    PlugAddress::EPlugDirection getDirection()
+        { return m_direction; }
+    EAvPlugType getPlugType()
+        { return m_type; }
+
+    const AvPlugVector& getInputConnections() const
+        { return m_inputConnections; }
+    const AvPlugVector& getOutputConnections() const
+        { return m_outputConnections; }
+
     bool addXmlDescription( xmlNodePtr conectionSet );
     bool addXmlDescriptionStreamFormats( xmlNodePtr streamFormats );
 
@@ -82,9 +102,13 @@ protected:
     bool discoverClusterInfo();
     bool discoverStreamFormat();
     bool discoverSupportedStreamFormats();
+    bool discoverConnectionsInput();
+    bool discoverConnectionsOutput();
 
     ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
     ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFunction);
+    SignalSourceCmd setSrcPlugAddrToSignalCmd();
+    void setDestPlugAddrToSignalCmd( SignalSourceCmd& signalSourceCmd, AvPlug& plug );
 
     void debugOutputClusterInfos( int debugLevel );
 
@@ -155,10 +179,38 @@ private:
 
     ClusterInfo* getClusterInfoByIndex( int index );
 
+    AvPlugVector             m_inputConnections;
+    AvPlugVector             m_outputConnections;
+
+    AvPlugManager*           m_plugManager;
+
     DECLARE_DEBUG_MODULE;
 };
 
-typedef std::vector<AvPlug*> AvPlugVector;
+const char* avPlugTypeToString( AvPlug::EAvPlugType type );
+
+class AvPlugManager
+{
+public:
+    AvPlugManager();
+    ~AvPlugManager();
+
+    bool addPlug( AvPlug& plug );
+    bool remPlug( AvPlug& plug );
+
+    void showPlugs();
+
+    AvPlug* getPlug( AVCCommand::ESubunitType subunitType,
+                     subunit_id_t subunitId,
+                     AvPlug::EAvPlugType plugType,
+                     PlugAddress::EPlugDirection plugDirection,
+                     plug_id_t plugId );
+
+private:
+    AvPlugVector m_plugs;
+
+    DECLARE_DEBUG_MODULE;
+};
 
 class AvPlugCluster {
 public:

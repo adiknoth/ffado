@@ -25,9 +25,11 @@
 
 
 IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( AvPlugManager, AvPlugManager, DEBUG_LEVEL_NORMAL );
 
 AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 int nodeId,
+                AvPlugManager& plugManager,
                 AVCCommand::ESubunitType subunitType,
                 subunit_id_t subunitId,
                 EAvPlugType plugType,
@@ -42,6 +44,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
     , m_id( plugId )
     , m_infoPlugType( ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Unknown )
     , m_nrOfChannels( 0 )
+    , m_plugManager( &plugManager )
 {
 }
 
@@ -58,11 +61,13 @@ AvPlug::AvPlug( const AvPlug& rhs )
     , m_name( rhs.m_name )
     , m_clusterInfos( rhs.m_clusterInfos )
     , m_formatInfos( rhs.m_formatInfos )
+    , m_plugManager( rhs.m_plugManager )
 {
 }
 
 AvPlug::~AvPlug()
 {
+    m_plugManager->remPlug( *this );
 }
 
 bool
@@ -75,54 +80,84 @@ AvPlug::discover()
     }
 
     if ( !discoverName() ) {
-        debugError( "discover: Could not discover name (%d,%d,%d,%d,%d)\n",
+        debugError( "Could not discover name (%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverNoOfChannels() ) {
-        debugError( "discover: Could not discover number of channels "
+        debugError( "Could not discover number of channels "
                     "(%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverChannelPosition() ) {
-        debugError( "discover: Could not discover channel positions "
+        debugError( "Could not discover channel positions "
                     "(%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverChannelName() ) {
-        debugError( "discover: Could not discover channel name "
+        debugError( "Could not discover channel name "
                     "(%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverClusterInfo() ) {
-        debugError( "discover: Could not discover channel name "
+        debugError( "Could not discover channel name "
                     "(%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverStreamFormat() ) {
-        debugError( "discover: Could not discover stream format "
+        debugError( "Could not discover stream format "
                     "(%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverSupportedStreamFormats() ) {
-        debugError( "discover: Could not discover supported stream formats "
+        debugError( "Could not discover supported stream formats "
                     "(%d,%d,%d,%d,%d)\n",
                     m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
-    return true;
+    return m_plugManager->addPlug( *this );
+}
+
+bool
+AvPlug::discoverConnections()
+{
+    return discoverConnectionsInput() && discoverConnectionsOutput();
+}
+
+bool
+AvPlug::inquireConnnection( AvPlug& plug )
+{
+    SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
+    setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
+
+    if ( !signalSourceCmd.fire() ) {
+        debugError( "Could not inquire connection between '%s' and '%s'\n",
+                    m_name.c_str(), plug.getName() );
+        return false;
+    }
+
+    if ( signalSourceCmd.getResponse() == AVCCommand::eR_Implemented ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "Connection possible between '%s' and '%s'\n",
+                     m_name.c_str(),  plug.getName() );
+        return true;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "Connection not possible between '%s' and '%s'\n",
+                 m_name.c_str(),  plug.getName() );
+    return false;
 }
 
 int
@@ -161,7 +196,7 @@ AvPlug::discoverPlugType()
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
     if ( !extPlugInfoCmd.fire() ) {
-        debugError( "discoverPlugType: plug type command failed\n" );
+        debugError( "plug type command failed\n" );
         return false;
     }
 
@@ -192,7 +227,7 @@ AvPlug::discoverName()
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
     if ( !extPlugInfoCmd.fire() ) {
-        debugError( "discoverName: name command failed\n" );
+        debugError( "name command failed\n" );
         return false;
     }
 
@@ -224,7 +259,7 @@ AvPlug::discoverNoOfChannels()
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
     if ( !extPlugInfoCmd.fire() ) {
-        debugError( "discoverNoOfChannels: number of channels command failed\n" );
+        debugError( "number of channels command failed\n" );
         return false;
     }
 
@@ -255,7 +290,7 @@ AvPlug::discoverChannelPosition()
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
     if ( !extPlugInfoCmd.fire() ) {
-        debugError( "discoverNoOfChannels: channel position command failed\n" );
+        debugError( "channel position command failed\n" );
         return false;
     }
 
@@ -264,7 +299,7 @@ AvPlug::discoverChannelPosition()
          && infoType->m_plugChannelPosition )
     {
         if ( !copyClusterInfo( *( infoType->m_plugChannelPosition ) ) ) {
-            debugError( "discoverChannelPosition: Could not copy channel position "
+            debugError( "Could not copy channel position "
                         "information\n" );
             return false;
         }
@@ -308,7 +343,7 @@ AvPlug::discoverChannelName()
                     channelInfo->m_streamPosition;
             }
             if ( !extPlugInfoCmd.fire() ) {
-                debugError( "discoverChannelName: channel name command failed\n" );
+                debugError( "channel name command failed\n" );
                 return false;
             }
             infoType = extPlugInfoCmd.getInfoType();
@@ -364,7 +399,7 @@ AvPlug::discoverClusterInfo()
             clusterInfo->m_index;
 
         if ( !extPlugInfoCmd.fire() ) {
-            debugError( "discoverClusterInfo: cluster info command failed\n" );
+            debugError( "cluster info command failed\n" );
             return false;
         }
 
@@ -397,8 +432,16 @@ AvPlug::discoverStreamFormat()
         setPlugAddrToStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
 
     if ( !extStreamFormatCmd.fire() ) {
-        debugError( "discoverStreamFormat: stream format command failed\n" );
+        debugError( "stream format command failed\n" );
         return false;
+    }
+
+    if ( ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NoStreamFormat )
+         || ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NotUsed ) )
+    {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "No stream format information available\n" );
+        return true;
     }
 
     FormatInformation* formatInfo =
@@ -410,7 +453,7 @@ AvPlug::discoverStreamFormat()
         m_samplingFrequency =
             compoundStream->m_samplingFrequency;
         debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "discoverStreamFormat: %s plug %d uses "
+                     "%s plug %d uses "
                      "sampling frequency %d, nr of stream infos = %d\n",
                      m_name.c_str(),
                      m_id,
@@ -425,14 +468,14 @@ AvPlug::discoverStreamFormat()
                 getClusterInfoByIndex( i );
 
             if ( !clusterInfo ) {
-                debugError( "discoverStreamFormat: No matching cluster "
+                debugError( "No matching cluster "
                             "info found for index %d\n",  i );
                     return false;
             }
             StreamFormatInfo* streamFormatInfo =
                 compoundStream->m_streamFormatInfos[ i - 1 ];
 
-            debugOutput( DEBUG_LEVEL_VERBOSE, "discoverStreamFormat: "
+            debugOutput( DEBUG_LEVEL_VERBOSE,
                          "number of channels = %d, stream format = %d\n",
                          streamFormatInfo->m_numberOfChannels,
                          streamFormatInfo->m_streamFormat );
@@ -447,7 +490,7 @@ AvPlug::discoverStreamFormat()
             // sanity checks
             if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
             {
-                debugError( "discoverStreamFormat: Number of channels "
+                debugError( "Number of channels "
                             "mismatch: '%s' plug %d discovering reported "
                             "%d channels for cluster '%s', while stream "
                             "format reported %d\n",
@@ -484,8 +527,10 @@ AvPlug::discoverStreamFormat()
                      m_samplingFrequency );
     }
 
-    if ( !compoundStream && !syncStream ) {
-        debugError( "discoverStreamFormat: Unsupported stream format\n" );
+
+    if ( !compoundStream && !syncStream )
+    {
+        debugError( "Unsupported stream format\n" );
         return false;
     }
 
@@ -542,8 +587,7 @@ AvPlug::discoverSupportedStreamFormats()
                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
                         break;
                     default:
-                        debugWarning( "discoverSupportedStreamFormats: "
-                                      "unknown stream format for channel "
+                        debugWarning("unknown stream format for channel "
                                       "(%d)\n", j );
                     }
                 }
@@ -576,6 +620,223 @@ AvPlug::discoverSupportedStreamFormats()
     return true;
 }
 
+
+bool
+AvPlug::discoverConnectionsInput()
+{
+    ExtendedPlugInfoCmd extPlugInfoCmd = setPlugAddrToPlugInfoCmd();
+    ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
+        ExtendedPlugInfoInfoType::eIT_PlugInput );
+    extendedPlugInfoInfoType.initialize();
+    extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+
+    if ( !extPlugInfoCmd.fire() ) {
+        debugError( "plug type command failed\n" );
+        return false;
+    }
+
+    ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+    if ( infoType
+         && infoType->m_plugInput )
+    {
+        PlugAddressSpecificData* plugAddress
+            = infoType->m_plugInput->m_plugAddress;
+
+        UnitPlugSpecificDataPlugAddress* pUnitPlugAddress =
+            dynamic_cast<UnitPlugSpecificDataPlugAddress*>
+            ( plugAddress->m_plugAddressData );
+
+        if ( pUnitPlugAddress ) {
+            EAvPlugType type = eAP_PCR;
+            switch ( pUnitPlugAddress->m_plugType ) {
+                case UnitPlugSpecificDataPlugAddress::ePT_PCR:
+                    type = eAP_PCR;
+                    break;
+                case UnitPlugSpecificDataPlugAddress::ePT_ExternalPlug:
+                    type = eAP_ExternalPlug;
+                    break;
+                case UnitPlugSpecificDataPlugAddress::ePT_AsynchronousPlug:
+                    type = eAP_AsynchronousPlug;
+                    break;
+            }
+
+            AvPlug* outputPlug = m_plugManager->getPlug(
+                AVCCommand::eST_Unit,
+                0xff,
+                type,
+                PlugAddress::ePD_Output,
+                pUnitPlugAddress->m_plugId );
+
+            if ( outputPlug ) {
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                             "'%s' has a connection from '%s'\n",
+                             m_name.c_str(),
+                             outputPlug->getName() );
+                m_inputConnections.push_back( outputPlug );
+            } else {
+                debugError( "no corresponding output plug found\n" );
+                return false;
+            }
+        }
+
+        SubunitPlugSpecificDataPlugAddress* pSubunitPlugAddress =
+            dynamic_cast<SubunitPlugSpecificDataPlugAddress*>
+            ( plugAddress->m_plugAddressData );
+
+        if ( pSubunitPlugAddress ) {
+            AVCCommand::ESubunitType subunitType =
+                static_cast<AVCCommand::ESubunitType>( pSubunitPlugAddress->m_subunitType );
+
+            AvPlug* outputPlug = m_plugManager->getPlug(
+                subunitType,
+                pSubunitPlugAddress->m_subunitId,
+                eAP_SubunitPlug,
+                PlugAddress::ePD_Output,
+                pSubunitPlugAddress->m_plugId );
+           if ( outputPlug ) {
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                             "'%s' has a connection from '%s'\n",
+                             m_name.c_str(),
+                             outputPlug->getName() );
+                m_inputConnections.push_back( outputPlug );
+            } else {
+                debugError( "no corresponding output plug found\n" );
+                return false;
+            }
+        }
+        FunctionBlockPlugSpecificDataPlugAddress*
+            pFunctionBlockPlugAddress =
+            dynamic_cast<FunctionBlockPlugSpecificDataPlugAddress*>
+            ( plugAddress->m_plugAddressData );
+
+        if (  pFunctionBlockPlugAddress  ) {
+            debugWarning( "function block address is not handled\n" );
+        }
+    } else {
+        debugError( "no valid info type for plug '%s'\n", m_name.c_str() );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+AvPlug::discoverConnectionsOutput()
+{
+    ExtendedPlugInfoCmd extPlugInfoCmd = setPlugAddrToPlugInfoCmd();
+    ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
+        ExtendedPlugInfoInfoType::eIT_PlugOutput );
+    extendedPlugInfoInfoType.initialize();
+    extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+
+    if ( !extPlugInfoCmd.fire() ) {
+        debugError( "plug type command failed\n" );
+        return false;
+    }
+
+    ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+    if ( infoType
+         && infoType->m_plugOutput )
+    {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "number of output plugs is %d for plug '%s'\n",
+                     infoType->m_plugOutput->m_nrOfOutputPlugs,
+                     m_name.c_str() );
+
+        if ( infoType->m_plugOutput->m_nrOfOutputPlugs
+             != infoType->m_plugOutput->m_outputPlugAddresses.size() )
+        {
+            debugError( "number of output plugs (%d) disagree with "
+                        "number of elements in plug address vector (%d)\n",
+                        infoType->m_plugOutput->m_nrOfOutputPlugs,
+                        infoType->m_plugOutput->m_outputPlugAddresses.size());
+        }
+        for ( unsigned int i = 0;
+              i < infoType->m_plugOutput->m_outputPlugAddresses.size();
+              ++i )
+        {
+            PlugAddressSpecificData* plugAddress
+                = infoType->m_plugOutput->m_outputPlugAddresses[i];
+
+            UnitPlugSpecificDataPlugAddress* pUnitPlugAddress =
+                dynamic_cast<UnitPlugSpecificDataPlugAddress*>
+                ( plugAddress->m_plugAddressData );
+
+            if ( pUnitPlugAddress ) {
+                EAvPlugType type = eAP_PCR;
+                switch ( pUnitPlugAddress->m_plugType ) {
+                case UnitPlugSpecificDataPlugAddress::ePT_PCR:
+                    type = eAP_PCR;
+                    break;
+                case UnitPlugSpecificDataPlugAddress::ePT_ExternalPlug:
+                    type = eAP_ExternalPlug;
+                    break;
+                case UnitPlugSpecificDataPlugAddress::ePT_AsynchronousPlug:
+                    type = eAP_AsynchronousPlug;
+                    break;
+                }
+
+                AvPlug* inputPlug = m_plugManager->getPlug(
+                    AVCCommand::eST_Unit,
+                    0xff,
+                    type,
+                    PlugAddress::ePD_Input,
+                    pUnitPlugAddress->m_plugId );
+
+                if ( inputPlug ) {
+                    debugOutput( DEBUG_LEVEL_NORMAL,
+                                 "'%s' has a connection to '%s'\n",
+                                 m_name.c_str(),
+                                 inputPlug->getName() );
+                    m_outputConnections.push_back( inputPlug );
+                } else {
+                    debugError( "no corresponding input plug found\n" );
+                    return false;
+                }
+            }
+
+            SubunitPlugSpecificDataPlugAddress* pSubunitPlugAddress =
+                dynamic_cast<SubunitPlugSpecificDataPlugAddress*>
+                ( plugAddress->m_plugAddressData );
+
+            if ( pSubunitPlugAddress ) {
+                AVCCommand::ESubunitType subunitType =
+                    static_cast<AVCCommand::ESubunitType>( pSubunitPlugAddress->m_subunitType );
+
+                AvPlug* inputPlug = m_plugManager->getPlug(
+                    subunitType,
+                    pSubunitPlugAddress->m_subunitId,
+                    eAP_SubunitPlug,
+                    PlugAddress::ePD_Input,
+                    pSubunitPlugAddress->m_plugId );
+                if ( inputPlug ) {
+                    debugOutput( DEBUG_LEVEL_NORMAL,
+                                 "'%s' has a connection to '%s'\n",
+                                 m_name.c_str(),
+                                 inputPlug->getName() );
+                    m_outputConnections.push_back( inputPlug );
+                } else {
+                    debugError( "no corresponding input plug found\n" );
+                    return false;
+                }
+            }
+
+            FunctionBlockPlugSpecificDataPlugAddress*
+                pFunctionBlockPlugAddress =
+                dynamic_cast<FunctionBlockPlugSpecificDataPlugAddress*>
+                ( plugAddress->m_plugAddressData );
+
+            if (  pFunctionBlockPlugAddress  ) {
+                debugWarning( "function block address is not handled\n" );
+            }
+        }
+    } else {
+        debugError( "no valid info type for plug '%s'\n", m_name.c_str() );
+        return false;
+    }
+
+    return true;
+}
 
 ExtendedPlugInfoCmd
 AvPlug::setPlugAddrToPlugInfoCmd()
@@ -616,7 +877,7 @@ AvPlug::setPlugAddrToPlugInfoCmd()
         }
         break;
     default:
-        debugError( "setPlugAddrToPlugInfoCmd: Unknown subunit type\n" );
+        debugError( "Unknown subunit type\n" );
     }
 
     extPlugInfoCmd.setNodeId( m_nodeId );
@@ -665,7 +926,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFu
     }
     break;
     default:
-        debugError( "discoverStreamFormat: Unknown subunit type\n" );
+        debugError( "Unknown subunit type\n" );
     }
 
     extStreamFormatInfoCmd.setNodeId( m_nodeId );
@@ -675,6 +936,76 @@ AvPlug::setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFu
 
     return extStreamFormatInfoCmd;
 }
+
+SignalSourceCmd
+AvPlug::setSrcPlugAddrToSignalCmd()
+{
+    SignalSourceCmd signalSourceCmd( m_1394Service );
+
+    switch( m_subunitType ) {
+    case AVCCommand::eST_Unit:
+    {
+        SignalUnitAddress signalUnitAddr;
+        if ( getPlugType() == eAP_ExternalPlug ) {
+            signalUnitAddr.m_plugId = m_id + 0x80;
+        } else {
+            signalUnitAddr.m_plugId = m_id;
+        }
+        signalSourceCmd.setSignalSource( signalUnitAddr );
+    }
+    break;
+    case AVCCommand::eST_Music:
+    case AVCCommand::eST_Audio:
+    {
+        SignalSubunitAddress signalSubunitAddr;
+        signalSubunitAddr.m_subunitType = m_subunitType;
+        signalSubunitAddr.m_subunitId = m_subunitId;
+        signalSubunitAddr.m_plugId = m_id;
+        signalSourceCmd.setSignalSource( signalSubunitAddr );
+    }
+    break;
+    default:
+        debugError( "Unknown subunit type\n" );
+    }
+
+    signalSourceCmd.setNodeId( m_nodeId );
+    signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
+    signalSourceCmd.setSubunitType( m_subunitType );
+    signalSourceCmd.setSubunitId( m_subunitId );
+
+    return signalSourceCmd;
+}
+
+void
+AvPlug::setDestPlugAddrToSignalCmd(SignalSourceCmd& signalSourceCmd, AvPlug& plug)
+{
+    switch( plug.m_subunitType ) {
+    case AVCCommand::eST_Unit:
+    {
+        SignalUnitAddress signalUnitAddr;
+        if ( plug.getPlugType() == eAP_ExternalPlug ) {
+            signalUnitAddr.m_plugId = plug.m_id + 0x80;
+        } else {
+            signalUnitAddr.m_plugId = plug.m_id;
+        }
+        signalSourceCmd.setSignalDestination( signalUnitAddr );
+    }
+    break;
+    case AVCCommand::eST_Music:
+    case AVCCommand::eST_Audio:
+    {
+        SignalSubunitAddress signalSubunitAddr;
+        signalSubunitAddr.m_subunitType = plug.m_subunitType;
+        signalSubunitAddr.m_subunitId = plug.m_subunitId;
+        signalSubunitAddr.m_plugId = plug.m_id;
+        signalSourceCmd.setSignalDestination( signalSubunitAddr );
+    }
+    break;
+    default:
+        debugError( "Unknown subunit type\n" );
+    }
+}
+
 
 bool
 AvPlug::copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
@@ -758,6 +1089,141 @@ AvPlug::getClusterInfoByIndex(int index)
             return info;
         }
     }
+    return 0;
+}
+
+const char* avPlugTypeStrings[] =
+{
+    "PCR",
+    "external",
+    "asynchronous",
+    "subunit",
+};
+
+const char* avPlugTypeToString( AvPlug::EAvPlugType type )
+{
+    return avPlugTypeStrings[type];
+}
+
+/////////////////////////////////////
+
+
+AvPlugManager::AvPlugManager()
+{
+}
+
+AvPlugManager::~AvPlugManager()
+{
+}
+
+bool
+AvPlugManager::addPlug( AvPlug& plug )
+{
+    m_plugs.push_back( &plug );
+    return true;
+}
+
+bool
+AvPlugManager::remPlug( AvPlug& plug )
+{
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* plugIt = *it;
+        if ( plugIt == &plug ) {
+            m_plugs.erase( it );
+            return true;
+        }
+    }
+    return false;
+}
+
+void
+AvPlugManager::showPlugs()
+{
+    printf( "Plug       | Id | Dir | Type     | SubUnitType | SubUnitId | Name\n" );
+    printf( "-----------+----+-----+----------+-------------+-----------+-----\n" );
+
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+
+        printf( "0x%08x | %2d |   %1d | %8s |          %2d |       %3d | %s\n",
+                ( unsigned int )plug,
+                plug->getPlugId(),
+                plug->getDirection(),
+                avPlugTypeToString( plug->getPlugType() ),
+                plug->getSubunitType(),
+                plug->getSubunitId(),
+                plug->getName() );
+    }
+
+    printf( "\nConnections\n" );
+    printf( "-----------\n" );
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+        for ( AvPlugVector::const_iterator it = plug->getInputConnections().begin();
+            it != plug->getInputConnections().end();
+            ++it )
+        {
+            printf( "%30s <- %s\n", plug->getName(), ( *it )->getName() );
+        }
+        for ( AvPlugVector::const_iterator it = plug->getOutputConnections().begin();
+            it != plug->getOutputConnections().end();
+            ++it )
+        {
+            printf( "%30s -> %s\n", plug->getName(), ( *it )->getName() );
+        }
+    }
+}
+
+AvPlug*
+AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
+                        subunit_id_t subunitId,
+                        AvPlug::EAvPlugType plugType,
+                        PlugAddress::EPlugDirection plugDirection,
+                        plug_id_t plugId )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "lookup (SubUnitType, SubUnitId, PlugType, Direction, Id) = "
+                 "(%d, %d, %d, %d, %d)\n",
+                 subunitType,
+                 subunitId,
+                 plugType,
+                 plugDirection,
+                 plugId );
+
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+
+        if (    ( subunitType == plug->getSubunitType() )
+             && ( subunitId == plug->getSubunitId() )
+             && ( plugType == plug->getPlugType() )
+             && ( plugDirection == plug->getPlugDirection() )
+             && ( plugId == plug->getPlugId() ) )
+        {
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "found  (SubUnitType, SubUnitId, PlugType, Direction, Id) = "
+                         "(%d, %d, %d, %d, %d) ('%s')\n",
+                         plug->getSubunitType(),
+                         plug->getSubunitId(),
+                         plug->getPlugType(),
+                         plug->getPlugDirection(),
+                         plug->getPlugId(),
+                         plug->getName() );
+            return plug;
+        }
+    }
+
     return 0;
 }
 

@@ -71,8 +71,7 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire( raw1394handle_t handle,
-                       unsigned int node_id );
+    virtual bool fire();
 
     bool setSignalSource( SignalUnitAddress& signalAddress );
     bool setSignalSource( SignalSubunitAddress& signalAddress );
