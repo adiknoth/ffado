@@ -21,8 +21,9 @@
 AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 0)
-m4_define(freebob_minor_version, 1)
+m4_define(freebob_minor_version, 2)
 m4_define(freebob_micro_version, 0)
+
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
 
 AC_INIT(libfreebob, freebob_version, <freebob-devel@lists.sf.net>)
@@ -158,8 +159,10 @@ AC_CONFIG_FILES([Makefile
 		 libfreebob/Makefile
 		 src/debugmodule/Makefile
 		 src/libfreebobavc/Makefile
+		 src/libfreebobstreaming/Makefile
 		 src/Makefile
 		 tests/Makefile
+		 tests/streaming/Makefile
 		 libfreebob.pc])
 AC_OUTPUT
 

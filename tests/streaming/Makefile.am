@@ -1,5 +1,6 @@
 # Makefile.am - Makefile template
 # Copyright (C) 2005 by Daniel Wagner.
+# Copyright (C) 2006 by Pieter Palmers.
 #
 # This file is part of FreeBob.
 #
@@ -15,19 +16,19 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = streaming
+INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
-	$(LIBAVC1394_CFLAGS)
+noinst_PROGRAMS = teststreaming teststreaming2 teststreaming3 testmidistreaming1
+noinst_HEADERS = debugtools.h
 
-noinst_PROGRAMS = test-freebob test-extplugcmd
-noinst_HEADERS = 
+teststreaming_SOURCES = teststreaming.c debugtools.c
+teststreaming_LDADD   = @top_builddir@src/libfreebob.la
 
-test_freebob_SOURCES = test-freebob.c
-test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS)
+teststreaming2_SOURCES = teststreaming2.c debugtools.c
+teststreaming2_LDADD   = @top_builddir@src/libfreebob.la
 
-test_extplugcmd_SOURCES = test-extplugcmd.cpp
-test_extplugcmd_LDADD = $(top_builddir)/src/libfreebobavc/libfreebobavc.la
+teststreaming3_SOURCES = teststreaming3.c debugtools.c
+teststreaming3_LDADD   = @top_builddir@src/libfreebob.la
 
-#TESTS_ENVIRONMENT
-TEST = test-freebob
+testmidistreaming1_SOURCES = testmidistreaming1.c debugtools.c
+testmidistreaming1_LDADD   = @top_builddir@src/libfreebob.la -lasound

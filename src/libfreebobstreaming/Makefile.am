@@ -1,4 +1,5 @@
 # Makefile.am - Makefile template
+# Copyright (C) 2006 by Pieter Palmers.
 # Copyright (C) 2005 by Daniel Wagner.
 #
 # This file is part of FreeBob.
@@ -15,19 +16,15 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = streaming
+noinst_LTLIBRARIES = libfreebobstreaming.la
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
-	$(LIBAVC1394_CFLAGS)
+libfreebobstreaming_la_SOURCES =  			\
+	cip.c freebob_streaming.c messagebuffer.c \
+	freebob_connections.c ringbuffer.c thread.c \
+	cip.h freebob_connections.h messagebuffer.h \
+	ringbuffer.h freebob_streaming_private.h freebob_debug.h thread.h
 
-noinst_PROGRAMS = test-freebob test-extplugcmd
-noinst_HEADERS = 
+INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS)
+libfreebobstreaming_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
 
-test_freebob_SOURCES = test-freebob.c
-test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS)
-
-test_extplugcmd_SOURCES = test-extplugcmd.cpp
-test_extplugcmd_LDADD = $(top_builddir)/src/libfreebobavc/libfreebobavc.la
-
-#TESTS_ENVIRONMENT
-TEST = test-freebob
+MAINTAINERCLEANFILES = Makefile.in
