@@ -52,7 +52,7 @@ freebob_new_handle( int port )
         return 0;
     }
 
-    handle->m_deviceManager = new DeviceManager;
+    handle->m_deviceManager = new DeviceManager( true );
     if ( !handle->m_deviceManager ) {
         debugFatal( "Could not allocate device manager\n" );
         delete handle;

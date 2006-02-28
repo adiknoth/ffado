@@ -434,8 +434,7 @@ ExtendedStreamFormatCmd::fire()
             case eR_Implemented:
             {
                 BufferDeserialize de( resp->byte, sizeof( req ) );
-                deserialize( de );
-                result = true;
+                result = deserialize( de );
             }
             break;
             case eR_Rejected:
@@ -458,10 +457,11 @@ ExtendedStreamFormatCmd::fire()
     return result;
 }
 
-status_t
+ExtendedStreamFormatCmd::EStatus
 ExtendedStreamFormatCmd::getStatus()
 {
-    return m_status;
+    EStatus status = static_cast<EStatus>( m_status );
+    return status;
 }
 
 FormatInformation*

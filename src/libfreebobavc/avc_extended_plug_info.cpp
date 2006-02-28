@@ -319,6 +319,7 @@ ExtendedPlugInfoPlugInputSpecificData::ExtendedPlugInfoPlugInputSpecificData(con
 ExtendedPlugInfoPlugInputSpecificData::~ExtendedPlugInfoPlugInputSpecificData()
 {
     delete m_plugAddress;
+    m_plugAddress = 0;
 }
 
 bool
@@ -675,6 +676,8 @@ ExtendedPlugInfoInfoType::serialize( IOSSerialize& se )
 bool
 ExtendedPlugInfoInfoType::deserialize( IISDeserialize& de )
 {
+    bool status = false;
+
     de.read( &m_infoType );
 
     switch ( m_infoType ) {
@@ -682,59 +685,58 @@ ExtendedPlugInfoInfoType::deserialize( IISDeserialize& de )
         if ( !m_plugType ) {
             m_plugType = new ExtendedPlugInfoPlugTypeSpecificData;
         }
-        m_plugType->deserialize( de );
+        status = m_plugType->deserialize( de );
         break;
     case eIT_PlugName:
         if ( !m_plugName ) {
             m_plugName = new ExtendedPlugInfoPlugNameSpecificData;
         }
-        m_plugName->deserialize( de );
+        status = m_plugName->deserialize( de );
         break;
     case eIT_NoOfChannels:
         if ( !m_plugNrOfChns ) {
             m_plugNrOfChns =
                 new ExtendedPlugInfoPlugNumberOfChannelsSpecificData;
         }
-        m_plugNrOfChns->deserialize( de );
+        status = m_plugNrOfChns->deserialize( de );
         break;
     case eIT_ChannelPosition:
         if ( !m_plugChannelPosition ) {
             m_plugChannelPosition =
                 new ExtendedPlugInfoPlugChannelPositionSpecificData;
         }
-        m_plugChannelPosition->deserialize( de );
-
+        status = m_plugChannelPosition->deserialize( de );
         break;
     case eIT_ChannelName:
         if ( !m_plugChannelName ) {
             m_plugChannelName =
                 new ExtendedPlugInfoPlugChannelNameSpecificData;
         }
-        m_plugChannelName->deserialize( de );
+        status = m_plugChannelName->deserialize( de );
         break;
     case eIT_PlugInput:
         if ( !m_plugInput ) {
             m_plugInput = new ExtendedPlugInfoPlugInputSpecificData;
         }
-        m_plugInput->deserialize( de );
+        status = m_plugInput->deserialize( de );
         break;
     case eIT_PlugOutput:
         if ( !m_plugOutput ) {
             m_plugOutput = new ExtendedPlugInfoPlugOutputSpecificData;
         }
-        m_plugOutput->deserialize( de );
+        status = m_plugOutput->deserialize( de );
         break;
     case eIT_ClusterInfo:
         if ( !m_plugClusterInfo ) {
             m_plugClusterInfo = new ExtendedPlugInfoClusterInfoSpecificData;
         }
-        m_plugClusterInfo->deserialize( de );
+        status =m_plugClusterInfo->deserialize( de );
         break;
     default:
         return false;
     }
 
-    return true;
+    return status;
 }
 
 ExtendedPlugInfoInfoType*
@@ -781,23 +783,25 @@ ExtendedPlugInfoCmd::~ExtendedPlugInfoCmd()
 bool
 ExtendedPlugInfoCmd::serialize( IOSSerialize& se )
 {
+    bool status = false;
     AVCCommand::serialize( se );
     se.write( m_subFunction, "ExtendedPlugInfoCmd subFunction" );
-    m_plugAddress->serialize( se );
-    m_infoType->serialize( se );
+    status = m_plugAddress->serialize( se );
+    status &= m_infoType->serialize( se );
 
-    return true;
+    return status;
 }
 
 bool
 ExtendedPlugInfoCmd::deserialize( IISDeserialize& de )
 {
+    bool status = false;
     AVCCommand::deserialize( de );
     de.read( &m_subFunction );
-    m_plugAddress->deserialize( de );
-    m_infoType->deserialize( de );
+    status = m_plugAddress->deserialize( de );
+    status &= m_infoType->deserialize( de );
 
-    return true;
+    return status;
 }
 
 bool
@@ -889,8 +893,7 @@ ExtendedPlugInfoCmd::fire()
             case eR_Implemented:
             {
                 BufferDeserialize de( resp->byte, sizeof( req ) );
-                deserialize( de );
-                result = true;
+                result = deserialize( de );
             }
             break;
             default:

@@ -90,6 +90,23 @@ public:
 };
 
 ////////////////////////////////////////////////////////////
+
+class UndefinedPlugAddress : public PlugAddressData
+{
+public:
+    UndefinedPlugAddress();
+    virtual ~UndefinedPlugAddress();
+
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
+    virtual UndefinedPlugAddress* clone() const;
+
+    reserved_t m_reserved0;
+    reserved_t m_reserved1;
+    reserved_t m_reserved2;
+};
+
+////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
 class UnitPlugSpecificDataPlugAddress : public PlugAddressData
@@ -161,6 +178,25 @@ public:
 };
 
 ////////////////////////////////////////////////////////////
+
+class UndefinedPlugSpecificDataPlugAddress : public PlugAddressData
+{
+public:
+    UndefinedPlugSpecificDataPlugAddress();
+    virtual ~UndefinedPlugSpecificDataPlugAddress();
+
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
+    virtual UndefinedPlugSpecificDataPlugAddress* clone() const;
+
+    reserved_t m_reserved0;
+    reserved_t m_reserved1;
+    reserved_t m_reserved2;
+    reserved_t m_reserved3;
+    reserved_t m_reserved4;
+};
+
+////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
 class PlugAddress : public IBusData {
@@ -174,6 +210,7 @@ public:
         ePAM_Unit          = 0x00,
         ePAM_Subunit       = 0x01,
         ePAM_FunctionBlock = 0x02,
+	ePAM_Undefined     = 0xff,
     };
 
     PlugAddress( EPlugDirection plugDirection,
@@ -185,6 +222,8 @@ public:
     PlugAddress( EPlugDirection plugDirection,
                  EPlugAddressMode plugAddressMode,
                  FunctionBlockPlugAddress& functionBlockPlugAddress );
+    PlugAddress( EPlugDirection plugDirection,
+		 EPlugAddressMode plugAddressMode );
     PlugAddress( const PlugAddress& pa );
 
     virtual ~PlugAddress();
@@ -212,6 +251,7 @@ public:
         ePAM_Unit          = 0x00,
         ePAM_Subunit       = 0x01,
         ePAM_FunctionBlock = 0x02,
+        ePAM_Undefined     = 0xff,
     };
 
     PlugAddressSpecificData( EPlugDirection plugDirection,
@@ -223,7 +263,9 @@ public:
     PlugAddressSpecificData( EPlugDirection plugDirection,
 			     EPlugAddressMode plugAddressMode,
 			     FunctionBlockPlugSpecificDataPlugAddress& functionBlockPlugAddress );
-     PlugAddressSpecificData( const  PlugAddressSpecificData& pa );
+    PlugAddressSpecificData( EPlugDirection plugDirection,
+			     EPlugAddressMode plugAddressMode );
+    PlugAddressSpecificData( const  PlugAddressSpecificData& pa );
 
     virtual ~PlugAddressSpecificData();
 

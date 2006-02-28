@@ -191,10 +191,6 @@ typedef struct _freebob_connection_status {
 
 	freebob_timestamp_t last_timestamp;	
 	
-#ifdef DEBUG
-	int total_packets_prev;
-
-#endif
 } freebob_connection_status_t;
 
 typedef struct _freebob_stream freebob_stream_t;

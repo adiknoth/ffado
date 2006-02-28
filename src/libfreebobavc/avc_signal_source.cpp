@@ -229,8 +229,7 @@ SignalSourceCmd::deserialize( IISDeserialize& de )
 }
 
 bool
-SignalSourceCmd::fire( raw1394handle_t handle,
-                       unsigned int node_id )
+SignalSourceCmd::fire()
 {
     bool result = false;
 
@@ -308,8 +307,7 @@ SignalSourceCmd::fire( raw1394handle_t handle,
         case eR_Rejected:
             {
                 BufferDeserialize de( resp->byte, sizeof( req ) );
-                deserialize( de );
-                result = true;
+                result = deserialize( de );
             }
             break;
         default:

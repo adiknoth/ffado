@@ -46,6 +46,10 @@ class AvDeviceSubunit {
     AVCCommand::ESubunitType getSubunitType()
 	{ return m_sbType; }
 
+    AvPlugVector& getPlugs()
+	{ return m_plugs; }
+    AvPlug* getPlug(PlugAddress::EPlugDirection direction, plug_id_t plugId);
+
  protected:
     bool discoverPlugs(PlugAddress::EPlugDirection plugDirection,
                        plug_id_t plugMaxId );

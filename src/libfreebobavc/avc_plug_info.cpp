@@ -208,8 +208,7 @@ PlugInfoCmd::fire()
             case eR_Implemented:
             {
                 BufferDeserialize de( resp->byte, sizeof( req ) );
-                deserialize( de );
-                result = true;
+                result = deserialize( de );
             }
             break;
             default:

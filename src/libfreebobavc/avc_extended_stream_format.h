@@ -270,7 +270,7 @@ public:
 
     virtual bool fire();
 
-    status_t getStatus();
+    EStatus getStatus();
     FormatInformation* getFormatInformation();
     index_in_stream_format_t getIndex();
 

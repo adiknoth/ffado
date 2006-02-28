@@ -57,11 +57,16 @@ public:
     Ieee1394Service* get1394Service()
 	{ return m_1394Service; }
 
+    AvPlugManager& getPlugManager()
+	{ return m_plugManager; }
+
+    void showDevice();
+
 protected:
     bool enumerateSubUnits();
 
     bool discoverPlugs();
-    bool discoverPlugsIso( PlugAddress::EPlugDirection plugDirection,
+    bool discoverPlugsPCR( PlugAddress::EPlugDirection plugDirection,
                            plug_id_t plugMaxId );
     bool discoverPlugsExternal( PlugAddress::EPlugDirection plugDirection,
                                 plug_id_t plugMaxId );
@@ -89,13 +94,14 @@ protected:
     ConfigRom*       m_configRom;
     int              m_nodeId;
 
-    AvPlugVector     m_isoPlugs;
+    AvPlugVector     m_pcrPlugs;
     AvPlugVector     m_externalPlugs;
-    AvPlugVector     m_syncPlugs;
 
     AvPlugConnectionVector m_plugConnections;
 
     AvDeviceSubunitVector  m_subunits;
+
+    AvPlugManager    m_plugManager;
 
     DECLARE_DEBUG_MODULE;
 };

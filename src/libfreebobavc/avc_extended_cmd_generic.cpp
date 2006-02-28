@@ -134,6 +134,43 @@ FunctionBlockPlugAddress:: clone() const
 }
 
 ////////////////////////////////////////////////////////////
+
+UndefinedPlugAddress::UndefinedPlugAddress()
+    : m_reserved0( 0xff )
+    , m_reserved1( 0xff )
+    , m_reserved2( 0xff )
+{
+}
+
+UndefinedPlugAddress::~UndefinedPlugAddress()
+{
+}
+
+bool
+UndefinedPlugAddress::serialize( IOSSerialize& se )
+{
+    se.write( m_reserved0, "UndefinedPlugAddress reserved0" );
+    se.write( m_reserved1, "UndefinedPlugAddress reserved1" );
+    se.write( m_reserved2, "UndefinedPlugAddress reserved2" );
+    return true;
+}
+
+bool
+UndefinedPlugAddress::deserialize( IISDeserialize& de )
+{
+    de.read( &m_reserved0 );
+    de.read( &m_reserved1 );
+    de.read( &m_reserved2 );
+    return true;
+}
+
+UndefinedPlugAddress*
+UndefinedPlugAddress:: clone() const
+{
+    return new UndefinedPlugAddress( *this );
+}
+
+////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
 UnitPlugSpecificDataPlugAddress::UnitPlugSpecificDataPlugAddress( EPlugType plugType,  plug_type_t plugId )
@@ -272,6 +309,49 @@ FunctionBlockPlugSpecificDataPlugAddress:: clone() const
 }
 
 ////////////////////////////////////////////////////////////
+
+UndefinedPlugSpecificDataPlugAddress::UndefinedPlugSpecificDataPlugAddress()
+    : m_reserved0( 0xff )
+    , m_reserved1( 0xff )
+    , m_reserved2( 0xff )
+    , m_reserved3( 0xff )
+    , m_reserved4( 0xff )
+{
+}
+
+UndefinedPlugSpecificDataPlugAddress::~UndefinedPlugSpecificDataPlugAddress()
+{
+}
+
+bool
+UndefinedPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
+{
+    se.write( m_reserved0, "UndefinedPlugAddress reserved0" );
+    se.write( m_reserved1, "UndefinedPlugAddress reserved1" );
+    se.write( m_reserved2, "UndefinedPlugAddress reserved2" );
+    se.write( m_reserved3, "UndefinedPlugAddress reserved3" );
+    se.write( m_reserved4, "UndefinedPlugAddress reserved4" );
+    return true;
+}
+
+bool
+UndefinedPlugSpecificDataPlugAddress::deserialize( IISDeserialize& de )
+{
+    de.read( &m_reserved0 );
+    de.read( &m_reserved1 );
+    de.read( &m_reserved2 );
+    de.read( &m_reserved3 );
+    de.read( &m_reserved4 );
+    return true;
+}
+
+UndefinedPlugSpecificDataPlugAddress*
+UndefinedPlugSpecificDataPlugAddress:: clone() const
+{
+    return new UndefinedPlugSpecificDataPlugAddress( *this );
+}
+
+////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
 PlugAddress::PlugAddress( EPlugDirection plugDirection,
@@ -300,6 +380,15 @@ PlugAddress::PlugAddress( EPlugDirection plugDirection,
     , m_plugAddressData( new FunctionBlockPlugAddress( functionBlockPlugAddress ) )
 {
 }
+
+PlugAddress::PlugAddress( EPlugDirection plugDirection,
+                          EPlugAddressMode plugAddressMode )
+    : m_plugDirection( plugDirection )
+    , m_addressMode( plugAddressMode )
+    , m_plugAddressData( new UndefinedPlugAddress() )
+{
+}
+
 
 PlugAddress::PlugAddress( const PlugAddress& pa )
     : m_plugDirection( pa.m_plugDirection )
@@ -393,6 +482,7 @@ PlugAddressSpecificData::deserialize( IISDeserialize& de )
     de.read( &m_addressMode );
     if ( m_plugAddressData ) {
         delete m_plugAddressData;
+        m_plugAddressData = 0;
     }
     switch ( m_addressMode ) {
     case ePAM_Unit:
@@ -417,6 +507,9 @@ PlugAddressSpecificData::deserialize( IISDeserialize& de )
                 0xff,
                 0xff);
         break;
+    default:
+        m_plugAddressData =
+            new UndefinedPlugSpecificDataPlugAddress();
     }
 
     return m_plugAddressData->deserialize( de );
