@@ -109,7 +109,7 @@ AC_CHECK_LIB(pthread, pthread_create,,
 ])
 
 # Check for dependencies
-PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.0)
+PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.1)
 PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
 PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.2)
 PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
@@ -169,7 +169,7 @@ AC_OUTPUT
 # Print a summary so that important information isn't missed.
 AC_MSG_RESULT([
 
-FreeBob is now configured for $canonical_host_type
+FreeBob $VERSION is now configured for $canonical_host_type
 
   Source directory:     $srcdir
   Installation prefix:  $prefix
