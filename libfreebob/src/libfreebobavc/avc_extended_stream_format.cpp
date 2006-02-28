@@ -120,7 +120,7 @@ std::ostream& operator<<( std::ostream& stream, FormatInformationStreamsCompound
 {
     stream << (int)info.m_samplingFrequency << " Hz (rate control: ";
 	stream << (int)info.m_rateControl << ")" << std::endl;
-
+	
 	for ( FormatInformationStreamsCompound::StreamFormatInfoVector::iterator it = info.m_streamFormatInfos.begin();
 		it != info.m_streamFormatInfos.end();
 		++it )
@@ -196,18 +196,6 @@ FormatInformation::FormatInformation()
     , m_level2( eFHL2_AM824_DONT_CARE )
     , m_streams( 0 )
 {
-}
-
-FormatInformation::FormatInformation( const FormatInformation& rhs )
-    : IBusData()
-    , m_root( rhs.m_root )
-    , m_level1( rhs.m_level1 )
-    , m_level2( rhs.m_level2 )
-    , m_streams( 0 )
-{
-    if ( rhs.m_streams ) {
-        m_streams = dynamic_cast<FormatInformationStreams*>( rhs.m_streams->clone() );
-    }
 }
 
 FormatInformation::~FormatInformation()
@@ -296,16 +284,6 @@ ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( Ieee1394Service* service,
 {
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0x00 );
     m_plugAddress = new PlugAddress( PlugAddress::ePD_Output, PlugAddress::ePAM_Unit, unitPlugAddress );
-}
-
-ExtendedStreamFormatCmd::ExtendedStreamFormatCmd(
-    const ExtendedStreamFormatCmd& rhs )
-    : AVCCommand( rhs )
-{
-    m_subFunction = rhs.m_subFunction;
-    m_plugAddress = new PlugAddress( *rhs.m_plugAddress );
-    m_formatInformation =
-        new FormatInformation( *rhs.m_formatInformation );
 }
 
 ExtendedStreamFormatCmd::~ExtendedStreamFormatCmd()

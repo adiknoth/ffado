@@ -43,7 +43,6 @@ public:
 
     PlugInfoCmd( Ieee1394Service* ieee1394service,
 		 ESubFunction eSubFunction = eSF_SerialBusIsochronousAndExternalPlug );
-    PlugInfoCmd( const PlugInfoCmd& rhs );
     virtual ~PlugInfoCmd();
 
     virtual bool serialize( IOSSerialize& se );

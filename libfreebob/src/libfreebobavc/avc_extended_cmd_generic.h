@@ -37,7 +37,6 @@ public:
         ePT_PCR              = 0x00,
         ePT_ExternalPlug     = 0x01,
         ePT_AsynchronousPlug = 0x02,
-	ePT_Unknown          = 0xff,
     };
 
     UnitPlugAddress( EPlugType plugType,  plug_type_t plugId );

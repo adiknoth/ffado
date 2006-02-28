@@ -35,8 +35,11 @@ class SubunitPlugSpecificDataPlugAddress;
 
 class AvDevice {
 public:
+    friend class AvDeviceSubunitAudio;
+    friend class AvDeviceSubunitMusic;
+
     // takes ownership of config rom
-    AvDevice( Ieee1394Service* ieee1394Service,
+    AvDevice( Ieee1394Service* ieee1394service,
               ConfigRom* configRom,
               int nodeId );
     virtual ~AvDevice();
@@ -54,20 +57,29 @@ public:
 
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
 
-    Ieee1394Service* get1394Service()
-	{ return m_1394Service; }
-
 protected:
+    bool discoverStep1();
+    bool discoverStep2();
+    bool discoverStep3();
+    bool discoverStep4();
+    bool discoverStep4Plug( AvPlugVector& isoPlugs );
+    bool discoverStep5();
+    bool discoverStep5Plug( AvPlugVector& isoPlugs );
+    bool discoverStep6();
+    bool discoverStep6Plug( AvPlugVector& isoPlugs );
+    bool discoverStep7();
+    bool discoverStep7Plug( AvPlugVector& isoPlugs );
+    bool discoverStep8();
+    bool discoverStep8Plug( AvPlugVector& isoPlugs );
+    bool discoverStep9();
+    bool discoverStep9Plug( AvPlugVector& isoPlugs );
+    bool discoverStep10();
+    bool discoverStep10Plug( AvPlugVector& isoPlugs );
+
+    bool discoverPlugConnection( AvPlug& srcPlug,
+                                 SubunitPlugSpecificDataPlugAddress& subunitPlugAddress );
+
     bool enumerateSubUnits();
-
-    bool discoverPlugs();
-    bool discoverPlugsIso( PlugAddress::EPlugDirection plugDirection,
-                           plug_id_t plugMaxId );
-    bool discoverPlugsExternal( PlugAddress::EPlugDirection plugDirection,
-                                plug_id_t plugMaxId );
-    bool discoverPlugConnections();
-    bool discoverSyncModes();
-
 
     AvDeviceSubunit* getSubunit( subunit_type_t subunitType,
                                  subunit_id_t subunitId ) const;
@@ -75,11 +87,10 @@ protected:
     unsigned int getNrOfSubunits( subunit_type_t subunitType ) const;
     AvPlugConnection* getPlugConnection( AvPlug& srcPlug ) const;
 
-    AvPlug* getSyncPlug( int maxPlugId, PlugAddress::EPlugDirection );
 
-    AvPlug* getPlugById( AvPlugVector& plugs,
-                         PlugAddress::EPlugDirection plugDireciton,
-                         int id );
+    AvPlug* getPlugById( AvPlugVector& plugs, int id );
+    bool addXmlDescriptionPlug( AvPlug& plug, xmlNodePtr conectionSet );
+    bool addXmlDescriptionStreamFormats( AvPlug& plug, xmlNodePtr streamFormats );
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    PlugAddress::EPlugDirection direction,
@@ -89,13 +100,15 @@ protected:
     ConfigRom*       m_configRom;
     int              m_nodeId;
 
-    AvPlugVector     m_isoPlugs;
-    AvPlugVector     m_externalPlugs;
-    AvPlugVector     m_syncPlugs;
+    AvPlugVector           m_isoInputPlugs;
+    AvPlugVector           m_isoOutputPlugs;
 
     AvPlugConnectionVector m_plugConnections;
 
     AvDeviceSubunitVector  m_subunits;
+
+    nr_of_plugs_t m_serialBusIsochronousInputPlugs;
+    nr_of_plugs_t m_serialBusIsochronousOutputPlugs;
 
     DECLARE_DEBUG_MODULE;
 };

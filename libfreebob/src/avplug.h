@@ -1,5 +1,5 @@
 /* avplug.h
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -21,48 +21,31 @@
 #ifndef AVPLUG_H
 #define AVPLUG_H
 
-#include "libfreebobavc/avc_extended_stream_format.h"
-#include "libfreebobavc/avc_extended_plug_info.h"
-#include "libfreebobavc/avc_extended_cmd_generic.h"
-#include "libfreebobavc/avc_definitions.h"
-#include "libfreebobavc/avc_generic.h"
-#include "libfreebob/xmlparser.h"
-
 #include "debugmodule/debugmodule.h"
+#include "libfreebobavc/avc_definitions.h"
 
-class Ieee1394Service;
+#include <vector>
+
+class AvPlugCluster;
+class ExtendedPlugInfoPlugChannelPositionSpecificData;
 
 class AvPlug {
 public:
-
-    enum EAvPlugType {
-	eAP_PCR,
-	eAP_ExternalPlug,
-	eAP_AsynchronousPlug,
-	eAP_SubunitPlug,
-    };
-
-    AvPlug( Ieee1394Service& ieee1394Service,
-	    int m_nodeId,
-	    AVCCommand::ESubunitType subunitType,
-	    subunit_id_t subunitId,
-	    EAvPlugType plugType,
-	    PlugAddress::EPlugDirection plugDirection,
-	    plug_id_t plugId );
+    AvPlug();
     AvPlug( const AvPlug& rhs );
     virtual ~AvPlug();
 
-    bool discover();
-
+    plug_type_t    getPlugType()
+	{ return m_plugType; }
     plug_id_t      getPlugId()
-	{ return m_id; }
-    AVCCommand::ESubunitType getSubunitType()
+	{ return m_plugId; }
+    subunit_type_t getSubunitType()
 	{ return m_subunitType; }
     subunit_id_t   getSubunitId()
 	{ return m_subunitId; }
     const char*    getName()
 	{ return m_name.c_str(); }
-    PlugAddress::EPlugDirection getPlugDirection()
+    plug_direction_t getPlugDirection()
 	{ return m_direction; }
     sampling_frequency_t getSamplingFrequency()
 	{ return m_samplingFrequency; }
@@ -70,46 +53,17 @@ public:
     int getNrOfChannels();
     int getNrOfStreams();
 
-    bool addXmlDescription( xmlNodePtr conectionSet );
-    bool addXmlDescriptionStreamFormats( xmlNodePtr streamFormats );
+    plug_type_t          m_plugType;
+    plug_id_t            m_plugId;
+    subunit_type_t       m_subunitType;
+    subunit_id_t         m_subunitId;
+    plug_direction_t     m_direction;
+    std::string          m_name;
+    nr_of_channels_t     m_nrOfChannels;
+    sampling_frequency_t m_samplingFrequency;
 
-protected:
-    bool discoverPlugType();
-    bool discoverName();
-    bool discoverNoOfChannels();
-    bool discoverChannelPosition();
-    bool discoverChannelName();
-    bool discoverClusterInfo();
-    bool discoverStreamFormat();
-    bool discoverSupportedStreamFormats();
 
-    ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
-    ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFunction);
-
-    void debugOutputClusterInfos( int debugLevel );
-
-    bool copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
-                         channelPositionData );
-
-private:
-    Ieee1394Service*             m_1394Service;
-
-    int                          m_nodeId;
-    AVCCommand::ESubunitType     m_subunitType;
-    subunit_id_t                 m_subunitId;
-    EAvPlugType                  m_type;
-    PlugAddress::EPlugDirection  m_direction;
-    plug_id_t                    m_id;
-
-    // Info plug type
-    ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType m_infoPlugType;
-
-    // Number of channels
-    nr_of_channels_t             m_nrOfChannels;
-
-    // Plug name
-    std::string                  m_name;
-
+    // ---
     // Channel & Cluster Info
     struct ChannelInfo {
         stream_position_t          m_streamPosition;
@@ -131,10 +85,8 @@ private:
 
     ClusterInfoVector        m_clusterInfos;
 
-    // Sampling frequency
-    sampling_frequency_t m_samplingFrequency;
-
-    // Supported stream formats
+    // ---
+    // Stream Format
     struct FormatInfo {
         FormatInfo()
             : m_samplingFrequency( eSF_DontCare )
@@ -152,8 +104,17 @@ private:
     typedef std::vector<FormatInfo> FormatInfoVector;
 
     FormatInfoVector         m_formatInfos;
+    // ---
 
-    ClusterInfo* getClusterInfoByIndex( int index );
+    void debugOutputClusterInfos( int debugLevel );
+
+    bool copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
+                         channelPositionData );
+
+    ClusterInfo* getClusterInfoByIndex(int index);
+    ClusterInfoVector& getClusterInfos()
+	{ return m_clusterInfos; }
+
 
     DECLARE_DEBUG_MODULE;
 };

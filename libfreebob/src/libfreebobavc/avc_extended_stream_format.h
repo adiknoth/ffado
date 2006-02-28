@@ -222,7 +222,6 @@ public:
     typedef byte_t format_hierarchy_level2_t;
 
     FormatInformation();
-    FormatInformation( const FormatInformation& rhs );
     virtual ~FormatInformation();
 
     virtual bool serialize( IOSSerialize& se );
@@ -258,7 +257,6 @@ public:
     typedef byte_t index_in_stream_format_t;
 
     ExtendedStreamFormatCmd( Ieee1394Service* ieee1349service, ESubFunction eSubFunction = eSF_ExtendedStreamFormatInformationCommand );
-    ExtendedStreamFormatCmd( const ExtendedStreamFormatCmd& rhs );
     virtual ~ExtendedStreamFormatCmd();
 
     bool setPlugAddress( const PlugAddress& plugAddress );

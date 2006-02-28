@@ -22,19 +22,12 @@
 #include "avdevice.h"
 #include "avplug.h"
 
-#include "libfreebobavc/avc_plug_info.h"
-#include "libfreebobavc/avc_extended_stream_format.h"
-#include "libfreebobavc/serialize.h"
-
-
-
-
 IMPL_DEBUG_MODULE( AvDeviceSubunit, AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
 
 ////////////////////////////////////////////
 
-AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice, AVCCommand::ESubunitType type, subunit_t id )
-    : m_avDevice( &avDevice )
+AvDeviceSubunit::AvDeviceSubunit( AvDevice* avDevice, subunit_type_t type, subunit_t id )
+    : m_avDevice( avDevice )
     , m_sbType( type )
     , m_sbId( id )
 {
@@ -51,74 +44,6 @@ AvDeviceSubunit::~AvDeviceSubunit()
 }
 
 bool
-AvDeviceSubunit::discover()
-{
-    PlugInfoCmd plugInfoCmd( m_avDevice->get1394Service(),
-                             PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
-    plugInfoCmd.setNodeId( m_avDevice->getNodeId() );
-    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    plugInfoCmd.setSubunitType( m_sbType );
-    plugInfoCmd.setSubunitId( m_sbId );
-
-    if ( !plugInfoCmd.fire() ) {
-        debugError( "discover: plug info command failed\n" );
-        return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_NORMAL, "\n"
-                 "\tnumber of source plugs = %d\n "
-                 "\tnumber of destination output plugs = %d\n",
-                 plugInfoCmd.m_sourcePlugs,
-                 plugInfoCmd.m_destinationPlugs );
-
-    if ( !discoverPlugs(  PlugAddress::ePD_Input,
-                          plugInfoCmd.m_destinationPlugs ) )
-    {
-        debugError( "discover: destination plug discovering failed\n" );
-        return false;
-    }
-
-    if ( !discoverPlugs(  PlugAddress::ePD_Output,
-                          plugInfoCmd.m_sourcePlugs ) )
-    {
-        debugError( "discover: source plug discovering failed\n" );
-        return false;
-    }
-
-    return true;
-}
-
-bool
-AvDeviceSubunit::discoverPlugs(PlugAddress::EPlugDirection plugDirection,
-                               plug_id_t plugMaxId )
-{
-    for ( int plugIdx = 0;
-          plugIdx < plugMaxId;
-          ++plugIdx )
-    {
-        AVCCommand::ESubunitType subunitType =
-            static_cast<AVCCommand::ESubunitType>( getSubunitType() );
-        AvPlug* plug = new AvPlug( *m_avDevice->get1394Service(),
-                                   m_avDevice->getNodeId(),
-                                   subunitType,
-                                   getSubunitId(),
-                                   AvPlug::eAP_SubunitPlug,
-                                   plugDirection,
-                                   plugIdx );
-        if ( !plug || !plug->discover() ) {
-            debugError( "discoverPlugs: plug discover failed\n" );
-            return false;
-        }
-
-        debugOutput( DEBUG_LEVEL_NORMAL, "discoverPlugs: plug '%s' found\n",
-                     plug->getName() );
-        m_plugs.push_back( plug );
-    }
-    return true;
-}
-
-
-bool
 AvDeviceSubunit::addPlug( AvPlug& plug )
 {
     m_plugs.push_back( &plug );
@@ -127,13 +52,19 @@ AvDeviceSubunit::addPlug( AvPlug& plug )
 
 ////////////////////////////////////////////
 
-AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice, subunit_t id )
+AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice* avDevice, subunit_t id )
     : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id )
 {
 }
 
 AvDeviceSubunitAudio::~AvDeviceSubunitAudio()
 {
+}
+
+bool
+AvDeviceSubunitAudio::discover()
+{
+    return true;
 }
 
 const char*
@@ -144,13 +75,19 @@ AvDeviceSubunitAudio::getName()
 
 ////////////////////////////////////////////
 
-AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice, subunit_t id )
+AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice* avDevice, subunit_t id )
     : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id )
 {
 }
 
 AvDeviceSubunitMusic::~AvDeviceSubunitMusic()
 {
+}
+
+bool
+AvDeviceSubunitMusic::discover()
+{
+    return true;
 }
 
 const char*
