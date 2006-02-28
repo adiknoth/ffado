@@ -1,3 +1,41 @@
+2006-03-01  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: bumb minor version to 0.3
+
+	* src/avdevice.cpp: Discover connections between plugs.
+	* src/avdevice.h: Likewise.
+	* src/avdevicesubunit.cpp: Likewise.
+	* src/avdevicesubunit.h: Likewise.
+	* src/avdevicexml.cpp: Likewise.
+	* src/avplug.cpp: Likewise.
+	* src/avplug.h: Likewise.
+	* src/devicemanager.cpp: Likewise.
+	* src/devicemanager.h: Likewise.
+	* src/freebob.cpp: Likewise.
+
+	* src/libfreebobavc/avc_extended_cmd_generic.cpp: Give
+	return value to caller. New undefined plug address
+	introduced. Handling of response message is more rebust now.
+	* src/libfreebobavc/avc_extended_cmd_generic.h: Likewise.
+	* src/libfreebobavc/avc_extended_plug_info.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_stream_format.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_stream_format.h: Likewise.
+	* src/libfreebobavc/avc_plug_info.cpp: Likewise.
+	* src/libfreebobavc/avc_signal_source.cpp: Likewise.
+	* src/libfreebobavc/avc_signal_source.h: Likewise.
+	* src/libfreebobavc/avc_subunit_info.cpp: Likewise.
+	* src/libfreebobavc/avc_unit_info.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_plug_info.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_stream_format.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_cmd_generic.cpp:
+	* src/libfreebobavc/avc_extended_cmd_generic.h: Likewise.
+
+	* src/libfreebobstreaming/freebob_debug.h: DEBUG is defined through --enable-debug
+	switch.
+
+	* src/libfreebobstreaming/freebob_connections.h: Removed double defined variable 
+	if DEBUG is defined.
+
 2006-02-28  Pieter Palmers <pieterpalmers@users.sourceforge.net>
 	* Added the streaming API that was previously hardcoded into the jackd backend
 	  to the library as src/libfreebobstreaming.
