@@ -17,4 +17,4 @@
 
 
 libfreebobincludedir = $(includedir)/libfreebob
-libfreebobinclude_HEADERS = freebob.h xmlparser.h
+libfreebobinclude_HEADERS = freebob.h freebob_streaming.h xmlparser.h

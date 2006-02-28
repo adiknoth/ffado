@@ -1,5 +1,6 @@
 # Makefile.am - Makefile template
 # Copyright (C) 2005 by Daniel Wagner.
+# Copyright (C) 2006 by Pieter Palmers.
 #
 # This file is part of FreeBob.
 #
@@ -15,7 +16,7 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = debugmodule libfreebobavc
+SUBDIRS = debugmodule libfreebobavc libfreebobstreaming
 
 INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
 	$(LIBAVC1394_CFLAGS) $(LIBLO_CFLAGS) $(LIBXML_CFLAGS) \
@@ -42,9 +43,11 @@ libfreebob_la_SOURCES = 	\
 	csr1212.c		\
 	fbtypes.h		
 
-
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
 	$(LIBLO_LIBS) $(LIBXML_LIBS) debugmodule/libdebugmodule.la \
-	libfreebobavc/libfreebobavc.la -safe-temps
+	libfreebobavc/libfreebobavc.la \
+	libfreebobstreaming/libfreebobstreaming.la \
+	 -safe-temps
+
 
