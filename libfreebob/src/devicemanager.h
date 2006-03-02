@@ -35,13 +35,13 @@ typedef std::vector< AvDevice* >::iterator AvDeviceVectorIterator;
 
 class DeviceManager{
  public:
-    DeviceManager( bool verbose );
+    DeviceManager();
     ~DeviceManager();
 
     bool initialize( int port );
     bool deinitialize();
 
-    bool discover();
+    bool discover( bool verbose );
 
     bool isValidNode( int node );
     int getNbDevices();
@@ -53,8 +53,6 @@ class DeviceManager{
  protected:
     Ieee1394Service* m_1394Service;
     AvDeviceVector   m_avDevices;
-
-    bool m_verbose;
 
     DECLARE_DEBUG_MODULE;
 };

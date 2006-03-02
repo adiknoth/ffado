@@ -32,14 +32,14 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 AvPlugManager& plugManager,
                 AVCCommand::ESubunitType subunitType,
                 subunit_id_t subunitId,
-                EAvPlugType plugType,
+                EAvPlugAddressType plugAddressType,
                 PlugAddress::EPlugDirection plugDirection,
                 plug_id_t plugId )
     : m_1394Service( &ieee1394Service )
     , m_nodeId( nodeId )
     , m_subunitType( subunitType )
     , m_subunitId( subunitId )
-    , m_type( plugType )
+    , m_addressType( plugAddressType )
     , m_direction( plugDirection )
     , m_id( plugId )
     , m_infoPlugType( ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Unknown )
@@ -53,7 +53,7 @@ AvPlug::AvPlug( const AvPlug& rhs )
     , m_nodeId( rhs.m_nodeId )
     , m_subunitType( rhs.m_subunitType )
     , m_subunitId( rhs.m_subunitId )
-    , m_type( rhs.m_type )
+    , m_addressType( rhs.m_addressType )
     , m_direction( rhs.m_direction )
     , m_id( rhs.m_id )
     , m_infoPlugType( rhs.m_infoPlugType )
@@ -647,23 +647,23 @@ AvPlug::discoverConnectionsInput()
             ( plugAddress->m_plugAddressData );
 
         if ( pUnitPlugAddress ) {
-            EAvPlugType type = eAP_PCR;
+            EAvPlugAddressType addressType = eAP_PCR;
             switch ( pUnitPlugAddress->m_plugType ) {
                 case UnitPlugSpecificDataPlugAddress::ePT_PCR:
-                    type = eAP_PCR;
+                    addressType = eAP_PCR;
                     break;
                 case UnitPlugSpecificDataPlugAddress::ePT_ExternalPlug:
-                    type = eAP_ExternalPlug;
+                    addressType = eAP_ExternalPlug;
                     break;
                 case UnitPlugSpecificDataPlugAddress::ePT_AsynchronousPlug:
-                    type = eAP_AsynchronousPlug;
+                    addressType = eAP_AsynchronousPlug;
                     break;
             }
 
             AvPlug* outputPlug = m_plugManager->getPlug(
                 AVCCommand::eST_Unit,
                 0xff,
-                type,
+                addressType,
                 PlugAddress::ePD_Output,
                 pUnitPlugAddress->m_plugId );
 
@@ -763,23 +763,23 @@ AvPlug::discoverConnectionsOutput()
                 ( plugAddress->m_plugAddressData );
 
             if ( pUnitPlugAddress ) {
-                EAvPlugType type = eAP_PCR;
+                EAvPlugAddressType addressType = eAP_PCR;
                 switch ( pUnitPlugAddress->m_plugType ) {
                 case UnitPlugSpecificDataPlugAddress::ePT_PCR:
-                    type = eAP_PCR;
+                    addressType = eAP_PCR;
                     break;
                 case UnitPlugSpecificDataPlugAddress::ePT_ExternalPlug:
-                    type = eAP_ExternalPlug;
+                    addressType = eAP_ExternalPlug;
                     break;
                 case UnitPlugSpecificDataPlugAddress::ePT_AsynchronousPlug:
-                    type = eAP_AsynchronousPlug;
+                    addressType = eAP_AsynchronousPlug;
                     break;
                 }
 
                 AvPlug* inputPlug = m_plugManager->getPlug(
                     AVCCommand::eST_Unit,
                     0xff,
-                    type,
+                    addressType,
                     PlugAddress::ePD_Input,
                     pUnitPlugAddress->m_plugId );
 
@@ -847,7 +847,7 @@ AvPlug::setPlugAddrToPlugInfoCmd()
     case AVCCommand::eST_Unit:
         {
             UnitPlugAddress::EPlugType ePlugType = UnitPlugAddress::ePT_Unknown;
-            switch ( m_type ) {
+            switch ( m_addressType ) {
                 case eAP_PCR:
                     ePlugType = UnitPlugAddress::ePT_PCR;
                     break;
@@ -896,7 +896,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFu
     case AVCCommand::eST_Unit:
     {
             UnitPlugAddress::EPlugType ePlugType = UnitPlugAddress::ePT_Unknown;
-            switch ( m_type ) {
+            switch ( m_addressType ) {
                 case eAP_PCR:
                     ePlugType = UnitPlugAddress::ePT_PCR;
                     break;
@@ -946,7 +946,7 @@ AvPlug::setSrcPlugAddrToSignalCmd()
     case AVCCommand::eST_Unit:
     {
         SignalUnitAddress signalUnitAddr;
-        if ( getPlugType() == eAP_ExternalPlug ) {
+        if ( getPlugAddressType() == eAP_ExternalPlug ) {
             signalUnitAddr.m_plugId = m_id + 0x80;
         } else {
             signalUnitAddr.m_plugId = m_id;
@@ -983,7 +983,7 @@ AvPlug::setDestPlugAddrToSignalCmd(SignalSourceCmd& signalSourceCmd, AvPlug& plu
     case AVCCommand::eST_Unit:
     {
         SignalUnitAddress signalUnitAddr;
-        if ( plug.getPlugType() == eAP_ExternalPlug ) {
+        if ( plug.getPlugAddressType() == eAP_ExternalPlug ) {
             signalUnitAddr.m_plugId = plug.m_id + 0x80;
         } else {
             signalUnitAddr.m_plugId = plug.m_id;
@@ -1092,17 +1092,21 @@ AvPlug::getClusterInfoByIndex(int index)
     return 0;
 }
 
-const char* avPlugTypeStrings[] =
+const char* avPlugAddressTypeStrings[] =
 {
     "PCR",
     "external",
     "asynchronous",
     "subunit",
+    "undefined",
 };
 
-const char* avPlugTypeToString( AvPlug::EAvPlugType type )
+const char* avPlugAddressTypeToString( AvPlug::EAvPlugAddressType type )
 {
-    return avPlugTypeStrings[type];
+    if ( type > AvPlug::eAP_SubunitPlug ) {
+        type = AvPlug::eAP_Undefined;
+    }
+    return avPlugAddressTypeStrings[type];
 }
 
 /////////////////////////////////////
@@ -1142,6 +1146,12 @@ AvPlugManager::remPlug( AvPlug& plug )
 void
 AvPlugManager::showPlugs()
 {
+    // \todo The information provided here could be better arranged. For a start it is ok, but
+    // there is room for improvement. Something for a lazy sunday afternoon (tip: maybe drink some
+    // beer to get into the mood)
+
+    printf( "\nSummery\n" );
+    printf( "-------\n\n" );
     printf( "Plug       | Id | Dir | Type     | SubUnitType | SubUnitId | Name\n" );
     printf( "-----------+----+-----+----------+-------------+-----------+-----\n" );
 
@@ -1155,7 +1165,7 @@ AvPlugManager::showPlugs()
                 ( unsigned int )plug,
                 plug->getPlugId(),
                 plug->getDirection(),
-                avPlugTypeToString( plug->getPlugType() ),
+                avPlugAddressTypeToString( plug->getPlugAddressType() ),
                 plug->getSubunitType(),
                 plug->getSubunitId(),
                 plug->getName() );
@@ -1181,12 +1191,35 @@ AvPlugManager::showPlugs()
             printf( "%30s -> %s\n", plug->getName(), ( *it )->getName() );
         }
     }
+
+    printf( "\nPlug details\n" );
+    printf( "------------\n" );
+    int i = 0;
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it, ++i )
+    {
+        AvPlug* plug = *it;
+
+        printf( "Plug %d:\n", i );
+        printf( "\tName               = %s\n", plug->getName() );
+        printf( "\tType               = %s\n", extendedPlugInfoPlugTypeToString( plug->getPlugType() ) );
+        printf( "\tAddress Type       = %s\n", avPlugAddressTypeToString( plug->getPlugAddressType() ) );
+        printf( "\tId                 = %d\n", plug->getPlugId() );
+        printf( "\tSubunitType        = %d\n",  plug->getSubunitType() );
+        printf( "\tSubunitId          = %d\n",  plug->getSubunitId() );
+        printf( "\tDirection          = %s\n", plugAddressPlugDirectionToString( plug->getPlugDirection() ) );
+        printf( "\tSampling Rate      = %d\n", plug->getSampleRate() );
+        printf( "\tNumber of Channels = %d\n",  plug->getNrOfChannels() );
+        printf( "\tNumber of Streams  = %d\n",  plug->getNrOfStreams() );
+    }
+    printf( "\n" );
 }
 
 AvPlug*
 AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
                         subunit_id_t subunitId,
-                        AvPlug::EAvPlugType plugType,
+                        AvPlug::EAvPlugAddressType plugAddressType,
                         PlugAddress::EPlugDirection plugDirection,
                         plug_id_t plugId )
 {
@@ -1195,7 +1228,7 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
                  "(%d, %d, %d, %d, %d)\n",
                  subunitType,
                  subunitId,
-                 plugType,
+                 plugAddressType,
                  plugDirection,
                  plugId );
 
@@ -1207,7 +1240,7 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
 
         if (    ( subunitType == plug->getSubunitType() )
              && ( subunitId == plug->getSubunitId() )
-             && ( plugType == plug->getPlugType() )
+             && ( plugAddressType == plug->getPlugAddressType() )
              && ( plugDirection == plug->getPlugDirection() )
              && ( plugId == plug->getPlugId() ) )
         {
@@ -1216,7 +1249,7 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
                          "(%d, %d, %d, %d, %d) ('%s')\n",
                          plug->getSubunitType(),
                          plug->getSubunitId(),
-                         plug->getPlugType(),
+                         plug->getPlugAddressType(),
                          plug->getPlugDirection(),
                          plug->getPlugId(),
                          plug->getName() );
@@ -1226,6 +1259,32 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
 
     return 0;
 }
+
+AvPlug* AvPlugManager::getPlugByType( AVCCommand::ESubunitType subunitType,
+                                      subunit_id_t subunitId,
+                                      AvPlug::EAvPlugAddressType plugAddressType,
+                                      PlugAddress::EPlugDirection plugDirection,
+                                      ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType type)
+{
+   for ( AvPlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+
+        if (    ( subunitType == plug->getSubunitType() )
+             && ( subunitId == plug->getSubunitId() )
+             && ( plugAddressType == plug->getPlugAddressType() )
+             && ( plugDirection == plug->getPlugDirection() )
+             && ( type == plug->getPlugType() ) )
+        {
+            return plug;
+        }
+    }
+
+    return 0;
+}
+
 
 ////////////////////////////////////
 

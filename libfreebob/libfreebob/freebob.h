@@ -112,7 +112,7 @@ int
 freebob_destroy_handle( freebob_handle_t freebob_handle );
 
 int
-freebob_discover_devices( freebob_handle_t freebob_handle );
+freebob_discover_devices( freebob_handle_t freebob_handle, int verbose );
 
 
 freebob_connection_info_t*

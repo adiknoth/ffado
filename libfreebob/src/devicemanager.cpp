@@ -33,9 +33,8 @@ using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_VERBOSE );
 
-DeviceManager::DeviceManager( bool verbose )
+DeviceManager::DeviceManager()
     : m_1394Service( 0 )
-    , m_verbose( verbose )
 {
 }
 
@@ -71,7 +70,7 @@ DeviceManager::initialize( int port )
 }
 
 bool
-DeviceManager::discover()
+DeviceManager::discover( bool verbose )
 {
     for ( AvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
@@ -118,7 +117,7 @@ DeviceManager::discover()
             delete avDevice;
             return false;
         }
-        if ( m_verbose ) {
+        if ( verbose ) {
             avDevice->showDevice();
         }
 

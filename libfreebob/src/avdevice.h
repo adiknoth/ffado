@@ -85,6 +85,10 @@ protected:
     AvPlug* getPlugById( AvPlugVector& plugs,
                          PlugAddress::EPlugDirection plugDireciton,
                          int id );
+    // We expect only one sync plug which matches
+    AvPlug* getPlugByType( AvPlugVector& plugs,
+			   PlugAddress::EPlugDirection plugDirection,
+			   ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType type);
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    PlugAddress::EPlugDirection direction,

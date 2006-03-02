@@ -263,37 +263,57 @@ AvDevice::discoverSyncModes()
     // First we have to find the sync input and output plug
     // in the music subunit.
 
-    /*
-    AvPlug* syncInputPlug = getPlugById( m_pcrPlugs, PlugAddress::ePD_Input, 1 );
+    AvPlug* syncInputPlug = getPlugByType( m_pcrPlugs,
+                                           PlugAddress::ePD_Input,
+                                           ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync );
     if ( !syncInputPlug ) {
         debugError( "No sync input plug found\n" );
         return false;
     }
-    AvPlug* syncOutputPlug = getPlugById( m_pcrPlugs, PlugAddress::ePD_Output, 1 );
+
+    AvPlug* syncOutputPlug = getPlugByType( m_pcrPlugs,
+                                            PlugAddress::ePD_Output,
+                                            ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync );
     if ( !syncOutputPlug ) {
         debugError( "No sync output plug found with\n" );
         return false;
     }
-    printf( "XXX syncInputPlug = '%s'\n", syncInputPlug->getName() );
-    printf( "XXX syncOutputPlug = '%s'\n", syncOutputPlug->getName() );
 
-    AvDeviceSubunit* msuSubunit = getSubunit( AVCCommand::eST_Music, 0 );
-    AvPlug* msuSyncInputPlug = msuSubunit->getPlug( PlugAddress::ePD_Input, 4 );
-
-
-    if ( syncOutputPlug->inquireConnnection( *msuSyncInputPlug ) ) {
-        debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
-                     syncOutputPlug->getName(),
-                     msuSyncInputPlug->getName() );
+    AvPlug* syncMSUInputPlug = m_plugManager.getPlugByType( AVCCommand::eST_Music,
+                                                            0,
+                                                            AvPlug::eAP_SubunitPlug,
+                                                            PlugAddress::ePD_Input,
+                                                            ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync );
+    if ( !syncMSUInputPlug ) {
+        debugError( "No sync input plug for MSU subunit found with id 0\n" );
+        return false;
     }
 
-    if ( msuSyncInputPlug->inquireConnnection( *syncInputPlug ) ) {
+    AvPlug* syncMSUOutputPlug = m_plugManager.getPlugByType( AVCCommand::eST_Music,
+                                                             0,
+                                                             AvPlug::eAP_SubunitPlug,
+                                                             PlugAddress::ePD_Output,
+                                                             ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync );
+    if ( !syncMSUOutputPlug ) {
+        debugError( "No sync output plug for MSU subunit found with id 0\n" );
+        return false;
+    }
+
+    // Just some simple tests with the plugs. Some more inquiries are needed.
+    if ( syncOutputPlug->inquireConnnection( *syncMSUInputPlug ) ) {
         debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
-                     msuSyncInputPlug->getName(),
+                     syncOutputPlug->getName(),
+                     syncMSUInputPlug->getName() );
+    }
+
+    if ( syncMSUOutputPlug->inquireConnnection( *syncInputPlug ) ) {
+        debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
+                     syncMSUOutputPlug->getName(),
                      syncInputPlug->getName() );
 
     }
 
+    /*
     for ( AvPlugVector::iterator it = m_pcrPlugs.begin();
           it != m_pcrPlugs.end();
           ++it )
@@ -319,7 +339,7 @@ AvDevice::discoverSyncModes()
                          plug->getName() );
         }
     }
-*/
+    */
 
     return true;
 }
@@ -458,6 +478,26 @@ AvDevice::getPlugById( AvPlugVector& plugs, PlugAddress::EPlugDirection plugDire
     {
         AvPlug* plug = *it;
         if ( ( id == plug->getPlugId() )
+             && ( plugDirection == plug->getPlugDirection() ) )
+        {
+            return plug;
+        }
+    }
+
+    return 0;
+}
+
+AvPlug*
+AvDevice::getPlugByType( AvPlugVector& plugs,
+                         PlugAddress::EPlugDirection plugDirection,
+                         ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType type)
+{
+    for ( AvPlugVector::iterator it = plugs.begin();
+          it != plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+        if ( ( type == plug->getPlugType() )
              && ( plugDirection == plug->getPlugDirection() ) )
         {
             return plug;

@@ -202,8 +202,9 @@ public:
 class PlugAddress : public IBusData {
 public:
     enum EPlugDirection {
-        ePD_Input  = 0x00,
-        ePD_Output = 0x01,
+        ePD_Input     = 0x00,
+        ePD_Output    = 0x01,
+	ePD_Undefined = 0xff,
     };
 
     enum EPlugAddressMode {
@@ -237,6 +238,9 @@ public:
     plug_address_mode_t m_addressMode;
     PlugAddressData*    m_plugAddressData;
 };
+
+const char* plugAddressPlugDirectionToString( PlugAddress::EPlugDirection direction  );
+const char* plugAddressAddressModeToString( PlugAddress::EPlugAddressMode mode );
 
 ////////////////////////////////////////////////////////////
 
