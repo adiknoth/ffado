@@ -1,5 +1,8 @@
 2006-03-02  Daniel Wagner  <wagi@monom.org>
 
+	* src/avplug.cpp (discoverStreamFormat): Sanity check turned
+	into warning.
+
 	* configure.ac: bumb minor version to 0.4
 
 	* src/libfreebobavc/avc_extended_cmd_generic.h: plugAddressPlugDirectionToString

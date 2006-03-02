@@ -487,19 +487,17 @@ AvPlug::discoverStreamFormat()
                 // 8 logical midi channels fit into 1 channel
                 nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
             }
-            // sanity checks
+            // sanity check
             if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
             {
-                debugError( "Number of channels "
-                            "mismatch: '%s' plug %d discovering reported "
-                            "%d channels for cluster '%s', while stream "
-                            "format reported %d\n",
-                            m_name.c_str(),
-                            m_id,
-                            nrOfChannels,
-                            clusterInfo->m_name.c_str(),
-                            streamFormatInfo->m_numberOfChannels);
-                return false;
+                debugWarning( "Number of channels "
+                              "mismatch: '%s' plug discovering reported "
+                              "%d channels for cluster '%s', while stream "
+                              "format reported %d\n",
+                              m_name.c_str(),
+                              nrOfChannels,
+                              clusterInfo->m_name.c_str(),
+                              streamFormatInfo->m_numberOfChannels);
             }
             clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
 
