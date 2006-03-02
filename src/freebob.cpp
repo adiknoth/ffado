@@ -52,7 +52,7 @@ freebob_new_handle( int port )
         return 0;
     }
 
-    handle->m_deviceManager = new DeviceManager( true );
+    handle->m_deviceManager = new DeviceManager();
     if ( !handle->m_deviceManager ) {
         debugFatal( "Could not allocate device manager\n" );
         delete handle;
@@ -76,9 +76,9 @@ freebob_destroy_handle( freebob_handle_t freebob_handle )
 }
 
 int
-freebob_discover_devices( freebob_handle_t freebob_handle )
+freebob_discover_devices( freebob_handle_t freebob_handle, int verbose )
 {
-    return freebob_handle->m_deviceManager->discover()? 0 : -1;
+    return freebob_handle->m_deviceManager->discover(verbose)? 0 : -1;
 }
 
 freebob_connection_info_t*
@@ -135,7 +135,7 @@ freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int sample
     AvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-            return freebob_handle->m_deviceManager->discover()? 1 : 0;
+            return freebob_handle->m_deviceManager->discover(0)? 1 : 0;
         }
     }
     return 0;

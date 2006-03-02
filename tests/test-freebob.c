@@ -160,7 +160,7 @@ main( int argc, char **argv )
 	    return -1;
 	}
 		
-	if ( freebob_discover_devices( fb_handle ) != 0 ) {
+	if ( freebob_discover_devices( fb_handle, arguments.verbose ) != 0 ) {
 	    fprintf( stderr, "Could not discover devices\n" );
 	    freebob_destroy_handle( fb_handle );
 	    return -1;
@@ -225,7 +225,7 @@ main( int argc, char **argv )
 	    return -1;
 	}
 		
-	if ( freebob_discover_devices( fb_handle ) != 0 ) {
+	if ( freebob_discover_devices( fb_handle, 0 ) != 0 ) {
 	    fprintf( stderr, "Could not discover devices\n" );
 	    freebob_destroy_handle( fb_handle );
 	    return -1;
@@ -266,7 +266,7 @@ main( int argc, char **argv )
 	    return -1;
 	}
 		
-	if ( freebob_discover_devices( fb_handle ) != 0 ) {
+	if ( freebob_discover_devices( fb_handle, 0 ) != 0 ) {
 	    fprintf( stderr, "Could not discover devices\n" );
 	    freebob_destroy_handle( fb_handle );
 	    return -1;
@@ -311,7 +311,7 @@ main( int argc, char **argv )
 	    return -1;
 	}
 		
-	if ( freebob_discover_devices( fb_handle ) != 0 ) {
+	if ( freebob_discover_devices( fb_handle, 0 ) != 0 ) {
 	    fprintf( stderr, "Could not discover devices\n" );
 	    freebob_destroy_handle( fb_handle );
 	    return -1;
@@ -339,7 +339,7 @@ main( int argc, char **argv )
 	    return -1;
 	}
 		
-	if ( freebob_discover_devices( fb_handle ) != 0 ) {
+	if ( freebob_discover_devices( fb_handle, 0 ) != 0 ) {
 	    fprintf( stderr, "Could not discover devices\n" );
 	    freebob_destroy_handle( fb_handle );
 	    return -1;

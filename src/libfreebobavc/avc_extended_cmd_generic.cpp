@@ -425,6 +425,40 @@ PlugAddress::clone() const
     return new PlugAddress( *this );
 }
 
+const char* plugAddressDirectionStrings[] =
+{
+    "Input",
+    "Output",
+    "Undefined",
+};
+
+const char* plugAddressAddressModeStrings[] =
+{
+    "Unit",
+    "Subunit",
+    "FunctionBlock",
+    "Undefined",
+};
+
+const char*
+plugAddressPlugDirectionToString( PlugAddress::EPlugDirection direction  )
+{
+    if ( direction > PlugAddress::ePD_Output ) {
+        direction = PlugAddress::ePD_Undefined;
+    }
+    return plugAddressDirectionStrings[direction];
+}
+
+const char*
+plugAddressAddressModeToString( PlugAddress::EPlugAddressMode mode )
+{
+    if ( mode > PlugAddress::ePAM_FunctionBlock ) {
+        mode = PlugAddress::ePAM_FunctionBlock;
+    }
+    return plugAddressAddressModeStrings[mode];
+}
+
+
 ////////////////////////////////////////////////////////////
 
 PlugAddressSpecificData::PlugAddressSpecificData( EPlugDirection plugDirection,

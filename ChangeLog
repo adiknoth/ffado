@@ -1,3 +1,30 @@
+2006-03-02  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: bumb minor version to 0.4
+
+	* src/libfreebobavc/avc_extended_cmd_generic.h: plugAddressPlugDirectionToString
+	and plugAddressAddressModeToString added.
+	* src/libfreebobavc/avc_extended_cmd_generic.cpp: Likewise.
+
+	* src/avplug.h: Enum EAvPlugType renamed to EAvPlugAddressType.
+	getPlugAddressType added. getPlugType returns now real plug type.
+	(class AvPlugManager): getPlugByType added.
+
+	* src/avdevice.h: getPlugByType added.
+	* src/avdevice.cpp: Likewise.
+	(discoverSyncModes): Use getPlugByType instead
+	of hardcoded id to find sync plugs.
+
+	* src/devicemanager.h: Verbose argument not in constructor
+	instead in discover method.
+	* src/devicemanager.cpp: Likewise.
+
+	* libfreebob/freebob.h (freebob_discover_devices): Verbose argument
+	added.
+	* src/libfreebobstreaming/freebob_streaming.c: Likewise.
+	* src/freebob.cpp: Likewise.
+	* tests/test-freebob.c: Likewise.
+
 2006-03-01  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: bumb minor version to 0.3
