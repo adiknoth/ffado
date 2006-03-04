@@ -86,14 +86,15 @@ protected:
     AvPlug* getPlugById( AvPlugVector& plugs,
                          AvPlug::EAvPlugDirection plugDireciton,
                          int id );
-    // We expect only one sync plug which matches
-    AvPlug* getPlugByType( AvPlugVector& plugs,
-			   AvPlug::EAvPlugDirection plugDirection,
-			   AvPlug::EAvPlugType type);
+    AvPlugVector getPlugsByType( AvPlugVector& plugs,
+				 AvPlug::EAvPlugDirection plugDirection,
+				 AvPlug::EAvPlugType type);
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    AvPlug::EAvPlugDirection direction,
                                    ESamplingFrequency samplingFrequency );
+
+    void showAvPlugs( AvPlugVector& plugs ) const;
 protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;
