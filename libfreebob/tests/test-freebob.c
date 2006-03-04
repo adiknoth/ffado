@@ -33,6 +33,7 @@ const char *argp_program_bug_address = PACKAGE_BUGREPORT;
 // Program documentation.
 static char doc[] = "FreeBob -- a driver for BeBob devices (test application)\n\n"
                     "OPERATION: discover\n"
+                    "           odisocver\n"
                     "           setsamplerate\n"
                     "           xmldump\n"
                     "           testmultidevicediscovery\n"
@@ -259,6 +260,18 @@ main( int argc, char **argv )
 		
 	freebob_destroy_handle( fb_handle );
 		
+    } else if ( strcmp( arguments.args[0], "odiscover" ) == 0 ) {
+	freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
+	if ( !fb_handle ) {
+	    fprintf( stderr, "Could not create freebob handle\n" );
+	    return -1;
+	}
+		
+	if ( freebob_discover_devices( fb_handle, arguments.verbose ) != 0 ) {
+	    fprintf( stderr, "Could not discover devices\n" );
+	    freebob_destroy_handle( fb_handle );
+	    return -1;
+	}
     } else if ( strcmp( arguments.args[0], "xmldump" ) == 0 ) {
 	freebob_handle_t fb_handle = freebob_new_handle( arguments.port );
 	if ( !fb_handle ) {
