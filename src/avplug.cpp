@@ -34,7 +34,8 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 subunit_id_t subunitId,
                 EAvPlugAddressType plugAddressType,
                 EAvPlugDirection plugDirection,
-                plug_id_t plugId )
+                plug_id_t plugId,
+                bool verbose )
     : m_1394Service( &ieee1394Service )
     , m_nodeId( nodeId )
     , m_subunitType( subunitType )
@@ -45,7 +46,11 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
     , m_infoPlugType( eAPT_Unknown )
     , m_nrOfChannels( 0 )
     , m_plugManager( &plugManager )
+    , m_verbose( verbose )
 {
+    if ( m_verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
 }
 
 AvPlug::AvPlug( const AvPlug& rhs )
@@ -62,7 +67,11 @@ AvPlug::AvPlug( const AvPlug& rhs )
     , m_clusterInfos( rhs.m_clusterInfos )
     , m_formatInfos( rhs.m_formatInfos )
     , m_plugManager( rhs.m_plugManager )
+    , m_verbose( rhs.m_verbose )
 {
+    if ( m_verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
 }
 
 AvPlug::~AvPlug()

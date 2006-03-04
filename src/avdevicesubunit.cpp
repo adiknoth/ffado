@@ -26,18 +26,22 @@
 #include "libfreebobavc/avc_extended_stream_format.h"
 #include "libfreebobavc/serialize.h"
 
-
-
-
 IMPL_DEBUG_MODULE( AvDeviceSubunit, AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
 
 ////////////////////////////////////////////
 
-AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice, AVCCommand::ESubunitType type, subunit_t id )
+AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
+                                  AVCCommand::ESubunitType type,
+                                  subunit_t id,
+                                  bool verbose)
     : m_avDevice( &avDevice )
     , m_sbType( type )
     , m_sbId( id )
+    , m_verbose( verbose )
 {
+    if ( m_verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
 }
 
 AvDeviceSubunit::~AvDeviceSubunit()
@@ -105,7 +109,8 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                                    getSubunitId(),
                                    AvPlug::eAPA_SubunitPlug,
                                    plugDirection,
-                                   plugIdx );
+                                   plugIdx,
+                                   m_verbose );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discover failed\n" );
             return false;
@@ -146,8 +151,10 @@ AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
 
 ////////////////////////////////////////////
 
-AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice, subunit_t id )
-    : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id )
+AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice,
+                                            subunit_t id,
+                                            bool verbose )
+    : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id, verbose )
 {
 }
 
@@ -163,8 +170,10 @@ AvDeviceSubunitAudio::getName()
 
 ////////////////////////////////////////////
 
-AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice, subunit_t id )
-    : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id )
+AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice,
+                                            subunit_t id,
+                                            bool verbose )
+    : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id, verbose )
 {
 }
 

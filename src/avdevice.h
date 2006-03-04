@@ -38,7 +38,8 @@ public:
     // takes ownership of config rom
     AvDevice( Ieee1394Service* ieee1394Service,
               ConfigRom* configRom,
-              int nodeId );
+              int nodeId,
+	      bool verbose );
     virtual ~AvDevice();
 
     bool discover();
@@ -97,6 +98,7 @@ protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;
     int              m_nodeId;
+    bool             m_verbose;
 
     AvPlugVector     m_pcrPlugs;
     AvPlugVector     m_externalPlugs;

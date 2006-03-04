@@ -72,7 +72,8 @@ public:
 	    subunit_id_t subunitId,
 	    EAvPlugAddressType plugAddressType,
 	    EAvPlugDirection plugDirection,
-	    plug_id_t plugId );
+	    plug_id_t plugId,
+	    bool verbose );
     AvPlug( const AvPlug& rhs );
     virtual ~AvPlug();
 
@@ -204,6 +205,8 @@ private:
     AvPlugVector             m_outputConnections;
 
     AvPlugManager*           m_plugManager;
+
+    bool                     m_verbose;
 
     DECLARE_DEBUG_MODULE;
 };

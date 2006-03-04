@@ -28,7 +28,7 @@ public:
               level >= 0;
               --level )
         {
-            DebugModuleManager::instance()->setDebugLevel( "Test", level );
+            DebugModuleManager::instance()->setMgrDebugLevel( "Test", level );
 
             cout << endl << "*** Debug Level = " << level << endl << endl;
 
