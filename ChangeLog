@@ -1,5 +1,8 @@
 2006-03-04  Daniel Wagner  <wagi@monom.org>
 
+	* tests/test-freebob.c: Added 'odiscover' command which
+	does not print the xml stuff.
+
 	* src/avdevice.cpp: Added 'verbose' argument to constructor
 	and set debug level to DEBUG_LEVEL_VERBOSE if 'verbose'
 	is true, e.g enables verbose mode with '-v' argument passed
