@@ -1,5 +1,10 @@
 2006-03-04  Daniel Wagner  <wagi@monom.org>
 
+	* src/avdevice.cpp: Sync mode discovering improved.
+	* src/avdevice.h: Likewise.
+	* src/avplug.cpp: Likewise.
+	* src/avplug.h: Likewise.
+
 	* tests/test-freebob.c: Added 'odiscover' command which
 	does not print the xml stuff.
 

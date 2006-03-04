@@ -170,7 +170,7 @@ AvPlug::inquireConnnection( AvPlug& plug )
 }
 
 int
-AvPlug::getNrOfStreams()
+AvPlug::getNrOfStreams() const
 {
     int nrOfChannels = 0;
     for ( ClusterInfoVector::const_iterator it = m_clusterInfos.begin();
@@ -184,13 +184,13 @@ AvPlug::getNrOfStreams()
 }
 
 int
-AvPlug::getNrOfChannels()
+AvPlug::getNrOfChannels() const
 {
     return m_nrOfChannels;
 }
 
 int
-AvPlug::getSampleRate()
+AvPlug::getSampleRate() const
 {
     return convertESamplingFrequency( static_cast<ESamplingFrequency>( m_samplingFrequency ) );
 }
@@ -496,7 +496,7 @@ AvPlug::discoverStreamFormat()
               ++i )
         {
             ClusterInfo* clusterInfo =
-                getClusterInfoByIndex( i );
+                const_cast<ClusterInfo*>( getClusterInfoByIndex( i ) );
 
             if ( !clusterInfo ) {
                 debugError( "No matching cluster "
@@ -1105,15 +1105,15 @@ AvPlug::debugOutputClusterInfos( int debugLevel )
     }
 }
 
-AvPlug::ClusterInfo*
-AvPlug::getClusterInfoByIndex(int index)
+const AvPlug::ClusterInfo*
+AvPlug::getClusterInfoByIndex(int index) const
 {
-    for ( AvPlug::ClusterInfoVector::iterator clit =
+    for ( AvPlug::ClusterInfoVector::const_iterator clit =
               m_clusterInfos.begin();
           clit != m_clusterInfos.end();
           ++clit )
     {
-        ClusterInfo* info = &*clit;
+        const ClusterInfo* info = &*clit;
         if ( info->m_index == index ) {
             return info;
         }
@@ -1122,7 +1122,7 @@ AvPlug::getClusterInfoByIndex(int index)
 }
 
 PlugAddress::EPlugDirection
-AvPlug::convertPlugDirection()
+AvPlug::convertPlugDirection() const
 {
     PlugAddress::EPlugDirection dir;
     switch ( m_direction ) {
@@ -1136,6 +1136,21 @@ AvPlug::convertPlugDirection()
         dir = PlugAddress::ePD_Undefined;
     }
     return dir;
+}
+
+void
+AvPlug::showPlug() const
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tName               = %s\n", getName() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tType               = %s\n", extendedPlugInfoPlugTypeToString( getPlugType() ) );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tAddress Type       = %s\n", avPlugAddressTypeToString( getPlugAddressType() ) );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tId                 = %d\n", getPlugId() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tSubunitType        = %d\n",  getSubunitType() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tSubunitId          = %d\n",  getSubunitId() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tDirection          = %s\n", avPlugDirectionToString( getPlugDirection() ) );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tSampling Rate      = %d\n", getSampleRate() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tNumber of Channels = %d\n",  getNrOfChannels() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tNumber of Streams  = %d\n",  getNrOfStreams() );
 }
 
 /////////////////////////////////////////
@@ -1195,8 +1210,20 @@ const char* avPlugDirectionToString( AvPlug::EAvPlugDirection type )
 /////////////////////////////////////
 
 
-AvPlugManager::AvPlugManager()
+AvPlugManager::AvPlugManager( bool verbose )
+    : m_verbose( verbose )
 {
+    if ( m_verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
+}
+
+AvPlugManager::AvPlugManager( const AvPlugManager& rhs )
+    : m_verbose( rhs.m_verbose )
+{
+    if ( m_verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
 }
 
 AvPlugManager::~AvPlugManager()
@@ -1227,7 +1254,7 @@ AvPlugManager::remPlug( AvPlug& plug )
 }
 
 void
-AvPlugManager::showPlugs()
+AvPlugManager::showPlugs() const
 {
     // \todo The information provided here could be better arranged. For a start it is ok, but
     // there is room for improvement. Something for a lazy sunday afternoon (tip: maybe drink some
@@ -1238,7 +1265,7 @@ AvPlugManager::showPlugs()
     printf( "Plug       | Id | Dir | Type     | SubUnitType | SubUnitId | Name\n" );
     printf( "-----------+----+-----+----------+-------------+-----------+-----\n" );
 
-    for ( AvPlugVector::iterator it = m_plugs.begin();
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
           ++it )
     {
@@ -1256,7 +1283,7 @@ AvPlugManager::showPlugs()
 
     printf( "\nConnections\n" );
     printf( "-----------\n" );
-    for ( AvPlugVector::iterator it = m_plugs.begin();
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
           ++it )
     {
@@ -1275,28 +1302,20 @@ AvPlugManager::showPlugs()
         }
     }
 
-    printf( "\nPlug details\n" );
-    printf( "------------\n" );
+    /*
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Plug details\n" );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "------------\n" );
     int i = 0;
-    for ( AvPlugVector::iterator it = m_plugs.begin();
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
           ++it, ++i )
     {
         AvPlug* plug = *it;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Plug %d:\n", i );
+        plug->showPlug();
 
-        printf( "Plug %d:\n", i );
-        printf( "\tName               = %s\n", plug->getName() );
-        printf( "\tType               = %s\n", extendedPlugInfoPlugTypeToString( plug->getPlugType() ) );
-        printf( "\tAddress Type       = %s\n", avPlugAddressTypeToString( plug->getPlugAddressType() ) );
-        printf( "\tId                 = %d\n", plug->getPlugId() );
-        printf( "\tSubunitType        = %d\n",  plug->getSubunitType() );
-        printf( "\tSubunitId          = %d\n",  plug->getSubunitId() );
-        printf( "\tDirection          = %s\n", avPlugDirectionToString( plug->getPlugDirection() ) );
-        printf( "\tSampling Rate      = %d\n", plug->getSampleRate() );
-        printf( "\tNumber of Channels = %d\n",  plug->getNrOfChannels() );
-        printf( "\tNumber of Streams  = %d\n",  plug->getNrOfStreams() );
     }
-    printf( "\n" );
+    */
 }
 
 AvPlug*
@@ -1304,18 +1323,9 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
                         subunit_id_t subunitId,
                         AvPlug::EAvPlugAddressType plugAddressType,
                         AvPlug::EAvPlugDirection plugDirection,
-                        plug_id_t plugId )
+                        plug_id_t plugId ) const
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE,
-                 "lookup (SubUnitType, SubUnitId, PlugType, Direction, Id) = "
-                 "(%d, %d, %d, %d, %d)\n",
-                 subunitType,
-                 subunitId,
-                 plugAddressType,
-                 plugDirection,
-                 plugId );
-
-    for ( AvPlugVector::iterator it = m_plugs.begin();
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
           ++it )
     {
@@ -1327,15 +1337,6 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
              && ( plugDirection == plug->getPlugDirection() )
              && ( plugId == plug->getPlugId() ) )
         {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "found  (SubUnitType, SubUnitId, PlugType, Direction, Id) = "
-                         "(%d, %d, %d, %d, %d) ('%s')\n",
-                         plug->getSubunitType(),
-                         plug->getSubunitId(),
-                         plug->getPlugAddressType(),
-                         plug->getPlugDirection(),
-                         plug->getPlugId(),
-                         plug->getName() );
             return plug;
         }
     }
@@ -1343,13 +1344,15 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
     return 0;
 }
 
-AvPlug* AvPlugManager::getPlugByType( AVCCommand::ESubunitType subunitType,
-                                      subunit_id_t subunitId,
-                                      AvPlug::EAvPlugAddressType plugAddressType,
-                                      AvPlug::EAvPlugDirection plugDirection,
-                                      AvPlug::EAvPlugType type)
+AvPlugVector
+AvPlugManager::getPlugsByType( AVCCommand::ESubunitType subunitType,
+                               subunit_id_t subunitId,
+                               AvPlug::EAvPlugAddressType plugAddressType,
+                               AvPlug::EAvPlugDirection plugDirection,
+                               AvPlug::EAvPlugType type) const
 {
-   for ( AvPlugVector::iterator it = m_plugs.begin();
+    AvPlugVector plugVector;
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
           ++it )
     {
@@ -1361,11 +1364,11 @@ AvPlug* AvPlugManager::getPlugByType( AVCCommand::ESubunitType subunitType,
              && ( plugDirection == plug->getPlugDirection() )
              && ( type == plug->getPlugType() ) )
         {
-            return plug;
+            plugVector.push_back( plug );
         }
     }
 
-    return 0;
+    return plugVector;
 }
 
 

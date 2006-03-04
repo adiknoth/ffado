@@ -47,6 +47,7 @@ AvDevice::AvDevice( Ieee1394Service* ieee1394service,
     , m_configRom( configRom )
     , m_nodeId( nodeId )
     , m_verbose( verbose )
+    , m_plugManager( verbose )
 {
     if ( m_verbose ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -270,90 +271,178 @@ AvDevice::discoverSyncModes()
     // First we have to find the sync input and output plug
     // in the music subunit.
 
-    AvPlug* syncInputPlug = getPlugByType( m_pcrPlugs,
-                                           AvPlug::eAPD_Input,
-                                           AvPlug::eAPT_Sync );
-    if ( !syncInputPlug ) {
-        debugError( "No sync input plug found\n" );
-        return false;
+    // Note PCR input means 1394bus-to-device where as
+    // MSU input means subunit-to-device
+
+    AvPlugVector syncPCRInputPlugs = getPlugsByType( m_pcrPlugs,
+                                                     AvPlug::eAPD_Input,
+                                                     AvPlug::eAPT_Sync );
+    if ( !syncPCRInputPlugs.size() ) {
+        debugWarning( "No PCR sync input plug found\n" );
     }
 
-    AvPlug* syncOutputPlug = getPlugByType( m_pcrPlugs,
-                                            AvPlug::eAPD_Output,
-                                            AvPlug::eAPT_Sync );
-    if ( !syncOutputPlug ) {
-        debugError( "No sync output plug found with\n" );
-        return false;
+    AvPlugVector syncPCROutputPlugs = getPlugsByType( m_pcrPlugs,
+                                                      AvPlug::eAPD_Output,
+                                                      AvPlug::eAPT_Sync );
+    if ( !syncPCROutputPlugs.size() ) {
+        debugWarning( "No PCR sync output plug found\n" );
     }
 
-    AvPlug* syncMSUInputPlug = m_plugManager.getPlugByType( AVCCommand::eST_Music,
-                                                            0,
-                                                            AvPlug::eAPA_SubunitPlug,
-                                                            AvPlug::eAPD_Input,
-                                                            AvPlug::eAPT_Sync );
-    if ( !syncMSUInputPlug ) {
-        debugError( "No sync input plug for MSU subunit found\n" );
-        return false;
-    }
-
-    AvPlug* syncMSUOutputPlug = m_plugManager.getPlugByType( AVCCommand::eST_Music,
-                                                             0,
-                                                             AvPlug::eAPA_SubunitPlug,
-                                                             AvPlug::eAPD_Output,
-                                                             AvPlug::eAPT_Sync );
-    if ( !syncMSUOutputPlug ) {
-        debugError( "No sync output plug for MSU subunit found\n" );
-        return false;
-    }
-
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "syncInputPlug = '%s'\n", syncInputPlug->getName() );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "syncOutputPlug = '%s'\n", syncOutputPlug->getName() );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "syncMSUInputPlug = '%s'\n", syncMSUInputPlug->getName() );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "syncMSUOutputPlug = '%s'\n", syncMSUOutputPlug->getName() );
-
-
-    // Just some simple tests with the plugs. Some more inquiries are needed.
-    if ( syncOutputPlug->inquireConnnection( *syncMSUInputPlug ) ) {
-        debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
-                     syncOutputPlug->getName(),
-                     syncMSUInputPlug->getName() );
-    }
-
-    if ( syncMSUOutputPlug->inquireConnnection( *syncInputPlug ) ) {
-        debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
-                     syncMSUOutputPlug->getName(),
-                     syncInputPlug->getName() );
+    AvPlugVector isoPCRInputPlugs = getPlugsByType( m_pcrPlugs,
+                                                    AvPlug::eAPD_Input,
+                                                    AvPlug::eAPT_IsoStream );
+    if ( !isoPCRInputPlugs.size() ) {
+        debugWarning( "No PCR iso input plug found\n" );
 
     }
 
-    /*
-    for ( AvPlugVector::iterator it = m_pcrPlugs.begin();
-          it != m_pcrPlugs.end();
-          ++it )
+    AvPlugVector isoPCROutputPlugs = getPlugsByType( m_pcrPlugs,
+                                                    AvPlug::eAPD_Output,
+                                                    AvPlug::eAPT_IsoStream );
+    if ( !isoPCROutputPlugs.size() ) {
+        debugWarning( "No PCR iso output plug found\n" );
+
+    }
+
+    AvPlugVector digitalPCRInputPlugs = getPlugsByType( m_externalPlugs,
+                                                    AvPlug::eAPD_Input,
+                                                    AvPlug::eAPT_Digital );
+
+    AvPlugVector syncMSUInputPlugs = m_plugManager.getPlugsByType( AVCCommand::eST_Music,
+                                                                   0,
+                                                                   AvPlug::eAPA_SubunitPlug,
+                                                                   AvPlug::eAPD_Input,
+                                                                   AvPlug::eAPT_Sync );
+    if ( !syncMSUInputPlugs.size() ) {
+        debugWarning( "No sync input plug for MSU subunit found\n" );
+    }
+
+    AvPlugVector syncMSUOutputPlugs = m_plugManager.getPlugsByType( AVCCommand::eST_Music,
+                                                                    0,
+                                                                    AvPlug::eAPA_SubunitPlug,
+                                                                    AvPlug::eAPD_Output,
+                                                                    AvPlug::eAPT_Sync );
+    if ( !syncMSUOutputPlugs.size() ) {
+        debugWarning( "No sync output plug for MSU subunit found\n" );
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Sync Input Plugs:\n" );
+    showAvPlugs( syncPCRInputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Sync Output Plugs:\n" );
+    showAvPlugs( syncPCROutputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Input Plugs:\n" );
+    showAvPlugs( isoPCRInputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Output Plugs:\n" );
+    showAvPlugs( isoPCROutputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR digital Input Plugs:\n" );
+    showAvPlugs( digitalPCRInputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Input Plugs:\n" );
+    showAvPlugs( syncMSUInputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Output Plugs:\n" );
+    showAvPlugs( syncMSUOutputPlugs );
+
+    // Check all possible PCR input to MSU input connections
+    // -> sync stream input
+    for ( AvPlugVector::iterator piIt = syncPCRInputPlugs.begin();
+          piIt != syncPCRInputPlugs.end();
+          ++piIt )
     {
-        AvPlug* plug = *it;
-
-        if ( syncOutputPlug->inquireConnnection( *plug ) ) {
-            debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
-                         syncInputPlug->getName(),
-                         plug->getName() );
+        AvPlug* pi = *piIt;
+        for ( AvPlugVector::iterator miIt = syncMSUInputPlugs.begin();
+              miIt != syncMSUInputPlugs.end();
+              ++miIt )
+        {
+            AvPlug* mi = *miIt;
+            if ( pi->inquireConnnection( *mi ) ) {
+                debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection (Sync Stream Input) '%s' -> '%s'\n",
+                             pi->getName(),
+                             mi->getName() );
+            }
         }
     }
 
-    for ( AvPlugVector::iterator it = m_externalPlugs.begin();
-          it != m_externalPlugs.end();
-          ++it )
+    // Check all possible MSU output to PCR output connections
+    // -> sync stream output
+    for ( AvPlugVector::iterator moIt = syncMSUOutputPlugs.begin();
+          moIt != syncMSUOutputPlugs.end();
+          ++moIt )
     {
-        AvPlug* plug = *it;
-
-        if ( syncOutputPlug->inquireConnnection( *plug ) ) {
-            debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection '%s' -> '%s'\n",
-                         syncInputPlug->getName(),
-                         plug->getName() );
+        AvPlug* mo = *moIt;
+        for ( AvPlugVector::iterator poIt = syncPCROutputPlugs.begin();
+              poIt != syncPCROutputPlugs.end();
+              ++poIt )
+        {
+            AvPlug* po = *poIt;
+            if ( mo->inquireConnnection( *po ) ) {
+                debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection (Sync Stream Output) '%s' -> '%s'\n",
+                             mo->getName(),
+                             po->getName() );
+            }
         }
     }
-    */
+
+    // Check all PCR iso input to MSU input connections
+    // -> SYT match
+    for ( AvPlugVector::iterator iiIt = isoPCRInputPlugs.begin();
+          iiIt != isoPCRInputPlugs.end();
+          ++iiIt )
+    {
+        AvPlug* ii = *iiIt;
+        for ( AvPlugVector::iterator miIt = syncMSUInputPlugs.begin();
+              miIt != syncMSUInputPlugs.end();
+              ++miIt )
+        {
+            AvPlug* mi = *miIt;
+            if ( ii->inquireConnnection( *mi ) ) {
+                debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection (SYT match) '%s' -> '%s'\n",
+                             ii->getName(),
+                             mi->getName() );
+            }
+        }
+    }
+
+    // Check all MSU sync output to MSU input connections
+    // -> CSP
+    for ( AvPlugVector::iterator moIt = syncMSUOutputPlugs.begin();
+          moIt != syncMSUOutputPlugs.end();
+          ++moIt )
+    {
+        AvPlug* mo = *moIt;
+        for ( AvPlugVector::iterator miIt = syncMSUInputPlugs.begin();
+              miIt != syncMSUInputPlugs.end();
+              ++miIt )
+        {
+            AvPlug* mi = *miIt;
+            if ( mo->inquireConnnection( *mi ) ) {
+                debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection (CSP) '%s' -> '%s'\n",
+                             mo->getName(),
+                             mi->getName() );
+            }
+        }
+    }
+
+    // Check all external PCR digital input to MSU input connections
+    // -> SPDIF/ADAT sync
+    for ( AvPlugVector::iterator diIt = digitalPCRInputPlugs.begin();
+          diIt != digitalPCRInputPlugs.end();
+          ++diIt )
+    {
+        AvPlug* di = *diIt;
+        for ( AvPlugVector::iterator miIt = syncMSUInputPlugs.begin();
+              miIt != syncMSUInputPlugs.end();
+              ++miIt )
+        {
+            AvPlug* mi = *miIt;
+            if ( di->inquireConnnection( *mi ) ) {
+                debugOutput( DEBUG_LEVEL_NORMAL, "Sync connection (SPDIF/ADAT) '%s' -> '%s'\n",
+                             di->getName(),
+                             mi->getName() );
+            }
+        }
+    }
+
+    // Currently active connection
+    // signal source cmd, command type status, source unknown, destination MSU sync input plug
 
     return true;
 }
@@ -501,11 +590,12 @@ AvDevice::getPlugById( AvPlugVector& plugs, AvPlug::EAvPlugDirection plugDirecti
     return 0;
 }
 
-AvPlug*
-AvDevice::getPlugByType( AvPlugVector& plugs,
-                         AvPlug::EAvPlugDirection plugDirection,
-                         AvPlug::EAvPlugType type)
+AvPlugVector
+AvDevice::getPlugsByType( AvPlugVector& plugs,
+                          AvPlug::EAvPlugDirection plugDirection,
+                          AvPlug::EAvPlugType type)
 {
+    AvPlugVector plugVector;
     for ( AvPlugVector::iterator it = plugs.begin();
           it != plugs.end();
           ++it )
@@ -514,11 +604,11 @@ AvDevice::getPlugByType( AvPlugVector& plugs,
         if ( ( type == plug->getPlugType() )
              && ( plugDirection == plug->getPlugDirection() ) )
         {
-            return plug;
+            plugVector.push_back( plug );
         }
     }
 
-    return 0;
+    return plugVector;
 }
 
 AvPlug*
@@ -680,4 +770,18 @@ void
 AvDevice::showDevice()
 {
     m_plugManager.showPlugs();
+}
+
+void
+AvDevice::showAvPlugs( AvPlugVector& plugs ) const
+{
+    int i = 0;
+    for ( AvPlugVector::const_iterator it = plugs.begin();
+          it != plugs.end();
+          ++it, ++i )
+    {
+        AvPlug* plug = *it;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Plug %d\n", i );
+        plug->showPlug();
+    }
 }
