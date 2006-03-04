@@ -71,14 +71,14 @@ AvDeviceSubunit::discover()
                  plugInfoCmd.m_sourcePlugs,
                  plugInfoCmd.m_destinationPlugs );
 
-    if ( !discoverPlugs(  PlugAddress::ePD_Input,
+    if ( !discoverPlugs(  AvPlug::eAPD_Input,
                           plugInfoCmd.m_destinationPlugs ) )
     {
         debugError( "destination plug discovering failed\n" );
         return false;
     }
 
-    if ( !discoverPlugs(  PlugAddress::ePD_Output,
+    if ( !discoverPlugs(  AvPlug::eAPD_Output,
                           plugInfoCmd.m_sourcePlugs ) )
     {
         debugError( "source plug discovering failed\n" );
@@ -89,7 +89,7 @@ AvDeviceSubunit::discover()
 }
 
 bool
-AvDeviceSubunit::discoverPlugs(PlugAddress::EPlugDirection plugDirection,
+AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                                plug_id_t plugMaxId )
 {
     for ( int plugIdx = 0;
@@ -103,7 +103,7 @@ AvDeviceSubunit::discoverPlugs(PlugAddress::EPlugDirection plugDirection,
                                    m_avDevice->getPlugManager(),
                                    subunitType,
                                    getSubunitId(),
-                                   AvPlug::eAP_SubunitPlug,
+                                   AvPlug::eAPA_SubunitPlug,
                                    plugDirection,
                                    plugIdx );
         if ( !plug || !plug->discover() ) {
@@ -128,7 +128,7 @@ AvDeviceSubunit::addPlug( AvPlug& plug )
 
 
 AvPlug*
-AvDeviceSubunit::getPlug(PlugAddress::EPlugDirection direction, plug_id_t plugId)
+AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
 {
     for ( AvPlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();

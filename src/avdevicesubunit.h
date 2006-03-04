@@ -48,10 +48,10 @@ class AvDeviceSubunit {
 
     AvPlugVector& getPlugs()
 	{ return m_plugs; }
-    AvPlug* getPlug(PlugAddress::EPlugDirection direction, plug_id_t plugId);
+    AvPlug* getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId);
 
  protected:
-    bool discoverPlugs(PlugAddress::EPlugDirection plugDirection,
+    bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                        plug_id_t plugMaxId );
 
  protected:

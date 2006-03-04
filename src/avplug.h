@@ -42,11 +42,27 @@ class AvPlug {
 public:
 
     enum EAvPlugAddressType {
-	eAP_PCR,
-	eAP_ExternalPlug,
-	eAP_AsynchronousPlug,
-	eAP_SubunitPlug,
-	eAP_Undefined,
+	eAPA_PCR,
+	eAPA_ExternalPlug,
+	eAPA_AsynchronousPlug,
+	eAPA_SubunitPlug,
+	eAPA_Undefined,
+    };
+
+    enum EAvPlugType {
+        eAPT_IsoStream,   
+        eAPT_AsyncStream,
+        eAPT_Midi,
+        eAPT_Sync,
+        eAPT_Analog,
+        eAPT_Digital,
+        eAPT_Unknown,	
+    };
+
+    enum EAvPlugDirection {
+	eAPD_Input,
+	eAPD_Output,
+	eAPD_Unknown,
     };
 
     AvPlug( Ieee1394Service& ieee1394Service,
@@ -55,7 +71,7 @@ public:
 	    AVCCommand::ESubunitType subunitType,
 	    subunit_id_t subunitId,
 	    EAvPlugAddressType plugAddressType,
-	    PlugAddress::EPlugDirection plugDirection,
+	    EAvPlugDirection plugDirection,
 	    plug_id_t plugId );
     AvPlug( const AvPlug& rhs );
     virtual ~AvPlug();
@@ -73,7 +89,7 @@ public:
 	{ return m_subunitId; }
     const char*    getName()
 	{ return m_name.c_str(); }
-    PlugAddress::EPlugDirection getPlugDirection()
+    EAvPlugDirection getPlugDirection()
 	{ return m_direction; }
     sampling_frequency_t getSamplingFrequency()
 	{ return m_samplingFrequency; }
@@ -81,11 +97,11 @@ public:
     int getNrOfChannels();
     int getNrOfStreams();
 
-    PlugAddress::EPlugDirection getDirection() const
+    EAvPlugDirection getDirection() const
         { return m_direction; }
     EAvPlugAddressType getPlugAddressType() const
         { return m_addressType; }
-    ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType getPlugType() const
+    EAvPlugType getPlugType() const
 	{ return m_infoPlugType; }
 
     const AvPlugVector& getInputConnections() const
@@ -95,6 +111,8 @@ public:
 
     bool addXmlDescription( xmlNodePtr conectionSet );
     bool addXmlDescriptionStreamFormats( xmlNodePtr streamFormats );
+
+    PlugAddress::EPlugDirection convertPlugDirection();
 
 protected:
     bool discoverPlugType();
@@ -125,11 +143,11 @@ private:
     AVCCommand::ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;
     EAvPlugAddressType           m_addressType;
-    PlugAddress::EPlugDirection  m_direction;
+    EAvPlugDirection             m_direction;
     plug_id_t                    m_id;
 
     // Info plug type
-    ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType m_infoPlugType;
+    EAvPlugType m_infoPlugType;
 
     // Number of channels
     nr_of_channels_t             m_nrOfChannels;
@@ -191,6 +209,8 @@ private:
 };
 
 const char* avPlugAddressTypeToString( AvPlug::EAvPlugAddressType addressType );
+const char* avPlugTypeToString( AvPlug::EAvPlugType type );
+const char* avPlugDirectionToString( AvPlug::EAvPlugDirection direction );
 
 class AvPlugManager
 {
@@ -206,14 +226,14 @@ public:
     AvPlug* getPlug( AVCCommand::ESubunitType subunitType,
                      subunit_id_t subunitId,
                      AvPlug::EAvPlugAddressType plugAddressType,
-                     PlugAddress::EPlugDirection plugDirection,
+                     AvPlug::EAvPlugDirection plugDirection,
                      plug_id_t plugId );
     // We expect only one sync plug which matches
     AvPlug* getPlugByType( AVCCommand::ESubunitType subunitType,
 			   subunit_id_t subunitId,
 			   AvPlug::EAvPlugAddressType plugAddressType,
-			   PlugAddress::EPlugDirection plugDirection,
-			   ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType type);
+			   AvPlug::EAvPlugDirection plugDirection,
+			   AvPlug::EAvPlugType type);
 
 private:
     AvPlugVector m_plugs;
