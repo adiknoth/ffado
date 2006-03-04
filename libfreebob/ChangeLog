@@ -1,5 +1,19 @@
 2006-03-04  Daniel Wagner  <wagi@monom.org>
 
+	* src/avdevice.cpp: Added 'verbose' argument to constructor
+	and set debug level to DEBUG_LEVEL_VERBOSE if 'verbose'
+	is true, e.g enables verbose mode with '-v' argument passed
+	to test-freebob.
+	* src/avdevice.h: Likewsise.
+	* src/avdevicesubunit.cpp: Likewsise.
+	* src/avdevicesubunit.h: Likewsise.
+	* src/avplug.cpp: Likewsise.
+	* src/avplug.h: Likewsise.
+	* src/devicemanager.cpp: Likewsise.
+	* src/debugmodule/debugmodule.cpp: Likewsise.
+	* src/debugmodule/debugmodule.h: Likewsise.
+	* src/debugmodule/test_debugmodule.cpp: Likewsise.
+	
 	* src/avdevice.cpp: eAP_* renamed into eAPA_*.
 	EAvPlugDirection and EAvPlugType introduced. All PlugAddress:ePD_ and 
 	ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_* exchanged with corresponding

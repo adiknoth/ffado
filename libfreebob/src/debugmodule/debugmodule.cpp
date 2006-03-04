@@ -185,7 +185,7 @@ DebugModuleManager::unregisterModule( DebugModule& debugModule )
 }
 
 bool
-DebugModuleManager::setDebugLevel( std::string name, debug_level_t level )
+DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
 {
     for ( DebugModuleVectorIterator it = m_debugModules.begin();
           it != m_debugModules.end();

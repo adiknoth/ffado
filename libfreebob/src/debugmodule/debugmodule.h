@@ -72,7 +72,9 @@ typedef short debug_level_t;
 #define IMPL_GLOBAL_DEBUG_MODULE( RegisterName, Level )            \
                 DebugModule m_debugModule =                        \
 		    DebugModule( #RegisterName, Level )
-                
+
+#define setDebugLevel( Level )                                     \
+                m_debugModule.setLevel( Level )
 
 
 #ifdef DEBUG
@@ -151,7 +153,7 @@ public:
     friend class DebugModule;
 
     static DebugModuleManager* instance();
-    bool setDebugLevel( std::string name, debug_level_t level );
+    bool setMgrDebugLevel( std::string name, debug_level_t level );
 
 protected:
     bool registerModule( DebugModule& debugModule );

@@ -31,7 +31,7 @@
 
 using namespace std;
 
-IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
@@ -72,6 +72,9 @@ DeviceManager::initialize( int port )
 bool
 DeviceManager::discover( bool verbose )
 {
+    if ( verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
     for ( AvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -104,7 +107,7 @@ DeviceManager::discover( bool verbose )
             continue;
         }
 
-        AvDevice* avDevice = new AvDevice( m_1394Service, configRom, nodeId );
+        AvDevice* avDevice = new AvDevice( m_1394Service, configRom, nodeId, verbose );
         if ( !avDevice ) {
             debugError( "discover: Could not allocate AvDevice\n" );
             delete configRom;

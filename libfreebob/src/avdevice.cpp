@@ -37,15 +37,20 @@
 
 using namespace std;
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
 AvDevice::AvDevice( Ieee1394Service* ieee1394service,
                     ConfigRom* configRom,
-                    int nodeId )
-    : m_1394Service( ieee1394service )
+                    int nodeId,
+                    bool verbose )
+    :  m_1394Service( ieee1394service )
     , m_configRom( configRom )
     , m_nodeId( nodeId )
+    , m_verbose( verbose )
 {
+    if ( m_verbose ) {
+        setDebugLevel( DEBUG_LEVEL_VERBOSE );
+    }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Found AvDevice (NodeID %d)\n", nodeId );
 }
 
@@ -174,7 +179,8 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
                                     0xff,
                                     AvPlug::eAPA_PCR,
                                     plugDirection,
-                                    plugId );
+                                    plugId,
+                                    m_verbose );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             return false;
@@ -203,7 +209,8 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
                                     0xff,
                                     AvPlug::eAPA_ExternalPlug,
                                     plugDirection,
-                                    plugId );
+                                    plugId,
+                                    m_verbose );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             return false;
@@ -383,14 +390,14 @@ AvDevice::enumerateSubUnits()
         AvDeviceSubunit* subunit = 0;
         switch( subunit_type ) {
         case AVCCommand::eST_Audio:
-            subunit = new AvDeviceSubunitAudio( *this, subunitId );
+            subunit = new AvDeviceSubunitAudio( *this, subunitId, m_verbose );
             if ( !subunit ) {
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
                 return false;
             }
             break;
         case AVCCommand::eST_Music:
-            subunit = new AvDeviceSubunitMusic( *this, subunitId );
+            subunit = new AvDeviceSubunitMusic( *this, subunitId, m_verbose );
             if ( !subunit ) {
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
                 return false;

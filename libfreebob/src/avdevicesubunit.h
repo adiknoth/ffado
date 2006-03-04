@@ -33,7 +33,10 @@ class AvDevice;
 
 class AvDeviceSubunit {
  public:
-    AvDeviceSubunit( AvDevice& avDevice, AVCCommand::ESubunitType type, subunit_t id );
+    AvDeviceSubunit( AvDevice& avDevice, 
+		     AVCCommand::ESubunitType type, 
+		     subunit_t id,
+		     bool verbose );
     virtual ~AvDeviceSubunit();
 
     virtual bool discover();
@@ -58,6 +61,7 @@ class AvDeviceSubunit {
     AvDevice*      m_avDevice;
     AVCCommand::ESubunitType m_sbType;
     subunit_t      m_sbId;
+    bool           m_verbose;
 
     AvPlugVector   m_plugs;
 
@@ -70,7 +74,9 @@ typedef std::vector<AvDeviceSubunit*> AvDeviceSubunitVector;
 
 class AvDeviceSubunitAudio: public AvDeviceSubunit {
  public:
-    AvDeviceSubunitAudio( AvDevice& avDevice, subunit_t id );
+    AvDeviceSubunitAudio( AvDevice& avDevice, 
+			  subunit_t id,
+			  bool verbose );
     virtual ~AvDeviceSubunitAudio();
 
     virtual const char* getName();
@@ -80,7 +86,9 @@ class AvDeviceSubunitAudio: public AvDeviceSubunit {
 
 class AvDeviceSubunitMusic: public AvDeviceSubunit {
  public:
-    AvDeviceSubunitMusic( AvDevice& avDevice, subunit_t id );
+    AvDeviceSubunitMusic( AvDevice& avDevice, 
+			  subunit_t id,
+			  bool verbose );
     virtual ~AvDeviceSubunitMusic();
 
     virtual const char* getName();
