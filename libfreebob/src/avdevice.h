@@ -66,9 +66,9 @@ protected:
     bool enumerateSubUnits();
 
     bool discoverPlugs();
-    bool discoverPlugsPCR( PlugAddress::EPlugDirection plugDirection,
+    bool discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
                            plug_id_t plugMaxId );
-    bool discoverPlugsExternal( PlugAddress::EPlugDirection plugDirection,
+    bool discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
                                 plug_id_t plugMaxId );
     bool discoverPlugConnections();
     bool discoverSyncModes();
@@ -80,18 +80,18 @@ protected:
     unsigned int getNrOfSubunits( subunit_type_t subunitType ) const;
     AvPlugConnection* getPlugConnection( AvPlug& srcPlug ) const;
 
-    AvPlug* getSyncPlug( int maxPlugId, PlugAddress::EPlugDirection );
+    AvPlug* getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection );
 
     AvPlug* getPlugById( AvPlugVector& plugs,
-                         PlugAddress::EPlugDirection plugDireciton,
+                         AvPlug::EAvPlugDirection plugDireciton,
                          int id );
     // We expect only one sync plug which matches
     AvPlug* getPlugByType( AvPlugVector& plugs,
-			   PlugAddress::EPlugDirection plugDirection,
-			   ExtendedPlugInfoPlugTypeSpecificData::EExtendedPlugInfoPlugType type);
+			   AvPlug::EAvPlugDirection plugDirection,
+			   AvPlug::EAvPlugType type);
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
-                                   PlugAddress::EPlugDirection direction,
+                                   AvPlug::EAvPlugDirection direction,
                                    ESamplingFrequency samplingFrequency );
 protected:
     Ieee1394Service* m_1394Service;
