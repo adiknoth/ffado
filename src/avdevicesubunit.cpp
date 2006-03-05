@@ -18,6 +18,7 @@
  * MA 02111-1307 USA.
  */
 
+#include "functionblock.h"
 #include "avdevicesubunit.h"
 #include "avdevice.h"
 #include "avplug.h"
@@ -57,6 +58,17 @@ AvDeviceSubunit::~AvDeviceSubunit()
 bool
 AvDeviceSubunit::discover()
 {
+    if ( !discoverPlugs() ) {
+        debugError( "plug discovering failed\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+AvDeviceSubunit::discoverPlugs()
+{
     PlugInfoCmd plugInfoCmd( m_avDevice->get1394Service(),
                              PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
     plugInfoCmd.setNodeId( m_avDevice->getNodeId() );
@@ -93,6 +105,26 @@ AvDeviceSubunit::discover()
 }
 
 bool
+AvDeviceSubunit::discoverConnections()
+{
+    // XXX does not work because function blocks are missing.
+    /*
+    for ( AvPlugVector::iterator it = m_plugs.begin();
+          it != m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+        if ( plug->discoverConnections() ) {
+            debugError( "plug connection discovering failed ('%s')\n",
+                        plug->getName() );
+            return false;
+        }
+    }
+    */
+    return true;
+}
+
+bool
 AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                                plug_id_t plugMaxId )
 {
@@ -122,7 +154,6 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
     }
     return true;
 }
-
 
 bool
 AvDeviceSubunit::addPlug( AvPlug& plug )
@@ -160,6 +191,49 @@ AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice,
 
 AvDeviceSubunitAudio::~AvDeviceSubunitAudio()
 {
+    for ( FunctionBlockVector::iterator it = m_functions.begin();
+          it != m_functions.end();
+          ++it )
+    {
+        delete *it;
+    }
+}
+
+bool
+AvDeviceSubunitAudio::discover()
+{
+    if ( !AvDeviceSubunit::discover() ) {
+        return false;
+    }
+
+    if ( !discoverFunctionBlocks() ) {
+        debugError( "function block discovering failed\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+AvDeviceSubunitAudio::discoverConnections()
+{
+    if ( !AvDeviceSubunit::discoverConnections() ) {
+        return false;
+    }
+
+    for ( FunctionBlockVector::iterator it = m_functions.begin();
+          it != m_functions.end();
+          ++it )
+    {
+        FunctionBlock* function = *it;
+        if ( function->discoverConnections() ) {
+            debugError( "functionblock connection discovering failed ('%s')\n",
+                        function->getName() );
+            return false;
+        }
+    }
+
+    return true;
 }
 
 const char*
@@ -167,6 +241,14 @@ AvDeviceSubunitAudio::getName()
 {
     return "AudioSubunit";
 }
+
+bool
+AvDeviceSubunitAudio::discoverFunctionBlocks()
+{
+    // printf( "XXX discover functions\n" );
+    return true;
+}
+
 
 ////////////////////////////////////////////
 

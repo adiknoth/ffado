@@ -1,3 +1,19 @@
+2006-03-05  Daniel Wagner  <wagi@monom.org>
+
+	* src/avdevice.cpp: Plug connection discovering also on
+	subunits (disabled because missing funciton blocks).
+	Sync connections code cleanup.
+	* src/avdevice.h: Likewise.
+	* src/avdevicesubunit.cpp: Likewise.
+	* src/avdevicesubunit.h: Likewise.
+	* src/avplug.cpp: Likewise.
+	* src/avplug.h: Likewise.
+
+	* src/Makefile.am: Added functionblock.cpp and
+	functionblock.h
+	* src/functionblock.cpp: New file
+	* src/functionblock.h: Likewise.
+
 2006-03-04  Daniel Wagner  <wagi@monom.org>
 
 	* src/avdevice.cpp: Sync mode discovering improved.

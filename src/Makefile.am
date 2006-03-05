@@ -25,23 +25,25 @@ INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
 lib_LTLIBRARIES = libfreebob.la
 
 libfreebob_la_SOURCES = 	\
-	freebob.cpp 		\
-	xmlparser.c		\
-	devicemanager.h         \
-	devicemanager.cpp       \
-	avdevice.h              \
 	avdevice.cpp		\
-	avdevicexml.cpp		\
-	avdevicesubunit.h	\
+	avdevice.h              \
 	avdevicesubunit.cpp	\
-	avplug.h                \
+	avdevicesubunit.h	\
+	avdevicexml.cpp		\
 	avplug.cpp		\
+	avplug.h                \
 	avplugxml.cpp		\
-	configrom.h		\
 	configrom.cpp		\
-	csr1212.h		\
+	configrom.h		\
 	csr1212.c		\
-	fbtypes.h		
+	csr1212.h		\
+	devicemanager.cpp       \
+	devicemanager.h         \
+	fbtypes.h		\
+	freebob.cpp 		\
+	functionblock.cpp	\
+	functionblock.h		\
+	xmlparser.c
 
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
