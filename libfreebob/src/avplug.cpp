@@ -701,7 +701,7 @@ AvPlug::discoverConnectionsInput()
                              "'%s' has a connection from '%s'\n",
                              m_name.c_str(),
                              outputPlug->getName() );
-                m_inputConnections.push_back( outputPlug );
+                addPlugConnection( m_inputConnections, *outputPlug );
             } else {
                 debugError( "no corresponding output plug found\n" );
                 return false;
@@ -727,7 +727,7 @@ AvPlug::discoverConnectionsInput()
                              "'%s' has a connection from '%s'\n",
                              m_name.c_str(),
                              outputPlug->getName() );
-                m_inputConnections.push_back( outputPlug );
+                addPlugConnection( m_inputConnections, *outputPlug );
             } else {
                 debugError( "no corresponding output plug found\n" );
                 return false;
@@ -817,7 +817,7 @@ AvPlug::discoverConnectionsOutput()
                                  "'%s' has a connection to '%s'\n",
                                  m_name.c_str(),
                                  inputPlug->getName() );
-                    m_outputConnections.push_back( inputPlug );
+                    addPlugConnection( m_outputConnections, *inputPlug );
                 } else {
                     debugError( "no corresponding input plug found\n" );
                     return false;
@@ -843,7 +843,7 @@ AvPlug::discoverConnectionsOutput()
                                  "'%s' has a connection to '%s'\n",
                                  m_name.c_str(),
                                  inputPlug->getName() );
-                    m_outputConnections.push_back( inputPlug );
+                    addPlugConnection( m_outputConnections, *inputPlug );
                 } else {
                     debugError( "no corresponding input plug found\n" );
                     return false;
@@ -864,6 +864,28 @@ AvPlug::discoverConnectionsOutput()
         return false;
     }
 
+    return true;
+}
+
+bool
+AvPlug::addPlugConnection( AvPlugVector& connections,
+                           AvPlug& plug )
+
+{
+    for ( AvPlugVector::iterator it = connections.begin();
+          it != connections.end();
+          ++it )
+    {
+        AvPlug* cPlug = *it;
+        if ( cPlug == &plug ) {
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "plug '%s' already in connection list\n",
+                         plug.getName() );
+            return true;
+        }
+    }
+
+    connections.push_back( &plug );
     return true;
 }
 

@@ -73,7 +73,7 @@ protected:
                                 plug_id_t plugMaxId );
     bool discoverPlugConnections();
     bool discoverSyncModes();
-
+    bool discoverSubUnitsPlugConnections();
 
     AvDeviceSubunit* getSubunit( subunit_type_t subunitType,
                                  subunit_id_t subunitId ) const;
@@ -95,6 +95,8 @@ protected:
                                    ESamplingFrequency samplingFrequency );
 
     void showAvPlugs( AvPlugVector& plugs ) const;
+
+    bool checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs );
 protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;

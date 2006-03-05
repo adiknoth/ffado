@@ -139,9 +139,9 @@ protected:
     bool copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
                          channelPositionData );
 
+    bool addPlugConnection( AvPlugVector& connections, AvPlug& plug );
 private:
     Ieee1394Service*             m_1394Service;
-
     int                          m_nodeId;
     AVCCommand::ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;

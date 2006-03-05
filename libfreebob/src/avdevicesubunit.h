@@ -30,16 +30,19 @@
 #include <vector>
 
 class AvDevice;
+class FunctionBlock;
+typedef std::vector<FunctionBlock*> FunctionBlockVector;
 
 class AvDeviceSubunit {
  public:
-    AvDeviceSubunit( AvDevice& avDevice, 
-		     AVCCommand::ESubunitType type, 
+    AvDeviceSubunit( AvDevice& avDevice,
+		     AVCCommand::ESubunitType type,
 		     subunit_t id,
 		     bool verbose );
     virtual ~AvDeviceSubunit();
 
     virtual bool discover();
+    virtual bool discoverConnections();
     virtual const char* getName() = 0;
 
     bool addPlug( AvPlug& plug );
@@ -54,6 +57,7 @@ class AvDeviceSubunit {
     AvPlug* getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId);
 
  protected:
+    bool discoverPlugs();
     bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                        plug_id_t plugMaxId );
 
@@ -63,7 +67,7 @@ class AvDeviceSubunit {
     subunit_t      m_sbId;
     bool           m_verbose;
 
-    AvPlugVector   m_plugs;
+    AvPlugVector        m_plugs;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -74,19 +78,28 @@ typedef std::vector<AvDeviceSubunit*> AvDeviceSubunitVector;
 
 class AvDeviceSubunitAudio: public AvDeviceSubunit {
  public:
-    AvDeviceSubunitAudio( AvDevice& avDevice, 
+    AvDeviceSubunitAudio( AvDevice& avDevice,
 			  subunit_t id,
 			  bool verbose );
     virtual ~AvDeviceSubunitAudio();
 
+    virtual bool discover();
+    virtual bool discoverConnections();
+
     virtual const char* getName();
+
+
+protected:
+    bool discoverFunctionBlocks();
+
+    FunctionBlockVector m_functions;
 };
 
 /////////////////////////////
 
 class AvDeviceSubunitMusic: public AvDeviceSubunit {
  public:
-    AvDeviceSubunitMusic( AvDevice& avDevice, 
+    AvDeviceSubunitMusic( AvDevice& avDevice,
 			  subunit_t id,
 			  bool verbose );
     virtual ~AvDeviceSubunitMusic();
