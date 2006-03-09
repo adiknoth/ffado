@@ -223,8 +223,7 @@ public:
     PlugAddress( EPlugDirection plugDirection,
                  EPlugAddressMode plugAddressMode,
                  FunctionBlockPlugAddress& functionBlockPlugAddress );
-    PlugAddress( EPlugDirection plugDirection,
-		 EPlugAddressMode plugAddressMode );
+    PlugAddress( ); // undefined plug address
     PlugAddress( const PlugAddress& pa );
 
     virtual ~PlugAddress();

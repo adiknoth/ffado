@@ -58,6 +58,11 @@ typedef byte_t string_length_t;
 typedef byte_t cluster_index_t;
 typedef byte_t port_type_t;
 typedef byte_t number_of_output_plugs_t;
+typedef byte_t function_block_type_t;
+typedef byte_t function_block_id_t;
+typedef byte_t function_block_special_purpose_t;
+typedef byte_t no_of_input_plugs_t;
+typedef byte_t no_of_output_plugs_t;
 
 typedef quadlet_t company_id_t;
 

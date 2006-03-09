@@ -890,14 +890,20 @@ ExtendedPlugInfoCmd::fire()
         parseResponse( resp->byte[0] );
         switch ( getResponse() )
         {
-            case eR_Implemented:
-            {
-                BufferDeserialize de( resp->byte, sizeof( req ) );
-                result = deserialize( de );
-            }
-            break;
-            default:
-                printf( "unexpected response received (0x%x)\n", getResponse() );
+        case eR_Implemented:
+        {
+            BufferDeserialize de( resp->byte, sizeof( req ) );
+            result = deserialize( de );
+        }
+        break;
+        case eR_Rejected:
+        {
+            BufferDeserialize de( resp->byte, sizeof( req ) );
+            result = deserialize( de );
+        }
+        break;
+        default:
+            printf( "unexpected response received (0x%x)\n", getResponse() );
         }
     } else {
 	printf( "no response\n" );
