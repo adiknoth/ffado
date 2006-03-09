@@ -1,3 +1,15 @@
+2006-03-10  Daniel Wagner  <wagi@monom.org>
+
+	* src/libfreebobavc/Makefile.am: New files added.
+	* src/libfreebobavc/avc_extended_subunit_info.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_subunit_info.h: Likewise
+
+	* src/libfreebobavc/avc_definitions.h: Several small improvements.
+	* src/libfreebobavc/avc_extended_cmd_generic.cpp: Likewise.
+	* src/libfreebobavc/avc_extended_cmd_generic.h: Likewise.
+	* src/libfreebobavc/avc_extended_plug_info.cpp: Likewise.
+	* src/libfreebobavc/avc_generic.cpp: Likewise.
+
 2006-03-05  Daniel Wagner  <wagi@monom.org>
 
 	* src/avdevice.cpp: Plug connection discovering also on

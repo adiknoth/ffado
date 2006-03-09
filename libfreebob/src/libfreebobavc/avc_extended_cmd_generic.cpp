@@ -381,14 +381,12 @@ PlugAddress::PlugAddress( EPlugDirection plugDirection,
 {
 }
 
-PlugAddress::PlugAddress( EPlugDirection plugDirection,
-                          EPlugAddressMode plugAddressMode )
-    : m_plugDirection( plugDirection )
-    , m_addressMode( plugAddressMode )
+PlugAddress::PlugAddress()
+    : m_plugDirection( ePD_Undefined )
+    , m_addressMode( ePAM_Undefined )
     , m_plugAddressData( new UndefinedPlugAddress() )
 {
 }
-
 
 PlugAddress::PlugAddress( const PlugAddress& pa )
     : m_plugDirection( pa.m_plugDirection )

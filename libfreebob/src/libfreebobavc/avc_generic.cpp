@@ -148,7 +148,11 @@ const char* subunitTypeStrings[] =
 const char*
 subunitTypeToString( subunit_type_t subunitType )
 {
-    if ( subunitType > sizeof( subunitTypeStrings ) ) {
+    if ( subunitType == AVCCommand::eST_Unit ) {
+        return "Unit";
+    }
+    if ( subunitType > ( int ) ( sizeof( subunitTypeStrings )
+             / sizeof( subunitTypeStrings[0] ) ) ) {
         return "unknown";
     } else {
         return subunitTypeStrings[subunitType];
