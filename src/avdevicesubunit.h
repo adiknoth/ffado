@@ -22,16 +22,16 @@
 #define AVDEVICESUBUNIT_H
 
 #include "avplug.h"
+#include "functionblock.h"
 
 #include "debugmodule/debugmodule.h"
+#include "libfreebobavc/avc_extended_subunit_info.h"
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebobavc/avc_generic.h"
 
 #include <vector>
 
 class AvDevice;
-class FunctionBlock;
-typedef std::vector<FunctionBlock*> FunctionBlockVector;
 
 class AvDeviceSubunit {
  public:
@@ -56,18 +56,22 @@ class AvDeviceSubunit {
 	{ return m_plugs; }
     AvPlug* getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId);
 
+
+    AvDevice& getAvDevice() const
+        { return *m_avDevice; }
+
  protected:
     bool discoverPlugs();
     bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                        plug_id_t plugMaxId );
 
  protected:
-    AvDevice*      m_avDevice;
+    AvDevice*                m_avDevice;
     AVCCommand::ESubunitType m_sbType;
-    subunit_t      m_sbId;
-    bool           m_verbose;
+    subunit_t                m_sbId;
+    bool                     m_verbose;
 
-    AvPlugVector        m_plugs;
+    AvPlugVector             m_plugs;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -91,7 +95,16 @@ class AvDeviceSubunitAudio: public AvDeviceSubunit {
 
 protected:
     bool discoverFunctionBlocks();
+    bool discoverFunctionBlocksDo(
+        ExtendedSubunitInfoCmd::EFunctionBlockType fbType );
+    bool createFunctionBlock(
+        ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
+        ExtendedSubunitInfoPageData& data );
 
+    FunctionBlock::ESpecialPurpose convertSpecialPurpose(
+        function_block_special_purpose_t specialPurpose );
+
+protected:
     FunctionBlockVector m_functions;
 };
 

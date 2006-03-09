@@ -1,5 +1,16 @@
 2006-03-10  Daniel Wagner  <wagi@monom.org>
 
+	* configure.ac: Version bump to 0.5.0
+
+	* src/avdevice.cpp: Plug connection discovering
+	finished. 
+	* src/avdevicesubunit.cpp: Likewise.
+	* src/avdevicesubunit.h: Likewise.
+	* src/avplug.cpp: Likewise.
+	* src/avplug.h: Likewise.
+	* src/functionblock.cpp: Likewise.
+	* src/functionblock.h: Likewise.
+	
 	* src/libfreebobavc/Makefile.am: New files added.
 	* src/libfreebobavc/avc_extended_subunit_info.cpp: Likewise.
 	* src/libfreebobavc/avc_extended_subunit_info.h: Likewise

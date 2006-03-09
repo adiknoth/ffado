@@ -52,7 +52,8 @@ AvDevice::AvDevice( Ieee1394Service* ieee1394service,
     if ( m_verbose ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Found AvDevice (NodeID %d)\n", nodeId );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Found AvDevice (NodeID %d)\n",
+                 nodeId );
 }
 
 AvDevice::~AvDevice()
@@ -91,18 +92,22 @@ AvDevice::discover()
         debugError( "Could not enumarate sub units\n" );
         return false;
     }
+
     if ( !discoverPlugs() ) {
         debugError( "Detecting plugs failed\n" );
         return false;
     }
+
     if ( !discoverPlugConnections() ) {
         debugError( "Detecting plug connections failed\n" );
         return false;
     }
+
     if ( !discoverSubUnitsPlugConnections() ) {
-        debugError( "Deceting plug connnection failed\n" );
+        debugError( "Detecting plug connnection failed\n" );
         return false;
     }
+
     if ( !discoverSyncModes() ) {
         debugError( "Detecting sync modes failed\n" );
         return false;
@@ -127,16 +132,14 @@ AvDevice::discoverPlugs()
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL, "\n"
-                 "\tnumber of iso input plugs = %d\n"
-                 "\tnumber of iso output plugs = %d\n"
-                 "\tnumber of external input plugs = %d\n "
-                 "\tnumber of external output plugs = %d\n",
-                 plugInfoCmd.m_serialBusIsochronousInputPlugs,
-                 plugInfoCmd.m_serialBusIsochronousOutputPlugs,
-                 plugInfoCmd.m_externalInputPlugs,
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of iso input plugs = %d\n",
+                 plugInfoCmd.m_serialBusIsochronousInputPlugs );
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of iso output plugs = %d\n",
+                 plugInfoCmd.m_serialBusIsochronousOutputPlugs );
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of external input plugs = %d\n",
+                 plugInfoCmd.m_externalInputPlugs );
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of external output plugs = %d\n",
                  plugInfoCmd.m_externalOutputPlugs );
-
 
     if ( !discoverPlugsPCR( AvPlug::eAPD_Input,
                             plugInfoCmd.m_serialBusIsochronousInputPlugs ) )
@@ -182,12 +185,15 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
                                     m_plugManager,
                                     AVCCommand::eST_Unit,
                                     0xff,
+                                    0xff,
+                                    0xff,
                                     AvPlug::eAPA_PCR,
                                     plugDirection,
                                     plugId,
                                     m_verbose );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
+            delete plug;
             return false;
         }
 
@@ -212,6 +218,8 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
                                     m_plugManager,
                                     AVCCommand::eST_Unit,
                                     0xff,
+                                    0xff,
+                                    0xff,
                                     AvPlug::eAPA_ExternalPlug,
                                     plugDirection,
                                     plugId,
@@ -232,7 +240,6 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
 bool
 AvDevice::discoverPlugConnections()
 {
-
     for ( AvPlugVector::iterator it = m_pcrPlugs.begin();
           it != m_pcrPlugs.end();
           ++it )
@@ -329,20 +336,26 @@ AvDevice::discoverSyncModes()
                                                     AvPlug::eAPD_Input,
                                                     AvPlug::eAPT_Digital );
 
-    AvPlugVector syncMSUInputPlugs = m_plugManager.getPlugsByType( AVCCommand::eST_Music,
-                                                                   0,
-                                                                   AvPlug::eAPA_SubunitPlug,
-                                                                   AvPlug::eAPD_Input,
-                                                                   AvPlug::eAPT_Sync );
+    AvPlugVector syncMSUInputPlugs = m_plugManager.getPlugsByType(
+        AVCCommand::eST_Music,
+        0,
+        0xff,
+        0xff,
+        AvPlug::eAPA_SubunitPlug,
+        AvPlug::eAPD_Input,
+        AvPlug::eAPT_Sync );
     if ( !syncMSUInputPlugs.size() ) {
         debugWarning( "No sync input plug for MSU subunit found\n" );
     }
 
-    AvPlugVector syncMSUOutputPlugs = m_plugManager.getPlugsByType( AVCCommand::eST_Music,
-                                                                    0,
-                                                                    AvPlug::eAPA_SubunitPlug,
-                                                                    AvPlug::eAPD_Output,
-                                                                    AvPlug::eAPT_Sync );
+    AvPlugVector syncMSUOutputPlugs = m_plugManager.getPlugsByType(
+        AVCCommand::eST_Music,
+        0,
+        0xff,
+        0xff,
+        AvPlug::eAPA_SubunitPlug,
+        AvPlug::eAPD_Output,
+        AvPlug::eAPT_Sync );
     if ( !syncMSUOutputPlugs.size() ) {
         debugWarning( "No sync output plug for MSU subunit found\n" );
     }
@@ -383,15 +396,16 @@ AvDevice::discoverSyncModes()
     checkSyncConnections( digitalPCRInputPlugs, syncMSUInputPlugs );
 
 
-    // Currently active connection
-    // signal source cmd, command type status, source unknown, destination MSU sync input plug
+    // Currently active connection signal sourqce cmd, command type
+    // status, source unknown, destination MSU sync input plug
 
     for ( AvPlugVector::const_iterator it = syncMSUInputPlugs.begin();
           it != syncMSUInputPlugs.end();
           ++it )
     {
         AvPlug* msuPlug = *it;
-        for ( AvPlugVector::const_iterator jt = msuPlug->getInputConnections().begin();
+        for ( AvPlugVector::const_iterator jt =
+                  msuPlug->getInputConnections().begin();
               jt != msuPlug->getInputConnections().end();
               ++jt )
         {
@@ -523,7 +537,7 @@ AvDevice::getPlugConnection( AvPlug& srcPlug ) const
           ++it )
     {
         AvPlugConnection* plugConnection = *it;
-        if ( plugConnection->m_srcPlug == &srcPlug ) {
+        if ( &( plugConnection->getSrcPlug() ) == &srcPlug ) {
             return plugConnection;
         }
     }
@@ -532,7 +546,9 @@ AvDevice::getPlugConnection( AvPlug& srcPlug ) const
 }
 
 AvPlug*
-AvDevice::getPlugById( AvPlugVector& plugs, AvPlug::EAvPlugDirection plugDirection, int id )
+AvDevice::getPlugById( AvPlugVector& plugs,
+                       AvPlug::EAvPlugDirection plugDirection,
+                       int id )
 {
     for ( AvPlugVector::iterator it = plugs.begin();
           it != plugs.end();
@@ -603,7 +619,10 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
         return false;
     }
 
-    if ( !setSamplingFrequencyPlug( *plug, AvPlug::eAPD_Input, samplingFrequency ) ) {
+    if ( !setSamplingFrequencyPlug( *plug,
+                                    AvPlug::eAPD_Input,
+                                    samplingFrequency ) )
+    {
         debugError( "setSampleRate: Setting sample rate failed\n" );
         return false;
     }
@@ -614,7 +633,10 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
         return false;
     }
 
-    if ( !setSamplingFrequencyPlug( *plug, AvPlug::eAPD_Output, samplingFrequency ) ) {
+    if ( !setSamplingFrequencyPlug( *plug,
+                                    AvPlug::eAPD_Output,
+                                    samplingFrequency ) )
+    {
         debugError( "setSampleRate: Setting sample rate failed\n" );
         return false;
     }
@@ -630,8 +652,9 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                                     AvPlug::EAvPlugDirection direction,
                                     ESamplingFrequency samplingFrequency )
 {
-    ExtendedStreamFormatCmd extStreamFormatCmd( m_1394Service,
-                                                ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+    ExtendedStreamFormatCmd extStreamFormatCmd(
+        m_1394Service,
+        ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
                                      plug.getPlugId() );
 
@@ -665,7 +688,8 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 
         cmdSuccess = extStreamFormatCmd.fire();
         if ( cmdSuccess
-             && ( extStreamFormatCmd.getResponse() == AVCCommand::eR_Implemented ) )
+             && ( extStreamFormatCmd.getResponse() ==
+                  AVCCommand::eR_Implemented ) )
         {
             ESamplingFrequency foundFreq = eSF_DontCare;
 
@@ -675,14 +699,18 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                 = dynamic_cast< FormatInformationStreamsCompound* > (
                     formatInfo->m_streams );
             if ( compoundStream ) {
-                foundFreq = static_cast<ESamplingFrequency>( compoundStream->m_samplingFrequency );
+                foundFreq =
+                    static_cast<ESamplingFrequency>(
+                        compoundStream->m_samplingFrequency );
             }
 
             FormatInformationStreamsSync* syncStream
                 = dynamic_cast< FormatInformationStreamsSync* > (
                     formatInfo->m_streams );
             if ( syncStream ) {
-                foundFreq = static_cast<ESamplingFrequency>( compoundStream->m_samplingFrequency );
+                foundFreq =
+                    static_cast<ESamplingFrequency>(
+                        compoundStream->m_samplingFrequency );
             }
 
             if (  foundFreq == samplingFrequency )
@@ -702,7 +730,8 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
     }
 
     if ( !correctFormatFound ) {
-        debugError( "setSampleRatePlug: %s plug %d does not support sample rate %d\n",
+        debugError( "setSampleRatePlug: %s plug %d does not support "
+                    "sample rate %d\n",
                     plug.getName(),
                     plug.getPlugId(),
                     convertESamplingFrequency( samplingFrequency ) );
