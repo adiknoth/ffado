@@ -81,11 +81,10 @@ AvDeviceSubunit::discoverPlugs()
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL, "\n"
-                 "\tnumber of source plugs = %d\n "
-                 "\tnumber of destination output plugs = %d\n",
-                 plugInfoCmd.m_sourcePlugs,
-                 plugInfoCmd.m_destinationPlugs );
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of source plugs = %d\n",
+                 plugInfoCmd.m_sourcePlugs );
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of destination output "
+                 "plugs = %d\n", plugInfoCmd.m_destinationPlugs );
 
     if ( !discoverPlugs(  AvPlug::eAPD_Input,
                           plugInfoCmd.m_destinationPlugs ) )
@@ -107,20 +106,18 @@ AvDeviceSubunit::discoverPlugs()
 bool
 AvDeviceSubunit::discoverConnections()
 {
-    // XXX does not work because function blocks are missing.
-    /*
     for ( AvPlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();
           ++it )
     {
         AvPlug* plug = *it;
-        if ( plug->discoverConnections() ) {
+        if ( !plug->discoverConnections() ) {
             debugError( "plug connection discovering failed ('%s')\n",
                         plug->getName() );
             return false;
         }
     }
-    */
+
     return true;
 }
 
@@ -139,6 +136,8 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                                    m_avDevice->getPlugManager(),
                                    subunitType,
                                    getSubunitId(),
+                                   0xff,
+                                   0xff,
                                    AvPlug::eAPA_SubunitPlug,
                                    plugDirection,
                                    plugIdx,
@@ -226,7 +225,7 @@ AvDeviceSubunitAudio::discoverConnections()
           ++it )
     {
         FunctionBlock* function = *it;
-        if ( function->discoverConnections() ) {
+        if ( !function->discoverConnections() ) {
             debugError( "functionblock connection discovering failed ('%s')\n",
                         function->getName() );
             return false;
@@ -245,8 +244,181 @@ AvDeviceSubunitAudio::getName()
 bool
 AvDeviceSubunitAudio::discoverFunctionBlocks()
 {
-    // printf( "XXX discover functions\n" );
+    if ( !discoverFunctionBlocksDo(
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitSelector) ) {
+        debugError( "Could not discover function block selector\n" );
+        return false;
+    }
+    if ( !discoverFunctionBlocksDo(
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitFeature) ) {
+        debugError( "Could not discover function block feature\n" );
+        return false;
+    }
+    if ( !discoverFunctionBlocksDo(
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitProcessing) ) {
+        debugError( "Could not discover function block processing\n" );
+        return false;
+    }
+    if ( !discoverFunctionBlocksDo(
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitCodec) ) {
+        debugError( "Could not discover function block codec\n" );
+        return false;
+    }
+
     return true;
+}
+
+bool
+AvDeviceSubunitAudio::discoverFunctionBlocksDo(
+    ExtendedSubunitInfoCmd::EFunctionBlockType fbType )
+{
+    ExtendedSubunitInfoCmd
+        extSubunitInfoCmd( m_avDevice->get1394Service() );
+    extSubunitInfoCmd.setNodeId( m_avDevice->getNodeId() );
+    extSubunitInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    extSubunitInfoCmd.setSubunitId( getSubunitId() );
+    extSubunitInfoCmd.setSubunitType( getSubunitType() );
+
+    extSubunitInfoCmd.m_fbType = fbType;
+
+    int page = 0;
+    bool cmdSuccess = false;
+    bool finished = false;
+    do {
+        extSubunitInfoCmd.m_page = page;
+        cmdSuccess =extSubunitInfoCmd.fire();
+        if ( cmdSuccess
+             && ( extSubunitInfoCmd.getResponse()
+                  == AVCCommand::eR_Implemented ) )
+        {
+            for ( ExtendedSubunitInfoPageDataVector::iterator it =
+                      extSubunitInfoCmd.m_infoPageDatas.begin();
+                  cmdSuccess
+                  && ( it != extSubunitInfoCmd.m_infoPageDatas.end() );
+                  ++it )
+            {
+                cmdSuccess = createFunctionBlock( fbType, **it );
+            }
+        } else {
+            finished = true;
+        }
+    } while ( cmdSuccess && !finished );
+
+    return cmdSuccess;
+}
+
+bool
+AvDeviceSubunitAudio::createFunctionBlock(
+    ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
+    ExtendedSubunitInfoPageData& data )
+{
+    FunctionBlock::ESpecialPurpose purpose
+        = convertSpecialPurpose(  data.m_functionBlockSpecialPupose );
+
+    FunctionBlock* fb = 0;
+
+    switch ( fbType ) {
+    case ExtendedSubunitInfoCmd::eFBT_AudioSubunitSelector:
+    {
+        fb = new FunctionBlockSelector( *this,
+                                        data.m_functionBlockId,
+                                        purpose,
+                                        data.m_noOfInputPlugs,
+                                        data.m_noOfOutputPlugs,
+                                        m_verbose );
+    }
+    break;
+    case ExtendedSubunitInfoCmd::eFBT_AudioSubunitFeature:
+    {
+        fb = new FunctionBlockFeature( *this,
+                                       data.m_functionBlockId,
+                                       purpose,
+                                       data.m_noOfInputPlugs,
+                                       data.m_noOfOutputPlugs,
+                                       m_verbose );
+    }
+    break;
+    case ExtendedSubunitInfoCmd::eFBT_AudioSubunitProcessing:
+    {
+        switch ( data.m_functionBlockType ) {
+        case ExtendedSubunitInfoCmd::ePT_EnhancedMixer:
+        {
+            fb = new FunctionBlockEnhancedMixer( *this,
+                                                 data.m_functionBlockId,
+                                                 purpose,
+                                                 data.m_noOfInputPlugs,
+                                                 data.m_noOfOutputPlugs,
+                                                 m_verbose );
+        }
+        break;
+        case ExtendedSubunitInfoCmd::ePT_Mixer:
+        case ExtendedSubunitInfoCmd::ePT_Generic:
+        case ExtendedSubunitInfoCmd::ePT_UpDown:
+        case ExtendedSubunitInfoCmd::ePT_DolbyProLogic:
+        case ExtendedSubunitInfoCmd::ePT_3DStereoExtender:
+        case ExtendedSubunitInfoCmd::ePT_Reverberation:
+        case ExtendedSubunitInfoCmd::ePT_Chorus:
+        case ExtendedSubunitInfoCmd::ePT_DynamicRangeCompression:
+        default:
+            fb = new FunctionBlockProcessing( *this,
+                                              data.m_functionBlockId,
+                                              purpose,
+                                              data.m_noOfInputPlugs,
+                                              data.m_noOfOutputPlugs,
+                                              m_verbose );
+            debugWarning( "Dummy function block processing created. "
+                          "Implementation is missing\n" );
+        }
+    }
+    break;
+    case ExtendedSubunitInfoCmd::eFBT_AudioSubunitCodec:
+    {
+        fb = new FunctionBlockCodec( *this,
+                                     data.m_functionBlockId,
+                                     purpose,
+                                     data.m_noOfInputPlugs,
+                                     data.m_noOfOutputPlugs,
+                                     m_verbose );
+        debugWarning( "Dummy function block codec created. "
+                      "Implementation is missing\n" );
+    }
+    break;
+    default:
+        debugError( "Unhandled function block type found\n" );
+        return false;
+    }
+
+    if ( !fb ) {
+        debugError( "Could create function block\n" );
+        return false;
+    }
+    if ( !fb->discover() ) {
+        debugError( "Could not discover function block %s\n",
+                    fb->getName() );
+        delete fb;
+        return false;
+    }
+    m_functions.push_back( fb );
+
+    return true;
+}
+
+FunctionBlock::ESpecialPurpose
+AvDeviceSubunitAudio::convertSpecialPurpose(
+    function_block_special_purpose_t specialPurpose )
+{
+    FunctionBlock::ESpecialPurpose p;
+    switch ( specialPurpose ) {
+    case ExtendedSubunitInfoPageData::eSP_InputGain:
+        p  = FunctionBlock::eSP_InputGain;
+        break;
+    case ExtendedSubunitInfoPageData::eSP_OutputVolume:
+        p = FunctionBlock::eSP_OutputVolume;
+    break;
+    default:
+        p = FunctionBlock::eSP_NoSpecialPurpose;
+    }
+    return p;
 }
 
 

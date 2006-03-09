@@ -46,6 +46,7 @@ public:
 	eAPA_ExternalPlug,
 	eAPA_AsynchronousPlug,
 	eAPA_SubunitPlug,
+	eAPA_FunctionBlockPlug,
 	eAPA_Undefined,
     };
 
@@ -65,11 +66,14 @@ public:
 	eAPD_Unknown,
     };
 
+    // \todo This constructors sucks. too many parameters. fix it.
     AvPlug( Ieee1394Service& ieee1394Service,
 	    int m_nodeId,
             AvPlugManager& plugManager,
 	    AVCCommand::ESubunitType subunitType,
 	    subunit_id_t subunitId,
+	    function_block_type_t functionBlockType,
+	    function_block_type_t functionBlockId,
 	    EAvPlugAddressType plugAddressType,
 	    EAvPlugDirection plugDirection,
 	    plug_id_t plugId,
@@ -104,6 +108,11 @@ public:
         { return m_addressType; }
     EAvPlugType getPlugType() const
 	{ return m_infoPlugType; }
+
+    function_block_type_t getFunctionBlockType() const
+	{ return m_functionBlockType; }
+    function_block_id_t getFunctionBlockId() const
+        { return m_functionBlockId; }
 
     const AvPlugVector& getInputConnections() const
         { return m_inputConnections; }
@@ -140,11 +149,23 @@ protected:
                          channelPositionData );
 
     bool addPlugConnection( AvPlugVector& connections, AvPlug& plug );
+
+    bool discoverConnectionsFromSpecificData(
+        EAvPlugDirection discoverDirection,
+        PlugAddressSpecificData* plugAddress,
+        AvPlugVector& connections );
+
+    AvPlug* getPlugDefinedBySpecificData(
+        UnitPlugSpecificDataPlugAddress* pUnitPlugAddress,
+        SubunitPlugSpecificDataPlugAddress* pSubunitPlugAddress,
+        FunctionBlockPlugSpecificDataPlugAddress* pFunctionBlockPlugAddress );
 private:
     Ieee1394Service*             m_1394Service;
     int                          m_nodeId;
     AVCCommand::ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;
+    function_block_type_t        m_functionBlockType;
+    function_block_id_t          m_functionBlockId;
     EAvPlugAddressType           m_addressType;
     EAvPlugDirection             m_direction;
     plug_id_t                    m_id;
@@ -231,14 +252,25 @@ public:
 
     AvPlug* getPlug( AVCCommand::ESubunitType subunitType,
                      subunit_id_t subunitId,
+		     function_block_type_t functionBlockType,
+		     function_block_id_t functionBlockId,
                      AvPlug::EAvPlugAddressType plugAddressType,
                      AvPlug::EAvPlugDirection plugDirection,
                      plug_id_t plugId ) const;
     AvPlugVector getPlugsByType( AVCCommand::ESubunitType subunitType,
 				 subunit_id_t subunitId,
+				 function_block_type_t functionBlockType,
+				 function_block_id_t functionBlockId,
 				 AvPlug::EAvPlugAddressType plugAddressType,
 				 AvPlug::EAvPlugDirection plugDirection,
 				 AvPlug::EAvPlugType type) const;
+    int getIndexForPlug( AVCCommand::ESubunitType subunitType,
+                     subunit_id_t subunitId,
+		     function_block_type_t functionBlockType,
+		     function_block_id_t functionBlockId,
+                     AvPlug::EAvPlugAddressType plugAddressType,
+                     AvPlug::EAvPlugDirection plugDirection,
+                     plug_id_t plugId ) const;
 
 private:
     bool         m_verbose;
@@ -259,13 +291,19 @@ public:
 
 class AvPlugConnection {
 public:
-    AvPlugConnection();
-    ~AvPlugConnection();
+    AvPlugConnection( AvPlug& srcPlug, AvPlug& destPlug );
 
+    AvPlug& getSrcPlug() const
+        { return *m_srcPlug; }
+    AvPlug& getDestPlug() const
+        { return *m_destPlug; }
+
+private:
     AvPlug* m_srcPlug;
     AvPlug* m_destPlug;
 };
 
 typedef std::vector<AvPlugConnection*> AvPlugConnectionVector;
+typedef std::vector<AvPlugConnection> AvPlugConnectionOwnerVector;
 
 #endif
