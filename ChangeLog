@@ -1,3 +1,8 @@
+2006-03-12  Daniel Wagner  <wagi@monom.org>
+
+	* src/libfreebobavc/ieee1394service.cpp (transactionBlock): Set retry
+	value to 10. 
+
 2006-03-10  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bump to 0.5.0

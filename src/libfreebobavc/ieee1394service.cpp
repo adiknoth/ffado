@@ -84,5 +84,5 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    fb_quadlet_t* buf,
                                    int len )
 {
-    return avc1394_transaction_block( m_handle, nodeId, buf, len,  1 );
+    return avc1394_transaction_block( m_handle, nodeId, buf, len,  10 );
 }
