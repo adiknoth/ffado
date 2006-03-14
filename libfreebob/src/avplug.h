@@ -86,13 +86,15 @@ public:
 
     bool inquireConnnection( AvPlug& plug );
 
-    plug_id_t      getPlugId() const
+    int getGlobalId() const
+	{ return m_globalId; }
+    plug_id_t getPlugId() const
 	{ return m_id; }
     AVCCommand::ESubunitType getSubunitType() const
 	{ return m_subunitType; }
-    subunit_id_t   getSubunitId() const
+    subunit_id_t getSubunitId() const
 	{ return m_subunitId; }
-    const char*    getName() const
+    const char* getName() const
 	{ return m_name.c_str(); }
     EAvPlugDirection getPlugDirection() const
 	{ return m_direction; }
@@ -122,7 +124,8 @@ public:
     bool addXmlDescription( xmlNodePtr conectionSet );
     bool addXmlDescriptionStreamFormats( xmlNodePtr streamFormats );
 
-    PlugAddress::EPlugDirection convertPlugDirection() const;
+    PlugAddress::EPlugDirection convertPlugDirection(
+	EAvPlugDirection direction) const;
 
     void showPlug() const;
 
@@ -139,9 +142,14 @@ protected:
     bool discoverConnectionsOutput();
 
     ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
-    ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(ExtendedStreamFormatCmd::ESubFunction subFunction);
+
+    ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
+	ExtendedStreamFormatCmd::ESubFunction subFunction);
+
     SignalSourceCmd setSrcPlugAddrToSignalCmd();
-    void setDestPlugAddrToSignalCmd( SignalSourceCmd& signalSourceCmd, AvPlug& plug );
+
+    void setDestPlugAddrToSignalCmd(
+	SignalSourceCmd& signalSourceCmd, AvPlug& plug );
 
     void debugOutputClusterInfos( int debugLevel );
 
@@ -159,6 +167,9 @@ protected:
         UnitPlugSpecificDataPlugAddress* pUnitPlugAddress,
         SubunitPlugSpecificDataPlugAddress* pSubunitPlugAddress,
         FunctionBlockPlugSpecificDataPlugAddress* pFunctionBlockPlugAddress );
+
+    EAvPlugDirection toggleDirection( EAvPlugDirection direction ) const;
+
 private:
     Ieee1394Service*             m_1394Service;
     int                          m_nodeId;
@@ -231,6 +242,10 @@ private:
 
     bool                     m_verbose;
 
+    int                      m_globalId;
+
+    static int               m_globalIdCounter;
+
     DECLARE_DEBUG_MODULE;
 };
 
@@ -264,13 +279,6 @@ public:
 				 AvPlug::EAvPlugAddressType plugAddressType,
 				 AvPlug::EAvPlugDirection plugDirection,
 				 AvPlug::EAvPlugType type) const;
-    int getIndexForPlug( AVCCommand::ESubunitType subunitType,
-                     subunit_id_t subunitId,
-		     function_block_type_t functionBlockType,
-		     function_block_id_t functionBlockId,
-                     AvPlug::EAvPlugAddressType plugAddressType,
-                     AvPlug::EAvPlugDirection plugDirection,
-                     plug_id_t plugId ) const;
 
 private:
     bool         m_verbose;

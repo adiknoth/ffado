@@ -23,6 +23,8 @@
 #include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/serialize.h"
 
+int AvPlug::m_globalIdCounter = 0;
+
 
 IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( AvPlugManager, AvPlugManager, DEBUG_LEVEL_NORMAL );
@@ -51,6 +53,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
     , m_nrOfChannels( 0 )
     , m_plugManager( &plugManager )
     , m_verbose( verbose )
+    , m_globalId( m_globalIdCounter++ )
 {
     if ( m_verbose ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -228,40 +231,48 @@ AvPlug::discoverPlugType()
         return false;
     }
 
-    ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-    if ( infoType
-         && infoType->m_plugType )
-    {
-        plug_type_t plugType = infoType->m_plugType->m_plugType;
+    m_infoPlugType = eAPT_Unknown;
 
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "plug %d is of type %d (%s)\n",
-                     m_id,
-                     plugType,
-                     extendedPlugInfoPlugTypeToString( plugType ) );
-        switch ( plugType ) {
-        case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_IsoStream:
-            m_infoPlugType = eAPT_IsoStream;
-            break;
-        case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_AsyncStream:
-            m_infoPlugType = eAPT_AsyncStream;
-            break;
-        case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Midi:
-            m_infoPlugType = eAPT_Midi;
-            break;
-        case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync:
-            m_infoPlugType = eAPT_Sync;
-            break;
-        case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Analog:
-            m_infoPlugType = eAPT_Analog;
-            break;
-        case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Digital:
-            m_infoPlugType = eAPT_Digital;
-            break;
-        default:
-            m_infoPlugType = eAPT_Unknown;
+    if ( extPlugInfoCmd.getResponse() == AVCCommand::eR_Implemented ) {
 
+        ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+        if ( infoType
+             && infoType->m_plugType )
+        {
+            plug_type_t plugType = infoType->m_plugType->m_plugType;
+
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "plug %d is of type %d (%s)\n",
+                         m_id,
+                         plugType,
+                         extendedPlugInfoPlugTypeToString( plugType ) );
+            switch ( plugType ) {
+            case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_IsoStream:
+                m_infoPlugType = eAPT_IsoStream;
+                break;
+            case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_AsyncStream:
+                m_infoPlugType = eAPT_AsyncStream;
+                break;
+            case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Midi:
+                m_infoPlugType = eAPT_Midi;
+                break;
+            case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Sync:
+                m_infoPlugType = eAPT_Sync;
+                break;
+            case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Analog:
+                m_infoPlugType = eAPT_Analog;
+                break;
+            case ExtendedPlugInfoPlugTypeSpecificData::eEPIPT_Digital:
+                m_infoPlugType = eAPT_Digital;
+                break;
+            default:
+                m_infoPlugType = eAPT_Unknown;
+
+            }
         }
+    } else {
+        debugWarning( "Plug does implement extended plug info plug "
+                      "type info command\n" );
     }
 
    return true;
@@ -810,12 +821,15 @@ AvPlug::discoverConnectionsFromSpecificData(
 
     if ( plug ) {
         debugOutput( DEBUG_LEVEL_NORMAL,
-                     "'%s' has a connection to '%s'\n",
+                     "'(%d) %s' has a connection to '(%d) %s'\n",
+                     getGlobalId(),
                      getName(),
+                     plug->getGlobalId(),
                      plug->getName() );
         addPlugConnection( connections, *plug );
     } else {
-        debugError( "no corresponding plug found for '%s'\n",
+        debugError( "no corresponding plug found for '(%d) %s'\n",
+                    getGlobalId(),
                     getName() );
         return false;
     }
@@ -871,7 +885,7 @@ AvPlug::setPlugAddrToPlugInfoCmd()
             UnitPlugAddress unitPlugAddress( ePlugType,
                                              m_id );
             extPlugInfoCmd.setPlugAddress(
-                PlugAddress( convertPlugDirection(),
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
                              PlugAddress::ePAM_Unit,
                              unitPlugAddress ) );
         }
@@ -884,9 +898,10 @@ AvPlug::setPlugAddrToPlugInfoCmd()
             {
                 SubunitPlugAddress subunitPlugAddress( m_id );
                 extPlugInfoCmd.setPlugAddress(
-                    PlugAddress( convertPlugDirection(),
-                                 PlugAddress::ePAM_Subunit,
-                                 subunitPlugAddress ) );
+                    PlugAddress(
+                        convertPlugDirection( getPlugDirection() ),
+                        PlugAddress::ePAM_Subunit,
+                        subunitPlugAddress ) );
             }
             break;
             case eAPA_FunctionBlockPlug:
@@ -897,7 +912,7 @@ AvPlug::setPlugAddrToPlugInfoCmd()
                     m_id );
                 extPlugInfoCmd.setPlugAddress(
                     PlugAddress(
-                        convertPlugDirection(),
+                        convertPlugDirection( getPlugDirection() ),
                         PlugAddress::ePAM_FunctionBlock,
                         functionBlockPlugAddress ) );
             }
@@ -947,7 +962,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
         UnitPlugAddress unitPlugAddress( ePlugType,
                                          m_id );
         extStreamFormatInfoCmd.setPlugAddress(
-            PlugAddress( convertPlugDirection(),
+            PlugAddress( convertPlugDirection( getPlugDirection() ),
                          PlugAddress::ePAM_Unit,
                          unitPlugAddress ) );
         }
@@ -960,7 +975,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
         {
             SubunitPlugAddress subunitPlugAddress( m_id );
             extStreamFormatInfoCmd.setPlugAddress(
-                PlugAddress( convertPlugDirection(),
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
                              PlugAddress::ePAM_Subunit,
                              subunitPlugAddress ) );
         }
@@ -972,7 +987,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
                 m_functionBlockId,
                 m_id );
             extStreamFormatInfoCmd.setPlugAddress(
-                PlugAddress( convertPlugDirection(),
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
                              PlugAddress::ePAM_FunctionBlock,
                              functionBlockPlugAddress ) );
         }
@@ -1151,10 +1166,10 @@ AvPlug::getClusterInfoByIndex(int index) const
 }
 
 PlugAddress::EPlugDirection
-AvPlug::convertPlugDirection() const
+AvPlug::convertPlugDirection( EAvPlugDirection direction ) const
 {
     PlugAddress::EPlugDirection dir;
-    switch ( m_direction ) {
+    switch ( direction ) {
     case AvPlug::eAPD_Input:
         dir = PlugAddress::ePD_Input;
         break;
@@ -1228,8 +1243,24 @@ AvPlug::getPlugDefinedBySpecificData(
             addressType = eAPA_AsynchronousPlug;
             break;
         }
-        direction = getDirection();
+        // unit plug have only connections to subunits
+        if ( getPlugAddressType() == eAPA_SubunitPlug ) {
+            direction = getDirection();
+        } else {
+            debugError( "Function block has connection from/to unknown "
+                        "plug type\n" );
+            direction = eAPD_Unknown;
+        }
         plugId = pUnitPlugAddress->m_plugId;
+
+        debugOutput( DEBUG_LEVEL_NORMAL,
+                     "'(%d) %s': Remote plug is a unit plug "
+                     "(%s, %s, %d)\n",
+                     getGlobalId(),
+                     getName(),
+                     avPlugAddressTypeToString( addressType ),
+                     avPlugDirectionToString( direction ),
+                     plugId );
     }
 
     if ( pSubunitPlugAddress ) {
@@ -1237,23 +1268,25 @@ AvPlug::getPlugDefinedBySpecificData(
         subunitId = pSubunitPlugAddress->m_subunitId;
         addressType = eAPA_SubunitPlug;
 
-        if ( getPlugAddressType() == eAPA_SubunitPlug ) {
-            switch ( getDirection() ) {
-            case eAPD_Output:
-                direction = eAPD_Input;
-                break;
-            case eAPD_Input:
-                direction = eAPD_Output;
-                break;
-            default:
-                debugError( "Unhandled direction\n" );
-                return 0;
-            }
+        if ( getPlugAddressType() == eAPA_FunctionBlockPlug ) {
+            direction = getDirection();
+        } else if ( getPlugAddressType() == eAPA_SubunitPlug ) {
+            direction = toggleDirection( getDirection() );
         } else {
+            // unit
             direction = getDirection();
         }
 
         plugId = pSubunitPlugAddress->m_plugId;
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "'(%d) %s': Remote plug is a subunit plug "
+                     "(%d, %d, %s, %d)\n",
+                     getGlobalId(),
+                     getName(),
+                     subunitType,
+                     subunitId,
+                     avPlugDirectionToString( direction ),
+                     plugId );
     }
 
     if ( pFunctionBlockPlugAddress ) {
@@ -1263,25 +1296,29 @@ AvPlug::getPlugDefinedBySpecificData(
         functionBlockId = pFunctionBlockPlugAddress->m_functionBlockId;
         addressType = eAPA_FunctionBlockPlug;
 
-/*
-        if ( getPlugAddressType() != eAPA_FunctionBlockPlug ) {
-*/
-            switch ( getDirection() ) {
-            case eAPD_Output:
-                direction = eAPD_Input;
-                break;
-            case eAPD_Input:
-                direction = eAPD_Output;
-                break;
-            default:
-                debugError( "Unhandled direction\n" );
-                return 0;
-            }
-/*
+        if ( getPlugAddressType() == eAPA_FunctionBlockPlug ) {
+            direction = toggleDirection( getDirection() );
+        } else if ( getPlugAddressType() == eAPA_SubunitPlug ){
+            direction = getDirection();
+        } else {
+            debugError( "Function block has connection from/to unknown "
+                        "plug type\n" );
+            direction = eAPD_Unknown;
         }
-*/
 
         plugId = pFunctionBlockPlugAddress->m_plugId;
+
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "'(%d) %s': Remote plug is a functionblock plug "
+                     "(%d, %d, %d, %d, %s, %d)\n",
+                     getGlobalId(),
+                     getName(),
+                     subunitType,
+                     subunitId,
+                     functionBlockType,
+                     functionBlockId,
+                     avPlugDirectionToString( direction ),
+                     plugId );
     }
 
     AVCCommand::ESubunitType enumSubunitType =
@@ -1295,6 +1332,24 @@ AvPlug::getPlugDefinedBySpecificData(
         addressType,
         direction,
         plugId );
+}
+
+AvPlug::EAvPlugDirection
+AvPlug::toggleDirection( EAvPlugDirection direction ) const
+{
+    EAvPlugDirection newDirection;
+    switch ( direction ) {
+    case eAPD_Output:
+        newDirection = eAPD_Input;
+        break;
+    case eAPD_Input:
+        newDirection = eAPD_Output;
+        break;
+    default:
+        newDirection = direction;
+    }
+
+    return newDirection;
 }
 
 /////////////////////////////////////////
@@ -1435,15 +1490,14 @@ AvPlugManager::showPlugs() const
     printf( "Nr | AddressType     | Direction | SubUnitType | SubUnitId | FunctionBlockType | FunctionBlockId | Id   | Type         |Name\n" );
     printf( "---+-----------------+-----------+-------------+-----------+-------------------+-----------------+------+--------------+------\n" );
 
-    int i = 0;
     for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
-          ++it, ++i )
+          ++it )
     {
         AvPlug* plug = *it;
 
         printf( "%2d | %15s | %9s | %11s |      0x%02x |              0x%02x |            0x%02x | 0x%02x | %12s | %s\n",
-                i,
+                plug->getGlobalId(),
                 avPlugAddressTypeToString( plug->getPlugAddressType() ),
                 avPlugDirectionToString( plug->getDirection() ),
                 subunitTypeToString( plug->getSubunitType() ),
@@ -1480,42 +1534,41 @@ AvPlugManager::showPlugs() const
             addConnection( connections, *plug, *( *it ) );
         }
     }
+
     printf( "digraph avcconnections {\n" );
     for ( AvPlugConnectionOwnerVector::iterator it = connections.begin();
           it != connections.end();
           ++it )
     {
         AvPlugConnection& con = *it;
-        /*
-        printf( "\t\"%s\" -> \"%s\"\n",
-                con.getSrcPlug().getName(),
-                con.getDestPlug().getName() );
-        */
-
-        int srcIdx = getIndexForPlug(
-            con.getSrcPlug().getSubunitType(),
-            con.getSrcPlug().getSubunitId(),
-            con.getSrcPlug().getFunctionBlockType(),
-            con.getSrcPlug().getFunctionBlockId(),
-            con.getSrcPlug().getPlugAddressType(),
-            con.getSrcPlug().getDirection(),
-            con.getSrcPlug().getPlugId() );
-
-        int destIdx = getIndexForPlug(
-            con.getDestPlug().getSubunitType(),
-            con.getDestPlug().getSubunitId(),
-            con.getDestPlug().getFunctionBlockType(),
-            con.getDestPlug().getFunctionBlockId(),
-            con.getDestPlug().getPlugAddressType(),
-            con.getDestPlug().getDirection(),
-            con.getDestPlug().getPlugId() );
-
         printf( "\t\"(%d) %s\" -> \"(%d) %s\"\n",
-                srcIdx,
+                con.getSrcPlug().getGlobalId(),
                 con.getSrcPlug().getName(),
-                destIdx,
+                con.getDestPlug().getGlobalId(),
                 con.getDestPlug().getName() );
     }
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
+          it != m_plugs.end();
+          ++it )
+    {
+        AvPlug* plug = *it;
+        if ( plug->getFunctionBlockType() != 0xff ) {
+            if ( plug->getPlugDirection() == AvPlug::eAPD_Input ) {
+                printf( "\t\"(%d) %s\" -> \"(0x%02x,%d)\"\n",
+                        plug->getGlobalId(),
+                        plug->getName(),
+                        plug->getFunctionBlockType(),
+                        plug->getFunctionBlockId() );
+            } else {
+                printf( "\t\"(0x%02x,%d)\" -> \t\"(%d) %s\"\n",
+                        plug->getFunctionBlockType(),
+                        plug->getFunctionBlockId(),
+                        plug->getGlobalId(),
+                        plug->getName() );
+            }
+        }
+    }
+
     const char* colorStrings[] = {
         "coral",
         "slateblue",
@@ -1525,30 +1578,28 @@ AvPlugManager::showPlugs() const
         "grey",
     };
 
-    i = 0;
     for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
-          ++it, ++i)
+          ++it )
     {
         AvPlug* plug = *it;
         printf( "\t\"(%d) %s\" [color=%s,style=filled];\n",
-                i, plug->getName(),
+                plug->getGlobalId(), plug->getName(),
                 colorStrings[plug->getPlugAddressType() ] );
     }
 
-    printf( "}\n" );
+    printf("}\n" );
     printf( "Use \"dot -Tps FILENAME.dot -o FILENAME.ps\" "
             "to generate graph\n");
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Plug details\n" );
     debugOutput( DEBUG_LEVEL_VERBOSE, "------------\n" );
-    i = 0;
     for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
-          ++it, ++i )
+          ++it )
     {
         AvPlug* plug = *it;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Plug %d:\n", i );
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Plug %d:\n", plug->getGlobalId() );
         plug->showPlug();
 
     }
@@ -1634,39 +1685,6 @@ AvPlugManager::getPlugsByType( AVCCommand::ESubunitType subunitType,
 
     return plugVector;
 }
-
-int
-AvPlugManager::getIndexForPlug( AVCCommand::ESubunitType subunitType,
-                                subunit_id_t subunitId,
-                                function_block_type_t functionBlockType,
-                                function_block_id_t functionBlockId,
-                                AvPlug::EAvPlugAddressType plugAddressType,
-                                AvPlug::EAvPlugDirection plugDirection,
-                                plug_id_t plugId ) const
-{
-    int i = 0;
-    for ( AvPlugVector::const_iterator it = m_plugs.begin();
-          it !=  m_plugs.end();
-          ++it, ++i )
-    {
-        AvPlug* plug = *it;
-
-        if (    ( subunitType == plug->getSubunitType() )
-             && ( subunitId == plug->getSubunitId() )
-             && ( functionBlockType == plug->getFunctionBlockType() )
-             && ( functionBlockId == plug->getFunctionBlockId() )
-             && ( plugAddressType == plug->getPlugAddressType() )
-             && ( plugDirection == plug->getPlugDirection() )
-             && ( plugId == plug->getPlugId() ) )
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-
 
 ////////////////////////////////////
 
