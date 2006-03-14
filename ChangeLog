@@ -1,3 +1,15 @@
+2006-03-15  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 0.5.1
+	
+	* src/libfreebobavc/avc_extended_plug_info.cpp (fire): 
+	  Handle NOT_IMPLEMENTED.
+	
+	* src/avplug.h: Input and output plug discovering part
+	fixed. Now connection are correctly handled.
+	* src/avplug.cpp: Likewise.
+	* src/avdevicesubunit.cpp: Likewise.
+
 2006-03-12  Daniel Wagner  <wagi@monom.org>
 
 	* src/libfreebobavc/ieee1394service.cpp (transactionBlock): Set retry

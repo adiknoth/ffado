@@ -891,12 +891,8 @@ ExtendedPlugInfoCmd::fire()
         switch ( getResponse() )
         {
         case eR_Implemented:
-        {
-            BufferDeserialize de( resp->byte, sizeof( req ) );
-            result = deserialize( de );
-        }
-        break;
         case eR_Rejected:
+        case eR_NotImplemented:
         {
             BufferDeserialize de( resp->byte, sizeof( req ) );
             result = deserialize( de );

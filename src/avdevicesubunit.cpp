@@ -86,8 +86,8 @@ AvDeviceSubunit::discoverPlugs()
     debugOutput( DEBUG_LEVEL_NORMAL, "number of destination output "
                  "plugs = %d\n", plugInfoCmd.m_destinationPlugs );
 
-    if ( !discoverPlugs(  AvPlug::eAPD_Input,
-                          plugInfoCmd.m_destinationPlugs ) )
+    if ( !discoverPlugs( AvPlug::eAPD_Input,
+                         plugInfoCmd.m_destinationPlugs ) )
     {
         debugError( "destination plug discovering failed\n" );
         return false;
