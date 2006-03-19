@@ -1,8 +1,0 @@
-.cvsignore
-Makefile
-Makefile.in
-.deps
-.libs
-*.lo
-*.la
-test_debugmodule
