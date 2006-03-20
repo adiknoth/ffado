@@ -1,3 +1,11 @@
+2006-03-20  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 0.5.2
+
+	* src/avplug.cpp (discoverStreamFormat): If no stream format information
+	is available or format hierarchy root is not Audio&Music skip plug. 
+	(discoverSupportedStreamFormats): Added 'support' for IEC60968-3 (SPDIF transparent)
+
 2006-03-15  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bump to 0.5.1

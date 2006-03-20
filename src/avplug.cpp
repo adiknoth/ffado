@@ -505,6 +505,18 @@ AvPlug::discoverStreamFormat()
         return true;
     }
 
+    if ( !extStreamFormatCmd.getFormatInformation() ) {
+        debugWarning( "No stream format information for plug found -> skip\n" );
+        return true;
+    }
+
+    if ( extStreamFormatCmd.getFormatInformation()->m_root
+           != FormatInformation::eFHR_AudioMusic  )
+    {
+        debugWarning( "Format hierarchy root is not Audio&Music -> skip\n" );
+        return true;
+    }
+
     FormatInformation* formatInfo =
         extStreamFormatCmd.getFormatInformation();
     FormatInformationStreamsCompound* compoundStream
@@ -616,6 +628,7 @@ AvPlug::discoverSupportedStreamFormats()
         {
             FormatInfo formatInfo;
             formatInfo.m_index = i;
+            bool formatInfoIsValid = true;
 
             FormatInformationStreamsSync* syncStream
                 = dynamic_cast< FormatInformationStreamsSync* >
@@ -638,6 +651,10 @@ AvPlug::discoverSupportedStreamFormats()
                       ++j )
                 {
                     switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
+                    case AVC1394_STREAM_FORMAT_AM824_IEC60968_3:
+                        formatInfo.m_audioChannels +=
+                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                        break;
                     case AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW:
                         formatInfo.m_audioChannels +=
                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
@@ -647,30 +664,35 @@ AvPlug::discoverSupportedStreamFormats()
                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
                         break;
                     default:
-                        debugWarning("unknown stream format for channel "
-                                      "(%d)\n", j );
+                        formatInfoIsValid = false;
+                        debugWarning("unknown stream format (0x%02x) for channel "
+                                      "(%d)\n",
+                                     compoundStream->m_streamFormatInfos[j]->m_streamFormat,
+                                     j );
                     }
                 }
             }
 
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "[%s:%d] formatInfo[%d].m_samplingFrequency = %d\n",
-                         getName(), m_id,
-                         i, formatInfo.m_samplingFrequency );
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "[%s:%d] formatInfo[%d].m_isSyncStream = %d\n",
-                         getName(), m_id,
-                         i, formatInfo.m_isSyncStream );
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "[%s:%d] formatInfo[%d].m_audioChannels = %d\n",
-                         getName(), m_id,
-                         i, formatInfo.m_audioChannels );
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "[%s:%d] formatInfo[%d].m_midiChannels = %d\n",
-                         getName(), m_id,
-                         i, formatInfo.m_midiChannels );
-
-            m_formatInfos.push_back( formatInfo );
+            if ( formatInfoIsValid ) {
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_samplingFrequency "
+                             "= %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_samplingFrequency );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_isSyncStream = %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_isSyncStream );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_audioChannels = %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_audioChannels );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_midiChannels = %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_midiChannels );
+                m_formatInfos.push_back( formatInfo );
+            }
         }
 
         ++i;
