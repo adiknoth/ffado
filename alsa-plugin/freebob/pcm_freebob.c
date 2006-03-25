@@ -33,7 +33,9 @@
 #include <libfreebob/freebob.h>
 #include <libfreebob/freebob_streaming.h>
 
-#define FREEBOB_PLUGIN_VERSION "0.0.2"
+#include <pthread.h>
+
+#define FREEBOB_PLUGIN_VERSION "0.0.3"
 
 #define PRINT_FUNCTION_ENTRY (printf("entering %s\n",__FUNCTION__))
 
@@ -57,6 +59,8 @@ typedef struct {
 	
 	snd_pcm_stream_t stream;
 
+	// thread for polling
+	pthread_t thread;
 
 } snd_pcm_freebob_t;
 
@@ -78,17 +82,10 @@ static snd_pcm_sframes_t snd_pcm_freebob_write(snd_pcm_ioplug_t *io,
 
 	int sampleswritten;
 
-	retval = freebob_streaming_wait(freebob->streaming_device);
-	if (retval < 0) {
-		fprintf(stderr,"Xrun\n");
-		freebob_streaming_reset(freebob->streaming_device);
-		return 0;
-	}
-
 	freebob_streaming_transfer_playback_buffers(freebob->streaming_device);
 
 	for(i=0;i<freebob->channels;i++) {
-		freebob_sample_t *buff=(freebob_sample_t *)((char *)areas->addr + (areas->first + areas->step * offset) / 8);
+		freebob_sample_t *buff=(freebob_sample_t *)((char *)areas[i].addr + (areas[i].step * offset / 8));
 		sampleswritten=freebob_streaming_write(freebob->streaming_device, i, buff, freebob->dev_options.period_size);
 	}
 
@@ -111,19 +108,91 @@ static int snd_pcm_freebob_hw_params(snd_pcm_ioplug_t *io, snd_pcm_hw_params_t *
 	if (freebob->stream == SND_PCM_STREAM_PLAYBACK) {
 		//fixme: assumes that the audio streams are always the first streams
 		for (i=0;i<freebob_streaming_get_nb_playback_streams(freebob->streaming_device);i++) {
-			if(freebob_streaming_get_playback_stream_type(freebob->streaming_device,i)) {
+			if(freebob_streaming_get_playback_stream_type(freebob->streaming_device,i)==freebob_stream_type_audio) {
 				freebob->channels++;
 			}
 		}
 		for (i=0;i<freebob->channels;i++) {
 			// setup buffers, currently left at default
+
 		}
 	} else {
 		//TODO: implement capture
 	}
 
-	freebob_streaming_start(freebob->streaming_device);
+	return 0;
+}
 
+static int
+snd_pcm_freebob_pollfunction(snd_pcm_freebob_t *freebob)
+{
+
+ 	PRINT_FUNCTION_ENTRY;
+	int retval;
+	static char buf[1];
+	snd_pcm_ioplug_t *io=&freebob->io;
+	const snd_pcm_channel_area_t *areas;
+	snd_pcm_uframes_t xfer = 0;
+	int i;
+
+	assert(freebob);
+	assert(freebob->streaming_device);
+
+	retval = freebob_streaming_wait(freebob->streaming_device);
+	if (retval < 0) {
+		printf("Xrun\n");
+		freebob_streaming_reset(freebob->streaming_device);
+		return 0;
+	}
+
+
+	areas = snd_pcm_ioplug_mmap_areas(io);
+
+	snd_pcm_uframes_t offset = freebob->hw_ptr;
+
+	for (i=0;i<freebob->channels;i++) {
+		freebob_sample_t *buff=(freebob_sample_t *)((char *)areas[i].addr + (areas[i].step * offset / 8));
+// 		printf("%d: %p %d %d %p\n",i, areas[i].addr, offset, areas[i].step, buff);
+		freebob_streaming_set_playback_stream_buffer(freebob->streaming_device, i, (char *)buff, freebob_buffer_type_uint24);
+	}
+
+	freebob_streaming_transfer_playback_buffers(freebob->streaming_device);
+
+	freebob->hw_ptr += freebob->dev_options.period_size;
+	freebob->hw_ptr %= io->buffer_size;
+
+	write(freebob->fd, buf, 1); /* for polling */
+
+	return 0;
+}
+
+static void * freebob_workthread(void *arg)
+{
+	PRINT_FUNCTION_ENTRY;
+	snd_pcm_freebob_t *freebob = (snd_pcm_freebob_t *)arg;
+
+	int oldstate;
+
+	pthread_setcancelstate (PTHREAD_CANCEL_DEFERRED, &oldstate);
+
+	while (1) {
+		snd_pcm_freebob_pollfunction(freebob);
+		pthread_testcancel();
+	}
+
+}
+
+static int snd_pcm_freebob_poll_revents(snd_pcm_ioplug_t *io,
+				     struct pollfd *pfds, unsigned int nfds,
+				     unsigned short *revents)
+{
+	static char buf[1];
+	
+	assert(pfds && nfds == 1 && revents);
+
+	read(pfds[0].fd, buf, 1);
+
+	*revents = pfds[0].revents;
 	return 0;
 }
 
@@ -163,18 +232,40 @@ static snd_pcm_sframes_t snd_pcm_freebob_pointer(snd_pcm_ioplug_t *io)
 
 static int snd_pcm_freebob_start(snd_pcm_ioplug_t *io)
 {
+	int result = 0;
+	snd_pcm_freebob_t *freebob = io->private_data;
+
 	PRINT_FUNCTION_ENTRY;
 
-	snd_pcm_freebob_t *freebob = io->private_data;
+	result = pthread_create (&freebob->thread, 0, freebob_workthread, freebob);
+	if(result) return result;
+
 	return freebob_streaming_start(freebob->streaming_device);
 }
 
 static int snd_pcm_freebob_stop(snd_pcm_ioplug_t *io)
 {
-	PRINT_FUNCTION_ENTRY;
 	snd_pcm_freebob_t *freebob = io->private_data;
 
+	PRINT_FUNCTION_ENTRY;
+
+	if(pthread_cancel(freebob->thread)) {
+		fprintf(stderr,"could not cancel thread!\n");
+	}
+
+	if(pthread_join(freebob->thread,NULL)) {
+		fprintf(stderr,"could not join thread!\n");
+	}
+
 	return freebob_streaming_stop(freebob->streaming_device);
+}
+
+static int snd_pcm_freebob_prepare(snd_pcm_ioplug_t *io)
+{
+	snd_pcm_freebob_t *freebob = io->private_data;
+	PRINT_FUNCTION_ENTRY;
+
+	return 0;
 }
 
 static snd_pcm_ioplug_callback_t freebob_pcm_callback = {
@@ -182,20 +273,29 @@ static snd_pcm_ioplug_callback_t freebob_pcm_callback = {
 	.start = snd_pcm_freebob_start,
 	.stop = snd_pcm_freebob_stop,
 	.pointer = snd_pcm_freebob_pointer,
-	.transfer = snd_pcm_freebob_write,
+// 	.transfer = snd_pcm_freebob_write,
 	.hw_params = snd_pcm_freebob_hw_params,
-// 	.prepare = snd_pcm_freebob_prepare,
-//	.poll_revents = snd_pcm_freebob_poll_revents,
+ 	.prepare = snd_pcm_freebob_prepare,
+	.poll_revents = snd_pcm_freebob_poll_revents,
 };
-
+/*
+static snd_pcm_ioplug_callback_t jack_pcm_callback = {
+	.close = snd_pcm_jack_close,
+	.start = snd_pcm_jack_start,
+	.stop = snd_pcm_jack_stop,
+	.pointer = snd_pcm_jack_pointer,
+	.prepare = snd_pcm_jack_prepare,
+	.poll_revents = snd_pcm_jack_poll_revents,
+};
+*/
 #define ARRAY_SIZE(ary)	(sizeof(ary)/sizeof(ary[0]))
 
 static int freebob_set_hw_constraint(snd_pcm_freebob_t *freebob)
 {
 	PRINT_FUNCTION_ENTRY;
 	unsigned int access_list[] = {
-		SND_PCM_ACCESS_MMAP_NONINTERLEAVED,
-//		SND_PCM_ACCESS_RW_NONINTERLEAVED
+ 		SND_PCM_ACCESS_MMAP_NONINTERLEAVED,
+		SND_PCM_ACCESS_RW_NONINTERLEAVED,
 	};
 /*
 	unsigned int rate_list[] = {
@@ -248,6 +348,10 @@ static int freebob_set_hw_constraint(snd_pcm_freebob_t *freebob)
 		}
 	}
 
+	SNDERR("minchannels: %d \n",min_channels);
+	SNDERR("maxchannels: %d \n",max_channels);
+
+
 	freebob_free_supported_stream_format_info( stream_info );
 
 	freebob->sample_bits = snd_pcm_format_physical_width(format);
@@ -259,9 +363,9 @@ static int freebob_set_hw_constraint(snd_pcm_freebob_t *freebob)
 	    (err = snd_pcm_ioplug_set_param_list(&freebob->io, SND_PCM_IOPLUG_HW_FORMAT,
 						 1, &format)) < 0 ||
 	    (err = snd_pcm_ioplug_set_param_minmax(&freebob->io, SND_PCM_IOPLUG_HW_CHANNELS,
-						   min_channels, max_channels)) < 0 ||
+						   max_channels, max_channels)) < 0 ||
 	    (err = snd_pcm_ioplug_set_param_minmax(&freebob->io, SND_PCM_IOPLUG_HW_PERIOD_BYTES,
-						   64, 64*1024)) < 0 ||
+						   512*8, 512*8)) < 0 ||
 	    (err = snd_pcm_ioplug_set_param_minmax(&freebob->io, SND_PCM_IOPLUG_HW_PERIODS,
 						   3, 64)) < 0)
 		return err;
@@ -303,13 +407,22 @@ static int snd_pcm_freebob_open(snd_pcm_t **pcmp, const char *name,
 	    return -ENOMEM;
 	}
 		
-	if ( freebob_discover_devices( freebob->fb_handle, 1 ) != 0 ) {
+ 	if ( freebob_discover_devices( freebob->fb_handle, 0 ) != 0 ) {
+// 	if ( freebob_discover_devices( freebob->fb_handle ) != 0 ) {
 	    SNDERR("Could not discover devices\n" );
 	    freebob_destroy_handle( freebob->fb_handle );
 	    return -EINVAL;
 	}
 
 	freebob_device_info_t device_info;
+
+	freebob->dev_options.directions=0;
+
+	if(stream == SND_PCM_STREAM_PLAYBACK) {
+		freebob->dev_options.directions |= FREEBOB_IGNORE_CAPTURE;
+	} else {
+		freebob->dev_options.directions |= FREEBOB_IGNORE_PLAYBACK;
+	}
 
 	freebob->streaming_device=freebob_streaming_init(&device_info,freebob->dev_options);
 
@@ -343,7 +456,7 @@ static int snd_pcm_freebob_open(snd_pcm_t **pcmp, const char *name,
 	freebob->io.name = "FreeBob PCM Plugin";
 	freebob->io.callback = &freebob_pcm_callback;
 	freebob->io.private_data = freebob;
-	freebob->io.mmap_rw = 0;
+	freebob->io.mmap_rw = 1;
 	freebob->io.poll_fd = freebob->fd;
 	freebob->io.poll_events = stream == SND_PCM_STREAM_PLAYBACK ? POLLOUT : POLLIN;
 
@@ -420,7 +533,8 @@ SND_PCM_PLUGIN_DEFINE_FUNC(freebob)
 			dev_options.node_id=tmp_int;
 			continue;
 		}
-/*		if (strcmp(id, "playback_ports") == 0) {
+/*
+		if (strcmp(id, "playback_ports") == 0) {
 			if (snd_config_get_type(n) != SND_CONFIG_TYPE_COMPOUND) {
 				SNDERR("Invalid type for %s", id);
 				return -EINVAL;
