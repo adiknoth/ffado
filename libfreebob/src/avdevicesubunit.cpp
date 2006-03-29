@@ -34,13 +34,13 @@ IMPL_DEBUG_MODULE( AvDeviceSubunit, AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
 AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
                                   AVCCommand::ESubunitType type,
                                   subunit_t id,
-                                  bool verbose)
+                                  int verboseLevel )
     : m_avDevice( &avDevice )
     , m_sbType( type )
     , m_sbId( id )
-    , m_verbose( verbose )
+    , m_verboseLevel( verboseLevel )
 {
-    if ( m_verbose ) {
+    if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
 }
@@ -75,6 +75,7 @@ AvDeviceSubunit::discoverPlugs()
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     plugInfoCmd.setSubunitType( m_sbType );
     plugInfoCmd.setSubunitId( m_sbId );
+    plugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !plugInfoCmd.fire() ) {
         debugError( "plug info command failed\n" );
@@ -141,7 +142,7 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                                    AvPlug::eAPA_SubunitPlug,
                                    plugDirection,
                                    plugIdx,
-                                   m_verbose );
+                                   m_verboseLevel );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discover failed\n" );
             return false;
@@ -183,8 +184,8 @@ AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
 
 AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice,
                                             subunit_t id,
-                                            bool verbose )
-    : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id, verbose )
+                                            int verboseLevel )
+    : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id, verboseLevel )
 {
 }
 
@@ -278,6 +279,7 @@ AvDeviceSubunitAudio::discoverFunctionBlocksDo(
     extSubunitInfoCmd.setCommandType( AVCCommand::eCT_Status );
     extSubunitInfoCmd.setSubunitId( getSubunitId() );
     extSubunitInfoCmd.setSubunitType( getSubunitType() );
+    extSubunitInfoCmd.setVerbose( m_verboseLevel );
 
     extSubunitInfoCmd.m_fbType = fbType;
 
@@ -325,7 +327,7 @@ AvDeviceSubunitAudio::createFunctionBlock(
                                         purpose,
                                         data.m_noOfInputPlugs,
                                         data.m_noOfOutputPlugs,
-                                        m_verbose );
+                                        m_verboseLevel );
     }
     break;
     case ExtendedSubunitInfoCmd::eFBT_AudioSubunitFeature:
@@ -335,7 +337,7 @@ AvDeviceSubunitAudio::createFunctionBlock(
                                        purpose,
                                        data.m_noOfInputPlugs,
                                        data.m_noOfOutputPlugs,
-                                       m_verbose );
+                                       m_verboseLevel );
     }
     break;
     case ExtendedSubunitInfoCmd::eFBT_AudioSubunitProcessing:
@@ -348,7 +350,7 @@ AvDeviceSubunitAudio::createFunctionBlock(
                                                  purpose,
                                                  data.m_noOfInputPlugs,
                                                  data.m_noOfOutputPlugs,
-                                                 m_verbose );
+                                                 m_verboseLevel );
         }
         break;
         case ExtendedSubunitInfoCmd::ePT_Mixer:
@@ -365,7 +367,7 @@ AvDeviceSubunitAudio::createFunctionBlock(
                                               purpose,
                                               data.m_noOfInputPlugs,
                                               data.m_noOfOutputPlugs,
-                                              m_verbose );
+                                              m_verboseLevel );
             debugWarning( "Dummy function block processing created. "
                           "Implementation is missing\n" );
         }
@@ -378,7 +380,7 @@ AvDeviceSubunitAudio::createFunctionBlock(
                                      purpose,
                                      data.m_noOfInputPlugs,
                                      data.m_noOfOutputPlugs,
-                                     m_verbose );
+                                     m_verboseLevel );
         debugWarning( "Dummy function block codec created. "
                       "Implementation is missing\n" );
     }
@@ -426,8 +428,8 @@ AvDeviceSubunitAudio::convertSpecialPurpose(
 
 AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice,
                                             subunit_t id,
-                                            bool verbose )
-    : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id, verbose )
+                                            int verboseLevel )
+    : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id, verboseLevel )
 {
 }
 

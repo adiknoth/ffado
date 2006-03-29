@@ -29,6 +29,8 @@
 #include "devicemanager.h"
 #include "avdevice.h"
 
+#include "libfreebobavc/avc_generic.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -331,4 +333,9 @@ freebob_print_xml_description( freebob_handle_t freebob_handle,
 	xmlFree(xmlbuff);
 	xmlFree(doc);
     return;
+}
+
+void freebob_sleep_after_avc_command( int time )
+{
+    AVCCommand::setSleepAfterAVCCommand( time );
 }

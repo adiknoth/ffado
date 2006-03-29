@@ -39,7 +39,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 EAvPlugAddressType plugAddressType,
                 EAvPlugDirection plugDirection,
                 plug_id_t plugId,
-                bool verbose )
+                int verboseLevel )
     : m_1394Service( &ieee1394Service )
     , m_nodeId( nodeId )
     , m_subunitType( subunitType )
@@ -52,10 +52,10 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
     , m_infoPlugType( eAPT_Unknown )
     , m_nrOfChannels( 0 )
     , m_plugManager( &plugManager )
-    , m_verbose( verbose )
+    , m_verboseLevel( verboseLevel )
     , m_globalId( m_globalIdCounter++ )
 {
-    if ( m_verbose ) {
+    if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
     debugOutput( DEBUG_LEVEL_VERBOSE,
@@ -89,9 +89,9 @@ AvPlug::AvPlug( const AvPlug& rhs )
     , m_clusterInfos( rhs.m_clusterInfos )
     , m_formatInfos( rhs.m_formatInfos )
     , m_plugManager( rhs.m_plugManager )
-    , m_verbose( rhs.m_verbose )
+    , m_verboseLevel( rhs.m_verboseLevel )
 {
-    if ( m_verbose ) {
+    if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
 }
@@ -172,6 +172,7 @@ AvPlug::inquireConnnection( AvPlug& plug )
 {
     SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
     setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
+    signalSourceCmd.setVerbose( m_verboseLevel );
 
     if ( !signalSourceCmd.fire() ) {
         debugError( "Could not inquire connection between '%s' and '%s'\n",
@@ -225,6 +226,7 @@ AvPlug::discoverPlugType()
         ExtendedPlugInfoInfoType::eIT_PlugType );
     extendedPlugInfoInfoType.initialize();
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    extPlugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "plug type command failed\n" );
@@ -286,6 +288,7 @@ AvPlug::discoverName()
         ExtendedPlugInfoInfoType::eIT_PlugName );
     extendedPlugInfoInfoType.initialize();
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    extPlugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "name command failed\n" );
@@ -318,6 +321,7 @@ AvPlug::discoverNoOfChannels()
         ExtendedPlugInfoInfoType::eIT_NoOfChannels );
     extendedPlugInfoInfoType.initialize();
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    extPlugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "number of channels command failed\n" );
@@ -349,6 +353,7 @@ AvPlug::discoverChannelPosition()
         ExtendedPlugInfoInfoType::eIT_ChannelPosition );
     extendedPlugInfoInfoType.initialize();
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    extPlugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "channel position command failed\n" );
@@ -396,6 +401,7 @@ AvPlug::discoverChannelName()
                 ExtendedPlugInfoInfoType::eIT_ChannelName );
             extendedPlugInfoInfoType.initialize();
             extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+            extPlugInfoCmd.setVerbose( m_verboseLevel );
 
             ExtendedPlugInfoInfoType* infoType =
                 extPlugInfoCmd.getInfoType();
@@ -455,6 +461,7 @@ AvPlug::discoverClusterInfo()
             ExtendedPlugInfoInfoType::eIT_ClusterInfo );
         extendedPlugInfoInfoType.initialize();
         extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+        extPlugInfoCmd.setVerbose( m_verboseLevel );
 
         extPlugInfoCmd.getInfoType()->m_plugClusterInfo->m_clusterIndex =
             clusterInfo->m_index;
@@ -491,6 +498,7 @@ AvPlug::discoverStreamFormat()
 {
     ExtendedStreamFormatCmd extStreamFormatCmd =
         setPlugAddrToStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+    extStreamFormatCmd.setVerbose( m_verboseLevel );
 
     if ( !extStreamFormatCmd.fire() ) {
         debugError( "stream format command failed\n" );
@@ -614,6 +622,7 @@ AvPlug::discoverSupportedStreamFormats()
     ExtendedStreamFormatCmd extStreamFormatCmd =
         setPlugAddrToStreamFormatCmd(
             ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList);
+    extStreamFormatCmd.setVerbose( m_verboseLevel );
 
     int i = 0;
     bool cmdSuccess = false;
@@ -711,6 +720,7 @@ AvPlug::discoverConnectionsInput()
         ExtendedPlugInfoInfoType::eIT_PlugInput );
     extendedPlugInfoInfoType.initialize();
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    extPlugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "plug type command failed\n" );
@@ -762,6 +772,7 @@ AvPlug::discoverConnectionsOutput()
         ExtendedPlugInfoInfoType::eIT_PlugOutput );
     extendedPlugInfoInfoType.initialize();
     extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    extPlugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "plug type command failed\n" );
@@ -1438,18 +1449,18 @@ const char* avPlugDirectionToString( AvPlug::EAvPlugDirection type )
 /////////////////////////////////////
 
 
-AvPlugManager::AvPlugManager( bool verbose )
-    : m_verbose( verbose )
+AvPlugManager::AvPlugManager( int verboseLevel )
+    : m_verboseLevel( verboseLevel )
 {
-    if ( m_verbose ) {
+    if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
 }
 
 AvPlugManager::AvPlugManager( const AvPlugManager& rhs )
-    : m_verbose( rhs.m_verbose )
+    : m_verboseLevel( rhs.m_verboseLevel )
 {
-    if ( m_verbose ) {
+    if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
 }

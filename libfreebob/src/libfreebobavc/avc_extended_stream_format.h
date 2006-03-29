@@ -268,11 +268,12 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire();
-
     EStatus getStatus();
     FormatInformation* getFormatInformation();
     index_in_stream_format_t getIndex();
+
+    virtual const char* getCmdName() const
+	{ return "ExtendedStreamFormatCmd"; }
 
 protected:
     subfunction_t            m_subFunction;

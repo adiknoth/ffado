@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 		fid_in[i]=fopen(name,"w");
 
 		freebob_streaming_get_capture_stream_name(dev,i,name,sizeof(name));
-		fprintf(fid_in[i], "Channel name: %s\n");
+		fprintf(fid_in[i], "Channel name: %s\n",name);
 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
 		case freebob_stream_type_audio:
 			fprintf(fid_in[i], "Channel type: audio\n");

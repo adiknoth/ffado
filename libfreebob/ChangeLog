@@ -1,3 +1,23 @@
+2006-03-30  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 0.6.0
+
+	* src/*: Verbose bool turned int verbose level.
+	
+	* src/libfreebobavc/*: Moved fire implementation to 
+	base class (AVCCommand). 
+	
+	* libfreebob/freebob.h: freebob_sleep_after_avc_command
+	workaround added.
+
+	* tests/test-freebob.c: Verbose bool turned into verbose level.
+	Workaround: sleep after avc command added.
+
+	* tests/streaming/Makefile.am (*_SOURCES): Added libavc1394 to LDADD.
+	* tests/Makefile.am (*_SOURCES): Likewise.
+	
+	* tests/streaming/teststreaming2.c (fid_in): compiler warning fixed.
+
 2006-03-20  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bump to 0.5.2

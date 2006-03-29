@@ -42,14 +42,14 @@ IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 AvDevice::AvDevice( Ieee1394Service* ieee1394service,
                     ConfigRom* configRom,
                     int nodeId,
-                    bool verbose )
+                    int verboseLevel )
     :  m_1394Service( ieee1394service )
     , m_configRom( configRom )
     , m_nodeId( nodeId )
-    , m_verbose( verbose )
-    , m_plugManager( verbose )
+    , m_verboseLevel( verboseLevel )
+    , m_plugManager( verboseLevel )
 {
-    if ( m_verbose ) {
+    if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Found AvDevice (NodeID %d)\n",
@@ -126,6 +126,7 @@ AvDevice::discoverPlugs()
     PlugInfoCmd plugInfoCmd( m_1394Service );
     plugInfoCmd.setNodeId( m_nodeId );
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    plugInfoCmd.setVerbose( m_verboseLevel );
 
     if ( !plugInfoCmd.fire() ) {
         debugError( "plug info command failed\n" );
@@ -190,7 +191,7 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
                                     AvPlug::eAPA_PCR,
                                     plugDirection,
                                     plugId,
-                                    m_verbose );
+                                    m_verboseLevel );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             delete plug;
@@ -223,7 +224,7 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
                                     AvPlug::eAPA_ExternalPlug,
                                     plugDirection,
                                     plugId,
-                                    m_verbose );
+                                    m_verboseLevel );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             return false;
@@ -433,6 +434,7 @@ AvDevice::enumerateSubUnits()
 
     subUnitInfoCmd.m_page = 0;
     subUnitInfoCmd.setNodeId( m_nodeId );
+    subUnitInfoCmd.setVerbose( m_verboseLevel );
     if ( !subUnitInfoCmd.fire() ) {
         debugError( "Subunit info command failed\n" );
     }
@@ -452,14 +454,16 @@ AvDevice::enumerateSubUnits()
         AvDeviceSubunit* subunit = 0;
         switch( subunit_type ) {
         case AVCCommand::eST_Audio:
-            subunit = new AvDeviceSubunitAudio( *this, subunitId, m_verbose );
+            subunit = new AvDeviceSubunitAudio( *this, subunitId,
+                                                m_verboseLevel );
             if ( !subunit ) {
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
                 return false;
             }
             break;
         case AVCCommand::eST_Music:
-            subunit = new AvDeviceSubunitMusic( *this, subunitId, m_verbose );
+            subunit = new AvDeviceSubunitMusic( *this, subunitId,
+                                                m_verboseLevel );
             if ( !subunit ) {
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
                 return false;
@@ -685,6 +689,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
     do {
         extStreamFormatCmd.setIndexInStreamFormat( i );
         extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+        extStreamFormatCmd.setVerbose( m_verboseLevel );
 
         cmdSuccess = extStreamFormatCmd.fire();
         if ( cmdSuccess
@@ -741,6 +746,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
     extStreamFormatCmd.setSubFunction(
         ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Control );
+    extStreamFormatCmd.setVerbose( m_verboseLevel );
 
     if ( !extStreamFormatCmd.fire() ) {
         debugError( "setSampleRate: Could not set sample rate %d "

@@ -31,6 +31,9 @@ class IOSSerialize;
 class IISDeserialize;
 class Ieee1394Service;
 
+const int fcpFrameMaxLength = 512;
+typedef unsigned char fcp_frame_t[fcpFrameMaxLength];
+
 class IBusData {
 public:
     IBusData() {}
@@ -88,7 +91,7 @@ public:
     virtual bool deserialize( IISDeserialize& de );
 
     virtual bool setCommandType( ECommandType commandType );
-    virtual bool fire() = 0;
+    virtual bool fire();
 
     EResponse getResponse();
 
@@ -99,27 +102,36 @@ public:
     ESubunitType getSubunitType();
     subunit_id_t getSubunitId();
 
-    bool setVerbose( bool enable );
-    bool isVerbose();
+    bool setVerbose( int verboseLevel );
+    int getVerboseLevel();
 
+    virtual const char* getCmdName() const = 0;
+
+    // workaround
+    static void setSleepAfterAVCCommand( int time );
+protected:
+    void showFcpFrame( const unsigned char* buf,
+		       unsigned short frameSize ) const;
 
 protected:
     AVCCommand( Ieee1394Service* ieee1394service, opcode_t opcode );
     virtual ~AVCCommand() {}
 
-    bool parseResponse( byte_t response );
     ECommandType getCommandType();
 
     Ieee1394Service* m_1394Service;
     fb_nodeid_t      m_nodeId;
+
+    fcp_frame_t      m_fcpFrame;
 
 private:
     ctype_t      m_ctype;
     subunit_t    m_subunit;
     opcode_t     m_opcode;
     EResponse    m_eResponse;
-    bool         m_verbose;
+    int          m_verboseLevel;
     ECommandType m_commandType;
+    static int   m_time;
 };
 
 

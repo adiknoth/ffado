@@ -83,8 +83,7 @@ public:
                                     fb_quadlet_t* buf,
                                     int len );
 
-
-    
+    bool transactionBlockClose();
     
 private:
     raw1394handle_t m_handle;
