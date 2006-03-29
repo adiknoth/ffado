@@ -37,7 +37,8 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire();
+    virtual const char* getCmdName() const
+	{ return "SubUnitInfoCmd"; }
 
     bool clear();
 

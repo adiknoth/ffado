@@ -49,16 +49,21 @@ struct arguments
     int   port;
     int   node_id;
     int   node_id_set;
+    int   time;
     char* args[2];  
 };
 
 // The options we understand.
 static struct argp_option options[] = {
-    {"verbose",  'v',    0,    0,  "Produce verbose output" },
-    {"quiet",    'q',    0,    0,  "Don't produce any output" },
-    {"silent",   's',    0,    OPTION_ALIAS },
-    {"node",     'n', "id",    0,  "Node to use" },
-    {"port",     'p', "nr",    0,  "IEEE1394 Port to use" },
+    {"quiet",    'q',       0,    0,  "Don't produce any output" },
+    {"silent",   's',       0,    OPTION_ALIAS },
+
+    {"verbose",  'v', "level",    0,  "Produce verbose output" },
+
+
+    {"node",     'n',    "id",    0,  "Node to use" },
+    {"port",     'p',    "nr",    0,  "IEEE1394 Port to use" },
+    {"time",     't',    "time",  0,  "Workaround: sleep <time> usec after AVC command\n" },
     { 0 }
 };
 
@@ -78,7 +83,22 @@ parse_opt( int key, char* arg, struct argp_state* state )
 	    arguments->silent = 1;
 	    break;
 	case 'v':
-	    arguments->verbose = 1;
+	    if (arg) {
+		arguments->verbose = strtol( arg, &tail, 0 );
+		if ( errno ) {
+		    fprintf( stderr,  "Could not parse 'verbose' argument\n" );
+		    return ARGP_ERR_UNKNOWN;
+		}
+	    }
+	    break;
+	case 't':
+	    if (arg) {
+		arguments->time = strtol( arg, &tail, 0 );
+		if ( errno ) {
+		    fprintf( stderr,  "Could not parse 'time' argument\n" );
+		    return ARGP_ERR_UNKNOWN;
+		}
+	    }
 	    break;
 	case 'p':
 	    if (arg) {
@@ -142,6 +162,7 @@ main( int argc, char **argv )
     arguments.port        = 0;
     arguments.node_id     = 0;
     arguments.node_id_set = 0; // if we don't specify a node, discover all
+    arguments.time        = 0;
     arguments.args[0]     = "";
     arguments.args[1]     = "";
 
@@ -152,7 +173,11 @@ main( int argc, char **argv )
         return -1;
     }
 
+    printf("verbose level = %d\n", arguments.verbose);
+
     printf( "Using freebob library version: %s\n\n", freebob_get_version() );
+
+    freebob_sleep_after_avc_command( arguments.time );
 
     if ( strcmp( arguments.args[0], "discover" ) == 0 ) {
 	freebob_handle_t fb_handle = freebob_new_handle( arguments.port );

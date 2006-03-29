@@ -22,6 +22,7 @@
 #include <libavc1394/avc1394.h>
 
 #include <errno.h>
+#include <netinet/in.h>
 
 #include <iostream>
 
@@ -84,5 +85,24 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    fb_quadlet_t* buf,
                                    int len )
 {
-    return avc1394_transaction_block( m_handle, nodeId, buf, len,  10 );
+    for (int i = 0; i < len; ++i) {
+        buf[i] = ntohl( buf[i] );
+    }
+
+    fb_quadlet_t* result =
+        avc1394_transaction_block( m_handle, nodeId, buf, len,  10 );
+
+    for ( int i = 0; i < 512/4; ++i ) { //XXX
+        result[i] = htonl( result[i] );
+    }
+
+    return result;
+}
+
+
+bool
+Ieee1394Service::transactionBlockClose()
+{
+    avc1394_transaction_block_close( m_handle );
+    return true;
 }

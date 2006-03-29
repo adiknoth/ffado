@@ -260,7 +260,6 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual ExtendedPlugInfoInfoType* clone() const;
 
-    typedef byte_t info_type_t;
     info_type_t m_infoType;
 
     ExtendedPlugInfoPlugTypeSpecificData*               m_plugType;
@@ -272,6 +271,8 @@ public:
     ExtendedPlugInfoPlugOutputSpecificData*             m_plugOutput;
     ExtendedPlugInfoClusterInfoSpecificData*            m_plugClusterInfo;
 };
+
+const char* extendedPlugInfoInfoTypeToString( info_type_t infoType );
 
 /////////////////////////////////////////////////////////
 
@@ -295,13 +296,14 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire();
-
     bool setPlugAddress( const PlugAddress& plugAddress );
     bool setSubFunction( ESubFunction subFunction );
     bool setInfoType( const ExtendedPlugInfoInfoType& infoType );
     ExtendedPlugInfoInfoType* getInfoType()
 	{ return m_infoType; }
+
+    virtual const char* getCmdName() const
+	{ return "ExtendedPlugInfoCmd"; }
 
 protected:
     subfunction_t             m_subFunction;

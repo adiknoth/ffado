@@ -70,9 +70,9 @@ DeviceManager::initialize( int port )
 }
 
 bool
-DeviceManager::discover( bool verbose )
+DeviceManager::discover( int verboseLevel )
 {
-    if ( verbose ) {
+    if ( verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
     for ( AvDeviceVectorIterator it = m_avDevices.begin();
@@ -107,7 +107,10 @@ DeviceManager::discover( bool verbose )
             continue;
         }
 
-        AvDevice* avDevice = new AvDevice( m_1394Service, configRom, nodeId, verbose );
+        AvDevice* avDevice = new AvDevice( m_1394Service,
+                                           configRom,
+                                           nodeId,
+                                           verboseLevel );
         if ( !avDevice ) {
             debugError( "discover: Could not allocate AvDevice\n" );
             delete configRom;
@@ -120,7 +123,7 @@ DeviceManager::discover( bool verbose )
             delete avDevice;
             return false;
         }
-        if ( verbose ) {
+        if ( verboseLevel ) {
             avDevice->showDevice();
         }
 

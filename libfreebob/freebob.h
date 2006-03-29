@@ -112,7 +112,7 @@ int
 freebob_destroy_handle( freebob_handle_t freebob_handle );
 
 int
-freebob_discover_devices( freebob_handle_t freebob_handle, int verbose );
+freebob_discover_devices( freebob_handle_t freebob_handle, int verbose_level );
 
 
 freebob_connection_info_t*
@@ -159,6 +159,12 @@ freebob_print_xml_description( freebob_handle_t freebob_handle,
 
 const char*
 freebob_get_version();
+
+/* various function */
+
+/* workaround: wait usec after each AVC command.
+   will disapear as soon bug is fixed */    
+void freebob_sleep_after_avc_command( int time );
 
 #ifdef __cplusplus
 }

@@ -92,7 +92,8 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire();
+    virtual const char* getCmdName() const
+	{ return "ExtendedSubunitInfoCmd"; }
 
     page_t                m_page;
     function_block_type_t m_fbType;

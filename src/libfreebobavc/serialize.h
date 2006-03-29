@@ -41,6 +41,7 @@ public:
 
     virtual bool read( byte_t* value ) = 0;
     virtual bool read( quadlet_t* value ) = 0;
+    virtual bool read( char** value, size_t length ) = 0;
     virtual bool peek( byte_t* value ) = 0;
 };
 
@@ -50,11 +51,16 @@ class CoutSerializer: public IOSSerialize {
 public:
     CoutSerializer()
         : IOSSerialize()
+        , m_cnt( 0 )
         {}
     virtual ~CoutSerializer() {}
 
     virtual bool write( byte_t value, const char* name = "" );
     virtual bool write( quadlet_t value,  const char* name = "" );
+
+private:
+    unsigned int m_cnt;
+
 };
 
 class BufferSerialize: public IOSSerialize {
@@ -69,6 +75,9 @@ public:
 
     virtual bool write( byte_t value, const char* name = "" );
     virtual bool write( quadlet_t value,  const char* name = "" );
+
+    int getNrOfProducesBytes() const
+	{ return m_curPos - m_buffer; }
 
 protected:
     inline bool isCurPosValid() const;
@@ -91,7 +100,11 @@ public:
 
     virtual bool read( byte_t* value );
     virtual bool read( quadlet_t* value );
+    virtual bool read( char** value, size_t length );
     virtual bool peek( byte_t* value );
+
+    int getNrOfConsumedBytes()  const
+        { return m_curPos - m_buffer; }
 
 protected:
     inline bool isCurPosValid() const;
@@ -99,7 +112,7 @@ protected:
 private:
     unsigned char* m_buffer; // start of the buffer
     unsigned char* m_curPos; // current read pos
-    size_t m_length; // length of buffer
+    size_t m_length;         // size of buffer
 };
 
 #endif // Serialize_h

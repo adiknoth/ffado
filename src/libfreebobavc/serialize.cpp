@@ -23,19 +23,22 @@
 #include <iostream>
 #include <iomanip>
 
-using namespace std;
+#include <netinet/in.h>
 
 bool
 CoutSerializer::write( byte_t d, const char* name )
 {
-    cout << name << ": 0x" << setfill( '0' ) << hex << static_cast<unsigned int>( d ) << endl;
+    printf( "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
+    m_cnt += sizeof( byte_t );
+
     return true;
 }
 
 bool
 CoutSerializer::write( quadlet_t d, const char* name )
 {
-    cout << name << ": 0x" << setfill( '0' ) << setw( 8 ) << hex << d << endl;
+    printf( "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
+    m_cnt += sizeof( quadlet_t );
     return true;
 }
 
@@ -95,7 +98,19 @@ BufferDeserialize::read( quadlet_t* value )
     if ( isCurPosValid() ) {
         *value = *m_curPos;
         m_curPos += sizeof( quadlet_t );
-        result = true;;
+        result = true;
+    }
+    return result;
+}
+
+bool
+BufferDeserialize::read( char** value, size_t length )
+{
+    bool result = false;
+    if ( isCurPosValid() ) {
+        *value = ( char* )m_curPos;
+        m_curPos += length;
+        result = true;
     }
     return result;
 }

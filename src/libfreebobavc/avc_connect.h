@@ -34,9 +34,8 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire( ECommandType commandType,
-                       raw1394handle_t handle,
-                       unsigned int node_id );
+    virtual const char* getCmdName() const
+	{ return "ConnectCmd"; }
 };
 
 

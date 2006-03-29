@@ -41,7 +41,7 @@ class DeviceManager{
     bool initialize( int port );
     bool deinitialize();
 
-    bool discover( bool verbose );
+    bool discover( int verboseLevel );
 
     bool isValidNode( int node );
     int getNbDevices();

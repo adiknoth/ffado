@@ -112,15 +112,10 @@ ExtendedPlugInfoPlugNameSpecificData::deserialize( IISDeserialize& de )
     byte_t length;
     de.read( &length );
     m_name.clear();
-    for ( int i = 0; i < length; ++length ) {
-        byte_t c;
-        de.read( &c );
-        // \todo do correct encoding
-        if ( c == '&' ) {
-            c = '+';
-        }
-        m_name += c;
-    }
+    char* name;
+    de.read( &name, length );
+    m_name = name;
+
     return true;
 }
 
@@ -499,7 +494,8 @@ const char* extendedPlugInfoPortTypeStrings[] =
 
 const char* extendedPlugInfoClusterInfoPortTypeToString( port_type_t portType )
 {
-    if ( portType > sizeof( extendedPlugInfoPortTypeStrings ) ) {
+    if ( portType > ( ( sizeof( extendedPlugInfoPortTypeStrings ) )
+                      / ( sizeof( extendedPlugInfoPortTypeStrings[0] ) ) ) ) {
         return "Unknown";
     } else {
         return extendedPlugInfoPortTypeStrings[portType];
@@ -623,7 +619,11 @@ ExtendedPlugInfoInfoType::initialize()
 bool
 ExtendedPlugInfoInfoType::serialize( IOSSerialize& se )
 {
-    se.write( m_infoType, "ExtendedPlugInfoInfoType infoType" );
+    // XXX \todo improve IOSSerialize::write interface
+    char* buf;
+    asprintf( &buf, "ExtendedPlugInfoInfoType infoType (%s)",
+              extendedPlugInfoInfoTypeToString( m_infoType ) );
+    se.write( m_infoType, buf );
 
     switch ( m_infoType ) {
     case eIT_PlugType:
@@ -748,6 +748,29 @@ ExtendedPlugInfoInfoType::clone() const
    return extPlugInfoInfoType;
 }
 
+const char* extendedPlugInfoInfoTypeStrings[] =
+{
+    "PlugType",
+    "PlugName",
+    "NoOfChannels",
+    "ChannelPosition",
+    "ChannelName",
+    "PlugInput",
+    "PlugOutput",
+    "ClusterInfo",
+};
+
+const char* extendedPlugInfoInfoTypeToString( info_type_t infoType )
+{
+    if ( infoType > ( ( sizeof( extendedPlugInfoInfoTypeStrings ) )
+                      / ( sizeof( extendedPlugInfoInfoTypeStrings[0] ) ) ) )  {
+        return "Unknown";
+    } else {
+        return extendedPlugInfoInfoTypeStrings[infoType];
+    }
+}
+
+
 //////////////////////////////////////////////
 
 ExtendedPlugInfoCmd::ExtendedPlugInfoCmd( Ieee1394Service* ieee1394service,
@@ -802,110 +825,6 @@ ExtendedPlugInfoCmd::deserialize( IISDeserialize& de )
     status &= m_infoType->deserialize( de );
 
     return status;
-}
-
-bool
-ExtendedPlugInfoCmd::fire()
-{
-    bool result = false;
-
-    #define STREAM_FORMAT_REQUEST_SIZE 20 // XXX random length
-    union UPacket {
-        quadlet_t     quadlet[STREAM_FORMAT_REQUEST_SIZE];
-        unsigned char byte[STREAM_FORMAT_REQUEST_SIZE*4];
-    };
-    typedef union UPacket packet_t;
-
-    packet_t  req;
-    packet_t* resp;
-
-    // initialize complete packet
-    memset( &req,  0xff,  sizeof( req ) );
-
-    BufferSerialize se( req.byte, sizeof( req ) );
-    if ( !serialize( se ) ) {
-        printf(  "ExtendedPlugInfoCmd::fire: Could not serialize\n" );
-        return false;
-    }
-
-    if ( isVerbose() ) {
-        printf( "\n" );
-        printf( " idx type                       value\n" );
-        printf( "-------------------------------------\n" );
-        printf( "  %02d                     ctype: 0x%02x\n", 0, req.byte[0] );
-        printf( "  %02d subunit_type + subunit_id: 0x%02x\n", 1, req.byte[1] );
-        printf( "  %02d                    opcode: 0x%02x\n", 2, req.byte[2] );
-
-        for ( int i = 3; i < STREAM_FORMAT_REQUEST_SIZE * 4; ++i ) {
-            printf( "  %02d                operand %2d: 0x%02x\n", i, i-3, req.byte[i] );
-        }
-    }
-
-    // reorder the bytes to the correct layout
-    for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
-        req.quadlet[i] = ntohl( req.quadlet[i] );
-    }
-
-    if ( isVerbose() ) {
-        // debug output
-        puts("request:");
-        for (int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i) {
-            printf("  %2d: 0x%08x\n", i, req.quadlet[i]);
-        }
-    }
-
-    resp = reinterpret_cast<packet_t*>(
-        m_1394Service->transactionBlock( m_nodeId,
-                                         req.quadlet,
-                                         STREAM_FORMAT_REQUEST_SIZE ) );
-    if ( resp ) {
-        if ( isVerbose() ) {
-            // debug output
-            puts("response:");
-            for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
-                printf( "  %2d: 0x%08x\n", i, resp->quadlet[i] );
-            }
-        }
-
-        // reorder the bytes to the correct layout
-        for ( int i = 0; i < STREAM_FORMAT_REQUEST_SIZE; ++i ) {
-            resp->quadlet[i] = htonl( resp->quadlet[i] );
-        }
-
-        if ( isVerbose() ) {
-            // a more detailed debug output
-            printf( "\n" );
-            printf( " idx type                       value\n" );
-            printf( "-------------------------------------\n" );
-            printf( "  %02d                     ctype: 0x%02x\n", 0, resp->byte[0] );
-            printf( "  %02d subunit_type + subunit_id: 0x%02x\n", 1, resp->byte[1] );
-            printf( "  %02d                    opcode: 0x%02x\n", 2, resp->byte[2] );
-
-            for ( int i = 3; i < STREAM_FORMAT_REQUEST_SIZE * 4; ++i ) {
-                printf( "  %02d                operand %2d: 0x%02x\n", i, i-3, resp->byte[i] );
-            }
-        }
-
-        // parse output
-        parseResponse( resp->byte[0] );
-        switch ( getResponse() )
-        {
-        case eR_Implemented:
-        case eR_Rejected:
-        case eR_NotImplemented:
-        {
-            BufferDeserialize de( resp->byte, sizeof( req ) );
-            result = deserialize( de );
-        }
-        break;
-        default:
-            printf( "unexpected response received (0x%x)\n", getResponse() );
-        }
-    } else {
-	printf( "no response\n" );
-    }
-
-    return result;
 }
 
 bool

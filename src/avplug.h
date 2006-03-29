@@ -77,7 +77,7 @@ public:
 	    EAvPlugAddressType plugAddressType,
 	    EAvPlugDirection plugDirection,
 	    plug_id_t plugId,
-	    bool verbose );
+	    int verboseLevel );
     AvPlug( const AvPlug& rhs );
     virtual ~AvPlug();
 
@@ -240,7 +240,7 @@ private:
 
     AvPlugManager*           m_plugManager;
 
-    bool                     m_verbose;
+    int                      m_verboseLevel;
 
     int                      m_globalId;
 
@@ -256,7 +256,7 @@ const char* avPlugDirectionToString( AvPlug::EAvPlugDirection direction );
 class AvPlugManager
 {
 public:
-    AvPlugManager( bool verbose );
+    AvPlugManager( int verboseLevel );
     AvPlugManager( const AvPlugManager& rhs );
     ~AvPlugManager();
 
@@ -281,7 +281,7 @@ public:
 				 AvPlug::EAvPlugType type) const;
 
 private:
-    bool         m_verbose;
+    int          m_verboseLevel;
     AvPlugVector m_plugs;
 
     DECLARE_DEBUG_MODULE;

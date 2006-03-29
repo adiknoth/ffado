@@ -49,8 +49,8 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
-    virtual bool fire();
-
+    virtual const char* getCmdName() const
+	{ return "PlugInfoCmd"; }
 
     nr_of_plugs_t m_serialBusIsochronousInputPlugs;
     nr_of_plugs_t m_serialBusIsochronousOutputPlugs;

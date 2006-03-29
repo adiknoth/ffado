@@ -22,6 +22,12 @@
 #include "serialize.h"
 #include "ieee1394service.h"
 
+#include <netinet/in.h>
+
+#define DEBUG_EXTRA_VERBOSE 2
+
+int AVCCommand::m_time = 0;
+
 AVCCommand::AVCCommand( Ieee1394Service* ieee1394service,
                         opcode_t opcode )
     : m_1394Service( ieee1394service )
@@ -30,7 +36,7 @@ AVCCommand::AVCCommand( Ieee1394Service* ieee1394service,
     , m_subunit( 0xff )
     , m_opcode( opcode )
     , m_eResponse( eR_Unknown )
-    , m_verbose( false )
+    , m_verboseLevel( 0 )
 {
 }
 
@@ -73,13 +79,6 @@ AVCCommand::getResponse()
 }
 
 bool
-AVCCommand::parseResponse( byte_t response )
-{
-    m_eResponse = static_cast<EResponse>( response );
-    return true;
-}
-
-bool
 AVCCommand::setSubunitType(ESubunitType subunitType)
 {
     byte_t subT = subunitType;
@@ -115,18 +114,108 @@ AVCCommand::getSubunitId()
 }
 
 bool
-AVCCommand::setVerbose( bool enable )
+AVCCommand::setVerbose( int verboseLevel )
 {
-    m_verbose = enable;
+    m_verboseLevel = verboseLevel;
     return true;
 }
 
-bool
-AVCCommand::isVerbose()
+int
+AVCCommand::getVerboseLevel()
 {
-    return m_verbose;
+    return m_verboseLevel;
 }
 
+
+void
+AVCCommand::showFcpFrame( const unsigned char* buf,
+                          unsigned short frameSize ) const
+{
+    for ( int i = 0; i < frameSize; ++i ) {
+        if ( ( i % 16 ) == 0 ) {
+            if ( i > 0 ) {
+                printf( "\n" );
+            }
+            printf( "  %3d:\t", i );
+        } else if ( ( i % 4 ) == 0 ) {
+            printf( " " );
+        }
+        printf( "%02x ", buf[i] );
+    }
+    printf( "\n" );
+}
+
+bool
+AVCCommand::fire()
+{
+    memset( &m_fcpFrame,  0x0,  sizeof( m_fcpFrame ) );
+
+    BufferSerialize se( m_fcpFrame, sizeof( m_fcpFrame ) );
+    if ( !serialize( se ) ) {
+        printf(  "ExtendedPlugInfoCmd::fire: Could not serialize\n" );
+        return false;
+    }
+
+    unsigned short fcpFrameSize = se.getNrOfProducesBytes();
+
+    if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE ) {
+        printf( "%s:\n", getCmdName() );
+        puts( "  Request:");
+        showFcpFrame( m_fcpFrame, fcpFrameSize );
+
+        CoutSerializer se;
+        serialize( se );
+    }
+
+    quadlet_t* resp = m_1394Service->transactionBlock( m_nodeId,
+                                                       (quadlet_t*)m_fcpFrame,
+                                                       ( fcpFrameSize + 3 ) / 4 );
+    bool result = false;
+    if ( resp ) {
+        unsigned char* buf = ( unsigned char* ) resp;
+
+        m_eResponse = ( EResponse )( *buf );
+        switch ( m_eResponse )
+        {
+        case eR_Implemented:
+        case eR_Rejected:
+        case eR_NotImplemented:
+        {
+            BufferDeserialize de( buf, 512 ); // XXX magic number
+            result = deserialize( de );
+
+            if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE) {
+                puts("  Response:");
+                showFcpFrame( buf, de.getNrOfConsumedBytes() );
+
+                CoutSerializer se;
+                serialize( se );
+            }
+        }
+        break;
+        default:
+            printf( "unexpected response received (0x%x)\n", m_eResponse );
+        }
+    } else {
+	printf( "no response\n" );
+    }
+
+    if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE ) {
+        printf( "\n" );
+    }
+
+    m_1394Service->transactionBlockClose();
+
+    usleep( m_time );
+
+    return result;
+}
+
+void
+AVCCommand::setSleepAfterAVCCommand( int time )
+{
+    m_time = time;
+}
 
 const char* subunitTypeStrings[] =
 {

@@ -39,7 +39,7 @@ public:
     AvDevice( Ieee1394Service* ieee1394Service,
               ConfigRom* configRom,
               int nodeId,
-	      bool verbose );
+	      int verboseLevel );
     virtual ~AvDevice();
 
     bool discover();
@@ -101,7 +101,7 @@ protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;
     int              m_nodeId;
-    bool             m_verbose;
+    int              m_verboseLevel;
 
     AvPlugVector     m_pcrPlugs;
     AvPlugVector     m_externalPlugs;
