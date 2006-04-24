@@ -27,7 +27,7 @@
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
 #include "devicemanager.h"
-#include "avdevice.h"
+#include "iavdevice.h"
 
 #include "libfreebobavc/avc_generic.h"
 
@@ -134,13 +134,20 @@ freebob_get_device_node_id( freebob_handle_t freebob_handle, int device_nr )
 int
 freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int samplerate )
 {
-    AvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
+    IAvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
             return freebob_handle->m_deviceManager->discover(0)? 1 : 0;
-        }
+
+	// retry
+        } else if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
+            return freebob_handle->m_deviceManager->discover(0)? 1 : 0;
+	// failed
+	} else {
+	    return -1;
+	}
     }
-    return 0;
+    return -1;
 }
 
 void

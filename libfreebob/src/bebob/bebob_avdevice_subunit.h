@@ -21,8 +21,8 @@
 #ifndef AVDEVICESUBUNIT_H
 #define AVDEVICESUBUNIT_H
 
-#include "avplug.h"
-#include "functionblock.h"
+#include "bebob/bebob_avplug.h"
+#include "bebob/bebob_functionblock.h"
 
 #include "debugmodule/debugmodule.h"
 #include "libfreebobavc/avc_extended_subunit_info.h"
@@ -30,6 +30,8 @@
 #include "libfreebobavc/avc_generic.h"
 
 #include <vector>
+
+namespace BeBoB {
 
 class AvDevice;
 
@@ -119,5 +121,7 @@ class AvDeviceSubunitMusic: public AvDeviceSubunit {
 
     virtual const char* getName();
 };
+
+}
 
 #endif

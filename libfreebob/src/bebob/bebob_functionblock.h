@@ -21,10 +21,12 @@
 #ifndef FUNCTION_BLOCK_H
 #define FUNCTION_BLOCK_H
 
-#include "avplug.h"
+#include "bebob/bebob_avplug.h"
 
 #include "libfreebobavc/avc_definitions.h"
 #include "debugmodule/debugmodule.h"
+
+namespace BeBoB {
 
 class AvDeviceSubunit;
 
@@ -165,5 +167,6 @@ public:
     virtual const char* getName();
 };
 
+}
 
 #endif

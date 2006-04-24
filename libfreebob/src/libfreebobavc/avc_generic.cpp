@@ -44,7 +44,11 @@ bool
 AVCCommand::serialize( IOSSerialize& se )
 {
     se.write( m_ctype, "AVCCommand ctype" );
-    se.write( m_subunit, "AVCCommand subunit" );
+    // XXX \todo improve IOSSerialize::write interface
+    char* buf;
+    asprintf( &buf, "AVCCommand subunit (subunit_type = %d, subunit_id = %d)",
+              getSubunitType(), getSubunitId() );
+    se.write( m_subunit, buf );
     se.write( m_opcode, "AVCCommand opcode" );
     return true;
 }
@@ -167,11 +171,14 @@ AVCCommand::fire()
         serialize( se );
     }
 
+    unsigned int resp_len;
     quadlet_t* resp = m_1394Service->transactionBlock( m_nodeId,
                                                        (quadlet_t*)m_fcpFrame,
-                                                       ( fcpFrameSize + 3 ) / 4 );
+                                                       ( fcpFrameSize+3 ) / 4,
+                                                       &resp_len );
     bool result = false;
     if ( resp ) {
+        resp_len *= 4;
         unsigned char* buf = ( unsigned char* ) resp;
 
         m_eResponse = ( EResponse )( *buf );
@@ -181,7 +188,7 @@ AVCCommand::fire()
         case eR_Rejected:
         case eR_NotImplemented:
         {
-            BufferDeserialize de( buf, 512 ); // XXX magic number
+            BufferDeserialize de( buf, resp_len );
             result = deserialize( de );
 
             if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE) {
@@ -195,6 +202,14 @@ AVCCommand::fire()
         break;
         default:
             printf( "unexpected response received (0x%x)\n", m_eResponse );
+            if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE) {
+                puts("  Response:");
+                BufferDeserialize de( buf, resp_len );
+                deserialize( de );
+
+                showFcpFrame( buf, resp_len );
+            }
+
         }
     } else {
 	printf( "no response\n" );

@@ -18,7 +18,7 @@
  * MA 02111-1307 USA.
  */
 
-#include "avplug.h"
+#include "bebob/bebob_avplug.h"
 
 #include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/serialize.h"
@@ -273,8 +273,9 @@ AvPlug::discoverPlugType()
             }
         }
     } else {
-        debugWarning( "Plug does implement extended plug info plug "
-                      "type info command\n" );
+        debugError( "Plug does not implement extended plug info plug "
+                    "type info command\n" );
+        return false;
     }
 
    return true;
@@ -1518,7 +1519,7 @@ AvPlugManager::showPlugs() const
     // there is room for improvement. Something for a lazy sunday afternoon (tip: maybe drink some
     // beer to get into the mood)
 
-    printf( "\nSummery\n" );
+    printf( "\nSummary\n" );
     printf( "-------\n\n" );
     printf( "Nr | AddressType     | Direction | SubUnitType | SubUnitId | FunctionBlockType | FunctionBlockId | Id   | Type         |Name\n" );
     printf( "---+-----------------+-----------+-------------+-----------+-------------------+-----------------+------+--------------+------\n" );

@@ -20,10 +20,12 @@
 
 // AvDevice XML stuff
 
-#include "avdevice.h"
+#include "bebob/bebob_avdevice.h"
 #include "configrom.h"
 
 #include "libfreebobavc/ieee1394service.h"
+
+namespace BeBoB {
 
 bool
 AvDevice::addXmlDescription( xmlNodePtr deviceNode )
@@ -116,3 +118,4 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
     return true;
 }
 
+}

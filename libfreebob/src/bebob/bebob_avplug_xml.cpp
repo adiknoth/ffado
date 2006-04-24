@@ -20,7 +20,7 @@
 
 // AvPlug XML stuff
 
-#include "avplug.h"
+#include "bebob/bebob_avplug.h"
 
 #include "libfreebobavc/ieee1394service.h"
 

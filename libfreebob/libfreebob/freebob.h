@@ -1,5 +1,6 @@
 /* freebob.h
  * Copyright (C) 2005 Pieter Palmers
+ * Copyright (C) 2006 Daniel Wagner
  *
  * This file is part of FreeBoB
  *
@@ -23,6 +24,9 @@
 #define FREEBOB_H
 
 #define FREEBOB_MAX_NAME_LEN 256
+
+#define FREEBOB_BOUNCE_SERVER_VENDORNAME  "FreeBoB Server"
+#define FREEBOB_BOUNCE_SERVER_MODELNAME   "freebob-server"
 
 enum freebob_direction {
     FREEBOB_CAPTURE  = 0,

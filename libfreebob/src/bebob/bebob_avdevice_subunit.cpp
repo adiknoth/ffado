@@ -18,14 +18,17 @@
  * MA 02111-1307 USA.
  */
 
-#include "functionblock.h"
-#include "avdevicesubunit.h"
-#include "avdevice.h"
-#include "avplug.h"
+#include "bebob/bebob_functionblock.h"
+#include "bebob/bebob_avdevice_subunit.h"
+#include "bebob/bebob_avdevice.h"
+#include "bebob/bebob_avplug.h"
+#include "configrom.h"
 
 #include "libfreebobavc/avc_plug_info.h"
 #include "libfreebobavc/avc_extended_stream_format.h"
 #include "libfreebobavc/serialize.h"
+
+namespace BeBoB {
 
 IMPL_DEBUG_MODULE( AvDeviceSubunit, AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
 
@@ -71,7 +74,7 @@ AvDeviceSubunit::discoverPlugs()
 {
     PlugInfoCmd plugInfoCmd( m_avDevice->get1394Service(),
                              PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
-    plugInfoCmd.setNodeId( m_avDevice->getNodeId() );
+    plugInfoCmd.setNodeId( m_avDevice->getConfigRom().getNodeId() );
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     plugInfoCmd.setSubunitType( m_sbType );
     plugInfoCmd.setSubunitId( m_sbId );
@@ -133,7 +136,7 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
         AVCCommand::ESubunitType subunitType =
             static_cast<AVCCommand::ESubunitType>( getSubunitType() );
         AvPlug* plug = new AvPlug( *m_avDevice->get1394Service(),
-                                   m_avDevice->getNodeId(),
+                                   m_avDevice->getConfigRom().getNodeId(),
                                    m_avDevice->getPlugManager(),
                                    subunitType,
                                    getSubunitId(),
@@ -246,22 +249,26 @@ bool
 AvDeviceSubunitAudio::discoverFunctionBlocks()
 {
     if ( !discoverFunctionBlocksDo(
-             ExtendedSubunitInfoCmd::eFBT_AudioSubunitSelector) ) {
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitSelector) )
+    {
         debugError( "Could not discover function block selector\n" );
         return false;
     }
     if ( !discoverFunctionBlocksDo(
-             ExtendedSubunitInfoCmd::eFBT_AudioSubunitFeature) ) {
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitFeature) )
+    {
         debugError( "Could not discover function block feature\n" );
         return false;
     }
     if ( !discoverFunctionBlocksDo(
-             ExtendedSubunitInfoCmd::eFBT_AudioSubunitProcessing) ) {
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitProcessing) )
+    {
         debugError( "Could not discover function block processing\n" );
         return false;
     }
     if ( !discoverFunctionBlocksDo(
-             ExtendedSubunitInfoCmd::eFBT_AudioSubunitCodec) ) {
+             ExtendedSubunitInfoCmd::eFBT_AudioSubunitCodec) )
+    {
         debugError( "Could not discover function block codec\n" );
         return false;
     }
@@ -273,22 +280,23 @@ bool
 AvDeviceSubunitAudio::discoverFunctionBlocksDo(
     ExtendedSubunitInfoCmd::EFunctionBlockType fbType )
 {
-    ExtendedSubunitInfoCmd
-        extSubunitInfoCmd( m_avDevice->get1394Service() );
-    extSubunitInfoCmd.setNodeId( m_avDevice->getNodeId() );
-    extSubunitInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    extSubunitInfoCmd.setSubunitId( getSubunitId() );
-    extSubunitInfoCmd.setSubunitType( getSubunitType() );
-    extSubunitInfoCmd.setVerbose( m_verboseLevel );
-
-    extSubunitInfoCmd.m_fbType = fbType;
-
     int page = 0;
     bool cmdSuccess = false;
     bool finished = false;
+
     do {
+        ExtendedSubunitInfoCmd
+            extSubunitInfoCmd( m_avDevice->get1394Service() );
+        extSubunitInfoCmd.setNodeId( m_avDevice->getConfigRom().getNodeId() );
+        extSubunitInfoCmd.setCommandType( AVCCommand::eCT_Status );
+        extSubunitInfoCmd.setSubunitId( getSubunitId() );
+        extSubunitInfoCmd.setSubunitType( getSubunitType() );
+        extSubunitInfoCmd.setVerbose( m_verboseLevel );
+
+        extSubunitInfoCmd.m_fbType = fbType;
         extSubunitInfoCmd.m_page = page;
-        cmdSuccess =extSubunitInfoCmd.fire();
+
+        cmdSuccess = extSubunitInfoCmd.fire();
         if ( cmdSuccess
              && ( extSubunitInfoCmd.getResponse()
                   == AVCCommand::eR_Implemented ) )
@@ -296,10 +304,17 @@ AvDeviceSubunitAudio::discoverFunctionBlocksDo(
             for ( ExtendedSubunitInfoPageDataVector::iterator it =
                       extSubunitInfoCmd.m_infoPageDatas.begin();
                   cmdSuccess
-                  && ( it != extSubunitInfoCmd.m_infoPageDatas.end() );
+                      && ( it != extSubunitInfoCmd.m_infoPageDatas.end() );
                   ++it )
             {
                 cmdSuccess = createFunctionBlock( fbType, **it );
+            }
+            if ( ( extSubunitInfoCmd.m_infoPageDatas.size() != 0 )
+                 && ( extSubunitInfoCmd.m_infoPageDatas.size() == 5 ) )
+            {
+                page++;
+            } else {
+                finished = true;
             }
         } else {
             finished = true;
@@ -441,4 +456,6 @@ const char*
 AvDeviceSubunitMusic::getName()
 {
     return "MusicSubunit";
+}
+
 }

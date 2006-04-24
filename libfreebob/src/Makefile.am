@@ -1,5 +1,5 @@
 # Makefile.am - Makefile template
-# Copyright (C) 2005 by Daniel Wagner.
+# Copyright (C) 2005,06 by Daniel Wagner.
 # Copyright (C) 2006 by Pieter Palmers.
 #
 # This file is part of FreeBob.
@@ -24,32 +24,36 @@ INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
 
 lib_LTLIBRARIES = libfreebob.la
 
-libfreebob_la_SOURCES = 	\
-	avdevice.cpp		\
-	avdevice.h              \
-	avdevicesubunit.cpp	\
-	avdevicesubunit.h	\
-	avdevicexml.cpp		\
-	avplug.cpp		\
-	avplug.h                \
-	avplugxml.cpp		\
-	configrom.cpp		\
-	configrom.h		\
-	csr1212.c		\
-	csr1212.h		\
-	devicemanager.cpp       \
-	devicemanager.h         \
-	fbtypes.h		\
-	freebob.cpp 		\
-	functionblock.cpp	\
-	functionblock.h		\
-	xmlparser.c
+libfreebob_la_SOURCES = 			\
+	configrom.h				\
+	configrom.cpp				\
+	csr1212.h				\
+	csr1212.c				\
+	devicemanager.h         		\
+	devicemanager.cpp       		\
+	fbtypes.h				\
+	freebob.cpp 				\
+	xmlparser.c				\
+	bebob/bebob_avdevice.h          	\
+	bebob/bebob_avdevice.cpp		\
+	bebob/bebob_avdevice_xml.cpp		\
+	bebob/bebob_avdevice_subunit.h		\
+	bebob/bebob_avdevice_subunit.cpp	\
+	bebob/bebob_avplug.h            	\
+	bebob/bebob_avplug.cpp			\
+	bebob/bebob_avplug_xml.cpp		\
+	bebob/bebob_functionblock.h		\
+	bebob/bebob_functionblock.cpp 		\
+	bounce/bounce_avdevice.h		\
+	bounce/bounce_avdevice.cpp
+
+
 
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
-	$(LIBLO_LIBS) $(LIBXML_LIBS) debugmodule/libdebugmodule.la \
-	libfreebobavc/libfreebobavc.la \
-	libfreebobstreaming/libfreebobstreaming.la \
-	 -safe-temps
+	$(LIBLO_LIBS) $(LIBXML_LIBS) -safe-temps
+
+libfreebob_la_LIBADD = debugmodule/libdebugmodule.la libfreebobavc/libfreebobavc.la \
+	libfreebobstreaming/libfreebobstreaming.la
 
 

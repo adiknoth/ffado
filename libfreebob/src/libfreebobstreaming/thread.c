@@ -27,8 +27,6 @@
   Thread creation function including workarounds for real-time scheduling
   behaviour on different glibc versions.
 
-  $Id$
-
 */
 
 #include <config.h>

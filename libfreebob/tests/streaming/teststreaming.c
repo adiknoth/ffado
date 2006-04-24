@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	dev_options.iso_prebuffers=8;
 	dev_options.iso_irq_interval=8;
 	
-	dev_options.port=1;
+	dev_options.port=0;
 	dev_options.node_id=-1;
 	
 	dev_options.realtime=0;

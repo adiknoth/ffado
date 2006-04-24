@@ -1,5 +1,5 @@
 /* avdevice.h
- * Copyright (C) 2005 by Daniel Wagner
+ * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -21,47 +21,42 @@
 #ifndef AVDEVICE_H
 #define AVDEVICE_H
 
+#include <stdint.h>
+
 #include "debugmodule/debugmodule.h"
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebobavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
 
-#include "avplug.h"
-#include "avdevicesubunit.h"
+#include "bebob/bebob_avplug.h"
+#include "bebob/bebob_avdevice_subunit.h"
+
+#include "iavdevice.h"
 
 class ConfigRom;
 class Ieee1394Service;
 class SubunitPlugSpecificDataPlugAddress;
 
-class AvDevice {
+namespace BeBoB {
+
+class AvDevice : public IAvDevice {
 public:
-    // takes ownership of config rom
-    AvDevice( Ieee1394Service* ieee1394Service,
-              ConfigRom* configRom,
+    AvDevice( Ieee1394Service& ieee1394Service,
               int nodeId,
 	      int verboseLevel );
     virtual ~AvDevice();
 
-    bool discover();
-
-    std::string getVendorName();
-    std::string getModelName();
-
-    uint64_t getGuid();
-
-    bool addXmlDescription( xmlNodePtr deviceNode );
-    int getNodeId()
-        { return m_nodeId; }
-
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool discover();
+    virtual ConfigRom& getConfigRom() const;
+    virtual bool addXmlDescription( xmlNodePtr deviceNode );
+    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual void showDevice() const;
 
     Ieee1394Service* get1394Service()
 	{ return m_1394Service; }
 
     AvPlugManager& getPlugManager()
 	{ return m_plugManager; }
-
-    void showDevice();
 
 protected:
     bool enumerateSubUnits();
@@ -114,5 +109,7 @@ protected:
 
     DECLARE_DEBUG_MODULE;
 };
+
+}
 
 #endif

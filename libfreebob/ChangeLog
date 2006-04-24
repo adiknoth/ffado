@@ -1,3 +1,56 @@
+2006-04-23  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bumped to 0.7.0
+
+	* Abstract interface IAvDevice introduced. 
+	* BeBoB device discovering code moved into bebob directory.
+	* Bounce device added.
+
+2006-04-17  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bumped to 0.6.4
+
+	* src/libfreebobavc/avc_generic.cpp (serialize): Decode subunit_type 
+	and subunit_id field.
+	(fire): avc1394_transaction_block2 inteface change update.
+	* src/libfreebobavc/ieee1394service.cpp (transactionBlock): Likewise.
+	* src/libfreebobavc/ieee1394service.h: Likewise.
+
+2006-04-11  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bumped to 0.6.3
+	
+	* src/avdevicesubunit.cpp (discoverFunctionBlocks): reformating.
+	(discoverFunctionBlocksDo): Really added a correct
+	bugfix for the reuse of ExtendedSubunitInfoCmd.
+
+2006-04-07  Pieter Palmers <pieterpalmers@users.sourceforge.net>
+
+	* src/avdevice.h src/avdevice.cpp: moved the include of stdint.h
+	from the implementation to the header, to fix certain compilation
+	problems wrt uint64_t. This datatype is also used in the class
+	definition in avdevice.h.
+
+2006-04-05  Pieter Palmers <pieterpalmers@users.sourceforge.net>
+
+	* configure.ac: Version bump to 0.6.2
+
+	* src/freebob.cpp: Retry setting the sample rate if it fails the
+	first time.
+	
+	* src/libfreebobstreaming/*: Added an way to choose for playback
+	or capture only (for ALSA plugin), using the options passed when
+	creating the freebob device.  * src/libfreebobstreaming/*: fixed
+	the bug that prevented playback only operation.
+
+2006-04-04  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 0.6.1
+
+	* src/avdevicesubunit.cpp (discoverFunctionBlocksDo): 
+	ExtendedSubunitInfoCmd is not reusable at this point. 
+	Moved into its own block so that's initatilialized correctly.
+
 2006-03-30  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bump to 0.6.0

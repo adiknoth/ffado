@@ -18,9 +18,9 @@
  * MA 02111-1307 USA.
  */
 
-#include "avdevice.h"
+#include "bebob/bebob_avdevice.h"
+#include "bebob/bebob_avdevice_subunit.h"
 #include "configrom.h"
-#include "avdevicesubunit.h"
 
 #include "libfreebobavc/avc_plug_info.h"
 #include "libfreebobavc/avc_extended_plug_info.h"
@@ -33,18 +33,15 @@
 #include "debugmodule/debugmodule.h"
 
 #include <iostream>
-#include <stdint.h>
 
-using namespace std;
+namespace BeBoB {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
-AvDevice::AvDevice( Ieee1394Service* ieee1394service,
-                    ConfigRom* configRom,
+AvDevice::AvDevice( Ieee1394Service& ieee1394service,
                     int nodeId,
                     int verboseLevel )
-    :  m_1394Service( ieee1394service )
-    , m_configRom( configRom )
+    :  m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_plugManager( verboseLevel )
@@ -52,8 +49,11 @@ AvDevice::AvDevice( Ieee1394Service* ieee1394service,
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Found AvDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
+
+    m_configRom = new ConfigRom( m_1394Service, m_nodeId );
+    m_configRom->initialize();
 }
 
 AvDevice::~AvDevice()
@@ -83,6 +83,12 @@ AvDevice::~AvDevice()
     {
         delete *it;
     }
+}
+
+ConfigRom&
+AvDevice::getConfigRom() const
+{
+    return *m_configRom;
 }
 
 bool
@@ -596,27 +602,10 @@ AvDevice::getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection )
     return 0;
 }
 
-std::string
-AvDevice::getVendorName()
-{
-    return m_configRom->getVendorName();
-}
-
-std::string
-AvDevice::getModelName()
-{
-    return m_configRom->getModelName();
-}
-
-uint64_t
-AvDevice::getGuid()
-{
-    return m_configRom->getGuid();
-}
-
 bool
 AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
+
     AvPlug* plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
     if ( !plug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
@@ -680,7 +669,6 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 
     extStreamFormatCmd.setNodeId( m_nodeId );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-    //extStreamFormatCmd.setVerbose( true );
 
     int i = 0;
     bool cmdSuccess = false;
@@ -761,7 +749,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 }
 
 void
-AvDevice::showDevice()
+AvDevice::showDevice() const
 {
     m_plugManager.showPlugs();
 }
@@ -802,4 +790,6 @@ AvDevice::checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs )
         }
     }
     return true;
+}
+
 }

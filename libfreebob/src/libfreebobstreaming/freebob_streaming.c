@@ -103,6 +103,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	printMessage("  RAW1394 ISO Buffers      : %d\n",options.iso_buffers);
 	printMessage("  RAW1394 ISO Prebuffers   : %d\n",options.iso_prebuffers);
 	printMessage("  RAW1394 ISO IRQ Interval : %d\n",options.iso_irq_interval);
+	printMessage("  Directions               : %X\n",options.directions);
 	
 	// initialize the freebob_device
 	// allocate memory
@@ -177,10 +178,16 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 
 	/* Read the connection specification
  	 */
-	
-	libfreebob_capture_connections=freebob_get_connection_info(dev->fb_handle, options.node_id, 0);
-	libfreebob_playback_connections=freebob_get_connection_info(dev->fb_handle, options.node_id, 1);
-			
+ 
+	if(!(options.directions & FREEBOB_IGNORE_CAPTURE)) {
+		libfreebob_capture_connections=freebob_get_connection_info(dev->fb_handle, options.node_id, 0);
+	}
+
+	if(!(options.directions & FREEBOB_IGNORE_PLAYBACK)) {
+		libfreebob_playback_connections=freebob_get_connection_info(dev->fb_handle, options.node_id, 1);
+	}
+ 
+
 	if (libfreebob_capture_connections) {
 		dev->nb_connections_capture=libfreebob_capture_connections->nb_connections;
 		// FIXME:
@@ -924,6 +931,26 @@ int freebob_streaming_prefill_playback_streams(freebob_device_t *dev) {
 	
 }
 
+int freebob_streaming_reset_playback_streams(freebob_device_t *dev) {
+	int i;
+	int err=0;
+	
+	for(i=0; i < dev->nb_playback_streams; i++) {
+		freebob_stream_t *stream;
+
+		stream=*(dev->playback_streams+i);
+		
+		assert(stream);
+		err=freebob_streaming_reset_stream(dev, stream);
+		if (err) {
+			printError("Could not reset stream %d\n",i);
+			return -1;
+		}
+	}
+	return 0;
+	
+}
+
 int freebob_streaming_reset(freebob_device_t *dev) {
 	/* 
 	 * Reset means:
@@ -1426,10 +1453,15 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 			raw1394_iso_recv_init(
 					connection->raw_handle, 
 					iso_master_receive_handler, 
-					connection->iso.buffers*2,  // use 2 times the transmit buffer for the receive buffer
+					/* the receive buffer size doesn't matter for the latency, 
+					   but it has a minimal value in order for libraw to operate correctly (300) 
+					*/
+					400,
 					AMDTP_MAX_PACKET_SIZE, 
 					connection->iso.iso_channel, 
-					RAW1394_DMA_BUFFERFILL, 
+// 					RAW1394_DMA_BUFFERFILL, 
+					/* Packet per buffer enables low latency */
+ 					RAW1394_DMA_PACKET_PER_BUFFER, 
 					connection->iso.irq_interval);
 
 		} else {
@@ -1439,10 +1471,15 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 			raw1394_iso_recv_init(	
 					connection->raw_handle, 
 					iso_slave_receive_handler, 
-					connection->iso.buffers*2,  // use 2 times the transmit buffer for the receive buffer 
+					/* the receive buffer size doesn't matter for the latency, 
+					   but it has a minimal value in order for libraw to operate correctly (300) 
+					*/
+					400,
 					AMDTP_MAX_PACKET_SIZE, 
 					connection->iso.iso_channel, 
-					RAW1394_DMA_BUFFERFILL, 
+// 					RAW1394_DMA_BUFFERFILL, 
+					/* Packet per buffer enables low latency */
+ 					RAW1394_DMA_PACKET_PER_BUFFER, 
 					connection->iso.irq_interval);
 		}
 		
@@ -1554,7 +1591,27 @@ int freebob_streaming_wait_for_sync_stream(freebob_device_t *dev, freebob_connec
 	freebob_streaming_reset_connection(dev, connection);
 	
 	// FIXME: only works for sync on receive stream because we don't prefill.
-	
+	// ?FIXED?
+	if(connection->spec.direction==1) { // playback
+		int i;
+
+		if((err=freebob_streaming_reset_playback_streams(dev))<0) {
+			printError("Could not reset playback streams.\n");
+			return err;
+		}
+
+		// put nb_periods*period_size of null frames into the playback buffers
+		if((err=freebob_streaming_prefill_playback_streams(dev))<0) {
+			printError("Could not prefill playback streams.\n");
+			return err;
+		}
+			
+		// we should transfer nb_buffers periods of playback from the stream buffers to the event buffer
+		for (i=0;i<dev->options.nb_buffers;i++) {
+			freebob_streaming_transfer_playback_buffers(dev);
+		}
+	}	
+
 	debugPrint(DEBUG_LEVEL_STARTUP, "  stream is running.\n");
 
 	return 0;
@@ -1928,7 +1985,8 @@ int freebob_streaming_decode_midi(freebob_connection_t *connection,
 			
 //  			debugPrint(DEBUG_LEVEL_PACKETCOUNTER, "Stream %d,%d,%d is midi, dbc=%d  [",s,stream->spec.location,stream->spec.position,dbc);
 						
-			for(j = (dbc%8)+stream->spec.location-1; j < nsamples; j += 8) {
+// 			for(j = (dbc%8)+stream->spec.location-1; j < nsamples; j += 8) {
+ 			for(j = (dbc & 0x07)+stream->spec.location-1; j < nsamples; j += 8) {
 				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
 				quadlet_t sample_int=ntohl(*target_event);
   				if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
@@ -2011,7 +2069,8 @@ int freebob_streaming_encode_midi(freebob_connection_t *connection,
 			if(stream->midi_counter<=0) { // we can send a byte
 				read=freebob_ringbuffer_read(stream->buffer, (char *)(stream->user_buffer), 1*sizeof(quadlet_t))/sizeof(quadlet_t);
 				if(read) {
-					j = (dbc%8)+stream->spec.location-1; 
+// 					j = (dbc%8)+stream->spec.location-1; 
+					j = (dbc & 0x07)+stream->spec.location-1; 
 					target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
 					buffer=((quadlet_t *)(stream->user_buffer));
 				
@@ -2129,7 +2188,8 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-	if( (!(connection->status.packets % 2))) {
+// 	if( (!(connection->status.packets % 2))) {
+	if( (!(connection->status.packets & 0x01))) {
 		return RAW1394_ISO_DEFER;
 	}
 	return retval;
@@ -2210,7 +2270,8 @@ static enum raw1394_iso_disposition
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-	if( (!(connection->status.packets % 2))) {
+// 	if( (!(connection->status.packets % 2))) {
+	if( (!(connection->status.packets & 0x01))) {
 		return RAW1394_ISO_DEFER;
 	}
 	return retval;
@@ -2337,7 +2398,8 @@ iso_master_transmit_handler(raw1394handle_t handle,
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-	if( (!(connection->status.packets % 2))) {
+// 	if( (!(connection->status.packets % 2))) {
+	if( (!(connection->status.packets & 0x01))) {
 		return RAW1394_ISO_DEFER;
 	}
 	return retval;
