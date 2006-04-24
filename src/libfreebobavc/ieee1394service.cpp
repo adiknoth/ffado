@@ -83,16 +83,22 @@ Ieee1394Service::write( fb_nodeid_t   nodeId,
 fb_quadlet_t*
 Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    fb_quadlet_t* buf,
-                                   int len )
+                                   int len,
+                                   unsigned int* resp_len )
 {
     for (int i = 0; i < len; ++i) {
         buf[i] = ntohl( buf[i] );
     }
 
     fb_quadlet_t* result =
-        avc1394_transaction_block( m_handle, nodeId, buf, len,  10 );
+        avc1394_transaction_block2( m_handle,
+                                    nodeId,
+                                    buf,
+                                    len,
+                                    resp_len,
+                                    10 );
 
-    for ( int i = 0; i < 512/4; ++i ) { //XXX
+    for ( unsigned int i = 0; i < *resp_len; ++i ) {
         result[i] = htonl( result[i] );
     }
 

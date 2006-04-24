@@ -154,6 +154,21 @@ ConfigRom::isAvcDevice() const
     return m_avcDevice;
 }
 
+// XXX This might work only for the M-Audio Audiophile
+// but can easily extended.
+#define VENDOR_ID_MAUDIO    0x00000d6c
+#define MODEL_ID_MAUDIO_BOOTLOADER 0x00010060
+
+const bool
+ConfigRom::isBootloader() const
+{
+    if ( ( m_vendorId == VENDOR_ID_MAUDIO )
+         && ( m_modelId == MODEL_ID_MAUDIO_BOOTLOADER ) )
+    {
+        return true;
+    }
+    return false;
+}
 
 static int
 busRead( struct csr1212_csr* csr,
@@ -202,6 +217,7 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                     debugOutput( DEBUG_LEVEL_VERBOSE,
                                  "\tvendor_id = 0x%08x\n",
                                  kv->value.immediate);
+                    m_vendorId = kv->value.immediate;
 		}
 		break;
 
@@ -209,6 +225,7 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tmodel_id = 0x%08x\n",
                              kv->value.immediate);
+                m_modelId = kv->value.immediate;
 		break;
 
 	    case CSR1212_KV_ID_SPECIFIER_ID:
@@ -311,6 +328,12 @@ ConfigRom::processRootDirectory(struct csr1212_csr* csr)
 	last_key_id = kv->key.id;
     }
 
+}
+
+const fb_nodeid_t
+ConfigRom::getNodeId() const
+{
+    return m_nodeId;
 }
 
 const fb_octlet_t

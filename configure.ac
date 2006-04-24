@@ -1,5 +1,6 @@
 # configure.ac - Configure script for FreeBob.
-# Copyright (C) 2005 by Daniel Wagner.
+# Copyright (C) 2005,06 by Daniel Wagner.
+# Copyright (C) 2006    by Pieter Palmers.
 #
 # This file is part of FreeBob.
 #
@@ -21,7 +22,7 @@
 AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 0)
-m4_define(freebob_minor_version, 6)
+m4_define(freebob_minor_version, 7)
 m4_define(freebob_micro_version, 0)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
@@ -46,7 +47,7 @@ AC_SUBST(FREEBOB_MINOR_VERSION, freebob_minor_version)
 AC_SUBST(FREEBOB_MAJOR_VERSION, freebob_major_version)
 AC_SUBST(FREEBOB_MICRO_VERSION, freebob_micro_version)
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/freebob.cpp])
 AC_CONFIG_HEADER([config.h])
@@ -72,6 +73,7 @@ test ".$CXXFLAGS" = "." && CXXFLAGS=""
 AC_PROG_CC
 AC_PROG_CXX
 AM_PROG_AS
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AC_CHECK_TOOL([AR], [ar], :)
 AC_CHECK_TOOL([NM], [nm], :)
@@ -124,15 +126,83 @@ AC_ARG_ENABLE(debug,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
 esac],[debug=false])
 
-CFLAGS="$CFLAGS -g -Wall -std=gnu99"
-CXXFLAGS="$CXXFLAGS -g -Wall"
+
+dnl Check for MMX assembly
+
+AC_ARG_ENABLE(mmx,
+    [  --enable-mmx            enable MMX support (default=auto)],,
+    enable_mmx=yes)
+
+AC_ARG_ENABLE(sse,
+    [  --enable-sse            enable SSE support (default=auto)],,
+    enable_sse=$enable_mmx)
+
+if test "x$enable_mmx" = xyes; then
+    
+    AC_MSG_CHECKING(whether we can compile MMX code)
+    
+    AC_COMPILE_IFELSE([asm ("movq 0, %mm0");],
+	
+	AC_DEFINE(USE_MMX, 1, [Define to 1 if MMX assembly is available.])
+	AC_MSG_RESULT(yes)
+	MMX_FLAGS="-mmmx"
+	
+	if test "x$enable_sse" = xyes; then
+	      
+	      AC_MSG_CHECKING(whether we can compile SSE code)
+	      
+	      AC_COMPILE_IFELSE([asm ("movntps %xmm0, 0");],
+		  AC_DEFINE(USE_SSE, 1,
+                            [Define to 1 if SSE assembly is available.])
+		  SSE_FLAGS="-msse -mfpmath=sse"
+		  AC_MSG_RESULT(yes)
+		  ,
+		  enable_sse=no
+		  AC_MSG_RESULT(no)
+		  AC_MSG_WARN(
+                      [The assembler does not support the SSE command set.]
+                  )
+	      )
+	      
+	  fi
+	  ,
+	  enable_mmx=no
+	  AC_MSG_RESULT(no)
+	  AC_MSG_WARN([The assembler does not support the MMX command set.])
+      )
+  fi
+
+  AC_DEFINE(x86, 1, "Nope it's intel")
+  COMMON_X86_OPT_FLAGS="-DREENTRANT -O3 -fomit-frame-pointer -ffast-math -funroll-loops"
+
+  if test "$target_cpu" = "i586"; then
+      FREEBOB_OPT_CFLAGS="-march=i586 "
+  elif test "$target_cpu" = "i686"; then
+      FREEBOB_OPT_CFLAGS="-march=i686"
+  else
+      :
+  fi
+
+  FREEBOB_OPT_CFLAGS="$COMMON_X86_OPT_FLAGS $FREEBOB_OPT_CFLAGS $MMX_FLAGS $SSE_FLAGS"
+
+
+AC_ARG_ENABLE(optimize,
+    AC_HELP_STRING([--enable-optimize],
+		   [ask the compiler for its best optimizations]),
+    [ if test x$enable_optimize != xno ; then
+	CFLAGS="$CFLAGS $FREEBOB_OPT_CFLAGS" ;
+	CXXFLAGS="$CXXFLAGS $FREEBOB_OPT_CFLAGS"
+      fi 
+    ]
+)
+
+
+CFLAGS="$CFLAGS -Wall -std=gnu99"
+CXXFLAGS="$CXXFLAGS -Wall"
 
 if test "${debug}" = true; then
-   CFLAGS="$CFLAGS -DDEBUG"
-   CXXFLAGS="$CXXFLAGS -DDEBUG" 
-else
-   CFLAGS="$CFLAGS -O2"
-   CXXFLAGS="$CXXFLAGS -O2" 
+   CFLAGS="$CFLAGS -g -DDEBUG"
+   CXXFLAGS="$CXXFLAGS -g -DDEBUG" 
 fi;
 
 AC_SUBST([CFLAGS])
@@ -164,6 +234,7 @@ AC_CONFIG_FILES([Makefile
 		 tests/Makefile
 		 tests/streaming/Makefile
 		 libfreebob.pc])
+
 AC_OUTPUT
 
 # Print a summary so that important information isn't missed.
@@ -174,4 +245,11 @@ FreeBob $VERSION is now configured for $canonical_host_type
   Source directory:     $srcdir
   Installation prefix:  $prefix
   C++ compiler:         $CXX $CXXFLAGS
+
+  libraw1394 CFLAGS:    $LIBRAW1394_CFLAGS
+  libraw1394 LIBS:      $LIBRAW1394_LIBS
+  libiec61883 CFLAGS:   $LIBIEC61883_CFLAGS
+  libiec61883 LIBS:     $LIBIEC61883_LIBS
+  libavc1394 CFLAGS:    $LIBAVC1394_CFLAGS
+  libavc1394 LIBS:      $LIBAVC1394_LIBS
 ])

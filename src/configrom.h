@@ -1,5 +1,5 @@
 /* configrom.h
- * Copyright (C) 2005 by Daniel Wagner
+ * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -38,9 +38,12 @@ class ConfigRom {
     bool initialize();
 
     const bool isAvcDevice() const;
+    const bool isBootloader() const;
+    const fb_nodeid_t getNodeId() const;
     const fb_octlet_t getGuid() const;
     const std::string getModelName() const;
     const std::string getVendorName() const;
+
 
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,
@@ -55,6 +58,8 @@ class ConfigRom {
     fb_octlet_t      m_guid;
     std::string      m_vendorName;
     std::string      m_modelName;
+    unsigned int     m_vendorId;
+    unsigned int     m_modelId;
 
     /* only used during parsing */
     struct csr1212_keyval* m_vendorNameKv;

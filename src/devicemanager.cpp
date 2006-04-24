@@ -21,11 +21,13 @@
 #include "fbtypes.h"
 
 #include "devicemanager.h"
-#include "avdevice.h"
+#include "iavdevice.h"
 #include "configrom.h"
 
 #include "libfreebobavc/ieee1394service.h"
 #include "debugmodule/debugmodule.h"
+#include "bebob/bebob_avdevice.h"
+#include "bounce/bounce_avdevice.h"
 
 #include <iostream>
 
@@ -36,11 +38,13 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
+    m_probeList.push_back( probeBeBoB );
+    m_probeList.push_back( probeBounce );
 }
 
 DeviceManager::~DeviceManager()
 {
-    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -75,7 +79,7 @@ DeviceManager::discover( int verboseLevel )
     if ( verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
-    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -87,8 +91,8 @@ DeviceManager::discover( int verboseLevel )
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
     {
-        ConfigRom* configRom = new ConfigRom( m_1394Service, nodeId );
-        if ( !configRom->initialize() ) {
+        ConfigRom configRom( m_1394Service, nodeId );
+        if ( !configRom.initialize() ) {
             // \todo If a PHY on the bus in power safe mode than
             // the config rom is missing. So this might be just
             // such a case and we can safely skip it. But it might
@@ -98,55 +102,78 @@ DeviceManager::discover( int verboseLevel )
                          "Could not read config rom from device (noe id %d). "
                          "Skip device discovering for this node\n",
                          nodeId );
-            delete configRom;
             continue;
         }
 
-        if ( !configRom->isAvcDevice() ) {
-            delete configRom;
+        if ( !configRom.isAvcDevice() ) {
             continue;
         }
 
-        AvDevice* avDevice = new AvDevice( m_1394Service,
-                                           configRom,
-                                           nodeId,
-                                           verboseLevel );
-        if ( !avDevice ) {
-            debugError( "discover: Could not allocate AvDevice\n" );
-            delete configRom;
-            return false;
+        for ( ProbeFunctionVector::iterator it = m_probeList.begin();
+              it != m_probeList.end();
+              ++it )
+        {
+            ProbeFunction func = *it;
+            IAvDevice* avDevice = func(*m_1394Service, nodeId, verboseLevel);
+            if ( avDevice ) {
+                m_avDevices.push_back( avDevice );
+                if ( verboseLevel ) {
+                    avDevice->showDevice();
+                }
+                break;
+            }
         }
 
-        if ( !avDevice->discover() ) {
-            debugError( "discover: Could not discover device (node id %d)\n",
-                        nodeId );
-            delete avDevice;
-            return false;
-        }
-        if ( verboseLevel ) {
-            avDevice->showDevice();
-        }
-
-        m_avDevices.push_back( avDevice );
     }
 
     return true;
 }
 
+
+IAvDevice*
+DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
+{
+    IAvDevice* avDevice = new BeBoB::AvDevice( service, id, level );
+    if ( !avDevice ) {
+        return 0;
+    }
+
+    if ( !avDevice->discover() ) {
+        delete avDevice;
+        return 0;
+    }
+    return avDevice;
+}
+
+IAvDevice*
+DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
+{
+    IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
+    if ( !avDevice ) {
+        return 0;
+    }
+
+    if ( !avDevice->discover() ) {
+        delete avDevice;
+        return 0;
+    }
+    return avDevice;
+}
+
 bool
 DeviceManager::isValidNode(int node)
 {
-    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        AvDevice* avDevice = *it;
+        IAvDevice* avDevice = *it;
 
-        if (avDevice->getNodeId() == node) {
+        if (avDevice->getConfigRom().getNodeId() == node) {
         	return true;
-        }
 	}
-	return false;
+    }
+    return false;
 }
 
 int
@@ -163,24 +190,24 @@ DeviceManager::getDeviceNodeId( int deviceNr )
         return -1;
     }
 
-    AvDevice* avDevice = m_avDevices.at( deviceNr );
+    IAvDevice* avDevice = m_avDevices.at( deviceNr );
 
     if ( !avDevice ) {
         debugError( "Could not get device at position (%d)\n",  deviceNr );
     }
 
-    return avDevice->getNodeId();
+    return avDevice->getConfigRom().getNodeId();
 }
 
-AvDevice*
+IAvDevice*
 DeviceManager::getAvDevice( int nodeId )
 {
-    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        AvDevice* avDevice = *it;
-        if ( avDevice->getNodeId() == nodeId ) {
+        IAvDevice* avDevice = *it;
+        if ( avDevice->getConfigRom().getNodeId() == nodeId ) {
             return avDevice;
         }
     }
@@ -206,11 +233,11 @@ DeviceManager::getXmlDescription()
     }
     xmlDocSetRootElement( doc, rootNode );
 
-    for ( AvDeviceVectorIterator it = m_avDevices.begin();
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        AvDevice* avDevice = *it;
+        IAvDevice* avDevice = *it;
 
         xmlNodePtr deviceNode = xmlNewChild( rootNode, 0,
                                              BAD_CAST "Device", 0 );
@@ -222,7 +249,7 @@ DeviceManager::getXmlDescription()
         }
 
         char* result;
-        asprintf( &result, "%d", avDevice->getNodeId() );
+        asprintf( &result, "%d", avDevice->getConfigRom().getNodeId() );
         if ( !xmlNewChild( deviceNode,  0,
                            BAD_CAST "NodeId",  BAD_CAST result ) )
         {
@@ -231,9 +258,9 @@ DeviceManager::getXmlDescription()
         }
 
         std::string res = "Connection Information for "
-                          + avDevice->getVendorName()
+                          + avDevice->getConfigRom().getVendorName()
                           +", "
-                          + avDevice->getModelName()
+                          + avDevice->getConfigRom().getModelName()
                           + " configuration";
         if ( !xmlNewChild( deviceNode,
                            0,
@@ -245,7 +272,7 @@ DeviceManager::getXmlDescription()
             return 0;
         }
 
-        res = avDevice->getVendorName();
+        res = avDevice->getConfigRom().getVendorName();
 
         if ( !xmlNewChild( deviceNode,
                            0,
@@ -257,7 +284,7 @@ DeviceManager::getXmlDescription()
             return 0;
         }
 
-        res = avDevice->getModelName();
+        res = avDevice->getConfigRom().getModelName();
 
         if ( !xmlNewChild( deviceNode,
                            0,
@@ -270,8 +297,8 @@ DeviceManager::getXmlDescription()
         }
 
         asprintf( &result, "%08x%08x",
-                  ( quadlet_t )( avDevice->getGuid() >> 32 ),
-                  ( quadlet_t )( avDevice->getGuid() & 0xfffffff ) );
+                  ( quadlet_t )( avDevice->getConfigRom().getGuid() >> 32 ),
+                  ( quadlet_t )( avDevice->getConfigRom().getGuid() & 0xfffffff ) );
         if ( !xmlNewChild( deviceNode,  0,
                            BAD_CAST "GUID",  BAD_CAST result ) ) {
             debugError( "Couldn't create 'GUID' node\n" );

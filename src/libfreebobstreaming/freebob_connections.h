@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  *   FreeBob Streaming API
  *   FreeBob = Firewire (pro-)audio for linux

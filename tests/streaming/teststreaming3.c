@@ -47,7 +47,7 @@ static void sighandler (int sig)
 int main(int argc, char *argv[])
 {
 
-	#define PERIOD_SIZE 64
+	#define PERIOD_SIZE 256
 
 	int samplesread=0;
 // 	int sampleswritten=0;
@@ -75,13 +75,13 @@ int main(int argc, char *argv[])
 	dev_options.sample_rate=44100;
 	dev_options.period_size=PERIOD_SIZE;
 
-	dev_options.nb_buffers=2;
+	dev_options.nb_buffers=3;
 
 	dev_options.iso_buffers=40;
 	dev_options.iso_prebuffers=4;
 	dev_options.iso_irq_interval=2;
 	
-	dev_options.port=1;
+	dev_options.port=0;
 	dev_options.node_id=-1;
 
 	dev_options.realtime=1;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	nullbuffer=calloc(PERIOD_SIZE+1,sizeof(freebob_sample_t));
 	
 	for (i=0;i<nb_out_channels;i++) {
-		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
+		switch (freebob_streaming_get_playback_stream_type(dev,i)) {
 			case freebob_stream_type_audio:
 				if (i<nb_in_channels) {
 					/* assign the audiobuffer to the stream */

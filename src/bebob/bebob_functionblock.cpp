@@ -18,9 +18,12 @@
  * MA 02111-1307 USA.
  */
 
-#include "functionblock.h"
-#include "avdevicesubunit.h"
-#include "avdevice.h"
+#include "bebob/bebob_functionblock.h"
+#include "bebob/bebob_avdevice_subunit.h"
+#include "bebob/bebob_avdevice.h"
+#include "configrom.h"
+
+namespace BeBoB {
 
 IMPL_DEBUG_MODULE( FunctionBlock, FunctionBlock, DEBUG_LEVEL_NORMAL );
 
@@ -99,7 +102,7 @@ FunctionBlock::discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
     for ( int plugId = 0; plugId < plugMaxId; ++plugId ) {
         AvPlug* plug = new AvPlug(
             *( m_subunit->getAvDevice().get1394Service() ),
-            m_subunit->getAvDevice().getNodeId(),
+            m_subunit->getAvDevice().getConfigRom().getNodeId(),
             m_subunit->getAvDevice().getPlugManager(),
             m_subunit->getSubunitType(),
             m_subunit->getSubunitId(),
@@ -317,4 +320,6 @@ const char*
 FunctionBlockCodec::getName()
 {
     return "Dummy Codec";
+}
+
 }

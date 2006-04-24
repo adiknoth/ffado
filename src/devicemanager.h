@@ -28,10 +28,14 @@
 #include <vector>
 
 class Ieee1394Service;
-class AvDevice;
+class IAvDevice;
 
-typedef std::vector< AvDevice* > AvDeviceVector;
-typedef std::vector< AvDevice* >::iterator AvDeviceVectorIterator;
+typedef std::vector< IAvDevice* > IAvDeviceVector;
+typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
+
+typedef IAvDevice* (*ProbeFunction)(Ieee1394Service&, int, int);
+typedef std::vector<ProbeFunction> ProbeFunctionVector;
+typedef std::vector<ProbeFunction>::iterator ProbeFunctionVectorIterator;
 
 class DeviceManager{
  public:
@@ -47,12 +51,18 @@ class DeviceManager{
     int getNbDevices();
     int getDeviceNodeId( int deviceNr );
 
-    AvDevice* getAvDevice( int nodeId );
+    IAvDevice* getAvDevice( int nodeId );
 
     xmlDocPtr getXmlDescription();
- protected:
+
+protected:
+    static IAvDevice* probeBeBoB(Ieee1394Service& service, int id, int level);
+    static IAvDevice* probeBounce(Ieee1394Service& service, int id, int level);
+
+protected:
     Ieee1394Service* m_1394Service;
-    AvDeviceVector   m_avDevices;
+    IAvDeviceVector  m_avDevices;
+    ProbeFunctionVector m_probeList;
 
     DECLARE_DEBUG_MODULE;
 };

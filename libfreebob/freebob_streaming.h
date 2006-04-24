@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  *   FreeBob Streaming API
  *   FreeBob = Firewire (pro-)audio for linux
@@ -39,6 +37,10 @@ extern "C" {
 #endif
 
 #define FREEBOB_STREAMING_MAX_URL_LENGTH 2048
+
+#define FREEBOB_IGNORE_CAPTURE 		(1<<0)
+#define FREEBOB_IGNORE_PLAYBACK 	(1<<1)
+
 #include <stdlib.h>
 
 /* The basic operation of the API is as follows:
@@ -118,6 +120,10 @@ typedef struct freebob_options {
 	int node_id;
 	int port;
 	
+
+	/* direction map */
+	int directions;
+
 } freebob_options_t;
 
 /**

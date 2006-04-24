@@ -81,7 +81,8 @@ public:
 
     fb_quadlet_t* transactionBlock( fb_nodeid_t nodeId,
                                     fb_quadlet_t* buf,
-                                    int len );
+                                    int len,
+				    unsigned int* resp_len );
 
     bool transactionBlockClose();
     
