@@ -23,7 +23,7 @@ AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 0)
 m4_define(freebob_minor_version, 7)
-m4_define(freebob_micro_version, 0)
+m4_define(freebob_micro_version, 1)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
 

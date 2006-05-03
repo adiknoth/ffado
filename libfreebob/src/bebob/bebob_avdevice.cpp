@@ -417,6 +417,8 @@ AvDevice::discoverSyncModes()
               ++jt )
         {
             AvPlug* plug = *jt;
+            plug = plug; // disable compiler warning in release mode
+                         // will be optimized away
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "Active Sync Connection: '%s' -> '%s'\n",
                          msuPlug->getName(),
@@ -634,6 +636,7 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
         return false;
     }
 
+
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "setSampleRate: Set sample rate to %d\n",
                  convertESamplingFrequency( samplingFrequency ) );
@@ -645,27 +648,18 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                                     AvPlug::EAvPlugDirection direction,
                                     ESamplingFrequency samplingFrequency )
 {
+
     ExtendedStreamFormatCmd extStreamFormatCmd(
         m_1394Service,
         ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
                                      plug.getPlugId() );
 
-    PlugAddress::EPlugDirection dir;
-    switch ( direction ) {
-    case AvPlug::eAPD_Input:
-        dir = PlugAddress::ePD_Input;
-        break;
-    case AvPlug::eAPD_Output:
-        dir = PlugAddress::ePD_Output;
-        break;
-    default:
-        return false;
-    }
-
-    extStreamFormatCmd.setPlugAddress( PlugAddress( dir,
-                                                    PlugAddress::ePAM_Unit,
-                                                    unitPlugAddress ) );
+    extStreamFormatCmd.setPlugAddress(
+        PlugAddress(
+            AvPlug::convertPlugDirection(direction ),
+            PlugAddress::ePAM_Unit,
+            unitPlugAddress ) );
 
     extStreamFormatCmd.setNodeId( m_nodeId );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
@@ -680,6 +674,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
         extStreamFormatCmd.setVerbose( m_verboseLevel );
 
         cmdSuccess = extStreamFormatCmd.fire();
+
         if ( cmdSuccess
              && ( extStreamFormatCmd.getResponse() ==
                   AVCCommand::eR_Implemented ) )
@@ -706,7 +701,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                         compoundStream->m_samplingFrequency );
             }
 
-            if (  foundFreq == samplingFrequency )
+            if ( foundFreq == samplingFrequency )
             {
                 correctFormatFound = true;
                 break;
@@ -714,8 +709,11 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
         }
 
         ++i;
-    } while ( cmdSuccess && ( extStreamFormatCmd.getResponse()
-                              == ExtendedStreamFormatCmd::eR_Implemented ) );
+    } while ( cmdSuccess
+              && ( extStreamFormatCmd.getResponse() ==
+                   ExtendedStreamFormatCmd::eR_Implemented )
+              && ( extStreamFormatCmd.getStatus() !=
+                   ExtendedStreamFormatCmd::eS_NotUsed ) );
 
     if ( !cmdSuccess ) {
         debugError( "setSampleRatePlug: Failed to retrieve format info\n" );

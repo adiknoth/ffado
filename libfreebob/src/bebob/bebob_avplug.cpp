@@ -1076,8 +1076,8 @@ AvPlug::setSrcPlugAddrToSignalCmd()
 
     signalSourceCmd.setNodeId( m_nodeId );
     signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
-    signalSourceCmd.setSubunitType( m_subunitType );
-    signalSourceCmd.setSubunitId( m_subunitId );
+    signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
+    signalSourceCmd.setSubunitId( 0xff );
 
     return signalSourceCmd;
 }
@@ -1200,7 +1200,7 @@ AvPlug::getClusterInfoByIndex(int index) const
 }
 
 PlugAddress::EPlugDirection
-AvPlug::convertPlugDirection( EAvPlugDirection direction ) const
+AvPlug::convertPlugDirection( EAvPlugDirection direction )
 {
     PlugAddress::EPlugDirection dir;
     switch ( direction ) {

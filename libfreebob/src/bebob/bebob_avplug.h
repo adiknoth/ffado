@@ -124,8 +124,8 @@ public:
     bool addXmlDescription( xmlNodePtr conectionSet );
     bool addXmlDescriptionStreamFormats( xmlNodePtr streamFormats );
 
-    PlugAddress::EPlugDirection convertPlugDirection(
-	EAvPlugDirection direction) const;
+    static PlugAddress::EPlugDirection convertPlugDirection(
+	EAvPlugDirection direction);
 
     void showPlug() const;
 
