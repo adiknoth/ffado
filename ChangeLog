@@ -1,3 +1,10 @@
+2006-05-03  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bumped to 0.7.1
+
+	* Fixed bug in SignalSource command which
+	prevented one to set the samplerate.
+
 2006-04-23  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bumped to 0.7.0
