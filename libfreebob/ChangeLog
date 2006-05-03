@@ -1,5 +1,12 @@
 2006-05-04  Daniel Wagner  <wagi@monom.org>
 
+	* configure.ac: Version bumped to 0.8.0
+
+	* Discovering code ported stable 0.2.0 version
+	to head and activated for default discovering.
+
+2006-05-04  Daniel Wagner  <wagi@monom.org>
+
 	* configure.ac: Version bumped to 0.7.2
 
 	* src/bebob: Some cleanup on naming and

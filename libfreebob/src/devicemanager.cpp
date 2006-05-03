@@ -27,6 +27,7 @@
 #include "libfreebobavc/ieee1394service.h"
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
+#include "bebob_light/bebob_light_avdevice.h"
 #include "bounce/bounce_avdevice.h"
 
 #include <iostream>
@@ -133,7 +134,7 @@ DeviceManager::discover( int verboseLevel )
 IAvDevice*
 DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
 {
-    IAvDevice* avDevice = new BeBoB::AvDevice( service, id, level );
+    IAvDevice* avDevice = new BeBoB_Light::AvDevice( service, id, level );
     if ( !avDevice ) {
         return 0;
     }
