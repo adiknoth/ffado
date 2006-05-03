@@ -1,5 +1,5 @@
-/* avdevicesubunit.h
- * Copyright (C) 2005 by Daniel Wagner
+/* bebob_avdevice_subunit.h
+ * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *
@@ -18,8 +18,8 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef AVDEVICESUBUNIT_H
-#define AVDEVICESUBUNIT_H
+#ifndef BEBOB_AVDEVICESUBUNIT_H
+#define BEBOB_AVDEVICESUBUNIT_H
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_functionblock.h"

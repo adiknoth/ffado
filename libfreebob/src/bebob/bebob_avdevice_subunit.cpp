@@ -1,5 +1,5 @@
-/* avdevicesubunit.cpp
- * Copyright (C) 2005 by Daniel Wagner
+/* bebob_avdevice_subunit.cpp
+ * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
  *

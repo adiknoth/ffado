@@ -1,4 +1,4 @@
-/* functionblock.h
+/* bebob_functionblock.h
  * Copyright (C) 2006 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,8 +18,8 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef FUNCTION_BLOCK_H
-#define FUNCTION_BLOCK_H
+#ifndef BEBOB_FUNCTION_BLOCK_H
+#define BEBOB_FUNCTION_BLOCK_H
 
 #include "bebob/bebob_avplug.h"
 

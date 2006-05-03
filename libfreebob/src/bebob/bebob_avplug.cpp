@@ -1,4 +1,4 @@
-/* avplug.cpp
+/* bebob_avplug.cpp
  * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -23,8 +23,9 @@
 #include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/serialize.h"
 
-int AvPlug::m_globalIdCounter = 0;
+namespace BeBoB {
 
+int AvPlug::m_globalIdCounter = 0;
 
 IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( AvPlugManager, AvPlugManager, DEBUG_LEVEL_NORMAL );
@@ -1736,4 +1737,6 @@ AvPlugConnection::AvPlugConnection( AvPlug& srcPlug, AvPlug& destPlug )
     : m_srcPlug( &srcPlug )
     , m_destPlug( &destPlug )
 {
+}
+
 }

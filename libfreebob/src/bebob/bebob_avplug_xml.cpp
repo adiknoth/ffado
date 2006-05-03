@@ -1,4 +1,4 @@
-/* avplugxml.cpp
+/* bebob_avplug_xml.cpp
  * Copyright (C) 2006 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -23,6 +23,8 @@
 #include "bebob/bebob_avplug.h"
 
 #include "libfreebobavc/ieee1394service.h"
+
+namespace BeBoB {
 
 bool
 AvPlug::addXmlDescription( xmlNodePtr connectionSet )
@@ -261,4 +263,6 @@ AvPlug::addXmlDescriptionStreamFormats( xmlNodePtr streamFormatNode )
     }
 
     return true;
+}
+
 }
