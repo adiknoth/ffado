@@ -1,4 +1,4 @@
-/* avdevice.cpp
+/* bebob_avdevice.cpp
  * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.

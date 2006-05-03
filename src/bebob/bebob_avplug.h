@@ -1,4 +1,4 @@
-/* avplug.h
+/* bebob_avplug.h
  * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,8 +18,8 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef AVPLUG_H
-#define AVPLUG_H
+#ifndef BEBOB_AVPLUG_H
+#define BEBOB_AVPLUG_H
 
 #include "libfreebobavc/avc_signal_source.h"
 #include "libfreebobavc/avc_extended_stream_format.h"
@@ -32,6 +32,8 @@
 #include "debugmodule/debugmodule.h"
 
 class Ieee1394Service;
+
+namespace BeBoB {
 
 class AvPlugManager;
 class AvPlug;
@@ -313,5 +315,7 @@ private:
 
 typedef std::vector<AvPlugConnection*> AvPlugConnectionVector;
 typedef std::vector<AvPlugConnection> AvPlugConnectionOwnerVector;
+
+}
 
 #endif

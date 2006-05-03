@@ -1,3 +1,10 @@
+2006-05-04  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bumped to 0.7.2
+
+	* src/bebob: Some cleanup on naming and
+	namespaces.
+
 2006-05-03  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bumped to 0.7.1

@@ -1,4 +1,4 @@
-/* functionblock.cpp
+/* bebob_functionblock.cpp
  * Copyright (C) 2006 by Daniel Wagner
  *
  * This file is part of FreeBob.

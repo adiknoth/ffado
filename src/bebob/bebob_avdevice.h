@@ -1,4 +1,4 @@
-/* avdevice.h
+/* bebob_avdevice.h
  * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBob.
@@ -18,8 +18,8 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef AVDEVICE_H
-#define AVDEVICE_H
+#ifndef BEBOB_AVDEVICE_H
+#define BEBOB_AVDEVICE_H
 
 #include <stdint.h>
 
