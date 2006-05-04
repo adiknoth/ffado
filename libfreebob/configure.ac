@@ -145,7 +145,7 @@ if test "x$enable_mmx" = xyes; then
 	
 	AC_DEFINE(USE_MMX, 1, [Define to 1 if MMX assembly is available.])
 	AC_MSG_RESULT(yes)
-	MMX_FLAGS="-mmmx"
+	MMX_FLAGS="-mmmx -DENABLE_MMX"
 	
 	if test "x$enable_sse" = xyes; then
 	      
@@ -154,7 +154,7 @@ if test "x$enable_mmx" = xyes; then
 	      AC_COMPILE_IFELSE([asm ("movntps %xmm0, 0");],
 		  AC_DEFINE(USE_SSE, 1,
                             [Define to 1 if SSE assembly is available.])
-		  SSE_FLAGS="-msse -mfpmath=sse"
+		  SSE_FLAGS="-msse -mfpmath=sse -DENABLE_SSE"
 		  AC_MSG_RESULT(yes)
 		  ,
 		  enable_sse=no

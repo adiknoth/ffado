@@ -2545,7 +2545,11 @@ static enum raw1394_iso_disposition
 /*
  * Decoders and encoders
  */
-	
+#ifdef ENABLE_SSE_NOT_COMPLETELY_WORKING
+typedef float v4sf __attribute__ ((vector_size (16)));
+typedef int v4si __attribute__ ((vector_size (16)));
+typedef int v2si __attribute__ ((vector_size (8)));
+
 static inline int  
 freebob_decode_events_to_stream(freebob_connection_t *connection,
 								freebob_stream_t *stream, 
@@ -2564,8 +2568,17 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 	freebob_sample_t *buffer=NULL;
 	float *floatbuff=NULL;
 
-	const float multiplier = 1.0f / (float)(1 << 23);
+	int dimension=connection->spec.dimension;
 	
+	static const float multiplier = 1.0f / (float)(0x7FFFFF);
+	static const float sse_multiplier[4] __attribute__((aligned(16))) = {
+		1.0f / (float)(0x7FFFFF),
+		1.0f / (float)(0x7FFFFF),
+		1.0f / (float)(0x7FFFFF),
+		1.0f / (float)(0x7FFFFF)
+	};
+	unsigned int tmp[4];
+
 	assert(stream->user_buffer);
 	
 	switch(stream->buffer_type) {
@@ -2597,7 +2610,7 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 	
 	if (stream->spec.format== IEC61883_STREAM_TYPE_MBLA) {
 		target_event=(quadlet_t *)(events + stream->spec.position);
-		
+
 		// TODO: convert this into function pointer based
 		switch(stream->buffer_type) {
 			default:
@@ -2606,21 +2619,52 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
 		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
 					buffer++;
-					target_event+=connection->spec.dimension;
+					target_event+=dimension;
 				}
 				break;
 			case freebob_buffer_type_float:
-				for(j = 0; j < nsamples; j += 1) { // decode max nsamples		
-
-					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
-					// sign-extend highest bit of 24-bit int
-					int tmp = (int)(v << 8) / 256;
-		
-					*floatbuff = tmp * multiplier;
-				
-					floatbuff++;
-					target_event+=connection->spec.dimension;
+// 				assert(nsamples>=4);
+				j=0;
+				if(nsamples>3) {
+					for(j = 0; j < nsamples; j += 4) {
+						tmp[0] = ntohl(*target_event);
+						target_event += dimension;
+						tmp[1] = ntohl(*target_event);
+						target_event += dimension;
+						tmp[2] = ntohl(*target_event);
+						target_event += dimension;
+						tmp[3] = ntohl(*target_event);
+						target_event += dimension;
+						asm("pslld $8, %[in2]\n\t" // sign extend 24th bit
+								"pslld $8, %[in1]\n\t"
+								"psrad $8, %[in2]\n\t"
+								"psrad $8, %[in1]\n\t"
+								"cvtpi2ps %[in2], %%xmm0\n\t"
+								"movlhps %%xmm0, %%xmm0\n\t"
+								"cvtpi2ps %[in1], %%xmm0\n\t"
+								"mulps %[ssemult], %%xmm0\n\t"
+								"movups %%xmm0, %[floatbuff]"
+							: [floatbuff] "=m" (*(v4sf*)floatbuff)
+							: [in1] "y" (*(v2si*)tmp),
+						[in2] "y" (*(v2si*)(tmp+2)),
+						[ssemult] "x" (*(v4sf*)sse_multiplier)
+							: "xmm0");
+						floatbuff += 4;
+					}
 				}
+				if (j != nsamples) {
+					for(j -= 4; j < nsamples; ++j) { // decode max nsamples
+						unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+						// sign-extend highest bit of 24-bit int
+						int tmp = (int)(v << 8) / 256;
+						*floatbuff = tmp * multiplier;
+	
+						floatbuff++;
+						target_event += dimension;
+					}
+				}
+				asm volatile("emms");
+				
 				break;
 		}
 
@@ -2666,7 +2710,21 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 	freebob_sample_t *buffer=NULL;
 	float *floatbuff=NULL;
 
-	const float multiplier = (float)(1u << 31);
+	const float multiplier = (float)(0x7FFFFF00);
+	static const float sse_multiplier[4] __attribute__((aligned(16))) = {
+		(float)(0x7FFFFF00),
+		(float)(0x7FFFFF00),
+		(float)(0x7FFFFF00),
+		(float)(0x7FFFFF00)
+	};
+
+	static const int sse_mask[4] __attribute__((aligned(16))) = {
+		0x40000000,  0x40000000,  0x40000000,  0x40000000
+	};
+
+	unsigned int out[4];	
+	
+	int dimension=connection->spec.dimension;
 	
 	unsigned int j=0;
 	unsigned int read=0;
@@ -2716,14 +2774,14 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 				for(j = 0; j < read; j += 1) { // decode max nsamples
 					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
 					buffer++;
-					target_event+=connection->spec.dimension;
+					target_event+=dimension;
 					
 		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
 
 				}
 				break;
 			case freebob_buffer_type_float:
-				for(j = 0; j < read; j += 1) { // decode max nsamples
+/*				for(j = 0; j < read; j += 1) { // decode max nsamples
 					// don't care for overflow
 					float v = *floatbuff * multiplier;  // v: -231 .. 231
 					unsigned int tmp = ((int)v);
@@ -2731,7 +2789,48 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 					
 					floatbuff++;
 					target_event += connection->spec.dimension;
+				}*/
+				j=0;
+				if(read>3) {
+					for (j = 0; j < read; j += 4) {
+						asm("movups %[floatbuff], %%xmm0\n\t"
+								"mulps %[ssemult], %%xmm0\n\t"
+								"cvttps2pi %%xmm0, %[out1]\n\t"
+								"movhlps %%xmm0, %%xmm0\n\t"
+								"psrld $8, %[out1]\n\t"
+								"cvttps2pi %%xmm0, %[out2]\n\t"
+								"por %[mmxmask], %[out1]\n\t"
+								"psrld $8, %[out2]\n\t"
+								"por %[mmxmask], %[out2]\n\t"
+							: [out1] "=&y" (*(v2si*)&out[0]),
+						[out2] "=&y" (*(v2si*)&out[2])
+							: [floatbuff] "m" (*(v4sf*)floatbuff),
+						[ssemult] "x" (*(v4sf*)sse_multiplier),
+						[mmxmask] "y" (*(v2si*)sse_mask)
+							: "xmm0");
+						floatbuff += 4;
+						*target_event = htonl(out[0]);
+						target_event += dimension;
+						*target_event = htonl(out[1]);
+						target_event += dimension;
+						*target_event = htonl(out[2]);
+						target_event += dimension;
+						*target_event = htonl(out[3]);
+						target_event += dimension;
+					}
 				}
+				if (j != read) {
+					for(j -= 4; j < read; ++j) {
+					// don't care for overflow
+						float v = *floatbuff * multiplier;  // v: -231 .. 231
+						unsigned int tmp = (int)v;
+						*target_event = htonl((tmp >> 8) | 0x40000000);
+			
+						floatbuff++;
+						target_event += dimension;
+					}				
+				}
+				asm volatile("emms");
 				break;
 		}
 		
@@ -2756,6 +2855,221 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 
 }
 
+#else
+
+static inline int  
+freebob_decode_events_to_stream(freebob_connection_t *connection,
+								freebob_stream_t *stream, 
+								quadlet_t* events, 
+								unsigned int nsamples,
+								unsigned int dbc
+								) {
+	quadlet_t *target_event;
+	int do_ringbuffer_write=0;
+	
+	assert (stream);
+	assert (connection);
+	assert (events);
+	assert (stream->spec.position < connection->spec.dimension);
+		
+	freebob_sample_t *buffer=NULL;
+	float *floatbuff=NULL;
+
+	const float multiplier = 1.0f / (float)(0x7FFFFF);
+	
+	int dimension=connection->spec.dimension;
+	
+	assert(stream->user_buffer);
+	
+	switch(stream->buffer_type) {
+		case freebob_buffer_type_per_stream:
+		default:
+//			assert(nsamples < dev->options.period_size);
+			
+			// use the preallocated buffer (at init time)
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=1;
+			break;
+				
+		case freebob_buffer_type_uint24:
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=0;
+			break;
+				
+		case freebob_buffer_type_float:
+			floatbuff=((float *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_write=0;
+			break;
+	}
+	
+	int j=0;
+	int written=0;
+	
+	if (stream->spec.format== IEC61883_STREAM_TYPE_MBLA) {
+		target_event=(quadlet_t *)(events + stream->spec.position);
+
+		// TODO: convert this into function pointer based
+		switch(stream->buffer_type) {
+			default:
+			case freebob_buffer_type_uint24:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
+					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+					buffer++;
+					target_event+=dimension;
+				}
+				break;
+			case freebob_buffer_type_float:
+				for(j = 0; j < nsamples; j += 1) { // decode max nsamples		
+
+					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+					// sign-extend highest bit of 24-bit int
+					int tmp = (int)(v << 8) / 256;
+		
+					*floatbuff = tmp * multiplier;
+				
+					floatbuff++;
+					target_event+=dimension;
+				}
+				break;
+		}
+
+// 		fprintf(stderr,"rb write [%02d: %08p %08p]\n",stream->spec.position, stream, stream->buffer);
+	
+// 	fprintf(stderr,"rb write [%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
+		if(do_ringbuffer_write) {
+			// reset the buffer pointer
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			written=freebob_ringbuffer_write(stream->buffer, (char *)(buffer), nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		} else {
+			written=nsamples;
+		}
+		
+// 	fprintf(stderr,"rb write1[%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
+		
+		return written;
+	
+	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
+		return nsamples; // for midi streams we always indicate a full write
+	
+	} else {//if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
+		return nsamples; // for unsupported we always indicate a full read
+	
+	}
+	
+	return 0;
+
+
+}
+
+static inline int 
+freebob_encode_stream_to_events(freebob_connection_t *connection,
+								freebob_stream_t *stream,
+								quadlet_t* events,
+								unsigned int nsamples,
+								unsigned int dbc
+								) {
+	quadlet_t *target_event;
+	//freebob_sample_t buff[nsamples];
+	int do_ringbuffer_read=0;
+	
+	freebob_sample_t *buffer=NULL;
+	float *floatbuff=NULL;
+
+	const float multiplier = (float)(0x7FFFFF00);
+	int dimension=connection->spec.dimension;
+	
+	unsigned int j=0;
+	unsigned int read=0;
+
+	assert (stream);
+	assert (connection);
+	assert (events);
+	assert (stream->spec.position < connection->spec.dimension);
+	
+	switch(stream->buffer_type) {
+		case freebob_buffer_type_per_stream:
+		default:
+//			assert(nsamples < dev->options.period_size);
+			// use the preallocated buffer (at init time)
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=1;
+			break;
+				
+		case freebob_buffer_type_uint24:
+			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=0;
+			break;
+				
+		case freebob_buffer_type_float:
+			floatbuff=((float *)(stream->user_buffer))+stream->user_buffer_position;
+			
+			do_ringbuffer_read=0;
+			break;
+	}
+	
+	
+	if(stream->spec.format == IEC61883_STREAM_TYPE_MBLA) { // MBLA
+		target_event=(quadlet_t *)(events + (stream->spec.position));
+		
+		if(do_ringbuffer_read) {
+			read=freebob_ringbuffer_read(stream->buffer, (char *)buffer, nsamples*sizeof(freebob_sample_t))/sizeof(freebob_sample_t);
+		} else {
+			read=nsamples;
+		}
+		
+		// TODO: convert this into function pointer based
+		switch(stream->buffer_type) {
+			default:
+			case freebob_buffer_type_uint24:
+				for(j = 0; j < read; j += 1) { // decode max nsamples
+					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
+					buffer++;
+					target_event+=dimension;
+					
+		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
+
+				}
+				break;
+			case freebob_buffer_type_float:
+				for(j = 0; j < read; j += 1) { // decode max nsamples
+					// don't care for overflow
+					float v = *floatbuff * multiplier;  // v: -231 .. 231
+					unsigned int tmp = ((int)v);
+					*target_event = htonl((tmp >> 8) | 0x40000000);
+					
+					floatbuff++;
+					target_event += dimension;
+				}
+				break;
+		}
+		
+		/*		
+		for(j = 0; j < nsamples; j+=1) {
+			*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
+			buffer++;
+			target_event+=connection->spec.dimension;
+		}
+		*/
+		
+		return read;
+		
+	} else if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
+		return nsamples; // for midi we always indicate a full read
+	
+	} else { //if (stream->spec.format == IEC61883_STREAM_TYPE_SPDIF) {
+		return nsamples; // for unsupported we always indicate a full read
+	
+	}
+	return 0;
+
+}
+#endif
 
 /* 
  * write received events to the stream ringbuffers.
