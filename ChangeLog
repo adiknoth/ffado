@@ -1,3 +1,9 @@
+2006-05-04  Pieter Palmers  <pieterpalmers@users.sourceforge.net>
+
+	* configure.ac: Version bumped to 0.8.1
+
+	* Introduced SSE-accellerated packet encoders/decoders
+
 2006-05-04  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bumped to 0.8.0
