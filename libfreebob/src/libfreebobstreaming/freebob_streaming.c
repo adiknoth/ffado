@@ -2204,10 +2204,11 @@ static enum raw1394_iso_disposition
 {
 	enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
 	/* slave receive is easy if you assume that the connections are synced
-	* Synced connections have matched data rates, so just receiving and calling the rcv handler would
-	* suffice in this case. As the connection is externally matched to the master connection, the buffer fill
-	* will be ok.
+	Synced connections have matched data rates, so just receiving and 
+	calling the rcv handler would suffice in this case. As the connection 
+	is externally matched to the master connection, the buffer fill will be ok.
 	*/
+	/* TODO: implement correct SYT behaviour */
 	 	
 // 	int xrun=0;
 
@@ -2223,7 +2224,6 @@ static enum raw1394_iso_disposition
 
 	connection->status.last_cycle=cycle;
 
-	
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
 		connection->status.fdf=packet->fdf;
@@ -2545,7 +2545,7 @@ static enum raw1394_iso_disposition
 /*
  * Decoders and encoders
  */
-#ifdef ENABLE_SSE_NOT_COMPLETELY_WORKING
+#ifdef ENABLE_SSE
 typedef float v4sf __attribute__ ((vector_size (16)));
 typedef int v4si __attribute__ ((vector_size (16)));
 typedef int v2si __attribute__ ((vector_size (8)));
@@ -2626,7 +2626,7 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 // 				assert(nsamples>=4);
 				j=0;
 				if(nsamples>3) {
-					for(j = 0; j < nsamples; j += 4) {
+					for(j = 0; j < nsamples-4; j += 4) {
 						tmp[0] = ntohl(*target_event);
 						target_event += dimension;
 						tmp[1] = ntohl(*target_event);
@@ -2653,7 +2653,7 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 					}
 				}
 				if (j != nsamples) {
-					for(j -= 4; j < nsamples; ++j) { // decode max nsamples
+					for(; j < nsamples; ++j) { // decode max nsamples
 						unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
 						// sign-extend highest bit of 24-bit int
 						int tmp = (int)(v << 8) / 256;
@@ -2792,7 +2792,7 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 				}*/
 				j=0;
 				if(read>3) {
-					for (j = 0; j < read; j += 4) {
+					for (j = 0; j < read-4; j += 4) {
 						asm("movups %[floatbuff], %%xmm0\n\t"
 								"mulps %[ssemult], %%xmm0\n\t"
 								"cvttps2pi %%xmm0, %[out1]\n\t"
@@ -2820,7 +2820,7 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 					}
 				}
 				if (j != read) {
-					for(j -= 4; j < read; ++j) {
+					for(; j < read; ++j) {
 					// don't care for overflow
 						float v = *floatbuff * multiplier;  // v: -231 .. 231
 						unsigned int tmp = (int)v;

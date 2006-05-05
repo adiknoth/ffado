@@ -8,6 +8,8 @@
 #define IEC61883_FMT_AMDTP 0x10
 #define IEC61883_FMT_MPEG2 0x20
 
+#define CIP_TRANSFER_DELAY 9000
+
 #if __BYTE_ORDER == __BIG_ENDIAN
 
 struct iec61883_packet {

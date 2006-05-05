@@ -81,7 +81,7 @@ void
 iec61883_cip_init(struct iec61883_cip *ptz, int format, int fdf,
 		int rate, int dbs, int syt_interval)
 {
-  const int transfer_delay = 9000;
+  const int transfer_delay = CIP_TRANSFER_DELAY;
 
   ptz->rate = rate;
   ptz->cycle_count = transfer_delay / 3072;
