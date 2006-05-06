@@ -24,13 +24,16 @@ noinst_PROGRAMS = test-freebob test-extplugcmd freebob-server
 noinst_HEADERS = 
 
 test_freebob_SOURCES = test-freebob.c
-test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS) -lavc1394
+test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la \
+	$(LIBXML_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
 test_extplugcmd_SOURCES = test-extplugcmd.cpp
-test_extplugcmd_LDADD = $(top_builddir)/src/libfreebobavc/libfreebobavc.la -lavc1394
+test_extplugcmd_LDADD = $(top_builddir)/src/libfreebobavc/libfreebobavc.la \
+	$(LIBAVC1394_LIBS)
 
 freebob_server_SOURCES = freebob-server.c
-freebob_server_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS) -lavc1394 -lrom1394
+freebob_server_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS) \
+	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
 
 
 #TESTS_ENVIRONMENT
