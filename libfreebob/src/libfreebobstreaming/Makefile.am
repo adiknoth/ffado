@@ -24,7 +24,8 @@ libfreebobstreaming_la_SOURCES =  			\
 	cip.h freebob_connections.h messagebuffer.h \
 	ringbuffer.h freebob_streaming_private.h freebob_debug.h thread.h
 
-INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS)
+INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
+	-I$(top_srcdir)
 libfreebobstreaming_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
 
 MAINTAINERCLEANFILES = Makefile.in
