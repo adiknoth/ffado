@@ -107,11 +107,6 @@ typedef struct freebob_options {
 				 */
 	int nb_buffers;	/* the size of the frame buffer (in periods) */
 
-	/* RAW1394 related settings */
-	int iso_buffers;
-	int iso_prebuffers;
-	int iso_irq_interval;
-	
 	/* packetizer thread options */
 	int realtime;
 	int packetizer_priority;
@@ -120,7 +115,6 @@ typedef struct freebob_options {
 	int node_id;
 	int port;
 	
-
 	/* direction map */
 	int directions;
 

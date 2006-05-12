@@ -1,3 +1,12 @@
+2006-05-12  Pieter Palmers  <pieterpalmers@users.sourceforge.net>
+	* src/libfreebobstreaming/*: 
+	- Code cleanup
+	- Improved SSE code
+	- ISO connection parameters are calculated instead of being user
+	  specified. Note: you need a new jackd backend version due to this.
+	
+	* configure.ac: Version bumped to 0.8.2
+
 2006-05-06  Daniel Wagner  <wagi@monom.org>
 
 	* This patch fixes two issues when building:

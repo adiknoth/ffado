@@ -77,10 +77,6 @@ int main(int argc, char *argv[])
 
 	dev_options.nb_buffers=3;
 
-	dev_options.iso_buffers=40;
-	dev_options.iso_prebuffers=4;
-	dev_options.iso_irq_interval=2;
-	
 	dev_options.port=0;
 	dev_options.node_id=-1;
 
