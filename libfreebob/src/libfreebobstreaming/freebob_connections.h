@@ -151,10 +151,15 @@ typedef struct _freebob_iso_status {
 	int prebuffers;
 	int irq_interval;
 	int startcycle;
-	
+	enum raw1394_iso_dma_recv_mode receive_mode;
+
 	int iso_channel;
 	int do_disconnect;
 	int bandwidth;
+
+	int packets_per_period;
+	int max_packet_size; // tailored to result in optimal IRQ timing
+	int packet_size; // expected packet size
 	
 	int hostplug;
 	
@@ -164,8 +169,6 @@ typedef struct _freebob_iso_status {
 typedef struct _freebob_connection_status {
 	int packets;
 	int events;
-	//int total_packets;
-	int total_packets_prev;
 	int total_events;
 
 	int frames_left;
@@ -178,9 +181,12 @@ typedef struct _freebob_connection_status {
 	
 	int dropped;
 	
-	int fdf;
 	
+#ifdef DEBUG
+	int fdf;
+	int total_packets_prev;
 	int last_cycle;	
+#endif
 
 	int packet_info_table_size;
 	packet_info_t *packet_info_table;

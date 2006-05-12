@@ -100,9 +100,6 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	printMessage("  Samplerate               : %d\n",options.sample_rate);
 	printMessage("  Period Size              : %d\n",options.period_size);
 	printMessage("  Nb Buffers               : %d\n",options.nb_buffers);
-	printMessage("  RAW1394 ISO Buffers      : %d\n",options.iso_buffers);
-	printMessage("  RAW1394 ISO Prebuffers   : %d\n",options.iso_prebuffers);
-	printMessage("  RAW1394 ISO IRQ Interval : %d\n",options.iso_irq_interval);
 	printMessage("  Directions               : %X\n",options.directions);
 	
 	// initialize the freebob_device
@@ -560,7 +557,50 @@ int freebob_streaming_start(freebob_device_t *dev) {
 	for(i=0; i < dev->nb_connections; i++) {
 		err=0;
 		freebob_connection_t *connection= &(dev->connections[i]);
+
+		int fdf, syt_interval;
+
+		int samplerate=dev->options.sample_rate;
+
+		switch (samplerate) {
+		case 32000:
+			syt_interval = 8;
+			fdf = IEC61883_FDF_SFC_32KHZ;
+			break;
+		case 44100:
+			syt_interval = 8;
+			fdf = IEC61883_FDF_SFC_44K1HZ;
+			break;
+		default:
+		case 48000:
+			syt_interval = 8;
+			fdf = IEC61883_FDF_SFC_48KHZ;
+			break;
+		case 88200:
+			syt_interval = 16;
+			fdf = IEC61883_FDF_SFC_88K2HZ;
+			break;
+		case 96000:
+			syt_interval = 16;
+			fdf = IEC61883_FDF_SFC_96KHZ;
+			break;
+		case 176400:
+			syt_interval = 32;
+			fdf = IEC61883_FDF_SFC_176K4HZ;
+			break;
+		case 192000:
+			syt_interval = 32;
+			fdf = IEC61883_FDF_SFC_192KHZ;
+			break;
+		}
 		
+		if(dev->options.period_size < syt_interval) {
+			printError("Period size (%d) too small! Samplerate %d requires period >= %d\n",
+			           dev->options.period_size, samplerate, syt_interval);
+			return -1;
+		}
+		connection->iso.packets_per_period = dev->options.period_size/syt_interval;
+
 		//connection->plug=0;
 		connection->iso.hostplug=-1;
 		
@@ -595,38 +635,33 @@ int freebob_streaming_start(freebob_device_t *dev) {
 				connection->status.master=NULL;
 				
 			}
-			
-			// this moved to iso_connection_start in order to work around a raw1394 bug
-#if 0
-			if (connection->spec.is_master) { //master connection
-				debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO master receive handler on channel %d...\n",connection->iso.iso_channel);
-				debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
-				raw1394_iso_recv_init(
-					connection->raw_handle, 
-					iso_master_receive_handler, 
-					connection->iso.buffers, 
-					AMDTP_MAX_PACKET_SIZE, 
-					connection->iso.iso_channel, 
-					RAW1394_DMA_BUFFERFILL, 
-					connection->iso.irq_interval);
-										
-				dev->sync_master_connection=connection;
-				connection->status.master=NULL;
-				
-			} else {
-				//slave receive connection
-				debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO slave receive handler on channel %d...\n",connection->iso.iso_channel);
-				debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n", connection->iso.buffers, AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
-				raw1394_iso_recv_init(	
-					connection->raw_handle, 
-					iso_slave_receive_handler, 
-					connection->iso.buffers, 
-					AMDTP_MAX_PACKET_SIZE, 
-					connection->iso.iso_channel, 
-					RAW1394_DMA_BUFFERFILL, 
-					connection->iso.irq_interval);
+
+			// setup the optimal parameters for the raw1394 ISO buffering
+			connection->iso.packets_per_period=dev->options.period_size/syt_interval;
+			// hardware interrupts occur when one DMA block is full, and the size of one DMA
+			// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq 
+			// occurs at a period boundary (optimal CPU use)
+			// note: try and use 2 interrupts per period for better latency.
+			connection->iso.max_packet_size=getpagesize() / connection->iso.packets_per_period * 2;
+			connection->iso.irq_interval=connection->iso.packets_per_period/2;
+
+			connection->iso.packet_size=4 * (2 + syt_interval * connection->spec.dimension);
+
+			if (connection->iso.max_packet_size < connection->iso.packet_size) {
+				connection->iso.max_packet_size=connection->iso.packet_size;
 			}
-#endif			
+
+			/* the receive buffer size doesn't matter for the latency,
+			   but it has a minimal value in order for libraw to operate correctly (300) */
+			connection->iso.buffers=400;
+
+			// this is a hack
+			if(dev->options.period_size < 128) {
+				connection->iso.receive_mode=RAW1394_DMA_PACKET_PER_BUFFER;
+			} else {
+				connection->iso.receive_mode=RAW1394_DMA_BUFFERFILL;
+			}
+
 		break;
 		case FREEBOB_PLAYBACK:
 			debugPrint(DEBUG_LEVEL_STARTUP," creating playback connections...\n");
@@ -650,76 +685,7 @@ int freebob_streaming_start(freebob_device_t *dev) {
 				dev->sync_master_connection=connection;
 				connection->status.master=NULL;
 			}
-			
-			// this moved to iso_connection_start in order to work around a raw1394 bug
-#if 0
-			if (connection->spec.is_master) { // master connection
-				debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO master transmit handler on channel %d...\n",connection->iso.iso_channel);
-				debugPrint(DEBUG_LEVEL_STARTUP, "   other mode (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
-				
-				raw1394_iso_xmit_init(
-					connection->raw_handle, 
-					iso_master_transmit_handler, 
-					connection->iso.buffers,
-					AMDTP_MAX_PACKET_SIZE, 
-					connection->iso.iso_channel, 
-					RAW1394_ISO_SPEED_400, 
-					connection->iso.irq_interval);
 
-				dev->sync_master_connection=connection;
-				connection->status.master=NULL;
-			
-			} else {
-			
-				debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO slave transmit handler on channel %d...\n",connection->iso.iso_channel);
-				debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
-				raw1394_iso_xmit_init(
-					connection->raw_handle, 
-					iso_slave_transmit_handler, 
-					connection->iso.buffers,
-					AMDTP_MAX_PACKET_SIZE, 
-					connection->iso.iso_channel, 
-					RAW1394_ISO_SPEED_400, 
-					connection->iso.irq_interval);
-			}
-#endif			
-			int fdf, syt_interval;
-// FIXME:		
-			int samplerate=dev->options.sample_rate;
-//			int samplerate=connection->spec.samplerate;
-
- 			switch (samplerate) {
-			case 32000:
-				syt_interval = 8;
-				fdf = IEC61883_FDF_SFC_32KHZ;
-				break;
-			case 44100:
-				syt_interval = 8;
-				fdf = IEC61883_FDF_SFC_44K1HZ;
-				break;
-			default:
-			case 48000:
-				syt_interval = 8;
-				fdf = IEC61883_FDF_SFC_48KHZ;
-				break;
-			case 88200:
-				syt_interval = 16;
-				fdf = IEC61883_FDF_SFC_88K2HZ;
-				break;
-			case 96000:
-				syt_interval = 16;
-				fdf = IEC61883_FDF_SFC_96KHZ;
-				break;
-			case 176400:
-				syt_interval = 32;
-				fdf = IEC61883_FDF_SFC_176K4HZ;
-				break;
-			case 192000:
-				syt_interval = 32;
-				fdf = IEC61883_FDF_SFC_192KHZ;
-				break;
-			}
-								
 			iec61883_cip_init (
 				&connection->status.cip, 
 				IEC61883_FMT_AMDTP, 
@@ -732,6 +698,27 @@ int freebob_streaming_start(freebob_device_t *dev) {
 				&connection->status.cip, 
 				IEC61883_MODE_BLOCKING_EMPTY);
 
+
+			// setup the optimal parameters for the raw1394 ISO buffering
+			connection->iso.packets_per_period=dev->options.period_size/syt_interval;
+			// hardware interrupts occur when one DMA block is full, and the size of one DMA
+			// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
+			// occurs at a period boundary (optimal CPU use)
+			// note: try and use 2 interrupts per period for better latency.
+			connection->iso.max_packet_size=getpagesize() / connection->iso.packets_per_period * 2;
+			connection->iso.irq_interval=connection->iso.packets_per_period / 2;
+
+			connection->iso.packet_size=4 * (2 + syt_interval * connection->spec.dimension);
+
+			if (connection->iso.max_packet_size < connection->iso.packet_size) {
+				connection->iso.max_packet_size=connection->iso.packet_size;
+			}
+
+			/* the transmit buffer size should be as low as possible for latency. 
+			*/
+			connection->iso.buffers=connection->iso.packets_per_period;
+			if (connection->iso.buffers<10) connection->iso.buffers=10;
+
 		break;
 		}
 		
@@ -740,12 +727,6 @@ int freebob_streaming_start(freebob_device_t *dev) {
 			i-=1;
 			while(i>=0) {
 				connection= &(dev->connections[i]);
-		
-				// not nescessary anymore since it moved to the iso_start function
-/*				debugPrint(DEBUG_LEVEL_STARTUP, "Shutdown connection %d on channel %d ...\n", i, connection->iso.iso_channel);
-				
-				raw1394_iso_shutdown(connection->raw_handle);
-*/
 		
 				if (connection->iso.do_disconnect) {
 					// destroy the CCM PTP connection
@@ -842,8 +823,6 @@ int freebob_streaming_start(freebob_device_t *dev) {
 		
 	debugPrint(DEBUG_LEVEL_STARTUP,"Armed...\n");
 	
- 	//freebob_streaming_start_iso(dev);
-	
 	freebob_streaming_start_thread(dev);
 
 	return 0;
@@ -856,18 +835,9 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 
 	freebob_streaming_stop_thread(dev);
 	
- 	//freebob_streaming_stop_iso(dev);
-
 	// stop ISO xmit/receive
 	for(i=0; i < dev->nb_connections; i++) {
 		freebob_connection_t *connection= &(dev->connections[i]);
-
-		// this moved to iso_connection_stop in order to work around a raw1394 bug
-#if 0
-		debugPrint(DEBUG_LEVEL_STARTUP, "Shutdown connection %d on channel %d ...\n", i, connection->iso.iso_channel);
-		
-		raw1394_iso_shutdown(connection->raw_handle);
-#endif
 
 		if (connection->iso.do_disconnect) {
 			// destroy the CCM PTP connection
@@ -1448,42 +1418,56 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 		connection->status.packets=0;	
 		connection->status.dropped=0;		
 		if (connection->spec.is_master) { //master connection
-			debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO master receive handler on channel %d...\n",connection->iso.iso_channel);
-			debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
+
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"Init ISO master receive handler on channel %d...\n",
+				connection->iso.iso_channel);
+
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"   (%s, BUFFERS=%d, PACKET_SIZE=%d, PACKET_MAX=%d, IRQ=%d, %d PKT/PERIOD)...\n",
+				(connection->iso.receive_mode==RAW1394_DMA_PACKET_PER_BUFFER ? "PACKET_PER_BUFFER" : "BUFFERFILL"),
+				connection->iso.buffers, 
+				connection->iso.packet_size,
+				connection->iso.max_packet_size,
+				connection->iso.irq_interval,
+				connection->iso.packets_per_period);
+
 			raw1394_iso_recv_init(
 					connection->raw_handle, 
 					iso_master_receive_handler, 
-					/* the receive buffer size doesn't matter for the latency, 
-					   but it has a minimal value in order for libraw to operate correctly (300) 
-					*/
-					400,
-					AMDTP_MAX_PACKET_SIZE, 
+					connection->iso.buffers,
+					connection->iso.max_packet_size, 
 					connection->iso.iso_channel, 
-// 					RAW1394_DMA_BUFFERFILL, 
-					/* Packet per buffer enables low latency */
- 					RAW1394_DMA_PACKET_PER_BUFFER, 
+ 					connection->iso.receive_mode, // RAW1394_DMA_BUFFERFILL, 
 					connection->iso.irq_interval);
 
 		} else {
-				//slave receive connection
-			debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO slave receive handler on channel %d...\n",connection->iso.iso_channel);
-			debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n", connection->iso.buffers, AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
+			//slave receive connection
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"Init ISO slave receive handler on channel %d...\n",
+				connection->iso.iso_channel);
+
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"   (%s, BUFFERS=%d, PACKET_SIZE=%d, PACKET_MAX=%d, IRQ=%d, %d PKT/PERIOD)...\n",
+				(connection->iso.receive_mode==RAW1394_DMA_PACKET_PER_BUFFER ? "PACKET_PER_BUFFER" : "BUFFERFILL"),				connection->iso.buffers, 
+				connection->iso.packet_size,
+				connection->iso.max_packet_size,
+				connection->iso.irq_interval,
+				connection->iso.packets_per_period);
+
 			raw1394_iso_recv_init(	
 					connection->raw_handle, 
 					iso_slave_receive_handler, 
-					/* the receive buffer size doesn't matter for the latency, 
-					   but it has a minimal value in order for libraw to operate correctly (300) 
-					*/
-					400,
-					AMDTP_MAX_PACKET_SIZE, 
+					connection->iso.buffers,
+					connection->iso.max_packet_size, 
 					connection->iso.iso_channel, 
-// 					RAW1394_DMA_BUFFERFILL, 
-					/* Packet per buffer enables low latency */
- 					RAW1394_DMA_PACKET_PER_BUFFER, 
+ 					connection->iso.receive_mode, // RAW1394_DMA_BUFFERFILL, 
 					connection->iso.irq_interval);
 		}
 		
-		debugPrint(DEBUG_LEVEL_STARTUP, "Start ISO receive for connection on channel %d at cycle %d...\n",  connection->iso.iso_channel, connection->iso.startcycle);
+		debugPrint(DEBUG_LEVEL_STARTUP, 
+			"Start ISO receive for connection on channel %d at cycle %d...\n",
+			  connection->iso.iso_channel, connection->iso.startcycle);
 			
 		err = raw1394_iso_recv_start(
 				connection->raw_handle, 
@@ -1501,36 +1485,60 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 	} else if (connection->spec.direction == FREEBOB_PLAYBACK) {
 		
 		if (connection->spec.is_master) { // master connection
-			debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO master transmit handler on channel %d...\n",connection->iso.iso_channel);
-			debugPrint(DEBUG_LEVEL_STARTUP, "   other mode (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"Init ISO master transmit handler on channel %d...\n",
+				connection->iso.iso_channel);
+
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"   (BUFFERS=%d, PACKET_SIZE=%d, PACKET_MAX=%d, IRQ=%d, %d PKT/PERIOD)...\n",
+				connection->iso.buffers, 
+				connection->iso.packet_size,
+				connection->iso.max_packet_size,
+				connection->iso.irq_interval,
+				connection->iso.packets_per_period);
+
 				
 			raw1394_iso_xmit_init(
 					connection->raw_handle, 
 					iso_master_transmit_handler, 
 					connection->iso.buffers,
-					AMDTP_MAX_PACKET_SIZE, 
+					connection->iso.max_packet_size, 
 					connection->iso.iso_channel, 
 					RAW1394_ISO_SPEED_400, 
 					connection->iso.irq_interval);			
 		} else {
 			
-			debugPrint(DEBUG_LEVEL_STARTUP, "Init ISO slave transmit handler on channel %d...\n",connection->iso.iso_channel);
-			debugPrint(DEBUG_LEVEL_STARTUP, "   (BUFFER=%d,PACKET_MAX=%d,IRQ=%d)...\n",connection->iso.buffers,AMDTP_MAX_PACKET_SIZE, connection->iso.irq_interval);
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"Init ISO slave transmit handler on channel %d...\n",
+				connection->iso.iso_channel);
+
+			debugPrint(DEBUG_LEVEL_STARTUP, 
+				"   (BUFFERS=%d, PACKET_SIZE=%d, PACKET_MAX=%d, IRQ=%d, %d PKT/PERIOD)...\n",
+				connection->iso.buffers, 
+				connection->iso.packet_size,
+				connection->iso.max_packet_size,
+				connection->iso.irq_interval,
+				connection->iso.packets_per_period);
+
 			raw1394_iso_xmit_init(
 					connection->raw_handle, 
 					iso_slave_transmit_handler, 
 					connection->iso.buffers,
-					AMDTP_MAX_PACKET_SIZE, 
+					connection->iso.max_packet_size, 
 					connection->iso.iso_channel, 
 					RAW1394_ISO_SPEED_400, 
-					connection->iso.irq_interval);
-		}		
-		debugPrint(DEBUG_LEVEL_STARTUP, "Start ISO transmit for connection on channel %d at cycle %d\n", connection->iso.iso_channel, connection->iso.startcycle);
+					connection->iso.irq_interval);	
+
+		}
+	
+		debugPrint(DEBUG_LEVEL_STARTUP, 
+			"Start ISO transmit for connection on channel %d at cycle %d\n",
+			connection->iso.iso_channel, connection->iso.startcycle);
 			
 		err=raw1394_iso_xmit_start(
-				connection->raw_handle, 
-		connection->iso.startcycle, 
-		connection->iso.prebuffers);
+			connection->raw_handle, 
+			connection->iso.startcycle, 
+			connection->iso.prebuffers);
 
 		if (err) {
 			printError("FREEBOB: couldn't start transmitting: %s\n",
@@ -1715,11 +1723,9 @@ void * freebob_iso_packet_iterator(void *arg)
 	// start xmit/receive
 	debugPrint(DEBUG_LEVEL_STARTUP, "Go Go Go!!!\n");
 	
-	//sem_post(&dev->packetizer.transfer_ack);
 #define POLL_BASED	
 #ifdef POLL_BASED 
 	while (dev->packetizer.run && !underrun_detected) {
-		//sem_wait(&dev->packetizer.transfer_ack);
 		
 		freebob_streaming_period_reset(dev);
 		
@@ -1753,7 +1759,6 @@ void * freebob_iso_packet_iterator(void *arg)
 					printError ("hangup on fd for %d\n",i);
 				}
 				
-//				if(dev->pfds[i].revents & (POLLIN | POLLPRI)) {
 				if(dev->pfds[i].revents & (POLLIN)) {
 					// FIXME: this can segfault 
 					connection=dev->fdmap[i];
@@ -1787,12 +1792,10 @@ void * freebob_iso_packet_iterator(void *arg)
 		
 		if(underrun_detected) {
 			dev->xrun_detected=TRUE;
-			//underrun_detected=0;
 		}
 
 #else
 	while (dev->packetizer.run && !underrun_detected) {
-		//sem_wait(&dev->packetizer.transfer_ack);
 		
 		freebob_streaming_period_reset(dev);
 			
@@ -1835,9 +1838,6 @@ void * freebob_iso_packet_iterator(void *arg)
 
 				connection = &(dev->connections[c]);
 				
-				// skip the sync master and the connections that are finished
-				//if ((connection == dev->sync_master_connection) || (connection->status.frames_left <= 0))
-					
 				if ((connection == dev->sync_master_connection))
 						continue;
 				
@@ -1864,7 +1864,6 @@ void * freebob_iso_packet_iterator(void *arg)
 		
 		if(underrun_detected) {
 			dev->xrun_detected=TRUE;
-				//underrun_detected=0;
 		}
 	
 #endif
@@ -1882,9 +1881,7 @@ void * freebob_iso_packet_iterator(void *arg)
 		sem_post(&dev->packetizer.transfer_boundary);
 
 #ifdef DEBUG
-		// update the packet counter
 		if((dev->sync_master_connection->status.packets - dev->sync_master_connection->status.total_packets_prev) > 1024*2) {
-// 		if(1) {
 			unsigned int i;
 			debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER,"\r -> ");
 			
@@ -1892,9 +1889,6 @@ void * freebob_iso_packet_iterator(void *arg)
 				freebob_connection_t *connection= &(dev->connections[i]);
 				assert(connection);
 				
-				/* Debug info format:
-				* [direction, packetcount, bufferfill, packetdrop
-				*/
 				debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER,"[%s, %02d, %10d, %04d, %4d, (R: %04d)]", 
 					(connection->spec.direction==FREEBOB_CAPTURE ? "C" : "P"),
 					connection->status.fdf,
@@ -1949,7 +1943,7 @@ void freebob_streaming_append_master_timestamp(freebob_device_t *dev, freebob_ti
 	}
 }
 
-int freebob_streaming_decode_midi(freebob_connection_t *connection,
+inline int freebob_streaming_decode_midi(freebob_connection_t *connection,
 								  quadlet_t* events, 
 								  unsigned int nsamples,
 								  unsigned int dbc
@@ -1983,15 +1977,11 @@ int freebob_streaming_decode_midi(freebob_connection_t *connection,
 			buffer=((quadlet_t *)(stream->user_buffer));
 			written=0;
 			
-//  			debugPrint(DEBUG_LEVEL_PACKETCOUNTER, "Stream %d,%d,%d is midi, dbc=%d  [",s,stream->spec.location,stream->spec.position,dbc);
-						
-// 			for(j = (dbc%8)+stream->spec.location-1; j < nsamples; j += 8) {
  			for(j = (dbc & 0x07)+stream->spec.location-1; j < nsamples; j += 8) {
 				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
 				quadlet_t sample_int=ntohl(*target_event);
   				if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
 					*(buffer)=(sample_int >> 16);
-// 					debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER, "%08X-%08X-%d ",*target_event,*buffer,((j * connection->spec.dimension) + stream->spec.position));
 					buffer++;
 					written++;
  				}
@@ -2001,20 +1991,6 @@ int freebob_streaming_decode_midi(freebob_connection_t *connection,
 			if(written_to_rb<written) {
 				printMessage("MIDI OUT bytes lost (%d/%d)",written_to_rb,written);
 			}
-// 			debugPrintShort(DEBUG_LEVEL_PACKETCOUNTER, "]\n");
-			
-			
-			/*						
-			for(j = 0; j < nsamples; j += 1) {
-				target_event=(quadlet_t *)(events + j);
-				quadlet_t sample_int=ntohl(*target_event);
-				*(buffer)=sample_int;
-				buffer++;
-				written++;
-
-			}
-			written=freebob_ringbuffer_write(stream->buffer, (char *)(stream->user_buffer), written*sizeof(quadlet_t))/sizeof(quadlet_t);
-			*/
 		}
 	}
 	return 0;
@@ -2026,7 +2002,7 @@ int freebob_streaming_decode_midi(freebob_connection_t *connection,
  * therefore we can only send one byte on 1 out of 3 iso cycles (=325usec)
  */
 
-int freebob_streaming_encode_midi(freebob_connection_t *connection,
+inline int freebob_streaming_encode_midi(freebob_connection_t *connection,
 								quadlet_t* events, 
 								unsigned int nsamples,
 								unsigned int dbc
@@ -2080,14 +2056,6 @@ int freebob_streaming_encode_midi(freebob_connection_t *connection,
 			} else {
 				stream->midi_counter--;
 			}
-			/*			
-			for(j=0; (j < nsamples); j++) {
-				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
-				
-				hexDumpQuadlets( target_event,1);
-			}
-			*/
-			
 		}
 	}
 	return 0;
@@ -2105,10 +2073,7 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
         unsigned char tag, unsigned char sy, unsigned int cycle, 
         unsigned int dropped)
 {
-    enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
-// 	static quadlet_t cntr=0;
-	
-// 	int xrun=0;
+	enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
 
 	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
 	assert(connection);
@@ -2117,10 +2082,11 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 	assert(packet);
 	
 	// FIXME: dropped packets are very bad when transmitting and the other side is sync'ing on that!
-	//connection->status.packets+=dropped;
 	connection->status.dropped+=dropped;
-	
+
+#ifdef DEBUG	
 	connection->status.last_cycle=cycle;
+#endif
 
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
@@ -2128,16 +2094,6 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 		// add the data payload to the ringbuffer
 
 		assert(connection->spec.dimension == packet->dbs);
-		
-// 		if(nevents>2) {
-// 			quadlet_t *t=(quadlet_t *)(data+8);
-// 			t+=2;
-// 			
-// 			t++;
-// 			*t=0x40000000 | ((cntr) & 0xFFFFFF);
-// 			t++;
-// 			*t=0x40000000 | ((cntr++) & 0xFFFFFF);
-// 		}
 		
 		if (freebob_ringbuffer_write(
 				connection->event_buffer,(char *)(data+8),
@@ -2158,13 +2114,11 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 		
 		// keep track of the total amount of events received
 		connection->status.events+=nevents;
-		
+
+#ifdef DEBUG	
 		connection->status.fdf=packet->fdf;
+#endif
 		
-		connection->status.last_timestamp.cycle=cycle;
-		connection->status.last_timestamp.syt=packet->syt;
-		
-		freebob_streaming_append_master_timestamp(connection->parent, &connection->status.last_timestamp);
 	} else {
 		// discard packet
 		// can be important for sync though
@@ -2188,10 +2142,7 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-// 	if( (!(connection->status.packets % 2))) {
-	if( (!(connection->status.packets & 0x01))) {
-		return RAW1394_ISO_DEFER;
-	}
+
 	return retval;
 }
 
@@ -2210,8 +2161,6 @@ static enum raw1394_iso_disposition
 	*/
 	/* TODO: implement correct SYT behaviour */
 	 	
-// 	int xrun=0;
-
 	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
 	assert(connection);
 	
@@ -2222,11 +2171,16 @@ static enum raw1394_iso_disposition
 	//connection->status.packets+=dropped;
 	connection->status.dropped+=dropped;
 
+#ifdef DEBUG	
 	connection->status.last_cycle=cycle;
+#endif
 
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
+
+#ifdef DEBUG	
 		connection->status.fdf=packet->fdf;
+#endif
 		
 		// add the data payload to the ringbuffer
 
@@ -2260,9 +2214,14 @@ static enum raw1394_iso_disposition
 	
 	if(packet->dbs) {
 		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-								"SLAVE RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %6d\n", 
-								channel, packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, length,
-								((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped);
+			"SLAVE RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %6d\n", 
+			channel, packet->fdf,
+			packet->syt,
+			packet->dbs,
+			packet->dbc,
+			packet->fmt, 
+			length,
+			((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped);
 	}
 		
 		
@@ -2270,10 +2229,7 @@ static enum raw1394_iso_disposition
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-// 	if( (!(connection->status.packets % 2))) {
-	if( (!(connection->status.packets & 0x01))) {
-		return RAW1394_ISO_DEFER;
-	}
+
 	return retval;
 }
 
@@ -2304,28 +2260,20 @@ iso_master_transmit_handler(raw1394handle_t handle,
 	
 	// construct the packet cip
 	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
-// 	int xrun=0;
 	int nsamples=0;
 	int bytes_read;
 	
-	freebob_timestamp_t tstamp;
-	
-// 	unsigned int syt;
-
+#ifdef DEBUG	
 	connection->status.last_cycle=cycle;
-	
-	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
-	
-	int i;
-	// if packets are dropped, also drop the same amount of timestamps from the ringbuffer
-	for (i=0;i<dropped;i++) {
-		freebob_ringbuffer_read(connection->timestamp_buffer,(char *)&tstamp,sizeof(freebob_timestamp_t));
-	}
-		
-// debug
+
 	if(packet->fdf != 0xFF) {
 		connection->status.fdf=packet->fdf;
 	}
+#endif
+
+	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
+
+
 
 	if (nevents > 0) {
 		nsamples = nevents;
@@ -2340,14 +2288,9 @@ iso_master_transmit_handler(raw1394handle_t handle,
 	}
 	
 	// dropped packets are very bad when transmitting and the other side is sync'ing on that!
-	//connection->status.packets+=dropped;
 	connection->status.dropped += dropped;
 		
 	if (nsamples > 0) {
-		
-		if(freebob_ringbuffer_read(connection->timestamp_buffer,(char *)&tstamp,sizeof(freebob_timestamp_t))) {
-			packet->syt=tstamp.syt+connection->total_delay;
-		}
 
 		assert(connection->spec.dimension == packet->dbs);
 
@@ -2367,13 +2310,6 @@ iso_master_transmit_handler(raw1394handle_t handle,
 		}
 	}
 	
-// 	if (xrun) {
-// 		printError("SLAVE XMT: Buffer underrun!\n");
-// 		connection->status.xruns++;
-// 		retval=RAW1394_ISO_DEFER;
-// 		nsamples=0;
-// 	}
-
 	*length = nsamples * connection->spec.dimension * sizeof (quadlet_t) + 8;
 	*tag = IEC61883_TAG_WITH_CIP;
 	*sy = 0;
@@ -2393,15 +2329,12 @@ iso_master_transmit_handler(raw1394handle_t handle,
 								connection->status.packets, connection->status.events, connection->status.frames_left, 
 								nevents, nsamples);
 	}
-	// TODO: the -100 should be derrived from the buffer size
+
 	if((connection->status.frames_left<=0)) {
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-// 	if( (!(connection->status.packets % 2))) {
-	if( (!(connection->status.packets & 0x01))) {
-		return RAW1394_ISO_DEFER;
-	}
+
 	return retval;
 
 }
@@ -2426,27 +2359,19 @@ static enum raw1394_iso_disposition
 	memcpy(&old_cip,&connection->status.cip,sizeof(struct iec61883_cip));
 	
 	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
-// 	int xrun=0;
 	int nsamples=0;
 	int bytes_read;
-	
-	freebob_timestamp_t tstamp;
-	
-// 	unsigned int syt;
+
+#ifdef DEBUG	
 	connection->status.last_cycle=cycle;
-	
-	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
-	
-	int i;
-	// if packets are dropped, also drop the same amount of timestamps from the ringbuffer
-	for (i=0;i<dropped;i++) {
-		freebob_ringbuffer_read(connection->timestamp_buffer,(char *)&tstamp,sizeof(freebob_timestamp_t));
-	}
-	
-// debug
+
 	if(packet->fdf != 0xFF) {
 		connection->status.fdf=packet->fdf;
 	}
+#endif
+
+	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
+
 
 	if (nevents > 0) {
 		nsamples = nevents;
@@ -2466,10 +2391,6 @@ static enum raw1394_iso_disposition
 		
 	if (nsamples > 0) {
 		int bytes_to_read=nsamples*sizeof(quadlet_t)*connection->spec.dimension;
-
-		if(freebob_ringbuffer_read(connection->timestamp_buffer,(char *)&tstamp,sizeof(freebob_timestamp_t))) {
-			packet->syt=tstamp.syt+connection->total_delay;
-		}
 
 		assert(connection->spec.dimension == packet->dbs);
 
@@ -2507,7 +2428,6 @@ static enum raw1394_iso_disposition
 			// we cannot offload midi encoding due to the need for a dbc value
 			freebob_streaming_encode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
 		}
-// 		hexDumpQuadlets( data,nsamples*connection->spec.dimension+2);
 	}
 	
 	*length = nsamples * connection->spec.dimension * sizeof (quadlet_t) + 8;
@@ -2530,14 +2450,11 @@ static enum raw1394_iso_disposition
 								nevents, nsamples);
 	}
 
-/*	if((connection->status.frames_left<=0)) {
+	if((connection->status.frames_left<=0)) {
 		connection->pfd->events=0;
 		return RAW1394_ISO_DEFER;
 	}
-*/
-/*	if( (!(connection->status.packets % 2))) {
-		return RAW1394_ISO_DEFER;
-	}*/
+
 	return retval;
 
 }
@@ -2584,8 +2501,6 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 	switch(stream->buffer_type) {
 		case freebob_buffer_type_per_stream:
 		default:
-//			assert(nsamples < dev->options.period_size);
-			
 			// use the preallocated buffer (at init time)
 			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
 			
@@ -2617,16 +2532,14 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 			case freebob_buffer_type_uint24:
 				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
 					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
-		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
 					buffer++;
 					target_event+=dimension;
 				}
 				break;
 			case freebob_buffer_type_float:
-// 				assert(nsamples>=4);
 				j=0;
 				if(nsamples>3) {
-					for(j = 0; j < nsamples-4; j += 4) {
+					for(j = 0; j < nsamples-3; j += 4) {
 						tmp[0] = ntohl(*target_event);
 						target_event += dimension;
 						tmp[1] = ntohl(*target_event);
@@ -2652,16 +2565,14 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 						floatbuff += 4;
 					}
 				}
-				if (j != nsamples) {
-					for(; j < nsamples; ++j) { // decode max nsamples
-						unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
-						// sign-extend highest bit of 24-bit int
-						int tmp = (int)(v << 8) / 256;
-						*floatbuff = tmp * multiplier;
-	
-						floatbuff++;
-						target_event += dimension;
-					}
+				for(; j < nsamples; ++j) { // decode max nsamples
+					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+					// sign-extend highest bit of 24-bit int
+					int tmp = (int)(v << 8) / 256;
+					*floatbuff = tmp * multiplier;
+
+					floatbuff++;
+					target_event += dimension;
 				}
 				asm volatile("emms");
 				
@@ -2792,7 +2703,7 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 				}*/
 				j=0;
 				if(read>3) {
-					for (j = 0; j < read-4; j += 4) {
+					for (j = 0; j < read-3; j += 4) {
 						asm("movups %[floatbuff], %%xmm0\n\t"
 								"mulps %[ssemult], %%xmm0\n\t"
 								"cvttps2pi %%xmm0, %[out1]\n\t"
@@ -2819,17 +2730,16 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 						target_event += dimension;
 					}
 				}
-				if (j != read) {
-					for(; j < read; ++j) {
-					// don't care for overflow
-						float v = *floatbuff * multiplier;  // v: -231 .. 231
-						unsigned int tmp = (int)v;
-						*target_event = htonl((tmp >> 8) | 0x40000000);
-			
-						floatbuff++;
-						target_event += dimension;
-					}				
+				for(; j < read; ++j) {
+				// don't care for overflow
+					float v = *floatbuff * multiplier;  // v: -231 .. 231
+					unsigned int tmp = (int)v;
+					*target_event = htonl((tmp >> 8) | 0x40000000);
+		
+					floatbuff++;
+					target_event += dimension;
 				}
+
 				asm volatile("emms");
 				break;
 		}

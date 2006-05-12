@@ -117,8 +117,13 @@ int freebob_streaming_reset_connection(freebob_device_t * dev, freebob_connectio
 	// reset the counters
 	connection->status.xruns = 0;
 	connection->status.packets=0;	
+
+#ifdef DEBUG
+	connection->status.total_packets_prev=0;
+#endif
+
 	connection->status.dropped=0;
-	
+
 	// make sure the connection is polled next time
 	if(connection->pfd) { // this can be called before everything is init'ed
 		connection->pfd->events=POLLIN;
@@ -145,11 +150,6 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 		return -ENOMEM;
 	}
 	raw1394_set_userdata(connection->raw_handle, (void *)connection);
-	
-	// these have quite some influence on latency
-	connection->iso.buffers = dev->options.iso_buffers;
-	connection->iso.prebuffers = dev->options.iso_prebuffers;
-	connection->iso.irq_interval = dev->options.iso_irq_interval;
 	
 	connection->iso.speed = RAW1394_ISO_SPEED_400;
 	
