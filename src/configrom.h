@@ -43,7 +43,8 @@ class ConfigRom {
     const fb_octlet_t getGuid() const;
     const std::string getModelName() const;
     const std::string getVendorName() const;
-
+    const unsigned int getModelId() const;
+    const unsigned int getVendorId() const;
 
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,

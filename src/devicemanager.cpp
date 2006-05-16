@@ -29,6 +29,7 @@
 #include "bebob/bebob_avdevice.h"
 #include "bebob_light/bebob_light_avdevice.h"
 #include "bounce/bounce_avdevice.h"
+#include "motu/motu_avdevice.h"
 
 #include <iostream>
 
@@ -39,8 +40,9 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
-    m_probeList.push_back( probeBeBoB );
-    m_probeList.push_back( probeBounce );
+    m_probeList.push_back( probeMotu );
+//     m_probeList.push_back( probeBeBoB );
+     m_probeList.push_back( probeBounce );
 }
 
 DeviceManager::~DeviceManager()
@@ -136,12 +138,12 @@ DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
 {
     IAvDevice* avDevice = new BeBoB_Light::AvDevice( service, id, level );
     if ( !avDevice ) {
-        return 0;
+        return NULL;
     }
 
     if ( !avDevice->discover() ) {
         delete avDevice;
-        return 0;
+        return NULL;
     }
     return avDevice;
 }
@@ -151,12 +153,27 @@ DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
 {
     IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
     if ( !avDevice ) {
-        return 0;
+        return NULL;
     }
 
     if ( !avDevice->discover() ) {
         delete avDevice;
-        return 0;
+        return NULL;
+    }
+    return avDevice;
+}
+
+IAvDevice*
+DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
+{
+    IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
+    if ( !avDevice ) {
+        return NULL;
+    }
+
+    if ( !avDevice->discover() ) {
+        delete avDevice;
+        return NULL;
     }
     return avDevice;
 }

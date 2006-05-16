@@ -21,6 +21,7 @@
 #include <config.h>
 
 #include "libfreebob/freebob.h"
+#include "libfreebob/freebob_bounce.h"
 
 #include <argp.h>
 #include <stdlib.h>

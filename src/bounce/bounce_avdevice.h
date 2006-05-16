@@ -28,6 +28,7 @@
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebobavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
+#include "libfreebob/freebob_bounce.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -52,6 +53,10 @@ protected:
     ConfigRom*       m_configRom;
     int              m_nodeId;
     int              m_verboseLevel;
+
+private:
+	std::string xmlDescription;
+
 
     DECLARE_DEBUG_MODULE;
 };

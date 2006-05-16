@@ -58,6 +58,7 @@ class DeviceManager{
 protected:
     static IAvDevice* probeBeBoB(Ieee1394Service& service, int id, int level);
     static IAvDevice* probeBounce(Ieee1394Service& service, int id, int level);
+    static IAvDevice* probeMotu(Ieee1394Service& service, int id, int level);
 
 protected:
     Ieee1394Service* m_1394Service;

@@ -51,7 +51,9 @@ libfreebob_la_SOURCES = 				\
 	bebob_light/bebob_light_avplug.h		\
 	bebob_light/bebob_light_avplug.cpp		\
 	bounce/bounce_avdevice.h			\
-	bounce/bounce_avdevice.cpp
+	bounce/bounce_avdevice.cpp			\
+	motu/motu_avdevice.h				\
+	motu/motu_avdevice.cpp
 
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
