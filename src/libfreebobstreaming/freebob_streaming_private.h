@@ -187,10 +187,6 @@ int freebob_streaming_stop_thread(freebob_device_t *dev);
 			   
 void * freebob_iso_packet_iterator(void *arg);
 
-void *freebob_streaming_watchdog_thread (void *arg);
-int freebob_streaming_start_watchdog (freebob_device_t *dev);
-void freebob_streaming_stop_watchdog (freebob_device_t *dev);
-
 void freebob_streaming_print_bufferfill(freebob_device_t *dev);
 
 

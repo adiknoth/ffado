@@ -1,4 +1,4 @@
-/* freebob.h
+/* freebob.cpp
  * Copyright (C) 2005 Pieter Palmers, Daniel Wagner
  *
  * This file is part of FreeBoB

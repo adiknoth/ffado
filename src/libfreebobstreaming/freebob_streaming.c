@@ -38,38 +38,12 @@
 #include "freebob_debug.h"
 #include "thread.h"
 #include "messagebuffer.h"
+#include "watchdog.h"
+#include "handlers.h"
 
 #include <signal.h>
 #include <unistd.h>
 
-/**
- * Callbacks
- */
-
-static enum raw1394_iso_disposition 
-iso_slave_receive_handler(raw1394handle_t handle, unsigned char *data, 
-        unsigned int length, unsigned char channel,
-        unsigned char tag, unsigned char sy, unsigned int cycle, 
-        unsigned int dropped);
-        
-static enum raw1394_iso_disposition 
-iso_master_receive_handler(raw1394handle_t handle, unsigned char *data, 
-        unsigned int length, unsigned char channel,
-        unsigned char tag, unsigned char sy, unsigned int cycle, 
-        unsigned int dropped);
-        
-static enum raw1394_iso_disposition 
-iso_slave_transmit_handler(raw1394handle_t handle,
-		unsigned char *data, unsigned int *length,
-		unsigned char *tag, unsigned char *sy,
-		int cycle, unsigned int dropped);
-		
-static enum raw1394_iso_disposition 
-iso_master_transmit_handler(raw1394handle_t handle,
-		unsigned char *data, unsigned int *length,
-		unsigned char *tag, unsigned char *sy,
-		int cycle, unsigned int dropped);
-			
 static int freebob_am824_recv(char *data, 
 							  int nevents, unsigned int offset, unsigned int dbc,
 							  freebob_connection_t *connection);
@@ -1943,521 +1917,6 @@ void freebob_streaming_append_master_timestamp(freebob_device_t *dev, freebob_ti
 	}
 }
 
-inline int freebob_streaming_decode_midi(freebob_connection_t *connection,
-								  quadlet_t* events, 
-								  unsigned int nsamples,
-								  unsigned int dbc
-								 ) {
-	quadlet_t *target_event;
-	
-	assert (connection);
-	assert (events);
-
-	freebob_stream_t *stream;
-	
-	unsigned int j=0;
-	unsigned int s=0;
-	int written=0;
-	quadlet_t *buffer;
-	
-	for (s=0;s<connection->nb_streams;s++) {
-		stream=&connection->streams[s];
-		
-		assert (stream);
-		assert (stream->spec.position < connection->spec.dimension);
-		assert(stream->user_buffer);
-		
-		if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
-			/* idea:
-			spec says: current_midi_port=(dbc+j)%8;
-			=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
-			we'll start at the right event for the midi port.
-			=> if we increment j with 8, we stay at the right event.
-			*/
-			buffer=((quadlet_t *)(stream->user_buffer));
-			written=0;
-			
- 			for(j = (dbc & 0x07)+stream->spec.location-1; j < nsamples; j += 8) {
-				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
-				quadlet_t sample_int=ntohl(*target_event);
-  				if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-					*(buffer)=(sample_int >> 16);
-					buffer++;
-					written++;
- 				}
-			}
-			
-			int written_to_rb=freebob_ringbuffer_write(stream->buffer, (char *)(stream->user_buffer), written*sizeof(quadlet_t))/sizeof(quadlet_t);
-			if(written_to_rb<written) {
-				printMessage("MIDI OUT bytes lost (%d/%d)",written_to_rb,written);
-			}
-		}
-	}
-	return 0;
-	
-}
-
-/*
- * according to the MIDI over 1394 spec, we are only allowed to send a maximum of one midi byte every 320usec
- * therefore we can only send one byte on 1 out of 3 iso cycles (=325usec)
- */
-
-inline int freebob_streaming_encode_midi(freebob_connection_t *connection,
-								quadlet_t* events, 
-								unsigned int nsamples,
-								unsigned int dbc
-								) {
-	quadlet_t *target_event;
-	
-	assert (connection);
-	assert (events);
-
-	freebob_stream_t *stream;
-
-	unsigned int j=0;
-	unsigned int s=0;
-	int read=0;
-	quadlet_t *buffer;
-	
-	for (s=0;s<connection->nb_streams;s++) {
-		stream=&connection->streams[s];
-
-		assert (stream);
-		assert (stream->spec.position < connection->spec.dimension);
-		assert(stream->user_buffer);
-
-		if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
-			// first prefill the buffer with NO_DATA's on all time muxed channels
-			for(j=0; (j < nsamples); j++) {
-				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
-				
-				*target_event=htonl(IEC61883_AM824_SET_LABEL(0,IEC61883_AM824_LABEL_MIDI_NO_DATA));
-
-			}
-			
-			/* idea:
-				spec says: current_midi_port=(dbc+j)%8;
-				=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
-				we'll start at the right event for the midi port.
-				=> if we increment j with 8, we stay at the right event.
-			*/
-			
-			if(stream->midi_counter<=0) { // we can send a byte
-				read=freebob_ringbuffer_read(stream->buffer, (char *)(stream->user_buffer), 1*sizeof(quadlet_t))/sizeof(quadlet_t);
-				if(read) {
-// 					j = (dbc%8)+stream->spec.location-1; 
-					j = (dbc & 0x07)+stream->spec.location-1; 
-					target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
-					buffer=((quadlet_t *)(stream->user_buffer));
-				
-					*target_event=htonl(IEC61883_AM824_SET_LABEL((*buffer)<<16,IEC61883_AM824_LABEL_MIDI_1X));
-					stream->midi_counter=3; // only if we send a byte, we reset the counter
-				}
-			} else {
-				stream->midi_counter--;
-			}
-		}
-	}
-	return 0;
-
-}
-
-
-/**
- * ISO send/receive callback handlers
- */
-
-static enum raw1394_iso_disposition 
-iso_master_receive_handler(raw1394handle_t handle, unsigned char *data, 
-        unsigned int length, unsigned char channel,
-        unsigned char tag, unsigned char sy, unsigned int cycle, 
-        unsigned int dropped)
-{
-	enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
-
-	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
-	assert(connection);
-	
-	struct iec61883_packet *packet = (struct iec61883_packet *) data;
-	assert(packet);
-	
-	// FIXME: dropped packets are very bad when transmitting and the other side is sync'ing on that!
-	connection->status.dropped+=dropped;
-
-#ifdef DEBUG	
-	connection->status.last_cycle=cycle;
-#endif
-
-	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
-		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
-		
-		// add the data payload to the ringbuffer
-
-		assert(connection->spec.dimension == packet->dbs);
-		
-		if (freebob_ringbuffer_write(
-				connection->event_buffer,(char *)(data+8),
-				nevents*sizeof(quadlet_t)*connection->spec.dimension) < 
-				nevents*sizeof(quadlet_t)*connection->spec.dimension) 
-		{
-			printError("MASTER RCV: Buffer overrun!\n"); 
-			connection->status.xruns++;
-			retval=RAW1394_ISO_DEFER;
-		} else {
-			retval=RAW1394_ISO_OK;
-			// we cannot offload midi encoding due to the need for a dbc value
-			freebob_streaming_decode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
-		}
-		
-		// keep the frame counter
-		connection->status.frames_left -= nevents;
-		
-		// keep track of the total amount of events received
-		connection->status.events+=nevents;
-
-#ifdef DEBUG	
-		connection->status.fdf=packet->fdf;
-#endif
-		
-	} else {
-		// discard packet
-		// can be important for sync though
-	}
-
-	// one packet received
-	connection->status.packets++;
-
-	if(packet->dbs) {
-		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
-		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-			"MASTER RCV: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d\n", 
-			cycle, 
-			channel, packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, length,
-			((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
-			connection->status.packets, connection->status.events, connection->status.frames_left, 
-			nevents);
-	}	
-
-	if((connection->status.frames_left<=0)) {
-		connection->pfd->events=0;
-		return RAW1394_ISO_DEFER;
-	}
-
-	return retval;
-}
-
-
-static enum raw1394_iso_disposition 
-		iso_slave_receive_handler(raw1394handle_t handle, unsigned char *data, 
-								  unsigned int length, unsigned char channel,
-								  unsigned char tag, unsigned char sy, unsigned int cycle, 
-								  unsigned int dropped)
-{
-	enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
-	/* slave receive is easy if you assume that the connections are synced
-	Synced connections have matched data rates, so just receiving and 
-	calling the rcv handler would suffice in this case. As the connection 
-	is externally matched to the master connection, the buffer fill will be ok.
-	*/
-	/* TODO: implement correct SYT behaviour */
-	 	
-	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
-	assert(connection);
-	
-	struct iec61883_packet *packet = (struct iec61883_packet *) data;
-	assert(packet);
-	
-	// FIXME: dropped packets are very bad when transmitting and the other side is sync'ing on that!
-	//connection->status.packets+=dropped;
-	connection->status.dropped+=dropped;
-
-#ifdef DEBUG	
-	connection->status.last_cycle=cycle;
-#endif
-
-	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
-		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
-
-#ifdef DEBUG	
-		connection->status.fdf=packet->fdf;
-#endif
-		
-		// add the data payload to the ringbuffer
-
-		assert(connection->spec.dimension == packet->dbs);
-
-		if (freebob_ringbuffer_write(
-				  	connection->event_buffer,(char *)(data+8),
-					nevents*sizeof(quadlet_t)*connection->spec.dimension) < 
-			nevents*sizeof(quadlet_t)*connection->spec.dimension) 
-		{
-			printError("SLAVE RCV: Buffer overrun!\n");
-			connection->status.xruns++;
-			retval=RAW1394_ISO_DEFER;
-		} else {
-			retval=RAW1394_ISO_OK;
-			// we cannot offload midi encoding due to the need for a dbc value
-			freebob_streaming_decode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
-		}
-
-		connection->status.frames_left-=nevents;
-		
-		// keep track of the total amount of events received
-		connection->status.events+=nevents;
-	} else {
-		// discard packet
-		// can be important for sync though
-	}
-
-	// one packet received
-	connection->status.packets++;
-	
-	if(packet->dbs) {
-		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-			"SLAVE RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %6d\n", 
-			channel, packet->fdf,
-			packet->syt,
-			packet->dbs,
-			packet->dbc,
-			packet->fmt, 
-			length,
-			((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped);
-	}
-		
-		
-	if((connection->status.frames_left<=0)) {
-		connection->pfd->events=0;
-		return RAW1394_ISO_DEFER;
-	}
-
-	return retval;
-}
-
-/**
- * The master transmit handler.
- *
- * This is the most difficult, because we have to generate timing information ourselves.
- *
- */
-
-/*
- Includes code from libiec61883
- */
-static enum raw1394_iso_disposition 
-iso_master_transmit_handler(raw1394handle_t handle,
-		unsigned char *data, unsigned int *length,
-		unsigned char *tag, unsigned char *sy,
-		int cycle, unsigned int dropped)
-{
-	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
-	assert(connection);
-	
-	struct iec61883_packet *packet = (struct iec61883_packet *) data;
-	assert(packet);
-	assert(length);
-	assert(tag);
-	assert(sy);	
-	
-	// construct the packet cip
-	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
-	int nsamples=0;
-	int bytes_read;
-	
-#ifdef DEBUG	
-	connection->status.last_cycle=cycle;
-
-	if(packet->fdf != 0xFF) {
-		connection->status.fdf=packet->fdf;
-	}
-#endif
-
-	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
-
-
-
-	if (nevents > 0) {
-		nsamples = nevents;
-	}
-	else {
-		if (connection->status.cip.mode == IEC61883_MODE_BLOCKING_EMPTY) {
-			nsamples = 0;
-		}
-		else {
-			nsamples = connection->status.cip.syt_interval;
-		}
-	}
-	
-	// dropped packets are very bad when transmitting and the other side is sync'ing on that!
-	connection->status.dropped += dropped;
-		
-	if (nsamples > 0) {
-
-		assert(connection->spec.dimension == packet->dbs);
-
-		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,(char *)(data+8),nsamples*sizeof(quadlet_t)*connection->spec.dimension)) < 
-				   nsamples*sizeof(quadlet_t)*connection->spec.dimension) 
-		{
-			printError("MASTER XMT: Buffer underrun! (%d / %d) (%d / %d )\n",
-					   bytes_read,nsamples*sizeof(quadlet_t)*connection->spec.dimension,
-					   freebob_ringbuffer_read_space(connection->event_buffer),0);
-			connection->status.xruns++;
-			retval=RAW1394_ISO_DEFER;
-			nsamples=0;
-		} else {
-			retval=RAW1394_ISO_OK;
-			// we cannot offload midi encoding due to the need for a dbc value
-			freebob_streaming_encode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
-		}
-	}
-	
-	*length = nsamples * connection->spec.dimension * sizeof (quadlet_t) + 8;
-	*tag = IEC61883_TAG_WITH_CIP;
-	*sy = 0;
-	
-	// keep track of the total amount of events transmitted
-	connection->status.events+=nsamples;
-	
-	connection->status.frames_left-=nsamples;
-		
-	// one packet transmitted
-	connection->status.packets++;
-
-	if(packet->dbs) {
-		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-								"MASTER XMT: %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d\n", cycle, 
-								connection->iso.iso_channel,  packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, *length,((*length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
-								connection->status.packets, connection->status.events, connection->status.frames_left, 
-								nevents, nsamples);
-	}
-
-	if((connection->status.frames_left<=0)) {
-		connection->pfd->events=0;
-		return RAW1394_ISO_DEFER;
-	}
-
-	return retval;
-
-}
-
-static enum raw1394_iso_disposition 
-		iso_slave_transmit_handler(raw1394handle_t handle,
-								   unsigned char *data, unsigned int *length,
-								   unsigned char *tag, unsigned char *sy,
-								   int cycle, unsigned int dropped)
-{
-	freebob_connection_t *connection=(freebob_connection_t *) raw1394_get_userdata (handle);
-	assert(connection);
-	
-	struct iec61883_packet *packet = (struct iec61883_packet *) data;
-	assert(packet);
-	assert(length);
-	assert(tag);
-	assert(sy);	
-	
-	// construct the packet cip
-	struct iec61883_cip old_cip;
-	memcpy(&old_cip,&connection->status.cip,sizeof(struct iec61883_cip));
-	
-	int nevents = iec61883_cip_fill_header (handle, &connection->status.cip, packet);
-	int nsamples=0;
-	int bytes_read;
-
-#ifdef DEBUG	
-	connection->status.last_cycle=cycle;
-
-	if(packet->fdf != 0xFF) {
-		connection->status.fdf=packet->fdf;
-	}
-#endif
-
-	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
-
-
-	if (nevents > 0) {
-		nsamples = nevents;
-	}
-	else {
-		if (connection->status.cip.mode == IEC61883_MODE_BLOCKING_EMPTY) {
-			nsamples = 0;
-		}
-		else {
-			nsamples = connection->status.cip.syt_interval;
-		}
-	}
-	
-	// dropped packets are very bad when transmitting and the other side is sync'ing on that!
-	//connection->status.packets+=dropped;
-	connection->status.dropped += dropped;
-		
-	if (nsamples > 0) {
-		int bytes_to_read=nsamples*sizeof(quadlet_t)*connection->spec.dimension;
-
-		assert(connection->spec.dimension == packet->dbs);
-
-		if ((bytes_read=freebob_ringbuffer_read(connection->event_buffer,(char *)(data+8),bytes_to_read)) < 
-			bytes_to_read) 
-		{
-			/* there is no more data in the ringbuffer */
-			
-			/* If there are already more than on period
-			* of frames transfered to the XMIT buffer, there is no xrun.
-			* 
-			*/
-			if(connection->status.frames_left<=0) {
-				// we stop processing this untill the next period boundary
-				// that's when new data is ready
-				
-				connection->pfd->events=0;
-				
-				// reset the cip to the old value
-				memcpy(&connection->status.cip,&old_cip,sizeof(struct iec61883_cip));
-
-				// retry this packed 
-				retval=RAW1394_ISO_AGAIN;
-				nsamples=0;
-			} else {
-				printError("SLAVE XMT : Buffer underrun! %d (%d / %d) (%d / %d )\n",
-					   connection->status.frames_left, bytes_read,bytes_to_read,
-					   freebob_ringbuffer_read_space(connection->event_buffer),0);
-				connection->status.xruns++;
-				retval=RAW1394_ISO_DEFER;
-				nsamples=0;
- 			}
-		} else {
-			retval=RAW1394_ISO_OK;
-			// we cannot offload midi encoding due to the need for a dbc value
-			freebob_streaming_encode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
-		}
-	}
-	
-	*length = nsamples * connection->spec.dimension * sizeof (quadlet_t) + 8;
-	*tag = IEC61883_TAG_WITH_CIP;
-	*sy = 0;
-	
-	// keep track of the total amount of events transmitted
-	connection->status.events+=nsamples;
-	
-	connection->status.frames_left-=nsamples;
-		
-	// one packet transmitted
-	connection->status.packets++;
-
-	if(packet->dbs) {
-		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
-								"SLAVE XMT : %08d, CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d), DROPPED = %4d, info->packets=%4d, events=%4d, %d, %d %d\n", cycle, 
-								connection->iso.iso_channel,  packet->fdf,packet->syt,packet->dbs,packet->dbc,packet->fmt, *length,((*length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
-								connection->status.packets, connection->status.events, connection->status.frames_left, 
-								nevents, nsamples);
-	}
-
-	if((connection->status.frames_left<=0)) {
-		connection->pfd->events=0;
-		return RAW1394_ISO_DEFER;
-	}
-
-	return retval;
-
-}
 
 /*
  * Decoders and encoders
@@ -2794,8 +2253,6 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 	switch(stream->buffer_type) {
 		case freebob_buffer_type_per_stream:
 		default:
-//			assert(nsamples < dev->options.period_size);
-			
 			// use the preallocated buffer (at init time)
 			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
 			
@@ -2827,7 +2284,6 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 			case freebob_buffer_type_uint24:
 				for(j = 0; j < nsamples; j += 1) { // decode max nsamples
 					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
-		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
 					buffer++;
 					target_event+=dimension;
 				}
@@ -2847,9 +2303,6 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 				break;
 		}
 
-// 		fprintf(stderr,"rb write [%02d: %08p %08p]\n",stream->spec.position, stream, stream->buffer);
-	
-// 	fprintf(stderr,"rb write [%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
 		if(do_ringbuffer_write) {
 			// reset the buffer pointer
 			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
@@ -2857,8 +2310,7 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 		} else {
 			written=nsamples;
 		}
-		
-// 	fprintf(stderr,"rb write1[%02d: %08p %08p %08X, %d, %d]\n",stream->spec.position, stream, stream->buffer, *buffer, nsamples, written);
+
 		
 		return written;
 	
@@ -2872,7 +2324,6 @@ freebob_decode_events_to_stream(freebob_connection_t *connection,
 	
 	return 0;
 
-
 }
 
 static inline int 
@@ -2883,7 +2334,6 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 								unsigned int dbc
 								) {
 	quadlet_t *target_event;
-	//freebob_sample_t buff[nsamples];
 	int do_ringbuffer_read=0;
 	
 	freebob_sample_t *buffer=NULL;
@@ -2903,7 +2353,6 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 	switch(stream->buffer_type) {
 		case freebob_buffer_type_per_stream:
 		default:
-//			assert(nsamples < dev->options.period_size);
 			// use the preallocated buffer (at init time)
 			buffer=((freebob_sample_t *)(stream->user_buffer))+stream->user_buffer_position;
 			
@@ -2923,7 +2372,6 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 			break;
 	}
 	
-	
 	if(stream->spec.format == IEC61883_STREAM_TYPE_MBLA) { // MBLA
 		target_event=(quadlet_t *)(events + (stream->spec.position));
 		
@@ -2941,9 +2389,6 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
 					buffer++;
 					target_event+=dimension;
-					
-		//			fprintf(stderr,"[%03d, %02d: %08p %08X %08X]\n",j, stream->spec.position, target_event, *target_event, *buffer);
-
 				}
 				break;
 			case freebob_buffer_type_float:
@@ -2958,14 +2403,6 @@ freebob_encode_stream_to_events(freebob_connection_t *connection,
 				}
 				break;
 		}
-		
-		/*		
-		for(j = 0; j < nsamples; j+=1) {
-			*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
-			buffer++;
-			target_event+=connection->spec.dimension;
-		}
-		*/
 		
 		return read;
 		
@@ -3063,53 +2500,4 @@ int freebob_am824_xmit(	char *data,
 // 	connection->status.frames_left-=nevents;
 	
 	return xrun;
-}
-
-void *freebob_streaming_watchdog_thread (void *arg)
-{
-	freebob_device_t *dev = (freebob_device_t *) arg;
-
-	dev->watchdog_check = 0;
-
-	while (1) {
-		sleep (2);
-		if (dev->watchdog_check == 0) {
-
-			printError("watchdog: timeout");
-
-			/* kill our process group, try to get a dump */
-			kill (-getpgrp(), SIGABRT);
-			/*NOTREACHED*/
-			exit (1);
-		}
-		dev->watchdog_check = 0;
-	}
-}
-
-int freebob_streaming_start_watchdog (freebob_device_t *dev)
-{
-	int watchdog_priority = dev->packetizer.priority + 10;
-	int max_priority = sched_get_priority_max (SCHED_FIFO);
-
-	debugPrint(DEBUG_LEVEL_STARTUP, "Starting Watchdog...\n");
-	
-	if ((max_priority != -1) &&
-			(max_priority < watchdog_priority))
-		watchdog_priority = max_priority;
-	
-	if (freebob_streaming_create_thread (dev, &dev->watchdog_thread, watchdog_priority,
-		TRUE, freebob_streaming_watchdog_thread, dev)) {
-			printError ("cannot start watchdog thread");
-			return -1;
-		}
-
-	return 0;
-}
-
-void freebob_streaming_stop_watchdog (freebob_device_t *dev)
-{
-	debugPrint(DEBUG_LEVEL_STARTUP, "Stopping Watchdog...\n");
-	
-	pthread_cancel (dev->watchdog_thread);
-	pthread_join (dev->watchdog_thread, NULL);
 }

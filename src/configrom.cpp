@@ -353,3 +353,15 @@ ConfigRom::getVendorName() const
 {
     return m_vendorName;
 }
+
+const unsigned int
+ConfigRom::getModelId() const
+{
+    return m_modelId;
+}
+
+const unsigned int
+ConfigRom::getVendorId() const
+{
+    return m_vendorId;
+}

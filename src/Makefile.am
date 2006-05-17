@@ -16,7 +16,7 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = debugmodule libfreebobavc libfreebobstreaming
+SUBDIRS = debugmodule libfreebobavc libstreaming
 
 INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
 	$(LIBAVC1394_CFLAGS) $(LIBLO_CFLAGS) $(LIBXML_CFLAGS) \
@@ -51,13 +51,14 @@ libfreebob_la_SOURCES = 				\
 	bebob_light/bebob_light_avplug.h		\
 	bebob_light/bebob_light_avplug.cpp		\
 	bounce/bounce_avdevice.h			\
-	bounce/bounce_avdevice.cpp
+	bounce/bounce_avdevice.cpp			\
+	motu/motu_avdevice.h				\
+	motu/motu_avdevice.cpp
 
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
 	$(LIBLO_LIBS) $(LIBXML_LIBS) -safe-temps
 
 libfreebob_la_LIBADD = debugmodule/libdebugmodule.la libfreebobavc/libfreebobavc.la \
-	libfreebobstreaming/libfreebobstreaming.la
-
+	libstreaming/libstreaming.la 
 

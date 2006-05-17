@@ -16,17 +16,27 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-noinst_LTLIBRARIES = libfreebobstreaming.la
+noinst_LTLIBRARIES = libstreaming.la
 
-libfreebobstreaming_la_SOURCES =  			\
-	cip.c freebob_streaming.c messagebuffer.c \
-	freebob_connections.c ringbuffer.c thread.c \
-	cip.h freebob_connections.h messagebuffer.h \
-	ringbuffer.h freebob_streaming_private.h freebob_debug.h thread.h \
-	watchdog.c watchdog.h handlers.c handlers.h
+libstreaming_la_SOURCES = 	\
+	messagebuffer.c messagebuffer.h	\
+	debug.h \
+	FreebobPosixThread.cpp  FreebobPosixThread.h \
+	FreebobThread.h \
+	FreebobAtomic.h   \
+	freebob_streaming.c \
+	IsoHandler.cpp \
+	IsoHandler.h \
+	IsoHandlerManager.cpp \
+	IsoHandlerManager.h \
+	IsoStream.cpp \
+	IsoStream.h \
+	IsoStreamManager.cpp \
+	IsoStreamManager.h
+
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)
-libfreebobstreaming_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
+libstreaming_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
 
 MAINTAINERCLEANFILES = Makefile.in
