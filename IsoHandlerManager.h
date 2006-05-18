@@ -28,6 +28,8 @@
 #ifndef __FREEBOB_ISOHANDLERMANAGER__
 #define __FREEBOB_ISOHANDLERMANAGER__
 
+#include "../debugmodule/debugmodule.h"
+
 #include <vector>
 
 namespace FreebobStreaming
@@ -61,8 +63,8 @@ class IsoHandlerManager
         IsoHandlerManager();
         virtual ~IsoHandlerManager();
 
-		int RegisterHandler(IsoHandler *);
-		int UnregisterHandler(IsoHandler *);
+		int registerHandler(IsoHandler *);
+		int unregisterHandler(IsoHandler *);
 
 
 };

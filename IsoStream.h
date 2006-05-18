@@ -29,6 +29,7 @@
 #define __FREEBOB_ISOSTREAM__
 
 #include <libraw1394/raw1394.h>
+#include "../debugmodule/debugmodule.h"
 
 namespace FreebobStreaming
 {
@@ -39,7 +40,6 @@ namespace FreebobStreaming
 
 class IsoStream
 {
-	protected:
 
     public:
 
@@ -49,13 +49,23 @@ class IsoStream
 		};
 
 
-        IsoStream(int channel) : m_Channel(channel)
+        IsoStream(int channel) : m_Channel(channel), m_packetcount(0)
         {};
         virtual ~IsoStream()
         {};
 
-	private:
+		void setVerboseLevel(int l) { setDebugLevel( l ); };
+
+		int getChannel() {return m_Channel;};
+		int getPacketCount() {return m_packetcount;};
+		void resetPacketCount() {m_packetcount=0;};
+	
+	protected:
 		int m_Channel;
+
+		int m_packetcount;
+
+		DECLARE_DEBUG_MODULE;
 
 };
 
@@ -67,11 +77,12 @@ class IsoRecvStream : public IsoStream
 
 		virtual enum EStreamType getType() { return EST_Receive;};
 
-	private:
 		int 
-			PutPacket(unsigned char *data, unsigned int length, 
+			putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped);
+
+	private:
 
 };
 
@@ -83,12 +94,12 @@ class IsoXmitStream : public IsoStream
         virtual ~IsoXmitStream();
 
 		virtual enum EStreamType getType() { return EST_Transmit;};
-
-	private:
 		int 
-			GetPacket(unsigned char *data, unsigned int *length,
+			getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped);
+
+	private:
 
 };
 

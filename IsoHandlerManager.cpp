@@ -43,7 +43,7 @@ IsoHandlerManager::~IsoHandlerManager()
 
 }
 
-int IsoHandlerManager::RegisterHandler(IsoHandler *handler)
+int IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
 	assert(handler);
 	IsoRecvHandler *hrx;
@@ -67,7 +67,7 @@ int IsoHandlerManager::RegisterHandler(IsoHandler *handler)
 
 }
 
-int IsoHandlerManager::UnregisterHandler(IsoHandler *handler)
+int IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 {
 	assert(handler);
 

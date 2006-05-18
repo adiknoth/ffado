@@ -31,6 +31,8 @@
 namespace FreebobStreaming
 {
 
+IMPL_DEBUG_MODULE( IsoStream, IsoStream, DEBUG_LEVEL_NORMAL );
+
 IsoRecvStream::IsoRecvStream(int channel)
 		: IsoStream(channel)
 {
@@ -42,9 +44,16 @@ IsoRecvStream::~IsoRecvStream()
 
 }
 
-int IsoRecvStream::PutPacket(unsigned char *data, unsigned int length, 
+int IsoRecvStream::putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped) {
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+	             "received packet: length=%d, channel=%d, cycle=%d\n",
+	             length, channel, cycle );
+
+	m_packetcount++;
+
 
 	return 0;
 }
@@ -60,9 +69,19 @@ IsoXmitStream::~IsoXmitStream()
 
 }
 
-int IsoXmitStream::GetPacket(unsigned char *data, unsigned int *length,
+int IsoXmitStream::getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped) {
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+	             "sending packet: length=%d, cycle=%d\n",
+	             *length, cycle );
+
+	memcpy(data,&cycle,sizeof(cycle));
+	*length=sizeof(cycle);
+	*tag = 1;
+	*sy = 0;
+
+	m_packetcount++;
 
 	return 0;
 }
