@@ -44,7 +44,7 @@ IsoStreamManager::~IsoStreamManager()
 
 }
 
-int IsoStreamManager::RegisterStream(IsoStream *stream)
+int IsoStreamManager::registerStream(IsoStream *stream)
 {
 	assert(stream);
 
@@ -65,9 +65,10 @@ int IsoStreamManager::RegisterStream(IsoStream *stream)
 		return 0;
 	}
 
+	return -1;
 }
 
-int IsoStreamManager::UnregisterStream(IsoStream *stream)
+int IsoStreamManager::unregisterStream(IsoStream *stream)
 {
 	assert(stream);
 

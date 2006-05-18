@@ -25,45 +25,19 @@
  * 
  *
  */
-#ifndef __FREEBOB_ISOSTREAMMANAGER__
-#define __FREEBOB_ISOSTREAMMANAGER__
-#include "../debugmodule/debugmodule.h"
 
-#include <vector>
-namespace FreebobStreaming
-{
+#include "Receiver.h"
 
-/*!
-\brief ISO stream management class
-*/
-class IsoStream;
-class IsoXmitStream;
-class IsoRecvStream;
+namespace FreebobStreaming {
 
-typedef std::vector<IsoXmitStream *> IsoXmitStreamVector;
-typedef std::vector<IsoXmitStream *>::iterator IsoXmitStreamVectorIterator;
-typedef std::vector<IsoRecvStream *> IsoRecvStreamVector;
-typedef std::vector<IsoRecvStream *>::iterator IsoRecvStreamVectorIterator;
+IMPL_DEBUG_MODULE( Receiver, Receiver, DEBUG_LEVEL_NORMAL );
 
-class IsoStreamManager
-{
-    public:
-
-        IsoStreamManager();
-        virtual ~IsoStreamManager();
-
-		int registerStream(IsoStream *);
-		int unregisterStream(IsoStream *);
-
-	private:
-		IsoRecvStreamVector m_IsoRecvStreams;
-		IsoXmitStreamVector m_IsoXmitStreams;
-
-};
+Receiver::Receiver() {
 
 }
 
-#endif /* __FREEBOB_ISOSTREAMMANAGER__ */
+Receiver::~Receiver() {
 
+}
 
-
+}

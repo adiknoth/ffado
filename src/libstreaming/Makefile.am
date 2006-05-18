@@ -24,7 +24,7 @@ libstreaming_la_SOURCES = 	\
 	FreebobPosixThread.cpp  FreebobPosixThread.h \
 	FreebobThread.h \
 	FreebobAtomic.h   \
-	freebob_streaming.c \
+	freebob_streaming.cpp \
 	IsoHandler.cpp \
 	IsoHandler.h \
 	IsoHandlerManager.cpp \
@@ -32,8 +32,9 @@ libstreaming_la_SOURCES = 	\
 	IsoStream.cpp \
 	IsoStream.h \
 	IsoStreamManager.cpp \
-	IsoStreamManager.h
-
+	IsoStreamManager.h \
+	ringbuffer.c ringbuffer.h \
+	Receiver.cpp Receiver.h
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)

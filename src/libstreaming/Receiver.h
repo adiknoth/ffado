@@ -25,45 +25,30 @@
  * 
  *
  */
-#ifndef __FREEBOB_ISOSTREAMMANAGER__
-#define __FREEBOB_ISOSTREAMMANAGER__
+#ifndef __FREEBOB_RECEIVER__
+#define __FREEBOB_RECEIVER__
+
 #include "../debugmodule/debugmodule.h"
+#include "ringbuffer.h"
+#include "IsoStream.h"
 
-#include <vector>
-namespace FreebobStreaming
-{
+namespace FreebobStreaming {
 
-/*!
-\brief ISO stream management class
-*/
-class IsoStream;
-class IsoXmitStream;
-class IsoRecvStream;
+class Receiver : public IsoRecvStream {
 
-typedef std::vector<IsoXmitStream *> IsoXmitStreamVector;
-typedef std::vector<IsoXmitStream *>::iterator IsoXmitStreamVectorIterator;
-typedef std::vector<IsoRecvStream *> IsoRecvStreamVector;
-typedef std::vector<IsoRecvStream *>::iterator IsoRecvStreamVectorIterator;
+public:
 
-class IsoStreamManager
-{
-    public:
+	Receiver(int periodsize);
+	virtual ~Receiver();
 
-        IsoStreamManager();
-        virtual ~IsoStreamManager();
-
-		int registerStream(IsoStream *);
-		int unregisterStream(IsoStream *);
-
-	private:
-		IsoRecvStreamVector m_IsoRecvStreams;
-		IsoXmitStreamVector m_IsoXmitStreams;
-
-};
+protected:
+	int 
+private:
+	freebob_ringbuffer_t event_buffer;
+}
 
 }
 
-#endif /* __FREEBOB_ISOSTREAMMANAGER__ */
-
+#endif /* __FREEBOB_RECEIVER__ */
 
 
