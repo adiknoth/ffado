@@ -75,6 +75,8 @@ typedef short debug_level_t;
 
 #define setDebugLevel( Level )                                     \
                 m_debugModule.setLevel( Level )
+#define getDebugLevel( Level )                                     \
+                m_debugModule.getLevel( )
 
 
 #ifdef DEBUG
@@ -107,11 +109,12 @@ void hexDumpQuadlets( quadlet_t *data_start, unsigned int length );
 class DebugModule {
 public:
     enum {
-        eDL_Fatal   = 0,
-        eDL_Error   = 1,
-        eDL_Warning = 2,
-        eDL_Normal  = 3,
-        eDL_Verbose = 4,
+        eDL_Fatal       = 0,
+        eDL_Error       = 1,
+        eDL_Warning     = 2,
+        eDL_Normal      = 3,
+        eDL_Verbose     = 4,
+        eDL_VeryVerbose = 5,
     } EDebugLevel;
 
     DebugModule( std::string name, debug_level_t level );
@@ -144,8 +147,9 @@ private:
     debug_level_t m_level;
 };
 
-#define DEBUG_LEVEL_NORMAL  DebugModule::eDL_Normal
-#define DEBUG_LEVEL_VERBOSE DebugModule::eDL_Verbose
+#define DEBUG_LEVEL_NORMAL          DebugModule::eDL_Normal
+#define DEBUG_LEVEL_VERBOSE         DebugModule::eDL_Verbose
+#define DEBUG_LEVEL_VERY_VERBOSE    DebugModule::eDL_VeryVerbose
 
 
 class DebugModuleManager {

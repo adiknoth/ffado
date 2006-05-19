@@ -16,23 +16,34 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBIEC61883_CFLAGS) 
+INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/src/libstreaming $(LIBIEC61883_CFLAGS)
+AM_CFLAGS = -DDEBUG
+AM_CXXFLAGS = -DDEBUG
 
-noinst_PROGRAMS = teststreaming teststreaming2 teststreaming3 testmidistreaming1
-noinst_HEADERS = debugtools.h
+# noinst_PROGRAMS = teststreaming teststreaming2 teststreaming3 testmidistreaming1
+# noinst_HEADERS = debugtools.h
 
-teststreaming_SOURCES = teststreaming.c debugtools.c
-teststreaming_LDADD   = @top_builddir@src/libfreebob.la \
+# teststreaming_SOURCES = teststreaming.c debugtools.c
+# teststreaming_LDADD   = @top_builddir@src/libfreebob.la \
+# 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+# 
+# teststreaming2_SOURCES = teststreaming2.c debugtools.c
+# teststreaming2_LDADD   = @top_builddir@src/libfreebob.la \
+# 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+# 
+# teststreaming3_SOURCES = teststreaming3.c debugtools.c
+# teststreaming3_LDADD   = @top_builddir@src/libfreebob.la \
+# 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+# 
+# testmidistreaming1_SOURCES = testmidistreaming1.c debugtools.c
+# testmidistreaming1_LDADD   = @top_builddir@src/libfreebob.la -lasound \
+# 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+
+noinst_PROGRAMS = test-isohandling
+noinst_HEADERS = 
+
+test_isohandling_SOURCES = test-isohandling.cpp
+test_isohandling_LDADD   = @top_builddir@src/libfreebob.la \
 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
-teststreaming2_SOURCES = teststreaming2.c debugtools.c
-teststreaming2_LDADD   = @top_builddir@src/libfreebob.la \
-	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
-
-teststreaming3_SOURCES = teststreaming3.c debugtools.c
-teststreaming3_LDADD   = @top_builddir@src/libfreebob.la \
-	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
-
-testmidistreaming1_SOURCES = testmidistreaming1.c debugtools.c
-testmidistreaming1_LDADD   = @top_builddir@src/libfreebob.la -lasound \
-	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+MAINTAINERCLEANFILES = Makefile.in
