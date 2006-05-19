@@ -32,7 +32,10 @@
 namespace FreebobStreaming
 {
 
-IsoHandlerManager::IsoHandlerManager()
+IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
+
+IsoHandlerManager::IsoHandlerManager() :
+   m_poll_timeout(-1)
 {
 
 }
@@ -40,6 +43,46 @@ IsoHandlerManager::IsoHandlerManager()
 
 IsoHandlerManager::~IsoHandlerManager()
 {
+
+}
+
+bool IsoHandlerManager::Init()
+{
+	// prepare the fd map
+
+	return true;
+}
+
+
+bool IsoHandlerManager::Execute()
+{
+	int err;
+	int i=0;
+
+	err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
+	
+	if (err == -1) {
+		if (errno == EINTR) {
+			return true;
+		}
+		debugFatal("poll error: %s\n", strerror (errno));
+		return false;
+	}
+
+	for (i = 0; i < m_poll_nfds; i++) {
+		if (m_poll_fds[i].revents & POLLERR) {
+			debugWarning("error on fd for %d\n",i);
+		}
+
+		if (m_poll_fds[i].revents & POLLHUP) {
+			debugWarning("hangup on fd for %d\n",i);
+		}
+		
+		if(m_poll_fds[i].revents & (POLLIN)) {
+
+		}
+	}
+	return true;
 
 }
 

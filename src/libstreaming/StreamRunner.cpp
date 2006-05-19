@@ -26,18 +26,52 @@
  *
  */
 
-#include "Receiver.h"
+#include "StreamRunner.h"
+#include "StreamProcessorManager.h"
+#include "IsoHandlerManager.h"
 
 namespace FreebobStreaming {
 
-IMPL_DEBUG_MODULE( Receiver, Receiver, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( StreamRunner, StreamRunner, DEBUG_LEVEL_NORMAL );
 
-Receiver::Receiver(int periodsize) {
-
-}
-
-Receiver::~Receiver() {
+StreamRunner::~StreamRunner() {
 
 }
 
+bool StreamRunner::Execute() {
+	// note that this is called in we while(running) loop
+	
+	if(m_isoManager->Execute()) {
+		return m_processorManager->Execute();
+	} else return false;
+
+	return true;
+
 }
+
+bool StreamRunner::Init() {
+	if(!m_isoManager) {
+		debugFatal("Not a valid IsoHandlerManager");
+		return false;
+	}
+	if(!m_processorManager) {
+		debugFatal("Not a valid StreamProcessorManager");
+		return false;
+	}
+
+	if(m_isoManager->Init()) {
+		debugFatal("Could not init IsoHandlerManager");
+		return false;
+	}
+	
+	if(m_processorManager->Init()) {
+		debugFatal("Could not init StreamProcessorManager");
+		return false;
+	}
+
+	return true;
+
+}
+
+
+} // end of namespace FreebobStreaming

@@ -27,6 +27,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifndef __FreebobPosixThread__
 #define __FreebobPosixThread__
 
+#include "../debugmodule/debugmodule.h"
+
 #include "FreebobThread.h"
 #include <pthread.h>
 
@@ -74,6 +76,11 @@ class FreebobPosixThread : public FreebobThread
         virtual int DropRealTime();
 
         pthread_t GetThreadID();
+
+	protected:
+
+    DECLARE_DEBUG_MODULE;
+
 };
 
 } // end of namespace

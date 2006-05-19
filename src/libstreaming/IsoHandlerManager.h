@@ -29,6 +29,10 @@
 #define __FREEBOB_ISOHANDLERMANAGER__
 
 #include "../debugmodule/debugmodule.h"
+#include "FreebobThread.h"
+
+#include <sys/poll.h>
+#include <errno.h>
 
 #include <vector>
 
@@ -52,11 +56,9 @@ typedef std::vector<IsoRecvHandler *> IsoRecvHandlerVector;
 typedef std::vector<IsoRecvHandler *>::iterator IsoRecvHandlerVectorIterator;
 
 
-class IsoHandlerManager
+class IsoHandlerManager : public FreebobRunnableInterface
 {
-	private:
-		IsoXmitHandlerVector m_IsoXmitHandlers;
-		IsoRecvHandlerVector m_IsoRecvHandlers;
+	friend class StreamRunner;
 
     public:
 
@@ -66,6 +68,22 @@ class IsoHandlerManager
 		int registerHandler(IsoHandler *);
 		int unregisterHandler(IsoHandler *);
 
+		void setPollTimeout(int t) {m_poll_timeout=t;};
+		int getPollTimeout() {return m_poll_timeout;};
+
+	protected:
+		// FreebobRunnableInterface interface
+		bool Execute(); // note that this is called in we while(running) loop
+		bool Init();
+
+		IsoXmitHandlerVector m_IsoXmitHandlers;
+		IsoRecvHandlerVector m_IsoRecvHandlers;
+
+		int m_poll_timeout;
+		int                  m_poll_nfds;
+		struct pollfd        *m_poll_fds;
+
+	    DECLARE_DEBUG_MODULE;
 
 };
 
