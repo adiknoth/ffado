@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
- *   FreeBob Streaming API
+ *   FreeBob porting API
  *   FreeBob = Firewire (pro-)audio for linux
  *
  *   http://freebob.sf.net
@@ -25,31 +25,46 @@
  * 
  *
  */
-#ifndef __FREEBOB_RECEIVER__
-#define __FREEBOB_RECEIVER__
 
-#include "../debugmodule/debugmodule.h"
-#include "ringbuffer.h"
-#include "IsoStream.h"
+#include "PortManager.h"
 
 namespace FreebobStreaming {
 
-class Receiver  {
+IMPL_DEBUG_MODULE( PortManager, PortManager, DEBUG_LEVEL_NORMAL );
 
-public:
-
-	Receiver(int periodsize) ;
-	virtual ~Receiver();
-
-protected:
-	int m_period_size;
-private:
-	freebob_ringbuffer_t event_buffer;
-
-	DECLARE_DEBUG_MODULE;
-
-};
+PortManager::PortManager() {
 
 }
 
-#endif /* __FREEBOB_RECEIVER__ */
+PortManager::~PortManager() {
+
+}
+
+int PortManager::addPort(Port *port)
+{
+	assert(port);
+
+	m_Ports.push_back(port);
+
+	return 0;
+}
+
+int PortManager::deletePort(Port *port)
+{
+	assert(port);
+
+    for ( PortVectorIterator it = m_Ports.begin();
+          it != m_Ports.end();
+          ++it )
+    {
+        if ( *it == port ) { 
+            m_Ports.erase(it);
+			return 0;
+        }
+    }
+
+	return -1; //not found
+
+}
+
+}

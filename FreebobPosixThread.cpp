@@ -33,6 +33,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 namespace FreebobStreaming
 {
 
+IMPL_DEBUG_MODULE( FreebobPosixThread, FreebobPosixThread, DEBUG_LEVEL_NORMAL );
+
 void* FreebobPosixThread::ThreadHandler(void* arg)
 {
     FreebobPosixThread* obj = (FreebobPosixThread*)arg;

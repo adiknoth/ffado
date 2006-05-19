@@ -55,19 +55,19 @@ class IsoStream
         virtual ~IsoStream()
         {};
 
-		void setVerboseLevel(int l) { setDebugLevel( l ); };
+		virtual void setVerboseLevel(int l) { setDebugLevel( l ); };
 
 		int getChannel() {return m_Channel;};
 
 		enum EStreamType getType() { return m_type;};
 
-		int initialize() {return 0;};
+		virtual int initialize() {return 0;};
 
-		int 
+		virtual int 
 			putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped);
-		int 
+		virtual int 
 			getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped, unsigned int max_length);
@@ -102,8 +102,8 @@ class IsoStreamBuffered : public IsoStream
 			getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped, unsigned int max_length);
-	int getBufferFillPackets();
-	int getBufferFillPayload();
+		int getBufferFillPackets();
+		int getBufferFillPayload();
 
 	protected:
 		int m_headersize;
