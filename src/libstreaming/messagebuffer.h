@@ -35,9 +35,17 @@
 #ifndef __FREEBOB_MESSAGEBUFFER_H__
 #define __FREEBOB_MESSAGEBUFFER_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void freebob_messagebuffer_init();
 void freebob_messagebuffer_exit();
 
 void freebob_messagebuffer_add(const char *fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __freebob_messagebuffer_h__ */

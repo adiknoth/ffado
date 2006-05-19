@@ -48,20 +48,13 @@ int IsoStreamManager::registerStream(IsoStream *stream)
 {
 	assert(stream);
 
-	IsoRecvStream *srx;
-	IsoXmitStream *stx;
-
-	srx=dynamic_cast<IsoRecvStream *>(stream);
-
-	if (srx) {
-		m_IsoRecvStreams.push_back(srx);
+	if (stream->getType()==IsoStream::EST_Receive) {
+		m_IsoRecvStreams.push_back(stream);
 		return 0;
 	}
 	
-	stx=dynamic_cast<IsoXmitStream *>(stream);
-
-	if (stx) {
-		m_IsoXmitStreams.push_back(stx);
+	if (stream->getType()==IsoStream::EST_Transmit) {
+		m_IsoXmitStreams.push_back(stream);
 		return 0;
 	}
 
@@ -72,25 +65,21 @@ int IsoStreamManager::unregisterStream(IsoStream *stream)
 {
 	assert(stream);
 
-    for ( IsoRecvStreamVectorIterator it = m_IsoRecvStreams.begin();
+    for ( IsoStreamVectorIterator it = m_IsoRecvStreams.begin();
           it != m_IsoRecvStreams.end();
           ++it )
     {
-		// FIXME: how do I compare these two pointers?
-        IsoStream* s = dynamic_cast<IsoStream *>(*it);
-        if ( s == stream ) { 
+        if ( *it == stream ) { 
             m_IsoRecvStreams.erase(it);
 			return 0;
         }
     }
 
-    for ( IsoXmitStreamVectorIterator it = m_IsoXmitStreams.begin();
+    for ( IsoStreamVectorIterator it = m_IsoXmitStreams.begin();
           it != m_IsoXmitStreams.end();
           ++it )
     {
-		// FIXME: how do I compare these two pointers?
-        IsoStream* s = dynamic_cast<IsoStream *>(*it);
-        if ( s == stream ) { 
+       if ( *it == stream ) { 
             m_IsoXmitStreams.erase(it);
 			return 0;
         }

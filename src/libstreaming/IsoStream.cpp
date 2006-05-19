@@ -27,24 +27,15 @@
  */
 
 #include "IsoStream.h"
+#include "PacketBuffer.h"
 
 namespace FreebobStreaming
 {
 
 IMPL_DEBUG_MODULE( IsoStream, IsoStream, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( IsoStreamBuffered, IsoStreamBuffered, DEBUG_LEVEL_NORMAL );
 
-IsoRecvStream::IsoRecvStream(int channel)
-		: IsoStream(channel)
-{
-
-}
-
-IsoRecvStream::~IsoRecvStream()
-{
-
-}
-
-int IsoRecvStream::putPacket(unsigned char *data, unsigned int length, 
+int IsoStream::putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped) {
 
@@ -52,26 +43,12 @@ int IsoRecvStream::putPacket(unsigned char *data, unsigned int length,
 	             "received packet: length=%d, channel=%d, cycle=%d\n",
 	             length, channel, cycle );
 
-	m_packetcount++;
-
-
 	return 0;
 }
 
-IsoXmitStream::IsoXmitStream(int channel)
-		: IsoStream(channel)
-{
-
-}
-
-IsoXmitStream::~IsoXmitStream()
-{
-
-}
-
-int IsoXmitStream::getPacket(unsigned char *data, unsigned int *length,
+int IsoStream::getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
-		              int cycle, unsigned int dropped) {
+		              int cycle, unsigned int dropped, unsigned int max_length) {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
 	             "sending packet: length=%d, cycle=%d\n",
 	             *length, cycle );
@@ -81,9 +58,85 @@ int IsoXmitStream::getPacket(unsigned char *data, unsigned int *length,
 	*tag = 1;
 	*sy = 0;
 
-	m_packetcount++;
 
 	return 0;
+}
+
+/* buffered variant of the ISO stream */
+IsoStreamBuffered::~IsoStreamBuffered() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	if(buffer) delete buffer;
+
+}
+
+int IsoStreamBuffered::initialize() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	buffer=new PacketBuffer(m_headersize, m_buffersize, m_max_packetsize);
+
+	if(buffer==NULL) return -1;
+
+	return buffer->initialize();
+
+}
+
+int IsoStreamBuffered::putPacket(unsigned char *data, unsigned int length, 
+		              unsigned char channel, unsigned char tag, unsigned char sy, 
+			          unsigned int cycle, unsigned int dropped) {
+	int retval;
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+	             "received packet: length=%d, channel=%d, cycle=%d\n",
+	             length, channel, cycle );
+	if(buffer) {
+		if((retval=buffer->addPacket((quadlet_t *)data,length))) {
+			debugWarning("Receive buffer overflow\n");
+		}
+	}
+
+	return 0;
+}
+
+int IsoStreamBuffered::getPacket(unsigned char *data, unsigned int *length,
+		              unsigned char *tag, unsigned char *sy,
+		              int cycle, unsigned int dropped, unsigned int max_length) {
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+	             "sending packet: length=%d, cycle=%d\n",
+	             *length, cycle );
+
+	int retval;
+	*length=sizeof(cycle);
+	*tag = 1;
+	*sy = 0;
+
+	if(buffer) {
+		if((retval=buffer->getNextPacket((quadlet_t *)data,max_length))<0) {
+			debugWarning("Transmit buffer underflow: %d\n",retval);
+			return -1;
+		}
+		*length=retval;
+	}
+
+	return 0;
+}
+
+int IsoStreamBuffered::getBufferFillPackets() {
+
+	if(buffer) return buffer->getBufferFillPackets();
+	return -1;
+
+}
+int IsoStreamBuffered::getBufferFillPayload() {
+
+	if(buffer) return buffer->getBufferFillPayload();
+	return -1;
+
+}
+
+void IsoStreamBuffered::setVerboseLevel(int l) { 
+	setDebugLevel( l ); 
+	if(buffer) {
+		buffer->setVerboseLevel(l);
+	}
 }
 
 }

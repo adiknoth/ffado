@@ -34,7 +34,8 @@ libstreaming_la_SOURCES = 	\
 	IsoStreamManager.cpp \
 	IsoStreamManager.h \
 	ringbuffer.c ringbuffer.h \
-	Receiver.cpp Receiver.h
+	Receiver.cpp Receiver.h \
+	PacketBuffer.cpp PacketBuffer.h
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)

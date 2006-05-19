@@ -25,41 +25,52 @@
  * 
  *
  */
-#ifndef __FREEBOB_ISOSTREAMMANAGER__
-#define __FREEBOB_ISOSTREAMMANAGER__
+#ifndef __FREEBOB_PACKETBUFFER__
+#define __FREEBOB_PACKETBUFFER__
+
 #include "../debugmodule/debugmodule.h"
+#include <libraw1394/raw1394.h>
+#include "ringbuffer.h"
 
-#include <vector>
-namespace FreebobStreaming
-{
+namespace FreebobStreaming {
 
-/*!
-\brief ISO stream management class
-*/
-class IsoStream;
+class PacketBuffer {
+// note: all sizes in quadlets
+public:
 
-typedef std::vector<IsoStream *> IsoStreamVector;
-typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
+	PacketBuffer(int headersize, int buffersize, int max_packetsize) 
+	   : m_headersize(headersize), m_buffersize(buffersize), m_max_packetsize(max_packetsize),
+	     payload_buffer(0), header_buffer(0), len_buffer(0)
+	{};
 
-class IsoStreamManager
-{
-    public:
+	virtual ~PacketBuffer();
+	void setVerboseLevel(int l) { setDebugLevel( l ); };
 
-        IsoStreamManager();
-        virtual ~IsoStreamManager();
+	int initialize();
 
-		int registerStream(IsoStream *);
-		int unregisterStream(IsoStream *);
+	void flush();
 
-	private:
-		IsoStreamVector m_IsoRecvStreams;
-		IsoStreamVector m_IsoXmitStreams;
+	int addPacket(quadlet_t *packet, int packet_len);
+
+	int getNextPacket(quadlet_t *packet, int packet_len);
+	int getBufferFillPackets();
+	int getBufferFillPayload();
+
+protected:
+	int m_headersize;
+	int m_buffersize;
+	int m_max_packetsize;
+
+	freebob_ringbuffer_t *payload_buffer;
+	freebob_ringbuffer_t *header_buffer;
+	freebob_ringbuffer_t *len_buffer;
+	
+    DECLARE_DEBUG_MODULE;
 
 };
 
 }
 
-#endif /* __FREEBOB_ISOSTREAMMANAGER__ */
-
+#endif /* __FREEBOB_PACKETBUFFER__ */
 
 

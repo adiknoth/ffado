@@ -34,21 +34,22 @@
 
 namespace FreebobStreaming {
 
-class Receiver : public IsoRecvStream {
+class Receiver  {
 
 public:
 
-	Receiver(int periodsize);
+	Receiver(int periodsize) ;
 	virtual ~Receiver();
 
 protected:
-	int 
+	int m_period_size;
 private:
 	freebob_ringbuffer_t event_buffer;
-}
+
+	DECLARE_DEBUG_MODULE;
+
+};
 
 }
 
 #endif /* __FREEBOB_RECEIVER__ */
-
-
