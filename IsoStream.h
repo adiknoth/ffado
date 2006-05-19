@@ -34,6 +34,8 @@
 namespace FreebobStreaming
 {
 
+class PacketBuffer;
+
 /*!
 \brief The Base Class for ISO streams
 */
@@ -48,8 +50,7 @@ class IsoStream
 			EST_Transmit
 		};
 
-
-        IsoStream(int channel) : m_Channel(channel), m_packetcount(0)
+        IsoStream(enum EStreamType type, int channel) : m_type(type), m_Channel(channel)
         {};
         virtual ~IsoStream()
         {};
@@ -57,49 +58,61 @@ class IsoStream
 		void setVerboseLevel(int l) { setDebugLevel( l ); };
 
 		int getChannel() {return m_Channel;};
-		int getPacketCount() {return m_packetcount;};
-		void resetPacketCount() {m_packetcount=0;};
-	
-	protected:
-		int m_Channel;
 
-		int m_packetcount;
+		enum EStreamType getType() { return m_type;};
 
-		DECLARE_DEBUG_MODULE;
-
-};
-
-class IsoRecvStream : public IsoStream
-{
-	public:
-        IsoRecvStream(int);
-        virtual ~IsoRecvStream();
-
-		virtual enum EStreamType getType() { return EST_Receive;};
+		int initialize() {return 0;};
 
 		int 
 			putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped);
-
-	private:
-
-};
-
-class IsoXmitStream : public IsoStream
-{
-	
-	public:
-        IsoXmitStream(int);
-        virtual ~IsoXmitStream();
-
-		virtual enum EStreamType getType() { return EST_Transmit;};
 		int 
 			getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
-		              int cycle, unsigned int dropped);
+		              int cycle, unsigned int dropped, unsigned int max_length);
+	
+	protected:
+		enum EStreamType m_type;
+		int m_Channel;
 
-	private:
+		DECLARE_DEBUG_MODULE;
+
+};
+
+class IsoStreamBuffered : public IsoStream
+{
+
+    public:
+
+        IsoStreamBuffered(int headersize,int buffersize, int max_packetsize, enum EStreamType type, int channel) 
+		   : IsoStream(type,channel), m_headersize(headersize), m_buffersize(buffersize), m_max_packetsize(max_packetsize), buffer(0)
+        {};
+        virtual ~IsoStreamBuffered();
+
+		void setVerboseLevel(int l);
+
+		int initialize();
+
+		int 
+			putPacket(unsigned char *data, unsigned int length, 
+		              unsigned char channel, unsigned char tag, unsigned char sy, 
+			          unsigned int cycle, unsigned int dropped);
+		int 
+			getPacket(unsigned char *data, unsigned int *length,
+		              unsigned char *tag, unsigned char *sy,
+		              int cycle, unsigned int dropped, unsigned int max_length);
+	int getBufferFillPackets();
+	int getBufferFillPayload();
+
+	protected:
+		int m_headersize;
+		int m_buffersize;
+		int m_max_packetsize;
+
+		PacketBuffer *buffer;
+
+		DECLARE_DEBUG_MODULE;
 
 };
 

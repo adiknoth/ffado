@@ -136,11 +136,18 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
 	             "received packet: length=%d, channel=%d, cycle=%d\n",
 	             length, channel, cycle );
+	m_packetcount++;
+
+	if(m_Client) {
+		if(m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped)) {
+// 			return RAW1394_ISO_AGAIN;
+		}
+	}
 	
 	return RAW1394_ISO_OK;
 }
 
-int IsoRecvHandler::registerStream(IsoRecvStream *stream)
+int IsoRecvHandler::registerStream(IsoStream *stream)
 {
 	assert(stream);
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
@@ -166,7 +173,7 @@ int IsoRecvHandler::registerStream(IsoRecvStream *stream)
 
 }
 
-int IsoRecvHandler::unregisterStream(IsoRecvStream *stream)
+int IsoRecvHandler::unregisterStream(IsoStream *stream)
 {
 	assert(stream);
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
@@ -254,8 +261,10 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(unsigned char *data, unsi
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
 	             "sending packet: length=%d, cycle=%d\n",
 	             *length, cycle );
+	m_packetcount++;
+
 	if(m_Client) {
-    	if(m_Client->getPacket(data, length, tag, sy, cycle, dropped)) {
+    	if(m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size)) {
 // 			return RAW1394_ISO_AGAIN;
 		}
 	}
@@ -264,7 +273,7 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(unsigned char *data, unsi
 }
 
 // an xmit handler can have only one source IsoStream
-int IsoXmitHandler::registerStream(IsoXmitStream *stream)
+int IsoXmitHandler::registerStream(IsoStream *stream)
 {
 	assert(stream);
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
@@ -291,7 +300,7 @@ int IsoXmitHandler::registerStream(IsoXmitStream *stream)
 
 }
 
-int IsoXmitHandler::unregisterStream(IsoXmitStream *stream)
+int IsoXmitHandler::unregisterStream(IsoStream *stream)
 {
 	assert(stream);
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");

@@ -32,7 +32,7 @@ namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( Receiver, Receiver, DEBUG_LEVEL_NORMAL );
 
-Receiver::Receiver() {
+Receiver::Receiver(int periodsize) {
 
 }
 
