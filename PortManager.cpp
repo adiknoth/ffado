@@ -42,6 +42,7 @@ PortManager::~PortManager() {
 
 int PortManager::addPort(Port *port)
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
 
 	m_Ports.push_back(port);
@@ -51,6 +52,7 @@ int PortManager::addPort(Port *port)
 
 int PortManager::deletePort(Port *port)
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
 
     for ( PortVectorIterator it = m_Ports.begin();

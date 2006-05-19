@@ -47,13 +47,13 @@ namespace FreebobStreaming
 */
 
 class IsoHandler;
-class IsoXmitHandler;
-class IsoRecvHandler;
+class IsoStream;
 
-typedef std::vector<IsoXmitHandler *> IsoXmitHandlerVector;
-typedef std::vector<IsoXmitHandler *>::iterator IsoXmitHandlerVectorIterator;
-typedef std::vector<IsoRecvHandler *> IsoRecvHandlerVector;
-typedef std::vector<IsoRecvHandler *>::iterator IsoRecvHandlerVectorIterator;
+typedef std::vector<IsoHandler *> IsoHandlerVector;
+typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
+
+typedef std::vector<IsoStream *> IsoStreamVector;
+typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
 
 
 class IsoHandlerManager : public FreebobRunnableInterface
@@ -65,23 +65,50 @@ class IsoHandlerManager : public FreebobRunnableInterface
         IsoHandlerManager();
         virtual ~IsoHandlerManager();
 
-		int registerHandler(IsoHandler *);
-		int unregisterHandler(IsoHandler *);
-
 		void setPollTimeout(int t) {m_poll_timeout=t;};
 		int getPollTimeout() {return m_poll_timeout;};
+
+		void setVerboseLevel(int l) { setDebugLevel( l ); };
+
+		void dumpInfo();
+
+		int registerStream(IsoStream *);
+		int unregisterStream(IsoStream *);
+
+		int startHandlers();
+		int startHandlers(int cycle);
+		void stopHandlers();
 
 	protected:
 		// FreebobRunnableInterface interface
 		bool Execute(); // note that this is called in we while(running) loop
 		bool Init();
 
-		IsoXmitHandlerVector m_IsoXmitHandlers;
-		IsoRecvHandlerVector m_IsoRecvHandlers;
+		// note: there is a disctinction between streams and handlers
+		// because one handler can serve multiple streams (in case of 
+		// multichannel receive)
 
+		// only streams are allowed to be registered externally.
+		// we allocate a handler if we need one, otherwise the stream
+		// is assigned to another handler
+
+		// the collection of handlers
+ 		IsoHandlerVector m_IsoHandlers;
+
+		int registerHandler(IsoHandler *);
+		int unregisterHandler(IsoHandler *);
+		void pruneHandlers();
+
+		// the collection of streams
+ 		IsoStreamVector m_IsoStreams;
+
+		// poll stuff
 		int m_poll_timeout;
-		int                  m_poll_nfds;
-		struct pollfd        *m_poll_fds;
+		struct pollfd *m_poll_fds;
+		int m_poll_nfds;
+
+		int rebuildFdMap();
+
 
 	    DECLARE_DEBUG_MODULE;
 

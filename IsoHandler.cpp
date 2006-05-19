@@ -93,10 +93,18 @@ void IsoHandler::stop()
 	raw1394_iso_stop(m_handle); 
 };
 
+void IsoHandler::dumpInfo()
+{
+	debugOutput( DEBUG_LEVEL_NORMAL, "  Stream type  : %s\n",
+	     (this->getType()==EHT_Receive ? "Receive" : "Transmit"));
+	debugOutput( DEBUG_LEVEL_NORMAL, "  Packet count : %d\n",this->getPacketCount());
+
+};
+
 /* Child class implementations */
 
 IsoRecvHandler::IsoRecvHandler(int port)
-		: IsoHandler(port), m_Client(0)
+		: IsoHandler(port)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 }
@@ -110,6 +118,7 @@ IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets,
 IsoRecvHandler::~IsoRecvHandler()
 {
 	raw1394_iso_shutdown(m_handle);
+	raw1394_destroy_handle(m_handle);
 
 }
 
@@ -194,7 +203,7 @@ int IsoRecvHandler::start(int cycle)
 /* ----------------- XMIT --------------- */
 
 IsoXmitHandler::IsoXmitHandler(int port)
-		: IsoHandler(port), m_Client(0), m_prebuffers(0)
+		: IsoHandler(port), m_prebuffers(0)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
@@ -202,7 +211,7 @@ IsoXmitHandler::IsoXmitHandler(int port)
 IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
                                unsigned int max_packet_size, int irq)
 		: IsoHandler(port, buf_packets, max_packet_size,irq),
-		  m_Client(0), m_speed(RAW1394_ISO_SPEED_400), m_prebuffers(0)
+		  m_speed(RAW1394_ISO_SPEED_400), m_prebuffers(0)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
@@ -211,7 +220,7 @@ IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
                                unsigned int max_packet_size, int irq,
                                enum raw1394_iso_speed speed)
 		: IsoHandler(port, buf_packets,max_packet_size,irq),
-		  m_Client(0), m_speed(speed), m_prebuffers(0)
+		  m_speed(speed), m_prebuffers(0)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
@@ -221,7 +230,7 @@ IsoXmitHandler::~IsoXmitHandler()
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	raw1394_iso_shutdown(m_handle);
-
+	raw1394_destroy_handle(m_handle);
 }
 
 bool
@@ -278,7 +287,10 @@ int IsoXmitHandler::registerStream(IsoStream *stream)
 	assert(stream);
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	if (m_Client) return -1;
+	if (m_Client) { 
+		debugFatal("Already a registered client\n");
+		return -1;
+	}
 
 	m_Client=stream;
 

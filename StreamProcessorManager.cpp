@@ -93,12 +93,15 @@ int StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 
 bool StreamProcessorManager::Init()
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	return true;
 }
 
 
 bool StreamProcessorManager::Execute()
 {
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+	return true;
 
 }
 

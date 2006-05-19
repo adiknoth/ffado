@@ -51,7 +51,7 @@ void* FreebobPosixThread::ThreadHandler(void* arg)
         return 0;
     }
 
-    debugPrint(DEBUG_LEVEL_THREADS, "ThreadHandler: start\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: start\n");
 
     // If Init succeed start the thread loop
 	bool res = true;
@@ -60,7 +60,7 @@ void* FreebobPosixThread::ThreadHandler(void* arg)
 		//pthread_testcancel();
     }
 
-    debugPrint(DEBUG_LEVEL_THREADS, "ThreadHandler: exit\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: exit\n");
     return 0;
 }
 
@@ -71,7 +71,7 @@ int FreebobPosixThread::Start()
 
     if (fRealTime) {
 
-        debugPrint(DEBUG_LEVEL_THREADS, "Create RT thread\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Create RT thread\n");
 
         /* Get the client thread to run as an RT-FIFO
            scheduled thread of appropriate priority.
@@ -107,7 +107,7 @@ int FreebobPosixThread::Start()
 
         return 0;
     } else {
-        debugPrint(DEBUG_LEVEL_THREADS, "Create non RT thread\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Create non RT thread\n");
 
         if ((res = pthread_create(&fThread, 0, ThreadHandler, this))) {
             printError("Cannot set create thread %d %s", res, strerror(errno));
@@ -120,7 +120,7 @@ int FreebobPosixThread::Start()
 int FreebobPosixThread::Kill()
 {
     if (fThread) { // If thread has been started
-        debugPrint(DEBUG_LEVEL_THREADS, "FreebobPosixThread::Kill\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "FreebobPosixThread::Kill\n");
         void* status;
         pthread_cancel(fThread);
         pthread_join(fThread, &status);
@@ -133,7 +133,7 @@ int FreebobPosixThread::Kill()
 int FreebobPosixThread::Stop()
 {
     if (fThread) { // If thread has been started
-		debugPrint(DEBUG_LEVEL_THREADS, "FreebobPosixThread::Stop\n");
+		debugOutput( DEBUG_LEVEL_VERBOSE, "FreebobPosixThread::Stop\n");
 		void* status;
         fRunning = false; // Request for the thread to stop
 		pthread_join(fThread, &status);

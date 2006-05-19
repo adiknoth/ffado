@@ -50,14 +50,17 @@ class IsoStream
 			EST_Transmit
 		};
 
-        IsoStream(enum EStreamType type, int channel) : m_type(type), m_Channel(channel)
+        IsoStream(enum EStreamType type, int channel) : m_type(type), m_channel(channel), m_port(0)
+        {};
+        IsoStream(enum EStreamType type, int channel, int port) : m_type(type), m_channel(channel), m_port(port)
         {};
         virtual ~IsoStream()
         {};
 
 		virtual void setVerboseLevel(int l) { setDebugLevel( l ); };
 
-		int getChannel() {return m_Channel;};
+		int getChannel() {return m_channel;};
+		int getPort() {return m_port;};
 
 		enum EStreamType getType() { return m_type;};
 
@@ -74,7 +77,8 @@ class IsoStream
 	
 	protected:
 		enum EStreamType m_type;
-		int m_Channel;
+		int m_channel;
+		int m_port;
 
 		DECLARE_DEBUG_MODULE;
 
