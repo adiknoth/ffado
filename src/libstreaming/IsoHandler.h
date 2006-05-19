@@ -61,20 +61,20 @@ class IsoHandler
 	
 		IsoHandler(int port) 
 		   : m_handle(0), m_port(port), 
-		   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1), m_packetcount(0)
+		   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1), m_packetcount(0), m_Client(0)
 		{}
 
 		IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq) 
 		   : m_handle(0), m_port(port), 
 		   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), m_irq_interval(irq),
-		   m_packetcount(0)
+		   m_packetcount(0), m_Client(0)
 		{}
 
 		virtual ~IsoHandler()
 		{}
 
 	    bool initialize();
-		int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); };
+		int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); else return -1; };
 		
 		void setVerboseLevel(int l) { setDebugLevel( l ); };
 
@@ -92,6 +92,14 @@ class IsoHandler
 		void stop();
 		int getFileDescriptor() { return raw1394_get_fd(m_handle);};
 
+		void dumpInfo();
+
+		bool inUse() {return (m_Client !=0) ;};
+		virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
+
+		virtual int registerStream(IsoStream *) = 0;
+		virtual int unregisterStream(IsoStream *) = 0;
+
 	protected:
 	    raw1394handle_t m_handle;
     	int             m_port;
@@ -100,6 +108,8 @@ class IsoHandler
 		int             m_irq_interval;
 
 		int m_packetcount;
+
+		IsoStream *m_Client;
 
     DECLARE_DEBUG_MODULE;
 
@@ -174,7 +184,6 @@ class IsoXmitHandler  : public IsoHandler
 		int start(int cycle);
 
 	private:
-		IsoStream *m_Client;
 
 		static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
 				unsigned char *data, unsigned int *length,

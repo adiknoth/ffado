@@ -120,12 +120,14 @@ int IsoStreamBuffered::getPacket(unsigned char *data, unsigned int *length,
 }
 
 int IsoStreamBuffered::getBufferFillPackets() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 	if(buffer) return buffer->getBufferFillPackets();
 	return -1;
 
 }
 int IsoStreamBuffered::getBufferFillPayload() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 	if(buffer) return buffer->getBufferFillPayload();
 	return -1;

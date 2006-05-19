@@ -39,6 +39,7 @@ StreamRunner::~StreamRunner() {
 }
 
 bool StreamRunner::Execute() {
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 	// note that this is called in we while(running) loop
 	
 	if(m_isoManager->Execute()) {
@@ -50,22 +51,23 @@ bool StreamRunner::Execute() {
 }
 
 bool StreamRunner::Init() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	if(!m_isoManager) {
-		debugFatal("Not a valid IsoHandlerManager");
+		debugFatal("Not a valid IsoHandlerManager\n");
 		return false;
 	}
 	if(!m_processorManager) {
-		debugFatal("Not a valid StreamProcessorManager");
+		debugFatal("Not a valid StreamProcessorManager\n");
 		return false;
 	}
 
-	if(m_isoManager->Init()) {
-		debugFatal("Could not init IsoHandlerManager");
+	if(!m_isoManager->Init()) {
+		debugFatal("Could not init IsoHandlerManager\n");
 		return false;
 	}
 	
-	if(m_processorManager->Init()) {
-		debugFatal("Could not init StreamProcessorManager");
+	if(!m_processorManager->Init()) {
+		debugFatal("Could not init StreamProcessorManager\n");
 		return false;
 	}
 

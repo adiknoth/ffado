@@ -28,6 +28,7 @@
 
 #include "IsoHandlerManager.h"
 #include "IsoHandler.h"
+#include "IsoStream.h"
 
 namespace FreebobStreaming
 {
@@ -35,7 +36,7 @@ namespace FreebobStreaming
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
 IsoHandlerManager::IsoHandlerManager() :
-   m_poll_timeout(-1)
+   m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0)
 {
 
 }
@@ -48,7 +49,7 @@ IsoHandlerManager::~IsoHandlerManager()
 
 bool IsoHandlerManager::Init()
 {
-	// prepare the fd map
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 	return true;
 }
@@ -58,6 +59,7 @@ bool IsoHandlerManager::Execute()
 {
 	int err;
 	int i=0;
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 
 	err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
 	
@@ -79,7 +81,9 @@ bool IsoHandlerManager::Execute()
 		}
 		
 		if(m_poll_fds[i].revents & (POLLIN)) {
-
+			IsoHandler *s=m_IsoHandlers.at(i);
+			assert(s);
+			s->iterate();
 		}
 	}
 	return true;
@@ -88,52 +92,177 @@ bool IsoHandlerManager::Execute()
 
 int IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(handler);
-	IsoRecvHandler *hrx;
-	IsoXmitHandler *htx;
+	m_IsoHandlers.push_back(handler);
 
-	hrx=dynamic_cast<IsoRecvHandler *>(handler);
-
-	if (hrx) {
-		m_IsoRecvHandlers.push_back(hrx);
-		return 0;
-	}
-	
-	htx=dynamic_cast<IsoXmitHandler *>(handler);
-
-	if (htx) {
-		m_IsoXmitHandlers.push_back(htx);
-		return 0;
-	}
-
-	return -1;
+	// rebuild the fd map for poll()'ing.
+	return rebuildFdMap();	
 
 }
 
 int IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(handler);
 
-    for ( IsoRecvHandlerVectorIterator it = m_IsoRecvHandlers.begin();
-          it != m_IsoRecvHandlers.end();
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
           ++it )
     {
-		// FIXME: how do I compare these two pointers?
-        IsoHandler* s = dynamic_cast<IsoHandler *>(*it);
-        if ( s == handler ) { 
-            m_IsoRecvHandlers.erase(it);
-			return 0;
+        if ( *it == handler ) {
+			// erase the iso handler from the list
+            m_IsoHandlers.erase(it);
+
+			// rebuild the fd map for poll()'ing.
+			return rebuildFdMap();
         }
     }
 
-    for ( IsoXmitHandlerVectorIterator it = m_IsoXmitHandlers.begin();
-          it != m_IsoXmitHandlers.end();
+	return -1; //not found
+
+}
+
+int IsoHandlerManager::rebuildFdMap() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	int i=0;
+
+	m_poll_nfds=0;
+	if(m_poll_fds) free(m_poll_fds);
+
+	// count the number of handlers
+	m_poll_nfds=m_IsoHandlers.size();
+
+	// allocate the fd array
+	m_poll_fds   = (struct pollfd *) calloc (m_poll_nfds, sizeof (struct pollfd));
+	if(!m_poll_fds) {
+		debugFatal("Could not allocate memory for poll FD array\n");
+		return -1;
+	}
+
+	// fill the fd map
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
           ++it )
     {
-		// FIXME: how do I compare these two pointers?
-        IsoHandler* s = dynamic_cast<IsoHandler *>(*it);
-        if ( s == handler ) { 
-            m_IsoXmitHandlers.erase(it);
+		m_poll_fds[i].fd=(*it)->getFileDescriptor();
+		m_poll_fds[i].events = POLLIN;
+		i++;
+    }
+
+	return 0;
+}
+
+
+// FIXME: currently there is a one-to-one mapping
+//        between streams and handlers, this is not ok for 
+//        multichannel receive
+int IsoHandlerManager::registerStream(IsoStream *stream)
+{
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	assert(stream);
+
+	// make sure the stream isn't already attached to a handler
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		if((*it)->isStreamRegistered(stream)) {
+			(*it)->unregisterStream(stream);
+		}
+    }
+
+	// clean up all handlers that aren't used
+	pruneHandlers();
+
+	// allocate a handler for this stream
+	if (stream->getType()==IsoStream::EST_Receive) {
+		IsoRecvHandler *h = new IsoRecvHandler(stream->getPort());
+		if(!h) {
+			debugFatal("Could not create IsoRecvHandler\n");
+			return -1;
+		}
+
+		h->setVerboseLevel(getDebugLevel());
+
+		// init the handler
+		if(!h->initialize()) {
+			debugFatal("Could not initialize receive handler\n");
+			return -1;
+		}
+
+		// register the stream with the handler
+		if(h->registerStream(stream)) {
+			debugFatal("Could not register receive stream with handler\n");
+			return -1;
+		}
+
+		// register the handler with the manager
+		if(this->registerHandler(h)) {
+			debugFatal("Could not register receive handler with manager\n");
+			return -1;
+		}
+	}
+	
+	if (stream->getType()==IsoStream::EST_Transmit) {
+		IsoXmitHandler *h = new IsoXmitHandler(stream->getPort());
+		if(!h) {
+			debugFatal("Could not create IsoXmitHandler\n");
+			return -1;
+		}
+
+		h->setVerboseLevel(getDebugLevel());
+
+		// init the handler
+		if(!h->initialize()) {
+			debugFatal("Could not initialize transmit handler\n");
+			return -1;
+		}
+
+		// register the stream with the handler
+		if(h->registerStream(stream)) {
+			debugFatal("Could not register transmit stream with handler\n");
+			return -1;
+		}
+
+		// register the handler with the manager
+		if(this->registerHandler(h)) {
+			debugFatal("Could not register transmit handler with manager\n");
+			return -1;
+		}
+
+	}
+
+	m_IsoStreams.push_back(stream);
+
+	return 0;
+}
+
+int IsoHandlerManager::unregisterStream(IsoStream *stream)
+{
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	assert(stream);
+
+	// make sure the stream isn't attached to a handler anymore
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		if((*it)->isStreamRegistered(stream)) {
+			(*it)->unregisterStream(stream);
+		}
+    }
+
+	// clean up all handlers that aren't used
+	pruneHandlers();
+
+	// remove the stream from the registered streams list
+    for ( IsoStreamVectorIterator it = m_IsoStreams.begin();
+          it != m_IsoStreams.end();
+          ++it )
+    {
+        if ( *it == stream ) { 
+            m_IsoStreams.erase(it);
 			return 0;
         }
     }
@@ -142,5 +271,73 @@ int IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 
 }
 
+void IsoHandlerManager::pruneHandlers() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	IsoHandlerVector toUnregister;
+
+	// find all handlers that are not in use
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		if(!((*it)->inUse())) {
+			toUnregister.push_back(*it);
+		}
+    }
+	// delete them
+    for ( IsoHandlerVectorIterator it = toUnregister.begin();
+          it != toUnregister.end();
+          ++it )
+    {
+		unregisterHandler(*it);
+    }
 
 }
+
+int IsoHandlerManager::startHandlers() {
+	return startHandlers(-1);
+}
+
+int IsoHandlerManager::startHandlers(int cycle) {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		(*it)->start(cycle);
+    }
+	return 0;
+}
+
+void IsoHandlerManager::stopHandlers() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		(*it)->stop();
+    }
+
+}
+
+
+void IsoHandlerManager::dumpInfo() {
+	debugOutput( DEBUG_LEVEL_NORMAL, "Dumping IsoHandlerManager Stream handler information...\n");
+	int i=0;
+
+	// fill the fd map
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		debugOutput( DEBUG_LEVEL_NORMAL, " Stream %d\n",i++);
+
+		(*it)->dumpInfo();
+    }
+
+}
+
+} // end of namespace FreebobStreaming
+
