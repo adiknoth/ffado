@@ -44,7 +44,7 @@ public:
 		E_Transmit
 	};
 
-	StreamProcessor(enum IsoStream::EStreamType type, int channel);
+	StreamProcessor(enum IsoStream::EStreamType type, int channel, int port);
 	virtual ~StreamProcessor();
 
 	int 
@@ -56,7 +56,7 @@ public:
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length);
 
-	enum EProcessorType getType() { return m_type;};
+	virtual enum EProcessorType getType() =0;
 
 	void setPeriodSize(unsigned int period);
 	void setPeriodSize(unsigned int period, unsigned int nb_buffers);
@@ -67,9 +67,14 @@ public:
 
 	bool xrunOccurred() { return (m_xruns>0);};
 
-	bool periodDone() { return (m_framecounter > m_period); };
+	bool isOnePeriodReady() { return (m_framecounter > m_period); };
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
 
+	virtual int transfer() =0; // transfer the buffer contents from/to client
+
+	virtual void reset() =0; // reset the streams & buffers (e.g. after xrun)
+
+	void dumpInfo();
 
 protected:
 	
@@ -79,7 +84,55 @@ protected:
 	unsigned int m_xruns;
 	unsigned int m_framecounter;
 
-	enum EProcessorType m_type;
+    DECLARE_DEBUG_MODULE;
+
+
+};
+
+class ReceiveStreamProcessor : public StreamProcessor {
+
+public:
+	ReceiveStreamProcessor(int channel, int port);
+
+	virtual ~ReceiveStreamProcessor();
+
+
+	virtual enum EProcessorType getType() {return E_Receive;};
+
+	int putPacket(unsigned char *data, unsigned int length, 
+	              unsigned char channel, unsigned char tag, unsigned char sy, 
+		          unsigned int cycle, unsigned int dropped);
+
+	int transfer(); // transfer the buffer contents from/to client
+
+	void reset(); // reset the streams & buffers (e.g. after xrun)
+
+protected:
+
+    DECLARE_DEBUG_MODULE;
+
+
+};
+
+class TransmitStreamProcessor : public StreamProcessor {
+
+public:
+	TransmitStreamProcessor(int channel, int port);
+
+	virtual ~TransmitStreamProcessor();
+
+	virtual enum EProcessorType getType() {return E_Transmit;};
+
+	int 
+		getPacket(unsigned char *data, unsigned int *length,
+	              unsigned char *tag, unsigned char *sy,
+	              int cycle, unsigned int dropped, unsigned int max_length);
+
+	int transfer(); // transfer the buffer contents from/to client
+
+	void reset(); // reset the streams & buffers (e.g. after xrun)
+
+protected:
 
     DECLARE_DEBUG_MODULE;
 

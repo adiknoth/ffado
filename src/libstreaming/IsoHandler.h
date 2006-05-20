@@ -61,13 +61,14 @@ class IsoHandler
 	
 		IsoHandler(int port) 
 		   : m_handle(0), m_port(port), 
-		   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1), m_packetcount(0), m_Client(0)
+		   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1),
+		   m_packetcount(0), m_dropped(0), m_Client(0)
 		{}
 
 		IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq) 
 		   : m_handle(0), m_port(port), 
-		   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), m_irq_interval(irq),
-		   m_packetcount(0), m_Client(0)
+		   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), 
+		   m_irq_interval(irq), m_packetcount(0), m_dropped(0), m_Client(0)
 		{}
 
 		virtual ~IsoHandler()
@@ -86,6 +87,9 @@ class IsoHandler
 		int getPacketCount() {return m_packetcount;};
 		void resetPacketCount() {m_packetcount=0;};
 
+		int getDroppedCount() {return m_dropped;};
+		void resetDroppedCount() {m_dropped=0;};
+
 		virtual enum EHandlerType getType() = 0;
 
 		virtual int start(int cycle) = 0;
@@ -94,7 +98,7 @@ class IsoHandler
 
 		void dumpInfo();
 
-		bool inUse() {return (m_Client !=0) ;};
+		bool inUse() {return (m_Client != 0) ;};
 		virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
 
 		virtual int registerStream(IsoStream *) = 0;
@@ -108,13 +112,16 @@ class IsoHandler
 		int             m_irq_interval;
 
 		int m_packetcount;
+		int m_dropped;
 
 		IsoStream *m_Client;
 
-    DECLARE_DEBUG_MODULE;
+		virtual int handleBusReset(unsigned int generation) = 0;
+
+		DECLARE_DEBUG_MODULE;
 
 	private:
-
+		static int busreset_handler(raw1394handle_t handle, unsigned int generation);
 
 
 };
@@ -141,7 +148,7 @@ class IsoRecvHandler : public IsoHandler
 		int start(int cycle);
 
 	private:
-		IsoStream *m_Client;
+		int handleBusReset(unsigned int generation);
 
 		static enum raw1394_iso_disposition 
  		iso_receive_handler(raw1394handle_t handle, unsigned char *data, 
@@ -184,6 +191,8 @@ class IsoXmitHandler  : public IsoHandler
 		int start(int cycle);
 
 	private:
+
+		int handleBusReset(unsigned int generation);
 
 		static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
 				unsigned char *data, unsigned int *length,

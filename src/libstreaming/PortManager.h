@@ -49,7 +49,9 @@ public:
 	virtual int deletePort(Port *port);
 
 protected:
-	PortVector m_Ports;
+	PortVector m_PacketPorts;
+	PortVector m_PeriodPorts;
+// 	PortVector m_SamplePorts;
 
     DECLARE_DEBUG_MODULE;
 

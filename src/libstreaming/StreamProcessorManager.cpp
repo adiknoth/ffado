@@ -28,12 +28,14 @@
 
 #include "StreamProcessorManager.h"
 #include "StreamProcessor.h"
+#include <errno.h>
 
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_NORMAL );
 
-StreamProcessorManager::StreamProcessorManager(unsigned int period) {
+StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int nb_buffers)
+	: m_nb_buffers(nb_buffers), m_period(period), m_xruns(0) {
 
 }
 
@@ -43,6 +45,7 @@ StreamProcessorManager::~StreamProcessorManager() {
 
 int StreamProcessorManager::registerProcessor(StreamProcessor *processor)
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Registering processor (%p) with manager\n",processor);
 	assert(processor);
 
 	if (processor->getType()==StreamProcessor::E_Receive) {
@@ -60,6 +63,7 @@ int StreamProcessorManager::registerProcessor(StreamProcessor *processor)
 
 int StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering processor (%p) with manager\n",processor);
 	assert(processor);
 
 	if (processor->getType()==StreamProcessor::E_Receive) {
@@ -94,14 +98,140 @@ int StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 bool StreamProcessorManager::Init()
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	if(sem_init(&m_period_semaphore, 0, 0)) {
+		debugFatal( "Cannot init packet transfer semaphore\n");
+		debugFatal( " Error: %s\n",strerror(errno));
+		return false;
+	} else {
+		debugOutput( DEBUG_LEVEL_VERBOSE,"FREEBOB: successfull init of packet transfer semaphore\n");
+	}
 	return true;
 }
-
 
 bool StreamProcessorManager::Execute()
 {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+
+	bool period_ready=true;
+	m_xrun_has_occured=false;
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		period_ready = period_ready && (*it)->isOnePeriodReady();
+		m_xrun_has_occured = m_xrun_has_occured || (*it)->xrunOccurred();
+	}
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		period_ready = period_ready && (*it)->isOnePeriodReady();
+		m_xrun_has_occured = m_xrun_has_occured || (*it)->xrunOccurred();
+	}
+
+	if(m_xrun_has_occured) {
+		// do xrun signaling/handling
+		m_xruns++;
+		sem_post(&m_period_semaphore);
+		return false;
+	}
+
+	if(period_ready) {
+		// signal the waiting thread(s?) that a period is ready
+		sem_post(&m_period_semaphore);
+	}
+
 	return true;
+
+}
+
+int StreamProcessorManager::waitForPeriod() {
+	int ret;
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+
+	// Wait for packetizer thread to signal a period completion
+	sem_wait(&m_period_semaphore);
+	
+	if(m_xrun_has_occured) {
+		// notify the driver of the underrun
+		ret = 0;
+	} else {
+		ret=m_period;
+	}
+	
+	return ret;
+
+}
+
+void StreamProcessorManager::reset() {
+
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting processors...\n");
+
+	/* 
+	 * Reset means:
+	 * Bringing all buffers & connections into a know state
+	 *   - Clear all capture buffers
+	 *   - Put nb_periods*period_size of null frames into the playback buffers
+	 *  => implemented by a reset() call, implementation dependant on the type
+	 */
+	
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		(*it)->reset();
+	}
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		(*it)->reset();
+	}
+}
+
+int StreamProcessorManager::transfer() {
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+
+	// a static cast could make sure that there is no performance
+	// penalty for the virtual functions (to be checked)
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) { 
+		(*it)->transfer();
+	}
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		(*it)->transfer();
+	}
+
+	return 0;
+}
+
+void StreamProcessorManager::dumpInfo() {
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping StreamProcessorManager information...\n");
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		(*it)->dumpInfo();
+	}
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		(*it)->dumpInfo();
+	}
 
 }
 

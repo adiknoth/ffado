@@ -27,6 +27,7 @@
  */
 
 #include "Port.h"
+ #include <stdlib.h>
 
 namespace FreebobStreaming {
 
@@ -34,5 +35,121 @@ IMPL_DEBUG_MODULE( Port, Port, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( AudioPort, AudioPort, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( MidiPort, MidiPort, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( ControlPort, ControlPort, DEBUG_LEVEL_NORMAL );
+
+Port::Port(std::string name, enum E_BufferType type, int buffsize) 
+  : m_Name(name),
+    m_BufferType(type),
+    m_enabled(true),
+    m_buffersize(buffsize),
+	m_buffer(0),
+    m_buffer_attached(false)
+{
+
+	allocateInternalBuffer();
+}
+
+Port::Port(std::string name, enum E_BufferType type, int buffsize, void* externalbuffer) 
+  : m_Name(name),
+    m_BufferType(type),
+    m_enabled(true),
+    m_buffersize(buffsize),
+	m_buffer(externalbuffer),
+    m_buffer_attached(true)
+{
+	
+}
+
+int Port::attachBuffer(void *buff) {
+
+	if(m_buffer_attached) {
+		debugFatal("already has a buffer attached\n");
+		return -1;
+	}
+
+	freeInternalBuffer();
+
+	m_buffer=buff;
+
+	m_buffer_attached=true;
+
+}
+
+// detach the user buffer, allocates an internal buffer
+int Port::detachBuffer() {
+	if(!m_buffer_attached) {
+		debugWarning("does not have a buffer attached\n");
+		if(m_buffer) {
+			return 0;	
+		} // if no buffer present, there should be one allocated
+	}
+
+	m_buffer_attached=false;
+
+	return allocateInternalBuffer();
+
+}
+
+int Port::allocateInternalBuffer() {
+	int event_size=getEventSize();
+
+	if(m_buffer_attached) {
+		debugWarning("has an external buffer attached, not allocating\n");
+		return -1;
+	}
+
+	if(m_buffer) {
+		debugWarning("already has an internal buffer attached, re-allocating\n");
+		freeInternalBuffer();
+	}
+
+	m_buffer=calloc(m_buffersize,event_size);
+	if (!m_buffer) {
+		debugFatal("could not allocate internal buffer\n");
+		m_buffersize=0;
+		return -1;
+	}
+
+	return 0;
+}
+
+void Port::freeInternalBuffer() {
+	if(m_buffer_attached) {
+		debugWarning("has an external buffer attached, not free-ing\n");
+		return;
+	}
+	if(m_buffer) {
+		free(m_buffer);
+		m_buffer=0;
+	}
+}
+
+unsigned int AudioPort::getEventSize() {
+	switch (m_DataType) {
+		case E_Float:
+			return sizeof(float);
+		case E_Int24: // 24 bit 2's complement, packed in a 32bit integer (LSB's)
+			return sizeof(uint32_t);
+		default:
+			return 0;
+	}
+}
+
+unsigned int MidiPort::getEventSize() {
+	switch (m_DataType) {
+		case E_Byte:
+			return sizeof(char);
+		default:
+			return 0;
+	}
+}
+
+unsigned int ControlPort::getEventSize() {
+	switch (m_DataType) {
+		case E_Default:
+			return sizeof(uint32_t);
+		default:
+			return 0;
+	}
+}
 
 }

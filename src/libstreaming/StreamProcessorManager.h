@@ -30,6 +30,7 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "FreebobThread.h"
+#include <semaphore.h>
 
 #include <vector>
 
@@ -47,11 +48,14 @@ class StreamProcessorManager :
 
 public:
 
-	StreamProcessorManager(unsigned int period);
+	StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
 	virtual ~StreamProcessorManager();
 
 	int initialize(); // to be called immediately after the construction
 	int prepare(); // to be called after the processors are registered
+
+	void setVerboseLevel(int l) { setDebugLevel( l ); };
+	void dumpInfo();
 
 	// this is the setup API
 	int unregisterProcessor(StreamProcessor *processor);
@@ -66,7 +70,10 @@ public:
 
 	// the client-side functions
 	bool xrunOccurred();
+	int getXrunCount() {return m_xruns;};
+
 	int waitForPeriod(); // wait for the next period
+
 	int transfer(); // transfer the buffer contents from/to client
 
 	void reset(); // reset the streams & buffers (e.g. after xrun)
@@ -78,13 +85,24 @@ protected:
 	bool Execute(); // note that this is called in we while(running) loop
 	bool Init();
 
-protected:
+	// thread sync primitives
+	sem_t m_period_semaphore;
+	// this may only be written by the packet thread, and read by 
+	// the waiting thread. The packet thread terminates if this is
+	// true, therefore it will never by updated again.
+	// it can only be set to true before the period semaphore is 
+	// signalled, which the waiting thread is waiting for. Therefore
+	// this variable is protected by the semaphore.
+	bool m_xrun_has_occured; 
 
+	// processor list
 	StreamProcessorVector m_ReceiveProcessors;
 	StreamProcessorVector m_TransmitProcessors;
 
 	unsigned int m_nb_buffers;
 	unsigned int m_period;
+	unsigned int m_xruns;
+
 
     DECLARE_DEBUG_MODULE;
 

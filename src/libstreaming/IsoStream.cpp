@@ -62,6 +62,16 @@ int IsoStream::getPacket(unsigned char *data, unsigned int *length,
 	return 0;
 }
 
+void IsoStream::dumpInfo()
+{
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Stream type    : %s\n",
+	     (this->getType()==EST_Receive ? "Receive" : "Transmit"));
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
+	     m_port, m_channel);
+
+};
+
 /* buffered variant of the ISO stream */
 IsoStreamBuffered::~IsoStreamBuffered() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
