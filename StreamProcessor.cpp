@@ -31,9 +31,11 @@
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 
-StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel) 
-	: IsoStream(type, channel) {
+StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel, int port) 
+	: IsoStream(type, channel, port) {
 
 }
 
@@ -44,7 +46,42 @@ StreamProcessor::~StreamProcessor() {
 int StreamProcessor::putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped) {
-	int retval;
+
+	debugWarning("BUG: received packet in StreamProcessor base class!\n");
+
+	return -1;
+}
+
+int StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
+		              unsigned char *tag, unsigned char *sy,
+		              int cycle, unsigned int dropped, unsigned int max_length) {
+	
+	debugWarning("BUG: packet requested from StreamProcessor base class!\n");
+
+	return -1;
+}
+
+void StreamProcessor::dumpInfo()
+{
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
+	
+	((IsoStream*)this)->dumpInfo();
+};
+
+
+ReceiveStreamProcessor::ReceiveStreamProcessor(int channel, int port) 
+	: StreamProcessor(IsoStream::EST_Receive, channel, port) {
+
+}
+
+ReceiveStreamProcessor::~ReceiveStreamProcessor() {
+
+}
+
+int ReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length, 
+		              unsigned char channel, unsigned char tag, unsigned char sy, 
+			          unsigned int cycle, unsigned int dropped) {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
 	             "received packet: length=%d, channel=%d, cycle=%d\n",
@@ -53,14 +90,37 @@ int StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 	return 0;
 }
 
-int StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
-		              unsigned char *tag, unsigned char *sy,
-		              int cycle, unsigned int dropped, unsigned int max_length) {
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-	             "sending packet: length=%d, cycle=%d\n",
-	             *length, cycle );
+void ReceiveStreamProcessor::reset() {
 
-	int retval;
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting processors...\n");
+	
+	// reset the boundary counter
+	m_framecounter = 0;
+
+}
+
+int ReceiveStreamProcessor::transfer() {
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+// TODO: implement
+
+	return 0;
+}
+
+
+TransmitStreamProcessor::TransmitStreamProcessor(int channel, int port) 
+	: StreamProcessor(IsoStream::EST_Transmit, channel, port) {
+
+}
+
+TransmitStreamProcessor::~TransmitStreamProcessor() {
+
+}
+
+int TransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
+	              unsigned char *tag, unsigned char *sy,
+	              int cycle, unsigned int dropped, unsigned int max_length) {
+	memcpy(data,&cycle,sizeof(cycle));
 	*length=sizeof(cycle);
 	*tag = 1;
 	*sy = 0;
@@ -68,7 +128,20 @@ int StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
 	return 0;
 }
 
+void TransmitStreamProcessor::reset() {
 
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting processors...\n");
+// TODO: implement
+
+}
+
+int TransmitStreamProcessor::transfer() {
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+// TODO: implement
+
+	return 0;
+}
 
 
 }

@@ -74,6 +74,8 @@ class IsoStream
 			getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped, unsigned int max_length);
+
+		void dumpInfo();
 	
 	protected:
 		enum EStreamType m_type;

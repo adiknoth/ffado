@@ -65,11 +65,21 @@ IsoRecvHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data,
 	return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped);
 }
 
+int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation)
+{	
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Busreset happened, generation %d...\n", generation);
+
+	IsoHandler *handler=static_cast<IsoHandler *>(raw1394_get_userdata(handle));
+	assert(handler);
+	return handler->handleBusReset(generation);
+}
+
+
 /* Base class implementation */
 bool
 IsoHandler::initialize()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoHandler (%p) enter...\n",this);
 
     m_handle = raw1394_new_handle_on_port( m_port );
     if ( !m_handle ) {
@@ -83,6 +93,12 @@ IsoHandler::initialize()
     }
 
 	raw1394_set_userdata(m_handle, static_cast<void *>(this));
+	if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
+		debugWarning("Could not enable busreset notification.\n");
+		debugWarning(" Error message: %s\n",strerror(errno));
+	}
+
+	raw1394_set_bus_reset_handler(m_handle, busreset_handler);
 
     return true;
 }
@@ -95,9 +111,16 @@ void IsoHandler::stop()
 
 void IsoHandler::dumpInfo()
 {
-	debugOutput( DEBUG_LEVEL_NORMAL, "  Stream type  : %s\n",
+
+	int channel=-1;
+	if (m_Client) channel=m_Client->getChannel();
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Handler type    : %s\n",
 	     (this->getType()==EHT_Receive ? "Receive" : "Transmit"));
-	debugOutput( DEBUG_LEVEL_NORMAL, "  Packet count : %d\n",this->getPacketCount());
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
+	     m_port, channel);
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count   : %d (%d dropped)\n\n",
+	     this->getPacketCount(), this->getDroppedCount());
 
 };
 
@@ -110,7 +133,7 @@ IsoRecvHandler::IsoRecvHandler(int port)
 }
 IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets, 
                                unsigned int max_packet_size, int irq)
-		: IsoHandler(port, buf_packets,max_packet_size,irq), m_Client(0)
+		: IsoHandler(port, buf_packets,max_packet_size,irq)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
@@ -124,7 +147,7 @@ IsoRecvHandler::~IsoRecvHandler()
 
 bool
 IsoRecvHandler::initialize() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoRecvHandler enter...\n");
 
 	IsoHandler *base=static_cast<IsoHandler *>(this);
 
@@ -146,6 +169,7 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 	             "received packet: length=%d, channel=%d, cycle=%d\n",
 	             length, channel, cycle );
 	m_packetcount++;
+	m_dropped+=dropped;
 
 	if(m_Client) {
 		if(m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped)) {
@@ -175,6 +199,8 @@ int IsoRecvHandler::registerStream(IsoStream *stream)
                                          m_irq_interval)) {
 		debugFatal("Could not do receive initialisation!\n" );
 
+		m_Client=0;
+
 		return -1;
 	}
 
@@ -200,12 +226,18 @@ int IsoRecvHandler::start(int cycle)
 	return raw1394_iso_recv_start(m_handle, cycle, -1, 0);
 }
 
+int IsoRecvHandler::handleBusReset(unsigned int generation) {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	//TODO: implement busreset
+	return 0;
+}
+
 /* ----------------- XMIT --------------- */
 
 IsoXmitHandler::IsoXmitHandler(int port)
 		: IsoHandler(port), m_prebuffers(0)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
 IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
@@ -213,7 +245,7 @@ IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
 		: IsoHandler(port, buf_packets, max_packet_size,irq),
 		  m_speed(RAW1394_ISO_SPEED_400), m_prebuffers(0)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
 IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
@@ -222,7 +254,7 @@ IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
 		: IsoHandler(port, buf_packets,max_packet_size,irq),
 		  m_speed(speed), m_prebuffers(0)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
 
@@ -271,6 +303,7 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(unsigned char *data, unsi
 	             "sending packet: length=%d, cycle=%d\n",
 	             *length, cycle );
 	m_packetcount++;
+	m_dropped+=dropped;
 
 	if(m_Client) {
     	if(m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size)) {
@@ -305,6 +338,8 @@ int IsoXmitHandler::registerStream(IsoStream *stream)
                              m_irq_interval)) {
 		debugFatal("Could not do xmit initialisation!\n" );
 
+		m_Client=0;
+
 		return -1;
 	}
 
@@ -328,6 +363,12 @@ int IsoXmitHandler::start(int cycle)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	return raw1394_iso_xmit_start(m_handle, cycle, m_prebuffers);
+}
+
+int IsoXmitHandler::handleBusReset(unsigned int generation) {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	//TODO: implement busreset
+	return 0;
 }
 
 }
