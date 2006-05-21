@@ -86,13 +86,21 @@ int main(int argc, char *argv[])
 // 	}
 // 	spt->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
-// 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(0,2,44100,7);
-	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
+ 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(0,2,44100,11);
+// 	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
 	if(!spr) {
 		printf("Could not create receive AmdtpStreamProcessor\n");
 		return -1;
 	}
 	spr->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+
+ 	AmdtpReceiveStreamProcessor *spr2 = new AmdtpReceiveStreamProcessor(1,2,44100,7);
+// 	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
+	if(!spr2) {
+		printf("Could not create receive AmdtpStreamProcessor\n");
+		return -1;
+	}
+	spr2->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
 // 	if (isomanager->registerStream(spt)) {
 // 		printf("Could not register transmit stream processor with the ISO manager\n");
@@ -110,6 +118,11 @@ int main(int argc, char *argv[])
 	}
 	printf("----------------------\n");
 
+	if (isomanager->registerStream(spr2)) {
+		printf("Could not register receive stream processor with the ISO manager\n");
+		return -1;
+	}
+	printf("----------------------\n");
 
 // 	printf("----------------------\n");
 // 	if (procMan->registerProcessor(spt)) {
@@ -121,6 +134,12 @@ int main(int argc, char *argv[])
 	// also register it with the processor manager, so that it is aware of 
 	// buffer sizes etc...
 	if (procMan->registerProcessor(spr)) {
+		printf("Could not register receive stream processor with the Processor manager\n");
+		return -1;
+	}
+	printf("----------------------\n");
+
+	if (procMan->registerProcessor(spr2)) {
 		printf("Could not register receive stream processor with the Processor manager\n");
 		return -1;
 	}
@@ -145,16 +164,23 @@ int main(int argc, char *argv[])
 	}
 	printf("----------------------\n");
 
+	int periods=0;
+	int periods_print=0;
 	while(run) {
-		printf("\n");
-		printf("============================================\n");
-		isomanager->dumpInfo();
-		printf("--------------------------------------------\n");
-		procMan->dumpInfo();
-		printf("============================================\n");
-		printf("\n");
-
-		sleep(1);
+		periods++;
+ 		if(periods>periods_print) {
+			printf("\n");
+			printf("============================================\n");
+			isomanager->dumpInfo();
+			printf("--------------------------------------------\n");
+			procMan->dumpInfo();
+			printf("============================================\n");
+			printf("\n");
+			periods_print+=100;
+ 		}
+		procMan->waitForPeriod();
+		procMan->transfer();
+		
 	}
 
 	thread->Stop();
@@ -163,9 +189,11 @@ int main(int argc, char *argv[])
 
 // 	isomanager->unregisterStream(spt);
 	isomanager->unregisterStream(spr);
+	isomanager->unregisterStream(spr2);
 
 // 	procMan->unregisterProcessor(spt);
 	procMan->unregisterProcessor(spr);
+	procMan->unregisterProcessor(spr2);
 
 	delete thread;
 	delete runner;
@@ -174,6 +202,7 @@ int main(int argc, char *argv[])
 
 // 	delete spt;
 	delete spr;
+	delete spr2;
 
 	printf("Bye...\n");
 
