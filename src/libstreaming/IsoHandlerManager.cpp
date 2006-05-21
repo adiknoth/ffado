@@ -29,6 +29,8 @@
 #include "IsoHandlerManager.h"
 #include "IsoHandler.h"
 #include "IsoStream.h"
+#include <assert.h>
+
 
 namespace FreebobStreaming
 {

@@ -29,6 +29,8 @@
 #include "StreamRunner.h"
 #include "StreamProcessorManager.h"
 #include "IsoHandlerManager.h"
+#include <assert.h>
+
 
 namespace FreebobStreaming {
 

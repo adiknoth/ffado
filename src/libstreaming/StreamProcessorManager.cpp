@@ -29,6 +29,8 @@
 #include "StreamProcessorManager.h"
 #include "StreamProcessor.h"
 #include <errno.h>
+#include <assert.h>
+
 
 namespace FreebobStreaming {
 

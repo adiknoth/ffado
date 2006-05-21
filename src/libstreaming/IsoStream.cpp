@@ -28,6 +28,8 @@
 
 #include "IsoStream.h"
 #include "PacketBuffer.h"
+#include <assert.h>
+
 
 namespace FreebobStreaming
 {

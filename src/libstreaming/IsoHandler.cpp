@@ -30,6 +30,8 @@
 #include "IsoStream.h"
 #include <errno.h>
 #include <netinet/in.h>
+#include <assert.h>
+
 
 #include <iostream>
 using namespace std;
