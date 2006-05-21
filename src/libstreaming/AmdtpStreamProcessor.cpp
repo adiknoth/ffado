@@ -56,7 +56,7 @@ int AmdtpTransmitStreamProcessor::init() {
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
-	if((err=((ReceiveStreamProcessor *)this)->init())) {
+	if((err=TransmitStreamProcessor::init())) {
 		debugFatal("Could not allocate memory event ringbuffer (%d)",err);
 		return err;
 	}
@@ -119,12 +119,12 @@ int AmdtpTransmitStreamProcessor::init() {
 	}
 
 	// call the parent init
-	return ((TransmitStreamProcessor *)this)->init();
+	return TransmitStreamProcessor::init();
 }
 
 void AmdtpTransmitStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
-	((TransmitStreamProcessor *)this)->setVerboseLevel(l);
+	TransmitStreamProcessor::setVerboseLevel(l);
 }
 
 
@@ -189,7 +189,7 @@ void AmdtpTransmitStreamProcessor::reset() {
 	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	((TransmitStreamProcessor *)this)->reset();
+	TransmitStreamProcessor::reset();
 }
 
 void AmdtpTransmitStreamProcessor::prepare() {
@@ -198,7 +198,7 @@ void AmdtpTransmitStreamProcessor::prepare() {
 
 	// prepare all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	((TransmitStreamProcessor *)this)->prepare();
+	TransmitStreamProcessor::prepare();
 
 	// after preparing, we should transfer the port buffer contents to the event buffer
 	int i=m_nb_buffers;
@@ -233,7 +233,7 @@ int AmdtpReceiveStreamProcessor::init() {
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
-	if((err=((ReceiveStreamProcessor *)this)->init())) {
+	if((err=ReceiveStreamProcessor::init())) {
 		debugFatal("Could not allocate memory event ringbuffer (%d)",err);
 		return err;
 	}
@@ -296,7 +296,7 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 
 void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
-// 	((ReceiveStreamProcessor *)this)->setVerboseLevel(l);
+// 	ReceiveStreamProcessor::setVerboseLevel(l);
 
 }
 
@@ -310,7 +310,7 @@ void AmdtpReceiveStreamProcessor::reset() {
 	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	((ReceiveStreamProcessor *)this)->reset();
+	ReceiveStreamProcessor::reset();
 }
 
 void AmdtpReceiveStreamProcessor::prepare() {
@@ -319,7 +319,7 @@ void AmdtpReceiveStreamProcessor::prepare() {
 
 	// prepare all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	((ReceiveStreamProcessor *)this)->prepare();
+	ReceiveStreamProcessor::prepare();
 }
 
 int AmdtpReceiveStreamProcessor::transfer() {

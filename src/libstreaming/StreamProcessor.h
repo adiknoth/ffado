@@ -77,7 +77,7 @@ public:
 
 	virtual int init();
 
- 	void setVerboseLevel(int l);
+ 	virtual void setVerboseLevel(int l);
 
 protected:
 	
@@ -113,11 +113,11 @@ public:
 	virtual int putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped);
-// 	virtual void setVerboseLevel(int l);
+ 	virtual void setVerboseLevel(int l);
 
 protected:
 
-//     DECLARE_DEBUG_MODULE;
+     DECLARE_DEBUG_MODULE;
 
 
 };
@@ -135,11 +135,11 @@ public:
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length);
-// 	virtual void setVerboseLevel(int l);
+ 	virtual void setVerboseLevel(int l);
 
 protected:
 
-//     DECLARE_DEBUG_MODULE;
+     DECLARE_DEBUG_MODULE;
 
 
 };
