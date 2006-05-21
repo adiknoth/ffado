@@ -204,6 +204,8 @@ int IsoRecvHandler::registerStream(IsoStream *stream)
 		return -1;
 	}
 
+	m_Client->setHandler(this);
+
 	return 0;
 
 }
@@ -215,6 +217,7 @@ int IsoRecvHandler::unregisterStream(IsoStream *stream)
 
 	if(stream != m_Client) return -1; //not registered
 
+	m_Client->clearHandler();
 	m_Client=0;
 	return 0;
 
@@ -343,6 +346,8 @@ int IsoXmitHandler::registerStream(IsoStream *stream)
 		return -1;
 	}
 
+	m_Client->setHandler(this);
+
 	return 0;
 
 }
@@ -354,6 +359,7 @@ int IsoXmitHandler::unregisterStream(IsoStream *stream)
 
 	if(stream != m_Client) return -1; //not registered
 
+	m_Client->clearHandler();
 	m_Client=0;
 	return 0;
 

@@ -25,45 +25,13 @@
  * 
  *
  */
-#ifndef __FREEBOB_PORTMANAGER__
-#define __FREEBOB_PORTMANAGER__
 
-#include "../debugmodule/debugmodule.h"
-
-#include <vector>
+#include "AmdtpPortInfo.h"
 
 namespace FreebobStreaming {
 
-class Port;
-typedef std::vector<Port *> PortVector;
-typedef std::vector<Port *>::iterator PortVectorIterator;
-
-class PortManager {
-
-public:
-
-	PortManager();
-	virtual ~PortManager();
-
-	virtual int addPort(Port *port);
-	virtual int deletePort(Port *port);
-
-	void reset();
-	void prepare();	
-
-	void setVerboseLevel(int l) { setDebugLevel( l ); };
-
-protected:
-	PortVector m_PacketPorts;
-	PortVector m_PeriodPorts;
-// 	PortVector m_SamplePorts;
-
-    DECLARE_DEBUG_MODULE;
-
-};
-
-}
-
-#endif /* __FREEBOB_PORTMANAGER__ */
+IMPL_DEBUG_MODULE( AmdtpPortInfo, AmdtpPortInfo, DEBUG_LEVEL_NORMAL );
 
 
+
+} // end of namespace FreebobStreaming

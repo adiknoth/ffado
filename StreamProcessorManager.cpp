@@ -50,11 +50,13 @@ int StreamProcessorManager::registerProcessor(StreamProcessor *processor)
 
 	if (processor->getType()==StreamProcessor::E_Receive) {
 		m_ReceiveProcessors.push_back(processor);
+		processor->setManager(this);
 		return 0;
 	}
 	
 	if (processor->getType()==StreamProcessor::E_Transmit) {
 		m_TransmitProcessors.push_back(processor);
+		processor->setManager(this);
 		return 0;
 	}
 
@@ -74,6 +76,7 @@ int StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 
 			if ( *it == processor ) { 
 					m_ReceiveProcessors.erase(it);
+					processor->clearManager();
 					return 0;
 				}
 		}
@@ -86,6 +89,7 @@ int StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 
 			if ( *it == processor ) { 
 					m_TransmitProcessors.erase(it);
+					processor->clearManager();
 					return 0;
 				}
 		}
@@ -105,6 +109,27 @@ bool StreamProcessorManager::Init()
 	} else {
 		debugOutput( DEBUG_LEVEL_VERBOSE,"FREEBOB: successfull init of packet transfer semaphore\n");
 	}
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		if((*it)->init()) {
+			debugFatal("Could not initialize receive processor\n");
+			return false;
+		}
+	}
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		if((*it)->init()) {
+			debugFatal("Could not initialize receive processor\n");
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -234,5 +259,24 @@ void StreamProcessorManager::dumpInfo() {
 	}
 
 }
+
+void StreamProcessorManager::setVerboseLevel(int l) {
+	setDebugLevel(l);
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		(*it)->setVerboseLevel(l);
+	}
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		(*it)->setVerboseLevel(l);
+	}
+}
+
 
 } // end of namespace

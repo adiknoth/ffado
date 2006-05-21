@@ -19,7 +19,7 @@
 noinst_LTLIBRARIES = libstreaming.la
 
 libstreaming_la_SOURCES = 	\
-	messagebuffer.c messagebuffer.h	\
+	messagebuffer.c messagebuffer.h	cip.h cip.c \
 	debug.h \
 	FreebobPosixThread.cpp  FreebobPosixThread.h \
 	FreebobThread.h \
@@ -43,6 +43,11 @@ libstreaming_la_SOURCES = 	\
 	StreamProcessor.h \
 	StreamProcessorManager.cpp \
 	StreamProcessorManager.h \
+	AmdtpPortInfo.cpp AmdtpPortInfo.h \
+	AmdtpPort.cpp \
+	AmdtpPort.h \
+	AmdtpStreamProcessor.cpp \
+	AmdtpStreamProcessor.h \
 	StreamRunner.cpp StreamRunner.h
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
