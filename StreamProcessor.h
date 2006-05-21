@@ -66,6 +66,8 @@ public:
 
 	bool isOnePeriodReady() { return (m_framecounter > m_period); };
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
+	void decrementFrameCounter() {m_framecounter -= m_period;};
+
 
 	virtual int transfer(); // transfer the buffer contents from/to client
 

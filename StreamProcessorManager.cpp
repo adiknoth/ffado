@@ -168,6 +168,19 @@ bool StreamProcessorManager::Execute()
 	if(period_ready) {
 		// signal the waiting thread(s?) that a period is ready
 		sem_post(&m_period_semaphore);
+	 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "Period done...\n");
+
+		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+			it != m_ReceiveProcessors.end();
+			++it ) {
+			(*it)->decrementFrameCounter();
+		}
+	
+		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+			it != m_TransmitProcessors.end();
+			++it ) {
+			(*it)->decrementFrameCounter();
+		}
 	}
 
 	return true;

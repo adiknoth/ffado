@@ -282,6 +282,16 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 			// we cannot offload midi encoding due to the need for a dbc value
 // 			freebob_streaming_decode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
 		}
+
+		debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
+			"RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
+			channel, packet->fdf,
+			packet->syt,
+			packet->dbs,
+			packet->dbc,
+			packet->fmt, 
+			length,
+			((length / sizeof (quadlet_t)) - 2)/packet->dbs);
 		
 		// update the frame counter
 		m_framecounter+=nevents;
@@ -296,7 +306,7 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 
 void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
-// 	ReceiveStreamProcessor::setVerboseLevel(l);
+ 	ReceiveStreamProcessor::setVerboseLevel(l);
 
 }
 
@@ -326,6 +336,14 @@ int AmdtpReceiveStreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 // TODO: implement
+	
+	int read_size=m_period*sizeof(quadlet_t)*m_dimension;
+	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
+	if (freebob_ringbuffer_read(m_event_buffer,(char *)(dummybuffer),read_size) < read_size) {
+		debugWarning("Could not read from event buffer\n");
+	}
+	free(dummybuffer);
+
 
 	return 0;
 }
