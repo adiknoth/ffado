@@ -27,6 +27,8 @@
  */
 
 #include "AmdtpStreamProcessor.h"
+#include <assert.h>
+
 
 namespace FreebobStreaming {
 

@@ -34,6 +34,8 @@
 
 #include "libfreebob/freebob_streaming.h"
 #include "messagebuffer.h"
+#include <assert.h>
+
 
 freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, freebob_options_t options) {
 	freebob_messagebuffer_init();

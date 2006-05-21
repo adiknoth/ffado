@@ -28,6 +28,8 @@
 
 #include "Port.h"
  #include <stdlib.h>
+#include <assert.h>
+
 
 namespace FreebobStreaming {
 

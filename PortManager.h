@@ -51,14 +51,14 @@ public:
 	void reset();
 	void prepare();	
 
-	void setVerboseLevel(int l) { setDebugLevel( l ); };
+ 	void setVerboseLevel(int l) {  };
 
 protected:
 	PortVector m_PacketPorts;
 	PortVector m_PeriodPorts;
 // 	PortVector m_SamplePorts;
 
-    DECLARE_DEBUG_MODULE;
+//     DECLARE_DEBUG_MODULE;
 
 };
 

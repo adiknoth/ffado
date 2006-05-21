@@ -29,6 +29,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "debug.h"
 #include <string.h> // for memset
 #include <errno.h>
+#include <assert.h>
+
 
 namespace FreebobStreaming
 {

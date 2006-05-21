@@ -28,10 +28,12 @@
 
 #include "PortManager.h"
 #include "Port.h"
+#include <assert.h>
+
 
 namespace FreebobStreaming {
 
-IMPL_DEBUG_MODULE( PortManager, PortManager, DEBUG_LEVEL_NORMAL );
+// IMPL_DEBUG_MODULE( PortManager, PortManager, DEBUG_LEVEL_NORMAL );
 
 PortManager::PortManager() {
 
@@ -43,23 +45,23 @@ PortManager::~PortManager() {
 
 int PortManager::addPort(Port *port)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
 
 	switch(port->getBufferType()) {
 	case (Port::E_PacketBuffered):
-		debugOutput( DEBUG_LEVEL_VERBOSE, "Adding packet buffered port %s\n",port->getName().c_str());
+// 		debugOutput( DEBUG_LEVEL_VERBOSE, "Adding packet buffered port %s\n",port->getName().c_str());
 		m_PacketPorts.push_back(port);
 		break;
 	case Port::E_PeriodBuffered:
-		debugOutput( DEBUG_LEVEL_VERBOSE, "Adding period buffered port %s\n",port->getName().c_str());
+// 		debugOutput( DEBUG_LEVEL_VERBOSE, "Adding period buffered port %s\n",port->getName().c_str());
 		m_PeriodPorts.push_back(port);
 		break;
 /*	case Port::E_SampleBuffered:
 		m_SamplePorts.push_back(port);
 		break;*/
 	default:
-		debugFatal("Unsupported port type!");
+// 		debugFatal("Unsupported port type!");
 		return -1;
 	}
 
@@ -68,9 +70,9 @@ int PortManager::addPort(Port *port)
 
 int PortManager::deletePort(Port *port)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
 
     for ( PortVectorIterator it = m_PacketPorts.begin();
           it != m_PacketPorts.end();
@@ -101,7 +103,7 @@ int PortManager::deletePort(Port *port)
 // 			return 0;
 //         }
 //     }
-	debugOutput( DEBUG_LEVEL_VERBOSE, " => port not found\n");
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, " => port not found\n");
 
 	return -1; //not found
 

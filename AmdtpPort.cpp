@@ -27,6 +27,7 @@
  */
 
 #include "AmdtpPort.h"
+#include <assert.h>
 
 namespace FreebobStreaming {
 
