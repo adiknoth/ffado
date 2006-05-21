@@ -58,7 +58,7 @@ protected:
 	PortVector m_PeriodPorts;
 // 	PortVector m_SamplePorts;
 
-//     DECLARE_DEBUG_MODULE;
+    DECLARE_DEBUG_MODULE;
 
 };
 

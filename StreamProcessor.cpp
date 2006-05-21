@@ -33,8 +33,8 @@
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_NORMAL );
-// IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
-// IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 
 StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel, int port, int framerate) 
 	: IsoStream(type, channel, port), m_framerate(framerate), m_manager(0) {
@@ -90,7 +90,7 @@ int StreamProcessor::init()
 	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
 
 
-	return ((IsoStream *)this)->init();
+	return IsoStream::init();
 }
 
 void StreamProcessor::reset() {
@@ -100,10 +100,10 @@ void StreamProcessor::reset() {
 	m_framecounter=0;
 
 	// loop over the ports to reset them
-	((PortManager *)this)->reset();
+	PortManager::reset();
 
 	// reset the iso stream
-	((IsoStream *)this)->reset();
+	IsoStream::reset();
 
 }
 
@@ -112,10 +112,10 @@ void StreamProcessor::prepare() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 // TODO: implement
 	// loop over the ports to reset them
-	((PortManager *)this)->prepare();
+	PortManager::prepare();
 
 	// reset the iso stream
-	((IsoStream *)this)->prepare();
+	IsoStream::prepare();
 
 }
 
@@ -129,8 +129,8 @@ int StreamProcessor::transfer() {
 
 void StreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
-	((IsoStream *)this)->setVerboseLevel(l);
-	((PortManager *)this)->setVerboseLevel(l);
+	IsoStream::setVerboseLevel(l);
+	PortManager::setVerboseLevel(l);
 
 }
 
@@ -155,18 +155,18 @@ int ReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 	return 0;
 }
 
-// void ReceiveStreamProcessor::setVerboseLevel(int l) {
-// 	setDebugLevel(l);
-// 
-// /*	StreamProcessor *parent;
-// 	parent=dynamic_cast<StreamProcessor *>(this);
-// 
-// 	assert(parent);
-// 
-// 	parent->setVerboseLevel(l);
-//  	((StreamProcessor *)this)->setVerboseLevel(l);
-// */
-// }
+void ReceiveStreamProcessor::setVerboseLevel(int l) {
+	setDebugLevel(l);
+
+/*	StreamProcessor *parent;
+	parent=dynamic_cast<StreamProcessor *>(this);
+
+	assert(parent);
+
+	parent->setVerboseLevel(l);
+ 	StreamProcessor::setVerboseLevel(l);
+*/
+}
 
 
 TransmitStreamProcessor::TransmitStreamProcessor(int channel, int port, int framerate) 
@@ -187,11 +187,11 @@ int TransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
 	return 0;
 }
-/*
+
 void TransmitStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
-	((StreamProcessor *)this)->setVerboseLevel(l);
+	StreamProcessor::setVerboseLevel(l);
 
-}*/
+}
 
 }
