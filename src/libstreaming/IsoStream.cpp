@@ -62,6 +62,14 @@ int IsoStream::getPacket(unsigned char *data, unsigned int *length,
 	return 0;
 }
 
+int IsoStream::getNodeId() {
+	if (m_handler) {
+		return m_handler->getLocalNodeId();
+	}
+	return -1;
+}
+
+
 void IsoStream::dumpInfo()
 {
 
@@ -72,6 +80,18 @@ void IsoStream::dumpInfo()
 
 };
 
+void IsoStream::reset() {
+
+}
+
+void IsoStream::prepare() {
+}
+
+int IsoStream::init() {
+	return 0;
+
+}
+
 /* buffered variant of the ISO stream */
 IsoStreamBuffered::~IsoStreamBuffered() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
@@ -79,7 +99,7 @@ IsoStreamBuffered::~IsoStreamBuffered() {
 
 }
 
-int IsoStreamBuffered::initialize() {
+int IsoStreamBuffered::init() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	buffer=new PacketBuffer(m_headersize, m_buffersize, m_max_packetsize);
 

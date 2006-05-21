@@ -27,15 +27,16 @@
  */
 
 #include "StreamProcessor.h"
+#include "StreamProcessorManager.h"
 
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
+// IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
+// IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 
-StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel, int port) 
-	: IsoStream(type, channel, port) {
+StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel, int port, int framerate) 
+	: IsoStream(type, channel, port), m_framerate(framerate), m_manager(0) {
 
 }
 
@@ -65,13 +66,76 @@ void StreamProcessor::dumpInfo()
 {
 
 	debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
 	
 	((IsoStream*)this)->dumpInfo();
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter  : %d\n", m_framecounter);
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns          : %d\n", m_xruns);
+	
 };
 
+int StreamProcessor::init()
+{
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+	if(!m_manager) {
+		debugFatal("Not attached to a manager!\n");
+		return -1;
+	}
 
-ReceiveStreamProcessor::ReceiveStreamProcessor(int channel, int port) 
-	: StreamProcessor(IsoStream::EST_Receive, channel, port) {
+	m_nb_buffers=m_manager->getNbBuffers();
+	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_nb_buffers  : %d\n", m_nb_buffers);
+
+	m_period=m_manager->getPeriodSize();
+	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
+
+
+	return ((IsoStream *)this)->init();
+}
+
+void StreamProcessor::reset() {
+
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
+
+	m_framecounter=0;
+
+	// loop over the ports to reset them
+	((PortManager *)this)->reset();
+
+	// reset the iso stream
+	((IsoStream *)this)->reset();
+
+}
+
+void StreamProcessor::prepare() {
+
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+// TODO: implement
+	// loop over the ports to reset them
+	((PortManager *)this)->prepare();
+
+	// reset the iso stream
+	((IsoStream *)this)->prepare();
+
+}
+
+int StreamProcessor::transfer() {
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+// TODO: implement
+
+	return 0;
+}
+
+void StreamProcessor::setVerboseLevel(int l) {
+	setDebugLevel(l);
+	((IsoStream *)this)->setVerboseLevel(l);
+	((PortManager *)this)->setVerboseLevel(l);
+
+}
+
+
+ReceiveStreamProcessor::ReceiveStreamProcessor(int channel, int port, int framerate) 
+	: StreamProcessor(IsoStream::EST_Receive, channel, port, framerate) {
 
 }
 
@@ -90,26 +154,22 @@ int ReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 	return 0;
 }
 
-void ReceiveStreamProcessor::reset() {
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting processors...\n");
-	
-	// reset the boundary counter
-	m_framecounter = 0;
-
-}
-
-int ReceiveStreamProcessor::transfer() {
-
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-// TODO: implement
-
-	return 0;
-}
+// void ReceiveStreamProcessor::setVerboseLevel(int l) {
+// 	setDebugLevel(l);
+// 
+// /*	StreamProcessor *parent;
+// 	parent=dynamic_cast<StreamProcessor *>(this);
+// 
+// 	assert(parent);
+// 
+// 	parent->setVerboseLevel(l);
+//  	((StreamProcessor *)this)->setVerboseLevel(l);
+// */
+// }
 
 
-TransmitStreamProcessor::TransmitStreamProcessor(int channel, int port) 
-	: StreamProcessor(IsoStream::EST_Transmit, channel, port) {
+TransmitStreamProcessor::TransmitStreamProcessor(int channel, int port, int framerate) 
+	: StreamProcessor(IsoStream::EST_Transmit, channel, port, framerate) {
 
 }
 
@@ -120,28 +180,17 @@ TransmitStreamProcessor::~TransmitStreamProcessor() {
 int TransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) {
-	memcpy(data,&cycle,sizeof(cycle));
-	*length=sizeof(cycle);
+	*length=0;
 	*tag = 1;
 	*sy = 0;
 
 	return 0;
 }
+/*
+void TransmitStreamProcessor::setVerboseLevel(int l) {
+	setDebugLevel(l);
+	((StreamProcessor *)this)->setVerboseLevel(l);
 
-void TransmitStreamProcessor::reset() {
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting processors...\n");
-// TODO: implement
-
-}
-
-int TransmitStreamProcessor::transfer() {
-
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-// TODO: implement
-
-	return 0;
-}
-
+}*/
 
 }

@@ -25,45 +25,44 @@
  * 
  *
  */
-#ifndef __FREEBOB_PORTMANAGER__
-#define __FREEBOB_PORTMANAGER__
+#ifndef __FREEBOB_AMDTPPORTINFO__
+#define __FREEBOB_AMDTPPORTINFO__
 
 #include "../debugmodule/debugmodule.h"
-
-#include <vector>
+#include <string>
 
 namespace FreebobStreaming {
 
-class Port;
-typedef std::vector<Port *> PortVector;
-typedef std::vector<Port *>::iterator PortVectorIterator;
-
-class PortManager {
+class AmdtpPortInfo {
 
 public:
 
-	PortManager();
-	virtual ~PortManager();
+	AmdtpPortInfo(std::string name, int position, int location, int format, int type)
+	  : m_name(name), m_position(position), m_location(location), m_format(format), m_type(type)
+	{};
+	virtual ~AmdtpPortInfo() {};
 
-	virtual int addPort(Port *port);
-	virtual int deletePort(Port *port);
-
-	void reset();
-	void prepare();	
-
-	void setVerboseLevel(int l) { setDebugLevel( l ); };
+	std::string getName() {return m_name;};
+	int getLocation()     {return m_location;};
+	int getPostition()    {return m_position;};
+	int getFormat()       {return m_format;};
+	int getType()         {return m_type;};
 
 protected:
-	PortVector m_PacketPorts;
-	PortVector m_PeriodPorts;
-// 	PortVector m_SamplePorts;
+    std::string m_name;
+
+    int m_position;
+    int m_location;
+    int m_format;
+    int m_type;
+
 
     DECLARE_DEBUG_MODULE;
 
 };
 
-}
+} // end of namespace FreebobStreaming
 
-#endif /* __FREEBOB_PORTMANAGER__ */
+#endif /* __FREEBOB_AMDTPPORTINFO__ */
 
 

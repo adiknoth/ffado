@@ -54,7 +54,7 @@ public:
 	int initialize(); // to be called immediately after the construction
 	int prepare(); // to be called after the processors are registered
 
-	void setVerboseLevel(int l) { setDebugLevel( l ); };
+	void setVerboseLevel(int l);
 	void dumpInfo();
 
 	// this is the setup API

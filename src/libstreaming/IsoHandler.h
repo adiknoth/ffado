@@ -104,6 +104,8 @@ class IsoHandler
 		virtual int registerStream(IsoStream *) = 0;
 		virtual int unregisterStream(IsoStream *) = 0;
 
+		int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
+
 	protected:
 	    raw1394handle_t m_handle;
     	int             m_port;

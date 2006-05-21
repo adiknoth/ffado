@@ -30,6 +30,7 @@
 
 #include <libraw1394/raw1394.h>
 #include "../debugmodule/debugmodule.h"
+#include "IsoHandler.h"
 
 namespace FreebobStreaming
 {
@@ -42,6 +43,9 @@ class PacketBuffer;
 
 class IsoStream
 {
+	friend class IsoHandler;
+	friend class IsoRecvHandler;
+	friend class IsoXmitHandler;
 
     public:
 
@@ -50,9 +54,11 @@ class IsoStream
 			EST_Transmit
 		};
 
-        IsoStream(enum EStreamType type, int channel) : m_type(type), m_channel(channel), m_port(0)
+        IsoStream(enum EStreamType type, int channel) 
+		   : m_type(type), m_channel(channel), m_port(0), m_handler(0)
         {};
-        IsoStream(enum EStreamType type, int channel, int port) : m_type(type), m_channel(channel), m_port(port)
+        IsoStream(enum EStreamType type, int channel, int port) 
+		   : m_type(type), m_channel(channel), m_port(port), m_handler(0)
         {};
         virtual ~IsoStream()
         {};
@@ -64,7 +70,7 @@ class IsoStream
 
 		enum EStreamType getType() { return m_type;};
 
-		virtual int initialize() {return 0;};
+		virtual int init();
 
 		virtual int 
 			putPacket(unsigned char *data, unsigned int length, 
@@ -76,11 +82,23 @@ class IsoStream
 		              int cycle, unsigned int dropped, unsigned int max_length);
 
 		void dumpInfo();
-	
+
+		int getNodeId();
+			
+
+		void reset();
+		void prepare();	
+
 	protected:
+
+		void setHandler( IsoHandler * h) {m_handler=h;};
+		void clearHandler() {m_handler=0;};
+
 		enum EStreamType m_type;
 		int m_channel;
 		int m_port;
+
+		IsoHandler *m_handler;
 
 		DECLARE_DEBUG_MODULE;
 
@@ -98,7 +116,7 @@ class IsoStreamBuffered : public IsoStream
 
 		void setVerboseLevel(int l);
 
-		int initialize();
+		int init();
 
 		int 
 			putPacket(unsigned char *data, unsigned int length, 

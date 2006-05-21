@@ -31,7 +31,7 @@
 #include "IsoHandler.h"
 #include "IsoStream.h"
 #include "StreamProcessorManager.h"
-#include "StreamProcessor.h"
+#include "AmdtpStreamProcessor.h"
 #include "IsoHandlerManager.h"
 #include "StreamRunner.h"
 #include "FreebobPosixThread.h"
@@ -58,37 +58,7 @@ int main(int argc, char *argv[])
 	printf("Freebob streaming test application\n");
 	printf(" ISO handler tests\n");
 
-	IsoStream *xms = new IsoStream(IsoStream::EST_Transmit,2,2);
-	if(!xms) {
-		printf("Could not create transmit IsoStream\n");
-		return -1;
-	}
-	xms->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-	IsoStream *rcs = new IsoStream(IsoStream::EST_Receive,0,2);
-	if(!rcs) {
-		printf("Could not create receive IsoStream\n");
-		return -1;
-	}
-	rcs->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-	StreamProcessor *spt = new TransmitStreamProcessor(3,2);
-	if(!spt) {
-		printf("Could not create transmit StreamProcessor\n");
-		return -1;
-	}
-	spt->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-	StreamProcessor *spr = new ReceiveStreamProcessor(1,2);
-	if(!spr) {
-		printf("Could not create receive StreamProcessor\n");
-		return -1;
-	}
-	spr->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-	// now we have an xmit stream, attached to an xmit handler
-	// register it with the manager
-
+	// the first thing we need is a ISO handler manager
 	IsoHandlerManager *isomanager = new IsoHandlerManager();
 	if(!isomanager) {
 		printf("Could not create IsoHandlerManager\n");
@@ -97,23 +67,42 @@ int main(int argc, char *argv[])
 
 	isomanager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	printf("----------------------\n");
-	if (isomanager->registerStream(xms)) {
-		printf("Could not register transmit handler with the manager\n");
-		return -1;
-	}
-	printf("----------------------\n");
 
-	if (isomanager->registerStream(rcs)) {
-		printf("Could not register receive handler with the manager\n");
+	// also create a processor manager to manage the actual stream
+	// processors	
+	StreamProcessorManager *procMan = new StreamProcessorManager(512,3);
+	if(!procMan) {
+		printf("Could not create StreamProcessorManager\n");
 		return -1;
 	}
-	printf("----------------------\n");
+	procMan->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
-	if (isomanager->registerStream(spt)) {
-		printf("Could not register transmit stream processor with the ISO manager\n");
+	// now we can allocate the stream processors themselves
+
+// 	StreamProcessor *spt = new AmdtpTransmitStreamProcessor(3,2,44100,10);
+// 	if(!spt) {
+// 		printf("Could not create transmit AmdtpTransmitStreamProcessor\n");
+// 		return -1;
+// 	}
+// 	spt->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+
+// 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(0,2,44100,7);
+	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
+	if(!spr) {
+		printf("Could not create receive AmdtpStreamProcessor\n");
 		return -1;
 	}
-	printf("----------------------\n");
+	spr->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+
+// 	if (isomanager->registerStream(spt)) {
+// 		printf("Could not register transmit stream processor with the ISO manager\n");
+// 		return -1;
+// 	}
+// 	printf("----------------------\n");
+
+
+	// now we have an xmit stream, 
+	// register it with the manager that assigns an iso handler
 
 	if (isomanager->registerStream(spr)) {
 		printf("Could not register receive stream processor with the ISO manager\n");
@@ -121,22 +110,16 @@ int main(int argc, char *argv[])
 	}
 	printf("----------------------\n");
 
-	// also create a processor as a dummy for the stream runner
-	
-	StreamProcessorManager *procMan = new StreamProcessorManager(512,3);
-	if(!procMan) {
-		printf("Could not create StreamProcessor\n");
-		return -1;
-	}
-	procMan->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
-	printf("----------------------\n");
-	if (procMan->registerProcessor(spt)) {
-		printf("Could not register transmit stream processor with the Processor manager\n");
-		return -1;
-	}
-	printf("----------------------\n");
+// 	printf("----------------------\n");
+// 	if (procMan->registerProcessor(spt)) {
+// 		printf("Could not register transmit stream processor with the Processor manager\n");
+// 		return -1;
+// 	}
+// 	printf("----------------------\n");
 
+	// also register it with the processor manager, so that it is aware of 
+	// buffer sizes etc...
 	if (procMan->registerProcessor(spr)) {
 		printf("Could not register receive stream processor with the Processor manager\n");
 		return -1;
@@ -178,12 +161,10 @@ int main(int argc, char *argv[])
 
 	isomanager->stopHandlers();
 
-	isomanager->unregisterStream(xms);
-	isomanager->unregisterStream(rcs);
-	isomanager->unregisterStream(spt);
+// 	isomanager->unregisterStream(spt);
 	isomanager->unregisterStream(spr);
 
-	procMan->unregisterProcessor(spt);
+// 	procMan->unregisterProcessor(spt);
 	procMan->unregisterProcessor(spr);
 
 	delete thread;
@@ -191,9 +172,7 @@ int main(int argc, char *argv[])
 	delete procMan;
 	delete isomanager;
 
-	delete rcs;
-	delete xms;
-	delete spt;
+// 	delete spt;
 	delete spr;
 
 	printf("Bye...\n");

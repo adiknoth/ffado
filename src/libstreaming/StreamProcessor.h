@@ -35,8 +35,12 @@
 
 namespace FreebobStreaming {
 
+class StreamProcessorManager;
+
 class StreamProcessor : public IsoStream, 
                         public PortManager {
+
+	friend class StreamProcessorManager;
 
 public:
 	enum EProcessorType {
@@ -44,47 +48,54 @@ public:
 		E_Transmit
 	};
 
-	StreamProcessor(enum IsoStream::EStreamType type, int channel, int port);
+	StreamProcessor(enum IsoStream::EStreamType type, int channel, int port, int framerate);
 	virtual ~StreamProcessor();
 
-	int 
+	virtual int 
 		putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped);
-	int 
+	virtual int 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length);
 
 	virtual enum EProcessorType getType() =0;
 
-	void setPeriodSize(unsigned int period);
-	void setPeriodSize(unsigned int period, unsigned int nb_buffers);
-	int getPeriodSize() {return m_period;};
-
-	void setNbBuffers(unsigned int nb_buffers);
-	int getNbBuffers() {return m_nb_buffers;};
-
 	bool xrunOccurred() { return (m_xruns>0);};
 
 	bool isOnePeriodReady() { return (m_framecounter > m_period); };
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
 
-	virtual int transfer() =0; // transfer the buffer contents from/to client
+	virtual int transfer(); // transfer the buffer contents from/to client
 
-	virtual void reset() =0; // reset the streams & buffers (e.g. after xrun)
+	virtual void reset(); // reset the streams & buffers (e.g. after xrun)
 
-	void dumpInfo();
+	virtual void prepare(); // prepare the streams & buffers (e.g. prefill)
+
+	virtual void dumpInfo();
+
+	virtual int init();
+
+ 	void setVerboseLevel(int l);
 
 protected:
 	
-	unsigned int m_nb_buffers;
-	unsigned int m_period;
+
+	void setManager(StreamProcessorManager *manager) {m_manager=manager;};
+	void clearManager() {m_manager=0;};
+
+	unsigned int m_nb_buffers; // cached from manager->getNbBuffers()
+	unsigned int m_period; // cached from manager->getPeriod()
 
 	unsigned int m_xruns;
 	unsigned int m_framecounter;
 
-    DECLARE_DEBUG_MODULE;
+	unsigned int m_framerate;
+
+	StreamProcessorManager *m_manager;
+
+     DECLARE_DEBUG_MODULE;
 
 
 };
@@ -92,24 +103,21 @@ protected:
 class ReceiveStreamProcessor : public StreamProcessor {
 
 public:
-	ReceiveStreamProcessor(int channel, int port);
+	ReceiveStreamProcessor(int channel, int port, int framerate);
 
 	virtual ~ReceiveStreamProcessor();
 
 
 	virtual enum EProcessorType getType() {return E_Receive;};
 
-	int putPacket(unsigned char *data, unsigned int length, 
+	virtual int putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped);
-
-	int transfer(); // transfer the buffer contents from/to client
-
-	void reset(); // reset the streams & buffers (e.g. after xrun)
+// 	virtual void setVerboseLevel(int l);
 
 protected:
 
-    DECLARE_DEBUG_MODULE;
+//     DECLARE_DEBUG_MODULE;
 
 
 };
@@ -117,24 +125,21 @@ protected:
 class TransmitStreamProcessor : public StreamProcessor {
 
 public:
-	TransmitStreamProcessor(int channel, int port);
+	TransmitStreamProcessor(int channel, int port, int framerate);
 
 	virtual ~TransmitStreamProcessor();
 
 	virtual enum EProcessorType getType() {return E_Transmit;};
 
-	int 
+	virtual int 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length);
-
-	int transfer(); // transfer the buffer contents from/to client
-
-	void reset(); // reset the streams & buffers (e.g. after xrun)
+// 	virtual void setVerboseLevel(int l);
 
 protected:
 
-    DECLARE_DEBUG_MODULE;
+//     DECLARE_DEBUG_MODULE;
 
 
 };

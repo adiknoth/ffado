@@ -107,4 +107,11 @@ int PortManager::deletePort(Port *port)
 
 }
 
+void PortManager::reset() {
+
+}
+
+void PortManager::prepare() {
+}
+
 }
