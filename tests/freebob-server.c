@@ -36,6 +36,9 @@
 #include <libavc1394/avc1394.h>
 #include <libavc1394/rom1394.h>
 
+#include "../libfreebob/freebob.h"
+#include "../libfreebob/freebob_bounce.h"
+
 const char not_compatible[] = "\n"
 	"This libraw1394 does not work with your version of Linux. You need a different\n"
 	"version that matches your kernel (see kernel help text for the raw1394 option to\n"
@@ -45,10 +48,6 @@ const char not_loaded[] = "\n"
 	"This probably means that you don't have raw1394 support in the kernel or that\n"
 	"you haven't loaded the raw1394 module.\n";
 
-
-unsigned char g_signal_mode = 0x05; // SD 525-60, TODO: get from media
-unsigned char g_transport_mode = AVC1394_VCR_CMD_WIND;
-unsigned char g_transport_state = AVC1394_VCR_OPERAND_WIND_STOP;
 
 static int g_done = 0;
 
@@ -63,64 +62,6 @@ int subunit_control( avc1394_cmd_rsp *cr )
 {
 	switch ( cr->opcode )
 	{
-	case AVC1394_VCR_CMD_PLAY:
-		switch ( cr->operand[0] )
-		{
-		case AVC1394_VCR_OPERAND_PLAY_FORWARD:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = AVC1394_VCR_OPERAND_PLAY_FORWARD;
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PLAY FORWARD\n");
-			break;
-		
-		case AVC1394_VCR_OPERAND_PLAY_FASTEST_FORWARD:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = AVC1394_VCR_OPERAND_PLAY_FASTEST_FORWARD;
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PLAY FASTEST FORWARD\n");
-			break;
-		
-		case AVC1394_VCR_OPERAND_PLAY_REVERSE_PAUSE:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = cr->operand[0];
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PAUSE PLAY\n");
-			break;
-		
-		case AVC1394_VCR_OPERAND_PLAY_REVERSE:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = AVC1394_VCR_OPERAND_PLAY_REVERSE;
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PLAY REVERSE\n");
-			break;
-
-		case AVC1394_VCR_OPERAND_PLAY_FASTEST_REVERSE:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = AVC1394_VCR_OPERAND_PLAY_FASTEST_REVERSE;
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PLAY FASTEST REVERSE\n");
-			break;
-		
-		case AVC1394_VCR_OPERAND_PLAY_NEXT_FRAME:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = cr->operand[0];
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PLAY NEXT FRAME\n");
-			break;
-		
-		case AVC1394_VCR_OPERAND_PLAY_PREVIOUS_FRAME:
-			g_transport_mode = AVC1394_GET_OPCODE( AVC1394_VCR_RESPONSE_TRANSPORT_STATE_PLAY );
-			g_transport_state = cr->operand[0];
-			cr->status = AVC1394_RESP_ACCEPTED;
-			printf("PLAY PREVIOUS FRAME\n");
-			break;
-		
-		default:
-			fprintf( stderr, "play mode 0x%02x non supported\n", cr->operand[0] );
-			return 0;
-		}
-		break;
-
 	default:
 		fprintf( stderr, "subunit control command 0x%02x non supported\n", cr->opcode );
 		return 0;
@@ -128,14 +69,20 @@ int subunit_control( avc1394_cmd_rsp *cr )
 	return 1;
 }
 
-
 int subunit_status( avc1394_cmd_rsp *cr )
 {
+
+	fprintf( stderr, "subunit STATUS\n");
+	char *buffer;
 	switch ( cr->opcode )
 	{
-	case AVC1394_VCR_CMD_OUTPUT_SIGNAL_MODE:
+	case (AVC1394_CMD_INPUT_PLUG_SIGNAL_FORMAT):
+
 		cr->status = AVC1394_RESP_STABLE;
-		cr->operand[0] = g_signal_mode;
+		buffer=(char*)&cr->operand[1];
+		fprintf( stderr, "subunit AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT\n");
+		
+		strncpy(buffer,"TEST123",sizeof(byte_t)*9);
 		break;
 	default:
 		fprintf( stderr, "subunit status command 0x%02x not supported\n", cr->opcode );
@@ -149,16 +96,6 @@ int subunit_inquiry( avc1394_cmd_rsp *cr )
 {
 	switch ( cr->opcode )
 	{
-	case AVC1394_VCR_CMD_PLAY:
-	case AVC1394_VCR_CMD_RECORD:
-	case AVC1394_VCR_CMD_WIND:
-	case AVC1394_VCR_CMD_OUTPUT_SIGNAL_MODE:
-	case AVC1394_VCR_CMD_INPUT_SIGNAL_MODE:
-	case AVC1394_VCR_CMD_TRANSPORT_STATE:
-	case AVC1394_VCR_CMD_TIME_CODE:
-	case AVC1394_VCR_CMD_MEDIUM_INFO:
-		cr->status = AVC1394_RESP_IMPLEMENTED;
-		return 1;
 	default:
 		fprintf( stderr, "subunit inquiry command 0x%02x not supported\n", cr->opcode );
 		return 0;
@@ -182,16 +119,16 @@ int unit_control( avc1394_cmd_rsp *cr )
 
 int unit_status( avc1394_cmd_rsp *cr )
 {
-	cr->operand[1] = 0xff;
-	cr->operand[2] = 0xff;
-	cr->operand[3] = 0xff;
-	cr->operand[4] = 0xff;
+	cr->operand[1] = 0x00;
+	cr->operand[2] = 0x00;
+	cr->operand[3] = 0x00;
+	cr->operand[4] = 0x00;
 	switch ( cr->opcode )
 	{
 	case AVC1394_CMD_UNIT_INFO:
 		cr->status = AVC1394_RESP_STABLE;
 		cr->operand[0] = AVC1394_OPERAND_UNIT_INFO_EXTENSION_CODE;
-		cr->operand[1] = AVC1394_SUBUNIT_TYPE_TAPE_RECORDER >> 19;
+		cr->operand[1] = AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER >> 19;
 		break;
 	case AVC1394_CMD_SUBUNIT_INFO:
 	{
@@ -200,7 +137,7 @@ int unit_status( avc1394_cmd_rsp *cr )
 		{
 			cr->status = AVC1394_RESP_STABLE;
 			cr->operand[0] = (page << 4) | AVC1394_OPERAND_UNIT_INFO_EXTENSION_CODE;
-			cr->operand[1] = AVC1394_SUBUNIT_TYPE_TAPE_RECORDER >> 19 << 3;
+			cr->operand[1] = AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER >> 19 << 3;
 		}
 
 		else
@@ -238,7 +175,7 @@ int command_handler( avc1394_cmd_rsp *cr )
 {
 	switch ( cr->subunit_type )
 	{
-	case AVC1394_SUBUNIT_TAPE_RECORDER:
+	case AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER:
 		if ( cr->subunit_id != 0 )
 		{
 			fprintf( stderr, "subunit id 0x%02x not supported\n", cr->subunit_id );
@@ -352,7 +289,7 @@ int init_config_rom(raw1394handle_t handle)
 	
 	/* change the vendor description for kicks */
 	i = strlen(dir.textual_leafs[0]);
-	strncpy(dir.textual_leafs[0], "FreeBob Server                            ", i);
+	strncpy(dir.textual_leafs[0], FREEBOB_BOUNCE_SERVER_VENDORNAME "                                          ", i);
 	retval = rom1394_set_directory(rom, &dir);
 	printf("rom1394_set_directory returned %d, romsize %d:",retval,rom_size);
 	for (i = 0; i < rom_size; i++)
@@ -368,7 +305,7 @@ int init_config_rom(raw1394handle_t handle)
 	/* add an AV/C unit directory */
 	dir.unit_spec_id    = 0x0000a02d;
 	dir.unit_sw_version = 0x00010001;
-	leaf = "freebob-server";
+	leaf = FREEBOB_BOUNCE_SERVER_MODELNAME;
 	dir.nr_textual_leafs = 1;
 	dir.textual_leafs = &leaf;
 	

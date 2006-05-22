@@ -358,8 +358,13 @@ int freebob_streaming_get_capture_stream_name(freebob_device_t *dev, int i, char
 	freebob_stream_t *stream;
 	if(i<dev->nb_capture_streams) {
 		stream=*(dev->capture_streams+i);
-		return snprintf (buffer, buffersize, "%s_%d_%d_%d_%s",
-						"cap", (int) stream->parent->spec.port, stream->parent->spec.node & 0x3F, stream->parent->spec.plug, stream->spec.name);		
+/*		return snprintf (buffer, buffersize, "%s_%d_%d_%d_%s",
+		                 "cap", (int) stream->parent->spec.port, 
+		                 stream->parent->spec.node & 0x3F, 
+		                 stream->parent->spec.plug, stream->spec.name);
+*/
+		return snprintf (buffer, buffersize, "%s_%s",
+		                 "cap", stream->spec.name);
 	} else {
 		return -1;
 	}
@@ -369,8 +374,13 @@ int freebob_streaming_get_playback_stream_name(freebob_device_t *dev, int i, cha
 	freebob_stream_t *stream;
 	if(i<dev->nb_playback_streams) {
 		stream=*(dev->playback_streams+i);
-		return snprintf (buffer, buffersize, "%s_%d_%d_%d_%s",
-						"pbk", (int) stream->parent->spec.port, stream->parent->spec.node & 0x3F, stream->parent->spec.plug, stream->spec.name);		
+/*		return snprintf (buffer, buffersize, "%s_%d_%d_%d_%s",
+			         "pbk", (int) stream->parent->spec.port, 
+		                 stream->parent->spec.node & 0x3F, 
+		                 stream->parent->spec.plug, stream->spec.name);
+*/
+		return snprintf (buffer, buffersize, "%s_%s",
+		                 "pbk", stream->spec.name);
 	} else {
 		return -1;
 	}
