@@ -28,6 +28,8 @@
 #include <signal.h>
 #include "debugmodule/debugmodule.h"
 
+#include <netinet/in.h>
+
 #include "IsoHandler.h"
 #include "IsoStream.h"
 #include "StreamProcessorManager.h"
@@ -35,8 +37,10 @@
 #include "IsoHandlerManager.h"
 #include "StreamRunner.h"
 #include "FreebobPosixThread.h"
+#include "AmdtpPort.h"
 
 using namespace FreebobStreaming;
+
 
 int run;
 
@@ -145,6 +149,28 @@ int main(int argc, char *argv[])
 	}
 	printf("----------------------\n");
 
+	AmdtpAudioPort *p1=new AmdtpAudioPort(
+		           std::string("Test port 1"), 
+		           AmdtpAudioPort::E_Int24,
+		           AmdtpAudioPort::E_PeriodBuffered, 
+		           512,
+		           1, 
+		           0, 
+		           AmdtpPortInfo::E_MBLA, 
+		           0
+		);
+	if (!p1) {
+		printf("Could not create port 1\n");
+		return -1;
+	}
+
+	printf("----------------------\n");
+
+	if (spr2->addPort(p1)) {
+		printf("Could not register port with receive stream processor\n");
+		return -1;
+	}
+	
 	// now create the runner that does the actual streaming
 	StreamRunner *runner = new StreamRunner(isomanager,procMan);
 	if(!runner) {
@@ -174,6 +200,8 @@ int main(int argc, char *argv[])
 			isomanager->dumpInfo();
 			printf("--------------------------------------------\n");
 			procMan->dumpInfo();
+			printf("--------------------------------------------\n");
+			hexDumpQuadlets((quadlet_t*)(p1->getBufferAddress()),10);
 			printf("============================================\n");
 			printf("\n");
 			periods_print+=100;
@@ -187,6 +215,8 @@ int main(int argc, char *argv[])
 
 	isomanager->stopHandlers();
 
+	spr->deletePort(p1);
+
 // 	isomanager->unregisterStream(spt);
 	isomanager->unregisterStream(spr);
 	isomanager->unregisterStream(spr2);
@@ -197,6 +227,9 @@ int main(int argc, char *argv[])
 
 	delete thread;
 	delete runner;
+
+	delete p1;
+
 	delete procMan;
 	delete isomanager;
 

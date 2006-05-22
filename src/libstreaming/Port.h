@@ -44,8 +44,16 @@ public:
 // 		E_SampleBuffered
 	};
 
-	Port(std::string name, enum E_BufferType type, int buffsize);
-	Port(std::string name, enum E_BufferType type, int buffsize, void *externalbuffer);
+	enum E_DataType {
+		E_Float,
+		E_Int24,
+		E_Byte,
+		E_Default,
+	};
+
+	Port(std::string name, enum E_BufferType type, unsigned int buffsize, enum E_DataType datatype);
+	Port(std::string name, enum E_BufferType type, unsigned int buffsize, 
+	     enum E_DataType datatype, void *externalbuffer);
 
 	virtual ~Port() 
 	  {};
@@ -60,7 +68,9 @@ public:
 	enum E_BufferType getBufferType() {return m_BufferType;};
 
 	// returns the size in bytes of the events in the port buffer
-	virtual unsigned int getEventSize() = 0;
+	unsigned int getEventSize();
+
+	enum E_DataType getDataType() {return m_datatype;};
 
 	// NOT THREAD SAFE!
 	// attaches a user buffer to the port.
@@ -71,8 +81,12 @@ public:
 	// detach the user buffer, allocates an internal buffer
 	int detachBuffer();
 
-	int getBufferSize() {return m_buffersize;};
+	unsigned int getBufferSize() {return m_buffersize;};
 	void *getBuffer() {return m_buffer;};
+
+	void setBufferOffset(unsigned int n);
+	// FIXME: this is not really OO, but for performance???
+	void *getBufferAddress() {return m_buffer;};
 
 protected:
 	std::string m_Name;
@@ -80,7 +94,10 @@ protected:
 	enum E_BufferType m_BufferType;
 
 	bool m_enabled;
-	int m_buffersize;
+	unsigned int m_buffersize;
+
+	enum E_DataType m_datatype;
+
 	void *m_buffer;
 	bool m_buffer_attached;
 
@@ -97,40 +114,29 @@ protected:
 class AudioPort : public Port {
 
 public:
-	enum E_DataType {
-		E_Float,
-		E_Int24
-	};
 
-	AudioPort(std::string name, int buffsize) 
-	  : Port(name, E_PeriodBuffered, buffsize),
-	    m_DataType(E_Int24)
+	AudioPort(std::string name, unsigned int buffsize) 
+	  : Port(name, E_PeriodBuffered, buffsize, E_Int24)
 	{};
 
-	AudioPort(std::string name, enum E_BufferType type, int buffsize) 
-	  : Port(name, type, buffsize),
-	    m_DataType(E_Int24)
+	AudioPort(std::string name, enum E_BufferType type, unsigned int buffsize) 
+	  : Port(name, type, buffsize, E_Int24)
 	{};
-	AudioPort(std::string name, enum E_BufferType type, int buffsize, void *externalbuffer) 
-	  : Port(name, type, buffsize, externalbuffer),
-	    m_DataType(E_Int24)
+	AudioPort(std::string name, enum E_BufferType type, unsigned int buffsize, void *externalbuffer) 
+	  : Port(name, type, buffsize, E_Int24, externalbuffer)
 	{};
 
 	AudioPort(std::string name, enum E_DataType datatype,
-	          enum E_BufferType type, int buffsize) 
-	  : Port(name, type, buffsize),
-	    m_DataType(datatype)
+	          enum E_BufferType type, unsigned int buffsize) 
+	  : Port(name, type, buffsize, datatype)
 	{};
 	AudioPort(std::string name, enum E_DataType datatype, 
-	          enum E_BufferType type, int buffsize, void *externalbuffer) 
-	  : Port(name, type, buffsize, externalbuffer),
-	    m_DataType(datatype)
+	          enum E_BufferType type, unsigned int buffsize, void *externalbuffer) 
+	  : Port(name, type, buffsize, datatype, externalbuffer)
 	{};
 
-	virtual ~AudioPort();
+	virtual ~AudioPort() {};
 
-	enum E_DataType getType() {return m_DataType;};
-	unsigned int getEventSize();
 
 protected:
 	enum E_DataType m_DataType;
@@ -142,18 +148,12 @@ protected:
 class MidiPort : public Port {
 
 public:
-	enum E_DataType {
-		E_Byte
-	};
 
-	MidiPort(std::string name, int buffsize) 
-	  : Port(name, E_PacketBuffered, buffsize), 
-	    m_DataType(E_Byte)
+	MidiPort(std::string name, unsigned int buffsize) 
+	  : Port(name, E_PacketBuffered, buffsize, E_Byte)
 	{};
-	virtual ~MidiPort();
+	virtual ~MidiPort() {};
 
-	enum E_DataType getType() {return m_DataType;};
-	unsigned int getEventSize();
 
 protected:
 	enum E_DataType m_DataType;
@@ -165,21 +165,14 @@ protected:
 class ControlPort : public Port {
 
 public:
-	enum E_DataType {
-		E_Default
-	};
 
-	ControlPort(std::string name, int buffsize) 
-	  : Port(name, E_PeriodBuffered, buffsize),
-	    m_DataType(E_Default)
+	ControlPort(std::string name, unsigned int buffsize) 
+	  : Port(name, E_PeriodBuffered, buffsize, E_Int24)
 	{};
-	virtual ~ControlPort();
+	virtual ~ControlPort() {};
 
-	enum E_DataType getType() {return m_DataType;};
-	unsigned int getEventSize();
 
 protected:
-	enum E_DataType m_DataType;
 
     DECLARE_DEBUG_MODULE;
 

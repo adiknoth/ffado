@@ -40,6 +40,10 @@
 
 namespace FreebobStreaming {
 
+class Port;
+class AmdtpAudioPort;
+class AmdtpMidiPort;
+
 class AmdtpTransmitStreamProcessor 
 	: public TransmitStreamProcessor
 {
@@ -62,6 +66,7 @@ public:
 	virtual void setVerboseLevel(int l);
 
 protected:
+
 	struct iec61883_cip m_cip_status;
 
 	freebob_ringbuffer_t * m_event_buffer;
@@ -95,6 +100,9 @@ public:
 	virtual void setVerboseLevel(int l);
 
 protected:
+
+	int receiveBlock(char *data, unsigned int nevents, unsigned int offset, unsigned int dbc);
+	int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents, unsigned int dbc);
 
 	freebob_ringbuffer_t * m_event_buffer;
 	char* m_cluster_buffer;
