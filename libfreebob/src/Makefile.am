@@ -26,6 +26,7 @@ lib_LTLIBRARIES = libfreebob.la
 
 libfreebob_la_SOURCES = 				\
 	configrom.h					\
+	iavdevice.h					\
 	configrom.cpp					\
 	csr1212.h					\
 	csr1212.c					\

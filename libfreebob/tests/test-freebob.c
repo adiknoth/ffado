@@ -27,6 +27,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define FREEBOB_BOUNCE_SERVER_GETXMLDESCRIPTION_CMD
+#define AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER 	0x0D
+
 const char *argp_program_version = PACKAGE_STRING;
 const char *argp_program_bug_address = PACKAGE_BUGREPORT;
 
