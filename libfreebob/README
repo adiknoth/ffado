@@ -1,24 +1,11 @@
-FreeBob version 0.0.1
-=====================
+FreeBob version 0.9.0 (RC1)
+===========================
 
 This project aims to provide a free driver implemenation for the BeBoB
 platform.  The BeBob is used in many available IEEE 1394 based break-out 
 boxes.
 
-This is the first beta release of libfreebob. Currently it depends
-still on the old streaming backend driver from the prealpha-release 2.1.
-In order to use libfreebob you need to download and install it this
-special version.
-
-The device discovering is done completely different to the 
-prealpha-release version of freebob. In the old version
-it is done using the descriptors. But this version has several sever
-drawbacks, e.g. not every BeBoB device is supported. This implemention
-now uses a some extended commands like the extended plug info command.
-This allows to discover any BeBoB device. Furthermore it provides
-more information and it is extremly faster... which is of course
-not very important because it is only device discovering and not
-streaming :)
+This is the release candidate of libfreebob.
 
 Dependencies
 ------------
@@ -29,19 +16,23 @@ installation).  The first few libraries it seems it is not necessary that
 the version must match. The chances that it works also with an older versions 
 are good:
 
-alsa        (>= 1.0.11)
-libxml2     (>= 2.6.22)
+alsa        (>= 1.0.0)
+libxml2     (>= 2.6.0)
 libpthread  (>= 2.3.5)
 
 These libraries here should be at least the version listed:
 
-libraw1394  (>= 1.2.0),  http://www.linux1394.org
+libraw1394  (>= 1.2.1),  http://www.linux1394.org
 libiec61883 (>= 1.1.0),  http://www.linux1394.org
-libavc1394  (>= 0.5.1),  http://sourceforge.net/projects/libavc1394
+libavc1394  (>= 0.5.3),  http://sourceforge.net/projects/libavc1394
 
-And finally, you need the special jackd version which uses libfreebob.
-It can be downloaded from sf.net as well.
+Currently only the jackd audio server is supported.
 
+jackd (>= 0.102.5), http://jackaudio.org
+
+Optionally, but recommended is that you install qjackctl:
+
+qjackctl (>= 0.2.20.10), http://sourceforge.net/projects/qjackctl
 
 How to build
 ------------
@@ -55,12 +46,7 @@ under /usr/local:
 $ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 $ export LD_LIBRARY_PATH=/usr/local/lib
 
-If you want to build the release version you can do following (CVS checkout)
-
-$ ./autogen.sh
-$ make install
-
-If you have not a CVS checkout you can do following:
+If you want to build the release version you can do following:
 
 $ ./configure
 $ make 
@@ -73,16 +59,45 @@ $ ./configure --enable-debug
 $ make
 $ make install
 
-After you have install libfreebob you can start building the
-special jack version with the iec61883 backend driver which is using
-libfreebob.
+NOTE: In order to build jackd with freebob support, you have 
+to install libfreebob before you build jackd.
 
 
-Testing
--------
+Running jackd
+-------------
+
+The easiest way to run this is using qjackctl. There are only minor 
+differences with the other backends, however you should change some
+of the default values:
+- The 'interface' field should contain only a number. This number is
+  the port number of the IEEE1394 host controller the audio device
+  is connected to. For most people this will be '0', but if you have
+  multiple controllers, you have to change this number.
+- The 'Input channels' and 'Output channels' fields indicate if the
+  backend should provide capture and/or playback channels. If you set
+  these to 0, no channels are created. In order to enable capture and/or
+  playback, you have to set them to a nonzero value.
+- It is recommended to change the 'periods/buffer' field to 3, especially
+  if you use low period sizes (=< 128)
+- It is recommended to raise the RT priority to 70.
+
+In order to get it running from the command line, you need to provide some 
+arguments to jackd.
+
+Run 
+
+$ jackd -d freebob --help
+
+to see the backend options. You can easily figure out how to set them using
+the remarks given above (for qjackctl).
+
+For the other aspects of jackd usage, consult the jackd documentation.
+
+In case of problems
+-------------------
 
 Under the tests directory there is a test program. You should first
-try to run this. 
+try to run this.
 
 If you don't have installed libfreebob then you can adapt your
 LD_LIBRARY_PATH environment variable to
@@ -91,12 +106,14 @@ $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../src/.libs
 
 Then you can try running the program without having to install it.
 
-With the release version you see something like this (note that you 
-have to provide the correct node id, in this example '-n 0'):
+With the release version you see something like this:
 
-wagi@cruxam:~/src/libfreebob/tests$ ./test-freebob -n 0 discover
-Using freebob library version: libfreebob 0.0.1
+wagi@cruxam:~/src/libfreebob/tests$ ./test-freebob discover
+verbose level = 0
+Using freebob library version: libfreebob 0.9.0
 
+  port = 2, devices_on_bus = 1
+  get info for device = 0, node = 1
 Direction:              0 (capture)
 
 Connection Info
@@ -107,22 +124,25 @@ Number of connections:  1
   Connection  0
   -------------
     [ 0] Id:         0
-    [ 0] Port:       0
-    [ 0] Node:       0
+    [ 0] Port:       2
+    [ 0] Node:       1
     [ 0] Plug:       0
     [ 0] Dimension:  7
-    [ 0] Samplerate: 48000
-    [ 0] Number of stream infos: 7
+    [ 0] Samplerate: 44100
+    [ 0] IsoChannel: -1
+    [ 0] IsMaster:   0
+    [ 0] Number of stream infos: 8
 
     StreamId  Position Location Format Type DPort Name
     --------------------------------------------------
-    [ 0]:[ 0] 0x01     0x01     0x06   0x03 0x00  LineOut 1+2 left
-    [ 0]:[ 1] 0x04     0x02     0x06   0x03 0x00  LineOut 1+2 right
-    [ 0]:[ 2] 0x02     0x01     0x06   0x03 0x00  LineOut 3+4 left
-    [ 0]:[ 3] 0x05     0x02     0x06   0x03 0x00  LineOut 3+4 right
-    [ 0]:[ 4] 0x00     0x01     0x06   0x04 0x00  SpdifOut left
-    [ 0]:[ 5] 0x03     0x02     0x06   0x04 0x00  SpdifOut right
-    [ 0]:[ 6] 0x06     0x01     0x0d   0x0a 0x00  MidiPort_1
+    [ 0]:[ 0] 0x01     0x01     0x06   0x02 0x00  MicIn 1+2 left
+    [ 0]:[ 1] 0x04     0x02     0x06   0x02 0x00  MicIn 1+2 right
+    [ 0]:[ 2] 0x02     0x01     0x06   0x03 0x00  LineIn 1+2 left
+    [ 0]:[ 3] 0x05     0x02     0x06   0x03 0x00  LineIn 1+2 right
+    [ 0]:[ 4] 0x00     0x01     0x06   0x04 0x00  SpdifIn 1 left
+    [ 0]:[ 5] 0x03     0x02     0x06   0x04 0x00  SpdifIn 1 right
+    [ 0]:[ 6] 0x06     0x01     0x0d   0x0a 0x00  MidiIn2
+    [ 0]:[ 7] 0x06     0x02     0x0d   0x0a 0x00  MidiIn2
 
 
 Direction:              1 (playback)
@@ -135,369 +155,34 @@ Number of connections:  1
   Connection  0
   -------------
     [ 0] Id:         0
-    [ 0] Port:       0
-    [ 0] Node:       0
+    [ 0] Port:       2
+    [ 0] Node:       1
     [ 0] Plug:       0
-    [ 0] Dimension:  7
-    [ 0] Samplerate: 48000
-    [ 0] Number of stream infos: 7
+    [ 0] Dimension:  11
+    [ 0] Samplerate: 44100
+    [ 0] IsoChannel: -1
+    [ 0] IsMaster:   0
+    [ 0] Number of stream infos: 12
 
     StreamId  Position Location Format Type DPort Name
     --------------------------------------------------
-    [ 0]:[ 0] 0x01     0x01     0x06   0x02 0x00  MicIn1 left
-    [ 0]:[ 1] 0x04     0x02     0x06   0x02 0x00  MicIn1 right
-    [ 0]:[ 2] 0x02     0x01     0x06   0x03 0x00  LineIn 3+4 left
-    [ 0]:[ 3] 0x05     0x02     0x06   0x03 0x00  LineIn 3+4 right
-    [ 0]:[ 4] 0x00     0x01     0x06   0x04 0x00  SpdifIn left
-    [ 0]:[ 5] 0x03     0x02     0x06   0x04 0x00  SpdifIn right
-    [ 0]:[ 6] 0x06     0x01     0x0d   0x0a 0x00  MidiPort_1
+    [ 0]:[ 0] 0x01     0x01     0x06   0x03 0x00  MultiChannel 7.1 Front left
+    [ 0]:[ 1] 0x06     0x02     0x06   0x03 0x00  MultiChannel 7.1 Front right
+    [ 0]:[ 2] 0x02     0x03     0x06   0x03 0x00  MultiChannel 7.1 Center
+    [ 0]:[ 3] 0x07     0x04     0x06   0x03 0x00  MultiChannel 7.1 Subwoofer
+    [ 0]:[ 4] 0x03     0x05     0x06   0x03 0x00  MultiChannel 7.1 Rear left
+    [ 0]:[ 5] 0x08     0x06     0x06   0x03 0x00  MultiChannel 7.1 Rear right
+    [ 0]:[ 6] 0x04     0x07     0x06   0x03 0x00  MultiChannel 7.1 Surround left
+    [ 0]:[ 7] 0x09     0x08     0x06   0x03 0x00  MultiChannel 7.1 Surround right
+    [ 0]:[ 8] 0x00     0x01     0x06   0x04 0x00  SpdifOut 1 left
+    [ 0]:[ 9] 0x05     0x02     0x06   0x04 0x00  SpdifOut 1 right
+    [ 0]:[10] 0x0a     0x01     0x0d   0x0a 0x00  MidiOut2
+    [ 0]:[11] 0x0a     0x02     0x0d   0x0a 0x00  MidiOut2
 
 
-To impress friends you need of course to use the debug version
-which looks like this:
-
-wagi@cruxam:~/src/libfreebob/tests$ ./test-freebob -n 0 discover
-Using freebob library version: libfreebob 0.0.1
-
-Debug (avdevice.cpp)[47] AvDevice: Found AvDevice (NodeID 0)
-Debug (avdevice.cpp)[1262] enumerateSubUnits: subunit_id =  0, subunit_type =  1 (Audio), max_subunit_ID = 0
-Debug (avdevice.cpp)[1262] enumerateSubUnits: subunit_id =  0, subunit_type = 12 (Music), max_subunit_ID = 0
-Debug (avdevice.cpp)[169] discoverStep1: number of iso input plugs = 2, number of iso output plugs = 2
-Debug (avdevice.cpp)[214] discoverStep2: number of output plugs is 1 for iso input plug 0
-Debug (avdevice.cpp)[251] discoverStep2: output plug 0 is owned by subunit_type 12, subunit_id = 0
-Debug (avdevice.cpp)[1203] discoverPlugConnection: IsoStreamInput plug 0 has a valid connection to plug 0 of MusicSubunit subunit 0
-Debug (avdevice.cpp)[214] discoverStep2: number of output plugs is 0 for iso input plug 1
-Debug (avdevice.cpp)[339] discoverStep3: output plug 0 is owned by subunit_type 12, subunit_id 0
-Debug (avdevice.cpp)[1203] discoverPlugConnection: IsoStreamOutput plug 0 has a valid connection to plug 0 of MusicSubunit subunit 0
-Debug (avdevice.cpp)[339] discoverStep3: output plug 5 is owned by subunit_type 12, subunit_id 0
-Debug (avdevice.cpp)[1203] discoverPlugConnection: IsoStreamOutput plug 1 has a valid connection to plug 5 of MusicSubunit subunit 0
-Debug (avdevice.cpp)[416] discoverStep4: iso input plug 0 is of type 0 (IsoStream)
-Debug (avdevice.cpp)[383] discoverStep4: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[465] discoverStep4: iso output plug 0 is of type 0 (IsoStream)
-Debug (avdevice.cpp)[465] discoverStep4: iso output plug 1 is of type 3 (Sync)
-Debug (avdevice.cpp)[524] discoverStep5: iso input plug 0 has 7 channels
-Debug (avdevice.cpp)[491] discoverStep5: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[573] discoverStep5: iso output plug 0 has 7 channels
-Debug (avdevice.cpp)[573] discoverStep5: iso output plug 1 has 2 channels
-Debug (avdevice.cpp)[636] discoverStep6: iso input plug 0: channel position information retrieved
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 2
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 5
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 3
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 6
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 1
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 4
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 7
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avdevice.cpp)[598] discoverStep6: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[690] discoverStep6: iso output plug 0: channel position information retrieved
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 2
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 5
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 3
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 6
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 1
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 4
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 7
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avdevice.cpp)[690] discoverStep6: iso output plug 1: channel position information retrieved
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 1
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 2
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 2: channel name = LineOut 1+2 left
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 5: channel name = LineOut 1+2 right
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 3: channel name = LineOut 3+4 left
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 6: channel name = LineOut 3+4 right
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 1: channel name = SpdifOut left
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 4: channel name = SpdifOut right
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 7: channel name = MidiPort_1
-Debug (avdevice.cpp)[716] discoverStep7: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 2: channel name = MicIn1 left
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 5: channel name = MicIn1 right
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 3: channel name = LineIn 3+4 left
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 6: channel name = LineIn 3+4 right
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 1: channel name = SpdifIn left
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 4: channel name = SpdifIn right
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 7: channel name = MidiPort_1
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 1 stream position 1: channel name = SynchChannel1
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 1 stream position 2: channel name = SynchChannel2
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 1, portType Line, cluster name = LineOut 1+2
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 2, portType Line, cluster name = LineOut 3+4
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 3, portType SPDIF, cluster name = SpdifOut
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 4, portType MIDI, cluster name = MidiSection.0
-Debug (avdevice.cpp)[866] discoverStep8: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 1, portType Microphone, cluster name = MicIn1
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 2, portType Line, cluster name = LineIn 3+4
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 3, portType SPDIF, cluster name = SpdifIn
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 4, portType MIDI, cluster name = MidiSection.0
-Warning (avdevice.cpp)[936] discoverStep8: Skipping plugs with id > 0. Further investigation needed
-Debug (avdevice.cpp)[1040] discoverStep9: discoverStep9: iso input plug 0 uses sampling frequency 4
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 1: stream format 6
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 2: stream format 6
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 3: stream format 6
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 4: stream format 13
-Debug (avdevice.cpp)[1008] discoverStep9: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[1134] discoverStep9: discoverStep9: iso output plug 0 uses sampling frequency 4
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 1: stream format 6
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 2: stream format 6
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 3: stream format 6
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 4: stream format 13
-Debug (avdevice.cpp)[1177] discoverStep9: iso output plug 1 is sync stream with sampling frequency 4
-Direction:              0 (capture)
-
-Connection Info
-===============
-
-Number of connections:  1
-
-  Connection  0
-  -------------
-    [ 0] Id:         0
-    [ 0] Port:       0
-    [ 0] Node:       0
-    [ 0] Plug:       0
-    [ 0] Dimension:  7
-    [ 0] Samplerate: 48000
-    [ 0] Number of stream infos: 7
-
-    StreamId  Position Location Format Type DPort Name
-    --------------------------------------------------
-    [ 0]:[ 0] 0x01     0x01     0x06   0x03 0x00  LineOut 1+2 left
-    [ 0]:[ 1] 0x04     0x02     0x06   0x03 0x00  LineOut 1+2 right
-    [ 0]:[ 2] 0x02     0x01     0x06   0x03 0x00  LineOut 3+4 left
-    [ 0]:[ 3] 0x05     0x02     0x06   0x03 0x00  LineOut 3+4 right
-    [ 0]:[ 4] 0x00     0x01     0x06   0x04 0x00  SpdifOut left
-    [ 0]:[ 5] 0x03     0x02     0x06   0x04 0x00  SpdifOut right
-    [ 0]:[ 6] 0x06     0x01     0x0d   0x0a 0x00  MidiPort_1
-
-
-Direction:              1 (playback)
-
-Connection Info
-===============
-
-Number of connections:  1
-
-  Connection  0
-  -------------
-    [ 0] Id:         0
-    [ 0] Port:       0
-    [ 0] Node:       0
-    [ 0] Plug:       0
-    [ 0] Dimension:  7
-    [ 0] Samplerate: 48000
-    [ 0] Number of stream infos: 7
-
-    StreamId  Position Location Format Type DPort Name
-    --------------------------------------------------
-    [ 0]:[ 0] 0x01     0x01     0x06   0x02 0x00  MicIn1 left
-    [ 0]:[ 1] 0x04     0x02     0x06   0x02 0x00  MicIn1 right
-    [ 0]:[ 2] 0x02     0x01     0x06   0x03 0x00  LineIn 3+4 left
-    [ 0]:[ 3] 0x05     0x02     0x06   0x03 0x00  LineIn 3+4 right
-    [ 0]:[ 4] 0x00     0x01     0x06   0x04 0x00  SpdifIn left
-    [ 0]:[ 5] 0x03     0x02     0x06   0x04 0x00  SpdifIn right
-    [ 0]:[ 6] 0x06     0x01     0x0d   0x0a 0x00  MidiPort_1
-
-
-Running jackd
--------------
-
-In order to get it running you need to provide some arguments to 
-jackd, e.g.
-
-$ jackd -d iec61883 -n 1 -d 0 -p 512 -b 1000 -b 1000 -i 20 -r 8192
-
-Note that '-n' most be addapted to your local 1394 bus configuraiton.
-This is the node number of the device.
-
-On my screen I get:
-
-wagi@cruxam:~/src/jack-audio-connection-kit+freebob-0.100.0$ jackd -d iec61883 -n 1 -d 0 -p 512 -b 1000 -b 1000 -i 20 -r 8192
-jackd 0.100.0
-Copyright 2001-2005 Paul Davis and others.
-jackd comes with ABSOLUTELY NO WARRANTY
-This is free software, and you are welcome to redistribute it
-under certain conditions; see the file COPYING for details
-
-JACK compiled with System V SHM support.
-loading driver ..
-IEC61883: Using libfreebob version libfreebob 0.0.1
-Debug (avdevice.cpp)[47] AvDevice: Found AvDevice (NodeID 1)
-Debug (avdevice.cpp)[1262] enumerateSubUnits: subunit_id =  0, subunit_type =  1 (Audio), max_subunit_ID = 0
-Debug (avdevice.cpp)[1262] enumerateSubUnits: subunit_id =  0, subunit_type = 12 (Music), max_subunit_ID = 0
-Debug (avdevice.cpp)[169] discoverStep1: number of iso input plugs = 2, number of iso output plugs = 2
-Debug (avdevice.cpp)[214] discoverStep2: number of output plugs is 1 for iso input plug 0
-Debug (avdevice.cpp)[251] discoverStep2: output plug 0 is owned by subunit_type 12, subunit_id = 0
-Debug (avdevice.cpp)[1203] discoverPlugConnection: IsoStreamInput plug 0 has a valid connection to plug 0 of MusicSubunit subunit 0
-Debug (avdevice.cpp)[214] discoverStep2: number of output plugs is 0 for iso input plug 1
-Debug (avdevice.cpp)[339] discoverStep3: output plug 0 is owned by subunit_type 12, subunit_id 0
-Debug (avdevice.cpp)[1203] discoverPlugConnection: IsoStreamOutput plug 0 has a valid connection to plug 0 of MusicSubunit subunit 0
-Debug (avdevice.cpp)[339] discoverStep3: output plug 5 is owned by subunit_type 12, subunit_id 0
-Debug (avdevice.cpp)[1203] discoverPlugConnection: IsoStreamOutput plug 1 has a valid connection to plug 5 of MusicSubunit subunit 0
-Debug (avdevice.cpp)[416] discoverStep4: iso input plug 0 is of type 0 (IsoStream)
-Debug (avdevice.cpp)[383] discoverStep4: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[465] discoverStep4: iso output plug 0 is of type 0 (IsoStream)
-Debug (avdevice.cpp)[465] discoverStep4: iso output plug 1 is of type 3 (Sync)
-Debug (avdevice.cpp)[524] discoverStep5: iso input plug 0 has 7 channels
-Debug (avdevice.cpp)[491] discoverStep5: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[573] discoverStep5: iso output plug 0 has 7 channels
-Debug (avdevice.cpp)[573] discoverStep5: iso output plug 1 has 2 channels
-Debug (avdevice.cpp)[636] discoverStep6: iso input plug 0: channel position information retrieved
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 2
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 5
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 3
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 6
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 1
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 4
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 7
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avdevice.cpp)[598] discoverStep6: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[690] discoverStep6: iso output plug 0: channel position information retrieved
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 2
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 5
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 3
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 6
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 1
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 4
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 7
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avdevice.cpp)[690] discoverStep6: iso output plug 1: channel position information retrieved
-Debug (avplug.cpp)[105] debugOutputClusterInfos: number of channels: 2
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 1
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 1
-Debug (avplug.cpp)[115] debugOutputClusterInfos: stream position: 2
-Debug (avplug.cpp)[118] debugOutputClusterInfos: location: 2
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 2: channel name = LineOut 1+2 left
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 5: channel name = LineOut 1+2 right
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 3: channel name = LineOut 3+4 left
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 6: channel name = LineOut 3+4 right
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 1: channel name = SpdifOut left
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 4: channel name = SpdifOut right
-Debug (avdevice.cpp)[767] discoverStep7: iso input plug 0 stream position 7: channel name = MidiPort_1
-Debug (avdevice.cpp)[716] discoverStep7: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 2: channel name = MicIn1 left
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 5: channel name = MicIn1 right
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 3: channel name = LineIn 3+4 left
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 6: channel name = LineIn 3+4 right
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 1: channel name = SpdifIn left
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 4: channel name = SpdifIn right
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 0 stream position 7: channel name = MidiPort_1
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 1 stream position 1: channel name = SynchChannel1
-Debug (avdevice.cpp)[838] discoverStep7: iso output plug 1 stream position 2: channel name = SynchChannel2
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 1, portType Line, cluster name = LineOut 1+2
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 2, portType Line, cluster name = LineOut 3+4
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 3, portType SPDIF, cluster name = SpdifOut
-Debug (avdevice.cpp)[910] discoverStep8: iso input plug 0: cluster index = 4, portType MIDI, cluster name = MidiSection.0
-Debug (avdevice.cpp)[866] discoverStep8: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 1, portType Microphone, cluster name = MicIn1
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 2, portType Line, cluster name = LineIn 3+4
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 3, portType SPDIF, cluster name = SpdifIn
-Debug (avdevice.cpp)[980] discoverStep8: iso output plug 0: cluster index = 4, portType MIDI, cluster name = MidiSection.0
-Warning (avdevice.cpp)[936] discoverStep8: Skipping plugs with id > 0. Further investigation needed
-Debug (avdevice.cpp)[1040] discoverStep9: discoverStep9: iso input plug 0 uses sampling frequency 4
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 1: stream format 6
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 2: stream format 6
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 3: stream format 6
-Debug (avdevice.cpp)[1070] discoverStep9: iso input plug 0 cluster info 4: stream format 13
-Debug (avdevice.cpp)[1008] discoverStep9: iso input plug 1 has no valid connecton -> skip
-Debug (avdevice.cpp)[1134] discoverStep9: discoverStep9: iso output plug 0 uses sampling frequency 4
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 1: stream format 6
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 2: stream format 6
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 3: stream format 6
-Debug (avdevice.cpp)[1164] discoverStep9: iso output plug 0 cluster info 4: stream format 13
-Debug (avdevice.cpp)[1177] discoverStep9: iso output plug 1 is sync stream with sampling frequency 4
-IEC61883: Adding 1 capture connection(s)...
-IEC61883:   capture connection 0: 0 streams, dim 1 from (0,7,7)
-IEC61883:     adding stream 0: (1,1) 0x06 0x03 -> 0 (LineOut 1+2 left)
-IEC61883:     adding stream 1: (4,2) 0x06 0x03 -> 0 (LineOut 1+2 right)
-IEC61883:     adding stream 2: (2,1) 0x06 0x03 -> 0 (LineOut 3+4 left)
-IEC61883:     adding stream 3: (5,2) 0x06 0x03 -> 0 (LineOut 3+4 right)
-IEC61883:     adding stream 4: (0,1) 0x06 0x04 -> 0 (SpdifOut left)
-IEC61883:     adding stream 5: (3,2) 0x06 0x04 -> 0 (SpdifOut right)
-IEC61883:     adding stream 6: (6,1) 0x0D 0x0A -> 0 (MidiPort_1)
-IEC61883: Adding 1 playback connection(s)...
-IEC61883:   playback connection 0: 0 streams, dim 1 to (0,7,7)
-IEC61883:     adding stream 0: (1,1) 0x06 0x02 -> 0 (MicIn1 left)
-IEC61883:     adding stream 1: (4,2) 0x06 0x02 -> 0 (MicIn1 right)
-IEC61883:     adding stream 2: (2,1) 0x06 0x03 -> 0 (LineIn 3+4 left)
-IEC61883:     adding stream 3: (5,2) 0x06 0x03 -> 0 (LineIn 3+4 right)
-IEC61883:     adding stream 4: (0,1) 0x06 0x04 -> 0 (SpdifIn left)
-IEC61883:     adding stream 5: (3,2) 0x06 0x04 -> 0 (SpdifIn right)
-IEC61883:     adding stream 6: (6,1) 0x0D 0x0A -> 0 (MidiPort_1)
-IEC61883D: Creating driver (period_size=512, ringbuffer_size=8192)
-Creating IEC61883 client... 512/8192/48000
- poll timeout = 10 ms
-Creating 7 buffers of 8192 quadlets...
-IEC61883C: Creating playback connection from node 65473, plug 0
-             prebuffers=0, buffers=1000, irq_interval=20
-Creating 7 buffers of 8192 quadlets...
-IEC61883 Client created...
-IEC61883CM: registered jack port cap_0_1_0_LineOut 1+2 left
-IEC61883CM: registered jack port cap_0_1_0_LineOut 1+2 right
-IEC61883CM: registered jack port cap_0_1_0_LineOut 3+4 left
-IEC61883CM: registered jack port cap_0_1_0_LineOut 3+4 right
-IEC61883CM: registered jack port cap_0_1_0_SpdifOut left
-IEC61883CM: registered jack port cap_0_1_0_SpdifOut right
-IEC61883CM: registered midi port MidiIn_0_1_0_MidiPort_1_1 as 128:0
-IEC61883CM: registered jack port pbk_0_1_0_MicIn1 left
-IEC61883CM: registered jack port pbk_0_1_0_MicIn1 right
-IEC61883CM: registered jack port pbk_0_1_0_LineIn 3+4 left
-IEC61883CM: registered jack port pbk_0_1_0_LineIn 3+4 right
-IEC61883CM: registered jack port pbk_0_1_0_SpdifIn left
-IEC61883CM: registered jack port pbk_0_1_0_SpdifIn right
-IEC61883CM: registered midi port MidiOut_0_1_0_MidiPort_1_1 as 128:1
-Client start...
- creating capture connections...
-libiec61883 warning: Established connection on channel 0.
-You may need to manually set the channel on the receiving node.
-Init ISO master receive handler on channel 0...
-   (BUFFER=1000,PACKET_MAX=2048,IRQ=20)...
-Start ISO master receive...
- creating playback connections...
-libiec61883 warning: Established connection on channel 1.
-You may need to manually set the channel on the transmitting node.
-Init ISO slave transmit handler on channel 1...
-   other mode (BUFFER=1000,PACKET_MAX=2048,IRQ=20)...
-Start ISO slave transmit... PREBUFFER=0
-  ->     2618k Packets, Bufferfill (I:  512, O:    0), Packets dropped (I:    0, O:   11), XRUNS (   0)(1, 8/0)
+If you don't get this, check if you have multiple host controllers, and 
+use the -p parameter to specify them. If you get any error messages, the 
+best way to help us figure out what the problem might be is to build the 
+debug version (./configure --enable-debug). You can then rerun the test
+application and send us its output.
 
