@@ -203,6 +203,9 @@ CXXFLAGS="$CXXFLAGS -Wall"
 if test "${debug}" = true; then
    CFLAGS="$CFLAGS -g -DDEBUG"
    CXXFLAGS="$CXXFLAGS -g -DDEBUG" 
+else 
+   CFLAGS="$CFLAGS -O2"
+   CXXFLAGS="$CXXFLAGS -O2"
 fi;
 
 AC_SUBST([CFLAGS])
