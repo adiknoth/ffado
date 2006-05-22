@@ -27,6 +27,10 @@
  */
 
 #include "AmdtpStreamProcessor.h"
+#include "Port.h"
+#include "AmdtpPort.h"
+
+#include <netinet/in.h>
 #include <assert.h>
 
 
@@ -268,7 +272,7 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
 
-		int write_size=nevents*sizeof(quadlet_t)*m_dimension;
+		unsigned int write_size=nevents*sizeof(quadlet_t)*m_dimension;
 		// add the data payload to the ringbuffer
 		
 		if (freebob_ringbuffer_write(m_event_buffer,(char *)(data+8),write_size) < write_size) 
@@ -337,16 +341,111 @@ int AmdtpReceiveStreamProcessor::transfer() {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 // TODO: implement
 	
-	int read_size=m_period*sizeof(quadlet_t)*m_dimension;
+	unsigned int read_size=m_period*sizeof(quadlet_t)*m_dimension;
 	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
 	if (freebob_ringbuffer_read(m_event_buffer,(char *)(dummybuffer),read_size) < read_size) {
 		debugWarning("Could not read from event buffer\n");
 	}
+
+	receiveBlock(dummybuffer, m_period, 0, 0);
+
 	free(dummybuffer);
+
 
 
 	return 0;
 }
 
+/* 
+ * write received events to the stream ringbuffers.
+ */
+
+int AmdtpReceiveStreamProcessor::receiveBlock(char *data, 
+					   unsigned int nevents, unsigned int offset, unsigned int dbc)
+{
+	int problem=0;
+
+	for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+
+		//FIXME: make this into a static_cast when not DEBUG?
+
+		AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+		assert(pinfo); // this should not fail!!
+
+		switch(pinfo->getFormat()) {
+		case AmdtpPortInfo::E_MBLA:
+			if(decodeMBLAEventsToPort(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents, dbc)) {
+				debugWarning("Could not decode packet MBLA to port %s",(*it)->getName().c_str());
+				problem=1;
+			}
+			break;
+		case AmdtpPortInfo::E_SPDIF: // still unimplemented
+			break;
+	/* for this processor, midi is a packet based port 
+		case AmdtpPortInfo::E_Midi:
+			break;*/
+		default: // ignore
+			break;
+		}
+    }
+	return problem;
+
+}
+
+int AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(AmdtpAudioPort *p, quadlet_t *data, 
+					   unsigned int offset, unsigned int nevents, unsigned int dbc)
+{
+	unsigned int j=0;
+	
+	quadlet_t *target_event;
+
+	target_event=(quadlet_t *)(data + p->getPosition());
+
+	switch(p->getDataType()) {
+		default:
+		case Port::E_Int24:
+			{
+				quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+
+				assert(nevents + offset <= p->getBufferSize());
+
+				buffer+=offset;
+
+				for(j = 0; j < nevents; j += 1) { // decode max nsamples
+					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+					buffer++;
+					target_event+=m_dimension;
+				}
+			}
+			break;
+		case Port::E_Float:
+			{
+				const float multiplier = 1.0f / (float)(0x7FFFFF);
+				float *buffer=(float *)(p->getBufferAddress());
+
+				assert(nevents + offset <= p->getBufferSize());
+
+				buffer+=offset;
+
+				for(j = 0; j < nevents; j += 1) { // decode max nsamples		
+	
+					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+					// sign-extend highest bit of 24-bit int
+					int tmp = (int)(v << 8) / 256;
+		
+					*buffer = tmp * multiplier;
+				
+					buffer++;
+					target_event+=m_dimension;
+				}
+			}
+			break;
+	}
+
+	return 0;
+}
 
 } // end of namespace FreebobStreaming

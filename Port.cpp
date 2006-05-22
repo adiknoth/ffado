@@ -38,11 +38,12 @@ IMPL_DEBUG_MODULE( AudioPort, AudioPort, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( MidiPort, MidiPort, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( ControlPort, ControlPort, DEBUG_LEVEL_NORMAL );
 
-Port::Port(std::string name, enum E_BufferType type, int buffsize) 
+Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize, enum E_DataType datatype) 
   : m_Name(name),
     m_BufferType(type),
     m_enabled(true),
     m_buffersize(buffsize),
+	m_datatype(datatype),
 	m_buffer(0),
     m_buffer_attached(false)
 {
@@ -50,11 +51,13 @@ Port::Port(std::string name, enum E_BufferType type, int buffsize)
 	allocateInternalBuffer();
 }
 
-Port::Port(std::string name, enum E_BufferType type, int buffsize, void* externalbuffer) 
+Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize,
+           enum E_DataType datatype, void* externalbuffer) 
   : m_Name(name),
     m_BufferType(type),
     m_enabled(true),
     m_buffersize(buffsize),
+	m_datatype(datatype),
 	m_buffer(externalbuffer),
     m_buffer_attached(true)
 {
@@ -125,30 +128,14 @@ void Port::freeInternalBuffer() {
 	}
 }
 
-unsigned int AudioPort::getEventSize() {
-	switch (m_DataType) {
+unsigned int Port::getEventSize() {
+	switch (m_datatype) {
 		case E_Float:
 			return sizeof(float);
 		case E_Int24: // 24 bit 2's complement, packed in a 32bit integer (LSB's)
 			return sizeof(uint32_t);
-		default:
-			return 0;
-	}
-}
-
-unsigned int MidiPort::getEventSize() {
-	switch (m_DataType) {
 		case E_Byte:
 			return sizeof(char);
-		default:
-			return 0;
-	}
-}
-
-unsigned int ControlPort::getEventSize() {
-	switch (m_DataType) {
-		case E_Default:
-			return sizeof(uint32_t);
 		default:
 			return 0;
 	}
