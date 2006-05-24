@@ -48,11 +48,12 @@ public:
 		           enum E_DataType datatype,
 		           enum E_BufferType buffertype, 
 		           unsigned int buffsize,
+	               enum E_Direction direction,
 		           int position, 
 		           int location, 
 		           enum E_Formats format, 
 		           int type)
-	: AudioPort(name, datatype,	buffertype, buffsize),
+	: AudioPort(name, datatype,	buffertype, buffsize, direction),
 	  AmdtpPortInfo(name, position, location, format, type)
 	{};
 
@@ -61,18 +62,18 @@ public:
 		           enum E_BufferType buffertype, 
 		           unsigned int buffsize,
 	               void *externalbuffer,
+	               enum E_Direction direction,
 		           int position, 
 		           int location, 
 		           enum E_Formats format, 
 		           int type)
-	: AudioPort(name, datatype,	buffertype, buffsize, externalbuffer),
+	: AudioPort(name, datatype,	buffertype, buffsize, externalbuffer, direction),
 	  AmdtpPortInfo(name, position, location, format, type)
 	{};
 
 	virtual ~AmdtpAudioPort() {};
-
+ 
 protected:
-    DECLARE_DEBUG_MODULE;
 
 };
 
@@ -84,18 +85,18 @@ public:
 
 	AmdtpMidiPort(std::string name, 
 		           unsigned int buffsize,
+	               enum E_Direction direction,
 		           int position, 
 		           int location, 
 		           enum E_Formats format, 
 		           int type)
-	: MidiPort(name, buffsize),
+	: MidiPort(name, buffsize, direction),
 	  AmdtpPortInfo(name, position, location, format, type)
 	{};
 
 	virtual ~AmdtpMidiPort() {};
 
 protected:
-    DECLARE_DEBUG_MODULE;
 
 };
 

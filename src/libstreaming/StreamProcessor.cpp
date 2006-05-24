@@ -37,7 +37,14 @@ IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_N
 IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 
 StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel, int port, int framerate) 
-	: IsoStream(type, channel, port), m_framerate(framerate), m_manager(0) {
+	: IsoStream(type, channel, port)
+	, m_manager(0)
+	, m_nb_buffers(0)
+	, m_period(0)
+	, m_xruns(0)
+	, m_framecounter(0)
+	, m_framerate(framerate)
+{
 
 }
 
@@ -111,6 +118,10 @@ void StreamProcessor::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 // TODO: implement
+
+	// init the ports
+	
+
 	// loop over the ports to reset them
 	PortManager::prepare();
 
@@ -157,15 +168,8 @@ int ReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
 void ReceiveStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
+	StreamProcessor::setVerboseLevel(l);
 
-/*	StreamProcessor *parent;
-	parent=dynamic_cast<StreamProcessor *>(this);
-
-	assert(parent);
-
-	parent->setVerboseLevel(l);
- 	StreamProcessor::setVerboseLevel(l);
-*/
 }
 
 

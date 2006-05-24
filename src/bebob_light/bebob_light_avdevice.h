@@ -29,6 +29,10 @@
 #include "bebob_light/bebob_light_avplug.h"
 #include "bebob_light/bebob_light_avdevicesubunit.h"
 
+#include "libstreaming/AmdtpStreamProcessor.h"
+#include "libstreaming/AmdtpPort.h"
+#include "libstreaming/AmdtpPortInfo.h"
+
 #include "iavdevice.h"
 
 class ConfigRom;
@@ -50,8 +54,20 @@ public:
 
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
-    virtual bool addXmlDescription( xmlNodePtr deviceNode );
+
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+
+	virtual int getStreamProcessorCount();
+	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+
+	virtual bool prepare();
+
+	virtual int startStreamByIndex(int i);
+	virtual int stopStreamByIndex(int i);
+
+
+    virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual void showDevice() const;
 
 protected:
@@ -89,6 +105,9 @@ protected:
     bool addXmlDescriptionPlug( AvPlug& plug, xmlNodePtr conectionSet );
     bool addXmlDescriptionStreamFormats( AvPlug& plug, xmlNodePtr streamFormats );
 
+	bool addPlugToProcessor( AvPlug& plug, FreebobStreaming::StreamProcessor *processor, 
+	                         FreebobStreaming::AmdtpAudioPort::E_Direction direction);
+
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    PlugAddress::EPlugDirection direction,
                                    ESamplingFrequency samplingFrequency );
@@ -107,6 +126,12 @@ protected:
 
     nr_of_plugs_t m_serialBusIsochronousInputPlugs;
     nr_of_plugs_t m_serialBusIsochronousOutputPlugs;
+
+	// streaming stuff
+	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
+	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor2;
+	FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
+
 
     DECLARE_DEBUG_MODULE;
 };

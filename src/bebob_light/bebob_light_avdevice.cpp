@@ -48,6 +48,8 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
     : m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
+	, m_receiveProcessor ( 0 )
+	, m_transmitProcessor ( 0 )
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -1661,6 +1663,30 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     return true;
 }
 
+int
+AvDevice::getSamplingFrequency( ) {
+    AvPlug* inputPlug = getPlugById( m_isoInputPlugs, 0 );
+    if ( !inputPlug ) {
+        debugError( "No iso input plug found with id %d\n" );
+        return false;
+    }
+    AvPlug* outputPlug = getPlugById( m_isoOutputPlugs, 0 );
+    if ( !outputPlug ) {
+        debugError( "No iso output plug found with id %d\n" );
+        return false;
+    }
+
+	int samplerate_playback=inputPlug->getSampleRate();
+	int samplerate_capture=outputPlug->getSampleRate();
+
+	if (samplerate_playback != samplerate_capture) {
+		debugWarning("Samplerates for capture and playback differ!\n");
+	}
+	return samplerate_capture;
+}
+
+
+
 ConfigRom&
 AvDevice::getConfigRom() const
 {
@@ -1673,4 +1699,241 @@ AvDevice::showDevice() const
     printf( "showDevice: not implemented\n" );
 }
 
+bool
+AvDevice::prepare() {
+    ///////////
+    // get plugs
+
+    AvPlug* inputPlug = getPlugById( m_isoInputPlugs, 0 );
+    if ( !inputPlug ) {
+        debugError( "No iso input plug found with id %d\n" );
+        return false;
+    }
+    AvPlug* outputPlug = getPlugById( m_isoOutputPlugs, 0 );
+    if ( !outputPlug ) {
+        debugError( "No iso output plug found with id %d\n" );
+        return false;
+    }
+
+	int samplerate=outputPlug->getSampleRate();
+	const int channel=-1; // this can only be known when the connection is made
+	m_receiveProcessor=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+	                         channel,
+	                         m_1394Service->getPort(),
+	                         samplerate,
+	                         outputPlug->getNrOfChannels());
+
+	if (!addPlugToProcessor(*outputPlug,m_receiveProcessor, 
+		FreebobStreaming::AmdtpAudioPort::E_Capture)) {
+		debugFatal("Could not add plug to processor!\n");
+		return false;
+	}
+
+	// do the transmit processor
+	// for now we are snooping, so these are receive too.
+// 	samplerate=inputPlug->getSampleRate();
+// 	m_receiveProcessor2=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+// 	                         channel,
+// 	                         m_1394Service->getPort(),
+// 	                         samplerate,
+// 	                         inputPlug->getNrOfChannels());
+// 
+// 	if (!addPlugToProcessor(*inputPlug,m_receiveProcessor2, 
+// 		FreebobStreaming::AmdtpAudioPort::E_Capture)) {
+// 		debugFatal("Could not add plug to processor!\n");
+// 		return false;
+// 	}
+
+	// do the transmit processor
+	samplerate=inputPlug->getSampleRate();
+	m_transmitProcessor=new FreebobStreaming::AmdtpTransmitStreamProcessor(
+	                         channel,
+	                         m_1394Service->getPort(),
+	                         samplerate,
+	                         inputPlug->getNrOfChannels());
+
+	if (!addPlugToProcessor(*inputPlug,m_transmitProcessor, 
+		FreebobStreaming::AmdtpAudioPort::E_Playback)) {
+		debugFatal("Could not add plug to processor!\n");
+		return false;
+	}
+
+	return true;
 }
+
+bool
+AvDevice::addPlugToProcessor(
+	AvPlug& plug, 
+	FreebobStreaming::StreamProcessor *processor, 
+	FreebobStreaming::AmdtpAudioPort::E_Direction direction) {
+
+    AvPlug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
+    for ( AvPlug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
+          it != clusterInfos.end();
+          ++it )
+    {
+        const AvPlug::ClusterInfo* clusterInfo = &( *it );
+
+        AvPlug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
+        for ( AvPlug::ChannelInfoVector::const_iterator it = channelInfos.begin();
+              it != channelInfos.end();
+              ++it )
+        {
+            const AvPlug::ChannelInfo* channelInfo = &( *it );
+
+			FreebobStreaming::Port *p=NULL;
+			switch(clusterInfo->m_portType) {
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Headphone:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Microphone:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
+				p=new FreebobStreaming::AmdtpAudioPort(
+						channelInfo->m_name, 
+						FreebobStreaming::AmdtpAudioPort::E_Int24, // changed in the audio part
+						FreebobStreaming::AmdtpAudioPort::E_PeriodBuffered, 
+						0, // changed in the audio part
+						direction, 
+						// \todo: streaming backend expects indexing starting from 0
+						// but bebob reports it starting from 1. Decide where
+						// and how to handle this (pp: here)
+						channelInfo->m_streamPosition - 1, 
+						channelInfo->m_location, 
+						FreebobStreaming::AmdtpPortInfo::E_MBLA, 
+						clusterInfo->m_portType
+				);
+				break;
+
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
+				break;
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_SPDIF:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_ADAT:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_TDIF:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_MADI:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Digital:
+			case ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
+			default:
+			// unsupported
+				break;
+			}
+
+			if (!p) {
+				printf("Skipped port %s\n",channelInfo->m_name.c_str());
+			} else {
+		
+				if (processor->addPort(p)) {
+					printf("Could not register port with stream processor\n");
+					return false;
+				}
+			}
+         }
+    }
+	return true;
+}
+
+int 
+AvDevice::getStreamProcessorCount() {
+ 	return 2; // one receive, one transmit
+  	return 1; // only receive for the moment
+}
+
+FreebobStreaming::StreamProcessor *
+AvDevice::getStreamProcessorByIndex(int i) {
+	switch (i) {
+	case 0:
+		return m_receiveProcessor;
+	case 1:
+// 		return m_receiveProcessor2;
+ 		return m_transmitProcessor;
+	default:
+		return NULL;
+	}
+	return 0;
+}
+
+int
+AvDevice::startStreamByIndex(int i) {
+	int iso_channel=0;
+	int plug=0;
+	int hostplug=-1;
+	int bandwidth=-1;
+
+	switch (i) {
+	case 0:
+		// do connection management: make connection
+		iso_channel = iec61883_cmp_connect(
+			m_1394Service->getHandle(), 
+			m_nodeId | 0xffc0, 
+			&plug,
+			raw1394_get_local_id (m_1394Service->getHandle()), 
+			&hostplug, 
+			&bandwidth);
+		
+		// set the channel obtained by the connection management
+		m_receiveProcessor->setChannel(iso_channel);
+		break;
+	case 1:
+		// do connection management: make connection
+		iso_channel = iec61883_cmp_connect(
+			m_1394Service->getHandle(), 
+			raw1394_get_local_id (m_1394Service->getHandle()), 
+			&hostplug, 
+			m_nodeId | 0xffc0, 
+			&plug,
+			&bandwidth);
+		
+		// set the channel obtained by the connection management
+// 		m_receiveProcessor2->setChannel(iso_channel);
+ 		m_transmitProcessor->setChannel(iso_channel);
+		break;
+	default:
+		return 0;
+	}
+
+	return 0;
+
+}
+int
+AvDevice::stopStreamByIndex(int i) {
+	// do connection management: break connection
+
+	int plug=0;
+	int hostplug=-1;
+	int bandwidth=-1;
+
+	switch (i) {
+	case 0:
+		// do connection management: break connection
+		iec61883_cmp_disconnect(
+			m_1394Service->getHandle(), 
+			m_nodeId | 0xffc0, 
+			plug,
+			raw1394_get_local_id (m_1394Service->getHandle()), 
+			hostplug, 
+			m_receiveProcessor->getChannel(),
+			bandwidth);
+
+		break;
+	case 1:
+		// do connection management: break connection
+		iec61883_cmp_disconnect(
+			m_1394Service->getHandle(), 
+			raw1394_get_local_id (m_1394Service->getHandle()), 
+			hostplug, 
+			m_nodeId | 0xffc0, 
+			plug,
+			m_transmitProcessor->getChannel(),
+			bandwidth);
+
+		// set the channel obtained by the connection management
+// 		m_receiveProcessor2->setChannel(iso_channel);
+		break;
+	default:
+		return 0;
+	}
+
+	return 0;
+}
+
+} // end of namespace
+

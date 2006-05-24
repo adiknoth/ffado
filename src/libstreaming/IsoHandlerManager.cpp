@@ -92,11 +92,30 @@ bool IsoHandlerManager::Execute()
 
 }
 
+bool IsoHandlerManager::prepare()
+{
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+        if(!(*it)->prepare()) {
+			debugFatal("Could not prepare handlers\n");
+			return false;
+        }
+    }
+
+	return true;
+}
+
+
+
 int IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(handler);
 	m_IsoHandlers.push_back(handler);
+	handler->setVerboseLevel(getDebugLevel());
 
 	// rebuild the fd map for poll()'ing.
 	return rebuildFdMap();	
@@ -336,6 +355,17 @@ void IsoHandlerManager::stopHandlers() {
     {
 		debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
 		(*it)->stop();
+    }
+}
+
+void IsoHandlerManager::setVerboseLevel(int i) {
+	setDebugLevel(i);
+
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+		(*it)->setVerboseLevel(i);
     }
 }
 

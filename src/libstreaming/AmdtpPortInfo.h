@@ -65,9 +65,6 @@ protected:
     enum E_Formats m_format;
     int m_type;
 
-
-    DECLARE_DEBUG_MODULE;
-
 };
 
 } // end of namespace FreebobStreaming

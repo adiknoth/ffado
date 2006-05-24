@@ -34,16 +34,16 @@
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( Port, Port, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( AudioPort, AudioPort, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( MidiPort, MidiPort, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( ControlPort, ControlPort, DEBUG_LEVEL_NORMAL );
 
-Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize, enum E_DataType datatype) 
+Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize, 
+           enum E_DataType datatype, enum E_PortType porttype, enum E_Direction direction) 
   : m_Name(name),
     m_BufferType(type),
     m_enabled(true),
     m_buffersize(buffsize),
 	m_datatype(datatype),
+	m_porttype(porttype),
+	m_direction(direction),
 	m_buffer(0),
     m_buffer_attached(false)
 {
@@ -52,54 +52,72 @@ Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize, enum
 }
 
 Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize,
-           enum E_DataType datatype, void* externalbuffer) 
+           enum E_DataType datatype, void* externalbuffer, enum E_PortType porttype, 
+           enum E_Direction direction) 
   : m_Name(name),
     m_BufferType(type),
     m_enabled(true),
     m_buffersize(buffsize),
 	m_datatype(datatype),
+	m_porttype(porttype),
+	m_direction(direction),
 	m_buffer(externalbuffer),
     m_buffer_attached(true)
 {
 	
 }
 
-int Port::attachBuffer(void *buff) {
+// int Port::attachBuffer(void *buff) {
+// 
+// // 	if(m_buffer_attached) {
+// // 		debugFatal("already has a buffer attached\n");
+// // 		return -1;
+// // 	}
+// // 
+// // 	freeInternalBuffer();
+// 
+// 	m_buffer=buff;
+// 
+// 	m_buffer_attached=true;
+// 
+// }
 
+// // detach the user buffer, allocates an internal buffer
+// int Port::detachBuffer() {
+// 	if(!m_buffer_attached) {
+// 		debugWarning("does not have a buffer attached\n");
+// 		if(m_buffer) {
+// 			return 0;	
+// 		} // if no buffer present, there should be one allocated
+// 	}
+// 
+// 	m_buffer_attached=false;
+// 
+// 	return allocateInternalBuffer();
+// 
+// }
+
+bool Port::setBufferSize(unsigned int newsize) {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Setting buffersize to %d for port %s\n",newsize,m_Name.c_str());
+
+	m_buffersize=newsize;
 	if(m_buffer_attached) {
-		debugFatal("already has a buffer attached\n");
-		return -1;
+		return true;
 	}
 
 	freeInternalBuffer();
-
-	m_buffer=buff;
-
-	m_buffer_attached=true;
-
-}
-
-// detach the user buffer, allocates an internal buffer
-int Port::detachBuffer() {
-	if(!m_buffer_attached) {
-		debugWarning("does not have a buffer attached\n");
-		if(m_buffer) {
-			return 0;	
-		} // if no buffer present, there should be one allocated
-	}
-
-	m_buffer_attached=false;
 
 	return allocateInternalBuffer();
 
 }
 
-int Port::allocateInternalBuffer() {
+
+bool Port::allocateInternalBuffer() {
 	int event_size=getEventSize();
 
 	if(m_buffer_attached) {
 		debugWarning("has an external buffer attached, not allocating\n");
-		return -1;
+		return false;
 	}
 
 	if(m_buffer) {
@@ -111,10 +129,10 @@ int Port::allocateInternalBuffer() {
 	if (!m_buffer) {
 		debugFatal("could not allocate internal buffer\n");
 		m_buffersize=0;
-		return -1;
+		return false;
 	}
 
-	return 0;
+	return true;
 }
 
 void Port::freeInternalBuffer() {

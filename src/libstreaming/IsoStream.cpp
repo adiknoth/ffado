@@ -82,6 +82,11 @@ void IsoStream::dumpInfo()
 
 };
 
+int IsoStream::setChannel(int c) {
+	m_channel=c;
+}
+
+
 void IsoStream::reset() {
 
 }

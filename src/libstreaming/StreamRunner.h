@@ -50,6 +50,8 @@ public:
 	bool Execute(); // note that this is called in we while(running) loop
 	bool Init();
 
+ 	void setVerboseLevel(int l) { setDebugLevel(l);  };
+
 protected:
 
 	IsoHandlerManager *m_isoManager;

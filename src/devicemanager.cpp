@@ -40,9 +40,9 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
-     m_probeList.push_back( probeMotu );
+//      m_probeList.push_back( probeMotu );
      m_probeList.push_back( probeBeBoB );
-     m_probeList.push_back( probeBounce );
+//      m_probeList.push_back( probeBounce );
 }
 
 DeviceManager::~DeviceManager()
@@ -102,7 +102,7 @@ DeviceManager::discover( int verboseLevel )
             // be there is a real software problem on our side.
             // This should be handled more carefuly.
             debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Could not read config rom from device (noe id %d). "
+                         "Could not read config rom from device (node id %d). "
                          "Skip device discovering for this node\n",
                          nodeId );
             continue;
@@ -148,35 +148,35 @@ DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
     return avDevice;
 }
 
-IAvDevice*
-DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
-{
-    IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
-    if ( !avDevice ) {
-        return NULL;
-    }
-
-    if ( !avDevice->discover() ) {
-        delete avDevice;
-        return NULL;
-    }
-    return avDevice;
-}
-
-IAvDevice*
-DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
-{
-    IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
-    if ( !avDevice ) {
-        return NULL;
-    }
-
-    if ( !avDevice->discover() ) {
-        delete avDevice;
-        return NULL;
-    }
-    return avDevice;
-}
+// IAvDevice*
+// DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
+// {
+//     IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
+//     if ( !avDevice ) {
+//         return NULL;
+//     }
+// 
+//     if ( !avDevice->discover() ) {
+//         delete avDevice;
+//         return NULL;
+//     }
+//     return avDevice;
+// }
+// 
+// IAvDevice*
+// DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
+// {
+//     IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
+//     if ( !avDevice ) {
+//         return NULL;
+//     }
+// 
+//     if ( !avDevice->discover() ) {
+//         delete avDevice;
+//         return NULL;
+//     }
+//     return avDevice;
+// }
 
 bool
 DeviceManager::isValidNode(int node)
@@ -231,6 +231,18 @@ DeviceManager::getAvDevice( int nodeId )
     }
 
     return 0;
+}
+
+IAvDevice*
+DeviceManager::getAvDeviceByIndex( int idx )
+{
+	return m_avDevices.at(idx);
+}
+
+unsigned int 
+DeviceManager::getAvDeviceCount( )
+{
+	return m_avDevices.size();
 }
 
 xmlDocPtr

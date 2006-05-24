@@ -27,15 +27,32 @@
 class ConfigRom;
 class Ieee1394Service;
 
+namespace FreebobStreaming {
+	class StreamProcessor;
+}
+
 class IAvDevice {
 public:
     virtual ~IAvDevice() {}
 
     virtual ConfigRom& getConfigRom() const = 0;
     virtual bool discover() = 0;
+
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency ) = 0;
+    virtual int getSamplingFrequency( ) = 0;
+
+	virtual int getStreamProcessorCount() = 0;
+	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i) = 0;
+
     virtual bool addXmlDescription( xmlNodePtr deviceNode ) = 0;
     virtual void showDevice() const = 0;
+
+	virtual bool prepare() = 0;
+
+
+	virtual int startStreamByIndex(int i) = 0;
+	virtual int stopStreamByIndex(int i) = 0;
+
 };
 
 #endif

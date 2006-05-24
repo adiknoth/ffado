@@ -85,6 +85,9 @@ public:
 				    unsigned int* resp_len );
 
     bool transactionBlockClose();
+
+    raw1394handle_t getHandle() {return m_handle;};
+
     
 private:
     raw1394handle_t m_handle;

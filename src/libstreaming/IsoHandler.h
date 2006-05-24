@@ -101,10 +101,12 @@ class IsoHandler
 		bool inUse() {return (m_Client != 0) ;};
 		virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
 
-		virtual int registerStream(IsoStream *) = 0;
-		virtual int unregisterStream(IsoStream *) = 0;
+		virtual int registerStream(IsoStream *);
+		virtual int unregisterStream(IsoStream *);
 
 		int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
+
+		virtual bool prepare() = 0;
 
 	protected:
 	    raw1394handle_t m_handle;
@@ -144,10 +146,12 @@ class IsoRecvHandler : public IsoHandler
 	
 		enum EHandlerType getType() { return EHT_Receive;};
 
-		int registerStream(IsoStream *);
-		int unregisterStream(IsoStream *);
+// 		int registerStream(IsoStream *);
+// 		int unregisterStream(IsoStream *);
 
 		int start(int cycle);
+
+		bool prepare();
 
 	private:
 		int handleBusReset(unsigned int generation);
@@ -184,13 +188,15 @@ class IsoXmitHandler  : public IsoHandler
 		
 		enum EHandlerType getType() { return EHT_Transmit;};
 
-		int registerStream(IsoStream *);
-		int unregisterStream(IsoStream *);
+// 		int registerStream(IsoStream *);
+// 		int unregisterStream(IsoStream *);
 
 		unsigned int getPreBuffers() {return m_prebuffers;};
 		void setPreBuffers(unsigned int n) {m_prebuffers=n;};
 
 		int start(int cycle);
+
+		bool prepare();
 
 	private:
 

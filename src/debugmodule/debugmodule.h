@@ -73,8 +73,15 @@ typedef short debug_level_t;
                 DebugModule m_debugModule =                        \
 		    DebugModule( #RegisterName, Level )
 
-#define setDebugLevel( Level )                                     \
-                m_debugModule.setLevel( Level )
+#define setDebugLevel( Level ) {                                    \
+                m_debugModule.setLevel( Level ); \
+                m_debugModule.print( Level,                        \
+                                     __FILE__,                     \
+                                     __FUNCTION__,                 \
+                                     __LINE__,                     \
+                                     "Setting debug level to %d\n",  \
+                                     Level ); \
+				}
 #define getDebugLevel( Level )                                     \
                 m_debugModule.getLevel( )
 

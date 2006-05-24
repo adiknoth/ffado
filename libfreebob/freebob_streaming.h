@@ -137,6 +137,7 @@ typedef enum {
   	freebob_stream_type_unknown                      =   0,
   	freebob_stream_type_audio                        =   1,
   	freebob_stream_type_midi                         =   2,
+  	freebob_stream_type_control                      =   3,
 } freebob_streaming_stream_type;
 
 /**

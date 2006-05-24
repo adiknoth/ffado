@@ -52,6 +52,8 @@ class DeviceManager{
     int getDeviceNodeId( int deviceNr );
 
     IAvDevice* getAvDevice( int nodeId );
+	IAvDevice* getAvDeviceByIndex( int idx );
+	unsigned int getAvDeviceCount();
 
     xmlDocPtr getXmlDescription();
 

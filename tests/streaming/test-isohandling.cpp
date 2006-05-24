@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 // 	}
 // 	spt->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
- 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(0,2,44100,11);
+ 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(0,2,44100,7);
 // 	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
 	if(!spr) {
 		printf("Could not create receive AmdtpStreamProcessor\n");
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 	}
 	spr->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
- 	AmdtpReceiveStreamProcessor *spr2 = new AmdtpReceiveStreamProcessor(1,2,44100,7);
+ 	AmdtpReceiveStreamProcessor *spr2 = new AmdtpReceiveStreamProcessor(1,2,44100,11);
 // 	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
 	if(!spr2) {
 		printf("Could not create receive AmdtpStreamProcessor\n");
@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
 		           AmdtpAudioPort::E_Int24,
 		           AmdtpAudioPort::E_PeriodBuffered, 
 		           512,
+		           AmdtpAudioPort::E_Capture, 
 		           1, 
 		           0, 
 		           AmdtpPortInfo::E_MBLA, 
@@ -180,6 +181,10 @@ int main(int argc, char *argv[])
 
 	FreebobPosixThread *thread=new FreebobPosixThread(runner);
 
+
+	procMan->prepare();
+	isomanager->prepare();
+
 	// start the runner
 	thread->Start();
 	printf("----------------------\n");
@@ -201,6 +206,8 @@ int main(int argc, char *argv[])
 			printf("--------------------------------------------\n");
 			procMan->dumpInfo();
 			printf("--------------------------------------------\n");
+/*			hexDumpQuadlets((quadlet_t*)(p1->getBufferAddress()),10);
+			printf("--------------------------------------------\n");*/
 			hexDumpQuadlets((quadlet_t*)(p1->getBufferAddress()),10);
 			printf("============================================\n");
 			printf("\n");
@@ -215,8 +222,6 @@ int main(int argc, char *argv[])
 
 	isomanager->stopHandlers();
 
-	spr->deletePort(p1);
-
 // 	isomanager->unregisterStream(spt);
 	isomanager->unregisterStream(spr);
 	isomanager->unregisterStream(spr2);
@@ -227,8 +232,6 @@ int main(int argc, char *argv[])
 
 	delete thread;
 	delete runner;
-
-	delete p1;
 
 	delete procMan;
 	delete isomanager;

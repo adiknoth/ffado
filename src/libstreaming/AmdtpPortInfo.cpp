@@ -32,8 +32,5 @@
 
 namespace FreebobStreaming {
 
-IMPL_DEBUG_MODULE( AmdtpPortInfo, AmdtpPortInfo, DEBUG_LEVEL_NORMAL );
-
-
 
 } // end of namespace FreebobStreaming

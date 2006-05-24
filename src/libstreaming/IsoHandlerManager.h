@@ -68,7 +68,7 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		void setPollTimeout(int t) {m_poll_timeout=t;};
 		int getPollTimeout() {return m_poll_timeout;};
 
-		void setVerboseLevel(int l) { setDebugLevel( l ); };
+		void setVerboseLevel(int l);
 
 		void dumpInfo();
 
@@ -79,10 +79,15 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		int startHandlers(int cycle);
 		void stopHandlers();
 
+		bool reset() {return true;};
+
+		bool prepare();
+
 	protected:
 		// FreebobRunnableInterface interface
 		bool Execute(); // note that this is called in we while(running) loop
 		bool Init();
+
 
 		// note: there is a disctinction between streams and handlers
 		// because one handler can serve multiple streams (in case of 

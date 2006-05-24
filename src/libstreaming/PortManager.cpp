@@ -40,6 +40,44 @@ PortManager::PortManager() {
 }
 
 PortManager::~PortManager() {
+	deleteAllPorts();
+}
+
+bool PortManager::setPortBuffersize(unsigned int newsize) {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "setting port buffer size to %d\n",newsize);
+
+    for ( PortVectorIterator it = m_PacketPorts.begin();
+          it != m_PacketPorts.end();
+          ++it )
+    {
+		if(!(*it)->setBufferSize(newsize)) {
+			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
+			return false;
+		}
+    }
+
+    for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+		if(!(*it)->setBufferSize(newsize)) {
+			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
+			return false;
+		}
+    }
+
+//     for ( PortVectorIterator it = m_SamplePorts.begin();
+//           it != m_SamplePorts.end();
+//           ++it )
+//     {
+/*		if(!(*it)->setBufferSize(newsize)) {
+			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
+			return false;
+		}*/
+//     }
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, " => port not found\n");
+
+	return true; //not found
 
 }
 
@@ -47,6 +85,8 @@ int PortManager::addPort(Port *port)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
+
+	port->setVerboseLevel(getDebugLevel());
 
 	switch(port->getBufferType()) {
 	case (Port::E_PacketBuffered):
@@ -80,6 +120,7 @@ int PortManager::deletePort(Port *port)
     {
         if ( *it == port ) { 
             m_PacketPorts.erase(it);
+			delete *it;
 			return 0;
         }
     }
@@ -90,6 +131,7 @@ int PortManager::deletePort(Port *port)
     {
         if ( *it == port ) { 
             m_PeriodPorts.erase(it);
+			delete *it;
 			return 0;
         }
     }
@@ -109,11 +151,140 @@ int PortManager::deletePort(Port *port)
 
 }
 
+void PortManager::deleteAllPorts()
+{
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting all ports\n");
+
+    for ( PortVectorIterator it = m_PacketPorts.begin();
+          it != m_PacketPorts.end();
+          ++it )
+    {
+        m_PacketPorts.erase(it);
+		delete *it;
+    }
+
+    for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+        m_PeriodPorts.erase(it);
+		delete *it;
+    }
+
+//     for ( PortVectorIterator it = m_SamplePorts.begin();
+//           it != m_SamplePorts.end();
+//           ++it )
+//     {
+//          m_SamplePorts.erase(it);
+// 			delete *it;
+//     }
+
+	return;
+
+}
+
+int PortManager::getPortCount(enum Port::E_PortType type) {
+	int count=0;
+
+    for ( PortVectorIterator it = m_PacketPorts.begin();
+          it != m_PacketPorts.end();
+          ++it )
+    {
+        if ( (*it)->getPortType() == type ) { 
+			count++;
+        }
+    }
+
+    for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+        if ( (*it)->getPortType() == type ) { 
+			count++;
+        }
+    }
+
+//     for ( PortVectorIterator it = m_SamplePorts.begin();
+//           it != m_SamplePorts.end();
+//           ++it )
+//     {
+//         if ( (*it)->getPortType() == type ) { 
+// 			count++;
+//         }
+//         }
+//     }
+
+	return count;
+}
+
+int PortManager::getPortCount() {
+	int count=0;
+
+
+	
+	count+=m_PacketPorts.size();
+	count+=m_PeriodPorts.size();
+// 	count+=m_SamplePorts.size();
+
+	return count;
+}
+
+Port * PortManager::getPortAtIdx(unsigned int index) {
+
+	if (index<m_PacketPorts.size()) {
+		return m_PacketPorts.at(index);
+	}
+	index -= m_PacketPorts.size();
+
+	if (index<m_PeriodPorts.size()) {
+		return m_PeriodPorts.at(index);
+	}
+
+// 	index -= m_PeriodPorts.size();
+// 
+// 	if (index<m_SamplePorts.size()) {
+// 		return m_SamplePorts.at(index);
+// 	}
+
+	return 0;
+
+}
+
+void PortManager::setVerboseLevel(int i) {
+
+	setDebugLevel(i);
+
+    for ( PortVectorIterator it = m_PacketPorts.begin();
+          it != m_PacketPorts.end();
+          ++it )
+    {
+        (*it)->setVerboseLevel(i);
+    }
+
+    for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+        (*it)->setVerboseLevel(i);
+    }
+
+//     for ( PortVectorIterator it = m_SamplePorts.begin();
+//           it != m_SamplePorts.end();
+//           ++it )
+//     {
+//         (*it)->setVerboseLevel(i);
+//     }
+
+}
+
+
 void PortManager::reset() {
 
 }
 
 void PortManager::prepare() {
+
 }
 
 }

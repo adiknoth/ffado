@@ -643,12 +643,12 @@ int freebob_streaming_start(freebob_device_t *dev) {
 			if (connection->spec.iso_channel < 0) { // we need to make the connection ourself
 				debugPrint(DEBUG_LEVEL_STARTUP, "Executing CMP procedure...\n");
 				connection->iso.iso_channel = iec61883_cmp_connect(
-				connection->raw_handle, 
-				raw1394_get_local_id (connection->raw_handle), 
-				&connection->iso.hostplug, 
-				connection->spec.node | 0xffc0, 
-				&connection->spec.plug, 
-				&connection->iso.bandwidth);
+					connection->raw_handle, 
+					raw1394_get_local_id (connection->raw_handle), 
+					&connection->iso.hostplug, 
+					connection->spec.node | 0xffc0, 
+					&connection->spec.plug, 
+					&connection->iso.bandwidth);
 				
 				connection->iso.do_disconnect=1;
 			} else {
