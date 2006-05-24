@@ -29,6 +29,7 @@
 #define __FREEBOB_PORTMANAGER__
 
 #include "../debugmodule/debugmodule.h"
+#include "Port.h"
 
 #include <vector>
 
@@ -47,11 +48,20 @@ public:
 
 	virtual int addPort(Port *port);
 	virtual int deletePort(Port *port);
+	virtual void deleteAllPorts();
+
+	virtual int getPortCount(enum Port::E_PortType);
+	virtual int getPortCount();
+
+	bool setPortBuffersize(unsigned int newsize);
+	
+
+	Port *getPortAtIdx(unsigned int index);
 
 	void reset();
 	void prepare();	
 
- 	void setVerboseLevel(int l) {  };
+ 	virtual void setVerboseLevel(int l);
 
 protected:
 	PortVector m_PacketPorts;

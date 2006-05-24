@@ -126,6 +126,35 @@ void IsoHandler::dumpInfo()
 
 };
 
+int IsoHandler::registerStream(IsoStream *stream)
+{
+	assert(stream);
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+
+	if (m_Client) return -1;
+
+	m_Client=stream;
+
+
+	m_Client->setHandler(this);
+
+	return 0;
+
+}
+
+int IsoHandler::unregisterStream(IsoStream *stream)
+{
+	assert(stream);
+	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+
+	if(stream != m_Client) return -1; //not registered
+
+	m_Client->clearHandler();
+	m_Client=0;
+	return 0;
+
+}
+
 /* Child class implementations */
 
 IsoRecvHandler::IsoRecvHandler(int port)
@@ -182,15 +211,8 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 	return RAW1394_ISO_OK;
 }
 
-int IsoRecvHandler::registerStream(IsoStream *stream)
+bool IsoRecvHandler::prepare()
 {
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-
-	if (m_Client) return -1;
-
-	m_Client=stream;
-
 	raw1394_iso_shutdown(m_handle);
 
 	if(raw1394_iso_recv_init(m_handle,   iso_receive_handler,
@@ -201,28 +223,9 @@ int IsoRecvHandler::registerStream(IsoStream *stream)
                                          m_irq_interval)) {
 		debugFatal("Could not do receive initialisation!\n" );
 
-		m_Client=0;
-
-		return -1;
+		return false;
 	}
-
-	m_Client->setHandler(this);
-
-	return 0;
-
-}
-
-int IsoRecvHandler::unregisterStream(IsoStream *stream)
-{
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-
-	if(stream != m_Client) return -1; //not registered
-
-	m_Client->clearHandler();
-	m_Client=0;
-	return 0;
-
+	return true;
 }
 
 int IsoRecvHandler::start(int cycle)
@@ -284,17 +287,18 @@ IsoXmitHandler::initialize() {
 
 	// this is a dummy init, to see if everything works
 	// the real init is done when a stream is registered
-	if(raw1394_iso_xmit_init(m_handle,
-                             iso_transmit_handler,
-                             m_buf_packets,
-                             m_max_packet_size,
-	                         0,
-	                         m_speed,
-                             m_irq_interval)) {
-		debugFatal("Could not do xmit initialisation!\n" );
-
-		return false;
-	}
+// what if there is already a stream xmitting on ch0??
+// 	if(raw1394_iso_xmit_init(m_handle,
+//                              iso_transmit_handler,
+//                              m_buf_packets,
+//                              m_max_packet_size,
+// 	                         0,
+// 	                         m_speed,
+//                              m_irq_interval)) {
+// 		debugFatal("Could not do xmit initialisation!\n" );
+// 
+// 		return false;
+// 	}
 
 	return true;
 
@@ -319,19 +323,8 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(unsigned char *data, unsi
 	return RAW1394_ISO_OK;
 }
 
-// an xmit handler can have only one source IsoStream
-int IsoXmitHandler::registerStream(IsoStream *stream)
+bool IsoXmitHandler::prepare()
 {
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-
-	if (m_Client) { 
-		debugFatal("Already a registered client\n");
-		return -1;
-	}
-
-	m_Client=stream;
-
 	raw1394_iso_shutdown(m_handle);
 
 	if(raw1394_iso_xmit_init(m_handle,
@@ -343,28 +336,10 @@ int IsoXmitHandler::registerStream(IsoStream *stream)
                              m_irq_interval)) {
 		debugFatal("Could not do xmit initialisation!\n" );
 
-		m_Client=0;
-
-		return -1;
+		return false;
 	}
 
-	m_Client->setHandler(this);
-
-	return 0;
-
-}
-
-int IsoXmitHandler::unregisterStream(IsoStream *stream)
-{
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-
-	if(stream != m_Client) return -1; //not registered
-
-	m_Client->clearHandler();
-	m_Client=0;
-	return 0;
-
+	return true;
 }
 
 int IsoXmitHandler::start(int cycle)

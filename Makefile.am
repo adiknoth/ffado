@@ -51,7 +51,7 @@ libstreaming_la_SOURCES = 	\
 	StreamRunner.cpp StreamRunner.h
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
-	-I$(top_srcdir)
+	-I$(top_srcdir)  $(LIBXML_CFLAGS)
 libstreaming_la_LIBADD  = $(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC_LIBS)
 
 MAINTAINERCLEANFILES = Makefile.in

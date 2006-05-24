@@ -73,6 +73,12 @@ protected:
 	char* m_cluster_buffer;
 	int m_dimension;
 
+	int transmitBlock(char *data, unsigned int nevents, 
+	                  unsigned int offset, unsigned int dbc);
+	int encodePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
+	                           unsigned int offset, unsigned int nevents,
+	                           unsigned int dbc);
+
     DECLARE_DEBUG_MODULE;
 
 };

@@ -66,6 +66,8 @@ class IsoStream
 		virtual void setVerboseLevel(int l) { setDebugLevel( l ); };
 
 		int getChannel() {return m_channel;};
+		int setChannel(int c);
+
 		int getPort() {return m_port;};
 
 		enum EStreamType getType() { return m_type;};

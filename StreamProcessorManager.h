@@ -31,6 +31,8 @@
 #include "../debugmodule/debugmodule.h"
 #include "FreebobThread.h"
 #include <semaphore.h>
+#include "Port.h"
+#include "StreamProcessor.h"
 
 #include <vector>
 
@@ -52,9 +54,9 @@ public:
 	virtual ~StreamProcessorManager();
 
 	int initialize(); // to be called immediately after the construction
-	int prepare(); // to be called after the processors are registered
+	bool prepare(); // to be called after the processors are registered
 
-	void setVerboseLevel(int l);
+	virtual void setVerboseLevel(int l);
 	void dumpInfo();
 
 	// this is the setup API
@@ -68,6 +70,10 @@ public:
 	void setNbBuffers(unsigned int nb_buffers);
 	int getNbBuffers() {return m_nb_buffers;};
 
+	int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
+	int getPortCount(enum Port::E_Direction);
+	Port* getPortByIndex(int idx, enum Port::E_Direction);
+
 	// the client-side functions
 	bool xrunOccurred();
 	int getXrunCount() {return m_xruns;};
@@ -75,6 +81,7 @@ public:
 	int waitForPeriod(); // wait for the next period
 
 	int transfer(); // transfer the buffer contents from/to client
+	int transfer(enum StreamProcessor::EProcessorType); // transfer the buffer contents from/to client
 
 	void reset(); // reset the streams & buffers (e.g. after xrun)
 

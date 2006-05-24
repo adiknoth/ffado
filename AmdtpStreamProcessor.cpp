@@ -163,6 +163,10 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 		// signal underrun
 		m_xruns++;
 
+		// not nescessary (xrun handling resets this)
+		// but pre-distort this anyway
+		m_framecounter-=nevents;
+
 		retval=RAW1394_ISO_DEFER;
 		*length=0;
 
@@ -213,7 +217,108 @@ void AmdtpTransmitStreamProcessor::prepare() {
 int AmdtpTransmitStreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-// TODO: implement
+	// TODO: improve
+
+	unsigned int write_size=m_period*sizeof(quadlet_t)*m_dimension;
+	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
+	transmitBlock(dummybuffer, m_period, 0, 0);
+
+	if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
+		debugWarning("Could not write to event buffer\n");
+	}
+
+
+	free(dummybuffer);
+
+	return 0;
+}
+/* 
+ * write received events to the stream ringbuffers.
+ */
+
+int AmdtpTransmitStreamProcessor::transmitBlock(char *data, 
+					   unsigned int nevents, unsigned int offset, unsigned int dbc)
+{
+	int problem=0;
+
+	for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+
+		//FIXME: make this into a static_cast when not DEBUG?
+
+		AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+		assert(pinfo); // this should not fail!!
+
+		switch(pinfo->getFormat()) {
+		case AmdtpPortInfo::E_MBLA:
+			if(encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents, dbc)) {
+				debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+				problem=1;
+			}
+			break;
+		case AmdtpPortInfo::E_SPDIF: // still unimplemented
+			break;
+	/* for this processor, midi is a packet based port 
+		case AmdtpPortInfo::E_Midi:
+			break;*/
+		default: // ignore
+			break;
+		}
+    }
+	return problem;
+
+}
+
+int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents(AmdtpAudioPort *p, quadlet_t *data, 
+					   unsigned int offset, unsigned int nevents, unsigned int dbc)
+{
+	unsigned int j=0;
+
+	quadlet_t *target_event;
+
+	target_event=(quadlet_t *)(data + p->getPosition());
+
+	switch(p->getDataType()) {
+		default:
+		case Port::E_Int24:
+			{
+				quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+
+				assert(nevents + offset <= p->getBufferSize());
+
+				buffer+=offset;
+
+				for(j = 0; j < nevents; j += 1) { // decode max nsamples
+					*target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
+					buffer++;
+					target_event += m_dimension;
+				}
+			}
+			break;
+		case Port::E_Float:
+			{
+				const float multiplier = (float)(0x7FFFFF00);
+				float *buffer=(float *)(p->getBufferAddress());
+
+				assert(nevents + offset <= p->getBufferSize());
+
+				buffer+=offset;
+
+				for(j = 0; j < nevents; j += 1) { // decode max nsamples		
+	
+					// don't care for overflow
+					float v = *buffer * multiplier;  // v: -231 .. 231
+					unsigned int tmp = ((int)v);
+					*target_event = htonl((tmp >> 8) | 0x40000000);
+					
+					buffer++;
+					target_event += m_dimension;
+				}
+			}
+			break;
+	}
 
 	return 0;
 }
@@ -399,7 +504,11 @@ int AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(AmdtpAudioPort *p, quadl
 					   unsigned int offset, unsigned int nevents, unsigned int dbc)
 {
 	unsigned int j=0;
-	
+
+// 	printf("****************\n");
+// 	hexDumpQuadlets(data,m_dimension*4);
+// 	printf("****************\n");
+
 	quadlet_t *target_event;
 
 	target_event=(quadlet_t *)(data + p->getPosition());

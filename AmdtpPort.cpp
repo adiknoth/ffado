@@ -31,8 +31,5 @@
 
 namespace FreebobStreaming {
 
-IMPL_DEBUG_MODULE( AmdtpAudioPort, AmdtpAudioPort, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( AmdtpMidiPort, AmdtpMidiPort, DEBUG_LEVEL_NORMAL );
-
 
 } // end of namespace FreebobStreaming

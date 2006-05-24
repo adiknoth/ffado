@@ -28,6 +28,7 @@
 
 #include "StreamProcessorManager.h"
 #include "StreamProcessor.h"
+#include "Port.h"
 #include <errno.h>
 #include <assert.h>
 
@@ -53,12 +54,14 @@ int StreamProcessorManager::registerProcessor(StreamProcessor *processor)
 	if (processor->getType()==StreamProcessor::E_Receive) {
 		m_ReceiveProcessors.push_back(processor);
 		processor->setManager(this);
+		processor->setVerboseLevel(getDebugLevel());
 		return 0;
 	}
 	
 	if (processor->getType()==StreamProcessor::E_Transmit) {
 		m_TransmitProcessors.push_back(processor);
 		processor->setManager(this);
+		processor->setVerboseLevel(getDebugLevel());
 		return 0;
 	}
 
@@ -99,6 +102,72 @@ int StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 
 	return -1; //not found
 
+}
+
+int StreamProcessorManager::getPortCount(enum Port::E_PortType type, enum Port::E_Direction direction) {
+	int count=0;
+
+	if (direction == Port::E_Capture) {
+		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+			it != m_ReceiveProcessors.end();
+			++it ) {
+			count += (*it)->getPortCount(type);
+		}
+	} else {
+		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+			it != m_TransmitProcessors.end();
+			++it ) {
+			count += (*it)->getPortCount(type);
+		}
+	}
+	return count;
+}
+
+int StreamProcessorManager::getPortCount(enum Port::E_Direction direction) {
+	int count=0;
+
+	if (direction == Port::E_Capture) {
+		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+			it != m_ReceiveProcessors.end();
+			++it ) {
+			count += (*it)->getPortCount();
+		}
+	} else {
+		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+			it != m_TransmitProcessors.end();
+			++it ) {
+			count += (*it)->getPortCount();
+		}
+	}
+	return count;
+}
+
+Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
+	int count=0;
+	int prevcount=0;
+
+	if (direction == Port::E_Capture) {
+		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+			it != m_ReceiveProcessors.end();
+			++it ) {
+			count += (*it)->getPortCount();
+			if (count > idx) {
+				return (*it)->getPortAtIdx(idx-prevcount);
+			}
+			prevcount=count;
+		}
+	} else {
+		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+			it != m_TransmitProcessors.end();
+			++it ) {
+			count += (*it)->getPortCount();
+			if (count > idx) {
+				return (*it)->getPortAtIdx(idx-prevcount);
+			}
+			prevcount=count;
+		}
+	}
+	return NULL;
 }
 
 bool StreamProcessorManager::Init()
@@ -256,6 +325,32 @@ int StreamProcessorManager::transfer() {
 	return 0;
 }
 
+int StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
+
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+
+	// a static cast could make sure that there is no performance
+	// penalty for the virtual functions (to be checked)
+
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Receive processors...\n");
+	if (t==StreamProcessor::E_Receive) {
+		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+			it != m_ReceiveProcessors.end();
+			++it ) { 
+			(*it)->transfer();
+		}
+	} else {
+// 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, " Transmit processors...\n");
+		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+			it != m_TransmitProcessors.end();
+			++it ) {
+			(*it)->transfer();
+		}
+	}
+
+	return 0;
+}
+
 void StreamProcessorManager::dumpInfo() {
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping StreamProcessorManager information...\n");
 
@@ -291,6 +386,33 @@ void StreamProcessorManager::setVerboseLevel(int l) {
 		++it ) {
 		(*it)->setVerboseLevel(l);
 	}
+}
+
+bool StreamProcessorManager::prepare() {
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "setting port buffersize...\n");
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " Receive processors...\n");
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		if(!(*it)->setPortBuffersize(m_period)) {
+			debugOutputShort( DEBUG_LEVEL_NORMAL, " could not set buffer size...\n");
+			return false;
+			
+		}
+	}
+
+	debugOutputShort( DEBUG_LEVEL_NORMAL, " Transmit processors...\n");
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		if(!(*it)->setPortBuffersize(m_period)) {
+			debugOutputShort( DEBUG_LEVEL_NORMAL, " could not set buffer size...\n");
+			return false;
+			
+		}
+	}
+
+	return true;
 }
 
 
