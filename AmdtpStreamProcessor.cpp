@@ -161,11 +161,7 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 		debugWarning("Transmit buffer underrun\n");
 		
 		// signal underrun
-		m_xruns++;
-
-		// not nescessary (xrun handling resets this)
-		// but pre-distort this anyway
-		m_framecounter-=nevents;
+// 		m_xruns++;
 
 		retval=RAW1394_ISO_DEFER;
 		*length=0;
