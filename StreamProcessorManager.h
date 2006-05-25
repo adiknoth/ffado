@@ -33,6 +33,7 @@
 #include <semaphore.h>
 #include "Port.h"
 #include "StreamProcessor.h"
+#include "IsoHandlerManager.h"
 
 #include <vector>
 
@@ -84,6 +85,9 @@ public:
 	int transfer(enum StreamProcessor::EProcessorType); // transfer the buffer contents from/to client
 
 	void reset(); // reset the streams & buffers (e.g. after xrun)
+
+	int registerStreamProcessors(IsoHandlerManager *m);
+
 
 	// the ISO-side functions
 protected:

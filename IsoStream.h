@@ -72,6 +72,9 @@ class IsoStream
 
 		enum EStreamType getType() { return m_type;};
 
+		virtual unsigned int getPacketsPerPeriod() {return 1;};
+		virtual unsigned int getMaxPacketSize() {return 1024;}; //FIXME: arbitrary
+		
 		virtual int init();
 
 		virtual int 

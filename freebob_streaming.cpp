@@ -172,10 +172,6 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 			if (dev->processorManager->registerProcessor(streamproc)) {
 				printf("Could not register receive stream processor with the Processor manager\n");
 			}
-			printf("Registering stream processor %d of device %d with isomanager\n",j,i);
-			if (dev->isoManager->registerStream(streamproc)) {
-				printf("Could not register receive stream processor with the Iso manager\n");
-			}
 		}
 	}
 
@@ -193,7 +189,7 @@ void freebob_streaming_finish(freebob_device_t *dev) {
 	delete dev->runner;
 	delete dev->processorManager;
 	delete dev->isoManager;
-    delete dev->m_deviceManager;
+   	delete dev->m_deviceManager;
 	delete dev;
 
 	freebob_messagebuffer_exit();
@@ -220,15 +216,21 @@ int freebob_streaming_start(freebob_device_t *dev) {
 			// start the stream
 			device->startStreamByIndex(j);
 		}
+		device->getStreamProcessorByIndex(1)->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	}
 
 	dev->processorManager->prepare();
+	
+	dev->processorManager->registerStreamProcessors(dev->isoManager);
+	
 	dev->isoManager->prepare();
 
+	
 	// start the runner thread
 	dev->thread->Start();
 
-	if(dev->isoManager->startHandlers()) {
+	int cycle=0;
+	if(dev->isoManager->startHandlers(cycle)) {
 		debugFatal("Could not start handlers\n");
 		return -1;
 	}

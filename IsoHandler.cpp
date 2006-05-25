@@ -214,6 +214,8 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 bool IsoRecvHandler::prepare()
 {
 	raw1394_iso_shutdown(m_handle);
+	
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso handler\n");
 
 	if(raw1394_iso_recv_init(m_handle,   iso_receive_handler,
                                          m_buf_packets,
