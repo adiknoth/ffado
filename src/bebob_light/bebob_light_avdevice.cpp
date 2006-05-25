@@ -48,8 +48,10 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
     : m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
-	, m_receiveProcessor ( 0 )
-	, m_transmitProcessor ( 0 )
+    , m_receiveProcessor ( 0 )
+    , m_receiveProcessorBandwidth ( -1 )
+    , m_transmitProcessor ( 0 )
+    , m_transmitProcessorBandwidth ( -1 )
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -1856,8 +1858,7 @@ AvDevice::startStreamByIndex(int i) {
 	int iso_channel=0;
 	int plug=0;
 	int hostplug=-1;
-	int bandwidth=-1;
-
+	
 	switch (i) {
 	case 0:
 		// do connection management: make connection
@@ -1867,7 +1868,7 @@ AvDevice::startStreamByIndex(int i) {
 			&plug,
 			raw1394_get_local_id (m_1394Service->getHandle()), 
 			&hostplug, 
-			&bandwidth);
+			&m_receiveProcessorBandwidth);
 		
 		// set the channel obtained by the connection management
 		m_receiveProcessor->setChannel(iso_channel);
@@ -1880,7 +1881,7 @@ AvDevice::startStreamByIndex(int i) {
 			&hostplug, 
 			m_nodeId | 0xffc0, 
 			&plug,
-			&bandwidth);
+			&m_transmitProcessorBandwidth);
 		
 		// set the channel obtained by the connection management
 // 		m_receiveProcessor2->setChannel(iso_channel);
@@ -1899,7 +1900,6 @@ AvDevice::stopStreamByIndex(int i) {
 
 	int plug=0;
 	int hostplug=-1;
-	int bandwidth=-1;
 
 	switch (i) {
 	case 0:
@@ -1911,7 +1911,7 @@ AvDevice::stopStreamByIndex(int i) {
 			raw1394_get_local_id (m_1394Service->getHandle()), 
 			hostplug, 
 			m_receiveProcessor->getChannel(),
-			bandwidth);
+			m_receiveProcessorBandwidth);
 
 		break;
 	case 1:
@@ -1923,7 +1923,7 @@ AvDevice::stopStreamByIndex(int i) {
 			m_nodeId | 0xffc0, 
 			plug,
 			m_transmitProcessor->getChannel(),
-			bandwidth);
+			m_transmitProcessorBandwidth);
 
 		// set the channel obtained by the connection management
 // 		m_receiveProcessor2->setChannel(iso_channel);

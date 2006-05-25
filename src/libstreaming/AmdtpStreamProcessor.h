@@ -61,9 +61,13 @@ public:
 
 	int init();
 	void reset();
-	void prepare();
+	bool prepare();
 	int transfer();
 	virtual void setVerboseLevel(int l);
+
+// NOTE: shouldn't this be (4*m_period)/(3*m_syt_interval), because every 3 packets, one empty is sent
+	unsigned int getPacketsPerPeriod() {return m_period/m_syt_interval;};
+	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
 protected:
 
@@ -72,6 +76,9 @@ protected:
 	freebob_ringbuffer_t * m_event_buffer;
 	char* m_cluster_buffer;
 	int m_dimension;
+	unsigned int m_syt_interval;
+
+	int m_fdf;
 
 	int transmitBlock(char *data, unsigned int nevents, 
 	                  unsigned int offset, unsigned int dbc);
@@ -100,7 +107,7 @@ public:
 
 	int init();
 	void reset();
-	void prepare();
+	bool prepare();
 	int transfer();
 
 	virtual void setVerboseLevel(int l);
@@ -113,7 +120,7 @@ protected:
 	freebob_ringbuffer_t * m_event_buffer;
 	char* m_cluster_buffer;
 	int m_dimension;
-
+	unsigned int m_syt_interval;
     DECLARE_DEBUG_MODULE;
 
 };

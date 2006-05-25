@@ -230,7 +230,28 @@ int IsoHandlerManager::registerStream(IsoStream *stream)
 	}
 	
 	if (stream->getType()==IsoStream::EST_Transmit) {
-		IsoXmitHandler *h = new IsoXmitHandler(stream->getPort());
+	
+		// setup the optimal parameters for the raw1394 ISO buffering
+		unsigned int packets_per_period=stream->getPacketsPerPeriod();
+		// hardware interrupts occur when one DMA block is full, and the size of one DMA
+		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
+		// occurs at a period boundary (optimal CPU use)
+		// NOTE: try and use 2 interrupts per period for better latency.
+		unsigned int max_packet_size=getpagesize() / packets_per_period * 2;
+		int irq_interval=packets_per_period / 2;
+
+		if (max_packet_size < stream->getMaxPacketSize()) {
+			max_packet_size=stream->getMaxPacketSize();
+		}
+
+		/* the transmit buffer size should be as low as possible for latency. 
+		*/
+		int buffers=packets_per_period;
+		if (buffers<10) buffers=10;	
+		
+		// create the actual handler
+		IsoXmitHandler *h = new IsoXmitHandler(stream->getPort(), buffers,
+		                                       max_packet_size, irq_interval);
 
 		debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoXmitHandler\n");
 

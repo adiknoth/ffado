@@ -85,17 +85,6 @@ void StreamProcessor::dumpInfo()
 int StreamProcessor::init()
 {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-	if(!m_manager) {
-		debugFatal("Not attached to a manager!\n");
-		return -1;
-	}
-
-	m_nb_buffers=m_manager->getNbBuffers();
-	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_nb_buffers  : %d\n", m_nb_buffers);
-
-	m_period=m_manager->getPeriodSize();
-	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
-
 
 	return IsoStream::init();
 }
@@ -114,19 +103,31 @@ void StreamProcessor::reset() {
 
 }
 
-void StreamProcessor::prepare() {
+bool StreamProcessor::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 // TODO: implement
 
 	// init the ports
 	
+	if(!m_manager) {
+		debugFatal("Not attached to a manager!\n");
+		return -1;
+	}
+
+	m_nb_buffers=m_manager->getNbBuffers();
+	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_nb_buffers  : %d\n", m_nb_buffers);
+
+	m_period=m_manager->getPeriodSize();
+	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
 
 	// loop over the ports to reset them
 	PortManager::prepare();
 
 	// reset the iso stream
 	IsoStream::prepare();
+	
+	return true;
 
 }
 

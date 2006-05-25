@@ -53,58 +53,29 @@ AmdtpTransmitStreamProcessor::~AmdtpTransmitStreamProcessor() {
 }
 
 int AmdtpTransmitStreamProcessor::init() {
-	int fdf=0, syt_interval=0;
-	int m_dbs=0;
 	int err=0;
 
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
 	if((err=TransmitStreamProcessor::init())) {
-		debugFatal("Could not allocate memory event ringbuffer (%d)",err);
+		debugFatal("Could not init (%p), err=(%d)",this,err);
 		return err;
 	}
+	
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n");
 
-
-	switch (m_framerate) {
-	case 32000:
-		syt_interval = 8;
-		fdf = IEC61883_FDF_SFC_32KHZ;
-		break;
-	case 44100:
-		syt_interval = 8;
-		fdf = IEC61883_FDF_SFC_44K1HZ;
-		break;
-	default:
-	case 48000:
-		syt_interval = 8;
-		fdf = IEC61883_FDF_SFC_48KHZ;
-		break;
-	case 88200:
-		syt_interval = 16;
-		fdf = IEC61883_FDF_SFC_88K2HZ;
-		break;
-	case 96000:
-		syt_interval = 16;
-		fdf = IEC61883_FDF_SFC_96KHZ;
-		break;
-	case 176400:
-		syt_interval = 32;
-		fdf = IEC61883_FDF_SFC_176K4HZ;
-		break;
-	case 192000:
-		syt_interval = 32;
-		fdf = IEC61883_FDF_SFC_192KHZ;
-		break;
-	}
+	
+	debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, FDF: %d, DBS: %d, SYT: %d\n",
+		     m_framerate,m_fdf,m_dimension,m_syt_interval);
 	
 	iec61883_cip_init (
 		&m_cip_status, 
 		IEC61883_FMT_AMDTP, 
-		fdf,
+		m_fdf,
 		m_framerate, 
-		m_dbs, 
-		syt_interval);
+		m_dimension, 
+		m_syt_interval);
 
 	// allocate the event buffer
 	if( !(m_event_buffer=freebob_ringbuffer_create(
@@ -121,9 +92,12 @@ int AmdtpTransmitStreamProcessor::init() {
 		return -1;
 // 		return -ENOMEM;
 	}
+	
+	// we should transfer the port buffer contents to the event buffer
+	int i=m_nb_buffers;
+	while(i--) transfer();
 
-	// call the parent init
-	return TransmitStreamProcessor::init();
+	return 0;
 }
 
 void AmdtpTransmitStreamProcessor::setVerboseLevel(int l) {
@@ -158,7 +132,8 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 	if ((freebob_ringbuffer_read(m_event_buffer,(char *)(data+8),read_size)) < 
 				read_size) 
 	{
-		debugWarning("Transmit buffer underrun\n");
+		debugWarning("Transmit buffer underrun (cycle %d, FC=%d, PC=%d)\n", 
+			     cycle, m_framecounter, m_handler->getPacketCount());
 		
 		// signal underrun
 // 		m_xruns++;
@@ -196,17 +171,47 @@ void AmdtpTransmitStreamProcessor::reset() {
 	TransmitStreamProcessor::reset();
 }
 
-void AmdtpTransmitStreamProcessor::prepare() {
+bool AmdtpTransmitStreamProcessor::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+	
+	switch (m_framerate) {
+	case 32000:
+		m_syt_interval = 8;
+		m_fdf = IEC61883_FDF_SFC_32KHZ;
+		break;
+	case 44100:
+		m_syt_interval = 8;
+		m_fdf = IEC61883_FDF_SFC_44K1HZ;
+		break;
+	default:
+	case 48000:
+		m_syt_interval = 8;
+		m_fdf = IEC61883_FDF_SFC_48KHZ;
+		break;
+	case 88200:
+		m_syt_interval = 16;
+		m_fdf = IEC61883_FDF_SFC_88K2HZ;
+		break;
+	case 96000:
+		m_syt_interval = 16;
+		m_fdf = IEC61883_FDF_SFC_96KHZ;
+		break;
+	case 176400:
+		m_syt_interval = 32;
+		m_fdf = IEC61883_FDF_SFC_176K4HZ;
+		break;
+	case 192000:
+		m_syt_interval = 32;
+		m_fdf = IEC61883_FDF_SFC_192KHZ;
+		break;
+	}
 
 	// prepare all non-device specific stuff
 	// i.e. the iso stream and the associated ports
 	TransmitStreamProcessor::prepare();
 
-	// after preparing, we should transfer the port buffer contents to the event buffer
-	int i=m_nb_buffers;
-	while(i--) transfer();
+	return true;
 
 }
 
@@ -335,6 +340,8 @@ AmdtpReceiveStreamProcessor::~AmdtpReceiveStreamProcessor() {
 
 int AmdtpReceiveStreamProcessor::init() {
 	int err=0;
+	
+	
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
@@ -428,13 +435,37 @@ void AmdtpReceiveStreamProcessor::reset() {
 	ReceiveStreamProcessor::reset();
 }
 
-void AmdtpReceiveStreamProcessor::prepare() {
+bool AmdtpReceiveStreamProcessor::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+	switch (m_framerate) {
+	case 32000:
+		m_syt_interval = 8;
+		break;
+	case 44100:
+		m_syt_interval = 8;
+		break;
+	default:
+	case 48000:
+		m_syt_interval = 8;
+		break;
+	case 88200:
+		m_syt_interval = 16;
+		break;
+	case 96000:
+		m_syt_interval = 16;
+		break;
+	case 176400:
+		m_syt_interval = 32;
+		break;
+	case 192000:
+		m_syt_interval = 32;
+		break;
+	}
 
 	// prepare all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	ReceiveStreamProcessor::prepare();
+	return ReceiveStreamProcessor::prepare();
 }
 
 int AmdtpReceiveStreamProcessor::transfer() {

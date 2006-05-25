@@ -129,8 +129,14 @@ protected:
 
 	// streaming stuff
 	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
-	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor2;
+	int m_receiveProcessorBandwidth;
+	
 	FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
+	int m_transmitProcessorBandwidth;
+	
+	// FIXME: remove this debug line
+	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor2;
+	int m_receiveProcessor2Bandwidth;
 
 
     DECLARE_DEBUG_MODULE;

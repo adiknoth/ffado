@@ -142,6 +142,28 @@ int StreamProcessorManager::getPortCount(enum Port::E_Direction direction) {
 	return count;
 }
 
+int StreamProcessorManager::registerStreamProcessors(IsoHandlerManager *m) {
+
+	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+		it != m_ReceiveProcessors.end();
+		++it ) {
+		debugOutput(DEBUG_LEVEL_VERBOSE,"Registering stream processor %p with isomanager\n",*it);
+		if (m->registerStream(*it)) {
+			debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register receive stream processor with the Iso manager\n");
+		}
+	}
+	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+		it != m_TransmitProcessors.end();
+		++it ) {
+		debugOutput(DEBUG_LEVEL_VERBOSE,"Registering stream processor %p with isomanager\n",*it);
+		if (m->registerStream(*it)) {
+			debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register transmit stream processor with the Iso manager\n");
+		}
+	}
+
+	return 0;
+}
+
 Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
 	int count=0;
 	int prevcount=0;
@@ -394,23 +416,33 @@ bool StreamProcessorManager::prepare() {
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
 		it != m_ReceiveProcessors.end();
 		++it ) {
-		if(!(*it)->setPortBuffersize(m_period)) {
-			debugOutputShort( DEBUG_LEVEL_NORMAL, " could not set buffer size...\n");
-			return false;
-			
+			if(!(*it)->setPortBuffersize(m_period)) {
+				debugOutputShort( DEBUG_LEVEL_NORMAL, " could not set buffer size (%p)...\n",(*it));
+				return false;
+				
+			}
+			if(!(*it)->prepare()) {
+				debugOutputShort( DEBUG_LEVEL_NORMAL, " could not prepare (%p)...\n",(*it));
+				return false;
+				
+			}
 		}
-	}
 
 	debugOutputShort( DEBUG_LEVEL_NORMAL, " Transmit processors...\n");
 	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
 		it != m_TransmitProcessors.end();
 		++it ) {
-		if(!(*it)->setPortBuffersize(m_period)) {
-			debugOutputShort( DEBUG_LEVEL_NORMAL, " could not set buffer size...\n");
-			return false;
+			if(!(*it)->setPortBuffersize(m_period)) {
+				debugOutputShort( DEBUG_LEVEL_NORMAL, " could not set buffer size (%p)...\n",(*it));
+				return false;
 			
+			}
+			if(!(*it)->prepare()) {
+				debugOutputShort( DEBUG_LEVEL_NORMAL, " could not prepare (%p)...\n",(*it));
+				return false;
+			
+			}
 		}
-	}
 
 	return true;
 }

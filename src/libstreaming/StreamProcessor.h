@@ -73,7 +73,7 @@ public:
 
 	virtual void reset(); // reset the streams & buffers (e.g. after xrun)
 
-	virtual void prepare(); // prepare the streams & buffers (e.g. prefill)
+	virtual bool prepare(); // prepare the streams & buffers (e.g. prefill)
 
 	virtual void dumpInfo();
 
