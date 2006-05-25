@@ -17,33 +17,35 @@
 
 noinst_LTLIBRARIES = libfreebobavc.la
 
-libfreebobavc_la_SOURCES =  				\
-		avc_connect.cpp 			\
+noinst_HEADERS = 				\
 		avc_connect.h 				\
-		avc_definitions.cpp 			\
 		avc_definitions.h 			\
-		avc_extended_cmd_generic.cpp		\
 		avc_extended_cmd_generic.h		\
-		avc_extended_plug_info.cpp		\
 		avc_extended_plug_info.h		\
-		avc_extended_stream_format.cpp 		\
 		avc_extended_stream_format.h 		\
 		avc_extended_subunit_info.h		\
+		avc_generic.h 				\
+		avc_plug_info.h 			\
+		avc_signal_source.h 			\
+		avc_subunit_info.h			\
+		avc_unit_info.h				\
+		ieee1394service.h       		\
+		serialize.h
+
+libfreebobavc_la_SOURCES =  				\
+		avc_connect.cpp 			\
+		avc_definitions.cpp 			\
+		avc_extended_cmd_generic.cpp		\
+		avc_extended_plug_info.cpp		\
+		avc_extended_stream_format.cpp 		\
 		avc_extended_subunit_info.cpp		\
 		avc_generic.cpp 			\
-		avc_generic.h 				\
 		avc_plug_info.cpp 			\
-		avc_plug_info.h 			\
 		avc_signal_source.cpp 			\
-		avc_signal_source.h 			\
 		avc_subunit_info.cpp			\
-		avc_subunit_info.h			\
 		avc_unit_info.cpp			\
-		avc_unit_info.h				\
 		ieee1394service.cpp			\
-		ieee1394service.h       		\
-		serialize.cpp				\
-		serialize.h
+		serialize.cpp				
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) $(LIBAVC1394_CFLAGS) \
 	-I$(top_srcdir)/src

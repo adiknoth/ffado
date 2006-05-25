@@ -17,13 +17,15 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 noinst_LTLIBRARIES = libfreebobstreaming.la
+noinst_HEADERS = 				\
+	cip.h freebob_connections.h messagebuffer.h \
+	ringbuffer.h freebob_streaming_private.h freebob_debug.h thread.h \
+	watchdog.h handlers.h
 
 libfreebobstreaming_la_SOURCES =  			\
 	cip.c freebob_streaming.c messagebuffer.c \
 	freebob_connections.c ringbuffer.c thread.c \
-	cip.h freebob_connections.h messagebuffer.h \
-	ringbuffer.h freebob_streaming_private.h freebob_debug.h thread.h \
-	watchdog.c watchdog.h handlers.c handlers.h
+	watchdog.c handlers.c 
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)
