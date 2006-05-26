@@ -118,6 +118,9 @@ typedef struct freebob_options {
 	/* direction map */
 	int directions;
 
+	/* verbosity */
+	int verbose;
+
 } freebob_options_t;
 
 /**

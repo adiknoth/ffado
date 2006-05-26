@@ -79,6 +79,8 @@ static int freebob_am824_xmit(char *data,
 							  freebob_connection_t *connection);
 			       
 
+int g_verbose=0;
+
 freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, freebob_options_t options) {
 	int i;
 	int c;
@@ -86,7 +88,8 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	freebob_device_t* dev=NULL;
 	
 	freebob_messagebuffer_init();
-		
+	g_verbose=options.verbose;
+
 	assert(device_info);
 	
 	printMessage("FreeBob Streaming Device Init\n");
@@ -135,7 +138,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		return NULL;
 	}
 
-	if (freebob_discover_devices(dev->fb_handle, 0)!=0) {
+	if (freebob_discover_devices(dev->fb_handle, options.verbose)!=0) {
 		freebob_destroy_handle(dev->fb_handle);
 		free(dev);
 		printError("FREEBOB: device discovering failed\n");

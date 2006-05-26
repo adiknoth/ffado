@@ -40,6 +40,8 @@ extern "C" {
 #include <sys/time.h>
 #include "messagebuffer.h"
 
+extern int g_verbose;
+
 unsigned long getCurrentUTime();
 
 static unsigned long debugGetCurrentUTime() {
@@ -103,8 +105,10 @@ static unsigned long debugGetCurrentUTime() {
 #else
 	#define DEBUG_LEVEL
 	
-	#define printMessage(format, args...) freebob_messagebuffer_add( "FREEBOB MSG: " format, ##args )
-	#define printError(format, args...)   freebob_messagebuffer_add( "FREEBOB ERR: " format, ##args )
+	#define printMessage(format, args...) if(g_verbose) freebob_messagebuffer_add( \
+	                                      "LibFreeBob MSG: " format, ##args )
+
+	#define printError(format, args...)   freebob_messagebuffer_add( "LibFreeBob ERR: " format, ##args )
 	
 	#define printEnter() 
 	#define printExit() 
