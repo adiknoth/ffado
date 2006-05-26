@@ -81,7 +81,7 @@ ConfigRom::initialize()
                                  5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
                                  &csr_info );
     if (!m_csr || csr1212_parse_csr( m_csr ) != CSR1212_SUCCESS) {
-        debugError( "Could not parse config rom" );
+        debugError( "Could not parse config rom of node %d on port %d", m_nodeId, m_1394Service->getPort() );
         if (m_csr) {
             csr1212_destroy_csr(m_csr);
             m_csr = 0;
@@ -184,7 +184,7 @@ busRead( struct csr1212_csr* csr,
                                   length,
                                   ( quadlet_t* )buffer) )
     {
-        cerr << "ConfigRom: Read failed" << endl;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "ConfigRom: Read failed\n");
         return -1;
     }
 

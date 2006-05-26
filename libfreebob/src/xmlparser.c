@@ -711,9 +711,9 @@ freebob_xmlparse_get_connection_info( xmlDocPtr doc,
 		
 	int nb_devices=freebob_xmlparse_get_nb_devices(doc, base);
 		
-	fprintf( stderr,
+/*	fprintf( stderr,
 		 "Nb devices %d\n",
-		 nb_devices );
+		 nb_devices );*/
 					
 	for(device_nr=0;device_nr<nb_devices;device_nr++) {
 		
