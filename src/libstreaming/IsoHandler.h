@@ -74,10 +74,11 @@ class IsoHandler
 		virtual ~IsoHandler()
 		{}
 
-	    bool initialize();
+	    	virtual bool init();
+	    	
 		int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); else return -1; };
 		
-		void setVerboseLevel(int l) { setDebugLevel( l ); };
+		void setVerboseLevel(int l);
 
 		// no setter functions, because those would require a re-init
 		unsigned int getMaxPacketSize() { return m_max_packet_size;};
@@ -92,8 +93,9 @@ class IsoHandler
 
 		virtual enum EHandlerType getType() = 0;
 
-		virtual int start(int cycle) = 0;
-		void stop();
+		virtual bool start(int cycle) = 0;
+		virtual bool stop();
+		
 		int getFileDescriptor() { return raw1394_get_fd(m_handle);};
 
 		void dumpInfo();
@@ -101,16 +103,17 @@ class IsoHandler
 		bool inUse() {return (m_Client != 0) ;};
 		virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
 
-		virtual int registerStream(IsoStream *);
-		virtual int unregisterStream(IsoStream *);
+		virtual bool registerStream(IsoStream *);
+		virtual bool unregisterStream(IsoStream *);
 
 		int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
+		int getPort() {return m_port;};
 
 		virtual bool prepare() = 0;
 
 	protected:
 	    raw1394handle_t m_handle;
-    	int             m_port;
+    		int             m_port;
 		unsigned int    m_buf_packets;
 		unsigned int    m_max_packet_size;
 		int             m_irq_interval;
@@ -131,7 +134,7 @@ class IsoHandler
 };
 
 /*!
-\brief ISO receive handler class
+\brief ISO receive handler class (not multichannel) 
 */
 
 class IsoRecvHandler : public IsoHandler 
@@ -142,14 +145,14 @@ class IsoRecvHandler : public IsoHandler
 		IsoRecvHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq);
 		virtual ~IsoRecvHandler();
 
-		bool initialize();
+		bool init();
 	
 		enum EHandlerType getType() { return EHT_Receive;};
 
 // 		int registerStream(IsoStream *);
 // 		int unregisterStream(IsoStream *);
 
-		int start(int cycle);
+		bool start(int cycle);
 
 		bool prepare();
 
@@ -176,15 +179,15 @@ class IsoRecvHandler : public IsoHandler
 class IsoXmitHandler  : public IsoHandler 
 {
    	public:
-        IsoXmitHandler(int port);
+		IsoXmitHandler(int port);
 		IsoXmitHandler(int port, unsigned int buf_packets, 
-		               unsigned int max_packet_size, int irq);
+			       unsigned int max_packet_size, int irq);
 		IsoXmitHandler(int port, unsigned int buf_packets, 
-		               unsigned int max_packet_size, int irq, 
-		               enum raw1394_iso_speed speed);
-        virtual ~IsoXmitHandler();
+			       unsigned int max_packet_size, int irq, 
+			       enum raw1394_iso_speed speed);
+        	virtual ~IsoXmitHandler();
 
-	    bool initialize();
+		bool init();
 		
 		enum EHandlerType getType() { return EHT_Transmit;};
 
@@ -194,7 +197,7 @@ class IsoXmitHandler  : public IsoHandler
 		unsigned int getPreBuffers() {return m_prebuffers;};
 		void setPreBuffers(unsigned int n) {m_prebuffers=n;};
 
-		int start(int cycle);
+		bool start(int cycle);
 
 		bool prepare();
 

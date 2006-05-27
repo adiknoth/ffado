@@ -54,11 +54,11 @@ class IsoStream
 			EST_Transmit
 		};
 
-        IsoStream(enum EStreamType type, int channel) 
-		   : m_type(type), m_channel(channel), m_port(0), m_handler(0)
+        IsoStream(enum EStreamType type) 
+		   : m_type(type), m_channel(-1), m_port(0), m_handler(0)
         {};
-        IsoStream(enum EStreamType type, int channel, int port) 
-		   : m_type(type), m_channel(channel), m_port(port), m_handler(0)
+        IsoStream(enum EStreamType type, int port) 
+		   : m_type(type), m_channel(-1), m_port(port), m_handler(0)
         {};
         virtual ~IsoStream()
         {};
@@ -66,7 +66,7 @@ class IsoStream
 		virtual void setVerboseLevel(int l) { setDebugLevel( l ); };
 
 		int getChannel() {return m_channel;};
-		int setChannel(int c);
+		bool setChannel(int c);
 
 		int getPort() {return m_port;};
 
@@ -75,7 +75,7 @@ class IsoStream
 		virtual unsigned int getPacketsPerPeriod() {return 1;};
 		virtual unsigned int getMaxPacketSize() {return 1024;}; //FIXME: arbitrary
 		
-		virtual int init();
+		virtual bool init();
 
 		virtual int 
 			putPacket(unsigned char *data, unsigned int length, 
@@ -91,12 +91,12 @@ class IsoStream
 		int getNodeId();
 			
 
-		void reset();
-		void prepare();	
+		virtual bool reset();
+		virtual bool prepare();	
 
 	protected:
 
-		void setHandler( IsoHandler * h) {m_handler=h;};
+		void setHandler( IsoHandler * h) ;
 		void clearHandler() {m_handler=0;};
 
 		enum EStreamType m_type;
@@ -104,42 +104,6 @@ class IsoStream
 		int m_port;
 
 		IsoHandler *m_handler;
-
-		DECLARE_DEBUG_MODULE;
-
-};
-
-class IsoStreamBuffered : public IsoStream
-{
-
-    public:
-
-        IsoStreamBuffered(int headersize,int buffersize, int max_packetsize, enum EStreamType type, int channel) 
-		   : IsoStream(type,channel), m_headersize(headersize), m_buffersize(buffersize), m_max_packetsize(max_packetsize), buffer(0)
-        {};
-        virtual ~IsoStreamBuffered();
-
-		void setVerboseLevel(int l);
-
-		int init();
-
-		int 
-			putPacket(unsigned char *data, unsigned int length, 
-		              unsigned char channel, unsigned char tag, unsigned char sy, 
-			          unsigned int cycle, unsigned int dropped);
-		int 
-			getPacket(unsigned char *data, unsigned int *length,
-		              unsigned char *tag, unsigned char *sy,
-		              int cycle, unsigned int dropped, unsigned int max_length);
-		int getBufferFillPackets();
-		int getBufferFillPayload();
-
-	protected:
-		int m_headersize;
-		int m_buffersize;
-		int m_max_packetsize;
-
-		PacketBuffer *buffer;
 
 		DECLARE_DEBUG_MODULE;
 

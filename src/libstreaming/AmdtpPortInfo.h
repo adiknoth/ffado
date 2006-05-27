@@ -32,7 +32,14 @@
 #include <string>
 
 namespace FreebobStreaming {
+/*!
+\brief Class containing the stream information for an AMDTP channel
 
+ Contains the information that maps the port to an AMDTP stream position (i.e. channel)
+ this allows the AMDTP stream demultiplexer to find the channel associated 
+ to this port.
+ 
+*/
 class AmdtpPortInfo {
 
 public:

@@ -97,17 +97,30 @@ Port::Port(std::string name, enum E_BufferType type, unsigned int buffsize,
 // 
 // }
 
+void Port::setVerboseLevel(int l) {
+	setDebugLevel(l);
+}
+
+bool Port::setDataType(enum E_DataType datatype) {
+
+	m_datatype=datatype;
+	return eventSizeChanged();
+
+}
+
 bool Port::setBufferSize(unsigned int newsize) {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Setting buffersize to %d for port %s\n",newsize,m_Name.c_str());
 
 	m_buffersize=newsize;
-	if(m_buffer_attached) {
-		return true;
-	}
+	return true;
+	
+// 	if(m_buffer_attached) {
+// 		return true;
+// 	}
 
-	freeInternalBuffer();
+// 	freeInternalBuffer();
 
-	return allocateInternalBuffer();
+// 	return allocateInternalBuffer();
 
 }
 
@@ -157,6 +170,24 @@ unsigned int Port::getEventSize() {
 		default:
 			return 0;
 	}
+}
+
+/**
+ * this function should update the buffers if the event size changes
+ *
+ * \return true if there was no error
+ */
+bool Port::eventSizeChanged() {
+// 	if(m_buffer_attached) {
+// 		return true; // nothing to do, external buffer should be ok
+// 	}
+// 
+// 	freeInternalBuffer();
+// 
+// 	return allocateInternalBuffer();
+	return true;
+	
+
 }
 
 }

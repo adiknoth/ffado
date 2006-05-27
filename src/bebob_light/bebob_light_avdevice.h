@@ -58,7 +58,7 @@ public:
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
 
-	virtual int getStreamProcessorCount();
+	virtual int getStreamCount();
 	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
 	virtual bool prepare();

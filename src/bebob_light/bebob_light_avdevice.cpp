@@ -1698,7 +1698,7 @@ AvDevice::getConfigRom() const
 void
 AvDevice::showDevice() const
 {
-    printf( "showDevice: not implemented\n" );
+    debugWarning( "showDevice: not implemented\n" );
 }
 
 bool
@@ -1718,12 +1718,16 @@ AvDevice::prepare() {
     }
 
 	int samplerate=outputPlug->getSampleRate();
-	const int channel=-1; // this can only be known when the connection is made
 	m_receiveProcessor=new FreebobStreaming::AmdtpReceiveStreamProcessor(
-	                         channel,
 	                         m_1394Service->getPort(),
 	                         samplerate,
 	                         outputPlug->getNrOfChannels());
+
+	if(!m_receiveProcessor->init()) {
+		debugFatal("Could not initialize receive processor!\n");
+		return false;
+	
+	}
 
 	if (!addPlugToProcessor(*outputPlug,m_receiveProcessor, 
 		FreebobStreaming::AmdtpAudioPort::E_Capture)) {
@@ -1749,10 +1753,15 @@ AvDevice::prepare() {
 	// do the transmit processor
 	samplerate=inputPlug->getSampleRate();
 	m_transmitProcessor=new FreebobStreaming::AmdtpTransmitStreamProcessor(
-	                         channel,
 	                         m_1394Service->getPort(),
 	                         samplerate,
 	                         inputPlug->getNrOfChannels());
+	                         
+	if(!m_transmitProcessor->init()) {
+		debugFatal("Could not initialize transmit processor!\n");
+		return false;
+	
+	}
 
 	if (!addPlugToProcessor(*inputPlug,m_transmitProcessor, 
 		FreebobStreaming::AmdtpAudioPort::E_Playback)) {
@@ -1820,11 +1829,11 @@ AvDevice::addPlugToProcessor(
 			}
 
 			if (!p) {
-				printf("Skipped port %s\n",channelInfo->m_name.c_str());
+				debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->m_name.c_str());
 			} else {
 		
 				if (processor->addPort(p)) {
-					printf("Could not register port with stream processor\n");
+					debugWarning("Could not register port with stream processor\n");
 					return false;
 				}
 			}
@@ -1834,9 +1843,8 @@ AvDevice::addPlugToProcessor(
 }
 
 int 
-AvDevice::getStreamProcessorCount() {
+AvDevice::getStreamCount() {
  	return 2; // one receive, one transmit
-  	return 1; // only receive for the moment
 }
 
 FreebobStreaming::StreamProcessor *

@@ -33,15 +33,17 @@
 
 namespace FreebobStreaming {
 
-class IsoHandlerManager;
 class StreamProcessorManager;
-
+/*!
+\brief Runs the isomanager and the processor manager
+ 
+*/
 class StreamRunner : public FreebobRunnableInterface {
 
 public:
 
-	StreamRunner(IsoHandlerManager *h, StreamProcessorManager *p) 
-	    : m_isoManager(h), m_processorManager(p)
+	StreamRunner(StreamProcessorManager *p) 
+	    : m_processorManager(p)
 	    {};
 
 	virtual ~StreamRunner();
@@ -54,7 +56,6 @@ public:
 
 protected:
 
-	IsoHandlerManager *m_isoManager;
 	StreamProcessorManager *m_processorManager;
 
     DECLARE_DEBUG_MODULE;

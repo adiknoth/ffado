@@ -37,6 +37,14 @@ namespace FreebobStreaming {
 
 class StreamProcessorManager;
 
+/*!
+\brief Class providing a generic interface for Stream Processors
+
+ A stream processor multiplexes or demultiplexes an ISO stream into a 
+ collection of ports. This class should be subclassed, and the relevant
+ functions should be overloaded.
+ 
+*/
 class StreamProcessor : public IsoStream, 
                         public PortManager {
 
@@ -48,7 +56,7 @@ public:
 		E_Transmit
 	};
 
-	StreamProcessor(enum IsoStream::EStreamType type, int channel, int port, int framerate);
+	StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate);
 	virtual ~StreamProcessor();
 
 	virtual int 
@@ -66,18 +74,23 @@ public:
 
 	bool isOnePeriodReady() { return (m_framecounter > m_period); };
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
-	void decrementFrameCounter() {m_framecounter -= m_period;};
+	void decrementFrameCounter();
+	void resetFrameCounter();
 
+	bool isRunning(); ///< returns true if there is some stream data processed
+	void enable(); ///< enable the stream processing 
+	void disable() {m_disabled=true;}; ///< disable the stream processing 
+	bool isEnabled() {return !m_disabled;};
 
-	virtual int transfer(); // transfer the buffer contents from/to client
+	virtual bool transfer(); // transfer the buffer contents from/to client
 
-	virtual void reset(); // reset the streams & buffers (e.g. after xrun)
+	virtual bool reset(); // reset the streams & buffers (e.g. after xrun)
 
 	virtual bool prepare(); // prepare the streams & buffers (e.g. prefill)
 
 	virtual void dumpInfo();
 
-	virtual int init();
+	virtual bool init();
 
  	virtual void setVerboseLevel(int l);
 
@@ -91,21 +104,29 @@ protected:
 	unsigned int m_period; // cached from manager->getPeriod()
 
 	unsigned int m_xruns;
-	unsigned int m_framecounter;
+	int m_framecounter;
 
 	unsigned int m_framerate;
 
 	StreamProcessorManager *m_manager;
+
+	bool m_running;
+	bool m_disabled;
 
      DECLARE_DEBUG_MODULE;
 
 
 };
 
+/*!
+\brief Class providing a generic interface for receive Stream Processors
+
+ 
+*/
 class ReceiveStreamProcessor : public StreamProcessor {
 
 public:
-	ReceiveStreamProcessor(int channel, int port, int framerate);
+	ReceiveStreamProcessor(int port, int framerate);
 
 	virtual ~ReceiveStreamProcessor();
 
@@ -124,10 +145,14 @@ protected:
 
 };
 
+/*!
+\brief Class providing a generic interface for receive Stream Processors
+
+*/
 class TransmitStreamProcessor : public StreamProcessor {
 
 public:
-	TransmitStreamProcessor(int channel, int port, int framerate);
+	TransmitStreamProcessor(int port, int framerate);
 
 	virtual ~TransmitStreamProcessor();
 

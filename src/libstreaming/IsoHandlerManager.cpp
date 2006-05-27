@@ -110,11 +110,13 @@ bool IsoHandlerManager::prepare()
 
 
 
-int IsoHandlerManager::registerHandler(IsoHandler *handler)
+bool IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(handler);
+	
 	m_IsoHandlers.push_back(handler);
+	
 	handler->setVerboseLevel(getDebugLevel());
 
 	// rebuild the fd map for poll()'ing.
@@ -122,29 +124,30 @@ int IsoHandlerManager::registerHandler(IsoHandler *handler)
 
 }
 
-int IsoHandlerManager::unregisterHandler(IsoHandler *handler)
+bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(handler);
 
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
-        if ( *it == handler ) {
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
+		if ( *it == handler ) {
 			// erase the iso handler from the list
-            m_IsoHandlers.erase(it);
-
+			m_IsoHandlers.erase(it);
 			// rebuild the fd map for poll()'ing.
 			return rebuildFdMap();
-        }
-    }
+		}
+	}
 
-	return -1; //not found
+	debugFatal("Could not find handler (%p)\n", handler);
+	
+	return false; //not found
 
 }
 
-int IsoHandlerManager::rebuildFdMap() {
+bool IsoHandlerManager::rebuildFdMap() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	int i=0;
 
@@ -158,73 +161,104 @@ int IsoHandlerManager::rebuildFdMap() {
 	m_poll_fds   = (struct pollfd *) calloc (m_poll_nfds, sizeof (struct pollfd));
 	if(!m_poll_fds) {
 		debugFatal("Could not allocate memory for poll FD array\n");
-		return -1;
+		return false;
 	}
 
 	// fill the fd map
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
 		m_poll_fds[i].fd=(*it)->getFileDescriptor();
 		m_poll_fds[i].events = POLLIN;
 		i++;
-    }
+	}
 
-	return 0;
+	return true;
 }
 
-
-// FIXME: currently there is a one-to-one mapping
-//        between streams and handlers, this is not ok for 
-//        multichannel receive
-int IsoHandlerManager::registerStream(IsoStream *stream)
+/**
+ * Registers an IsoStream with the IsoHandlerManager.
+ *
+ * If nescessary, an IsoHandler is created to handle this stream.
+ * Once an IsoStream is registered to the handler, it will be included
+ * in the ISO streaming cycle (i.e. receive/transmit of it will occur).
+ *
+ * @param stream the stream to register
+ * @return true if registration succeeds
+ *
+ * \todo : currently there is a one-to-one mapping
+ *        between streams and handlers, this is not ok for 
+ *        multichannel receive
+ */
+bool IsoHandlerManager::registerStream(IsoStream *stream)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(stream);
 
 	// make sure the stream isn't already attached to a handler
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
 		if((*it)->isStreamRegistered(stream)) {
-			debugOutput( DEBUG_LEVEL_VERBOSE, "stream already registered!\n");
+			debugWarning( "stream already registered!\n");
 			(*it)->unregisterStream(stream);
+			
 		}
-    }
-
+	}
+	
 	// clean up all handlers that aren't used
 	pruneHandlers();
 
 	// allocate a handler for this stream
 	if (stream->getType()==IsoStream::EST_Receive) {
-		IsoRecvHandler *h = new IsoRecvHandler(stream->getPort());
+		// setup the optimal parameters for the raw1394 ISO buffering
+		unsigned int packets_per_period=stream->getPacketsPerPeriod();
+		// hardware interrupts occur when one DMA block is full, and the size of one DMA
+		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
+		// occurs at a period boundary (optimal CPU use)
+		// NOTE: try and use 2 interrupts per period for better latency.
+		unsigned int max_packet_size=getpagesize() / packets_per_period * 2;
+		int irq_interval=packets_per_period / 2;
+
+		if (max_packet_size < stream->getMaxPacketSize()) {
+			max_packet_size=stream->getMaxPacketSize();
+		}
+
+		/* the receive buffer size doesn't matter for the latency,
+		   but it has a minimal value in order for libraw to operate correctly (300) */
+		int buffers=400;
+		
+		// create the actual handler
+		IsoRecvHandler *h = new IsoRecvHandler(stream->getPort(), buffers,
+		                                       max_packet_size, irq_interval);
+
 		debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoRecvHandler\n");
 
 		if(!h) {
 			debugFatal("Could not create IsoRecvHandler\n");
-			return -1;
+			return false;
 		}
 
 		h->setVerboseLevel(getDebugLevel());
 
 		// init the handler
-		if(!h->initialize()) {
+		if(!h->init()) {
 			debugFatal("Could not initialize receive handler\n");
-			return -1;
+			return false;
 		}
 
 		// register the stream with the handler
-		if(h->registerStream(stream)) {
+		if(!h->registerStream(stream)) {
 			debugFatal("Could not register receive stream with handler\n");
-			return -1;
+			return false;
 		}
 
 		// register the handler with the manager
-		if(this->registerHandler(h)) {
+		if(!registerHandler(h)) {
 			debugFatal("Could not register receive handler with manager\n");
-			return -1;
+			return false;
 		}
 		debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
 	}
@@ -257,27 +291,27 @@ int IsoHandlerManager::registerStream(IsoStream *stream)
 
 		if(!h) {
 			debugFatal("Could not create IsoXmitHandler\n");
-			return -1;
+			return false;
 		}
 
 		h->setVerboseLevel(getDebugLevel());
 
 		// init the handler
-		if(!h->initialize()) {
+		if(!h->init()) {
 			debugFatal("Could not initialize transmit handler\n");
-			return -1;
+			return false;
 		}
 
 		// register the stream with the handler
-		if(h->registerStream(stream)) {
+		if(!h->registerStream(stream)) {
 			debugFatal("Could not register transmit stream with handler\n");
-			return -1;
+			return false;
 		}
 
 		// register the handler with the manager
-		if(this->registerHandler(h)) {
+		if(!registerHandler(h)) {
 			debugFatal("Could not register transmit handler with manager\n");
-			return -1;
+			return false;
 		}
 		debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
 
@@ -287,41 +321,46 @@ int IsoHandlerManager::registerStream(IsoStream *stream)
 	debugOutput( DEBUG_LEVEL_VERBOSE, " %d streams, %d handlers registered\n",
 	                                  m_IsoStreams.size(), m_IsoHandlers.size());
 
-	return 0;
+	return true;
 }
 
-int IsoHandlerManager::unregisterStream(IsoStream *stream)
+bool IsoHandlerManager::unregisterStream(IsoStream *stream)
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(stream);
 
 	// make sure the stream isn't attached to a handler anymore
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
 		if((*it)->isStreamRegistered(stream)) {
-			(*it)->unregisterStream(stream);
+			if(!(*it)->unregisterStream(stream)) {
+				debugOutput( DEBUG_LEVEL_VERBOSE, " could not unregister stream (%p) from handler (%p)...\n",stream,*it);
+				return false;
+			}
+			
 			debugOutput( DEBUG_LEVEL_VERBOSE, " unregistered stream (%p) from handler (%p)...\n",stream,*it);
 		}
-    }
+	}
 
 	// clean up all handlers that aren't used
 	pruneHandlers();
 
 	// remove the stream from the registered streams list
-    for ( IsoStreamVectorIterator it = m_IsoStreams.begin();
-          it != m_IsoStreams.end();
-          ++it )
-    {
-        if ( *it == stream ) { 
-            m_IsoStreams.erase(it);
+	for ( IsoStreamVectorIterator it = m_IsoStreams.begin();
+	  it != m_IsoStreams.end();
+	  ++it )
+	{
+		if ( *it == stream ) { 
+			m_IsoStreams.erase(it);
+			
 			debugOutput( DEBUG_LEVEL_VERBOSE, " deleted stream (%p) from list...\n", *it);
-			return 0;
-        }
-    }
+			return true;
+		}
+	}
 
-	return -1; //not found
+	return false; //not found
 
 }
 
@@ -350,33 +389,41 @@ void IsoHandlerManager::pruneHandlers() {
 
 }
 
-int IsoHandlerManager::startHandlers() {
+bool IsoHandlerManager::startHandlers() {
 	return startHandlers(-1);
 }
 
-int IsoHandlerManager::startHandlers(int cycle) {
+bool IsoHandlerManager::startHandlers(int cycle) {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
 		debugOutput( DEBUG_LEVEL_VERBOSE, " starting handler (%p)\n",*it);
-		(*it)->start(cycle);
-    }
-	return 0;
+		if(!(*it)->start(cycle)) {
+			debugOutput( DEBUG_LEVEL_VERBOSE, " could not start handler (%p)\n",*it);
+			return false;
+		}
+	}
+	
+	return true;
 }
 
-void IsoHandlerManager::stopHandlers() {
+bool IsoHandlerManager::stopHandlers() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
 		debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
-		(*it)->stop();
-    }
+		if(!(*it)->stop()){
+			debugOutput( DEBUG_LEVEL_VERBOSE, " could not start handler (%p)\n",*it);
+			return false;
+		}
+	}
+	return true;
 }
 
 void IsoHandlerManager::setVerboseLevel(int i) {

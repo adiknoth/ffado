@@ -184,7 +184,7 @@ busRead( struct csr1212_csr* csr,
                                   length,
                                   ( quadlet_t* )buffer) )
     {
-        cerr << "ConfigRom: Read failed" << endl;
+//         debugOutput( DEBUG_LEVEL_VERBOSE, "ConfigRom: Read failed\n");
         return -1;
     }
 

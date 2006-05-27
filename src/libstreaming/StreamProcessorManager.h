@@ -40,10 +40,15 @@
 namespace FreebobStreaming {
 
 class StreamProcessor;
+class IsoHandlerManager;
+
 typedef std::vector<StreamProcessor *> StreamProcessorVector;
 typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 
-
+/*!
+\brief Manages a collection of StreamProcessors and provides a synchronisation interface
+ 
+*/
 class StreamProcessorManager :
                         public FreebobRunnableInterface {
 
@@ -54,15 +59,15 @@ public:
 	StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
 	virtual ~StreamProcessorManager();
 
-	int initialize(); // to be called immediately after the construction
-	bool prepare(); // to be called after the processors are registered
+	bool init(); ///< to be called immediately after the construction
+	bool prepare(); ///< to be called after the processors are registered
 
 	virtual void setVerboseLevel(int l);
 	void dumpInfo();
 
 	// this is the setup API
-	int unregisterProcessor(StreamProcessor *processor);
-	int registerProcessor(StreamProcessor *processor);
+	bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
+	bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
 	void setPeriodSize(unsigned int period);
 	void setPeriodSize(unsigned int period, unsigned int nb_buffers);
@@ -79,15 +84,15 @@ public:
 	bool xrunOccurred();
 	int getXrunCount() {return m_xruns;};
 
-	int waitForPeriod(); // wait for the next period
+	bool waitForPeriod(); ///< wait for the next period
 
-	int transfer(); // transfer the buffer contents from/to client
-	int transfer(enum StreamProcessor::EProcessorType); // transfer the buffer contents from/to client
+	bool transfer(); ///< transfer the buffer contents from/to client
+	bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
 
-	void reset(); // reset the streams & buffers (e.g. after xrun)
+	bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
-	int registerStreamProcessors(IsoHandlerManager *m);
-
+	bool start();
+	bool stop();
 
 	// the ISO-side functions
 protected:
@@ -113,7 +118,8 @@ protected:
 	unsigned int m_nb_buffers;
 	unsigned int m_period;
 	unsigned int m_xruns;
-
+	
+	IsoHandlerManager *m_isoManager;
 
     DECLARE_DEBUG_MODULE;
 

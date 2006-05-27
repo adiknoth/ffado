@@ -41,8 +41,8 @@ IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEB
 
 
 /* transmit */
-AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int channel, int port, int framerate, int dimension)
-	: TransmitStreamProcessor(channel, port, framerate), m_dimension(dimension) {
+AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framerate, int dimension)
+	: TransmitStreamProcessor(port, framerate), m_dimension(dimension) {
 
 
 }
@@ -52,52 +52,19 @@ AmdtpTransmitStreamProcessor::~AmdtpTransmitStreamProcessor() {
 	free(m_cluster_buffer);
 }
 
-int AmdtpTransmitStreamProcessor::init() {
-	int err=0;
+bool AmdtpTransmitStreamProcessor::init() {
 
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n");
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
-	if((err=TransmitStreamProcessor::init())) {
-		debugFatal("Could not init (%p), err=(%d)",this,err);
-		return err;
+	if(!TransmitStreamProcessor::init()) {
+		debugFatal("Could not do base class init (%p)\n",this);
+		return false;
 	}
 	
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n");
 
-	
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, FDF: %d, DBS: %d, SYT: %d\n",
-		     m_framerate,m_fdf,m_dimension,m_syt_interval);
-	
-	iec61883_cip_init (
-		&m_cip_status, 
-		IEC61883_FMT_AMDTP, 
-		m_fdf,
-		m_framerate, 
-		m_dimension, 
-		m_syt_interval);
-
-	// allocate the event buffer
-	if( !(m_event_buffer=freebob_ringbuffer_create(
-			(m_dimension * m_nb_buffers * m_period) * sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate memory event ringbuffer");
-// 		return -ENOMEM;
-		return -1;
-	}
-
-	// allocate the temporary cluster buffer
-	if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate temporary cluster buffer");
-		freebob_ringbuffer_free(m_event_buffer);
-		return -1;
-// 		return -ENOMEM;
-	}
-	
-	// we should transfer the port buffer contents to the event buffer
-	int i=m_nb_buffers;
-	while(i--) transfer();
-
-	return 0;
+	return true;
 }
 
 void AmdtpTransmitStreamProcessor::setVerboseLevel(int l) {
@@ -112,15 +79,30 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 
 	struct iec61883_packet *packet = (struct iec61883_packet *) data;
 	
+	// signal that we are running (a transmit stream is always 'runnable')
+	m_running=true;
+	
+	// don't process the stream when it is not enabled.
+	// however, we do have to generate (semi) valid packets
+	// that means that we'll send NODATA packets FIXME: check!!
+	if(m_disabled) {
+		iec61883_cip_fill_header_nodata(getNodeId(), &m_cip_status, packet);
+		*length = 0; // this is to disable sending
+		*tag = IEC61883_TAG_WITH_CIP;
+		*sy = 0;
+		return (int)RAW1394_ISO_OK;
+	}
+		
 	// construct the packet cip
 	int nevents = iec61883_cip_fill_header (getNodeId(), &m_cip_status, packet);
 
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 
 	if (!(nevents > 0)) {
+		
 		if (m_cip_status.mode == IEC61883_MODE_BLOCKING_EMPTY) {
 			*length = 8;
-			return (int)RAW1394_ISO_OK;
+			return (int)RAW1394_ISO_OK ;
 		}
 		else {
 			nevents = m_cip_status.syt_interval;
@@ -136,7 +118,8 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 			     cycle, m_framecounter, m_handler->getPacketCount());
 		
 		// signal underrun
-// 		m_xruns++;
+		// FIXME: underrun signaling turned off!!
+		m_xruns++;
 
 		retval=RAW1394_ISO_DEFER;
 		*length=0;
@@ -159,7 +142,7 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 
 }
 
-void AmdtpTransmitStreamProcessor::reset() {
+bool AmdtpTransmitStreamProcessor::reset() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
@@ -168,12 +151,19 @@ void AmdtpTransmitStreamProcessor::reset() {
 	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	TransmitStreamProcessor::reset();
+	return TransmitStreamProcessor::reset();
 }
 
 bool AmdtpTransmitStreamProcessor::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+	
+	// prepare all non-device specific stuff
+	// i.e. the iso stream and the associated ports
+	if(!TransmitStreamProcessor::prepare()) {
+		debugFatal("Could not prepare base class\n");
+		return false;
+	}
 	
 	switch (m_framerate) {
 	case 32000:
@@ -206,16 +196,53 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 		m_fdf = IEC61883_FDF_SFC_192KHZ;
 		break;
 	}
+	
+	iec61883_cip_init (
+		&m_cip_status, 
+		IEC61883_FMT_AMDTP, 
+		m_fdf,
+		m_framerate, 
+		m_dimension, 
+		m_syt_interval);
 
-	// prepare all non-device specific stuff
-	// i.e. the iso stream and the associated ports
-	TransmitStreamProcessor::prepare();
+	// allocate the event buffer
+	if( !(m_event_buffer=freebob_ringbuffer_create(
+			(m_dimension * m_nb_buffers * m_period) * sizeof(quadlet_t)))) {
+		debugFatal("Could not allocate memory event ringbuffer");
+// 		return -ENOMEM;
+		return false;
+	}
+
+	// allocate the temporary cluster buffer
+	if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
+		debugFatal("Could not allocate temporary cluster buffer");
+		freebob_ringbuffer_free(m_event_buffer);
+		return false;
+// 		return -ENOMEM;
+	}
+	
+	// we should transfer the port buffer contents to the event buffer
+	int i=m_nb_buffers;
+	while(i--) {
+		if(!transfer()) {
+			debugFatal("Could not prefill transmit stream\n");
+			return false;
+		}
+	}
+	
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, FDF: %d, DBS: %d, SYT: %d\n",
+		     m_framerate,m_fdf,m_dimension,m_syt_interval);
+	debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
+		     m_period,m_nb_buffers);
+	debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
+		     m_port,m_channel);
 
 	return true;
 
 }
 
-int AmdtpTransmitStreamProcessor::transfer() {
+bool AmdtpTransmitStreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 	// TODO: improve
@@ -231,7 +258,7 @@ int AmdtpTransmitStreamProcessor::transfer() {
 
 	free(dummybuffer);
 
-	return 0;
+	return true;
 }
 /* 
  * write received events to the stream ringbuffers.
@@ -326,8 +353,8 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents(AmdtpAudioPort *p, quad
 
 /* --------------------- RECEIVE ----------------------- */
 
-AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int channel, int port, int framerate, int dimension)
-	: ReceiveStreamProcessor(channel, port, framerate), m_dimension(dimension) {
+AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int framerate, int dimension)
+	: ReceiveStreamProcessor(port, framerate), m_dimension(dimension) {
 
 
 }
@@ -338,34 +365,19 @@ AmdtpReceiveStreamProcessor::~AmdtpReceiveStreamProcessor() {
 
 }
 
-int AmdtpReceiveStreamProcessor::init() {
+bool AmdtpReceiveStreamProcessor::init() {
 	int err=0;
 	
 	
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
-	if((err=ReceiveStreamProcessor::init())) {
-		debugFatal("Could not allocate memory event ringbuffer (%d)",err);
-		return err;
+	if(!ReceiveStreamProcessor::init()) {
+		debugFatal("Could not do base class init (%d)\n",this);
+		return false;
 	}
 
-	if( !(m_event_buffer=freebob_ringbuffer_create(
-			(m_dimension * m_nb_buffers * m_period) * sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate memory event ringbuffer");
-// 		return -ENOMEM;
-		return -1;
-	}
-
-	// allocate the temporary cluster buffer
-	if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate temporary cluster buffer");
-		freebob_ringbuffer_free(m_event_buffer);
-// 		return -ENOMEM;
-		return -1;
-	}
-
-	return 0;
+	return true;
 }
 
 int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length, 
@@ -379,7 +391,16 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 	
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
-
+		
+		// signal that we're running
+		if(nevents) m_running=true;
+		
+		// don't process the stream when it is not enabled.
+		if(m_disabled) {
+			return (int)RAW1394_ISO_OK;
+		}
+		
+		
 		unsigned int write_size=nevents*sizeof(quadlet_t)*m_dimension;
 		// add the data payload to the ringbuffer
 		
@@ -423,7 +444,7 @@ void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 }
 
 
-void AmdtpReceiveStreamProcessor::reset() {
+bool AmdtpReceiveStreamProcessor::reset() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
@@ -432,11 +453,18 @@ void AmdtpReceiveStreamProcessor::reset() {
 	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	ReceiveStreamProcessor::reset();
+	return ReceiveStreamProcessor::reset();
 }
 
 bool AmdtpReceiveStreamProcessor::prepare() {
 
+	// prepare all non-device specific stuff
+	// i.e. the iso stream and the associated ports
+	if(!ReceiveStreamProcessor::prepare()) {
+		debugFatal("Could not prepare base class\n");
+		return false;
+	}
+	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 	switch (m_framerate) {
 	case 32000:
@@ -463,12 +491,35 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 		break;
 	}
 
-	// prepare all non-device specific stuff
-	// i.e. the iso stream and the associated ports
-	return ReceiveStreamProcessor::prepare();
+	if( !(m_event_buffer=freebob_ringbuffer_create(
+			(m_dimension * m_nb_buffers * m_period) * sizeof(quadlet_t)))) {
+		debugFatal("Could not allocate memory event ringbuffer");
+// 		return -ENOMEM;
+		return false;
+	}
+
+	// allocate the temporary cluster buffer
+	if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
+		debugFatal("Could not allocate temporary cluster buffer");
+		freebob_ringbuffer_free(m_event_buffer);
+// 		return -ENOMEM;
+		return false;
+	}
+
+
+	
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
+		     m_framerate,m_dimension,m_syt_interval);
+	debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
+		     m_period,m_nb_buffers);
+	debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
+		     m_port,m_channel);
+	return true;
+
 }
 
-int AmdtpReceiveStreamProcessor::transfer() {
+bool AmdtpReceiveStreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 // TODO: implement
@@ -483,9 +534,7 @@ int AmdtpReceiveStreamProcessor::transfer() {
 
 	free(dummybuffer);
 
-
-
-	return 0;
+	return true;
 }
 
 /* 

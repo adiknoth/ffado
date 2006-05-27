@@ -64,7 +64,6 @@ struct _freebob_device
 {	
 	DeviceManager * m_deviceManager;
 	StreamProcessorManager *processorManager;
-	IsoHandlerManager *isoManager;
 	StreamRunner *runner;
 	FreebobPosixThread *thread;
 
@@ -79,56 +78,51 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	struct _freebob_device *dev = new struct _freebob_device;
 
 	if(!dev) {
-        debugFatal( "Could not allocate streaming device\n" );
+		debugFatal( "Could not allocate streaming device\n" );
 		return 0;
 	}
 
 	memcpy((void *)&dev->options, (void *)&options, sizeof(dev->options));
 	memcpy((void *)&dev->device_info, (void *)device_info, sizeof(dev->device_info));
 
-    dev->m_deviceManager = new DeviceManager();
-    if ( !dev->m_deviceManager ) {
-        debugFatal( "Could not allocate device manager\n" );
-		delete dev;
-        return 0;
-    }
-    if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
-        debugFatal( "Could not initialize device manager\n" );
-        delete dev->m_deviceManager;
-		delete dev;
-        return 0;
-    }
-
-	// the first thing we need is a ISO handler manager
-	dev->isoManager = new IsoHandlerManager();
-	if(!dev->isoManager) {
-		debugFatal("Could not create IsoHandlerManager\n");
-        delete dev->m_deviceManager;
-		delete dev;
+	dev->m_deviceManager = new DeviceManager();
+	if ( !dev->m_deviceManager ) {
+		debugFatal( "Could not allocate device manager\n" );
+			delete dev;
+		return 0;
+	}
+	if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
+		debugFatal( "Could not initialize device manager\n" );
+		delete dev->m_deviceManager;
+			delete dev;
 		return 0;
 	}
 
-	dev->isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
 	// also create a processor manager to manage the actual stream
 	// processors	
 	dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
 	if(!dev->processorManager) {
 		debugFatal("Could not create StreamProcessorManager\n");
-		delete dev->isoManager;
-        delete dev->m_deviceManager;
+        	delete dev->m_deviceManager;
 		delete dev;
 		return 0;
 	}
 	dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+	if(!dev->processorManager->init()) {
+		debugFatal("Could not init StreamProcessorManager\n");
+		delete dev->processorManager;
+        	delete dev->m_deviceManager;
+		delete dev;
+		return 0;
+	}
 
 	// now create the runner that does the actual streaming
-	dev->runner = new StreamRunner(dev->isoManager,dev->processorManager);
+	dev->runner = new StreamRunner(dev->processorManager);
 	if(!dev->runner) {
 		debugFatal("Could not create StreamRunner\n");
 		delete dev->processorManager;
-		delete dev->isoManager;
-        delete dev->m_deviceManager;
+	        delete dev->m_deviceManager;
 		delete dev;
 		return 0;
 	}
@@ -139,19 +133,17 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		debugFatal("Could not create Thread for streamrunner\n");
 		delete dev->runner;
 		delete dev->processorManager;
-		delete dev->isoManager;
-        delete dev->m_deviceManager;
+		delete dev->m_deviceManager;
 		delete dev;
 		return 0;
 	}
 
  	dev->runner->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-	dev->isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
 	// discover the devices on the bus
 	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
-		printf("Could not discover devices\n");
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Could not discover devices\n");
 		return 0;
 	}
 
@@ -165,18 +157,19 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		device->prepare();
 
 		int j=0;
-		for(j=0; j<device->getStreamProcessorCount();j++) {
+		for(j=0; j<device->getStreamCount();j++) {
 			StreamProcessor *streamproc=device->getStreamProcessorByIndex(j);
 
-			printf("Registering stream processor %d of device %d with processormanager\n",j,i);
-			if (dev->processorManager->registerProcessor(streamproc)) {
-				printf("Could not register receive stream processor with the Processor manager\n");
+			debugOutput(DEBUG_LEVEL_VERBOSE, "Registering stream processor %d of device %d with processormanager\n",j,i);
+			if (!dev->processorManager->registerProcessor(streamproc)) {
+				debugWarning("Could not register stream processor (%p) with the Processor manager\n",streamproc);
 			}
 		}
 	}
 
 	// we are ready!
 
+	debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n\n");
 	return dev;
 
 }
@@ -188,7 +181,6 @@ void freebob_streaming_finish(freebob_device_t *dev) {
 	delete dev->thread;
 	delete dev->runner;
 	delete dev->processorManager;
-	delete dev->isoManager;
    	delete dev->m_deviceManager;
 	delete dev;
 
@@ -199,10 +191,8 @@ void freebob_streaming_finish(freebob_device_t *dev) {
 
 int freebob_streaming_start(freebob_device_t *dev) {
 	int i=0;
+	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Start -------------\n");
 
- 	dev->runner->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-	dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-	dev->isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	
 	// create the connections for all devices
 	// iterate over the found devices
@@ -212,37 +202,36 @@ int freebob_streaming_start(freebob_device_t *dev) {
 		assert(device);
 
 		int j=0;
-		for(j=0; j<device->getStreamProcessorCount();j++) {
+		for(j=0; j<device->getStreamCount();j++) {
 			// start the stream
 			device->startStreamByIndex(j);
 		}
-		device->getStreamProcessorByIndex(1)->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	}
 
+	
 	dev->processorManager->prepare();
-	
-	dev->processorManager->registerStreamProcessors(dev->isoManager);
-	
-	dev->isoManager->prepare();
-
 	
 	// start the runner thread
 	dev->thread->Start();
+	
+	dev->processorManager->start();
 
 	int cycle=0;
-	if(dev->isoManager->startHandlers(cycle)) {
-		debugFatal("Could not start handlers\n");
-		return -1;
-	}
+// 	if(dev->isoManager->startHandlers(cycle)) {
+// 		debugFatal("Could not start handlers\n");
+// 		return -1;
+// 	}
 	return 0;
 }
 
 int freebob_streaming_stop(freebob_device_t *dev) {
 	int i;
+	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Stop -------------\n");
 
 	dev->thread->Stop();
 
-	dev->isoManager->stopHandlers();
+// 	dev->isoManager->stopHandlers();
+	dev->processorManager->stop();
 
 	// create the connections for all devices
 	// iterate over the found devices
@@ -252,7 +241,7 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 		assert(device);
 
 		int j=0;
-		for(j=0; j<device->getStreamProcessorCount();j++) {
+		for(j=0; j<device->getStreamCount();j++) {
 			// start the stream
 			device->stopStreamByIndex(j);
 		}
@@ -262,6 +251,7 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 }
 
 int freebob_streaming_reset(freebob_device_t *dev) {
+	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Reset -------------\n");
 	/* 
 	 * Reset means:
 	 * 1) Stopping the packetizer thread
@@ -270,14 +260,15 @@ int freebob_streaming_reset(freebob_device_t *dev) {
 	 *    - Put nb_periods*period_size of null frames into the playback buffers
 	 * 3) Restarting the packetizer thread
 	 */
-	dev->thread->Stop();
-	dev->isoManager->stopHandlers();
-
-	dev->processorManager->reset();
-	dev->isoManager->reset();
-
-	dev->isoManager->startHandlers();
-	dev->thread->Start();
+// 	dev->thread->Stop();
+// 
+// 	dev->processorManager->stop();
+// 	
+// 	dev->processorManager->reset();
+// 	
+// 	dev->processorManager->start();
+// 	
+// 	dev->thread->Start();
 
 	return 0;
 }
@@ -288,15 +279,13 @@ int freebob_streaming_wait(freebob_device_t *dev) {
 	static int periods_print=0;
 		periods++;
   		if(periods>periods_print) {
-			printf("\n");
-			printf("============================================\n");
-			dev->isoManager->dumpInfo();
-			printf("--------------------------------------------\n");
+			debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
+			debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
 			dev->processorManager->dumpInfo();
-			printf("--------------------------------------------\n");
+			debugOutput(DEBUG_LEVEL_VERBOSE, "--------------------------------------------\n");
 			hexDumpQuadlets((quadlet_t*)(dev->processorManager->getPortByIndex(0, Port::E_Capture)->getBufferAddress()),10);
-			printf("============================================\n");
-			printf("\n");
+			debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
+			debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
 			periods_print+=100;
   		}
 	dev->processorManager->waitForPeriod();

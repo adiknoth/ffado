@@ -38,6 +38,12 @@
 
 namespace FreebobStreaming {
 
+/*!
+\brief The Base Class for an AMDTP Audio Port
+
+ The AMDTP/AM824/IEC61883-6 port that represents audio.
+ 
+*/
 class AmdtpAudioPort 
 	: public AudioPort, public AmdtpPortInfo
 {
@@ -77,6 +83,12 @@ protected:
 
 };
 
+/*!
+\brief The Base Class for an AMDTP Midi Port
+
+ The AMDTP/AM824/IEC61883-6 port that represents midi.
+ 
+*/
 class AmdtpMidiPort 
 	: public MidiPort, public AmdtpPortInfo
 {

@@ -40,7 +40,7 @@ PortManager::PortManager() {
 }
 
 PortManager::~PortManager() {
-	deleteAllPorts();
+// 	deleteAllPorts();
 }
 
 bool PortManager::setPortBuffersize(unsigned int newsize) {
@@ -279,12 +279,16 @@ void PortManager::setVerboseLevel(int i) {
 }
 
 
-void PortManager::reset() {
-
+bool PortManager::resetPorts() {
+	return true;
 }
 
-void PortManager::prepare() {
+bool PortManager::initPorts() {
+	return true;
+}
 
+bool PortManager::preparePorts() {
+	return true;
 }
 
 }

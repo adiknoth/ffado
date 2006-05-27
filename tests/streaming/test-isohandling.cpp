@@ -62,16 +62,6 @@ int main(int argc, char *argv[])
 	printf("Freebob streaming test application\n");
 	printf(" ISO handler tests\n");
 
-	// the first thing we need is a ISO handler manager
-	IsoHandlerManager *isomanager = new IsoHandlerManager();
-	if(!isomanager) {
-		printf("Could not create IsoHandlerManager\n");
-		return -1;
-	}
-
-	isomanager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-	printf("----------------------\n");
-
 	// also create a processor manager to manage the actual stream
 	// processors	
 	StreamProcessorManager *procMan = new StreamProcessorManager(512,3);
@@ -90,43 +80,23 @@ int main(int argc, char *argv[])
 // 	}
 // 	spt->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
- 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(0,2,44100,7);
+ 	AmdtpReceiveStreamProcessor *spr = new AmdtpReceiveStreamProcessor(2,44100,7);
 // 	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
 	if(!spr) {
 		printf("Could not create receive AmdtpStreamProcessor\n");
 		return -1;
 	}
 	spr->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+	spr->setChannel(0);
 
- 	AmdtpReceiveStreamProcessor *spr2 = new AmdtpReceiveStreamProcessor(1,2,44100,11);
+ 	AmdtpReceiveStreamProcessor *spr2 = new AmdtpReceiveStreamProcessor(2,44100,11);
 // 	ReceiveStreamProcessor *spr = new ReceiveStreamProcessor(0,2,44100);
 	if(!spr2) {
 		printf("Could not create receive AmdtpStreamProcessor\n");
 		return -1;
 	}
 	spr2->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-// 	if (isomanager->registerStream(spt)) {
-// 		printf("Could not register transmit stream processor with the ISO manager\n");
-// 		return -1;
-// 	}
-// 	printf("----------------------\n");
-
-
-	// now we have an xmit stream, 
-	// register it with the manager that assigns an iso handler
-
-	if (isomanager->registerStream(spr)) {
-		printf("Could not register receive stream processor with the ISO manager\n");
-		return -1;
-	}
-	printf("----------------------\n");
-
-	if (isomanager->registerStream(spr2)) {
-		printf("Could not register receive stream processor with the ISO manager\n");
-		return -1;
-	}
-	printf("----------------------\n");
+	spr2->setChannel(1);
 
 // 	printf("----------------------\n");
 // 	if (procMan->registerProcessor(spt)) {
@@ -173,7 +143,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// now create the runner that does the actual streaming
-	StreamRunner *runner = new StreamRunner(isomanager,procMan);
+	StreamRunner *runner = new StreamRunner(procMan);
 	if(!runner) {
 		printf("Could not create StreamRunner\n");
 		return -1;
@@ -183,13 +153,12 @@ int main(int argc, char *argv[])
 
 
 	procMan->prepare();
-	isomanager->prepare();
 
 	// start the runner
 	thread->Start();
 	printf("----------------------\n");
 
-	if(isomanager->startHandlers()) {
+	if(procMan->start()) {
 		printf("Could not start handlers\n");
 		return -1;
 	}
@@ -202,8 +171,6 @@ int main(int argc, char *argv[])
  		if(periods>periods_print) {
 			printf("\n");
 			printf("============================================\n");
-			isomanager->dumpInfo();
-			printf("--------------------------------------------\n");
 			procMan->dumpInfo();
 			printf("--------------------------------------------\n");
 /*			hexDumpQuadlets((quadlet_t*)(p1->getBufferAddress()),10);
@@ -220,11 +187,7 @@ int main(int argc, char *argv[])
 
 	thread->Stop();
 
-	isomanager->stopHandlers();
-
-// 	isomanager->unregisterStream(spt);
-	isomanager->unregisterStream(spr);
-	isomanager->unregisterStream(spr2);
+	procMan->stop();
 
 // 	procMan->unregisterProcessor(spt);
 	procMan->unregisterProcessor(spr);
@@ -234,7 +197,6 @@ int main(int argc, char *argv[])
 	delete runner;
 
 	delete procMan;
-	delete isomanager;
 
 // 	delete spt;
 	delete spr;

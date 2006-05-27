@@ -26,6 +26,8 @@
  *
  */
 
+#include "FreebobAtomic.h"
+
 #include "StreamProcessor.h"
 #include "StreamProcessorManager.h"
 #include <assert.h>
@@ -36,14 +38,16 @@ IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 
-StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int channel, int port, int framerate) 
-	: IsoStream(type, channel, port)
+StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate) 
+	: IsoStream(type, port)
 	, m_manager(0)
 	, m_nb_buffers(0)
 	, m_period(0)
 	, m_xruns(0)
 	, m_framecounter(0)
 	, m_framerate(framerate)
+	, m_running(false)
+	, m_disabled(true)
 {
 
 }
@@ -79,27 +83,35 @@ void StreamProcessor::dumpInfo()
 	((IsoStream*)this)->dumpInfo();
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter  : %d\n", m_framecounter);
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns          : %d\n", m_xruns);
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running        : %d\n", m_running);
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled        : %d\n", !m_disabled);
 	
 };
 
-int StreamProcessor::init()
+bool StreamProcessor::init()
 {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 
 	return IsoStream::init();
 }
 
-void StreamProcessor::reset() {
+bool StreamProcessor::reset() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-	m_framecounter=0;
+	resetFrameCounter();
 
 	// loop over the ports to reset them
-	PortManager::reset();
+	if (!PortManager::resetPorts()) {
+		debugFatal("Could not reset ports\n");
+		return false;
+	}
 
 	// reset the iso stream
-	IsoStream::reset();
+	if (!IsoStream::reset()) {
+		debugFatal("Could not reset isostream\n");
+		return false;
+	}
 
 }
 
@@ -116,13 +128,13 @@ bool StreamProcessor::prepare() {
 	}
 
 	m_nb_buffers=m_manager->getNbBuffers();
-	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_nb_buffers  : %d\n", m_nb_buffers);
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Setting m_nb_buffers  : %d\n", m_nb_buffers);
 
 	m_period=m_manager->getPeriodSize();
-	debugOutputShort( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
 
 	// loop over the ports to reset them
-	PortManager::prepare();
+	PortManager::preparePorts();
 
 	// reset the iso stream
 	IsoStream::prepare();
@@ -131,13 +143,41 @@ bool StreamProcessor::prepare() {
 
 }
 
-int StreamProcessor::transfer() {
+bool StreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 // TODO: implement
 
-	return 0;
+	return true;
 }
+
+bool StreamProcessor::isRunning() {
+	return m_running;
+}
+
+void StreamProcessor::enable()  {
+	if(!m_running) {
+		debugWarning("The StreamProcessor is not running yet, enable() might not be a good idea.\n");
+	}
+	m_disabled=false;
+};
+
+
+/**
+ * Decrements the frame counter, in a atomic way. This
+ * is thread safe.
+ */
+void StreamProcessor::decrementFrameCounter() {
+	SUBSTRACT_ATOMIC((SInt32 *)&m_framecounter,m_period);
+};
+
+/**
+ * Resets the frame counter, in a atomic way. This
+ * is thread safe.
+ */
+void StreamProcessor::resetFrameCounter() {
+	ZERO_ATOMIC((SInt32 *)&m_framecounter);
+};
 
 void StreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
@@ -146,9 +186,8 @@ void StreamProcessor::setVerboseLevel(int l) {
 
 }
 
-
-ReceiveStreamProcessor::ReceiveStreamProcessor(int channel, int port, int framerate) 
-	: StreamProcessor(IsoStream::EST_Receive, channel, port, framerate) {
+ReceiveStreamProcessor::ReceiveStreamProcessor(int port, int framerate) 
+	: StreamProcessor(IsoStream::EST_Receive, port, framerate) {
 
 }
 
@@ -174,8 +213,8 @@ void ReceiveStreamProcessor::setVerboseLevel(int l) {
 }
 
 
-TransmitStreamProcessor::TransmitStreamProcessor(int channel, int port, int framerate) 
-	: StreamProcessor(IsoStream::EST_Transmit, channel, port, framerate) {
+TransmitStreamProcessor::TransmitStreamProcessor( int port, int framerate) 
+	: StreamProcessor(IsoStream::EST_Transmit, port, framerate) {
 
 }
 
