@@ -44,13 +44,20 @@ class Port;
 class AmdtpAudioPort;
 class AmdtpMidiPort;
 
+/*!
+\brief The Base Class for an AMDTP transmit stream processor
+
+ This class implements a TransmitStreamProcessor that multiplexes Ports 
+ into AMDTP streams.
+ 
+*/
 class AmdtpTransmitStreamProcessor 
 	: public TransmitStreamProcessor
 {
 
 public:
 
-	AmdtpTransmitStreamProcessor(int channel, int port, int framerate, int dimension);
+	AmdtpTransmitStreamProcessor(int port, int framerate, int dimension);
 
 	virtual ~AmdtpTransmitStreamProcessor();
 
@@ -59,10 +66,10 @@ public:
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length);
 
-	int init();
-	void reset();
+	bool init();
+	bool reset();
 	bool prepare();
-	int transfer();
+	bool transfer();
 	virtual void setVerboseLevel(int l);
 
 // NOTE: shouldn't this be (4*m_period)/(3*m_syt_interval), because every 3 packets, one empty is sent
@@ -89,14 +96,20 @@ protected:
     DECLARE_DEBUG_MODULE;
 
 };
+/*!
+\brief The Base Class for an AMDTP receive stream processor
 
+ This class implements a ReceiveStreamProcessor that demultiplexes 
+ AMDTP streams into Ports.
+ 
+*/
 class AmdtpReceiveStreamProcessor 
 	: public ReceiveStreamProcessor
 {
 
 public:
 
-	AmdtpReceiveStreamProcessor(int channel, int port, int framerate, int dimension);
+	AmdtpReceiveStreamProcessor(int port, int framerate, int dimension);
 
 	virtual ~AmdtpReceiveStreamProcessor();
 
@@ -105,12 +118,16 @@ public:
 		          unsigned int cycle, unsigned int dropped);
 
 
-	int init();
-	void reset();
+	bool init();
+	bool reset();
 	bool prepare();
-	int transfer();
+	bool transfer();
 
 	virtual void setVerboseLevel(int l);
+	
+// NOTE: shouldn't this be (4*m_period)/(3*m_syt_interval), because every 3 packets, one empty is sent
+	unsigned int getPacketsPerPeriod() {return m_period/m_syt_interval;};
+	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
 protected:
 

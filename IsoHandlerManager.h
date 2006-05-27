@@ -39,13 +39,6 @@
 namespace FreebobStreaming
 {
 
-/*!
-\brief The ISO Handler management class
-
- This class manages the use of ISO handlers by ISO streams
-
-*/
-
 class IsoHandler;
 class IsoStream;
 
@@ -56,32 +49,44 @@ typedef std::vector<IsoStream *> IsoStreamVector;
 typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
 
 
+/*!
+\brief The ISO Handler management class
+
+ This class manages the use of ISO handlers by ISO streams.
+ You can register an IsoStream with an IsoHandlerManager. This
+ manager will assign an IsoHandler to the stream. If nescessary
+ the manager allocates a new handler. If there is already a handler
+ that can handle the IsoStream (e.g. in case of multichannel receive),
+ it can be assigned.
+
+*/
+
 class IsoHandlerManager : public FreebobRunnableInterface
 {
-	friend class StreamRunner;
+	friend class StreamProcessorManager;
 
     public:
 
         IsoHandlerManager();
         virtual ~IsoHandlerManager();
 
-		void setPollTimeout(int t) {m_poll_timeout=t;};
-		int getPollTimeout() {return m_poll_timeout;};
+		void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
+		int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
 
-		void setVerboseLevel(int l);
+		void setVerboseLevel(int l); ///< set the verbose level
 
-		void dumpInfo();
+		void dumpInfo(); ///< print some information about the manager to stdout/stderr
 
-		int registerStream(IsoStream *);
-		int unregisterStream(IsoStream *);
+		bool registerStream(IsoStream *); ///< register an iso stream with the manager
+		bool unregisterStream(IsoStream *); ///< unregister an iso stream with the manager
 
-		int startHandlers();
-		int startHandlers(int cycle);
-		void stopHandlers();
+		bool startHandlers(); ///< start the managed ISO handlers 
+		bool startHandlers(int cycle); ///< start the managed ISO handlers 
+		bool stopHandlers(); ///< stop the managed ISO handlers 
 
-		bool reset() {return true;};
+		bool reset() {return true;}; ///< reset the ISO manager and all streams
 
-		bool prepare();
+		bool prepare(); ///< prepare the ISO manager and all streams
 
 	protected:
 		// FreebobRunnableInterface interface
@@ -100,8 +105,8 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		// the collection of handlers
  		IsoHandlerVector m_IsoHandlers;
 
-		int registerHandler(IsoHandler *);
-		int unregisterHandler(IsoHandler *);
+		bool registerHandler(IsoHandler *);
+		bool unregisterHandler(IsoHandler *);
 		void pruneHandlers();
 
 		// the collection of streams
@@ -112,7 +117,7 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		struct pollfd *m_poll_fds;
 		int m_poll_nfds;
 
-		int rebuildFdMap();
+		bool rebuildFdMap();
 
 
 	    DECLARE_DEBUG_MODULE;

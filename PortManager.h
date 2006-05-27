@@ -38,7 +38,12 @@ namespace FreebobStreaming {
 class Port;
 typedef std::vector<Port *> PortVector;
 typedef std::vector<Port *>::iterator PortVectorIterator;
+/*!
+\brief The Base Class for any class that maintains a collection of ports.
 
+ Contains helper classes that allow the easy maintaining of Port collections.
+ 
+*/
 class PortManager {
 
 public:
@@ -50,16 +55,16 @@ public:
 	virtual int deletePort(Port *port);
 	virtual void deleteAllPorts();
 
-	virtual int getPortCount(enum Port::E_PortType);
-	virtual int getPortCount();
+	int getPortCount(enum Port::E_PortType);
+	int getPortCount();
 
-	bool setPortBuffersize(unsigned int newsize);
-	
+	virtual bool setPortBuffersize(unsigned int newsize);
 
 	Port *getPortAtIdx(unsigned int index);
 
-	void reset();
-	void prepare();	
+	virtual bool resetPorts();
+	virtual bool initPorts();	
+	virtual bool preparePorts();	
 
  	virtual void setVerboseLevel(int l);
 

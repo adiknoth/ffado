@@ -33,17 +33,30 @@
 
 namespace FreebobStreaming {
 
+/*!
+\brief The Base Class for Ports
+
+ Ports are the entities that provide the interface between the ISO streaming
+ layer and the datatype-specific layer. You can define plug types by subclassing
+ the base port type.
+*/
 class Port {
 
 public:
 	friend class PortManager;
-
+	
+	/*!
+	\brief Specifies the buffering type for ports
+	*/
 	enum E_BufferType {
-		E_PacketBuffered,
-		E_PeriodBuffered,
-// 		E_SampleBuffered
+		E_PacketBuffered, ///< the port is to be processed for every packet
+		E_PeriodBuffered, ///< the port is to be processed after a period of frames
+// 		E_SampleBuffered ///< the port is to be processed after each frame (sample)
 	};
 
+	/*!
+	\brief The datatype of the port buffer
+	*/
 	enum E_DataType {
 		E_Float,
 		E_Int24,
@@ -51,12 +64,18 @@ public:
 		E_Default,
 	};
 
+	/*!
+	\brief The port type
+	*/
 	enum E_PortType {
 		E_Audio,
 		E_Midi,
 		E_Control,
 	};
 
+	/*!
+	\brief The port direction
+	*/
 	enum E_Direction {
 		E_Playback,
 		E_Capture,
@@ -64,6 +83,7 @@ public:
 
 	Port(std::string name, enum E_BufferType type, unsigned int buffsize, 
 	     enum E_DataType datatype, enum E_PortType porttype, enum E_Direction direction);
+	     
 	Port(std::string name, enum E_BufferType type, unsigned int buffsize, 
 	     enum E_DataType datatype, void *externalbuffer, enum E_PortType porttype, enum E_Direction direction);
 
@@ -79,11 +99,9 @@ public:
 
 	enum E_BufferType getBufferType() {return m_BufferType;};
 
-	// returns the size in bytes of the events in the port buffer
-	unsigned int getEventSize();
 
 	enum E_DataType getDataType() {return m_datatype;};
-	void setDataType(enum E_DataType datatype) {m_datatype=datatype;};
+	bool setDataType(enum E_DataType datatype);
 
 	enum E_PortType getPortType() {return m_porttype;};
 	enum E_Direction getDirection() {return m_direction;};
@@ -98,26 +116,55 @@ public:
 	// detach the user buffer, allocates an internal buffer
 // 	int detachBuffer();
 
+	/**
+	 * \brief returns the size of the events in the port buffer, in bytes
+	 *
+	 */
+	unsigned int getEventSize();
+	
+	/**
+	 * \brief returns the size of the port buffer
+	 *
+	 * counted in number of E_DataType units (events), not in bytes
+	 *
+	 */
 	unsigned int getBufferSize() {return m_buffersize;};
+	
+	/**
+	 * \brief sets the size of the port buffer
+	 *
+	 * counted in number of E_DataType units, not in bytes
+	 *
+	 * if there is an external buffer assigned, it should
+	 * be large enough
+	 * if there is an internal buffer, it will be resized
+	 *
+	 */
 	bool setBufferSize(unsigned int);
-
-	void setBufferOffset(unsigned int n);
 
 	// FIXME: this is not really OO, but for performance???
 	void *getBufferAddress() {return m_buffer;};
 	void setBufferAddress(void *buff) {m_buffer=buff;};
 
- 	virtual void setVerboseLevel(int l) { setDebugLevel(l);  };
+ 	virtual void setVerboseLevel(int l);
 
 protected:
-	std::string m_Name;
+	std::string m_Name; ///< Port name, [at construction]
 
-	enum E_BufferType m_BufferType;
+	enum E_BufferType m_BufferType; ///< Buffer type, [at construction]
 
-	bool m_enabled;
-	unsigned int m_buffersize;
+	bool m_enabled; ///< is the port enabled?, [anytime]
+	
+	/**
+	 * \brief size of the buffer
+	 *
+	 * counted in number of E_DataType units, not in bytes
+	 *
+	 * []
+	 */
+	unsigned int m_buffersize; 
 
-	enum E_DataType m_datatype;
+	enum E_DataType m_datatype; ///< size of the buffer, number of E_DataType units []
 	enum E_PortType m_porttype;
 	enum E_Direction m_direction;
 
@@ -128,12 +175,17 @@ protected:
 	void freeInternalBuffer();
 
 	// call this when the event size is changed
-	void eventSizeChanged();
+	virtual bool eventSizeChanged(); ///< this is called whenever the event size changes.
 
     DECLARE_DEBUG_MODULE;
 
 };
 
+/*!
+\brief The Base Class for an Audio Port
+
+
+*/
 class AudioPort : public Port {
 
 public:
@@ -169,6 +221,11 @@ protected:
   
 };
 
+/*!
+\brief The Base Class for a Midi Port
+
+
+*/
 class MidiPort : public Port {
 
 public:
@@ -185,6 +242,11 @@ protected:
 
 };
 
+/*!
+\brief The Base Class for a control port
+
+
+*/
 class ControlPort : public Port {
 
 public:

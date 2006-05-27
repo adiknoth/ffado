@@ -159,5 +159,33 @@ static inline long DEC_ATOMIC(volatile SInt32* val)
     return actual;
 }
 
+static inline long ADD_ATOMIC(volatile SInt32* val, SInt32 addval)
+{
+    SInt32 actual;
+    do {
+        actual = *val;
+    } while (!CAS(actual, actual + addval, val));
+    return actual;
+}
+
+static inline long SUBSTRACT_ATOMIC(volatile SInt32* val, SInt32 addval)
+{
+    SInt32 actual;
+    do {
+        actual = *val;
+    } while (!CAS(actual, actual - addval, val));
+    return actual;
+}
+
+static inline long ZERO_ATOMIC(volatile SInt32* val)
+{
+    SInt32 actual;
+    do {
+        actual = *val;
+    } while (!CAS(actual, 0, val));
+    return actual;
+}
+
+
 #endif
 

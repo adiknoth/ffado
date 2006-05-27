@@ -205,3 +205,34 @@ iec61883_cip_fill_header(int node_id, struct iec61883_cip *ptz,
 
   return nevents;
 }
+
+// note that we don't implement timestamp increase for nodata
+// FIXME: check if this is standards compliant!!
+int
+iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *ptz,
+		struct iec61883_packet *packet)
+{
+  int nevents, nevents_dbc;
+
+  packet->eoh0 = 0;
+
+  /* Our node ID can change after a bus reset, so it is best to fetch
+   * our node ID for each packet. */
+  packet->sid = node_id & 0x3f;
+
+  packet->dbs = ptz->dbs;
+  packet->fn = 0;
+  packet->qpc = 0;
+  packet->sph = 0;
+  packet->reserved = 0;
+  packet->dbc = ptz->dbc;
+  packet->eoh1 = 2;
+  packet->fmt = ptz->format;
+
+  packet->fdf = IEC61883_FDF_NODATA;
+  packet->syt = 0xffff;
+
+  ptz->dbc += ptz->syt_interval;
+
+  return nevents;
+}
