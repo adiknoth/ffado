@@ -43,142 +43,72 @@ PortManager::~PortManager() {
 // 	deleteAllPorts();
 }
 
-bool PortManager::setPortBuffersize(unsigned int newsize) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "setting port buffer size to %d\n",newsize);
+// bool PortManager::setPortBuffersize(unsigned int newsize) {
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, "setting port buffer size to %d\n",newsize);
+// 
+// 
+// 	for ( PortVectorIterator it = m_Ports.begin();
+// 	  it != m_Ports.end();
+// 	  ++it )
+// 	{
+// 		if(!(*it)->setBufferSize(newsize)) {
+// 			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
+// 			return false;
+// 		}
+// 	}
+// 
+// 	return true; //not found
+// 
+// }
 
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
-		if(!(*it)->setBufferSize(newsize)) {
-			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
-			return false;
-		}
-    }
-
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-		if(!(*it)->setBufferSize(newsize)) {
-			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
-			return false;
-		}
-    }
-
-//     for ( PortVectorIterator it = m_SamplePorts.begin();
-//           it != m_SamplePorts.end();
-//           ++it )
-//     {
-/*		if(!(*it)->setBufferSize(newsize)) {
-			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
-			return false;
-		}*/
-//     }
-// 	debugOutput( DEBUG_LEVEL_VERBOSE, " => port not found\n");
-
-	return true; //not found
-
-}
-
-int PortManager::addPort(Port *port)
+/**
+ * 
+ * @param port 
+ * @return 
+ */
+bool PortManager::addPort(Port *port)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
 
-	port->setVerboseLevel(getDebugLevel());
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s\n",port->getName().c_str());
+	m_Ports.push_back(port);
 
-	switch(port->getBufferType()) {
-	case (Port::E_PacketBuffered):
-		debugOutput( DEBUG_LEVEL_VERBOSE, "Adding packet buffered port %s\n",port->getName().c_str());
-		m_PacketPorts.push_back(port);
-		break;
-	case Port::E_PeriodBuffered:
-		debugOutput( DEBUG_LEVEL_VERBOSE, "Adding period buffered port %s\n",port->getName().c_str());
-		m_PeriodPorts.push_back(port);
-		break;
-/*	case Port::E_SampleBuffered:
-		m_SamplePorts.push_back(port);
-		break;*/
-	default:
-		debugFatal("Unsupported port type!");
-		return -1;
-	}
-
-	return 0;
+	return true;
 }
 
-int PortManager::deletePort(Port *port)
+bool PortManager::deletePort(Port *port)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	assert(port);
 	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
 
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
-        if ( *it == port ) { 
-            m_PacketPorts.erase(it);
-			delete *it;
-			return 0;
-        }
-    }
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		if(*it == port) {
+			m_Ports.erase(it);
+// 			delete *it;
+			return true;
+		}
+	}
 
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        if ( *it == port ) { 
-            m_PeriodPorts.erase(it);
-			delete *it;
-			return 0;
-        }
-    }
-
-//     for ( PortVectorIterator it = m_SamplePorts.begin();
-//           it != m_SamplePorts.end();
-//           ++it )
-//     {
-//         if ( *it == port ) { 
-//             m_SamplePorts.erase(it);
-// 			return 0;
-//         }
-//     }
-// 	debugOutput( DEBUG_LEVEL_VERBOSE, " => port not found\n");
-
-	return -1; //not found
+	debugOutput( DEBUG_LEVEL_VERBOSE, "port %s not found \n",port->getName().c_str());
+	
+	return false; //not found
 
 }
 
 void PortManager::deleteAllPorts()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting all ports\n");
 
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
-        m_PacketPorts.erase(it);
-		delete *it;
-    }
-
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        m_PeriodPorts.erase(it);
-		delete *it;
-    }
-
-//     for ( PortVectorIterator it = m_SamplePorts.begin();
-//           it != m_SamplePorts.end();
-//           ++it )
-//     {
-//          m_SamplePorts.erase(it);
-// 			delete *it;
-//     }
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		m_Ports.erase(it);
+// 		delete *it;
+	}
 
 	return;
 
@@ -187,67 +117,28 @@ void PortManager::deleteAllPorts()
 int PortManager::getPortCount(enum Port::E_PortType type) {
 	int count=0;
 
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
-        if ( (*it)->getPortType() == type ) { 
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		if ( (*it)->getPortType() == type ) { 
 			count++;
-        }
-    }
-
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        if ( (*it)->getPortType() == type ) { 
-			count++;
-        }
-    }
-
-//     for ( PortVectorIterator it = m_SamplePorts.begin();
-//           it != m_SamplePorts.end();
-//           ++it )
-//     {
-//         if ( (*it)->getPortType() == type ) { 
-// 			count++;
-//         }
-//         }
-//     }
-
+		}
+	}
 	return count;
 }
 
 int PortManager::getPortCount() {
 	int count=0;
 
-
-	
-	count+=m_PacketPorts.size();
-	count+=m_PeriodPorts.size();
-// 	count+=m_SamplePorts.size();
+	count+=m_Ports.size();
 
 	return count;
 }
 
 Port * PortManager::getPortAtIdx(unsigned int index) {
 
-	if (index<m_PacketPorts.size()) {
-		return m_PacketPorts.at(index);
-	}
-	index -= m_PacketPorts.size();
-
-	if (index<m_PeriodPorts.size()) {
-		return m_PeriodPorts.at(index);
-	}
-
-// 	index -= m_PeriodPorts.size();
-// 
-// 	if (index<m_SamplePorts.size()) {
-// 		return m_SamplePorts.at(index);
-// 	}
-
-	return 0;
+	return m_Ports.at(index);
 
 }
 
@@ -255,39 +146,79 @@ void PortManager::setVerboseLevel(int i) {
 
 	setDebugLevel(i);
 
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
-        (*it)->setVerboseLevel(i);
-    }
-
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        (*it)->setVerboseLevel(i);
-    }
-
-//     for ( PortVectorIterator it = m_SamplePorts.begin();
-//           it != m_SamplePorts.end();
-//           ++it )
-//     {
-//         (*it)->setVerboseLevel(i);
-//     }
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		(*it)->setVerboseLevel(i);
+	}
 
 }
 
 
 bool PortManager::resetPorts() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "reset ports\n");
+	
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		if(!(*it)->reset()) {
+			debugFatal("Could not reset port %s",(*it)->getName().c_str());
+			return false;
+		}
+	}
 	return true;
 }
 
 bool PortManager::initPorts() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "init ports\n");
+	
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		if(!(*it)->init()) {
+			debugFatal("Could not init port %s",(*it)->getName().c_str());
+			return false;
+		}
+	}
 	return true;
 }
 
 bool PortManager::preparePorts() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "preparing ports\n");
+	
+	// clear the cache lists
+	m_PeriodPorts.clear();
+	m_PacketPorts.clear();
+	
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it )
+	{
+		if(!(*it)->prepare()) {
+			debugFatal("Could not prepare port %s",(*it)->getName().c_str());
+			return false;
+		}
+		
+		// now prepare the cache lists
+		switch((*it)->getSignalType()) {
+			case Port::E_PacketSignalled:
+				m_PacketPorts.push_back(*it);
+				break;
+			case Port::E_PeriodSignalled:
+				m_PeriodPorts.push_back(*it);
+				break;
+			default:
+				debugWarning("%s has unsupported port type\n",
+				             (*it)->getName().c_str());	
+			break;
+		}
+	}
+	
+	
+	
 	return true;
 }
 

@@ -64,8 +64,6 @@ struct _freebob_device
 {	
 	DeviceManager * m_deviceManager;
 	StreamProcessorManager *processorManager;
-	StreamRunner *runner;
-	FreebobPosixThread *thread;
 
 	freebob_options_t options;
 	freebob_device_info_t device_info;
@@ -98,8 +96,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		return 0;
 	}
 
-
-	// also create a processor manager to manage the actual stream
+	// create a processor manager to manage the actual stream
 	// processors	
 	dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
 	if(!dev->processorManager) {
@@ -108,6 +105,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		delete dev;
 		return 0;
 	}
+	
 	dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	if(!dev->processorManager->init()) {
 		debugFatal("Could not init StreamProcessorManager\n");
@@ -116,30 +114,6 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		delete dev;
 		return 0;
 	}
-
-	// now create the runner that does the actual streaming
-	dev->runner = new StreamRunner(dev->processorManager);
-	if(!dev->runner) {
-		debugFatal("Could not create StreamRunner\n");
-		delete dev->processorManager;
-	        delete dev->m_deviceManager;
-		delete dev;
-		return 0;
-	}
-
-	// and the tread that runs the runner
-	dev->thread=new FreebobPosixThread(dev->runner);
-	if(!dev->thread) {
-		debugFatal("Could not create Thread for streamrunner\n");
-		delete dev->runner;
-		delete dev->processorManager;
-		delete dev->m_deviceManager;
-		delete dev;
-		return 0;
-	}
-
- 	dev->runner->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-	dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
 	// discover the devices on the bus
 	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
@@ -168,18 +142,32 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	}
 
 	// we are ready!
+	freebob_streaming_prepare(dev);
 
 	debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n\n");
 	return dev;
 
 }
 
+/**
+ * preparation should be done after setting all per-stream parameters
+ * the way you want them. being buffer data type etc...
+ *
+ * @param dev 
+ * @return 
+ */
+bool freebob_streaming_prepare(freebob_device_t *dev) {
+	int i=0;
+	
+	dev->processorManager->prepare();
+
+	return true;
+}
+
 void freebob_streaming_finish(freebob_device_t *dev) {
 
 	assert(dev);
 
-	delete dev->thread;
-	delete dev->runner;
 	delete dev->processorManager;
    	delete dev->m_deviceManager;
 	delete dev;
@@ -208,19 +196,8 @@ int freebob_streaming_start(freebob_device_t *dev) {
 		}
 	}
 
-	
-	dev->processorManager->prepare();
-	
-	// start the runner thread
-	dev->thread->Start();
-	
 	dev->processorManager->start();
 
-	int cycle=0;
-// 	if(dev->isoManager->startHandlers(cycle)) {
-// 		debugFatal("Could not start handlers\n");
-// 		return -1;
-// 	}
 	return 0;
 }
 
@@ -228,9 +205,6 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 	int i;
 	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Stop -------------\n");
 
-	dev->thread->Stop();
-
-// 	dev->isoManager->stopHandlers();
 	dev->processorManager->stop();
 
 	// create the connections for all devices
@@ -239,6 +213,8 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 	for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
 		IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
 		assert(device);
+		
+		debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d\n",i);
 
 		int j=0;
 		for(j=0; j<device->getStreamCount();j++) {
@@ -283,7 +259,8 @@ int freebob_streaming_wait(freebob_device_t *dev) {
 			debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
 			dev->processorManager->dumpInfo();
 			debugOutput(DEBUG_LEVEL_VERBOSE, "--------------------------------------------\n");
-			hexDumpQuadlets((quadlet_t*)(dev->processorManager->getPortByIndex(0, Port::E_Capture)->getBufferAddress()),10);
+			quadlet_t *addr=(quadlet_t*)(dev->processorManager->getPortByIndex(0, Port::E_Capture)->getBufferAddress());
+			if (addr) hexDumpQuadlets(addr,10);
 			debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
 			debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
 			periods_print+=100;
@@ -306,14 +283,26 @@ int freebob_streaming_transfer_buffers(freebob_device_t *dev) {
 
 
 int freebob_streaming_write(freebob_device_t *dev, int i, freebob_sample_t *buffer, int nsamples) {
-	return 0;
+// 	debugFatal("Not implemented\n");
+	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
+	// use an assert here performancewise, 
+	// it should already have failed before, if not correct
+	assert(p); 
+	
+	return p->writeEvents((void *)buffer, nsamples);
 }
 
 int freebob_streaming_read(freebob_device_t *dev, int i, freebob_sample_t *buffer, int nsamples) {
-	return 0;
+	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
+	// use an assert here performancewise, 
+	// it should already have failed before, if not correct
+	assert(p); 
+	
+	return p->readEvents((void *)buffer, nsamples);
 }
 
 pthread_t freebob_streaming_get_packetizer_thread(freebob_device_t *dev) {
+// 	debugFatal("Not implemented\n");
 	return 0;
 }
 
@@ -393,26 +382,12 @@ freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob
 // TODO: the way port buffers are set doesn't satisfy me
 int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int i, char *buff,  freebob_streaming_buffer_type t) {
 	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
-	if(!p) {
-		debugWarning("Could not get playback port at index %d\n",i);
-		return -1;
-	}
-	switch(t) {
-	case freebob_buffer_type_uint24:
-		p->setDataType(Port::E_Int24);
-		p->setBufferAddress((void *)buff);
-		return 0;
-// 		break;
-	case freebob_buffer_type_float:
-		p->setDataType(Port::E_Float);
-		p->setBufferAddress((void *)buff);
-		return 0;
-	case freebob_buffer_type_per_stream:
-		p->setDataType(Port::E_Int24);
-// 		p->detachBuffer();
-
-		break;
-	}
+	
+	// use an assert here performancewise, 
+	// it should already have failed before, if not correct
+	assert(p); 
+	
+	p->setExternalBufferAddress((void *)buff);
 
 	return 0;
 
@@ -420,25 +395,11 @@ int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int i, ch
 
 int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int i, char *buff,  freebob_streaming_buffer_type t) {
 	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
-	if(!p) {
-		debugWarning("Could not get playback port at index %d\n",i);
-		return -1;
-	}
-	switch(t) {
-	case freebob_buffer_type_uint24:
-		p->setDataType(Port::E_Int24);
-		p->setBufferAddress((void *)buff);
-		return 0;
-	case freebob_buffer_type_float:
-		p->setDataType(Port::E_Float);
-		p->setBufferAddress((void *)buff);
-		return 0;
-	case freebob_buffer_type_per_stream:
-		p->setDataType(Port::E_Int24);
-// 		p->detachBuffer();
-
-		break;
-	}
+	// use an assert here performancewise, 
+	// it should already have failed before, if not correct
+	assert(p); 
+	
+	p->setExternalBufferAddress((void *)buff);
 
 	return 0;
 }

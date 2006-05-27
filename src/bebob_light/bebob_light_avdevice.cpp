@@ -1800,10 +1800,7 @@ AvDevice::addPlugToProcessor(
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
 				p=new FreebobStreaming::AmdtpAudioPort(
-						channelInfo->m_name, 
-						FreebobStreaming::AmdtpAudioPort::E_Int24, // changed in the audio part
-						FreebobStreaming::AmdtpAudioPort::E_PeriodBuffered, 
-						0, // changed in the audio part
+						channelInfo->m_name,
 						direction, 
 						// \todo: streaming backend expects indexing starting from 0
 						// but bebob reports it starting from 1. Decide where
@@ -1816,6 +1813,18 @@ AvDevice::addPlugToProcessor(
 				break;
 
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
+				p=new FreebobStreaming::AmdtpMidiPort(
+						channelInfo->m_name, 
+						direction, 
+						// \todo: streaming backend expects indexing starting from 0
+						// but bebob reports it starting from 1. Decide where
+						// and how to handle this (pp: here)
+						channelInfo->m_streamPosition - 1, 
+						channelInfo->m_location, 
+						FreebobStreaming::AmdtpPortInfo::E_Midi, 
+						clusterInfo->m_portType
+				);
+
 				break;
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_SPDIF:
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_ADAT:
@@ -1832,7 +1841,7 @@ AvDevice::addPlugToProcessor(
 				debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->m_name.c_str());
 			} else {
 		
-				if (processor->addPort(p)) {
+				if (!processor->addPort(p)) {
 					debugWarning("Could not register port with stream processor\n");
 					return false;
 				}

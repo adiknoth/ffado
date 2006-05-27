@@ -121,9 +121,6 @@ int main(int argc, char *argv[])
 
 	AmdtpAudioPort *p1=new AmdtpAudioPort(
 		           std::string("Test port 1"), 
-		           AmdtpAudioPort::E_Int24,
-		           AmdtpAudioPort::E_PeriodBuffered, 
-		           512,
 		           AmdtpAudioPort::E_Capture, 
 		           1, 
 		           0, 
@@ -134,6 +131,8 @@ int main(int argc, char *argv[])
 		printf("Could not create port 1\n");
 		return -1;
 	}
+
+	p1->setBufferSize(512);
 
 	printf("----------------------\n");
 

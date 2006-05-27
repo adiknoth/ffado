@@ -38,6 +38,21 @@
 #include <libiec61883/iec61883.h>
 #include "ringbuffer.h"
 
+#define AMDTP_MAX_PACKET_SIZE 2048
+
+#define IEC61883_STREAM_TYPE_MIDI   0x0D
+#define IEC61883_STREAM_TYPE_SPDIF  0x00
+#define IEC61883_STREAM_TYPE_MBLA   0x06
+
+#define IEC61883_AM824_LABEL_MASK 			0xFF000000
+#define IEC61883_AM824_GET_LABEL(x) 		(((x) & 0xFF000000) >> 24)
+#define IEC61883_AM824_SET_LABEL(x,y) 		((x) | ((y)<<24))
+
+#define IEC61883_AM824_LABEL_MIDI_NO_DATA 	0x80 
+#define IEC61883_AM824_LABEL_MIDI_1X      	0x81 
+#define IEC61883_AM824_LABEL_MIDI_2X      	0x82
+#define IEC61883_AM824_LABEL_MIDI_3X      	0x83
+
 namespace FreebobStreaming {
 
 class Port;
@@ -70,6 +85,7 @@ public:
 	bool reset();
 	bool prepare();
 	bool transfer();
+	bool transferSilence();
 	virtual void setVerboseLevel(int l);
 
 // NOTE: shouldn't this be (4*m_period)/(3*m_syt_interval), because every 3 packets, one empty is sent
@@ -89,7 +105,14 @@ protected:
 
 	int transmitBlock(char *data, unsigned int nevents, 
 	                  unsigned int offset);
+	                  
+	bool encodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
 	int encodePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
+	                           unsigned int offset, unsigned int nevents);
+	
+	int transmitSilenceBlock(char *data, unsigned int nevents, 
+	                  unsigned int offset);
+	int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
 	                           unsigned int offset, unsigned int nevents);
 
     DECLARE_DEBUG_MODULE;
@@ -131,6 +154,8 @@ public:
 protected:
 
 	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
+	bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
+	
 	int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
 	freebob_ringbuffer_t * m_event_buffer;

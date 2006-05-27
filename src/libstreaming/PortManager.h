@@ -51,14 +51,14 @@ public:
 	PortManager();
 	virtual ~PortManager();
 
-	virtual int addPort(Port *port);
-	virtual int deletePort(Port *port);
+	virtual bool addPort(Port *port);
+	virtual bool deletePort(Port *port);
 	virtual void deleteAllPorts();
 
 	int getPortCount(enum Port::E_PortType);
 	int getPortCount();
 
-	virtual bool setPortBuffersize(unsigned int newsize);
+// 	virtual bool setPortBuffersize(unsigned int newsize);
 
 	Port *getPortAtIdx(unsigned int index);
 
@@ -69,6 +69,7 @@ public:
  	virtual void setVerboseLevel(int l);
 
 protected:
+	PortVector m_Ports;
 	PortVector m_PacketPorts;
 	PortVector m_PeriodPorts;
 // 	PortVector m_SamplePorts;

@@ -51,29 +51,12 @@ class AmdtpAudioPort
 public:
 
 	AmdtpAudioPort(std::string name, 
-		           enum E_DataType datatype,
-		           enum E_BufferType buffertype, 
-		           unsigned int buffsize,
-	               enum E_Direction direction,
+	                   enum E_Direction direction,
 		           int position, 
 		           int location, 
 		           enum E_Formats format, 
 		           int type)
-	: AudioPort(name, datatype,	buffertype, buffsize, direction),
-	  AmdtpPortInfo(name, position, location, format, type)
-	{};
-
-	AmdtpAudioPort(std::string name, 
-		           enum E_DataType datatype,
-		           enum E_BufferType buffertype, 
-		           unsigned int buffsize,
-	               void *externalbuffer,
-	               enum E_Direction direction,
-		           int position, 
-		           int location, 
-		           enum E_Formats format, 
-		           int type)
-	: AudioPort(name, datatype,	buffertype, buffsize, externalbuffer, direction),
+	: AudioPort(name, direction),
 	  AmdtpPortInfo(name, position, location, format, type)
 	{};
 
@@ -96,20 +79,20 @@ class AmdtpMidiPort
 public:
 
 	AmdtpMidiPort(std::string name, 
-		           unsigned int buffsize,
-	               enum E_Direction direction,
+	                   enum E_Direction direction,
 		           int position, 
 		           int location, 
 		           enum E_Formats format, 
-		           int type)
-	: MidiPort(name, buffsize, direction),
-	  AmdtpPortInfo(name, position, location, format, type)
-	{};
+		           int type);
 
-	virtual ~AmdtpMidiPort() {};
+	virtual ~AmdtpMidiPort();
+	
+	bool canSend(); ///< can we send a byte
+	void trigger(){m_countdown--;}; ///< call this every time a byte could have been sent
 
 protected:
-
+	int m_countdown;
+	
 };
 
 } // end of namespace FreebobStreaming

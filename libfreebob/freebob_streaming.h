@@ -176,6 +176,16 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info,
 				 	freebob_options_t options);
 
 /**
+ * preparation should be done after setting all per-stream parameters
+ * the way you want them. being buffer data type etc...
+ *
+ * @param dev the freebob device
+ * @return 
+ */
+bool freebob_streaming_prepare(freebob_device_t *dev);
+
+
+/**
  * Finishes the FreeBob streaming. Cleans up all internal data structures
  * and terminates connections.
  *

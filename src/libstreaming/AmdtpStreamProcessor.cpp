@@ -128,8 +128,11 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 		retval=RAW1394_ISO_OK;
 		*length = read_size + 8;
 		
-		// TODO: we should do all packet buffered processing here
-// 		freebob_streaming_encode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
+		// process all ports that should be handled on a per-packet base
+		// this is MIDI for AMDTP (due to the need of DBC)
+		if (!encodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
+			debugWarning("Problem encoding Packet Ports\n");
+		}
 	}
 	
 	*tag = IEC61883_TAG_WITH_CIP;
@@ -220,11 +223,87 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 		return false;
 // 		return -ENOMEM;
 	}
-	
-	// we should transfer the port buffer contents to the event buffer
+
+	// set the parameters of ports we can:
+	// we want the audio ports to be period buffered,
+	// and the midi ports to be packet buffered
+	for ( PortVectorIterator it = m_Ports.begin();
+		  it != m_Ports.end();
+		  ++it )
+	{
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
+		if(!(*it)->setBufferSize(m_period)) {
+			debugFatal("Could not set buffer size to %d\n",m_period);
+			return false;
+		}
+		
+		
+		switch ((*it)->getPortType()) {
+			case Port::E_Audio:
+				if(!(*it)->setSignalType(Port::E_PeriodSignalled)) {
+					debugFatal("Could not set signal type to PeriodSignalling");
+					return false;
+				}
+				debugWarning("---------------- ! Doing hardcoded test setup ! --------------\n");
+				// buffertype and datatype are dependant on the API
+				if(!(*it)->setBufferType(Port::E_PointerBuffer)) {
+					debugFatal("Could not set buffer type");
+					return false;
+				}
+				if(!(*it)->useExternalBuffer(true)) {
+					debugFatal("Could not set external buffer usage");
+					return false;
+				}
+				
+				if(!(*it)->setDataType(Port::E_Float)) {
+					debugFatal("Could not set data type");
+					return false;
+				}
+				
+				
+				break;
+			case Port::E_Midi:
+				if(!(*it)->setSignalType(Port::E_PacketSignalled)) {
+					debugFatal("Could not set signal type to PeriodSignalling");
+					return false;
+				}
+				// buffertype and datatype are dependant on the API
+				debugWarning("---------------- ! Doing hardcoded test setup ! --------------\n");
+				// buffertype and datatype are dependant on the API
+				if(!(*it)->setBufferType(Port::E_RingBuffer)) {
+					debugFatal("Could not set buffer type");
+					return false;
+				}
+				if(!(*it)->setDataType(Port::E_MidiEvent)) {
+					debugFatal("Could not set data type");
+					return false;
+				}
+				break;
+			default:
+				debugWarning("Unsupported port type specified\n");
+				break;
+		}
+	}
+
+	// the API specific settings of the ports should already be set, 
+	// as this is called from the processorManager->prepare()
+	// so we can init the ports
+	if(!initPorts()) {
+		debugFatal("Could not initialize ports!\n");
+		return false;
+	}
+
+	if(!preparePorts()) {
+		debugFatal("Could not initialize ports!\n");
+		return false;
+	}
+
+	// we should prefill the event buffer
+	// FIXME: i have to solve this otherwise because the ports aren't ready yet
+	// especially if there are no internal buffers=> segfault
 	int i=m_nb_buffers;
 	while(i--) {
-		if(!transfer()) {
+		if(!transferSilence()) {
 			debugFatal("Could not prefill transmit stream\n");
 			return false;
 		}
@@ -240,6 +319,19 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 
 	return true;
 
+}
+
+bool AmdtpTransmitStreamProcessor::transferSilence() {
+	/* a naive implementation would look like this: */
+	
+	unsigned int write_size=m_period*sizeof(quadlet_t)*m_dimension;
+	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
+	transmitSilenceBlock(dummybuffer, m_period, 0);
+
+	if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
+		debugWarning("Could not write to event buffer\n");
+	}
+	return true;
 }
 
 bool AmdtpTransmitStreamProcessor::transfer() {
@@ -260,7 +352,6 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 	free(dummybuffer);
 */
 /* but we're not that naive anymore... */
-	int i;
 	int xrun;
 	unsigned int offset=0;
 	
@@ -377,9 +468,6 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
 			break;
 		case AmdtpPortInfo::E_SPDIF: // still unimplemented
 			break;
-	/* for this processor, midi is a packet based port 
-		case AmdtpPortInfo::E_Midi:
-			break;*/
 		default: // ignore
 			break;
 		}
@@ -387,6 +475,104 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
 	return problem;
 
 }
+
+int AmdtpTransmitStreamProcessor::transmitSilenceBlock(char *data, 
+					   unsigned int nevents, unsigned int offset)
+{
+	int problem=0;
+
+	for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it )
+    {
+
+		//FIXME: make this into a static_cast when not DEBUG?
+
+		AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+		assert(pinfo); // this should not fail!!
+
+		switch(pinfo->getFormat()) {
+		case AmdtpPortInfo::E_MBLA:
+			if(encodeSilencePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+				debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+				problem=1;
+			}
+			break;
+		case AmdtpPortInfo::E_SPDIF: // still unimplemented
+			break;
+		default: // ignore
+			break;
+		}
+    }
+	return problem;
+
+}
+
+/**
+ * @brief decode a packet for the packet-based ports
+ *
+ * @param data Packet data
+ * @param nevents number of events in data (including events of other ports & port types)
+ * @param dbc DataBlockCount value for this packet
+ * @return true if all successfull
+ */
+bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc)
+{
+	bool ok=true;
+	char byte;
+	
+	quadlet_t *target_event=NULL;
+	int j;
+	
+	for ( PortVectorIterator it = m_PacketPorts.begin();
+          it != m_PacketPorts.end();
+          ++it )
+	{
+
+#ifdef DEBUG
+		AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+		assert(pinfo); // this should not fail!!
+
+		// the only packet type of events for AMDTP is MIDI in mbla
+		assert(pinfo->getFormat()==AmdtpPortInfo::E_Midi);
+#endif
+		
+		AmdtpMidiPort *mp=static_cast<AmdtpMidiPort *>(*it);
+		
+		// we encode this directly (no function call) due to the high frequency
+		/* idea:
+		spec says: current_midi_port=(dbc+j)%8;
+		=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
+		we'll start at the right event for the midi port.
+		=> if we increment j with 8, we stay at the right event.
+		*/
+		// FIXME: as we know in advance how big a packet is (syt_interval) we can 
+		//        predict how much loops will be present here
+		// first prefill the buffer with NO_DATA's on all time muxed channels
+		
+		for(j = (dbc & 0x07)+mp->getLocation()-1; j < nevents; j += 8) {
+		
+			target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
+			
+			if(mp->canSend()) { // we can send a byte
+				mp->readEvent(&byte);
+				*target_event=htonl(
+					IEC61883_AM824_SET_LABEL((byte)<<16,
+					                         IEC61883_AM824_LABEL_MIDI_1X));
+			} else { 
+				// can't send a byte, either because there is no byte,
+				// or because this would exceed the maximum rate
+				*target_event=htonl(
+					IEC61883_AM824_SET_LABEL(0,IEC61883_AM824_LABEL_MIDI_NO_DATA));
+			}
+			mp->trigger();
+		}
+
+	}
+    	
+	return ok;
+}
+
 
 int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents(AmdtpAudioPort *p, quadlet_t *data, 
 					   unsigned int offset, unsigned int nevents)
@@ -439,6 +625,30 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents(AmdtpAudioPort *p, quad
 
 	return 0;
 }
+int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents(AmdtpAudioPort *p, quadlet_t *data, 
+					   unsigned int offset, unsigned int nevents)
+{
+	unsigned int j=0;
+
+	quadlet_t *target_event;
+
+	target_event=(quadlet_t *)(data + p->getPosition());
+
+	switch(p->getDataType()) {
+		default:
+		case Port::E_Int24:
+		case Port::E_Float:
+			{
+				for(j = 0; j < nevents; j += 1) { // decode max nsamples
+					*target_event = htonl(0x40000000);
+					target_event += m_dimension;
+				}
+			}
+			break;
+	}
+
+	return 0;
+}
 
 /* --------------------- RECEIVE ----------------------- */
 
@@ -455,9 +665,6 @@ AmdtpReceiveStreamProcessor::~AmdtpReceiveStreamProcessor() {
 }
 
 bool AmdtpReceiveStreamProcessor::init() {
-	int err=0;
-	
-	
 	// call the parent init
 	// this has to be done before allocating the buffers, 
 	// because this sets the buffersizes from the processormanager
@@ -501,8 +708,11 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 			retval=RAW1394_ISO_DEFER;
 		} else {
 			retval=RAW1394_ISO_OK;
-			// we cannot offload midi encoding due to the need for a dbc value
-// 			freebob_streaming_decode_midi(connection,(quadlet_t *)(data+8), nevents, packet->dbc);
+			// process all ports that should be handled on a per-packet base
+			// this is MIDI for AMDTP (due to the need of DBC)
+			if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
+				debugWarning("Problem decoding Packet Ports\n");
+			}
 		}
 
 		debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
@@ -595,8 +805,80 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 		return false;
 	}
 
+	// set the parameters of ports we can:
+	// we want the audio ports to be period buffered,
+	// and the midi ports to be packet buffered
+	for ( PortVectorIterator it = m_Ports.begin();
+		  it != m_Ports.end();
+		  ++it )
+	{
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
+		if(!(*it)->setBufferSize(m_period)) {
+			debugFatal("Could not set buffer size to %d\n",m_period);
+			return false;
+		}
 
-	
+		switch ((*it)->getPortType()) {
+			case Port::E_Audio:
+				if(!(*it)->setSignalType(Port::E_PeriodSignalled)) {
+					debugFatal("Could not set signal type to PeriodSignalling");
+					return false;
+				}
+				// buffertype and datatype are dependant on the API
+				debugWarning("---------------- ! Doing hardcoded dummy setup ! --------------\n");
+				// buffertype and datatype are dependant on the API
+				if(!(*it)->setBufferType(Port::E_PointerBuffer)) {
+					debugFatal("Could not set buffer type");
+					return false;
+				}
+				if(!(*it)->useExternalBuffer(true)) {
+					debugFatal("Could not set external buffer usage");
+					return false;
+				}
+				if(!(*it)->setDataType(Port::E_Float)) {
+					debugFatal("Could not set data type");
+					return false;
+				}
+				break;
+			case Port::E_Midi:
+				if(!(*it)->setSignalType(Port::E_PacketSignalled)) {
+					debugFatal("Could not set signal type to PacketSignalling");
+					return false;
+				}
+				// buffertype and datatype are dependant on the API
+				// buffertype and datatype are dependant on the API
+				debugWarning("---------------- ! Doing hardcoded test setup ! --------------\n");
+				// buffertype and datatype are dependant on the API
+				if(!(*it)->setBufferType(Port::E_RingBuffer)) {
+					debugFatal("Could not set buffer type");
+					return false;
+				}
+				if(!(*it)->setDataType(Port::E_MidiEvent)) {
+					debugFatal("Could not set data type");
+					return false;
+				}
+				break;
+			default:
+				debugWarning("Unsupported port type specified\n");
+				break;
+		}
+
+	}
+
+	// the API specific settings of the ports should already be set, 
+	// as this is called from the processorManager->prepare()
+	// so we can init the ports
+	if(!initPorts()) {
+		debugFatal("Could not initialize ports!\n");
+		return false;
+	}
+
+	if(!preparePorts()) {
+		debugFatal("Could not initialize ports!\n");
+		return false;
+	}
+
+
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
 	debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
 		     m_framerate,m_dimension,m_syt_interval);
@@ -623,7 +905,6 @@ bool AmdtpReceiveStreamProcessor::transfer() {
 
 	free(dummybuffer);
 */
-	int i;
 	int xrun;
 	unsigned int offset=0;
 	
@@ -698,17 +979,16 @@ bool AmdtpReceiveStreamProcessor::transfer() {
 			bytes2read -= bytesread;
 		}
 			
-			// the bytes2read should always be cluster aligned
+		// the bytes2read should always be cluster aligned
 		assert(bytes2read%cluster_size==0);
 	}
 
 	return true;
 }
 
-/* 
- * write received events to the stream ringbuffers.
+/**
+ * \brief write received events to the stream ringbuffers.
  */
-
 int AmdtpReceiveStreamProcessor::receiveBlock(char *data, 
 					   unsigned int nevents, unsigned int offset)
 {
@@ -742,6 +1022,61 @@ int AmdtpReceiveStreamProcessor::receiveBlock(char *data,
     }
 	return problem;
 
+}
+
+/**
+ * @brief decode a packet for the packet-based ports
+ *
+ * @param data Packet data
+ * @param nevents number of events in data (including events of other ports & port types)
+ * @param dbc DataBlockCount value for this packet
+ * @return true if all successfull
+ */
+bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc)
+{
+	bool ok=true;
+	
+	quadlet_t *target_event=NULL;
+	int j;
+	
+	for ( PortVectorIterator it = m_PacketPorts.begin();
+          it != m_PacketPorts.end();
+          ++it )
+	{
+
+#ifdef DEBUG
+		AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+		assert(pinfo); // this should not fail!!
+
+		// the only packet type of events for AMDTP is MIDI in mbla
+		assert(pinfo->getFormat()==AmdtpPortInfo::E_Midi);
+#endif
+		AmdtpMidiPort *mp=static_cast<AmdtpMidiPort *>(*it);
+		
+		// we decode this directly (no function call) due to the high frequency
+		/* idea:
+		spec says: current_midi_port=(dbc+j)%8;
+		=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
+		we'll start at the right event for the midi port.
+		=> if we increment j with 8, we stay at the right event.
+		*/
+		// FIXME: as we know in advance how big a packet is (syt_interval) we can 
+		//        predict how much loops will be present here
+		for(j = (dbc & 0x07)+mp->getLocation()-1; j < nevents; j += 8) {
+			target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
+			quadlet_t sample_int=ntohl(*target_event);
+			if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
+				sample_int=(sample_int >> 16) & 0xFF;
+				if(!mp->writeEvent(&sample_int)) {
+					debugWarning("Packet port events lost\n");
+					ok=false;
+				}
+			}
+		}
+
+	}
+    	
+	return ok;
 }
 
 int AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(AmdtpAudioPort *p, quadlet_t *data, 
