@@ -88,10 +88,9 @@ protected:
 	int m_fdf;
 
 	int transmitBlock(char *data, unsigned int nevents, 
-	                  unsigned int offset, unsigned int dbc);
+	                  unsigned int offset);
 	int encodePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
-	                           unsigned int offset, unsigned int nevents,
-	                           unsigned int dbc);
+	                           unsigned int offset, unsigned int nevents);
 
     DECLARE_DEBUG_MODULE;
 
@@ -131,8 +130,8 @@ public:
 
 protected:
 
-	int receiveBlock(char *data, unsigned int nevents, unsigned int offset, unsigned int dbc);
-	int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents, unsigned int dbc);
+	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
+	int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
 	freebob_ringbuffer_t * m_event_buffer;
 	char* m_cluster_buffer;

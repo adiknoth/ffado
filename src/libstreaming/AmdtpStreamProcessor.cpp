@@ -246,6 +246,7 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 	// TODO: improve
+/* a naive implementation would look like this:
 
 	unsigned int write_size=m_period*sizeof(quadlet_t)*m_dimension;
 	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
@@ -257,6 +258,94 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 
 
 	free(dummybuffer);
+*/
+/* but we're not that naive anymore... */
+	int i;
+	int xrun;
+	unsigned int offset=0;
+	
+	freebob_ringbuffer_data_t vec[2];
+	// we received one period of frames
+	// this is period_size*dimension of events
+	int events2write=m_period*m_dimension;
+	int bytes2write=events2write*sizeof(quadlet_t);
+
+	/* write events2write bytes to the ringbuffer 
+	*  first see if it can be done in one read.
+	*  if so, ok. 
+	*  otherwise write up to a multiple of clusters directly to the buffer
+	*  then do the buffer wrap around using ringbuffer_write
+	*  then write the remaining data directly to the buffer in a third pass 
+	*  Make sure that we cannot end up on a non-cluster aligned position!
+	*/
+	int cluster_size=m_dimension*sizeof(quadlet_t);
+
+	while(bytes2write>0) {
+		int byteswritten=0;
+		
+		unsigned int frameswritten=(m_period*cluster_size-bytes2write)/cluster_size;
+		offset=frameswritten;
+		
+		freebob_ringbuffer_get_write_vector(m_event_buffer, vec);
+			
+		if(vec[0].len==0) { // this indicates a full event buffer
+			debugError("Event buffer overrun in processor %d\n",this);
+			break;
+		}
+			
+		/* if we don't take care we will get stuck in an infinite loop
+		* because we align to a cluster boundary later
+		* the remaining nb of bytes in one write operation can be 
+		* smaller than one cluster
+		* this can happen because the ringbuffer size is always a power of 2
+		*/
+		if(vec[0].len<cluster_size) {
+			
+			// encode to the temporary buffer
+			xrun = transmitBlock(m_cluster_buffer, 1, offset);
+			
+			if(xrun<0) {
+				// xrun detected
+				debugError("Frame buffer underrun in processor %d\n",this);
+				break;
+			}
+				
+			// use the ringbuffer function to write one cluster 
+			// the write function handles the wrap around.
+			freebob_ringbuffer_write(m_event_buffer,
+						 m_cluster_buffer,
+						 cluster_size);
+				
+			// we advanced one cluster_size
+			bytes2write-=cluster_size;
+				
+		} else { // 
+			
+			if(bytes2write>vec[0].len) {
+				// align to a cluster boundary
+				byteswritten=vec[0].len-(vec[0].len%cluster_size);
+			} else {
+				byteswritten=bytes2write;
+			}
+				
+			xrun = transmitBlock(vec[0].buf,
+					     byteswritten/cluster_size,
+					     offset);
+			
+			if(xrun<0) {
+					// xrun detected
+				debugError("Frame buffer underrun in processor %d\n",this);
+				break;
+			}
+
+			freebob_ringbuffer_write_advance(m_event_buffer, byteswritten);
+			bytes2write -= byteswritten;
+		}
+			
+		// the bytes2write should always be cluster aligned
+		assert(bytes2write%cluster_size==0);
+			
+	}
 
 	return true;
 }
@@ -265,7 +354,7 @@ bool AmdtpTransmitStreamProcessor::transfer() {
  */
 
 int AmdtpTransmitStreamProcessor::transmitBlock(char *data, 
-					   unsigned int nevents, unsigned int offset, unsigned int dbc)
+					   unsigned int nevents, unsigned int offset)
 {
 	int problem=0;
 
@@ -281,7 +370,7 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
 
 		switch(pinfo->getFormat()) {
 		case AmdtpPortInfo::E_MBLA:
-			if(encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents, dbc)) {
+			if(encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
 				debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
 				problem=1;
 			}
@@ -300,7 +389,7 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
 }
 
 int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents(AmdtpAudioPort *p, quadlet_t *data, 
-					   unsigned int offset, unsigned int nevents, unsigned int dbc)
+					   unsigned int offset, unsigned int nevents)
 {
 	unsigned int j=0;
 
@@ -522,17 +611,96 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 bool AmdtpReceiveStreamProcessor::transfer() {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-// TODO: implement
 	
+/* another naive section:	
 	unsigned int read_size=m_period*sizeof(quadlet_t)*m_dimension;
 	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
 	if (freebob_ringbuffer_read(m_event_buffer,(char *)(dummybuffer),read_size) < read_size) {
 		debugWarning("Could not read from event buffer\n");
 	}
 
-	receiveBlock(dummybuffer, m_period, 0, 0);
+	receiveBlock(dummybuffer, m_period, 0);
 
 	free(dummybuffer);
+*/
+	int i;
+	int xrun;
+	unsigned int offset=0;
+	
+	freebob_ringbuffer_data_t vec[2];
+	// we received one period of frames on each connection
+	// this is period_size*dimension of events
+
+	int events2read=m_period*m_dimension;
+	int bytes2read=events2read*sizeof(quadlet_t);
+	/* read events2read bytes from the ringbuffer 
+	*  first see if it can be done in one read. 
+	*  if so, ok. 
+	*  otherwise read up to a multiple of clusters directly from the buffer
+	*  then do the buffer wrap around using ringbuffer_read
+	*  then read the remaining data directly from the buffer in a third pass 
+	*  Make sure that we cannot end up on a non-cluster aligned position!
+	*/
+	int cluster_size=m_dimension*sizeof(quadlet_t);
+	
+	while(bytes2read>0) {
+		unsigned int framesread=(m_period*cluster_size-bytes2read)/cluster_size;
+		offset=framesread;
+		
+		int bytesread=0;
+
+		freebob_ringbuffer_get_read_vector(m_event_buffer, vec);
+			
+		if(vec[0].len==0) { // this indicates an empty event buffer
+			debugError("Frame buffer underrun in processor %d\n",this);
+			break;
+		}
+			
+		/* if we don't take care we will get stuck in an infinite loop
+		* because we align to a cluster boundary later
+		* the remaining nb of bytes in one read operation can be smaller than one cluster
+		* this can happen because the ringbuffer size is always a power of 2
+			*/
+		if(vec[0].len<cluster_size) {
+			// use the ringbuffer function to read one cluster 
+			// the read function handles wrap around
+			freebob_ringbuffer_read(m_event_buffer,m_cluster_buffer,cluster_size);
+
+			xrun = receiveBlock(m_cluster_buffer, 1, offset);
+				
+			if(xrun<0) {
+				// xrun detected
+				debugError("Frame buffer underrun in processor %d\n",this);
+				break;
+			}
+				
+				// we advanced one cluster_size
+			bytes2read-=cluster_size;
+				
+		} else { // 
+			
+			if(bytes2read>vec[0].len) {
+					// align to a cluster boundary
+				bytesread=vec[0].len-(vec[0].len%cluster_size);
+			} else {
+				bytesread=bytes2read;
+			}
+				
+			xrun = receiveBlock(vec[0].buf, bytesread/cluster_size, offset);
+				
+			if(xrun<0) {
+					// xrun detected
+				debugError("Frame buffer underrun in processor %d\n",this);
+				break;
+			}
+
+			freebob_ringbuffer_read_advance(m_event_buffer, bytesread);
+			bytes2read -= bytesread;
+		}
+			
+			// the bytes2read should always be cluster aligned
+		assert(bytes2read%cluster_size==0);
+	}
 
 	return true;
 }
@@ -542,7 +710,7 @@ bool AmdtpReceiveStreamProcessor::transfer() {
  */
 
 int AmdtpReceiveStreamProcessor::receiveBlock(char *data, 
-					   unsigned int nevents, unsigned int offset, unsigned int dbc)
+					   unsigned int nevents, unsigned int offset)
 {
 	int problem=0;
 
@@ -558,7 +726,7 @@ int AmdtpReceiveStreamProcessor::receiveBlock(char *data,
 
 		switch(pinfo->getFormat()) {
 		case AmdtpPortInfo::E_MBLA:
-			if(decodeMBLAEventsToPort(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents, dbc)) {
+			if(decodeMBLAEventsToPort(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
 				debugWarning("Could not decode packet MBLA to port %s",(*it)->getName().c_str());
 				problem=1;
 			}
@@ -577,7 +745,7 @@ int AmdtpReceiveStreamProcessor::receiveBlock(char *data,
 }
 
 int AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(AmdtpAudioPort *p, quadlet_t *data, 
-					   unsigned int offset, unsigned int nevents, unsigned int dbc)
+					   unsigned int offset, unsigned int nevents)
 {
 	unsigned int j=0;
 
