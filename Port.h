@@ -30,6 +30,7 @@
 
 #include "../debugmodule/debugmodule.h"
 #include <string>
+#include "ringbuffer.h"
 
 namespace FreebobStreaming {
 
@@ -39,6 +40,20 @@ namespace FreebobStreaming {
  Ports are the entities that provide the interface between the ISO streaming
  layer and the datatype-specific layer. You can define plug types by subclassing
  the base port type.
+ 
+ After creating a port, you have to set its parameters and then call the init() function.
+ This is because a port needs information from two sources to operate: 
+ 1) the stream composition information from the AvDevice
+ 2) the streaming API setup (buffer type, data type, ...)
+ 
+ \note There are not much virtual functions here because of the high frequency of
+       calling. We try to do everything with a base class getter, and a child class
+       setter. If this isn't possible, we do a static_cast. This however can only be
+       done inside the streamprocessor that handles the specific sub-class types of 
+       the ports. i.e. by design you should make sure that the static_cast will be
+       OK.
+       
+ \todo rework the implementation into something more beautifull
 */
 class Port {
 
@@ -46,12 +61,23 @@ public:
 	friend class PortManager;
 	
 	/*!
-	\brief Specifies the buffering type for ports
+	\brief Specifies the buffer type for ports
+	
+	A PointerBuffer uses the getBufferAddress() and setBufferAddres() interface
+	A Ringbuffer uses the read/write interface
 	*/
 	enum E_BufferType {
-		E_PacketBuffered, ///< the port is to be processed for every packet
-		E_PeriodBuffered, ///< the port is to be processed after a period of frames
-// 		E_SampleBuffered ///< the port is to be processed after each frame (sample)
+		E_PointerBuffer, 
+		E_RingBuffer
+	};
+	
+	/*!
+	\brief Specifies the signalling type for ports
+	*/
+	enum E_SignalType {
+		E_PacketSignalled, ///< the port is to be processed for every packet
+		E_PeriodSignalled, ///< the port is to be processed after a period of frames
+// 		E_SampleSignalled ///< the port is to be processed after each frame (sample)
 	};
 
 	/*!
@@ -60,7 +86,7 @@ public:
 	enum E_DataType {
 		E_Float,
 		E_Int24,
-		E_Byte,
+		E_MidiEvent,
 		E_Default,
 	};
 
@@ -81,47 +107,66 @@ public:
 		E_Capture,
 	};
 
-	Port(std::string name, enum E_BufferType type, unsigned int buffsize, 
-	     enum E_DataType datatype, enum E_PortType porttype, enum E_Direction direction);
-	     
-	Port(std::string name, enum E_BufferType type, unsigned int buffsize, 
-	     enum E_DataType datatype, void *externalbuffer, enum E_PortType porttype, enum E_Direction direction);
+	Port(std::string name, enum E_PortType porttype, enum E_Direction direction);
 
 	virtual ~Port() 
 	  {};
-
-	std::string getName() {return m_Name;};
-	void setName(std::string name) {m_Name=name;};
-
+	
+	
+	/// Enable the port. (this can be called anytime)
 	void enable()  {m_enabled=true;};
+	/// Disable the port. (this can be called anytime)
 	void disable() {m_enabled=false;};
+	/// is the port enabled? (this can be called anytime)
 	bool isEnabled() {return m_enabled;};
 
-	enum E_BufferType getBufferType() {return m_BufferType;};
+	/*!
+	\brief Initialize the port
+	*/
+	bool init();
+	
+	bool prepare() {return true;};
+	bool reset() {return true;};
 
-
-	enum E_DataType getDataType() {return m_datatype;};
-	bool setDataType(enum E_DataType datatype);
-
-	enum E_PortType getPortType() {return m_porttype;};
-	enum E_Direction getDirection() {return m_direction;};
-
-	// NOT THREAD SAFE!
-	// attaches a user buffer to the port.
-	// deallocates the internal buffer, if there was one
-	// buffersize is in 'events'
-
-// 	int attachBuffer(void *buff);
-
-	// detach the user buffer, allocates an internal buffer
-// 	int detachBuffer();
+	std::string getName() {return m_Name;};
+	bool setName(std::string name);
 
 	/**
 	 * \brief returns the size of the events in the port buffer, in bytes
 	 *
 	 */
 	unsigned int getEventSize();
+
+	/**
+	 * \brief sets the event type for the port buffer
+	 *
+	 * \note use before calling init()
+	 */
+	virtual bool setDataType(enum E_DataType);
 	
+	enum E_DataType getDataType() {return m_DataType;};
+	
+	/**
+	 * \brief sets the event type for the port buffer
+	 *
+	 * \note use before calling init()
+	 */
+	virtual bool setSignalType(enum E_SignalType );
+	
+	enum E_SignalType getSignalType() {return m_SignalType;}; ///< returns the signalling type of the port
+	
+	/**
+	 * \brief sets the buffer type for the port
+	 *
+	 * \note use before calling init()
+	 */
+	virtual bool setBufferType(enum E_BufferType );
+	
+	enum E_BufferType getBufferType() {return m_BufferType;}; ///< returns the buffer type of the port
+
+	enum E_PortType getPortType() {return m_PortType;}; ///< returns the port type (is fixed)
+	enum E_Direction getDirection() {return m_Direction;}; ///< returns the direction (is fixed)
+
 	/**
 	 * \brief returns the size of the port buffer
 	 *
@@ -139,43 +184,55 @@ public:
 	 * be large enough
 	 * if there is an internal buffer, it will be resized
 	 *
+	 * \note use before calling init()
 	 */
-	bool setBufferSize(unsigned int);
+	virtual bool setBufferSize(unsigned int);
+	
+	/**
+	 * \brief use an external buffer (or not)
+	 *
+	 * \note use before calling init()
+	 */
+	virtual bool useExternalBuffer(bool b);
+	
+	void setExternalBufferAddress(void *buff);
 
 	// FIXME: this is not really OO, but for performance???
-	void *getBufferAddress() {return m_buffer;};
-	void setBufferAddress(void *buff) {m_buffer=buff;};
+	void *getBufferAddress();
+
+	// TODO: extend this with a blocking interface
+	bool writeEvent(void *event); ///< write one event
+	bool readEvent(void *event); ///< read one event
+	int writeEvents(void *event, unsigned int nevents); ///< write multiple events
+	int readEvents(void *event, unsigned int nevents); ///< read multiple events
 
  	virtual void setVerboseLevel(int l);
 
 protected:
 	std::string m_Name; ///< Port name, [at construction]
 
+	enum E_SignalType m_SignalType; ///< Signalling type, [at construction]
 	enum E_BufferType m_BufferType; ///< Buffer type, [at construction]
 
 	bool m_enabled; ///< is the port enabled?, [anytime]
-	
-	/**
-	 * \brief size of the buffer
-	 *
-	 * counted in number of E_DataType units, not in bytes
-	 *
-	 * []
-	 */
-	unsigned int m_buffersize; 
+	bool m_initialized; ///< is the port initialized? [after init()]
 
-	enum E_DataType m_datatype; ///< size of the buffer, number of E_DataType units []
-	enum E_PortType m_porttype;
-	enum E_Direction m_direction;
+	unsigned int m_buffersize; 
+	unsigned int m_eventsize; 
+
+	enum E_DataType m_DataType;
+	enum E_PortType m_PortType;
+	enum E_Direction m_Direction;
 
 	void *m_buffer;
-	bool m_buffer_attached;
+	freebob_ringbuffer_t *m_ringbuffer;
+	bool m_use_external_buffer;
 
 	bool allocateInternalBuffer();
 	void freeInternalBuffer();
-
-	// call this when the event size is changed
-	virtual bool eventSizeChanged(); ///< this is called whenever the event size changes.
+	
+	bool allocateInternalRingBuffer();
+	void freeInternalRingBuffer();
 
     DECLARE_DEBUG_MODULE;
 
@@ -190,33 +247,13 @@ class AudioPort : public Port {
 
 public:
 
-	AudioPort(std::string name, unsigned int buffsize, enum E_Direction direction) 
-	  : Port(name, E_PeriodBuffered, buffsize, E_Int24, E_Audio, direction)
-	{};
-
-	AudioPort(std::string name, enum E_BufferType type, unsigned int buffsize, 
-	          enum E_Direction direction) 
-	  : Port(name, type, buffsize, E_Int24, E_Audio, direction)
-	{};
-	AudioPort(std::string name, enum E_BufferType type, unsigned int buffsize, 
-	          void *externalbuffer, enum E_Direction direction) 
-	  : Port(name, type, buffsize, E_Int24, externalbuffer, E_Audio, direction)
-	{};
-
-	AudioPort(std::string name, enum E_DataType datatype,
-	          enum E_BufferType type, unsigned int buffsize, enum E_Direction direction) 
-	  : Port(name, type, buffsize, datatype, E_Audio, direction)
-	{};
-	AudioPort(std::string name, enum E_DataType datatype, 
-	          enum E_BufferType type, unsigned int buffsize, void *externalbuffer, 
-	          enum E_Direction direction) 
-	  : Port(name, type, buffsize, datatype, externalbuffer, E_Audio, direction)
+	AudioPort(std::string name, enum E_Direction direction) 
+	  : Port(name, E_Audio, direction)
 	{};
 
 	virtual ~AudioPort() {};
 
 protected:
-	enum E_DataType m_DataType;
 
   
 };
@@ -230,14 +267,13 @@ class MidiPort : public Port {
 
 public:
 
-	MidiPort(std::string name, unsigned int buffsize, enum E_Direction direction) 
-	  : Port(name, E_PacketBuffered, buffsize, E_Byte, E_Midi, direction)
+	MidiPort(std::string name, enum E_Direction direction) 
+	  : Port(name, E_Midi, direction)
 	{};
 	virtual ~MidiPort() {};
 
 
 protected:
-	enum E_DataType m_DataType;
 
 
 };
@@ -251,8 +287,8 @@ class ControlPort : public Port {
 
 public:
 
-	ControlPort(std::string name, unsigned int buffsize, enum E_Direction direction) 
-	  : Port(name, E_PeriodBuffered, buffsize, E_Int24, E_Control, direction)
+	ControlPort(std::string name, enum E_SignalType type, enum E_BufferType buffertype, enum E_Direction direction) 
+	  : Port(name, E_Control, direction)
 	{};
 	virtual ~ControlPort() {};
 

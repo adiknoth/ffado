@@ -30,6 +30,7 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "FreebobThread.h"
+#include "FreebobPosixThread.h"
 #include <semaphore.h>
 #include "Port.h"
 #include "StreamProcessor.h"
@@ -120,6 +121,8 @@ protected:
 	unsigned int m_xruns;
 	
 	IsoHandlerManager *m_isoManager;
+
+	FreebobPosixThread *streamingThread;
 
     DECLARE_DEBUG_MODULE;
 
