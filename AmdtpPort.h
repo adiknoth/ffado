@@ -83,15 +83,15 @@ public:
 		           int position, 
 		           int location, 
 		           enum E_Formats format, 
-		           int type);
+		           int type)
+		: MidiPort(name, direction),
+		  AmdtpPortInfo(name, position, location, format, type) 
+	{};
 
-	virtual ~AmdtpMidiPort();
-	
-	bool canSend(); ///< can we send a byte
-	void trigger(){m_countdown--;}; ///< call this every time a byte could have been sent
+
+	virtual ~AmdtpMidiPort() {};
 
 protected:
-	int m_countdown;
 	
 };
 

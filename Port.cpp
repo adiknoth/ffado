@@ -40,6 +40,7 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
 	m_SignalType(E_PeriodSignalled),
 	m_BufferType(E_PointerBuffer),
 	m_enabled(true),
+	m_initialized(false),
 	m_buffersize(0),
 	m_eventsize(0),
 	m_DataType(E_Int24),
@@ -47,7 +48,14 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
 	m_Direction(direction),
 	m_buffer(0),
 	m_ringbuffer(0),
-	m_use_external_buffer(false)
+	m_use_external_buffer(false),
+	m_do_ratecontrol(false),
+	m_event_interval(0),
+	m_slot_interval(0),
+	m_rate_counter(0),
+	m_rate_counter_minimum(0),
+	m_average_ratecontrol(false)
+	
 {
 
 }
@@ -283,19 +291,17 @@ bool Port::writeEvent(void *event) {
 	assert(m_BufferType==E_RingBuffer);
 	assert(m_ringbuffer);
 	
-	char *byte=(char *)event;
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Writing event %02X to port %s\n",(*byte)&0xFF,m_Name.c_str());
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Writing event %08X with size %d to port %s\n",*((quadlet_t *)event),m_eventsize, m_Name.c_str());
 	
-	return (freebob_ringbuffer_write(m_ringbuffer, byte, m_eventsize)==m_eventsize);
+	return (freebob_ringbuffer_write(m_ringbuffer, (char *)event, m_eventsize)==m_eventsize);
 }
 
 bool Port::readEvent(void *event) {
 	assert(m_ringbuffer);
 	
-	char *byte=(char *)event;
-	unsigned int read=freebob_ringbuffer_read(m_ringbuffer, byte, m_eventsize);
+	unsigned int read=freebob_ringbuffer_read(m_ringbuffer, (char *)event, m_eventsize);
 	
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Reading event %X from port %s\n",(*byte),m_Name.c_str());
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Reading event %X with size %d from port %s\n",*((quadlet_t *)event),m_eventsize,m_Name.c_str());
 	return (read==m_eventsize);
 }
 
@@ -303,25 +309,124 @@ int Port::writeEvents(void *event, unsigned int nevents) {
 	assert(m_BufferType==E_RingBuffer);
 	assert(m_ringbuffer);
 	
-	char *byte=(char *)event;
 	unsigned int bytes2write=m_eventsize*nevents;
 	
-	return (freebob_ringbuffer_write(m_ringbuffer, byte,bytes2write)/m_eventsize);
+	unsigned int written=freebob_ringbuffer_write(m_ringbuffer, (char *)event,bytes2write)/m_eventsize;
+	
+	if(written) {
+		int i=0;
+		quadlet_t * tmp=(quadlet_t *)event;
+		debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Written %d events (",written);
+		for (i=0;i<written;i++) {
+			debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%X ", *(tmp+i));
+		}
+		debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, ") to port %s\n",m_Name.c_str());
+	}
+	
+	return written;
 
 }
 
 int Port::readEvents(void *event, unsigned int nevents) {
 	assert(m_ringbuffer);
-	char *byte=(char *)event;
 	
 	unsigned int bytes2read=m_eventsize*nevents;
 	
-	freebob_ringbuffer_read(m_ringbuffer, byte, bytes2read);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Reading events (%X) from port %s\n",(*byte),m_Name.c_str());
+	unsigned int read=freebob_ringbuffer_read(m_ringbuffer, (char *)event, bytes2read)/m_eventsize;
 	
-	return freebob_ringbuffer_read(m_ringbuffer, byte, bytes2read)/m_eventsize;
+	if(read) {
+		int i=0;
+		quadlet_t * tmp=(quadlet_t *)event;
+		debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Read %d events (",read);
+		for (i=0;i<read;i++) {
+			debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%X ", *(tmp+i));
+		}
+		debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, ") from port %s\n",m_Name.c_str());
+	}
+	
+	return read;
 }
 
+/* rate control */
+bool Port::canRead() {
+	bool byte_present_in_buffer;
+	
+	bool retval=false;
+	
+	assert(m_ringbuffer);
+	
+	byte_present_in_buffer=(freebob_ringbuffer_read_space(m_ringbuffer) >= m_eventsize);
+	
+	if(byte_present_in_buffer) {
+		
+		if(!m_do_ratecontrol) {
+			return true;
+		}
+		
+		if(m_rate_counter <= 0) {
+			// update the counter
+			if(m_average_ratecontrol) {
+				m_rate_counter += m_event_interval;
+				assert(m_rate_counter<m_event_interval);
+			} else {
+				m_rate_counter = m_event_interval;
+			}
+		
+			retval=true;
+		} else {
+			debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Rate limit (%s)! rate_counter=%d \n",m_Name.c_str(),m_rate_counter);
+		
+		}
+	}
+	
+	
+	m_rate_counter -= m_slot_interval;
+	
+	// we have to limit the decrement of the ratecounter somehow.
+	// m_rate_counter_minimum is initialized when enabling ratecontrol
+	if(m_rate_counter < m_rate_counter_minimum) {
+		m_rate_counter = m_rate_counter_minimum;
+	}
+	
+	return retval;
+}
+
+bool Port::useRateControl(bool use, unsigned int slot_interval, 
+	                            unsigned int event_interval, bool average) {
+
+	if (use) {
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Enabling rate control for port %s...\n",m_Name.c_str());
+		if(slot_interval>event_interval) {
+			debugWarning("Rate control not needed!\n",m_Name.c_str());
+			m_do_ratecontrol=false;
+			return false;
+		}
+		if(slot_interval==0) {
+			debugFatal("Cannot have slot interval == 0!\n");
+			m_do_ratecontrol=false;
+			return false;
+		}
+		if(event_interval==0) {
+			debugFatal("Cannot have event interval == 0!\n");
+			m_do_ratecontrol=false;
+			return false;
+		}
+		m_do_ratecontrol=use;
+		m_event_interval=event_interval;
+		m_slot_interval=slot_interval;
+		m_rate_counter=0;
+		
+		// NOTE: pretty arbitrary, but in average mode this limits the peak stream rate
+		m_rate_counter_minimum=-(2*event_interval);
+		
+		m_average_ratecontrol=average;
+
+	} else {
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Disabling rate control for port %s...\n",m_Name.c_str());
+		m_do_ratecontrol=use;
+	}
+	return true;
+}
 
 /* Private functions */
 
