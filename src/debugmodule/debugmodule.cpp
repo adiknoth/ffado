@@ -71,18 +71,12 @@ DebugModule::printShort( debug_level_t level,
     va_list arg;
 
     va_start( arg, format );
-    if ( printf( "%s: ", getPreSequence( level ) ) < 0 ) {
-        cerr << "Could not create debug string with printf" << endl;
-        return;
-    }
+
     if ( vprintf( format, arg ) < 0 ) {
         cerr << "Could not create debug string with printf" << endl;
         return;
     }
-    if ( printf( "%s", getPostSequence( level ) ) < 0 ) {
-        cerr << "Could not create debug string with printf" << endl;
-        return;
-    }
+    
     va_end( arg );
 }
 

@@ -267,6 +267,24 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 					debugFatal("Could not set signal type to PeriodSignalling");
 					return false;
 				}
+				
+				// we use a timing unit of 10ns
+				// this makes sure that for the max syt interval
+				// we don't have rounding, and keeps the numbers low
+				// we have 1 slot every 8 events
+				// we have syt_interval events per packet
+				// => syt_interval/8 slots per packet
+				// packet rate is 8000pkt/sec => interval=125us
+				// so the slot interval is (1/8000)/(syt_interval/8)
+				// or: 1/(1000 * syt_interval) sec
+				// which is 1e9/(1000*syt_interval) nsec
+				// or 100000/syt_interval 'units'
+				// the event interval is fixed to 320us = 32000 'units'
+				if(!(*it)->useRateControl(true,(100000/m_syt_interval),32000, false)) {
+					debugFatal("Could not set signal type to PeriodSignalling");
+					return false;
+				}
+				
 				// buffertype and datatype are dependant on the API
 				debugWarning("---------------- ! Doing hardcoded test setup ! --------------\n");
 				// buffertype and datatype are dependant on the API
@@ -432,10 +450,10 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 			freebob_ringbuffer_write_advance(m_event_buffer, byteswritten);
 			bytes2write -= byteswritten;
 		}
-			
+
 		// the bytes2write should always be cluster aligned
 		assert(bytes2write%cluster_size==0);
-			
+
 	}
 
 	return true;
@@ -554,7 +572,7 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned i
 		
 			target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
 			
-			if(mp->canSend()) { // we can send a byte
+			if(mp->canRead()) { // we can send a byte
 				mp->readEvent(&byte);
 				*target_event=htonl(
 					IEC61883_AM824_SET_LABEL((byte)<<16,
@@ -565,7 +583,6 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned i
 				*target_event=htonl(
 					IEC61883_AM824_SET_LABEL(0,IEC61883_AM824_LABEL_MIDI_NO_DATA));
 			}
-			mp->trigger();
 		}
 
 	}
@@ -1065,8 +1082,10 @@ bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned in
 		for(j = (dbc & 0x07)+mp->getLocation()-1; j < nevents; j += 8) {
 			target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
 			quadlet_t sample_int=ntohl(*target_event);
+			// FIXME: this assumes that 2X and 3X speed isn't used, 
+			// because only the 1X slot is put into the ringbuffer
 			if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-				sample_int=(sample_int >> 16) & 0xFF;
+				sample_int=(sample_int >> 16) & 0x000000FF;
 				if(!mp->writeEvent(&sample_int)) {
 					debugWarning("Packet port events lost\n");
 					ok=false;
