@@ -90,7 +90,7 @@ public:
 	bool transfer(); ///< transfer the buffer contents from/to client
 	bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
 
-	bool reset(); ///< reset the streams & buffers (e.g. after xrun)
+	bool handleXrun(); ///< reset the streams & buffers after xrun
 
 	bool start();
 	bool stop();
@@ -104,13 +104,8 @@ protected:
 
 	// thread sync primitives
 	sem_t m_period_semaphore;
-	// this may only be written by the packet thread, and read by 
-	// the waiting thread. The packet thread terminates if this is
-	// true, therefore it will never by updated again.
-	// it can only be set to true before the period semaphore is 
-	// signalled, which the waiting thread is waiting for. Therefore
-	// this variable is protected by the semaphore.
-	bool m_xrun_has_occured; 
+
+	bool m_xrun_happened; 
 
 	// processor list
 	StreamProcessorVector m_ReceiveProcessors;
@@ -122,7 +117,7 @@ protected:
 	
 	IsoHandlerManager *m_isoManager;
 
-	FreebobPosixThread *streamingThread;
+	FreebobPosixThread *m_streamingThread;
 
     DECLARE_DEBUG_MODULE;
 

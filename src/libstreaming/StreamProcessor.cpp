@@ -40,8 +40,8 @@ IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL
 
 StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate) 
 	: IsoStream(type, port)
-	, m_manager(0)
 	, m_nb_buffers(0)
+	, m_manager(0)
 	, m_period(0)
 	, m_xruns(0)
 	, m_framecounter(0)
@@ -54,24 +54,6 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 
 StreamProcessor::~StreamProcessor() {
 
-}
-
-int StreamProcessor::putPacket(unsigned char *data, unsigned int length, 
-		              unsigned char channel, unsigned char tag, unsigned char sy, 
-			          unsigned int cycle, unsigned int dropped) {
-
-	debugWarning("BUG: received packet in StreamProcessor base class!\n");
-
-	return -1;
-}
-
-int StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
-		              unsigned char *tag, unsigned char *sy,
-		              int cycle, unsigned int dropped, unsigned int max_length) {
-	
-	debugWarning("BUG: packet requested from StreamProcessor base class!\n");
-
-	return -1;
 }
 
 void StreamProcessor::dumpInfo()
@@ -101,6 +83,8 @@ bool StreamProcessor::reset() {
 
 	resetFrameCounter();
 
+	resetXrunCounter();
+
 	// loop over the ports to reset them
 	if (!PortManager::resetPorts()) {
 		debugFatal("Could not reset ports\n");
@@ -112,7 +96,8 @@ bool StreamProcessor::reset() {
 		debugFatal("Could not reset isostream\n");
 		return false;
 	}
-
+	return true;
+	
 }
 
 bool StreamProcessor::prepare() {
@@ -179,6 +164,14 @@ void StreamProcessor::resetFrameCounter() {
 	ZERO_ATOMIC((SInt32 *)&m_framecounter);
 };
 
+/**
+ * Resets the xrun counter, in a atomic way. This
+ * is thread safe.
+ */
+void StreamProcessor::resetXrunCounter() {
+	ZERO_ATOMIC((SInt32 *)&m_xruns);
+};
+
 void StreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
 	IsoStream::setVerboseLevel(l);
@@ -195,17 +188,6 @@ ReceiveStreamProcessor::~ReceiveStreamProcessor() {
 
 }
 
-int ReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length, 
-		              unsigned char channel, unsigned char tag, unsigned char sy, 
-			          unsigned int cycle, unsigned int dropped) {
-
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-	             "received packet: length=%d, channel=%d, cycle=%d\n",
-	             length, channel, cycle );
-
-	return 0;
-}
-
 void ReceiveStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
 	StreamProcessor::setVerboseLevel(l);
@@ -220,16 +202,6 @@ TransmitStreamProcessor::TransmitStreamProcessor( int port, int framerate)
 
 TransmitStreamProcessor::~TransmitStreamProcessor() {
 
-}
-
-int TransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
-	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length) {
-	*length=0;
-	*tag = 1;
-	*sy = 0;
-
-	return 0;
 }
 
 void TransmitStreamProcessor::setVerboseLevel(int l) {

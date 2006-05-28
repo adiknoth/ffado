@@ -126,7 +126,7 @@ public:
 	bool init();
 	
 	bool prepare() {return true;};
-	bool reset() {return true;};
+	bool reset();
 
 	std::string getName() {return m_Name;};
 	bool setName(std::string name);

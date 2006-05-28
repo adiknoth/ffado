@@ -228,45 +228,40 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 
 int freebob_streaming_reset(freebob_device_t *dev) {
 	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Reset -------------\n");
-	/* 
-	 * Reset means:
-	 * 1) Stopping the packetizer thread
-	 * 2) Bringing all buffers & connections into a know state
-	 *    - Clear all capture buffers
-	 *    - Put nb_periods*period_size of null frames into the playback buffers
-	 * 3) Restarting the packetizer thread
-	 */
-// 	dev->thread->Stop();
-// 
-// 	dev->processorManager->stop();
-// 	
+
 // 	dev->processorManager->reset();
-// 	
-// 	dev->processorManager->start();
-// 	
-// 	dev->thread->Start();
 
 	return 0;
 }
 
 int freebob_streaming_wait(freebob_device_t *dev) {
-
-	static int periods=0;
+ 	static int periods=0;
 	static int periods_print=0;
+	static int xruns=0;
+		
 		periods++;
   		if(periods>periods_print) {
 			debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
 			debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
-			dev->processorManager->dumpInfo();
-			debugOutput(DEBUG_LEVEL_VERBOSE, "--------------------------------------------\n");
-			quadlet_t *addr=(quadlet_t*)(dev->processorManager->getPortByIndex(0, Port::E_Capture)->getBufferAddress());
-			if (addr) hexDumpQuadlets(addr,10);
+			debugOutput(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
 			debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
+			dev->processorManager->dumpInfo();
+// 			debugOutput(DEBUG_LEVEL_VERBOSE, "--------------------------------------------\n");
+/*			quadlet_t *addr=(quadlet_t*)(dev->processorManager->getPortByIndex(0, Port::E_Capture)->getBufferAddress());
+			if (addr) hexDumpQuadlets(addr,10);*/
 			debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
 			periods_print+=100;
   		}
-	dev->processorManager->waitForPeriod();
-	return dev->options.period_size;
+	if(dev->processorManager->waitForPeriod()) {
+		return dev->options.period_size;
+	} else {
+		debugWarning("XRUN detected\n");
+		// do xrun recovery
+		
+		dev->processorManager->handleXrun();
+		xruns++;
+		return -1;
+	}
 }
 
 int freebob_streaming_transfer_capture_buffers(freebob_device_t *dev) {

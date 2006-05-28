@@ -118,7 +118,6 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 			     cycle, m_framecounter, m_handler->getPacketCount());
 		
 		// signal underrun
-		// FIXME: underrun signaling turned off!!
 		m_xruns++;
 
 		retval=RAW1394_ISO_DEFER;
@@ -140,6 +139,9 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
 	
 	// update the frame counter
 	m_framecounter+=nevents;
+    if(m_framecounter>m_period) {
+       retval=RAW1394_ISO_DEFER;
+    }
 
 	return (int)retval;
 
@@ -152,9 +154,22 @@ bool AmdtpTransmitStreamProcessor::reset() {
 	// reset the event buffer, discard all content
 	freebob_ringbuffer_reset(m_event_buffer);
 	
+	// we should prefill the event buffer
+	int i=m_nb_buffers;
+	while(i--) {
+		if(!transferSilence()) {
+			debugFatal("Could not prefill transmit stream\n");
+			return false;
+		}
+	}
+	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	return TransmitStreamProcessor::reset();
+	if(!TransmitStreamProcessor::reset()) {
+		debugFatal("Could not do base class reset\n");
+		return false;
+	}
+	return true;
 }
 
 bool AmdtpTransmitStreamProcessor::prepare() {
@@ -317,8 +332,6 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 	}
 
 	// we should prefill the event buffer
-	// FIXME: i have to solve this otherwise because the ports aren't ready yet
-	// especially if there are no internal buffers=> segfault
 	int i=m_nb_buffers;
 	while(i--) {
 		if(!transferSilence()) {
@@ -398,7 +411,7 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 		freebob_ringbuffer_get_write_vector(m_event_buffer, vec);
 			
 		if(vec[0].len==0) { // this indicates a full event buffer
-			debugError("Event buffer overrun in processor %d\n",this);
+			debugError("XMT: Event buffer overrun in processor %p\n",this);
 			break;
 		}
 			
@@ -415,7 +428,7 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 			
 			if(xrun<0) {
 				// xrun detected
-				debugError("Frame buffer underrun in processor %d\n",this);
+				debugError("XMT: Frame buffer underrun in processor %p\n",this);
 				break;
 			}
 				
@@ -443,7 +456,7 @@ bool AmdtpTransmitStreamProcessor::transfer() {
 			
 			if(xrun<0) {
 					// xrun detected
-				debugError("Frame buffer underrun in processor %d\n",this);
+				debugError("XMT: Frame buffer underrun in processor %p\n",this);
 				break;
 			}
 
@@ -719,7 +732,8 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 		
 		if (freebob_ringbuffer_write(m_event_buffer,(char *)(data+8),write_size) < write_size) 
 		{
-			debugWarning("Buffer overrun!\n"); 
+		    debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n", 
+			     cycle, m_framecounter, m_handler->getPacketCount());
 			m_xruns++;
 
 			retval=RAW1394_ISO_DEFER;
@@ -729,6 +743,7 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 			// this is MIDI for AMDTP (due to the need of DBC)
 			if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
 				debugWarning("Problem decoding Packet Ports\n");
+	            retval=RAW1394_ISO_DEFER;
 			}
 		}
 
@@ -744,6 +759,9 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 		
 		// update the frame counter
 		m_framecounter+=nevents;
+		if(m_framecounter>m_period) {
+	       retval=RAW1394_ISO_DEFER;
+		}
 		
 	} else {
 		// discard packet
@@ -769,7 +787,11 @@ bool AmdtpReceiveStreamProcessor::reset() {
 	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
-	return ReceiveStreamProcessor::reset();
+	if(!ReceiveStreamProcessor::reset()) {
+		debugFatal("Could not do base class reset\n");
+		return false;
+	}
+	return true;
 }
 
 bool AmdtpReceiveStreamProcessor::prepare() {
@@ -950,7 +972,7 @@ bool AmdtpReceiveStreamProcessor::transfer() {
 		freebob_ringbuffer_get_read_vector(m_event_buffer, vec);
 			
 		if(vec[0].len==0) { // this indicates an empty event buffer
-			debugError("Frame buffer underrun in processor %d\n",this);
+			debugError("RCV: Event buffer underrun in processor %p\n",this);
 			break;
 		}
 			
@@ -968,7 +990,7 @@ bool AmdtpReceiveStreamProcessor::transfer() {
 				
 			if(xrun<0) {
 				// xrun detected
-				debugError("Frame buffer underrun in processor %d\n",this);
+				debugError("RCV: Frame buffer overrun in processor %p\n",this);
 				break;
 			}
 				
@@ -988,7 +1010,7 @@ bool AmdtpReceiveStreamProcessor::transfer() {
 				
 			if(xrun<0) {
 					// xrun detected
-				debugError("Frame buffer underrun in processor %d\n",this);
+				debugError("RCV: Frame buffer overrun in processor %p\n",this);
 				break;
 			}
 

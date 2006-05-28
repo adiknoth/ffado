@@ -1911,6 +1911,7 @@ AvDevice::startStreamByIndex(int i) {
 	return 0;
 
 }
+
 int
 AvDevice::stopStreamByIndex(int i) {
 	// do connection management: break connection

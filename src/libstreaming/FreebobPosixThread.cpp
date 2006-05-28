@@ -115,6 +115,7 @@ int FreebobPosixThread::Start()
             printError("Cannot set create thread %d %s", res, strerror(errno));
             return -1;
         }
+        
         return 0;
     }
 }

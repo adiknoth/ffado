@@ -77,6 +77,7 @@ class FreebobPosixThread : public FreebobThread
 
         pthread_t GetThreadID();
 
+        void setVerboseLevel(int l) {setDebugLevel(l);};
 	protected:
 
     DECLARE_DEBUG_MODULE;
