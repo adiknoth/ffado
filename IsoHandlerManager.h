@@ -78,7 +78,7 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		void dumpInfo(); ///< print some information about the manager to stdout/stderr
 
 		bool registerStream(IsoStream *); ///< register an iso stream with the manager
-		bool unregisterStream(IsoStream *); ///< unregister an iso stream with the manager
+		bool unregisterStream(IsoStream *); ///< unregister an iso stream from the manager
 
 		bool startHandlers(); ///< start the managed ISO handlers 
 		bool startHandlers(int cycle); ///< start the managed ISO handlers 

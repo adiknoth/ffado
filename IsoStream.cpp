@@ -106,8 +106,14 @@ bool IsoStream::init() {
 }
 
 void IsoStream::setHandler(IsoHandler *h) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "setting hanlder of isostream %p to %p\n", this,h);
+	debugOutput( DEBUG_LEVEL_VERBOSE, "setting handler of isostream %p to %p\n", this,h);
 	m_handler=h;
 }
 
+void IsoStream::clearHandler() {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "clearing handler of isostream %p\n", this);
+
+    m_handler=0;
+
+};
 }

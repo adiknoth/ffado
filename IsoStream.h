@@ -97,7 +97,7 @@ class IsoStream
 	protected:
 
 		void setHandler( IsoHandler * h) ;
-		void clearHandler() {m_handler=0;};
+		void clearHandler();
 
 		enum EStreamType m_type;
 		int m_channel;

@@ -110,6 +110,14 @@ bool Port::init() {
 	return m_initialized;
 }
 
+bool Port::reset() {
+	if (m_BufferType==E_RingBuffer) {
+		freebob_ringbuffer_reset(m_ringbuffer);
+	}
+	return true;
+};
+
+
 void Port::setVerboseLevel(int l) {
 	setDebugLevel(l);
 }

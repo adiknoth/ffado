@@ -62,20 +62,23 @@ public:
 	virtual int 
 		putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
-		          unsigned int cycle, unsigned int dropped);
+		          unsigned int cycle, unsigned int dropped) = 0;
 	virtual int 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length);
+	              int cycle, unsigned int dropped, unsigned int max_length) = 0;
 
 	virtual enum EProcessorType getType() =0;
 
 	bool xrunOccurred() { return (m_xruns>0);};
 
-	bool isOnePeriodReady() { return (m_framecounter > m_period); };
+	bool isOnePeriodReady() { return (m_framecounter > (int)m_period); };
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
 	void decrementFrameCounter();
+	
+	// move to private?
 	void resetFrameCounter();
+    void resetXrunCounter();
 
 	bool isRunning(); ///< returns true if there is some stream data processed
 	void enable(); ///< enable the stream processing 
@@ -132,10 +135,15 @@ public:
 
 
 	virtual enum EProcessorType getType() {return E_Receive;};
-
+	
+	virtual int 
+		getPacket(unsigned char *data, unsigned int *length,
+	              unsigned char *tag, unsigned char *sy,
+	              int cycle, unsigned int dropped, unsigned int max_length) {return 0;};
+	              
 	virtual int putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
-		          unsigned int cycle, unsigned int dropped);
+		          unsigned int cycle, unsigned int dropped) = 0;
  	virtual void setVerboseLevel(int l);
 
 protected:
@@ -159,9 +167,14 @@ public:
 	virtual enum EProcessorType getType() {return E_Transmit;};
 
 	virtual int 
+		putPacket(unsigned char *data, unsigned int length, 
+	              unsigned char channel, unsigned char tag, unsigned char sy, 
+		          unsigned int cycle, unsigned int dropped) {return 0;};
+		          
+	virtual int 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length);
+	              int cycle, unsigned int dropped, unsigned int max_length) = 0;
  	virtual void setVerboseLevel(int l);
 
 protected:

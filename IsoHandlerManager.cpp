@@ -193,7 +193,7 @@ bool IsoHandlerManager::rebuildFdMap() {
  */
 bool IsoHandlerManager::registerStream(IsoStream *stream)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Registering stream %p\n",stream);
 	assert(stream);
 
 	// make sure the stream isn't already attached to a handler
@@ -326,7 +326,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 
 bool IsoHandlerManager::unregisterStream(IsoStream *stream)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering stream %p\n",stream);
 	assert(stream);
 
 	// make sure the stream isn't attached to a handler anymore
@@ -419,7 +419,7 @@ bool IsoHandlerManager::stopHandlers() {
 	{
 		debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
 		if(!(*it)->stop()){
-			debugOutput( DEBUG_LEVEL_VERBOSE, " could not start handler (%p)\n",*it);
+			debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
 			return false;
 		}
 	}
