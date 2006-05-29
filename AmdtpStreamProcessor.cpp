@@ -491,6 +491,8 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
           ++it )
     {
 
+        if((*it)->isDisabled()) {continue;};
+        
 		//FIXME: make this into a static_cast when not DEBUG?
 
 		AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
@@ -1051,6 +1053,8 @@ int AmdtpReceiveStreamProcessor::receiveBlock(char *data,
           it != m_PeriodPorts.end();
           ++it )
     {
+
+        if((*it)->isDisabled()) {continue;};
 
 		//FIXME: make this into a static_cast when not DEBUG?
 

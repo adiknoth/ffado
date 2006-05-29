@@ -114,11 +114,11 @@ public:
 	
 	
 	/// Enable the port. (this can be called anytime)
-	void enable()  {m_enabled=true;};
+	void enable();
 	/// Disable the port. (this can be called anytime)
-	void disable() {m_enabled=false;};
-	/// is the port enabled? (this can be called anytime)
-	bool isEnabled() {return m_enabled;};
+	void disable();
+	/// is the port disabled? (this can be called anytime)
+	bool isDisabled() {return m_disabled;};
 
 	/*!
 	\brief Initialize the port
@@ -274,7 +274,7 @@ protected:
 	enum E_SignalType m_SignalType; ///< Signalling type, [at construction]
 	enum E_BufferType m_BufferType; ///< Buffer type, [at construction]
 
-	bool m_enabled; ///< is the port enabled?, [anytime]
+	bool m_disabled; ///< is the port disabled?, [anytime]
 	bool m_initialized; ///< is the port initialized? [after init()]
 
 	unsigned int m_buffersize; 
