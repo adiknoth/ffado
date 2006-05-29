@@ -182,7 +182,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info,
  * @param dev the freebob device
  * @return 
  */
-bool freebob_streaming_prepare(freebob_device_t *dev);
+int freebob_streaming_prepare(freebob_device_t *dev);
 
 
 /**

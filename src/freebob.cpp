@@ -40,6 +40,24 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 IMPL_GLOBAL_DEBUG_MODULE( FreeBob, DEBUG_LEVEL_VERBOSE );
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// this is very much nescessary, as otherwise the 
+// message buffer thread doesn't get killed when the 
+// library is dlclose()'d 
+
+static void exitfunc(void) __attribute__((destructor));
+
+static void exitfunc(void)
+{
+    delete DebugModuleManager::instance();
+}
+#ifdef __cplusplus
+}
+#endif
+
 const char*
 freebob_get_version() {
     return PACKAGE_STRING;

@@ -17,17 +17,16 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 noinst_LTLIBRARIES = libstreaming.la
-noinst_HEADERS = messagebuffer.h cip.h debug.h FreebobPosixThread.h \
-	FreebobThread.h FreebobAtomic.h IsoHandler.h IsoHandlerManager.h IsoStream.h \
-	ringbuffer.h PacketBuffer.h PortManager.h Port.h StreamProcessor.h \
-	StreamProcessorManager.h AmdtpPortInfo.h AmdtpPort.h AmdtpStreamProcessor.h StreamRunner.h \
-	ringbuffer.h
+noinst_HEADERS = cip.h FreebobPosixThread.h FreebobThread.h FreebobAtomic.h \
+	IsoHandler.h IsoHandlerManager.h IsoStream.h ringbuffer.h PacketBuffer.h \
+	PortManager.h Port.h StreamProcessor.h StreamProcessorManager.h AmdtpPortInfo.h \
+	AmdtpPort.h AmdtpStreamProcessor.h StreamRunner.h ringbuffer.h streamstatistics.h
 
-libstreaming_la_SOURCES = messagebuffer.c cip.c FreebobPosixThread.cpp \
-	freebob_streaming.cpp IsoHandler.cpp IsoHandlerManager.cpp IsoStream.cpp PacketBuffer.cpp \
-	PortManager.cpp Port.cpp StreamProcessor.cpp StreamProcessorManager.cpp \
-	AmdtpPortInfo.cpp AmdtpPort.cpp AmdtpStreamProcessor.cpp StreamRunner.cpp \
-	ringbuffer.c
+libstreaming_la_SOURCES = cip.c FreebobPosixThread.cpp \
+		freebob_streaming.cpp IsoHandler.cpp IsoHandlerManager.cpp IsoStream.cpp PacketBuffer.cpp \
+		PortManager.cpp Port.cpp StreamProcessor.cpp StreamProcessorManager.cpp \
+		AmdtpPortInfo.cpp AmdtpPort.cpp AmdtpStreamProcessor.cpp StreamRunner.cpp 	ringbuffer.c \
+	streamstatistics.cpp
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)  $(LIBXML_CFLAGS)

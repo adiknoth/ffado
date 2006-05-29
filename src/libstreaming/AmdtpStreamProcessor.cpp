@@ -142,6 +142,8 @@ int AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *l
     if(m_framecounter>m_period) {
        retval=RAW1394_ISO_DEFER;
     }
+    
+    m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
 
 	return (int)retval;
 
@@ -173,6 +175,9 @@ bool AmdtpTransmitStreamProcessor::reset() {
 }
 
 bool AmdtpTransmitStreamProcessor::prepare() {
+    m_PeriodStat.setName("XMT PERIOD");
+    m_PacketStat.setName("XMT PACKET");
+    m_WakeupStat.setName("XMT WAKEUP");
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 	
@@ -366,6 +371,7 @@ bool AmdtpTransmitStreamProcessor::transferSilence() {
 }
 
 bool AmdtpTransmitStreamProcessor::transfer() {
+    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 	// TODO: improve
@@ -767,6 +773,8 @@ int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int len
 		// discard packet
 		// can be important for sync though
 	}
+	
+    m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
 
 	return (int)retval;
 }
@@ -795,6 +803,10 @@ bool AmdtpReceiveStreamProcessor::reset() {
 }
 
 bool AmdtpReceiveStreamProcessor::prepare() {
+
+    m_PeriodStat.setName("RCV PERIOD");
+    m_PacketStat.setName("RCV PACKET");
+    m_WakeupStat.setName("RCV WAKEUP");
 
 	// prepare all non-device specific stuff
 	// i.e. the iso stream and the associated ports
@@ -930,6 +942,8 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 }
 
 bool AmdtpReceiveStreamProcessor::transfer() {
+
+    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 	

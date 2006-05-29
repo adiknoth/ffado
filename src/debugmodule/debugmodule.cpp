@@ -72,7 +72,7 @@ DebugModule::printShort( debug_level_t level,
 
     va_start( arg, format );
 
-    //freebob_messagebuffer_va_add( format, arg );
+    DebugModuleManager::instance()->va_print( format, arg );
     
     va_end( arg );
 }
@@ -91,11 +91,10 @@ DebugModule::print( debug_level_t level,
 
     va_list arg;
     va_start( arg, format );
-
-    //freebob_messagebuffer_add( "%s (%s)[%d] %s: ", getPreSequence( level ),
-    //             file,  line,  function );
-    //freebob_messagebuffer_va_add( format, arg );
-    //freebob_messagebuffer_add( "%s", getPostSequence( level ) );
+    DebugModuleManager::instance()->print( "%s (%s)[%d] %s: ", getPreSequence( level ),
+                 file,  line,  function );
+    DebugModuleManager::instance()->va_print( format, arg );
+    DebugModuleManager::instance()->print( "%s", getPostSequence( level ) );
     va_end( arg );
 }
 
@@ -122,15 +121,67 @@ DebugModule::getPostSequence( debug_level_t level ) const
 DebugModuleManager* DebugModuleManager::m_instance = 0;
 
 DebugModuleManager::DebugModuleManager()
+    : mb_initialized(0)
+    , mb_inbuffer(0)
+    , mb_outbuffer(0)
+    , mb_overruns(0)
+
 {
-	freebob_messagebuffer_init();
 
 }
 
 DebugModuleManager::~DebugModuleManager()
 {
-	freebob_messagebuffer_exit();
+	// cleanin up leftover modules
+    for ( DebugModuleVectorIterator it = m_debugModules.begin();
+          it != m_debugModules.end();
+          ++it )
+    {
+        fprintf(stderr,"Cleaning up leftover debug module: %s",(*it)->getName().c_str());
+        m_debugModules.erase( it );
+        delete *it;
+    }
 
+	if (!mb_initialized)
+		return;
+
+	pthread_mutex_lock(&mb_write_lock);
+	mb_initialized = 0;
+	pthread_cond_signal(&mb_ready_cond);
+	pthread_mutex_unlock(&mb_write_lock);
+
+	pthread_join(mb_writer_thread, NULL);
+	mb_flush();
+
+	if (mb_overruns)
+		fprintf(stderr, "WARNING: %d message buffer overruns!\n",
+			mb_overruns);
+	else
+		fprintf(stderr, "no message buffer overruns\n");
+
+	pthread_mutex_destroy(&mb_write_lock);
+	pthread_cond_destroy(&mb_ready_cond);
+
+}
+
+bool
+DebugModuleManager::init()
+{
+	if (mb_initialized)
+		return true;
+		
+	fprintf(stderr, "DebugModuleManager init...\n");
+
+	pthread_mutex_init(&mb_write_lock, NULL);
+	pthread_cond_init(&mb_ready_cond, NULL);
+
+ 	mb_overruns = 0;
+ 	mb_initialized = 1;
+
+	if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0)
+ 		mb_initialized = 0;
+
+    return true;
 }
 
 DebugModuleManager*
@@ -140,6 +191,10 @@ DebugModuleManager::instance()
         m_instance = new DebugModuleManager;
         if ( !m_instance ) {
             cerr << "DebugModuleManager::instance Failed to create "
+                 << "DebugModuleManager" << endl;
+        }
+        if ( !m_instance->init() ) {
+            cerr << "DebugModuleManager::instance Failed to init "
                  << "DebugModuleManager" << endl;
         }
     }
@@ -186,6 +241,100 @@ DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
     cerr << "setDebugLevel: Did not find DebugModule ("
          << name << ")" << endl;
     return false;
+}
+
+
+void
+DebugModuleManager::mb_flush()
+{
+	/* called WITHOUT the mb_write_lock */
+	while (mb_outbuffer != mb_inbuffer) {
+		fputs(mb_buffers[mb_outbuffer], stderr);
+		mb_outbuffer = MB_NEXT(mb_outbuffer);
+	}
+}
+
+void *
+DebugModuleManager::mb_thread_func(void *arg)
+{
+
+    DebugModuleManager *m=static_cast<DebugModuleManager *>(arg);
+    
+	/* The mutex is only to eliminate collisions between multiple
+	 * writer threads and protect the condition variable. */
+ 	pthread_mutex_lock(&m->mb_write_lock);
+
+	while (m->mb_initialized) {
+ 		pthread_cond_wait(&m->mb_ready_cond, &m->mb_write_lock);
+ 
+ 		/* releasing the mutex reduces contention */
+ 		pthread_mutex_unlock(&m->mb_write_lock);
+ 		m->mb_flush();
+ 		pthread_mutex_lock(&m->mb_write_lock);
+	}
+
+ 	pthread_mutex_unlock(&m->mb_write_lock);
+
+	return NULL;
+}
+
+void 
+DebugModuleManager::print(const char *fmt, ...)
+{
+	char msg[MB_BUFFERSIZE];
+	va_list ap;
+
+	/* format the message first, to reduce lock contention */
+	va_start(ap, fmt);
+	vsnprintf(msg, MB_BUFFERSIZE, fmt, ap);
+	va_end(ap);
+
+	if (!mb_initialized) {
+		/* Unable to print message with realtime safety.
+		 * Complain and print it anyway. */
+		fprintf(stderr, "ERROR: messagebuffer not initialized: %s",
+			msg);
+		return;
+	}
+	if (pthread_mutex_trylock(&mb_write_lock) == 0) {
+		strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
+		mb_inbuffer = MB_NEXT(mb_inbuffer);
+		pthread_cond_signal(&mb_ready_cond);
+		pthread_mutex_unlock(&mb_write_lock);
+	} else {			/* lock collision */
+// 		atomic_add(&mb_overruns, 1);
+		// FIXME: atomicity
+		mb_overruns++; // skip the atomicness for now
+	}
+}
+
+
+void 
+DebugModuleManager::va_print (const char *fmt, va_list ap)
+{
+	char msg[MB_BUFFERSIZE];
+	
+	/* format the message first, to reduce lock contention */
+	vsnprintf(msg, MB_BUFFERSIZE, fmt, ap);
+
+	if (!mb_initialized) {
+		/* Unable to print message with realtime safety.
+		 * Complain and print it anyway. */
+		fprintf(stderr, "ERROR: messagebuffer not initialized: %s",
+			msg);
+		return;
+	}
+
+	if (pthread_mutex_trylock(&mb_write_lock) == 0) {
+		strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
+		mb_inbuffer = MB_NEXT(mb_inbuffer);
+		pthread_cond_signal(&mb_ready_cond);
+		pthread_mutex_unlock(&mb_write_lock);
+	} else {			/* lock collision */
+// 		atomic_add(&mb_overruns, 1);
+		// FIXME: atomicity
+		mb_overruns++; // skip the atomicness for now
+	}
 }
 
 //----------------------------------------

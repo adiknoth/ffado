@@ -23,12 +23,16 @@
 
 #include "../fbtypes.h"
 
-#include "messagebuffer.h"
 
 #include <vector>
 #include <iostream>
 
 typedef short debug_level_t;
+
+/* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
+#define MB_BUFFERS	128
+#define MB_NEXT(index) ((index+1) & (MB_BUFFERS-1))
+#define MB_BUFFERSIZE	256		/* message length limit */
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -166,20 +170,37 @@ public:
     friend class DebugModule;
 
     static DebugModuleManager* instance();
+    ~DebugModuleManager();
+    
     bool setMgrDebugLevel( std::string name, debug_level_t level );
 
 protected:
     bool registerModule( DebugModule& debugModule );
     bool unregisterModule( DebugModule& debugModule );
 
+    bool init();
+    
+    void print(const char *fmt, ...);
+    void va_print(const char *fmt, va_list);
+    
 private:
     DebugModuleManager();
-    ~DebugModuleManager();
 
     typedef std::vector< DebugModule* > DebugModuleVector;
     typedef std::vector< DebugModule* >::iterator DebugModuleVectorIterator;
 
+    char mb_buffers[MB_BUFFERS][MB_BUFFERSIZE];
+    unsigned int mb_initialized;
+    unsigned int mb_inbuffer;
+    unsigned int mb_outbuffer;
+    unsigned int mb_overruns;
+    pthread_t mb_writer_thread;
+    pthread_mutex_t mb_write_lock;
+    pthread_cond_t mb_ready_cond;
 
+    static void *mb_thread_func(void *arg);
+    void mb_flush();
+    
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;
 };

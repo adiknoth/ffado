@@ -17,11 +17,9 @@
 
 noinst_LTLIBRARIES = libdebugmodule.la
 
-noinst_HEADERS = 				\
-		debugmodule.h	messagebuffer.h        
+noinst_HEADERS = debugmodule.h
 
-libdebugmodule_la_SOURCES =		\
-		debugmodule.cpp messagebuffer.c
+libdebugmodule_la_SOURCES = debugmodule.cpp
 
 
 noinst_PROGRAMS = test_debugmodule

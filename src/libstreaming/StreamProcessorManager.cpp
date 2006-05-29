@@ -150,7 +150,7 @@ bool StreamProcessorManager::init()
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 	// and the tread that runs the runner
-	m_streamingThread=new FreebobPosixThread(this);
+	m_streamingThread=new FreebobPosixThread(this, m_thread_realtime, m_thread_priority, PTHREAD_CANCEL_DEFERRED);
 	if(!m_streamingThread) {
 		debugFatal("Could not create streaming thread\n");
 		return false;
@@ -731,6 +731,12 @@ Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction dir
 		}
 	}
 	return NULL;
+}
+
+bool StreamProcessorManager::setThreadParameters(bool rt, int priority) {
+    m_thread_realtime=rt;
+    m_thread_priority=priority;
+    return true;
 }
 
 

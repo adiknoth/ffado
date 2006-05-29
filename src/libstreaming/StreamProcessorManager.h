@@ -95,6 +95,8 @@ public:
 	bool start();
 	bool stop();
 
+    bool setThreadParameters(bool rt, int priority);
+
 	// the ISO-side functions
 protected:
  	int signalWaiters(); // call this to signal a period boundary
@@ -106,6 +108,9 @@ protected:
 	sem_t m_period_semaphore;
 
 	bool m_xrun_happened; 
+
+    bool m_thread_realtime;
+    int m_thread_priority;
 
 	// processor list
 	StreamProcessorVector m_ReceiveProcessors;
