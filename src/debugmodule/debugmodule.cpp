@@ -72,10 +72,7 @@ DebugModule::printShort( debug_level_t level,
 
     va_start( arg, format );
 
-    if ( vprintf( format, arg ) < 0 ) {
-        cerr << "Could not create debug string with printf" << endl;
-        return;
-    }
+    //freebob_messagebuffer_va_add( format, arg );
     
     va_end( arg );
 }
@@ -95,20 +92,12 @@ DebugModule::print( debug_level_t level,
     va_list arg;
     va_start( arg, format );
 
-    if ( printf( "%s (%s)[%d] %s: ", getPreSequence( level ),
-                 file,  line,  function ) < 0 ) {
-        cerr << "Could not create debug string with printf" << endl;
-        return;
-    }
-    if ( vprintf( format, arg ) < 0 ) {
-        cerr << "Could not create debug string with printf" << endl;
-        return;
-    }
-    if ( printf( "%s", getPostSequence( level ) ) < 0 ) {
-        cerr << "Could not create debug string with printf" << endl;
-        return;
-    }
-    va_end( arg );}
+    //freebob_messagebuffer_add( "%s (%s)[%d] %s: ", getPreSequence( level ),
+    //             file,  line,  function );
+    //freebob_messagebuffer_va_add( format, arg );
+    //freebob_messagebuffer_add( "%s", getPostSequence( level ) );
+    va_end( arg );
+}
 
 const char*
 DebugModule::getPreSequence( debug_level_t level ) const
@@ -134,10 +123,14 @@ DebugModuleManager* DebugModuleManager::m_instance = 0;
 
 DebugModuleManager::DebugModuleManager()
 {
+	freebob_messagebuffer_init();
+
 }
 
 DebugModuleManager::~DebugModuleManager()
 {
+	freebob_messagebuffer_exit();
+
 }
 
 DebugModuleManager*

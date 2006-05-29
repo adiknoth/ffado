@@ -23,6 +23,8 @@
 
 #include "../fbtypes.h"
 
+#include "messagebuffer.h"
+
 #include <vector>
 #include <iostream>
 
