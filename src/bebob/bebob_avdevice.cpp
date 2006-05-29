@@ -790,4 +790,8 @@ AvDevice::checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs )
     return true;
 }
 
+bool AvDevice::setId( unsigned int id) {
+	return true;
+}
+
 }

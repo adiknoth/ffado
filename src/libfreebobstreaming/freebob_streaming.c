@@ -366,8 +366,8 @@ int freebob_streaming_get_capture_stream_name(freebob_device_t *dev, int i, char
 		                 stream->parent->spec.node & 0x3F, 
 		                 stream->parent->spec.plug, stream->spec.name);
 */
-		return snprintf (buffer, buffersize, "%s_%s",
-		                 "cap", stream->spec.name);
+		return snprintf (buffer, buffersize, "dev%d%s_%s",
+		                 stream->parent->spec.id , "c", stream->spec.name);
 	} else {
 		return -1;
 	}
@@ -382,8 +382,8 @@ int freebob_streaming_get_playback_stream_name(freebob_device_t *dev, int i, cha
 		                 stream->parent->spec.node & 0x3F, 
 		                 stream->parent->spec.plug, stream->spec.name);
 */
-		return snprintf (buffer, buffersize, "%s_%s",
-		                 "pbk", stream->spec.name);
+		return snprintf (buffer, buffersize, "dev%d%s_%s",
+		                 stream->parent->spec.id, "p", stream->spec.name);
 	} else {
 		return -1;
 	}
@@ -2425,8 +2425,9 @@ static enum raw1394_iso_disposition
 				// reset the cip to the old value
 				memcpy(&connection->status.cip,&old_cip,sizeof(struct iec61883_cip));
 
-				// retry this packed 
-				retval=RAW1394_ISO_AGAIN;
+				// retry this packet
+ 				retval=RAW1394_ISO_AGAIN;
+// 				retval=RAW1394_ISO_DEFER;
 				nsamples=0;
 			} else {
 				printError("SLAVE XMT : Buffer underrun! %d (%d / %d) (%d / %d )\n",

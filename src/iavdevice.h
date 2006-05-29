@@ -36,6 +36,7 @@ public:
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency ) = 0;
     virtual bool addXmlDescription( xmlNodePtr deviceNode ) = 0;
     virtual void showDevice() const = 0;
+    virtual bool setId(unsigned int id) = 0;
 };
 
 #endif

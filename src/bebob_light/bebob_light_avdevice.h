@@ -53,6 +53,7 @@ public:
     virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual void showDevice() const;
+    bool setId(unsigned int id);
 
 protected:
     bool discoverStep1();
@@ -107,6 +108,8 @@ protected:
 
     nr_of_plugs_t m_serialBusIsochronousInputPlugs;
     nr_of_plugs_t m_serialBusIsochronousOutputPlugs;
+
+    unsigned int m_id;
 
     DECLARE_DEBUG_MODULE;
 };
