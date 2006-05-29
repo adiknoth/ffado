@@ -142,22 +142,14 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	}
 
 	// we are ready!
-	freebob_streaming_prepare(dev);
-
+	
 	debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n\n");
 	return dev;
 
 }
 
-/**
- * preparation should be done after setting all per-stream parameters
- * the way you want them. being buffer data type etc...
- *
- * @param dev 
- * @return 
- */
 int freebob_streaming_prepare(freebob_device_t *dev) {
-	int i=0;
+	debugOutput(DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 	
 	dev->processorManager->prepare();
 
@@ -373,8 +365,90 @@ freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob
 		return freebob_stream_type_unknown;
 	}
 }
-// TODO: the way port buffers are set doesn't satisfy me
-int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int i, char *buff,  freebob_streaming_buffer_type t) {
+
+int freebob_streaming_set_stream_buffer_type(freebob_device_t *dev, int i, 
+        freebob_streaming_buffer_type t, enum Port::E_Direction direction) {
+
+	Port *p=dev->processorManager->getPortByIndex(i, direction);
+	if(!p) {
+		debugWarning("Could not get %s port at index %d\n",
+		      (direction==Port::E_Playback?"Playback":"Capture"),i);
+		return -1;
+	}
+	
+	switch(t) {
+	case freebob_buffer_type_int24:
+	   if (!p->setDataType(Port::E_Int24)) {
+	       debugWarning("%s: Could not set data type to Int24\n",p->getName().c_str());
+	       return -1;
+	   }
+	   if (!p->setBufferType(Port::E_PointerBuffer)) {
+	       debugWarning("%s: Could not set buffer type to Pointerbuffer\n",p->getName().c_str());
+	       return -1;
+	   }
+	   break;
+	case freebob_buffer_type_float:
+	   if (!p->setDataType(Port::E_Float)) {
+	       debugWarning("%s: Could not set data type to Float\n",p->getName().c_str());
+	       return -1;
+	   }
+	   if (!p->setBufferType(Port::E_PointerBuffer)) {
+	       debugWarning("%s: Could not set buffer type to Pointerbuffer\n",p->getName().c_str());
+	       return -1;
+	   }
+	   break;
+	case freebob_buffer_type_midi:
+	   if (!p->setDataType(Port::E_MidiEvent)) {
+	       debugWarning("%s: Could not set data type to MidiEvent\n",p->getName().c_str());
+	       return -1;
+	   }
+	   if (!p->setBufferType(Port::E_RingBuffer)) {
+	       debugWarning("%s: Could not set buffer type to Ringbuffer\n",p->getName().c_str());
+	       return -1;
+	   }
+	   break;
+	default:
+       debugWarning("%s: Unsupported buffer type\n",p->getName().c_str());
+       return -1;
+	}
+    return 0;
+
+}
+
+int freebob_streaming_set_playback_buffer_type(freebob_device_t *dev, int i, freebob_streaming_buffer_type t) {
+    return freebob_streaming_set_stream_buffer_type(dev, i, t, Port::E_Playback);
+}
+
+int freebob_streaming_set_capture_buffer_type(freebob_device_t *dev, int i, freebob_streaming_buffer_type t) {
+    return freebob_streaming_set_stream_buffer_type(dev, i, t, Port::E_Capture);
+}
+
+int freebob_streaming_stream_onoff(freebob_device_t *dev, int i, 
+        int on, enum Port::E_Direction direction) {
+	Port *p=dev->processorManager->getPortByIndex(i, direction);
+	if(!p) {
+		debugWarning("Could not get %s port at index %d\n",
+		      (direction==Port::E_Playback?"Playback":"Capture"),i);
+		return -1;
+	}
+	if(on) {
+	   p->enable();
+	} else {
+	   p->disable();
+	}
+	return 0;
+}
+
+int freebob_streaming_playback_stream_onoff(freebob_device_t *dev, int number, int on) {
+    return freebob_streaming_stream_onoff(dev, number, on, Port::E_Playback);
+}
+
+int freebob_streaming_capture_stream_onoff(freebob_device_t *dev, int number, int on) {
+    return freebob_streaming_stream_onoff(dev, number, on, Port::E_Capture);
+}
+
+// TODO: the way port buffers are set in the C api doesn't satisfy me
+int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int i, char *buff) {
 	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
 	
 	// use an assert here performancewise, 
@@ -387,7 +461,7 @@ int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int i, ch
 
 }
 
-int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int i, char *buff,  freebob_streaming_buffer_type t) {
+int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int i, char *buff) {
 	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
 	// use an assert here performancewise, 
 	// it should already have failed before, if not correct

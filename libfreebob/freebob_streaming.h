@@ -32,6 +32,8 @@
 #ifndef __FREEBOB_STREAMING_H__
 #define __FREEBOB_STREAMING_H__
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,7 +43,6 @@ extern "C" {
 #define FREEBOB_IGNORE_CAPTURE 		(1<<0)
 #define FREEBOB_IGNORE_PLAYBACK 	(1<<1)
 
-#include <stdlib.h>
 
 /* The basic operation of the API is as follows:
  * 
@@ -150,8 +151,9 @@ typedef enum {
  */
 typedef enum {
 	freebob_buffer_type_per_stream          =   -1, // use this to use the per-stream read functions
-	freebob_buffer_type_uint24           =   0,
+	freebob_buffer_type_int24           =   0,
 	freebob_buffer_type_float            =   1,
+	freebob_buffer_type_midi            =   2,
 // 	freebob_buffer_type_uint32           =   2,
 // 	freebob_buffer_type_double           =   3,
 // 	...
@@ -262,6 +264,9 @@ freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob
  * and separately indicate if you want to use a user buffer or a managed buffer.
  *
  */
+ 
+ 
+ 
 /**
  * Sets the decode buffer for the stream. This allows for zero-copy decoding.
  * The call to freebob_streaming_transfer_buffers will decode one period of the stream to
@@ -275,7 +280,10 @@ freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob
  *
  * @return -1 on error, 0 on success
  */
-int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int number, char *buff, freebob_streaming_buffer_type t);
+
+int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int number, char *buff);
+int freebob_streaming_set_capture_buffer_type(freebob_device_t *dev, int i, freebob_streaming_buffer_type t);
+int freebob_streaming_capture_stream_onoff(freebob_device_t *dev, int number, int on);
 
 /**
  * Sets the encode buffer for the stream. This allows for zero-copy encoding (directly to the events).
@@ -289,8 +297,20 @@ int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int numbe
  *
  * @return -1 on error, 0 on success
  */
-int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int number, char *buff, freebob_streaming_buffer_type t);
+int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int number, char *buff);
+int freebob_streaming_set_playback_buffer_type(freebob_device_t *dev, int i, freebob_streaming_buffer_type t);
+int freebob_streaming_playback_stream_onoff(freebob_device_t *dev, int number, int on);
 
+
+/**
+ * preparation should be done after setting all per-stream parameters
+ * the way you want them. being buffer data type etc...
+ *
+ * @param dev 
+ * @return 
+ */
+ 
+int freebob_streaming_prepare(freebob_device_t *dev);
 
 /**
  * Starts the streaming operation. This initiates the connections to the FreeBob devices and

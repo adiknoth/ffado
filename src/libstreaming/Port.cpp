@@ -39,7 +39,7 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
   	: m_Name(name),
 	m_SignalType(E_PeriodSignalled),
 	m_BufferType(E_PointerBuffer),
-	m_enabled(true),
+	m_disabled(true),
 	m_initialized(false),
 	m_buffersize(0),
 	m_eventsize(0),
@@ -435,6 +435,21 @@ bool Port::useRateControl(bool use, unsigned int slot_interval,
 	}
 	return true;
 }
+
+/// Enable the port. (this can be called anytime)
+void 
+Port::enable()  {
+	debugOutput(DEBUG_LEVEL_VERBOSE, "Enabling port %s...\n",m_Name.c_str());
+	m_disabled=false;
+};
+
+/// Disable the port. (this can be called anytime)
+void 
+Port::disable() {
+	debugOutput(DEBUG_LEVEL_VERBOSE, "Disabling port %s...\n",m_Name.c_str());
+    m_disabled=false;
+};
+
 
 /* Private functions */
 
