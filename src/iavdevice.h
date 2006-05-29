@@ -49,6 +49,8 @@ public:
 	virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency ) = 0;
 	virtual int getSamplingFrequency( ) = 0;
 	
+    virtual bool setId(unsigned int id) = 0;
+	
 	/// obsolete
 	virtual bool addXmlDescription( xmlNodePtr deviceNode ) = 0;
 	

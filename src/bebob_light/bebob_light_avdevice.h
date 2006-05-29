@@ -58,6 +58,8 @@ public:
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
 
+    virtual bool setId(unsigned int id);
+
 	virtual int getStreamCount();
 	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
@@ -126,6 +128,8 @@ protected:
 
     nr_of_plugs_t m_serialBusIsochronousInputPlugs;
     nr_of_plugs_t m_serialBusIsochronousOutputPlugs;
+
+    unsigned int m_id;
 
 	// streaming stuff
 	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;

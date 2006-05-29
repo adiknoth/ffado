@@ -120,6 +120,9 @@ DeviceManager::discover( int verboseLevel )
             IAvDevice* avDevice = func(*m_1394Service, nodeId, verboseLevel);
             if ( avDevice ) {
                 m_avDevices.push_back( avDevice );
+                if (!avDevice->setId(m_avDevices.size())) {
+                    debugError("Could not set Id of AvDevice\n");
+                }
                 if ( verboseLevel ) {
                     avDevice->showDevice();
                 }

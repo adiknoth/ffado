@@ -33,7 +33,8 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include <iostream>
+#include <iostream>	
+#include <sstream>
 #include <stdint.h>
 
 namespace BeBoB_Light {
@@ -48,6 +49,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
     : m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
+    , m_id(0)
     , m_receiveProcessor ( 0 )
     , m_receiveProcessorBandwidth ( -1 )
     , m_transmitProcessor ( 0 )
@@ -1264,6 +1266,13 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
         debugError( "Couldn't create 'GUID' node\n" );
         return false;
     }
+    
+    asprintf( &result, "%d", m_id & 0xFF );
+    if ( !xmlNewChild( connection,  0,
+                       BAD_CAST "Id",  BAD_CAST result ) ) {
+        debugError( "Couldn't create 'Id' node\n" );
+        return false;
+    }
 
     asprintf( &result, "%d", m_1394Service->getPort() );
     if ( !xmlNewChild( connection,  0,
@@ -1701,6 +1710,11 @@ AvDevice::showDevice() const
     debugWarning( "showDevice: not implemented\n" );
 }
 
+bool AvDevice::setId( unsigned int id) {
+    m_id=id;
+    return true;
+}
+
 bool
 AvDevice::prepare() {
     ///////////
@@ -1791,7 +1805,10 @@ AvDevice::addPlugToProcessor(
               ++it )
         {
             const AvPlug::ChannelInfo* channelInfo = &( *it );
-
+	        std::ostringstream portname;
+	        
+	        portname << "dev" << m_id << "_" << channelInfo->m_name;
+	        
 			FreebobStreaming::Port *p=NULL;
 			switch(clusterInfo->m_portType) {
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
@@ -1800,7 +1817,7 @@ AvDevice::addPlugToProcessor(
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
 				p=new FreebobStreaming::AmdtpAudioPort(
-						channelInfo->m_name,
+						portname.str(),
 						direction, 
 						// \todo: streaming backend expects indexing starting from 0
 						// but bebob reports it starting from 1. Decide where
@@ -1814,7 +1831,7 @@ AvDevice::addPlugToProcessor(
 
 			case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
 				p=new FreebobStreaming::AmdtpMidiPort(
-						channelInfo->m_name, 
+						portname.str(),
 						direction, 
 						// \todo: streaming backend expects indexing starting from 0
 						// but bebob reports it starting from 1. Decide where
