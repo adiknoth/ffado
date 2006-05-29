@@ -48,6 +48,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
     : m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
+    , m_id( 0 )
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -1261,6 +1262,13 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
         return false;
     }
 
+    asprintf( &result, "%d", m_id & 0xff );
+    if ( !xmlNewChild( connection,  0,
+                       BAD_CAST "Id",  BAD_CAST result ) ) {
+        debugError( "Couldn't create 'Id' node\n" );
+        return false;
+    }
+
     asprintf( &result, "%d", m_1394Service->getPort() );
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Port",  BAD_CAST result ) ) {
@@ -1671,6 +1679,11 @@ void
 AvDevice::showDevice() const
 {
     printf( "showDevice: not implemented\n" );
+}
+
+bool AvDevice::setId( unsigned int id) {
+	m_id=id;
+	return true;
 }
 
 }

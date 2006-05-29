@@ -97,4 +97,10 @@ BounceDevice::addXmlDescription( xmlNodePtr deviceNode )
     return true;
 }
 
+bool
+BounceDevice::setId(unsigned int id)
+{
+    return true;
+}
+
 }

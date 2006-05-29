@@ -118,6 +118,10 @@ DeviceManager::discover( int verboseLevel )
             IAvDevice* avDevice = func(*m_1394Service, nodeId, verboseLevel);
             if ( avDevice ) {
                 m_avDevices.push_back( avDevice );
+
+                if ( !avDevice->setId( m_avDevices.size() ) ) {
+                    debugError( "setting Id failed\n" );
+                }
                 if ( verboseLevel ) {
                     avDevice->showDevice();
                 }
@@ -255,7 +259,7 @@ DeviceManager::getXmlDescription()
                            BAD_CAST "NodeId",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'NodeId' node" );
-            return false;
+            return 0;
         }
 
         std::string res = "Connection Information for "
@@ -305,7 +309,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            return false;
+            return 0;
         }
 
         if ( !avDevice->addXmlDescription( deviceNode ) ) {

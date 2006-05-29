@@ -46,6 +46,7 @@ public:
     virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual void showDevice() const;
+    virtual bool setId(unsigned int id);
 
 protected:
     Ieee1394Service* m_1394Service;

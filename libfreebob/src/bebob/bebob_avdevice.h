@@ -51,6 +51,7 @@ public:
     virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual void showDevice() const;
+    virtual bool setId(unsigned int id);
 
     Ieee1394Service* get1394Service()
 	{ return m_1394Service; }
