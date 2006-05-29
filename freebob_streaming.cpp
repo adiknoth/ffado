@@ -33,7 +33,6 @@
  */
 
 #include "libfreebob/freebob_streaming.h"
-#include "messagebuffer.h"
 #include "../devicemanager.h"
 #include "../iavdevice.h"
 
@@ -70,7 +69,6 @@ struct _freebob_device
 }; 
 
 freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, freebob_options_t options) {
-	freebob_messagebuffer_init();
 	int i=0;
 
 	struct _freebob_device *dev = new struct _freebob_device;
@@ -105,6 +103,8 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		delete dev;
 		return 0;
 	}
+	
+    dev->processorManager->setThreadParameters(dev->options.realtime, dev->options.packetizer_priority);
 	
 	dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 	if(!dev->processorManager->init()) {
@@ -156,7 +156,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
  * @param dev 
  * @return 
  */
-bool freebob_streaming_prepare(freebob_device_t *dev) {
+int freebob_streaming_prepare(freebob_device_t *dev) {
 	int i=0;
 	
 	dev->processorManager->prepare();
@@ -172,8 +172,6 @@ void freebob_streaming_finish(freebob_device_t *dev) {
    	delete dev->m_deviceManager;
 	delete dev;
 
-	freebob_messagebuffer_exit();
-	
 	return;
 }
 
@@ -191,6 +189,7 @@ int freebob_streaming_start(freebob_device_t *dev) {
 
 		int j=0;
 		for(j=0; j<device->getStreamCount();j++) {
+    		debugOutput(DEBUG_LEVEL_VERBOSE,"Starting stream %d of device %d\n",j,i);
 			// start the stream
 			device->startStreamByIndex(j);
 		}
@@ -214,11 +213,11 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 		IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
 		assert(device);
 		
-		debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d\n",i);
 
 		int j=0;
 		for(j=0; j<device->getStreamCount();j++) {
-			// start the stream
+    		debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %d\n",j,i);
+			// stop the stream
 			device->stopStreamByIndex(j);
 		}
 	}
@@ -278,7 +277,7 @@ int freebob_streaming_transfer_buffers(freebob_device_t *dev) {
 
 
 int freebob_streaming_write(freebob_device_t *dev, int i, freebob_sample_t *buffer, int nsamples) {
-// 	debugFatal("Not implemented\n");
+// debugFatal("Not implemented\n");
 	Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
 	// use an assert here performancewise, 
 	// it should already have failed before, if not correct

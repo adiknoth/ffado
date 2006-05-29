@@ -26,7 +26,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "FreebobPosixThread.h"
 // #include "FreebobError.h"
-#include "debug.h"
 #include <string.h> // for memset
 #include <errno.h>
 #include <assert.h>
@@ -44,12 +43,12 @@ void* FreebobPosixThread::ThreadHandler(void* arg)
     int err;
 
     if ((err = pthread_setcanceltype(obj->fCancellation, NULL)) != 0) {
-        printError("pthread_setcanceltype err = %s", strerror(err));
+        debugError("pthread_setcanceltype err = %s", strerror(err));
     }
 
     // Call Init method
     if (!runnable->Init()) {
-        printError("Thread init fails: thread quits");
+        debugError("Thread init fails: thread quits");
         return 0;
     }
 
@@ -85,12 +84,12 @@ int FreebobPosixThread::Start()
         //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
 
         if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
-            printError("Cannot set FIFO scheduling class for RT thread  %d %s", res, strerror(errno));
+            debugError("Cannot set FIFO scheduling class for RT thread  %d %s", res, strerror(errno));
             return -1;
         }
 
         if ((res = pthread_attr_setscope(&attributes, PTHREAD_SCOPE_SYSTEM))) {
-            printError("Cannot set scheduling scope for RT thread %d %s", res, strerror(errno));
+            debugError("Cannot set scheduling scope for RT thread %d %s", res, strerror(errno));
             return -1;
         }
 
@@ -98,12 +97,12 @@ int FreebobPosixThread::Start()
         rt_param.sched_priority = fPriority;
 
         if ((res = pthread_attr_setschedparam(&attributes, &rt_param))) {
-            printError("Cannot set scheduling priority for RT thread %d %s", res, strerror(errno));
+            debugError("Cannot set scheduling priority for RT thread %d %s", res, strerror(errno));
             return -1;
         }
 
         if ((res = pthread_create(&fThread, &attributes, ThreadHandler, this))) {
-            printError("Cannot set create thread %d %s", res, strerror(errno));
+            debugError("Cannot set create thread %d %s", res, strerror(errno));
             return -1;
         }
 
@@ -112,7 +111,7 @@ int FreebobPosixThread::Start()
         debugOutput( DEBUG_LEVEL_VERBOSE, "Create non RT thread\n");
 
         if ((res = pthread_create(&fThread, 0, ThreadHandler, this))) {
-            printError("Cannot set create thread %d %s", res, strerror(errno));
+            debugError("Cannot set create thread %d %s", res, strerror(errno));
             return -1;
         }
         
@@ -160,7 +159,7 @@ int FreebobPosixThread::AcquireRealTime()
     //if ((res = pthread_setschedparam(fThread, SCHED_FIFO, &rtparam)) != 0) {
 
     if ((res = pthread_setschedparam(fThread, SCHED_RR, &rtparam)) != 0) {
-        printError("Cannot use real-time scheduling (FIFO/%d) "
+        debugError("Cannot use real-time scheduling (FIFO/%d) "
                    "(%d: %s)", rtparam.sched_priority, res,
                    strerror(res));
         return -1;
@@ -186,7 +185,7 @@ int FreebobPosixThread::DropRealTime()
     rtparam.sched_priority = 0;
 
     if ((res = pthread_setschedparam(fThread, SCHED_OTHER, &rtparam)) != 0) {
-        printError("Cannot switch to normal scheduling priority(%s)\n", strerror(errno));
+        debugError("Cannot switch to normal scheduling priority(%s)\n", strerror(errno));
         return -1;
     }
     return 0;

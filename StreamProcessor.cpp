@@ -68,6 +68,11 @@ void StreamProcessor::dumpInfo()
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running        : %d\n", m_running);
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled        : %d\n", !m_disabled);
 	
+    m_PeriodStat.dumpInfo();
+    m_PacketStat.dumpInfo();
+    m_WakeupStat.dumpInfo();
+	
+	
 };
 
 bool StreamProcessor::init()

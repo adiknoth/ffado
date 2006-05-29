@@ -32,6 +32,7 @@
 
 #include "IsoStream.h"
 #include "PortManager.h"
+#include "streamstatistics.h"
 
 namespace FreebobStreaming {
 
@@ -116,7 +117,13 @@ protected:
 	bool m_running;
 	bool m_disabled;
 
-     DECLARE_DEBUG_MODULE;
+    StreamStatistics m_PacketStat;
+    StreamStatistics m_PeriodStat;
+    
+    StreamStatistics m_WakeupStat;
+    
+
+    DECLARE_DEBUG_MODULE;
 
 
 };
@@ -124,7 +131,6 @@ protected:
 /*!
 \brief Class providing a generic interface for receive Stream Processors
 
- 
 */
 class ReceiveStreamProcessor : public StreamProcessor {
 
