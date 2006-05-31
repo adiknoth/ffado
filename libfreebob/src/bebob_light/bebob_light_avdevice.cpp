@@ -1087,6 +1087,9 @@ AvDevice::discoverPlugConnection( AvPlug& srcPlug,
 bool
 AvDevice::enumerateSubUnits()
 {
+    bool musicSubunitFound=false;
+    bool audioSubunitFound=false;
+
     SubUnitInfoCmd subUnitInfoCmd( m_1394Service );
     //subUnitInfoCmd.setVerbose( 1 );
     subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
@@ -1099,6 +1102,8 @@ AvDevice::enumerateSubUnits()
     subUnitInfoCmd.setNodeId( m_nodeId );
     if ( !subUnitInfoCmd.fire() ) {
         debugError( "Subunit info command failed\n" );
+        // shouldn't this be an error situation?
+        return false;
     }
 
     for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
@@ -1121,6 +1126,8 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
                 return false;
             }
+            m_subunits.push_back( subunit );
+            audioSubunitFound=true;
             break;
         case AVCCommand::eST_Music:
             subunit = new AvDeviceSubunitMusic( this, subunitId );
@@ -1128,6 +1135,8 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
                 return false;
             }
+            m_subunits.push_back( subunit );
+            musicSubunitFound=true;
             break;
         default:
             debugOutput( DEBUG_LEVEL_NORMAL,
@@ -1137,10 +1146,10 @@ AvDevice::enumerateSubUnits()
 
         }
 
-        m_subunits.push_back( subunit );
     }
 
-    return true;
+    // a BeBoB always has an audio and a music subunit
+    return (musicSubunitFound && audioSubunitFound);
 }
 
 
@@ -1242,6 +1251,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                        BAD_CAST result ) )
     {
         debugError( "Couldn't create 'Direction' node\n" );
+        free(result);
         return false;
     }
 
@@ -1250,6 +1260,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !connection ) {
         debugError( "Couldn't create 'Connection' node for "
                     "direction %d\n", plug.getPlugDirection() );
+        free(result);
         return false;
     }
 
@@ -1259,6 +1270,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "GUID",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'GUID' node\n" );
+        free(result);
         return false;
     }
 
@@ -1266,6 +1278,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Id",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Id' node\n" );
+        free(result);
         return false;
     }
 
@@ -1273,6 +1286,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Port",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Port' node\n" );
+        free(result);
         return false;
     }
 
@@ -1280,6 +1294,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Node",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Node' node\n" );
+        free(result);
         return false;
     }
 
@@ -1287,6 +1302,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Dimension",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Dimension' node\n" );
+        free(result);
         return false;
     }
 
@@ -1294,6 +1310,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Samplerate",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Samplerate' node\n" );
+        free(result);
         return false;
     }
 
@@ -1301,6 +1318,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                        BAD_CAST "IsoChannel", BAD_CAST "-1" ) )
     {
         debugError( "Couldn't create 'IsoChannel' node\n" );
+        free(result);
         return false;
     }
 
@@ -1309,6 +1327,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
     if ( !streams ) {
         debugError( "Couldn't create 'Streams' node for "
                     "direction %d\n", plug.getPlugDirection() );
+        free(result);
         return false;
     }
 
@@ -1330,6 +1349,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                              BAD_CAST "Stream",  0 );
             if ( !stream ) {
                 debugError( "Coulnd't create 'Stream' node" );
+                free(result);
                 return false;
             }
 
@@ -1341,6 +1361,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                BAD_CAST "Position",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Position' node" );
+                free(result);
                 return false;
             }
 
@@ -1349,6 +1370,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                BAD_CAST "Location",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Location' node" );
+                free(result);
                 return false;
             }
 
@@ -1357,6 +1379,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                BAD_CAST "Format",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Format' node" );
+                free(result);
                 return false;
             }
 
@@ -1365,6 +1388,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                BAD_CAST "Type",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Type' node" );
+                free(result);
                 return false;
             }
 
@@ -1374,6 +1398,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                BAD_CAST "DestinationPort",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'DestinationPort' node" );
+                free(result);
                 return false;
             }
 
@@ -1382,10 +1407,13 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
                                BAD_CAST channelInfo->m_name.c_str() ) )
             {
                 debugError( "Couldn't create 'Name' node" );
+                free(result);
                 return false;
             }
         }
     }
+    
+    free(result);
 
     return true;
 }
@@ -1438,6 +1466,7 @@ AvDevice::addXmlDescriptionStreamFormats( AvPlug& plug,
                            BAD_CAST "Samplerate",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'Samplerate' node\n" );
+            free(result);
             return false;
         }
 
@@ -1446,6 +1475,7 @@ AvDevice::addXmlDescriptionStreamFormats( AvPlug& plug,
                            BAD_CAST "AudioChannels",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'AudioChannels' node\n" );
+            free(result);
             return false;
         }
 
@@ -1454,11 +1484,13 @@ AvDevice::addXmlDescriptionStreamFormats( AvPlug& plug,
                            BAD_CAST "MidiChannels",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'MidiChannels' node\n" );
+            free(result);
             return false;
         }
     }
 
-    return true;
+   free(result);
+   return true;
 }
 
 bool
