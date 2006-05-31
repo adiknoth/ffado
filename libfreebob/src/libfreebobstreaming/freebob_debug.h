@@ -44,11 +44,6 @@ extern int g_verbose;
 
 unsigned long getCurrentUTime();
 
-static unsigned long debugGetCurrentUTime() {
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	return now.tv_sec*1000000+now.tv_usec;
-}
 
 // debug print control flags
 #define DEBUG_LEVEL_BUFFERS           	(1<<0)
@@ -65,6 +60,13 @@ static unsigned long debugGetCurrentUTime() {
 #define DEBUG_LEVEL_STREAMS				(1<<19)
 
 #ifdef DEBUG
+
+static unsigned long debugGetCurrentUTime() {
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	return now.tv_sec*1000000+now.tv_usec;
+}
+
 //#if 0
 	#define printMessage(format, args...) freebob_messagebuffer_add( "FREEBOB MSG: %s:%d (%s): " format, basename(__FILE__), __LINE__, __FUNCTION__, ##args )
 	#define printError(format, args...) freebob_messagebuffer_add( "FREEBOB ERR: %s:%d (%s): " format,  basename(__FILE__), __LINE__, __FUNCTION__, ##args )

@@ -889,12 +889,13 @@ int freebob_streaming_stop(freebob_device_t *dev) {
 }
 
 void freebob_streaming_print_bufferfill(freebob_device_t *dev) {
-	int i=0;
+#ifdef DEBUG	
+    int i=0;
 	for(i=0; i < dev->nb_connections; i++) {
-		freebob_connection_t *connection= &(dev->connections[i]);
+ 		freebob_connection_t *connection= &(dev->connections[i]);
 		debugPrint(DEBUG_LEVEL_XRUN_RECOVERY, "%i: %d\n",i,freebob_ringbuffer_read_space(connection->event_buffer));
 	}
-	
+#endif
 }
 
 int freebob_streaming_prefill_playback_streams(freebob_device_t *dev) {
@@ -2144,6 +2145,7 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 	// one packet received
 	connection->status.packets++;
 
+#ifdef DEBUG
 	if(packet->dbs) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
 		debugPrintWithTimeStamp(DEBUG_LEVEL_HANDLERS_LOWLEVEL, 
@@ -2153,7 +2155,8 @@ iso_master_receive_handler(raw1394handle_t handle, unsigned char *data,
 			((length / sizeof (quadlet_t)) - 2)/packet->dbs, dropped, 
 			connection->status.packets, connection->status.events, connection->status.frames_left, 
 			nevents);
-	}	
+	}
+#endif
 
 	if((connection->status.frames_left<=0)) {
 		connection->pfd->events=0;
