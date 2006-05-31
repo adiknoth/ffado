@@ -40,7 +40,7 @@ DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
     m_probeList.push_back( probeBeBoB );
-    m_probeList.push_back( probeBounce );
+    // m_probeList.push_back( probeBounce );
 }
 
 DeviceManager::~DeviceManager()
