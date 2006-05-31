@@ -52,8 +52,10 @@ AvPlug::addXmlDescription( xmlNodePtr connectionSet )
                        BAD_CAST result ) )
     {
         debugError( "Couldn't create 'Direction' node\n" );
+        free( result );
         return false;
     }
+    free( result );
 
     xmlNodePtr connection = xmlNewChild( connectionSet, 0,
                                          BAD_CAST "Connection", 0 );
@@ -78,29 +80,38 @@ AvPlug::addXmlDescription( xmlNodePtr connectionSet )
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Port",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Port' node\n" );
+        free( result );
         return false;
     }
+    free( result );
 
     asprintf( &result, "%d",  m_nodeId);
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Node",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Node' node\n" );
+        free( result );
         return false;
     }
+    free( result );
+
 
     asprintf( &result, "%d",  m_nrOfChannels );
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Dimension",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Dimension' node\n" );
+        free( result );
         return false;
     }
+    free( result );
 
     asprintf( &result, "%d",  getSampleRate() );
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Samplerate",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Samplerate' node\n" );
+        free( result );
         return false;
     }
+    free( result );
 
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "IsoChannel", BAD_CAST "-1" ) )
@@ -145,32 +156,41 @@ AvPlug::addXmlDescription( xmlNodePtr connectionSet )
                                BAD_CAST "Position",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Position' node" );
+                free( result );
                 return false;
             }
+            free( result );
 
             asprintf( &result, "%d", channelInfo->m_location );
             if ( !xmlNewChild( stream,  0,
                                BAD_CAST "Location",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Location' node" );
+                free( result );
                 return false;
             }
+            free( result );
 
             asprintf( &result, "%d", clusterInfo->m_streamFormat );
             if ( !xmlNewChild( stream,  0,
                                BAD_CAST "Format",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Format' node" );
+                free( result );
                 return false;
             }
+            free( result );
 
             asprintf( &result, "%d", clusterInfo->m_portType );
             if ( !xmlNewChild( stream,  0,
                                BAD_CAST "Type",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'Type' node" );
+                free( result );
                 return false;
             }
+            free( result );
+
 
             // \todo XXX: What do to do with DestinationPort value??
             asprintf( &result, "%d", 0 );
@@ -178,8 +198,10 @@ AvPlug::addXmlDescription( xmlNodePtr connectionSet )
                                BAD_CAST "DestinationPort",  BAD_CAST result ) )
             {
                 debugError( "Couldn't create 'DestinationPort' node" );
+                free( result );
                 return false;
             }
+            free( result );
 
             if ( !xmlNewChild( stream,  0,
                                BAD_CAST "Name",
@@ -220,8 +242,11 @@ AvPlug::addXmlDescriptionStreamFormats( xmlNodePtr streamFormatNode )
                        BAD_CAST result ) )
     {
         debugError( "addXmlDescriptionStreamFormats: Could not  create 'Direction' node\n" );
+        free( result );
         return false;
     }
+    free( result );
+
 
     for ( FormatInfoVector::iterator it =
               m_formatInfos.begin();
@@ -242,22 +267,27 @@ AvPlug::addXmlDescriptionStreamFormats( xmlNodePtr streamFormatNode )
                            BAD_CAST "Samplerate",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'Samplerate' node\n" );
+            free( result );
             return false;
         }
+        free( result );
 
         asprintf( &result, "%d",  formatInfo.m_audioChannels );
         if ( !xmlNewChild( formatNode,  0,
                            BAD_CAST "AudioChannels",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'AudioChannels' node\n" );
+            free( result );
             return false;
         }
+        free( result );
 
         asprintf( &result, "%d",  formatInfo.m_midiChannels );
         if ( !xmlNewChild( formatNode,  0,
                            BAD_CAST "MidiChannels",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'MidiChannels' node\n" );
+            free( result );
             return false;
         }
     }

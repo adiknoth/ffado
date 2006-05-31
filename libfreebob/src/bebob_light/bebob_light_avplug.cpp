@@ -113,6 +113,7 @@ AvPlug::debugOutputClusterInfos( int debugLevel )
               ++cit )
         {
             const ChannelInfo* channelInfo = &( *cit );
+            channelInfo = channelInfo;
             debugOutput( debugLevel,
                          "stream position: %d\n",
                          channelInfo->m_streamPosition );

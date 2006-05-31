@@ -262,6 +262,7 @@ DeviceManager::getXmlDescription()
             free(result);
             return 0;
         }
+        free( result );
 
         std::string res = "Connection Information for "
                           + avDevice->getConfigRom().getVendorName()
@@ -275,7 +276,6 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create comment node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            free(result);
             return 0;
         }
 
@@ -288,7 +288,6 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create vendor node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            free(result);
             return 0;
         }
 
@@ -301,7 +300,6 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create model node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            free(result);
             return 0;
         }
 
@@ -316,15 +314,15 @@ DeviceManager::getXmlDescription()
             free(result);
             return 0;
         }
+        free( result );
+
 
         if ( !avDevice->addXmlDescription( deviceNode ) ) {
             debugError( "Adding XML description failed\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            free(result);
             return 0;
         }
-        free(result);
     }
 
     return doc;

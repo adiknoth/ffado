@@ -1,3 +1,8 @@
+2006-05-31  Daniel Wagner  <wagi@monom.org>
+
+	* Free all allocated asprintf buffers after xmlNewChild.
+	Compiler warning removed
+
 2006-05-31  Pieter Palmers  <pieterpalmers@users.sourceforge.net>
     * src/devicemanager.cpp:
     - fixed some memory leaks

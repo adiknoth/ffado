@@ -44,12 +44,14 @@ bool
 AVCCommand::serialize( IOSSerialize& se )
 {
     se.write( m_ctype, "AVCCommand ctype" );
+
     // XXX \todo improve IOSSerialize::write interface
     char* buf;
     asprintf( &buf, "AVCCommand subunit (subunit_type = %d, subunit_id = %d)",
               getSubunitType(), getSubunitId() );
-    free(buf);
     se.write( m_subunit, buf );
+    free( buf );
+
     se.write( m_opcode, "AVCCommand opcode" );
     return true;
 }
