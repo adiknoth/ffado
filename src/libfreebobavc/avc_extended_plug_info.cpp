@@ -625,6 +625,8 @@ ExtendedPlugInfoInfoType::serialize( IOSSerialize& se )
               extendedPlugInfoInfoTypeToString( m_infoType ) );
     se.write( m_infoType, buf );
 
+    free(buff);
+    
     switch ( m_infoType ) {
     case eIT_PlugType:
         if ( m_plugType ) {

@@ -259,6 +259,7 @@ DeviceManager::getXmlDescription()
                            BAD_CAST "NodeId",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'NodeId' node" );
+            free(result);
             return 0;
         }
 
@@ -274,6 +275,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create comment node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -286,6 +288,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create vendor node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -298,6 +301,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create model node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -309,6 +313,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -316,8 +321,10 @@ DeviceManager::getXmlDescription()
             debugError( "Adding XML description failed\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
+        free(result);
     }
 
     return doc;

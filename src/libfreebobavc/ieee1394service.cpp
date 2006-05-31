@@ -36,6 +36,10 @@ Ieee1394Service::Ieee1394Service()
 
 Ieee1394Service::~Ieee1394Service()
 {
+    if (m_handle) {
+        raw1394_destroy_handle(m_handle);
+    }
+
 }
 
 bool

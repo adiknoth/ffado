@@ -86,9 +86,13 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	int c;
 	int err=0;
 	freebob_device_t* dev=NULL;
+	int discover_verbose=0;
 	
 	freebob_messagebuffer_init();
+
 	g_verbose=options.verbose;
+
+	if(g_verbose) discover_verbose=5;
 
 	assert(device_info);
 	
@@ -110,7 +114,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	dev=calloc(1,sizeof(freebob_device_t));
 	
 	if(!dev) {
-		printError("FREEBOB: cannot allocate memory for dev structure!\n");
+		printError("cannot allocate memory for dev structure!\n");
 		return NULL;
 	}
 	
@@ -134,14 +138,14 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	dev->fb_handle = freebob_new_handle(options.port);
 	if (!dev->fb_handle) {
 		free(dev);
-		printError("FREEBOB: cannot create libfreebob handle\n");
+		printError("cannot create libfreebob handle\n");
 		return NULL;
 	}
 
-	if (freebob_discover_devices(dev->fb_handle, options.verbose)!=0) {
+	if (freebob_discover_devices(dev->fb_handle, discover_verbose)!=0) {
 		freebob_destroy_handle(dev->fb_handle);
 		free(dev);
-		printError("FREEBOB: device discovering failed\n");
+		printError("device discovering failed\n");
 		return NULL;
 	}
 
@@ -154,7 +158,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	    if (! freebob_set_samplerate(dev->fb_handle, options.node_id, options.sample_rate)) {
 		freebob_destroy_handle(dev->fb_handle);
 		free(dev);
-		printError("FREEBOB: Failed to set samplerate...\n");
+		printError("Failed to set samplerate...\n");
 		return NULL;
 	    }
 
@@ -169,7 +173,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		if (! freebob_set_samplerate(dev->fb_handle, node_id, options.sample_rate)) {
 			freebob_destroy_handle(dev->fb_handle);
 			free(dev);
-			printError("FREEBOB: Failed to set samplerate...\n");
+			printError("Failed to set samplerate...\n");
 			return NULL;
 		}
 	    }
@@ -257,7 +261,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	for(i=0; i < dev->nb_connections; i++) {
 		freebob_connection_t *connection= &(dev->connections[i]);
 		if ((err=freebob_streaming_init_connection(dev, connection))<0) {
-			printError("FREEBOB: failed to init connection %d\n",i);
+			printError("failed to init connection %d\n",i);
 			break;
 		}
 	}
@@ -532,7 +536,7 @@ int freebob_streaming_start_thread(freebob_device_t *dev) {
 	dev->packetizer.run=1;
 	
 	if (freebob_streaming_create_thread(dev, &dev->packetizer.transfer_thread, dev->packetizer.priority, dev->packetizer.realtime, freebob_iso_packet_iterator, (void *)dev)) {
-		printError("FREEBOB: cannot create packet transfer thread");
+		printError("cannot create packet transfer thread");
 		return -1;
 	} else {
 		debugPrint(DEBUG_LEVEL_STARTUP,"Created packet transfer thread\n");
@@ -810,12 +814,12 @@ int freebob_streaming_start(freebob_device_t *dev) {
 	}
 	
 	if (sync_masters_present == 0) {
-		printError("FREEBOB: no sync master connection present!\n");
+		printError("no sync master connection present!\n");
 		// TODO: cleanup
 		//freebob_streaming_stop(driver);
 		return -1;
 	} else if (sync_masters_present > 1) {
-		printError("FREEBOB: too many sync master connections present! (%d)\n",sync_masters_present);
+		printError("too many sync master connections present! (%d)\n",sync_masters_present);
 		// TODO: cleanup
 		//freebob_streaming_stop(driver);
 		return -1;
@@ -1290,7 +1294,7 @@ unsigned int freebob_streaming_register_generic_stream(freebob_stream_t *stream,
 	for (i=0;i<set_size;i++) {
 		*(new_streams+i)=*(set+i);
 		if(*(set+i)==stream) {
-			printError("FREEBOB: stream already registered\n");
+			printError("stream already registered\n");
 			found=1;
 		}
 	}
@@ -1489,7 +1493,7 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 		0);
 
 		if (err) {
-			printError("FREEBOB: couldn't start receiving: %s\n",
+			printError("couldn't start receiving: %s\n",
 					   strerror (errno));
 				// TODO: cleanup
 			return err;
@@ -1554,7 +1558,7 @@ int freebob_streaming_start_iso_connection(freebob_device_t *dev, freebob_connec
 			connection->iso.prebuffers);
 
 		if (err) {
-			printError("FREEBOB: couldn't start transmitting: %s\n",
+			printError("couldn't start transmitting: %s\n",
 					   strerror (errno));
 				// TODO: cleanup
 			return err;
