@@ -1,20 +1,17 @@
-FreeBob version 0.9.0 (RC1)
-===========================
+FreeBoB version 1.0.0
+=====================
 
 This project aims to provide a free driver implemenation for the BeBoB
-platform.  The BeBob is used in many available IEEE 1394 based break-out 
+platform.  The BeBoB is used in many available IEEE 1394 based break-out 
 boxes.
-
-This is the release candidate of libfreebob.
 
 Dependencies
 ------------
 
-To build libfreebob you need several libraries. For all libraries a version
-is provided which is a 'known good' version (all tested with a debian testing
-installation).  The first few libraries it seems it is not necessary that 
-the version must match. The chances that it works also with an older versions 
-are good:
+To build libfreebob you need several libraries. For all libraries a
+version is provided which is a 'known good' version.  The first few
+libraries it seems it is not necessary that the version must
+match. The chances that it works also with an older versions are good:
 
 alsa        (>= 1.0.0)
 libxml2     (>= 2.6.0)
@@ -23,7 +20,7 @@ libpthread  (>= 2.3.5)
 These libraries here should be at least the version listed:
 
 libraw1394  (>= 1.2.1),  http://www.linux1394.org
-libiec61883 (>= 1.1.0),  http://www.linux1394.org
+libiec61883 (>= 1.0.0),  http://www.linux1394.org
 libavc1394  (>= 0.5.3),  http://sourceforge.net/projects/libavc1394
 
 Currently only the jackd audio server is supported.
@@ -92,6 +89,23 @@ to see the backend options. You can easily figure out how to set them using
 the remarks given above (for qjackctl).
 
 For the other aspects of jackd usage, consult the jackd documentation.
+
+Here is a sample session (without realtime support enabled):
+
+[wagi@halo ~]$ jackd -d freebob
+jackd 0.102.9
+Copyright 2001-2005 Paul Davis and others.
+jackd comes with ABSOLUTELY NO WARRANTY
+This is free software, and you are welcome to redistribute it
+under certain conditions; see the file COPYING for details
+
+JACK compiled with System V SHM support.
+loading driver ..
+Freebob using Firewire port 0, node -1
+libiec61883 warning: Established connection on channel 0.
+You may need to manually set the channel on the receiving node.
+libiec61883 warning: Established connection on channel 1.
+You may need to manually set the channel on the transmitting node.
 
 In case of problems
 -------------------

@@ -672,10 +672,10 @@ freebob_xmlparse_get_connection_info( xmlDocPtr doc,
         return 0;
     }
 
-    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBobConnectionInfo") ) {
+    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBoBConnectionInfo") ) {
         fprintf( stderr,
                  "document of the wrong type, root node "
-                 "!= FreeBobConnectionInfo\n" );
+                 "!= FreeBoBConnectionInfo\n" );
         return 0;
     }
 
@@ -753,10 +753,10 @@ freebob_xmlparse_get_stream_formats( xmlDocPtr doc,
         return 0;
     }
 
-    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBobConnectionInfo") ) {
+    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBoBConnectionInfo") ) {
         fprintf( stderr,
                  "document of the wrong type, root node "
-                 "!= FreeBobConnectionInfo\n" );
+                 "!= FreeBoBConnectionInfo\n" );
         return 0;
     }
 

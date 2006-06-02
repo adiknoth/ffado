@@ -85,7 +85,7 @@ int open_seq(snd_seq_t **seq_handle, int in_ports[], int out_ports[], int num_in
 		return(-1);
 	}
 	
-	snd_seq_set_client_name(*seq_handle, "FreeBob MIDI I/O test");
+	snd_seq_set_client_name(*seq_handle, "FreeBoB MIDI I/O test");
 	
 	for (l1 = 0; l1 < num_in; l1++) {
 		sprintf(portname, "MIDI OUT %d", l1);

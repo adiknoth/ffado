@@ -1,8 +1,8 @@
 /* $Id$ */
 
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ *   FreeBoB Streaming API
+ *   FreeBoB = Firewire (pro-)audio for linux
  *
  *   http://freebob.sf.net
  *
@@ -28,7 +28,7 @@
 
 /* freebob_streaming.c
  *
- * Implementation of the FreeBob Streaming API
+ * Implementation of the FreeBoB Streaming API
  *
  */
 
@@ -96,8 +96,8 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 
 	assert(device_info);
 	
-	printMessage("FreeBob Streaming Device Init\n");
-	printMessage(" Using FreeBob lib version %s\n",freebob_get_version());
+	printMessage("FreeBoB Streaming Device Init\n");
+	printMessage(" Using FreeBoB lib version %s\n",freebob_get_version());
 	printMessage(" Device information:\n");
 	
 	printMessage(" Device options:\n");
