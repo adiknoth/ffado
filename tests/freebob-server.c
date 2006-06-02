@@ -60,6 +60,7 @@ static void sighandler (int sig)
 /**** subunit handlers ****/
 int subunit_control( avc1394_cmd_rsp *cr )
 {
+	cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 	switch ( cr->opcode )
 	{
 	default:
@@ -71,6 +72,7 @@ int subunit_control( avc1394_cmd_rsp *cr )
 
 int subunit_status( avc1394_cmd_rsp *cr )
 {
+	cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 
 	fprintf( stderr, "subunit STATUS\n");
 	char *buffer;
@@ -94,6 +96,7 @@ int subunit_status( avc1394_cmd_rsp *cr )
 
 int subunit_inquiry( avc1394_cmd_rsp *cr )
 {
+	cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 	switch ( cr->opcode )
 	{
 	default:
@@ -107,6 +110,7 @@ int subunit_inquiry( avc1394_cmd_rsp *cr )
 /**** Unit handlers ****/
 int unit_control( avc1394_cmd_rsp *cr )
 {
+	cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 	switch ( cr->opcode )
 	{
 	default:
@@ -119,6 +123,7 @@ int unit_control( avc1394_cmd_rsp *cr )
 
 int unit_status( avc1394_cmd_rsp *cr )
 {
+	cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 	cr->operand[1] = 0x00;
 	cr->operand[2] = 0x00;
 	cr->operand[3] = 0x00;
@@ -157,6 +162,7 @@ int unit_status( avc1394_cmd_rsp *cr )
 
 int unit_inquiry( avc1394_cmd_rsp *cr )
 {
+	cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 	switch ( cr->opcode )
 	{
 	case AVC1394_CMD_SUBUNIT_INFO:
@@ -173,11 +179,13 @@ int unit_inquiry( avc1394_cmd_rsp *cr )
 /**** primary avc1394 target callback ****/
 int command_handler( avc1394_cmd_rsp *cr )
 {
+
 	switch ( cr->subunit_type )
 	{
 	case AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER:
 		if ( cr->subunit_id != 0 )
 		{
+			cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 			fprintf( stderr, "subunit id 0x%02x not supported\n", cr->subunit_id );
 			return 0;
 		}
@@ -209,6 +217,7 @@ int command_handler( avc1394_cmd_rsp *cr )
 		}
 		break;
 	default:
+		cr->status=AVC1394_RESP_NOT_IMPLEMENTED;
 		fprintf( stderr, "subunit type 0x%02x not supported\n", cr->subunit_type );
 		return 0;
 	}
@@ -366,7 +375,7 @@ int main( int argc, char **argv )
 		exit( EXIT_FAILURE );
 	}
 
-	if ( raw1394_set_port( handle, 0 ) < 0 )
+	if ( raw1394_set_port( handle, 1 ) < 0 )
 	{
 		perror( "couldn't set port" );
 		exit( EXIT_FAILURE );
