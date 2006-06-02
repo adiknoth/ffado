@@ -38,7 +38,7 @@
 #include <libxml/parser.h>
 
 DECLARE_GLOBAL_DEBUG_MODULE;
-IMPL_GLOBAL_DEBUG_MODULE( FreeBob, DEBUG_LEVEL_VERBOSE );
+IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
 
 const char*
 freebob_get_version() {

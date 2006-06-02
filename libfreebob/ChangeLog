@@ -1,3 +1,12 @@
+2006-06-01  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 1.0.0
+
+	* Changed all FreeBob to FreeBoB
+	* Removed all .cvsignore
+	* Added Pieter to AUTHORS
+	* Updated NEWS and README (release canditate date added)
+
 2006-05-31  Daniel Wagner  <wagi@monom.org>
 
 	* Free all allocated asprintf buffers after xmlNewChild.

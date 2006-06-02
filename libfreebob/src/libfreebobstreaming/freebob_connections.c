@@ -1,6 +1,6 @@
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ *   FreeBoB Streaming API
+ *   FreeBoB = Firewire (pro-)audio for linux
  *
  *   http://freebob.sf.net
  *

@@ -1,6 +1,6 @@
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ *   FreeBoB Streaming API
+ *   FreeBoB = Firewire (pro-)audio for linux
  *
  *   http://freebob.sf.net
  *
@@ -108,9 +108,9 @@ static unsigned long debugGetCurrentUTime() {
 	#define DEBUG_LEVEL
 	
 	#define printMessage(format, args...) if(g_verbose) freebob_messagebuffer_add( \
-	                                      "LibFreeBob MSG: " format, ##args )
+	                                      "LibFreeBoB MSG: " format, ##args )
 
-	#define printError(format, args...)   freebob_messagebuffer_add( "LibFreeBob ERR: " format, ##args )
+	#define printError(format, args...)   freebob_messagebuffer_add( "LibFreeBoB ERR: " format, ##args )
 	
 	#define printEnter() 
 	#define printExit() 
