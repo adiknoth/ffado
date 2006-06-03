@@ -116,7 +116,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	}
 
 	// discover the devices on the bus
-	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
+	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_VERBOSE)) {
 		debugOutput(DEBUG_LEVEL_VERBOSE, "Could not discover devices\n");
 		return 0;
 	}
@@ -133,7 +133,6 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		int j=0;
 		for(j=0; j<device->getStreamCount();j++) {
 			StreamProcessor *streamproc=device->getStreamProcessorByIndex(j);
-
 			debugOutput(DEBUG_LEVEL_VERBOSE, "Registering stream processor %d of device %d with processormanager\n",j,i);
 			if (!dev->processorManager->registerProcessor(streamproc)) {
 				debugWarning("Could not register stream processor (%p) with the Processor manager\n",streamproc);
