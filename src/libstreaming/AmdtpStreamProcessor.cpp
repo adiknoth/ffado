@@ -717,23 +717,25 @@ bool AmdtpReceiveStreamProcessor::init() {
 int AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped) {
-
+    
 	enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
 	
 	struct iec61883_packet *packet = (struct iec61883_packet *) data;
 	assert(packet);
 	
+	// how are we going to get this right???
+	m_running=true;
+	
 	if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
 		unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
 		
 		// signal that we're running
-		if(nevents) m_running=true;
+//  		if(nevents) m_running=true;
 		
 		// don't process the stream when it is not enabled.
 		if(m_disabled) {
 			return (int)RAW1394_ISO_OK;
 		}
-		
 		
 		unsigned int write_size=nevents*sizeof(quadlet_t)*m_dimension;
 		// add the data payload to the ringbuffer

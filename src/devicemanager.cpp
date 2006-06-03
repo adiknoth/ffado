@@ -32,6 +32,7 @@
 #include "motu/motu_avdevice.h"
 
 #include <iostream>
+#include <unistd.h>
 
 using namespace std;
 
@@ -41,8 +42,8 @@ DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
 //      m_probeList.push_back( probeMotu );
-     m_probeList.push_back( probeBeBoB );
-//      m_probeList.push_back( probeBounce );
+    m_probeList.push_back( probeBeBoB );
+    m_probeList.push_back( probeBounce );
 }
 
 DeviceManager::~DeviceManager()
@@ -146,26 +147,32 @@ DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
 
     if ( !avDevice->discover() ) {
         delete avDevice;
-        return NULL;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device...\n" );
+       return NULL;
     }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "BeBoB device discovered...\n" );
     return avDevice;
 }
 
-// IAvDevice*
-// DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
-// {
-//     IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
-//     if ( !avDevice ) {
-//         return NULL;
-//     }
-// 
-//     if ( !avDevice->discover() ) {
-//         delete avDevice;
-//         return NULL;
-//     }
-//     return avDevice;
-// }
-// 
+IAvDevice*
+DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
+{
+    IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
+    if ( !avDevice ) {
+        return NULL;
+    }
+
+    if ( !avDevice->discover() ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a Bounce device...\n");
+    
+        delete avDevice;
+        return NULL;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Bounce device discovered...\n");
+    
+    return avDevice;
+}
+
 // IAvDevice*
 // DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
 // {
@@ -287,6 +294,7 @@ DeviceManager::getXmlDescription()
                            BAD_CAST "NodeId",  BAD_CAST result ) )
         {
             debugError( "Couldn't create 'NodeId' node" );
+            free(result);
             return false;
         }
 
@@ -302,6 +310,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create comment node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -314,6 +323,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create vendor node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -326,6 +336,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create model node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -337,6 +348,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return false;
         }
 
@@ -344,8 +356,11 @@ DeviceManager::getXmlDescription()
             debugError( "Adding XML description failed\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
+        
+        free(result);
     }
 
     return doc;

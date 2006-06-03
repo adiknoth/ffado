@@ -53,6 +53,7 @@ static void exitfunc(void) __attribute__((destructor));
 static void exitfunc(void)
 {
     delete DebugModuleManager::instance();
+
 }
 #ifdef __cplusplus
 }

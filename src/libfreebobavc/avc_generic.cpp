@@ -49,6 +49,7 @@ AVCCommand::serialize( IOSSerialize& se )
     asprintf( &buf, "AVCCommand subunit (subunit_type = %d, subunit_id = %d)",
               getSubunitType(), getSubunitId() );
     se.write( m_subunit, buf );
+    free(buf);
     se.write( m_opcode, "AVCCommand opcode" );
     return true;
 }

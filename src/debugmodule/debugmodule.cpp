@@ -57,6 +57,7 @@ DebugModule::~DebugModule()
         cerr << "Could not unregister DebugModule at DebugModuleManager"
              << endl;
     }
+    
 }
 
 void

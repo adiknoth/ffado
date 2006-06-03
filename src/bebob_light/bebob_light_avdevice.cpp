@@ -1092,6 +1092,9 @@ AvDevice::discoverPlugConnection( AvPlug& srcPlug,
 bool
 AvDevice::enumerateSubUnits()
 {
+    bool musicSubunitFound=false;
+    bool audioSubunitFound=false;
+
     SubUnitInfoCmd subUnitInfoCmd( m_1394Service );
     //subUnitInfoCmd.setVerbose( 1 );
     subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
@@ -1104,6 +1107,8 @@ AvDevice::enumerateSubUnits()
     subUnitInfoCmd.setNodeId( m_nodeId );
     if ( !subUnitInfoCmd.fire() ) {
         debugError( "Subunit info command failed\n" );
+        // shouldn't this be an error situation?
+        return false;
     }
 
     for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
@@ -1126,6 +1131,8 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
                 return false;
             }
+            m_subunits.push_back( subunit );
+            audioSubunitFound=true;
             break;
         case AVCCommand::eST_Music:
             subunit = new AvDeviceSubunitMusic( this, subunitId );
@@ -1133,6 +1140,8 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
                 return false;
             }
+            m_subunits.push_back( subunit );
+            musicSubunitFound=true;
             break;
         default:
             debugOutput( DEBUG_LEVEL_NORMAL,
@@ -1142,10 +1151,10 @@ AvDevice::enumerateSubUnits()
 
         }
 
-        m_subunits.push_back( subunit );
     }
-
-    return true;
+    
+    // a BeBoB always has an audio and a music subunit
+    return (musicSubunitFound && audioSubunitFound);
 }
 
 
