@@ -64,6 +64,11 @@ freebob_get_version() {
     return PACKAGE_STRING;
 }
 
+const int
+freebob_get_api_version() {
+    return FREEBOB_API_VERSION;
+}
+
 freebob_handle_t
 freebob_new_handle( int port )
 {
