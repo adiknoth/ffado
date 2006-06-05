@@ -226,6 +226,8 @@ AC_SUBST([LIBXML_LIBS])
 AC_SUBST([LIBXML_CFLAGS])
 
 AC_CONFIG_FILES([Makefile
+		 doc/Makefile
+		 doc/reference.doxygen
 		 libfreebob/Makefile
 		 src/debugmodule/Makefile
 		 src/libfreebobavc/Makefile

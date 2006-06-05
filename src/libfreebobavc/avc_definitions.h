@@ -67,6 +67,9 @@ typedef byte_t info_type_t;
 
 typedef quadlet_t company_id_t;
 
+/**
+ * \brief the possible sampling frequencies
+ */
 enum ESamplingFrequency {
     eSF_22050Hz = 0x00,
     eSF_24000Hz = 0x01,
@@ -80,7 +83,17 @@ enum ESamplingFrequency {
     eSF_DontCare = 0x0F,
 };
 
+/**
+ * \brief Convert from ESamplingFrequency to an integer
+ * @param freq 
+ * @return 
+ */
 int convertESamplingFrequency(ESamplingFrequency freq);
+/**
+ * \brief Convert from integer to ESamplingFrequency
+ * @param sampleRate 
+ * @return 
+ */
 ESamplingFrequency parseSampleRate( int sampleRate );
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
