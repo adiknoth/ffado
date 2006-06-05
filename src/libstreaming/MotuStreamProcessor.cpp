@@ -141,7 +141,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     *sy = 0;
     
     // update the frame counter
-    m_framecounter+=nevents;
+    incrementFrameCounter(nevents);
     // keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
     // keeps requesting packets, that are not nescessarily ready
     if(m_framecounter>m_period) {
@@ -706,7 +706,7 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         }
 
         // update the frame counter
-        m_framecounter+=nevents;
+        incrementFrameCounter(nevents);
         // keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
         // keeps requesting packets without going to the xmit handler, leading to xmit starvation
         if(m_framecounter>m_period) {

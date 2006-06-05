@@ -18,10 +18,10 @@
 
 noinst_LTLIBRARIES = libstreaming.la
 noinst_HEADERS = cip.h FreebobPosixThread.h FreebobThread.h FreebobAtomic.h \
-		IsoHandler.h IsoHandlerManager.h IsoStream.h ringbuffer.h PacketBuffer.h \
-		PortManager.h Port.h StreamProcessor.h StreamProcessorManager.h AmdtpPortInfo.h \
-		AmdtpPort.h AmdtpStreamProcessor.h StreamRunner.h ringbuffer.h streamstatistics.h \
-	MotuStreamProcessor.h MotuPort.h MotuPortInfo.h
+	IsoHandler.h IsoHandlerManager.h IsoStream.h PacketBuffer.h PortManager.h Port.h \
+	StreamProcessor.h StreamProcessorManager.h AmdtpPortInfo.h AmdtpPort.h \
+	AmdtpStreamProcessor.h StreamRunner.h streamstatistics.h MotuStreamProcessor.h MotuPort.h \
+	MotuPortInfo.h
 
 libstreaming_la_SOURCES = cip.c FreebobPosixThread.cpp 		freebob_streaming.cpp \
 	IsoHandler.cpp IsoHandlerManager.cpp IsoStream.cpp PacketBuffer.cpp 		PortManager.cpp \
