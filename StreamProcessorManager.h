@@ -124,6 +124,8 @@ protected:
 
 	FreebobPosixThread *m_streamingThread;
 
+    unsigned int m_nbperiods;
+
     DECLARE_DEBUG_MODULE;
 
 };

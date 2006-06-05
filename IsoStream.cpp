@@ -36,7 +36,8 @@ namespace FreebobStreaming
 
 IMPL_DEBUG_MODULE( IsoStream, IsoStream, DEBUG_LEVEL_NORMAL );
 
-int IsoStream::putPacket(unsigned char *data, unsigned int length, 
+enum raw1394_iso_disposition 
+IsoStream::putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped) {
 
@@ -44,10 +45,11 @@ int IsoStream::putPacket(unsigned char *data, unsigned int length,
 	             "received packet: length=%d, channel=%d, cycle=%d\n",
 	             length, channel, cycle );
 
-	return 0;
+	return RAW1394_ISO_OK;
 }
 
-int IsoStream::getPacket(unsigned char *data, unsigned int *length,
+enum raw1394_iso_disposition 
+IsoStream::getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped, unsigned int max_length) {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
@@ -60,7 +62,7 @@ int IsoStream::getPacket(unsigned char *data, unsigned int *length,
 	*sy = 0;
 
 
-	return 0;
+	return RAW1394_ISO_OK;
 }
 
 int IsoStream::getNodeId() {
@@ -74,6 +76,7 @@ int IsoStream::getNodeId() {
 void IsoStream::dumpInfo()
 {
 
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Address        : %p\n",this);
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Stream type    : %s\n",
 	     (this->getType()==EST_Receive ? "Receive" : "Transmit"));
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
@@ -115,5 +118,6 @@ void IsoStream::clearHandler() {
 
     m_handler=0;
 
-};
+}
+
 }

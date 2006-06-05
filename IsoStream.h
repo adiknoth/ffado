@@ -77,11 +77,11 @@ class IsoStream
 		
 		virtual bool init();
 
-		virtual int 
+		virtual enum raw1394_iso_disposition 
 			putPacket(unsigned char *data, unsigned int length, 
 		              unsigned char channel, unsigned char tag, unsigned char sy, 
 			          unsigned int cycle, unsigned int dropped);
-		virtual int 
+		virtual enum raw1394_iso_disposition 
 			getPacket(unsigned char *data, unsigned int *length,
 		              unsigned char *tag, unsigned char *sy,
 		              int cycle, unsigned int dropped, unsigned int max_length);
@@ -89,11 +89,10 @@ class IsoStream
 		void dumpInfo();
 
 		int getNodeId();
-			
-
+		
 		virtual bool reset();
 		virtual bool prepare();	
-
+    
 	protected:
 
 		void setHandler( IsoHandler * h) ;

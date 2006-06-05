@@ -82,6 +82,10 @@ bool StreamProcessor::init()
 	return IsoStream::init();
 }
 
+/**
+ * Resets the frame counter, the xrun counter, the ports and the iso stream.
+ * @return true if reset succeeded
+ */
 bool StreamProcessor::reset() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
@@ -150,8 +154,7 @@ void StreamProcessor::enable()  {
 		debugWarning("The StreamProcessor is not running yet, enable() might not be a good idea.\n");
 	}
 	m_disabled=false;
-};
-
+}
 
 /**
  * Decrements the frame counter, in a atomic way. This
@@ -159,7 +162,7 @@ void StreamProcessor::enable()  {
  */
 void StreamProcessor::decrementFrameCounter() {
 	SUBSTRACT_ATOMIC((SInt32 *)&m_framecounter,m_period);
-};
+}
 
 /**
  * Resets the frame counter, in a atomic way. This
@@ -167,7 +170,7 @@ void StreamProcessor::decrementFrameCounter() {
  */
 void StreamProcessor::resetFrameCounter() {
 	ZERO_ATOMIC((SInt32 *)&m_framecounter);
-};
+}
 
 /**
  * Resets the xrun counter, in a atomic way. This
@@ -175,7 +178,7 @@ void StreamProcessor::resetFrameCounter() {
  */
 void StreamProcessor::resetXrunCounter() {
 	ZERO_ATOMIC((SInt32 *)&m_xruns);
-};
+}
 
 void StreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);

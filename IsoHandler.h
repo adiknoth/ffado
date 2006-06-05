@@ -60,7 +60,7 @@ class IsoHandler
 		};
 	
 		IsoHandler(int port) 
-		   : m_handle(0), m_port(port), 
+		   : m_handle(0), m_handle_util(0), m_port(port), 
 		   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1),
 		   m_packetcount(0), m_dropped(0), m_Client(0)
 		{}
@@ -71,8 +71,7 @@ class IsoHandler
 		   m_irq_interval(irq), m_packetcount(0), m_dropped(0), m_Client(0)
 		{}
 
-		virtual ~IsoHandler()
-		{}
+		virtual ~IsoHandler();
 
 	    	virtual bool init();
 	    	
@@ -110,10 +109,13 @@ class IsoHandler
 		int getPort() {return m_port;};
 
 		virtual bool prepare() = 0;
-
+		
+		unsigned int getCycleCounter();
+    
 	protected:
 	    raw1394handle_t m_handle;
-    		int             m_port;
+        raw1394handle_t m_handle_util;
+   		int             m_port;
 		unsigned int    m_buf_packets;
 		unsigned int    m_max_packet_size;
 		int             m_irq_interval;

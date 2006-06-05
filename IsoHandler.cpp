@@ -78,6 +78,14 @@ int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation
 
 
 /* Base class implementation */
+
+IsoHandler::~IsoHandler() {
+    stop();
+    if(m_handle) raw1394_destroy_handle(m_handle);
+    if(m_handle_util) raw1394_destroy_handle(m_handle_util);
+    
+}
+
 bool
 IsoHandler::init()
 {
@@ -93,8 +101,21 @@ IsoHandler::init()
 		}
 		return false;
 	}
-	
 	raw1394_set_userdata(m_handle, static_cast<void *>(this));
+	
+	// a second handle for utility stuff
+	m_handle_util = raw1394_new_handle_on_port( m_port );
+	if ( !m_handle_util ) {
+		if ( !errno ) {
+			cerr << "libraw1394 not compatible" << endl;
+		} else {
+			perror( "IsoHandler::Initialize: Could not get 1394 handle" );
+			cerr << "Is ieee1394 and raw1394 driver loaded?" << endl;
+		}
+		return false;
+	}
+	
+	raw1394_set_userdata(m_handle_util, static_cast<void *>(this));
 	
 	if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
 		debugWarning("Could not enable busreset notification.\n");
@@ -111,7 +132,29 @@ bool IsoHandler::stop()
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 	raw1394_iso_stop(m_handle); 
 	return true;
-};
+}
+
+/**
+ * Returns the current value of the cycle counter
+ *
+ * @return the current value of the cycle counter
+ */
+#define CSR_CYCLE_TIME            0x200
+#define CSR_REGISTER_BASE  0xfffff0000000ULL
+
+unsigned int IsoHandler::getCycleCounter() {
+    quadlet_t buf=0;
+    
+    // normally we should be able to use the same handle
+    // because it is not iterated on by any other stuff
+    // but I'm not sure
+    raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
+        CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+        
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Current timestamp: %08X = %u\n",buf, ntohl(buf));
+    
+    return ntohl(buf) & 0xFFFFFFFF;
+}
 
 void IsoHandler::dumpInfo()
 {
@@ -211,9 +254,7 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 	m_dropped+=dropped;
 
 	if(m_Client) {
-		if(m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped)) {
-// 			return RAW1394_ISO_AGAIN;
-		}
+		return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
 	}
 	
 	return RAW1394_ISO_OK;
@@ -316,11 +357,9 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(unsigned char *data, unsi
 	m_dropped+=dropped;
 
 	if(m_Client) {
-    	if(m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size)) {
-// 			return RAW1394_ISO_AGAIN;
-		}
+    	return m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
 	}
-
+	
 	return RAW1394_ISO_OK;
 }
 

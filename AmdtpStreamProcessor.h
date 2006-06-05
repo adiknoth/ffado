@@ -76,7 +76,7 @@ public:
 
 	virtual ~AmdtpTransmitStreamProcessor();
 
-	int 
+	enum raw1394_iso_disposition 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length);
@@ -85,11 +85,19 @@ public:
 	bool reset();
 	bool prepare();
 	bool transfer();
-	bool transferSilence();
 	virtual void setVerboseLevel(int l);
+	
+	bool isOnePeriodReady();
 
-// NOTE: shouldn't this be (4*m_period)/(3*m_syt_interval), because every 3 packets, one empty is sent
-	unsigned int getPacketsPerPeriod() {return m_period/m_syt_interval;};
+    // We have 1 period of samples = m_period
+    // this period takes m_period/m_framerate seconds of time
+    // during this time, 8000 packets are sent
+// 	unsigned int getPacketsPerPeriod() {return (m_period*8000)/m_framerate;};
+    
+    // however, if we only count the number of used packets
+    // it is m_period / m_syt_interval
+	unsigned int getPacketsPerPeriod() {return (m_period)/m_syt_interval;};
+	
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
 protected:
@@ -102,6 +110,10 @@ protected:
 	unsigned int m_syt_interval;
 
 	int m_fdf;
+	
+    bool prefill();
+    
+	bool transferSilence(unsigned int size);
 
 	int transmitBlock(char *data, unsigned int nevents, 
 	                  unsigned int offset);
@@ -135,7 +147,7 @@ public:
 
 	virtual ~AmdtpReceiveStreamProcessor();
 
-	int putPacket(unsigned char *data, unsigned int length, 
+	enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped);
 
@@ -147,8 +159,17 @@ public:
 
 	virtual void setVerboseLevel(int l);
 	
-// NOTE: shouldn't this be (4*m_period)/(3*m_syt_interval), because every 3 packets, one empty is sent
-	unsigned int getPacketsPerPeriod() {return m_period/m_syt_interval;};
+	bool isOnePeriodReady();
+	
+    // We have 1 period of samples = m_period
+    // this period takes m_period/m_framerate seconds of time
+    // during this time, 8000 packets are sent
+// 	unsigned int getPacketsPerPeriod() {return (m_period*8000)/m_framerate;};
+    
+    // however, if we only count the number of used packets
+    // it is m_period / m_syt_interval
+	unsigned int getPacketsPerPeriod() {return (m_period)/m_syt_interval;};
+	
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
 protected:
@@ -162,6 +183,9 @@ protected:
 	char* m_cluster_buffer;
 	int m_dimension;
 	unsigned int m_syt_interval;
+    
+    unsigned int m_last_timestamp;
+    
     DECLARE_DEBUG_MODULE;
 
 };
