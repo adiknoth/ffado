@@ -38,7 +38,7 @@ namespace FreebobStreaming {
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_NORMAL );
 
 StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int nb_buffers)
-	: m_nb_buffers(nb_buffers), m_period(period), m_xruns(0), m_isoManager(0) {
+	: m_nb_buffers(nb_buffers), m_period(period), m_xruns(0), m_isoManager(0), m_nbperiods(0) {
 
 }
 
@@ -225,6 +225,7 @@ bool StreamProcessorManager::Execute()
 
 	bool period_ready=true;
     bool xrun_has_occured=false;
+	bool this_period_ready;
 	
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 	if(!m_isoManager->Execute()) {
@@ -236,7 +237,13 @@ bool StreamProcessorManager::Execute()
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
 		it != m_ReceiveProcessors.end();
 		++it ) {
-		period_ready = period_ready && (*it)->isOnePeriodReady();
+		
+		this_period_ready = (*it)->isOnePeriodReady();
+		period_ready = period_ready && this_period_ready;
+// 		if (this_period_ready) {
+// 		    m_isoManager->disablePolling(*it);
+// 		}
+// 		
 		xrun_has_occured = xrun_has_occured || (*it)->xrunOccurred();
 	 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "(%d/%d/%d) ", period_ready, xrun_has_occured,(*it)->m_framecounter);
 	}
@@ -246,7 +253,11 @@ bool StreamProcessorManager::Execute()
 	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
 		it != m_TransmitProcessors.end();
 		++it ) {
-		period_ready = period_ready && (*it)->isOnePeriodReady();
+		this_period_ready = (*it)->isOnePeriodReady();
+		period_ready = period_ready && this_period_ready;
+// 		if (this_period_ready) {
+// 		    m_isoManager->disablePolling(*it);
+// 		}
 		xrun_has_occured = xrun_has_occured || (*it)->xrunOccurred();
 	 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "(%d/%d/%d) ", period_ready, xrun_has_occured,(*it)->m_framecounter);
 	}
@@ -270,13 +281,18 @@ bool StreamProcessorManager::Execute()
 			it != m_ReceiveProcessors.end();
 			++it ) {
 			(*it)->decrementFrameCounter();
+//  			m_isoManager->enablePolling(*it);
+			
 		}
 	
 		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
 			it != m_TransmitProcessors.end();
 			++it ) {
 			(*it)->decrementFrameCounter();
+//  			m_isoManager->enablePolling(*it);
 		}
+		
+		m_nbperiods++;
 	}
 
 	return true;
@@ -418,12 +434,14 @@ bool StreamProcessorManager::start() {
 		it != m_ReceiveProcessors.end();
 		++it ) {		
 		(*it)->enable();
+		m_isoManager->enablePolling(*it);
 	}
 	
 	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
 		it != m_TransmitProcessors.end();
 		++it ) {
 		(*it)->enable();
+		m_isoManager->enablePolling(*it);
 	}
 	
 	// dump the iso stream information when in verbose mode
@@ -622,6 +640,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
 void StreamProcessorManager::dumpInfo() {
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "----------------------------------------------------\n");
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping StreamProcessorManager information...\n");
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "Period count: %d\n", m_nbperiods);
 
 	debugOutputShort( DEBUG_LEVEL_NORMAL, " Receive processors...\n");
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();

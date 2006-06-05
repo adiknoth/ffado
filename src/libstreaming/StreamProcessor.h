@@ -60,11 +60,11 @@ public:
 	StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate);
 	virtual ~StreamProcessor();
 
-	virtual int 
+	virtual enum raw1394_iso_disposition 
 		putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped) = 0;
-	virtual int 
+	virtual enum raw1394_iso_disposition 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) = 0;
@@ -73,7 +73,18 @@ public:
 
 	bool xrunOccurred() { return (m_xruns>0);};
 
-	bool isOnePeriodReady() { return (m_framecounter > (int)m_period); };
+    /**
+     * This is used for implementing the synchronisation.
+     * As long as this function doesn't return true, the current buffer
+     * contents are not transfered to the packet decoders.
+     *
+     * This means that there can be more events in the buffer than
+     * one period worth of them, should the synchronisation mechanism 
+     * require this
+     * @return 
+     */
+	virtual bool isOnePeriodReady()=0;
+	
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
 	void decrementFrameCounter();
 	
@@ -86,11 +97,11 @@ public:
 	void disable() {m_disabled=true;}; ///< disable the stream processing 
 	bool isEnabled() {return !m_disabled;};
 
-	virtual bool transfer(); // transfer the buffer contents from/to client
+	virtual bool transfer(); ///< transfer the buffer contents from/to client
 
-	virtual bool reset(); // reset the streams & buffers (e.g. after xrun)
+	virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
-	virtual bool prepare(); // prepare the streams & buffers (e.g. prefill)
+	virtual bool prepare(); ///< prepare the streams & buffers (e.g. prefill)
 
 	virtual void dumpInfo();
 
@@ -142,12 +153,13 @@ public:
 
 	virtual enum EProcessorType getType() {return E_Receive;};
 	
-	virtual int 
+	virtual enum raw1394_iso_disposition 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length) {return 0;};
+	              int cycle, unsigned int dropped, unsigned int max_length) 
+	              {return RAW1394_ISO_STOP;};
 	              
-	virtual int putPacket(unsigned char *data, unsigned int length, 
+	virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped) = 0;
  	virtual void setVerboseLevel(int l);
@@ -172,12 +184,12 @@ public:
 
 	virtual enum EProcessorType getType() {return E_Transmit;};
 
-	virtual int 
+	virtual enum raw1394_iso_disposition 
 		putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
-		          unsigned int cycle, unsigned int dropped) {return 0;};
+		          unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
 		          
-	virtual int 
+	virtual enum raw1394_iso_disposition 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) = 0;

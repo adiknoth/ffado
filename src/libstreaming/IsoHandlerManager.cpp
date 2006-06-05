@@ -177,6 +177,40 @@ bool IsoHandlerManager::rebuildFdMap() {
 	return true;
 }
 
+void IsoHandlerManager::disablePolling(IsoStream *stream) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable polling on stream %p\n",stream);
+	int i=0;
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
+	   if ((*it)->isStreamRegistered(stream)) {
+	       m_poll_fds[i].events = 0;
+	       m_poll_fds[i].revents = 0;
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling disabled\n");
+	   }
+	   i++;
+	}
+
+}
+
+void IsoHandlerManager::enablePolling(IsoStream *stream) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable polling on stream %p\n",stream);
+	int i=0;
+	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+	  it != m_IsoHandlers.end();
+	  ++it )
+	{
+	   if ((*it)->isStreamRegistered(stream)) {
+	       m_poll_fds[i].events = POLLIN;
+	       m_poll_fds[i].revents = 0;
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling enabled\n");
+	   }
+	   i++;
+	}
+}
+
+
 /**
  * Registers an IsoStream with the IsoHandlerManager.
  *
@@ -215,16 +249,19 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 	if (stream->getType()==IsoStream::EST_Receive) {
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
+		
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
 		// occurs at a period boundary (optimal CPU use)
-		// NOTE: try and use 2 interrupts per period for better latency.
-		unsigned int max_packet_size=getpagesize() / packets_per_period * 2;
-		int irq_interval=packets_per_period / 2;
-
+		
+		// NOTE: try and use 2 hardware interrupts per period for better latency.
+		unsigned int max_packet_size=2 * getpagesize() / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}
+		
+		int irq_interval=packets_per_period / 4;
+        if(irq_interval <= 0) irq_interval=1;
 
 		/* the receive buffer size doesn't matter for the latency,
 		   but it has a minimal value in order for libraw to operate correctly (300) */
@@ -271,17 +308,22 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
 		// occurs at a period boundary (optimal CPU use)
 		// NOTE: try and use 2 interrupts per period for better latency.
-		unsigned int max_packet_size=getpagesize() / packets_per_period * 2;
-		int irq_interval=packets_per_period / 2;
-
+		unsigned int max_packet_size=2 * getpagesize() / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}
+		
+		int irq_interval=packets_per_period / 4;
+        if(irq_interval <= 0) irq_interval=1;
 
-		/* the transmit buffer size should be as low as possible for latency. 
-		*/
+		// the transmit buffer size should be as low as possible for latency. 
+		// note however that the raw1394 subsystem tries to keep this buffer
+		// full, so we have to make sure that we have enough events in our
+		// event buffers
 		int buffers=packets_per_period;
-		if (buffers<10) buffers=10;	
+		
+		// NOTE: this is dangerous: what if there is not enough prefill?
+// 		if (buffers<10) buffers=10;	
 		
 		// create the actual handler
 		IsoXmitHandler *h = new IsoXmitHandler(stream->getPort(), buffers,

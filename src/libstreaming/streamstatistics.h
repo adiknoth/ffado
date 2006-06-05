@@ -28,8 +28,6 @@ public:
     
     void dumpInfo();
     void reset();
-    
-private:
 
     std::string m_name;
     
@@ -38,6 +36,8 @@ private:
     long m_min;
     long m_max;
     long m_sum;
+    
+private:
     
 };
 

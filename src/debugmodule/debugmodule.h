@@ -30,7 +30,7 @@
 typedef short debug_level_t;
 
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
-#define MB_BUFFERS	1024
+#define MB_BUFFERS	4096
 #define MB_NEXT(index) ((index+1) & (MB_BUFFERS-1))
 #define MB_BUFFERSIZE	256		/* message length limit */
 

@@ -73,6 +73,8 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 
 	struct _freebob_device *dev = new struct _freebob_device;
 
+    debugFatal("%s built %s %s\n", freebob_get_version(), __DATE__, __TIME__);
+
 	if(!dev) {
 		debugFatal( "Could not allocate streaming device\n" );
 		return 0;

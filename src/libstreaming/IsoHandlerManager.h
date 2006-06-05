@@ -87,6 +87,9 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		bool reset() {return true;}; ///< reset the ISO manager and all streams
 
 		bool prepare(); ///< prepare the ISO manager and all streams
+		
+		void disablePolling(IsoStream *); ///< disables polling on a stream
+		void enablePolling(IsoStream *); ///< enables polling on a stream
 
 	protected:
 		// FreebobRunnableInterface interface
