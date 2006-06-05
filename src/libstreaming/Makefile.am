@@ -18,15 +18,16 @@
 
 noinst_LTLIBRARIES = libstreaming.la
 noinst_HEADERS = cip.h FreebobPosixThread.h FreebobThread.h FreebobAtomic.h \
-	IsoHandler.h IsoHandlerManager.h IsoStream.h ringbuffer.h PacketBuffer.h \
-	PortManager.h Port.h StreamProcessor.h StreamProcessorManager.h AmdtpPortInfo.h \
-	AmdtpPort.h AmdtpStreamProcessor.h StreamRunner.h ringbuffer.h streamstatistics.h
+		IsoHandler.h IsoHandlerManager.h IsoStream.h ringbuffer.h PacketBuffer.h \
+		PortManager.h Port.h StreamProcessor.h StreamProcessorManager.h AmdtpPortInfo.h \
+		AmdtpPort.h AmdtpStreamProcessor.h StreamRunner.h ringbuffer.h streamstatistics.h \
+	MotuStreamProcessor.h MotuPort.h MotuPortInfo.h
 
-libstreaming_la_SOURCES = cip.c FreebobPosixThread.cpp \
-		freebob_streaming.cpp IsoHandler.cpp IsoHandlerManager.cpp IsoStream.cpp PacketBuffer.cpp \
-		PortManager.cpp Port.cpp StreamProcessor.cpp StreamProcessorManager.cpp \
-		AmdtpPortInfo.cpp AmdtpPort.cpp AmdtpStreamProcessor.cpp StreamRunner.cpp 	ringbuffer.c \
-	streamstatistics.cpp
+libstreaming_la_SOURCES = cip.c FreebobPosixThread.cpp 		freebob_streaming.cpp \
+	IsoHandler.cpp IsoHandlerManager.cpp IsoStream.cpp PacketBuffer.cpp 		PortManager.cpp \
+	Port.cpp StreamProcessor.cpp StreamProcessorManager.cpp 		AmdtpPortInfo.cpp \
+	AmdtpPort.cpp AmdtpStreamProcessor.cpp StreamRunner.cpp 	ringbuffer.c \
+		streamstatistics.cpp MotuStreamProcessor.cpp MotuPort.cpp MotuPortInfo.cpp
 
 INCLUDES = $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)  $(LIBXML_CFLAGS)

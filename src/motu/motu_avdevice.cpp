@@ -26,6 +26,9 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "libstreaming/MotuStreamProcessor.h"
+#include "libstreaming/MotuPort.h"
+
 #include <string>
 #include <stdint.h>
 #include <assert.h>
@@ -41,6 +44,10 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394service,
     : m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
+    , m_id(0)
+    , m_receiveProcessor ( 0 )
+    , m_transmitProcessor ( 0 )
+    
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -114,11 +121,23 @@ MotuDevice::discover()
     return false;
 }
 
+int 
+MotuDevice::getSamplingFrequency( ) {
+    /*
+     Implement the procedure to retrieve the samplerate here
+    */
+    // FIXME: 
+    return 44100;
 
+}
 
 bool
 MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
+    /*
+     Implement the procedure to set the samplerate here
+    */
+
     quadlet_t new_rate=0;
 	int supported=true;
 
@@ -170,21 +189,279 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     return supported;
 }
 
+bool MotuDevice::setId( unsigned int id) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
+    m_id=id;
+    return true;
+}
+
 void
 MotuDevice::showDevice() const
 {
     printf( "%s %s at node %d\n",
-	        m_configRom->getVendorName(), 
-	        m_configRom->getModelName(),
+	        m_configRom->getVendorName().c_str(), 
+	        m_configRom->getModelName().c_str(),
 	        m_nodeId );
 
 }
 
 bool
-MotuDevice::addXmlDescription( xmlNodePtr deviceNode )
-{
-    return true;
+MotuDevice::prepare() {
+
+    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
+
+	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
+	                         m_1394Service->getPort(),
+	                         getSamplingFrequency());
+	                         
+	// the first thing is to initialize the processor
+	// this creates the data structures
+	if(!m_receiveProcessor->init()) {
+		debugFatal("Could not initialize receive processor!\n");
+		return false;
+	
+	}
+
+    // now we add ports to the processor
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
+	
+	// TODO: change this into something based upon device detection/configuration
+	
+    char *buff;
+    FreebobStreaming::Port *p=NULL;
+    
+	// example of adding an audio port:
+    asprintf(&buff,"dev%d_cap_%s",m_id,"myportnamehere");
+    
+    p=new FreebobStreaming::MotuAudioPort(
+            buff,
+            FreebobStreaming::Port::E_Capture, 
+            0 // you can add all other port specific stuff you 
+              // need to pass by extending MotuXXXPort and MotuPortInfo
+    );
+    
+    free(buff);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+    } else {
+
+        if (!m_receiveProcessor->addPort(p)) {
+            debugWarning("Could not register port with stream processor\n");
+            return false;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+        
+        }
+    }
+    
+	// example of adding an midi port:
+    asprintf(&buff,"dev%d_cap_%s",m_id,"myportnamehere");
+    
+    p=new FreebobStreaming::MotuMidiPort(
+            buff,
+            FreebobStreaming::Port::E_Capture, 
+            0 // you can add all other port specific stuff you 
+              // need to pass by extending MotuXXXPort and MotuPortInfo
+    );
+    
+    free(buff);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+    } else {
+
+        if (!m_receiveProcessor->addPort(p)) {
+            debugWarning("Could not register port with stream processor\n");
+            return false;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+        
+        }
+    }
+    
+	// example of adding an control port:
+    asprintf(&buff,"dev%d_cap_%s",m_id,"myportnamehere");
+    
+    p=new FreebobStreaming::MotuControlPort(
+            buff,
+            FreebobStreaming::Port::E_Capture, 
+            0 // you can add all other port specific stuff you 
+              // need to pass by extending MotuXXXPort and MotuPortInfo
+    );
+    
+    free(buff);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+    } else {
+
+        if (!m_receiveProcessor->addPort(p)) {
+            debugWarning("Could not register port with stream processor\n");
+            return false;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+        
+        }
+    }
+
+
+	// do the same for the transmit processor
+	m_transmitProcessor=new FreebobStreaming::MotuTransmitStreamProcessor(
+	                         m_1394Service->getPort(),
+	                         getSamplingFrequency());
+	                         
+	m_transmitProcessor->setVerboseLevel(getDebugLevel());
+	
+	if(!m_transmitProcessor->init()) {
+		debugFatal("Could not initialize transmit processor!\n");
+		return false;
+	
+	}
+
+    // now we add ports to the processor
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
+    
+	// example of adding an audio port:
+	// we change the naming and the direction to E_Playback
+    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
+    
+    p=new FreebobStreaming::MotuAudioPort(
+            buff,
+            FreebobStreaming::Port::E_Playback, 
+            0 // you can add all other port specific stuff you 
+              // need to pass by extending MotuXXXPort and MotuPortInfo
+    );
+    
+    free(buff);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+    } else {
+
+        if (!m_transmitProcessor->addPort(p)) {
+            debugWarning("Could not register port with stream processor\n");
+            return false;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+        
+        }
+    }
+    
+	// example of adding an midi port:
+    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
+    
+    p=new FreebobStreaming::MotuMidiPort(
+            buff,
+            FreebobStreaming::Port::E_Playback, 
+            0 // you can add all other port specific stuff you 
+              // need to pass by extending MotuXXXPort and MotuPortInfo
+    );
+    
+    free(buff);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+    } else {
+
+        if (!m_transmitProcessor->addPort(p)) {
+            debugWarning("Could not register port with stream processor\n");
+            return false;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+        
+        }
+    }
+    
+	// example of adding an control port:
+    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
+    
+    p=new FreebobStreaming::MotuControlPort(
+            buff,
+            FreebobStreaming::Port::E_Playback, 
+            0 // you can add all other port specific stuff you 
+              // need to pass by extending MotuXXXPort and MotuPortInfo
+    );
+    
+    free(buff);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+    } else {
+
+        if (!m_transmitProcessor->addPort(p)) {
+            debugWarning("Could not register port with stream processor\n");
+            return false;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+        
+        }
+    }
+	
+	return true;
 }
+
+int 
+MotuDevice::getStreamCount() {
+ 	return 2; // one receive, one transmit
+}
+
+FreebobStreaming::StreamProcessor *
+MotuDevice::getStreamProcessorByIndex(int i) {
+	switch (i) {
+	case 0:
+		return m_receiveProcessor;
+	case 1:
+ 		return m_transmitProcessor;
+	default:
+		return NULL;
+	}
+	return 0;
+}
+
+int
+MotuDevice::startStreamByIndex(int i) {
+
+    // NOTE: this assumes that you have two streams
+ 	switch (i) {
+	case 0:
+        // TODO: do the stuff that is nescessary to make the device
+        // transmit a stream
+
+
+		// set the streamprocessor channel to the one obtained by 
+		// the connection management
+		// IMPORTANT!!
+ 		m_receiveProcessor->setChannel(1); // TODO: change the channel NR
+ 		break;
+ 	case 1:
+        // TODO: do the stuff that is nescessary to make the device
+        // receive a stream
+
+		// set the streamprocessor channel to the one obtained by 
+		// the connection management
+		// IMPORTANT!!
+  		m_transmitProcessor->setChannel(0); // TODO: change the channel NR
+ 		break;
+ 		
+ 	default: // invalid index
+ 		return -1;
+ 	}
+
+	return 0;
+
+}
+
+int
+MotuDevice::stopStreamByIndex(int i) {
+	// TODO: connection management: break connection
+	// cfr the start function
+
+	return 0;
+}
+
+
+
 
 /* ======================================================================== */
 

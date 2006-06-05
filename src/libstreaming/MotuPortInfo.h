@@ -25,22 +25,21 @@
  * 
  *
  */
-#ifndef __FREEBOB_AMDTPPORTINFO__
-#define __FREEBOB_AMDTPPORTINFO__
+#ifndef __FREEBOB_MOTUPORTINFO__
+#define __FREEBOB_MOTUPORTINFO__
 
 #include "../debugmodule/debugmodule.h"
 #include <string>
 
 namespace FreebobStreaming {
 /*!
-\brief Class containing the stream information for an AMDTP channel
+\brief Class containing the stream information for a Motu channel
 
- Contains the information that maps the port to an AMDTP stream position (i.e. channel)
- this allows the AMDTP stream demultiplexer to find the channel associated 
- to this port.
- 
+ Contains the information that enables the decoding routine to find 
+ this port's data in the ISO events 
+
 */
-class AmdtpPortInfo {
+class MotuPortInfo {
 
 public:
     /**
@@ -51,39 +50,43 @@ public:
      * This kind of enum allows to discriminate these formats when decoding
      * If all channels always have the same format, you won't be needing this
      */
+     /*
 	enum E_Formats {
-		E_MBLA, ///< multibit linear audio
-		E_Midi, ///< midi
-		E_SPDIF,///< IEC.... format
+		E_MBLA, // Multibit linear audio, is acutally AMDTP. Change if needed
+		E_Midi,
+		E_SPDIF,
 	};
-	enum E_Types {
-
-	};
-
-	AmdtpPortInfo(std::string name, int position, int location, enum E_Formats format, int type)
-	  : m_name(name), m_position(position), m_location(location), m_format(format), m_type(type)
+    */
+    
+	/**
+	 * Initialize Motu portinfo
+	 * should not be called directly, is inherited by motu ports
+	 *
+	 * the position parameter is an example
+	 * the name parameter is mandatory
+	 *
+	 * @param name 
+	 * @param position example parameter
+	 * @return 
+	 */
+	MotuPortInfo(std::string name, int position)
+	  : m_name(name), m_position(position)
 	{};
-	virtual ~AmdtpPortInfo() {};
+	virtual ~MotuPortInfo() {};
 
 
 	std::string getName() {return m_name;};
-	int getLocation()     {return m_location;};
 	int getPosition()     {return m_position;};
-	enum E_Formats getFormat()       {return m_format;};
-	int getType()         {return m_type;};
 
 protected:
     std::string m_name;
 
     int m_position;
-    int m_location;
-    enum E_Formats m_format;
-    int m_type;
 
 };
 
 } // end of namespace FreebobStreaming
 
-#endif /* __FREEBOB_AMDTPPORTINFO__ */
+#endif /* __FREEBOB_MOTUPORTINFO__ */
 
 

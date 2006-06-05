@@ -31,12 +31,12 @@ noinst_HEADERS = 				\
 	bebob_light/bebob_light_avdevice.h		\
 	bebob_light/bebob_light_avdevicesubunit.h	\
 	bebob_light/bebob_light_avplug.h		\
- 	bounce/bounce_avdevice.h			
+ 	bounce/bounce_avdevice.h			\
+ 	motu/motu_avdevice.h				
 # 	bebob/bebob_avdevice.h          		\
 # 	bebob/bebob_avdevice_subunit.h			\
 # 	bebob/bebob_avplug.h            		\
-# 	bebob/bebob_functionblock.h			\
-# 	motu/motu_avdevice.h				
+# 	bebob/bebob_functionblock.h			
 
 libfreebob_la_SOURCES = 				\
 	configrom.cpp					\
@@ -47,14 +47,14 @@ libfreebob_la_SOURCES = 				\
 	bebob_light/bebob_light_avdevice.cpp		\
 	bebob_light/bebob_light_avdevicesubunit.cpp	\
 	bebob_light/bebob_light_avplug.cpp		\
- 	bounce/bounce_avdevice.cpp			
+ 	bounce/bounce_avdevice.cpp			\
+ 	motu/motu_avdevice.cpp
 # 	bebob/bebob_avdevice.cpp			\
 # 	bebob/bebob_avdevice_xml.cpp			\
 # 	bebob/bebob_avdevice_subunit.cpp		\
 # 	bebob/bebob_avplug.cpp				\
 # 	bebob/bebob_avplug_xml.cpp			\
-# 	bebob/bebob_functionblock.cpp 			\
-# 	motu/motu_avdevice.cpp
+# 	bebob/bebob_functionblock.cpp 			
 
 libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \

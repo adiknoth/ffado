@@ -27,6 +27,8 @@
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebob/xmlparser.h"
 
+#include "libstreaming/MotuStreamProcessor.h"
+
 #define MOTU_BASE_ADDR     0xfffff0000000ULL
 #define MOTU_BASE_RATE_44100 		(0<<4)
 #define MOTU_BASE_RATE_48000 		(1<<4)
@@ -50,17 +52,37 @@ public:
 
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
-    virtual bool addXmlDescription( xmlNodePtr deviceNode );
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+
+    // obsolete, will be removed soon, unused
+    virtual bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
+
     virtual void showDevice() const;
+
+    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+
+    virtual bool setId(unsigned int id);
+
+    virtual int getStreamCount();
+    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+
+    virtual bool prepare();
+
+    virtual int startStreamByIndex(int i);
+    virtual int stopStreamByIndex(int i);
 
 protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;
     int              m_nodeId;
     int              m_verboseLevel;
+    unsigned int m_id;
+    
+	FreebobStreaming::MotuReceiveStreamProcessor *m_receiveProcessor;
+	FreebobStreaming::MotuTransmitStreamProcessor *m_transmitProcessor;
 
 private:
+
 	unsigned int ReadRegister(unsigned int reg);
 	signed int WriteRegister(unsigned int reg, quadlet_t data);
 

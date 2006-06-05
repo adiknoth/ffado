@@ -41,8 +41,8 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
-//      m_probeList.push_back( probeMotu );
     m_probeList.push_back( probeBeBoB );
+    m_probeList.push_back( probeMotu );
     m_probeList.push_back( probeBounce );
 }
 
@@ -173,20 +173,20 @@ DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
     return avDevice;
 }
 
-// IAvDevice*
-// DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
-// {
-//     IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
-//     if ( !avDevice ) {
-//         return NULL;
-//     }
-// 
-//     if ( !avDevice->discover() ) {
-//         delete avDevice;
-//         return NULL;
-//     }
-//     return avDevice;
-// }
+IAvDevice*
+DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
+{
+    IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
+    if ( !avDevice ) {
+        return NULL;
+    }
+
+    if ( !avDevice->discover() ) {
+        delete avDevice;
+        return NULL;
+    }
+    return avDevice;
+}
 
 bool
 DeviceManager::isValidNode(int node)
