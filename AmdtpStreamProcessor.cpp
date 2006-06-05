@@ -62,6 +62,9 @@ AmdtpTransmitStreamProcessor::~AmdtpTransmitStreamProcessor() {
 	free(m_cluster_buffer);
 }
 
+/**
+ * @return 
+ */
 bool AmdtpTransmitStreamProcessor::init() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n");
@@ -173,7 +176,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     *sy = 0;
     
     // update the frame counter
-    m_framecounter+=nevents;
+    incrementFrameCounter(nevents);
     if(m_framecounter>m_period) {
        retval=RAW1394_ISO_DEFER;
     }
@@ -870,7 +873,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             ((length / sizeof (quadlet_t)) - 2)/packet->dbs);
         
         // update the frame counter
-        m_framecounter+=nevents;
+        incrementFrameCounter(nevents);
         if(m_framecounter>m_period) {
            retval=RAW1394_ISO_DEFER;
            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"defer!\n");

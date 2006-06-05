@@ -38,8 +38,8 @@ namespace FreebobStreaming {
 \brief The Base Class for Ports
 
  Ports are the entities that provide the interface between the ISO streaming
- layer and the datatype-specific layer. You can define plug types by subclassing
- the base port type.
+ layer and the datatype-specific layer. You can define port types by subclassing
+ the base port class.
  
  After creating a port, you have to set its parameters and then call the init() function.
  This is because a port needs information from two sources to operate: 
@@ -60,6 +60,11 @@ class Port {
 public:
 	friend class PortManager;
 	
+	/*
+	 * IMPORTANT: if you add something to any of these enum's, be sure to
+	 *            check the code where they are used.
+	 */
+	 
 	/*!
 	\brief Specifies the buffer type for ports
 	

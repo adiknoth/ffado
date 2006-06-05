@@ -163,6 +163,13 @@ void StreamProcessor::enable()  {
 void StreamProcessor::decrementFrameCounter() {
 	SUBSTRACT_ATOMIC((SInt32 *)&m_framecounter,m_period);
 }
+/**
+ * Increments the frame counter, in a atomic way. This
+ * is thread safe.
+ */
+void StreamProcessor::incrementFrameCounter(int nbframes) {
+	ADD_ATOMIC((SInt32 *)&m_framecounter, nbframes);
+}
 
 /**
  * Resets the frame counter, in a atomic way. This

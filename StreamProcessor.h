@@ -87,6 +87,7 @@ public:
 	
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
 	void decrementFrameCounter();
+	void incrementFrameCounter(int nbframes);
 	
 	// move to private?
 	void resetFrameCounter();
@@ -115,8 +116,8 @@ protected:
 	void setManager(StreamProcessorManager *manager) {m_manager=manager;};
 	void clearManager() {m_manager=0;};
 
-	unsigned int m_nb_buffers; // cached from manager->getNbBuffers()
-	unsigned int m_period; // cached from manager->getPeriod()
+	unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
+	unsigned int m_period; ///< cached from manager->getPeriod(), the period size
 
 	unsigned int m_xruns;
 	int m_framecounter;
