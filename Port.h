@@ -354,7 +354,7 @@ class ControlPort : public Port {
 
 public:
 
-	ControlPort(std::string name, enum E_SignalType type, enum E_BufferType buffertype, enum E_Direction direction) 
+	ControlPort(std::string name, enum E_Direction direction) 
 	  : Port(name, E_Control, direction)
 	{};
 	virtual ~ControlPort() {};
