@@ -29,8 +29,8 @@
 #define __FREEBOB_STREAMPROCESSORMANAGER__
 
 #include "../debugmodule/debugmodule.h"
-#include "FreebobThread.h"
-#include "FreebobPosixThread.h"
+#include "../libutil/Thread.h"
+#include "../libutil/PosixThread.h"
 #include <semaphore.h>
 #include "Port.h"
 #include "StreamProcessor.h"
@@ -51,7 +51,7 @@ typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
  
 */
 class StreamProcessorManager :
-                        public FreebobRunnableInterface {
+                        public FreebobUtil::RunnableInterface {
 
 	friend class StreamRunner;
 
@@ -100,7 +100,7 @@ public:
 	// the ISO-side functions
 protected:
  	int signalWaiters(); // call this to signal a period boundary
-	// FreebobRunnableInterface interface
+	// RunnableInterface interface
 	bool Execute(); // note that this is called in we while(running) loop
 	bool Init();
 
@@ -122,7 +122,7 @@ protected:
 	
 	IsoHandlerManager *m_isoManager;
 
-	FreebobPosixThread *m_streamingThread;
+	FreebobUtil::PosixThread *m_streamingThread;
 
     unsigned int m_nbperiods;
 

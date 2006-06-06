@@ -42,8 +42,7 @@
 #include "StreamProcessorManager.h"
 #include "AmdtpStreamProcessor.h"
 #include "IsoHandlerManager.h"
-#include "StreamRunner.h"
-#include "FreebobPosixThread.h"
+#include "../libutil/PosixThread.h"
 #include "AmdtpPort.h"
 
 #include <assert.h>

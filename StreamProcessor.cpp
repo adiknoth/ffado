@@ -26,7 +26,7 @@
  *
  */
 
-#include "FreebobAtomic.h"
+#include "../libutil/Atomic.h"
 
 #include "StreamProcessor.h"
 #include "StreamProcessorManager.h"
