@@ -26,39 +26,18 @@
  *
  */
 
-#include "StreamRunner.h"
-#include "StreamProcessorManager.h"
-#include "IsoHandlerManager.h"
-#include <assert.h>
+#include "DelayLockedLoop.h"
 
+namespace FreeBobUtil {
 
-namespace FreebobStreaming {
+IMPL_DEBUG_MODULE( DelayLockedLoop, DelayLockedLoop, DEBUG_LEVEL_NORMAL );
 
-IMPL_DEBUG_MODULE( StreamRunner, StreamRunner, DEBUG_LEVEL_NORMAL );
-
-StreamRunner::~StreamRunner() {
+DelayLockedLoop::DelayLockedLoop() {
 
 }
 
-bool StreamRunner::Execute() {
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-	// note that this is called in we while(running) loop
-	
-	return m_processorManager->Execute();
+DelayLockedLoop::~DelayLockedLoop() {
 
 }
 
-bool StreamRunner::Init() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	if(!m_processorManager) {
-		debugFatal("Not a valid StreamProcessorManager\n");
-		return false;
-	}
-	
-
-	return true;
-
-}
-
-
-} // end of namespace FreebobStreaming
+} // end of namespace FreeBobUtil

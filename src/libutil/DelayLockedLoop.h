@@ -25,45 +25,27 @@
  * 
  *
  */
-#ifndef __FREEBOB_STREAMRUNNER__
-#define __FREEBOB_STREAMRUNNER__
+#ifndef __FREEBOB_DELAYLOCKEDLOOP__
+#define __FREEBOB_DELAYLOCKEDLOOP__
 
 #include "../debugmodule/debugmodule.h"
-#include "FreebobThread.h"
 
-namespace FreebobStreaming {
+namespace FreeBobUtil {
 
-class StreamProcessorManager;
-/*!
-\brief Runs the isomanager and the processor manager
- 
-*/
-class StreamRunner : public FreebobRunnableInterface {
+class DelayLockedLoop {
 
 public:
 
-	StreamRunner(StreamProcessorManager *p) 
-	    : m_processorManager(p)
-	    {};
-
-	virtual ~StreamRunner();
-
-    // FreebobRunnableInterface interface
-	bool Execute(); // note that this is called in we while(running) loop
-	bool Init();
-
- 	void setVerboseLevel(int l) { setDebugLevel(l);  };
+	DelayLockedLoop();
+	virtual ~DelayLockedLoop();
 
 protected:
-
-	StreamProcessorManager *m_processorManager;
-
     DECLARE_DEBUG_MODULE;
 
 };
 
-}
+} // end of namespace FreeBobUtil
 
-#endif /* __FREEBOB_STREAMRUNNER__ */
+#endif /* __FREEBOB_DELAYLOCKEDLOOP__ */
 
 

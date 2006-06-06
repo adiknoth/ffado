@@ -150,7 +150,7 @@ bool StreamProcessorManager::init()
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 	// and the tread that runs the runner
-	m_streamingThread=new FreebobPosixThread(this, m_thread_realtime, m_thread_priority, PTHREAD_CANCEL_DEFERRED);
+	m_streamingThread=new FreebobUtil::PosixThread(this, m_thread_realtime, m_thread_priority, PTHREAD_CANCEL_DEFERRED);
 	if(!m_streamingThread) {
 		debugFatal("Could not create streaming thread\n");
 		return false;

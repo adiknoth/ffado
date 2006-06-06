@@ -231,8 +231,8 @@ AC_CONFIG_FILES([Makefile
 		 libfreebob/Makefile
 		 src/debugmodule/Makefile
 		 src/libfreebobavc/Makefile
-		 src/libfreebobstreaming/Makefile
 		 src/libstreaming/Makefile
+		 src/libutil/Makefile
 		 src/Makefile
 		 tests/Makefile
 		 tests/streaming/Makefile

@@ -16,7 +16,7 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = debugmodule libfreebobavc libstreaming
+SUBDIRS = debugmodule libfreebobavc libstreaming libutil
 
 INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
 	$(LIBAVC1394_CFLAGS) $(LIBLO_CFLAGS) $(LIBXML_CFLAGS) \
@@ -61,5 +61,5 @@ libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
 	$(LIBLO_LIBS) $(LIBXML_LIBS) -safe-temps
 
 libfreebob_la_LIBADD = debugmodule/libdebugmodule.la libfreebobavc/libfreebobavc.la \
-	libstreaming/libstreaming.la 
+	libstreaming/libstreaming.la libutil/libutil.la
 

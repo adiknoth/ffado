@@ -29,7 +29,7 @@
 #define __FREEBOB_ISOHANDLERMANAGER__
 
 #include "../debugmodule/debugmodule.h"
-#include "FreebobThread.h"
+#include "../libutil/Thread.h"
 
 #include <sys/poll.h>
 #include <errno.h>
@@ -61,7 +61,7 @@ typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
 
 */
 
-class IsoHandlerManager : public FreebobRunnableInterface
+class IsoHandlerManager : public FreebobUtil::RunnableInterface
 {
 	friend class StreamProcessorManager;
 
@@ -92,7 +92,7 @@ class IsoHandlerManager : public FreebobRunnableInterface
 		void enablePolling(IsoStream *); ///< enables polling on a stream
 
 	protected:
-		// FreebobRunnableInterface interface
+		// RunnableInterface interface
 		bool Execute(); // note that this is called in we while(running) loop
 		bool Init();
 

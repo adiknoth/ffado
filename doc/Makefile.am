@@ -14,7 +14,7 @@ DOC_STAMPS=html-build.stamp
 
 DOC_DIR=$(HTML_DIR)
 
-all-local: doxygen-build.stamp
+doc: doxygen-build.stamp
 
 doxygen-build.stamp: $(DOX) $(DOXSOURCES)
 	@echo '*** Running doxygen ***'

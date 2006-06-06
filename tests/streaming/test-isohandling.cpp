@@ -35,8 +35,7 @@
 #include "StreamProcessorManager.h"
 #include "AmdtpStreamProcessor.h"
 #include "IsoHandlerManager.h"
-#include "StreamRunner.h"
-#include "FreebobPosixThread.h"
+#include "PosixThread.h"
 #include "AmdtpPort.h"
 
 using namespace FreebobStreaming;
@@ -141,14 +140,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
-	// now create the runner that does the actual streaming
-	StreamRunner *runner = new StreamRunner(procMan);
-	if(!runner) {
-		printf("Could not create StreamRunner\n");
-		return -1;
-	}
-
-	FreebobPosixThread *thread=new FreebobPosixThread(runner);
+	FreebobUtil::PosixThread *thread=new FreebobUtil::PosixThread(procMan);
 
 
 	procMan->prepare();
@@ -193,7 +185,6 @@ int main(int argc, char *argv[])
 	procMan->unregisterProcessor(spr2);
 
 	delete thread;
-	delete runner;
 
 	delete procMan;
 

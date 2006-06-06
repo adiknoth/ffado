@@ -16,7 +16,7 @@
 # along with FreeBob; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/src/libstreaming $(LIBIEC61883_CFLAGS)
+INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/src/libstreaming -I$(top_srcdir)/src/libutil $(LIBIEC61883_CFLAGS)
 AM_CFLAGS = -DDEBUG
 AM_CXXFLAGS = -DDEBUG
 
