@@ -28,6 +28,8 @@
 #define FREEBOB_BOUNCE_SERVER_VENDORNAME  "FreeBoB Server"
 #define FREEBOB_BOUNCE_SERVER_MODELNAME   "freebob-server"
 
+#define FREEBOB_API_VERSION 1
+
 enum freebob_direction {
     FREEBOB_CAPTURE  = 0,
     FREEBOB_PLAYBACK = 1,
@@ -163,6 +165,9 @@ freebob_print_xml_description( freebob_handle_t freebob_handle,
 
 const char*
 freebob_get_version();
+
+const int
+freebob_get_api_version();
 
 /* various function */
 
