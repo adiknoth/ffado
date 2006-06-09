@@ -105,7 +105,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 		*length = 0; // this is to disable sending
 		*tag = IEC61883_TAG_WITH_CIP;
 		*sy = 0;
-		m_last_timestamp=9000.0 + cycle * 3072.0;
+		m_last_timestamp=4.0*9000.0 + cycle * 3072.0;
 		return RAW1394_ISO_OK;
 	}
 	
@@ -195,7 +195,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         }
         
         unsigned int timestamp2=ntohs(timestamp);
-         debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT %d EVENTS, SYT %04X (was: %04X) for cycle %2d: %5u ticks (%2u cycles + %04u ticks)\n",
+         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"XMIT %d EVENTS, SYT %04X (was: %04X) for cycle %2d: %5u ticks (%2u cycles + %04u ticks)\n",
          nevents, timestamp, packet->syt, cycle,
          CYCLE_COUNTER_TO_TICKS(timestamp2),
          CYCLE_COUNTER_GET_CYCLES(timestamp2),
@@ -877,6 +877,8 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // this will allow us to determine the 
             // actual presentation time later
             if (packet->syt != 0xFFFF) {
+
+                bool wraparound_occurred=false;
                 
                 m_last_timestamp2=m_last_timestamp;
                 
@@ -886,30 +888,42 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 unsigned int syt_cycle=CYCLE_COUNTER_GET_CYCLES(syt_timestamp);
                 
                 // if this is true, wraparound has occurred, undo this wraparound
-                if(syt_cycle<now_cycle_masked) syt_cycle += 0xF;
+                if(syt_cycle<now_cycle_masked) syt_cycle += 0x10;
                 
                 unsigned int delta_cycles=syt_cycle-now_cycle_masked;
                 
                 // reconstruct the cycle part of the timestamp
                 unsigned int new_cycles=cycle + delta_cycles;
                 
-                if(new_cycles>7999) new_cycles-=8000; // wrap around
+                if(new_cycles>7999) {
+                    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Detected wraparound: %d + %d = %d\n",cycle,delta_cycles,new_cycles);
+                    
+                    new_cycles-=8000; // wrap around
+                    wraparound_occurred=true;
+                }
                 
                 m_last_timestamp = (new_cycles) << 12;
                 
                 // now add the offset part on top of that
                 m_last_timestamp |= (syt_timestamp & 0xFFF);
                 
+                // mask off the seconds field
+                
                 // m_last_timestamp timestamp now contains all info,
                 // including cycle number
                 
                 if (m_last_timestamp & m_last_timestamp2) {
                     // try and estimate the frame rate from the device:
-                    int timestamp_difference=CYCLE_COUNTER_TO_TICKS(m_last_timestamp)
-                                             -CYCLE_COUNTER_TO_TICKS(m_last_timestamp2);
+                    int timestamp_difference=((int)(CYCLE_COUNTER_TO_TICKS(m_last_timestamp)))
+                                             -((int)(CYCLE_COUNTER_TO_TICKS(m_last_timestamp2)));
                                              
-                    // handle wrap around of the cycle variable
-                    if (new_cycles==0) timestamp_difference+=TICKS_PER_SECOND;
+                    // handle wrap around of the cycle variable if nescessary
+                    // it can be that two successive timestamps cause wraparound (if the difference between time
+                    // stamps is larger than 2 cycles), thus it isn't always nescessary
+                    if (wraparound_occurred & (m_last_timestamp<m_last_timestamp2)) {
+                        debugOutput(DEBUG_LEVEL_VERY_VERBOSE," => correcting for timestamp difference wraparound\n");
+                        timestamp_difference+=TICKS_PER_SECOND;
+                    }
                     
                     // implement a 1st order DLL to estimate the framerate
                     // this is the number of ticks between two samples
@@ -919,8 +933,23 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     // and the current measurement
                     err=err-m_ticks_per_frame;
                     
+                    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT: %08X | STMP: %08X | DLL: in=%5.0f, current=%f, err=%e\n",syt_timestamp, m_last_timestamp, f,m_ticks_per_frame,err);
+
+#ifdef DEBUG
+                    if(f > 1.5*((TICKS_PER_SECOND*1.0) / m_framerate)*m_syt_interval) {
+                        debugWarning("Timestamp diff more than 50%% of the nominal diff too large!\n");
+                        debugWarning(" SYT: %08X | STMP: %08X,%08X | DLL: in=%5.0f, current=%f, err=%e\n",syt_timestamp, m_last_timestamp, m_last_timestamp2, f,m_ticks_per_frame,err);
+                    }
+                    if(f < 0.5*((TICKS_PER_SECOND*1.0) / m_framerate)*m_syt_interval) {
+                        debugWarning("Timestamp diff more than 50%% of the nominal diff too small!\n");
+                        debugWarning(" SYT: %08X | STMP: %08X,%08X | DLL: in=%5.0f, current=%f, err=%e\n",syt_timestamp, m_last_timestamp, m_last_timestamp2, f,m_ticks_per_frame,err);
+                    }
+#endif
+
+                    const double coeff=0.0001;
                     // integrate the error
-                    m_ticks_per_frame += 0.000001*err;
+                    m_ticks_per_frame += coeff*err;
+                    
                 }
                 
                  debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"R-SYT for cycle (%2d %2d)=>%2d: %5uT (%04uC + %04uT) %04X %04X %d\n",
@@ -933,11 +962,13 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                  
 #ifdef DEBUG
                 if(m_last_timestamp<m_last_timestamp2) {
-                    if(new_cycles==0) {
-                        debugWarning("timestamp not sequential, but it's wraparound. %08X %08X %08X\n",syt_timestamp, m_last_timestamp, m_last_timestamp2);                   
+                    if(wraparound_occurred) {
+                        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"timestamp not sequential for cycle %d, but it's wraparound. %08X %08X %08X\n",cycle,syt_timestamp, m_last_timestamp, m_last_timestamp2);                   
                     } else {
-                        debugFatal("timestamp not sequential! %08X %08X %08X\n",syt_timestamp, m_last_timestamp, m_last_timestamp2);
-                        return RAW1394_ISO_STOP;
+                        debugWarning("timestamp not sequential for cycle %d! %08X %08X %08X\n", cycle, syt_timestamp, m_last_timestamp, m_last_timestamp2);
+                        
+                        // the DLL will recover from this.
+                        m_last_timestamp2=m_last_timestamp;
                     }
                 }
 #endif
@@ -1062,8 +1093,8 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
         if (tmp > 24576000/2) tmp-=24576000;
         
         if(tmp<0) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"SYT passed (%d ticks too late)\n",-tmp);
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Periods: %d, remote ticks/frame: %f, remote framerate = %f\n",m_PeriodStat.m_count, m_ticks_per_frame, 24576000.0/m_ticks_per_frame);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT passed (%d ticks too late)\n",-tmp);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Periods: %d, remote ticks/frame: %f, remote framerate = %f\n",m_PeriodStat.m_count, m_ticks_per_frame, 24576000.0/m_ticks_per_frame);
             if (-tmp>1000000) debugWarning("SYT VERY LATE: %d!\n",-tmp);
 //                 return true;
         } else {
@@ -1078,6 +1109,16 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
     } else return false;
 #endif
 }
+
+void AmdtpReceiveStreamProcessor::dumpInfo()
+{
+
+    StreamProcessor::dumpInfo();
+    
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate  : %f\n", 24576000.0/m_ticks_per_frame);
+
+}
+
 
 void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);

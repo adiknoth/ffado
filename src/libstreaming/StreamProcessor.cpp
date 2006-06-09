@@ -62,7 +62,7 @@ void StreamProcessor::dumpInfo()
 	debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
 	
-	((IsoStream*)this)->dumpInfo();
+	IsoStream::dumpInfo();
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter  : %d\n", m_framecounter);
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns          : %d\n", m_xruns);
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running        : %d\n", m_running);
@@ -73,7 +73,7 @@ void StreamProcessor::dumpInfo()
     m_WakeupStat.dumpInfo();
 	
 	
-};
+}
 
 bool StreamProcessor::init()
 {
