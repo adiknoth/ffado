@@ -181,6 +181,8 @@ public:
 
     double getTicksPerFrame() {return m_ticks_per_frame;};
     
+    void dumpInfo();
+    
 protected:
 
 	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
