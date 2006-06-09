@@ -28,20 +28,40 @@
 #ifndef __FREEBOB_DELAYLOCKEDLOOP__
 #define __FREEBOB_DELAYLOCKEDLOOP__
 
-#include "../debugmodule/debugmodule.h"
-
-namespace FreeBobUtil {
+namespace FreebobUtil {
 
 class DelayLockedLoop {
 
 public:
 
+	DelayLockedLoop(unsigned int order, float *coeffs);
+	DelayLockedLoop(unsigned int order);
 	DelayLockedLoop();
+	
 	virtual ~DelayLockedLoop();
-
+    
+    float getCoefficient(unsigned int i);
+    void setCoefficient(unsigned int i, float c);
+    
+    void setIntegrator(unsigned int i, float c);
+    
+    void reset();
+    
+    unsigned int getOrder();
+    void setOrder(unsigned int i);
+    void setOrder(unsigned int order, float* coeffs);
+    
+    void put(float v);
+    float get();
+    float getError();
+    
 protected:
-    DECLARE_DEBUG_MODULE;
 
+    unsigned int m_order;
+
+    float *m_coeffs;
+    float *m_nodes;
+    float m_error;
 };
 
 } // end of namespace FreeBobUtil

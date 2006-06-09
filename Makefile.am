@@ -24,3 +24,6 @@ INCLUDES = -I$(top_srcdir)/src -lpthread
 libutil_la_LIBADD  = 
 
 MAINTAINERCLEANFILES = Makefile.in
+noinst_PROGRAMS = test-dll
+test_dll_SOURCES = test-dll.cpp
+test_dll_LDADD = libutil.la
