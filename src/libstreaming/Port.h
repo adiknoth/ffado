@@ -28,6 +28,8 @@
 #ifndef __FREEBOB_PORT__
 #define __FREEBOB_PORT__
 
+#include <stdint.h>
+
 #include "../debugmodule/debugmodule.h"
 #include <string>
 #include "ringbuffer.h"

@@ -1786,6 +1786,9 @@ AvDevice::prepare() {
 	
 	}
 
+    // FIXME: do this the proper way!
+    m_transmitProcessor->syncmaster=m_receiveProcessor;
+
 	if (!addPlugToProcessor(*inputPlug,m_transmitProcessor, 
 		FreebobStreaming::AmdtpAudioPort::E_Playback)) {
 		debugFatal("Could not add plug to processor!\n");

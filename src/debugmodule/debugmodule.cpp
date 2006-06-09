@@ -92,7 +92,7 @@ DebugModule::print( debug_level_t level,
 
     va_list arg;
     va_start( arg, format );
-    DebugModuleManager::instance()->print( "%s (%s)[%d] %s: ", getPreSequence( level ),
+    DebugModuleManager::instance()->print( "%s (%s)[%4d] %s: ", getPreSequence( level ),
                  file,  line,  function );
     DebugModuleManager::instance()->va_print( format, arg );
     DebugModuleManager::instance()->print( "%s", getPostSequence( level ) );
