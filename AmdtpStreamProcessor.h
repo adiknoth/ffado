@@ -58,6 +58,7 @@ namespace FreebobStreaming {
 class Port;
 class AmdtpAudioPort;
 class AmdtpMidiPort;
+class AmdtpReceiveStreamProcessor;
 
 /*!
 \brief The Base Class for an AMDTP transmit stream processor
@@ -100,6 +101,9 @@ public:
 	
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
+    // FIXME: do this the proper way!
+    AmdtpReceiveStreamProcessor *syncmaster;
+
 protected:
 
 	struct iec61883_cip m_cip_status;
@@ -126,6 +130,9 @@ protected:
 	                  unsigned int offset);
 	int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
 	                           unsigned int offset, unsigned int nevents);
+
+    double m_last_timestamp;
+
 
     DECLARE_DEBUG_MODULE;
 
@@ -172,6 +179,8 @@ public:
 	
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
+    double getTicksPerFrame() {return m_ticks_per_frame;};
+    
 protected:
 
 	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -185,6 +194,9 @@ protected:
 	unsigned int m_syt_interval;
     
     unsigned int m_last_timestamp;
+    unsigned int m_last_timestamp2;
+    
+    double m_ticks_per_frame;
     
     DECLARE_DEBUG_MODULE;
 

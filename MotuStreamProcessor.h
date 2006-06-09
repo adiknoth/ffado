@@ -27,6 +27,7 @@
  */
 #ifndef __FREEBOB_MOTUSTREAMPROCESSOR__
 #define __FREEBOB_MOTUSTREAMPROCESSOR__
+#include <assert.h>
 
 #include "../debugmodule/debugmodule.h"
 #include "StreamProcessor.h"

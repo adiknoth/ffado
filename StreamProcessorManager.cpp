@@ -156,8 +156,6 @@ bool StreamProcessorManager::init()
 		return false;
 	}
 	
-	m_streamingThread->setVerboseLevel(getDebugLevel());
-
 	m_isoManager=new IsoHandlerManager();
 	
 	if(!m_isoManager) {
@@ -666,7 +664,6 @@ void StreamProcessorManager::setVerboseLevel(int l) {
 	setDebugLevel(l);
 
 	if (m_isoManager) m_isoManager->setVerboseLevel(l);
-	if (m_streamingThread) m_streamingThread->setVerboseLevel(l);
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();

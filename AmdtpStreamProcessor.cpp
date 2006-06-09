@@ -42,7 +42,7 @@
 
 // this is one milisecond of processing delay
 #define TICKS_PER_SECOND 24576000
-#define RECEIVE_PROCESSING_DELAY (TICKS_PER_SECOND / 500)
+#define RECEIVE_PROCESSING_DELAY (TICKS_PER_SECOND * 1/1000)
 
 namespace FreebobStreaming {
 
@@ -52,7 +52,7 @@ IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEB
 
 /* transmit */
 AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framerate, int dimension)
-	: TransmitStreamProcessor(port, framerate), m_dimension(dimension) {
+	: TransmitStreamProcessor(port, framerate), m_dimension(dimension), m_last_timestamp(0) {
 
 
 }
@@ -105,6 +105,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 		*length = 0; // this is to disable sending
 		*tag = IEC61883_TAG_WITH_CIP;
 		*sy = 0;
+		m_last_timestamp=9000.0 + cycle * 3072.0;
 		return RAW1394_ISO_OK;
 	}
 	
@@ -115,8 +116,43 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 	memcpy(&old_cip,&m_cip_status,sizeof(struct iec61883_cip));
 		
 	// construct the packet cip
-	int nevents = iec61883_cip_fill_header (getNodeId(), &m_cip_status, packet);
+	// FIXME: this should be done differently:
+	// first we should determine the timestamp of the first sample in this block
+	// this can be done by reading the rate of the compagnion receiver
+	// this rate will give us the ticks per sample used by the device
+	// then we should take the previous timestamp, and add m_syt_interval * ticks_per_sample
+	// to this timestamp (only if we are sending events). This gives us the timestamp
+	// of the first sample in this packet.
+	// we should define a transfer delay and add it to this timestamp and then send it to
+	// the device.
+	
+	// NOTE: this will even work when we're only transmitting (no receive stream):
+	//       the ticks_per_sample value is initialized by the receive streamprocessor
+	//       to the nominal value. We will then transmit at our own pace, being at nominal
+	//       rate compared to the cycle counter.
 
+    // NOTE: this scheme might even work when sync'ing on the sync streams of the device
+    //       they are AMDTP streams with SYT timestamps, therefore a decent estimate of
+    //       ticks_per_frame can be found, and we are synced when using it.
+	
+//  	<<compile error here>>
+ 	
+ 	int nevents = iec61883_cip_fill_header (getNodeId(), &m_cip_status, packet);
+ 	
+	
+	unsigned int timestamp_ticks=m_last_timestamp; // fixed transfer delay
+	timestamp_ticks += 9000;
+	unsigned int timestamp=(((timestamp_ticks/3072) << 12) & 0xF000);
+	timestamp |= ((timestamp_ticks % 3072)) & 0xFFF;
+ 	
+ 	timestamp = htons(timestamp);
+ 	
+ 	m_last_timestamp += nevents*syncmaster->getTicksPerFrame();
+  
+    if (nevents==0) {
+        timestamp=0xFFFF;
+    }
+    
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 
 	if (!(nevents > 0)) {
@@ -141,7 +177,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
                  cycle, m_framecounter, m_handler->getPacketCount());
         
         // signal underrun
-        m_xruns++;
+//         m_xruns++;
 
         retval=RAW1394_ISO_DEFER;
         *length=0;
@@ -158,22 +194,20 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             debugWarning("Problem encoding Packet Ports\n");
         }
         
-        if (packet->syt != 0xFFFF) {
-             unsigned int m_last_timestamp=ntohs(packet->syt);
-             // reconstruct the top part of the timestamp using the current cycle number
-              m_last_timestamp |= ((cycle << 12) & 0x01FF0000);
-             
-             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Sent packet with SYT for cycle %2d: %5u ticks (%2u cycles + %04u ticks)\n",
-             cycle,
-             CYCLE_COUNTER_TO_TICKS(m_last_timestamp),
-             CYCLE_COUNTER_GET_CYCLES(m_last_timestamp),
-             CYCLE_COUNTER_GET_TICKS(m_last_timestamp)
-             );
-        }
+        unsigned int timestamp2=ntohs(timestamp);
+         debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT %d EVENTS, SYT %04X (was: %04X) for cycle %2d: %5u ticks (%2u cycles + %04u ticks)\n",
+         nevents, timestamp, packet->syt, cycle,
+         CYCLE_COUNTER_TO_TICKS(timestamp2),
+         CYCLE_COUNTER_GET_CYCLES(timestamp2),
+         CYCLE_COUNTER_GET_TICKS(timestamp2)
+         );
     }
     
     *tag = IEC61883_TAG_WITH_CIP;
     *sy = 0;
+    
+    // FIXME: do this directly
+    packet->syt=timestamp;
     
     // update the frame counter
     incrementFrameCounter(nevents);
@@ -204,10 +238,10 @@ bool AmdtpTransmitStreamProcessor::prefill() {
     
     // and we should also provide enough prefill for the
     // SYT processing delay
-/*    if(!transferSilence((m_framerate * RECEIVE_PROCESSING_DELAY)/TICKS_PER_SECOND)) {
-        debugFatal("Could not prefill transmit stream\n");
-        return false;
-    }*/
+//     if(!transferSilence((m_framerate * RECEIVE_PROCESSING_DELAY)/TICKS_PER_SECOND)) {
+//         debugFatal("Could not prefill transmit stream\n");
+//         return false;
+//     }
     
     // the framecounter should be pulled back to
     // make sure the ISO buffering is used 
@@ -771,7 +805,7 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents(AmdtpAudioPort *
 /* --------------------- RECEIVE ----------------------- */
 
 AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int framerate, int dimension)
-    : ReceiveStreamProcessor(port, framerate), m_dimension(dimension), m_last_timestamp(0) {
+    : ReceiveStreamProcessor(port, framerate), m_dimension(dimension), m_last_timestamp(0), m_last_timestamp2(0) {
 
 
 }
@@ -843,22 +877,71 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // this will allow us to determine the 
             // actual presentation time later
             if (packet->syt != 0xFFFF) {
-                 
-                m_last_timestamp=ntohs(packet->syt);
+                
+                m_last_timestamp2=m_last_timestamp;
+                
+                unsigned int syt_timestamp=ntohs(packet->syt);
                  // reconstruct the top part of the timestamp using the current cycle number
-//                  m_last_timestamp |= ((cycle << 12) & 0x01FF0000);
-                unsigned int syt_cycles=CYCLE_COUNTER_GET_CYCLES(m_last_timestamp);
-                int new_cycles=cycle+(syt_cycles-(cycle & 0xF));
-//                 m_last_timestamp &= 0xFFF; // keep only the offset
-//                 m_last_timestamp |= ((new_cycles << 12) & 0x01FFF000); // add the right cycle info
-                 
+                unsigned int now_cycle_masked=cycle & 0xF;
+                unsigned int syt_cycle=CYCLE_COUNTER_GET_CYCLES(syt_timestamp);
+                
+                // if this is true, wraparound has occurred, undo this wraparound
+                if(syt_cycle<now_cycle_masked) syt_cycle += 0xF;
+                
+                unsigned int delta_cycles=syt_cycle-now_cycle_masked;
+                
+                // reconstruct the cycle part of the timestamp
+                unsigned int new_cycles=cycle + delta_cycles;
+                
+                if(new_cycles>7999) new_cycles-=8000; // wrap around
+                
+                m_last_timestamp = (new_cycles) << 12;
+                
+                // now add the offset part on top of that
+                m_last_timestamp |= (syt_timestamp & 0xFFF);
+                
+                // m_last_timestamp timestamp now contains all info,
+                // including cycle number
+                
+                if (m_last_timestamp & m_last_timestamp2) {
+                    // try and estimate the frame rate from the device:
+                    int timestamp_difference=CYCLE_COUNTER_TO_TICKS(m_last_timestamp)
+                                             -CYCLE_COUNTER_TO_TICKS(m_last_timestamp2);
+                                             
+                    // handle wrap around of the cycle variable
+                    if (new_cycles==0) timestamp_difference+=TICKS_PER_SECOND;
+                    
+                    // implement a 1st order DLL to estimate the framerate
+                    // this is the number of ticks between two samples
+                    double f=timestamp_difference;
+                    double err = timestamp_difference / m_syt_interval;
+                    // now it contains the error between our estimate
+                    // and the current measurement
+                    err=err-m_ticks_per_frame;
+                    
+                    // integrate the error
+                    m_ticks_per_frame += 0.000001*err;
+                }
+                
                  debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"R-SYT for cycle (%2d %2d)=>%2d: %5uT (%04uC + %04uT) %04X %04X %d\n",
-                 cycle,cycle & 0xF,new_cycles,
+                 cycle,now_cycle_masked,delta_cycles,
                  CYCLE_COUNTER_TO_TICKS(m_last_timestamp),
                  CYCLE_COUNTER_GET_CYCLES(m_last_timestamp),
                  CYCLE_COUNTER_GET_TICKS(m_last_timestamp),
                  ntohs(packet->syt),m_last_timestamp&0xFFFF, dropped
                  );
+                 
+#ifdef DEBUG
+                if(m_last_timestamp<m_last_timestamp2) {
+                    if(new_cycles==0) {
+                        debugWarning("timestamp not sequential, but it's wraparound. %08X %08X %08X\n",syt_timestamp, m_last_timestamp, m_last_timestamp2);                   
+                    } else {
+                        debugFatal("timestamp not sequential! %08X %08X %08X\n",syt_timestamp, m_last_timestamp, m_last_timestamp2);
+                        return RAW1394_ISO_STOP;
+                    }
+                }
+#endif
+
             }
         }
 
@@ -891,7 +974,9 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
 // this uses SYT to determine if one period is ready
 bool AmdtpReceiveStreamProcessor::isOnePeriodReady() { 
-#if 0 // this code is not ready yet
+#define DO_SYT_SYNC
+#ifdef DO_SYT_SYNC
+ // this code is not ready yet
 
     // one sample will take a number off cycle counter ticks:
     // The number of ticks per second is 24576000
@@ -936,11 +1021,11 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
         
         // FIXME: if we are sure, make ideal_presentation_time an unsigned int
 //         assert(ideal_presentation_time>=0);
-        
-        
-/*        if(ideal_presentation_time) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Presentation time < 0 : %d\n", ideal_presentation_time);
-        }*/
+#ifdef DEBUG
+        if(ideal_presentation_time<0) {
+            debugWarning("ideal_presentation_time time is negative!\n");
+        }
+#endif
         
         unsigned int current_time=m_handler->getCycleCounter() & 0x1FFFFFF;
         unsigned int current_time_ticks = CYCLE_COUNTER_TO_TICKS(current_time);
@@ -948,7 +1033,7 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
         // if the last signalled period lies in the future, we know we had wraparound of the clock
         // so add one second
 //         if (current_time_ticks < m_previous_signal_ticks) current_time_ticks += 24576000;
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Periods: %d\n",m_PeriodStat.m_count);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Periods: %d, remote framerate %f\n",m_PeriodStat.m_count, m_ticks_per_frame);
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Timestamp : %10u ticks (%3u secs + %4u cycles + %04u ticks)\n",
             m_last_timestamp_ticks,
             CYCLE_COUNTER_GET_SECS(m_last_timestamp), 
@@ -977,19 +1062,21 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
         if (tmp > 24576000/2) tmp-=24576000;
         
         if(tmp<0) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT passed (%d ticks too late)\n",-tmp);
+            debugOutput(DEBUG_LEVEL_VERBOSE,"SYT passed (%d ticks too late)\n",-tmp);
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Periods: %d, remote ticks/frame: %f, remote framerate = %f\n",m_PeriodStat.m_count, m_ticks_per_frame, 24576000.0/m_ticks_per_frame);
             if (-tmp>1000000) debugWarning("SYT VERY LATE: %d!\n",-tmp);
-            return true;
+//                 return true;
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Too early wait %d ticks\n",tmp);
-            return false;
+//             return false;
         }
-    } else return false;
-#endif
+     } 
+//      else return false;
+// #else
     if(m_framecounter > (int)m_period) {
      return true;
     } else return false;
-
+#endif
 }
 
 void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
@@ -1013,6 +1100,15 @@ bool AmdtpReceiveStreamProcessor::reset() {
     m_PacketStat.reset();
     m_WakeupStat.reset();
 
+    // reset the framerate estimate
+     m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / m_framerate;
+
+     debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n",m_ticks_per_frame);
+	
+	//reset the timestamps
+	m_last_timestamp=0;
+	m_last_timestamp2=0;
+	
 	
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
@@ -1061,6 +1157,11 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 		m_syt_interval = 32;
 		break;
 	}
+
+    // prepare the framerate estimate
+    m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / m_framerate;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n",m_ticks_per_frame);
 
     // allocate the event buffer
     unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
