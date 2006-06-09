@@ -24,22 +24,21 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 */
 
-#include "FreebobPosixThread.h"
-// #include "FreebobError.h"
+#include "PosixThread.h"
 #include <string.h> // for memset
 #include <errno.h>
 #include <assert.h>
 
+#define debugOutput( level, format, args... )
+#define debugError( format, args... )
 
-namespace FreebobStreaming
+namespace FreebobUtil
 {
 
-IMPL_DEBUG_MODULE( FreebobPosixThread, FreebobPosixThread, DEBUG_LEVEL_NORMAL );
-
-void* FreebobPosixThread::ThreadHandler(void* arg)
+void* PosixThread::ThreadHandler(void* arg)
 {
-    FreebobPosixThread* obj = (FreebobPosixThread*)arg;
-    FreebobRunnableInterface* runnable = obj->fRunnable;
+    PosixThread* obj = (PosixThread*)arg;
+    RunnableInterface* runnable = obj->fRunnable;
     int err;
 
     if ((err = pthread_setcanceltype(obj->fCancellation, NULL)) != 0) {
@@ -65,7 +64,7 @@ void* FreebobPosixThread::ThreadHandler(void* arg)
     return 0;
 }
 
-int FreebobPosixThread::Start()
+int PosixThread::Start()
 {
     int res;
 	fRunning = true;
@@ -119,10 +118,10 @@ int FreebobPosixThread::Start()
     }
 }
 
-int FreebobPosixThread::Kill()
+int PosixThread::Kill()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "FreebobPosixThread::Kill\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Kill\n");
         void* status;
         pthread_cancel(fThread);
         pthread_join(fThread, &status);
@@ -132,10 +131,10 @@ int FreebobPosixThread::Kill()
     }
 }
 
-int FreebobPosixThread::Stop()
+int PosixThread::Stop()
 {
     if (fThread) { // If thread has been started
-		debugOutput( DEBUG_LEVEL_VERBOSE, "FreebobPosixThread::Stop\n");
+		debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop\n");
 		void* status;
         fRunning = false; // Request for the thread to stop
 		pthread_join(fThread, &status);
@@ -145,7 +144,7 @@ int FreebobPosixThread::Stop()
     }
 }
 
-int FreebobPosixThread::AcquireRealTime()
+int PosixThread::AcquireRealTime()
 {
     struct sched_param rtparam;
     int res;
@@ -167,13 +166,13 @@ int FreebobPosixThread::AcquireRealTime()
     return 0;
 }
 
-int FreebobPosixThread::AcquireRealTime(int priority)
+int PosixThread::AcquireRealTime(int priority)
 {
     fPriority = priority;
     return AcquireRealTime();
 }
 
-int FreebobPosixThread::DropRealTime()
+int PosixThread::DropRealTime()
 {
     struct sched_param rtparam;
     int res;
@@ -191,7 +190,7 @@ int FreebobPosixThread::DropRealTime()
     return 0;
 }
 
-pthread_t FreebobPosixThread::GetThreadID()
+pthread_t PosixThread::GetThreadID()
 {
     return fThread;
 }

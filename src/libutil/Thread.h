@@ -24,27 +24,27 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 */
 
-#ifndef __FreebobThread__
-#define __FreebobThread__
+#ifndef __THREAD__
+#define __THREAD__
 
-#include "FreebobAtomic.h"
+#include "Atomic.h"
 #include <pthread.h>
 
-namespace FreebobStreaming
+namespace FreebobUtil
 {
 
 /*!
 \brief The base class for runnable objects, that have an <B> Init </B> and <B> Execute </B> method to be called in a thread.
 */
 
-class FreebobRunnableInterface
+class RunnableInterface
 {
 
     public:
 
-        FreebobRunnableInterface()
+        RunnableInterface()
         {}
-        virtual ~FreebobRunnableInterface()
+        virtual ~RunnableInterface()
         {}
 
         virtual bool Init()          /*! Called once when the thread is started */
@@ -58,18 +58,18 @@ class FreebobRunnableInterface
 \brief The thread base class.
 */
 
-class FreebobThread
+class Thread
 {
 
     protected:
 
-        FreebobRunnableInterface* fRunnable;
+        RunnableInterface* fRunnable;
 
     public:
 
-        FreebobThread(FreebobRunnableInterface* runnable): fRunnable(runnable)
+        Thread(RunnableInterface* runnable): fRunnable(runnable)
         {}
-        virtual ~FreebobThread()
+        virtual ~Thread()
         {}
 
         virtual int Start() = 0;

@@ -24,22 +24,20 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 */
 
-#ifndef __FreebobPosixThread__
-#define __FreebobPosixThread__
+#ifndef __POSIXTHREAD__
+#define __POSIXTHREAD__
 
-#include "../debugmodule/debugmodule.h"
-
-#include "FreebobThread.h"
+#include "Thread.h"
 #include <pthread.h>
 
-namespace FreebobStreaming
+namespace FreebobUtil
 {
 
 /*!
 \brief The POSIX thread base class.
 */
 
-class FreebobPosixThread : public FreebobThread
+class PosixThread : public Thread
 {
 
     protected:
@@ -54,17 +52,17 @@ class FreebobPosixThread : public FreebobThread
 
     public:
 
-        FreebobPosixThread(FreebobRunnableInterface* runnable, bool real_time, int priority, int cancellation)
-                : FreebobThread(runnable), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
+        PosixThread(RunnableInterface* runnable, bool real_time, int priority, int cancellation)
+                : Thread(runnable), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
         {}
-        FreebobPosixThread(FreebobRunnableInterface* runnable)
-                : FreebobThread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
+        PosixThread(RunnableInterface* runnable)
+                : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
         {}
-        FreebobPosixThread(FreebobRunnableInterface* runnable, int cancellation)
-                : FreebobThread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
+        PosixThread(RunnableInterface* runnable, int cancellation)
+                : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
         {}
 
-        virtual ~FreebobPosixThread()
+        virtual ~PosixThread()
         {}
 
         virtual int Start();
@@ -77,10 +75,7 @@ class FreebobPosixThread : public FreebobThread
 
         pthread_t GetThreadID();
 
-        void setVerboseLevel(int l) {setDebugLevel(l);};
 	protected:
-
-    DECLARE_DEBUG_MODULE;
 
 };
 
