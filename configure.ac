@@ -230,9 +230,6 @@ AC_SUBST([LIBXML_CFLAGS])
 
 AC_CONFIG_FILES([Makefile
 		 libfreebob/Makefile
-		 src/debugmodule/Makefile
-		 src/libfreebobavc/Makefile
-		 src/libfreebobstreaming/Makefile
 		 src/Makefile
 		 tests/Makefile
 		 tests/streaming/Makefile

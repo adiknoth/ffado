@@ -36,7 +36,7 @@
 #include "libfreebob/freebob_streaming.h"
 
 //#include <jack/jack.h>
-#include <thread.h>
+#include "libfreebobstreaming/thread.h"
 //#include <jack/internal.h>
 
 #include <pthread.h>
