@@ -1,5 +1,5 @@
 # Makefile.am - Makefile template
-# Copyright (C) 2005 by Daniel Wagner.
+# Copyright (C) 2005,06 by Daniel Wagner.
 #
 # This file is part of FreeBoB.
 #
@@ -28,7 +28,7 @@ test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la \
 	$(LIBXML_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
 test_extplugcmd_SOURCES = test-extplugcmd.cpp
-test_extplugcmd_LDADD = $(top_builddir)/src/libfreebobavc/libfreebobavc.la \
+test_extplugcmd_LDADD = $(top_builddir)/src/libfreebob.la \
 	$(LIBAVC1394_LIBS)
 
 freebob_server_SOURCES = freebob-server.c

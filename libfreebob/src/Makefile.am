@@ -16,10 +16,9 @@
 # along with FreeBoB; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = debugmodule libfreebobavc libfreebobstreaming
-
-INCLUDES = $(LIBSIGC_CFLAGS) $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) \
-	$(LIBAVC1394_CFLAGS) $(LIBLO_CFLAGS) $(LIBXML_CFLAGS) \
+INCLUDES = 						\
+	$(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) 	\
+	$(LIBAVC1394_CFLAGS) $(LIBXML_CFLAGS)      	\
 	-I$(top_srcdir) -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libfreebob.la
@@ -52,13 +51,52 @@ libfreebob_la_SOURCES = 				\
 	bebob_light/bebob_light_avplug.h		\
 	bebob_light/bebob_light_avplug.cpp		\
 	bounce/bounce_avdevice.h			\
-	bounce/bounce_avdevice.cpp
+	bounce/bounce_avdevice.cpp			\
+	libfreebobavc/avc_connect.cpp			\
+	libfreebobavc/avc_definitions.cpp		\
+	libfreebobavc/avc_extended_cmd_generic.cpp	\
+	libfreebobavc/avc_extended_plug_info.cpp	\
+	libfreebobavc/avc_extended_stream_format.cpp	\
+	libfreebobavc/avc_extended_subunit_info.cpp	\
+	libfreebobavc/avc_generic.cpp			\
+	libfreebobavc/avc_plug_info.cpp			\
+	libfreebobavc/avc_signal_source.cpp		\
+	libfreebobavc/avc_subunit_info.cpp		\
+	libfreebobavc/avc_unit_info.cpp			\
+	libfreebobavc/ieee1394service.cpp		\
+	libfreebobavc/serialize.cpp			\
+	libfreebobavc/avc_connect.h			\
+	libfreebobavc/avc_definitions.h			\
+	libfreebobavc/avc_extended_cmd_generic.h	\
+	libfreebobavc/avc_extended_plug_info.h		\
+	libfreebobavc/avc_extended_stream_format.h	\
+	libfreebobavc/avc_extended_subunit_info.h	\
+	libfreebobavc/avc_generic.h			\
+	libfreebobavc/avc_plug_info.h			\
+	libfreebobavc/avc_signal_source.h		\
+	libfreebobavc/avc_subunit_info.h		\
+	libfreebobavc/avc_unit_info.h			\
+	libfreebobavc/ieee1394service.h			\
+	libfreebobavc/serialize.h			\
+	libfreebobstreaming/cip.c			\
+	libfreebobstreaming/freebob_connections.c	\
+	libfreebobstreaming/freebob_streaming.c		\
+	libfreebobstreaming/messagebuffer.c		\
+	libfreebobstreaming/ringbuffer.c		\
+	libfreebobstreaming/thread.c			\
+	libfreebobstreaming/cip.h			\
+	libfreebobstreaming/freebob_connections.h	\
+	libfreebobstreaming/freebob_debug.h		\
+	libfreebobstreaming/freebob_streaming_private.h	\
+	libfreebobstreaming/messagebuffer.h		\
+	libfreebobstreaming/ringbuffer.h		\
+	libfreebobstreaming/thread.h			\
+	debugmodule/debugmodule.h			\
+	debugmodule/debugmodule.cpp
 
-libfreebob_la_LDFLAGS = -version-info $(LT_VERSION) -lpthread $(LIBSIGC_LIBS) \
-	$(LIBRAW1394_LIBS) $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) \
-	$(LIBLO_LIBS) $(LIBXML_LIBS) -safe-temps
-
-libfreebob_la_LIBADD = debugmodule/libdebugmodule.la libfreebobavc/libfreebobavc.la \
-	libfreebobstreaming/libfreebobstreaming.la
+libfreebob_la_LDFLAGS = 				\
+	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
+	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
+	$(LIBXML_LIBS) -lpthread
 
 
