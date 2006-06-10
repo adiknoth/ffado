@@ -142,6 +142,10 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 	
 	unsigned int timestamp_ticks=m_last_timestamp; // fixed transfer delay
 	timestamp_ticks += 9000;
+	
+	// if there are dropped packets, incorporate them into the delay
+	// FIXME: we don't know how many samples were lost
+		
 	unsigned int timestamp=(((timestamp_ticks/3072) << 12) & 0xF000);
 	timestamp |= ((timestamp_ticks % 3072)) & 0xFFF;
  	
@@ -214,6 +218,20 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     if(m_framecounter>m_period) {
        retval=RAW1394_ISO_DEFER;
     }
+    
+#ifdef DEBUG
+    if(packet->dbs) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, 
+            "XMT: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
+            m_channel, packet->fdf,
+            packet->syt,
+            packet->dbs,
+            packet->dbc,
+            packet->fmt, 
+            *length,
+            ((*length / sizeof (quadlet_t)) - 2)/packet->dbs);
+    }
+#endif    
     
     m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
 	
@@ -976,15 +994,19 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             }
         }
 
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
-            "RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
-            channel, packet->fdf,
-            packet->syt,
-            packet->dbs,
-            packet->dbc,
-            packet->fmt, 
-            length,
-            ((length / sizeof (quadlet_t)) - 2)/packet->dbs);
+#ifdef DEBUG
+        if(packet->dbs) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, 
+                "RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
+                channel, packet->fdf,
+                packet->syt,
+                packet->dbs,
+                packet->dbc,
+                packet->fmt, 
+                length,
+                ((length / sizeof (quadlet_t)) - 2)/packet->dbs);
+        }
+#endif
         
         // update the frame counter
         incrementFrameCounter(nevents);

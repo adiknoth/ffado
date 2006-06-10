@@ -3,6 +3,7 @@
 
 #include <libraw1394/raw1394.h>
 #include <endian.h>
+#include <stdint.h>
 
 #define IEC61883_FMT_DV 0x00
 #define IEC61883_FMT_AMDTP 0x10
@@ -20,22 +21,22 @@ extern "C" {
 
 struct iec61883_packet {
 	/* First quadlet */
-	unsigned int dbs      : 8;
-	unsigned int eoh0     : 2;
-	unsigned int sid      : 6;
+	uint8_t dbs      : 8;
+	uint8_t eoh0     : 2;
+	uint8_t sid      : 6;
 
-	unsigned int dbc      : 8;
-	unsigned int fn       : 2;
-	unsigned int qpc      : 3;
-	unsigned int sph      : 1;
-	unsigned int reserved : 2;
+	uint8_t dbc      : 8;
+	uint8_t fn       : 2;
+	uint8_t qpc      : 3;
+	uint8_t sph      : 1;
+	uint8_t reserved : 2;
 
 	/* Second quadlet */
-	unsigned int fdf      : 8;
-	unsigned int eoh1     : 2;
-	unsigned int fmt      : 6;
+	uint8_t fdf      : 8;
+	uint8_t eoh1     : 2;
+	uint8_t fmt      : 6;
 
-	unsigned int syt      : 16;
+	uint16_t syt      : 16;
 
 	unsigned char data[0];
 };
@@ -44,22 +45,22 @@ struct iec61883_packet {
 
 struct iec61883_packet {
 	/* First quadlet */
-	unsigned int sid      : 6;
-	unsigned int eoh0     : 2;
-	unsigned int dbs      : 8;
+	uint8_t sid      : 6;
+	uint8_t eoh0     : 2;
+	uint8_t dbs      : 8;
 
-	unsigned int reserved : 2;
-	unsigned int sph      : 1;
-	unsigned int qpc      : 3;
-	unsigned int fn       : 2;
-	unsigned int dbc      : 8;
+	uint8_t reserved : 2;
+	uint8_t sph      : 1;
+	uint8_t qpc      : 3;
+	uint8_t fn       : 2;
+	uint8_t dbc      : 8;
 
 	/* Second quadlet */
-	unsigned int fmt      : 6;
-	unsigned int eoh1     : 2;
-	unsigned int fdf      : 8;
+	uint8_t fmt      : 6;
+	uint8_t eoh1     : 2;
+	uint8_t fdf      : 8;
 
-	unsigned int syt      : 16;
+	uint16_t syt      : 16;
 
 	unsigned char data[0];
 };
