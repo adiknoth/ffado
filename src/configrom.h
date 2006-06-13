@@ -45,7 +45,9 @@ class ConfigRom {
     const std::string getVendorName() const;
     const unsigned int getModelId() const;
     const unsigned int getVendorId() const;
-
+    const unsigned int getUnitSpecifierId() const;
+    const unsigned int getUnitVersion() const;
+        
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,
                                struct csr1212_keyval* ud_kv,
@@ -61,6 +63,8 @@ class ConfigRom {
     std::string      m_modelName;
     unsigned int     m_vendorId;
     unsigned int     m_modelId;
+    unsigned int     m_unit_specifier_id;
+    unsigned int     m_unit_version;
 
     /* only used during parsing */
     struct csr1212_keyval* m_vendorNameKv;

@@ -38,10 +38,13 @@ namespace Motu {
 
 IMPL_DEBUG_MODULE( MotuDevice, MotuDevice, DEBUG_LEVEL_NORMAL );
 
+char *motufw_modelname[] = {"[unknown]","828MkII", "Traveler"}; 
+
 MotuDevice::MotuDevice( Ieee1394Service& ieee1394service,
                         int nodeId,
                         int verboseLevel )
     : m_1394Service( &ieee1394service )
+    , m_motu_model( MOTUFW_MODEL_NONE )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_id(0)
@@ -73,50 +76,22 @@ MotuDevice::getConfigRom() const
 bool
 MotuDevice::discover()
 {
-	signed int i, is_motu_fw_audio;
-
-	/* A list of all IEEE1394 Vendor IDs used by MOTU.  One would expect this to
-	* include only one, but stranger things have happened in this world.  The
-	* list is terminated with a 0xffffffff value.
-	*/
-	const unsigned int motu_vendor_ids[] = {
-		VENDOR_MOTU,
-		VENDOR_MOTU_TEST,
-		0xffffffff,
-	};
-	
-	/* A list of all valid IEEE1394 model IDs for MOTU firewire audio devices,
-	* terminated by 0xffffffff.
-	*/
-	const unsigned int motu_fw_audio_model_ids[] = {
-		MOTU_828mkII, MOTU_TRAVELER, MOTU_TEST,
-		0xffffffff,
-	};
-	
-	/* Find out if this device is one we know about */
-	is_motu_fw_audio = i = 0;
-
-	while ((motu_vendor_ids[i]!=0xffffffff) 
-			&& (m_configRom->getVendorId() != motu_vendor_ids[i]))
-		i++;
-
-	if (motu_vendor_ids[i] != 0xffffffff) {
-		/* Device is made by MOTU.  See if the model is one we know about */
-		i = 0;
-
-		while ((motu_fw_audio_model_ids[i]!=0xffffffff) 
-				&& (m_configRom->getModelId() != motu_fw_audio_model_ids[i]))
-			i++;
-
-		if (motu_fw_audio_model_ids[i]!=0xffffffff)
-			is_motu_fw_audio = 1;
-	}
-
-	if (is_motu_fw_audio) {
-		debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-			m_configRom->getVendorName(), m_configRom->getModelName());
-		return true;
-	}
+        // Find out if this device is one we know about
+        if (m_configRom->getUnitSpecifierId() == MOTUFW_VENDOR_MOTU) {
+                switch (m_configRom->getUnitVersion()) {
+                    case MOTUFW_UNITVER_828mkII: 
+                        m_motu_model = MOTUFW_MODEL_828mkII; 
+                        break;
+                    case MOTUFW_UNITVER_TRAVELER:
+                        m_motu_model = MOTUFW_MODEL_TRAVELER;
+                        break;
+                }
+        }
+        if (m_motu_model != MOTUFW_MODEL_NONE) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "found MOTU %s\n",
+                        motufw_modelname[m_motu_model]);
+                return true;
+        }
 
     return false;
 }
@@ -126,9 +101,26 @@ MotuDevice::getSamplingFrequency( ) {
     /*
      Implement the procedure to retrieve the samplerate here
     */
-    // FIXME: 
-    return 44100;
+    quadlet_t q = ReadRegister(MOTUFW_REG_RATECTRL);
+    int rate = 0;
 
+    switch (q & ~MOTUFW_BASE_RATE_MASK) {
+        case MOTUFW_BASE_RATE_44100:
+            rate = 44100;
+            break;
+        case MOTUFW_BASE_RATE_48000:
+            rate = 48000;
+            break;
+    }
+    switch (q & ~MOTUFW_RATE_MULTIPLIER_MASK) {
+        case MOTUFW_RATE_MULTIPLIER_2X:
+            rate *= 2;
+            break;
+        case MOTUFW_RATE_MULTIPLIER_4X:
+            rate *= 4;
+            break;
+    }
+    return rate;
 }
 
 bool
@@ -141,51 +133,50 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     quadlet_t new_rate=0;
 	int supported=true;
 
-	switch ( samplingFrequency ) {
-    case eSF_22050Hz:
-		supported=false;
-        break;
-    case eSF_24000Hz:
-		supported=false;
-        break;
-    case eSF_32000Hz:
-		supported=false;
-        break;
-    case eSF_44100Hz:
-        new_rate = MOTU_BASE_RATE_44100 | MOTU_RATE_MULTIPLIER_1X;
-        break;
-    case eSF_48000Hz:
-        new_rate = MOTU_BASE_RATE_48000 | MOTU_RATE_MULTIPLIER_1X;
-        break;
-    case eSF_88200Hz:
-        new_rate = MOTU_BASE_RATE_44100 | MOTU_RATE_MULTIPLIER_2X;
-        break;
-    case eSF_96000Hz:
-        new_rate = MOTU_BASE_RATE_48000 | MOTU_RATE_MULTIPLIER_2X;
-        break;
-    case eSF_176400Hz:
-        new_rate = MOTU_BASE_RATE_44100 | MOTU_RATE_MULTIPLIER_4X;
-        break;
-    case eSF_192000Hz:
-        new_rate = MOTU_BASE_RATE_48000 | MOTU_RATE_MULTIPLIER_4X;
-        break;
-    default:
-        supported=false;
+    switch ( samplingFrequency ) {
+        case eSF_22050Hz:
+	    supported=false;
+	    break;
+	case eSF_24000Hz:
+	    supported=false;
+            break;
+    	case eSF_32000Hz:
+	    supported=false;
+            break;
+	case eSF_44100Hz:
+            new_rate = MOTUFW_BASE_RATE_44100 | MOTUFW_RATE_MULTIPLIER_1X;
+            break;
+	case eSF_48000Hz:
+            new_rate = MOTUFW_BASE_RATE_48000 | MOTUFW_RATE_MULTIPLIER_1X;
+            break;
+        case eSF_88200Hz:
+            new_rate = MOTUFW_BASE_RATE_44100 | MOTUFW_RATE_MULTIPLIER_2X;
+            break;
+        case eSF_96000Hz:
+            new_rate = MOTUFW_BASE_RATE_48000 | MOTUFW_RATE_MULTIPLIER_2X;
+            break;
+        case eSF_176400Hz:
+            new_rate = MOTUFW_BASE_RATE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
+            break;
+        case eSF_192000Hz:
+            new_rate = MOTUFW_BASE_RATE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
+            break;
+        default:
+            supported=false;
     }
 
-	// update the register
-	if(supported) {
- 		quadlet_t value=ReadRegister(0x0B14);
-		value &= ~(MOTU_RATE_MASK);
-		value |= new_rate;
-
-		if(WriteRegister(0x0B14,value) == 0) {
-			supported=true;
-		} else {
-			supported=false;
-		}
-	}
-
+    // update the register.  FIXME: there's more to it than this
+    if (supported) {
+        quadlet_t value=ReadRegister(MOTUFW_REG_RATECTRL);
+        value &= ~(MOTUFW_BASE_RATE_MASK|MOTUFW_RATE_MULTIPLIER_MASK);
+        value |= new_rate;
+//        value |= 0x04000000;
+        if (WriteRegister(MOTUFW_REG_RATECTRL, value) == 0) {
+            supported=true;
+        } else {
+            supported=false;
+        }
+    }
     return supported;
 }
 
@@ -198,11 +189,9 @@ bool MotuDevice::setId( unsigned int id) {
 void
 MotuDevice::showDevice() const
 {
-    printf( "%s %s at node %d\n",
-	        m_configRom->getVendorName().c_str(), 
-	        m_configRom->getModelName().c_str(),
-	        m_nodeId );
-
+    printf( "MOTU %s at node %d\n",
+        motufw_modelname[m_motu_model],
+        m_nodeId );
 }
 
 bool
@@ -470,16 +459,16 @@ unsigned int MotuDevice::ReadRegister(unsigned int reg) {
  * Attempts to read the requested register from the MOTU.
  */
 
-	quadlet_t quadlet;
-	assert(m_1394Service);
+quadlet_t quadlet;
+assert(m_1394Service);
 	
-	quadlet = 0;
-	if (m_1394Service->read(m_nodeId, MOTU_BASE_ADDR+reg, 4, &quadlet) < 0) {
-		debugError("Error doing motu read from register 0x%06x\n",reg);
-	}
+  quadlet = 0;
+  // Note: 1394Service::read() expects a physical ID, not the node id
+  if (m_1394Service->read(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 4, &quadlet) < 0) {
+    debugError("Error doing motu read from register 0x%06x\n",reg);
+  }
 
-
-	return ntohl(quadlet);
+  return ntohl(quadlet);
 }
 
 signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
@@ -488,16 +477,15 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
  */
 
   unsigned int err = 0;
-
   data = htonl(data);
 
-  if (m_1394Service->write(m_nodeId, MOTU_BASE_ADDR+reg, 4, &data) < 0) {
+  // Note: 1394Service::write() expects a physical ID, not the node id
+  if (m_1394Service->write(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 4, &data) < 0) {
     err = 1;
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }
 
   usleep(100);
-
   return (err==0)?0:-1;
 }
 

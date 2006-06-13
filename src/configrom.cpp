@@ -60,6 +60,8 @@ ConfigRom::ConfigRom( Ieee1394Service* ieee1394service, fb_nodeid_t nodeId )
     , m_guid( 0 )
     , m_vendorName( "" )
     , m_modelName( "" )
+    , m_unit_specifier_id( 0 )
+    , m_unit_version( 0 )
     , m_vendorNameKv( 0 )
     , m_modelNameKv( 0 )
     , m_csr( 0 )
@@ -207,7 +209,6 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
     struct csr1212_dentry *dentry;
     struct csr1212_keyval *kv;
     unsigned int last_key_id = 0;
-    unsigned int specifier_id = 0;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "process unit directory:\n" );
     csr1212_for_each_dir_entry(csr, kv, ud_kv, dentry) {
@@ -232,14 +233,15 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tspecifier_id = 0x%08x\n",
                              kv->value.immediate);
-                specifier_id = kv->value.immediate;
+                m_unit_specifier_id = kv->value.immediate;
 		break;
 
 	    case CSR1212_KV_ID_VERSION:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tversion = 0x%08x\n",
                              kv->value.immediate);
-                if ( specifier_id == 0x0000a02d ) // XXX
+                m_unit_version = kv->value.immediate;
+                if ( m_unit_specifier_id == 0x0000a02d ) // XXX
                 {
                     if ( kv->value.immediate == 0x10001 ) {
                         m_avcDevice = true;
@@ -364,4 +366,16 @@ const unsigned int
 ConfigRom::getVendorId() const
 {
     return m_vendorId;
+}
+
+const unsigned int
+ConfigRom::getUnitSpecifierId() const
+{
+    return m_unit_specifier_id;
+}
+
+const unsigned int
+ConfigRom::getUnitVersion() const
+{
+    return m_unit_version;
 }

@@ -34,6 +34,10 @@
 #include <iostream>
 #include <unistd.h>
 
+// Unit directory SpecifierID/Version identifying a true Bebob AVC device
+#define BEBOB_AVCDEVICE_UNIT_SPECIFIER   0x0000a02d
+#define BEBOB_AVCDEVICE_UNIT_VERSION     0x10001
+
 using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
@@ -109,16 +113,12 @@ DeviceManager::discover( int verboseLevel )
             continue;
         }
 
-        if ( !configRom.isAvcDevice() ) {
-            continue;
-        }
-
         for ( ProbeFunctionVector::iterator it = m_probeList.begin();
               it != m_probeList.end();
               ++it )
         {
             ProbeFunction func = *it;
-            IAvDevice* avDevice = func(*m_1394Service, nodeId, verboseLevel);
+            IAvDevice* avDevice = func(*m_1394Service, configRom, nodeId, verboseLevel);
             if ( avDevice ) {
                 m_avDevices.push_back( avDevice );
                 if (!avDevice->setId(m_avDevices.size())) {
@@ -138,9 +138,18 @@ DeviceManager::discover( int verboseLevel )
 
 
 IAvDevice*
-DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
+DeviceManager::probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
 {
-    IAvDevice* avDevice = new BeBoB_Light::AvDevice( service, id, level );
+    IAvDevice* avDevice;
+
+    // All BeBob devices have predictable unit specifier/version fields
+    if (configRom.getUnitSpecifierId() != BEBOB_AVCDEVICE_UNIT_SPECIFIER ||
+        configRom.getUnitVersion() == BEBOB_AVCDEVICE_UNIT_VERSION) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device...\n" );
+        return NULL;
+    }
+
+    avDevice = new BeBoB_Light::AvDevice( service, id, level );
     if ( !avDevice ) {
         return NULL;
     }
@@ -148,23 +157,31 @@ DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
     if ( !avDevice->discover() ) {
         delete avDevice;
         debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device...\n" );
-       return NULL;
+        return NULL;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "BeBoB device discovered...\n" );
     return avDevice;
 }
 
 IAvDevice*
-DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
+DeviceManager::probeBounce(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
 {
-    IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
+    IAvDevice* avDevice;
+
+    // All Bounce devices have predictable unit specifier/version fields
+    if (configRom.getUnitSpecifierId() != BEBOB_AVCDEVICE_UNIT_SPECIFIER ||
+        configRom.getUnitVersion() == BEBOB_AVCDEVICE_UNIT_VERSION) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a Bounce device...\n" );
+        return NULL;
+    }
+
+    avDevice = new Bounce::BounceDevice( service, id, level );
     if ( !avDevice ) {
         return NULL;
     }
 
     if ( !avDevice->discover() ) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Not a Bounce device...\n");
-    
         delete avDevice;
         return NULL;
     }
@@ -174,17 +191,24 @@ DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
 }
 
 IAvDevice*
-DeviceManager::probeMotu(Ieee1394Service& service, int id, int level)
+DeviceManager::probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
 {
     IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
     if ( !avDevice ) {
         return NULL;
     }
 
+    // MOTU's discover() needs to differentiate between different models,
+    // so for now keep all probing code in there since it's very intermingled.
+    // The code is robust in the event that the device isn't a MOTU, so
+    // at this stage there seems no reason to do otherwise.
     if ( !avDevice->discover() ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a MOTU device...\n");
         delete avDevice;
         return NULL;
     }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "MOTU device discovered...\n");
+
     return avDevice;
 }
 

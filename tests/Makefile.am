@@ -20,12 +20,13 @@ SUBDIRS = streaming
 INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
 	$(LIBAVC1394_CFLAGS)
 
-noinst_PROGRAMS = # test-freebob test-extplugcmd freebob-server
+# noinst_PROGRAMS = # test-freebob test-extplugcmd freebob-server
+noinst_PROGRAMS = test-freebob
 noinst_HEADERS = 
 
-# test_freebob_SOURCES = test-freebob.c
-# test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la \
-# 	$(LIBXML_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+test_freebob_SOURCES = test-freebob.c
+test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la \
+	$(LIBXML_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 # 
 # test_extplugcmd_SOURCES = test-extplugcmd.cpp
 # test_extplugcmd_LDADD = $(top_builddir)/src/libfreebobavc/libfreebobavc.la \

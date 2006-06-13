@@ -21,6 +21,8 @@
 #ifndef FREEBOBDEVICEMANAGER_H
 #define FREEBOBDEVICEMANAGER_H
 
+#include "configrom.h"
+
 #include "debugmodule/debugmodule.h"
 
 #include "libfreebob/xmlparser.h"
@@ -33,7 +35,7 @@ class IAvDevice;
 typedef std::vector< IAvDevice* > IAvDeviceVector;
 typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
 
-typedef IAvDevice* (*ProbeFunction)(Ieee1394Service&, int, int);
+typedef IAvDevice* (*ProbeFunction)(Ieee1394Service&, ConfigRom&, int, int);
 typedef std::vector<ProbeFunction> ProbeFunctionVector;
 typedef std::vector<ProbeFunction>::iterator ProbeFunctionVectorIterator;
 
@@ -58,9 +60,9 @@ class DeviceManager{
     xmlDocPtr getXmlDescription();
 
 protected:
-    static IAvDevice* probeBeBoB(Ieee1394Service& service, int id, int level);
-    static IAvDevice* probeBounce(Ieee1394Service& service, int id, int level);
-    static IAvDevice* probeMotu(Ieee1394Service& service, int id, int level);
+    static IAvDevice* probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
+    static IAvDevice* probeBounce(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
+    static IAvDevice* probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
 
 protected:
     Ieee1394Service* m_1394Service;
