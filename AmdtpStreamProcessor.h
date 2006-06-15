@@ -72,7 +72,9 @@ class AmdtpTransmitStreamProcessor
 {
 
 public:
-
+    // FIXME: debug
+    friend class AmdtpReceiveStreamProcessor;
+    
 	AmdtpTransmitStreamProcessor(int port, int framerate, int dimension);
 
 	virtual ~AmdtpTransmitStreamProcessor();
@@ -104,6 +106,13 @@ public:
     // FIXME: do this the proper way!
     AmdtpReceiveStreamProcessor *syncmaster;
 
+    // this updates the timestamp, and the
+    // 'bufferfill'
+    // should be called from the same thread
+    // that does the iteration
+    void decrementFrameCounter();
+	void incrementFrameCounter(int nbframes);
+    
 protected:
 
 	struct iec61883_cip m_cip_status;
@@ -131,8 +140,9 @@ protected:
 	int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
 	                           unsigned int offset, unsigned int nevents);
 
-    double m_last_timestamp;
+    unsigned int m_last_timestamp;
 
+    unsigned int m_dbc;
 
     DECLARE_DEBUG_MODULE;
 
@@ -149,6 +159,8 @@ class AmdtpReceiveStreamProcessor
 {
 
 public:
+    // FIXME: debug
+    friend class AmdtpTransmitStreamProcessor;
 
 	AmdtpReceiveStreamProcessor(int port, int framerate, int dimension);
 
@@ -180,7 +192,8 @@ public:
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
     double getTicksPerFrame() {return m_ticks_per_frame;};
-    
+    unsigned int getPeriodTimeStamp() {return m_last_timestamp_at_period_ticks;};
+
     void dumpInfo();
     
 protected:
@@ -197,6 +210,7 @@ protected:
     
     unsigned int m_last_timestamp;
     unsigned int m_last_timestamp2;
+    unsigned int m_last_timestamp_at_period_ticks;
     
     double m_ticks_per_frame;
     
