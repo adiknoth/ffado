@@ -86,8 +86,8 @@ public:
 	virtual bool isOnePeriodReady()=0;
 	
 	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
-	void decrementFrameCounter();
-	void incrementFrameCounter(int nbframes);
+	virtual void decrementFrameCounter();
+	virtual void incrementFrameCounter(int nbframes);
 	
 	// move to private?
 	void resetFrameCounter();
