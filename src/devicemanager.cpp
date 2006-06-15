@@ -99,6 +99,8 @@ DeviceManager::discover( int verboseLevel )
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
     {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
+    
         ConfigRom configRom( m_1394Service, nodeId );
         if ( !configRom.initialize() ) {
             // \todo If a PHY on the bus in power safe mode than
@@ -141,11 +143,11 @@ IAvDevice*
 DeviceManager::probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
 {
     IAvDevice* avDevice;
-
+    
     // All BeBob devices have predictable unit specifier/version fields
     if (configRom.getUnitSpecifierId() != BEBOB_AVCDEVICE_UNIT_SPECIFIER ||
-        configRom.getUnitVersion() == BEBOB_AVCDEVICE_UNIT_VERSION) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device...\n" );
+        configRom.getUnitVersion() != BEBOB_AVCDEVICE_UNIT_VERSION) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device, fails ConfigRom test...\n" );
         return NULL;
     }
 
@@ -156,7 +158,7 @@ DeviceManager::probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id
 
     if ( !avDevice->discover() ) {
         delete avDevice;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device...\n" );
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device, fails discovery...\n" );
         return NULL;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "BeBoB device discovered...\n" );
