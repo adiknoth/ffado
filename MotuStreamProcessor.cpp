@@ -103,7 +103,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // TODO: calculate read_size here.
     // note: an 'event' is one sample from all channels + possibly other midi and control data
     int nevents=0; // TODO: determine
-	int read_size=nevents*m_dimension*sizeof(quadlet_t); // assumes each channel takes one quadlet
+	unsigned int read_size=nevents*m_dimension*sizeof(quadlet_t); // assumes each channel takes one quadlet
 
     // we read the packet data from a ringbuffer, because of efficiency
     // that allows us to construct the packets one period at once
@@ -163,7 +163,7 @@ bool MotuTransmitStreamProcessor::isOnePeriodReady()
      
      // this implementation just waits until there is one period of samples
      // transmitted from the buffer
-     return (m_framecounter > (int)m_period); 
+     return (m_framecounter > m_period); 
 }
  
 bool MotuTransmitStreamProcessor::prefill() {
@@ -341,8 +341,8 @@ bool MotuTransmitStreamProcessor::transfer() {
     freebob_ringbuffer_data_t vec[2];
     // we received one period of frames
     // this is period_size*dimension of events
-    int events2write=m_period*m_dimension;
-    int bytes2write=events2write*sizeof(quadlet_t);
+    unsigned int events2write=m_period*m_dimension;
+    unsigned int bytes2write=events2write*sizeof(quadlet_t);
 
     /* write events2write bytes to the ringbuffer 
     *  first see if it can be done in one read.
@@ -352,7 +352,7 @@ bool MotuTransmitStreamProcessor::transfer() {
     *  then write the remaining data directly to the buffer in a third pass 
     *  Make sure that we cannot end up on a non-cluster aligned position!
     */
-    int cluster_size=m_dimension*sizeof(quadlet_t);
+    unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
 
     while(bytes2write>0) {
         int byteswritten=0;
@@ -731,7 +731,7 @@ bool MotuReceiveStreamProcessor::isOnePeriodReady() {
      
      // this implementation just waits until there is one period of samples
      // received into the buffer
-    if(m_framecounter > (int)m_period) {
+    if(m_framecounter > m_period) {
         return true;
     }
     return false;
@@ -870,8 +870,8 @@ bool MotuReceiveStreamProcessor::transfer() {
 	// we received one period of frames on each connection
 	// this is period_size*dimension of events
 
-	int events2read=m_period*m_dimension;
-	int bytes2read=events2read*sizeof(quadlet_t);
+	unsigned int events2read=m_period*m_dimension;
+	unsigned int bytes2read=events2read*sizeof(quadlet_t);
 	/* read events2read bytes from the ringbuffer 
 	*  first see if it can be done in one read. 
 	*  if so, ok. 
@@ -880,7 +880,7 @@ bool MotuReceiveStreamProcessor::transfer() {
 	*  then read the remaining data directly from the buffer in a third pass 
 	*  Make sure that we cannot end up on a non-cluster aligned position!
 	*/
-	int cluster_size=m_dimension*sizeof(quadlet_t);
+	unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
 	
 	while(bytes2read>0) {
 		unsigned int framesread=(m_period*cluster_size-bytes2read)/cluster_size;

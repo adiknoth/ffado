@@ -41,11 +41,11 @@ IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL
 StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate) 
 	: IsoStream(type, port)
 	, m_nb_buffers(0)
-	, m_manager(0)
 	, m_period(0)
 	, m_xruns(0)
 	, m_framecounter(0)
 	, m_framerate(framerate)
+	, m_manager(0)
 	, m_running(false)
 	, m_disabled(true)
 {

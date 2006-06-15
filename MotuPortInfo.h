@@ -50,13 +50,10 @@ public:
      * This kind of enum allows to discriminate these formats when decoding
      * If all channels always have the same format, you won't be needing this
      */
-     /*
-	enum E_Formats {
-		E_MBLA, // Multibit linear audio, is acutally AMDTP. Change if needed
-		E_Midi,
-		E_SPDIF,
-	};
-    */
+//	enum E_Formats {
+//		E_MBLA,     // Multibit linear audio
+//		E_Midi,     // MIDI
+//	};
     
 	/**
 	 * Initialize Motu portinfo
@@ -65,23 +62,27 @@ public:
 	 * the position parameter is an example
 	 * the name parameter is mandatory
 	 *
-	 * @param name 
-	 * @param position example parameter
+	 * @param name Port name
+	 * @param position Start position of port's data in iso event
+	 * @param format Format of data in iso event
+	 * @param size Size in bits of port's data in iso event
 	 * @return 
 	 */
-	MotuPortInfo(std::string name, int position)
-	  : m_name(name), m_position(position)
+	MotuPortInfo(std::string name, int position, int size)
+	  : m_name(name), m_position(position), m_size(size)
 	{};
 	virtual ~MotuPortInfo() {};
 
 
 	std::string getName() {return m_name;};
 	int getPosition()     {return m_position;};
+	int getSize()         {return m_size;};
 
 protected:
     std::string m_name;
 
     int m_position;
+    int m_size;
 
 };
 
