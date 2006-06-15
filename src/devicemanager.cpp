@@ -38,6 +38,9 @@
 #define BEBOB_AVCDEVICE_UNIT_SPECIFIER   0x0000a02d
 #define BEBOB_AVCDEVICE_UNIT_VERSION     0x10001
 
+// The vendor ID for MOTU devices
+#define MOTU_VENDOR_ID                   0x000001f2
+
 using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
@@ -195,15 +198,24 @@ DeviceManager::probeBounce(Ieee1394Service& service, ConfigRom& configRom, int i
 IAvDevice*
 DeviceManager::probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
 {
-    IAvDevice* avDevice = new Motu::MotuDevice( service, id, level );
+    IAvDevice* avDevice;
+
+    // Do a first-pass test to see if it's likely that this device is a MOTU
+    if (configRom.getUnitSpecifierId() != MOTU_VENDOR_ID) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a MOTU device...\n");
+        return NULL;
+    }        
+
+    avDevice = new Motu::MotuDevice( service, id, level );
     if ( !avDevice ) {
         return NULL;
     }
 
-    // MOTU's discover() needs to differentiate between different models,
-    // so for now keep all probing code in there since it's very intermingled.
-    // The code is robust in the event that the device isn't a MOTU, so
-    // at this stage there seems no reason to do otherwise.
+    // MOTU's discover() needs to differentiate between different models, so
+    // for now keep all probing code in there since it's very intermingled. 
+    // By this point it's fairly certain that we are dealing with a MOTU but
+    // in any case the code is robust in the event that the device isn't a
+    // MOTU, so at this stage there seems no reason to do otherwise.
     if ( !avDevice->discover() ) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Not a MOTU device...\n");
         delete avDevice;

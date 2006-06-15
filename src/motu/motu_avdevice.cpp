@@ -225,6 +225,7 @@ MotuDevice::prepare() {
     p=new FreebobStreaming::MotuAudioPort(
             buff,
             FreebobStreaming::Port::E_Capture, 
+            0,
             0 // you can add all other port specific stuff you 
               // need to pass by extending MotuXXXPort and MotuPortInfo
     );
@@ -318,6 +319,7 @@ MotuDevice::prepare() {
     p=new FreebobStreaming::MotuAudioPort(
             buff,
             FreebobStreaming::Port::E_Playback, 
+            0,
             0 // you can add all other port specific stuff you 
               // need to pass by extending MotuXXXPort and MotuPortInfo
     );

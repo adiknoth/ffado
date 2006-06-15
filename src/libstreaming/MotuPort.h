@@ -51,9 +51,10 @@ public:
 
 	MotuAudioPort(std::string name, 
 	                   enum E_Direction direction,
-		           int position)
+		           int position,
+		           int size)
 	: AudioPort(name, direction),
-	  MotuPortInfo(name, position) // TODO: add more port information parameters here if nescessary
+	  MotuPortInfo(name, position, size) // TODO: add more port information parameters here if nescessary
 	{};
 
 	virtual ~MotuAudioPort() {};
@@ -77,7 +78,7 @@ public:
 	                   enum E_Direction direction,
 		           int position)
 		: MidiPort(name, direction),
-		  MotuPortInfo(name, position)  // TODO: add more port information parameters here if nescessary
+		  MotuPortInfo(name, position, 16)  // TODO: add more port information parameters here if nescessary
 	{};
 
 
@@ -102,7 +103,7 @@ public:
 	                   enum E_Direction direction,
 		           int position)
 		: ControlPort(name, direction),
-		  MotuPortInfo(name, position) // TODO: add more port information parameters here if nescessary 
+		  MotuPortInfo(name, position, 16) // TODO: add more port information parameters here if nescessary 
 	{};
 
 

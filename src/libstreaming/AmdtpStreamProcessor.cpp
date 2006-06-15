@@ -275,7 +275,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 
-	int read_size=nevents*sizeof(quadlet_t)*m_dimension;
+	unsigned int read_size=nevents*sizeof(quadlet_t)*m_dimension;
 
 	if ((freebob_ringbuffer_read(m_event_buffer,(char *)(data+8),read_size)) < 
 				read_size) 
@@ -378,7 +378,7 @@ void AmdtpTransmitStreamProcessor::incrementFrameCounter(int nbframes) {
 bool AmdtpTransmitStreamProcessor::isOnePeriodReady()
 { 
     return true;
-    //return (m_framecounter > (int)m_period); 
+    //return (m_framecounter > m_period); 
 }
  
 bool AmdtpTransmitStreamProcessor::prefill() {
@@ -1193,7 +1193,7 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
     // however we have to make sure that we can transfer at least one period
     // therefore we first check if this is ok
     
-     if(m_framecounter > (int)m_period) {
+     if(m_framecounter > m_period) {
         // we make this signed, because this can be < 0
         unsigned int m_last_timestamp_ticks = CYCLE_COUNTER_TO_TICKS(m_last_timestamp);
         
@@ -1265,7 +1265,7 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
         return false;
      }
 #else
-    if(m_framecounter > (int)m_period) {
+    if(m_framecounter > m_period) {
      return true;
     } else return false;
 #endif

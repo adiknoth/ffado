@@ -496,7 +496,7 @@ bool StreamProcessorManager::stop() {
 }
 
 bool StreamProcessorManager::waitForPeriod() {
-	int ret;
+
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 
 	// Wait for packetizer thread to signal a period completion

@@ -68,7 +68,7 @@ struct _freebob_device
 }; 
 
 freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, freebob_options_t options) {
-	int i=0;
+	unsigned int i=0;
 
 	struct _freebob_device *dev = new struct _freebob_device;
 
@@ -168,7 +168,7 @@ void freebob_streaming_finish(freebob_device_t *dev) {
 }
 
 int freebob_streaming_start(freebob_device_t *dev) {
-	int i=0;
+	unsigned int i=0;
 	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Start -------------\n");
 
 	
@@ -193,7 +193,7 @@ int freebob_streaming_start(freebob_device_t *dev) {
 }
 
 int freebob_streaming_stop(freebob_device_t *dev) {
-	int i;
+	unsigned int i;
 	debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Stop -------------\n");
 
 	dev->processorManager->stop();

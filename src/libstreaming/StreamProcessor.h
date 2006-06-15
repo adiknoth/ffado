@@ -120,7 +120,7 @@ protected:
 	unsigned int m_period; ///< cached from manager->getPeriod(), the period size
 
 	unsigned int m_xruns;
-	int m_framecounter;
+	unsigned int m_framecounter;
 
 	unsigned int m_framerate;
 
