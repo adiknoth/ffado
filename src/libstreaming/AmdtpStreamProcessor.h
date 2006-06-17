@@ -191,7 +191,7 @@ public:
 	
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
-    double getTicksPerFrame() {return m_ticks_per_frame;};
+    float getTicksPerFrame() {return m_ticks_per_frame;};
     unsigned int getPeriodTimeStamp() {return m_last_timestamp_at_period_ticks;};
 
     void dumpInfo();
@@ -212,7 +212,7 @@ protected:
     unsigned int m_last_timestamp2;
     unsigned int m_last_timestamp_at_period_ticks;
     
-    double m_ticks_per_frame;
+    float m_ticks_per_frame;
     
     DECLARE_DEBUG_MODULE;
 

@@ -225,11 +225,16 @@ bool StreamProcessorManager::Execute()
     bool xrun_has_occured=false;
 	bool this_period_ready;
 	
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+	unsigned long tstamp_enter=debugGetCurrentTSC();
+	
+// 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "------------- EXECUTE -----------\n");
+	
 	if(!m_isoManager->Execute()) {
 		debugFatal("Could not execute isoManager\n");
 		return false;
 	}
+	
+	unsigned long tstamp_iso=debugGetCurrentTSC();
  	
  	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " RCV PROC: ");
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
@@ -260,6 +265,8 @@ bool StreamProcessorManager::Execute()
 	 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "(%d/%d/%d) ", period_ready, xrun_has_occured,(*it)->m_framecounter);
 	}
 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n");
+	
+	unsigned long tstamp_periodcheck=debugGetCurrentTSC();
 
 	if(xrun_has_occured) {
 		// do xrun signaling/handling
@@ -292,6 +299,12 @@ bool StreamProcessorManager::Execute()
 		
 		m_nbperiods++;
 	}
+	
+	unsigned long tstamp_exit=debugGetCurrentTSC();
+	
+// 	debugOutput( DEBUG_LEVEL_VERBOSE, "EXECUTE TIME: ISO: %6d | PeriodCheck: %6d | FrameCounter: %6d \n",
+// 	   tstamp_iso-tstamp_enter, tstamp_periodcheck-tstamp_iso, tstamp_exit-tstamp_periodcheck
+// 	   );
 
 	return true;
 

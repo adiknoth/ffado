@@ -93,7 +93,7 @@ typedef short debug_level_t;
 
 
 #ifdef DEBUG
-
+    
     #define debugOutput( level, format, args... )                  \
                 m_debugModule.print( level,                        \
                                      __FILE__,                     \
@@ -113,6 +113,46 @@ typedef short debug_level_t;
     #define debugOutputShort( level, format, args... )
 
 #endif
+
+/* Enable preemption checking for Linux Realtime Preemption kernels.
+ *
+ * This checks if any RT-safe code section does anything to cause CPU
+ * preemption.  Examples are sleep() or other system calls that block.
+ * If a problem is detected, the kernel writes a syslog entry, and
+ * sends SIGUSR2 to the client.
+ */
+
+#define DO_PREEMPTION_CHECKING
+
+#include <sys/time.h>
+ 
+#ifdef DO_PREEMPTION_CHECKING
+#define CHECK_PREEMPTION(onoff) \
+	gettimeofday (1, (onoff))
+#else
+#define CHECK_PREEMPTION(engine, onoff)
+#endif
+
+// Intel recommends that a serializing instruction 
+// should be called before and after rdtsc. 
+// CPUID is a serializing instruction. 
+#define read_rdtsc(time) \
+	__asm__ __volatile__( \
+	"pushl %%ebx\n\t" \
+	"cpuid\n\t" \
+ 	"rdtsc\n\t" \
+ 	"mov %%eax,(%0)\n\t" \
+ 	"cpuid\n\t" \
+	"popl %%ebx\n\t" \
+ 	: /* no output */ \
+ 	: "S"(&time) \
+ 	: "eax", "ecx", "edx", "memory")
+
+static inline unsigned long debugGetCurrentTSC() {
+    unsigned retval;
+    read_rdtsc(retval);
+    return retval;
+}
 
 unsigned char toAscii( unsigned char c );
 void quadlet2char( fb_quadlet_t quadlet, unsigned char* buff );
