@@ -27,6 +27,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #ifndef __THREAD__
 #define __THREAD__
 
+#include "../debugmodule/debugmodule.h"
+
 #include "Atomic.h"
 #include <pthread.h>
 
@@ -84,6 +86,10 @@ class Thread
         {}
 
         virtual pthread_t GetThreadID() = 0;
+        
+    protected:
+    		DECLARE_DEBUG_MODULE;
+
 };
 
 } // end of namespace

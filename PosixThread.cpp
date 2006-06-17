@@ -29,11 +29,10 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <errno.h>
 #include <assert.h>
 
-#define debugOutput( level, format, args... )
-#define debugError( format, args... )
-
 namespace FreebobUtil
 {
+
+IMPL_DEBUG_MODULE( Thread, Thread, DEBUG_LEVEL_VERBOSE );
 
 void* PosixThread::ThreadHandler(void* arg)
 {
@@ -71,7 +70,7 @@ int PosixThread::Start()
 
     if (fRealTime) {
 
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Create RT thread\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Create RT thread with priority %d\n", fPriority);
 
         /* Get the client thread to run as an RT-FIFO
            scheduled thread of appropriate priority.
@@ -80,9 +79,9 @@ int PosixThread::Start()
         struct sched_param rt_param;
         pthread_attr_init(&attributes);
 
-        //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
+        if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
 
-        if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
+        //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
             debugError("Cannot set FIFO scheduling class for RT thread  %d %s", res, strerror(errno));
             return -1;
         }
