@@ -42,7 +42,8 @@
 
 // this is one milisecond of processing delay
 #define TICKS_PER_SECOND 24576000
-#define RECEIVE_PROCESSING_DELAY (TICKS_PER_SECOND * 1/1000)
+#define RECEIVE_PROCESSING_DELAY (TICKS_PER_SECOND * 2/1000)
+#define TRANSMIT_PROCESSING_DELAY RECEIVE_PROCESSING_DELAY
 
 namespace FreebobStreaming {
 
@@ -90,12 +91,20 @@ enum raw1394_iso_disposition
 AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) {
-
+    
 	struct iec61883_packet *packet = (struct iec61883_packet *) data;
 	unsigned int nevents=0;
 	
+	unsigned long in_time=debugGetCurrentTSC();
+	
     packet->eoh0 = 0;
-
+    
+#ifdef DEBUG
+    if(dropped>0) {
+        debugWarning("Dropped %d packets on cycle %d\n",dropped, cycle);
+    }
+#endif
+    
     /* Our node ID can change after a bus reset, so it is best to fetch
      * our node ID for each packet. */
     packet->sid = getNodeId() & 0x3f;
@@ -127,12 +136,15 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 		*length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
 		*tag = IEC61883_TAG_WITH_CIP;
 		*sy = 0;
-		return RAW1394_ISO_OK;
+        
+		return RAW1394_ISO_DEFER;
 	}
     
     packet->fdf = m_fdf;
 	
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
+//     assert(m_handler->getDroppedCount()<5);
+	
+//     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
 	
 	// construct the packet cip
 	// NOTE: maybe a little outdated
@@ -158,7 +170,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 //  	<<compile error here>>
  	
     // FIXME: if m_last_bufferfill > 0
-    double ticks_per_frame=syncmaster->getTicksPerFrame();
+    int ticks_per_frame=syncmaster->getTicksPerFrame()*1024;
 
     // m_last_timestamp is the moment upon which the last 'period signal'  
     // should have been given (note: should have been because
@@ -171,7 +183,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // before new packets are received)
     // therefore the last sample of the xmit buffer lies at 
     // T1 = timestamp + (nb_buffers * period) * ticks_per_frame
-    int T1 = m_last_timestamp + (m_nb_buffers * m_period) * ticks_per_frame;
+    int T1 = m_last_timestamp + (m_nb_buffers * m_period) * ticks_per_frame/1024;
     
     // in reality however life is multithreaded, and we don't know
     // exactly how many samples there are in the buffer. but we know
@@ -182,7 +194,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // T2 = T1 - (nb_frames_in_buffer) * ticks_per_frame
     int buffer_fill=freebob_ringbuffer_read_space(m_event_buffer)/m_dimension/sizeof(quadlet_t);
     
-    int T2 = T1 - buffer_fill * ticks_per_frame;
+    int T2 = T1 - buffer_fill * (ticks_per_frame/1024);
     
     // normally:  nb_buffers * period > nb_frames_in_buffer
     // making T2 > timestamp
@@ -199,7 +211,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // making that these 100 packets contain 600 frames, and that
     // we therefore need to advance the timestamp with the equivalent of 
     // 600 frames (600*ticks_per_frame)
-    int T3 = T2 + (m_handler->getBuffersize() * m_framerate * ticks_per_frame) / 8000;
+    int T3 = T2 + (m_handler->getBuffersize() * m_framerate * ticks_per_frame/1024) / 8000;
     
     // we then need to add the processing delay for the receiving
     // device to this time to determine the xmit timestamp
@@ -222,6 +234,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // note: Tslack=0 packets
     int TSEND = T3;
     
+    // the xmit timestamp should then be the TSEND + PROCESSING_DELAY
+    int timestamp = TSEND + TRANSMIT_PROCESSING_DELAY;
+    
     // if we take a look at TSEND we can determine if we are to send
     // the sample or not:
     // if 
@@ -238,13 +253,27 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // arbitrary
     if (cycle_wo_wraparound - (TSEND/3072) < -4000) {
         cycle_wo_wraparound +=8000;
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"wraparound detected: %d %d %d\n",cycle, cycle_wo_wraparound, cycle - (TSEND/3072));
+//         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"wraparound detected: %d %d %d\n",cycle, cycle_wo_wraparound, cycle - (TSEND/3072));
     }
-    
+  
     if (TSEND < cycle_wo_wraparound*3072) {
         nevents=m_syt_interval;
         m_dbc += m_syt_interval;
+#ifdef DEBUG
+        if(timestamp<cycle_wo_wraparound*3072) {
+            unsigned int tmpsyt_cycles=timestamp/3072;
+            unsigned int tmpsyt_ticks=timestamp%3072;
+            unsigned int tmpsyt = (tmpsyt_cycles << 12) | tmpsyt_ticks;
+        
+            debugWarning("Timestamp for cycle %d lies %d ticks in the past: %2u cycles + %04u ticks!\n", 
+                cycle, cycle_wo_wraparound*3072-timestamp,
+                CYCLE_COUNTER_GET_CYCLES(tmpsyt),
+                CYCLE_COUNTER_GET_TICKS(tmpsyt));
+        }
+#endif
+        
     } else { // no-data
+  
 	   // no-data packets have syt=0xFFFF
 	   // and have the usual amount of events as dummy data 
         packet->fdf = IEC61883_FDF_NODATA;
@@ -257,21 +286,36 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 		*tag = IEC61883_TAG_WITH_CIP;
 		*sy = 0;
 		
-		debugOutput(DEBUG_LEVEL_VERBOSE,"Sending empty packet\n");
-
-		return RAW1394_ISO_OK;
+        if(packet->dbs) {
+//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
+//                 "XMT %04d: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
+//                 cycle, m_channel, packet->fdf,
+//                 packet->syt,
+//                 packet->dbs,
+//                 packet->dbc,
+//                 packet->fmt, 
+//                 *length,
+//                 ((*length / sizeof (quadlet_t)) - 2)/packet->dbs);
+        }
+        
+		debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Sending empty packet on cycle %d\n", cycle);
+        
+        // FIXME: this is to prevent libraw to do loop over too
+        //        much packets at once (overflowing the receive side)
+        //        but putting it here is a little arbitrary
+        
+    
+		return RAW1394_ISO_DEFER;
     }
     
-    // the xmit timestamp should then be the TSEND + PROCESSING_DELAY
-    int timestamp = TSEND + 3*3072;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Now=%4d/%8d, Tstamp=%8d, DT=%8d, T2=%8d, T3=%8d, last TS=%d, BF=%d\n",
-        cycle,(cycle*3072),
-        timestamp,
-        timestamp-(cycle*3072),
-        T2,T3,
-        m_last_timestamp,
-        buffer_fill);
+//     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Now=%4d/%8d, Tstamp=%8d, DT=%8d, T2=%8d, T3=%8d, last TS=%d, BF=%d\n",
+//         cycle,(cycle*3072),
+//         timestamp,
+//         timestamp-(cycle*3072),
+//         T2,T3,
+//         m_last_timestamp,
+//         buffer_fill);
     
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 
@@ -314,12 +358,12 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         
         packet->syt = ntohs(timestamp_cyclecounter & 0xffff);
         
-        debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT %d EVENTS, SYT %04X for cycle %2d: %08d (%2u cycles + %04u ticks)\n",
-          nevents, timestamp_cyclecounter & 0xFFFF, cycle,
-          CYCLE_COUNTER_TO_TICKS(timestamp_cyclecounter),
-          CYCLE_COUNTER_GET_CYCLES(timestamp_cyclecounter),
-          CYCLE_COUNTER_GET_TICKS(timestamp_cyclecounter)
-          );
+//         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"XMIT %d EVENTS, SYT %04X for cycle %2d: %08d (%2u cycles + %04u ticks)\n",
+//           nevents, timestamp_cyclecounter & 0xFFFF, cycle,
+//           CYCLE_COUNTER_TO_TICKS(timestamp_cyclecounter),
+//           CYCLE_COUNTER_GET_CYCLES(timestamp_cyclecounter),
+//           CYCLE_COUNTER_GET_TICKS(timestamp_cyclecounter)
+//           );
     }
     
     *tag = IEC61883_TAG_WITH_CIP;
@@ -328,26 +372,27 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // update the frame counter
     incrementFrameCounter(nevents);
     
-    if(m_framecounter>m_period) {
+/*    if(m_framecounter>m_period) {
        retval=RAW1394_ISO_DEFER;
-    }
+    }*/
     
 #ifdef DEBUG
-    if(packet->dbs) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
-            "XMT: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
-            m_channel, packet->fdf,
-            packet->syt,
-            packet->dbs,
-            packet->dbc,
-            packet->fmt, 
-            *length,
-            ((*length / sizeof (quadlet_t)) - 2)/packet->dbs);
-    }
+//     if(packet->dbs) {
+//         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
+//             "XMT %04d: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
+//             cycle, m_channel, packet->fdf,
+//             packet->syt,
+//             packet->dbs,
+//             packet->dbc,
+//             packet->fmt, 
+//             *length,
+//             ((*length / sizeof (quadlet_t)) - 2)/packet->dbs);
+//     }
 #endif
 
-    m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
-	
+    m_PacketStat.mark(debugGetCurrentTSC()-in_time);
+//     m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
+// 	debugOutput(DEBUG_LEVEL_VERBOSE, "XMIT took: %d\n",debugGetCurrentTSC()-in_time);
     return retval;
 
 }
@@ -359,7 +404,7 @@ void AmdtpTransmitStreamProcessor::decrementFrameCounter() {
     int xmit_bufferspace=freebob_ringbuffer_read_space(m_event_buffer)/m_dimension/4;
     int recv_bufferspace=freebob_ringbuffer_read_space(syncmaster->m_event_buffer)/syncmaster->m_dimension/4;
     
-    debugOutput(DEBUG_LEVEL_VERBOSE,"XMT: %5d | RCV: %5d | DIFF: %5d | SUM: %5d \n", xmit_bufferspace, recv_bufferspace, xmit_bufferspace - recv_bufferspace, xmit_bufferspace + recv_bufferspace);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"XMT: %5d | RCV: %5d | DIFF: %5d | SUM: %5d \n", xmit_bufferspace, recv_bufferspace, xmit_bufferspace - recv_bufferspace, xmit_bufferspace + recv_bufferspace);
 #endif
 
     // update the timestamp
@@ -991,11 +1036,18 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
+	unsigned long in_time=debugGetCurrentTSC();
+
+#ifdef DEBUG
+    if(dropped>0) {
+        debugWarning("Dropped %d packets on cycle %d\n",dropped, cycle);
+    }
+#endif
     
     // how are we going to get this right???
 //     m_running=true;
     
-    if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
+    if((packet->fmt == 0x10) && (packet->fdf != 0xFF) && (packet->syt != 0xFFFF) && (packet->dbs>0) && (length>=2*sizeof(quadlet_t))) {
         unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
         
         // signal that we're running
@@ -1003,7 +1055,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         
         // don't process the stream when it is not enabled.
         if(m_disabled) {
-            return RAW1394_ISO_OK;
+            return RAW1394_ISO_DEFER;
         }
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
         
@@ -1081,8 +1133,8 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     
                     // implement a 1st order DLL to estimate the framerate
                     // this is the number of ticks between two samples
-                    double f=timestamp_difference;
-                    double err = timestamp_difference / m_syt_interval;
+                    float f=timestamp_difference;
+                    float err = timestamp_difference / m_syt_interval;
                     // now it contains the error between our estimate
                     // and the current measurement
                     err=err-m_ticks_per_frame;
@@ -1100,13 +1152,13 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     }
 #endif
 
-                    const double coeff=0.0005;
+                    const float coeff=0.0005;
                     // integrate the error
                     m_ticks_per_frame += coeff*err;
                     
                 }
                 
-                 debugOutput(DEBUG_LEVEL_VERBOSE,"R-SYT for cycle (%2d %2d)=>%2d: %5uT (%04uC + %04uT) %04X %04X %d\n",
+                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"R-SYT for cycle (%2d %2d)=>%2d: %5uT (%04uC + %04uT) %04X %04X %d\n",
                  cycle,now_cycle_masked,delta_cycles,
                  CYCLE_COUNTER_TO_TICKS(m_last_timestamp),
                  CYCLE_COUNTER_GET_CYCLES(m_last_timestamp),
@@ -1133,8 +1185,8 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 #ifdef DEBUG
         if(packet->dbs) {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
-                "RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
-                channel, packet->fdf,
+                "RCV %04d: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d (%2d)\n", 
+                cycle, channel, packet->fdf,
                 packet->syt,
                 packet->dbs,
                 packet->dbc,
@@ -1154,9 +1206,16 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     } else {
         // discard packet
         // can be important for sync though
+        
+        // FIXME: this is to prevent libraw to do loop over too
+        //        much packets at once (draining the xmit side)
+        //        but putting it here is a little arbitrary
+        retval=RAW1394_ISO_DEFER;
     }
     
-    m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
+    m_PacketStat.mark(debugGetCurrentTSC()-in_time);
+    
+//     m_PacketStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
     
     return retval;
 }

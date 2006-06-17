@@ -56,14 +56,38 @@ bool IsoHandlerManager::Init()
 	return true;
 }
 
+// Intel recommends that a serializing instruction 
+// should be called before and after rdtsc. 
+// CPUID is a serializing instruction. 
+#define read_rdtsc(time) \
+	__asm__ __volatile__( \
+	"pushl %%ebx\n\t" \
+	"cpuid\n\t" \
+ 	"rdtsc\n\t" \
+ 	"mov %%eax,(%0)\n\t" \
+ 	"cpuid\n\t" \
+	"popl %%ebx\n\t" \
+ 	: /* no output */ \
+ 	: "S"(&time) \
+ 	: "eax", "ecx", "edx", "memory")
+
+static inline unsigned long debugGetCurrentUTime() {
+    unsigned retval;
+    read_rdtsc(retval);
+    return retval;
+}
 
 bool IsoHandlerManager::Execute()
 {
 	int err;
 	int i=0;
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+	
+	unsigned long tstamp=debugGetCurrentUTime();
 
 	err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
+	
+// 	debugOutput(DEBUG_LEVEL_VERBOSE, "Poll took: %6d\n", debugGetCurrentUTime()-tstamp);
 	
 	if (err == -1) {
 		if (errno == EINTR) {
@@ -85,7 +109,15 @@ bool IsoHandlerManager::Execute()
 		if(m_poll_fds[i].revents & (POLLIN)) {
 			IsoHandler *s=m_IsoHandlers.at(i);
 			assert(s);
+			
+			unsigned int packetcount_prev=s->getPacketCount();
+			
+			tstamp=debugGetCurrentUTime();
+			
 			s->iterate();
+/*			debugOutput(DEBUG_LEVEL_VERBOSE, "Iterate %p: time: %6d | packets: %3d\n", 
+			     s, debugGetCurrentUTime()-tstamp, s->getPacketCount()-packetcount_prev
+			     );*/
 		}
 	}
 	return true;
@@ -254,8 +286,8 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
 		// occurs at a period boundary (optimal CPU use)
 		
-		// NOTE: try and use 2 hardware interrupts per period for better latency.
-		unsigned int max_packet_size=2 * getpagesize() / packets_per_period;
+		// NOTE: try and use 4 hardware interrupts per period for better latency.
+		unsigned int max_packet_size=4 * getpagesize() / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}
@@ -305,17 +337,17 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
-		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
+		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq  
 		// occurs at a period boundary (optimal CPU use)
-		// NOTE: try and use 2 interrupts per period for better latency.
-		unsigned int max_packet_size=2 * getpagesize() / packets_per_period;
+		// NOTE: try and use 4 interrupts per period for better latency.
+		unsigned int max_packet_size=4 * getpagesize() / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}
 		
-		int irq_interval=packets_per_period / 4;
-        if(irq_interval <= 0) irq_interval=1;
-
+ 		int irq_interval=packets_per_period / 4;
+ 		if(irq_interval <= 0) irq_interval=1;
+        
 		// the transmit buffer size should be as low as possible for latency. 
 		// note however that the raw1394 subsystem tries to keep this buffer
 		// full, so we have to make sure that we have enough events in our

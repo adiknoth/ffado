@@ -39,8 +39,8 @@ void StreamStatistics::mark(int value) {
 }
 
 void StreamStatistics::dumpInfo() {
-    printf("--- Stats for %s: min=%ld avg=%f max=%ld cnt=%ld sum=%ld\n",m_name.c_str(),
-        m_min,m_average,m_max,m_count,m_sum);
+     printf("--- Stats for %s: min=%ld avg=%f max=%ld cnt=%ld sum=%ld\n",m_name.c_str(),
+         m_min,m_average,m_max,m_count,m_sum);
 }
 
 void StreamStatistics::reset() {
