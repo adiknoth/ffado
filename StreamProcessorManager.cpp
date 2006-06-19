@@ -402,7 +402,7 @@ bool StreamProcessorManager::start() {
 		}
 		return false;
 	}
-	
+
 	debugOutput( DEBUG_LEVEL_VERBOSE, "StreamProcessors running...\n");
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting frame counters...\n");
 	
@@ -415,9 +415,9 @@ bool StreamProcessorManager::start() {
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
 		}
-		
+
 		(*it)->reset();
-		
+
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
 		}

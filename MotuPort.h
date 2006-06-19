@@ -78,7 +78,7 @@ public:
 	                   enum E_Direction direction,
 		           int position)
 		: MidiPort(name, direction),
-		  MotuPortInfo(name, position, 16)  // TODO: add more port information parameters here if nescessary
+		  MotuPortInfo(name, position, 2)  // TODO: add more port information parameters here if nescessary
 	{};
 
 
@@ -103,7 +103,7 @@ public:
 	                   enum E_Direction direction,
 		           int position)
 		: ControlPort(name, direction),
-		  MotuPortInfo(name, position, 16) // TODO: add more port information parameters here if nescessary 
+		  MotuPortInfo(name, position, 2) // TODO: add more port information parameters here if nescessary 
 	{};
 
 

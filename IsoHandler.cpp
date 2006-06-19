@@ -277,6 +277,7 @@ bool IsoRecvHandler::prepare()
 	                                     RAW1394_DMA_BUFFERFILL,
                                          m_irq_interval)) {
 		debugFatal("Could not do receive initialisation!\n" );
+		debugFatal("  %s\n",strerror(errno));
 
 		return false;
 	}
