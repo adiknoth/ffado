@@ -32,10 +32,16 @@
 #include "Port.h"
 #include "MotuPort.h"
 
+#include <netinet/in.h>
+
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( MotuTransmitStreamProcessor, MotuTransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
+
+// A macro to extract specific bits from a native endian quadlet
+#define get_bits(_d,_start,_len) (((_d)>>((_start)-(_len)+1)) & ((1<<(_len))-1))
+
 
 /* transmit */
 MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate)
@@ -95,6 +101,12 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		*sy = 0;
 		return RAW1394_ISO_OK;
 	}
+
+// FIXME: for now always just return NULL packets
+*length = 0;
+*tag = 0;
+*sy = 0;
+return RAW1394_ISO_OK;
 	
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
 	
@@ -201,7 +213,7 @@ bool MotuTransmitStreamProcessor::reset() {
         debugFatal("Could not prefill buffers\n");
         return false;    
     }
-    
+
     return true;
 }
 
@@ -215,6 +227,10 @@ bool MotuTransmitStreamProcessor::prepare() {
         debugFatal("Could not prepare base class\n");
         return false;
     }
+
+	m_PeriodStat.setName("XMT PERIOD");
+	m_PacketStat.setName("XMT PACKET");
+	m_WakeupStat.setName("XMT WAKEUP");
     
     // allocate the event buffer
     unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
@@ -304,6 +320,7 @@ bool MotuTransmitStreamProcessor::transferSilence(unsigned int size) {
     // this function should tranfer 'size' frames of 'silence' to the event buffer
     unsigned int write_size=size*sizeof(quadlet_t)*m_dimension;
     char *dummybuffer=(char *)calloc(sizeof(quadlet_t),size*m_dimension);
+
     transmitSilenceBlock(dummybuffer, size, 0);
 
     if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
@@ -337,7 +354,10 @@ bool MotuTransmitStreamProcessor::transfer() {
 /* but we're not that naive anymore... */
     int xrun;
     unsigned int offset=0;
-    
+
+// FIXME: just return until we've got the transmit side of things functional
+return true;
+
     freebob_ringbuffer_data_t vec[2];
     // we received one period of frames
     // this is period_size*dimension of events
@@ -518,7 +538,7 @@ bool MotuTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned in
     
     quadlet_t *target_event=NULL;
     int j;
-    
+
     for ( PortVectorIterator it = m_PacketPorts.begin();
           it != m_PacketPorts.end();
           ++it )
@@ -666,57 +686,69 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                   unsigned int cycle, unsigned int dropped) {
     
     enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
-    
-    if(1 /* if there are events in this packet */) {
-    
-        unsigned int nevents=0; // TODO: calculate the number of events here
-        
-        // signal that we're running
-		if(nevents) m_running=true;
-        
-        // don't process the stream when it is not enabled.
-        if(m_disabled) {
-            return RAW1394_ISO_OK;
-        }
-        
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
-        
-        // see transmit processor
-        unsigned int write_size=nevents*sizeof(quadlet_t)*m_dimension;
-        
-        // add the data payload (events) to the ringbuffer
-        if (freebob_ringbuffer_write(m_event_buffer,(char *)(data+8),write_size) < write_size) 
-        {
-            debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n", 
-                 cycle, m_framecounter, m_handler->getPacketCount());
-            m_xruns++;
 
-            retval=RAW1394_ISO_DEFER;
-        } else {
-            retval=RAW1394_ISO_OK;
-            // process all ports that should be handled on a per-packet base
-            // this is MIDI for AMDTP (due to the need of DBC)
-            int dbc=0; //get this from packet if needed, else change decodePacketPorts
-            if (!decodePacketPorts((quadlet_t *)(data+8), nevents, dbc)) {
-                debugWarning("Problem decoding Packet Ports\n");
-                retval=RAW1394_ISO_DEFER;
-            }
-            
-            // time stamp processing can be done here
-        
-        }
+    // If the packet length is 8 bytes (ie: just a CIP-like header) there is
+    // no isodata.
+    if (length > 8) {
+	// Note: a freebob "event" is equivalent to an ieee1394 iso data
+	// block.  We'll try to stick to freebob terminology.
+	quadlet_t *quadlet = (quadlet_t *)data;
+	unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // ISO data block size in terms of fdf_size
+	unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // ISO block unit size in bits
+	unsigned int event_length = (fdf_size * dbs) / 8;       // Event (aka ISO block) size in bytes
+	unsigned int n_events = (length-8) / event_length;
 
-        // update the frame counter
-        incrementFrameCounter(nevents);
-        // keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
-        // keeps requesting packets without going to the xmit handler, leading to xmit starvation
-        if(m_framecounter>m_period) {
-           retval=RAW1394_ISO_DEFER;
-        }
+	// Don't even attempt to process a packet if it isn't what we expect
+	// from a MOTU
+	if (tag!=1 || fdf_size!=32) {
+		return RAW1394_ISO_OK;
+	}
+        
+	// Signal that we're running
+	if (n_events) m_running=true;
+
+	// Don't process the stream when it is not enabled.
+	if (m_disabled) {
+		return RAW1394_ISO_OK;
+	}
+        
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
+
+        // Add the data payload (events) to the ringbuffer.  We'll just copy
+	// everything including the 4 byte timestamp at the start of each
+	// event (that is, everything except the CIP-like header).  The
+	// demultiplexer can deal with the complexities such as the channel
+	// 24-bit data.
+	unsigned int write_size = length-8;
+	if (freebob_ringbuffer_write(m_event_buffer,(char *)(data+8),write_size) < write_size) {
+		debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n", 
+			cycle, m_framecounter, m_handler->getPacketCount());
+		m_xruns++;
+
+		retval=RAW1394_ISO_DEFER;
+	} else {
+		retval=RAW1394_ISO_OK;
+		// Process all ports that should be handled on a per-packet basis
+		// This is MIDI for AMDTP (due to the need of DBC)
+		int dbc = get_bits(ntohl(quadlet[0]), 8, 8);  // Low byte of CIP quadlet 0
+		if (!decodePacketPorts((quadlet_t *)(data+8), n_events, dbc)) {
+			debugWarning("Problem decoding Packet Ports\n");
+			retval=RAW1394_ISO_DEFER;
+		}
+		// time stamp processing can be done here
+	}
+
+	// update the frame counter
+	incrementFrameCounter(n_events);
+	// keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
+	// keeps requesting packets without going to the xmit handler, leading to xmit starvation
+	if(m_framecounter>m_period) {
+		retval=RAW1394_ISO_DEFER;
+	}
         
     } else { // no events in packet
-        // discard packet
-        // can be important for sync though
+	// discard packet
+	// can be important for sync though
     }
     
     return retval;
@@ -750,7 +782,7 @@ bool MotuReceiveStreamProcessor::reset() {
 
 	// reset the event buffer, discard all content
 	freebob_ringbuffer_reset(m_event_buffer);
-	
+
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports
 	if(!ReceiveStreamProcessor::reset()) {
@@ -769,16 +801,20 @@ bool MotuReceiveStreamProcessor::prepare() {
 		debugFatal("Could not prepare base class\n");
 		return false;
 	}
-	
+
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+
+	m_PeriodStat.setName("RCV PERIOD");
+	m_PacketStat.setName("RCV PACKET");
+	m_WakeupStat.setName("RCV WAKEUP");
 
     // setup any specific stuff here
 
-    // allocate the event buffer
-    unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
-    
-    if( !(m_event_buffer=freebob_ringbuffer_create(
-            (m_dimension * ringbuffer_size_frames) * sizeof(quadlet_t)))) {
+	// allocate the event buffer
+	unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
+
+	if( !(m_event_buffer=freebob_ringbuffer_create(
+		(m_dimension * ringbuffer_size_frames) * sizeof(quadlet_t)))) {
 		debugFatal("Could not allocate memory event ringbuffer");
 		return false;
 	}
@@ -872,6 +908,10 @@ bool MotuReceiveStreamProcessor::transfer() {
 
 	unsigned int events2read=m_period*m_dimension;
 	unsigned int bytes2read=events2read*sizeof(quadlet_t);
+
+// FIXME: remove once the stuff below has been tweaked for the MOTU
+return true;
+
 	/* read events2read bytes from the ringbuffer 
 	*  first see if it can be done in one read. 
 	*  if so, ok. 

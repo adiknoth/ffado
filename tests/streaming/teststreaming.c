@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	freebob_streaming_prepare(dev);
 	freebob_streaming_start(dev);
 
 	fprintf(stderr,"Entering receive loop (%d,%d)\n",nb_in_channels,nb_out_channels);

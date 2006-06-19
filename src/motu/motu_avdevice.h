@@ -39,8 +39,9 @@
 #define MOTUFW_RATE_MULTIPLIER_MASK     (0x00000030)
 
 /* Device registers */
-#define MOTUFW_REG_RATECTRL             0x0b14
-
+#define MOTUFW_REG_ISOCTRL		0x0b00
+#define MOTUFW_REG_RATECTRL		0x0b14
+#define MOTUFW_REG_ROUTE_PORT_CONF      0x0c04
 
 class ConfigRom;
 class Ieee1394Service;
@@ -49,6 +50,18 @@ namespace Motu {
 
 class MotuDevice : public IAvDevice {
 public:
+    enum EMotuModel {
+      MOTUFW_MODEL_NONE     = 0x0000,
+      MOTUFW_MODEL_828mkII  = 0x0001,
+      MOTUFW_MODEL_TRAVELER = 0x0002,
+    };
+
+    enum EMotuOpticalMode {
+      MOTUFW_OPTICAL_OFF      = 0,
+      MOTUFW_OPTICAL_ADAT     = 1,
+      MOTUFW_OPTICAL_TOSLINK  = 2,
+    };
+
     MotuDevice( Ieee1394Service& ieee1394Service,
 		  int nodeId,
 		  int verboseLevel );
@@ -75,19 +88,19 @@ public:
     virtual int startStreamByIndex(int i);
     virtual int stopStreamByIndex(int i);
 
-    enum EMotuModel {
-      MOTUFW_MODEL_NONE     = 0x0000,
-      MOTUFW_MODEL_828mkII  = 0x0001,
-      MOTUFW_MODEL_TRAVELER = 0x0002,
-    };
-
+    signed int getIsoRecvChannel(void);
+    signed int getIsoSendChannel(void);
+    enum EMotuOpticalMode getOpticalMode(void);
+    signed int setOpticalMode(enum EMotuOpticalMode mode);
+  
 protected:
     Ieee1394Service* m_1394Service;
     ConfigRom*       m_configRom;
     signed int       m_motu_model;
     int              m_nodeId;
     int              m_verboseLevel;
-    unsigned int m_id;
+    signed int m_id;
+    signed int m_iso_recv_channel, m_iso_send_channel;
     
 	FreebobStreaming::MotuReceiveStreamProcessor *m_receiveProcessor;
 	FreebobStreaming::MotuTransmitStreamProcessor *m_transmitProcessor;

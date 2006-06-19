@@ -23,9 +23,9 @@ AM_CXXFLAGS = -DDEBUG
 # noinst_PROGRAMS = teststreaming teststreaming2 teststreaming3 testmidistreaming1
 # noinst_HEADERS = debugtools.h
 
-# teststreaming_SOURCES = teststreaming.c debugtools.c
-# teststreaming_LDADD   = @top_builddir@src/libfreebob.la \
-# 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+teststreaming_SOURCES = teststreaming.c debugtools.c
+teststreaming_LDADD   = @top_builddir@src/libfreebob.la \
+	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 # 
 # teststreaming2_SOURCES = teststreaming2.c debugtools.c
 # teststreaming2_LDADD   = @top_builddir@src/libfreebob.la \
@@ -39,8 +39,8 @@ AM_CXXFLAGS = -DDEBUG
 # testmidistreaming1_LDADD   = @top_builddir@src/libfreebob.la -lasound \
 # 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
-noinst_PROGRAMS = test-isohandling
-noinst_HEADERS = 
+noinst_PROGRAMS = test-isohandling teststreaming
+noinst_HEADERS = debugtools.h
 
 test_isohandling_SOURCES = test-isohandling.cpp
 test_isohandling_LDADD   = @top_builddir@src/libfreebob.la \
