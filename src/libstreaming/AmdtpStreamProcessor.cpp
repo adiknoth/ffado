@@ -1198,7 +1198,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         
         // update the frame counter
         incrementFrameCounter(nevents);
-        if(m_framecounter>m_period) {
+        if(m_framecounter>(signed int)m_period) {
            retval=RAW1394_ISO_DEFER;
            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"defer!\n");
         }
@@ -1252,7 +1252,7 @@ bool AmdtpReceiveStreamProcessor::isOnePeriodReady() {
     // however we have to make sure that we can transfer at least one period
     // therefore we first check if this is ok
     
-     if(m_framecounter > m_period) {
+     if(m_framecounter > (signed int)m_period) {
         // we make this signed, because this can be < 0
         unsigned int m_last_timestamp_ticks = CYCLE_COUNTER_TO_TICKS(m_last_timestamp);
         

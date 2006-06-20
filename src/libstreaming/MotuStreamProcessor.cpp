@@ -157,7 +157,7 @@ return RAW1394_ISO_OK;
     incrementFrameCounter(nevents);
     // keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
     // keeps requesting packets, that are not nescessarily ready
-    if(m_framecounter>m_period) {
+    if(m_framecounter>(signed int)m_period) {
        retval=RAW1394_ISO_DEFER;
     }
 	
@@ -175,7 +175,7 @@ bool MotuTransmitStreamProcessor::isOnePeriodReady()
      
      // this implementation just waits until there is one period of samples
      // transmitted from the buffer
-     return (m_framecounter > m_period); 
+     return (m_framecounter > (signed int)m_period); 
 }
  
 bool MotuTransmitStreamProcessor::prefill() {
@@ -742,7 +742,7 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 	incrementFrameCounter(n_events);
 	// keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
 	// keeps requesting packets without going to the xmit handler, leading to xmit starvation
-	if(m_framecounter>m_period) {
+	if(m_framecounter>(signed int)m_period) {
 		retval=RAW1394_ISO_DEFER;
 	}
         
@@ -763,7 +763,7 @@ bool MotuReceiveStreamProcessor::isOnePeriodReady() {
      
      // this implementation just waits until there is one period of samples
      // received into the buffer
-    if(m_framecounter > m_period) {
+    if(m_framecounter > (signed int)m_period) {
         return true;
     }
     return false;
