@@ -690,12 +690,13 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // If the packet length is 8 bytes (ie: just a CIP-like header) there is
     // no isodata.
     if (length > 8) {
-	// Note: a freebob "event" is equivalent to an ieee1394 iso data
-	// block.  We'll try to stick to freebob terminology.
+	// The iso data blocks from the MOTUs comprise a CIP-like header
+	// followed by a number of events (8 for 1x rates, 16 for 2x rates,
+	// 32 for 4x rates).
 	quadlet_t *quadlet = (quadlet_t *)data;
-	unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // ISO data block size in terms of fdf_size
-	unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // ISO block unit size in bits
-	unsigned int event_length = (fdf_size * dbs) / 8;       // Event (aka ISO block) size in bytes
+	unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
+	unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
+	unsigned int event_length = (fdf_size * dbs) / 8;       // Event size in bytes
 	unsigned int n_events = (length-8) / event_length;
 
 	// Don't even attempt to process a packet if it isn't what we expect
