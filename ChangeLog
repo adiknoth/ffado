@@ -1,3 +1,7 @@
+2006-06-21  Daniel Wagner  <wagi@monom.org>
+
+	* freebob-downloader first version added
+
 2006-06-10  Daniel Wagner  <wagi@monom.org>
 
 	* Changed building rules: No static sub libraries

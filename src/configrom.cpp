@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -60,6 +61,17 @@ ConfigRom::ConfigRom( Ieee1394Service* ieee1394service, fb_nodeid_t nodeId )
     , m_guid( 0 )
     , m_vendorName( "" )
     , m_modelName( "" )
+    , m_vendorId( 0 )
+    , m_modelId( 0 )
+    , m_isIsoResourceManager( false )
+    , m_isCycleMasterCapable( false )
+    , m_isSupportIsoOperations( false )
+    , m_isBusManagerCapable( false )
+    , m_cycleClkAcc( 0 )
+    , m_maxRec( 0 )
+    , m_nodeVendorId( 0 )
+    , m_chipIdHi( 0 )
+    , m_chipIdLow( 0 )
     , m_vendorNameKv( 0 )
     , m_modelNameKv( 0 )
     , m_csr( 0 )
@@ -89,6 +101,18 @@ ConfigRom::initialize()
         return false;
     }
 
+    // Process Bus_Info_Block
+    m_isIsoResourceManager = m_csr->bus_info_data[2] >> 31;
+    m_isCycleMasterCapable = ( m_csr->bus_info_data[2] >> 30 ) & 0x1;
+    m_isSupportIsoOperations = ( m_csr->bus_info_data[2] >> 29 ) & 0x1;
+    m_isBusManagerCapable = ( m_csr->bus_info_data[2] >> 28 ) & 0x1;
+    m_cycleClkAcc = ( m_csr->bus_info_data[2] >> 16 ) & 0xff;
+    m_maxRec = ( m_csr->bus_info_data[2] >> 12 ) & 0xf;
+    m_nodeVendorId = ( m_csr->bus_info_data[3] >> 8 );
+    m_chipIdHi = ( m_csr->bus_info_data[3] ) & 0xff;
+    m_chipIdLow = m_csr->bus_info_data[4];
+
+    // Process Root Directory
     processRootDirectory(m_csr);
 
     if ( m_vendorNameKv ) {
@@ -179,10 +203,10 @@ busRead( struct csr1212_csr* csr,
 {
     struct config_csr_info* csr_info = (struct config_csr_info*) private_data;
 
-    if ( csr_info->service->read( csr_info->nodeId,
-                                  addr,
-                                  length,
-                                  ( quadlet_t* )buffer) )
+    if ( !csr_info->service->read( csr_info->nodeId,
+                                   addr,
+                                   length/4,
+                                   ( quadlet_t* )buffer) )
     {
         //debugOutput( DEBUG_LEVEL_VERBOSE, "ConfigRom: Read failed\n");
         return -1;
@@ -352,4 +376,73 @@ const std::string
 ConfigRom::getVendorName() const
 {
     return m_vendorName;
+}
+
+bool
+ConfigRom::updatedNodeId()
+{
+    for ( fb_nodeid_t nodeId = 0;
+          nodeId < m_1394Service->getNodeCount();
+          ++nodeId )
+    {
+        struct config_csr_info csr_info;
+        csr_info.service = m_1394Service;
+        csr_info.nodeId = 0xffc0 | nodeId;
+
+        struct csr1212_csr* csr =
+            csr1212_create_csr( &configrom_csr1212_ops,
+                                5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
+                                &csr_info );
+
+        if (!csr || csr1212_parse_csr( csr ) != CSR1212_SUCCESS) {
+            if (csr) {
+                csr1212_destroy_csr(csr);
+            }
+            return false;
+        }
+
+
+        octlet_t guid =
+            ((u_int64_t)CSR1212_BE32_TO_CPU(csr->bus_info_data[3]) << 32)
+            | CSR1212_BE32_TO_CPU(csr->bus_info_data[4]);
+
+        if ( guid == m_guid ) {
+            if ( nodeId != m_nodeId ) {
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "Device with GUID 0%08x%08x changed node id "
+                             "from %d to %d\n",
+                             m_guid >> 32,
+                             m_guid & 0xffffffff,
+                             m_nodeId,
+                             nodeId );
+                m_nodeId = nodeId;
+            }
+            return true;
+        }
+    }
+
+    debugOutput( DEBUG_LEVEL_NORMAL,
+                 "Device with GUID 0x%08x%08x could not be found on "
+                 "the bus anymore (removed?)\n",
+                 m_guid >> 32,
+                 m_guid & 0xffffffff );
+    return false;
+}
+
+void
+ConfigRom::printConfigRom() const
+{
+    using namespace std;
+    cout << "Config ROM" << endl;
+    cout << "\tCurrent Node Id:\t" << getNodeId() << endl;
+    cout << "\tGUID:\t\t\t0x" << setfill( '0' ) << setw( 16 ) << hex << getGuid() << endl;
+    cout << "\tVendor Name:\t\t" << getVendorName() << endl;
+    cout << "\tModel Name:\t\t" << getModelName() << endl;
+}
+
+unsigned short
+ConfigRom::getAsyMaxPayload() const
+{
+    // XXX use pow instead
+    return 1 << ( m_maxRec + 1 );
 }

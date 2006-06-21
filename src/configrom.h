@@ -43,7 +43,23 @@ class ConfigRom {
     const fb_octlet_t getGuid() const;
     const std::string getModelName() const;
     const std::string getVendorName() const;
+    bool isIsoResourseManager() const
+	{ return m_isIsoResourceManager; }
+    bool isCycleMasterCapable() const
+        { return m_isCycleMasterCapable; }
+    bool isSupportsIsoOperations() const
+        { return m_isSupportIsoOperations; }
+    bool isBusManagerCapable() const
+        { return m_isBusManagerCapable; }
+    fb_byte_t getCycleClockAccurancy() const
+        { return m_cycleClkAcc; }
+    fb_byte_t getMaxRec() const
+        { return m_maxRec; }
+    unsigned short getAsyMaxPayload() const;
 
+    bool updatedNodeId();
+
+    void printConfigRom() const;
 
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,
@@ -60,6 +76,15 @@ class ConfigRom {
     std::string      m_modelName;
     unsigned int     m_vendorId;
     unsigned int     m_modelId;
+    bool             m_isIsoResourceManager;
+    bool             m_isCycleMasterCapable;
+    bool             m_isSupportIsoOperations;
+    bool             m_isBusManagerCapable;
+    fb_byte_t        m_cycleClkAcc;
+    fb_byte_t        m_maxRec;
+    unsigned short   m_nodeVendorId;
+    fb_byte_t        m_chipIdHi;
+    fb_quadlet_t     m_chipIdLow;
 
     /* only used during parsing */
     struct csr1212_keyval* m_vendorNameKv;
