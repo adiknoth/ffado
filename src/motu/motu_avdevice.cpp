@@ -41,12 +41,14 @@ IMPL_DEBUG_MODULE( MotuDevice, MotuDevice, DEBUG_LEVEL_NORMAL );
 char *motufw_modelname[] = {"[unknown]","828MkII", "Traveler"}; 
 
 /* ======================================================================= */
-/* Keep track of iso channels assigned to different MOTU devices.  This
- * is slightly simplistic at present since it assumes there are no other
- * users of iso channels on the firewire bus.  It does however allow
- * more than one MOTU interface to exist on the same bus.  The first MOTU
- * discovered will be allocated iso channels 0 (send) and 1 (receive) which
- * mirrors what the official driver appears to do.
+/* Provide a mechanism for allocating iso channels to MOTU interfaces.
+ *
+ * FIXME: This is overly simplistic at present since it assumes there are no
+ * other users of iso channels on the firewire bus except MOTU interfaces. 
+ * It does however allow more than one MOTU interface to exist on the same
+ * bus.  For now the first MOTU discovered will be allocated iso channels 0
+ * (send) and 1 (receive) which mirrors what the official driver appears to
+ * do.  Ultimately we need code to query the IRM for iso channels.
  */
 static signed int next_iso_recv_channel_num = 1;
 static signed int next_iso_send_channel_num = 0;  
@@ -57,7 +59,7 @@ static signed int next_iso_recv_channel(void) {
  * available -1 is returned.  Currently the odd channels (starting from 1)
  * are used for iso receive.  No provision is made to reuse previously
  * allocated channels in the event that the applicable interface has been
- * removed - this may change in future.
+ * removed - this will change in future to use the IRM.
  */
 	if (next_iso_recv_channel_num < 64) {
 		next_iso_recv_channel_num+=2;
@@ -71,7 +73,7 @@ static signed int next_iso_send_channel(void) {
  * available -1 is returned.  Currently the even channels (starting from 0)
  * are used for iso receive.  No provision is made to reuse previously
  * allocated channels in the event that the applicable interface has been
- * removed - this may change in future.
+ * removed - this will all change in future to use the IRM.
  */
 	if (next_iso_send_channel_num < 64) {
 		next_iso_send_channel_num+=2;
@@ -246,7 +248,7 @@ bool
 MotuDevice::prepare() {
 
 	int samp_freq = getSamplingFrequency();
-	enum EMotuOpticalMode optical_mode = getOpticalMode();
+	unsigned int optical_mode = getOpticalMode();
 
 	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
@@ -269,27 +271,9 @@ MotuDevice::prepare() {
 	unsigned int i;
 	FreebobStreaming::Port *p=NULL;
 
-	// For now just add the 8 analog capture ports since they are always
-	// present no matter what the device configuration is.
-	for (i=0; i<8; i++) {
-		asprintf(&buff,"dev%d_cap_Analog%d",m_id,i+1);
-		p=new FreebobStreaming::MotuAudioPort(
-			buff,
-			FreebobStreaming::Port::E_Capture, 
-			0, 0);
-
-		if (!p) {
-			debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
-		} else {
-			if (!m_receiveProcessor->addPort(p)) {
-				debugWarning("Could not register port with stream processor\n");
-				free(buff);
-				return false;
-			} else {
-				debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-			}
-		}
-		free(buff);
+	// Add audio capture ports
+	if (!addDirPorts(FreebobStreaming::Port::E_Capture, samp_freq, optical_mode)) {
+		return false;
 	}
 
 	// example of adding an midi port:
@@ -350,30 +334,10 @@ MotuDevice::prepare() {
 	// now we add ports to the processor
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
-	// For now just add the 8 analog capture ports since they are always
-	// present no matter what the device configuration is.  Note the
-	// direction is now E_Playback.
-	for (i=0; i<8; i++) {
-		asprintf(&buff,"dev%d_pbk_Analog%d",m_id,i+1);
-
-		p=new FreebobStreaming::MotuAudioPort(
-			buff,
-			FreebobStreaming::Port::E_Playback, 
-			0, 0);
-
-		if (!p) {
-			debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
-		} else {
-			if (!m_transmitProcessor->addPort(p)) {
-				debugWarning("Could not register port with stream processor\n");
-				free(buff);
-				return false;
-			} else {
-				debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-			}
-		}
-		free(buff);
-    	}
+	// Add audio playback ports
+	if (!addDirPorts(FreebobStreaming::Port::E_Playback, samp_freq, optical_mode)) {
+		return false;
+	}
 
 //	// example of adding an midi port:
 //    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
@@ -529,20 +493,134 @@ signed int MotuDevice::getIsoSendChannel(void) {
 	return m_iso_send_channel;
 }
 
-enum MotuDevice::EMotuOpticalMode MotuDevice::getOpticalMode(void) {
+unsigned int MotuDevice::getOpticalMode(void) {
+	unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
+	return reg & MOTUFW_OPTICAL_MODE_MASK;
+}
+
+signed int MotuDevice::setOpticalMode(unsigned int mode) {
 	unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
 
-// FIXME: remove after debugging
-// Also, do we really want to mess with this enum?
-fprintf(stderr,"route-port conf reg: 0x%08x\n",reg);
-	return (enum EMotuOpticalMode)((reg & 0x00000300) >> 8);
+	// FIXME: there seems to be more to it than this.
+	reg &= ~MOTUFW_OPTICAL_MODE_MASK;
+	reg |= mode & MOTUFW_OPTICAL_MODE_MASK;
+	return WriteRegister(MOTUFW_REG_ROUTE_PORT_CONF, reg);
 }
 
-signed int MotuDevice::setOpticalMode(enum EMotuOpticalMode mode) {
-  // FIXME: needs implementing
-  return -1;
-}
+/* ======================================================================= */
 
+bool MotuDevice::addPort(FreebobStreaming::StreamProcessor *s_processor,
+  char *name, enum FreebobStreaming::Port::E_Direction direction, 
+  int position, int size) {
+/*
+ * Internal helper function to add a MOTU port to a given stream processor. 
+ * This just saves the unnecessary replication of what is essentially
+ * boilerplate code.  Note that the port name is freed by this function
+ * prior to exit.
+ */
+FreebobStreaming::Port *p=NULL;
+
+	p = new FreebobStreaming::MotuAudioPort(name, direction, position, size);
+
+	if (!p) {
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
+	} else {
+		if (!s_processor->addPort(p)) {
+			debugWarning("Could not register port with stream processor\n");
+			free(name);
+			return false;
+		} else {
+			debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",name);
+		}
+	}
+	free(name);
+	return true;
+}
+/* ======================================================================= */
+
+bool MotuDevice::addDirPorts(
+  enum FreebobStreaming::Port::E_Direction direction, 
+  unsigned int sample_rate, unsigned int optical_mode) {
+/*
+ * Internal helper method: adds all required ports for the given direction
+ * based on the indicated sample rate and optical mode.
+ *
+ * Notes: currently ports are not created if they are disabled due to sample
+ * rate or optical mode.  However, it might be better to unconditionally
+ * create all ports and just disable those which are not active.
+ */
+const char *mode_str = direction==FreebobStreaming::Port::E_Capture?"cap":"pbk";
+const char *aux_str = direction==FreebobStreaming::Port::E_Capture?"Mix1":"Phones";
+FreebobStreaming::StreamProcessor *s_processor;
+unsigned int i;
+char *buff;
+
+	if (direction == FreebobStreaming::Port::E_Capture) {
+		s_processor = m_receiveProcessor;
+	} else {
+		s_processor = m_transmitProcessor;
+	}
+
+	// Unconditionally add the 8 analog capture ports since they are
+	// always present no matter what the device configuration is.
+	for (i=0; i<8; i++) {
+		asprintf(&buff,"dev%d_%s_Analog%d", m_id, mode_str, i+1);
+		if (!addPort(s_processor, buff, direction, 0, 0))
+			return false;
+	}
+
+	// AES/EBU ports are present for 1x and 2x sampling rates
+	if (sample_rate <= 96000) {
+		for (i=0; i<2; i++) {
+			asprintf(&buff,"dev%d_%s_AES/EBU%d", m_id, mode_str, i+1);
+			if (!addPort(s_processor, buff, direction, 0, 0))
+				return false;
+		}
+	}
+
+	// SPDIF ports are present for 1x and 2x sampling rates so long
+	// as the optical mode is not TOSLINK.
+	if (sample_rate<=96000 && optical_mode!=MOTUFW_OPTICAL_MODE_TOSLINK) {
+		for (i=0; i<2; i++) {
+			asprintf(&buff,"dev%d_%s_SPDIF%d", m_id, mode_str, i+1);
+			if (!addPort(s_processor, buff, direction, 0, 0))
+				return false;
+		}
+	}
+
+	// ADAT ports 1-4 are present for 1x and 2x sampling rates so long
+	// as the optical mode is set to ADAT.
+	if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
+		for (i=0; i<4; i++) {
+			asprintf(&buff,"dev%d_%s_ADAT%d", m_id, mode_str, i+1);
+			if (!addPort(s_processor, buff, direction, 0, 0))
+				return false;
+		}
+	}
+
+	// ADAT ports 5-8 are present for 1x sampling rates so long as the
+	// optical mode is set to ADAT.
+	if (sample_rate<=48000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
+		for (i=4; i<8; i++) {
+			asprintf(&buff,"dev%d_%s_ADAT%d", m_id, mode_str, i+1);
+			if (!addPort(s_processor, buff, direction, 0, 0))
+				return false;
+		}
+	}
+
+	// Finally add ports for the Mix1 return / Phones send which is
+	// present for 1x and 2x sampling rates.
+	if (sample_rate<=96000) {
+		for (i=0; i<2; i++) {
+			asprintf(&buff,"dev%d_%s_%s-%c", m_id, mode_str,
+			  aux_str, i==0?'L':'R');
+			if (!addPort(s_processor, buff, direction, 0, 0))
+				return false;
+		}
+	}
+
+	return true;
+}
 /* ======================================================================== */
 
 unsigned int MotuDevice::ReadRegister(unsigned int reg) {

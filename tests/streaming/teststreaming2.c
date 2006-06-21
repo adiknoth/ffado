@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
 	dev_options.nb_buffers=3;
 
-	dev_options.port=1;
+	dev_options.port=0;
 	dev_options.node_id=-1;
 	
 	dev_options.realtime=0;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
 			case freebob_stream_type_audio:
 				/* assign the audiobuffer to the stream */
-				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffer[i]), freebob_buffer_type_uint24);
+				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffer[i]));
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
 			case freebob_stream_type_midi:
@@ -178,7 +178,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// start the streaming layer
+	// prepare and start the streaming layer
+	freebob_streaming_prepare(dev);
 	freebob_streaming_start(dev);
 
 	fprintf(stderr,"Entering receive loop (%d,%d)\n",nb_in_channels,nb_out_channels);

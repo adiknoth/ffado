@@ -455,6 +455,7 @@ int freebob_streaming_set_capture_stream_buffer(freebob_device_t *dev, int i, ch
 	// it should already have failed before, if not correct
 	assert(p); 
 	
+	p->useExternalBuffer(true);
 	p->setExternalBufferAddress((void *)buff);
 
 	return 0;
@@ -467,6 +468,7 @@ int freebob_streaming_set_playback_stream_buffer(freebob_device_t *dev, int i, c
 	// it should already have failed before, if not correct
 	assert(p); 
 	
+	p->useExternalBuffer(true);
 	p->setExternalBufferAddress((void *)buff);
 
 	return 0;

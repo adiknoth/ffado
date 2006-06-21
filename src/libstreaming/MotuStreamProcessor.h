@@ -59,11 +59,10 @@ public:
 	
 	bool isOnePeriodReady();
 
-    // these two are important to calculate the optimal
-    // ISO DMA buffers size
-    // an estimate will do
-	unsigned int getPacketsPerPeriod() {return 1;};
-	unsigned int getMaxPacketSize() {return 2048;}; 
+	// These two are important to calculate the optimal ISO DMA buffers
+	// size.  An estimate will do.
+	unsigned int getPacketsPerPeriod() {return (m_period*8000) / m_framerate;};
+	unsigned int getMaxPacketSize() {return m_framerate<=48000?616:(m_framerate<=96000?1032:1160);}; 
 
 	virtual void setVerboseLevel(int l);
 

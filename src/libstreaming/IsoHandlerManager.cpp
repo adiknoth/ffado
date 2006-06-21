@@ -292,8 +292,8 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 			max_packet_size=stream->getMaxPacketSize();
 		}
 
-		// FIXME: this is all very well, but libraw1394 as of 1.2.1 implicitly limits
-		// the maximum packet size to the pagesize.
+		// Ensure we don't request a packet size bigger than the
+		// kernel-enforced maximum which is currently 1 page.
 		if (max_packet_size > (unsigned int)getpagesize())
                 	max_packet_size = getpagesize();
 
@@ -350,8 +350,8 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 			max_packet_size=stream->getMaxPacketSize();
 		}
 
-		// FIXME: this is all very well, but libraw1394 as of 1.2.1 implicitly limits
-		// the maximum packet size to the pagesize.
+		// Ensure we don't request a packet size bigger than the
+		// kernel-enforced maximum which is currently 1 page.
 		if (max_packet_size > (unsigned int)getpagesize())
                 	max_packet_size = getpagesize();
 

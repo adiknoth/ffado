@@ -29,7 +29,7 @@
 
 #include "libstreaming/MotuStreamProcessor.h"
 
-#define MOTUFW_BASE_ADDR     0xfffff0000000ULL
+#define MOTUFW_BASE_ADDR                0xfffff0000000ULL
 #define MOTUFW_BASE_RATE_44100          (0<<3)
 #define MOTUFW_BASE_RATE_48000          (1<<3)
 #define MOTUFW_RATE_MULTIPLIER_1X       (0<<4)
@@ -37,6 +37,11 @@
 #define MOTUFW_RATE_MULTIPLIER_4X       (2<<4)
 #define MOTUFW_BASE_RATE_MASK           (0x00000008)
 #define MOTUFW_RATE_MULTIPLIER_MASK     (0x00000030)
+
+#define MOTUFW_OPTICAL_MODE_OFF		(0<<8)
+#define MOTUFW_OPTICAL_MODE_ADAT	(1<<8)
+#define MOTUFW_OPTICAL_MODE_TOSLINK	(2<<8)
+#define MOTUFW_OPTICAL_MODE_MASK	(0x00000300)
 
 /* Device registers */
 #define MOTUFW_REG_ISOCTRL		0x0b00
@@ -54,12 +59,6 @@ public:
       MOTUFW_MODEL_NONE     = 0x0000,
       MOTUFW_MODEL_828mkII  = 0x0001,
       MOTUFW_MODEL_TRAVELER = 0x0002,
-    };
-
-    enum EMotuOpticalMode {
-      MOTUFW_OPTICAL_OFF      = 0,
-      MOTUFW_OPTICAL_ADAT     = 1,
-      MOTUFW_OPTICAL_TOSLINK  = 2,
     };
 
     MotuDevice( Ieee1394Service& ieee1394Service,
@@ -90,8 +89,8 @@ public:
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-    enum EMotuOpticalMode getOpticalMode(void);
-    signed int setOpticalMode(enum EMotuOpticalMode mode);
+    unsigned int getOpticalMode(void);
+    signed int setOpticalMode(unsigned int mode);
   
 protected:
     Ieee1394Service* m_1394Service;
@@ -106,7 +105,14 @@ protected:
 	FreebobStreaming::MotuTransmitStreamProcessor *m_transmitProcessor;
 
 private:
-
+	bool addPort(FreebobStreaming::StreamProcessor *s_processor,
+		char *name, 
+		enum FreebobStreaming::Port::E_Direction direction,
+		int position, int size);
+	bool MotuDevice::addDirPorts(
+		enum FreebobStreaming::Port::E_Direction direction,
+		unsigned int sample_rate, unsigned int optical_mode);
+        
 	unsigned int ReadRegister(unsigned int reg);
 	signed int WriteRegister(unsigned int reg, quadlet_t data);
 
