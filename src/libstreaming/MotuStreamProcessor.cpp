@@ -7,7 +7,7 @@
  *   http://freebob.sf.net
  *
  *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ *   Copyright (C) 2006 Jonathan Woithe <jwoithe@physics.adelaide.edu.au>
  *
  *   This program is free software {} you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -44,15 +44,15 @@ IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG
 
 
 /* transmit */
-MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate)
-	: TransmitStreamProcessor(port, framerate),m_dimension(0) {
-
+MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate,
+		unsigned int event_size)
+	: TransmitStreamProcessor(port, framerate), m_event_size(event_size) {
 
 }
 
 MotuTransmitStreamProcessor::~MotuTransmitStreamProcessor() {
 	freebob_ringbuffer_free(m_event_buffer);
-	free(m_cluster_buffer);
+	free(m_tmp_event_buffer);
 }
 
 bool MotuTransmitStreamProcessor::init() {
@@ -106,6 +106,8 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 *length = 0;
 *tag = 0;
 *sy = 0;
+freebob_ringbuffer_read_advance(m_event_buffer, 6*m_event_size);
+incrementFrameCounter(6);
 return RAW1394_ISO_OK;
 	
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
@@ -115,7 +117,7 @@ return RAW1394_ISO_OK;
     // TODO: calculate read_size here.
     // note: an 'event' is one sample from all channels + possibly other midi and control data
     int nevents=0; // TODO: determine
-	unsigned int read_size=nevents*m_dimension*sizeof(quadlet_t); // assumes each channel takes one quadlet
+	unsigned int read_size=nevents*m_event_size;
 
     // we read the packet data from a ringbuffer, because of efficiency
     // that allows us to construct the packets one period at once
@@ -231,21 +233,23 @@ bool MotuTransmitStreamProcessor::prepare() {
 	m_PeriodStat.setName("XMT PERIOD");
 	m_PacketStat.setName("XMT PACKET");
 	m_WakeupStat.setName("XMT WAKEUP");
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Event size: %d\n", m_event_size);
     
     // allocate the event buffer
     unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
     
     if( !(m_event_buffer=freebob_ringbuffer_create(
-            (m_dimension * ringbuffer_size_frames) * sizeof(quadlet_t)))) {
-        debugFatal("Could not allocate memory event ringbuffer");
+	m_event_size * ringbuffer_size_frames))) {
+        	debugFatal("Could not allocate memory event ringbuffer");
         return false;
     }
 
-    // allocate the temporary cluster buffer
+    // allocate the temporary event buffer
     // this is needed for the efficient transfer() routine
-    // it's size has to be equal to one 'event'
-    if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
-        debugFatal("Could not allocate temporary cluster buffer");
+    // its size has to be equal to one 'event'
+    if( !(m_tmp_event_buffer=(char *)calloc(1,m_event_size))) {
+        debugFatal("Could not allocate temporary event buffer");
         freebob_ringbuffer_free(m_event_buffer);
         return false;
     }
@@ -318,8 +322,8 @@ bool MotuTransmitStreamProcessor::prepare() {
 bool MotuTransmitStreamProcessor::transferSilence(unsigned int size) {
     
     // this function should tranfer 'size' frames of 'silence' to the event buffer
-    unsigned int write_size=size*sizeof(quadlet_t)*m_dimension;
-    char *dummybuffer=(char *)calloc(sizeof(quadlet_t),size*m_dimension);
+    unsigned int write_size=size*m_event_size;
+    char *dummybuffer=(char *)calloc(size,m_event_size);
 
     transmitSilenceBlock(dummybuffer, size, 0);
 
@@ -333,14 +337,14 @@ bool MotuTransmitStreamProcessor::transferSilence(unsigned int size) {
 }
 
 bool MotuTransmitStreamProcessor::transfer() {
-    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
+    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/m_event_size);
 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
     // TODO: improve
 /* a naive implementation would look like this:
 
-    unsigned int write_size=m_period*sizeof(quadlet_t)*m_dimension;
-    char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
+    unsigned int write_size=m_period*m_event_size;
+    char *dummybuffer=(char *)calloc(m_period,m_event_size);
     
     transmitBlock(dummybuffer, m_period, 0, 0);
 
@@ -360,24 +364,21 @@ return true;
 
     freebob_ringbuffer_data_t vec[2];
     // we received one period of frames
-    // this is period_size*dimension of events
-    unsigned int events2write=m_period*m_dimension;
-    unsigned int bytes2write=events2write*sizeof(quadlet_t);
+    // this is period_size*m_event_size of events
+    unsigned int bytes2write=m_period*m_event_size;
 
     /* write events2write bytes to the ringbuffer 
     *  first see if it can be done in one read.
     *  if so, ok. 
-    *  otherwise write up to a multiple of clusters directly to the buffer
+    *  otherwise write up to a multiple of events directly to the buffer
     *  then do the buffer wrap around using ringbuffer_write
     *  then write the remaining data directly to the buffer in a third pass 
     *  Make sure that we cannot end up on a non-cluster aligned position!
     */
-    unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
-
     while(bytes2write>0) {
         int byteswritten=0;
         
-        unsigned int frameswritten=(m_period*cluster_size-bytes2write)/cluster_size;
+        unsigned int frameswritten=(m_period*m_event_size-bytes2write)/m_event_size;
         offset=frameswritten;
         
         freebob_ringbuffer_get_write_vector(m_event_buffer, vec);
@@ -388,15 +389,15 @@ return true;
         }
             
         /* if we don't take care we will get stuck in an infinite loop
-        * because we align to a cluster boundary later
+        * because we align to a event boundary later
         * the remaining nb of bytes in one write operation can be 
-        * smaller than one cluster
+        * smaller than one event
         * this can happen because the ringbuffer size is always a power of 2
         */
-        if(vec[0].len<cluster_size) {
+        if(vec[0].len<m_event_size) {
             
             // encode to the temporary buffer
-            xrun = transmitBlock(m_cluster_buffer, 1, offset);
+            xrun = transmitBlock(m_tmp_event_buffer, 1, offset);
             
             if(xrun<0) {
                 // xrun detected
@@ -404,26 +405,26 @@ return true;
                 break;
             }
                 
-            // use the ringbuffer function to write one cluster 
+            // use the ringbuffer function to write one event 
             // the write function handles the wrap around.
             freebob_ringbuffer_write(m_event_buffer,
-                         m_cluster_buffer,
-                         cluster_size);
+                         m_tmp_event_buffer,
+                         m_event_size);
                 
-            // we advanced one cluster_size
-            bytes2write-=cluster_size;
+            // we advanced one m_event_size
+            bytes2write-=m_event_size;
                 
         } else { // 
             
             if(bytes2write>vec[0].len) {
-                // align to a cluster boundary
-                byteswritten=vec[0].len-(vec[0].len%cluster_size);
+                // align to an event boundary
+                byteswritten=vec[0].len-(vec[0].len%m_event_size);
             } else {
                 byteswritten=bytes2write;
             }
                 
             xrun = transmitBlock(vec[0].buf,
-                         byteswritten/cluster_size,
+                         byteswritten/m_event_size,
                          offset);
             
             if(xrun<0) {
@@ -436,8 +437,8 @@ return true;
             bytes2write -= byteswritten;
         }
 
-        // the bytes2write should always be cluster aligned
-        assert(bytes2write%cluster_size==0);
+        // the bytes2write should always be event aligned
+        assert(bytes2write%m_event_size==0);
 
     }
 
@@ -655,15 +656,15 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(MotuAudioPort *p,
 
 /* --------------------- RECEIVE ----------------------- */
 
-MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, int framerate)
-    : ReceiveStreamProcessor(port, framerate), m_dimension(0) {
-
+MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, int framerate, 
+	unsigned int event_size)
+    : ReceiveStreamProcessor(port, framerate), m_event_size(event_size) {
 
 }
 
 MotuReceiveStreamProcessor::~MotuReceiveStreamProcessor() {
     freebob_ringbuffer_free(m_event_buffer);
-    free(m_cluster_buffer);
+    free(m_tmp_event_buffer);
 
 }
 
@@ -811,18 +812,20 @@ bool MotuReceiveStreamProcessor::prepare() {
 
     // setup any specific stuff here
 
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Event size: %d\n", m_event_size);
+    
 	// allocate the event buffer
 	unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
 
 	if( !(m_event_buffer=freebob_ringbuffer_create(
-		(m_dimension * ringbuffer_size_frames) * sizeof(quadlet_t)))) {
+			m_event_size * ringbuffer_size_frames))) {
 		debugFatal("Could not allocate memory event ringbuffer");
 		return false;
 	}
 
-	// allocate the temporary cluster buffer
-	if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate temporary cluster buffer");
+	// allocate the temporary event buffer
+	if( !(m_tmp_event_buffer=(char *)calloc(1,m_event_size))) {
+		debugFatal("Could not allocate temporary event buffer");
 		freebob_ringbuffer_free(m_event_buffer);
 		return false;
 	}
@@ -867,8 +870,8 @@ bool MotuReceiveStreamProcessor::prepare() {
 
 	}
 
-    // the API specific settings of the ports are already set before
-    // this routine is called, therefore we can init&prepare the ports
+	// The API specific settings of the ports are already set before
+	// this routine is called, therefore we can init&prepare the ports
 	if(!initPorts()) {
 		debugFatal("Could not initialize ports!\n");
 		return false;
@@ -890,8 +893,8 @@ bool MotuReceiveStreamProcessor::transfer() {
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
 	
 /* another naive section:	
-	unsigned int read_size=m_period*sizeof(quadlet_t)*m_dimension;
-	char *dummybuffer=(char *)calloc(sizeof(quadlet_t),m_period*m_dimension);
+	unsigned int read_size=m_period*m_event_size;
+	char *dummybuffer=(char *)calloc(m_period,m_event_size);
 	if (freebob_ringbuffer_read(m_event_buffer,(char *)(dummybuffer),read_size) < read_size) {
 		debugWarning("Could not read from event buffer\n");
 	}
@@ -904,27 +907,22 @@ bool MotuReceiveStreamProcessor::transfer() {
 	unsigned int offset=0;
 	
 	freebob_ringbuffer_data_t vec[2];
-	// we received one period of frames on each connection
-	// this is period_size*dimension of events
-
-	unsigned int events2read=m_period*m_dimension;
-	unsigned int bytes2read=events2read*sizeof(quadlet_t);
+	// We received one period of frames from each channel.
+	// This is period_size*m_event_size bytes.
+	unsigned int bytes2read = m_period * m_event_size;
 
 // FIXME: remove once the stuff below has been tweaked for the MOTU
-return true;
+//return true;
 
-	/* read events2read bytes from the ringbuffer 
-	*  first see if it can be done in one read. 
-	*  if so, ok. 
-	*  otherwise read up to a multiple of clusters directly from the buffer
+	/* Read events2read bytes from the ringbuffer.
+	*  First see if it can be done in one read.  If so, ok.
+	*  Otherwise read up to a multiple of events directly from the buffer
 	*  then do the buffer wrap around using ringbuffer_read
 	*  then read the remaining data directly from the buffer in a third pass 
-	*  Make sure that we cannot end up on a non-cluster aligned position!
+	*  Make sure that we cannot end up on a non-event aligned position!
 	*/
-	unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
-	
 	while(bytes2read>0) {
-		unsigned int framesread=(m_period*cluster_size-bytes2read)/cluster_size;
+		unsigned int framesread=(m_period*m_event_size-bytes2read)/m_event_size;
 		offset=framesread;
 		
 		int bytesread=0;
@@ -937,16 +935,16 @@ return true;
 		}
 			
 		/* if we don't take care we will get stuck in an infinite loop
-		* because we align to a cluster boundary later
-		* the remaining nb of bytes in one read operation can be smaller than one cluster
+		* because we align to an event boundary later
+		* the remaining nb of bytes in one read operation can be smaller than one event
 		* this can happen because the ringbuffer size is always a power of 2
 			*/
-		if(vec[0].len<cluster_size) {
-			// use the ringbuffer function to read one cluster 
+		if(vec[0].len<m_event_size) {
+			// use the ringbuffer function to read one event 
 			// the read function handles wrap around
-			freebob_ringbuffer_read(m_event_buffer,m_cluster_buffer,cluster_size);
+			freebob_ringbuffer_read(m_event_buffer,m_tmp_event_buffer,m_event_size);
 
-			xrun = receiveBlock(m_cluster_buffer, 1, offset);
+			xrun = receiveBlock(m_tmp_event_buffer, 1, offset);
 				
 			if(xrun<0) {
 				// xrun detected
@@ -954,19 +952,19 @@ return true;
 				break;
 			}
 				
-				// we advanced one cluster_size
-			bytes2read-=cluster_size;
+			// We advanced one m_event_size
+			bytes2read-=m_event_size;
 				
 		} else { // 
 			
 			if(bytes2read>vec[0].len) {
-					// align to a cluster boundary
-				bytesread=vec[0].len-(vec[0].len%cluster_size);
+					// align to an event boundary
+				bytesread=vec[0].len-(vec[0].len%m_event_size);
 			} else {
 				bytesread=bytes2read;
 			}
 				
-			xrun = receiveBlock(vec[0].buf, bytesread/cluster_size, offset);
+			xrun = receiveBlock(vec[0].buf, bytesread/m_event_size, offset);
 				
 			if(xrun<0) {
 					// xrun detected
@@ -978,8 +976,8 @@ return true;
 			bytes2read -= bytesread;
 		}
 			
-		// the bytes2read should always be cluster aligned
-		assert(bytes2read%cluster_size==0);
+		// the bytes2read should always be event aligned
+		assert(bytes2read%m_event_size==0);
 	}
 
 	return true;
@@ -1125,4 +1123,18 @@ int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, quadlet
 	return 0;
 }
 */
+
+signed int MotuReceiveStreamProcessor::setEventSize(unsigned int size) {
+	m_event_size = size;
+	return 0;
+}
+
+unsigned int MotuReceiveStreamProcessor::getEventSize(void) {
+//
+// Return the size of a single event sent by the MOTU as part of an iso
+// data packet in bytes.
+//
+	return m_event_size;
+}
+                
 } // end of namespace FreebobStreaming

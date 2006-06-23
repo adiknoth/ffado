@@ -217,6 +217,8 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_midi:
 				samplesread=freebob_streaming_read(dev, i, audiobuffer[i], PERIOD_SIZE);
 				break;
+			default:
+				;
 			}
 	
 /* 			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
@@ -239,6 +241,8 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_midi:
 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
 				break;
+			default:
+				;
 			}
 //  			fprintf(fid_out[i], "---- Period write (%d samples) ----\n",sampleswritten);
 //  			hexDumpToFile(fid_out[i],(unsigned char*)buff,sampleswritten*sizeof(freebob_sample_t));

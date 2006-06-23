@@ -1,5 +1,6 @@
 /* motu_avdevice.cpp
  * Copyright (C) 2006 by Pieter Palmers
+ * Copyright (C) 2006 by Jonathan Woithe
  *
  * This file is part of FreeBob.
  *
@@ -249,11 +250,12 @@ MotuDevice::prepare() {
 
 	int samp_freq = getSamplingFrequency();
 	unsigned int optical_mode = getOpticalMode();
+	unsigned int event_size = getEventSize();
 
 	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
 	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
-	                         m_1394Service->getPort(), samp_freq);
+		m_1394Service->getPort(), samp_freq, event_size);
 	                         
 	// the first thing is to initialize the processor
 	// this creates the data structures
@@ -321,8 +323,7 @@ MotuDevice::prepare() {
 
 	// do the same for the transmit processor
 	m_transmitProcessor=new FreebobStreaming::MotuTransmitStreamProcessor(
-		m_1394Service->getPort(),
-		getSamplingFrequency());
+		m_1394Service->getPort(), getSamplingFrequency(), event_size);
 
 	m_transmitProcessor->setVerboseLevel(getDebugLevel());
 	
@@ -507,6 +508,56 @@ signed int MotuDevice::setOpticalMode(unsigned int mode) {
 	return WriteRegister(MOTUFW_REG_ROUTE_PORT_CONF, reg);
 }
 
+signed int MotuDevice::getEventSize(void) {
+//
+// Return the size of a single event sent by the MOTU as part of an iso
+// data packet in bytes.
+//
+// FIXME: for performance it may turn out best to calculate the event
+// size in setOpticalMode and cache the result in a data field.  However,
+// as it stands this will not adapt to dynamic changes in sample rate - we'd
+// need a setFrameRate() for that.
+//
+// At the very least an event consists of the SPH (4 bytes), the control/MIDI
+// bytes (6 bytes) and 8 analog audio channels (each 3 bytes long).  Note that
+// all audio channels are sent using 3 bytes.
+signed int sample_rate = getSamplingFrequency();
+signed int optical_mode = getOpticalMode();
+signed int size = 4+6+8*3;
+
+        // 2 channels of AES/EBU is present if a 1x or 2x sample rate is in 
+        // use
+        if (sample_rate <= 96000)
+                size += 2*3;
+
+        // 2 channels of (coax) SPDIF is present for 1x or 2x sample rates so
+        // long as the optical mode is not TOSLINK.  If the optical mode is  
+        // TOSLINK the coax SPDIF channels are replaced by optical TOSLINK   
+        // channels.  Thus between these options we always have an addition  
+        // 2 channels here for 1x or 2x sample rates regardless of the optical
+        // mode.
+        if (sample_rate <= 96000)
+                size += 2*3;
+
+        // ADAT channels 1-4 are present for 1x or 2x sample rates so long
+        // as the optical mode is ADAT.
+        if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT)
+                size += 4*3;
+
+        // ADAT channels 5-8 are present for 1x sample rates so long as the
+        // optical mode is ADAT.
+        if (sample_rate<=48000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT)
+                size += 4*3;
+
+	// When 1x or 2x sample rate is active there are an additional
+	// 2 channels sent in an event.  For capture it is a Mix1 return,
+	// while for playback it is a separate headphone mix.
+	if (sample_rate<=96000)
+		size += 2*3;
+
+        // Finally round size up to the next quadlet boundary
+        return ((size+3)/4)*4;
+}
 /* ======================================================================= */
 
 bool MotuDevice::addPort(FreebobStreaming::StreamProcessor *s_processor,
@@ -583,6 +634,16 @@ char *buff;
 	if (sample_rate<=96000 && optical_mode!=MOTUFW_OPTICAL_MODE_TOSLINK) {
 		for (i=0; i<2; i++) {
 			asprintf(&buff,"dev%d_%s_SPDIF%d", m_id, mode_str, i+1);
+			if (!addPort(s_processor, buff, direction, 0, 0))
+				return false;
+		}
+	}
+
+	// TOSLINK ports are present for 1x and 2x sampling rates so long
+	// as the optical mode is set to TOSLINK.
+	if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_TOSLINK) {
+		for (i=0; i<2; i++) {
+			asprintf(&buff,"dev%d_%s_TOSLINK%d", m_id, mode_str, i+1);
 			if (!addPort(s_processor, buff, direction, 0, 0))
 				return false;
 		}

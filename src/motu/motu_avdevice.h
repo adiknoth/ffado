@@ -91,6 +91,8 @@ public:
     signed int getIsoSendChannel(void);
     unsigned int getOpticalMode(void);
     signed int setOpticalMode(unsigned int mode);
+
+    signed int getEventSize(void);
   
 protected:
     Ieee1394Service* m_1394Service;
