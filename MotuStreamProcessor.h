@@ -43,7 +43,8 @@ class MotuTransmitStreamProcessor
 {
 public:
 	
-	MotuTransmitStreamProcessor(int port, int framerate);
+	MotuTransmitStreamProcessor(int port, int framerate, 
+		unsigned int event_size);
 
 	virtual ~MotuTransmitStreamProcessor();
 
@@ -69,19 +70,13 @@ public:
 protected:
 
 	freebob_ringbuffer_t * m_event_buffer;
-	char* m_cluster_buffer;
+	char* m_tmp_event_buffer;
 	
-	/**
-	 * AMDTP specific:
-	 * the dimension of a stream is the number of substreams it contains
-	 * i.e. one 'event' is 'dimension' quadlets big. 
-	 *
-	 * a packet mostly consists of multiple events. the frames of one substream
-	 * are located in *(buffer), *(buffer+dimension), *(buffer+(dimension*2)), ...
-	 *
-	 * adapt this to your needs
+	/*
+	 * An iso packet mostly consists of multiple events.  m_event_size
+	 * is the size of a single 'event' in bytes.
 	 */
-	int m_dimension;
+	unsigned int m_event_size;
 	
     bool prefill();
     
@@ -111,7 +106,7 @@ class MotuReceiveStreamProcessor
 
 public:
 
-	MotuReceiveStreamProcessor(int port, int framerate);
+	MotuReceiveStreamProcessor(int port, int framerate, unsigned int event_size);
 	virtual ~MotuReceiveStreamProcessor();
 	
 	enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
@@ -128,11 +123,13 @@ public:
     // these two are important to calculate the optimal
     // ISO DMA buffers size
     // an estimate will do
-	unsigned int getPacketsPerPeriod() {return 1;};
-	unsigned int getMaxPacketSize() {return 2048;}; 
+	unsigned int getPacketsPerPeriod() {return (m_period*8000) / m_framerate;};
+	unsigned int getMaxPacketSize() {return m_framerate<=48000?616:(m_framerate<=96000?1032:1160);}; 
 
 	virtual void setVerboseLevel(int l);
 	
+	signed int setEventSize(unsigned int size);
+	unsigned int getEventSize(void);
 
 protected:
 
@@ -141,20 +138,13 @@ protected:
 
 
 	freebob_ringbuffer_t * m_event_buffer;
-	char* m_cluster_buffer;
+	char* m_tmp_event_buffer;
 	
-	/**
-	 * AMDTP specific:
-	 * the dimension of a stream is the number of substreams it contains
-	 * i.e. one 'event' is 'dimension' quadlets big. 
-	 *
-	 * a packet mostly consists of multiple events. the frames of one substream
-	 * are located in *(buffer), *(buffer+dimension), *(buffer+(dimension*2)), ...
-	 *
-	 * adapt this to your needs
+	/*
+	 * An iso packet mostly consists of multiple events.  m_event_size
+	 * is the size of a single 'event' in bytes.
 	 */
-	int m_dimension;
-
+	unsigned int m_event_size;
 
     DECLARE_DEBUG_MODULE;
 
