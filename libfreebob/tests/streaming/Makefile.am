@@ -22,17 +22,17 @@ noinst_PROGRAMS = teststreaming teststreaming2 teststreaming3 testmidistreaming1
 noinst_HEADERS = debugtools.h
 
 teststreaming_SOURCES = teststreaming.c debugtools.c
-teststreaming_LDADD   = @top_builddir@src/libfreebob.la \
+teststreaming_LDADD   = $(top_builddir)/src/libfreebob.la \
 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
 teststreaming2_SOURCES = teststreaming2.c debugtools.c
-teststreaming2_LDADD   = @top_builddir@src/libfreebob.la \
+teststreaming2_LDADD   = $(top_builddir)/src/libfreebob.la \
 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
 teststreaming3_SOURCES = teststreaming3.c debugtools.c
-teststreaming3_LDADD   = @top_builddir@src/libfreebob.la \
+teststreaming3_LDADD   = $(top_builddir)/src/libfreebob.la \
 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
 testmidistreaming1_SOURCES = testmidistreaming1.c debugtools.c
-testmidistreaming1_LDADD   = @top_builddir@src/libfreebob.la -lasound \
+testmidistreaming1_LDADD   = $(top_builddir)/src/libfreebob.la -lasound \
 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
