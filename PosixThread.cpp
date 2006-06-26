@@ -79,15 +79,23 @@ int PosixThread::Start()
         struct sched_param rt_param;
         pthread_attr_init(&attributes);
 
+        if ((res = pthread_attr_setinheritsched(&attributes, PTHREAD_EXPLICIT_SCHED))) {
+            debugError("Cannot request explicit scheduling for RT thread  %d %s", res, strerror(errno));
+            return -1;
+        }
+        if ((res = pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE))) {
+            debugError("Cannot request joinable thread creation for RT thread  %d %s", res, strerror(errno));
+            return -1;
+        }
+        if ((res = pthread_attr_setscope(&attributes, PTHREAD_SCOPE_SYSTEM))) {
+            debugError("Cannot set scheduling scope for RT thread %d %s", res, strerror(errno));
+            return -1;
+        }
+
         if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
 
         //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
             debugError("Cannot set FIFO scheduling class for RT thread  %d %s", res, strerror(errno));
-            return -1;
-        }
-
-        if ((res = pthread_attr_setscope(&attributes, PTHREAD_SCOPE_SYSTEM))) {
-            debugError("Cannot set scheduling scope for RT thread %d %s", res, strerror(errno));
             return -1;
         }
 
@@ -156,7 +164,7 @@ int PosixThread::AcquireRealTime()
 
     //if ((res = pthread_setschedparam(fThread, SCHED_FIFO, &rtparam)) != 0) {
 
-    if ((res = pthread_setschedparam(fThread, SCHED_RR, &rtparam)) != 0) {
+    if ((res = pthread_setschedparam(fThread, SCHED_FIFO, &rtparam)) != 0) {
         debugError("Cannot use real-time scheduling (FIFO/%d) "
                    "(%d: %s)", rtparam.sched_priority, res,
                    strerror(res));
