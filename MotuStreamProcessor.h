@@ -34,6 +34,8 @@
 
 namespace FreebobStreaming {
 
+class MotuAudioPort;
+
 /**
  * This class implements the outgoing stream processing for
  * motu devices
@@ -135,7 +137,7 @@ protected:
 
 	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
 	bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
-
+	signed int decodeMBLAEventsToPort(MotuAudioPort *p, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
 	freebob_ringbuffer_t * m_event_buffer;
 	char* m_tmp_event_buffer;

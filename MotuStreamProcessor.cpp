@@ -911,9 +911,6 @@ bool MotuReceiveStreamProcessor::transfer() {
 	// This is period_size*m_event_size bytes.
 	unsigned int bytes2read = m_period * m_event_size;
 
-// FIXME: remove once the stuff below has been tweaked for the MOTU
-//return true;
-
 	/* Read events2read bytes from the ringbuffer.
 	*  First see if it can be done in one read.  If so, ok.
 	*  Otherwise read up to a multiple of events directly from the buffer
@@ -967,7 +964,7 @@ bool MotuReceiveStreamProcessor::transfer() {
 			xrun = receiveBlock(vec[0].buf, bytesread/m_event_size, offset);
 				
 			if(xrun<0) {
-					// xrun detected
+				// xrun detected
 				debugError("RCV: Frame buffer overrun in processor %p\n",this);
 				break;
 			}
@@ -993,38 +990,29 @@ int MotuReceiveStreamProcessor::receiveBlock(char *data,
 
 	for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
-          ++it )
-    {
-
-        if((*it)->isDisabled()) {continue;};
+          ++it ) {
+		if((*it)->isDisabled()) {continue;};
 
 		//FIXME: make this into a static_cast when not DEBUG?
-
-		MotuPortInfo *pinfo=dynamic_cast<MotuPortInfo *>(*it);
-		assert(pinfo); // this should not fail!!
+		Port *port=dynamic_cast<Port *>(*it);
 		
-/* AMDTP, left as reference
-		switch(pinfo->getFormat()) {
+		switch(port->getPortType()) {
 		
-		case MotuPortInfo::E_MBLA:
+		case Port::E_Audio:
 			if(decodeMBLAEventsToPort(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
 				debugWarning("Could not decode packet MBLA to port %s",(*it)->getName().c_str());
 				problem=1;
 			}
 			break;
-		case MotuPortInfo::E_SPDIF: // still unimplemented
-			break;
-	// midi is a packet based port, don't process
-	//	case MotuPortInfo::E_Midi:
-	//		break;
+		// midi is a packet based port, don't process
+		//	case MotuPortInfo::E_Midi:
+		//		break;
 
 		default: // ignore
 			break;
 		}
-*/
-    }
+	}
 	return problem;
-
 }
 
 /**
@@ -1043,9 +1031,8 @@ bool MotuReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int
 	int j;
 	
 	for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-	{
+	  it != m_PacketPorts.end();
+	  ++it ) {
 
 #ifdef DEBUG
 		MotuPortInfo *pinfo=dynamic_cast<MotuPortInfo *>(*it);
@@ -1064,10 +1051,8 @@ bool MotuReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int
 	return ok;
 }
 
-/* for reference
-
-int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, quadlet_t *data, 
-					   unsigned int offset, unsigned int nevents)
+signed int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, 
+		quadlet_t *data, unsigned int offset, unsigned int nevents)
 {
 	unsigned int j=0;
 
@@ -1075,9 +1060,11 @@ int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, quadlet
 // 	hexDumpQuadlets(data,m_dimension*4);
 // 	printf("****************\n");
 
-	quadlet_t *target_event;
-
-	target_event=(quadlet_t *)(data + p->getPosition());
+	// Use char here since a port's source address won't necessarily be 
+	// aligned; use of an unaligned quadlet_t may cause issues on certain
+	// architectures.
+	unsigned char *src_data;
+	src_data = (unsigned char *)data + p->getPosition();
 
 	switch(p->getDataType()) {
 		default:
@@ -1089,10 +1076,17 @@ int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, quadlet
 
 				buffer+=offset;
 
-				for(j = 0; j < nevents; j += 1) { // decode max nsamples
-					*(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+				for(j = 0; j < nevents; j += 1) { // Decode nsamples
+					*buffer = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
+					// Sign-extend highest bit of 24-bit int.
+					// FIXME: this isn't strictly needed since E_Int24 is a 24-bit,
+					// but doing so shouldn't break anything and makes the data
+					// easier to deal with during debugging.
+					if (*src_data & 0x80)
+						*buffer |= 0xff000000;
+
 					buffer++;
-					target_event+=m_dimension;
+					src_data+=m_event_size;
 				}
 			}
 			break;
@@ -1107,14 +1101,15 @@ int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, quadlet
 
 				for(j = 0; j < nevents; j += 1) { // decode max nsamples		
 	
-					unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+					unsigned int v = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
+
 					// sign-extend highest bit of 24-bit int
 					int tmp = (int)(v << 8) / 256;
 		
 					*buffer = tmp * multiplier;
 				
 					buffer++;
-					target_event+=m_dimension;
+					src_data+=m_event_size;
 				}
 			}
 			break;
@@ -1122,7 +1117,6 @@ int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p, quadlet
 
 	return 0;
 }
-*/
 
 signed int MotuReceiveStreamProcessor::setEventSize(unsigned int size) {
 	m_event_size = size;
