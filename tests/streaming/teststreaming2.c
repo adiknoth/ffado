@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_audio:
 				/* assign the audiobuffer to the stream */
 				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffer[i]));
+				freebob_streaming_set_capture_buffer_type(dev, i, freebob_buffer_type_int24);
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
 			case freebob_stream_type_midi:
@@ -178,6 +179,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+FILE *of=fopen("foo.dat","w");
+
 	// prepare and start the streaming layer
 	freebob_streaming_prepare(dev);
 	freebob_streaming_start(dev);
@@ -221,8 +224,12 @@ int main(int argc, char *argv[])
 				;
 			}
 	
-/* 			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
- 			hexDumpToFile(fid_in[i],(unsigned char*)audiobuffer[i],samplesread*sizeof(freebob_sample_t)+1);*/
+// 			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
+// 			hexDumpToFile(fid_in[i],(unsigned char*)audiobuffer[i],samplesread*sizeof(freebob_sample_t)+1);
+// FIXME: Dump analog1 as raw data to a separate binary file for testing
+if (i==2) {
+  fwrite(audiobuffer[i],sizeof(freebob_sample_t),samplesread,of);
+}
 		}
 
 		for(i=0;i<nb_out_channels;i++) {
@@ -235,8 +242,10 @@ int main(int argc, char *argv[])
 			
 			switch (freebob_streaming_get_playback_stream_type(dev,i)) {
 			case freebob_stream_type_audio:
- 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
-//				sampleswritten=PERIOD_SIZE;
+//// Calling freebob_streaming_write() causes problems since the buffer is external here.
+//// Just mirror the read case since it seems to work.
+//// 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
+				sampleswritten=PERIOD_SIZE;
 				break;
 			case freebob_stream_type_midi:
 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
@@ -257,6 +266,7 @@ int main(int argc, char *argv[])
 	freebob_streaming_stop(dev);
 
 	freebob_streaming_finish(dev);
+fclose(of);
 
 	for (i=0;i<nb_out_channels;i++) {
 		fclose(fid_out[i]);

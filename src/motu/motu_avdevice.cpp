@@ -583,6 +583,7 @@ FreebobStreaming::Port *p=NULL;
 		} else {
 			debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",name);
 		}
+		p->enable();
 	}
 	free(name);
 	return true;
@@ -603,7 +604,7 @@ bool MotuDevice::addDirPorts(
 const char *mode_str = direction==FreebobStreaming::Port::E_Capture?"cap":"pbk";
 const char *aux_str = direction==FreebobStreaming::Port::E_Capture?"Mix1":"Phones";
 FreebobStreaming::StreamProcessor *s_processor;
-unsigned int i;
+unsigned int i, ofs;
 char *buff;
 
 	if (direction == FreebobStreaming::Port::E_Capture) {
@@ -611,20 +612,43 @@ char *buff;
 	} else {
 		s_processor = m_transmitProcessor;
 	}
+	// Offset into an event's data of the first audio data
+	ofs = 10;
+
+	// Add ports for the Mix1 return / Phones send which is present for 
+	// 1x and 2x sampling rates.
+	if (sample_rate<=96000) {
+		for (i=0; i<2; i++, ofs+=3) {
+			asprintf(&buff,"dev%d_%s_%s-%c", m_id, mode_str,
+			  aux_str, i==0?'L':'R');
+			if (!addPort(s_processor, buff, direction, ofs, 0))
+				return false;
+		}
+	}
 
 	// Unconditionally add the 8 analog capture ports since they are
 	// always present no matter what the device configuration is.
-	for (i=0; i<8; i++) {
+	for (i=0; i<8; i++, ofs+=3) {
 		asprintf(&buff,"dev%d_%s_Analog%d", m_id, mode_str, i+1);
-		if (!addPort(s_processor, buff, direction, 0, 0))
+		if (!addPort(s_processor, buff, direction, ofs, 0))
 			return false;
 	}
 
-	// AES/EBU ports are present for 1x and 2x sampling rates
+	// AES/EBU ports are present for 1x and 2x sampling rates on the 
+	// Traveler.  On earlier interfaces (for example, 828 MkII) this
+	// space was taken up with a separate "main out" send.
+	// FIXME: what is in this position of incoming data on an 828 MkII?
 	if (sample_rate <= 96000) {
-		for (i=0; i<2; i++) {
-			asprintf(&buff,"dev%d_%s_AES/EBU%d", m_id, mode_str, i+1);
-			if (!addPort(s_processor, buff, direction, 0, 0))
+		for (i=0; i<2; i++, ofs+=3) {
+			if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
+				asprintf(&buff,"dev%d_%s_AES/EBU%d", m_id, mode_str, i+1);
+			} else {
+				if (direction == FreebobStreaming::Port::E_Capture)
+					asprintf(&buff,"dev%d_%s_MainOut-%c", m_id, mode_str, i==0?'L':'R');
+				else
+					asprintf(&buff,"dev%d_%s_????%d", m_id, mode_str, i+1);
+			}
+			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
 	}
@@ -632,9 +656,9 @@ char *buff;
 	// SPDIF ports are present for 1x and 2x sampling rates so long
 	// as the optical mode is not TOSLINK.
 	if (sample_rate<=96000 && optical_mode!=MOTUFW_OPTICAL_MODE_TOSLINK) {
-		for (i=0; i<2; i++) {
+		for (i=0; i<2; i++, ofs+=3) {
 			asprintf(&buff,"dev%d_%s_SPDIF%d", m_id, mode_str, i+1);
-			if (!addPort(s_processor, buff, direction, 0, 0))
+			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
 	}
@@ -642,9 +666,9 @@ char *buff;
 	// TOSLINK ports are present for 1x and 2x sampling rates so long
 	// as the optical mode is set to TOSLINK.
 	if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_TOSLINK) {
-		for (i=0; i<2; i++) {
+		for (i=0; i<2; i++, ofs+=3) {
 			asprintf(&buff,"dev%d_%s_TOSLINK%d", m_id, mode_str, i+1);
-			if (!addPort(s_processor, buff, direction, 0, 0))
+			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
 	}
@@ -652,9 +676,9 @@ char *buff;
 	// ADAT ports 1-4 are present for 1x and 2x sampling rates so long
 	// as the optical mode is set to ADAT.
 	if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
-		for (i=0; i<4; i++) {
+		for (i=0; i<4; i++, ofs+=3) {
 			asprintf(&buff,"dev%d_%s_ADAT%d", m_id, mode_str, i+1);
-			if (!addPort(s_processor, buff, direction, 0, 0))
+			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
 	}
@@ -662,20 +686,9 @@ char *buff;
 	// ADAT ports 5-8 are present for 1x sampling rates so long as the
 	// optical mode is set to ADAT.
 	if (sample_rate<=48000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
-		for (i=4; i<8; i++) {
+		for (i=4; i<8; i++, ofs+=3) {
 			asprintf(&buff,"dev%d_%s_ADAT%d", m_id, mode_str, i+1);
-			if (!addPort(s_processor, buff, direction, 0, 0))
-				return false;
-		}
-	}
-
-	// Finally add ports for the Mix1 return / Phones send which is
-	// present for 1x and 2x sampling rates.
-	if (sample_rate<=96000) {
-		for (i=0; i<2; i++) {
-			asprintf(&buff,"dev%d_%s_%s-%c", m_id, mode_str,
-			  aux_str, i==0?'L':'R');
-			if (!addPort(s_processor, buff, direction, 0, 0))
+			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
 	}
