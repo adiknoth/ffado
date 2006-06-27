@@ -1,3 +1,11 @@
+2006-06-27  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 1.1.0
+	* remove bebob_light code
+	* downloader various improvements
+	* ConfigRom::isAvcDevice() removed. Device probe code added. 
+	Each device driver class can check if it supports a device.
+
 2006-06-21  Daniel Wagner  <wagi@monom.org>
 
 	* freebob-downloader first version added

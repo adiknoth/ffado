@@ -45,7 +45,11 @@ namespace BeBoB {
             { return m_softwareId; }
         fb_quadlet_t getSoftwareVersion() const
             { return m_softwareVersion; }
-
+	fb_quadlet_t getHardwareId() const
+	    { return m_hardwareId; }
+	fb_quadlet_t getVendorOUI() const
+	    { return m_vendorOUI; }
+	
         fb_quadlet_t getImageBaseAddress() const
             { return m_imageBaseAddress; }
         fb_quadlet_t getImageOffset() const
@@ -85,6 +89,9 @@ namespace BeBoB {
         fb_octlet_t  m_softwareTime;
         fb_quadlet_t m_softwareId;
         fb_quadlet_t m_softwareVersion;
+	fb_quadlet_t m_hardwareId;
+	fb_quadlet_t m_vendorOUI;
+	    
 
         fb_quadlet_t m_imageBaseAddress;
         fb_quadlet_t m_imageLength;

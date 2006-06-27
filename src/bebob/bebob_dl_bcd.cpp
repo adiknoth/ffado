@@ -98,6 +98,8 @@ BeBoB::BCD::BCD( std::string filename )
     , m_softwareTime( 0 )
     , m_softwareId( 0 )
     , m_softwareVersion( 0 )
+    , m_hardwareId( 0 )
+    , m_vendorOUI( 0 )
     , m_imageBaseAddress( 0 )
     , m_imageLength( 0 )
     , m_imageOffset( 0 )
@@ -197,6 +199,12 @@ BeBoB::BCD::readHeaderInfo()
         return false;
     }
     if ( !read( 0x1c, &m_softwareVersion ) ) {
+        return false;
+    }
+    if ( !read( 0x20, &m_hardwareId ) ) {
+        return false;
+    }
+    if ( !read( 0x24, &m_vendorOUI ) ) {
         return false;
     }
     if ( !read( 0x30, &m_imageOffset ) ) {
@@ -359,10 +367,12 @@ BeBoB::BCD::displayInfo()
     printf( "BCD Info\n" );
     printf( "\tBCD File Version\t%d\n", m_bcd_version );
     printf( "\tSoftware Date:\t\t%s, %s\n",
-            makeDate(m_softwareDate ).c_str(),
+            makeDate( m_softwareDate ).c_str(),
             makeTime( m_softwareTime ).c_str() );
     printf( "\tSoftware Version:\t0x%08x\n", m_softwareVersion );
     printf( "\tSoftware Id:\t\t0x%08x\n", m_softwareId );
+    printf( "\tHardware ID:\t\t0x%08x\n", m_hardwareId );
+    printf( "\tVendor OUI:\t\t0x%08x\n", m_vendorOUI );
     printf( "\tImage Offset:\t\t0x%08x\n", m_imageOffset );
     printf( "\tImage Base Address:\t0x%08x\n", m_imageBaseAddress );
     printf( "\tImage Length:\t\t0x%08x\n", m_imageLength );

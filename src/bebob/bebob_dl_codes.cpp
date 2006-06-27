@@ -169,16 +169,15 @@ BeBoB::CommandCodesDownloadStart::serialize( IOSSerialize& se )
 {
     bool result = CommandCodes::serialize( se );
 
-    fb_quadlet_t tmp;
     result &= se.write( m_object,  "CommandCodesDownloadStart: object" );
-    tmp = m_date >> 32;
-    result &= se.write( tmp,       "CommandCodesDownloadStart: date high" );
-    tmp = m_date & 0xffffffff;
-    result &= se.write( tmp,       "CommandCodesDownloadStart: date low" );
-    tmp = m_time >> 32;
-    result &= se.write( tmp   ,    "CommandCodesDownloadStart: time high" );
-    tmp = m_time & 0xffffffff;
-    result &= se.write( tmp,       "CommandCodesDownloadStart: time low" );
+    for (  unsigned int i = 0; i < sizeof( m_date ); ++i ) {
+        fb_byte_t* tmp = ( fb_byte_t* )( &m_date );
+        result &= se.write( tmp[i], "CommandCodesDownloadStart: date" );
+    }
+    for (  unsigned int i = 0; i < sizeof( m_date ); ++i ) {
+        fb_byte_t* tmp = ( fb_byte_t* )( &m_time );
+        result &= se.write( tmp[i], "CommandCodesDownloadStart: time" );
+    }
     result &= se.write( m_id,      "CommandCodesDownloadStart: id" );
     result &= se.write( m_version, "CommandCodesDownloadStart: version" );
     result &= se.write( m_address, "CommandCodesDownloadStart: address" );
@@ -314,3 +313,33 @@ BeBoB::CommandCodesInitializeConfigToFactorySetting::deserialize( IISDeserialize
     return CommandCodes::deserialize( de );
 }
 
+////////////////////////////////
+
+BeBoB::CommandCodesGo::CommandCodesGo( fb_quadlet_t protocolVersion,
+                                             EStartMode startMode )
+    : CommandCodes( protocolVersion, eCmdC_Go, sizeof( m_startMode ), 1, 1 )
+    , m_startMode( startMode )
+{
+}
+
+BeBoB::CommandCodesGo::~CommandCodesGo()
+{
+}
+
+bool
+BeBoB::CommandCodesGo::serialize( IOSSerialize& se )
+{
+    bool result = CommandCodes::serialize( se );
+    result &= se.write( m_startMode, "CommandCodesGo: start mode" );
+
+    return result;
+}
+
+bool
+BeBoB::CommandCodesGo::deserialize( IISDeserialize& de )
+{
+    bool result = CommandCodes::deserialize( de );
+    result &= de.read( &m_resp_validCRC );
+
+    return result;
+}

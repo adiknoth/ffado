@@ -29,7 +29,7 @@
 
 using namespace std;
 
-IMPL_DEBUG_MODULE( ConfigRom, ConfigRom, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( ConfigRom, ConfigRom, DEBUG_LEVEL_VERBOSE );
 
 static int busRead( struct csr1212_csr* csr,
                     u_int64_t addr,
@@ -54,8 +54,8 @@ struct config_csr_info {
 
 //-------------------------------------------------------------
 
-ConfigRom::ConfigRom( Ieee1394Service* ieee1394service, fb_nodeid_t nodeId )
-    : m_1394Service( ieee1394service )
+ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
+    : m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_avcDevice( false )
     , m_guid( 0 )
@@ -102,15 +102,15 @@ ConfigRom::initialize()
     }
 
     // Process Bus_Info_Block
-    m_isIsoResourceManager = m_csr->bus_info_data[2] >> 31;
-    m_isCycleMasterCapable = ( m_csr->bus_info_data[2] >> 30 ) & 0x1;
-    m_isSupportIsoOperations = ( m_csr->bus_info_data[2] >> 29 ) & 0x1;
-    m_isBusManagerCapable = ( m_csr->bus_info_data[2] >> 28 ) & 0x1;
-    m_cycleClkAcc = ( m_csr->bus_info_data[2] >> 16 ) & 0xff;
-    m_maxRec = ( m_csr->bus_info_data[2] >> 12 ) & 0xf;
-    m_nodeVendorId = ( m_csr->bus_info_data[3] >> 8 );
-    m_chipIdHi = ( m_csr->bus_info_data[3] ) & 0xff;
-    m_chipIdLow = m_csr->bus_info_data[4];
+    m_isIsoResourceManager = CSR1212_BE32_TO_CPU(m_csr->bus_info_data[2] ) >> 31;
+    m_isCycleMasterCapable = ( CSR1212_BE32_TO_CPU(m_csr->bus_info_data[2] ) >> 30 ) & 0x1;
+    m_isSupportIsoOperations = ( CSR1212_BE32_TO_CPU(m_csr->bus_info_data[2] ) >> 29 ) & 0x1;
+    m_isBusManagerCapable = ( CSR1212_BE32_TO_CPU(m_csr->bus_info_data[2] ) >> 28 ) & 0x1;
+    m_cycleClkAcc = ( CSR1212_BE32_TO_CPU(m_csr->bus_info_data[2] ) >> 16 ) & 0xff;
+    m_maxRec = ( CSR1212_BE32_TO_CPU( m_csr->bus_info_data[2] ) >> 12 ) & 0xf;
+    m_nodeVendorId = ( CSR1212_BE32_TO_CPU( m_csr->bus_info_data[3] ) >> 8 );
+    m_chipIdHi = ( CSR1212_BE32_TO_CPU( m_csr->bus_info_data[3] ) ) & 0xff;
+    m_chipIdLow = CSR1212_BE32_TO_CPU( m_csr->bus_info_data[4] );
 
     // Process Root Directory
     processRootDirectory(m_csr);
@@ -170,28 +170,6 @@ ConfigRom::initialize()
         m_csr = 0;
     }
     return true;
-}
-
-const bool
-ConfigRom::isAvcDevice() const
-{
-    return m_avcDevice;
-}
-
-// XXX This might work only for the M-Audio Audiophile
-// but can easily extended.
-#define VENDOR_ID_MAUDIO    0x00000d6c
-#define MODEL_ID_MAUDIO_BOOTLOADER 0x00010060
-
-const bool
-ConfigRom::isBootloader() const
-{
-    if ( ( m_vendorId == VENDOR_ID_MAUDIO )
-         && ( m_modelId == MODEL_ID_MAUDIO_BOOTLOADER ) )
-    {
-        return true;
-    }
-    return false;
 }
 
 static int
@@ -433,16 +411,26 @@ void
 ConfigRom::printConfigRom() const
 {
     using namespace std;
-    cout << "Config ROM" << endl;
-    cout << "\tCurrent Node Id:\t" << getNodeId() << endl;
-    cout << "\tGUID:\t\t\t0x" << setfill( '0' ) << setw( 16 ) << hex << getGuid() << endl;
-    cout << "\tVendor Name:\t\t" << getVendorName() << endl;
-    cout << "\tModel Name:\t\t" << getModelName() << endl;
+    printf( "Config ROM\n" );
+    printf( "\tCurrent Node Id:\t%d\n",       getNodeId() );
+    printf( "\tGUID:\t\t\t0x%08x%08x\n",
+            ( unsigned int )( getGuid() >> 32 ),
+            ( unsigned int ) ( getGuid() & 0xffffffff ) );
+    printf( "\tVendor Name:\t\t%s\n",         getVendorName().c_str() );
+    printf( "\tModel Name:\t\t%s\n",          getModelName().c_str() );
+    printf( "\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );
+    printf( "\tModel Id:\t\t0x%08x\n",        getModelId() );
+    printf( "\tISO resource manager:\t%d\n",  isIsoResourseManager() );
+    printf( "\tCycle master capable:\t%d\n",  isSupportsIsoOperations() );
+    printf( "\tBus manager capable:\t%d\n",   isBusManagerCapable() );
+    printf( "\tCycle clock accurancy:\t%d\n", getCycleClockAccurancy() );
+    printf( "\tMax rec:\t\t%d (max asy payload: %d bytes)\n",
+            getMaxRec(), getAsyMaxPayload() );
 }
 
 unsigned short
 ConfigRom::getAsyMaxPayload() const
 {
-    // XXX use pow instead
+    // XXX use pow instead?
     return 1 << ( m_maxRec + 1 );
 }

@@ -278,5 +278,35 @@ namespace BeBoB {
         virtual bool deserialize( IISDeserialize& de );
     };
 
+    /////////////////////////
+
+    class CommandCodesGo : public CommandCodes {
+    public:
+        enum EStartMode {
+            eSM_Application = 0,
+	    eSM_Debugger = 2,
+        };
+
+        CommandCodesGo( fb_quadlet_t protocolVersion, EStartMode startMode );
+        virtual ~CommandCodesGo();
+
+        virtual bool serialize( IOSSerialize& se );
+        virtual bool deserialize( IISDeserialize& de );
+
+        EStartMode getStartMode() const
+            { return static_cast<EStartMode>( m_startMode ); }
+        bool setStartMode( EStartMode startMode )
+            { m_startMode = startMode; return true; }
+
+        fb_quadlet_t getRespIsValidCRC() const
+            { return m_resp_validCRC; }
+
+    private:
+        fb_quadlet_t m_startMode;
+	fb_quadlet_t m_resp_validCRC;
+    };
+
+
+
 };
 #endif

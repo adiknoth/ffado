@@ -75,7 +75,7 @@ BeBoB::BootloaderManager::BootloaderManager(Ieee1394Service& ieee1349service,
 {
     memset( &m_cachedInfoRegs, 0, sizeof( m_cachedInfoRegs ) );
 
-    m_configRom = new ConfigRom( m_ieee1394service, nodeId );
+    m_configRom = new ConfigRom( *m_ieee1394service, nodeId );
     // XXX throw exception if initialize fails!
     m_configRom->initialize();
     cacheInfoRegisters();
@@ -213,45 +213,43 @@ BeBoB::BootloaderManager::downloadFirmware( std::string filename )
 {
     using namespace std;
 
+    printf( "parse BCD file\n" );
     std::auto_ptr<BCD> bcd = std::auto_ptr<BCD>( new BCD( filename ) );
     if ( !bcd.get() ) {
         debugError( "downloadFirmware: Could not open or parse BCD '%s'\n",
                     filename.c_str() );
         return false;
     }
-
     if ( !bcd->parse() ) {
         debugError( "downloadFirmware: BCD parsing failed\n" );
         return false;
     }
 
+    printf( "prepare for download (start bootloader)\n" );
     if ( !startBootloaderCmd() ) {
         debugError( "downloadFirmware: Could not start bootloader\n" );
         return false;
     }
-    waitForBusReset();
-    if ( !cacheInfoRegisters( MaxRetries ) ) {
-        debugError( "downloadFirmware: Could not read info registers\n" );
-        return false;
-    }
 
-    // wait for bootloader finish startup sequence
-    // there is no way to find out when it has finished
-    sleep( 10 );
-
+    printf( "start downloading protocol for application image\n" );
     if ( !downloadObject( *bcd, eOT_Application ) ) {
         debugError( "downloadFirmware: Firmware download failed\n" );
         return false;
     }
 
+    printf( "start downloading protocol for CnE\n" );
     if ( !downloadObject( *bcd, eOT_CnE ) ) {
         debugError( "downloadFirmware: CnE download failed\n" );
         return false;
     }
 
-    sleep( 5 );
+    printf( "setting CnE to factory default settings\n" );
+    if ( !initializeConfigToFactorySettingCmd() ) {
+        debugError( "downloadFirmware: Could not reinitalize CnE\n" );
+        return false;
+    }
 
-    // Let's try to start the image in any case...
+    printf( "start application\n" );
     if ( !startApplicationCmd() ) {
         debugError( "downloadFirmware: Could not restart application\n" );
         return false;
@@ -265,48 +263,37 @@ BeBoB::BootloaderManager::downloadCnE( std::string filename )
 {
     using namespace std;
 
+    printf( "parse BCD file\n" );
     std::auto_ptr<BCD> bcd = std::auto_ptr<BCD>( new BCD( filename ) );
     if ( !bcd.get() ) {
         debugError( "downloadCnE: Could not open or parse BCD '%s'\n",
                     filename.c_str() );
         return false;
     }
-
     if ( !bcd->parse() ) {
         debugError( "downloadCnE: BCD parsing failed\n" );
         return false;
     }
 
+    printf( "prepare for download (start bootloader)\n" );
     if ( !startBootloaderCmd() ) {
         debugError( "downloadCnE: Could not start bootloader\n" );
         return false;
     }
-    waitForBusReset();
-    if ( !cacheInfoRegisters( MaxRetries ) ) {
-        debugError( "downloadCnE: Could not read info registers\n" );
-        return false;
-    }
 
-    // wait for bootloader finish startup sequence
-    // there is no way to find out when it has finished
-    sleep( 10 );
-
-    get1394Serivce()->setVerbose( true );
-
+    printf( "start downloading protocol for CnE\n" );
     if ( !downloadObject( *bcd, eOT_CnE ) ) {
         debugError( "downloadCnE: CnE download failed\n" );
         return false;
     }
 
+    printf( "setting CnE to factory default settings\n" );
     if ( !initializeConfigToFactorySettingCmd() ) {
-        debugError( "downloadCnE: Setting default config "
-                    "settings failed\n" );
+        debugError( "downloadFirmware: Could not reinitalize CnE\n" );
         return false;
     }
 
-    sleep( 5 );
-
-    // Let's try to start the image in any case...
+    printf( "start application\n" );
     if ( !startApplicationCmd() ) {
         debugError( "downloadCnE: Could not restart application\n" );
         return false;
@@ -362,6 +349,7 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
 
     // bootloader erases the flash, have to wait until is ready
     // to answer our next request
+    printf( "wait unitl flash ereasing has terminated\n" );
     sleep( 20 );
 
     if ( !readResponse( ccDStart ) ) {
@@ -379,7 +367,8 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
     unsigned int i = 0;
     fb_quadlet_t address = 0;
     bool result = true;
-    int nrBlocks = ( imageLength + maxBlockSize - 1 ) / maxBlockSize;
+    int totalBytes = imageLength;
+    int downloadedBytes = 0;
     while ( imageLength > 0 ) {
         unsigned int blockSize = imageLength > maxBlockSize ?
                         maxBlockSize  : imageLength;
@@ -411,7 +400,7 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
             result = false;
             break;
         }
-        usleep( 1000 );
+        usleep( 100 );
 
         if ( !readResponse( ccBlock ) ) {
             debugError( "downloadObject: (block) read request failed\n" );
@@ -433,8 +422,10 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
             break;
         }
 
-        if ( ( i % 1000 ) == 0 ) {
-           printf( "[%04d/%04d] packets downloaded\n", i, nrBlocks );
+        downloadedBytes += blockSize;
+        if ( ( i % 100 ) == 0 ) {
+           printf( "%10d/%d bytes downloaded\n",
+                   downloadedBytes, totalBytes );
         }
 
         imageLength -= blockSize;
@@ -442,6 +433,8 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
         offset += blockSize;
         i++;
     }
+    printf( "%10d/%d bytes downloaded\n",
+            downloadedBytes, totalBytes );
 
     if ( !result ) {
         debugError( "downloadObject: seqNumber = %d, "
@@ -455,6 +448,7 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
         debugError( "downloadObject: (end) command write failed\n" );
     }
 
+    printf( "wait for transaction completion\n" );
     sleep( 10 );
 
     if ( !readResponse( ccEnd ) ) {
@@ -477,6 +471,7 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
             result = false;
         }
     }
+    printf( "download protocol successfuly completed\n" );
     return result;
 }
 
@@ -487,16 +482,6 @@ BeBoB::BootloaderManager::programGUID( fb_octlet_t guid )
         debugError( "programGUID: Could not start bootloader\n" );
         return false;
     }
-
-    waitForBusReset();
-    if ( !cacheInfoRegisters( MaxRetries ) ) {
-        debugError( "programGUID: Could not read info registers\n" );
-        return false;
-    }
-
-    // wait for bootloader finish startup sequence
-    // there is no way to find out when it has finished
-    sleep( 10 );
 
     if ( !programGUIDCmd( guid ) ) {
         debugError( "programGUID: Could not program guid\n" );
@@ -608,14 +593,24 @@ BeBoB::BootloaderManager::startBootloaderCmd()
         return false;
     }
 
+    waitForBusReset();
+    if ( !cacheInfoRegisters( MaxRetries ) ) {
+        debugError( "startBootloaderCmd: Could not read info registers\n" );
+        return false;
+    }
+
+    // wait for bootloader finish startup sequence
+    // there is no way to find out when it has finished
+    sleep( 10 );
+
     return true;
 }
 
 bool
 BeBoB::BootloaderManager::startApplicationCmd()
 {
-    CommandCodesReset cmd( m_protocolVersion,
-                           CommandCodesReset::eSM_Application ) ;
+    CommandCodesGo cmd( m_protocolVersion,
+                           CommandCodesGo::eSM_Application ) ;
     if ( !writeRequest( cmd ) ) {
         debugError( "startApplicationCmd: writeRequest failed\n" );
         return false;
@@ -633,6 +628,8 @@ BeBoB::BootloaderManager::programGUIDCmd( fb_octlet_t guid )
         return false;
     }
 
+    sleep( 1 );
+
     return true;
 }
 
@@ -645,6 +642,8 @@ BeBoB::BootloaderManager::initializePersParamCmd()
         return false;
     }
 
+    sleep( 1 );
+
     return true;
 }
 
@@ -656,6 +655,8 @@ BeBoB::BootloaderManager::initializeConfigToFactorySettingCmd()
         debugError( "initializeConfigToFactorySettingCmd: writeRequest failed\n" );
         return false;
     }
+
+    sleep( 5 );
 
     return true;
 }

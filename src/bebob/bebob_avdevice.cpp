@@ -38,10 +38,12 @@ namespace BeBoB {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
-AvDevice::AvDevice( Ieee1394Service& ieee1394service,
-                    int nodeId,
-                    int verboseLevel )
-    :  m_1394Service( &ieee1394service )
+    AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
+                        Ieee1394Service& ieee1394service,
+                        int nodeId,
+                        int verboseLevel )
+    :  m_configRom( configRom )
+    , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_plugManager( verboseLevel )
@@ -51,14 +53,10 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
-
-    m_configRom = new ConfigRom( m_1394Service, m_nodeId );
-    m_configRom->initialize();
 }
 
 AvDevice::~AvDevice()
 {
-    delete m_configRom;
     for ( AvDeviceSubunitVector::iterator it = m_subunits.begin();
           it != m_subunits.end();
           ++it )
@@ -89,6 +87,37 @@ ConfigRom&
 AvDevice::getConfigRom() const
 {
     return *m_configRom;
+}
+
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+};
+
+static VendorModelEntry supportedDeviceList[] =
+{
+    {0x000d6c, 0x00010060},  // M-Audio, Audiophile
+    {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
+};
+
+bool
+AvDevice::probe( ConfigRom& configRom )
+{
+    unsigned int vendorId = configRom.getNodeVendorId();
+    unsigned int modelId = configRom.getModelId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].model_id == modelId ) )
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool

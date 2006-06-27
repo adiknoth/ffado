@@ -32,13 +32,11 @@ class Ieee1394Service;
 
 class ConfigRom {
  public:
-    ConfigRom( Ieee1394Service* ieee1394service, fb_nodeid_t nodeId );
+    ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId );
     virtual ~ConfigRom();
 
     bool initialize();
 
-    const bool isAvcDevice() const;
-    const bool isBootloader() const;
     const fb_nodeid_t getNodeId() const;
     const fb_octlet_t getGuid() const;
     const std::string getModelName() const;
@@ -56,6 +54,11 @@ class ConfigRom {
     fb_byte_t getMaxRec() const
         { return m_maxRec; }
     unsigned short getAsyMaxPayload() const;
+
+    fb_quadlet_t getNodeVendorId() const
+	{ return m_nodeVendorId; }
+    unsigned int getModelId() const
+	{ return m_modelId; }
 
     bool updatedNodeId();
 
@@ -82,7 +85,7 @@ class ConfigRom {
     bool             m_isBusManagerCapable;
     fb_byte_t        m_cycleClkAcc;
     fb_byte_t        m_maxRec;
-    unsigned short   m_nodeVendorId;
+    fb_quadlet_t     m_nodeVendorId;
     fb_byte_t        m_chipIdHi;
     fb_quadlet_t     m_chipIdLow;
 
