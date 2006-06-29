@@ -32,6 +32,8 @@
 #include "../debugmodule/debugmodule.h"
 #include "StreamProcessor.h"
 
+#include "../libutil/DelayLockedLoop.h"
+
 namespace FreebobStreaming {
 
 class MotuAudioPort;
@@ -147,6 +149,9 @@ protected:
 	 * is the size of a single 'event' in bytes.
 	 */
 	unsigned int m_event_size;
+
+	FreebobUtil::DelayLockedLoop *m_sph_ofs_dll;
+	signed int m_last_cycle_ofs;
 
     DECLARE_DEBUG_MODULE;
 

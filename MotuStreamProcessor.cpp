@@ -95,7 +95,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	
 	// don't process the stream when it is not enabled.
 	// however, maybe we do have to generate (semi) valid packets
-	if(m_disabled) {
+	if (m_disabled) {
 		*length = 0; 
 		*tag = 1; // TODO: is this correct for MOTU?
 		*sy = 0;
@@ -658,14 +658,27 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(MotuAudioPort *p,
 
 MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, int framerate, 
 	unsigned int event_size)
-    : ReceiveStreamProcessor(port, framerate), m_event_size(event_size) {
+    : ReceiveStreamProcessor(port, framerate), m_event_size(event_size),
+	m_last_cycle_ofs(-1) {
 
+	// Set up the Delay-locked-loop to track audio frequency relative
+	// to the cycle timer.  The seed value is just the difference one
+	// would see if the audio clock was locked to the ieee1394 cycle
+	// timer.
+	// FIXME: the value for omega and coeff[0] are more or less copied
+	// from the test-dll.cpp code.  They need to be understood and
+	// optimised for this process.
+	float omega=6.28*0.001;
+	float coeffs[1];
+	coeffs[0]=1.41*omega;
+	m_sph_ofs_dll = new FreebobUtil::DelayLockedLoop(1, coeffs);
+	m_sph_ofs_dll->setIntegrator(0, 24576000.0/framerate);
 }
 
 MotuReceiveStreamProcessor::~MotuReceiveStreamProcessor() {
-    freebob_ringbuffer_free(m_event_buffer);
-    free(m_tmp_event_buffer);
-
+	freebob_ringbuffer_free(m_event_buffer);
+	free(m_tmp_event_buffer);
+	delete m_sph_ofs_dll;
 }
 
 bool MotuReceiveStreamProcessor::init() {
@@ -687,6 +700,12 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                   unsigned int cycle, unsigned int dropped) {
     
     enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
+
+// FIXME: just for debugging, print out the sph ofs DLL value
+// once a second
+if (cycle==0) {
+  fprintf(stderr, "sph_ofs_dll=%g\n",m_sph_ofs_dll->get());
+}
 
     // If the packet length is 8 bytes (ie: just a CIP-like header) there is
     // no isodata.
@@ -987,6 +1006,27 @@ int MotuReceiveStreamProcessor::receiveBlock(char *data,
 					   unsigned int nevents, unsigned int offset)
 {
 	int problem=0;
+
+	/* Push cycle offset differences from each event's SPH into the DLL.
+	 * If this is the very first block received, use the first event to
+	 * initialise the last cycle offset.
+	 * FIXME: it might be best to use differences only within the given
+	 * block rather than keeping a store of the last cycle offset.
+	 * Otherwise in the event of a lost incoming packet the DLL will
+	 * have an abnormally large value sent to it.  Perhaps this doesn't
+	 * matter?
+	 */
+	unsigned int ev;
+	signed int sph_ofs = ntohl(*(quadlet_t *)data) & 0xfff;
+	if (m_last_cycle_ofs < 0) {
+		m_last_cycle_ofs = sph_ofs-m_sph_ofs_dll->get();
+	}
+	for (ev=0; ev<nevents; ev++) {
+		sph_ofs = ntohl(*(quadlet_t *)(data+ev*m_event_size)) & 0xfff;
+		m_sph_ofs_dll->put((m_last_cycle_ofs<sph_ofs)?
+			sph_ofs-m_last_cycle_ofs:sph_ofs+3072-m_last_cycle_ofs);
+		m_last_cycle_ofs = sph_ofs;
+	}
 
 	for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
