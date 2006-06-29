@@ -30,6 +30,8 @@
 #include "libstreaming/MotuStreamProcessor.h"
 #include "libstreaming/MotuPort.h"
 
+#include "libutil/DelayLockedLoop.h"
+
 #include <string>
 #include <stdint.h>
 #include <assert.h>

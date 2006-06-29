@@ -149,9 +149,8 @@ DelayLockedLoop::setCoefficient(unsigned int i, float c) {
 void
 DelayLockedLoop::setIntegrator(unsigned int i, float c) {
     
-    unsigned int x;
-    if (x<m_order) {
-        m_nodes[x]=c;
+    if (i<m_order) {
+        m_nodes[i]=c;
     }
 }
 
