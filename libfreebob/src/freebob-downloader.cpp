@@ -44,6 +44,7 @@ static char args_doc[] = "NODE_ID OPERATION";
 static struct argp_option options[] = {
     {"verbose",   'v', 0,           0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
+    {"force",     'f', 0,           0,  "Force firmware download" },
     { 0 }
 };
 
@@ -52,6 +53,7 @@ struct arguments
     arguments()
         : verbose( false )
         , port( 0 )
+        , force( 0 )
         {
             args[0] = 0;
             args[1] = 0;
@@ -61,6 +63,7 @@ struct arguments
     char* args[3];
     bool  verbose;
     int   port;
+    int   force;
 } arguments;
 
 // Parse a single option.
@@ -83,6 +86,9 @@ parse_opt( int key, char* arg, struct argp_state* state )
             perror("argument parsing failed:");
             return errno;
         }
+        break;
+    case 'f':
+        arguments->force = 1;
         break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= 3) {
@@ -130,6 +136,9 @@ main( int argc, char** argv )
 
     service.setVerbose( false );
     BeBoB::BootloaderManager blMgr( service, node_id );
+    if ( arguments.force == 1 ) {
+        blMgr.setForceOperations( true );
+    }
     blMgr.getConfigRom()->printConfigRom();
     blMgr.printInfoRegisters();
 

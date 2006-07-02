@@ -56,6 +56,8 @@ namespace BeBoB {
 	Ieee1394Service* get1394Serivce() const
             { return m_ieee1394service; }
 
+	bool setForceOperations( bool enabled )
+            { m_forceEnabled = enabled; return true; }
     protected:
 	enum EObjectType {
 	    eOT_Application,
@@ -72,6 +74,7 @@ namespace BeBoB {
         bool startApplicationCmd();
         bool initializePersParamCmd();
         bool initializeConfigToFactorySettingCmd();
+        bool checkDeviceCompatibility( BCD& bcd );
 
     private:
         bool cacheInfoRegisters();
@@ -109,6 +112,8 @@ namespace BeBoB {
 	pthread_cond_t  m_cond;
 
 	Functor*        m_functor;
+
+        bool            m_forceEnabled;
 
 	DECLARE_DEBUG_MODULE;
     };

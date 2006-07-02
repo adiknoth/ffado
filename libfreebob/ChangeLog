@@ -1,3 +1,7 @@
+2006-07-02  Daniel Wagner  <wagi@monom.org>
+
+	* firmware downloader: check device firmware compatibility
+
 2006-06-27  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version bump to 1.1.0

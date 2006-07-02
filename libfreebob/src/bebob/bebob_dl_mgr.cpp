@@ -72,6 +72,7 @@ BeBoB::BootloaderManager::BootloaderManager(Ieee1394Service& ieee1349service,
     : m_ieee1394service( &ieee1349service )
     , m_protocolVersion( eBPV_Unknown )
     , m_isAppRunning( false )
+    , m_forceEnabled( false )
 {
     memset( &m_cachedInfoRegs, 0, sizeof( m_cachedInfoRegs ) );
 
@@ -225,6 +226,17 @@ BeBoB::BootloaderManager::downloadFirmware( std::string filename )
         return false;
     }
 
+    printf( "check firmware device compatibility... " );
+    if ( !m_forceEnabled ) {
+        if ( !checkDeviceCompatibility( *bcd ) ) {
+            printf( "failed.\n" );
+            return false;
+        }
+        printf( "ok\n" );
+    } else {
+        printf( "forced\n" );
+    }
+
     printf( "prepare for download (start bootloader)\n" );
     if ( !startBootloaderCmd() ) {
         debugError( "downloadFirmware: Could not start bootloader\n" );
@@ -273,6 +285,17 @@ BeBoB::BootloaderManager::downloadCnE( std::string filename )
     if ( !bcd->parse() ) {
         debugError( "downloadCnE: BCD parsing failed\n" );
         return false;
+    }
+
+    printf( "check firmware device compatibility... " );
+    if ( !m_forceEnabled ) {
+        if ( !checkDeviceCompatibility( *bcd ) ) {
+            printf( "failed.\n" );
+            return false;
+        }
+        printf( "ok\n" );
+    } else {
+        printf( "forced\n" );
     }
 
     printf( "prepare for download (start bootloader)\n" );
@@ -659,4 +682,24 @@ BeBoB::BootloaderManager::initializeConfigToFactorySettingCmd()
     sleep( 5 );
 
     return true;
+}
+
+bool
+BeBoB::BootloaderManager::checkDeviceCompatibility( BCD& bcd )
+{
+    fb_quadlet_t vendorOUI = (  m_cachedInfoRegs.m_guid >> 40 );
+
+
+    if ( ( vendorOUI == bcd.getVendorOUI() )
+         && ( m_cachedInfoRegs.m_softwareId == bcd.getSoftwareId() ) )
+    {
+        return true;
+    }
+
+    printf( "vendorOUI = 0x%08x\n", vendorOUI );
+    printf( "BCD vendorOUI = 0x%08x\n", bcd.getVendorOUI() );
+    printf( "software ID = 0x%08x\n", m_cachedInfoRegs.m_softwareId );
+    printf( "BCD software ID = 0x%08x\n", bcd.getSoftwareId() );
+
+    return false;
 }
