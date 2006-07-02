@@ -96,7 +96,9 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x000d6c, 0x00010060},  // M-Audio, Audiophile
+    {0x0040ab, 0x00010048},  // EDIROL, FA-101
+    {0x0040ab, 0x00010049},  // EDIROL, FA-66
+
     {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
 };
 
