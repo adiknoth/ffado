@@ -384,14 +384,14 @@ ConfigRom::updatedNodeId()
             ((u_int64_t)CSR1212_BE32_TO_CPU(csr->bus_info_data[3]) << 32)
             | CSR1212_BE32_TO_CPU(csr->bus_info_data[4]);
 
-        if ( guid == m_guid ) {
-            if ( nodeId != m_nodeId ) {
+        if ( guid == getGuid() ) {
+            if ( nodeId != getNodeId() ) {
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "Device with GUID 0%08x%08x changed node id "
+                             "Device with GUID 0x%08x%08x changed node id "
                              "from %d to %d\n",
-                             m_guid >> 32,
-                             m_guid & 0xffffffff,
-                             m_nodeId,
+                             ( unsigned int ) ( getGuid() >> 32 ),
+                             ( unsigned int ) ( getGuid() & 0xffffffff ),
+                             getNodeId(),
                              nodeId );
                 m_nodeId = nodeId;
             }
