@@ -434,7 +434,7 @@ AvDevice::discoverSyncModes()
     checkSyncConnections( digitalPCRInputPlugs, syncMSUInputPlugs );
 
 
-    // Currently active connection signal sourqce cmd, command type
+    // Currently active connection signal source cmd, command type
     // status, source unknown, destination MSU sync input plug
 
     for ( AvPlugVector::const_iterator it = syncMSUInputPlugs.begin();

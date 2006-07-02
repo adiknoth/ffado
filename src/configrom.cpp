@@ -29,7 +29,7 @@
 
 using namespace std;
 
-IMPL_DEBUG_MODULE( ConfigRom, ConfigRom, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( ConfigRom, ConfigRom, DEBUG_LEVEL_NORMAL );
 
 static int busRead( struct csr1212_csr* csr,
                     u_int64_t addr,
