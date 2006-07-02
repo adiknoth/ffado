@@ -41,11 +41,13 @@ namespace BeBoB {
 
 class AvDevice : public IAvDevice {
 public:
-    AvDevice( Ieee1394Service& ieee1394Service,
+    AvDevice( std::auto_ptr<ConfigRom>( configRom ),
+	      Ieee1394Service& ieee1394Service,
               int nodeId,
 	      int verboseLevel );
     virtual ~AvDevice();
 
+    static bool probe( ConfigRom& configRom );
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
     virtual bool addXmlDescription( xmlNodePtr deviceNode );
@@ -94,8 +96,8 @@ protected:
 
     bool checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs );
 protected:
+    std::auto_ptr<ConfigRom>( m_configRom );
     Ieee1394Service* m_1394Service;
-    ConfigRom*       m_configRom;
     int              m_nodeId;
     int              m_verboseLevel;
 
