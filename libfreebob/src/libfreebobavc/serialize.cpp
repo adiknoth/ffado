@@ -96,7 +96,7 @@ BufferDeserialize::read( quadlet_t* value )
 {
     bool result = false;
     if ( isCurPosValid() ) {
-        *value = *m_curPos;
+        *value = *( ( quadlet_t* )m_curPos );
         m_curPos += sizeof( quadlet_t );
         result = true;
     }

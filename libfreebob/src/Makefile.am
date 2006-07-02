@@ -34,6 +34,7 @@ libfreebob_la_SOURCES = 				\
 	fbtypes.h					\
 	freebob.cpp 					\
 	xmlparser.c					\
+	threads.h					\
 	bebob/bebob_avdevice.h          		\
 	bebob/bebob_avdevice.cpp			\
 	bebob/bebob_avdevice_xml.cpp			\
@@ -44,12 +45,12 @@ libfreebob_la_SOURCES = 				\
 	bebob/bebob_avplug_xml.cpp			\
 	bebob/bebob_functionblock.h			\
 	bebob/bebob_functionblock.cpp 			\
-	bebob_light/bebob_light_avdevice.h		\
-	bebob_light/bebob_light_avdevice.cpp		\
-	bebob_light/bebob_light_avdevicesubunit.h	\
-	bebob_light/bebob_light_avdevicesubunit.cpp	\
-	bebob_light/bebob_light_avplug.h		\
-	bebob_light/bebob_light_avplug.cpp		\
+	bebob/bebob_dl_mgr.h				\
+	bebob/bebob_dl_mgr.cpp				\
+	bebob/bebob_dl_codes.h				\
+	bebob/bebob_dl_codes.cpp			\
+	bebob/bebob_dl_bcd.h				\
+	bebob/bebob_dl_bcd.cpp				\
 	bounce/bounce_avdevice.h			\
 	bounce/bounce_avdevice.cpp			\
 	libfreebobavc/avc_connect.cpp			\
@@ -100,3 +101,13 @@ libfreebob_la_LDFLAGS = 				\
 	$(LIBXML_LIBS) -lpthread
 
 
+bin_PROGRAMS = freebob_downloader
+
+freebob_downloader_SOURCES =    \
+        freebob-downloader.cpp
+freebob_downloader_LDADD =      \
+        libfreebob.la           \
+        $(LIBRAW1394_LIBS)      \
+        $(LIBIEC61883_LIBS)     \
+        $(LIBAVC1394_LIBS)	\
+	-lpthread

@@ -1,4 +1,4 @@
-/* devicemanager.cpp
+ /* devicemanager.cpp
  * Copyright (C) 2005,06 by Daniel Wagner
  *
  * This file is part of FreeBoB.
@@ -27,7 +27,6 @@
 #include "libfreebobavc/ieee1394service.h"
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
-#include "bebob_light/bebob_light_avdevice.h"
 #include "bounce/bounce_avdevice.h"
 
 #include <iostream>
@@ -39,8 +38,6 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
-    m_probeList.push_back( probeBeBoB );
-    // m_probeList.push_back( probeBounce );
 }
 
 DeviceManager::~DeviceManager()
@@ -92,11 +89,13 @@ DeviceManager::discover( int verboseLevel )
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
     {
-        ConfigRom configRom( m_1394Service, nodeId );
-        if ( !configRom.initialize() ) {
-            // \todo If a PHY on the bus in power safe mode than
+        std::auto_ptr<ConfigRom> configRom =
+            std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
+                                                     nodeId ) );
+        if ( !configRom->initialize() ) {
+            // \todo If a PHY on the bus is in power safe mode then
             // the config rom is missing. So this might be just
-            // such a case and we can safely skip it. But it might
+            // such this case and we can safely skip it. But it might
             // be there is a real software problem on our side.
             // This should be handled more carefuly.
             debugOutput( DEBUG_LEVEL_NORMAL,
@@ -106,29 +105,30 @@ DeviceManager::discover( int verboseLevel )
             continue;
         }
 
-        if ( !configRom.isAvcDevice() ) {
-            continue;
-        }
+        configRom->printConfigRom();
+        IAvDevice* avDevice = getDriverForDevice( configRom,
+                                                  nodeId,
+                                                  verboseLevel );
+        if ( avDevice ) {
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                         "discover: driver found for device %d\n",
+                         nodeId );
 
-        for ( ProbeFunctionVector::iterator it = m_probeList.begin();
-              it != m_probeList.end();
-              ++it )
-        {
-            ProbeFunction func = *it;
-            IAvDevice* avDevice = func(*m_1394Service, nodeId, verboseLevel);
-            if ( avDevice ) {
-                m_avDevices.push_back( avDevice );
-
-                if ( !avDevice->setId( m_avDevices.size() ) ) {
-                    debugError( "setting Id failed\n" );
-                }
-                if ( verboseLevel ) {
-                    avDevice->showDevice();
-                }
-                break;
+            if ( !avDevice->discover() ) {
+                debugError( "discover: could not discover device\n" );
+                delete avDevice;
+                continue;
             }
-        }
 
+            if ( !avDevice->setId( m_avDevices.size() ) ) {
+                debugError( "setting Id failed\n" );
+            }
+            if ( verboseLevel ) {
+                avDevice->showDevice();
+            }
+
+            m_avDevices.push_back( avDevice );
+        }
     }
 
     return true;
@@ -136,33 +136,14 @@ DeviceManager::discover( int verboseLevel )
 
 
 IAvDevice*
-DeviceManager::probeBeBoB(Ieee1394Service& service, int id, int level)
+DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
+                                   int id,  int level )
 {
-    IAvDevice* avDevice = new BeBoB_Light::AvDevice( service, id, level );
-    if ( !avDevice ) {
-        return 0;
+    if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
+        return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
     }
 
-    if ( !avDevice->discover() ) {
-        delete avDevice;
-        return 0;
-    }
-    return avDevice;
-}
-
-IAvDevice*
-DeviceManager::probeBounce(Ieee1394Service& service, int id, int level)
-{
-    IAvDevice* avDevice = new Bounce::BounceDevice( service, id, level );
-    if ( !avDevice ) {
-        return 0;
-    }
-
-    if ( !avDevice->discover() ) {
-        delete avDevice;
-        return 0;
-    }
-    return avDevice;
+    return 0;
 }
 
 bool

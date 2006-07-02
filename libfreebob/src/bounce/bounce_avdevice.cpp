@@ -46,7 +46,7 @@ BounceDevice::BounceDevice( Ieee1394Service& ieee1394service,
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
                  nodeId );
-    m_configRom = new ConfigRom( m_1394Service, m_nodeId );
+    m_configRom = new ConfigRom( *m_1394Service, m_nodeId );
     m_configRom->initialize();
 }
 
