@@ -105,7 +105,6 @@ DeviceManager::discover( int verboseLevel )
             continue;
         }
 
-        configRom->printConfigRom();
         IAvDevice* avDevice = getDriverForDevice( configRom,
                                                   nodeId,
                                                   verboseLevel );
