@@ -86,6 +86,29 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 // we can get this thing synchronised.  For now this seems to work.
 #define CYCLE_DELAY 1
 
+// FIXME: currently data is not sent when the stream is disabled.  The
+// trouble is that the MOTU actually needs zero data explicitly sent from
+// the moment its iso receive channel is activated; failure to do so can
+// result in a high pitch audio signal (approx 10 kHz) in channels which
+// have had non-zero data in the past.  Things need to be changed around so
+// this can be done; essentially the tests on m_disabled disappear from
+// almost everywhere.  Instead, m_disabled will determine whether data is
+// fetched from the event buffer or whether zero data is generated.
+//
+// The other thing which needs to be worked out is close-down.
+// Experimentation has shown that 2 or so zero packets need to be sent so no
+// high-pitched noises are emitted at closedown and subsequent restart.  In
+// the proof-of-concept code this was done by manually calling
+// raw1394_loop_iterate() from the iso shutdown function.  Under freebob a
+// similar thing needs to be done from the respective function in the Motu
+// AvDevice object, but the precise way of doing so without causing issues
+// is yet to be determined.
+//
+// Finally, every so often sync seems to be missed on startup, and because
+// this code can't recover a sync the problem remains indefinitely.  The
+// cause of this needs to be identified.  It may be the result of not
+// running with RT privileges for this initial testing phase.
+
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	quadlet_t *quadlet = (quadlet_t *)data;
 	signed int i;
@@ -101,8 +124,8 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	m_running=true;
 	
 	// Initialise the cycle counter if this is the first time
-	// iso data has been requested.
-	if (m_cycle_count < 0) {
+	// iso data has been requested with the stream enabled.
+	if (!m_disabled && m_cycle_count<0) {
 		m_cycle_count = cycle;
 		m_cycle_ofs = 0.0;
 	}
@@ -112,16 +135,8 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	*sy = 0x00;
 	*tag = 1;      // All MOTU packets have a CIP-like header
 
-// FIXME: for now always just return NULL packets
-//*length = 0;
-//*tag = 0;
-//*sy = 0;
-//freebob_ringbuffer_read_advance(m_event_buffer, 6*m_event_size);
-//incrementFrameCounter(6);
-//return RAW1394_ISO_OK;
-	
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
-	
+
 	// Size of a single data frame in quadlets
 	unsigned dbs = m_event_size / 4;
 
@@ -137,7 +152,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// regime also means that the very first packet containing data will
 	// have a DBC of n_events, which matches what is observed from other
 	// systems.
-	if (!m_disabled && m_cycle_count<=cycle) {
+	if (!m_disabled && cycle>=m_cycle_count) {
 		m_tx_dbc += n_events;
 		if (m_tx_dbc > 0xff)
 			m_tx_dbc -= 0x100;
@@ -156,7 +171,9 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// If the stream is disabled or the MOTU transmission cycle count is
 	// ahead of the ieee1394 cycle timer, we send a data-less packet
 	// with only the 8 byte CIP-like header set up previously.
-	if (m_disabled || m_cycle_count>cycle) {
+	// FIXME: in disabled state, need to send a stream of zero audio data,
+	// not "no data".  Otherwise MOTU will emit an (approx) 10 kHz signal.
+	if (m_disabled || cycle<m_cycle_count) {
 		return RAW1394_ISO_OK;
 	}
 
@@ -181,12 +198,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		retval=RAW1394_ISO_OK;
 		*length += read_size;
 
-#if 0
-if (cycle<=10) {
-  fprintf(stderr,"cycle %d, sending %d/%d (dbs %d)\n",cycle,
-    m_cycle_count, (int)m_cycle_ofs, dbs);
-}
-#endif
 		// Set up each frames's SPH.  Note that the (int) typecast
 		// appears to do rounding.
 		// FIXME: once working, make more efficient by removing 1 of the
@@ -194,6 +205,14 @@ if (cycle<=10) {
 		for (i=0; i<n_events; i++, quadlet += dbs) {
 			*quadlet = htonl( (((m_cycle_count+CYCLE_DELAY)%8000)<<12) + 
 					(int)m_cycle_ofs);
+// FIXME: remove this hacked in 1 kHz test signal to analog-1
+{
+signed int val;
+val = 0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs)/3072.0))/8000.0);
+*(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
+*(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
+*(data+8+i*m_event_size+18) = val & 0xff;
+}
 			m_cycle_ofs += m_sph_ofs_dll->get();
 			if (m_cycle_ofs >= 3072) {
 				m_cycle_ofs -= 3072;
@@ -212,24 +231,6 @@ int j;
   }
 }
 #endif
-#if 0
-int j, glitch=0;
-j=0;
-while (j<n_events && !glitch) {
-  glitch=*(data+8+j*dbs*4+22)!=0 || *(data+8+j*dbs*4+23)!=0 ||*(data+8+j*dbs*4+24)!=0;
-  j++;
-}
-if (glitch) {
-  for (j=0; j<n_events; j++) {
-    for (i=0; i<27; i++)
-      fprintf(stderr,"%02hhx ",*(data+8+j*dbs*4+i));
-    fprintf(stderr,"\n");
-  }
-  fprintf(stderr,"\n");
-}
-#endif
-
-
 		// Process all ports that should be handled on a per-packet base
 		// this is MIDI for AMDTP (due to the need of DBC, which is lost 
 		// when putting the events in the ringbuffer)
@@ -676,14 +677,9 @@ int MotuTransmitStreamProcessor::encodePortToMBLAEvents(MotuAudioPort *p, quadle
 	default:
         case Port::E_Int24:
         case Port::E_Float:
-// send silence to all but selected analog channels
+// send silence to all outputs for now
 		for (j = 0; j < nevents; j++) {
-signed int val;
-if (p->getPosition() == 16) {
-  val = 0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs+j*512)/3072.0))/8000.0);
-//val = 0;
-//  fprintf(stderr,".%d.",val);
-} else
+signed int val = 0;
   val = 0;
 			*target = (val >> 16) & 0xff;
 			*(target+1) = (val >> 8) & 0xff;
