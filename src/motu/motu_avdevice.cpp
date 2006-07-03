@@ -157,7 +157,7 @@ MotuDevice::getSamplingFrequency( ) {
     quadlet_t q = ReadRegister(MOTUFW_REG_RATECTRL);
     int rate = 0;
 
-    switch (q & ~MOTUFW_BASE_RATE_MASK) {
+    switch (q & MOTUFW_BASE_RATE_MASK) {
         case MOTUFW_BASE_RATE_44100:
             rate = 44100;
             break;
@@ -165,7 +165,7 @@ MotuDevice::getSamplingFrequency( ) {
             rate = 48000;
             break;
     }
-    switch (q & ~MOTUFW_RATE_MULTIPLIER_MASK) {
+    switch (q & MOTUFW_RATE_MULTIPLIER_MASK) {
         case MOTUFW_RATE_MULTIPLIER_2X:
             rate *= 2;
             break;
@@ -334,6 +334,10 @@ MotuDevice::prepare() {
 		return false;
 	}
 
+	// Connect the transmit stream to the SPH offset DLL in the
+	// receive stream.
+	m_transmitProcessor->set_sph_ofs_dll(m_receiveProcessor->get_sph_ofs_dll());
+
 	// now we add ports to the processor
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
@@ -471,6 +475,7 @@ quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
 		// bit 23 on to enable changes to the MOTU's iso transmit
 		// settings when the iso control register is written.
 		isoctrl &= 0xffbfffff;
+		isoctrl |= 0x00800000;
 		WriteRegister(MOTUFW_REG_ISOCTRL, isoctrl);
 		break;
 	case 1:
@@ -478,6 +483,7 @@ quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
 		// bit 31 on to enable changes to the MOTU's iso receive
 		// settings when the iso control register is written.
 		isoctrl &= 0xbfffffff;
+		isoctrl |= 0x80000000;
 		WriteRegister(MOTUFW_REG_ISOCTRL, isoctrl);
 		break;
 		

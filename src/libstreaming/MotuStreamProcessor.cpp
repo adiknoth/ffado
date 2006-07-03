@@ -46,7 +46,8 @@ IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG
 /* transmit */
 MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate,
 		unsigned int event_size)
-	: TransmitStreamProcessor(port, framerate), m_event_size(event_size) {
+	: TransmitStreamProcessor(port, framerate), m_event_size(event_size),
+	m_tx_dbc(0), m_cycle_count(-1), m_cycle_ofs(0.0), m_sph_ofs_dll(NULL) {
 
 }
 
@@ -81,8 +82,14 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) {
 
+// FIXME: the actual delays in the system need to be worked out so
+// we can get this thing synchronised.  For now this seems to work.
+#define CYCLE_DELAY 1
+
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
-	
+	quadlet_t *quadlet = (quadlet_t *)data;
+	signed int i;
+
 	// signal that we are running
 	// this is to allow the manager to wait untill all streams are up&running
 	// it can take some time before the devices start to transmit.
@@ -93,435 +100,511 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// NOTE: xmit streams are most likely 'always' ready
 	m_running=true;
 	
-	// don't process the stream when it is not enabled.
-	// however, maybe we do have to generate (semi) valid packets
-	if (m_disabled) {
-		*length = 0; 
-		*tag = 1; // TODO: is this correct for MOTU?
-		*sy = 0;
+	// Initialise the cycle counter if this is the first time
+	// iso data has been requested.
+	if (m_cycle_count < 0) {
+		m_cycle_count = cycle;
+		m_cycle_ofs = 0.0;
+	}
+
+	// Do housekeeping expected for all packets sent to the MOTU, even
+	// for packets containing no audio data.
+	*sy = 0x00;
+	*tag = 1;      // All MOTU packets have a CIP-like header
+
+// FIXME: for now always just return NULL packets
+//*length = 0;
+//*tag = 0;
+//*sy = 0;
+//freebob_ringbuffer_read_advance(m_event_buffer, 6*m_event_size);
+//incrementFrameCounter(6);
+//return RAW1394_ISO_OK;
+	
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
+	
+	// Size of a single data frame in quadlets
+	unsigned dbs = m_event_size / 4;
+
+	// The number of events expected by the MOTU is solely dependent on
+	// the current sample rate.  An 'event' is one sample from all channels
+	// plus possibly other midi and control data.
+	signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
+
+	// Increment the dbc (data block count).  This is only done if the
+	// packet will contain events - that is, the stream is not disabled
+	// and we are due to send some data.  Otherwise a pad packet is sent
+	// which contains the DBC of the previously sent packet.  This
+	// regime also means that the very first packet containing data will
+	// have a DBC of n_events, which matches what is observed from other
+	// systems.
+	if (!m_disabled && m_cycle_count<=cycle) {
+		m_tx_dbc += n_events;
+		if (m_tx_dbc > 0xff)
+			m_tx_dbc -= 0x100;
+	}
+
+	// construct the packet CIP-like header.  Even if this is a data-less 
+	// packet the dbs field is still set as if there were data blocks 
+	// present.  For data-less packets the dbc is the same as the previously
+	// transmitted block.
+	*quadlet = htonl(0x00000400 | ((getNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
+	quadlet++;
+	*quadlet = htonl(0x8222ffff);
+	quadlet++;
+	*length = 8;
+
+	// If the stream is disabled or the MOTU transmission cycle count is
+	// ahead of the ieee1394 cycle timer, we send a data-less packet
+	// with only the 8 byte CIP-like header set up previously.
+	if (m_disabled || m_cycle_count>cycle) {
 		return RAW1394_ISO_OK;
 	}
 
-// FIXME: for now always just return NULL packets
-*length = 0;
-*tag = 0;
-*sy = 0;
-freebob_ringbuffer_read_advance(m_event_buffer, 6*m_event_size);
-incrementFrameCounter(6);
-return RAW1394_ISO_OK;
-	
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "get packet...\n");
-	
-	// construct the packet cip
+	// Size of data to read from the event buffer, in bytes.
+	unsigned int read_size = n_events * m_event_size;
 
-    // TODO: calculate read_size here.
-    // note: an 'event' is one sample from all channels + possibly other midi and control data
-    int nevents=0; // TODO: determine
-	unsigned int read_size=nevents*m_event_size;
-
-    // we read the packet data from a ringbuffer, because of efficiency
-    // that allows us to construct the packets one period at once
+	// We read the packet data from a ringbuffer because of efficiency;
+	// it allows us to construct the packets one period at once.
 	if ((freebob_ringbuffer_read(m_event_buffer,(char *)(data+8),read_size)) < 
-				read_size) 
-	{
-        /* there is no more data in the ringbuffer */
-        debugWarning("Transmit buffer underrun (cycle %d, FC=%d, PC=%d)\n", 
-                 cycle, m_framecounter, m_handler->getPacketCount());
-        
-        // signal underrun
-        m_xruns++;
+				read_size) {
+		/* there is no more data in the ringbuffer */
+		debugWarning("Transmit buffer underrun (cycle %d, FC=%d, PC=%d)\n", 
+			cycle, m_framecounter, m_handler->getPacketCount());
 
-        retval=RAW1394_ISO_DEFER; // make raw1394_loop_iterate exit its inner loop
-        *length=0;
-        nevents=0;
+		// signal underrun
+        	m_xruns++;
 
-    } else {
-        retval=RAW1394_ISO_OK;
-        *length = read_size + 8;
+		retval=RAW1394_ISO_DEFER; // make raw1394_loop_iterate exit its inner loop
+		n_events = 0;
+
+	} else {
+		retval=RAW1394_ISO_OK;
+		*length += read_size;
+
+#if 0
+if (cycle<=10) {
+  fprintf(stderr,"cycle %d, sending %d/%d (dbs %d)\n",cycle,
+    m_cycle_count, (int)m_cycle_ofs, dbs);
+}
+#endif
+		// Set up each frames's SPH.  Note that the (int) typecast
+		// appears to do rounding.
+		// FIXME: once working, make more efficient by removing 1 of the
+		// "trim to 8000" operations.
+		for (i=0; i<n_events; i++, quadlet += dbs) {
+			*quadlet = htonl( (((m_cycle_count+CYCLE_DELAY)%8000)<<12) + 
+					(int)m_cycle_ofs);
+			m_cycle_ofs += m_sph_ofs_dll->get();
+			if (m_cycle_ofs >= 3072) {
+				m_cycle_ofs -= 3072;
+				if (++m_cycle_count > 7999)
+					m_cycle_count -= 8000;
+			}
+		}
+#if 0
+//if (cycle==10) {
+if (m_cycle_count==7999 || m_cycle_count==0) {
+int j;
+  for (j=0; j<n_events; j++) {
+    for (i=0; i<25; i++)
+      fprintf(stderr,"%02hhx ",*(data+8+j*dbs*4+i));
+    fprintf(stderr,"\n");
+  }
+}
+#endif
+#if 0
+int j, glitch=0;
+j=0;
+while (j<n_events && !glitch) {
+  glitch=*(data+8+j*dbs*4+22)!=0 || *(data+8+j*dbs*4+23)!=0 ||*(data+8+j*dbs*4+24)!=0;
+  j++;
+}
+if (glitch) {
+  for (j=0; j<n_events; j++) {
+    for (i=0; i<27; i++)
+      fprintf(stderr,"%02hhx ",*(data+8+j*dbs*4+i));
+    fprintf(stderr,"\n");
+  }
+  fprintf(stderr,"\n");
+}
+#endif
+
+
+		// Process all ports that should be handled on a per-packet base
+		// this is MIDI for AMDTP (due to the need of DBC, which is lost 
+		// when putting the events in the ringbuffer)
+		// for motu this might also be control data, however as control
+		// data isn't time specific I would also include it in the period
+		// based processing
         
-        // process all ports that should be handled on a per-packet base
-        // this is MIDI for AMDTP (due to the need of DBC, which is lost 
-        // when putting the events in the ringbuffer)
-        // for motu this might also be control data, however as control
-        // data isn't time specific I would also include it in the period
-        // based processing
-        
-        int dbc=0;//get this from your packet, if you need it. otherwise change encodePacketPorts
-        if (!encodePacketPorts((quadlet_t *)(data+8), nevents, dbc)) {
-            debugWarning("Problem encoding Packet Ports\n");
-        }
-    }
+		// FIXME: m_tx_dbc probably needs to be initialised to a non-zero
+		// value somehow so MIDI sync is possible.  For now we ignore
+		// this issue.
+		if (!encodePacketPorts((quadlet_t *)(data+8), n_events, m_tx_dbc)) {
+			debugWarning("Problem encoding Packet Ports\n");
+		}
+	}
     
-    *tag = 1; // TODO: is this correct for MOTU?
-    *sy = 0;
-    
-    // update the frame counter
-    incrementFrameCounter(nevents);
-    // keep this at the end, because otherwise the raw1394_loop_iterate functions inner loop
-    // keeps requesting packets, that are not nescessarily ready
-    if(m_framecounter>(signed int)m_period) {
-       retval=RAW1394_ISO_DEFER;
-    }
+	// Update the frame counter
+	incrementFrameCounter(n_events);
+
+	// Keep this at the end, because otherwise the raw1394_loop_iterate
+	// functions inner loop keeps requesting packets, that are not
+	// nescessarily ready
+
+// Amdtp has this commented out
+	if (m_framecounter > (signed int)m_period) {
+		retval=RAW1394_ISO_DEFER;
+	}
 	
-    return retval;
-
+	return retval;
 }
 
-bool MotuTransmitStreamProcessor::isOnePeriodReady()
-{ 
-     // TODO: this is the way you can implement sync
-     //       only when this returns true, one period will be
-     //       transferred to the audio api side.
-     //       you can delay this moment as long as you
-     //       want (provided that there is enough buffer space)
-     
-     // this implementation just waits until there is one period of samples
-     // transmitted from the buffer
-     return (m_framecounter > (signed int)m_period); 
+bool MotuTransmitStreamProcessor::isOnePeriodReady() { 
+	// TODO: this is the way you can implement sync
+	//       only when this returns true, one period will be
+	//       transferred to the audio api side.
+	//       you can delay this moment as long as you
+	//       want (provided that there is enough buffer space)
+	
+	// this implementation just waits until there is one period of samples
+	// transmitted from the buffer
+
+// Amdtp has this commented out and simply return true.
+	return (m_framecounter > (signed int)m_period); 
+//	return true;
 }
  
 bool MotuTransmitStreamProcessor::prefill() {
-    // this is needed because otherwise there is no data to be 
-    // sent when the streaming starts
+	// this is needed because otherwise there is no data to be 
+	// sent when the streaming starts
     
-    int i=m_nb_buffers;
-    while(i--) {
-        if(!transferSilence(m_period)) {
-            debugFatal("Could not prefill transmit stream\n");
-            return false;
-        }
-    }
-    
-    return true;
-    
+	int i = m_nb_buffers;
+	while (i--) {
+		if(!transferSilence(m_period)) {
+			debugFatal("Could not prefill transmit stream\n");
+			return false;
+		}
+	}
+	return true;
 }
 
 bool MotuTransmitStreamProcessor::reset() {
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-    // reset the event buffer, discard all content
-    freebob_ringbuffer_reset(m_event_buffer);
+	// reset the event buffer, discard all content
+	freebob_ringbuffer_reset(m_event_buffer);
     
-    // reset all non-device specific stuff
-    // i.e. the iso stream and the associated ports
-    if(!TransmitStreamProcessor::reset()) {
-        debugFatal("Could not do base class reset\n");
-        return false;
-    }
+	// reset all non-device specific stuff
+	// i.e. the iso stream and the associated ports
+	if (!TransmitStreamProcessor::reset()) {
+		debugFatal("Could not do base class reset\n");
+		return false;
+	}
 
-    // we should prefill the event buffer
-    if (!prefill()) {
-        debugFatal("Could not prefill buffers\n");
-        return false;    
-    }
+	// we should prefill the event buffer
+	if (!prefill()) {
+		debugFatal("Could not prefill buffers\n");
+		return false;    
+	}
 
-    return true;
+	return true;
 }
 
 bool MotuTransmitStreamProcessor::prepare() {
     
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
     
-    // prepare all non-device specific stuff
-    // i.e. the iso stream and the associated ports
-    if(!TransmitStreamProcessor::prepare()) {
-        debugFatal("Could not prepare base class\n");
-        return false;
-    }
+	// prepare all non-device specific stuff
+	// i.e. the iso stream and the associated ports
+	if (!TransmitStreamProcessor::prepare()) {
+		debugFatal("Could not prepare base class\n");
+		return false;
+	}
 
 	m_PeriodStat.setName("XMT PERIOD");
 	m_PacketStat.setName("XMT PACKET");
 	m_WakeupStat.setName("XMT WAKEUP");
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Event size: %d\n", m_event_size);
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Event size: %d\n", m_event_size);
     
-    // allocate the event buffer
-    unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
+	// allocate the event buffer
+	unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
     
-    if( !(m_event_buffer=freebob_ringbuffer_create(
-	m_event_size * ringbuffer_size_frames))) {
-        	debugFatal("Could not allocate memory event ringbuffer");
-        return false;
-    }
+	if( !(m_event_buffer=freebob_ringbuffer_create(
+	  m_event_size * ringbuffer_size_frames))) {
+		debugFatal("Could not allocate memory event ringbuffer");
+		return false;
+	}
 
-    // allocate the temporary event buffer
-    // this is needed for the efficient transfer() routine
-    // its size has to be equal to one 'event'
-    if( !(m_tmp_event_buffer=(char *)calloc(1,m_event_size))) {
-        debugFatal("Could not allocate temporary event buffer");
-        freebob_ringbuffer_free(m_event_buffer);
-        return false;
-    }
+	// Allocate the temporary event buffer.  This is needed for the
+	// efficient transfer() routine.  Its size has to be equal to one
+	// 'event'.
+ 	if( !(m_tmp_event_buffer=(char *)calloc(1,m_event_size))) {
+		debugFatal("Could not allocate temporary event buffer");
+		freebob_ringbuffer_free(m_event_buffer);
+		return false;
+	}
 
-    // set the parameters of ports we can:
-    // we want the audio ports to be period buffered,
-    // and the midi ports to be packet buffered
-    for ( PortVectorIterator it = m_Ports.begin();
-          it != m_Ports.end();
-          ++it )
-    {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
-        if(!(*it)->setBufferSize(m_period)) {
-            debugFatal("Could not set buffer size to %d\n",m_period);
-            return false;
-        }
-        
-        
-        switch ((*it)->getPortType()) {
-            case Port::E_Audio:
-                if(!(*it)->setSignalType(Port::E_PeriodSignalled)) {
-                    debugFatal("Could not set signal type to PeriodSignalling");
-                    return false;
-                }
+	// Set the parameters of ports we can: we want the audio ports to be
+	// period buffered, and the midi ports to be packet buffered.
+	for ( PortVectorIterator it = m_Ports.begin();
+	  it != m_Ports.end();
+	  ++it ) {
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
+		if(!(*it)->setBufferSize(m_period)) {
+			debugFatal("Could not set buffer size to %d\n",m_period);
+			return false;
+        	}
+
+		switch ((*it)->getPortType()) {
+		case Port::E_Audio:
+			if (!(*it)->setSignalType(Port::E_PeriodSignalled)) {
+				debugFatal("Could not set signal type to PeriodSignalling");
+				return false;
+			}
+			break;
+
+		case Port::E_Midi:
+			if (!(*it)->setSignalType(Port::E_PacketSignalled)) {
+				debugFatal("Could not set signal type to PacketSignalling");
+				return false;
+			}
+			break;
                 
-                break;
-            case Port::E_Midi:
-                if(!(*it)->setSignalType(Port::E_PacketSignalled)) {
-                    debugFatal("Could not set signal type to PacketSignalling");
-                    return false;
-                }
-                
-                break;
-                
-            case Port::E_Control:
-                if(!(*it)->setSignalType(Port::E_PeriodSignalled)) {
-                    debugFatal("Could not set signal type to PeriodSignalling");
-                    return false;
-                }
-                
-                break;
-            default:
-                debugWarning("Unsupported port type specified\n");
-                break;
-        }
-    }
+		case Port::E_Control:
+			if (!(*it)->setSignalType(Port::E_PeriodSignalled)) {
+				debugFatal("Could not set signal type to PeriodSignalling");
+				return false;
+			}
+			break;
 
-    // the API specific settings of the ports are already set before
-    // this routine is called, therefore we can init&prepare the ports
-    if(!initPorts()) {
-        debugFatal("Could not initialize ports!\n");
-        return false;
-    }
+		default:
+			debugWarning("Unsupported port type specified\n");
+			break;
+		}
+	}
 
-    if(!preparePorts()) {
-        debugFatal("Could not initialize ports!\n");
-        return false;
-    }
+	// The API specific settings of the ports are already set before
+	// this routine is called, therefore we can init&prepare the ports
+	if (!initPorts()) {
+		debugFatal("Could not initialize ports!\n");
+		return false;
+	}
 
-    // we should prefill the event buffer
-    if (!prefill()) {
-        debugFatal("Could not prefill buffers\n");
-        return false;    
-    }
+	if(!preparePorts()) {
+		debugFatal("Could not initialize ports!\n");
+		return false;
+	}
 
-    return true;
+	// We should prefill the event buffer
+	if (!prefill()) {
+		debugFatal("Could not prefill buffers\n");
+		return false;    
+	}
 
+	return true;
 }
 
 bool MotuTransmitStreamProcessor::transferSilence(unsigned int size) {
     
-    // this function should tranfer 'size' frames of 'silence' to the event buffer
-    unsigned int write_size=size*m_event_size;
-    char *dummybuffer=(char *)calloc(size,m_event_size);
+	// This function should tranfer 'size' frames of 'silence' to the event buffer
+	unsigned int write_size=size*m_event_size;
+	char *dummybuffer=(char *)calloc(size,m_event_size);
 
-    transmitSilenceBlock(dummybuffer, size, 0);
+	transmitSilenceBlock(dummybuffer, size, 0);
 
-    if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
-        debugWarning("Could not write to event buffer\n");
-    }
-    
-    free(dummybuffer);
-    
-    return true;
+	if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
+		debugWarning("Could not write to event buffer\n");
+	}
+
+	free(dummybuffer);
+
+	return true;
 }
 
+/**
+ * \brief write events queued for transmission from the port ringbuffers
+ * to the event buffer.
+ */
 bool MotuTransmitStreamProcessor::transfer() {
-    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/m_event_size);
+	m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/m_event_size);
 
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-    // TODO: improve
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+	// TODO: improve
 /* a naive implementation would look like this:
 
-    unsigned int write_size=m_period*m_event_size;
-    char *dummybuffer=(char *)calloc(m_period,m_event_size);
-    
-    transmitBlock(dummybuffer, m_period, 0, 0);
+	unsigned int write_size=m_period*m_event_size;
+	char *dummybuffer=(char *)calloc(m_period,m_event_size);
 
-    if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
-        debugWarning("Could not write to event buffer\n");
-    }
+	transmitBlock(dummybuffer, m_period, 0, 0);
 
+	if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
+		debugWarning("Could not write to event buffer\n");
+ 	}
 
-    free(dummybuffer);
+	free(dummybuffer);
 */
 /* but we're not that naive anymore... */
-    int xrun;
-    unsigned int offset=0;
+	int xrun;
+	unsigned int offset=0;
 
 // FIXME: just return until we've got the transmit side of things functional
-return true;
+//return true;
 
-    freebob_ringbuffer_data_t vec[2];
-    // we received one period of frames
-    // this is period_size*m_event_size of events
-    unsigned int bytes2write=m_period*m_event_size;
+	freebob_ringbuffer_data_t vec[2];
+	// There is one period of frames to transfer.  This is
+	// period_size*m_event_size of events.
+	unsigned int bytes2write=m_period*m_event_size;
 
-    /* write events2write bytes to the ringbuffer 
-    *  first see if it can be done in one read.
-    *  if so, ok. 
-    *  otherwise write up to a multiple of events directly to the buffer
-    *  then do the buffer wrap around using ringbuffer_write
-    *  then write the remaining data directly to the buffer in a third pass 
-    *  Make sure that we cannot end up on a non-cluster aligned position!
-    */
-    while(bytes2write>0) {
-        int byteswritten=0;
+	/* Write bytes2write bytes to the event ringbuffer.  First see if it can
+	 * be done in one write; if so, ok.
+	 * Otherwise write up to a multiple of events directly to the buffer
+	 * then do the buffer wrap around using ringbuffer_write.  Then
+	 * write the remaining data directly to the buffer in a third pass. 
+	 * Make sure that we cannot end up on a non-cluster aligned
+	 * position!
+	 */
+	while(bytes2write>0) {
+		int byteswritten=0;
         
-        unsigned int frameswritten=(m_period*m_event_size-bytes2write)/m_event_size;
-        offset=frameswritten;
-        
-        freebob_ringbuffer_get_write_vector(m_event_buffer, vec);
-            
-        if(vec[0].len==0) { // this indicates a full event buffer
-            debugError("XMT: Event buffer overrun in processor %p\n",this);
-            break;
-        }
-            
-        /* if we don't take care we will get stuck in an infinite loop
-        * because we align to a event boundary later
-        * the remaining nb of bytes in one write operation can be 
-        * smaller than one event
-        * this can happen because the ringbuffer size is always a power of 2
-        */
-        if(vec[0].len<m_event_size) {
-            
-            // encode to the temporary buffer
-            xrun = transmitBlock(m_tmp_event_buffer, 1, offset);
-            
-            if(xrun<0) {
-                // xrun detected
-                debugError("XMT: Frame buffer underrun in processor %p\n",this);
-                break;
-            }
-                
-            // use the ringbuffer function to write one event 
-            // the write function handles the wrap around.
-            freebob_ringbuffer_write(m_event_buffer,
-                         m_tmp_event_buffer,
-                         m_event_size);
-                
-            // we advanced one m_event_size
-            bytes2write-=m_event_size;
-                
-        } else { // 
-            
-            if(bytes2write>vec[0].len) {
-                // align to an event boundary
-                byteswritten=vec[0].len-(vec[0].len%m_event_size);
-            } else {
-                byteswritten=bytes2write;
-            }
-                
-            xrun = transmitBlock(vec[0].buf,
-                         byteswritten/m_event_size,
-                         offset);
-            
-            if(xrun<0) {
-                    // xrun detected
-                debugError("XMT: Frame buffer underrun in processor %p\n",this);
-                break;
-            }
+		unsigned int frameswritten=(m_period*m_event_size-bytes2write)/m_event_size;
+		offset=frameswritten;
 
-            freebob_ringbuffer_write_advance(m_event_buffer, byteswritten);
-            bytes2write -= byteswritten;
-        }
+		freebob_ringbuffer_get_write_vector(m_event_buffer, vec);
 
-        // the bytes2write should always be event aligned
-        assert(bytes2write%m_event_size==0);
+		if (vec[0].len==0) { // this indicates a full event buffer
+			debugError("XMT: Event buffer overrun in processor %p\n",this);
+			break;
+		}
 
-    }
+		/* If we don't take care we will get stuck in an infinite
+		 * loop because we align to a event boundary later.  The
+		 * remaining nb of bytes in one write operation can be
+		 * smaller than one event; this can happen because the
+		 * ringbuffer size is always a power of 2.
+		 */
+		if(vec[0].len<m_event_size) {
+            
+			// encode to the temporary buffer
+			xrun = transmitBlock(m_tmp_event_buffer, 1, offset);
+            
+			if (xrun<0) {
+				// xrun detected
+				debugError("XMT: Frame buffer underrun in processor %p\n",this);
+				break;
+			}
 
-    return true;
+			// Use the ringbuffer function to write one event.
+			// The write function handles the wrap around.
+			freebob_ringbuffer_write(m_event_buffer,
+				m_tmp_event_buffer, m_event_size);
+                
+			// we advanced one m_event_size
+			bytes2write-=m_event_size;
+                
+		} else {
+            
+			if (bytes2write>vec[0].len) {
+				// align to an event boundary
+				byteswritten=vec[0].len-(vec[0].len%m_event_size);
+			} else {
+				byteswritten=bytes2write;
+			}
+
+			xrun = transmitBlock(vec[0].buf,
+				byteswritten/m_event_size, offset);
+            
+			if (xrun<0) {
+				// xrun detected
+				debugError("XMT: Frame buffer underrun in processor %p\n",this);
+				break;
+			}
+
+			freebob_ringbuffer_write_advance(m_event_buffer, byteswritten);
+			bytes2write -= byteswritten;
+		}
+
+		// the bytes2write should always be event aligned
+		assert(bytes2write%m_event_size==0);
+	}
+
+	return true;
 }
 /* 
  * write received events to the stream ringbuffers.
  */
 
 int MotuTransmitStreamProcessor::transmitBlock(char *data, 
-                       unsigned int nevents, unsigned int offset)
-{
-    int problem=0;
+                       unsigned int nevents, unsigned int offset) {
+	signed int problem=0;
+	unsigned int i;
 
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        // if this port is disabled, don't process it
-        if((*it)->isDisabled()) {continue;};
-        
-        //FIXME: make this into a static_cast when not DEBUG?
+	// FIXME: ensure the MIDI and control streams are all zeroed until
+	// such time as they are fully implemented.
+	for (i=0; i<nevents; i++) {
+		memset(data+4+i*m_event_size, 0x00, 6);
+	}
 
-        MotuPortInfo *pinfo=dynamic_cast<MotuPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
+	for ( PortVectorIterator it = m_PeriodPorts.begin();
+	  it != m_PeriodPorts.end();
+	  ++it ) {
+		// If this port is disabled, don't process it
+		if((*it)->isDisabled()) {continue;};
+        
+		//FIXME: make this into a static_cast when not DEBUG?
+		Port *port=dynamic_cast<Port *>(*it);
+		
+		switch(port->getPortType()) {
+		
+		case Port::E_Audio:
+			if (encodePortToMBLAEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+				debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+				problem=1;
+			}
+			break;
+		// midi is a packet based port, don't process
+		//	case MotuPortInfo::E_Midi:
+		//		break;
 
-/*      This is the AMDTP way, the motu way is different
-        Leaving this in as reference
-        
-        switch(pinfo->getFormat()) {
-        
-        
-        case MotuPortInfo::E_MBLA:
-            if(encodePortToMBLAEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
-                problem=1;
-            }
-            break;
-        case MotuPortInfo::E_SPDIF: // still unimplemented
-            break;
-        default: // ignore
-            break;
-        }
-*/
-    }
-    return problem;
-
+		default: // ignore
+			break;
+		}
+	}
+	return problem;
 }
 
 int MotuTransmitStreamProcessor::transmitSilenceBlock(char *data, 
-                       unsigned int nevents, unsigned int offset)
-{
-    int problem=0;
+                       unsigned int nevents, unsigned int offset) {
+	// This is the same as the non-silence version, except that is
+	// doesn't read from the port buffers.
 
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
+	int problem=0;
 
-        //FIXME: make this into a static_cast when not DEBUG?
+	for ( PortVectorIterator it = m_PeriodPorts.begin();
+	  it != m_PeriodPorts.end();
+	  ++it ) {
+		//FIXME: make this into a static_cast when not DEBUG?
+		Port *port=dynamic_cast<Port *>(*it);
+		
+		switch(port->getPortType()) {
+		
+		case Port::E_Audio:
+			if (encodeSilencePortToMBLAEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+				debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+				problem=1;
+			}
+			break;
+		// midi is a packet based port, don't process
+		//	case MotuPortInfo::E_Midi:
+		//		break;
 
-        MotuPortInfo *pinfo=dynamic_cast<MotuPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
-
-/* this is the same as the non-silence version, except that is doesn't read from the port buffers
-        switch(pinfo->getFormat()) {
-        
-
-        case MotuPortInfo::E_MBLA:
-            if(encodeSilencePortToMBLAEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
-                problem=1;
-            }
-            break;
-        case MotuPortInfo::E_SPDIF: // still unimplemented
-            break;
-        default: // ignore
-            break;
-        }
-        */
-    }
-    return problem;
-
+		default: // ignore
+			break;
+		}
+	}
+	return problem;
 }
 
 /**
@@ -574,12 +657,44 @@ iterate over the ports
 
 not that in order to use the 'efficient' transfer method, you have to make sure that
 you can start from an offset (expressed in frames).
+*/
+#include <math.h>
 
 int MotuTransmitStreamProcessor::encodePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
-                       unsigned int offset, unsigned int nevents)
-{
-    unsigned int j=0;
+                       unsigned int offset, unsigned int nevents) {
+	unsigned int j=0;
+	unsigned char *target = (unsigned char *)data + p->getPosition();
 
+// offset is offset into the port buffers
+//quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+//assert(nevents + offset <= p->getBufferSize());
+//buffer+=offset;
+
+
+// FIXME: use the form of the silence version here for testing
+	switch (p->getDataType()) {
+	default:
+        case Port::E_Int24:
+        case Port::E_Float:
+// send silence to all but selected analog channels
+		for (j = 0; j < nevents; j++) {
+signed int val;
+if (p->getPosition() == 16) {
+  val = 0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs+j*512)/3072.0))/8000.0);
+//val = 0;
+//  fprintf(stderr,".%d.",val);
+} else
+  val = 0;
+			*target = (val >> 16) & 0xff;
+			*(target+1) = (val >> 8) & 0xff;
+			*(target+2) = val & 0xff;
+			target += m_event_size;
+		}
+		break;
+	}
+
+
+/*
     quadlet_t *target_event;
 
     target_event=(quadlet_t *)(data + p->getPosition());
@@ -623,36 +738,28 @@ int MotuTransmitStreamProcessor::encodePortToMBLAEvents(MotuAudioPort *p, quadle
             }
             break;
     }
-
-    return 0;
-}
 */
-/*
+	return 0;
+}
+
 int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
-                       unsigned int offset, unsigned int nevents)
-{
-    unsigned int j=0;
+                       unsigned int offset, unsigned int nevents) {
+	unsigned int j=0;
+	unsigned char *target = (unsigned char *)data + p->getPosition();
 
-    quadlet_t *target_event;
-
-    target_event=(quadlet_t *)(data + p->getPosition());
-
-    switch(p->getDataType()) {
-        default:
+	switch (p->getDataType()) {
+	default:
         case Port::E_Int24:
         case Port::E_Float:
-            {
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *target_event = htonl(0x40000000);
-                    target_event += m_dimension;
-                }
-            }
-            break;
-    }
+		for (j = 0; j < nevents; j++) {
+			*target = *(target+1) = *(target+2) = 0;
+			target += m_event_size;
+		}
+		break;
+	}
 
-    return 0;
+	return 0;
 }
-*/
 
 /* --------------------- RECEIVE ----------------------- */
 
@@ -703,9 +810,9 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
 // FIXME: just for debugging, print out the sph ofs DLL value
 // once a second
-if (cycle==0) {
-  fprintf(stderr, "sph_ofs_dll=%g\n",m_sph_ofs_dll->get());
-}
+//if (cycle==0) {
+//  fprintf(stderr, "sph_ofs_dll=%g\n",m_sph_ofs_dll->get());
+//}
 
     // If the packet length is 8 bytes (ie: just a CIP-like header) there is
     // no isodata.
@@ -724,7 +831,7 @@ if (cycle==0) {
 	if (tag!=1 || fdf_size!=32) {
 		return RAW1394_ISO_OK;
 	}
-        
+
 	// Signal that we're running
 	if (n_events) m_running=true;
 
@@ -1018,8 +1125,9 @@ int MotuReceiveStreamProcessor::receiveBlock(char *data,
 	 */
 	unsigned int ev;
 	signed int sph_ofs = ntohl(*(quadlet_t *)data) & 0xfff;
+
 	if (m_last_cycle_ofs < 0) {
-		m_last_cycle_ofs = sph_ofs-m_sph_ofs_dll->get();
+		m_last_cycle_ofs = sph_ofs-(int)m_sph_ofs_dll->get();
 	}
 	for (ev=0; ev<nevents; ev++) {
 		sph_ofs = ntohl(*(quadlet_t *)(data+ev*m_event_size)) & 0xfff;
@@ -1114,6 +1222,10 @@ signed int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p,
 
 				assert(nevents + offset <= p->getBufferSize());
 
+				// Offset is in frames, but each port is only a single
+				// channel, so the number of frames is the same as the
+				// number of quadlets to offset (assuming the port buffer
+				// uses one quadlet per sample, which is the case currently).
 				buffer+=offset;
 
 				for(j = 0; j < nevents; j += 1) { // Decode nsamples
