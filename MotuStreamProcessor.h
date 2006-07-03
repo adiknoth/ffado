@@ -71,6 +71,8 @@ public:
 
 	virtual void setVerboseLevel(int l);
 
+	void set_sph_ofs_dll(FreebobUtil::DelayLockedLoop *dll) {m_sph_ofs_dll=dll;};
+
 protected:
 
 	freebob_ringbuffer_t * m_event_buffer;
@@ -81,7 +83,20 @@ protected:
 	 * is the size of a single 'event' in bytes.
 	 */
 	unsigned int m_event_size;
-	
+
+	// Keep track of transmission data block count
+	unsigned int m_tx_dbc;
+
+	// Transmission cycle count and cycle offset
+	signed int m_cycle_count;
+	float m_cycle_ofs;
+
+	// Hook to the DLL in the receive stream which allows calculation
+	// of cycle offsets to put into frame SPHs.  This object is 
+	// owned by the receive stream, so the transmit stream should
+	// not dispose of it.
+	FreebobUtil::DelayLockedLoop *m_sph_ofs_dll;
+
     bool prefill();
     
 	bool transferSilence(unsigned int size);
@@ -94,6 +109,12 @@ protected:
 	int transmitSilenceBlock(char *data, unsigned int nevents, 
 	                  unsigned int offset);
 	                  
+	int MotuTransmitStreamProcessor::encodePortToMBLAEvents(
+		MotuAudioPort *p, quadlet_t *data, unsigned int offset, 
+		unsigned int nevents);
+	int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(
+		MotuAudioPort *p, quadlet_t *data, unsigned int offset, 
+		unsigned int nevents);
 
 
     DECLARE_DEBUG_MODULE;
@@ -132,6 +153,7 @@ public:
 
 	virtual void setVerboseLevel(int l);
 	
+	FreebobUtil::DelayLockedLoop *get_sph_ofs_dll(void) {return m_sph_ofs_dll;};
 	signed int setEventSize(unsigned int size);
 	unsigned int getEventSize(void);
 
