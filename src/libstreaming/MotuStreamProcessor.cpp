@@ -664,6 +664,7 @@ you can start from an offset (expressed in frames).
 int MotuTransmitStreamProcessor::encodePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
                        unsigned int offset, unsigned int nevents) {
 	unsigned int j=0;
+#if 0
 	unsigned char *target = (unsigned char *)data + p->getPosition();
 
 // offset is offset into the port buffers
@@ -688,6 +689,63 @@ signed int val = 0;
 		}
 		break;
 	}
+
+#endif
+
+	// Use char here since the target address won't necessarily be 
+	// aligned; use of an unaligned quadlet_t may cause issues on certain
+	// architectures.
+	unsigned char *target;
+	target = (unsigned char *)data + p->getPosition();
+
+	switch(p->getDataType()) {
+		default:
+		case Port::E_Int24:
+			{
+				quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+
+				assert(nevents + offset <= p->getBufferSize());
+
+				// Offset is in frames, but each port is only a single
+				// channel, so the number of frames is the same as the
+				// number of quadlets to offset (assuming the port buffer
+				// uses one quadlet per sample, which is the case currently).
+				buffer+=offset;
+
+				for(j = 0; j < nevents; j += 1) { // Decode nsamples
+					*target = (*buffer >> 16) & 0xff;
+					*(target+1) = (*buffer >> 8) & 0xff;
+					*(target+2) = (*buffer) & 0xff;
+
+					buffer++;
+					target+=m_event_size;
+				}
+			}
+			break;
+		case Port::E_Float:
+			{
+				const float multiplier = (float)(0x7FFFFF);
+				float *buffer=(float *)(p->getBufferAddress());
+
+				assert(nevents + offset <= p->getBufferSize());
+
+				buffer+=offset;
+
+				for(j = 0; j < nevents; j += 1) { // decode max nsamples		
+					unsigned int v = *buffer * multiplier;
+					*target = (v >> 16) & 0xff;
+					*(target+1) = (v >> 8) & 0xff;
+					*(target+2) = v & 0xff;
+
+					buffer++;
+					target+=m_event_size;
+				}
+			}
+			break;
+	}
+
+	return 0;
+
 
 
 /*

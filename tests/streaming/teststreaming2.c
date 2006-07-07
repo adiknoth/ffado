@@ -109,23 +109,26 @@ int main(int argc, char *argv[])
 	}
 	
 	nullbuffer=calloc(PERIOD_SIZE+1,sizeof(freebob_sample_t));
-	
-// 	for (i=0;i<nb_out_channels;i++) {
-// 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
-// 			case freebob_stream_type_audio:
-// 				if (i<nb_in_channels) {
-// 					/* assign the audiobuffer to the stream */
-// 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)audiobuffer[i], freebob_buffer_type_uint24);
-// 				} else {
-// 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer, freebob_buffer_type_uint24);	
-// 				}
-// 				break;
-// 				// this is done with read/write routines because the nb of bytes can differ.
-// 			case freebob_stream_type_midi:
-// 			default:
-// 				break;
-// 		}
-// 	}
+
+#if 1
+ 	for (i=0;i<nb_out_channels;i++) {
+ 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
+ 			case freebob_stream_type_audio:
+ 				if (i<nb_in_channels) {
+ 					/* assign the audiobuffer to the stream */
+ 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)audiobuffer[i]);
+ 				} else {
+ 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer);
+ 				}
+				freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_int24);
+ 				break;
+ 				// this is done with read/write routines because the nb of bytes can differ.
+ 			case freebob_stream_type_midi:
+ 			default:
+ 				break;
+ 		}
+ 	}
+#endif
 	
 	/* open the files to write to*/
 	FILE* fid_out[nb_out_channels];
