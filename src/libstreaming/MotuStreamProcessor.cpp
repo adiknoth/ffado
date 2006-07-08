@@ -32,6 +32,8 @@
 #include "Port.h"
 #include "MotuPort.h"
 
+#include <math.h>
+
 #include <netinet/in.h>
 
 namespace FreebobStreaming {
