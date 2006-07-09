@@ -110,6 +110,8 @@ public:
 
  	virtual void setVerboseLevel(int l);
 
+ 	virtual bool preparedForStop() {return true;};
+
 protected:
 	
 

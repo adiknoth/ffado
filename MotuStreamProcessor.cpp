@@ -49,7 +49,8 @@ IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG
 MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate,
 		unsigned int event_size)
 	: TransmitStreamProcessor(port, framerate), m_event_size(event_size),
-	m_tx_dbc(0), m_cycle_count(-1), m_cycle_ofs(0.0), m_sph_ofs_dll(NULL) {
+	m_tx_dbc(0), m_cycle_count(-1), m_cycle_ofs(0.0), m_sph_ofs_dll(NULL),
+	m_closedown_count(-1) {
 
 }
 
@@ -68,7 +69,7 @@ bool MotuTransmitStreamProcessor::init() {
 		debugFatal("Could not do base class init (%p)\n",this);
 		return false;
 	}
-	
+	m_closedown_count = -1;
 
 	return true;
 }
@@ -98,7 +99,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 // fetched from the event buffer or whether zero data is generated.
 //
 // The other thing which needs to be worked out is close-down.
-// Experimentation has shown that 2 or so zero packets need to be sent so no
+// Experimentation has shown that some zero packets need to be sent so no
 // high-pitched noises are emitted at closedown and subsequent restart.  In
 // the proof-of-concept code this was done by manually calling
 // raw1394_loop_iterate() from the iso shutdown function.  Under freebob a
@@ -115,18 +116,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	quadlet_t *quadlet = (quadlet_t *)data;
 	signed int i;
 
-	// signal that we are running
-	// this is to allow the manager to wait untill all streams are up&running
-	// it can take some time before the devices start to transmit.
-	// if we would transmit ourselves, we'd have instant buffer underrun
-	// this works in cooperation with the m_disabled value
-	
-	// TODO: add code here to detect that a stream is running
-	// NOTE: xmit streams are most likely 'always' ready
-	m_running=true;
+	// The MOTU transmit stream is 'always' ready
+	m_running = true;
 	
 	// Initialise the cycle counter if this is the first time
-	// iso data has been requested with the stream enabled.
+	// iso data has been requested.
 	if (!m_disabled && m_cycle_count<0) {
 		m_cycle_count = cycle;
 		m_cycle_ofs = 0.0;
@@ -148,12 +142,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 
 	// Increment the dbc (data block count).  This is only done if the
-	// packet will contain events - that is, the stream is not disabled
-	// and we are due to send some data.  Otherwise a pad packet is sent
-	// which contains the DBC of the previously sent packet.  This
-	// regime also means that the very first packet containing data will
-	// have a DBC of n_events, which matches what is observed from other
-	// systems.
+	// packet will contain events - that is, we are due to send some
+	// data.  Otherwise a pad packet is sent which contains the DBC of
+	// the previously sent packet.  This regime also means that the very
+	// first packet containing data will have a DBC of n_events, which
+	// matches what is observed from other systems.
 	if (!m_disabled && cycle>=m_cycle_count) {
 		m_tx_dbc += n_events;
 		if (m_tx_dbc > 0xff)
@@ -173,8 +166,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// If the stream is disabled or the MOTU transmission cycle count is
 	// ahead of the ieee1394 cycle timer, we send a data-less packet
 	// with only the 8 byte CIP-like header set up previously.
-	// FIXME: in disabled state, need to send a stream of zero audio data,
-	// not "no data".  Otherwise MOTU will emit an (approx) 10 kHz signal.
 	if (m_disabled || cycle<m_cycle_count) {
 		return RAW1394_ISO_OK;
 	}
@@ -182,10 +173,30 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// Size of data to read from the event buffer, in bytes.
 	unsigned int read_size = n_events * m_event_size;
 
-	// We read the packet data from a ringbuffer because of efficiency;
-	// it allows us to construct the packets one period at once.
-	if ((freebob_ringbuffer_read(m_event_buffer,(char *)(data+8),read_size)) < 
-				read_size) {
+	// In the disabled state simply zero all data sent to the MOTU.  If
+	// a stream of empty packets are sent once iso streaming is enabled
+	// the MOTU tends to emit high-pitched audio (approx 10 kHz) for
+	// some reason.  This is not completely sufficient, however (zeroed
+	// packets must also be sent on iso closedown).
+
+	// FIXME: Currently we simply send empty packets to the MOTU when
+	// the stream is disabled so the "m_disabled == 0" code is never
+	// executed.  However, this may change in future so it's left in 
+	// for the moment for reference.
+	// FIXME: Currently we don't read the buffer at all during closedown.
+	// We could (and silently junk the contents) if it turned out to be
+	// more helpful.
+	if (!m_disabled && m_closedown_count<0) {
+	        // We read the packet data from a ringbuffer because of
+        	// efficiency; it allows us to construct the packets one
+        	// period at once.
+		i = freebob_ringbuffer_read(m_event_buffer,(char *)(data+8),read_size) <
+			read_size;
+	} else {
+		memset(data+8, 0, read_size);
+		i = 0;
+	}
+	if (i == 1) {
 		/* there is no more data in the ringbuffer */
 		debugWarning("Transmit buffer underrun (cycle %d, FC=%d, PC=%d)\n", 
 			cycle, m_framecounter, m_handler->getPacketCount());
@@ -200,6 +211,13 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		retval=RAW1394_ISO_OK;
 		*length += read_size;
 
+// FIXME: if we choose to read the buffer even during closedown,
+// here is where the data is silenced.
+//		if (m_closedown_count >= 0)
+//			memset(data+8, 0, read_size);
+		if (m_closedown_count > 0)
+			m_closedown_count--;
+
 		// Set up each frames's SPH.  Note that the (int) typecast
 		// appears to do rounding.
 		// FIXME: once working, make more efficient by removing 1 of the
@@ -207,10 +225,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		for (i=0; i<n_events; i++, quadlet += dbs) {
 			*quadlet = htonl( (((m_cycle_count+CYCLE_DELAY)%8000)<<12) + 
 					(int)m_cycle_ofs);
-// FIXME: remove this hacked in 1 kHz test signal to analog-1
-{
+// FIXME: remove this hacked in 1 kHz test signal to analog-1 when testing
+// is complete.  Note that the tone is *not* added during closedown.
+if (m_closedown_count<0) {
 signed int val;
-val = 0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs)/3072.0))/8000.0);
+val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs)/3072.0))/8000.0));
 *(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
 *(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
 *(data+8+i*m_event_size+18) = val & 0xff;
@@ -222,17 +241,7 @@ val = 0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs)/3072.0))/8000.0
 					m_cycle_count -= 8000;
 			}
 		}
-#if 0
-//if (cycle==10) {
-if (m_cycle_count==7999 || m_cycle_count==0) {
-int j;
-  for (j=0; j<n_events; j++) {
-    for (i=0; i<25; i++)
-      fprintf(stderr,"%02hhx ",*(data+8+j*dbs*4+i));
-    fprintf(stderr,"\n");
-  }
-}
-#endif
+
 		// Process all ports that should be handled on a per-packet base
 		// this is MIDI for AMDTP (due to the need of DBC, which is lost 
 		// when putting the events in the ringbuffer)
@@ -453,9 +462,6 @@ bool MotuTransmitStreamProcessor::transfer() {
 	int xrun;
 	unsigned int offset=0;
 
-// FIXME: just return until we've got the transmit side of things functional
-//return true;
-
 	freebob_ringbuffer_data_t vec[2];
 	// There is one period of frames to transfer.  This is
 	// period_size*m_event_size of events.
@@ -666,37 +672,12 @@ you can start from an offset (expressed in frames).
 int MotuTransmitStreamProcessor::encodePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
                        unsigned int offset, unsigned int nevents) {
 	unsigned int j=0;
-#if 0
-	unsigned char *target = (unsigned char *)data + p->getPosition();
-
-// offset is offset into the port buffers
-//quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
-//assert(nevents + offset <= p->getBufferSize());
-//buffer+=offset;
-
-
-// FIXME: use the form of the silence version here for testing
-	switch (p->getDataType()) {
-	default:
-        case Port::E_Int24:
-        case Port::E_Float:
-// send silence to all outputs for now
-		for (j = 0; j < nevents; j++) {
-signed int val = 0;
-  val = 0;
-			*target = (val >> 16) & 0xff;
-			*(target+1) = (val >> 8) & 0xff;
-			*(target+2) = val & 0xff;
-			target += m_event_size;
-		}
-		break;
-	}
-
-#endif
 
 	// Use char here since the target address won't necessarily be 
 	// aligned; use of an unaligned quadlet_t may cause issues on certain
-	// architectures.
+	// architectures.  Besides, the target (data going directly to the MOTU)
+	// isn't structured in quadlets anyway; it mainly consists of packed
+	// 24-bit integers.
 	unsigned char *target;
 	target = (unsigned char *)data + p->getPosition();
 
@@ -734,7 +715,7 @@ signed int val = 0;
 				buffer+=offset;
 
 				for(j = 0; j < nevents; j += 1) { // decode max nsamples		
-					unsigned int v = *buffer * multiplier;
+					unsigned int v = (int)(*buffer * multiplier);
 					*target = (v >> 16) & 0xff;
 					*(target+1) = (v >> 8) & 0xff;
 					*(target+2) = v & 0xff;
@@ -746,55 +727,6 @@ signed int val = 0;
 			break;
 	}
 
-	return 0;
-
-
-
-/*
-    quadlet_t *target_event;
-
-    target_event=(quadlet_t *)(data + p->getPosition());
-
-    switch(p->getDataType()) {
-        default:
-        case Port::E_Int24:
-            {
-                quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
-
-                assert(nevents + offset <= p->getBufferSize());
-
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *target_event = htonl((*(buffer) & 0x00FFFFFF) | 0x40000000);
-                    buffer++;
-                    target_event += m_dimension;
-                }
-            }
-            break;
-        case Port::E_Float:
-            {
-                const float multiplier = (float)(0x7FFFFF00);
-                float *buffer=(float *)(p->getBufferAddress());
-
-                assert(nevents + offset <= p->getBufferSize());
-
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples		
-    
-                    // don't care for overflow
-                    float v = *buffer * multiplier;  // v: -231 .. 231
-                    unsigned int tmp = ((int)v);
-                    *target_event = htonl((tmp >> 8) | 0x40000000);
-                    
-                    buffer++;
-                    target_event += m_dimension;
-                }
-            }
-            break;
-    }
-*/
 	return 0;
 }
 
@@ -815,6 +747,37 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(MotuAudioPort *p,
 	}
 
 	return 0;
+}
+
+bool MotuTransmitStreamProcessor::preparedForStop() {
+
+	// FIXME: ideally we want to include a condition which tests if the
+	// stream shutdown is in response to an xrun due to a problem at
+	// startup, and unconditionally return true.  This saves a few
+	// seconds delay since under these conditions the iso transmit
+	// callback doesn't appear to be called and therefore
+	// m_closedown_count is never decremented.  We can't just test for
+	// an xrun however since sometimes these can occur "normally" during
+	// shutdown.  This is probably all tied up with the sync recovery
+	// issue which hasn't really been exported yet.
+	if (m_disabled || !isRunning())
+		return true;
+
+	if (m_closedown_count < 0) {
+		// No closedown has been initiated, so start one now.  Set
+		// the closedown count to the number of zero packets which
+		// will be sent to the MOTU before closing off the iso
+		// streams.  FIXME: 128 is the experimentally-determined
+		// figure for 48 kHz.  Other rates may require other
+		// settings.
+		m_closedown_count = 128;
+		return false;
+	}
+
+	// We are "go" for closedown once all requested zero packets
+	// (initiated by a previous call to this function) have been sent to
+	// the MOTU.
+	return m_closedown_count == 0;
 }
 
 /* --------------------- RECEIVE ----------------------- */
@@ -1264,9 +1227,12 @@ signed int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p,
 // 	hexDumpQuadlets(data,m_dimension*4);
 // 	printf("****************\n");
 
-	// Use char here since a port's source address won't necessarily be 
-	// aligned; use of an unaligned quadlet_t may cause issues on certain
-	// architectures.
+	// Use char here since a port's source address won't necessarily be
+	// aligned; use of an unaligned quadlet_t may cause issues on
+	// certain architectures.  Besides, the source (data coming directly
+	// from the MOTU) isn't structured in quadlets anyway; it mainly
+	// consists of packed 24-bit integers.
+
 	unsigned char *src_data;
 	src_data = (unsigned char *)data + p->getPosition();
 
