@@ -468,6 +468,32 @@ bool StreamProcessorManager::stop() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping...\n");
 	assert(m_isoManager);
 	assert(m_streamingThread);
+
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to prepare to stop...\n");
+	// Most stream processors can just stop without special treatment.  However, some
+	// (like the MOTU) need to do a few things before it's safe to turn off the iso
+	// handling.
+	int wait_cycles=2000; // two seconds ought to be sufficient
+	bool allReady = false;
+	while (!allReady && wait_cycles) {
+		wait_cycles--;
+		allReady = true;
+		
+		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+			it != m_ReceiveProcessors.end();
+			++it ) {
+			if(!(*it)->preparedForStop()) allReady = false;
+		}
+	
+		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+			it != m_TransmitProcessors.end();
+			++it ) {
+			if(!(*it)->preparedForStop()) allReady = false;
+		}
+		usleep(1000);
+	}
+
+
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping thread...\n");
 	
 	m_streamingThread->Stop();

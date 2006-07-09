@@ -73,6 +73,8 @@ public:
 
 	void set_sph_ofs_dll(FreebobUtil::DelayLockedLoop *dll) {m_sph_ofs_dll=dll;};
 
+	virtual bool preparedForStop();
+
 protected:
 
 	freebob_ringbuffer_t * m_event_buffer;
@@ -96,6 +98,9 @@ protected:
 	// owned by the receive stream, so the transmit stream should
 	// not dispose of it.
 	FreebobUtil::DelayLockedLoop *m_sph_ofs_dll;
+
+	// Used to keep track of the close-down zeroing of output data
+	signed int m_closedown_count;
 
     bool prefill();
     
