@@ -89,28 +89,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 // we can get this thing synchronised.  For now this seems to work.
 #define CYCLE_DELAY 1
 
-// FIXME: currently data is not sent when the stream is disabled.  The
-// trouble is that the MOTU actually needs zero data explicitly sent from
-// the moment its iso receive channel is activated; failure to do so can
-// result in a high pitch audio signal (approx 10 kHz) in channels which
-// have had non-zero data in the past.  Things need to be changed around so
-// this can be done; essentially the tests on m_disabled disappear from
-// almost everywhere.  Instead, m_disabled will determine whether data is
-// fetched from the event buffer or whether zero data is generated.
-//
-// The other thing which needs to be worked out is close-down.
-// Experimentation has shown that some zero packets need to be sent so no
-// high-pitched noises are emitted at closedown and subsequent restart.  In
-// the proof-of-concept code this was done by manually calling
-// raw1394_loop_iterate() from the iso shutdown function.  Under freebob a
-// similar thing needs to be done from the respective function in the Motu
-// AvDevice object, but the precise way of doing so without causing issues
-// is yet to be determined.
-//
-// Finally, every so often sync seems to be missed on startup, and because
+// FIXME: every so often sync seems to be missed on startup, and because
 // this code can't recover a sync the problem remains indefinitely.  The
 // cause of this needs to be identified.  It may be the result of not
-// running with RT privileges for this initial testing phase.
+// running with RT privileges for this initial testing phase.  Even so, sync
+// recovery needs to be implemented.
 
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	quadlet_t *quadlet = (quadlet_t *)data;
@@ -119,6 +102,19 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// The MOTU transmit stream is 'always' ready
 	m_running = true;
 	
+// FIXME: some tests - attempt to recover sync after loss due to missed cycles
+static signed int next_cycle = -1;
+if (!m_disabled && next_cycle>=0 && cycle!=next_cycle) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "tx cycle miss: %d requested, %d expected\n",cycle,next_cycle);
+  // Try to pick up the transmit sequence as best we can.  This only works
+  // some of the time for some reason.
+  m_cycle_count = -1;
+}
+if (!m_disabled)
+  next_cycle = (cycle+1)%8000;
+else
+  next_cycle = -1;
+
 	// Initialise the cycle counter if this is the first time
 	// iso data has been requested.
 	if (!m_disabled && m_cycle_count<0) {
@@ -759,7 +755,7 @@ bool MotuTransmitStreamProcessor::preparedForStop() {
 	// m_closedown_count is never decremented.  We can't just test for
 	// an xrun however since sometimes these can occur "normally" during
 	// shutdown.  This is probably all tied up with the sync recovery
-	// issue which hasn't really been exported yet.
+	// issue which hasn't really been explored yet.
 	if (m_disabled || !isRunning())
 		return true;
 
@@ -767,10 +763,15 @@ bool MotuTransmitStreamProcessor::preparedForStop() {
 		// No closedown has been initiated, so start one now.  Set
 		// the closedown count to the number of zero packets which
 		// will be sent to the MOTU before closing off the iso
-		// streams.  FIXME: 128 is the experimentally-determined
-		// figure for 48 kHz.  Other rates may require other
-		// settings.
-		m_closedown_count = 128;
+		// streams.  FIXME: 128 packets (each containing 8 frames at
+		// 48 kHz) is the experimentally-determined figure for 48
+		// kHz with a period size of 1024.  It seems that at least
+		// one period of zero samples need to be sent to allow for
+		// inter-thread communication occuring on period boundaries. 
+		// This needs to be confirmed for other rates and period
+		// sizes.
+		signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
+		m_closedown_count = m_period / n_events;
 		return false;
 	}
 
