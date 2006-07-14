@@ -102,6 +102,7 @@ protected:
     int              m_verboseLevel;
     signed int m_id;
     signed int m_iso_recv_channel, m_iso_send_channel;
+    signed int m_bandwidth;
     
 	FreebobStreaming::MotuReceiveStreamProcessor *m_receiveProcessor;
 	FreebobStreaming::MotuTransmitStreamProcessor *m_transmitProcessor;

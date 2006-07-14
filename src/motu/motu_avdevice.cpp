@@ -37,6 +37,8 @@
 #include <assert.h>
 #include <netinet/in.h>
 
+#include <libraw1394/csr.h>
+
 namespace Motu {
 
 IMPL_DEBUG_MODULE( MotuDevice, MotuDevice, DEBUG_LEVEL_NORMAL );
@@ -44,45 +46,52 @@ IMPL_DEBUG_MODULE( MotuDevice, MotuDevice, DEBUG_LEVEL_NORMAL );
 char *motufw_modelname[] = {"[unknown]","828MkII", "Traveler"}; 
 
 /* ======================================================================= */
-/* Provide a mechanism for allocating iso channels to MOTU interfaces.
- *
- * FIXME: This is overly simplistic at present since it assumes there are no
- * other users of iso channels on the firewire bus except MOTU interfaces. 
- * It does however allow more than one MOTU interface to exist on the same
- * bus.  For now the first MOTU discovered will be allocated iso channels 0
- * (send) and 1 (receive) which mirrors what the official driver appears to
- * do.  Ultimately we need code to query the IRM for iso channels.
+/* Provide a mechanism for allocating iso channels and bandwidth to MOTU 
+ * interfaces.
  */
-static signed int next_iso_recv_channel_num = 1;
-static signed int next_iso_send_channel_num = 0;  
-      
-static signed int next_iso_recv_channel(void) {
+
+static signed int allocate_iso_channel(raw1394handle_t handle) {
 /*
- * Returns the next available channel for ISO receive.  If there are no more
- * available -1 is returned.  Currently the odd channels (starting from 1)
- * are used for iso receive.  No provision is made to reuse previously
- * allocated channels in the event that the applicable interface has been
- * removed - this will change in future to use the IRM.
+ * Allocates an iso channel for use by the interface in a similar way to
+ * libiec61883.  Returns -1 on error (due to there being no free channels)
+ * or an allocated channel number.
+ * FIXME: As in libiec61883, channel 63 is not requested; this is either a
+ * bug or it's omitted since that's the channel preferred by video devices.
  */
-	if (next_iso_recv_channel_num < 64) {
-		next_iso_recv_channel_num+=2;
-		return next_iso_recv_channel_num-2;
-	}
+	int c = -1;
+	for (c = 0; c < 63; c++)
+		if (raw1394_channel_modify (handle, c, RAW1394_MODIFY_ALLOC) == 0)
+			break;
+	if (c < 63)
+		return c;
 	return -1;
 }
-static signed int next_iso_send_channel(void) {
+
+static signed int free_iso_channel(raw1394handle_t handle, signed int channel) {
 /*
- * Returns the next available channel for ISO send.  If there are no more
- * available -1 is returned.  Currently the even channels (starting from 0)
- * are used for iso receive.  No provision is made to reuse previously
- * allocated channels in the event that the applicable interface has been
- * removed - this will all change in future to use the IRM.
+ * Deallocates an iso channel.  Returns -1 on error or 0 on success.  Silently
+ * ignores a request to deallocate a negative channel number.
  */
-	if (next_iso_send_channel_num < 64) {
-		next_iso_send_channel_num+=2;
-		return next_iso_send_channel_num-2;
-	}
-	return -1;
+	if (channel < 0)
+		return 0;
+	if (raw1394_channel_modify (handle, channel, RAW1394_MODIFY_FREE)!=0)
+		return -1;
+	return 0;
+}
+
+static signed int get_iso_bandwidth_avail(raw1394handle_t handle) {
+/*
+ * Returns the current value of the `bandwidth available' register on
+ * the IRM, or -1 on error.
+ */
+quadlet_t buffer;
+signed int result = raw1394_read (handle, raw1394_get_irm_id (handle),
+	CSR_REGISTER_BASE + CSR_BANDWIDTH_AVAILABLE,
+	sizeof (quadlet_t), &buffer);
+
+	if (result < 0)
+		return -1;
+	return ntohl(buffer);
 }
 /* ======================================================================= */
 
@@ -96,6 +105,7 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394service,
     , m_id(0)
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
+    , m_bandwidth ( -1 )
     , m_receiveProcessor ( 0 )
     , m_transmitProcessor ( 0 )
     
@@ -112,6 +122,19 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394service,
 
 MotuDevice::~MotuDevice()
 {
+	// Free ieee1394 bus resources if they have been allocated
+	if (m_1394Service != NULL) {
+		raw1394handle_t handle = m_1394Service->getHandle();
+		if (m_bandwidth >= 0)
+			if (raw1394_bandwidth_modify(handle, m_bandwidth, RAW1394_MODIFY_FREE) < 0)
+				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free bandwidth of %d\n", m_bandwidth);
+		if (m_iso_recv_channel >= 0)
+			if (raw1394_channel_modify(handle, m_iso_recv_channel, RAW1394_MODIFY_FREE) < 0)
+				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
+		if (m_iso_send_channel >= 0)
+			if (raw1394_channel_modify(handle, m_iso_send_channel, RAW1394_MODIFY_FREE) < 0)
+				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
+	}
 	delete m_configRom;
 }
 
@@ -138,14 +161,9 @@ MotuDevice::discover()
         if (m_motu_model != MOTUFW_MODEL_NONE) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, "found MOTU %s\n",
                         motufw_modelname[m_motu_model]);
-
-		// Assign iso channels if not already done
-		if (m_iso_recv_channel < 0)
-			m_iso_recv_channel = next_iso_recv_channel();
-		if (m_iso_send_channel < 0)
-			m_iso_send_channel = next_iso_send_channel();
                 return true;
 	}
+
 	return false;
 }
 
@@ -254,23 +272,69 @@ MotuDevice::prepare() {
 	unsigned int optical_mode = getOpticalMode();
 	unsigned int event_size = getEventSize();
 
+	raw1394handle_t handle = m_1394Service->getHandle();
+
 	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
+
+	// Assign iso channels if not already done
+	if (m_iso_recv_channel < 0)
+		m_iso_recv_channel = allocate_iso_channel(handle);
+	if (m_iso_send_channel < 0)
+		m_iso_send_channel = allocate_iso_channel(handle);
+
+	debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
+		m_iso_recv_channel, m_iso_send_channel);
+
+	if (m_iso_recv_channel<0 || m_iso_send_channel<0) {
+		debugFatal("Could not allocate iso channels!\n");
+		return false;
+	}
+
+	// Allocate bandwidth if not previously done.
+	// FIXME: The bandwidth allocation calculation can probably be
+	// refined somewhat since this is currently based on a rudimentary
+	// understanding of the iso protocol.
+	// Currently we assume the following.
+	//   * Ack/iso gap = 0.05 us
+	//   * DATA_PREFIX = 0.16 us
+	//   * DATA_END    = 0.26 us
+	// These numbers are the worst-case figures given in the ieee1394
+	// standard.  This gives approximately 0.5 us of overheads per
+	// packet - around 25 bandwidth allocation units (from the ieee1394
+	// standard 1 bandwidth allocation unit is 125/6144 us).  We further
+	// assume the MOTU is running at S400 (which it should be) so one
+	// allocation unit is equivalent to 1 transmitted byte; thus the
+	// bandwidth allocation required for the packets themselves is just
+	// the size of the packet.  We allocate based on the maximum packet
+	// size (1160 bytes at 192 kHz) so the sampling frequency can be
+	// changed dynamically if this ends up being useful in future.
+	m_bandwidth = 25 + 1160;
+	debugOutput(DEBUG_LEVEL_VERBOSE, "Available bandwidth: %d\n", 
+		get_iso_bandwidth_avail(handle));
+	if (raw1394_bandwidth_modify(handle, m_bandwidth, RAW1394_MODIFY_ALLOC) < 0) {
+		debugFatal("Could not allocate bandwidth of %d\n", m_bandwidth);
+		m_bandwidth = -1;
+		return false;
+	}
+	debugOutput(DEBUG_LEVEL_VERBOSE, 
+		"allocated bandwidth of %d for MOTU device\n", m_bandwidth);
+	debugOutput(DEBUG_LEVEL_VERBOSE,
+		"remaining bandwidth: %d\n", get_iso_bandwidth_avail(handle));
 
 	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
 		m_1394Service->getPort(), samp_freq, event_size);
 	                         
-	// the first thing is to initialize the processor
-	// this creates the data structures
+	// The first thing is to initialize the processor.  This creates the
+	// data structures.
 	if(!m_receiveProcessor->init()) {
 		debugFatal("Could not initialize receive processor!\n");
 		return false;
 	}
 	m_receiveProcessor->setVerboseLevel(getDebugLevel());
 
-	// now we add ports to the processor
+	// Now we add ports to the processor
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
 	
-	// TODO: change this into something based upon device detection/configuration
 	char *buff;
 	unsigned int i;
 	FreebobStreaming::Port *p=NULL;
@@ -323,7 +387,7 @@ MotuDevice::prepare() {
 //        }
 //    }
 
-	// do the same for the transmit processor
+	// Do the same for the transmit processor
 	m_transmitProcessor=new FreebobStreaming::MotuTransmitStreamProcessor(
 		m_1394Service->getPort(), getSamplingFrequency(), event_size);
 
@@ -338,7 +402,7 @@ MotuDevice::prepare() {
 	// receive stream.
 	m_transmitProcessor->set_sph_ofs_dll(m_receiveProcessor->get_sph_ofs_dll());
 
-	// now we add ports to the processor
+	// Now we add ports to the processor
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
 	// Add audio playback ports
