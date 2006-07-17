@@ -96,10 +96,14 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0040ab, 0x00010048},  // EDIROL, FA-101
-    {0x0040ab, 0x00010049},  // EDIROL, FA-66
+    {0x00000f, 0x00010065},  // Mackie, Onyx Firewire
 
     {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
+
+    {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW
+
+    {0x0040ab, 0x00010048},  // EDIROL, FA-101
+    {0x0040ab, 0x00010049},  // EDIROL, FA-66
 };
 
 bool
