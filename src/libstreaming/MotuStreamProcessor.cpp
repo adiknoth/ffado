@@ -102,22 +102,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// The MOTU transmit stream is 'always' ready
 	m_running = true;
 	
-// FIXME: some tests - attempt to recover sync after loss due to missed cycles
-static signed int next_cycle = -1;
-if (!m_disabled && next_cycle>=0 && cycle!=next_cycle) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "tx cycle miss: %d requested, %d expected\n",cycle,next_cycle);
-  // Try to pick up the transmit sequence as best we can.  This only works
-  // some of the time for some reason.
-  m_cycle_count = -1;
-}
-if (!m_disabled)
-  next_cycle = (cycle+1)%8000;
-else
-  next_cycle = -1;
-
 	// Initialise the cycle counter if this is the first time
 	// iso data has been requested.
 	if (!m_disabled && m_cycle_count<0) {
+debugOutput(DEBUG_LEVEL_VERBOSE, "tx enabled at cycle %d, dll=%g\n",cycle,
+  m_sph_ofs_dll->get());
 		m_cycle_count = cycle;
 		m_cycle_ofs = 0.0;
 	}
@@ -136,6 +125,58 @@ else
 	// the current sample rate.  An 'event' is one sample from all channels
 	// plus possibly other midi and control data.
 	signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
+
+// FIXME: some tests - attempt to recover sync after loss due to missed cycles
+static signed int next_cycle = -1;
+static suseconds_t last_us = -1;
+struct timeval tv;
+gettimeofday(&tv, NULL);
+if (!m_disabled && next_cycle>=0 && cycle!=next_cycle) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "tx cycle miss: %d requested, %d expected\n",cycle,next_cycle);
+  debugOutput(DEBUG_LEVEL_VERBOSE, "tx stream: cycle=%d, ofs=%g\n",m_cycle_count, m_cycle_ofs);
+  // Try to pick up the transmit sequence as best we can.  This only works
+  // some of the time for some reason.
+//  m_cycle_count = -1;
+debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, last call=%d, diff=%d\n",
+  tv.tv_usec, last_us, tv.tv_usec>last_us?(tv.tv_usec-last_us):(1000000-last_us+tv.tv_usec));
+
+#if 0
+m_cycle_count = cycle;
+m_cycle_ofs = 0.0;
+m_tx_dbc = 0;
+#else
+signed int ccount, fcount;
+
+  ccount = next_cycle;
+  while (ccount!=cycle) {
+    if (ccount < m_cycle_count) {
+      if (++ccount == 8000)
+        ccount = 0;
+      continue;
+    }
+    m_tx_dbc += n_events;
+    if (m_tx_dbc > 0xff)
+      m_tx_dbc -= 0x100;
+    for (fcount=0; fcount<n_events; fcount++) {
+      m_cycle_ofs += m_sph_ofs_dll->get();
+      if (m_cycle_ofs >= 3072) {
+        m_cycle_ofs -= 3072;
+        if (++m_cycle_count > 7999)
+          m_cycle_count -= 8000;
+      }
+    }
+    if (++ccount == 8000)
+      ccount = 0;
+  }
+#endif
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  resuming with cyclecount=%d, cycleofs=%g (dll=%g)\n",
+    m_cycle_count, m_cycle_ofs, m_sph_ofs_dll->get());
+}
+if (!m_disabled)
+  next_cycle = (cycle+1)%8000;
+else
+  next_cycle = -1;
+last_us = tv.tv_usec;
 
 	// Increment the dbc (data block count).  This is only done if the
 	// packet will contain events - that is, we are due to send some
@@ -792,12 +833,11 @@ MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, int framerate,
 	// to the cycle timer.  The seed value is just the difference one
 	// would see if the audio clock was locked to the ieee1394 cycle
 	// timer.
-	// FIXME: the value for omega and coeff[0] are more or less copied
-	// from the test-dll.cpp code.  They need to be understood and
-	// optimised for this process.
-	float omega=6.28*0.001;
+	// FIXME: the value for the coefficient may be optimisable; the
+	// value used currently just mirrors that used in
+	// AmdtpReceiveStreamProcessor::putPacket for a similar purpose.
 	float coeffs[1];
-	coeffs[0]=1.41*omega;
+	coeffs[0]=0.0005;
 	m_sph_ofs_dll = new FreebobUtil::DelayLockedLoop(1, coeffs);
 	m_sph_ofs_dll->setIntegrator(0, 24576000.0/framerate);
 }
@@ -834,6 +874,14 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 //  fprintf(stderr, "sph_ofs_dll=%g\n",m_sph_ofs_dll->get());
 //}
 
+// FIXME: more debugging
+static signed int last_cycle=-1;
+if (last_cycle>=0 && (signed)cycle!=(last_cycle+1)%8000) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "lost rx cycles; received %d, expected %d\n",
+    cycle, (last_cycle+1)%8000);
+}
+last_cycle=cycle;
+
     // If the packet length is 8 bytes (ie: just a CIP-like header) there is
     // no isodata.
     if (length > 8) {
@@ -854,6 +902,44 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
 	// Signal that we're running
 	if (n_events) m_running=true;
+
+#if 1
+	/* FIXME: test whether things are improved by doing this in the
+	 * actual receive handler.  The advantage is that we don't have to
+	 * wait until the stream is enabled before the DLL starts tracking. 
+	 * This has the desireable side-effect of having a relatively
+	 * accurate value in the DLL by the time the transmit stream is
+	 * enabled.  A disadvantage of having this in here is that it
+	 * increases the time spent in this function.  Whether this is
+	 * important in practice remains to be seen.  Ad hoc evidence thus
+	 * far seems to suggest that it does increase the chances of a
+	 * faulty startup, but more tests are needed.
+	 */
+	/* Push cycle offset differences from each event's SPH into the DLL.
+	 * If this is the very first block received, use the first event to
+	 * initialise the last cycle offset.
+	 * FIXME: it might be best to use differences only within the given
+	 * block rather than keeping a store of the last cycle offset.
+	 * Otherwise in the event of a lost incoming packet the DLL will
+	 * have an abnormally large value sent to it.  Perhaps this doesn't
+	 * matter?
+	 */
+	unsigned int ev;
+	signed int sph_ofs = ntohl(*(quadlet_t *)(data+8)) & 0xfff;
+
+//	if (m_last_cycle_ofs < 0) {
+//		m_last_cycle_ofs = sph_ofs-(int)m_sph_ofs_dll->get();
+//	}
+	m_last_cycle_ofs = sph_ofs;
+	for (ev=1; ev<n_events; ev++) {
+		sph_ofs = ntohl(*(quadlet_t *)(data+8+ev*m_event_size)) & 0xfff;
+		m_sph_ofs_dll->put((m_last_cycle_ofs<sph_ofs)?
+			sph_ofs-m_last_cycle_ofs:sph_ofs+3072-m_last_cycle_ofs);
+		m_last_cycle_ofs = sph_ofs;
+	}
+#endif
+
+
 
 	// Don't process the stream when it is not enabled.
 	if (m_disabled) {
@@ -1133,7 +1219,7 @@ int MotuReceiveStreamProcessor::receiveBlock(char *data,
 					   unsigned int nevents, unsigned int offset)
 {
 	int problem=0;
-
+#if 0
 	/* Push cycle offset differences from each event's SPH into the DLL.
 	 * If this is the very first block received, use the first event to
 	 * initialise the last cycle offset.
@@ -1155,7 +1241,7 @@ int MotuReceiveStreamProcessor::receiveBlock(char *data,
 			sph_ofs-m_last_cycle_ofs:sph_ofs+3072-m_last_cycle_ofs);
 		m_last_cycle_ofs = sph_ofs;
 	}
-
+#endif
 	for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
           ++it ) {
