@@ -1,3 +1,9 @@
+2006-07-17  Daniel Wagner  <wagi@monom.org>
+
+	* configure.ac: Version bump to 1.2.0
+	* freebob_sync program added
+	* Basic interface added for sync info
+
 2006-07-02  Daniel Wagner  <wagi@monom.org>
 
 	* firmware downloader: check device firmware compatibility

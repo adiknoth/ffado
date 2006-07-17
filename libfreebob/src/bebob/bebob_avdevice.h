@@ -61,6 +61,25 @@ public:
     AvPlugManager& getPlugManager()
 	{ return m_plugManager; }
 
+    struct SyncInfo {
+        SyncInfo( AvPlug& source,
+                  AvPlug& destination,
+                  std::string description )
+            : m_source( &source )
+            , m_destination( &destination )
+            , m_description( description )
+            {}
+	AvPlug*     m_source;
+	AvPlug*     m_destination;
+        std::string m_description;
+    };
+
+    typedef std::vector<SyncInfo> SyncInfoVector;
+    const SyncInfoVector& getSyncInfos() const
+        { return m_syncInfos; }
+    const SyncInfo* getActiveSyncInfo() const
+        { return m_activeSyncInfo; }
+
 protected:
     bool enumerateSubUnits();
 
@@ -94,7 +113,9 @@ protected:
 
     void showAvPlugs( AvPlugVector& plugs ) const;
 
-    bool checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs );
+    bool checkSyncConnectionsAndAddToList( AvPlugVector& plhs,
+                                           AvPlugVector& prhs,
+                                           std::string syncDescription );
 protected:
     std::auto_ptr<ConfigRom>( m_configRom );
     Ieee1394Service* m_1394Service;
@@ -109,6 +130,9 @@ protected:
     AvDeviceSubunitVector  m_subunits;
 
     AvPlugManager    m_plugManager;
+
+    SyncInfoVector   m_syncInfos;
+    SyncInfo*        m_activeSyncInfo;
 
     DECLARE_DEBUG_MODULE;
 };
