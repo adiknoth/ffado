@@ -32,9 +32,9 @@
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "freebob-downloader 0.1";
+const char *argp_program_version = "freebob_downloader 0.1";
 const char *argp_program_bug_address = "<freebob-devel@lists.sf.net>";
-static char doc[] = "freebobctrl -- firmware downloader application\n\n"
+static char doc[] = "freebob_downloader -- firmware downloader application\n\n"
                     "OPERATION: display\n"
                     "           setguid GUID\n"
                     "           firmware FILE\n"

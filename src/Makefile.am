@@ -100,8 +100,7 @@ libfreebob_la_LDFLAGS = 				\
 	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
 	$(LIBXML_LIBS) -lpthread
 
-
-bin_PROGRAMS = freebob_downloader
+bin_PROGRAMS = freebob_downloader freebob_sync
 
 freebob_downloader_SOURCES =    \
         freebob-downloader.cpp
@@ -111,3 +110,13 @@ freebob_downloader_LDADD =      \
         $(LIBIEC61883_LIBS)     \
         $(LIBAVC1394_LIBS)	\
 	-lpthread
+
+freebob_sync_SOURCES =    \
+        freebob-sync.cpp
+freebob_sync_LDADD =      \
+        libfreebob.la           \
+        $(LIBRAW1394_LIBS)      \
+        $(LIBIEC61883_LIBS)     \
+        $(LIBAVC1394_LIBS)	\
+	-lpthread
+

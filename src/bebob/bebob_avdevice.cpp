@@ -47,6 +47,7 @@ IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_plugManager( verboseLevel )
+    , m_activeSyncInfo( 0 )
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -419,24 +420,33 @@ AvDevice::discoverSyncModes()
 
     // Check all possible PCR input to MSU input connections
     // -> sync stream input
-    checkSyncConnections( syncPCRInputPlugs, syncMSUInputPlugs );
+    checkSyncConnectionsAndAddToList( syncPCRInputPlugs,
+                                      syncMSUInputPlugs,
+                                      "Sync Stream Input" );
 
     // Check all possible MSU output to PCR output connections
     // -> sync stream output
-    checkSyncConnections( syncMSUOutputPlugs,  syncPCROutputPlugs );
+    checkSyncConnectionsAndAddToList( syncMSUOutputPlugs,
+                                      syncPCROutputPlugs,
+                                      "Sync Stream Output" );
 
     // Check all PCR iso input to MSU input connections
     // -> SYT match
-    checkSyncConnections( isoPCRInputPlugs, syncMSUInputPlugs );
+    checkSyncConnectionsAndAddToList( isoPCRInputPlugs,
+                                      syncMSUInputPlugs,
+                                      "Syt Match" );
 
     // Check all MSU sync output to MSU input connections
     // -> CSP
-    checkSyncConnections( syncMSUOutputPlugs, syncMSUInputPlugs );
+    checkSyncConnectionsAndAddToList( syncMSUOutputPlugs,
+                                      syncMSUInputPlugs,
+                                      "Internal (CSP)" );
 
     // Check all external PCR digital input to MSU input connections
     // -> SPDIF/ADAT sync
-    checkSyncConnections( digitalPCRInputPlugs, syncMSUInputPlugs );
-
+    checkSyncConnectionsAndAddToList( digitalPCRInputPlugs,
+                                      syncMSUInputPlugs,
+                                      "Digital Input Sync" );
 
     // Currently active connection signal source cmd, command type
     // status, source unknown, destination MSU sync input plug
@@ -452,12 +462,23 @@ AvDevice::discoverSyncModes()
               ++jt )
         {
             AvPlug* plug = *jt;
-            plug = plug; // disable compiler warning in release mode
-                         // will be optimized away
+
+            for ( SyncInfoVector::iterator it = m_syncInfos.begin();
+                  it != m_syncInfos.end();
+                  ++it )
+            {
+                SyncInfo* pSyncInfo = &*it;
+                if ( ( pSyncInfo->m_source == plug )
+                     && ( pSyncInfo->m_destination == msuPlug ) )
+                {
+                    m_activeSyncInfo = pSyncInfo;
+                    break;
+                }
+            }
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "Active Sync Connection: '%s' -> '%s'\n",
-                         msuPlug->getName(),
-                         plug->getName() );
+                         plug->getName(),
+                         msuPlug->getName() );
         }
     }
 
@@ -802,7 +823,9 @@ AvDevice::showAvPlugs( AvPlugVector& plugs ) const
 }
 
 bool
-AvDevice::checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs )
+AvDevice::checkSyncConnectionsAndAddToList( AvPlugVector& plhs,
+                                            AvPlugVector& prhs,
+                                            std::string syncDescription )
 {
     for ( AvPlugVector::iterator plIt = plhs.begin();
           plIt != plhs.end();
@@ -815,6 +838,7 @@ AvDevice::checkSyncConnections( AvPlugVector& plhs, AvPlugVector& prhs )
         {
             AvPlug* pr = *prIt;
             if ( pl->inquireConnnection( *pr ) ) {
+                m_syncInfos.push_back( SyncInfo( *pl, *pr, syncDescription ) );
                 debugOutput( DEBUG_LEVEL_NORMAL,
                              "Sync connection '%s' -> '%s'\n",
                              pl->getName(),
