@@ -447,7 +447,7 @@ bool StreamProcessorManager::start() {
 		(*it)->enable();
 		m_isoManager->enablePolling(*it);
 	}
-	
+
 	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
 		it != m_TransmitProcessors.end();
 		++it ) {
