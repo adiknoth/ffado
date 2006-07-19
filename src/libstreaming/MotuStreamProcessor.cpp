@@ -128,23 +128,43 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "tx enabled at cycle %d, dll=%g\n",cycle,
 
 // FIXME: some tests - attempt to recover sync after loss due to missed cycles
 static signed int next_cycle = -1;
-static suseconds_t last_us = -1;
-struct timeval tv;
-gettimeofday(&tv, NULL);
+//static suseconds_t last_us = -1;
+//struct timeval tv;
+//gettimeofday(&tv, NULL);
 if (!m_disabled && next_cycle>=0 && cycle!=next_cycle) {
   debugOutput(DEBUG_LEVEL_VERBOSE, "tx cycle miss: %d requested, %d expected\n",cycle,next_cycle);
   debugOutput(DEBUG_LEVEL_VERBOSE, "tx stream: cycle=%d, ofs=%g\n",m_cycle_count, m_cycle_ofs);
-  // Try to pick up the transmit sequence as best we can.  This only works
-  // some of the time for some reason.
-//  m_cycle_count = -1;
-debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, last call=%d, diff=%d\n",
-  tv.tv_usec, last_us, tv.tv_usec>last_us?(tv.tv_usec-last_us):(1000000-last_us+tv.tv_usec));
+//debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, last call=%d, diff=%d\n",
+//  tv.tv_usec, last_us, tv.tv_usec>last_us?(tv.tv_usec-last_us):(1000000-last_us+tv.tv_usec));
 
 #if 0
+// This "simple" way out doesn't work, probably because there's no
+// guarantee that ofs 0 in the current cycle is anywhere near an audio
+// sample point.
 m_cycle_count = cycle;
 m_cycle_ofs = 0.0;
 m_tx_dbc = 0;
 #else
+float ftmp;
+
+// Calculate values of m_cycle_{count,ofs} which would be present
+// for this cycle if the missed cycles hadn't been missed.
+// These mathematical gymnastics *should* be functionally equivalent to
+// the loop below.  Once it has proven correct it can replace the loop
+// since it will be much faster most of the time.
+signed int n_missed = (cycle>next_cycle)?cycle-next_cycle:8000-next_cycle+cycle;
+signed int ma = ((n_events/2)+n_missed*3072.0/m_sph_ofs_dll->get())/n_events;
+ma*=n_events;
+ftmp = m_cycle_ofs+ma*m_sph_ofs_dll->get();
+//m_cycle_count = (int)(m_cycle_count+ftmp/3072) % 8000;
+//m_cycle_ofs = fmod(ftmp, 3072);
+//m_tx_dbc = (m_tx_dbc + ma) & 0xff;
+debugOutput(DEBUG_LEVEL_VERBOSE, " calc %d: count=%d, ofs=%g\n",
+  ma,
+  (int)(m_cycle_count+ftmp/3072) % 8000,
+  fmod(ftmp,3072)
+);
+
 signed int ccount, fcount;
 
   ccount = next_cycle;
@@ -155,19 +175,27 @@ signed int ccount, fcount;
       continue;
     }
     m_tx_dbc += n_events;
-    if (m_tx_dbc > 0xff)
-      m_tx_dbc -= 0x100;
-    for (fcount=0; fcount<n_events; fcount++) {
-      m_cycle_ofs += m_sph_ofs_dll->get();
-      if (m_cycle_ofs >= 3072) {
-        m_cycle_ofs -= 3072;
-        if (++m_cycle_count > 7999)
-          m_cycle_count -= 8000;
-      }
-    }
+
+//    for (fcount=0; fcount<n_events; fcount++) {
+//      m_cycle_ofs += m_sph_ofs_dll->get();
+//      if (m_cycle_ofs >= 3072) {
+//        m_cycle_ofs -= 3072;
+//        if (++m_cycle_count > 7999)
+//          m_cycle_count -= 8000;
+//      }
+//    }
+// Replace the above for loop with direct calculations to
+// improve efficiency.
+    ftmp = m_cycle_ofs+n_events*m_sph_ofs_dll->get();
+    m_cycle_count += ftmp/3072;
+    m_cycle_ofs = fmod(ftmp, 3072);
+
     if (++ccount == 8000)
       ccount = 0;
   }
+  m_tx_dbc &= 0xff;
+  m_cycle_count %= 8000;
+
 #endif
   debugOutput(DEBUG_LEVEL_VERBOSE, "  resuming with cyclecount=%d, cycleofs=%g (dll=%g)\n",
     m_cycle_count, m_cycle_ofs, m_sph_ofs_dll->get());
@@ -176,7 +204,7 @@ if (!m_disabled)
   next_cycle = (cycle+1)%8000;
 else
   next_cycle = -1;
-last_us = tv.tv_usec;
+//last_us = tv.tv_usec;
 
 	// Increment the dbc (data block count).  This is only done if the
 	// packet will contain events - that is, we are due to send some
