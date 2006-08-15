@@ -101,7 +101,8 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
 
-    {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW
+    {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
+    {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW (model version 7)
 
     {0x0040ab, 0x00010048},  // EDIROL, FA-101
     {0x0040ab, 0x00010049},  // EDIROL, FA-66
