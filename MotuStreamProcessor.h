@@ -71,7 +71,7 @@ public:
 
 	virtual void setVerboseLevel(int l);
 
-	void set_sph_ofs_dll(FreebobUtil::DelayLockedLoop *dll) {m_sph_ofs_dll=dll;};
+	void setTicksPerFrameDLL(float *dll) {m_ticks_per_frame=dll;};
 
 	virtual bool preparedForStop();
 
@@ -93,11 +93,10 @@ protected:
 	signed int m_cycle_count;
 	float m_cycle_ofs;
 
-	// Hook to the DLL in the receive stream which allows calculation
-	// of cycle offsets to put into frame SPHs.  This object is 
-	// owned by the receive stream, so the transmit stream should
-	// not dispose of it.
-	FreebobUtil::DelayLockedLoop *m_sph_ofs_dll;
+	// Hook to the DLL in the receive stream which provides a
+	// continuously updated estimate of the number of ieee1394 ticks
+	// per audio frame.
+	float *m_ticks_per_frame;
 
 	// Used to keep track of the close-down zeroing of output data
 	signed int m_closedown_count;
@@ -158,7 +157,7 @@ public:
 
 	virtual void setVerboseLevel(int l);
 	
-	FreebobUtil::DelayLockedLoop *get_sph_ofs_dll(void) {return m_sph_ofs_dll;};
+	float *getTicksPerFrameDLL(void) {return &m_ticks_per_frame;};
 	signed int setEventSize(unsigned int size);
 	unsigned int getEventSize(void);
 
@@ -177,7 +176,11 @@ protected:
 	 */
 	unsigned int m_event_size;
 
-	FreebobUtil::DelayLockedLoop *m_sph_ofs_dll;
+	// The integrator of a Delay-Locked Loop (DLL) used to provide a
+	// continuously updated estimate of the number of ieee1394 frames
+	// per audio frame at the current sample rate.
+	float m_ticks_per_frame;
+
 	signed int m_last_cycle_ofs;
 
     DECLARE_DEBUG_MODULE;
