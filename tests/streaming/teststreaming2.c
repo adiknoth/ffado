@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	dev_options.port=0;
 	dev_options.node_id=-1;
 	
-	dev_options.realtime=0;
+	dev_options.realtime=1;
 	dev_options.packetizer_priority=60;
 
 	freebob_device_t *dev=freebob_streaming_init(&device_info, dev_options);
@@ -230,9 +230,9 @@ FILE *of=fopen("foo.dat","w");
 // 			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
 // 			hexDumpToFile(fid_in[i],(unsigned char*)audiobuffer[i],samplesread*sizeof(freebob_sample_t)+1);
 // FIXME: Dump analog1 as raw data to a separate binary file for testing
-if (i==2) {
-  fwrite(audiobuffer[i],sizeof(freebob_sample_t),samplesread,of);
-}
+//if (i==2) {
+//  fwrite(audiobuffer[i],sizeof(freebob_sample_t),samplesread,of);
+//}
 		}
 
 		for(i=0;i<nb_out_channels;i++) {
