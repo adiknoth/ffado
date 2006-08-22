@@ -192,6 +192,13 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
         buf[i] = ntohl( buf[i] );
     }
 
+    #ifdef DEBUG
+    if ( m_verbose ) {
+        printf( "pre avc1394_transaction_block2\n" );
+        printBuffer( len, buf );
+    }
+    #endif
+
     fb_quadlet_t* result =
         avc1394_transaction_block2( m_handle,
                                     nodeId,
@@ -199,6 +206,13 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                     len,
                                     resp_len,
                                     10 );
+
+    #ifdef DEBUG
+    if ( m_verbose ) {
+        printf( "post avc1394_transaction_block2\n" );
+        printBuffer( *resp_len, result );
+    }
+    #endif
 
     for ( unsigned int i = 0; i < *resp_len; ++i ) {
         result[i] = htonl( result[i] );

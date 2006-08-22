@@ -94,7 +94,7 @@ AvPlug::AvPlug( const AvPlug& rhs )
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+     }
 }
 
 AvPlug::~AvPlug()
@@ -173,6 +173,7 @@ AvPlug::inquireConnnection( AvPlug& plug )
 {
     SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
     setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
+    signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
     signalSourceCmd.setVerbose( m_verboseLevel );
 
     if ( !signalSourceCmd.fire() ) {
@@ -189,6 +190,32 @@ AvPlug::inquireConnnection( AvPlug& plug )
     }
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "Connection not possible between '%s' and '%s'\n",
+                 getName(),  plug.getName() );
+    return false;
+}
+
+bool
+AvPlug::setConnection( AvPlug& plug )
+{
+    SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
+    setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
+    signalSourceCmd.setCommandType( AVCCommand::eCT_Control );
+    signalSourceCmd.setVerbose( m_verboseLevel );
+
+    if ( !signalSourceCmd.fire() ) {
+        debugError( "Could not set connection between '%s' and '%s'\n",
+                    getName(), plug.getName() );
+        return false;
+    }
+
+    if ( signalSourceCmd.getResponse() == AVCCommand::eR_Accepted ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "Could set connection between '%s' and '%s'\n",
+                     getName(), plug.getName() );
+        return true;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "Could not set connection between '%s' and '%s'\n",
                  getName(),  plug.getName() );
     return false;
 }
@@ -1076,7 +1103,6 @@ AvPlug::setSrcPlugAddrToSignalCmd()
     }
 
     signalSourceCmd.setNodeId( m_nodeId );
-    signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
     signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 

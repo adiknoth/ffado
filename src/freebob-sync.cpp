@@ -32,10 +32,10 @@
 const char *argp_program_version = "freebob_sync 0.1";
 const char *argp_program_bug_address = "<freebob-devel@lists.sf.net>";
 static char doc[] = "freebob_sync -- select sync mode\n\n"
-                    "OPERATION: display\n";
+                    "OPERATION:  set <nr>\n";
 static char args_doc[] = "NODE_ID OPERATION";
 static struct argp_option options[] = {
-    {"verbose",   'v', 0,           0,  "Produce verbose output" },
+    {"verbose",   'v', "level",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
     { 0 }
 };
@@ -45,15 +45,16 @@ IMPL_GLOBAL_DEBUG_MODULE( freebob-sync, DebugModule::eDL_Normal );
 struct arguments
 {
     arguments()
-        : verbose( false )
+        : verbose( 0 )
         , port( 0 )
         {
             args[0] = 0;
             args[1] = 0;
+            args[2] = 0;
         }
 
-    char* args[2];
-    bool  verbose;
+    char* args[3];
+    short verbose;
     int   port;
 } arguments;
 
@@ -68,7 +69,13 @@ parse_opt( int key, char* arg, struct argp_state* state )
     char* tail;
     switch (key) {
     case 'v':
-        arguments->verbose = true;
+        if (arg) {
+            arguments->verbose = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'verbose' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
         break;
     case 'p':
         errno = 0;
@@ -79,15 +86,13 @@ parse_opt( int key, char* arg, struct argp_state* state )
         }
         break;
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 2) {
-            // Too many arguments.
+        if (state->arg_num >= 3) {
             argp_usage (state);
         }
         arguments->args[state->arg_num] = arg;
         break;
     case ARGP_KEY_END:
         if (state->arg_num < 1) {
-            // Not enough arguments.
             argp_usage (state);
         }
         break;
@@ -112,7 +117,7 @@ main( int argc, char** argv )
     char* tail;
     int node_id = strtol(arguments.args[0], &tail, 0);
     if (errno) {
-	perror("argument parsing failed:");
+	perror("argument parsng failed:");
 	return -1;
     }
 
@@ -144,7 +149,6 @@ main( int argc, char** argv )
         return 0;
     }
 
-    printf( "Supported Sync modes:\n" );
     int i = 0;
     for ( BeBoB::AvDevice::SyncInfoVector::const_iterator it
               = pBeBoBAvDevice->getSyncInfos().begin();
@@ -162,6 +166,35 @@ main( int argc, char** argv )
         return 0;
     }
     printf( "  %s\n", pBeBoBAvDevice->getActiveSyncInfo()->m_description.c_str() );
+
+    if ( argc >= 4 ) {
+        if ( strcmp( "set", arguments.args[1] ) == 0 ) {
+            errno = 0;
+            unsigned int syncId = strtol(arguments.args[2], &tail, 0);
+            if (errno) {
+                perror("argument parsing failed:");
+                return -1;
+            }
+
+            if (syncId >= pBeBoBAvDevice->getSyncInfos().size() ) {
+                printf( "Invalid sync mode id given (%d). "
+                        "Valid range is 0 - %d\n",
+                        syncId, pBeBoBAvDevice->getSyncInfos().size()-1 );
+                return -1;
+            }
+
+            const BeBoB::AvDevice::SyncInfo& syncInfo
+                = pBeBoBAvDevice->getSyncInfos()[syncId];
+            printf( "Setting Sync Mode to \"%s\"... ",
+                    syncInfo.m_description.c_str() );
+
+            if ( pBeBoBAvDevice->setActiveSync( syncInfo ) ) {
+                printf( "done\n" );
+            } else {
+                printf( "failed\n" );
+            }
+        }
+    }
 
     return 0;
 }
