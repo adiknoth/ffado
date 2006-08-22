@@ -74,9 +74,13 @@ DeviceManager::initialize( int port )
 bool
 DeviceManager::discover( int verboseLevel )
 {
-    if ( verboseLevel ) {
+    switch ( verboseLevel ) {
+    case 3:
+        m_1394Service->setVerbose( true );
+    case 1:
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
+
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )

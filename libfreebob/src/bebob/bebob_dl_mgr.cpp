@@ -372,8 +372,8 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
 
     // bootloader erases the flash, have to wait until is ready
     // to answer our next request
-    printf( "wait unitl flash ereasing has terminated\n" );
-    sleep( 20 );
+    printf( "wait until flash ereasing has terminated\n" );
+    sleep( 30 );
 
     if ( !readResponse( ccDStart ) ) {
         debugError( "downloadObject: (start) command read request failed\n" );

@@ -187,6 +187,7 @@ AVCCommand::fire()
         m_eResponse = ( EResponse )( *buf );
         switch ( m_eResponse )
         {
+        case eR_Accepted:
         case eR_Implemented:
         case eR_Rejected:
         case eR_NotImplemented:

@@ -850,7 +850,13 @@ AvDevice::checkSyncConnectionsAndAddToList( AvPlugVector& plhs,
     return true;
 }
 
-bool AvDevice::setId( unsigned int id) {
+bool AvDevice::setActiveSync(const SyncInfo& syncInfo)
+{
+    return syncInfo.m_source->setConnection( *syncInfo.m_destination );
+}
+
+bool AvDevice::setId( unsigned int id)
+{
 	return true;
 }
 

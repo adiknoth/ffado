@@ -42,7 +42,7 @@ static char doc[] = "freebob_downloader -- firmware downloader application\n\n"
                     "           bcd FILE\n";
 static char args_doc[] = "NODE_ID OPERATION";
 static struct argp_option options[] = {
-    {"verbose",   'v', 0,           0,  "Produce verbose output" },
+    {"verbose",   'v', "level",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
     {"force",     'f', 0,           0,  "Force firmware download" },
     { 0 }
@@ -51,7 +51,7 @@ static struct argp_option options[] = {
 struct arguments
 {
     arguments()
-        : verbose( false )
+        : verbose( 0 )
         , port( 0 )
         , force( 0 )
         {
@@ -61,7 +61,7 @@ struct arguments
         }
 
     char* args[3];
-    bool  verbose;
+    short verbose;
     int   port;
     int   force;
 } arguments;
@@ -77,7 +77,13 @@ parse_opt( int key, char* arg, struct argp_state* state )
     char* tail;
     switch (key) {
     case 'v':
-        arguments->verbose = true;
+        if (arg) {
+            arguments->verbose = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'verbose' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
         break;
     case 'p':
         errno = 0;
@@ -134,7 +140,7 @@ main( int argc, char** argv )
         return -1;
     }
 
-    service.setVerbose( false );
+    service.setVerbose( arguments.verbose > 0 );
     BeBoB::BootloaderManager blMgr( service, node_id );
     if ( arguments.force == 1 ) {
         blMgr.setForceOperations( true );

@@ -79,6 +79,7 @@ public:
         { return m_syncInfos; }
     const SyncInfo* getActiveSyncInfo() const
         { return m_activeSyncInfo; }
+    bool setActiveSync( const SyncInfo& syncInfo );
 
 protected:
     bool enumerateSubUnits();

@@ -87,6 +87,7 @@ public:
     bool discoverConnections();
 
     bool inquireConnnection( AvPlug& plug );
+    bool setConnection( AvPlug& plug );
 
     int getGlobalId() const
 	{ return m_globalId; }
