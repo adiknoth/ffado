@@ -22,7 +22,7 @@
 AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 1)
-m4_define(freebob_minor_version, 3)
+m4_define(freebob_minor_version, 4)
 m4_define(freebob_micro_version, 0)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
@@ -196,9 +196,8 @@ AC_ARG_ENABLE(optimize,
     ]
 )
 
-
 CFLAGS="$CFLAGS -Wall -std=gnu99"
-CXXFLAGS="$CXXFLAGS -Wall"
+CXXFLAGS="$CXXFLAGS -Wall -DDATADIR=\\\"\$(datadir)\\\"" 
 
 if test "${debug}" = true; then
    CFLAGS="$CFLAGS -g -DDEBUG"

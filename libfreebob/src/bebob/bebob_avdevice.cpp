@@ -38,10 +38,10 @@ namespace BeBoB {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
-    AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
-                        Ieee1394Service& ieee1394service,
-                        int nodeId,
-                        int verboseLevel )
+AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
+                    Ieee1394Service& ieee1394service,
+                    int nodeId,
+                    int verboseLevel )
     :  m_configRom( configRom )
     , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
@@ -99,7 +99,7 @@ static VendorModelEntry supportedDeviceList[] =
 {
     {0x00000f, 0x00010065},  // Mackie, Onyx Firewire
 
-    {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
+//    {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
 
     {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
     {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW (model version 7)

@@ -53,6 +53,8 @@ libfreebob_la_SOURCES = 				\
 	bebob/bebob_dl_bcd.cpp				\
 	bounce/bounce_avdevice.h			\
 	bounce/bounce_avdevice.cpp			\
+	maudio/maudio_avdevice.h			\
+	maudio/maudio_avdevice.cpp			\
 	libfreebobavc/avc_connect.cpp			\
 	libfreebobavc/avc_definitions.cpp		\
 	libfreebobavc/avc_extended_cmd_generic.cpp	\
@@ -99,6 +101,9 @@ libfreebob_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
 	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
 	$(LIBXML_LIBS) -lpthread
+
+nobase_dist_pkgdata_DATA = 				\
+	maudio/refdesign.xml
 
 bin_PROGRAMS = freebob_downloader freebob_sync
 

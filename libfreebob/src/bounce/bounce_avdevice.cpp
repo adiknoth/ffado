@@ -34,10 +34,13 @@ namespace Bounce {
 
 IMPL_DEBUG_MODULE( BounceDevice, BounceDevice, DEBUG_LEVEL_NORMAL );
 
-BounceDevice::BounceDevice( Ieee1394Service& ieee1394service,
+
+BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
+                            Ieee1394Service& ieee1394service,
                             int nodeId,
                             int verboseLevel )
-    : m_1394Service( &ieee1394service )
+    : m_configRom( configRom )
+    , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
 {
@@ -46,8 +49,6 @@ BounceDevice::BounceDevice( Ieee1394Service& ieee1394service,
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
                  nodeId );
-    m_configRom = new ConfigRom( *m_1394Service, m_nodeId );
-    m_configRom->initialize();
 }
 
 BounceDevice::~BounceDevice()
@@ -59,6 +60,14 @@ ConfigRom&
 BounceDevice::getConfigRom() const
 {
     return *m_configRom;
+}
+
+bool
+BounceDevice::probe( ConfigRom& configRom )
+{
+    // do the magic
+
+    return false;
 }
 
 bool
