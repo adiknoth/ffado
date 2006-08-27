@@ -1,5 +1,4 @@
-/* bounce_avdevice.h
- * Copyright (C) 2006 by Pieter Palmers
+/* maudioe_avdevice.h
  * Copyright (C) 2006 by Daniel Wagner
  *
  * This file is part of FreeBoB.
@@ -19,8 +18,8 @@
  * MA 02111-1307 USA.
  */
 
-#ifndef BOUNCEDEVICE_H
-#define BOUNCEDEVICE_H
+#ifndef MAUDIODEVICE_H
+#define MAUDIODEVICE_H
 
 #include "iavdevice.h"
 
@@ -32,29 +31,30 @@
 class ConfigRom;
 class Ieee1394Service;
 
-namespace Bounce {
+namespace MAudio {
 
-class BounceDevice : public IAvDevice {
+class AvDevice : public IAvDevice {
 public:
-    BounceDevice( std::auto_ptr<ConfigRom>( configRom ),
-		  Ieee1394Service& ieee1394Service,
-		  int nodeId,
-		  int verboseLevel );
-    virtual ~BounceDevice();
+    AvDevice( std::auto_ptr<ConfigRom>( configRom ),
+	      Ieee1394Service& ieee1394Service,
+              int nodeId,
+	      int verboseLevel );
+    virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
-    virtual bool addXmlDescription( xmlNodePtr deviceNode );
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool addXmlDescription( xmlNodePtr pDeviceNode );
+    virtual bool setSamplingFrequency( ESamplingFrequency eSamplingFrequency );
     virtual void showDevice() const;
-    virtual bool setId(unsigned int id);
+    virtual bool setId(unsigned int iId);
 
 protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_1394Service;
-    int              m_nodeId;
-    int              m_verboseLevel;
+    std::auto_ptr<ConfigRom>( m_pConfigRom );
+    Ieee1394Service* m_p1394Service;
+    int              m_iNodeId;
+    int              m_iVerboseLevel;
+    const char*      m_pFilename;
 
     DECLARE_DEBUG_MODULE;
 };

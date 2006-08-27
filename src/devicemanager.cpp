@@ -28,6 +28,7 @@
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
 #include "bounce/bounce_avdevice.h"
+#include "maudio/maudio_avdevice.h"
 
 #include <iostream>
 
@@ -144,6 +145,14 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
 {
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
         return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
+    }
+
+    if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
+        return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
+    }
+
+    if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
+        return new Bounce::BounceDevice( configRom, *m_1394Service, id, level );
     }
 
     return 0;
