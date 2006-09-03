@@ -103,7 +103,8 @@ libfreebob_la_LDFLAGS = 				\
 	$(LIBXML_LIBS) -lpthread
 
 nobase_dist_pkgdata_DATA = 				\
-	maudio/refdesign.xml
+	maudio/refdesign.xml				\
+	maudio/fw410.xml
 
 bin_PROGRAMS = freebob_downloader freebob_sync
 
