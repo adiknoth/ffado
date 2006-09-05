@@ -7,6 +7,7 @@
  *   http://freebob.sf.net
  *
  *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ *   Copyright (C) 2006 Jonathan Woithe <jwoithe@physics.adelaide.edu.au>
  *
  *   This program is free software {} you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -93,6 +94,9 @@ protected:
 	signed int m_cycle_count;
 	float m_cycle_ofs;
 
+	// Used to detect missed cycles
+	signed int m_next_cycle;
+
 	// Hook to the DLL in the receive stream which provides a
 	// continuously updated estimate of the number of ieee1394 ticks
 	// per audio frame.
@@ -100,6 +104,7 @@ protected:
 
 	// Used to keep track of the close-down zeroing of output data
 	signed int m_closedown_count;
+	signed int m_streaming_active;
 
     bool prefill();
     
@@ -182,6 +187,7 @@ protected:
 	float m_ticks_per_frame;
 
 	signed int m_last_cycle_ofs;
+	signed int m_next_cycle;
 
     DECLARE_DEBUG_MODULE;
 

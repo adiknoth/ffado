@@ -1,5 +1,6 @@
 /* motu_avdevice.h
  * Copyright (C) 2006 by Pieter Palmers
+ * Copyright (C) 2006 Jonathan Woithe
  *
  * This file is part of FreeBob.
  *
