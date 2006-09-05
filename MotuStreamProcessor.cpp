@@ -41,6 +41,9 @@ namespace FreebobStreaming {
 IMPL_DEBUG_MODULE( MotuTransmitStreamProcessor, MotuTransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
 
+// Set to 1 to enable the generation of a 1 kHz test tone in analog output 1
+#define TESTTONE 1
+
 // A macro to extract specific bits from a native endian quadlet
 #define get_bits(_d,_start,_len) (((_d)>>((_start)-(_len)+1)) & ((1<<(_len))-1))
 
@@ -48,9 +51,8 @@ IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG
 MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate,
 		unsigned int event_size)
 	: TransmitStreamProcessor(port, framerate), m_event_size(event_size),
-	m_tx_dbc(0), m_cycle_count(-1), m_cycle_ofs(0.0), m_ticks_per_frame(NULL),
-	m_closedown_count(-1) {
-
+	m_tx_dbc(0), m_cycle_count(-1), m_cycle_ofs(0.0), m_next_cycle(-1), 
+	m_ticks_per_frame(NULL), m_closedown_count(-1), m_streaming_active(0) {
 }
 
 MotuTransmitStreamProcessor::~MotuTransmitStreamProcessor() {
@@ -68,7 +70,11 @@ bool MotuTransmitStreamProcessor::init() {
 		debugFatal("Could not do base class init (%p)\n",this);
 		return false;
 	}
+	m_next_cycle = -1;
 	m_closedown_count = -1;
+	m_streaming_active = 0;
+	m_cycle_count = -1;
+	m_cycle_ofs = 0.0;
 
 	return true;
 }
@@ -88,17 +94,13 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 // we can get this thing synchronised.  For now this seems to work.
 #define CYCLE_DELAY 1
 
-// FIXME: every so often sync seems to be missed on startup, and because
-// this code can't recover a sync the problem remains indefinitely.  The
-// cause of this needs to be identified.  It may be the result of not
-// running with RT privileges for this initial testing phase.  Even so, sync
-// recovery needs to be implemented.
-
 	enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 	quadlet_t *quadlet = (quadlet_t *)data;
 	signed int i;
+	signed int unwrapped_cycle = cycle;
 
-signed int corrected_cycle = cycle;
+	// Signal that streaming is still active
+	m_streaming_active = 1;
 
 	// The MOTU transmit stream is 'always' ready
 	m_running = true;
@@ -125,82 +127,58 @@ signed int corrected_cycle = cycle;
 	// plus possibly other midi and control data.
 	signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 
-// FIXME: some tests - attempt to recover sync after loss due to missed cycles
-static signed int next_cycle = -1;
-//static suseconds_t us_stack[10] = {0,0,0,0,0,0,0,0,0,0};
-//static int us_i = 0;
-//struct timeval tv;
-//gettimeofday(&tv, NULL);
-//us_stack[us_i] = tv.tv_usec + (tv.tv_sec%10)*1000000;
-//if (++us_i == 10)
-//  us_i = 0;
+	// Size of data to read from the event buffer, in bytes.
+	unsigned int read_size = n_events * m_event_size;
 
-if (!m_disabled && next_cycle>=0 && cycle!=next_cycle) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "tx cycle miss: %d requested, %d expected\n",cycle,next_cycle);
-  debugOutput(DEBUG_LEVEL_VERBOSE, "tx stream: cycle=%d, ofs=%g\n",m_cycle_count, m_cycle_ofs);
+	// Detect a missed cycle and attempt to "catch up".
+	if (!m_disabled && m_next_cycle>=0 && cycle!=m_next_cycle) {
+		float ftmp;
+		signed int ccount = m_next_cycle;
+  		debugOutput(DEBUG_LEVEL_VERBOSE, "tx cycle miss: %d requested, %d expected\n",cycle,m_next_cycle);
 
-// Print the times of the last 10 calls to this function
-//int i = us_i, l = -1;
-//  fprintf(stderr,"usec stack:\n");
-//  do {
-//    fprintf(stderr, "  %d",us_stack[i]);
-//    if (l != -1) 
-//      fprintf(stderr," (%d)",us_stack[i]-us_stack[l]);
-//    l = i;
-//    if (++i == 10) 
-//      i = 0;
-//  } while (i != us_i);
-//  fprintf(stderr,"\n");
+		while (ccount!=cycle) {
+			unwrapped_cycle = ccount;
+			if (m_cycle_count-ccount > 7900)
+				unwrapped_cycle += 8000;
 
-#if 0
-// This "simple" way out doesn't work, probably because there's no
-// guarantee that ofs 0 in the current cycle is anywhere near an audio
-// sample point.
-m_cycle_count = cycle;
-m_cycle_ofs = 0.0;
-m_tx_dbc = 0;
-#else
-float ftmp;
-signed int ccount;
+			if (unwrapped_cycle < m_cycle_count) {
+				if (++ccount == 8000)
+					ccount = 0;
+				continue;
+			}
+			// Advance buffers and counters as if this cycle had been dealt with
+			m_tx_dbc += n_events;
+			incrementFrameCounter(n_events);
 
-  ccount = next_cycle;
-  while (ccount!=cycle) {
+			ftmp = m_cycle_ofs+n_events*(*m_ticks_per_frame);
+			m_cycle_count += (unsigned int)ftmp/3072;
+			m_cycle_count %= 8000;
+			m_cycle_ofs = fmod(ftmp, 3072);
 
-corrected_cycle = ccount;
-if (m_cycle_count-ccount > 7900)
-  corrected_cycle += 8000;
+			if (++ccount == 8000)
+				ccount = 0;
 
-    if (corrected_cycle < m_cycle_count) {
-      if (++ccount == 8000)
-        ccount = 0;
-      continue;
-    }
-    m_tx_dbc += n_events;
-    incrementFrameCounter(n_events);
+			// Also advance the event buffer to keep things in sync
+			freebob_ringbuffer_read_advance(m_event_buffer,read_size);
+		}
+		m_tx_dbc &= 0xff;
+		debugOutput(DEBUG_LEVEL_VERBOSE, "  resuming with cyclecount=%d, cycleofs=%g (ticksperfame=%g)\n",
+			m_cycle_count, m_cycle_ofs, *m_ticks_per_frame);
 
-    ftmp = m_cycle_ofs+n_events*(*m_ticks_per_frame);
-    m_cycle_count += (unsigned int)ftmp/3072;
-    m_cycle_count %= 8000;
-    m_cycle_ofs = fmod(ftmp, 3072);
+		m_next_cycle = cycle;
+	}
 
-    if (++ccount == 8000)
-      ccount = 0;
-  }
-  m_tx_dbc &= 0xff;
 
-#endif
-  debugOutput(DEBUG_LEVEL_VERBOSE, "  resuming with cyclecount=%d, cycleofs=%g (ticksperfame=%g)\n",
-    m_cycle_count, m_cycle_ofs, *m_ticks_per_frame);
-}
-if (!m_disabled)
-  next_cycle = (cycle+1)%8000;
-else
-  next_cycle = -1;
+	if (!m_disabled) {
+		if (++m_next_cycle >= 8000)
+			m_next_cycle -= 8000;
+	} else
+		m_next_cycle = -1;
 
 	// Deal cleanly with potential wrap-around cycle counter conditions
-	corrected_cycle = cycle;
+	unwrapped_cycle = cycle;
 	if (m_cycle_count-cycle > 7900)
-		corrected_cycle += 8000;
+		unwrapped_cycle += 8000;
 
 	// Increment the dbc (data block count).  This is only done if the
 	// packet will contain events - that is, we are due to send some
@@ -208,7 +186,7 @@ else
 	// the previously sent packet.  This regime also means that the very
 	// first packet containing data will have a DBC of n_events, which
 	// matches what is observed from other systems.
-	if (!m_disabled && corrected_cycle>=m_cycle_count) {
+	if (!m_disabled && unwrapped_cycle>=m_cycle_count) {
 		m_tx_dbc += n_events;
 		if (m_tx_dbc > 0xff)
 			m_tx_dbc -= 0x100;
@@ -227,12 +205,9 @@ else
 	// If the stream is disabled or the MOTU transmission cycle count is
 	// ahead of the ieee1394 cycle timer, we send a data-less packet
 	// with only the 8 byte CIP-like header set up previously.
-	if (m_disabled || corrected_cycle<m_cycle_count) {
+	if (m_disabled || unwrapped_cycle<m_cycle_count) {
 		return RAW1394_ISO_OK;
 	}
-
-	// Size of data to read from the event buffer, in bytes.
-	unsigned int read_size = n_events * m_event_size;
 
 	// In the disabled state simply zero all data sent to the MOTU.  If
 	// a stream of empty packets are sent once iso streaming is enabled
@@ -281,39 +256,51 @@ else
 
 		// Set up each frames's SPH.  Note that the (int) typecast
 		// appears to do rounding.
-		// FIXME: once working, make more efficient by removing 1 of the
-		// "trim to 8000" operations.
+		//
+		// CYCLE_DELAY accounts for the delay between the cycle
+		// audio is sent in and when the MOTU can actually play 
+		// that audio.  The SPH timestamp must account for this
+		// it doesn't demand to be played before it's possible.
+		// For the duration of the event loop, account for the
+		// CYCLE_DELAY within m_cycle_count to save having to wrap
+		// (m_cycle_count+CYCLE_DELAY) and m_cycle_count separately
+		// within the event loop.  Once the loop is finished we
+		// reset m_cyle_count to once again refer to the send
+		// cycle rather than the audio presentation cycle.
+		//
+		// This seemingly messy treatment saves one modulo operation
+		// per loop iteration.  Since the loop count ranges from 8
+		// (for 1x sample rates) to 32 there are considerable
+		// savings to be made even at 1x rates.
+		if ((m_cycle_count+=CYCLE_DELAY) >= 8000)
+			m_cycle_count -= 8000;
 		for (i=0; i<n_events; i++, quadlet += dbs) {
-			*quadlet = htonl( (((m_cycle_count+CYCLE_DELAY)%8000)<<12) + 
-					(int)m_cycle_ofs);
-// FIXME: remove this hacked in 1 kHz test signal to analog-1 when testing
-// is complete.  Note that the tone is *not* added during closedown.
-if (m_closedown_count<0) {
-//static signed int a_cx=0, a_ofs=0;
-static signed int a_cx = 0;
-signed int val;
-// val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(m_cycle_count+((m_cycle_ofs)/3072.0))/8000.0));
-val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx/24576000.0)));
-if ((a_cx+=512) >= 24576000) {
-  a_cx -= 24576000;
-}
-//val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx+(float(a_ofs)/3072.0))/8000.0));
-//if ((a_ofs+=512) >= 3072) {
-//  a_ofs -= 3072;
-//  if (++a_cx > 7999)
-//    a_cx -= 8000;
-//}
-*(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
-*(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
-*(data+8+i*m_event_size+18) = val & 0xff;
-}
-			m_cycle_ofs += *m_ticks_per_frame;
-			if (m_cycle_ofs >= 3072) {
+			*quadlet = htonl( (m_cycle_count<<12) + (int)m_cycle_ofs);
+#if TESTTONE
+			// FIXME: remove this hacked in 1 kHz test signal to
+			// analog-1 when testing is complete.  Note that the tone is
+			// *never* added during closedown.
+			if (m_closedown_count<0) {
+				static signed int a_cx = 0;
+				signed int val;
+				val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx/24576000.0)));
+				if ((a_cx+=512) >= 24576000) {
+					a_cx -= 24576000;
+				}
+				*(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
+				*(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
+				*(data+8+i*m_event_size+18) = val & 0xff;
+			}
+#endif
+			if ((m_cycle_ofs+=*m_ticks_per_frame) >= 3072) {
 				m_cycle_ofs -= 3072;
 				if (++m_cycle_count > 7999)
 					m_cycle_count -= 8000;
 			}
 		}
+		// Reset m_cycle_count to the send cycle
+		if ((m_cycle_count-=CYCLE_DELAY) < 0)
+			m_cycle_count += 8000;
 
 		// Process all ports that should be handled on a per-packet base
 		// this is MIDI for AMDTP (due to the need of DBC, which is lost 
@@ -393,6 +380,12 @@ bool MotuTransmitStreamProcessor::reset() {
 		debugFatal("Could not prefill buffers\n");
 		return false;    
 	}
+
+	m_next_cycle = -1;
+	m_closedown_count = -1;
+	m_streaming_active = 0;
+	m_cycle_count = -1;
+	m_cycle_ofs = 0.0;
 
 	return true;
 }
@@ -727,23 +720,22 @@ bool MotuTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned in
     return ok;
 }
 
-/* Left in as reference, this is highly AMDTP related
-
-basic idea:
-
-iterate over the ports
-- get port buffer address
-- loop over events
-  * pick right sample in event based upon PortInfo
-  * convert sample from Port format (E_Int24, E_Float, ..) to native format
-
-not that in order to use the 'efficient' transfer method, you have to make sure that
-you can start from an offset (expressed in frames).
-*/
-#include <math.h>
-
 int MotuTransmitStreamProcessor::encodePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
                        unsigned int offset, unsigned int nevents) {
+// Encodes nevents worth of data from the given port into the given buffer.  The
+// format of the buffer is precisely that which will be sent to the MOTU.
+// The basic idea:
+//   iterate over the ports
+//     * get port buffer address
+//     * loop over events
+//         - pick right sample in event based upon PortInfo
+//         - convert sample from Port format (E_Int24, E_Float, ..) to MOTU
+//           native format
+//
+// We include the ability to start the transfer from the given offset within
+// the port (expressed in frames) so the 'efficient' transfer method can be
+// utilised.
+
 	unsigned int j=0;
 
 	// Use char here since the target address won't necessarily be 
@@ -824,16 +816,24 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(MotuAudioPort *p,
 
 bool MotuTransmitStreamProcessor::preparedForStop() {
 
-	// FIXME: ideally we want to include a condition which tests if the
-	// stream shutdown is in response to an xrun due to a problem at
-	// startup, and unconditionally return true.  This saves a few
-	// seconds delay since under these conditions the iso transmit
-	// callback doesn't appear to be called and therefore
-	// m_closedown_count is never decremented.  We can't just test for
-	// an xrun however since sometimes these can occur "normally" during
-	// shutdown.  This is probably all tied up with the sync recovery
-	// issue which hasn't really been explored yet.
-	if (m_disabled || !isRunning())
+	// If the stream is disabled or isn't running there's no need to
+	// wait since the MOTU *should* still be in a "zero data" state.
+	//
+	// If the m_streaming_active flag is 0 it indicates that the
+	// transmit callback hasn't been called since a closedown was
+	// requested when this function was last called.  This effectively
+	// signifies that the streaming thread has been exitted due to an
+	// xrun in either the receive or transmit handlers.  In this case
+	// there's no point in waiting for the closedown count to hit zero
+	// because it never will; the zero data will never get to the MOTU. 
+	// It's best to allow an immediate stop and let the xrun handler
+	// proceed as best it can.
+	//
+	// The ability to detect the lack of streaming also prevents the
+	// "wait for stop" in the stream processor manager's stop() method
+	// from hitting its timeout which in turn seems to increase the
+	// probability of a successful recovery.
+	if (m_disabled || !isRunning() || !m_streaming_active)
 		return true;
 
 	if (m_closedown_count < 0) {
@@ -849,6 +849,13 @@ bool MotuTransmitStreamProcessor::preparedForStop() {
 		// sizes.
 		signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 		m_closedown_count = m_period / n_events;
+
+		// Set up a test to confirm that streaming is still active.
+		// If the streaming function hasn't been called by the next
+		// iteration through this function there's no point in
+		// continuing since it means the zero data will never get to 
+		// the MOTU.
+		m_streaming_active = 0;
 		return false;
 	}
 
@@ -863,12 +870,10 @@ bool MotuTransmitStreamProcessor::preparedForStop() {
 MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, int framerate, 
 	unsigned int event_size)
     : ReceiveStreamProcessor(port, framerate), m_event_size(event_size),
-	m_last_cycle_ofs(-1) {
+	m_last_cycle_ofs(-1), m_next_cycle(-1) {
 
 	// Set up the Delay-locked-loop to track audio frequency relative
-	// to the cycle timer.  The seed value is just the difference one
-	// would see if the audio clock was locked to the ieee1394 cycle
-	// timer.
+	// to the cycle timer.  The seed value is the "ideal" value.
 	m_ticks_per_frame = 24576000.0/framerate;
 }
 
@@ -896,20 +901,25 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                   unsigned int cycle, unsigned int dropped) {
     
     enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
+    signed int have_lost_cycles = 0;
 
-// FIXME: just for debugging, print out the sph ofs DLL value
-// once a second
-//if (cycle==0) {
-//  fprintf(stderr, "m_ticks_per_frame=%g\n",*m_ticks_per_frame);
-//}
-
-// FIXME: more debugging
-static signed int last_cycle=-1;
-if (last_cycle>=0 && (signed)cycle!=(last_cycle+1)%8000) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "lost rx cycles; received %d, expected %d\n",
-    cycle, (last_cycle+1)%8000);
-}
-last_cycle=cycle;
+    // Detect missed receive cycles
+    // FIXME: it would be nice to advance the rx buffer by the amount of
+    // frames missed.  However, since the MOTU transmits more frames 
+    // per cycle than the average and "catches up" with period emty
+    // cycles it's not trivial to work out precisely how many frames
+    // were missed.  Ultimately we need to do so if sync is to be 
+    // maintained across a transient receive failure.
+    if (m_next_cycle < 0)
+	m_next_cycle = cycle;
+    if ((signed)cycle != m_next_cycle) {
+	debugOutput(DEBUG_LEVEL_VERBOSE, "lost rx cycles; received %d, expected %d\n",
+	    cycle, m_next_cycle);
+	m_next_cycle = cycle;
+	have_lost_cycles = 1;
+    }
+    if (++m_next_cycle >= 8000)
+	m_next_cycle -= 8000;
 
     // If the packet length is 8 bytes (ie: just a CIP-like header) there is
     // no isodata.
@@ -932,53 +942,45 @@ last_cycle=cycle;
 	// Signal that we're running
 	if (n_events) m_running=true;
 
-#if 1
-	/* FIXME: test whether things are improved by doing this in the
-	 * actual receive handler.  The advantage is that we don't have to
-	 * wait until the stream is enabled before the DLL starts tracking. 
-	 * This has the desireable side-effect of having a relatively
-	 * accurate value in the DLL by the time the transmit stream is
-	 * enabled.  A disadvantage of having this in here is that it
-	 * increases the time spent in this function.  Whether this is
-	 * important in practice remains to be seen.  Ad hoc evidence thus
-	 * far seems to suggest that it does increase the chances of a
-	 * faulty startup, but more tests are needed.
-	 */
-	/* Push cycle offset differences from each event's SPH into the DLL.
-	 * If this is the very first block received, use the first event to
-	 * initialise the last cycle offset.
-	 * FIXME: it might be best to use differences only within the given
-	 * block rather than keeping a store of the last cycle offset.
-	 * Otherwise in the event of a lost incoming packet the DLL will
-	 * have an abnormally large value sent to it.  Perhaps this doesn't
-	 * matter?
+	/* Send actual ticks-per-frame values (as deduced by the incoming 
+	 * SPHs) to the DLL for averaging.  Doing this here means the DLL
+	 * should acquire a reasonable estimation of the ticks per frame
+	 * even while the stream is formally disabled.  This in turn means
+	 * the transmit stream should have access to a very realistic 
+	 * estimate by the time it is enabled.  The major disadvantage
+	 * is a small increase in the overheads of this function compared
+	 * to what would be the case if this was delayed by pushing it into
+	 * the decode functions.
 	 */
 	unsigned int ev;
-	signed int sph_ofs = ntohl(*(quadlet_t *)(data+8)) & 0xfff;
+	signed int sph_ofs;
 
-//	if (m_last_cycle_ofs < 0) {
-//		m_last_cycle_ofs = sph_ofs-(int)(*m_ticks_per_frame);
-//	}
-	m_last_cycle_ofs = sph_ofs;
-	for (ev=1; ev<n_events; ev++) {
+	/* If this is the first block received or we have lost cycles,
+	 * initialise the m_last_cycle_ofs to a value which won't cause the
+	 * DLL to become polluted with an inappropriate ticks-per-frame
+	 * estimate.
+	 */
+	if (m_last_cycle_ofs<0 || have_lost_cycles) {
+		sph_ofs = ntohl(*(quadlet_t *)(data+8)) & 0xfff;
+		m_last_cycle_ofs = sph_ofs-(int)(m_ticks_per_frame);
+	}
+	for (ev=0; ev<n_events; ev++) {
 		sph_ofs = ntohl(*(quadlet_t *)(data+8+ev*m_event_size)) & 0xfff;
-		signed int sph_diff = (m_last_cycle_ofs<sph_ofs)?
-			sph_ofs-m_last_cycle_ofs:sph_ofs+3072-m_last_cycle_ofs;
+		signed int sph_diff = (sph_ofs - m_last_cycle_ofs);
+		// Handle wraparound of the cycle offset
+		if (sph_diff < 0)
+			sph_diff += 3072;
 		float err = sph_diff - m_ticks_per_frame;
 		// FIXME: originally we used a value of 0.0005 for the coefficient
 		// which mirrored the value used in
 		// AmdtpReceiveStreamProcessor::putPacket() for a similar purpose.
 		// However, tests showed that this introduced discontinuities in
 		// the output audio signal, so an alternative value was sought.
-		// Further tests are needed, but a value of 0.01 seems to work
+		// Further tests are needed, but a value of 0.015 seems to work
 		// well, at least at a sample rate of 48 kHz.
-		m_ticks_per_frame += 0.01*err;
-
+		m_ticks_per_frame += 0.015*err;
 		m_last_cycle_ofs = sph_ofs;
 	}
-#endif
-
-
 
 	// Don't process the stream when it is not enabled.
 	if (m_disabled) {
@@ -1206,7 +1208,7 @@ bool MotuReceiveStreamProcessor::transfer() {
 		* because we align to an event boundary later
 		* the remaining nb of bytes in one read operation can be smaller than one event
 		* this can happen because the ringbuffer size is always a power of 2
-			*/
+		*/
 		if(vec[0].len<m_event_size) {
 			// use the ringbuffer function to read one event 
 			// the read function handles wrap around
@@ -1258,40 +1260,6 @@ int MotuReceiveStreamProcessor::receiveBlock(char *data,
 					   unsigned int nevents, unsigned int offset)
 {
 	int problem=0;
-#if 0
-	/* Push cycle offset differences from each event's SPH into the DLL.
-	 * If this is the very first block received, use the first event to
-	 * initialise the last cycle offset.
-	 * FIXME: it might be best to use differences only within the given
-	 * block rather than keeping a store of the last cycle offset.
-	 * Otherwise in the event of a lost incoming packet the DLL will
-	 * have an abnormally large value sent to it.  Perhaps this doesn't
-	 * matter?
-	 */
-	unsigned int ev;
-	signed int sph_ofs = ntohl(*(quadlet_t *)data) & 0xfff;
-
-	if (m_last_cycle_ofs < 0) {
-//		m_last_cycle_ofs = sph_ofs-(int)(*m_ticks_per_frame);
-		m_last_cycle_ofs = sph_ofs - m_ticks_per_frame;
-	}
-	for (ev=0; ev<nevents; ev++) {
-		sph_ofs = ntohl(*(quadlet_t *)(data+ev*m_event_size)) & 0xfff;
-		signed int sph_diff = (m_last_cycle_ofs<sph_ofs)?
-			sph_ofs-m_last_cycle_ofs:sph_ofs+3072-m_last_cycle_ofs;
-		float err = sph_diff - m_ticks_per_frame;
-		// FIXME: originally we used a value of 0.0005 for the coefficient
-		// which mirrored the value used in
-		// AmdtpReceiveStreamProcessor::putPacket() for a similar purpose.
-		// However, tests showed that this introduced discontinuities in
-		// the output audio signal, so an alternative value was sought.
-		// Further tests are needed, but a value of 0.01 seems to work
-		// well, at least at a sample rate of 48 kHz.
-		m_ticks_per_frame += 0.01*err;
-
-		m_last_cycle_ofs = sph_ofs;
-	}
-#endif
 	for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
           ++it ) {
