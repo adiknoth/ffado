@@ -135,6 +135,9 @@ freebob_driver_attach (freebob_driver_t *driver)
 			if(freebob_streaming_set_capture_buffer_type(driver->dev, chn, freebob_buffer_type_float)) {
 				printError(" cannot set port buffer type for %s", buf);
 			}
+			if (freebob_streaming_set_capture_stream_buffer(driver->dev, chn, NULL)) {
+				printError(" cannot configure initial port buffer for %s", buf);
+			}
 			if(freebob_streaming_capture_stream_onoff(driver->dev, chn, 1)) {
 				printError(" cannot enable port %s", buf);
 			}
@@ -171,6 +174,9 @@ freebob_driver_attach (freebob_driver_t *driver)
 			// setup port parameters
 			if(freebob_streaming_set_playback_buffer_type(driver->dev, chn, freebob_buffer_type_float)) {
 				printError(" cannot set port buffer type for %s", buf);
+			}
+			if (freebob_streaming_set_playback_stream_buffer(driver->dev, chn, NULL)) {
+				printError(" cannot configure initial port buffer for %s", buf);
 			}
 			if(freebob_streaming_playback_stream_onoff(driver->dev, chn, 1)) {
 				printError(" cannot enable port %s", buf);
