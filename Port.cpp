@@ -259,6 +259,11 @@ bool Port::setBufferType(enum E_BufferType b) {
 }
 
 bool Port::useExternalBuffer(bool b) {
+
+	// If called on an initialised stream but the request isn't for a change silently
+	// allow it (relied on by C API as used by jack backend driver)
+	if (m_initialized && m_use_external_buffer==b)
+		return true;
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Setting external buffer use to %d for port %s\n",(int)b,m_Name.c_str());
 	
