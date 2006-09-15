@@ -128,6 +128,10 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
 		assert(device);
 
+		// Set the device's sampling rate to that requested
+		// FIXME: does this really belong here?  If so we need to handle errors.
+		device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate));
+
 		// prepare the device
 		device->prepare();
 
