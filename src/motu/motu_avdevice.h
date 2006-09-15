@@ -31,12 +31,13 @@
 #include "libstreaming/MotuStreamProcessor.h"
 
 #define MOTUFW_BASE_ADDR                0xfffff0000000ULL
-#define MOTUFW_BASE_RATE_44100          (0<<3)
-#define MOTUFW_BASE_RATE_48000          (1<<3)
+
+#define MOTUFW_RATE_BASE_44100          (0<<3)
+#define MOTUFW_RATE_BASE_48000          (1<<3)
 #define MOTUFW_RATE_MULTIPLIER_1X       (0<<4)
 #define MOTUFW_RATE_MULTIPLIER_2X       (1<<4)
 #define MOTUFW_RATE_MULTIPLIER_4X       (2<<4)
-#define MOTUFW_BASE_RATE_MASK           (0x00000008)
+#define MOTUFW_RATE_BASE_MASK           (0x00000008)
 #define MOTUFW_RATE_MULTIPLIER_MASK     (0x00000030)
 
 #define MOTUFW_OPTICAL_MODE_OFF		(0<<8)
@@ -44,10 +45,20 @@
 #define MOTUFW_OPTICAL_MODE_TOSLINK	(2<<8)
 #define MOTUFW_OPTICAL_MODE_MASK	(0x00000300)
 
+#define MOTUFW_CLKSRC_MASK		0x00000007
+#define MOTUFW_CLKSRC_INTERNAL		0
+#define MOTUFW_CLKSRC_ADAT_OPTICAL	1
+#define MOTUFW_CLKSRC_SPDIF_TOSLINK	2
+#define MOTUFW_CLKSRC_SMTPE		3
+#define MOTUFW_CLKSRC_WORDCLOCK		4
+#define MOTUFW_CLKSRC_ADAT_9PIN		5
+#define MOTUFW_CLKSRC_AES_EBU		7
+
 /* Device registers */
 #define MOTUFW_REG_ISOCTRL		0x0b00
 #define MOTUFW_REG_RATECTRL		0x0b14
 #define MOTUFW_REG_ROUTE_PORT_CONF      0x0c04
+#define MOTUFW_REG_CLKSRC_NAME0		0x0c60
 
 class ConfigRom;
 class Ieee1394Service;

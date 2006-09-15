@@ -1175,7 +1175,10 @@ void
 driver_finish (jack_driver_t *driver)
 {
 	freebob_driver_t *drv=(freebob_driver_t *) driver;
-	
+	// If jack hasn't called the detach method, do it now.  As of jack 0.101.1
+	// the detach method was not being called explicitly on closedown, and 
+	// we need it to at least deallocate the iso resources.
+	if (drv->dev != NULL)
+		freebob_driver_detach(drv);
 	freebob_driver_delete (drv);
-
 }

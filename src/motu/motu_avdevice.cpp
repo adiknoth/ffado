@@ -175,11 +175,11 @@ MotuDevice::getSamplingFrequency( ) {
     quadlet_t q = ReadRegister(MOTUFW_REG_RATECTRL);
     int rate = 0;
 
-    switch (q & MOTUFW_BASE_RATE_MASK) {
-        case MOTUFW_BASE_RATE_44100:
+    switch (q & MOTUFW_RATE_BASE_MASK) {
+        case MOTUFW_RATE_BASE_44100:
             rate = 44100;
             break;
-        case MOTUFW_BASE_RATE_48000:
+        case MOTUFW_RATE_BASE_48000:
             rate = 48000;
             break;
     }
@@ -197,58 +197,91 @@ MotuDevice::getSamplingFrequency( ) {
 bool
 MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
-    /*
-     Implement the procedure to set the samplerate here
-    */
+/*
+ * Set the device samplerate.
+ */
+	char *src_name;
+	quadlet_t q, new_rate=0;
+	int i, supported=true;
 
-    quadlet_t new_rate=0;
-	int supported=true;
+	switch ( samplingFrequency ) {
+		case eSF_22050Hz:
+			supported=false;
+			break;
+		case eSF_24000Hz:
+			supported=false;
+			break;
+		case eSF_32000Hz:
+			supported=false;
+			break;
+		case eSF_44100Hz:
+			new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_1X;
+			break;
+		case eSF_48000Hz:
+			new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_1X;
+			break;
+		case eSF_88200Hz:
+			new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_2X;
+			break;
+		case eSF_96000Hz:
+			new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_2X;
+			break;
+		case eSF_176400Hz:
+			new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
+			break;
+		case eSF_192000Hz:
+			new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
+			break;
+		default:
+			supported=false;
+	}
 
-    switch ( samplingFrequency ) {
-        case eSF_22050Hz:
-	    supported=false;
-	    break;
-	case eSF_24000Hz:
-	    supported=false;
-            break;
-    	case eSF_32000Hz:
-	    supported=false;
-            break;
-	case eSF_44100Hz:
-            new_rate = MOTUFW_BASE_RATE_44100 | MOTUFW_RATE_MULTIPLIER_1X;
-            break;
-	case eSF_48000Hz:
-            new_rate = MOTUFW_BASE_RATE_48000 | MOTUFW_RATE_MULTIPLIER_1X;
-            break;
-        case eSF_88200Hz:
-            new_rate = MOTUFW_BASE_RATE_44100 | MOTUFW_RATE_MULTIPLIER_2X;
-            break;
-        case eSF_96000Hz:
-            new_rate = MOTUFW_BASE_RATE_48000 | MOTUFW_RATE_MULTIPLIER_2X;
-            break;
-        case eSF_176400Hz:
-            new_rate = MOTUFW_BASE_RATE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
-            break;
-        case eSF_192000Hz:
-            new_rate = MOTUFW_BASE_RATE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
-            break;
-        default:
-            supported=false;
-    }
-
-    // update the register.  FIXME: there's more to it than this
-    if (supported) {
-        quadlet_t value=ReadRegister(MOTUFW_REG_RATECTRL);
-        value &= ~(MOTUFW_BASE_RATE_MASK|MOTUFW_RATE_MULTIPLIER_MASK);
-        value |= new_rate;
+	// Update the clock control register.  FIXME: there's more to it than this
+	if (supported) {
+		quadlet_t value=ReadRegister(MOTUFW_REG_RATECTRL);
+		value &= ~(MOTUFW_RATE_BASE_MASK|MOTUFW_RATE_MULTIPLIER_MASK);
+		value |= new_rate;
 //        value |= 0x04000000;
-        if (WriteRegister(MOTUFW_REG_RATECTRL, value) == 0) {
-            supported=true;
-        } else {
-            supported=false;
-        }
-    }
-    return supported;
+		if (WriteRegister(MOTUFW_REG_RATECTRL, value) == 0) {
+			supported=true;
+		} else {
+			supported=false;
+		}
+		// A write to the rate/clock control register requires the 
+		// textual name of the current clock source be sent to the 
+		// clock source name registers.
+		switch (value & MOTUFW_CLKSRC_MASK) {
+			case MOTUFW_CLKSRC_INTERNAL:
+				src_name = "Internal        ";
+				break;
+			case MOTUFW_CLKSRC_ADAT_OPTICAL:
+				src_name = "ADAT Optical    ";
+				break;
+			case MOTUFW_CLKSRC_SPDIF_TOSLINK:
+				src_name = "SPDIF/TOSLink   ";
+				break;
+			case MOTUFW_CLKSRC_SMTPE:
+				src_name = "SMPTE           ";
+				break;
+			case MOTUFW_CLKSRC_WORDCLOCK:
+				src_name = "Word Clock In   ";
+				break;
+			case MOTUFW_CLKSRC_ADAT_9PIN:
+				src_name = "ADAT 9-pin      ";
+				break;
+			case MOTUFW_CLKSRC_AES_EBU:
+				src_name = "AES-EBU         ";
+				break;
+			default:
+				src_name = "Unknown         ";
+		}
+		for (i=0; i<16; i+=4) {
+			q = (src_name[i]<<24) | (src_name[i+1]<<16) | 
+				(src_name[i+2]<<8) | src_name[i+3];
+			WriteRegister(MOTUFW_REG_CLKSRC_NAME0+i, q);
+		}
+	}
+	return supported;
 }
 
 bool MotuDevice::setId( unsigned int id) {
