@@ -359,6 +359,7 @@ ConfigRom::getVendorName() const
 bool
 ConfigRom::updatedNodeId()
 {
+    struct csr1212_csr* csr = 0;
     for ( fb_nodeid_t nodeId = 0;
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
@@ -367,16 +368,15 @@ ConfigRom::updatedNodeId()
         csr_info.service = m_1394Service;
         csr_info.nodeId = 0xffc0 | nodeId;
 
-        struct csr1212_csr* csr =
-            csr1212_create_csr( &configrom_csr1212_ops,
-                                5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
-                                &csr_info );
+        csr = csr1212_create_csr( &configrom_csr1212_ops,
+                                  5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
+                                  &csr_info );
 
         if (!csr || csr1212_parse_csr( csr ) != CSR1212_SUCCESS) {
             if (csr) {
                 csr1212_destroy_csr(csr);
             }
-            return false;
+            continue;
         }
 
 
@@ -395,8 +395,15 @@ ConfigRom::updatedNodeId()
                              nodeId );
                 m_nodeId = nodeId;
             }
+            if (csr) {
+                csr1212_destroy_csr(csr);
+            }
             return true;
         }
+    }
+
+    if (csr) {
+        csr1212_destroy_csr(csr);
     }
 
     debugOutput( DEBUG_LEVEL_NORMAL,
