@@ -45,6 +45,7 @@ static struct argp_option options[] = {
     {"verbose",   'v', "level",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
     {"force",     'f', 0,           0,  "Force firmware download" },
+    {"noboot",    'b', 0,           0,  "Do no start bootloader (bootloader is already running)" },
     { 0 }
 };
 
@@ -64,6 +65,7 @@ struct arguments
     short verbose;
     int   port;
     int   force;
+    int   no_bootloader_restart;
 } arguments;
 
 // Parse a single option.
@@ -95,6 +97,9 @@ parse_opt( int key, char* arg, struct argp_state* state )
         break;
     case 'f':
         arguments->force = 1;
+        break;
+    case 'b':
+        arguments->no_bootloader_restart = 1;
         break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= 3) {
@@ -170,6 +175,7 @@ main( int argc, char** argv )
         }
         std::string str( arguments.args[2] );
 
+        blMgr.setStartBootloader( arguments.no_bootloader_restart != 1 );
         if ( !blMgr.downloadFirmware( str ) ) {
             cerr << "Failed to download firmware" << endl;
             return -1;

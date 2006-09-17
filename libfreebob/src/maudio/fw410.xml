@@ -13,9 +13,11 @@
       <Connection>
         <Port>0</Port>
         <Node>1</Node>
+	<Plug>0</Plug>
         <Dimension>8</Dimension>
         <Samplerate>48000</Samplerate>
         <IsoChannel>-1</IsoChannel>
+	<Master>0</Master>
         <Streams>
           <Stream>
             <Position>0</Position>
@@ -87,9 +89,11 @@
       <Connection>
         <Port>0</Port>
         <Node>1</Node>
+	<Plug>1</Plug>
         <Dimension>2</Dimension>
         <Samplerate>48000</Samplerate>
         <IsoChannel>-1</IsoChannel>
+	<Master>0</Master>
         <Streams>
           <Stream>
             <Position>0</Position>
@@ -109,13 +113,16 @@
           </Stream>
         </Streams>
       </Connection>
-
+      
+      <!--
       <Connection>
         <Port>0</Port>
         <Node>1</Node>
-        <Dimension>1</Dimension>
+	<Plug>2</Plug>
+        <Dimension>2</Dimension>
         <Samplerate>48000</Samplerate>
         <IsoChannel>-1</IsoChannel>
+	<Master>0</Master>
         <Streams>
           <Stream>
             <Position>0</Position>
@@ -125,9 +132,20 @@
             <DestinationPort>2</DestinationPort>
             <Name>MIDIOut L</Name>
           </Stream>
+          <Stream>
+            <Position>1</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>4</Type>
+            <DestinationPort>2</DestinationPort>
+            <Name>Dummy</Name>
+          </Stream>
 	</Streams>
       </Connection>
+      -->
+
     </ConnectionSet>
+
 
     <ConnectionSet>
       <Direction>0</Direction>
@@ -135,9 +153,11 @@
       <Connection>
         <Port>0</Port>
         <Node>1</Node>
+	<Plug>0</Plug>
         <Dimension>2</Dimension>
         <Samplerate>48000</Samplerate>
         <IsoChannel>-1</IsoChannel>
+	<Master>1</Master>
         <Streams>
           <Stream>
             <Position>0</Position>
@@ -158,12 +178,15 @@
         </Streams>
       </Connection>
 
+      <!--
       <Connection>
         <Port>0</Port>
         <Node>1</Node>
+	<Plug>1</Plug>
         <Dimension>2</Dimension>
         <Samplerate>48000</Samplerate>
         <IsoChannel>-1</IsoChannel>
+	<Master>0</Master>
         <Streams>
           <Stream>
             <Position>0</Position>
@@ -183,13 +206,16 @@
           </Stream>
         </Streams>
       </Connection>
+      -->
 
       <Connection>
         <Port>0</Port>
         <Node>1</Node>
-        <Dimension>1</Dimension>
+	<Plug>2</Plug>
+        <Dimension>2</Dimension>
         <Samplerate>48000</Samplerate>
         <IsoChannel>-1</IsoChannel>
+	<Master>0</Master>
         <Streams>
           <Stream>
             <Position>0</Position>
@@ -199,8 +225,17 @@
             <DestinationPort>2</DestinationPort>
             <Name>MIDIIn</Name>
           </Stream>
+          <Stream>
+            <Position>1</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>4</Type>
+            <DestinationPort>2</DestinationPort>
+            <Name>Dummy</Name>
+          </Stream>
         </Streams>
       </Connection>
+
     </ConnectionSet>
 
 
@@ -209,15 +244,15 @@
       <Format>
         <Samplerate>48000</Samplerate>
         <AudioChannels>10</AudioChannels>
-        <MidiChannels>1</MidiChannels>
+        <MidiChannels>0</MidiChannels>
       </Format>
     </StreamFormats>
     <StreamFormats>
       <Direction>0</Direction>
       <Format>
         <Samplerate>48000</Samplerate>
-        <AudioChannels>4</AudioChannels>
-        <MidiChannels>1</MidiChannels>
+        <AudioChannels>2</AudioChannels>
+        <MidiChannels>2</MidiChannels>
       </Format>
     </StreamFormats>
   </Device>
