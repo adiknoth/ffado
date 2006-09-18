@@ -169,40 +169,40 @@ MotuDevice::discover()
 
 int 
 MotuDevice::getSamplingFrequency( ) {
-    /*
-     Implement the procedure to retrieve the samplerate here
-    */
-    quadlet_t q = ReadRegister(MOTUFW_REG_RATECTRL);
-    int rate = 0;
+/*
+ * Retrieve the current sample rate from the MOTU device.
+ */
+	quadlet_t q = ReadRegister(MOTUFW_REG_CLK_CTRL);
+	int rate = 0;
 
-    switch (q & MOTUFW_RATE_BASE_MASK) {
-        case MOTUFW_RATE_BASE_44100:
-            rate = 44100;
-            break;
-        case MOTUFW_RATE_BASE_48000:
-            rate = 48000;
-            break;
-    }
-    switch (q & MOTUFW_RATE_MULTIPLIER_MASK) {
-        case MOTUFW_RATE_MULTIPLIER_2X:
-            rate *= 2;
-            break;
-        case MOTUFW_RATE_MULTIPLIER_4X:
-            rate *= 4;
-            break;
-    }
-    return rate;
+	switch (q & MOTUFW_RATE_BASE_MASK) {
+		case MOTUFW_RATE_BASE_44100:
+			rate = 44100;
+			break;
+		case MOTUFW_RATE_BASE_48000:
+			rate = 48000;
+			break;
+	}
+	switch (q & MOTUFW_RATE_MULTIPLIER_MASK) {
+		case MOTUFW_RATE_MULTIPLIER_2X:
+			rate *= 2;
+			break;
+		case MOTUFW_RATE_MULTIPLIER_4X:
+			rate *= 4;
+			break;
+	}
+	return rate;
 }
 
 bool
 MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
 /*
- * Set the device samplerate.
+ * Set the MOTU device's samplerate.
  */
 	char *src_name;
 	quadlet_t q, new_rate=0;
-	int i, supported=true;
+	int i, supported=true, cancel_adat=false;
 
 	switch ( samplingFrequency ) {
 		case eSF_22050Hz:
@@ -227,22 +227,51 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 			new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_2X;
 			break;
 		case eSF_176400Hz:
-			new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
+			// Currently only the Traveler supports 4x sample rates
+			if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
+				new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
+				cancel_adat = true;
+			} else
+				supported=false;
 			break;
 		case eSF_192000Hz:
-			new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
+			// Currently only the Traveler supports 4x sample rates
+			if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
+				new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
+				cancel_adat = true;
+			} else
+				supported=false;
 			break;
 		default:
 			supported=false;
 	}
 
-	// Update the clock control register.  FIXME: there's more to it than this
+	// Update the clock control register.  FIXME: while this is now rather
+	// comprehensive there may still be a need to manipulate MOTUFW_REG_CLK_CTRL
+	// a little more than we do.
 	if (supported) {
-		quadlet_t value=ReadRegister(MOTUFW_REG_RATECTRL);
+		quadlet_t value=ReadRegister(MOTUFW_REG_CLK_CTRL);
+
+		// If optical port must be disabled (because a 4x sample rate has
+		// been selected) then do so before changing the sample rate.  At
+		// this stage it will be up to the user to re-enable the optical
+		// port if the sample rate is set to a 1x or 2x rate later.
+		if (cancel_adat) {
+			setOpticalMode(MOTUFW_DIR_INOUT, MOTUFW_OPTICAL_MODE_OFF);
+		}
+
 		value &= ~(MOTUFW_RATE_BASE_MASK|MOTUFW_RATE_MULTIPLIER_MASK);
 		value |= new_rate;
-//        value |= 0x04000000;
-		if (WriteRegister(MOTUFW_REG_RATECTRL, value) == 0) {
+
+		// In other OSes bit 26 of MOTUFW_REG_CLK_CTRL always seems
+		// to be set when this register is written to although the
+		// reason isn't currently known.  When we set it, it appears
+		// to prevent output being produced so we'll leave it unset
+		// until we work out what's going on.  Other systems write
+		// to MOTUFW_REG_CLK_CTRL multiple times, so that may be
+		// part of the mystery.
+		//   value |= 0x04000000;
+		if (WriteRegister(MOTUFW_REG_CLK_CTRL, value) == 0) {
 			supported=true;
 		} else {
 			supported=false;
@@ -258,7 +287,10 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 				src_name = "ADAT Optical    ";
 				break;
 			case MOTUFW_CLKSRC_SPDIF_TOSLINK:
-				src_name = "SPDIF/TOSLink   ";
+				if (getOpticalMode(MOTUFW_DIR_IN)  == MOTUFW_OPTICAL_MODE_TOSLINK)
+					src_name = "TOSLink         ";
+				else
+					src_name = "SPDIF           ";
 				break;
 			case MOTUFW_CLKSRC_SMTPE:
 				src_name = "SMPTE           ";
@@ -285,25 +317,27 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 }
 
 bool MotuDevice::setId( unsigned int id) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
-    m_id=id;
-    return true;
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
+	m_id=id;
+	return true;
 }
 
 void
 MotuDevice::showDevice() const
 {
-    printf( "MOTU %s at node %d\n",
-        motufw_modelname[m_motu_model],
-        m_nodeId );
+	debugOutput(DEBUG_LEVEL_VERBOSE,
+		"MOTU %s at node %d\n", motufw_modelname[m_motu_model],
+		m_nodeId);
 }
 
 bool
 MotuDevice::prepare() {
 
 	int samp_freq = getSamplingFrequency();
-	unsigned int optical_mode = getOpticalMode();
-	unsigned int event_size = getEventSize();
+	unsigned int optical_in_mode = getOpticalMode(MOTUFW_DIR_IN);
+	unsigned int optical_out_mode = getOpticalMode(MOTUFW_DIR_OUT);
+	unsigned int event_size_in = getEventSize(MOTUFW_DIR_IN);
+	unsigned int event_size_out= getEventSize(MOTUFW_DIR_OUT);
 
 	raw1394handle_t handle = m_1394Service->getHandle();
 
@@ -355,8 +389,8 @@ MotuDevice::prepare() {
 		"remaining bandwidth: %d\n", get_iso_bandwidth_avail(handle));
 
 	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
-		m_1394Service->getPort(), samp_freq, event_size);
-	                         
+		m_1394Service->getPort(), samp_freq, event_size_in);
+
 	// The first thing is to initialize the processor.  This creates the
 	// data structures.
 	if(!m_receiveProcessor->init()) {
@@ -373,7 +407,7 @@ MotuDevice::prepare() {
 	FreebobStreaming::Port *p=NULL;
 
 	// Add audio capture ports
-	if (!addDirPorts(FreebobStreaming::Port::E_Capture, samp_freq, optical_mode)) {
+	if (!addDirPorts(FreebobStreaming::Port::E_Capture, samp_freq, optical_in_mode)) {
 		return false;
 	}
 
@@ -422,7 +456,7 @@ MotuDevice::prepare() {
 
 	// Do the same for the transmit processor
 	m_transmitProcessor=new FreebobStreaming::MotuTransmitStreamProcessor(
-		m_1394Service->getPort(), getSamplingFrequency(), event_size);
+		m_1394Service->getPort(), getSamplingFrequency(), event_size_out);
 
 	m_transmitProcessor->setVerboseLevel(getDebugLevel());
 	
@@ -439,7 +473,7 @@ MotuDevice::prepare() {
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
 	// Add audio playback ports
-	if (!addDirPorts(FreebobStreaming::Port::E_Playback, samp_freq, optical_mode)) {
+	if (!addDirPorts(FreebobStreaming::Port::E_Playback, samp_freq, optical_out_mode)) {
 		return false;
 	}
 
@@ -599,24 +633,55 @@ signed int MotuDevice::getIsoSendChannel(void) {
 	return m_iso_send_channel;
 }
 
-unsigned int MotuDevice::getOpticalMode(void) {
-	unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
-	return reg & MOTUFW_OPTICAL_MODE_MASK;
-}
-
-signed int MotuDevice::setOpticalMode(unsigned int mode) {
+unsigned int MotuDevice::getOpticalMode(unsigned int dir) {
 	unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
 
-	// FIXME: there seems to be more to it than this.
-	reg &= ~MOTUFW_OPTICAL_MODE_MASK;
-	reg |= mode & MOTUFW_OPTICAL_MODE_MASK;
-	return WriteRegister(MOTUFW_REG_ROUTE_PORT_CONF, reg);
+	if (dir == MOTUFW_DIR_IN)
+		return (reg & MOTUFW_OPTICAL_IN_MODE_MASK) >> 8;
+	else
+		return (reg & MOTUFW_OPTICAL_OUT_MODE_MASK) >> 12;
 }
 
-signed int MotuDevice::getEventSize(void) {
+signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
+	unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
+	unsigned int opt_ctrl = 0x0000002;
+
+	// Set up the optical control register value according to the current
+	// optical port modes.  At this stage it's not completely understood 
+	// what the "Optical control" register does, so the values its set to
+	// are more or less "magic" numbers.
+	if (reg & MOTUFW_OPTICAL_IN_MODE_MASK != (MOTUFW_OPTICAL_MODE_ADAT<<8))
+		opt_ctrl |= 0x00000080;
+	if (reg & MOTUFW_OPTICAL_OUT_MODE_MASK != (MOTUFW_OPTICAL_MODE_ADAT<<12))
+		opt_ctrl |= 0x00000040;
+
+	if (mode & MOTUFW_DIR_IN) {
+		reg &= ~MOTUFW_OPTICAL_IN_MODE_MASK;
+		reg |= (mode << 8) & MOTUFW_OPTICAL_IN_MODE_MASK;
+		if (mode != MOTUFW_OPTICAL_MODE_ADAT)
+			opt_ctrl |= 0x00000080;
+		else
+			opt_ctrl &= ~0x00000080;
+	}
+	if (mode & MOTUFW_DIR_OUT) {
+		reg &= ~MOTUFW_OPTICAL_OUT_MODE_MASK;
+		reg |= (mode <<12) & MOTUFW_OPTICAL_OUT_MODE_MASK;
+		if (mode != MOTUFW_OPTICAL_MODE_ADAT)
+			opt_ctrl |= 0x00000040;
+		else
+			opt_ctrl &= ~0x00000040;
+	}
+
+	// FIXME: there seems to be more to it than this, but for 
+	// the moment at least this seems to work.
+	WriteRegister(MOTUFW_REG_ROUTE_PORT_CONF, reg);
+	return WriteRegister(MOTUFW_REG_OPTICAL_CTRL, opt_ctrl);
+}
+
+signed int MotuDevice::getEventSize(unsigned int dir) {
 //
-// Return the size of a single event sent by the MOTU as part of an iso
-// data packet in bytes.
+// Return the size in bytes of a single event sent to (dir==MOTUFW_OUT) or
+// from (dir==MOTUFW_IN) the MOTU as part of an iso data packet.
 //
 // FIXME: for performance it may turn out best to calculate the event
 // size in setOpticalMode and cache the result in a data field.  However,
@@ -627,7 +692,7 @@ signed int MotuDevice::getEventSize(void) {
 // bytes (6 bytes) and 8 analog audio channels (each 3 bytes long).  Note that
 // all audio channels are sent using 3 bytes.
 signed int sample_rate = getSamplingFrequency();
-signed int optical_mode = getOpticalMode();
+signed int optical_mode = getOpticalMode(dir);
 signed int size = 4+6+8*3;
 
         // 2 channels of AES/EBU is present if a 1x or 2x sample rate is in 

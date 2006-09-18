@@ -40,10 +40,12 @@
 #define MOTUFW_RATE_BASE_MASK           (0x00000008)
 #define MOTUFW_RATE_MULTIPLIER_MASK     (0x00000030)
 
-#define MOTUFW_OPTICAL_MODE_OFF		(0<<8)
-#define MOTUFW_OPTICAL_MODE_ADAT	(1<<8)
-#define MOTUFW_OPTICAL_MODE_TOSLINK	(2<<8)
-#define MOTUFW_OPTICAL_MODE_MASK	(0x00000300)
+#define MOTUFW_OPTICAL_MODE_OFF		0x00
+#define MOTUFW_OPTICAL_MODE_ADAT	0x01
+#define MOTUFW_OPTICAL_MODE_TOSLINK	0x02
+#define MOTUFW_OPTICAL_IN_MODE_MASK	(0x00000300)
+#define MOTUFW_OPTICAL_OUT_MODE_MASK	(0x00003000)
+#define MOTUFW_OPTICAL_MODE_MASK	(MOTUFW_OPTICAL_IN_MODE_MASK|MOTUFW_OPTICAL_MODE_MASK)
 
 #define MOTUFW_CLKSRC_MASK		0x00000007
 #define MOTUFW_CLKSRC_INTERNAL		0
@@ -54,9 +56,14 @@
 #define MOTUFW_CLKSRC_ADAT_9PIN		5
 #define MOTUFW_CLKSRC_AES_EBU		7
 
+#define MOTUFW_DIR_IN			1
+#define MOTUFW_DIR_OUT			2
+#define MOTUFW_DIR_INOUT		(MOTUFW_DIR_IN | MOTUFW_DIR_OUT)
+
 /* Device registers */
 #define MOTUFW_REG_ISOCTRL		0x0b00
-#define MOTUFW_REG_RATECTRL		0x0b14
+#define MOTUFW_REG_OPTICAL_CTRL		0x0b10
+#define MOTUFW_REG_CLK_CTRL		0x0b14
 #define MOTUFW_REG_ROUTE_PORT_CONF      0x0c04
 #define MOTUFW_REG_CLKSRC_NAME0		0x0c60
 
@@ -101,10 +108,10 @@ public:
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-    unsigned int getOpticalMode(void);
-    signed int setOpticalMode(unsigned int mode);
+    unsigned int getOpticalMode(unsigned int dir);
+    signed int setOpticalMode(unsigned int dir, unsigned int mode);
 
-    signed int getEventSize(void);
+    signed int getEventSize(unsigned int dir);
   
 protected:
     Ieee1394Service* m_1394Service;
