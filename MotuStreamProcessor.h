@@ -118,13 +118,10 @@ protected:
 	int transmitSilenceBlock(char *data, unsigned int nevents, 
 	                  unsigned int offset);
 	                  
-	int MotuTransmitStreamProcessor::encodePortToMBLAEvents(
-		MotuAudioPort *p, quadlet_t *data, unsigned int offset, 
-		unsigned int nevents);
-	int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(
-		MotuAudioPort *p, quadlet_t *data, unsigned int offset, 
-		unsigned int nevents);
-
+	int encodePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
+		unsigned int offset, unsigned int nevents);
+	int encodeSilencePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
+		unsigned int offset, unsigned int nevents);
 
     DECLARE_DEBUG_MODULE;
 
