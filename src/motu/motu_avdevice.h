@@ -131,7 +131,7 @@ private:
 		char *name, 
 		enum FreebobStreaming::Port::E_Direction direction,
 		int position, int size);
-	bool MotuDevice::addDirPorts(
+	bool addDirPorts(
 		enum FreebobStreaming::Port::E_Direction direction,
 		unsigned int sample_rate, unsigned int optical_mode);
         
