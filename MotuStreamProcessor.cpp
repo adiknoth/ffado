@@ -247,10 +247,10 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		retval=RAW1394_ISO_OK;
 		*length += read_size;
 
-// FIXME: if we choose to read the buffer even during closedown,
-// here is where the data is silenced.
-//		if (m_closedown_count >= 0)
-//			memset(data+8, 0, read_size);
+		// FIXME: if we choose to read the buffer even during closedown,
+		// here is where the data is silenced.
+		//   if (m_closedown_count >= 0)
+		//     memset(data+8, 0, read_size);
 		if (m_closedown_count > 0)
 			m_closedown_count--;
 
@@ -260,7 +260,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		// CYCLE_DELAY accounts for the delay between the cycle
 		// audio is sent in and when the MOTU can actually play 
 		// that audio.  The SPH timestamp must account for this
-		// it doesn't demand to be played before it's possible.
+		// so it doesn't demand to be played before it's possible.
 		// For the duration of the event loop, account for the
 		// CYCLE_DELAY within m_cycle_count to save having to wrap
 		// (m_cycle_count+CYCLE_DELAY) and m_cycle_count separately
@@ -1327,10 +1327,6 @@ signed int MotuReceiveStreamProcessor::decodeMBLAEventsToPort(MotuAudioPort *p,
 		quadlet_t *data, unsigned int offset, unsigned int nevents)
 {
 	unsigned int j=0;
-
-// 	printf("****************\n");
-// 	hexDumpQuadlets(data,m_dimension*4);
-// 	printf("****************\n");
 
 	// Use char here since a port's source address won't necessarily be
 	// aligned; use of an unaligned quadlet_t may cause issues on
