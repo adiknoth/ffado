@@ -648,7 +648,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
 
 	// Set up the optical control register value according to the current
 	// optical port modes.  At this stage it's not completely understood 
-	// what the "Optical control" register does, so the values its set to
+	// what the "Optical control" register does, so the values it's set to
 	// are more or less "magic" numbers.
 	if (reg & MOTUFW_OPTICAL_IN_MODE_MASK != (MOTUFW_OPTICAL_MODE_ADAT<<8))
 		opt_ctrl |= 0x00000080;
