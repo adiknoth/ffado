@@ -356,7 +356,7 @@ bool StreamProcessorManager::start() {
 	m_streamingThread->Start();
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to start running...\n");
-	// we have to wait untill all streamprocessors indicate that they are running
+	// we have to wait until all streamprocessors indicate that they are running
 	// i.e. that there is actually some data stream flowing
 	int wait_cycles=2000; // two seconds
 	bool notRunning=true;
@@ -515,7 +515,6 @@ bool StreamProcessorManager::stop() {
 				return false;
 			}
 			
-			
 		}
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, " Transmit processors...\n");
@@ -528,7 +527,6 @@ bool StreamProcessorManager::stop() {
 			}
 			
 		}
-    
 	
 	return true;
 	

@@ -111,7 +111,7 @@ class IsoHandler
 		virtual bool prepare() = 0;
 		
 		unsigned int getCycleCounter();
-    
+
 	protected:
 	    raw1394handle_t m_handle;
         raw1394handle_t m_handle_util;

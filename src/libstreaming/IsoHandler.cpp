@@ -80,8 +80,10 @@ int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation
 /* Base class implementation */
 
 IsoHandler::~IsoHandler() {
-    stop();
-    if(m_handle) raw1394_destroy_handle(m_handle);
+    if(m_handle) {
+        stop();
+        raw1394_destroy_handle(m_handle);
+    }
     if(m_handle_util) raw1394_destroy_handle(m_handle_util);
     
 }
@@ -227,9 +229,13 @@ IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets,
 }
 IsoRecvHandler::~IsoRecvHandler()
 {
-	raw1394_iso_shutdown(m_handle);
+// Don't call until libraw1394's raw1394_new_handle() function has been
+// fixed to correctly initialise the iso_packet_infos field.  Bug is
+// confirmed present in libraw1394 1.2.1.  In any case,
+// raw1394_destroy_handle() will do any iso system shutdown required.
+//	raw1394_iso_shutdown(m_handle);
 	raw1394_destroy_handle(m_handle);
-
+	m_handle = NULL;
 }
 
 bool
@@ -262,7 +268,10 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 
 bool IsoRecvHandler::prepare()
 {
-	raw1394_iso_shutdown(m_handle);
+// Don't call until libraw1394's raw1394_new_handle() function has been
+// fixed to correctly initialise the iso_packet_infos field.  Bug is
+// confirmed present in libraw1394 1.2.1.
+//	raw1394_iso_shutdown(m_handle);
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso receive handler (%p)\n",this);
 	debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n",m_buf_packets);
@@ -329,9 +338,13 @@ IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
 
 IsoXmitHandler::~IsoXmitHandler()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	raw1394_iso_shutdown(m_handle);
+// Don't call until libraw1394's raw1394_new_handle() function has been
+// fixed to correctly initialise the iso_packet_infos field.  Bug is
+// confirmed present in libraw1394 1.2.1.  In any case,
+// raw1394_destroy_handle() will do any iso system shutdown required.
+//	raw1394_iso_shutdown(m_handle);
 	raw1394_destroy_handle(m_handle);
+	m_handle = NULL;
 }
 
 bool
@@ -424,6 +437,11 @@ IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets,
 }
 IsoRecvHandler::~IsoRecvHandler()
 {
+// Don't call until libraw1394's raw1394_new_handle() function has been
+// fixed to correctly initialise the iso_packet_infos field.  Bug is
+// confirmed present in libraw1394 1.2.1.  In any case,
+// raw1394_destroy_handle() (in the base class destructor) will do any iso
+// system shutdown required.
 	raw1394_iso_shutdown(m_handle);
 
 }
