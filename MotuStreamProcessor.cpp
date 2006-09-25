@@ -112,6 +112,12 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		m_cycle_ofs = 0.0;
 	}
 
+	// Similarly, initialise the "next cycle".  This can be done
+	// whenever iso data is seen - it doesn't have to wait until
+	// the stream is initialised.
+	if (m_next_cycle < 0)
+		m_next_cycle = cycle;
+
 	// Do housekeeping expected for all packets sent to the MOTU, even
 	// for packets containing no audio data.
 	*sy = 0x00;
@@ -168,8 +174,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		m_next_cycle = cycle;
 	}
 
-
-	if (!m_disabled) {
+	if  (!m_disabled) {
 		if (++m_next_cycle >= 8000)
 			m_next_cycle -= 8000;
 	} else
@@ -870,7 +875,7 @@ bool MotuTransmitStreamProcessor::preparedForStop() {
 MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, int framerate, 
 	unsigned int event_size)
     : ReceiveStreamProcessor(port, framerate), m_event_size(event_size),
-	m_last_cycle_ofs(-1), m_next_cycle(-1) {
+	m_last_cycle_ofs(-1), m_next_cycle(-1), m_closedown_active(0) {
 
 	// Set up the Delay-locked-loop to track audio frequency relative
 	// to the cycle timer.  The seed value is the "ideal" value.
@@ -905,11 +910,11 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
     // Detect missed receive cycles
     // FIXME: it would be nice to advance the rx buffer by the amount of
-    // frames missed.  However, since the MOTU transmits more frames 
-    // per cycle than the average and "catches up" with period emty
-    // cycles it's not trivial to work out precisely how many frames
-    // were missed.  Ultimately we need to do so if sync is to be 
-    // maintained across a transient receive failure.
+    // frames missed.  However, since the MOTU transmits more frames per
+    // cycle than the average and "catches up" with periodic empty cycles
+    // it's not trivial to work out precisely how many frames were missed. 
+    // Ultimately I think we need to do so if sync is to be maintained
+    // across a transient receive failure.
     if (m_next_cycle < 0)
 	m_next_cycle = cycle;
     if ((signed)cycle != m_next_cycle) {
@@ -918,8 +923,11 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 	m_next_cycle = cycle;
 	have_lost_cycles = 1;
     }
-    if (++m_next_cycle >= 8000)
-	m_next_cycle -= 8000;
+    if (!m_disabled) {
+        if (++m_next_cycle >= 8000)
+	    m_next_cycle -= 8000;
+    } else
+        m_next_cycle = -1;
 
     // If the packet length is 8 bytes (ie: just a CIP-like header) there is
     // no isodata.
@@ -982,11 +990,20 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 		m_last_cycle_ofs = sph_ofs;
 	}
 
-	// Don't process the stream when it is not enabled.
+	// Don't process the stream when it is not enabled
 	if (m_disabled) {
 		return RAW1394_ISO_OK;
 	}
         
+	// If closedown is active we also just throw data way, but in this case
+	// we keep the frame counter going to prevent a false xrun detection
+	if (m_closedown_active) {
+		incrementFrameCounter(n_events);
+		if (m_framecounter > (signed int)m_period)
+			return RAW1394_ISO_DEFER;
+		return RAW1394_ISO_OK;
+	}
+
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
 
         // Add the data payload (events) to the ringbuffer.  We'll just copy
@@ -1064,6 +1081,8 @@ bool MotuReceiveStreamProcessor::reset() {
 		debugFatal("Could not do base class reset\n");
 		return false;
 	}
+
+	m_next_cycle = -1;
 	
 	return true;
 }
@@ -1183,6 +1202,11 @@ bool MotuReceiveStreamProcessor::transfer() {
 	// We received one period of frames from each channel.
 	// This is period_size*m_event_size bytes.
 	unsigned int bytes2read = m_period * m_event_size;
+
+	// If closedown is in progress just pretend that data's been transferred
+	// to prevent false underrun detections on the event buffer.
+	if (m_closedown_active)
+		return true;
 
 	/* Read events2read bytes from the ringbuffer.
 	*  First see if it can be done in one read.  If so, ok.
@@ -1404,6 +1428,18 @@ unsigned int MotuReceiveStreamProcessor::getEventSize(void) {
 // data packet in bytes.
 //
 	return m_event_size;
+}
+
+bool MotuReceiveStreamProcessor::preparedForStop() {
+
+	// A MOTU receive stream can stop at any time.  However, signify
+	// that stopping is in progress because other streams (notably the
+	// transmit stream) may keep going for some time and cause an
+	// overflow in the receive buffers.  If a closedown is in progress
+	// the receive handler simply throws all incoming data away so
+	// no buffer overflow can occur.
+	m_closedown_active = 1;
+	return true;
 }
                 
 } // end of namespace FreebobStreaming

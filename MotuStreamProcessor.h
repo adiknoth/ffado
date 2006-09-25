@@ -163,6 +163,8 @@ public:
 	signed int setEventSize(unsigned int size);
 	unsigned int getEventSize(void);
 
+	virtual bool preparedForStop();
+
 protected:
 
 	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -185,6 +187,10 @@ protected:
 
 	signed int m_last_cycle_ofs;
 	signed int m_next_cycle;
+
+	// Signifies a closedown is in progress, in which case incoming data 
+        // is junked.
+        signed int m_closedown_active;
 
     DECLARE_DEBUG_MODULE;
 

@@ -172,7 +172,6 @@ bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 			return rebuildFdMap();
 		}
 	}
-
 	debugFatal("Could not find handler (%p)\n", handler);
 	
 	return false; //not found
@@ -469,6 +468,16 @@ void IsoHandlerManager::pruneHandlers() {
     {
 		unregisterHandler(*it);
 		debugOutput( DEBUG_LEVEL_VERBOSE, " deleting handler (%p)\n",*it);
+
+		// Now the handler's been unregistered it won't be reused
+		// again.  Therefore it really needs to be formally deleted
+		// to free up the raw1394 handle.  Otherwise things fall
+		// apart after several xrun recoveries as the system runs
+		// out of resources to support all the disused but still
+		// allocated raw1394 handles.  At least this is the current
+		// theory as to why we end up with "memory allocation"
+		// failures after several Xrun recoveries.
+		delete *it;
     }
 
 }
