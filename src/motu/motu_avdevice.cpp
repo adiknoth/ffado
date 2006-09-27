@@ -817,9 +817,9 @@ char *buff;
 				asprintf(&buff,"dev%d_%s_AES/EBU%d", m_id, mode_str, i+1);
 			} else {
 				if (direction == FreebobStreaming::Port::E_Capture)
-					asprintf(&buff,"dev%d_%s_MainOut-%c", m_id, mode_str, i==0?'L':'R');
+					asprintf(&buff,"dev%d_%s_Mic%d", m_id, mode_str, i+1);
 				else
-					asprintf(&buff,"dev%d_%s_????%d", m_id, mode_str, i+1);
+					asprintf(&buff,"dev%d_%s_MainOut-%c", m_id, mode_str, i==0?'L':'R');
 			}
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
