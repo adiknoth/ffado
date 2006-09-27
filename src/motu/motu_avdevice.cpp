@@ -636,10 +636,13 @@ signed int MotuDevice::getIsoSendChannel(void) {
 unsigned int MotuDevice::getOpticalMode(unsigned int dir) {
 	unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
 
+debugOutput(DEBUG_LEVEL_VERBOSE, "optical mode: %x %x %x %x\n",dir, reg, reg & MOTUFW_OPTICAL_IN_MODE_MASK,
+reg & MOTUFW_OPTICAL_OUT_MODE_MASK);
+
 	if (dir == MOTUFW_DIR_IN)
 		return (reg & MOTUFW_OPTICAL_IN_MODE_MASK) >> 8;
 	else
-		return (reg & MOTUFW_OPTICAL_OUT_MODE_MASK) >> 12;
+		return (reg & MOTUFW_OPTICAL_OUT_MODE_MASK) >> 10;
 }
 
 signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
@@ -652,7 +655,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
 	// are more or less "magic" numbers.
 	if (reg & MOTUFW_OPTICAL_IN_MODE_MASK != (MOTUFW_OPTICAL_MODE_ADAT<<8))
 		opt_ctrl |= 0x00000080;
-	if (reg & MOTUFW_OPTICAL_OUT_MODE_MASK != (MOTUFW_OPTICAL_MODE_ADAT<<12))
+	if (reg & MOTUFW_OPTICAL_OUT_MODE_MASK != (MOTUFW_OPTICAL_MODE_ADAT<<10))
 		opt_ctrl |= 0x00000040;
 
 	if (mode & MOTUFW_DIR_IN) {
@@ -665,7 +668,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
 	}
 	if (mode & MOTUFW_DIR_OUT) {
 		reg &= ~MOTUFW_OPTICAL_OUT_MODE_MASK;
-		reg |= (mode <<12) & MOTUFW_OPTICAL_OUT_MODE_MASK;
+		reg |= (mode <<10) & MOTUFW_OPTICAL_OUT_MODE_MASK;
 		if (mode != MOTUFW_OPTICAL_MODE_ADAT)
 			opt_ctrl |= 0x00000040;
 		else
