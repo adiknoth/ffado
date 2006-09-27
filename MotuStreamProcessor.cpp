@@ -1083,7 +1083,7 @@ bool MotuReceiveStreamProcessor::reset() {
 	}
 
 	m_next_cycle = -1;
-	
+
 	return true;
 }
 
