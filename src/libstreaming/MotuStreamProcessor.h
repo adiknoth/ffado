@@ -75,6 +75,7 @@ public:
 	void setTicksPerFrameDLL(float *dll) {m_ticks_per_frame=dll;};
 
 	virtual bool preparedForStop();
+	virtual bool preparedForStart();
 
 protected:
 
@@ -164,6 +165,7 @@ public:
 	unsigned int getEventSize(void);
 
 	virtual bool preparedForStop();
+	virtual bool preparedForStart();
 
 protected:
 

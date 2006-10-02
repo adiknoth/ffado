@@ -403,7 +403,6 @@ MotuDevice::prepare() {
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
 	
 	char *buff;
-	unsigned int i;
 	FreebobStreaming::Port *p=NULL;
 
 	// Add audio capture ports
@@ -411,27 +410,25 @@ MotuDevice::prepare() {
 		return false;
 	}
 
-	// example of adding an midi port:
-//    asprintf(&buff,"dev%d_cap_%s",m_id,"myportnamehere");
-//    p=new FreebobStreaming::MotuMidiPort(
-//            buff,
-//            FreebobStreaming::Port::E_Capture, 
-//            0 // you can add all other port specific stuff you 
-//              // need to pass by extending MotuXXXPort and MotuPortInfo
-//    );
-//    free(buff);
-//
-//    if (!p) {
-//        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
-//    } else {
-//        if (!m_receiveProcessor->addPort(p)) {
-//            debugWarning("Could not register port with stream processor\n");
-//            return false;
-//        } else {
-//            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-//        }
-//    }
-    
+	// Add MIDI port.  The MOTU only has one MIDI input port, with each
+	// MIDI byte sent using a 3 byte sequence starting at byte 4 of the
+	// event data.
+	asprintf(&buff,"dev%d_cap_MIDI0",m_id);
+	p = new FreebobStreaming::MotuMidiPort(buff,
+		FreebobStreaming::Port::E_Capture, 4);
+	if (!p) {
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+	} else {
+		if (!m_receiveProcessor->addPort(p)) {
+			debugWarning("Could not register port with stream processor\n");
+			free(buff);
+			return false;
+		} else {
+			debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n", buff);
+		}
+	}
+	free(buff);
+
 	// example of adding an control port:
 //    asprintf(&buff,"dev%d_cap_%s",m_id,"myportnamehere");
 //    p=new FreebobStreaming::MotuControlPort(
@@ -477,28 +474,25 @@ MotuDevice::prepare() {
 		return false;
 	}
 
-//	// example of adding an midi port:
-//    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
-//    
-//    p=new FreebobStreaming::MotuMidiPort(
-//            buff,
-//            FreebobStreaming::Port::E_Playback, 
-//            0 // you can add all other port specific stuff you 
-//              // need to pass by extending MotuXXXPort and MotuPortInfo
-//    );
-//    free(buff);
-//
-//    if (!p) {
-//        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
-//    } else {
-//        if (!m_transmitProcessor->addPort(p)) {
-//            debugWarning("Could not register port with stream processor\n");
-//            return false;
-//        } else {
-//            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-//        }
-//    }
-    
+	// Add MIDI port.  The MOTU only has one output MIDI port, with each
+	// MIDI byte transmitted using a 3 byte sequence starting at byte 4
+	// of the event data.
+	asprintf(&buff,"dev%d_pbk_MIDI0",m_id);
+	p = new FreebobStreaming::MotuMidiPort(buff,
+		FreebobStreaming::Port::E_Capture, 4);
+	if (!p) {
+		debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+	} else {
+		if (!m_receiveProcessor->addPort(p)) {
+			debugWarning("Could not register port with stream processor\n");
+			free(buff);
+			return false;
+		} else {
+			debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n", buff);
+		}
+	}
+	free(buff);
+
 	// example of adding an control port:
 //    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
 //    

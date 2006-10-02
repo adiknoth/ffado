@@ -206,8 +206,12 @@ freebob_driver_detach (freebob_driver_t *driver)
 
 	for (node = driver->capture_ports; node;
 	     node = jack_slist_next (node)) {
-		jack_port_unregister (driver->client,
-				      ((jack_port_t *) node->data));
+		// Don't try to unregister NULL entries added for non-audio
+		// freebob ports by freebob_driver_attach().
+		if (node->data != NULL) {
+			jack_port_unregister (driver->client,
+					      ((jack_port_t *) node->data));
+		}
 	}
 
 	jack_slist_free (driver->capture_ports);
