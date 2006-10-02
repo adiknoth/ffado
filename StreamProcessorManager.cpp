@@ -319,6 +319,10 @@ bool StreamProcessorManager::start() {
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
 		it != m_ReceiveProcessors.end();
 		++it ) {
+			if (!(*it)->preparedForStart()) {
+				debugOutput(DEBUG_LEVEL_VERBOSE,"Receive stream processor (%p) failed to prepare for start\n", *it);
+				return false;
+			}
 			if (!m_isoManager->registerStream(*it)) {
 				debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register receive stream processor (%p) with the Iso manager\n",*it);
 				return false;
@@ -331,6 +335,10 @@ bool StreamProcessorManager::start() {
 	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
 		it != m_TransmitProcessors.end();
 		++it ) {
+			if (!(*it)->preparedForStart()) {
+				debugOutput(DEBUG_LEVEL_VERBOSE,"Transmit stream processor (%p) failed to prepare for start\n", *it);
+				return false;
+			}
 			if (!m_isoManager->registerStream(*it)) {
 				debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register transmit stream processor (%p) with the Iso manager\n",*it);
 				return false;
