@@ -1,3 +1,7 @@
+2006-10-07  Daniel Wagner  <wagi@newton.monom.org>
+
+	* libfreebob-1.0 released
+
 2006-06-24  Daniel Wagner  <wagi@monom.org>
 
 	* tests/streaming/Makefile.am: Fixed build problem with missing '/'.
