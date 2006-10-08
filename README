@@ -20,16 +20,16 @@ libpthread  (>= 2.3.5)
 These libraries here should be at least the version listed:
 
 libraw1394  (>= 1.2.1),  http://www.linux1394.org
-libiec61883 (>= 1.0.0),  http://www.linux1394.org
+libiec61883 (>= 1.1.0),  http://www.linux1394.org
 libavc1394  (>= 0.5.3),  http://sourceforge.net/projects/libavc1394
 
 Currently only the jackd audio server is supported.
 
-jackd (>= 0.102.5), http://jackaudio.org
+jackd (>= 0.102.20), http://jackaudio.org
 
 Optionally, but recommended is that you install qjackctl:
 
-qjackctl (>= 0.2.20.10), http://sourceforge.net/projects/qjackctl
+qjackctl (>= 0.2.21), http://sourceforge.net/projects/qjackctl
 
 How to build
 ------------
