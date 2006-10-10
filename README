@@ -200,3 +200,18 @@ best way to help us figure out what the problem might be is to build the
 debug version (./configure --enable-debug). You can then rerun the test
 application and send us its output.
 
+
+Known problems (a.k.a bugs)
+---------------------------
+
+- The 1394 bus related resources are not freed correctly. That means after a
+  few restarts of jackd the allocation of new resources will fail and jackd
+  will barf out. The error looks like this:
+ 
+     DRIVER NT: could not start driver
+     cannot start driver
+
+  A simple workaround is to reset the bus. This can either
+  be done with gscanbus (http://gscanbus.berlios.de) 'Control->Force Bus Reset'
+  or removing your device and re-attaching it to the bus.
+
