@@ -1,3 +1,23 @@
+/* test-fw410.cpp
+ * Copyright (C) 2006 by Daniel Wagner
+ *
+ * This file is part of FreeBoB.
+ *
+ * FreeBoB is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * FreeBoB is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FreeBoB; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA.
+ */
+
 #include <libraw1394/raw1394.h>
 #include <libiec61883/iec61883.h>
 
@@ -122,27 +142,42 @@ main(int argc, char **argv)
     int iLocalId  = raw1394_get_local_id( pHandle );
     int iRemoteId = iNodeId | 0xffc0;
     Connection cons[] = {
-        //   output,  oplug,    intput, iplug, bandwith, iso channel
-        {  iLocalId,     -1, iRemoteId,     0,        0,          -1 },     // iPCR[0]
-        { iRemoteId,      0,  iLocalId,    -1,        0,          -1 },     // oPCR[0]
-        { iRemoteId,      1,  iLocalId,    -1,        0,          -1 },     // oPCR[1]
-        {  iLocalId,     -1, iRemoteId,     2,        0,          -1 },     // iPCR[2]
+        //   output,  oplug,     input, iplug, bandwith, iso channel
+        { iRemoteId,      0,  iLocalId,    -1,    0x148,          -1 },     // oPCR[0]
+        { iRemoteId,      1,  iLocalId,    -1,    0x148,          -1 },     // oPCR[1]
+        //        { iRemoteId,      2,  iLocalId,    -1,        0,          -1 },     // oPCR[2]: cmp not supported
+        {  iLocalId,     -1, iRemoteId,     0,    0x148,          -1 },     // iPCR[0]
+        {  iLocalId,     -1, iRemoteId,     1,    0x148,          -1 },     // iPCR[1]
+        //        {  iLocalId,     -1, iRemoteId,     2,        0,          -1 },     // iPCR[2]: cmp not supported
     };
 
+    printf( "local node id %d\n", iLocalId  & ~0xffc0);
+    printf( "remote node id %d\n", iRemoteId & ~0xffc0);
 
     for ( unsigned int i = 0; i < sizeof( cons ) / sizeof( cons[0] ); ++i ) {
         Connection* pCons = &cons[i];
 
+        // the bandwith calculation fails, so its better to use 
+        // some default values.
         pCons->m_iBandwith = iec61883_cmp_calc_bandwidth ( pHandle,
                                                            pCons->m_output,
                                                            pCons->m_oplug,
                                                            IEC61883_DATARATE_400 );
+        sleep(1);
         pCons->m_iIsoChannel = iec61883_cmp_connect( pHandle,
                                                      pCons->m_output,
                                                      &pCons->m_oplug,
                                                      pCons->m_input,
                                                      &pCons->m_iplug,
                                                      &pCons->m_iBandwith );
+        printf( "%2d -> %2d %cPCR[%2d]: bw = %4d, ch = %2d\n",
+                pCons->m_output & ~0xffc0,
+                pCons->m_input & ~0xffc0,
+                pCons->m_oplug == -1? 'i' : 'o',
+                pCons->m_oplug == -1? pCons->m_iplug: pCons->m_oplug,
+                pCons->m_iBandwith,
+                pCons->m_iIsoChannel );
+        sleep(1);
     }
 
     sleep( 5 );
@@ -162,6 +197,7 @@ main(int argc, char **argv)
 
         }
     }
+
 
     raw1394_destroy_handle( pHandle );
     return 0;
