@@ -106,6 +106,8 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x0040ab, 0x00010048},  // EDIROL, FA-101
     {0x0040ab, 0x00010049},  // EDIROL, FA-66
+    
+    {0x00130e, 0x00000003},  // Focusrite, Pro26IO (Saffire 26)
 };
 
 bool
