@@ -97,6 +97,8 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
+    {0x0003db, 0x00010048},  // Apogee Electronics, Rosetta 200
+    
     {0x00000f, 0x00010065},  // Mackie, Onyx Firewire
 
 //    {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
@@ -108,6 +110,7 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0040ab, 0x00010049},  // EDIROL, FA-66
     
     {0x00130e, 0x00000003},  // Focusrite, Pro26IO (Saffire 26)
+    
 };
 
 bool
