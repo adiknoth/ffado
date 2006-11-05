@@ -71,7 +71,7 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0007f5, 0x00010048, "refdesign.xml"},  // BridgeCo, RD Audio1
+    //{0x0007f5, 0x00010048, "refdesign.xml"},  // BridgeCo, RD Audio1
 
     {0x000d6c, 0x00010046, "fw410.xml"},       // M-Audio, FW 410
     {0x000d6c, 0x00010058, "fw410.xml"},       // M-Audio, FW 410; Version 5.10.0.5036
