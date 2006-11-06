@@ -54,7 +54,7 @@ FeatureFunctionBlockVolume::serialize( IOSSerialize& se )
     bStatus &= se.write( m_audioChannelNumber, "FeatureFunctionBlockVolume audioChannelNumber" );
     bStatus &= se.write( m_controlSelector,    "FeatureFunctionBlockVolume controlSelector" );
     bStatus &= se.write( m_controlDataLength,  "FeatureFunctionBlockVolume controlDataLength" );
-    val = m_volume >> 16;
+    val = (byte_t)(m_volume >> 8);
     bStatus &= se.write( val,                  "FeatureFunctionBlockVolume volume high" );
     val = m_volume & 0xff;
     bStatus &= se.write( val,                  "FeatureFunctionBlockVolume volume low" );
@@ -72,7 +72,7 @@ FeatureFunctionBlockVolume::deserialize( IISDeserialize& de )
     bStatus = de.read( &m_controlSelector );
     bStatus = de.read( &m_controlDataLength );
     bStatus = de.read( &val );
-    m_volume = val << 16;
+    m_volume = val << 8;
     bStatus = de.read( &val );
     m_volume |= val;
 
@@ -90,7 +90,7 @@ FeatureFunctionBlockVolume::clone() const
 
 FeatureFunctionBlockCmd::FeatureFunctionBlockCmd( Ieee1394Service* ieee1394service )
     : AVCCommand( ieee1394service, AVC1394_FUNCTION_BLOCK_CMD )
-    , m_functionBlockType( eFCS_Volume )
+    , m_functionBlockType( 0x81 ) // feature function block
     , m_functionBlockId( 0xff )
     , m_controlAttribute( eCA_Current )
 {
