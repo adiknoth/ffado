@@ -22,104 +22,76 @@
 #include "libfreebobavc/serialize.h"
 #include "libfreebobavc/ieee1394service.h"
 
-#include <argp.h>
-
-using namespace std;
-
-////////////////////////////////////////////////
-// arg parsing
-////////////////////////////////////////////////
-const char *argp_program_version = "test-volume 0.1";
-const char *argp_program_bug_address = "<freebob-devel@lists.sf.net>";
-static char doc[] = "test-extplugcmd -- tests some extended plug info commands on a BeBoB device";
-static char args_doc[] = "NODE_ID FFB_ID VOL";
-static struct argp_option options[] = {
-    {"verbose",   'v', 0,           0,  "Produce verbose output" },
-    {"port",      'p', "PORT",      0,  "Set port" },
-   { 0 }
-};
-
-struct arguments
+short int getMaxVolume(Ieee1394Service& ieee1394service, int node_id, int ffb_id)
 {
-    arguments()
-        : verbose( false )
-        , test( false )
-        , port( 0 )
-        {
-            args[0] = 0;
-        }
-
-    char* args[3];
-    bool  verbose;
-    bool  test;
-    int   port;
-} arguments;
-
-// Parse a single option.
-static error_t
-parse_opt( int key, char* arg, struct argp_state* state )
-{
-    // Get the input argument from `argp_parse', which we
-    // know is a pointer to our arguments structure.
-    struct arguments* arguments = ( struct arguments* ) state->input;
-
-    char* tail;
-    switch (key) {
-    case 'v':
-        arguments->verbose = true;
-        break;
-    case 't':
-        arguments->test = true;
-        break;
-    case 'p':
-        errno = 0;
-        arguments->port = strtol(arg, &tail, 0);
-        if (errno) {
-            perror("argument parsing failed:");
-            return errno;
-        }
-        break;
-    case ARGP_KEY_ARG:
-        if (state->arg_num >= 3) {
-            // Too many arguments.
-            argp_usage (state);
-        }
-        arguments->args[state->arg_num] = arg;
-        break;
-    case ARGP_KEY_END:
-        if (state->arg_num < 3 ) {
-            // Not enough arguments.
-            argp_usage (state);
-        }
-        break;
-    default:
-        return ARGP_ERR_UNKNOWN;
+    FeatureFunctionBlockCmd ffbCmd( &ieee1394service );
+    ffbCmd.setNodeId( node_id );
+    ffbCmd.setSubunitId( 0x00 );
+    ffbCmd.setCommandType( AVCCommand::eCT_Status );
+    ffbCmd.setFunctionBlockId( ffb_id );
+    ffbCmd.setControlAttribute(FeatureFunctionBlockCmd::eCA_Maximum);
+        
+    if ( !ffbCmd.fire() ) {
+        printf( "cmd failed\n" );
     }
-    return 0;
+    return ffbCmd.m_volumeControl.m_volume;
 }
 
-static struct argp argp = { options, parse_opt, args_doc, doc };
+short int getMinVolume(Ieee1394Service& ieee1394service, int node_id, int ffb_id)
+{
+    FeatureFunctionBlockCmd ffbCmd( &ieee1394service );
+    ffbCmd.setNodeId( node_id );
+    ffbCmd.setSubunitId( 0x00 );
+    ffbCmd.setCommandType( AVCCommand::eCT_Status );
+    ffbCmd.setFunctionBlockId( ffb_id );
+    ffbCmd.setControlAttribute(FeatureFunctionBlockCmd::eCA_Minimum);
 
-////////////////////////////////////////
-// Application
-////////////////////////////////////////
+    if ( !ffbCmd.fire() ) {
+        printf( "cmd failed\n" );
+    }
+    return ffbCmd.m_volumeControl.m_volume;
+}
+
+short int getCurrentVolume(Ieee1394Service& ieee1394service, int node_id, int ffb_id)
+{
+    FeatureFunctionBlockCmd ffbCmd( &ieee1394service );
+    ffbCmd.setNodeId( node_id );
+    ffbCmd.setSubunitId( 0x00 );
+    ffbCmd.setCommandType( AVCCommand::eCT_Status );
+    ffbCmd.setFunctionBlockId( ffb_id );
+
+    if ( !ffbCmd.fire() ) {
+        printf( "cmd failed\n" );
+    }
+    return ffbCmd.m_volumeControl.m_volume;
+}
 
 bool
 doApp(Ieee1394Service& ieee1394service, int node_id, int ffb_id, int vol )
 {
+    short int maxVolume = getMaxVolume(ieee1394service, node_id, ffb_id);
+    short int minVolume = getMinVolume(ieee1394service, node_id, ffb_id);
+
+    printf("max volume value = %d\n", maxVolume);
+    printf("min volume value = %d\n", minVolume);
+
+    short int volume = getCurrentVolume(ieee1394service, node_id, ffb_id);
+    printf("old volume value = %d\n", volume);
+
     FeatureFunctionBlockCmd ffbCmd( &ieee1394service );
     ffbCmd.setNodeId( node_id );
-    ffbCmd.setSubunitId( 0x01 );
+    ffbCmd.setSubunitId( 0x00 );
     ffbCmd.setCommandType( AVCCommand::eCT_Control );
     ffbCmd.setFunctionBlockId( ffb_id );
     ffbCmd.m_volumeControl.m_volume = vol;
 
-    ffbCmd.setVerbose( arguments.verbose );
     if ( !ffbCmd.fire() ) {
         printf( "cmd failed\n" );
     }
-    CoutSerializer se;
-    ffbCmd.serialize( se );
+
+    volume = getCurrentVolume(ieee1394service, node_id, ffb_id);
+    printf("new volume value = %d\n", volume);
+
     return true;
 }
 
@@ -129,21 +101,24 @@ doApp(Ieee1394Service& ieee1394service, int node_id, int ffb_id, int vol )
 int
 main(int argc, char **argv)
 {
-    // arg parsing
-    argp_parse( &argp, argc, argv, 0, 0, &arguments );
 
-    errno = 0;
+    if (argc < 3) {
+        printf("usage: NODE_ID FFB_ID VOL\n");
+        exit(0);
+    }
+
+    int errno = 0;
     char* tail;
-    int node_id = strtol( arguments.args[0], &tail, 0 );
-    int ffb_id  = strtol( arguments.args[1], &tail, 0 );
-    int vol     = strtol( arguments.args[2], &tail, 0 );
+    int node_id = strtol( argv[1], &tail, 0 );
+    int ffb_id  = strtol( argv[2], &tail, 0 );
+    int vol     = strtol( argv[3], &tail, 0 );
 
     if (errno) {
 	perror("argument parsing failed:");
 	return -1;
     }
     Ieee1394Service ieee1394service;
-    if ( !ieee1394service.initialize( arguments.port ) ) {
+    if ( !ieee1394service.initialize( 0 ) ) {
         fprintf( stderr, "could not set port on ieee1394service\n" );
         return -1;
     }
