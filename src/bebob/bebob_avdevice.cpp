@@ -760,7 +760,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
             if ( syncStream ) {
                 foundFreq =
                     static_cast<ESamplingFrequency>(
-                        compoundStream->m_samplingFrequency );
+                        syncStream->m_samplingFrequency );
             }
 
             if ( foundFreq == samplingFrequency )
