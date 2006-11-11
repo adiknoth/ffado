@@ -1,3 +1,8 @@
+2006-11-11  Daniel Wagner  <wagi@newton.monom.org>
+
+	* src/bebob/bebob_avdevice.cpp (setSamplingFrequencyPlug): copy past
+	error fixed. Reported by Jamie Gennis jgennis at gmail dot com
+
 2006-10-07  Daniel Wagner  <wagi@newton.monom.org>
 
 	* libfreebob-1.0 released
