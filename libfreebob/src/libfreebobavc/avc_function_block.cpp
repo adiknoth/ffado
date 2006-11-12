@@ -121,6 +121,52 @@ FunctionBlockProcessingMixer::clone() const
     return new FunctionBlockProcessingMixer( *this );
 }
 
+/////////////////////////////////
+
+FunctionBlockProcessingEnhancedMixer::FunctionBlockProcessingEnhancedMixer()
+    : IBusData()
+    , m_controlSelector( FunctionBlockProcessing::eCSE_Processing_EnhancedMixer )
+    , m_statusSelector( eSS_ProgramableState )
+{
+}
+
+FunctionBlockProcessingEnhancedMixer::FunctionBlockProcessingEnhancedMixer(
+    const FunctionBlockProcessingEnhancedMixer& rhs )
+    : m_controlSelector( rhs.m_controlSelector )
+    , m_statusSelector( rhs.m_statusSelector )
+{
+}
+
+FunctionBlockProcessingEnhancedMixer::~FunctionBlockProcessingEnhancedMixer()
+{
+}
+
+bool
+FunctionBlockProcessingEnhancedMixer::serialize( IOSSerialize& se )
+{
+    bool bStatus;
+    bStatus  = se.write( m_controlSelector, "FunctionBlockProcessingEnhancedMixer controlSelector" );
+    bStatus &= se.write( m_statusSelector,  "FunctionBlockProcessingEnhancedMixer statusSelector" );
+
+    return bStatus;
+}
+
+bool
+FunctionBlockProcessingEnhancedMixer::deserialize( IISDeserialize& de )
+{
+    bool bStatus;
+    bStatus  = de.read( &m_controlSelector );
+    bStatus &= de.read( &m_statusSelector );
+
+    return bStatus;
+}
+
+FunctionBlockProcessingEnhancedMixer*
+FunctionBlockProcessingEnhancedMixer::clone() const
+{
+    return new FunctionBlockProcessingEnhancedMixer( *this );
+}
+
 
 /////////////////////////////////
 /////////////////////////////////
@@ -263,6 +309,8 @@ FunctionBlockProcessing::FunctionBlockProcessing()
     , m_fbInputPlugNumber( 0x00 )
     , m_inputAudioChannelNumber( 0x00 )
     , m_outputAudioChannelNumber( 0x00 )
+    , m_pMixer( 0 )
+    , m_pEnhancedMixer( 0 )
 {
 }
 
@@ -272,12 +320,19 @@ FunctionBlockProcessing::FunctionBlockProcessing( const FunctionBlockProcessing&
     , m_inputAudioChannelNumber( rhs.m_inputAudioChannelNumber )
     , m_outputAudioChannelNumber( rhs.m_outputAudioChannelNumber )
 {
+    if ( rhs.m_pMixer ) {
+        m_pMixer = new FunctionBlockProcessingMixer( *rhs.m_pMixer );
+    } else if ( rhs.m_pEnhancedMixer ) {
+        m_pEnhancedMixer = new FunctionBlockProcessingEnhancedMixer( *rhs.m_pEnhancedMixer );
+    }
 }
 
 FunctionBlockProcessing::~FunctionBlockProcessing()
 {
     delete m_pMixer;
     m_pMixer = 0;
+    delete m_pEnhancedMixer;
+    m_pEnhancedMixer = 0;
 }
 
 bool
@@ -291,6 +346,8 @@ FunctionBlockProcessing::serialize( IOSSerialize& se )
 
     if ( m_pMixer ) {
         bStatus &= m_pMixer->serialize( se );
+    } else if ( m_pEnhancedMixer ) {
+        bStatus &= m_pEnhancedMixer->serialize( se );
     } else {
         bStatus = false;
     }
@@ -315,6 +372,12 @@ FunctionBlockProcessing::deserialize( IISDeserialize& de )
             m_pMixer = new FunctionBlockProcessingMixer;
         }
         bStatus &= m_pMixer->deserialize( de );
+        break;
+    case eCSE_Processing_EnhancedMixer:
+        if ( !m_pEnhancedMixer ) {
+            m_pEnhancedMixer = new FunctionBlockProcessingEnhancedMixer;
+        }
+        bStatus &= m_pEnhancedMixer->deserialize( de );
         break;
     case eCSE_Processing_Enable:
     case eCSE_Processing_Mode:

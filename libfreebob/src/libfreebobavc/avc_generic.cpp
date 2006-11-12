@@ -43,10 +43,13 @@ AVCCommand::AVCCommand( Ieee1394Service* ieee1394service,
 bool
 AVCCommand::serialize( IOSSerialize& se )
 {
-    se.write( m_ctype, "AVCCommand ctype" );
-
     // XXX \todo improve IOSSerialize::write interface
     char* buf;
+    asprintf( &buf, "AVCCommand ctype ('%s')",
+              responseToString( static_cast<AVCCommand::EResponse>( m_ctype ) ) );
+    se.write( m_ctype, buf );
+    free( buf );
+
     asprintf( &buf, "AVCCommand subunit (subunit_type = %d, subunit_id = %d)",
               getSubunitType(), getSubunitId() );
     se.write( m_subunit, buf );
@@ -265,4 +268,33 @@ subunitTypeToString( subunit_type_t subunitType )
     } else {
         return subunitTypeStrings[subunitType];
     }
+}
+
+const char* responseToStrings[] =
+{
+    "control",
+    "status",
+    "specific inquiry",
+    "notify",
+    "general inquiry",
+    "reserved for future specification",
+    "reserved for future specification",
+    "reserved for future specification",
+    "not implemented",
+    "accepted",
+    "rejected",
+    "in transition",
+    "implemented/stable",
+    "changed"
+    "reserved for future specification",
+    "interim",
+};
+
+const char*
+responseToString( AVCCommand::EResponse eResponse )
+{
+    if ( eResponse > ( int )( sizeof( responseToStrings ) / sizeof( responseToStrings[0] ) ) ) {
+        return "unknown";
+    }
+    return responseToStrings[eResponse];
 }
