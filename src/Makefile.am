@@ -61,8 +61,8 @@ libfreebob_la_SOURCES = 				\
 	libfreebobavc/avc_extended_plug_info.cpp	\
 	libfreebobavc/avc_extended_stream_format.cpp	\
 	libfreebobavc/avc_extended_subunit_info.cpp	\
-	libfreebobavc/avc_feature_function_block.cpp	\
-	libfreebobavc/avc_feature_function_block.h	\
+	libfreebobavc/avc_function_block.cpp		\
+	libfreebobavc/avc_function_block.h		\
 	libfreebobavc/avc_generic.cpp			\
 	libfreebobavc/avc_plug_info.cpp			\
 	libfreebobavc/avc_signal_source.cpp		\
