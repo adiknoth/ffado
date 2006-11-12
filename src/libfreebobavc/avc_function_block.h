@@ -59,6 +59,29 @@ public:
 };
 
 ///////////////////////////////////////////
+
+class FunctionBlockProcessingEnhancedMixer: public IBusData
+{
+public:
+    enum EStatusSelector {
+        eSS_ProgramableState = 0x00,
+        eSS_Level            = 0x01,
+    };
+
+    FunctionBlockProcessingEnhancedMixer();
+    FunctionBlockProcessingEnhancedMixer(
+        const FunctionBlockProcessingEnhancedMixer& rhs );
+    virtual ~FunctionBlockProcessingEnhancedMixer();
+
+    virtual bool serialize( IOSSerialize& se );
+    virtual bool deserialize( IISDeserialize& de );
+    virtual FunctionBlockProcessingEnhancedMixer* clone() const;
+
+    control_selector_t m_controlSelector;
+    status_selector_t  m_statusSelector;
+};
+
+///////////////////////////////////////////
 ///////////////////////////////////////////
 
 class FunctionBlockSelector: public IBusData
@@ -142,7 +165,10 @@ public:
         eCSE_Processing_Enable          = 0x01,
         eCSE_Processing_Mode            = 0x02,
         eCSE_Processing_Mixer           = 0x03,
+        eCSE_Processing_EnhancedMixer   = 0xf1,
+
         // lots of definition missing
+
     };
 
     FunctionBlockProcessing();
@@ -158,7 +184,8 @@ public:
     input_audio_channel_number_t  m_inputAudioChannelNumber;
     output_audio_channel_number_t m_outputAudioChannelNumber;
 
-    FunctionBlockProcessingMixer*   m_pMixer;
+    FunctionBlockProcessingMixer*         m_pMixer;
+    FunctionBlockProcessingEnhancedMixer* m_pEnhancedMixer;
 };
 
 ///////////////////////////////////////////

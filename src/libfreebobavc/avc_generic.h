@@ -136,5 +136,6 @@ private:
 
 
 const char* subunitTypeToString( subunit_type_t subunitType );
+const char* responseToString( AVCCommand::EResponse eResponse );
 
 #endif // AVCGeneric_h

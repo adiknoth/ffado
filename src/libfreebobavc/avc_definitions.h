@@ -72,6 +72,7 @@ typedef byte_t control_data_length_t;
 typedef byte_t input_fb_plug_number_t;
 typedef byte_t input_audio_channel_number_t;
 typedef byte_t output_audio_channel_number_t;
+typedef byte_t status_selector_t;
 
 typedef quadlet_t company_id_t;
 

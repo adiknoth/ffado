@@ -1,9 +1,11 @@
-2006-11-12  Daniel Wagner  <wagi@newton.monom.org>
+2006-11-12  Daniel Wagner  <wagi@monom.org>
+
+	* test mixer programm added.
 
 	* basic function block AV/C commands added.
 	test program for setting the volume added.
 
-2006-11-11  Daniel Wagner  <wagi@newton.monom.org>
+2006-11-11  Daniel Wagner  <wagi@monom.org>
 
 	* src/bebob/bebob_avdevice.cpp (setSamplingFrequencyPlug): copy past
 	error fixed. Reported by Jamie Gennis jgennis at gmail dot com
