@@ -336,6 +336,7 @@ int freebob_streaming_prefill_stream(freebob_device_t* dev, freebob_stream_t *st
 			free(buffer);
 			
 			if(written != towrite) {
+				assert(!"Could not prefill the playback stream ringbuffer, which should have been empty.");
 				printError("Could not prefill the buffer. Written (%d/%d) of (%d/%d) bytes/frames\n",
 					written,written/sizeof(freebob_sample_t),towrite,towrite/sizeof(freebob_sample_t));
 				return -1;
