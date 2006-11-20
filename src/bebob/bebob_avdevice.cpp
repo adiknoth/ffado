@@ -106,6 +106,8 @@ static VendorModelEntry supportedDeviceList[] =
     {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
     {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW (model version 7)
 
+    {0x000f1b, 0x00010064},  // ESI, Quatafire 610
+
     {0x0040ab, 0x00010048},  // EDIROL, FA-101
     {0x0040ab, 0x00010049},  // EDIROL, FA-66
 
