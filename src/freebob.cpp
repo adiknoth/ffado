@@ -142,10 +142,8 @@ freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int sample
     IAvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-            return freebob_handle->m_deviceManager->discover(0)? 1 : 0;
-        } else {
-	    return -1;
-	}
+            return freebob_handle->m_deviceManager->discover(0)? 0 : -1;
+        }
     }
     return -1;
 }

@@ -1,3 +1,8 @@
+2006-11-20  Daniel Wagner  <wagi@newton.monom.org>
+
+	* freebob_set_samplerate: return value consitency fix. On success
+	it return 0 else -1. Reported by Jamie Gennis jgennis at gmail dot com
+
 2006-11-11  Daniel Wagner  <wagi@newton.monom.org>
 
 	* src/bebob/bebob_avdevice.cpp (setSamplingFrequencyPlug): copy past

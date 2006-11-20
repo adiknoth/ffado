@@ -154,13 +154,13 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	 * but before reading the bus description as the device capabilities can change
 	 */
 
-	if(options.node_id > -1) {
-	    if (! freebob_set_samplerate(dev->fb_handle, options.node_id, options.sample_rate)) {
-		freebob_destroy_handle(dev->fb_handle);
-		free(dev);
-		printError("Failed to set samplerate...\n");
-		return NULL;
-	    }
+    if(options.node_id > -1) {
+        if (freebob_set_samplerate(dev->fb_handle, options.node_id, options.sample_rate) != 0) {
+            freebob_destroy_handle(dev->fb_handle);
+            free(dev);
+            printError("Failed to set samplerate...\n");
+            return NULL;
+        }
 
 	} else {
 	    int devices_on_bus = freebob_get_nb_devices_on_bus(dev->fb_handle);
@@ -170,7 +170,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		int node_id=freebob_get_device_node_id(dev->fb_handle, i);
 		debugPrint(DEBUG_LEVEL_STARTUP,"set samplerate for device = %d, node = %d\n", i, node_id);
 				
-		if (! freebob_set_samplerate(dev->fb_handle, node_id, options.sample_rate)) {
+		if (freebob_set_samplerate(dev->fb_handle, node_id, options.sample_rate) != 0) {
 			freebob_destroy_handle(dev->fb_handle);
 			free(dev);
 			printError("Failed to set samplerate...\n");
