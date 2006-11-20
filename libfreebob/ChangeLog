@@ -2,8 +2,10 @@
 
 	* freebob_set_samplerate: return value consitency fix. On success
 	it return 0 else -1. Reported by Jamie Gennis jgennis at gmail dot com
-	
 
+	* freebob_streaming_start: Reset the playback ringbuffer before calling 
+	freebob_streaming_start. 
+	
 2006-11-12  Daniel Wagner  <wagi@monom.org>
 
 	* test mixer programm added.
