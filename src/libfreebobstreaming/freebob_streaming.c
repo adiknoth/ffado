@@ -78,6 +78,7 @@ static int freebob_am824_xmit(char *data,
 							  int nevents, unsigned int offset, unsigned int dbc,
 							  freebob_connection_t *connection);
 			       
+int freebob_streaming_reset_playback_streams(freebob_device_t *dev);
 
 int g_verbose=0;
 
@@ -825,8 +826,16 @@ int freebob_streaming_start(freebob_device_t *dev) {
 		return -1;
 	}
 	
+	// reset the playback streams
+	if((err=freebob_streaming_reset_playback_streams(dev))<0) {
+ 		// TODO: cleanup
+		printError("Could not reset playback streams.\n");
+		return err;
+	}
+
 	// put nb_periods*period_size of null frames into the playback buffers
 	if((err=freebob_streaming_prefill_playback_streams(dev))<0) {
+		// TODO: cleanup
 		printError("Could not prefill playback streams.\n");
 		return err;
 	}

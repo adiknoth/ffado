@@ -1,14 +1,17 @@
-2006-11-20  Daniel Wagner  <wagi@newton.monom.org>
+2006-11-20  Daniel Wagner  <wagi@monom.org>
 
 	* freebob_set_samplerate: return value consitency fix. On success
 	it return 0 else -1. Reported by Jamie Gennis jgennis at gmail dot com
 
-2006-11-11  Daniel Wagner  <wagi@newton.monom.org>
+	* freebob_streaming_start: Reset the playback ringbuffer before calling 
+	freebob_streaming_start. 
+	
+2006-11-11  Daniel Wagner  <wagi@monom.org>
 
 	* src/bebob/bebob_avdevice.cpp (setSamplingFrequencyPlug): copy past
 	error fixed. Reported by Jamie Gennis jgennis at gmail dot com
 
-2006-10-07  Daniel Wagner  <wagi@newton.monom.org>
+2006-10-07  Daniel Wagner  <wagi@monom.org>
 
 	* libfreebob-1.0 released
 
