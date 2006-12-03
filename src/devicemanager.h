@@ -63,6 +63,7 @@ protected:
     static IAvDevice* probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
     static IAvDevice* probeBounce(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
     static IAvDevice* probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
+    static IAvDevice* probeRme(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
 
 protected:
     Ieee1394Service* m_1394Service;

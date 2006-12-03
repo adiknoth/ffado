@@ -30,6 +30,7 @@
 #include "bebob_light/bebob_light_avdevice.h"
 #include "bounce/bounce_avdevice.h"
 #include "motu/motu_avdevice.h"
+#include "rme/rme_avdevice.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -41,6 +42,9 @@
 // The vendor ID for MOTU devices
 #define MOTU_VENDOR_ID                   0x000001f2
 
+// The vendor ID for RME devices
+#define RME_VENDOR_ID                    0x00000a35
+
 using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
@@ -50,6 +54,7 @@ DeviceManager::DeviceManager()
 {
     m_probeList.push_back( probeBeBoB );
     m_probeList.push_back( probeMotu );
+    m_probeList.push_back( probeRme );
     m_probeList.push_back( probeBounce );
 }
 
@@ -222,6 +227,36 @@ DeviceManager::probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id,
         return NULL;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "MOTU device discovered...\n");
+
+    return avDevice;
+}
+
+IAvDevice*
+DeviceManager::probeRme(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
+{
+    IAvDevice* avDevice;
+
+    // Do a first-pass test to see if it's likely that this device is a RME
+    if (configRom.getUnitSpecifierId() != RME_VENDOR_ID) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a RME device...\n");
+        return NULL;
+    }        
+
+    avDevice = new Rme::RmeDevice( service, id, level );
+    if ( !avDevice ) {
+        return NULL;
+    }
+
+    // RME's discover() needs to differentiate between different models, so
+    // for now keep all probing code in there since that's how we had to 
+    // do it for MOTU.  If RME turns out to be simpler we could move the
+    // logic into here.
+    if ( !avDevice->discover() ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a RME device...\n");
+        delete avDevice;
+        return NULL;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "RME device discovered...\n");
 
     return avDevice;
 }

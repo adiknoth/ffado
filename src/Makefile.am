@@ -32,7 +32,8 @@ noinst_HEADERS = 				\
 	bebob_light/bebob_light_avdevicesubunit.h	\
 	bebob_light/bebob_light_avplug.h		\
  	bounce/bounce_avdevice.h			\
- 	motu/motu_avdevice.h				
+ 	motu/motu_avdevice.h				\
+ 	rme/rme_avdevice.h
 # 	bebob/bebob_avdevice.h          		\
 # 	bebob/bebob_avdevice_subunit.h			\
 # 	bebob/bebob_avplug.h            		\
@@ -48,7 +49,9 @@ libfreebob_la_SOURCES = 				\
 	bebob_light/bebob_light_avdevicesubunit.cpp	\
 	bebob_light/bebob_light_avplug.cpp		\
  	bounce/bounce_avdevice.cpp			\
- 	motu/motu_avdevice.cpp
+ 	motu/motu_avdevice.cpp				\
+ 	rme/rme_avdevice.cpp
+
 # 	bebob/bebob_avdevice.cpp			\
 # 	bebob/bebob_avdevice_xml.cpp			\
 # 	bebob/bebob_avdevice_subunit.cpp		\
