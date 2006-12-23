@@ -711,16 +711,14 @@ bool MotuTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned in
 		it != m_PacketPorts.end();
 		++it ) {
 
-#ifdef DEBUG
-		//FIXME: make this into a static_cast when not DEBUG?
-		Port *port=dynamic_cast<Port *>(*it);
-		assert(port); // this should not fail!!
+		Port *port=static_cast<Port *>(*it);
+ 		assert(port); // this should not fail!!
 
 		// Currently the only packet type of events for MOTU 
 		// is MIDI in mbla.  However in future control data
 		// might also be sent via "packet" events.
 		// assert(pinfo->getFormat()==MotuPortInfo::E_Midi);
-#endif
+
 		// FIXME: MIDI output is completely untested at present.
 		switch (port->getPortType()) {
 			case Port::E_Midi: {
@@ -1397,8 +1395,6 @@ bool MotuReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int
 		it != m_PacketPorts.end();
 		++it ) {
 
-#ifdef DEBUG
-		//FIXME: make these into a static_casts when not DEBUG?
 		Port *port=dynamic_cast<Port *>(*it);
 		assert(port); // this should not fail!!
 
@@ -1406,7 +1402,7 @@ bool MotuReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int
 		// is MIDI in mbla.  However in future control data
 		// might also be sent via "packet" events, so allow 
 		// for this possible expansion.
-#endif
+
 		// FIXME: MIDI input is completely untested at present.
 		switch (port->getPortType()) {
 			case Port::E_Midi: {
