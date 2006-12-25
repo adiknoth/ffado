@@ -2,19 +2,19 @@
  * Copyright (C) 2006 by Pieter Palmers
  * Copyright (C) 2006 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -26,9 +26,6 @@
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebobavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
-
-#include "bebob_light/bebob_light_avplug.h"
-#include "bebob_light/bebob_light_avdevicesubunit.h"
 
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
@@ -44,11 +41,13 @@ namespace Bounce {
 
 class BounceDevice : public IAvDevice {
 public:
-    BounceDevice( Ieee1394Service& ieee1394Service,
+    BounceDevice( std::auto_ptr<ConfigRom>( configRom ),
+		  Ieee1394Service& ieee1394Service,
 		  int nodeId,
 		  int verboseLevel );
     virtual ~BounceDevice();
 
+    static bool probe( ConfigRom& configRom );
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
     
@@ -57,8 +56,6 @@ public:
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
 	virtual int getSamplingFrequency( );
     
-    virtual bool setId(unsigned int id);
-	
 	virtual bool prepare();
 	
 	virtual int getStreamCount();
@@ -70,10 +67,11 @@ public:
 	virtual int stopStreamByIndex(int i);
     
     virtual void showDevice() const;
+    virtual bool setId(unsigned int id);
 
 protected:
+    std::auto_ptr<ConfigRom>( m_configRom );
     Ieee1394Service* m_1394Service;
-    ConfigRom*       m_configRom;
     int              m_nodeId;
     int              m_verboseLevel;
 

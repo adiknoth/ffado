@@ -1,19 +1,19 @@
-/* devicemanager.cpp
+ /* devicemanager.cpp
  * Copyright (C) 2005,06 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -27,10 +27,10 @@
 #include "libfreebobavc/ieee1394service.h"
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
-#include "bebob_light/bebob_light_avdevice.h"
 #include "bounce/bounce_avdevice.h"
 #include "motu/motu_avdevice.h"
 #include "rme/rme_avdevice.h"
+#include "maudio/maudio_avdevice.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -52,10 +52,7 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
-    m_probeList.push_back( probeBeBoB );
-    m_probeList.push_back( probeMotu );
-    m_probeList.push_back( probeRme );
-    m_probeList.push_back( probeBounce );
+
 }
 
 DeviceManager::~DeviceManager()
@@ -92,9 +89,13 @@ DeviceManager::initialize( int port )
 bool
 DeviceManager::discover( int verboseLevel )
 {
-    if ( verboseLevel ) {
+    switch ( verboseLevel ) {
+    case 3:
+        m_1394Service->setVerbose( true );
+    case 1:
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
     }
+
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -108,12 +109,14 @@ DeviceManager::discover( int verboseLevel )
           ++nodeId )
     {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
-    
-        ConfigRom configRom( m_1394Service, nodeId );
-        if ( !configRom.initialize() ) {
-            // \todo If a PHY on the bus in power safe mode than
+        
+        std::auto_ptr<ConfigRom> configRom =
+            std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
+                                                     nodeId ) );
+        if ( !configRom->initialize() ) {
+            // \todo If a PHY on the bus is in power safe mode then
             // the config rom is missing. So this might be just
-            // such a case and we can safely skip it. But it might
+            // such this case and we can safely skip it. But it might
             // be there is a real software problem on our side.
             // This should be handled more carefuly.
             debugOutput( DEBUG_LEVEL_NORMAL,
@@ -123,24 +126,29 @@ DeviceManager::discover( int verboseLevel )
             continue;
         }
 
-        for ( ProbeFunctionVector::iterator it = m_probeList.begin();
-              it != m_probeList.end();
-              ++it )
-        {
-            ProbeFunction func = *it;
-            IAvDevice* avDevice = func(*m_1394Service, configRom, nodeId, verboseLevel);
-            if ( avDevice ) {
-                m_avDevices.push_back( avDevice );
-                if (!avDevice->setId(m_avDevices.size())) {
-                    debugError("Could not set Id of AvDevice\n");
-                }
-                if ( verboseLevel ) {
-                    avDevice->showDevice();
-                }
-                break;
-            }
-        }
+        IAvDevice* avDevice = getDriverForDevice( configRom,
+                                                  nodeId,
+                                                  verboseLevel );
+        if ( avDevice ) {
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                         "discover: driver found for device %d\n",
+                         nodeId );
 
+            if ( !avDevice->discover() ) {
+                debugError( "discover: could not discover device\n" );
+                delete avDevice;
+                continue;
+            }
+
+            if ( !avDevice->setId( m_avDevices.size() ) ) {
+                debugError( "setting Id failed\n" );
+            }
+            if ( verboseLevel ) {
+                avDevice->showDevice();
+            }
+
+            m_avDevices.push_back( avDevice );
+        }
     }
 
     return true;
@@ -148,117 +156,30 @@ DeviceManager::discover( int verboseLevel )
 
 
 IAvDevice*
-DeviceManager::probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
+DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
+                                   int id,  int level )
 {
-    IAvDevice* avDevice;
-    
-    // All BeBob devices have predictable unit specifier/version fields
-    if (configRom.getUnitSpecifierId() != BEBOB_AVCDEVICE_UNIT_SPECIFIER ||
-        configRom.getUnitVersion() != BEBOB_AVCDEVICE_UNIT_VERSION) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device, fails ConfigRom test...\n" );
-        return NULL;
+    if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
+        return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
     }
 
-    avDevice = new BeBoB_Light::AvDevice( service, id, level );
-    if ( !avDevice ) {
-        return NULL;
+    if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
+        return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
     }
 
-    if ( !avDevice->discover() ) {
-        delete avDevice;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a BeBoB device, fails discovery...\n" );
-        return NULL;
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "BeBoB device discovered...\n" );
-    return avDevice;
-}
-
-IAvDevice*
-DeviceManager::probeBounce(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
-{
-    IAvDevice* avDevice;
-
-    // All Bounce devices have predictable unit specifier/version fields
-    if (configRom.getUnitSpecifierId() != BEBOB_AVCDEVICE_UNIT_SPECIFIER ||
-        configRom.getUnitVersion() == BEBOB_AVCDEVICE_UNIT_VERSION) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a Bounce device...\n" );
-        return NULL;
+    if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
+        return new Motu::MotuDevice( configRom, *m_1394Service, id, level );
     }
 
-    avDevice = new Bounce::BounceDevice( service, id, level );
-    if ( !avDevice ) {
-        return NULL;
+    if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
+        return new Rme::RmeDevice( configRom, *m_1394Service, id, level );
     }
 
-    if ( !avDevice->discover() ) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a Bounce device...\n");
-        delete avDevice;
-        return NULL;
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Bounce device discovered...\n");
-    
-    return avDevice;
-}
-
-IAvDevice*
-DeviceManager::probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
-{
-    IAvDevice* avDevice;
-
-    // Do a first-pass test to see if it's likely that this device is a MOTU
-    if (configRom.getUnitSpecifierId() != MOTU_VENDOR_ID) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a MOTU device...\n");
-        return NULL;
-    }        
-
-    avDevice = new Motu::MotuDevice( service, id, level );
-    if ( !avDevice ) {
-        return NULL;
+    if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
+        return new Bounce::BounceDevice( configRom, *m_1394Service, id, level );
     }
 
-    // MOTU's discover() needs to differentiate between different models, so
-    // for now keep all probing code in there since it's very intermingled. 
-    // By this point it's fairly certain that we are dealing with a MOTU but
-    // in any case the code is robust in the event that the device isn't a
-    // MOTU, so at this stage there seems no reason to do otherwise.
-    if ( !avDevice->discover() ) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a MOTU device...\n");
-        delete avDevice;
-        return NULL;
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "MOTU device discovered...\n");
-
-    return avDevice;
-}
-
-IAvDevice*
-DeviceManager::probeRme(Ieee1394Service& service, ConfigRom& configRom, int id, int level)
-{
-    IAvDevice* avDevice;
-
-    // Do a first-pass test to see if it's likely that this device is a RME
-    if (configRom.getUnitSpecifierId() != RME_VENDOR_ID) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a RME device...\n");
-        return NULL;
-    }        
-
-    avDevice = new Rme::RmeDevice( service, id, level );
-    if ( !avDevice ) {
-        return NULL;
-    }
-
-    // RME's discover() needs to differentiate between different models, so
-    // for now keep all probing code in there since that's how we had to 
-    // do it for MOTU.  If RME turns out to be simpler we could move the
-    // logic into here.
-    if ( !avDevice->discover() ) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Not a RME device...\n");
-        delete avDevice;
-        return NULL;
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "RME device discovered...\n");
-
-    return avDevice;
+    return 0;
 }
 
 bool
@@ -337,7 +258,7 @@ DeviceManager::getXmlDescription()
         return 0;
     }
 
-    xmlNodePtr rootNode = xmlNewNode( 0,  BAD_CAST "FreeBobConnectionInfo" );
+    xmlNodePtr rootNode = xmlNewNode( 0,  BAD_CAST "FreeBoBConnectionInfo" );
     if ( !rootNode ) {
         debugError( "Couldn't create root node\n" );
         xmlFreeDoc( doc );
@@ -368,8 +289,9 @@ DeviceManager::getXmlDescription()
         {
             debugError( "Couldn't create 'NodeId' node" );
             free(result);
-            return false;
+            return 0;
         }
+        free( result );
 
         std::string res = "Connection Information for "
                           + avDevice->getConfigRom().getVendorName()
@@ -421,9 +343,12 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            
             free(result);
-            return false;
+            return 0;
         }
+        free( result );
+
 
         if ( !avDevice->addXmlDescription( deviceNode ) ) {
             debugError( "Adding XML description failed\n" );

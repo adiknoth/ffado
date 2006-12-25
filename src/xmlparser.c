@@ -176,7 +176,8 @@ freebob_xmlparse_connection( xmlDocPtr doc, xmlNodePtr cur )
         ConnectionSpecParseNode( "Plug", plug );
         ConnectionSpecParseNode( "Dimension", dimension );
         ConnectionSpecParseNode( "Samplerate", samplerate );
-	ConnectionSpecParseNode( "IsoChannel", iso_channel );
+ 	ConnectionSpecParseNode( "IsoChannel", iso_channel );
+ 	ConnectionSpecParseNode( "Master", is_master );
 
         if ( !xmlStrcmp( cur->name, (const xmlChar*) "Streams" ) ) {
             connection_spec->stream_info
@@ -672,10 +673,10 @@ freebob_xmlparse_get_connection_info( xmlDocPtr doc,
         return 0;
     }
 
-    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBobConnectionInfo") ) {
+    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBoBConnectionInfo") ) {
         fprintf( stderr,
                  "document of the wrong type, root node "
-                 "!= FreeBobConnectionInfo\n" );
+                 "!= FreeBoBConnectionInfo\n" );
         return 0;
     }
 
@@ -711,9 +712,9 @@ freebob_xmlparse_get_connection_info( xmlDocPtr doc,
 		
 	int nb_devices=freebob_xmlparse_get_nb_devices(doc, base);
 		
-	fprintf( stderr,
+/*	fprintf( stderr,
 		 "Nb devices %d\n",
-		 nb_devices );
+		 nb_devices );*/
 					
 	for(device_nr=0;device_nr<nb_devices;device_nr++) {
 		
@@ -753,10 +754,10 @@ freebob_xmlparse_get_stream_formats( xmlDocPtr doc,
         return 0;
     }
 
-    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBobConnectionInfo") ) {
+    if ( xmlStrcmp( base->name, (const xmlChar*) "FreeBoBConnectionInfo") ) {
         fprintf( stderr,
                  "document of the wrong type, root node "
-                 "!= FreeBobConnectionInfo\n" );
+                 "!= FreeBoBConnectionInfo\n" );
         return 0;
     }
 

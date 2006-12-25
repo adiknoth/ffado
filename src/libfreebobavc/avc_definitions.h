@@ -1,19 +1,19 @@
 /* avc_definitions.h
  * Copyright (C) 2005 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -34,6 +34,7 @@ typedef byte_t plug_id_t;
 typedef byte_t reserved_t;
 typedef byte_t function_block_type_t;
 typedef byte_t function_block_id_t;
+typedef byte_t control_attribute_t;
 typedef byte_t plug_direction_t;
 typedef byte_t plug_address_mode_t;
 typedef byte_t status_t;
@@ -64,6 +65,14 @@ typedef byte_t function_block_special_purpose_t;
 typedef byte_t no_of_input_plugs_t;
 typedef byte_t no_of_output_plugs_t;
 typedef byte_t info_type_t;
+typedef byte_t audio_channel_number_t;
+typedef byte_t selector_length_t;
+typedef byte_t control_selector_t;
+typedef byte_t control_data_length_t;
+typedef byte_t input_fb_plug_number_t;
+typedef byte_t input_audio_channel_number_t;
+typedef byte_t output_audio_channel_number_t;
+typedef byte_t status_selector_t;
 
 typedef quadlet_t company_id_t;
 

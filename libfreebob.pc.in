@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: libfreebob
-Description: FreeBob
+Description: FreeBoB
 Version: @VERSION@
 Libs: -L${libdir} -lfreebob
 Cflags: -I${includedir}

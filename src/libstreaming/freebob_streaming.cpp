@@ -117,7 +117,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	}
 
 	// discover the devices on the bus
-	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_VERBOSE)) {
+	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
 		debugOutput(DEBUG_LEVEL_VERBOSE, "Could not discover devices\n");
 		return 0;
 	}

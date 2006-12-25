@@ -2,19 +2,19 @@
  * Copyright (C) 2006 by Pieter Palmers
  * Copyright (C) 2006 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -43,10 +43,13 @@ namespace Bounce {
 
 IMPL_DEBUG_MODULE( BounceDevice, BounceDevice, DEBUG_LEVEL_VERBOSE );
 
-BounceDevice::BounceDevice( Ieee1394Service& ieee1394service,
+
+BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
+                            Ieee1394Service& ieee1394service,
                             int nodeId,
                             int verboseLevel )
-    : m_1394Service( &ieee1394service )
+    : m_configRom( configRom )
+    , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_samplerate (44100)
@@ -56,23 +59,52 @@ BounceDevice::BounceDevice( Ieee1394Service& ieee1394service,
     , m_transmitProcessor ( 0 )
     , m_transmitProcessorBandwidth ( -1 )
 {
-    setDebugLevel( m_verboseLevel );
+    setDebugLevel( verboseLevel );
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
                  nodeId );
-    m_configRom = new ConfigRom( m_1394Service, m_nodeId );
-    m_configRom->initialize();
 }
 
 BounceDevice::~BounceDevice()
 {
-	delete m_configRom;
+
 }
 
 ConfigRom&
 BounceDevice::getConfigRom() const
 {
     return *m_configRom;
+}
+
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+};
+
+static VendorModelEntry supportedDeviceList[] =
+{
+//     {0x0000, 0x000000},  
+};
+
+bool
+BounceDevice::probe( ConfigRom& configRom )
+{
+    unsigned int vendorId = configRom.getNodeVendorId();
+    unsigned int modelId = configRom.getModelId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].model_id == modelId ) 
+           )
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool

@@ -1,19 +1,19 @@
 /* bebob_avplug.cpp
  * Copyright (C) 2005,06 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -94,7 +94,7 @@ AvPlug::AvPlug( const AvPlug& rhs )
 {
     if ( m_verboseLevel ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+     }
 }
 
 AvPlug::~AvPlug()
@@ -173,6 +173,7 @@ AvPlug::inquireConnnection( AvPlug& plug )
 {
     SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
     setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
+    signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
     signalSourceCmd.setVerbose( m_verboseLevel );
 
     if ( !signalSourceCmd.fire() ) {
@@ -189,6 +190,32 @@ AvPlug::inquireConnnection( AvPlug& plug )
     }
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "Connection not possible between '%s' and '%s'\n",
+                 getName(),  plug.getName() );
+    return false;
+}
+
+bool
+AvPlug::setConnection( AvPlug& plug )
+{
+    SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
+    setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
+    signalSourceCmd.setCommandType( AVCCommand::eCT_Control );
+    signalSourceCmd.setVerbose( m_verboseLevel );
+
+    if ( !signalSourceCmd.fire() ) {
+        debugError( "Could not set connection between '%s' and '%s'\n",
+                    getName(), plug.getName() );
+        return false;
+    }
+
+    if ( signalSourceCmd.getResponse() == AVCCommand::eR_Accepted ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "Could set connection between '%s' and '%s'\n",
+                     getName(), plug.getName() );
+        return true;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "Could not set connection between '%s' and '%s'\n",
                  getName(),  plug.getName() );
     return false;
 }
@@ -1076,7 +1103,6 @@ AvPlug::setSrcPlugAddrToSignalCmd()
     }
 
     signalSourceCmd.setNodeId( m_nodeId );
-    signalSourceCmd.setCommandType( AVCCommand::eCT_SpecificInquiry );
     signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 

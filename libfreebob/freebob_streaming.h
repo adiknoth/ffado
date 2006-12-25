@@ -1,6 +1,6 @@
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ *   FreeBoB Streaming API
+ *   FreeBoB = Firewire (pro-)audio for linux
  *
  *   http://freebob.sf.net
  *
@@ -26,7 +26,7 @@
 
 /* freebob_streaming.h
  *
- * Specification for the FreeBob Streaming API
+ * Specification for the FreeBoB Streaming API
  *
  */
 #ifndef __FREEBOB_STREAMING_H__
@@ -160,7 +160,7 @@ typedef enum {
 } freebob_streaming_buffer_type;
 
 /**
- * Initializes the streaming from/to a FreeBob device. A FreeBob device
+ * Initializes the streaming from/to a FreeBoB device. A FreeBoB device
  * is a virtual device composed of several BeBoB or compatible devices,
  * linked together in one sync domain.
  *
@@ -188,7 +188,7 @@ int freebob_streaming_prepare(freebob_device_t *dev);
 
 
 /**
- * Finishes the FreeBob streaming. Cleans up all internal data structures
+ * Finishes the FreeBoB streaming. Cleans up all internal data structures
  * and terminates connections.
  *
  * @param dev the freebob device to be closed.
@@ -313,7 +313,7 @@ int freebob_streaming_playback_stream_onoff(freebob_device_t *dev, int number, i
 int freebob_streaming_prepare(freebob_device_t *dev);
 
 /**
- * Starts the streaming operation. This initiates the connections to the FreeBob devices and
+ * Starts the streaming operation. This initiates the connections to the FreeBoB devices and
  * starts the packet handling thread(s). This has to be called before any I/O can occur.
  *
  * @param dev the freebob device
@@ -323,7 +323,7 @@ int freebob_streaming_prepare(freebob_device_t *dev);
 int freebob_streaming_start(freebob_device_t *dev);
 
 /**
- * Stops the streaming operation. This closes the connections to the FreeBob devices and
+ * Stops the streaming operation. This closes the connections to the FreeBoB devices and
  * stops the packet handling thread(s). 
  *
  * @param dev the freebob device

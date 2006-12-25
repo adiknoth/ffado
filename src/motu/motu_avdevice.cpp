@@ -95,10 +95,12 @@ signed int result = raw1394_read (handle, raw1394_get_irm_id (handle),
 }
 /* ======================================================================= */
 
-MotuDevice::MotuDevice( Ieee1394Service& ieee1394service,
-                        int nodeId,
-                        int verboseLevel )
-    : m_1394Service( &ieee1394service )
+MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
+                    Ieee1394Service& ieee1394service,
+                    int nodeId,
+                    int verboseLevel )
+    : m_configRom( configRom )
+    , m_1394Service( &ieee1394service )
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
@@ -110,13 +112,10 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394service,
     , m_transmitProcessor ( 0 )
     
 {
-    if ( m_verboseLevel ) {
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+    setDebugLevel( verboseLevel );
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
                  nodeId );
-    m_configRom = new ConfigRom( m_1394Service, m_nodeId );
-    m_configRom->initialize();
 
 }
 
@@ -135,13 +134,49 @@ MotuDevice::~MotuDevice()
 			if (raw1394_channel_modify(handle, m_iso_send_channel, RAW1394_MODIFY_FREE) < 0)
 				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
 	}
-	delete m_configRom;
 }
 
 ConfigRom&
 MotuDevice::getConfigRom() const
 {
     return *m_configRom;
+}
+
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+};
+
+static VendorModelEntry supportedDeviceList[] =
+{
+    {0x000000, 0x000001f2},  // Motu device, model entry not used
+
+};
+
+bool
+MotuDevice::probe( ConfigRom& configRom )
+{
+    unsigned int vendorId = configRom.getNodeVendorId();
+    unsigned int modelId = configRom.getModelId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             //&& ( supportedDeviceList[i].model_id == modelId ) 
+             )
+        {
+            switch (configRom.getUnitVersion()) {
+                case MOTUFW_UNITVER_828mkII: 
+                    return true;
+                case MOTUFW_UNITVER_TRAVELER:
+                    return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 bool

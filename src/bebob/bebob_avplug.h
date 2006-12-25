@@ -1,19 +1,19 @@
 /* bebob_avplug.h
  * Copyright (C) 2005,06 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -87,6 +87,7 @@ public:
     bool discoverConnections();
 
     bool inquireConnnection( AvPlug& plug );
+    bool setConnection( AvPlug& plug );
 
     int getGlobalId() const
 	{ return m_globalId; }
@@ -130,6 +131,27 @@ public:
 	EAvPlugDirection direction);
 
     void showPlug() const;
+    
+    
+    struct ChannelInfo {
+        stream_position_t          m_streamPosition;
+        stream_position_location_t m_location;
+	std::string                m_name;
+    };
+    typedef std::vector<ChannelInfo> ChannelInfoVector;
+
+    struct ClusterInfo {
+	int                      m_index;
+	port_type_t              m_portType;
+	std::string              m_name;
+
+        nr_of_channels_t         m_nrOfChannels;
+        ChannelInfoVector        m_channelInfos;
+	stream_format_t          m_streamFormat;
+    };
+    typedef std::vector<ClusterInfo> ClusterInfoVector;
+    ClusterInfoVector& getClusterInfos()
+    { return m_clusterInfos; }
 
 protected:
     bool discoverPlugType();
@@ -193,23 +215,6 @@ private:
     std::string                  m_name;
 
     // Channel & Cluster Info
-    struct ChannelInfo {
-        stream_position_t          m_streamPosition;
-        stream_position_location_t m_location;
-	std::string                m_name;
-    };
-    typedef std::vector<ChannelInfo> ChannelInfoVector;
-
-    struct ClusterInfo {
-	int                      m_index;
-	port_type_t              m_portType;
-	std::string              m_name;
-
-        nr_of_channels_t         m_nrOfChannels;
-        ChannelInfoVector        m_channelInfos;
-	stream_format_t          m_streamFormat;
-    };
-    typedef std::vector<ClusterInfo> ClusterInfoVector;
 
     ClusterInfoVector        m_clusterInfos;
 

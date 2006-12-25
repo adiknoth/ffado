@@ -1,19 +1,19 @@
 /* debugmodule.h
  * Copyright (C) 2005 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -81,14 +81,17 @@ typedef short debug_level_t;
 
 #define setDebugLevel( Level ) {                                    \
                 m_debugModule.setLevel( Level ); \
-                m_debugModule.print( Level,                        \
+				}
+
+/*                m_debugModule.print( eDL_Normal,                        \
                                      __FILE__,                     \
                                      __FUNCTION__,                 \
                                      __LINE__,                     \
                                      "Setting debug level to %d\n",  \
                                      Level ); \
-				}
-#define getDebugLevel( Level )                                     \
+				}*/
+
+#define getDebugLevel(  )                                     \
                 m_debugModule.getLevel( )
 
 
@@ -166,8 +169,9 @@ public:
         eDL_Error       = 1,
         eDL_Warning     = 2,
         eDL_Normal      = 3,
-        eDL_Verbose     = 4,
-        eDL_VeryVerbose = 5,
+        eDL_Info        = 4,
+        eDL_Verbose     = 5,
+        eDL_VeryVerbose = 6,
     } EDebugLevel;
 
     DebugModule( std::string name, debug_level_t level );
@@ -201,6 +205,7 @@ private:
 };
 
 #define DEBUG_LEVEL_NORMAL          DebugModule::eDL_Normal
+#define DEBUG_LEVEL_INFO            DebugModule::eDL_Info
 #define DEBUG_LEVEL_VERBOSE         DebugModule::eDL_Verbose
 #define DEBUG_LEVEL_VERY_VERBOSE    DebugModule::eDL_VeryVerbose
 

@@ -38,7 +38,7 @@
 #include <libxml/parser.h>
 
 DECLARE_GLOBAL_DEBUG_MODULE;
-IMPL_GLOBAL_DEBUG_MODULE( FreeBob, DEBUG_LEVEL_VERBOSE );
+IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +63,7 @@ const char*
 freebob_get_version() {
     return PACKAGE_STRING;
 }
+
 
 const int
 freebob_get_api_version() {
@@ -161,10 +162,8 @@ freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int sample
     IAvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-            return freebob_handle->m_deviceManager->discover(0)? 1 : 0;
-        } else {
-	    return -1;
-	}
+            return freebob_handle->m_deviceManager->discover(0)? 0 : -1;
+        }
     }
     return -1;
 }

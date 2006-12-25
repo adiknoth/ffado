@@ -1,27 +1,25 @@
-/* template.cpp
+/* devicemanager.h
  * Copyright (C) 2005 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
 
 #ifndef FREEBOBDEVICEMANAGER_H
 #define FREEBOBDEVICEMANAGER_H
-
-#include "configrom.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -35,9 +33,8 @@ class IAvDevice;
 typedef std::vector< IAvDevice* > IAvDeviceVector;
 typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
 
-typedef IAvDevice* (*ProbeFunction)(Ieee1394Service&, ConfigRom&, int, int);
-typedef std::vector<ProbeFunction> ProbeFunctionVector;
-typedef std::vector<ProbeFunction>::iterator ProbeFunctionVectorIterator;
+class ConfigRom;
+
 
 class DeviceManager{
  public:
@@ -60,15 +57,13 @@ class DeviceManager{
     xmlDocPtr getXmlDescription();
 
 protected:
-    static IAvDevice* probeBeBoB(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
-    static IAvDevice* probeBounce(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
-    static IAvDevice* probeMotu(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
-    static IAvDevice* probeRme(Ieee1394Service& service, ConfigRom& configRom, int id, int level);
+    IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
+                                   int id,
+                                   int level );
 
 protected:
     Ieee1394Service* m_1394Service;
     IAvDeviceVector  m_avDevices;
-    ProbeFunctionVector m_probeList;
 
     DECLARE_DEBUG_MODULE;
 };

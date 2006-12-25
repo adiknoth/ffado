@@ -42,11 +42,13 @@ public:
       RME_MODEL_FIREFACE800 = 0x0001,
     };
 
-    RmeDevice( Ieee1394Service& ieee1394Service,
+    RmeDevice( std::auto_ptr<ConfigRom>( configRom ),
+	      Ieee1394Service& ieee1394Service,
 		  int nodeId,
 		  int verboseLevel );
     virtual ~RmeDevice();
 
+    static bool probe( ConfigRom& configRom );
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
 
@@ -74,8 +76,9 @@ public:
     signed int getEventSize(unsigned int dir);
   
 protected:
+    std::auto_ptr<ConfigRom>( m_configRom );
     Ieee1394Service* m_1394Service;
-    ConfigRom*       m_configRom;
+    
     signed int       m_rme_model;
     int              m_nodeId;
     int              m_verboseLevel;

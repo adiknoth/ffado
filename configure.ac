@@ -1,25 +1,26 @@
-# configure.ac - Configure script for FreeBob.
+# configure.ac - Configure script for FreeBoB.
 # Copyright (C) 2005,06 by Daniel Wagner.
 # Copyright (C) 2006    by Pieter Palmers.
 #
-# This file is part of FreeBob.
+# This file is part of FreeBoB.
 #
-# FreeBob is free software; you can redistribute it and/or modify
+# FreeBoB is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# FreeBob is distributed in the hope that it will be useful,
+# FreeBoB is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License
-# along with FreeBob; if not, write to the Free Software
+# along with FreeBoB; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
+
 
 m4_define(freebob_major_version, 1)
 m4_define(freebob_minor_version, 999)
@@ -112,8 +113,8 @@ AC_CHECK_LIB(pthread, pthread_create,,
 
 # Check for dependencies
 PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.1)
-PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
-PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.2)
+PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.0.0)
+PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.3)
 PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 
@@ -196,13 +197,15 @@ AC_ARG_ENABLE(optimize,
     ]
 )
 
-
 CFLAGS="$CFLAGS -Wall -std=gnu99"
-CXXFLAGS="$CXXFLAGS -Wall"
+CXXFLAGS="$CXXFLAGS -Wall -DDATADIR=\\\"\$(datadir)\\\"" 
 
 if test "${debug}" = true; then
    CFLAGS="$CFLAGS -g -DDEBUG"
    CXXFLAGS="$CXXFLAGS -g -DDEBUG" 
+else 
+   CFLAGS="$CFLAGS -O2"
+   CXXFLAGS="$CXXFLAGS -O2"
 fi;
 
 AC_SUBST([CFLAGS])
@@ -229,10 +232,6 @@ AC_CONFIG_FILES([Makefile
 		 doc/Makefile
 		 doc/reference.doxygen
 		 libfreebob/Makefile
-		 src/debugmodule/Makefile
-		 src/libfreebobavc/Makefile
-		 src/libstreaming/Makefile
-		 src/libutil/Makefile
 		 src/Makefile
 		 tests/Makefile
 		 tests/streaming/Makefile
@@ -243,7 +242,7 @@ AC_OUTPUT
 # Print a summary so that important information isn't missed.
 AC_MSG_RESULT([
 
-FreeBob $VERSION is now configured for $canonical_host_type
+FreeBoB $VERSION is now configured for $canonical_host_type
 
   Source directory:     $srcdir
   Installation prefix:  $prefix

@@ -1,19 +1,19 @@
 /* avc_generic.h
  * Copyright (C) 2005 by Daniel Wagner
  *
- * This file is part of FreeBob.
+ * This file is part of FreeBoB.
  *
- * FreeBob is free software; you can redistribute it and/or modify
+ * FreeBoB is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FreeBoB is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
+ * along with FreeBoB; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -22,6 +22,7 @@
 #define AVCGeneric_h
 
 #include "avc_definitions.h"
+#include "debugmodule/debugmodule.h"
 
 #include "../fbtypes.h"
 
@@ -104,7 +105,7 @@ public:
 
     bool setVerbose( int verboseLevel );
     int getVerboseLevel();
-
+    
     virtual const char* getCmdName() const = 0;
 
     // workaround
@@ -129,12 +130,14 @@ private:
     subunit_t    m_subunit;
     opcode_t     m_opcode;
     EResponse    m_eResponse;
-    int          m_verboseLevel;
     ECommandType m_commandType;
     static int   m_time;
+    
+    DECLARE_DEBUG_MODULE;
 };
 
 
 const char* subunitTypeToString( subunit_type_t subunitType );
+const char* responseToString( AVCCommand::EResponse eResponse );
 
 #endif // AVCGeneric_h
