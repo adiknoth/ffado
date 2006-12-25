@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 					freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_float);
 				} else {
 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer);
-					freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_uint24);	
+					freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_int24);	
 				}
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
