@@ -149,8 +149,8 @@ bool StreamProcessorManager::init()
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	// and the tread that runs the runner
-	m_streamingThread=new FreebobUtil::PosixThread(this, m_thread_realtime, m_thread_priority, PTHREAD_CANCEL_DEFERRED);
+	// the tread that runs the packet iterators
+	m_streamingThread=new FreebobUtil::PosixThread(this, m_thread_realtime, m_thread_priority+5, PTHREAD_CANCEL_DEFERRED);
 	if(!m_streamingThread) {
 		debugFatal("Could not create streaming thread\n");
 		return false;
@@ -165,8 +165,11 @@ bool StreamProcessorManager::init()
 	
 	m_isoManager->setVerboseLevel(getDebugLevel());
 	
-	if(!m_isoManager->Init()) {
-		debugFatal("Could not init IsoHandlerManager\n");
+	// the tread that keeps the handler's cycle counters up to date
+	// NOTE: is lower priority nescessary? it can block
+	m_isoManagerThread=new FreebobUtil::PosixThread(m_isoManager, m_thread_realtime, m_thread_priority+6, PTHREAD_CANCEL_DEFERRED);
+	if(!m_isoManagerThread) {
+		debugFatal("Could not create iso manager thread\n");
 		return false;
 	}
 
@@ -224,18 +227,14 @@ bool StreamProcessorManager::Execute()
 	bool period_ready=true;
     bool xrun_has_occured=false;
 	bool this_period_ready;
-	
-	unsigned long tstamp_enter=debugGetCurrentTSC();
-	
+
 // 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "------------- EXECUTE -----------\n");
-	
-	if(!m_isoManager->Execute()) {
-		debugFatal("Could not execute isoManager\n");
+
+	if(!m_isoManager->iterate()) {
+		debugFatal("Could not iterate the isoManager\n");
 		return false;
 	}
 	
-	unsigned long tstamp_iso=debugGetCurrentTSC();
- 	
  	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " RCV PROC: ");
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
 		it != m_ReceiveProcessors.end();
@@ -265,8 +264,6 @@ bool StreamProcessorManager::Execute()
 	 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "(%d/%d/%d) ", period_ready, xrun_has_occured,(*it)->m_framecounter);
 	}
 	debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n");
-	
-	unsigned long tstamp_periodcheck=debugGetCurrentTSC();
 
 	if(xrun_has_occured) {
 		// do xrun signaling/handling
@@ -274,6 +271,7 @@ bool StreamProcessorManager::Execute()
 		m_xruns++;
 		m_xrun_happened=true;
 		sem_post(&m_period_semaphore);
+        
 		return false; // stop thread
 	}
 
@@ -299,12 +297,6 @@ bool StreamProcessorManager::Execute()
 		
 		m_nbperiods++;
 	}
-	
-	unsigned long tstamp_exit=debugGetCurrentTSC();
-	
-// 	debugOutput( DEBUG_LEVEL_VERBOSE, "EXECUTE TIME: ISO: %6d | PeriodCheck: %6d | FrameCounter: %6d \n",
-// 	   tstamp_iso-tstamp_enter, tstamp_periodcheck-tstamp_iso, tstamp_exit-tstamp_periodcheck
-// 	   );
 
 	return true;
 
@@ -363,6 +355,9 @@ bool StreamProcessorManager::start() {
 	// start the runner thread
 	m_streamingThread->Start();
 	
+	// start the runner thread
+	m_isoManagerThread->Start();
+		
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to start running...\n");
 	// we have to wait until all streamprocessors indicate that they are running
 	// i.e. that there is actually some data stream flowing
@@ -424,7 +419,7 @@ bool StreamProcessorManager::start() {
 			(*it)->dumpInfo();
 		}
 
-		(*it)->reset();
+ 		(*it)->reset();
 
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
@@ -440,7 +435,7 @@ bool StreamProcessorManager::start() {
 			(*it)->dumpInfo();
 		}
 		
-		(*it)->reset();
+ 		(*it)->reset();
 		
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
@@ -502,9 +497,10 @@ bool StreamProcessorManager::stop() {
 	}
 
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping thread...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping threads...\n");
 	
 	m_streamingThread->Stop();
+	m_isoManagerThread->Stop();
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handlers...\n");
 	if(!m_isoManager->stopHandlers()) {

@@ -123,6 +123,7 @@ protected:
 	IsoHandlerManager *m_isoManager;
 
 	FreebobUtil::PosixThread *m_streamingThread;
+	FreebobUtil::PosixThread *m_isoManagerThread;
 
     unsigned int m_nbperiods;
 

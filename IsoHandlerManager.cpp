@@ -56,38 +56,21 @@ bool IsoHandlerManager::Init()
 	return true;
 }
 
-// Intel recommends that a serializing instruction 
-// should be called before and after rdtsc. 
-// CPUID is a serializing instruction. 
-#define read_rdtsc(time) \
-	__asm__ __volatile__( \
-	"pushl %%ebx\n\t" \
-	"cpuid\n\t" \
- 	"rdtsc\n\t" \
- 	"mov %%eax,(%0)\n\t" \
- 	"cpuid\n\t" \
-	"popl %%ebx\n\t" \
- 	: /* no output */ \
- 	: "S"(&time) \
- 	: "eax", "ecx", "edx", "memory")
-
-static inline unsigned long debugGetCurrentUTime() {
-    unsigned retval;
-    read_rdtsc(retval);
-    return retval;
+// the IsoHandlerManager thread updates the handler caches
+// it doesn't iterate them !!!
+bool IsoHandlerManager::Execute()
+{
+    updateCycleCounters();
+    return true;
 }
 
-bool IsoHandlerManager::Execute()
+bool IsoHandlerManager::iterate()
 {
 	int err;
 	int i=0;
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 	
-	unsigned long tstamp=debugGetCurrentUTime();
-
 	err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
-	
-// 	debugOutput(DEBUG_LEVEL_VERBOSE, "Poll took: %6d\n", debugGetCurrentUTime()-tstamp);
 	
 	if (err == -1) {
 		if (errno == EINTR) {
@@ -110,18 +93,24 @@ bool IsoHandlerManager::Execute()
 			IsoHandler *s=m_IsoHandlers.at(i);
 			assert(s);
 			
-			unsigned int packetcount_prev=s->getPacketCount();
-			
-			tstamp=debugGetCurrentUTime();
-			
 			s->iterate();
-/*			debugOutput(DEBUG_LEVEL_VERBOSE, "Iterate %p: time: %6d | packets: %3d\n", 
-			     s, debugGetCurrentUTime()-tstamp, s->getPacketCount()-packetcount_prev
-			     );*/
 		}
 	}
+
 	return true;
 
+}
+
+// updates the internal cycle counter caches of the handlers
+void IsoHandlerManager::updateCycleCounters() {
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+	
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+        (*it)->updateCycleCounter();
+    }
 }
 
 bool IsoHandlerManager::prepare()
