@@ -92,11 +92,18 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
 		void enablePolling(IsoStream *); ///< enables polling on a stream
 
 	protected:
+	
+	    
 		// RunnableInterface interface
 		bool Execute(); // note that this is called in we while(running) loop
 		bool Init();
 
-
+	    // iterate all handlers
+	    bool iterate();
+        
+        // updates the cycle counter caches of all handlers
+        void updateCycleCounters();
+        
 		// note: there is a disctinction between streams and handlers
 		// because one handler can serve multiple streams (in case of 
 		// multichannel receive)

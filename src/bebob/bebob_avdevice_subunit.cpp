@@ -43,9 +43,7 @@ AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
     , m_sbId( id )
     , m_verboseLevel( verboseLevel )
 {
-    if ( m_verboseLevel ) {
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+    setDebugLevel( m_verboseLevel );
 }
 
 AvDeviceSubunit::~AvDeviceSubunit()

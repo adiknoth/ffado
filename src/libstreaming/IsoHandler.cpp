@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <assert.h>
-
+#include <unistd.h>
 
 #include <iostream>
 using namespace std;
@@ -126,6 +126,9 @@ IsoHandler::init()
 	
 	raw1394_set_bus_reset_handler(m_handle, busreset_handler);
 
+    // update the cycle counter value for initial value
+    updateCycleCounter();
+
 	return true;
 }
 
@@ -144,7 +147,18 @@ bool IsoHandler::stop()
 #define CSR_CYCLE_TIME            0x200
 #define CSR_REGISTER_BASE  0xfffff0000000ULL
 
+#define CYCLE_COUNTER_GET_SECS(x)   (((x & 0xFE000000) >> 25))
+#define CYCLE_COUNTER_GET_CYCLES(x) (((x & 0x01FFF000) >> 12))
+#define CYCLE_COUNTER_GET_TICKS(x)  (((x & 0x00000FFF)))
+#define CYCLE_COUNTER_TO_TICKS(x) ((CYCLE_COUNTER_GET_SECS(x)   * 24576000) +\
+                                   (CYCLE_COUNTER_GET_CYCLES(x) *     3072) +\
+                                   (CYCLE_COUNTER_GET_TICKS(x)            ))
+
 unsigned int IsoHandler::getCycleCounter() {
+     return m_cyclecounter;
+}
+
+void IsoHandler::updateCycleCounter() {
     quadlet_t buf=0;
     
     // normally we should be able to use the same handle
@@ -152,10 +166,18 @@ unsigned int IsoHandler::getCycleCounter() {
     // but I'm not sure
     raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
         CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-        
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Current timestamp: %08X = %u\n",buf, ntohl(buf));
     
-    return ntohl(buf) & 0xFFFFFFFF;
+    m_cyclecounter= ntohl(buf) & 0xFFFFFFFF;
+    
+//     debugOutput(DEBUG_LEVEL_VERBOSE,"Updating timestamp: %08X (%2u sec + %2u cycles + %04u ticks)\n",
+//           m_cyclecounter, 
+//           CYCLE_COUNTER_GET_SECS(m_cyclecounter),
+//           CYCLE_COUNTER_GET_CYCLES(m_cyclecounter),
+//           CYCLE_COUNTER_GET_TICKS(m_cyclecounter)
+//           );    
+    
+    
+    usleep(100);
 }
 
 void IsoHandler::dumpInfo()

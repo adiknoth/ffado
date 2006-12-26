@@ -52,7 +52,7 @@ public:
                    ESpecialPurpose purpose,
                    no_of_input_plugs_t nrOfInputPlugs,
                    no_of_output_plugs_t nrOfOutputPlugs,
-                   bool verbose );
+                   int verbose );
     FunctionBlock( const FunctionBlock& rhs );
     virtual ~FunctionBlock();
 
@@ -72,7 +72,7 @@ protected:
     ESpecialPurpose       m_purpose;
     no_of_input_plugs_t   m_nrOfInputPlugs;
     no_of_output_plugs_t  m_nrOfOutputPlugs;
-    bool m_verbose;
+    int m_verbose;
 
     AvPlugVector m_plugs;
 
@@ -92,7 +92,7 @@ public:
                           ESpecialPurpose purpose,
                           no_of_input_plugs_t nrOfInputPlugs,
                           no_of_output_plugs_t nrOfOutputPlugs,
-                          bool verbose);
+                          int verbose);
     FunctionBlockSelector( const FunctionBlockSelector& rhs );
     virtual ~FunctionBlockSelector();
 
@@ -109,7 +109,7 @@ public:
                          ESpecialPurpose purpose,
                          no_of_input_plugs_t nrOfInputPlugs,
                          no_of_output_plugs_t nrOfOutputPlugs,
-                         bool verbose);
+                         int verbose);
     FunctionBlockFeature( const FunctionBlockFeature& rhs );
     virtual ~FunctionBlockFeature();
 
@@ -126,7 +126,7 @@ public:
                                 ESpecialPurpose purpose,
                                 no_of_input_plugs_t nrOfInputPlugs,
                                 no_of_output_plugs_t nrOfOutputPlugs,
-                                bool verbose );
+                                int verbose );
     FunctionBlockEnhancedMixer( const FunctionBlockEnhancedMixer& rhs );
     virtual ~FunctionBlockEnhancedMixer();
 
@@ -143,7 +143,7 @@ public:
                              ESpecialPurpose purpose,
                              no_of_input_plugs_t nrOfInputPlugs,
                              no_of_output_plugs_t nrOfOutputPlugs,
-                             bool verbose );
+                             int verbose );
     FunctionBlockProcessing( const FunctionBlockProcessing& rhs );
     virtual ~FunctionBlockProcessing();
 
@@ -160,7 +160,7 @@ public:
                        ESpecialPurpose purpose,
                        no_of_input_plugs_t nrOfInputPlugs,
                        no_of_output_plugs_t nrOfOutputPlugs,
-                       bool verbose);
+                       int verbose);
     FunctionBlockCodec( const FunctionBlockCodec& rhs );
     virtual ~FunctionBlockCodec();
 

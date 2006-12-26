@@ -125,15 +125,15 @@ typedef short debug_level_t;
  * sends SIGUSR2 to the client.
  */
 
-#define DO_PREEMPTION_CHECKING
+// #define DO_PREEMPTION_CHECKING
 
 #include <sys/time.h>
  
 #ifdef DO_PREEMPTION_CHECKING
 #define CHECK_PREEMPTION(onoff) \
-	gettimeofday (1, (onoff))
+	gettimeofday((struct timeval *)1, (struct timezone *)onoff)
 #else
-#define CHECK_PREEMPTION(engine, onoff)
+#define CHECK_PREEMPTION(onoff)
 #endif
 
 // Intel recommends that a serializing instruction 

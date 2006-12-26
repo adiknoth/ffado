@@ -110,7 +110,14 @@ class IsoHandler
 
 		virtual bool prepare() = 0;
 		
+		// get the most recent cycle counter value
+		// RT safe
 		unsigned int getCycleCounter();
+		
+		// update the cycle counter cache
+		// not RT safe
+		// the isohandlermanager is responsible for calling this!
+        void updateCycleCounter();
 
 	protected:
 	    raw1394handle_t m_handle;
@@ -119,6 +126,7 @@ class IsoHandler
 		unsigned int    m_buf_packets;
 		unsigned int    m_max_packet_size;
 		int             m_irq_interval;
+		unsigned int    m_cyclecounter;
 
 		int m_packetcount;
 		int m_dropped;
