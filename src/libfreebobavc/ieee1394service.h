@@ -24,6 +24,8 @@
 #include "fbtypes.h"
 #include "threads.h"
 
+#include "debugmodule/debugmodule.h"
+
 #include <libraw1394/raw1394.h>
 #include <pthread.h>
 
@@ -107,8 +109,8 @@ public:
 
     raw1394handle_t getHandle() {return m_handle;};
 
-    void setVerbose( bool isVerbose );
-
+    bool setVerbose( int verboseLevel );
+    int getVerboseLevel();
 
     bool addBusResetHandler( Functor* functor );
     bool remBusResetHandler( Functor* functor );
@@ -128,7 +130,6 @@ private:
     raw1394handle_t m_handle;
     raw1394handle_t m_resetHandle;
     int             m_port;
-    bool            m_verbose;
     unsigned int    m_generation;
 
     pthread_t       m_thread;
@@ -137,6 +138,8 @@ private:
 
     typedef std::vector< Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;
+    
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif
