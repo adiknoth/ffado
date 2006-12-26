@@ -79,6 +79,9 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x000d6c, 0x00010046, "fw410.xml"},       // M-Audio, FW 410
     {0x000d6c, 0x00010058, "fw410.xml"},       // M-Audio, FW 410; Version 5.10.0.5036
+    {0x000d6c, 0x00010060, "fwap.xml"},        // M-Audio, FW Audiophile (to be verified);
+
+    
 };
 
 bool
@@ -118,7 +121,8 @@ AvDevice::discover()
         }
     }
 
-    return m_pFilename != 0;
+    return m_pFilename != 0;    
+    
 }
 
 bool

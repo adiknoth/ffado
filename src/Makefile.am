@@ -125,7 +125,8 @@ libfreebob_la_LDFLAGS = 				\
 
 nobase_dist_pkgdata_DATA = 				\
 	maudio/refdesign.xml				\
-	maudio/fw410.xml
+	maudio/fw410.xml 					\
+	maudio/fwap.xml
 
 bin_PROGRAMS = freebob_downloader freebob_sync
 
