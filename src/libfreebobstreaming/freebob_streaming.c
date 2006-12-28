@@ -79,6 +79,8 @@ static int freebob_am824_xmit(char *data,
 							  freebob_connection_t *connection);
 			       
 
+int freebob_streaming_reset_playback_streams(freebob_device_t *dev);
+
 int g_verbose=0;
 
 freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, freebob_options_t options) {
@@ -154,13 +156,13 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	 * but before reading the bus description as the device capabilities can change
 	 */
 
-	if(options.node_id > -1) {
-	    if (! freebob_set_samplerate(dev->fb_handle, options.node_id, options.sample_rate)) {
-		freebob_destroy_handle(dev->fb_handle);
-		free(dev);
-		printError("Failed to set samplerate...\n");
-		return NULL;
-	    }
+    if(options.node_id > -1) {
+        if (freebob_set_samplerate(dev->fb_handle, options.node_id, options.sample_rate) != 0) {
+            freebob_destroy_handle(dev->fb_handle);
+            free(dev);
+            printError("Failed to set samplerate...\n");
+            return NULL;
+        }
 
 	} else {
 	    int devices_on_bus = freebob_get_nb_devices_on_bus(dev->fb_handle);
@@ -170,7 +172,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		int node_id=freebob_get_device_node_id(dev->fb_handle, i);
 		debugPrint(DEBUG_LEVEL_STARTUP,"set samplerate for device = %d, node = %d\n", i, node_id);
 				
-		if (! freebob_set_samplerate(dev->fb_handle, node_id, options.sample_rate)) {
+		if (freebob_set_samplerate(dev->fb_handle, node_id, options.sample_rate) != 0) {
 			freebob_destroy_handle(dev->fb_handle);
 			free(dev);
 			printError("Failed to set samplerate...\n");
@@ -825,8 +827,16 @@ int freebob_streaming_start(freebob_device_t *dev) {
 		return -1;
 	}
 	
+	// reset the playback streams
+	if((err=freebob_streaming_reset_playback_streams(dev))<0) {
+ 		// TODO: cleanup
+		printError("Could not reset playback streams.\n");
+		return err;
+	}
+
 	// put nb_periods*period_size of null frames into the playback buffers
 	if((err=freebob_streaming_prefill_playback_streams(dev))<0) {
+		// TODO: cleanup
 		printError("Could not prefill playback streams.\n");
 		return err;
 	}

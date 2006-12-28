@@ -1,3 +1,23 @@
+2006-11-20  Daniel Wagner  <wagi@monom.org>
+
+	* freebob_set_samplerate: return value consitency fix. On success
+	it return 0 else -1. Reported by Jamie Gennis jgennis at gmail dot com
+
+	* freebob_streaming_start: Reset the playback ringbuffer before calling 
+	freebob_streaming_start. 
+	
+2006-11-12  Daniel Wagner  <wagi@monom.org>
+
+	* test mixer programm added.
+
+	* basic function block AV/C commands added.
+	test program for setting the volume added.
+
+2006-11-11  Daniel Wagner  <wagi@monom.org>
+
+	* src/bebob/bebob_avdevice.cpp (setSamplingFrequencyPlug): copy past
+	error fixed. Reported by Jamie Gennis jgennis at gmail dot com
+
 2006-08-27  Daniel Wagner  <wagi@monom.org>
 
 	* configure.ac: Version set to 1.4.0
@@ -458,7 +478,7 @@
 	the source tree clean, or when building on multiple architectures 
 	- I use a build dir of $srcdir/obj-$arch-$os)
 
-	Both patches are written by Jeremy Kerr <jk@ozlabs.org>
+	Both patches are written by Jeremy Kerr jk at ozlabs dot org
 
 2006-01-12  Daniel Wagner  <wagi@monom.org>
 

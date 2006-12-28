@@ -71,9 +71,10 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0007f5, 0x00010048, "refdesign.xml"},  // BridgeCo, RD Audio1
+    //{0x0007f5, 0x00010048, "refdesign.xml"},  // BridgeCo, RD Audio1
 
     {0x000d6c, 0x00010046, "fw410.xml"},       // M-Audio, FW 410
+    {0x000d6c, 0x00010058, "fw410.xml"},       // M-Audio, FW 410; Version 5.10.0.5036
 };
 
 bool
@@ -179,6 +180,21 @@ AvDevice::addXmlDescription( xmlNodePtr pDeviceNode )
                     free( pFilename );
                     return false;
                 }
+
+                // set correct node id
+                for ( xmlNodePtr pNode = pDevDesc->xmlChildrenNode; pNode; pNode = pNode->next ) {
+                    if ( ( !xmlStrcmp( pNode->name,  ( const xmlChar * ) "Connection" ) ) ) {
+                        for ( xmlNodePtr pSubNode = pNode->xmlChildrenNode; pSubNode; pSubNode = pSubNode->next ) {
+                            if ( ( !xmlStrcmp( pSubNode->name,  ( const xmlChar * ) "Node" ) ) ) {
+                                char* result;
+                                asprintf( &result, "%d", m_iNodeId );
+                                xmlNodeSetContent( pSubNode, BAD_CAST result );
+                                free( result );
+                            }
+                        }
+                    }
+                }
+
                 xmlAddChild( pDeviceNode, pDevDesc );
             }
             if ( ( !xmlStrcmp( pCur->name, ( const xmlChar * ) "StreamFormats" ) ) ) {
