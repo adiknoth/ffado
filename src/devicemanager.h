@@ -1,4 +1,4 @@
-/* template.cpp
+/* devicemanager.h
  * Copyright (C) 2005 by Daniel Wagner
  *
  * This file is part of FreeBoB.
@@ -35,6 +35,7 @@ typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
 
 class ConfigRom;
 
+
 class DeviceManager{
  public:
     DeviceManager();
@@ -50,6 +51,8 @@ class DeviceManager{
     int getDeviceNodeId( int deviceNr );
 
     IAvDevice* getAvDevice( int nodeId );
+	IAvDevice* getAvDeviceByIndex( int idx );
+	unsigned int getAvDeviceCount();
 
     xmlDocPtr getXmlDescription();
 

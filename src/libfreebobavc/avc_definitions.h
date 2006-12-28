@@ -34,6 +34,7 @@ typedef byte_t plug_id_t;
 typedef byte_t reserved_t;
 typedef byte_t function_block_type_t;
 typedef byte_t function_block_id_t;
+typedef byte_t control_attribute_t;
 typedef byte_t plug_direction_t;
 typedef byte_t plug_address_mode_t;
 typedef byte_t status_t;
@@ -64,9 +65,20 @@ typedef byte_t function_block_special_purpose_t;
 typedef byte_t no_of_input_plugs_t;
 typedef byte_t no_of_output_plugs_t;
 typedef byte_t info_type_t;
+typedef byte_t audio_channel_number_t;
+typedef byte_t selector_length_t;
+typedef byte_t control_selector_t;
+typedef byte_t control_data_length_t;
+typedef byte_t input_fb_plug_number_t;
+typedef byte_t input_audio_channel_number_t;
+typedef byte_t output_audio_channel_number_t;
+typedef byte_t status_selector_t;
 
 typedef quadlet_t company_id_t;
 
+/**
+ * \brief the possible sampling frequencies
+ */
 enum ESamplingFrequency {
     eSF_22050Hz = 0x00,
     eSF_24000Hz = 0x01,
@@ -80,7 +92,17 @@ enum ESamplingFrequency {
     eSF_DontCare = 0x0F,
 };
 
+/**
+ * \brief Convert from ESamplingFrequency to an integer
+ * @param freq 
+ * @return 
+ */
 int convertESamplingFrequency(ESamplingFrequency freq);
+/**
+ * \brief Convert from integer to ESamplingFrequency
+ * @param sampleRate 
+ * @return 
+ */
 ESamplingFrequency parseSampleRate( int sampleRate );
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );

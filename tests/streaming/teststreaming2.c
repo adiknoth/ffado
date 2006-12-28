@@ -75,10 +75,10 @@ int main(int argc, char *argv[])
 
 	dev_options.nb_buffers=3;
 
-	dev_options.port=1;
+	dev_options.port=0;
 	dev_options.node_id=-1;
 	
-	dev_options.realtime=0;
+	dev_options.realtime=1;
 	dev_options.packetizer_priority=60;
 
 	freebob_device_t *dev=freebob_streaming_init(&device_info, dev_options);
@@ -98,7 +98,8 @@ int main(int argc, char *argv[])
 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
 			case freebob_stream_type_audio:
 				/* assign the audiobuffer to the stream */
-				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffer[i]), freebob_buffer_type_uint24);
+				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffer[i]));
+				freebob_streaming_set_capture_buffer_type(dev, i, freebob_buffer_type_int24);
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
 			case freebob_stream_type_midi:
@@ -108,23 +109,26 @@ int main(int argc, char *argv[])
 	}
 	
 	nullbuffer=calloc(PERIOD_SIZE+1,sizeof(freebob_sample_t));
-	
-// 	for (i=0;i<nb_out_channels;i++) {
-// 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
-// 			case freebob_stream_type_audio:
-// 				if (i<nb_in_channels) {
-// 					/* assign the audiobuffer to the stream */
-// 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)audiobuffer[i], freebob_buffer_type_uint24);
-// 				} else {
-// 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer, freebob_buffer_type_uint24);	
-// 				}
-// 				break;
-// 				// this is done with read/write routines because the nb of bytes can differ.
-// 			case freebob_stream_type_midi:
-// 			default:
-// 				break;
-// 		}
-// 	}
+
+#if 1
+ 	for (i=0;i<nb_out_channels;i++) {
+ 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
+ 			case freebob_stream_type_audio:
+ 				if (i<nb_in_channels) {
+ 					/* assign the audiobuffer to the stream */
+ 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)audiobuffer[i]);
+ 				} else {
+ 					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer);
+ 				}
+				freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_int24);
+ 				break;
+ 				// this is done with read/write routines because the nb of bytes can differ.
+ 			case freebob_stream_type_midi:
+ 			default:
+ 				break;
+ 		}
+ 	}
+#endif
 	
 	/* open the files to write to*/
 	FILE* fid_out[nb_out_channels];
@@ -178,7 +182,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// start the streaming layer
+FILE *of=fopen("foo.dat","w");
+
+	// prepare and start the streaming layer
+	freebob_streaming_prepare(dev);
 	freebob_streaming_start(dev);
 
 	fprintf(stderr,"Entering receive loop (%d,%d)\n",nb_in_channels,nb_out_channels);
@@ -216,10 +223,16 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_midi:
 				samplesread=freebob_streaming_read(dev, i, audiobuffer[i], PERIOD_SIZE);
 				break;
+			default:
+				;
 			}
 	
-/* 			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
- 			hexDumpToFile(fid_in[i],(unsigned char*)audiobuffer[i],samplesread*sizeof(freebob_sample_t)+1);*/
+// 			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
+// 			hexDumpToFile(fid_in[i],(unsigned char*)audiobuffer[i],samplesread*sizeof(freebob_sample_t)+1);
+// FIXME: Dump analog1 as raw data to a separate binary file for testing
+//if (i==2) {
+//  fwrite(audiobuffer[i],sizeof(freebob_sample_t),samplesread,of);
+//}
 		}
 
 		for(i=0;i<nb_out_channels;i++) {
@@ -232,12 +245,16 @@ int main(int argc, char *argv[])
 			
 			switch (freebob_streaming_get_playback_stream_type(dev,i)) {
 			case freebob_stream_type_audio:
- 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
-//				sampleswritten=PERIOD_SIZE;
+//// Calling freebob_streaming_write() causes problems since the buffer is external here.
+//// Just mirror the read case since it seems to work.
+//// 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
+				sampleswritten=PERIOD_SIZE;
 				break;
 			case freebob_stream_type_midi:
 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
 				break;
+			default:
+				;
 			}
 //  			fprintf(fid_out[i], "---- Period write (%d samples) ----\n",sampleswritten);
 //  			hexDumpToFile(fid_out[i],(unsigned char*)buff,sampleswritten*sizeof(freebob_sample_t));
@@ -252,6 +269,7 @@ int main(int argc, char *argv[])
 	freebob_streaming_stop(dev);
 
 	freebob_streaming_finish(dev);
+fclose(of);
 
 	for (i=0;i<nb_out_channels;i++) {
 		fclose(fid_out[i]);

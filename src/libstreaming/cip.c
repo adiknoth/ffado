@@ -128,7 +128,7 @@ iec61883_cip_get_max_packet_size(struct iec61883_cip *ptz)
 
 
 int
-iec61883_cip_fill_header(raw1394handle_t handle, struct iec61883_cip *ptz,
+iec61883_cip_fill_header(int node_id, struct iec61883_cip *ptz,
 		struct iec61883_packet *packet)
 {
   struct iec61883_fraction next;
@@ -179,7 +179,7 @@ iec61883_cip_fill_header(raw1394handle_t handle, struct iec61883_cip *ptz,
 
   /* Our node ID can change after a bus reset, so it is best to fetch
    * our node ID for each packet. */
-  packet->sid = raw1394_get_local_id( handle ) & 0x3f;
+  packet->sid = node_id & 0x3f;
 
   packet->dbs = ptz->dbs;
   packet->fn = 0;
@@ -202,6 +202,37 @@ iec61883_cip_fill_header(raw1394handle_t handle, struct iec61883_cip *ptz,
   packet->syt = htons(syt);
 
   ptz->dbc += nevents_dbc;
+
+  return nevents;
+}
+
+// note that we don't implement timestamp increase for nodata
+// FIXME: check if this is standards compliant!!
+int
+iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *ptz,
+		struct iec61883_packet *packet)
+{
+  int nevents, nevents_dbc;
+
+  packet->eoh0 = 0;
+
+  /* Our node ID can change after a bus reset, so it is best to fetch
+   * our node ID for each packet. */
+  packet->sid = node_id & 0x3f;
+
+  packet->dbs = ptz->dbs;
+  packet->fn = 0;
+  packet->qpc = 0;
+  packet->sph = 0;
+  packet->reserved = 0;
+  packet->dbc = ptz->dbc;
+  packet->eoh1 = 2;
+  packet->fmt = ptz->format;
+
+  packet->fdf = IEC61883_FDF_NODATA;
+  packet->syt = 0xffff;
+
+  ptz->dbc += ptz->syt_interval;
 
   return nevents;
 }

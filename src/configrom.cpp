@@ -63,6 +63,8 @@ ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
     , m_modelName( "" )
     , m_vendorId( 0 )
     , m_modelId( 0 )
+    , m_unit_specifier_id( 0 )
+    , m_unit_version( 0 )
     , m_isIsoResourceManager( false )
     , m_isCycleMasterCapable( false )
     , m_isSupportIsoOperations( false )
@@ -209,7 +211,6 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
     struct csr1212_dentry *dentry;
     struct csr1212_keyval *kv;
     unsigned int last_key_id = 0;
-    unsigned int specifier_id = 0;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "process unit directory:\n" );
     csr1212_for_each_dir_entry(csr, kv, ud_kv, dentry) {
@@ -234,14 +235,15 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tspecifier_id = 0x%08x\n",
                              kv->value.immediate);
-                specifier_id = kv->value.immediate;
+                m_unit_specifier_id = kv->value.immediate;
 		break;
 
 	    case CSR1212_KV_ID_VERSION:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tversion = 0x%08x\n",
                              kv->value.immediate);
-                if ( specifier_id == 0x0000a02d ) // XXX
+                m_unit_version = kv->value.immediate;
+                if ( m_unit_specifier_id == 0x0000a02d ) // XXX
                 {
                     if ( kv->value.immediate == 0x10001 ) {
                         m_avcDevice = true;
@@ -356,9 +358,34 @@ ConfigRom::getVendorName() const
     return m_vendorName;
 }
 
+const unsigned int
+ConfigRom::getModelId() const
+{
+    return m_modelId;
+}
+
+const unsigned int
+ConfigRom::getVendorId() const
+{
+    return m_vendorId;
+}
+
+const unsigned int
+ConfigRom::getUnitSpecifierId() const
+{
+    return m_unit_specifier_id;
+}
+
+const unsigned int
+ConfigRom::getUnitVersion() const
+{
+    return m_unit_version;
+}
+
 bool
 ConfigRom::updatedNodeId()
 {
+    struct csr1212_csr* csr = 0;
     for ( fb_nodeid_t nodeId = 0;
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
@@ -367,16 +394,15 @@ ConfigRom::updatedNodeId()
         csr_info.service = m_1394Service;
         csr_info.nodeId = 0xffc0 | nodeId;
 
-        struct csr1212_csr* csr =
-            csr1212_create_csr( &configrom_csr1212_ops,
-                                5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
-                                &csr_info );
+        csr = csr1212_create_csr( &configrom_csr1212_ops,
+                                  5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
+                                  &csr_info );
 
         if (!csr || csr1212_parse_csr( csr ) != CSR1212_SUCCESS) {
             if (csr) {
                 csr1212_destroy_csr(csr);
             }
-            return false;
+            continue;
         }
 
 
@@ -395,8 +421,15 @@ ConfigRom::updatedNodeId()
                              nodeId );
                 m_nodeId = nodeId;
             }
+            if (csr) {
+                csr1212_destroy_csr(csr);
+            }
             return true;
         }
+    }
+
+    if (csr) {
+        csr1212_destroy_csr(csr);
     }
 
     debugOutput( DEBUG_LEVEL_NORMAL,

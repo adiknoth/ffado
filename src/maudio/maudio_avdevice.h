@@ -21,12 +21,16 @@
 #ifndef MAUDIODEVICE_H
 #define MAUDIODEVICE_H
 
-#include "iavdevice.h"
-
 #include "debugmodule/debugmodule.h"
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebobavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
+
+#include "libstreaming/AmdtpStreamProcessor.h"
+#include "libstreaming/AmdtpPort.h"
+#include "libstreaming/AmdtpPortInfo.h"
+
+#include "iavdevice.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -45,9 +49,20 @@ public:
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
     virtual bool addXmlDescription( xmlNodePtr pDeviceNode );
-    virtual bool setSamplingFrequency( ESamplingFrequency eSamplingFrequency );
     virtual void showDevice() const;
-    virtual bool setId(unsigned int iId);
+    
+    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+        
+    virtual bool setId(unsigned int id);
+
+    virtual int getStreamCount();
+    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+
+    virtual bool prepare();
+
+    virtual int startStreamByIndex(int i);
+    virtual int stopStreamByIndex(int i);
 
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
@@ -55,7 +70,16 @@ protected:
     int              m_iNodeId;
     int              m_iVerboseLevel;
     const char*      m_pFilename;
+    
+    unsigned int m_id;
 
+    // streaming stuff
+    FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
+    int m_receiveProcessorBandwidth;
+
+    FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
+    int m_transmitProcessorBandwidth;
+    
     DECLARE_DEBUG_MODULE;
 };
 

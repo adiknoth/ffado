@@ -1,4 +1,4 @@
-/* freebob.h
+/* freebob.cpp
  * Copyright (C) 2005 Pieter Palmers, Daniel Wagner
  *
  * This file is part of FreeBoB
@@ -40,12 +40,32 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// this is very much nescessary, as otherwise the 
+// message buffer thread doesn't get killed when the 
+// library is dlclose()'d 
+
+static void exitfunc(void) __attribute__((destructor));
+
+static void exitfunc(void)
+{
+    delete DebugModuleManager::instance();
+
+}
+#ifdef __cplusplus
+}
+#endif
+
 const char*
 freebob_get_version() {
     return PACKAGE_STRING;
 }
 
-int
+
+const int
 freebob_get_api_version() {
     return FREEBOB_API_VERSION;
 }
@@ -142,10 +162,8 @@ freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int sample
     IAvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-            return freebob_handle->m_deviceManager->discover(0)? 1 : 0;
-        } else {
-	    return -1;
-	}
+            return freebob_handle->m_deviceManager->discover(0)? 0 : -1;
+        }
     }
     return -1;
 }

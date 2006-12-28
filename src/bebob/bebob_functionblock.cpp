@@ -34,7 +34,7 @@ FunctionBlock::FunctionBlock(
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
     no_of_output_plugs_t nrOfOutputPlugs,
-    bool verbose )
+    int verbose )
     : m_subunit( &subunit )
     , m_type( type )
     , m_id( id )
@@ -43,9 +43,7 @@ FunctionBlock::FunctionBlock(
     , m_nrOfOutputPlugs( nrOfOutputPlugs )
     , m_verbose( verbose )
 {
-    if ( m_verbose ) {
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+    setDebugLevel( verbose );
 }
 
 FunctionBlock::FunctionBlock( const FunctionBlock& rhs )
@@ -156,7 +154,7 @@ FunctionBlockSelector::FunctionBlockSelector(
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
     no_of_output_plugs_t nrOfOutputPlugs,
-    bool verbose )
+    int verbose )
     : FunctionBlock( subunit,
                      eFBT_AudioSubunitSelector,
                      id,
@@ -191,7 +189,7 @@ FunctionBlockFeature::FunctionBlockFeature(
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
     no_of_output_plugs_t nrOfOutputPlugs,
-    bool verbose )
+    int verbose )
     : FunctionBlock( subunit,
                      eFBT_AudioSubunitFeature,
                      id,
@@ -226,7 +224,7 @@ FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer(
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
     no_of_output_plugs_t nrOfOutputPlugs,
-    bool verbose )
+    int verbose )
     : FunctionBlock( subunit,
                      eFBT_AudioSubunitProcessing,
                      id,
@@ -261,7 +259,7 @@ FunctionBlockProcessing::FunctionBlockProcessing(
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
     no_of_output_plugs_t nrOfOutputPlugs,
-    bool verbose )
+    int verbose )
     : FunctionBlock( subunit,
                      eFBT_AudioSubunitProcessing,
                      id,
@@ -296,7 +294,7 @@ FunctionBlockCodec::FunctionBlockCodec(
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
     no_of_output_plugs_t nrOfOutputPlugs,
-    bool verbose )
+    int verbose )
     : FunctionBlock( subunit,
                      eFBT_AudioSubunitCodec,
                      id,

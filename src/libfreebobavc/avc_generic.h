@@ -22,6 +22,7 @@
 #define AVCGeneric_h
 
 #include "avc_definitions.h"
+#include "debugmodule/debugmodule.h"
 
 #include "../fbtypes.h"
 
@@ -104,7 +105,7 @@ public:
 
     bool setVerbose( int verboseLevel );
     int getVerboseLevel();
-
+    
     virtual const char* getCmdName() const = 0;
 
     // workaround
@@ -129,12 +130,14 @@ private:
     subunit_t    m_subunit;
     opcode_t     m_opcode;
     EResponse    m_eResponse;
-    int          m_verboseLevel;
     ECommandType m_commandType;
     static int   m_time;
+    
+    DECLARE_DEBUG_MODULE;
 };
 
 
 const char* subunitTypeToString( subunit_type_t subunitType );
+const char* responseToString( AVCCommand::EResponse eResponse );
 
 #endif // AVCGeneric_h

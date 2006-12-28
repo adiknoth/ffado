@@ -22,16 +22,20 @@ INCLUDES = 						\
 	-I$(top_srcdir) -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libfreebob.la
+noinst_HEADERS = 				\
+	configrom.h					\
+	csr1212.h					\
+	devicemanager.h         			\
+	fbtypes.h					\
+ 	bounce/bounce_avdevice.h			\
+ 	motu/motu_avdevice.h				\
+ 	rme/rme_avdevice.h
 
 libfreebob_la_SOURCES = 				\
-	configrom.h					\
 	iavdevice.h					\
 	configrom.cpp					\
-	csr1212.h					\
 	csr1212.c					\
-	devicemanager.h         			\
 	devicemanager.cpp       			\
-	fbtypes.h					\
 	freebob.cpp 					\
 	xmlparser.c					\
 	threads.h					\
@@ -51,6 +55,10 @@ libfreebob_la_SOURCES = 				\
 	bebob/bebob_dl_codes.cpp			\
 	bebob/bebob_dl_bcd.h				\
 	bebob/bebob_dl_bcd.cpp				\
+ 	motu/motu_avdevice.cpp				\
+ 	motu/motu_avdevice.h				\
+ 	rme/rme_avdevice.cpp				\
+ 	rme/rme_avdevice.h				\
 	bounce/bounce_avdevice.h			\
 	bounce/bounce_avdevice.cpp			\
 	maudio/maudio_avdevice.h			\
@@ -61,6 +69,8 @@ libfreebob_la_SOURCES = 				\
 	libfreebobavc/avc_extended_plug_info.cpp	\
 	libfreebobavc/avc_extended_stream_format.cpp	\
 	libfreebobavc/avc_extended_subunit_info.cpp	\
+	libfreebobavc/avc_function_block.cpp		\
+	libfreebobavc/avc_function_block.h		\
 	libfreebobavc/avc_generic.cpp			\
 	libfreebobavc/avc_plug_info.cpp			\
 	libfreebobavc/avc_signal_source.cpp		\
@@ -81,21 +91,32 @@ libfreebob_la_SOURCES = 				\
 	libfreebobavc/avc_unit_info.h			\
 	libfreebobavc/ieee1394service.h			\
 	libfreebobavc/serialize.h			\
-	libfreebobstreaming/cip.c			\
-	libfreebobstreaming/freebob_connections.c	\
-	libfreebobstreaming/freebob_streaming.c		\
-	libfreebobstreaming/messagebuffer.c		\
-	libfreebobstreaming/ringbuffer.c		\
-	libfreebobstreaming/thread.c			\
-	libfreebobstreaming/cip.h			\
-	libfreebobstreaming/freebob_connections.h	\
-	libfreebobstreaming/freebob_debug.h		\
-	libfreebobstreaming/freebob_streaming_private.h	\
-	libfreebobstreaming/messagebuffer.h		\
-	libfreebobstreaming/ringbuffer.h		\
-	libfreebobstreaming/thread.h			\
 	debugmodule/debugmodule.h			\
-	debugmodule/debugmodule.cpp
+	debugmodule/debugmodule.cpp			\
+	libstreaming/cip.c	\
+	libstreaming/freebob_streaming.cpp	\
+	libstreaming/IsoHandler.cpp	\
+	libstreaming/IsoHandlerManager.cpp	\
+	libstreaming/IsoStream.cpp	\
+	libstreaming/PacketBuffer.cpp	\
+	libstreaming/PortManager.cpp	\
+	libstreaming/Port.cpp	\
+	libstreaming/StreamProcessor.cpp	\
+	libstreaming/StreamProcessorManager.cpp	\
+	libstreaming/AmdtpPortInfo.cpp	\
+	libstreaming/AmdtpPort.cpp	\
+	libstreaming/AmdtpStreamProcessor.cpp	\
+	libstreaming/ringbuffer.c	\
+	libstreaming/streamstatistics.cpp	\
+	libstreaming/MotuStreamProcessor.cpp	\
+	libstreaming/MotuPort.cpp	\
+	libstreaming/MotuPortInfo.cpp \
+	libutil/DelayLockedLoop.h 	\
+	libutil/Atomic.h 	\
+	libutil/PosixThread.h  	\
+	libutil/Thread.h	\
+	libutil/DelayLockedLoop.cpp	\
+	libutil/PosixThread.cpp	
 
 libfreebob_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
@@ -104,7 +125,8 @@ libfreebob_la_LDFLAGS = 				\
 
 nobase_dist_pkgdata_DATA = 				\
 	maudio/refdesign.xml				\
-	maudio/fw410.xml
+	maudio/fw410.xml 					\
+	maudio/fwap.xml
 
 bin_PROGRAMS = freebob_downloader freebob_sync
 
@@ -126,3 +148,10 @@ freebob_sync_LDADD =      \
         $(LIBAVC1394_LIBS)	\
 	-lpthread
 
+noinst_PROGRAMS = test-dll test-debugmodule
+
+test_dll_SOURCES = libutil/test-dll.cpp
+test_dll_LDADD = libfreebob.la
+
+test_debugmodule_SOURCES = debugmodule/test_debugmodule.cpp
+test_debugmodule_LDADD = libfreebob.la

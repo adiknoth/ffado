@@ -22,6 +22,7 @@
 #define Serialize_h
 
 #include <libraw1394/raw1394.h> // byte_t and quadlet_t declaration
+#include <string>
 
 // Interfaces
 
@@ -60,6 +61,24 @@ public:
 
 private:
     unsigned int m_cnt;
+
+};
+
+class StringSerializer: public IOSSerialize {
+public:
+    StringSerializer()
+        : IOSSerialize()
+        , m_cnt( 0 )
+        {}
+    virtual ~StringSerializer() {}
+
+    virtual bool write( byte_t value, const char* name = "" );
+    virtual bool write( quadlet_t value,  const char* name = "" );
+    virtual std::string getString( ) { return m_string;};
+
+private:
+    unsigned int m_cnt;
+    std::string m_string;
 
 };
 

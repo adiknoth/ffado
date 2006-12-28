@@ -28,7 +28,10 @@
 #define FREEBOB_BOUNCE_SERVER_VENDORNAME  "FreeBoB Server"
 #define FREEBOB_BOUNCE_SERVER_MODELNAME   "freebob-server"
 
-#define FREEBOB_API_VERSION 1
+#define FREEBOB_BOUNCE_SERVER_GETXMLDESCRIPTION_CMD
+#define AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER 	0x0D
+
+#define FREEBOB_API_VERSION 2
 
 enum freebob_direction {
     FREEBOB_CAPTURE  = 0,
@@ -166,7 +169,7 @@ freebob_print_xml_description( freebob_handle_t freebob_handle,
 const char*
 freebob_get_version();
 
-int
+const int
 freebob_get_api_version();
 
 /* various function */

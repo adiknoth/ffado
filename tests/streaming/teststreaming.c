@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	freebob_streaming_prepare(dev);
 	freebob_streaming_start(dev);
 
 	fprintf(stderr,"Entering receive loop (%d,%d)\n",nb_in_channels,nb_out_channels);
@@ -176,6 +177,8 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_midi:
 				samplesread=freebob_streaming_read(dev, i, audiobuffer[i], PERIOD_SIZE);
 				break;
+			default:
+				;
 			}
 //   			fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
 //   			hexDumpToFile(fid_in[i],(unsigned char*)audiobuffer[i],samplesread*sizeof(freebob_sample_t));
@@ -196,6 +199,8 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_midi:
 				sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
 				break;
+			default:
+				;
 			}
 //  			fprintf(fid_out[i], "---- Period write (%d samples) ----\n",sampleswritten);
 //  			hexDumpToFile(fid_out[i],(unsigned char*)buff,sampleswritten*sizeof(freebob_sample_t));

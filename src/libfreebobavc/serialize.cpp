@@ -45,6 +45,35 @@ CoutSerializer::write( quadlet_t d, const char* name )
 //////////////////////////////////////////////////
 
 bool
+StringSerializer::write( byte_t d, const char* name )
+{
+    char* result;
+    asprintf( &result, "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
+    
+    m_string += result;
+    free( result );
+    
+    m_cnt += sizeof( byte_t );
+
+    return true;
+}
+
+bool
+StringSerializer::write( quadlet_t d, const char* name )
+{
+    char* result;
+    asprintf( &result, "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
+    
+    m_string += result;
+    free( result );
+    
+    m_cnt += sizeof( quadlet_t );
+    return true;
+}
+
+//////////////////////////////////////////////////
+
+bool
 BufferSerialize::write( byte_t value, const char* name )
 {
     bool result = false;

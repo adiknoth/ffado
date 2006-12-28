@@ -41,6 +41,12 @@ class ConfigRom {
     const fb_octlet_t getGuid() const;
     const std::string getModelName() const;
     const std::string getVendorName() const;
+    
+    const unsigned int getModelId() const;
+    const unsigned int getVendorId() const;
+    const unsigned int getUnitSpecifierId() const;
+    const unsigned int getUnitVersion() const;
+
     bool isIsoResourseManager() const
 	{ return m_isIsoResourceManager; }
     bool isCycleMasterCapable() const
@@ -57,8 +63,6 @@ class ConfigRom {
 
     fb_quadlet_t getNodeVendorId() const
 	{ return m_nodeVendorId; }
-    unsigned int getModelId() const
-	{ return m_modelId; }
 
     bool updatedNodeId();
 
@@ -79,6 +83,8 @@ class ConfigRom {
     std::string      m_modelName;
     unsigned int     m_vendorId;
     unsigned int     m_modelId;
+    unsigned int     m_unit_specifier_id;
+    unsigned int     m_unit_version;
     bool             m_isIsoResourceManager;
     bool             m_isCycleMasterCapable;
     bool             m_isSupportIsoOperations;

@@ -56,9 +56,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
     , m_verboseLevel( verboseLevel )
     , m_globalId( m_globalIdCounter++ )
 {
-    if ( m_verboseLevel ) {
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+    setDebugLevel( m_verboseLevel );
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "nodeId = %d, subunitType = %d, "
                  "subunitId = %d, functionBlockType = %d, "
@@ -882,7 +880,7 @@ AvPlug::discoverConnectionsFromSpecificData(
         pFunctionBlockPlugAddress );
 
     if ( plug ) {
-        debugOutput( DEBUG_LEVEL_NORMAL,
+        debugOutput( DEBUG_LEVEL_VERBOSE,
                      "'(%d) %s' has a connection to '(%d) %s'\n",
                      getGlobalId(),
                      getName(),
@@ -1314,7 +1312,7 @@ AvPlug::getPlugDefinedBySpecificData(
         }
         plugId = pUnitPlugAddress->m_plugId;
 
-        debugOutput( DEBUG_LEVEL_NORMAL,
+        debugOutput( DEBUG_LEVEL_VERBOSE,
                      "'(%d) %s': Remote plug is a unit plug "
                      "(%s, %s, %d)\n",
                      getGlobalId(),
@@ -1480,17 +1478,13 @@ const char* avPlugDirectionToString( AvPlug::EAvPlugDirection type )
 AvPlugManager::AvPlugManager( int verboseLevel )
     : m_verboseLevel( verboseLevel )
 {
-    if ( m_verboseLevel ) {
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+    setDebugLevel( m_verboseLevel );
 }
 
 AvPlugManager::AvPlugManager( const AvPlugManager& rhs )
     : m_verboseLevel( rhs.m_verboseLevel )
 {
-    if ( m_verboseLevel ) {
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+    setDebugLevel( m_verboseLevel );
 }
 
 AvPlugManager::~AvPlugManager()

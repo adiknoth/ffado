@@ -31,6 +31,10 @@
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"
 
+#include "libstreaming/AmdtpStreamProcessor.h"
+#include "libstreaming/AmdtpPort.h"
+#include "libstreaming/AmdtpPortInfo.h"
+
 #include "iavdevice.h"
 
 class ConfigRom;
@@ -42,24 +46,35 @@ namespace BeBoB {
 class AvDevice : public IAvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
-	      Ieee1394Service& ieee1394Service,
+          Ieee1394Service& ieee1394Service,
               int nodeId,
-	      int verboseLevel );
+          int verboseLevel );
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
     virtual ConfigRom& getConfigRom() const;
-    virtual bool addXmlDescription( xmlNodePtr deviceNode );
+
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+
+    virtual int getStreamCount();
+    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+
+    virtual bool prepare();
+
+    virtual int startStreamByIndex(int i);
+    virtual int stopStreamByIndex(int i);
+
+    virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual void showDevice() const;
     virtual bool setId(unsigned int id);
 
     Ieee1394Service* get1394Service()
-	{ return m_1394Service; }
+    { return m_1394Service; }
 
     AvPlugManager& getPlugManager()
-	{ return m_plugManager; }
+    { return m_plugManager; }
 
     struct SyncInfo {
         SyncInfo( AvPlug& source,
@@ -69,8 +84,8 @@ public:
             , m_destination( &destination )
             , m_description( description )
             {}
-	AvPlug*     m_source;
-	AvPlug*     m_destination;
+    AvPlug*     m_source;
+    AvPlug*     m_destination;
         std::string m_description;
     };
 
@@ -105,8 +120,11 @@ protected:
                          AvPlug::EAvPlugDirection plugDireciton,
                          int id );
     AvPlugVector getPlugsByType( AvPlugVector& plugs,
-				 AvPlug::EAvPlugDirection plugDirection,
-				 AvPlug::EAvPlugType type);
+                 AvPlug::EAvPlugDirection plugDirection,
+                 AvPlug::EAvPlugType type);
+
+    bool addPlugToProcessor( AvPlug& plug, FreebobStreaming::StreamProcessor *processor, 
+                             FreebobStreaming::AmdtpAudioPort::E_Direction direction);
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    AvPlug::EAvPlugDirection direction,
@@ -134,6 +152,15 @@ protected:
 
     SyncInfoVector   m_syncInfos;
     SyncInfo*        m_activeSyncInfo;
+
+    unsigned int m_id;
+
+    // streaming stuff
+    FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
+    int m_receiveProcessorBandwidth;
+
+    FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
+    int m_transmitProcessorBandwidth;
 
     DECLARE_DEBUG_MODULE;
 };

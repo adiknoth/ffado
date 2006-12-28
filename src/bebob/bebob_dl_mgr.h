@@ -58,6 +58,9 @@ namespace BeBoB {
 
 	bool setForceOperations( bool enabled )
             { m_forceEnabled = enabled; return true; }
+
+	bool setStartBootloader( bool bStartBootloader )
+	    { m_bStartBootloader = bStartBootloader; return true; }
     protected:
 	enum EObjectType {
 	    eOT_Application,
@@ -114,6 +117,7 @@ namespace BeBoB {
 	Functor*        m_functor;
 
         bool            m_forceEnabled;
+	bool            m_bStartBootloader;
 
 	DECLARE_DEBUG_MODULE;
     };

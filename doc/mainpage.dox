@@ -1,0 +1,36 @@
+/*
+ * This is the main page of the FreeBoB reference manual, built using
+ * doxygen.
+ */
+
+/**
+@mainpage FreeBoB - Firewire (pro-)audio for Linux
+
+@author Pieter Palmers <pieterpalmers@users.sourceforge.net>
+
+@section intro Introduction
+
+FreeBoB is intended as an intermediate layer between the Linux1394 kernel/userspace layer, and the various audio API's (ALSA, jack, ...) present.
+
+\note this is a SVN version, therefore it is highly volatile. Certain parts of the documentation can be outdated. This documentation is also auto-generated, and it can occur that unused classes and interfaces appear in the documentation. This pollution will be cleaned up as we go along.
+
+@see <http://freebob.sourceforge.net>
+
+@section library Client side library
+
+FreeBoB presents an interface that can be used to implement backends for various audio
+API's. Currently the best support is for the JACK backend. It is also intended to implement configuration applications like mixer controls etc..
+
+The library API is split in two parts:
+	- @ref freebob.h "<libfreebob/freebob.h>" is the discovery & configuration interface
+	- @ref freebob_streaming.h "<libfreebob/freebob_streaming.h>" is the streaming interface
+
+
+@section devicesupport Adding support for unsupported devices
+
+Initial support is/was for BeBoB devices only, however the framework 
+is usable for all firewire audio devices.
+
+Take a look at the @ref adding_devices page for a detailed description.
+
+*/

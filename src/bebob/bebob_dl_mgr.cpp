@@ -73,13 +73,16 @@ BeBoB::BootloaderManager::BootloaderManager(Ieee1394Service& ieee1349service,
     , m_protocolVersion( eBPV_Unknown )
     , m_isAppRunning( false )
     , m_forceEnabled( false )
+    , m_bStartBootloader( true )
 {
     memset( &m_cachedInfoRegs, 0, sizeof( m_cachedInfoRegs ) );
 
     m_configRom = new ConfigRom( *m_ieee1394service, nodeId );
     // XXX throw exception if initialize fails!
     m_configRom->initialize();
-    cacheInfoRegisters();
+    if ( !cacheInfoRegisters() ) {
+        debugError( "BootloaderManager: could not cache info registers\n" );
+    }
 
     switch(  m_cachedInfoRegs.m_protocolVersion ) {
     case 1:
@@ -117,6 +120,7 @@ bool
 BeBoB::BootloaderManager::cacheInfoRegisters()
 {
     if ( !m_configRom->updatedNodeId() ) {
+        debugError( "cacheInfoRegisters: did not find device anymore\n" );
         return false;
     }
 
@@ -237,10 +241,12 @@ BeBoB::BootloaderManager::downloadFirmware( std::string filename )
         printf( "forced\n" );
     }
 
-    printf( "prepare for download (start bootloader)\n" );
-    if ( !startBootloaderCmd() ) {
-        debugError( "downloadFirmware: Could not start bootloader\n" );
-        return false;
+    if ( m_bStartBootloader ) {
+        printf( "prepare for download (start bootloader)\n" );
+        if ( !startBootloaderCmd() ) {
+            debugError( "downloadFirmware: Could not start bootloader\n" );
+            return false;
+        }
     }
 
     printf( "start downloading protocol for application image\n" );
@@ -298,10 +304,12 @@ BeBoB::BootloaderManager::downloadCnE( std::string filename )
         printf( "forced\n" );
     }
 
-    printf( "prepare for download (start bootloader)\n" );
-    if ( !startBootloaderCmd() ) {
-        debugError( "downloadCnE: Could not start bootloader\n" );
-        return false;
+    if ( m_bStartBootloader ) {
+        printf( "prepare for download (start bootloader)\n" );
+        if ( !startBootloaderCmd() ) {
+            debugError( "downloadCnE: Could not start bootloader\n" );
+            return false;
+        }
     }
 
     printf( "start downloading protocol for CnE\n" );
@@ -501,9 +509,11 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
 bool
 BeBoB::BootloaderManager::programGUID( fb_octlet_t guid )
 {
-    if ( !startBootloaderCmd() ) {
-        debugError( "programGUID: Could not start bootloader\n" );
-        return false;
+    if ( m_bStartBootloader ) {
+        if ( !startBootloaderCmd() ) {
+            debugError( "programGUID: Could not start bootloader\n" );
+            return false;
+        }
     }
 
     if ( !programGUIDCmd( guid ) ) {

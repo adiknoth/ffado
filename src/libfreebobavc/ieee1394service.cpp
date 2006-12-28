@@ -24,14 +24,16 @@
 #include <errno.h>
 #include <netinet/in.h>
 
+#include "string.h"
+
 #include <iostream>
 #include <iomanip>
 
+IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
     : m_handle( 0 )
     , m_port( -1 )
-    , m_verbose( false )
     , m_threadRunning( false )
 {
     pthread_mutex_init( &m_mutex, 0 );
@@ -57,10 +59,11 @@ Ieee1394Service::initialize( int port )
     m_handle = raw1394_new_handle_on_port( port );
     if ( !m_handle ) {
         if ( !errno ) {
-            cerr << "libraw1394 not compatible" << endl;
+            debugFatal("libraw1394 not compatible\n");
         } else {
-            perror( "Ieee1394Service::initialize: Could not get 1394 handle" );
-            cerr << "Is ieee1394 and raw1394 driver loaded?" << endl;
+            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s",
+                strerror(errno) );
+            debugFatal("Is ieee1394 and raw1394 driver loaded?\n");
         }
         return false;
     }
@@ -68,10 +71,11 @@ Ieee1394Service::initialize( int port )
     m_resetHandle = raw1394_new_handle_on_port( port );
     if ( !m_handle ) {
         if ( !errno ) {
-            cerr << "libraw1394 not compatible" << endl;
+            debugFatal("libraw1394 not compatible\n");
         } else {
-            perror( "Ieee1394Service::initialize: Could not get 1394 handle" );
-            cerr << "Is ieee1394 and raw1394 driver loaded?" << endl;
+            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s",
+                strerror(errno) );
+            debugFatal("Is ieee1394 and raw1394 driver loaded?\n");
         }
         return false;
     }
@@ -103,22 +107,17 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
     if ( raw1394_read( m_handle, nodeId, addr, length*4, buffer ) == 0 ) {
 
         #ifdef DEBUG
-        if ( m_verbose ) {
-            cout << "read:  node 0x" << hex << nodeId <<", addr = 0x"
-                 << setfill( '0' ) << setw( 16 ) << addr
-                 << ", length = " << dec << length << " quadlets" << endl;
-            printBuffer( length, buffer );
-        }
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+            "read: node 0x%X, addr = 0x%016X, length = %d\n",
+            nodeId, addr, length);
+        printBuffer( length, buffer );        
         #endif
 
         return true;
     } else {
         #ifdef DEBUG
-        if ( m_verbose ) {
-            cerr << "raw1394_read failed: node 0x" << hex << nodeId
-                 << ", addr 0x" << setfill( '0' ) << setw( 16 ) << addr
-                 << ", length = " << dec << length << " quadlets" << endl;
-        }
+        debugError("raw1394_read failed: node 0x%X, addr = 0x%016X, length = %d\n",
+              nodeId, addr, length);
         #endif
 
         return false;
@@ -153,12 +152,9 @@ Ieee1394Service::write( fb_nodeid_t nodeId,
     using namespace std;
 
     #ifdef DEBUG
-    if ( m_verbose ) {
-        cout << "write: node 0x" << hex << nodeId << ", addr = 0x"
-             << setfill( '0' ) << setw( 16 ) << addr
-             << ", length = " << dec << length << " quadlets" << endl;
-        printBuffer( length, data );
-    }
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%X, addr = 0x%016X, length = %d\n",
+                nodeId, addr, length);
+    printBuffer( length, data );
     #endif
 
     return raw1394_write( m_handle, nodeId, addr, length*4, data ) == 0;
@@ -193,10 +189,8 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
     }
 
     #ifdef DEBUG
-    if ( m_verbose ) {
-        printf( "pre avc1394_transaction_block2\n" );
-        printBuffer( len, buf );
-    }
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "pre avc1394_transaction_block2\n" );
+    printBuffer( len, buf );
     #endif
 
     fb_quadlet_t* result =
@@ -208,10 +202,8 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                     10 );
 
     #ifdef DEBUG
-    if ( m_verbose ) {
-        printf( "post avc1394_transaction_block2\n" );
-        printBuffer( *resp_len, result );
-    }
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "post avc1394_transaction_block2\n" );
+    printBuffer( *resp_len, result );
     #endif
 
     for ( unsigned int i = 0; i < *resp_len; ++i ) {
@@ -229,27 +221,33 @@ Ieee1394Service::transactionBlockClose()
     return true;
 }
 
-void
-Ieee1394Service::setVerbose( bool isVerbose )
+bool
+Ieee1394Service::setVerbose( int verboseLevel )
 {
-    m_verbose = isVerbose;
+    setDebugLevel(verboseLevel);
+    return true;
+}
+
+int
+Ieee1394Service::getVerboseLevel()
+{
+    return getDebugLevel();
 }
 
 void
 Ieee1394Service::printBuffer( size_t length, fb_quadlet_t* buffer ) const
 {
-    using namespace std;
 
     for ( unsigned int i=0; i < length; ++i ) {
         if ( ( i % 4 ) == 0 ) {
             if ( i > 0 ) {
-                cout << endl;
+                debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"\n");
             }
-            cout << setfill( ' ' ) << setw( 4 ) << i*4 << ": ";
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"%4d: ",i*4);
         }
-        cout << setfill( '0' ) << setw( 8 ) << hex << buffer[i] << " ";
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"%08X ",buffer[i]);
     }
-    cout << endl;
+    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"\n");
 }
 
 int

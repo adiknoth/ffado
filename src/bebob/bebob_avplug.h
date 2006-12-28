@@ -131,6 +131,27 @@ public:
 	EAvPlugDirection direction);
 
     void showPlug() const;
+    
+    
+    struct ChannelInfo {
+        stream_position_t          m_streamPosition;
+        stream_position_location_t m_location;
+	std::string                m_name;
+    };
+    typedef std::vector<ChannelInfo> ChannelInfoVector;
+
+    struct ClusterInfo {
+	int                      m_index;
+	port_type_t              m_portType;
+	std::string              m_name;
+
+        nr_of_channels_t         m_nrOfChannels;
+        ChannelInfoVector        m_channelInfos;
+	stream_format_t          m_streamFormat;
+    };
+    typedef std::vector<ClusterInfo> ClusterInfoVector;
+    ClusterInfoVector& getClusterInfos()
+    { return m_clusterInfos; }
 
 protected:
     bool discoverPlugType();
@@ -194,23 +215,6 @@ private:
     std::string                  m_name;
 
     // Channel & Cluster Info
-    struct ChannelInfo {
-        stream_position_t          m_streamPosition;
-        stream_position_location_t m_location;
-	std::string                m_name;
-    };
-    typedef std::vector<ChannelInfo> ChannelInfoVector;
-
-    struct ClusterInfo {
-	int                      m_index;
-	port_type_t              m_portType;
-	std::string              m_name;
-
-        nr_of_channels_t         m_nrOfChannels;
-        ChannelInfoVector        m_channelInfos;
-	stream_format_t          m_streamFormat;
-    };
-    typedef std::vector<ClusterInfo> ClusterInfoVector;
 
     ClusterInfoVector        m_clusterInfos;
 

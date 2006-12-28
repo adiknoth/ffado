@@ -35,9 +35,6 @@ extern "C" {
 
 /** @file ringbuffer.h
  *
- * A set of library functions to make lock-free ringbuffers available
- * to JACK clients.  The `capture_client.c' (in the example_clients
- * directory) is a fully functioning user of this API.
  *
  * The key attribute of a ringbuffer is that it can be safely accessed
  * by two threads simultaneously -- one reading from the buffer and

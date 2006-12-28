@@ -21,8 +21,9 @@
 
 AC_PREREQ(2.57)
 
+
 m4_define(freebob_major_version, 1)
-m4_define(freebob_minor_version, 4)
+m4_define(freebob_minor_version, 999)
 m4_define(freebob_micro_version, 0)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
@@ -37,7 +38,7 @@ AC_INIT(libfreebob, freebob_version, <freebob-devel@lists.sf.net>)
 #   change to C+1:0:0
 # - If the interface is the same as the previous version, change to C:R+1:A
 
-LT_VERSION=1:0:1
+LT_VERSION=2:0:0
 AC_SUBST(LT_VERSION)
 
 AC_DEFINE(FREEBOB_MAJOR_VERSION, freebob_major_version,[Freebob major version])
@@ -228,6 +229,8 @@ AC_SUBST([LIBXML_LIBS])
 AC_SUBST([LIBXML_CFLAGS])
 
 AC_CONFIG_FILES([Makefile
+		 doc/Makefile
+		 doc/reference.doxygen
 		 libfreebob/Makefile
 		 src/Makefile
 		 tests/Makefile

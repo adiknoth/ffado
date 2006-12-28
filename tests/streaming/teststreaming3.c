@@ -102,7 +102,8 @@ int main(int argc, char *argv[])
 		switch (freebob_streaming_get_capture_stream_type(dev,i)) {
 			case freebob_stream_type_audio:
 				/* assign the audiobuffer to the stream */
-				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]), freebob_buffer_type_float);
+				freebob_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
+				freebob_streaming_set_capture_buffer_type(dev, i, freebob_buffer_type_float);
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
 			case freebob_stream_type_midi:
@@ -118,9 +119,11 @@ int main(int argc, char *argv[])
 			case freebob_stream_type_audio:
 				if (i<nb_in_channels) {
 					/* assign the audiobuffer to the stream */
-					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)audiobuffers_in[i], freebob_buffer_type_float);
+					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
+					freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_float);
 				} else {
-					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer, freebob_buffer_type_uint24);	
+					freebob_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer);
+					freebob_streaming_set_playback_buffer_type(dev, i, freebob_buffer_type_int24);	
 				}
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.

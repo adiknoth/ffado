@@ -28,9 +28,22 @@
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
 #include "bounce/bounce_avdevice.h"
+#include "motu/motu_avdevice.h"
+#include "rme/rme_avdevice.h"
 #include "maudio/maudio_avdevice.h"
 
 #include <iostream>
+#include <unistd.h>
+
+// Unit directory SpecifierID/Version identifying a true Bebob AVC device
+#define BEBOB_AVCDEVICE_UNIT_SPECIFIER   0x0000a02d
+#define BEBOB_AVCDEVICE_UNIT_VERSION     0x10001
+
+// The vendor ID for MOTU devices
+#define MOTU_VENDOR_ID                   0x000001f2
+
+// The vendor ID for RME devices
+#define RME_VENDOR_ID                    0x00000a35
 
 using namespace std;
 
@@ -39,6 +52,7 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
+
 }
 
 DeviceManager::~DeviceManager()
@@ -75,12 +89,9 @@ DeviceManager::initialize( int port )
 bool
 DeviceManager::discover( int verboseLevel )
 {
-    switch ( verboseLevel ) {
-    case 3:
-        m_1394Service->setVerbose( true );
-    case 1:
-        setDebugLevel( DEBUG_LEVEL_VERBOSE );
-    }
+
+    setDebugLevel( verboseLevel );
+    m_1394Service->setVerbose( verboseLevel );
 
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
@@ -94,6 +105,8 @@ DeviceManager::discover( int verboseLevel )
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
     {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
+        
         std::auto_ptr<ConfigRom> configRom =
             std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
                                                      nodeId ) );
@@ -104,7 +117,7 @@ DeviceManager::discover( int verboseLevel )
             // be there is a real software problem on our side.
             // This should be handled more carefuly.
             debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Could not read config rom from device (noe id %d). "
+                         "Could not read config rom from device (node id %d). "
                          "Skip device discovering for this node\n",
                          nodeId );
             continue;
@@ -149,6 +162,14 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
 
     if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
         return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
+    }
+
+    if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
+        return new Motu::MotuDevice( configRom, *m_1394Service, id, level );
+    }
+
+    if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
+        return new Rme::RmeDevice( configRom, *m_1394Service, id, level );
     }
 
     if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
@@ -213,6 +234,18 @@ DeviceManager::getAvDevice( int nodeId )
     return 0;
 }
 
+IAvDevice*
+DeviceManager::getAvDeviceByIndex( int idx )
+{
+	return m_avDevices.at(idx);
+}
+
+unsigned int 
+DeviceManager::getAvDeviceCount( )
+{
+	return m_avDevices.size();
+}
+
 xmlDocPtr
 DeviceManager::getXmlDescription()
 {
@@ -269,6 +302,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create comment node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -281,6 +315,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create vendor node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -293,6 +328,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create model node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
 
@@ -304,6 +340,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            
             free(result);
             return 0;
         }
@@ -314,8 +351,11 @@ DeviceManager::getXmlDescription()
             debugError( "Adding XML description failed\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
+            free(result);
             return 0;
         }
+        
+        free(result);
     }
 
     return doc;

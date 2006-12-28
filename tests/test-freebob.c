@@ -21,6 +21,7 @@
 #include <config.h>
 
 #include "libfreebob/freebob.h"
+#include "libfreebob/freebob_bounce.h"
 
 #include <argp.h>
 #include <stdlib.h>
@@ -261,11 +262,11 @@ main( int argc, char **argv )
 	}
 	
 	if(arguments.node_id_set) {
-	    if (! freebob_set_samplerate(fb_handle, arguments.node_id, samplerate)) {
-		fprintf( stderr, "Could not set samplerate\n" );
-		freebob_destroy_handle( fb_handle );
-		return -1;
-	    }
+	    if (freebob_set_samplerate(fb_handle, arguments.node_id, samplerate) != 0) {
+            fprintf( stderr, "Could not set samplerate\n" );
+            freebob_destroy_handle( fb_handle );
+            return -1;
+        }
 
 	} else {
 	    int i=0;
@@ -274,15 +275,15 @@ main( int argc, char **argv )
 	    printf("  port = %d, devices_on_bus = %d\n", arguments.port, devices_on_bus);
 			
 	    for(i=0;i<devices_on_bus;i++) {
-		int node_id=freebob_get_device_node_id(fb_handle, i);
-		printf("  set samplerate for device = %d, node = %d\n", i, node_id);
-				
-		if (! freebob_set_samplerate(fb_handle, node_id, samplerate)) {
-		    fprintf( stderr, "Could not set samplerate\n" );
-		    freebob_destroy_handle( fb_handle );
-		    return -1;
-		}
-	    }
+            int node_id=freebob_get_device_node_id(fb_handle, i);
+            printf("  set samplerate for device = %d, node = %d\n", i, node_id);
+
+            if (freebob_set_samplerate(fb_handle, node_id, samplerate) != 0) {
+                fprintf( stderr, "Could not set samplerate\n" );
+                freebob_destroy_handle( fb_handle );
+                return -1;
+            }
+        }
 
 	}
 		

@@ -22,9 +22,13 @@
 #include "serialize.h"
 #include "ieee1394service.h"
 
+#include "debugmodule/debugmodule.h"
+
 #include <netinet/in.h>
 
-#define DEBUG_EXTRA_VERBOSE 2
+#define DEBUG_EXTRA_VERBOSE 5
+
+IMPL_DEBUG_MODULE( AVCCommand, AVCCommand, DEBUG_LEVEL_NORMAL );
 
 int AVCCommand::m_time = 0;
 
@@ -36,17 +40,20 @@ AVCCommand::AVCCommand( Ieee1394Service* ieee1394service,
     , m_subunit( 0xff )
     , m_opcode( opcode )
     , m_eResponse( eR_Unknown )
-    , m_verboseLevel( 0 )
 {
+
 }
 
 bool
 AVCCommand::serialize( IOSSerialize& se )
 {
-    se.write( m_ctype, "AVCCommand ctype" );
-
     // XXX \todo improve IOSSerialize::write interface
     char* buf;
+    asprintf( &buf, "AVCCommand ctype ('%s')",
+              responseToString( static_cast<AVCCommand::EResponse>( m_ctype ) ) );
+    se.write( m_ctype, buf );
+    free( buf );
+
     asprintf( &buf, "AVCCommand subunit (subunit_type = %d, subunit_id = %d)",
               getSubunitType(), getSubunitId() );
     se.write( m_subunit, buf );
@@ -123,14 +130,14 @@ AVCCommand::getSubunitId()
 bool
 AVCCommand::setVerbose( int verboseLevel )
 {
-    m_verboseLevel = verboseLevel;
+    setDebugLevel(verboseLevel);
     return true;
 }
 
 int
 AVCCommand::getVerboseLevel()
 {
-    return m_verboseLevel;
+    return getDebugLevel();
 }
 
 
@@ -141,15 +148,15 @@ AVCCommand::showFcpFrame( const unsigned char* buf,
     for ( int i = 0; i < frameSize; ++i ) {
         if ( ( i % 16 ) == 0 ) {
             if ( i > 0 ) {
-                printf( "\n" );
+                debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "\n" );
             }
-            printf( "  %3d:\t", i );
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "  %3d:\t", i );
         } else if ( ( i % 4 ) == 0 ) {
-            printf( " " );
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, " " );
         }
-        printf( "%02x ", buf[i] );
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%02x ", buf[i] );
     }
-    printf( "\n" );
+    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "\n" );
 }
 
 bool
@@ -159,19 +166,22 @@ AVCCommand::fire()
 
     BufferSerialize se( m_fcpFrame, sizeof( m_fcpFrame ) );
     if ( !serialize( se ) ) {
-        printf(  "ExtendedPlugInfoCmd::fire: Could not serialize\n" );
+        debugFatal(  "ExtendedPlugInfoCmd::fire: Could not serialize\n" );
         return false;
     }
 
     unsigned short fcpFrameSize = se.getNrOfProducesBytes();
 
-    if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE ) {
-        printf( "%s:\n", getCmdName() );
-        puts( "  Request:");
+    if (getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%s:\n", getCmdName() );
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE,  "  Request:");
         showFcpFrame( m_fcpFrame, fcpFrameSize );
-
-        CoutSerializer se;
-        serialize( se );
+    
+        StringSerializer se_dbg;
+        serialize( se_dbg );
+    
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s", 
+                         se_dbg.getString().c_str());
     }
 
     unsigned int resp_len;
@@ -195,33 +205,31 @@ AVCCommand::fire()
             BufferDeserialize de( buf, resp_len );
             result = deserialize( de );
 
-            if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE) {
-                puts("  Response:");
-                showFcpFrame( buf, de.getNrOfConsumedBytes() );
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,"  Response:");
+            showFcpFrame( buf, de.getNrOfConsumedBytes() );
 
-                CoutSerializer se;
-                serialize( se );
-            }
+            StringSerializer se_dbg;
+            serialize( se_dbg );
+            
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s", 
+                             se_dbg.getString().c_str());
         }
         break;
         default:
-            printf( "unexpected response received (0x%x)\n", m_eResponse );
-            if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE) {
-                puts("  Response:");
-                BufferDeserialize de( buf, resp_len );
-                deserialize( de );
+            debugWarning( "unexpected response received (0x%x)\n", m_eResponse );
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,"  Response:");
+            
+            BufferDeserialize de( buf, resp_len );
+            deserialize( de );
 
-                showFcpFrame( buf, resp_len );
-            }
+            showFcpFrame( buf, de.getNrOfConsumedBytes() );
 
         }
     } else {
-	printf( "no response\n" );
+	   debugWarning( "no response\n" );
     }
-
-    if ( getVerboseLevel() >= DEBUG_EXTRA_VERBOSE ) {
-        printf( "\n" );
-    }
+    
+    debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n" );
 
     m_1394Service->transactionBlockClose();
 
@@ -265,4 +273,33 @@ subunitTypeToString( subunit_type_t subunitType )
     } else {
         return subunitTypeStrings[subunitType];
     }
+}
+
+const char* responseToStrings[] =
+{
+    "control",
+    "status",
+    "specific inquiry",
+    "notify",
+    "general inquiry",
+    "reserved for future specification",
+    "reserved for future specification",
+    "reserved for future specification",
+    "not implemented",
+    "accepted",
+    "rejected",
+    "in transition",
+    "implemented/stable",
+    "changed"
+    "reserved for future specification",
+    "interim",
+};
+
+const char*
+responseToString( AVCCommand::EResponse eResponse )
+{
+    if ( eResponse > ( int )( sizeof( responseToStrings ) / sizeof( responseToStrings[0] ) ) ) {
+        return "unknown";
+    }
+    return responseToStrings[eResponse];
 }
