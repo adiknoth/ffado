@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<FreeBoBConnectionInfo>
+  <Device>
+    <NodeId>0</NodeId>
+    <Comment>Connection Information for M-Audio, FW Audiophile configuration</Comment>
+    <Vendor>M-Audio</Vendor>
+    <Model>FW Audiophile</Model>
+    <GUID>0x000D6C031088FA68</GUID>
+
+    <ConnectionSet>
+      <Direction>1</Direction>
+
+      <Connection>
+        <Port>0</Port>
+        <Node>1</Node>
+	<Plug>0</Plug>
+        <Dimension>7</Dimension>
+        <Samplerate>44100</Samplerate>
+        <IsoChannel>-1</IsoChannel>
+	<Master>0</Master>
+        <Streams>
+          <Stream>
+            <Position>2</Position>
+            <Location>1</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>LineOut1 L</Name>
+          </Stream>
+          <Stream>
+            <Position>4</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>LineOut1 R</Name>
+          </Stream>
+          <Stream>
+            <Position>3</Position>
+            <Location>1</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>LineOut2 L</Name>
+          </Stream>
+          <Stream>
+            <Position>5</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>LineOut2 R</Name>
+          </Stream>
+          <Stream>
+            <Position>0</Position>
+            <Location>1</Location>
+            <Format>6</Format>
+            <Type>4</Type>
+            <DestinationPort>1</DestinationPort>
+            <Name>SPDIFOut L</Name>
+          </Stream>
+          <Stream>
+            <Position>1</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>4</Type>
+            <DestinationPort>1</DestinationPort>
+            <Name>SPDIFOut R</Name>
+          </Stream>  
+          <Stream>
+            <Position>6</Position>
+            <Location>0</Location>
+            <Format>13</Format>
+            <Type>10</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>MidiPort</Name>
+          </Stream>	  
+        </Streams>
+      </Connection>
+    </ConnectionSet>
+
+    <ConnectionSet>
+      <Direction>0</Direction>
+
+      <Connection>
+        <Port>0</Port>
+        <Node>1</Node>
+	<Plug>0</Plug>
+        <Dimension>5</Dimension>
+        <Samplerate>44100</Samplerate>
+        <IsoChannel>-1</IsoChannel>
+	<Master>1</Master>
+        <Streams>
+          <Stream>
+            <Position>0</Position>
+            <Location>1</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>1</DestinationPort>
+            <Name>SPDIFIn1 L</Name>
+          </Stream>
+          <Stream>
+            <Position>1</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>1</DestinationPort>
+            <Name>SPDIFIn1 R</Name>
+          </Stream>        
+          <Stream>
+            <Position>2</Position>
+            <Location>1</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>LineIn1 L</Name>
+          </Stream>
+          <Stream>
+            <Position>3</Position>
+            <Location>2</Location>
+            <Format>6</Format>
+            <Type>3</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>LineIn1 R</Name>
+          </Stream>
+          <Stream>
+            <Position>4</Position>
+            <Location>0</Location>
+            <Format>13</Format>
+            <Type>10</Type>
+            <DestinationPort>0</DestinationPort>
+            <Name>MidiPort</Name>
+          </Stream>	  
+        </Streams>
+      </Connection>
+
+    </ConnectionSet>
+
+
+    <StreamFormats>
+      <Direction>1</Direction>
+      <Format>
+        <Samplerate>44100</Samplerate>
+        <AudioChannels>6</AudioChannels>
+        <MidiChannels>1</MidiChannels>
+      </Format>
+    </StreamFormats>
+    <StreamFormats>
+      <Direction>0</Direction>
+      <Format>
+        <Samplerate>44100</Samplerate>
+        <AudioChannels>4</AudioChannels>
+        <MidiChannels>1</MidiChannels>
+      </Format>
+    </StreamFormats>
+  </Device>
+</FreeBoBConnectionInfo>

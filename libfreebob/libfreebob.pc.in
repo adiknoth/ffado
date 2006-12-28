@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libfreebob
+Description: FreeBoB
+Version: @VERSION@
+Libs: -L${libdir} -lfreebob
+Cflags: -I${includedir}
