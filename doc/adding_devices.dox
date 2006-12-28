@@ -1,0 +1,200 @@
+/*
+ * This is the main page of the FreeBoB reference manual, built using
+ * doxygen.
+ */
+
+/**
+@page adding_devices Adding support for new devices to LibFreeBoB
+
+@author Pieter Palmers <pieterpalmers@users.sourceforge.net>
+
+@section intro Introduction
+
+ Device support is implemented on two levels:
+
+ 1) Discovery & configuration
+
+ 2) Streaming layer
+ 
+ Layer 1 is implemented by subclassing the IAvDevice interface, and adding an appropriate 
+ probe function to devicemanager.cpp.
+ Layer 2 is implemented by subclassing the StreamProcessor class in src/libstreaming/
+ 
+ Basic operation of libfreebob is:
+ - Create a DeviceManager that iterates over all nodes connected to the 1394 bus. 
+   For every node present, it tries the probeFunctions (probeBeBoB, probeMotu, ...).
+   If a probefunction succeeds, the node is considered to be a freeob supported device.
+   The probefunction should return a pointer to a AvDevice, i.e. a subclass of this
+   interface. At this point we have access to all supported devices.
+ 
+ - When the streaming layer is started (e.g. by jackd), it will iterate over all IAvDevice's of
+   the DeviceManager. For every device:
+   The streaming layer will (most likely) set some config values (at this moment only the
+   samplerate). Then will then request the number of ISO streams the device provides using
+   getStreamCount(). Most likely this will be 2 streams, one transmit and one receive.
+   The next step is that for every stream a StreamProcessor is requested using
+   getStreamProcessorByIndex(i) (i starts at 0). This streamprocessor is responsible for
+   the translation between ISO stream and audio API. A streamprocessor is a class that is
+   a subclass of StreamProcessor (see the documentation of that class for more info).
+   
+ - Once the streaming layer fetched all streamprocessors of all devices, it will proceed with
+   initializing them, and setting up all support stuff (threads, ISO handlers, etc...)
+ 
+ - After this initial setup, the streaming layer will ask the IAvDevice to start the streams
+   on the hardware device, using startStreamByIndex(). When the streaming layer shuts down,
+   it will use stopStreamByIndex() to stop the device's streams, and free up the (possibly
+   allocated) bus resources.
+   
+   \note the jackd backend also supports to specify a specific node. In that case only the
+         AvDevice for that node is used, instead of iterating over all of them.
+   \note Starting the hardware streams is part of the IAvDevice because this allows for a 
+         more generic streamprocessor for AMDTP streams. This stream format is used by
+         BeBoB's, DICE-II devices, mLan devices, etc. Keeping the start/stop system 
+         separate from the streamprocessor allows the re-use of the streamprocessor should
+         the start/stop mechanism differ.
+ 
+ In order to add support for a device to freebob, two things should be implemented:
+  - an IAvDevice descendant that takes care of the device discovery & configuration
+  - a StreamProcessor descendant that takes care of the device specific stream translation
+
+@section discoverybaseclasses Streaming base class hierarchy and operation
+
+@ref iavdevice.h "<src/iavdevice.h>" is the device interface. It should be more or less 
+self-explanatory
+
+@section streamingbaseclasses Streaming base class hierarchy and operation
+
+This section explains the implementation details of the streaming part of LibFreeBoB. 
+
+The following figure shows the base class diagram, and the derrived classed that implement
+the AMDTP (AM824, IEC61883-6) streaming decoders. It can come in handy when trying to understand the following sections.
+@image html	class_diagram_1.png "Streaming Class Diagram"
+@image latex    class_diagram_1.eps "Streaming Class Diagram"
+
+The basic idea is that when the streaming layer is initialized, it creates a DeviceManager 
+(not shown in the figure) and a StreamProcessorManager. 
+
+The DeviceManager is responsible for discovering and configuring the devices, as explained in the introduction. 
+
+The StreamProcessorManager will take care of the actual 'streaming'. This incorporates:
+- handling the Isochronous traffic (allocating handlers, iterating handles, ...)
+- translating the iso streams into the data format requested by the client application
+- handling all threading issues (creation/destruction, realtime behaviour, synchronisation, ...) 
+- ...
+
+It joins the ISO side with the Audio API side.
+
+To accomplish this, it consists of two parts:
+- a collection of StreamProcessor 's
+- an IsoHandlerManager instance
+
+Related classes: FreebobStreaming::StreamProcessorManager
+
+@subsection isoside The ISO side: 1394 isochronous traffic management
+The IsoHandlerManager is responsible for the management of IsoHandlers. This means creating/destroying the handlers when needed, starting & stopping them, etc...
+An IsoHandler in its turn will serve an IsoStream. This means that the getPacket or putPacket callback of an IsoStream will be called by the IsoHandler whenever this is nescessary.
+
+\note The IsoHandler and IsoStream are separate classes because in the case of multichannel Isochronous receive, one IsoHandler can serve more than one IsoStream. The distinction lies in the fact that IsoStreams are bound to a channel and an ieee1394 port, while IsoHandlers are only bound to an ieee1394 port. [multichannel receive is however not implemented yet]
+
+The handling of an IsoStream by an IsoHandler can be started by registering the IsoStream with the IsoHandlerManager. The manager figures out if it has to allocate a new handler for this stream, and will do so if needed. It will also keep track of the IsoHandler-IsoStream relations and will clean up any unused IsoHandlers.
+
+To summarize: if we want to handle (receive from/transmit on) a channel of an ieee1394 port, the only thing we have to do is create an IsoStream, setup its parameters and register it with the IsoHandlerManager. If we then start() the IsoHandlerManager and call its Execute() function, the IsoStream callback will be called whenever activity happens.
+
+\note This abstraction is completely device independent, it only provides a mechanism to transmit or receive a certain isochronous stream. It could as well be used for video streams...
+
+Related classes: FreebobStreaming::IsoStream, FreebobStreaming::IsoHandlerManager, FreebobStreaming::IsoHandler
+
+@subsection audioapiside The Audio API side: port management
+
+\note not all stuff described here is implemented yet.
+
+
+The abstraction presented at the audio side is based upon Ports. A 'Port' is an entity that has the following properties:
+
+	- It has an associated buffer to store 'events'. These events can be samples, midi bytes, control data, ... . The buffer can be allocated outside of the Port (external buffer) or can be allocated internally. Currently there are two buffer types available: E_PointerBuffer and E_RingBuffer. 
+  		- E_PointerBuffer is a buffer that can be accessed using the getBufferAddress() method, i.e. by directly reading/writing to memory. It is assumed that routines using this method keep it's size in mind (can be obtained by multiplying getEventSize() and getBufferSize()). This buffer can be an external buffer or an internal buffer. It is important that both the reader and the writer use the correct data type.
+		\note for this type, currently only externally attached buffers are supported.
+  		- E_RingBuffer is a ringbuffer that can be accessed using read/write type of calls.
+		\note for the ringbuffer type, only internal buffers are supported.
+
+	- DataType: The datatype defines the data type of the events in a Port's buffer. This also determines the size of the events and hence (together with the setBufferSize()) the buffer size in bytes.
+
+	- PortType: The port type determines the type of events that is flowing through this port. Currently there are three port types: E_Audio, E_Midi, E_Control. In the future there might be more (e.g. E_AC3 or E_Adat).
+
+	- SignalType: The signalling type defines how the 'new event' signalling should occur for this port. Currently there are two possibilities:
+		- E_PacketSignalled: The port contents should be updated every time a packet arrives. This means that the read to/write from operation of the port is to be called for every packet that arrives (i.e. from within the packet handler callback). The most obvious use is for midi ports, as it can be a problem when midi bytes are quantized to period boundaries.
+    	- E_PeriodSignalled: The port contents should be updated every time time one period of packets is ready. This is for audio data, as this allows the code responsible for reading/writing the Port buffers to buffer the sink/source events untill one period has arrived, and then encode/decode the events all at once from/to the Port buffer. This is a big performance boost due to locallity of data (cache) and the possibility of using SIMD instructions, especially for big buffers.
+
+	- Direction: A port is either a Playback or a Capture port. Playback ports are filled by the Audio API and packetized into the ISO stream, Capture ports are filled by the ISO stream and read out by the Audio API.
+
+\note maybe someday we'll allow any access type with any buffer type, but that doesn't seem to be nescessary now.
+\note there are some relations between the DataType and the PortType. These relations should be established in the derrivative classes of Port.
+
+\note one of the fishy things about Ports is the order in which you can call Port methods and change parameters. more on that later.
+
+In order to facilitate the management of a collection of Ports, a PortManager class is implemented. This class implements methods like addPort(), deletePort() etc... It also allows to initialize, prepare and reset all ports in it's collection.
+
+The idea is that we present a collection of ports to the Audio API side which from which it can read or to which it can write.
+
+Related classes: FreebobStreaming::Port, FreebobStreaming::PortManager
+
+@subsection connectingisoandaudio Connecting the ISO side with the Audio API side
+The connection between the ISO side and the Audio API side is done by the StreamProcessor class. This class inherits both from IsoStream and PortManager. It therefore can be registered to the IsoHandlerManager in order to receive/transmit an ISO stream. It can also contain a collection of Ports that serve as a destination/source for the events in the ISO stream.
+
+The StreamProcessor class is an abstract class, it cannot be instantiated by itself. The classes that implement a StreamProcessor should derrive from either ReceiveStreamProcessor or TransmitStreamProcessor. These classes provide some extra code that differs between directions.
+
+A ReceiveStreamProcessor implements the putPacket callback, which is called every time a packet arrives. It is supposed to buffer the events (or the decoded frames). When one period of frames can be transmitted to the Audio API, it should signal this when its isOnePeriodReady() method is called. 
+
+For PeriodSignalled Ports, the actual transfer from the internal buffer(s) to the Port buffers should be done in the transfer() method. This is because it is not nescessarily so that the buffers of the StreamProcessor's Ports are valid. When the transfer() method is called, the buffers are guaranteed to be valid. The jackd backend for example sets the Port buffers to an internal address before calling transfer(). This allows for a near-zero-copy transfer of the audio: the ISO stream events are decoded directly into the jackd sample buffer.
+
+For PacketSignalled Ports, the StreamProcessor should decode & write the events when they arrive (in the packet callback).
+
+A TransmitStreamProcessor implements the getPacket method to construct packets. The rules wrt Port buffer access and internal buffering are similar to those of the ReceiveStreamProcessor.
+
+A StreamProcessor can be enabled and disabled. When a StreamProcessor is disabled, it should not read from or write to it's Port buffers. However, it's putPacket or getPacket callback can be called, so especially for TransmitStreamProcessors one should make sure to generate valid packets (if the device needs them). This behaviour is because some devices need some time before they start sending data, and we want to prevent our port buffers (especially playback) from Xrun due to a StreamProcessor that is already consuming while others are not ready yet. The enable state can be tested with the m_disabled variable.
+
+Closely coupled to the enable/disable functionallity is the isRunning() function. This should return true when a StreamProcessor is ready to consume or provide events.
+\note Mostly, a TransmitStreamProcessor is always 'runnable', but a ReceiveStreamProcessor only becomes running when it actually starts to receive events.
+
+In order to make the streaming system work, the StreamProcessors should update the value of m_framecounter in the packet callback. For a ReceiveStreamProcessor this denotes the number of received events, for a TransmitStreamProcessor this is the number of events transmitted. Most of the time this value should be incremented by the number of frames processed in the callback. This increment should be done by calling incrementFrameCounter(nb_frames) to do this thread-safe. The framecounter will be decremented by the streaming thread.
+
+A StreamProcessor also has the init(), prepare() and reset() calls, which are still to be documented (see later).
+
+Related classes: FreebobStreaming::StreamProcessor, FreebobStreaming::ReceiveStreamProcessor, FreebobStreaming::TransmitStreamProcessor, FreebobStreaming::PortManager
+
+@subsection mappingports Mapping Ports to IsoStreams
+The only thing not explained up till now is how the StreamProcessor knows which ISO substream to decode to which port. This is done by defining device specific subclasses of the Port class. These classes inherit both from the generic Port class and from a device specific class (e.g. PortInfo). This PortInfo class contains all information the StreamProcessor needs to map the Port onto the IsoStream, or vice versa. Due to the subclassing, these new device-specific ports can be used as if they were a normal Port. An example can be found in \ref amdtpdescription .
+
+@subsection puttingtogether Putting it all together
+The framework is completed by introducing the StreamProcessorManager. As indicated before, this class implements a 'collection of StreamProcessors' and an IsoHandlerManager. 
+
+First of all, the StreamProcessorManager is a collection of StreamProcessors, hence it implements the  registerStreamProcessor and unregisterStreamProcessor methods. It maintains the list of StreamProcessors under it's control. When StreamProcessors are (un)registered, they are automatically (un)registered to the IsoHandlerManager too, creating IsoHandlers to handle them. Remember that StreamProcessor is a descendant of IsoStream, and can therefore be registered to an IsoHandlerManager. This results in the fact that the ISO stream the StreamProcessor is supposed to handle, will be attached to an IsoHandler.
+
+Furthermore StreamProcessorManager is a child of the FreebobRunnable interface, and can therefore be used as the worker class for a FreebobThread. A complicated sentence to say that the StreamProcessorManager will start up a thread that calls its Execute() function, which in its turn calls the IsoHandlerManager Exectute() method (hence iterating the IsoHandlers managed by the IsoHandlerManager). This thread also performs the synchronisation as described in the next paragraph.
+
+The third function of the StreamProcessorManager is the synchronisation between the ISO side and the Audio API side. To implement this, the class provides a wait() method that waits on a synchronisation primitive. This primitive is signalled by the thread that iterates the IsoHandlerManager. This thread will signal the primitive when all StreamProcessors indicate that they have one period ready.
+\note this condition is not perfect, but it will do for the moment
+
+The Audio API should call wait(), and when it returns, should call transfer() to transfer the internal buffer contents to the Port buffers. It can then proceed to reading out these Port buffers. The near-zero-copy approach would be to call wait(), then change the Port buffer address to the client's audio buffer for that channel, and then call transfer().
+
+Currently this is for PeriodSignalled Ports only. The PacketBuffered Ports require the Audio API to read/write each Port individually using read/write routines. There is no signalling for these ports. The calls to read/write are also non-blocking, meaning that the Audio API will have to contignously poll these Ports for activity. This can be done with a separate thread, possibly using a sleep() call beween Port buffer fill checks. 
+\note A blocking-read/nonblocking write (and the other way around) version of access to PacketBuffered Ports is planned.
+
+Related classes: FreebobStreaming::StreamProcessorManager, FreebobStreaming::IsoHandlerManager, FreebobStreaming::Port
+
+@subsection callingorder Some notes on when which method is called
+It is not very clear when which method is called (init/prepare/reset/...). This is due to the fact that this isn't really 'clean' yet. Therefore it will be documented later. The source code contains some notes on this.
+
+Some preliminary statements for StreamProcessor's:
+- init() should call it's parent class' init to initialize the IsoStream
+- prepare() 
+	- should call it's parent class' prepare first, this makes m_nb_buffers and m_period available. These are needed to allocate the internal buffer. It should then proceed to allocate it's internal buffer(s).
+	- should make sure all ports are ready by calling init() and prepare() for the ports. However this can only be done after all Port parameters (buffersize, port type, ...) are set. Once a Port is init()'d, there are some parameters that cannot be changed (see Port documentation)
+	- when the StreamProcessor is an TransmitStreamProcessor, it might be good to prefill internal buffers.
+- reset() is called when an xrun occurs. it should clear (& prefill) all buffers, and should also be passed on to the parent in order to reset all counters, parent classes and ports.
+
+@section refimplementation Reference Implementation
+
+The BeBoB discovery with the AMDTP StreamProcessor can be considered the reference implementation of this model. You can find a description of the AMDTP StreamProcessor in \ref amdtpdescription .
+
+*/
