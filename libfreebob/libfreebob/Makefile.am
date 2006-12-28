@@ -15,28 +15,6 @@
 # along with FreeBoB; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = libfreebob src tests
 
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libfreebob.pc
-
-$(srcdir)/configure: configure.ac aclocal.m4
-	cd $(srcdir) && autoconf
-
-# autoheader might not change config.h.in, so touch a stamp file.
-$(srcdir)/config.h.in: stamp-h.in
-$(srcdir)/stamp-h.in: configure.ac aclocal.m4
-	cd $(srcdir) && autoheader
-	echo timestamp > $(srcdir)/stamp-h.in
-
-config.h: stamp-h
-stamp-h: config.h.in config.status
-	./config.status
-
-Makefile: Makefile.am config.status
-	./config.status
-
-config.status: configure
-	./config.status --recheck
-
-
+libfreebobincludedir = $(includedir)/libfreebob
+libfreebobinclude_HEADERS = freebob.h freebob_streaming.h xmlparser.h freebob_bounce.h

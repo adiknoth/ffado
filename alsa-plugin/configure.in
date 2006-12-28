@@ -1,0 +1,24 @@
+AC_INIT("Freebob ALSA Plugin", 0.0.7 ,freebob-devel@lists.sourceforge.net,freebob-alsa-plugin)
+AM_INIT_AUTOMAKE(freebob-alsa-plugin, 0.0.7)
+AC_PREFIX_DEFAULT(/usr)
+
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_DISABLE_STATIC
+AM_PROG_LIBTOOL
+AC_HEADER_STDC
+
+PKG_CHECK_MODULES(ALSA, alsa >= 1.0.9)
+AC_CHECK_LIB(asound, snd_pcm_ioplug_create,,
+	     AC_ERROR([*** libasound has no external plugin SDK]), -ldl)
+
+# check for FreeBob libraries
+PKG_CHECK_MODULES(LIBFREEBOB,  libfreebob >= 0.6.2)
+
+AC_SUBST([LIBFREEBOB_CFLAGS])
+AC_SUBST([LIBFREEBOB_LIBS])
+
+AC_OUTPUT([
+	Makefile
+	freebob/Makefile
+])
