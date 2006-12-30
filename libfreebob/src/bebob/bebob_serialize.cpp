@@ -67,14 +67,7 @@ BeBoB::XMLSerialize::~XMLSerialize()
 
 bool
 BeBoB::XMLSerialize::write( const char* pMemberName,
-                            byte_t value )
-{
-    return write( pMemberName, static_cast<quadlet_t>( value ) );
-}
-
-bool
-BeBoB::XMLSerialize::write( const char* pMemberName,
-                            quadlet_t value )
+                            long long value )
 
 {
     vector<string> tokens;
@@ -91,7 +84,7 @@ BeBoB::XMLSerialize::write( const char* pMemberName,
     // element to be added
     xmlpp::Element* pElem = pNode->add_child( tokens[tokens.size() - 1] );
     char* valstr;
-    asprintf( &valstr, "%d", value );
+    asprintf( &valstr, "%lld", value );
     pElem->set_child_text( valstr );
     free( valstr );
 
@@ -161,30 +154,7 @@ BeBoB::XMLDeserialize::~XMLDeserialize()
 
 bool
 BeBoB::XMLDeserialize::read( const char* pMemberName,
-                             byte_t& value )
-{
-    xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
-
-    xmlpp::NodeSet nodeSet = pNode->find( pMemberName );
-    for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
-          it != nodeSet.end();
-          ++it )
-    {
-        const xmlpp::Element* pElement = dynamic_cast< const xmlpp::Element* >( *it );
-        if ( pElement && pElement->has_child_text() ) {
-            char* tail;
-            value = strtol( pElement->get_child_text()->get_content().c_str(), &tail, 0 );
-            return true;
-        }
-        return false;
-    }
-
-    return false;
-}
-
-bool
-BeBoB::XMLDeserialize::read( const char* pMemberName,
-                             quadlet_t& value )
+                             long long& value )
 
 {
     xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
@@ -197,7 +167,7 @@ BeBoB::XMLDeserialize::read( const char* pMemberName,
         const xmlpp::Element* pElement = dynamic_cast< const xmlpp::Element* >( *it );
         if ( pElement && pElement->has_child_text() ) {
             char* tail;
-            value = strtol( pElement->get_child_text()->get_content().c_str(), &tail, 0 );
+            value = strtoll( pElement->get_child_text()->get_content().c_str(), &tail, 0 );
             return true;
         }
         return false;

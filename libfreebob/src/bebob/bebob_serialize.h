@@ -21,7 +21,6 @@
 #ifndef bebob_serialize_h
 #define bebob_serialize_h
 
-#include <libraw1394/raw1394.h>
 #include <libxml++/libxml++.h>
 
 #include <iostream>
@@ -33,9 +32,7 @@ namespace BeBoB {
         virtual ~IOSerialize() {}
 
         virtual bool write( const char* pMemberName,
-                            byte_t value ) = 0;
-        virtual bool write( const char* pMemberName,
-                            quadlet_t value ) = 0;
+                            long long value ) = 0;
 
         template <typename T>  bool write( const char* pMemberName, T value );
     };
@@ -46,9 +43,7 @@ namespace BeBoB {
         virtual ~IODeserialize() {}
 
         virtual bool read( const char* pMemberName,
-                           byte_t& value ) = 0;
-        virtual bool read( const char* pMemberName,
-                           quadlet_t& value ) = 0;
+                           long long& value ) = 0;
 
         template <typename T> bool read( const char* pMemberName, T& value );
     };
@@ -59,9 +54,7 @@ namespace BeBoB {
         virtual ~XMLSerialize();
 
         virtual bool write( const char* pMemberName,
-                            byte_t value );
-        virtual bool write( const char* pMemberName,
-                            quadlet_t value );
+                            long long value );
     private:
         Glib::ustring    m_filepath;
         xmlpp::Document  m_doc;
@@ -75,9 +68,7 @@ namespace BeBoB {
         virtual ~XMLDeserialize();
 
         virtual bool read( const char* pMemberName,
-                           byte_t& value );
-        virtual bool read( const char* pMemberName,
-                           quadlet_t& value );
+                           long long& value );
     private:
         Glib::ustring    m_filepath;
         xmlpp::DomParser m_parser;
@@ -88,12 +79,15 @@ namespace BeBoB {
 
     template <typename T> bool IOSerialize::write( const char* pMemberName, T value )
     {
-        return write( pMemberName, static_cast<quadlet_t>( value ) );
+        return write( pMemberName, static_cast<long long>( value ) );
     }
 
     template <typename T> bool IODeserialize::read( const char* pMemberName, T& value )
     {
-        return read( pMemberName, reinterpret_cast<quadlet_t&>( value ) );
+	long long tmp;
+        bool result = read( pMemberName, tmp );
+        value = static_cast<T>( tmp );
+        return result;
     }
 }
 
