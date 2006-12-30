@@ -318,6 +318,91 @@ testU2()
     return result;
 }
 
+///////////////////////////////////////
+
+class U3_SerializeMe {
+public:
+    U3_SerializeMe();
+    ~U3_SerializeMe();
+
+    bool operator == ( const U3_SerializeMe& rhs );
+
+    bool serialize( IOSerialize& ser );
+    bool deserialize( IODeserialize& deser );
+
+    const char* m_pString;
+};
+
+U3_SerializeMe::U3_SerializeMe()
+    : m_pString( 0 )
+{
+}
+
+
+U3_SerializeMe::~U3_SerializeMe()
+{
+    delete m_pString;
+}
+//--------------------------
+
+bool
+U3_SerializeMe::operator == ( const U3_SerializeMe& rhs )
+{
+    return strcmp( m_pString, rhs.m_pString ) == 0;
+}
+
+bool
+U3_SerializeMe::serialize( IOSerialize& ser )
+{
+    bool result;
+    result  = ser.write( "m_pString", Glib::ustring( m_pString ) );
+    return result;
+}
+
+bool
+U3_SerializeMe::deserialize( IODeserialize& deser )
+{
+    bool result;
+    Glib::ustring str;
+    result  = deser.read( "m_pString", str );
+
+    m_pString = strdup( str.c_str() );
+
+    return result;
+}
+
+static bool
+testU3()
+{
+    U3_SerializeMe sme1;
+    sme1.m_pString = strdup( "fancy string" );
+
+    {
+        XMLSerialize xmlSerialize( "unittest_u3.xml" );
+        if ( !sme1.serialize( xmlSerialize ) ) {
+            printf( "(serializing failed)" );
+            return false;
+        }
+    }
+
+    U3_SerializeMe sme2;
+
+    {
+        XMLDeserialize xmlDeserialize( "unittest_u3.xml" );
+        if ( !sme2.deserialize( xmlDeserialize ) ) {
+            printf( "(deserializing failed)" );
+            return false;
+        }
+    }
+
+    bool result = sme1 == sme2;
+    if ( !result ) {
+        printf( "(wrong values)" );
+    }
+
+    return result;
+}
+
 /////////////////////////////////////
 /////////////////////////////////////
 /////////////////////////////////////
@@ -333,6 +418,7 @@ TestEntry TestTable[] = {
     { "serialize 0",  testU0 },
     { "serialize 1",  testU1 },
     { "serialize 2",  testU2 },
+    { "serialize 3",  testU3 },
 };
 
 int
