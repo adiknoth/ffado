@@ -26,17 +26,17 @@
 #include <string.h>
 
 #include <signal.h>
-#include "debugmodule/debugmodule.h"
+#include "src/debugmodule/debugmodule.h"
 
 #include <netinet/in.h>
 
-#include "IsoHandler.h"
-#include "IsoStream.h"
-#include "StreamProcessorManager.h"
-#include "AmdtpStreamProcessor.h"
-#include "IsoHandlerManager.h"
-#include "PosixThread.h"
-#include "AmdtpPort.h"
+#include "src/libstreaming/IsoHandler.h"
+#include "src/libstreaming/IsoStream.h"
+#include "src/libstreaming/StreamProcessorManager.h"
+#include "src/libstreaming/AmdtpStreamProcessor.h"
+#include "src/libstreaming/IsoHandlerManager.h"
+#include "src/libutil/PosixThread.h"
+#include "src/libstreaming/AmdtpPort.h"
 
 using namespace FreebobStreaming;
 

@@ -30,6 +30,8 @@
 
 #include "../debugmodule/debugmodule.h"
 
+#include "libutil/TimeSource.h"
+
 #include <libraw1394/raw1394.h>
 
 
@@ -38,7 +40,6 @@ namespace FreebobStreaming
 {
 
 class IsoStream;
-
 /*!
 \brief The Base Class for ISO Handlers
 
@@ -48,7 +49,7 @@ class IsoStream;
 
 */
 
-class IsoHandler
+class IsoHandler : public FreebobUtil::TimeSource
 {
 	protected:
 	
@@ -59,17 +60,9 @@ class IsoHandler
 			EHT_Transmit
 		};
 	
-		IsoHandler(int port) 
-		   : m_handle(0), m_handle_util(0), m_port(port), 
-		   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1),
-		   m_packetcount(0), m_dropped(0), m_Client(0)
-		{}
+		IsoHandler(int port);
 
-		IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq) 
-		   : m_handle(0), m_port(port), 
-		   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), 
-		   m_irq_interval(irq), m_packetcount(0), m_dropped(0), m_Client(0)
-		{}
+		IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq);
 
 		virtual ~IsoHandler();
 
@@ -117,8 +110,12 @@ class IsoHandler
 		// update the cycle counter cache
 		// not RT safe
 		// the isohandlermanager is responsible for calling this!
-        void updateCycleCounter();
+        bool updateCycleCounter();
+        float getTicksPerUsec() {return m_ticks_per_usec;};
 
+        // register a master timing source
+        bool setSyncMaster(FreebobUtil::TimeSource *t);
+    
 	protected:
 	    raw1394handle_t m_handle;
         raw1394handle_t m_handle_util;
@@ -126,20 +123,37 @@ class IsoHandler
 		unsigned int    m_buf_packets;
 		unsigned int    m_max_packet_size;
 		int             m_irq_interval;
-		unsigned int    m_cyclecounter;
-
+		
+		unsigned int        m_cyclecounter_ticks;
+        freebob_microsecs_t m_lastmeas_usecs;
+        float               m_ticks_per_usec;
+        float               m_ticks_per_usec_dll_err2;
+        
 		int m_packetcount;
 		int m_dropped;
 
 		IsoStream *m_Client;
 
-		virtual int handleBusReset(unsigned int generation) = 0;
+        FreebobUtil::TimeSource *m_TimeSource;
+
+		virtual int handleBusReset(unsigned int generation);
+
 
 		DECLARE_DEBUG_MODULE;
 
 	private:
 		static int busreset_handler(raw1394handle_t handle, unsigned int generation);
 
+        void initCycleCounter();
+
+    // implement the TimeSource interface
+    public:
+        freebob_microsecs_t getCurrentTime();
+        freebob_microsecs_t getCurrentTimeAsUsecs();
+    private:
+        // to cope with wraparound
+        unsigned int m_TimeSource_LastSecs;
+        unsigned int m_TimeSource_NbCycleWraps;
 
 };
 
@@ -166,9 +180,10 @@ class IsoRecvHandler : public IsoHandler
 
 		bool prepare();
 
-	private:
+	protected:
 		int handleBusReset(unsigned int generation);
 
+	private:
 		static enum raw1394_iso_disposition 
  		iso_receive_handler(raw1394handle_t handle, unsigned char *data, 
 						unsigned int length, unsigned char channel,
@@ -211,10 +226,10 @@ class IsoXmitHandler  : public IsoHandler
 
 		bool prepare();
 
+    protected:
+    	int handleBusReset(unsigned int generation);
+
 	private:
-
-		int handleBusReset(unsigned int generation);
-
 		static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
 				unsigned char *data, unsigned int *length,
 				unsigned char *tag, unsigned char *sy,

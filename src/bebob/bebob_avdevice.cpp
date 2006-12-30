@@ -109,6 +109,7 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x000a92, 0x00010066},  // Presonous FirePOD
 
+    {0x000aac, 0x00000003},  // TerraTec Electronic GmbH, Phase 88 FW 
     {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
     {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW (model version 7)
 
