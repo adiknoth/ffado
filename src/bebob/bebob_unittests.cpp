@@ -19,6 +19,7 @@
  */
 
 #include "bebob_serialize.h"
+#include <libraw1394/raw1394.h>
 
 #include <stdio.h>
 
@@ -261,18 +262,9 @@ U2_SerializeMe::deserialize( IODeserialize& deser )
     return result;
 }
 
-bool
-testU2()
+static bool
+testU2execute( U2_SerializeMe& sme1 )
 {
-    U2_SerializeMe sme1;
-
-    sme1.m_char = 0;
-    sme1.m_unsigned_char = 1;
-    sme1.m_short = 2;
-    sme1.m_unsigned_short = 3;
-    sme1.m_int = 4;
-    sme1.m_unsigned_int = 5;
-
     {
         XMLSerialize xmlSerialize( "unittest_u2.xml" );
         if ( !sme1.serialize( xmlSerialize ) ) {
@@ -295,6 +287,34 @@ testU2()
     if ( !result ) {
         printf( "(wrong values)" );
     }
+
+    return result;
+}
+
+static bool
+testU2()
+{
+    U2_SerializeMe sme1;
+
+    sme1.m_char = 0;
+    sme1.m_unsigned_char = 1;
+    sme1.m_short = 2;
+    sme1.m_unsigned_short = 3;
+    sme1.m_int = 4;
+    sme1.m_unsigned_int = 5;
+
+    bool result;
+    result  = testU2execute( sme1 );
+
+    sme1.m_char = 0xff;
+    sme1.m_unsigned_char = 0xff;
+    sme1.m_short = 0xffff;
+    sme1.m_unsigned_short = 0xffff;
+    sme1.m_int = 0xffffffff;
+    sme1.m_unsigned_int = 0xffffffff;
+
+    result &= testU2execute( sme1 );
+
     return result;
 }
 
