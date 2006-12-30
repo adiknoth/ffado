@@ -91,6 +91,27 @@ BeBoB::XMLSerialize::write( const char* pMemberName,
     return true;
 }
 
+bool
+BeBoB::XMLSerialize::write( const char* pMemberName,
+                            Glib::ustring str)
+{
+    vector<string> tokens;
+    string memberName( pMemberName );
+    tokenize( memberName, tokens, "/" );
+
+    if ( tokens.size() == 0 ) {
+        return false;
+    }
+
+    xmlpp::Node* pNode = m_doc.get_root_node();
+    pNode = getNodePath( pNode, tokens );
+
+    // element to be added
+    xmlpp::Element* pElem = pNode->add_child( tokens[tokens.size() - 1] );
+    pElem->set_child_text( str );
+
+    return true;
+}
 
 xmlpp::Node*
 BeBoB::XMLSerialize::getNodePath( xmlpp::Node* pRootNode, std::vector<string>& tokens )
@@ -176,3 +197,24 @@ BeBoB::XMLDeserialize::read( const char* pMemberName,
     return false;
 }
 
+bool
+BeBoB::XMLDeserialize::read( const char* pMemberName,
+                             Glib::ustring& str )
+{
+    xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
+
+    xmlpp::NodeSet nodeSet = pNode->find( pMemberName );
+    for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
+          it != nodeSet.end();
+          ++it )
+    {
+        const xmlpp::Element* pElement = dynamic_cast< const xmlpp::Element* >( *it );
+        if ( pElement && pElement->has_child_text() ) {
+            str = pElement->get_child_text()->get_content();
+            return true;
+        }
+        return false;
+    }
+
+    return false;
+}

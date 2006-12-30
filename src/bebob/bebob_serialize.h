@@ -33,6 +33,8 @@ namespace BeBoB {
 
         virtual bool write( const char* pMemberName,
                             long long value ) = 0;
+        virtual bool write( const char* pMemberName,
+                            Glib::ustring str) = 0;
 
         template <typename T>  bool write( const char* pMemberName, T value );
     };
@@ -44,6 +46,8 @@ namespace BeBoB {
 
         virtual bool read( const char* pMemberName,
                            long long& value ) = 0;
+        virtual bool read( const char* pMemberName,
+                           Glib::ustring& str ) = 0;
 
         template <typename T> bool read( const char* pMemberName, T& value );
     };
@@ -55,6 +59,8 @@ namespace BeBoB {
 
         virtual bool write( const char* pMemberName,
                             long long value );
+        virtual bool write( const char* pMemberName,
+                            Glib::ustring str);
     private:
         Glib::ustring    m_filepath;
         xmlpp::Document  m_doc;
@@ -69,6 +75,8 @@ namespace BeBoB {
 
         virtual bool read( const char* pMemberName,
                            long long& value );
+        virtual bool read( const char* pMemberName,
+                           Glib::ustring& str );
     private:
         Glib::ustring    m_filepath;
         xmlpp::DomParser m_parser;
