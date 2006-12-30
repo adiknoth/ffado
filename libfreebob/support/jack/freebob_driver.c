@@ -195,7 +195,7 @@ freebob_driver_attach (freebob_driver_t *driver)
 	return jack_activate (driver->client);
 }
 
-static int
+static int 
 freebob_driver_detach (freebob_driver_t *driver)
 {
 	JSList *node;
@@ -448,8 +448,8 @@ freebob_driver_run_cycle (freebob_driver_t *driver)
 	int wait_status=0;
 	float delayed_usecs=0.0;
 
-	jack_nframes_t nframes = freebob_driver_wait (driver, -1, &wait_status,
-						   &delayed_usecs);
+	jack_nframes_t nframes = freebob_driver_wait (driver, -1,
+	   &wait_status, &delayed_usecs);
 	
 	if ((wait_status < 0)) {
 		printError( "wait status < 0! (= %d)",wait_status);

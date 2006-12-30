@@ -140,9 +140,11 @@ protected:
 	int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
 	                           unsigned int offset, unsigned int nevents);
 
-    unsigned int m_last_timestamp;
+    unsigned long m_last_timestamp;
 
     unsigned int m_dbc;
+    
+    unsigned int m_ringbuffer_size_frames;
 
     DECLARE_DEBUG_MODULE;
 
@@ -192,8 +194,8 @@ public:
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
     float getTicksPerFrame() {return m_ticks_per_frame;};
-    unsigned int getPeriodTimeStamp() {return m_last_timestamp_at_period_ticks;};
-
+    unsigned int getPeriodTimeStamp();
+    
     void dumpInfo();
     
 protected:
@@ -213,6 +215,8 @@ protected:
     unsigned int m_last_timestamp_at_period_ticks;
     
     float m_ticks_per_frame;
+    
+    bool m_one_period_passed;
     
     DECLARE_DEBUG_MODULE;
 

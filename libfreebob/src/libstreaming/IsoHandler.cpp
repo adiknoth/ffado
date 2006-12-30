@@ -28,6 +28,12 @@
 
 #include "IsoHandler.h"
 #include "IsoStream.h"
+#include "cyclecounter.h"
+
+#include "libutil/Time.h"
+#include "libutil/TimeSource.h"
+#include "libutil/SystemTimeSource.h"
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <assert.h>
@@ -35,6 +41,14 @@
 
 #include <iostream>
 using namespace std;
+
+
+#define CC_SLEEP_TIME_AFTER_UPDATE     100
+#define CC_SLEEP_TIME_AFTER_FAILURE     10
+#define CC_DLL_COEFF     ((0.01)*((float)(CC_SLEEP_TIME_AFTER_UPDATE/1000.0)))
+
+#define CC_MAX_RATE_ERROR           (2/100.0)
+#define CC_INIT_MAX_TRIES 10
 
 
 namespace FreebobStreaming
@@ -78,6 +92,28 @@ int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation
 
 
 /* Base class implementation */
+IsoHandler::IsoHandler(int port)
+   : TimeSource(), m_handle(0), m_handle_util(0), m_port(port), 
+   m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1),
+   m_cyclecounter_ticks(0), m_lastmeas_usecs(0), m_ticks_per_usec(24.576), 
+   m_ticks_per_usec_dll_err2(0),
+   m_packetcount(0), m_dropped(0), m_Client(0)
+{
+    InitTime();
+    m_TimeSource=new FreebobUtil::SystemTimeSource();
+}
+
+IsoHandler::IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq)
+   : TimeSource(), m_handle(0), m_port(port), 
+   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), 
+   m_irq_interval(irq), 
+   m_cyclecounter_ticks(0), m_lastmeas_usecs(0), m_ticks_per_usec(24.576),
+   m_ticks_per_usec_dll_err2(0),
+   m_packetcount(0), m_dropped(0), m_Client(0)
+{
+    InitTime();
+    m_TimeSource=new FreebobUtil::SystemTimeSource();
+}
 
 IsoHandler::~IsoHandler() {
     if(m_handle) {
@@ -86,6 +122,7 @@ IsoHandler::~IsoHandler() {
     }
     if(m_handle_util) raw1394_destroy_handle(m_handle_util);
     
+    delete m_TimeSource;
 }
 
 bool
@@ -126,10 +163,32 @@ IsoHandler::init()
 	
 	raw1394_set_bus_reset_handler(m_handle, busreset_handler);
 
+    // initialize the local timesource
+    m_TimeSource_NbCycleWraps=0;
+    quadlet_t buf=0;
+    unsigned int new_counter;
+    
+    raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
+        CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+    
+    new_counter= ntohl(buf) & 0xFFFFFFFF;
+    m_TimeSource_LastSecs=CYCLE_COUNTER_GET_SECS(new_counter);
+
     // update the cycle counter value for initial value
-    updateCycleCounter();
+    initCycleCounter();
 
 	return true;
+}
+
+bool
+IsoHandler::setSyncMaster(FreebobUtil::TimeSource *t)
+{
+    m_TimeSource=t;
+    
+    // update the cycle counter value for initial value
+    initCycleCounter();
+    
+    return true;
 }
 
 bool IsoHandler::stop()
@@ -140,44 +199,291 @@ bool IsoHandler::stop()
 }
 
 /**
- * Returns the current value of the cycle counter
+ * Bus reset handler
  *
- * @return the current value of the cycle counter
+ * @return ?
  */
-#define CSR_CYCLE_TIME            0x200
-#define CSR_REGISTER_BASE  0xfffff0000000ULL
-
-#define CYCLE_COUNTER_GET_SECS(x)   (((x & 0xFE000000) >> 25))
-#define CYCLE_COUNTER_GET_CYCLES(x) (((x & 0x01FFF000) >> 12))
-#define CYCLE_COUNTER_GET_TICKS(x)  (((x & 0x00000FFF)))
-#define CYCLE_COUNTER_TO_TICKS(x) ((CYCLE_COUNTER_GET_SECS(x)   * 24576000) +\
-                                   (CYCLE_COUNTER_GET_CYCLES(x) *     3072) +\
-                                   (CYCLE_COUNTER_GET_TICKS(x)            ))
-
-unsigned int IsoHandler::getCycleCounter() {
-     return m_cyclecounter;
+ 
+int IsoHandler::handleBusReset(unsigned int generation) {
+	debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
+	
+	// as busreset can elect a new cycle master,
+	// we need to re-initialize our timing code
+    initCycleCounter();
+    
+	return 0;
 }
 
-void IsoHandler::updateCycleCounter() {
+/**
+ * Returns the current value of the cycle counter (in ticks)
+ *
+ * @return the current value of the cycle counter (in ticks)
+ */
+
+unsigned int IsoHandler::getCycleCounter() {
+    // calculate the cycle counter based upon the current time
+    // and the estimated tick rate
+    freebob_microsecs_t now=m_TimeSource->getCurrentTimeAsUsecs();
+    
+    // linear interpolation
+    int delta_usecs=now-m_lastmeas_usecs;
+
+    float offset=m_ticks_per_usec * ((float)delta_usecs);
+    
+    unsigned int pred_ticks=m_cyclecounter_ticks+(unsigned int)offset;
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Get CC: d_usecs=%d, offset=%f, cc_ticks=%lu, pred_ticks=%lu\n",
+      delta_usecs, offset, m_cyclecounter_ticks,pred_ticks
+      );
+      
+    // if we need to wrap, do it
+    if (pred_ticks > TICKS_PER_SECOND * 128) {
+        pred_ticks -= TICKS_PER_SECOND * 128;
+    }
+    
+    return pred_ticks;
+}
+
+bool IsoHandler::updateCycleCounter() {
     quadlet_t buf=0;
+    
+    freebob_microsecs_t prev_usecs=m_lastmeas_usecs;
+    unsigned int prev_ticks=m_cyclecounter_ticks;
+    
+    freebob_microsecs_t new_usecs;
+    unsigned int new_ticks;
+    unsigned int new_counter;
+    
+    /* To estimate the cycle counter, we implement a 
+       DLL based routine, that maps the cycle counter
+       on the system clock.
+       
+       For more info, refer to:
+        "Using a DLL to filter time"
+        Fons Adriaensen
+        
+        Can be found at:
+        http://users.skynet.be/solaris/linuxaudio/downloads/usingdll.pdf
+        or maybe at:
+        http://www.kokkinizita.net/linuxaudio
+    
+        Basically what we do is estimate the next point (T1,CC1_est)
+        based upon the previous point (T0, CC0) and the estimated rate (R).
+        Then we compare our estimation with the measured cycle counter
+        at T1 (=CC1_meas). We then calculate the estimation error on R:
+        err=(CC1_meas-CC0)/(T1-T2) - (CC1_est-CC0)/(T1-T2)
+        and try to minimize this on average (DLL)
+        
+        Note that in order to have a contignous mapping, we should
+        update CC0<=CC1_est instead of CC0<=CC1_meas. The measurement 
+        serves only to correct the error 'on average'.
+        
+        In the code, the following variable names are used:
+        T0=prev_usecs
+        T1=next_usecs
+        
+        CC0=prev_ticks
+        CC1_est=est_ticks
+        CC1_meas=meas_ticks
+        
+     */
     
     // normally we should be able to use the same handle
     // because it is not iterated on by any other stuff
     // but I'm not sure
     raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
         CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+    new_usecs=m_TimeSource->getCurrentTimeAsUsecs();
     
-    m_cyclecounter= ntohl(buf) & 0xFFFFFFFF;
+    new_counter= ntohl(buf) & 0xFFFFFFFF;
+    new_ticks=CYCLE_COUNTER_TO_TICKS(new_counter);
     
-//     debugOutput(DEBUG_LEVEL_VERBOSE,"Updating timestamp: %08X (%2u sec + %2u cycles + %04u ticks)\n",
-//           m_cyclecounter, 
-//           CYCLE_COUNTER_GET_SECS(m_cyclecounter),
-//           CYCLE_COUNTER_GET_CYCLES(m_cyclecounter),
-//           CYCLE_COUNTER_GET_TICKS(m_cyclecounter)
-//           );    
+    // the difference in system time
+    int delta_usecs=new_usecs-prev_usecs;
+    // this cannot be 0, because m_TimeSource->getCurrentTimeAsUsecs should 
+    // never return the same value (maybe in future terrahz processors?)
+    assert(delta_usecs);
     
+    // the measured cycle counter difference
+    unsigned int delta_ticks_meas;
+    if (new_ticks > prev_ticks) {
+        delta_ticks_meas=new_ticks - prev_ticks;
+    } else { // wraparound
+        delta_ticks_meas=CYCLE_COUNTER_UNWRAP_TICKS(new_ticks) - prev_ticks;
+    }
     
-    usleep(100);
+    // the estimated cycle counter difference
+    unsigned int delta_ticks_est=(unsigned int)(m_ticks_per_usec * ((float)delta_usecs));
+    
+    // the measured & estimated rate
+    float rate_meas=((float)delta_ticks_meas/(float)delta_usecs);
+    float rate_est=((float)m_ticks_per_usec);
+    
+    // these make sure we don't update when the measurement is
+    // bad. We know the nominal rate, and it can't be that far
+    // off. The thing is that there is a problem in measuring
+    // both usecs and ticks at the same time (no provision in
+    // the kernel.
+    // We know that there are some tolerances on both
+    // the system clock and the firewire clock such that the 
+    // actual difference is rather small. So we discard values 
+    // that are too far from the nominal rate. 
+    // Otherwise the DLL has to have a very low bandwidth, in 
+    // order not to be desturbed too much by these bad measurements
+    // resulting in very slow locking.
+    
+    if (   (rate_meas < 24.576*(1.0+CC_MAX_RATE_ERROR)) 
+        && (rate_meas > 24.576*(1.0-CC_MAX_RATE_ERROR))) {
+
+#ifdef DEBUG
+
+        int diff=(int)delta_ticks_est;
+        
+        // calculate the difference in predicted ticks and
+        // measured ticks
+        diff -= delta_ticks_meas;
+        
+        
+        if (diff > 24000 || diff < -24000) { // approx +/-1 msec error
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Bad pred (%p): diff=%d, dt_est=%u, dt_meas=%u, d=%dus, err=%fus\n", this,
+                diff, delta_ticks_est, delta_ticks_meas, delta_usecs, (((float)diff)/24.576)
+                );
+        } else {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Good pred: diff=%d, dt_est=%u, dt_meas=%u, d=%dus, err=%fus\n",
+                diff, delta_ticks_est, delta_ticks_meas, delta_usecs, (((float)diff)/24.576)
+                );
+        }
+#endif
+        // DLL the error to obtain the rate.
+        // (note: the DLL makes the error=0)
+        // only update the DLL if the rate is within 10% of the expected
+        // rate
+        float err=rate_meas-rate_est;
+        
+        // 2nd order DLL update
+//         const float w=6.28*0.0001;
+//         const float b=w*1.45;
+//         const float c=w*w;
+//         
+//         m_ticks_per_usec += b*err + m_ticks_per_usec_dll_err2;
+//         m_ticks_per_usec_dll_err2 += c * err;
+
+        // first order DLL update
+         m_ticks_per_usec += CC_DLL_COEFF*err;
+    
+        if (   (m_ticks_per_usec > 24.576*(1.0+CC_MAX_RATE_ERROR)) 
+            || (m_ticks_per_usec < 24.576*(1.0-CC_MAX_RATE_ERROR))) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Warning: DLL ticks/usec near clipping (%8.4f)\n",
+                        m_ticks_per_usec);
+        }
+        
+        // update the internal values
+        // note: the next cyclecounter point is
+        //       the estimated one, not the measured one!
+        m_cyclecounter_ticks += delta_ticks_est;
+        // if we need to wrap, do it
+        if (m_cyclecounter_ticks > TICKS_PER_SECOND * 128) {
+            m_cyclecounter_ticks -= TICKS_PER_SECOND * 128;
+        }
+            
+        m_lastmeas_usecs = new_usecs;
+
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"U TS: %10u -> %10u, d=%7uus, dt_est=%7u,  dt_meas=%7u, erate=%6.4f, mrate=%6f\n",
+              prev_ticks, m_cyclecounter_ticks, delta_usecs,
+              delta_ticks_est, delta_ticks_meas, m_ticks_per_usec, rate_meas
+              );
+
+        // the estimate is good
+        return true;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"U TS: Not updating, rate out of range (%6.4f)\n",
+              rate_meas
+              );
+        return false;
+
+    }
+}
+
+void IsoHandler::initCycleCounter() {
+    quadlet_t buf=0;
+
+    freebob_microsecs_t prev_usecs;
+    unsigned int prev_ticks;
+    unsigned int prev_counter;
+    
+    freebob_microsecs_t new_usecs;
+    unsigned int new_ticks;
+    unsigned int new_counter;
+    
+    float rate=0.0;
+    
+    unsigned int try_cnt=0;
+    
+    // make sure that we start with a decent rate,
+    // meaning that we want two successive (usecs,ticks)
+    // points that make sense.
+    
+    while ( (try_cnt++ < CC_INIT_MAX_TRIES) &&
+           (   (rate > 24.576*(1.0+CC_MAX_RATE_ERROR)) 
+           || (rate < 24.576*(1.0-CC_MAX_RATE_ERROR)))) {
+           
+        // normally we should be able to use the same handle
+        // because it is not iterated on by any other stuff
+        // but I'm not sure
+        raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
+            CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+        prev_usecs=m_TimeSource->getCurrentTimeAsUsecs();
+        
+        prev_counter= ntohl(buf) & 0xFFFFFFFF;
+        prev_ticks=CYCLE_COUNTER_TO_TICKS(prev_counter);
+        
+        usleep(CC_SLEEP_TIME_AFTER_UPDATE);
+        
+        // normally we should be able to use the same handle
+        // because it is not iterated on by any other stuff
+        // but I'm not sure
+        raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
+            CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+        new_usecs=m_TimeSource->getCurrentTimeAsUsecs();
+        
+        new_counter= ntohl(buf) & 0xFFFFFFFF;
+        new_ticks=CYCLE_COUNTER_TO_TICKS(new_counter);
+        
+        unsigned int delta_ticks;
+        
+        if (new_ticks > prev_ticks) {
+            delta_ticks=new_ticks - prev_ticks;
+        } else { // wraparound
+            delta_ticks=CYCLE_COUNTER_UNWRAP_TICKS(new_ticks) - prev_ticks;
+        }
+        
+        int delta_usecs=new_usecs-prev_usecs;
+        
+        // this cannot be 0, because m_TimeSource->getCurrentTimeAsUsecs should 
+        // never return the same value (maybe in future terrahz processors?)
+        assert(delta_usecs);
+        
+        rate=((float)delta_ticks/(float)delta_usecs);
+        
+        // update the internal values
+        m_cyclecounter_ticks=new_ticks;
+        m_lastmeas_usecs=new_usecs;
+        
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Try %d: rate=%6.4f\n",
+            try_cnt,rate
+            );
+
+    }
+    
+    // this is not fatal, the DLL will eventually correct this
+    if(try_cnt == CC_INIT_MAX_TRIES) {
+        debugWarning("Failed to properly initialize cycle counter...\n");
+    }
+    
+    // initialize this to the nominal value
+    m_ticks_per_usec = 24.576;
+    m_ticks_per_usec_dll_err2 = 0;
+    
 }
 
 void IsoHandler::dumpInfo()
@@ -188,10 +494,17 @@ void IsoHandler::dumpInfo()
 
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Handler type    : %s\n",
 	     (this->getType()==EHT_Receive ? "Receive" : "Transmit"));
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %2d, %2d\n",
 	     m_port, channel);
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count   : %d (%d dropped)\n\n",
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count   : %10d (%5d dropped)\n",
 	     this->getPacketCount(), this->getDroppedCount());
+    #ifdef DEBUG
+    unsigned int cc=this->getCycleCounter();
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Cycle counter  : %10lu (%03us, %04ucycles, %04uticks)\n",
+	     cc,TICKS_TO_SECS(cc),TICKS_TO_CYCLES(cc),TICKS_TO_OFFSET(cc));
+	#endif
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Ticks/usec     : %8.6f (dll2: %8.6e)\n\n",
+	     this->getTicksPerUsec(), m_ticks_per_usec_dll_err2);
 
 };
 
@@ -234,6 +547,49 @@ bool IsoHandler::unregisterStream(IsoStream *stream)
 	return true;
 
 }
+
+/* The timesource interface */
+freebob_microsecs_t IsoHandler::getCurrentTime() {
+    quadlet_t buf=0;
+    unsigned int new_counter;
+    
+    raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
+        CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+    
+    new_counter= ntohl(buf) & 0xFFFFFFFF;
+        
+    // this assumes that it never happens that there are more than 2
+    // minutes between calls
+    if (CYCLE_COUNTER_GET_SECS(new_counter) < m_TimeSource_LastSecs) {
+        m_TimeSource_NbCycleWraps++;
+    }
+    
+    freebob_microsecs_t ticks=m_TimeSource_NbCycleWraps * 128 * TICKS_PER_SECOND
+            + CYCLE_COUNTER_TO_TICKS(new_counter);
+    
+    m_TimeSource_LastSecs=CYCLE_COUNTER_GET_SECS(new_counter);
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Wraps=%4u, LastSecs=%3u, nowSecs=%3u, ticks=%10u\n",
+              m_TimeSource_NbCycleWraps, m_TimeSource_LastSecs,
+              CYCLE_COUNTER_GET_SECS(new_counter), ticks
+              );
+              
+    return  ticks;
+}
+
+freebob_microsecs_t IsoHandler::getCurrentTimeAsUsecs() {
+    float tmp=getCurrentTime();
+    float tmp2 = tmp * USECS_PER_TICK;
+    freebob_microsecs_t retval=(freebob_microsecs_t)tmp2;
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"tmp=%f, tmp2=%f, retval=%u\n",
+              tmp, tmp2,retval
+              );
+    
+    return retval;
+}
+
+
 
 /* Child class implementations */
 
@@ -328,7 +684,13 @@ bool IsoRecvHandler::start(int cycle)
 
 int IsoRecvHandler::handleBusReset(unsigned int generation) {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "handle bus reset...\n");
+	
 	//TODO: implement busreset
+	
+	// pass on the busreset signal
+	if(IsoHandler::handleBusReset(generation)) {
+		return -1;
+	}
 	return 0;
 }
 
@@ -438,6 +800,12 @@ bool IsoXmitHandler::start(int cycle)
 int IsoXmitHandler::handleBusReset(unsigned int generation) {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
 	//TODO: implement busreset
+	
+	// pass on the busreset signal
+	if(IsoHandler::handleBusReset(generation)) {
+		return -1;
+	}
+	
 	return 0;
 }
 

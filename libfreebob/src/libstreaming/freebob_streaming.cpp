@@ -85,13 +85,13 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	dev->m_deviceManager = new DeviceManager();
 	if ( !dev->m_deviceManager ) {
 		debugFatal( "Could not allocate device manager\n" );
-			delete dev;
+		delete dev;
 		return 0;
 	}
 	if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
 		debugFatal( "Could not initialize device manager\n" );
 		delete dev->m_deviceManager;
-			delete dev;
+		delete dev;
 		return 0;
 	}
 
@@ -100,7 +100,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
 	if(!dev->processorManager) {
 		debugFatal("Could not create StreamProcessorManager\n");
-        	delete dev->m_deviceManager;
+        delete dev->m_deviceManager;
 		delete dev;
 		return 0;
 	}
@@ -111,7 +111,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	if(!dev->processorManager->init()) {
 		debugFatal("Could not init StreamProcessorManager\n");
 		delete dev->processorManager;
-        	delete dev->m_deviceManager;
+        delete dev->m_deviceManager;
 		delete dev;
 		return 0;
 	}
@@ -119,6 +119,9 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	// discover the devices on the bus
 	if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
 		debugOutput(DEBUG_LEVEL_VERBOSE, "Could not discover devices\n");
+		delete dev->processorManager;
+        delete dev->m_deviceManager;
+		delete dev;		
 		return 0;
 	}
 
@@ -130,7 +133,16 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 
 		// Set the device's sampling rate to that requested
 		// FIXME: does this really belong here?  If so we need to handle errors.
-		device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate));
+		if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+		  // try again:
+		  if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+                delete dev->processorManager;
+                delete dev->m_deviceManager;
+                delete dev;
+                debugFatal("Could not set sampling frequency to %d\n",dev->options.sample_rate);
+                return 0;
+		  }
+		}
 
 		// prepare the device
 		device->prepare();
@@ -155,7 +167,10 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 int freebob_streaming_prepare(freebob_device_t *dev) {
 	debugOutput(DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 	
-	dev->processorManager->prepare();
+	if (!dev->processorManager->prepare()) {
+	   debugFatal("Could not prepare streaming...\n");
+	   return false;
+	}
 
 	return true;
 }

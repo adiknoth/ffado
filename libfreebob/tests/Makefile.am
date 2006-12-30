@@ -15,13 +15,14 @@
 # along with FreeBoB; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-SUBDIRS = streaming
+# SUBDIRS = streaming
 
 INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
 	$(LIBAVC1394_CFLAGS)
 
 noinst_PROGRAMS = test-freebob test-extplugcmd test-fw410 freebob-server \
-	test-volume test-mixer
+ 		test-volume test-mixer test-cyclecounter test-sytmonitor
+
 noinst_HEADERS = 
 
 test_freebob_SOURCES = test-freebob.c
@@ -50,3 +51,12 @@ freebob_server_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS) \
 
 #TESTS_ENVIRONMENT
 TEST = test-freebob
+
+test_cyclecounter_LDADD = $(top_builddir)/src/libfreebob.la $(LIBIEC61883_LIBS) \
+	$(LIBRAW1394_LIBS) $(LIBAVC1394_LIBS)
+test_cyclecounter_SOURCES = test-cyclecounter.cpp
+
+test_sytmonitor_LDADD = $(top_builddir)/src/libfreebob.la $(LIBIEC61883_LIBS) \
+	$(LIBRAW1394_LIBS) $(LIBAVC1394_LIBS)
+test_sytmonitor_SOURCES = test-sytmonitor.cpp SytMonitor.cpp \
+                          SytMonitor.h

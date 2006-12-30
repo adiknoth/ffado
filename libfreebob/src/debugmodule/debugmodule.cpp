@@ -53,6 +53,10 @@ DebugModule::DebugModule( std::string name,  debug_level_t level )
 
 DebugModule::~DebugModule()
 {
+    cerr << "Unregistering " 
+         << this->getName()
+         << " at DebugModuleManager"
+         << endl;
     if ( !DebugModuleManager::instance()->unregisterModule( *this ) ) {
         cerr << "Could not unregister DebugModule at DebugModuleManager"
              << endl;
@@ -138,7 +142,7 @@ DebugModuleManager::~DebugModuleManager()
           it != m_debugModules.end();
           ++it )
     {
-        fprintf(stderr,"Cleaning up leftover debug module: %s",(*it)->getName().c_str());
+        fprintf(stderr,"Cleaning up leftover debug module: %s\n",(*it)->getName().c_str());
         m_debugModules.erase( it );
         delete *it;
     }

@@ -36,6 +36,10 @@
 
 #include <vector>
 
+#define USLEEP_AFTER_UPDATE_FAILURE 10
+#define USLEEP_AFTER_UPDATE 100
+#define MAX_UPDATE_TRIES 10
+
 namespace FreebobStreaming
 {
 
@@ -91,7 +95,7 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
 		void disablePolling(IsoStream *); ///< disables polling on a stream
 		void enablePolling(IsoStream *); ///< enables polling on a stream
 
-	protected:
+	public:
 	
 	    
 		// RunnableInterface interface
@@ -100,7 +104,7 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
 
 	    // iterate all handlers
 	    bool iterate();
-        
+    private:
         // updates the cycle counter caches of all handlers
         void updateCycleCounters();
         
