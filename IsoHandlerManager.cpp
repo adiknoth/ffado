@@ -61,6 +61,8 @@ bool IsoHandlerManager::Init()
 bool IsoHandlerManager::Execute()
 {
     updateCycleCounters();
+    usleep(USLEEP_AFTER_UPDATE);
+    
     return true;
 }
 
@@ -109,8 +111,12 @@ void IsoHandlerManager::updateCycleCounters() {
           it != m_IsoHandlers.end();
           ++it )
     {
-        (*it)->updateCycleCounter();
+        int cnt=0;
+        while (!(*it)->updateCycleCounter() && (cnt++ < MAX_UPDATE_TRIES)) {
+            usleep(USLEEP_AFTER_UPDATE_FAILURE);
+        }
     }
+    
 }
 
 bool IsoHandlerManager::prepare()
@@ -527,7 +533,7 @@ void IsoHandlerManager::dumpInfo() {
           it != m_IsoHandlers.end();
           ++it )
     {
-		debugOutputShort( DEBUG_LEVEL_NORMAL, " Stream %d (%p)\n",i++,*it);
+		debugOutputShort( DEBUG_LEVEL_NORMAL, " IsoHandler %d (%p)\n",i++,*it);
 
 		(*it)->dumpInfo();
     }

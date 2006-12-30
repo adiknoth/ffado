@@ -150,7 +150,10 @@ bool StreamProcessorManager::init()
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 	// the tread that runs the packet iterators
-	m_streamingThread=new FreebobUtil::PosixThread(this, m_thread_realtime, m_thread_priority+5, PTHREAD_CANCEL_DEFERRED);
+	m_streamingThread=new FreebobUtil::PosixThread(this,
+	   m_thread_realtime, m_thread_priority+5, 
+	   PTHREAD_CANCEL_DEFERRED);
+	   
 	if(!m_streamingThread) {
 		debugFatal("Could not create streaming thread\n");
 		return false;
@@ -167,7 +170,20 @@ bool StreamProcessorManager::init()
 	
 	// the tread that keeps the handler's cycle counters up to date
 	// NOTE: is lower priority nescessary? it can block
-	m_isoManagerThread=new FreebobUtil::PosixThread(m_isoManager, m_thread_realtime, m_thread_priority+6, PTHREAD_CANCEL_DEFERRED);
+// 	m_isoManagerThread=new FreebobUtil::PosixThread(m_isoManager, m_thread_realtime, m_thread_priority+6, PTHREAD_CANCEL_DEFERRED);
+
+    // now that we are using a DLL, we don't need to run this at RT priority
+    // it only serves to cope with drift
+    // however, in order to make the DLL fast enough, we have to increase
+    // its bandwidth, making it more sensitive to deviations. These deviations
+    // are mostly determined by the time difference between reading the cycle
+    // time register and the local cpu clock.
+    
+ 	m_isoManagerThread=new FreebobUtil::PosixThread(
+ 	      m_isoManager, 
+ 	      m_thread_realtime, m_thread_priority+6,
+ 	      PTHREAD_CANCEL_DEFERRED);
+ 	      
 	if(!m_isoManagerThread) {
 		debugFatal("Could not create iso manager thread\n");
 		return false;
@@ -217,6 +233,13 @@ bool StreamProcessorManager::prepare() {
 			}
 			
 		}
+
+    // if there are no stream processors registered, 
+    // fail
+    if (m_ReceiveProcessors.size() + m_TransmitProcessors.size() == 0) {
+        debugFatal("No stream processors registered, can't do anything usefull\n");
+        return false;
+    }
 
 	return true;
 }
