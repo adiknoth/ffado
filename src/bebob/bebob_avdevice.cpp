@@ -795,7 +795,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                     formatInfo->m_streams );
             if ( compoundStream ) {
                 foundFreq =
-                    static_cast<ESamplingFrequency>(
+                    static_cast< ESamplingFrequency >(
                         compoundStream->m_samplingFrequency );
             }
 
@@ -804,7 +804,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                     formatInfo->m_streams );
             if ( syncStream ) {
                 foundFreq =
-                    static_cast<ESamplingFrequency>(
+                    static_cast< ESamplingFrequency >(
                         syncStream->m_samplingFrequency );
             }
 
@@ -818,9 +818,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
         ++i;
     } while ( cmdSuccess
               && ( extStreamFormatCmd.getResponse() ==
-                   ExtendedStreamFormatCmd::eR_Implemented )
-              && ( extStreamFormatCmd.getStatus() !=
-                   ExtendedStreamFormatCmd::eS_NotUsed ) );
+                   ExtendedStreamFormatCmd::eR_Implemented ) );
 
     if ( !cmdSuccess ) {
         debugError( "setSampleRatePlug: Failed to retrieve format info\n" );
