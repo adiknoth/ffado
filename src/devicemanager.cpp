@@ -35,16 +35,6 @@
 #include <iostream>
 #include <unistd.h>
 
-// Unit directory SpecifierID/Version identifying a true Bebob AVC device
-#define BEBOB_AVCDEVICE_UNIT_SPECIFIER   0x0000a02d
-#define BEBOB_AVCDEVICE_UNIT_VERSION     0x10001
-
-// The vendor ID for MOTU devices
-#define MOTU_VENDOR_ID                   0x000001f2
-
-// The vendor ID for RME devices
-#define RME_VENDOR_ID                    0x00000a35
-
 using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
