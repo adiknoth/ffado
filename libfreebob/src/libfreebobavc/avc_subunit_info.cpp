@@ -19,7 +19,7 @@
  */
 
 #include "avc_subunit_info.h"
-#include "serialize.h"
+#include "avc_serialize.h"
 #include "ieee1394service.h"
 
 #include <netinet/in.h>

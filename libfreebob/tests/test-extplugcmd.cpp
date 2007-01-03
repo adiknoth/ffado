@@ -20,7 +20,7 @@
 
 #include "libfreebobavc/avc_extended_plug_info.h"
 #include "libfreebobavc/avc_plug_info.h"
-#include "libfreebobavc/serialize.h"
+#include "libfreebobavc/avc_serialize.h"
 #include "libfreebobavc/ieee1394service.h"
 
 #include <argp.h>

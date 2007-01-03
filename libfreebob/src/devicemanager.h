@@ -25,6 +25,8 @@
 
 #include "libfreebob/xmlparser.h"
 
+#include <glibmm/ustring.h>
+
 #include <vector>
 
 class Ieee1394Service;
@@ -51,10 +53,13 @@ class DeviceManager{
     int getDeviceNodeId( int deviceNr );
 
     IAvDevice* getAvDevice( int nodeId );
-	IAvDevice* getAvDeviceByIndex( int idx );
-	unsigned int getAvDeviceCount();
+    IAvDevice* getAvDeviceByIndex( int idx );
+    unsigned int getAvDeviceCount();
 
     xmlDocPtr getXmlDescription();
+
+    bool saveCache( Glib::ustring fileName );
+    bool loadCache( Glib::ustring fileName );
 
 protected:
     IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),

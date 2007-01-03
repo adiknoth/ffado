@@ -35,6 +35,8 @@
 #include "libstreaming/AmdtpPort.h"
 #include "libstreaming/AmdtpPortInfo.h"
 
+#include "libutil/serialize.h"
+
 #include "iavdevice.h"
 
 class ConfigRom;
@@ -46,9 +48,9 @@ namespace BeBoB {
 class AvDevice : public IAvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
-          Ieee1394Service& ieee1394Service,
+              Ieee1394Service& ieee1394Service,
               int nodeId,
-          int verboseLevel );
+              int verboseLevel );
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
@@ -71,10 +73,10 @@ public:
     virtual bool setId(unsigned int id);
 
     Ieee1394Service* get1394Service()
-    { return m_1394Service; }
+        { return m_1394Service; }
 
     AvPlugManager& getPlugManager()
-    { return m_plugManager; }
+        { return m_plugManager; }
 
     struct SyncInfo {
         SyncInfo( AvPlug& source,
@@ -84,8 +86,8 @@ public:
             , m_destination( &destination )
             , m_description( description )
             {}
-    AvPlug*     m_source;
-    AvPlug*     m_destination;
+        AvPlug*     m_source;
+        AvPlug*     m_destination;
         std::string m_description;
     };
 
@@ -95,6 +97,11 @@ public:
     const SyncInfo* getActiveSyncInfo() const
         { return m_activeSyncInfo; }
     bool setActiveSync( const SyncInfo& syncInfo );
+
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser );
+    static AvDevice* deserialize( Glib::ustring basePath,
+                                  Ieee1394Service& ieee1394Service,
+                                  Util::IODeserialize& deser );
 
 protected:
     bool enumerateSubUnits();
@@ -123,7 +130,7 @@ protected:
                  AvPlug::EAvPlugDirection plugDirection,
                  AvPlug::EAvPlugType type);
 
-    bool addPlugToProcessor( AvPlug& plug, FreebobStreaming::StreamProcessor *processor, 
+    bool addPlugToProcessor( AvPlug& plug, FreebobStreaming::StreamProcessor *processor,
                              FreebobStreaming::AmdtpAudioPort::E_Direction direction);
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
@@ -136,7 +143,7 @@ protected:
                                            AvPlugVector& prhs,
                                            std::string syncDescription );
 protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
+    std::auto_ptr<ConfigRom>( m_pConfigRom );
     Ieee1394Service* m_1394Service;
     int              m_nodeId;
     int              m_verboseLevel;

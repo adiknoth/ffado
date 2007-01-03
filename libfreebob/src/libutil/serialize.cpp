@@ -1,5 +1,5 @@
-/* bebob_serialize.cpp
- * Copyright (C) 2006 by Daniel Wagner
+/* serialize.cpp
+ * Copyright (C) 2006,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -18,7 +18,7 @@
  * MA 02111-1307 USA.
  */
 
-#include "bebob_serialize.h"
+#include "serialize.h"
 
 using namespace std;
 
@@ -43,9 +43,9 @@ void tokenize(const string& str,
 
 /////////////////////////////////
 
-BeBoB::XMLSerialize::XMLSerialize( const char* pFileName )
+Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
     : IOSerialize()
-    , m_filepath( pFileName )
+    , m_filepath( fileName )
 {
     try {
         m_doc.create_root_node( "bebob_cache" );
@@ -55,7 +55,7 @@ BeBoB::XMLSerialize::XMLSerialize( const char* pFileName )
 }
 
 
-BeBoB::XMLSerialize::~XMLSerialize()
+Util::XMLSerialize::~XMLSerialize()
 {
     try {
         m_doc.write_to_file_formatted( m_filepath );
@@ -66,13 +66,12 @@ BeBoB::XMLSerialize::~XMLSerialize()
 }
 
 bool
-BeBoB::XMLSerialize::write( const char* pMemberName,
-                            long long value )
+Util::XMLSerialize::write( std::string strMemberName,
+                           long long value )
 
 {
     vector<string> tokens;
-    string str( pMemberName );
-    tokenize( str, tokens, "/" );
+    tokenize( strMemberName, tokens, "/" );
 
     if ( tokens.size() == 0 ) {
         return false;
@@ -92,12 +91,11 @@ BeBoB::XMLSerialize::write( const char* pMemberName,
 }
 
 bool
-BeBoB::XMLSerialize::write( const char* pMemberName,
-                            Glib::ustring str)
+Util::XMLSerialize::write( std::string strMemberName,
+                           Glib::ustring str)
 {
     vector<string> tokens;
-    string memberName( pMemberName );
-    tokenize( memberName, tokens, "/" );
+    tokenize( strMemberName, tokens, "/" );
 
     if ( tokens.size() == 0 ) {
         return false;
@@ -114,7 +112,8 @@ BeBoB::XMLSerialize::write( const char* pMemberName,
 }
 
 xmlpp::Node*
-BeBoB::XMLSerialize::getNodePath( xmlpp::Node* pRootNode, std::vector<string>& tokens )
+Util::XMLSerialize::getNodePath( xmlpp::Node* pRootNode,
+                                 std::vector<string>& tokens )
 {
     // returns the correct node on which the new element has to be added.
     // if the path does not exist, it will be created.
@@ -154,9 +153,9 @@ BeBoB::XMLSerialize::getNodePath( xmlpp::Node* pRootNode, std::vector<string>& t
 
 /***********************************/
 
-BeBoB::XMLDeserialize::XMLDeserialize( const char* pFileName )
+Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName )
     : IODeserialize()
-    , m_filepath( pFileName )
+    , m_filepath( fileName )
 {
     try {
         m_parser.set_substitute_entities(); //We just want the text to
@@ -169,26 +168,28 @@ BeBoB::XMLDeserialize::XMLDeserialize( const char* pFileName )
 }
 
 
-BeBoB::XMLDeserialize::~XMLDeserialize()
+Util::XMLDeserialize::~XMLDeserialize()
 {
 }
 
 bool
-BeBoB::XMLDeserialize::read( const char* pMemberName,
-                             long long& value )
+Util::XMLDeserialize::read( std::string strMemberName,
+                            long long& value )
 
 {
     xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
 
-    xmlpp::NodeSet nodeSet = pNode->find( pMemberName );
+    xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
           it != nodeSet.end();
           ++it )
     {
-        const xmlpp::Element* pElement = dynamic_cast< const xmlpp::Element* >( *it );
+        const xmlpp::Element* pElement =
+            dynamic_cast< const xmlpp::Element* >( *it );
         if ( pElement && pElement->has_child_text() ) {
             char* tail;
-            value = strtoll( pElement->get_child_text()->get_content().c_str(), &tail, 0 );
+            value = strtoll( pElement->get_child_text()->get_content().c_str(),
+                             &tail, 0 );
             return true;
         }
         return false;
@@ -198,12 +199,12 @@ BeBoB::XMLDeserialize::read( const char* pMemberName,
 }
 
 bool
-BeBoB::XMLDeserialize::read( const char* pMemberName,
-                             Glib::ustring& str )
+Util::XMLDeserialize::read( std::string strMemberName,
+                            Glib::ustring& str )
 {
     xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
 
-    xmlpp::NodeSet nodeSet = pNode->find( pMemberName );
+    xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
           it != nodeSet.end();
           ++it )

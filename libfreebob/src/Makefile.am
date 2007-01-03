@@ -59,8 +59,6 @@ libfreebob_la_SOURCES = 				\
 	bebob/bebob_dl_codes.cpp			\
 	bebob/bebob_dl_bcd.h				\
 	bebob/bebob_dl_bcd.cpp				\
-	bebob/bebob_serialize.h				\
-	bebob/bebob_serialize.cpp			\
 	motu/motu_avdevice.cpp				\
 	motu/motu_avdevice.h				\
 	rme/rme_avdevice.cpp				\
@@ -83,7 +81,7 @@ libfreebob_la_SOURCES = 				\
 	libfreebobavc/avc_subunit_info.cpp		\
 	libfreebobavc/avc_unit_info.cpp			\
 	libfreebobavc/ieee1394service.cpp		\
-	libfreebobavc/serialize.cpp			\
+	libfreebobavc/avc_serialize.cpp			\
 	libfreebobavc/avc_connect.h			\
 	libfreebobavc/avc_definitions.h			\
 	libfreebobavc/avc_extended_cmd_generic.h	\
@@ -96,41 +94,44 @@ libfreebob_la_SOURCES = 				\
 	libfreebobavc/avc_subunit_info.h		\
 	libfreebobavc/avc_unit_info.h			\
 	libfreebobavc/ieee1394service.h			\
-	libfreebobavc/serialize.h			\
+	libfreebobavc/avc_serialize.h			\
 	debugmodule/debugmodule.h			\
 	debugmodule/debugmodule.cpp			\
-	libstreaming/cip.c	\
-	libstreaming/cyclecounter.h \
-	libstreaming/freebob_streaming.cpp	\
-	libstreaming/IsoHandler.cpp	\
-	libstreaming/IsoHandlerManager.cpp	\
-	libstreaming/IsoStream.cpp	\
-	libstreaming/PacketBuffer.cpp	\
-	libstreaming/PortManager.cpp	\
-	libstreaming/Port.cpp	\
-	libstreaming/StreamProcessor.cpp	\
-	libstreaming/StreamProcessorManager.cpp	\
-	libstreaming/AmdtpPortInfo.cpp	\
-	libstreaming/AmdtpPort.cpp	\
-	libstreaming/AmdtpStreamProcessor.cpp	\
-	libstreaming/ringbuffer.c	\
-	libstreaming/streamstatistics.cpp	\
-	libstreaming/MotuStreamProcessor.cpp	\
-	libstreaming/MotuPort.cpp	\
-	libstreaming/MotuPortInfo.cpp \
-	libutil/DelayLockedLoop.h 	\
-	libutil/Atomic.h 	\
-	libutil/PosixThread.h  	\
-	libutil/Thread.h	\
-	libutil/DelayLockedLoop.cpp	\
-	libutil/PosixThread.cpp \
-	libutil/Time.c  \
-	libutil/Time.h  \
-	libutil/TimeSource.cpp \
-	libutil/TimeSource.h \
-	libutil/SystemTimeSource.cpp \
-	libutil/SystemTimeSource.h \
-	libutil/cycles.h
+	libstreaming/cip.c				\
+	libstreaming/cyclecounter.h 			\
+	libstreaming/freebob_streaming.cpp		\
+	libstreaming/IsoHandler.cpp			\
+	libstreaming/IsoHandlerManager.cpp		\
+	libstreaming/IsoStream.cpp			\
+	libstreaming/PacketBuffer.cpp			\
+	libstreaming/PortManager.cpp			\
+	libstreaming/Port.cpp				\
+	libstreaming/StreamProcessor.cpp		\
+	libstreaming/StreamProcessorManager.cpp		\
+	libstreaming/AmdtpPortInfo.cpp			\
+	libstreaming/AmdtpPort.cpp			\
+	libstreaming/AmdtpStreamProcessor.cpp		\
+	libstreaming/ringbuffer.c			\
+	libstreaming/streamstatistics.cpp		\
+	libstreaming/MotuStreamProcessor.cpp		\
+	libstreaming/MotuPort.cpp			\
+	libstreaming/MotuPortInfo.cpp 			\
+	libutil/DelayLockedLoop.h 			\
+	libutil/Atomic.h 				\
+	libutil/PosixThread.h  				\
+	libutil/Thread.h				\
+	libutil/DelayLockedLoop.cpp			\
+	libutil/PosixThread.cpp 			\
+	libutil/Time.c  				\
+	libutil/Time.h  				\
+	libutil/TimeSource.cpp 				\
+	libutil/TimeSource.h 				\
+	libutil/SystemTimeSource.cpp 			\
+	libutil/SystemTimeSource.h 			\
+	libutil/cycles.h				\
+	libutil/serialize.h				\
+	libutil/serialize.cpp
+
 
 libfreebob_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
@@ -142,35 +143,29 @@ nobase_dist_pkgdata_DATA = 				\
 	maudio/fw410.xml 				\
 	maudio/fwap.xml
 
-bin_PROGRAMS = freebob_downloader freebob_sync
 
-freebob_downloader_SOURCES =    			\
-        freebob-downloader.cpp
-freebob_downloader_LDADD =      			\
-        libfreebob.la           			\
-        $(LIBRAW1394_LIBS)      			\
-        $(LIBIEC61883_LIBS)     			\
-        $(LIBAVC1394_LIBS)				\
-        -lpthread
+###############
 
-freebob_sync_SOURCES =    				\
-        freebob-sync.cpp
-freebob_sync_LDADD =     				\
-        libfreebob.la           			\
-        $(LIBRAW1394_LIBS)      			\
-        $(LIBIEC61883_LIBS)     			\
-        $(LIBAVC1394_LIBS)				\
-        -lpthread
+bin_PROGRAMS = freebob-downloader freebob-sync
 
-noinst_PROGRAMS = test-dll test-debugmodule bebob_unittests
+freebob_downloader_SOURCES = freebob-downloader.cpp
+freebob_downloader_LDADD = $(top_builddir)/src/libfreebob.la
+
+freebob_sync_SOURCES = freebob-sync.cpp
+freebob_sync_LDADD = $(top_builddir)/src/libfreebob.la
+
+###############
+
+noinst_PROGRAMS = test-dll test-debugmodule test-unittests test-ser
 
 test_dll_SOURCES = libutil/test-dll.cpp
-test_dll_LDADD = libfreebob.la
+test_dll_LDADD = $(top_builddir)/src/libfreebob.la
 
 test_debugmodule_SOURCES = debugmodule/test_debugmodule.cpp
-test_debugmodule_LDADD = libfreebob.la
+test_debugmodule_LDADD = $(top_builddir)/src/libfreebob.la
 
-bebob_unittests_SOURCES = bebob/bebob_unittests.cpp
-bebob_unittests_LDADD   = $(top_builddir)/src/libfreebob.la \
-        $(LIBXMLCPP_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
+test_unittests_SOURCES = libutil/unittests.cpp
+test_unittests_LDADD = $(top_builddir)/src/libfreebob.la
 
+test_ser_SOURCES = ser.cpp
+test_ser_LDADD = $(top_builddir)/src/libfreebob.la

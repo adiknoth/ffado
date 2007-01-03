@@ -1,5 +1,5 @@
-/* bebob_serialize.h
- * Copyright (C) 2006 by Daniel Wagner
+/* serialize.h
+ * Copyright (C) 2007 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -25,57 +25,59 @@
 
 #include <iostream>
 
-namespace BeBoB {
-    class IOSerialize {
-    public:
-        IOSerialize() {}
-        virtual ~IOSerialize() {}
+namespace Util {
 
-        virtual bool write( const char* pMemberName,
-                            long long value ) = 0;
-        virtual bool write( const char* pMemberName,
-                            Glib::ustring str) = 0;
+     class IOSerialize {
+     public:
+         IOSerialize() {}
+         virtual ~IOSerialize() {}
 
-        template <typename T>  bool write( const char* pMemberName, T value );
-    };
+         virtual bool write( std::string strMemberName,
+                             long long value ) = 0;
+         virtual bool write( std::string strMemberName,
+                             Glib::ustring str) = 0;
+
+         template <typename T>  bool write( std::string strMemberName, T value );
+     };
 
     class IODeserialize {
     public:
         IODeserialize() {}
         virtual ~IODeserialize() {}
 
-        virtual bool read( const char* pMemberName,
+        virtual bool read( std::string strMemberName,
                            long long& value ) = 0;
-        virtual bool read( const char* pMemberName,
+        virtual bool read( std::string strMemberName,
                            Glib::ustring& str ) = 0;
 
-        template <typename T> bool read( const char* pMemberName, T& value );
+        template <typename T> bool read( std::string strMemberName, T& value );
     };
 
     class XMLSerialize: public IOSerialize {
     public:
-        XMLSerialize( const char* pFileName );
+        XMLSerialize( Glib::ustring fileName );
         virtual ~XMLSerialize();
 
-        virtual bool write( const char* pMemberName,
+        virtual bool write( std::string strMemberName,
                             long long value );
-        virtual bool write( const char* pMemberName,
+        virtual bool write( std::string strMemberName,
                             Glib::ustring str);
     private:
         Glib::ustring    m_filepath;
         xmlpp::Document  m_doc;
 
-	xmlpp::Node* getNodePath( xmlpp::Node* pRootNode, std::vector<std::string>& tokens );
+        xmlpp::Node* getNodePath( xmlpp::Node* pRootNode,
+                                  std::vector<std::string>& tokens );
     };
 
     class XMLDeserialize: public IODeserialize {
     public:
-        XMLDeserialize( const char* pFileName );
+        XMLDeserialize( Glib::ustring fileName );
         virtual ~XMLDeserialize();
 
-        virtual bool read( const char* pMemberName,
+        virtual bool read( std::string strMemberName,
                            long long& value );
-        virtual bool read( const char* pMemberName,
+        virtual bool read( std::string strMemberName,
                            Glib::ustring& str );
     private:
         Glib::ustring    m_filepath;
@@ -83,17 +85,19 @@ namespace BeBoB {
     };
 
 
-    //////////////////////////////////////////
+//////////////////////////////////////////
 
-    template <typename T> bool IOSerialize::write( const char* pMemberName, T value )
+    template <typename T> bool IOSerialize::write( std::string strMemberName,
+                                                   T value )
     {
-        return write( pMemberName, static_cast<long long>( value ) );
+        return write( strMemberName, static_cast<long long>( value ) );
     }
 
-    template <typename T> bool IODeserialize::read( const char* pMemberName, T& value )
+    template <typename T> bool IODeserialize::read( std::string strMemberName,
+                                                    T& value )
     {
-	long long tmp;
-        bool result = read( pMemberName, tmp );
+        long long tmp;
+        bool result = read( strMemberName, tmp );
         value = static_cast<T>( tmp );
         return result;
     }

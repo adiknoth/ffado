@@ -19,7 +19,7 @@
  */
 
 #include "avc_generic.h"
-#include "serialize.h"
+#include "avc_serialize.h"
 #include "ieee1394service.h"
 
 #include "debugmodule/debugmodule.h"
@@ -176,11 +176,11 @@ AVCCommand::fire()
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%s:\n", getCmdName() );
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE,  "  Request:");
         showFcpFrame( m_fcpFrame, fcpFrameSize );
-    
+
         StringSerializer se_dbg;
         serialize( se_dbg );
-    
-        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s", 
+
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s",
                          se_dbg.getString().c_str());
     }
 
@@ -210,15 +210,15 @@ AVCCommand::fire()
 
             StringSerializer se_dbg;
             serialize( se_dbg );
-            
-            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s", 
+
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s",
                              se_dbg.getString().c_str());
         }
         break;
         default:
             debugWarning( "unexpected response received (0x%x)\n", m_eResponse );
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE,"  Response:");
-            
+
             BufferDeserialize de( buf, resp_len );
             deserialize( de );
 
@@ -228,7 +228,7 @@ AVCCommand::fire()
     } else {
 	   debugWarning( "no response\n" );
     }
-    
+
     debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n" );
 
     m_1394Service->transactionBlockClose();

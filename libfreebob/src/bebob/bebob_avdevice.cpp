@@ -26,7 +26,7 @@
 #include "libfreebobavc/avc_extended_plug_info.h"
 #include "libfreebobavc/avc_subunit_info.h"
 #include "libfreebobavc/avc_extended_stream_format.h"
-#include "libfreebobavc/serialize.h"
+#include "libfreebobavc/avc_serialize.h"
 #include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/avc_definitions.h"
 
@@ -43,7 +43,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId,
                     int verboseLevel )
-    : m_configRom( configRom )
+    : m_pConfigRom( configRom )
     , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
@@ -91,7 +91,7 @@ AvDevice::~AvDevice()
 ConfigRom&
 AvDevice::getConfigRom() const
 {
-    return *m_configRom;
+    return *m_pConfigRom;
 }
 
 struct VendorModelEntry {
@@ -543,10 +543,10 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
                 return false;
             }
-            
+
             m_subunits.push_back( subunit );
             audioSubunitFound=true;
-            
+
             break;
         case AVCCommand::eST_Music:
             subunit = new AvDeviceSubunitMusic( *this, subunitId,
@@ -555,10 +555,10 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
                 return false;
             }
-            
+
             m_subunits.push_back( subunit );
             musicSubunitFound=true;
-            
+
             break;
         default:
             debugOutput( DEBUG_LEVEL_NORMAL,
@@ -937,7 +937,7 @@ AvDevice::prepare() {
         return false;
     }
 
-    if (!addPlugToProcessor(*outputPlug,m_receiveProcessor, 
+    if (!addPlugToProcessor(*outputPlug,m_receiveProcessor,
         FreebobStreaming::AmdtpAudioPort::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
         return false;
@@ -952,12 +952,12 @@ AvDevice::prepare() {
 //                                   m_1394Service->getPort(),
 //                                   samplerate,
 //                                   inputPlug->getNrOfChannels());
-//         
+//
 //         if(!m_receiveProcessor2->init()) {
 //             debugFatal("Could not initialize snooping receive processor!\n");
 //             return false;
 //         }
-//         if (!addPlugToProcessor(*inputPlug,m_receiveProcessor2, 
+//         if (!addPlugToProcessor(*inputPlug,m_receiveProcessor2,
 //             FreebobStreaming::AmdtpAudioPort::E_Capture)) {
 //             debugFatal("Could not add plug to processor!\n");
 //             return false;
@@ -969,17 +969,17 @@ AvDevice::prepare() {
                                 m_1394Service->getPort(),
                                 samplerate,
                                 inputPlug->getNrOfChannels());
-                                
+
         if(!m_transmitProcessor->init()) {
             debugFatal("Could not initialize transmit processor!\n");
             return false;
-        
+
         }
-        
+
         // FIXME: do this the proper way!
         m_transmitProcessor->syncmaster=m_receiveProcessor;
-    
-        if (!addPlugToProcessor(*inputPlug,m_transmitProcessor, 
+
+        if (!addPlugToProcessor(*inputPlug,m_transmitProcessor,
             FreebobStreaming::AmdtpAudioPort::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
@@ -991,8 +991,8 @@ AvDevice::prepare() {
 
 bool
 AvDevice::addPlugToProcessor(
-    AvPlug& plug, 
-    FreebobStreaming::StreamProcessor *processor, 
+    AvPlug& plug,
+    FreebobStreaming::StreamProcessor *processor,
     FreebobStreaming::AmdtpAudioPort::E_Direction direction) {
 
     AvPlug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
@@ -1009,9 +1009,9 @@ AvDevice::addPlugToProcessor(
         {
             const AvPlug::ChannelInfo* channelInfo = &( *it );
             std::ostringstream portname;
-            
+
             portname << "dev" << m_id << "_" << channelInfo->m_name;
-            
+
             FreebobStreaming::Port *p=NULL;
             switch(clusterInfo->m_portType) {
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
@@ -1021,13 +1021,13 @@ AvDevice::addPlugToProcessor(
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
                 p=new FreebobStreaming::AmdtpAudioPort(
                         portname.str(),
-                        direction, 
+                        direction,
                         // \todo: streaming backend expects indexing starting from 0
                         // but bebob reports it starting from 1. Decide where
                         // and how to handle this (pp: here)
-                        channelInfo->m_streamPosition - 1, 
-                        channelInfo->m_location, 
-                        FreebobStreaming::AmdtpPortInfo::E_MBLA, 
+                        channelInfo->m_streamPosition - 1,
+                        channelInfo->m_location,
+                        FreebobStreaming::AmdtpPortInfo::E_MBLA,
                         clusterInfo->m_portType
                 );
                 break;
@@ -1035,13 +1035,13 @@ AvDevice::addPlugToProcessor(
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
                 p=new FreebobStreaming::AmdtpMidiPort(
                         portname.str(),
-                        direction, 
+                        direction,
                         // \todo: streaming backend expects indexing starting from 0
                         // but bebob reports it starting from 1. Decide where
                         // and how to handle this (pp: here)
-                        channelInfo->m_streamPosition - 1, 
-                        channelInfo->m_location, 
-                        FreebobStreaming::AmdtpPortInfo::E_Midi, 
+                        channelInfo->m_streamPosition - 1,
+                        channelInfo->m_location,
+                        FreebobStreaming::AmdtpPortInfo::E_Midi,
                         clusterInfo->m_portType
                 );
 
@@ -1060,7 +1060,7 @@ AvDevice::addPlugToProcessor(
             if (!p) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->m_name.c_str());
             } else {
-        
+
                 if (!processor->addPort(p)) {
                     debugWarning("Could not register port with stream processor\n");
                     return false;
@@ -1071,7 +1071,7 @@ AvDevice::addPlugToProcessor(
     return true;
 }
 
-int 
+int
 AvDevice::getStreamCount() {
     return 2; // one receive, one transmit
 }
@@ -1098,58 +1098,58 @@ AvDevice::startStreamByIndex(int i) {
     int iso_channel=0;
     int plug=0;
     int hostplug=-1;
-    
+
 //     if (m_snoopMode) {
-//     
+//
 //         switch (i) {
 //         case 0:
 //             // snooping doesn't use CMP, but obtains the info of the channel
 //             // from the target plug
-//             
+//
 //             // TODO: get isochannel from plug
-//             
+//
 //             // set the channel obtained by the connection management
 //             m_receiveProcessor->setChannel(iso_channel);
 //             break;
 //         case 1:
 //             // snooping doesn't use CMP, but obtains the info of the channel
 //             // from the target plug
-//             
+//
 //             // TODO: get isochannel from plug
-//             
+//
 //             // set the channel obtained by the connection management
 //             m_receiveProcessor2->setChannel(iso_channel);
-// 
+//
 //             break;
 //         default:
 //             return 0;
 //         }
 //     } else {
-    
+
         switch (i) {
         case 0:
             // do connection management: make connection
             iso_channel = iec61883_cmp_connect(
-                m_1394Service->getHandle(), 
-                m_nodeId | 0xffc0, 
+                m_1394Service->getHandle(),
+                m_nodeId | 0xffc0,
                 &plug,
-                raw1394_get_local_id (m_1394Service->getHandle()), 
-                &hostplug, 
+                raw1394_get_local_id (m_1394Service->getHandle()),
+                &hostplug,
                 &m_receiveProcessorBandwidth);
-            
+
             // set the channel obtained by the connection management
             m_receiveProcessor->setChannel(iso_channel);
             break;
         case 1:
             // do connection management: make connection
             iso_channel = iec61883_cmp_connect(
-                m_1394Service->getHandle(), 
-                raw1394_get_local_id (m_1394Service->getHandle()), 
-                &hostplug, 
-                m_nodeId | 0xffc0, 
+                m_1394Service->getHandle(),
+                raw1394_get_local_id (m_1394Service->getHandle()),
+                &hostplug,
+                m_nodeId | 0xffc0,
                 &plug,
                 &m_transmitProcessorBandwidth);
-            
+
             // set the channel obtained by the connection management
             m_transmitProcessor->setChannel(iso_channel);
             break;
@@ -1157,7 +1157,7 @@ AvDevice::startStreamByIndex(int i) {
             return 0;
         }
 //     }
-    
+
     return 0;
 
 }
@@ -1172,11 +1172,11 @@ AvDevice::stopStreamByIndex(int i) {
 //         switch (i) {
 //         case 0:
 //             // do connection management: break connection
-//     
+//
 //             break;
 //         case 1:
 //             // do connection management: break connection
-// 
+//
 //             break;
 //         default:
 //             return 0;
@@ -1186,22 +1186,22 @@ AvDevice::stopStreamByIndex(int i) {
         case 0:
             // do connection management: break connection
             iec61883_cmp_disconnect(
-                m_1394Service->getHandle(), 
-                m_nodeId | 0xffc0, 
+                m_1394Service->getHandle(),
+                m_nodeId | 0xffc0,
                 plug,
-                raw1394_get_local_id (m_1394Service->getHandle()), 
-                hostplug, 
+                raw1394_get_local_id (m_1394Service->getHandle()),
+                hostplug,
                 m_receiveProcessor->getChannel(),
                 m_receiveProcessorBandwidth);
-    
+
             break;
         case 1:
             // do connection management: break connection
             iec61883_cmp_disconnect(
-                m_1394Service->getHandle(), 
-                raw1394_get_local_id (m_1394Service->getHandle()), 
-                hostplug, 
-                m_nodeId | 0xffc0, 
+                m_1394Service->getHandle(),
+                raw1394_get_local_id (m_1394Service->getHandle()),
+                hostplug,
+                m_nodeId | 0xffc0,
                 plug,
                 m_transmitProcessor->getChannel(),
                 m_transmitProcessorBandwidth);
@@ -1211,9 +1211,39 @@ AvDevice::stopStreamByIndex(int i) {
             return 0;
         }
 //     }
-    
+
     return 0;
 }
 
+bool
+AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
+{
+    // create base path string
+    /*
+    char* buf;
+    asprintf( &buf, "%08x%08x",
+              ( unsigned int ) ( m_pConfigRom->getGuid() >> 32 ),
+              ( unsigned int ) ( m_pConfigRom->getGuid() & 0xffffffff ) );
+    std::string avDevicePath = basePath
+                               + m_pConfigRom->getVendorName() + "/"
+                               + m_pConfigRom->getModelName() + "/"
+                               + buf;
+    free( buf );
+    */
+
+    bool result;
+    result = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
+
+    return result;
+}
+
+AvDevice*
+AvDevice::deserialize( Glib::ustring basePath,
+                       Ieee1394Service& ieee1394Service,
+                       Util::IODeserialize& deser )
+{
+
+    return 0;
+}
 
 } // end of namespace

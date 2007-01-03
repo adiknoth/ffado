@@ -19,7 +19,7 @@
  */
 
 #include "avc_extended_plug_info.h"
-#include "serialize.h"
+#include "avc_serialize.h"
 #include "ieee1394service.h"
 
 #include <netinet/in.h>
@@ -626,7 +626,7 @@ ExtendedPlugInfoInfoType::serialize( IOSSerialize& se )
     se.write( m_infoType, buf );
 
     free(buf);
-    
+
     switch ( m_infoType ) {
     case eIT_PlugType:
         if ( m_plugType ) {

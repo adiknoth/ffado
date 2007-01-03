@@ -1,5 +1,5 @@
-/* serialize.h
- * Copyright (C) 2005 by Daniel Wagner
+/* avc_serialize.h
+ * Copyright (C) 2005,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *

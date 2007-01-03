@@ -19,7 +19,7 @@
  */
 
 #include "avc_function_block.h"
-#include "serialize.h"
+#include "avc_serialize.h"
 #include "ieee1394service.h"
 
 

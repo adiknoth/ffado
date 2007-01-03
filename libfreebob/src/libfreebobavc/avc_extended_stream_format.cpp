@@ -19,7 +19,7 @@
  */
 
 #include "avc_extended_stream_format.h"
-#include "serialize.h"
+#include "avc_serialize.h"
 #include "ieee1394service.h"
 
 #include <netinet/in.h>

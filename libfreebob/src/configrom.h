@@ -24,6 +24,7 @@
 #include "fbtypes.h"
 #include "csr1212.h"
 
+#include "libutil/serialize.h"
 #include "debugmodule/debugmodule.h"
 
 #include <string>
@@ -37,11 +38,13 @@ class ConfigRom {
 
     bool initialize();
 
+    bool operator == ( const ConfigRom& rhs );
+
     const fb_nodeid_t getNodeId() const;
     const fb_octlet_t getGuid() const;
-    const std::string getModelName() const;
-    const std::string getVendorName() const;
-    
+    const Glib::ustring getModelName() const;
+    const Glib::ustring getVendorName() const;
+
     const unsigned int getModelId() const;
     const unsigned int getVendorId() const;
     const unsigned int getUnitSpecifierId() const;
@@ -65,8 +68,12 @@ class ConfigRom {
 	{ return m_nodeVendorId; }
 
     bool updatedNodeId();
+    bool setNodeId( fb_nodeid_t nodeId );
 
     void printConfigRom() const;
+
+    bool serialize( Glib::ustring path, Util::IOSerialize& ser );
+    static ConfigRom* deserialize( Glib::ustring path, Util::IODeserialize& deser );
 
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,
@@ -79,8 +86,8 @@ class ConfigRom {
     fb_nodeid_t      m_nodeId;
     bool             m_avcDevice;
     fb_octlet_t      m_guid;
-    std::string      m_vendorName;
-    std::string      m_modelName;
+    Glib::ustring    m_vendorName;
+    Glib::ustring    m_modelName;
     unsigned int     m_vendorId;
     unsigned int     m_modelId;
     unsigned int     m_unit_specifier_id;
@@ -101,7 +108,8 @@ class ConfigRom {
     struct csr1212_csr*    m_csr;
 
 private:
-    ConfigRom( const ConfigRom& );
+    ConfigRom( const ConfigRom& ); // do not allow copy ctor
+    ConfigRom();                   // ctor for deserialition
 
     DECLARE_DEBUG_MODULE;
 };
