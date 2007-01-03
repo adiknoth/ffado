@@ -19,7 +19,7 @@
 */
 
 #include "libfreebobavc/avc_function_block.h"
-#include "libfreebobavc/serialize.h"
+#include "libfreebobavc/avc_serialize.h"
 #include "libfreebobavc/ieee1394service.h"
 
 const bool bVerbose = false;

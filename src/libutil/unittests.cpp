@@ -1,5 +1,5 @@
-/* bebob_unittests.cpp
- * Copyright (C) 2006 by Daniel Wagner
+/* unittests.cpp
+ * Copyright (C) 2006,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -18,12 +18,12 @@
  * MA 02111-1307 USA.
  */
 
-#include "bebob_serialize.h"
+#include "serialize.h"
 #include <libraw1394/raw1394.h>
 
 #include <stdio.h>
 
-using namespace BeBoB;
+using namespace Util;
 
 ///////////////////////////////////////
 

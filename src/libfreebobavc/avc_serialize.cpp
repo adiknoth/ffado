@@ -1,5 +1,5 @@
-/* serialize.cpp
- * Copyright (C) 2005 by Daniel Wagner
+/* avc_serialize.cpp
+ * Copyright (C) 2005,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -18,7 +18,7 @@
  * MA 02111-1307 USA.
  */
 
-#include "serialize.h"
+#include "avc_serialize.h"
 
 #include <iostream>
 #include <iomanip>
@@ -49,10 +49,10 @@ StringSerializer::write( byte_t d, const char* name )
 {
     char* result;
     asprintf( &result, "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
-    
+
     m_string += result;
     free( result );
-    
+
     m_cnt += sizeof( byte_t );
 
     return true;
@@ -63,10 +63,10 @@ StringSerializer::write( quadlet_t d, const char* name )
 {
     char* result;
     asprintf( &result, "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
-    
+
     m_string += result;
     free( result );
-    
+
     m_cnt += sizeof( quadlet_t );
     return true;
 }

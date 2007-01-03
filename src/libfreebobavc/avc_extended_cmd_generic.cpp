@@ -19,7 +19,7 @@
  */
 
 #include "avc_extended_cmd_generic.h"
-#include "serialize.h"
+#include "avc_serialize.h"
 #include "ieee1394service.h"
 
 UnitPlugAddress::UnitPlugAddress( EPlugType plugType,  plug_type_t plugId )

@@ -26,7 +26,7 @@
 
 #include "libfreebobavc/avc_plug_info.h"
 #include "libfreebobavc/avc_extended_stream_format.h"
-#include "libfreebobavc/serialize.h"
+#include "libfreebobavc/avc_serialize.h"
 
 namespace BeBoB {
 

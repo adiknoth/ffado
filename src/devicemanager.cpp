@@ -106,7 +106,7 @@ DeviceManager::discover( int verboseLevel )
           ++nodeId )
     {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
-        
+
         std::auto_ptr<ConfigRom> configRom =
             std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
                                                      nodeId ) );
@@ -240,7 +240,7 @@ DeviceManager::getAvDeviceByIndex( int idx )
 	return m_avDevices.at(idx);
 }
 
-unsigned int 
+unsigned int
 DeviceManager::getAvDeviceCount( )
 {
 	return m_avDevices.size();
@@ -340,7 +340,7 @@ DeviceManager::getXmlDescription()
             debugError( "Couldn't create 'GUID' node\n" );
             xmlFreeDoc( doc );
             xmlCleanupParser();
-            
+
             free(result);
             return 0;
         }
@@ -354,7 +354,7 @@ DeviceManager::getXmlDescription()
             free(result);
             return 0;
         }
-        
+
         free(result);
     }
 
@@ -367,3 +367,81 @@ DeviceManager::deinitialize()
     return true;
 }
 
+bool
+DeviceManager::saveCache( Glib::ustring fileName )
+{
+    int i = 0;
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+          it != m_avDevices.end();
+          ++it )
+    {
+        IAvDevice* pAvDevice = *it;
+        BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast< BeBoB::AvDevice* >( pAvDevice );
+        if ( pBeBoBDevice ) {
+            Util::XMLSerialize ser( fileName );
+            std::string idx = "id" + i;
+            Glib::ustring basePath = "BeBoB/" + idx + "/";
+            i++;
+            pBeBoBDevice->serialize( basePath, ser );
+            std::cout << "a bebob device serialized" << std::endl;
+            return true;
+        }
+    }
+    return true;
+}
+
+bool
+DeviceManager::loadCache( Glib::ustring fileName )
+{
+    Util::XMLDeserialize deser( fileName );
+    BeBoB::AvDevice* pBeBoBDevice = 0;
+    int i = 0;
+
+    typedef std::vector<ConfigRom*> ConfigRomVector;
+    ConfigRomVector configRoms;
+
+    for ( fb_nodeid_t nodeId = 0;
+          nodeId < m_1394Service->getNodeCount();
+          ++nodeId )
+    {
+        ConfigRom* pConfigRom  =  new ConfigRom( *m_1394Service, nodeId );
+        if ( !pConfigRom->initialize() ) {
+            // \todo If a PHY on the bus is in power safe mode then
+            // the config rom is missing. So this might be just
+            // such this case and we can safely skip it. But it might
+            // be there is a real software problem on our side.
+            // This should be handled more carefuly.
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                         "Could not read config rom from device (node id %d). "
+                         "Skip device discovering for this node\n",
+                         nodeId );
+            delete pConfigRom;
+            continue;
+        }
+        configRoms.push_back( pConfigRom );
+    }
+
+    do {
+        std::string idx = "id" + i;
+        pBeBoBDevice = BeBoB::AvDevice::deserialize(
+            "BeBoB/" + idx + "/",
+            *m_1394Service,
+            deser );
+        ++i;
+        if ( pBeBoBDevice ) {
+            for (ConfigRomVector::iterator it = configRoms.begin();
+                 it != configRoms.end();
+                 ++it )
+            {
+                ConfigRom* pConfigRom = *it;
+
+                if ( pBeBoBDevice->getConfigRom() == *pConfigRom ) {
+                    pBeBoBDevice->getConfigRom().setNodeId( pConfigRom->getNodeId() );
+                    // m_avDevices.push_back( pBeBoBDevice );
+                }
+            }
+        }
+    } while ( pBeBoBDevice );
+
+    return true;
+}

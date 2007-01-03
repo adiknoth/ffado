@@ -23,7 +23,7 @@
 
 #include "fbtypes.h"
 
-#include "libfreebobavc/serialize.h"
+#include "libfreebobavc/avc_serialize.h"
 
 namespace BeBoB {
     enum EBootloaderProtocolVersion {
