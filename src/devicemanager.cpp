@@ -1,5 +1,5 @@
  /* devicemanager.cpp
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -33,6 +33,8 @@
 #include "maudio/maudio_avdevice.h"
 
 #include <iostream>
+#include <sstream>
+
 #include <unistd.h>
 
 using namespace std;
@@ -368,13 +370,21 @@ DeviceManager::saveCache( Glib::ustring fileName )
         IAvDevice* pAvDevice = *it;
         BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast< BeBoB::AvDevice* >( pAvDevice );
         if ( pBeBoBDevice ) {
+            // Let's use a very simple path to find the devices later.
+            // Since under hood there will an xml node name this should
+            // adhere the needed naming rules. Of course we could give it
+            // a good node name and add an attribute but that would mean
+            // we have to expose a bigger interface from IOSerialize/IODesialize,
+            // which is just not needed. KISS.
+            ostringstream strstrm;
+            strstrm << "id" << i;
+            Glib::ustring basePath = "BeBoB/" + strstrm.str() + "/";
+
             Util::XMLSerialize ser( fileName );
-            std::string idx = "id" + i;
-            Glib::ustring basePath = "BeBoB/" + idx + "/";
-            i++;
             pBeBoBDevice->serialize( basePath, ser );
+
+            i++;
             std::cout << "a bebob device serialized" << std::endl;
-            return true;
         }
     }
     return true;
@@ -412,9 +422,10 @@ DeviceManager::loadCache( Glib::ustring fileName )
     }
 
     do {
-        std::string idx = "id" + i;
+        ostringstream strstrm;
+        strstrm << "id" << i;
         pBeBoBDevice = BeBoB::AvDevice::deserialize(
-            "BeBoB/" + idx + "/",
+            "BeBoB/" + strstrm.str() + "/",
             *m_1394Service,
             deser );
         ++i;
