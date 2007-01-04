@@ -426,8 +426,9 @@ DeviceManager::loadCache( Glib::ustring fileName )
         strstrm << "id" << i;
         pBeBoBDevice = BeBoB::AvDevice::deserialize(
             "BeBoB/" + strstrm.str() + "/",
-            *m_1394Service,
-            deser );
+            deser,
+            *m_1394Service );
+
         ++i;
         if ( pBeBoBDevice ) {
             for (ConfigRomVector::iterator it = configRoms.begin();
@@ -439,6 +440,7 @@ DeviceManager::loadCache( Glib::ustring fileName )
                 if ( pBeBoBDevice->getConfigRom() == *pConfigRom ) {
                     pBeBoBDevice->getConfigRom().setNodeId( pConfigRom->getNodeId() );
                     // m_avDevices.push_back( pBeBoBDevice );
+
                 }
             }
         }

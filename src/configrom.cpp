@@ -504,54 +504,61 @@ bool
 ConfigRom::serialize( Glib::ustring path, Util::IOSerialize& ser )
 {
     bool result;
-    result  = ser.write( path + "/m_nodeId", m_nodeId );
-    result &= ser.write( path + "/m_avcDevice",  m_avcDevice );
-    result &= ser.write( path + "/m_guid", m_guid );
-    result &= ser.write( path + "/m_vendorName", Glib::ustring( m_vendorName ) );
-    result &= ser.write( path + "/m_modelName", Glib::ustring( m_modelName ) );
-    result &= ser.write( path + "/m_vendorId", m_vendorId );
-    result &= ser.write( path + "/m_modelId", m_modelId );
-    result &= ser.write( path + "/m_unit_specifier_id", m_unit_specifier_id );
-    result &= ser.write( path + "/m_unit_version",  m_unit_version );
-    result &= ser.write( path + "/m_isIsoResourceManager", m_isIsoResourceManager );
-    result &= ser.write( path + "/m_isCycleMasterCapable", m_isCycleMasterCapable );
-    result &= ser.write( path + "/m_isSupportIsoOperations", m_isSupportIsoOperations );
-    result &= ser.write( path + "/m_isBusManagerCapable", m_isBusManagerCapable );
-    result &= ser.write( path + "/m_cycleClkAcc", m_cycleClkAcc );
-    result &= ser.write( path + "/m_maxRec", m_maxRec );
-    result &= ser.write( path + "/m_nodeVendorId", m_nodeVendorId );
-    result &= ser.write( path + "/m_chipIdHi", m_chipIdHi );
-    result &= ser.write( path + "/m_chipIdLow", m_chipIdLow );
+    result  = ser.write( path + "m_nodeId", m_nodeId );
+    result &= ser.write( path + "m_avcDevice",  m_avcDevice );
+    result &= ser.write( path + "m_guid", m_guid );
+    result &= ser.write( path + "m_vendorName", Glib::ustring( m_vendorName ) );
+    result &= ser.write( path + "m_modelName", Glib::ustring( m_modelName ) );
+    result &= ser.write( path + "m_vendorId", m_vendorId );
+    result &= ser.write( path + "m_modelId", m_modelId );
+    result &= ser.write( path + "m_unit_specifier_id", m_unit_specifier_id );
+    result &= ser.write( path + "m_unit_version",  m_unit_version );
+    result &= ser.write( path + "m_isIsoResourceManager", m_isIsoResourceManager );
+    result &= ser.write( path + "m_isCycleMasterCapable", m_isCycleMasterCapable );
+    result &= ser.write( path + "m_isSupportIsoOperations", m_isSupportIsoOperations );
+    result &= ser.write( path + "m_isBusManagerCapable", m_isBusManagerCapable );
+    result &= ser.write( path + "m_cycleClkAcc", m_cycleClkAcc );
+    result &= ser.write( path + "m_maxRec", m_maxRec );
+    result &= ser.write( path + "m_nodeVendorId", m_nodeVendorId );
+    result &= ser.write( path + "m_chipIdHi", m_chipIdHi );
+    result &= ser.write( path + "m_chipIdLow", m_chipIdLow );
     return result;
 }
 
 ConfigRom*
-ConfigRom::deserialize( Glib::ustring path, Util::IODeserialize& deser )
+ConfigRom::deserialize( Glib::ustring path, Util::IODeserialize& deser, Ieee1394Service& ieee1394Service )
 {
     ConfigRom* pConfigRom = new ConfigRom;
     if ( !pConfigRom ) {
         return 0;
     }
 
+    pConfigRom->m_1394Service = &ieee1394Service;
+
     bool result;
-    result  = deser.read( path + "/m_nodeId", pConfigRom->m_nodeId );
-    result &= deser.read( path + "/m_avcDevice", pConfigRom->m_avcDevice );
-    result &= deser.read( path + "/m_guid", pConfigRom->m_guid );
-    result &= deser.read( path + "/m_vendorName", pConfigRom->m_vendorName );
-    result &= deser.read( path + "/m_modelName", pConfigRom->m_modelName );
-    result &= deser.read( path + "/m_vendorId", pConfigRom->m_vendorId );
-    result &= deser.read( path + "/m_modelId", pConfigRom->m_modelId );
-    result &= deser.read( path + "/m_unit_specifier_id", pConfigRom->m_unit_specifier_id );
-    result &= deser.read( path + "/m_unit_version", pConfigRom->m_unit_version );
-    result &= deser.read( path + "/m_isIsoResourceManager", pConfigRom->m_isIsoResourceManager );
-    result &= deser.read( path + "/m_isCycleMasterCapable", pConfigRom->m_isCycleMasterCapable );
-    result &= deser.read( path + "/m_isSupportIsoOperations", pConfigRom->m_isSupportIsoOperations );
-    result &= deser.read( path + "/m_isBusManagerCapable", pConfigRom->m_isBusManagerCapable );
-    result &= deser.read( path + "/m_cycleClkAcc", pConfigRom->m_cycleClkAcc );
-    result &= deser.read( path + "/m_maxRec", pConfigRom->m_maxRec );
-    result &= deser.read( path + "/m_nodeVendorId", pConfigRom->m_nodeVendorId );
-    result &= deser.read( path + "/m_chipIdHi", pConfigRom->m_chipIdHi );
-    result &= deser.read( path + "/m_chipIdLow", pConfigRom->m_chipIdLow );
+    result  = deser.read( path + "m_nodeId", pConfigRom->m_nodeId );
+    result &= deser.read( path + "m_avcDevice", pConfigRom->m_avcDevice );
+    result &= deser.read( path + "m_guid", pConfigRom->m_guid );
+    result &= deser.read( path + "m_vendorName", pConfigRom->m_vendorName );
+    result &= deser.read( path + "m_modelName", pConfigRom->m_modelName );
+    result &= deser.read( path + "m_vendorId", pConfigRom->m_vendorId );
+    result &= deser.read( path + "m_modelId", pConfigRom->m_modelId );
+    result &= deser.read( path + "m_unit_specifier_id", pConfigRom->m_unit_specifier_id );
+    result &= deser.read( path + "m_unit_version", pConfigRom->m_unit_version );
+    result &= deser.read( path + "m_isIsoResourceManager", pConfigRom->m_isIsoResourceManager );
+    result &= deser.read( path + "m_isCycleMasterCapable", pConfigRom->m_isCycleMasterCapable );
+    result &= deser.read( path + "m_isSupportIsoOperations", pConfigRom->m_isSupportIsoOperations );
+    result &= deser.read( path + "m_isBusManagerCapable", pConfigRom->m_isBusManagerCapable );
+    result &= deser.read( path + "m_cycleClkAcc", pConfigRom->m_cycleClkAcc );
+    result &= deser.read( path + "m_maxRec", pConfigRom->m_maxRec );
+    result &= deser.read( path + "m_nodeVendorId", pConfigRom->m_nodeVendorId );
+    result &= deser.read( path + "m_chipIdHi", pConfigRom->m_chipIdHi );
+    result &= deser.read( path + "m_chipIdLow", pConfigRom->m_chipIdLow );
+
+    if ( !result ) {
+        delete pConfigRom;
+        return 0;
+    }
 
     return pConfigRom;
 }
