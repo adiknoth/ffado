@@ -73,7 +73,9 @@ class ConfigRom {
     void printConfigRom() const;
 
     bool serialize( Glib::ustring path, Util::IOSerialize& ser );
-    static ConfigRom* deserialize( Glib::ustring path, Util::IODeserialize& deser );
+    static ConfigRom* deserialize( Glib::ustring path, 
+				   Util::IODeserialize& deser,
+				   Ieee1394Service& ieee1394Service );
 
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,

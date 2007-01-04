@@ -100,10 +100,12 @@ public:
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser );
     static AvDevice* deserialize( Glib::ustring basePath,
-                                  Ieee1394Service& ieee1394Service,
-                                  Util::IODeserialize& deser );
+                                  Util::IODeserialize& deser,
+				  Ieee1394Service& ieee1394Service );
 
 protected:
+    AvDevice();
+
     bool enumerateSubUnits();
 
     bool discoverPlugs();

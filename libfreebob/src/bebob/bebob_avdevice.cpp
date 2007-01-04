@@ -49,7 +49,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_verboseLevel( verboseLevel )
     , m_plugManager( verboseLevel )
     , m_activeSyncInfo( 0 )
-    , m_id(0)
+    , m_id( 0 )
     , m_receiveProcessor ( 0 )
     , m_receiveProcessorBandwidth ( -1 )
     , m_transmitProcessor ( 0 )
@@ -58,6 +58,21 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     setDebugLevel( verboseLevel );
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
+}
+
+AvDevice::AvDevice()
+    : m_pConfigRom( 0 )
+    , m_1394Service( 0 )
+    , m_nodeId( -1 )
+    , m_verboseLevel( 0 )
+    , m_plugManager( 0 )
+    , m_activeSyncInfo( 0 )
+    , m_id( 0 )
+    , m_receiveProcessor ( 0 )
+    , m_receiveProcessorBandwidth ( -1 )
+    , m_transmitProcessor ( 0 )
+    , m_transmitProcessorBandwidth ( -1 )
+{
 }
 
 AvDevice::~AvDevice()
@@ -109,7 +124,7 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x000a92, 0x00010066},  // Presonous FirePOD
 
-    {0x000aac, 0x00000003},  // TerraTec Electronic GmbH, Phase 88 FW 
+    {0x000aac, 0x00000003},  // TerraTec Electronic GmbH, Phase 88 FW
     {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
     {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW (model version 7)
 
@@ -1218,19 +1233,6 @@ AvDevice::stopStreamByIndex(int i) {
 bool
 AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
 {
-    // create base path string
-    /*
-    char* buf;
-    asprintf( &buf, "%08x%08x",
-              ( unsigned int ) ( m_pConfigRom->getGuid() >> 32 ),
-              ( unsigned int ) ( m_pConfigRom->getGuid() & 0xffffffff ) );
-    std::string avDevicePath = basePath
-                               + m_pConfigRom->getVendorName() + "/"
-                               + m_pConfigRom->getModelName() + "/"
-                               + buf;
-    free( buf );
-    */
-
     bool result;
     result = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
 
@@ -1239,11 +1241,25 @@ AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
 
 AvDevice*
 AvDevice::deserialize( Glib::ustring basePath,
-                       Ieee1394Service& ieee1394Service,
-                       Util::IODeserialize& deser )
+                       Util::IODeserialize& deser,
+                       Ieee1394Service& ieee1394Service )
 {
+    AvDevice* pDev = new AvDevice;
 
-    return 0;
+    if ( pDev ) {
+        pDev->m_pConfigRom = std::auto_ptr<ConfigRom> (
+            ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service )
+            );
+        if ( !pDev->m_pConfigRom.get() ) {
+            delete pDev;
+            return 0;
+        }
+
+        pDev->m_1394Service = &ieee1394Service;
+
+    }
+
+    return pDev;
 }
 
 } // end of namespace
