@@ -233,8 +233,8 @@ freebob_driver_detach (freebob_driver_t *driver)
 	if(driver->midi_handle) {
 		freebob_driver_midi_finish(driver->midi_handle);	
 	}
-#endif	
 	driver->midi_handle=NULL;
+#endif
 
 	return 0;
 
