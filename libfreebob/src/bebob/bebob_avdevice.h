@@ -1,5 +1,5 @@
 /* bebob_avdevice.h
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
