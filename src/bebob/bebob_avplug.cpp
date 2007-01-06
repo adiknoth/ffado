@@ -96,6 +96,24 @@ AvPlug::AvPlug( const AvPlug& rhs )
      }
 }
 
+AvPlug::AvPlug()
+    : m_1394Service( 0 )
+    , m_pConfigRom( 0 )
+    , m_subunitType( AVCCommand::eST_Reserved ) // a good value for unknown/undefined?
+    , m_subunitId( 0 )
+    , m_functionBlockType( 0 )
+    , m_functionBlockId( 0 )
+    , m_addressType( eAPA_Undefined )
+    , m_direction( eAPD_Unknown )
+    , m_id( 0 )
+    , m_infoPlugType( eAPT_Unknown )
+    , m_nrOfChannels( 0 )
+    , m_plugManager( 0 )
+    , m_verboseLevel( 0 )
+    , m_globalId( 0 )
+{
+}
+
 AvPlug::~AvPlug()
 {
     m_plugManager->remPlug( *this );
@@ -1410,6 +1428,45 @@ AvPlug::toggleDirection( EAvPlugDirection direction ) const
     }
 
     return newDirection;
+}
+
+bool
+AvPlug::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
+{
+    bool result;
+    result  = ser.write( basePath + "m_subunitType", m_subunitType );
+    result &= ser.write( basePath + "m_subunitId", m_subunitId );
+    /// XXX ...
+
+    return result;
+}
+
+AvPlug*
+AvPlug::deserialize( Glib::ustring basePath,
+                     Util::IODeserialize& deser,
+                     Ieee1394Service& ieee1394Service,
+                     ConfigRom& configRom,
+                     AvPlugManager& plugManager )
+{
+    AvPlug* pPlug = new AvPlug;
+    if ( !pPlug ) {
+        return 0;
+    }
+
+    pPlug->m_1394Service = &ieee1394Service;
+    pPlug->m_pConfigRom = &configRom;
+    pPlug->m_plugManager = &plugManager;
+    bool result;
+    result  = deser.read( basePath + "m_subunitType", pPlug->m_subunitType );
+    result &= deser.read( basePath + "m_subunitId", pPlug->m_subunitId );
+    // XXX ...
+
+    if ( !result ) {
+        delete pPlug;
+        return 0;
+    }
+
+    return pPlug;
 }
 
 /////////////////////////////////////////

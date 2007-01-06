@@ -1228,14 +1228,65 @@ AvDevice::stopStreamByIndex(int i) {
     return 0;
 }
 
+
+template <typename T> bool serializeVector( Glib::ustring path,
+                                            Util::IOSerialize& ser,
+                                            T& vec )
+{
+    bool result = true; // if vec.size() == 0
+    int i = 0;
+    for ( typename T::iterator it = vec.begin(); it != vec.end(); ++it ) {
+        std::ostringstream strstrm;
+        strstrm << path << i;
+        result &= ( *it )->serialize( strstrm.str() + "/", ser );
+        i++;
+    }
+    return result;
+}
+
+template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
+                                                           Util::IODeserialize& deser,
+                                                           Ieee1394Service& ieee1394Service,
+                                                           ConfigRom& configRom,
+                                                           AvPlugManager& plugManager,
+                                                           VT& vec )
+{
+    int i = 0;
+    bool bFinished = false;
+    do {
+        std::ostringstream strstrm;
+        strstrm << path << i;
+        T* ptr = T::deserialize( strstrm.str() + "/",
+                                 deser,
+                                 ieee1394Service,
+                                 configRom,
+                                 plugManager );
+        if ( ptr ) {
+            vec.push_back( ptr );
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return true;
+}
+
 bool
 AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
 {
     bool result;
-    result = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
+    result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
+    result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel );
+
+    result &= serializeVector( basePath + "PCRPlug", ser, m_pcrPlugs );
+    result &= serializeVector( basePath + "ExternelPlug", ser, m_externalPlugs );
+
+    // XXX ...
 
     return result;
 }
+
 
 AvDevice*
 AvDevice::deserialize( Glib::ustring basePath,
@@ -1254,7 +1305,13 @@ AvDevice::deserialize( Glib::ustring basePath,
         }
 
         pDev->m_1394Service = &ieee1394Service;
+        bool result;
+        result = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
 
+        result &= deserializeVector<AvPlug>( basePath + "PCRPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get(), pDev->m_plugManager, pDev->m_pcrPlugs );
+        result &= deserializeVector<AvPlug>( basePath + "ExternalPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get(), pDev->m_plugManager, pDev->m_externalPlugs );
+
+        // XXX ...
     }
 
     return pDev;

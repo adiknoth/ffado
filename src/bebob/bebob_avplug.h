@@ -29,7 +29,11 @@
 #include "libfreebobavc/avc_generic.h"
 #include "libfreebob/xmlparser.h"
 
+#include "libutil/serialize.h"
+
 #include "debugmodule/debugmodule.h"
+
+#include <glibmm/ustring.h>
 
 class Ieee1394Service;
 class ConfigRom;
@@ -154,6 +158,12 @@ public:
     ClusterInfoVector& getClusterInfos()
     { return m_clusterInfos; }
 
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser );
+    static AvPlug* deserialize( Glib::ustring basePath,
+                                Util::IODeserialize& deser,
+                                Ieee1394Service& ieee1394Service,
+                                ConfigRom& configRom,
+                                AvPlugManager& plugManager );
 protected:
     bool discoverPlugType();
     bool discoverName();
@@ -194,6 +204,9 @@ protected:
         FunctionBlockPlugSpecificDataPlugAddress* pFunctionBlockPlugAddress );
 
     EAvPlugDirection toggleDirection( EAvPlugDirection direction ) const;
+
+private:
+    AvPlug();
 
 private:
     Ieee1394Service*             m_1394Service;
