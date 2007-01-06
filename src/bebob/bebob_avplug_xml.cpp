@@ -1,5 +1,5 @@
 /* bebob_avplug_xml.cpp
- * Copyright (C) 2006 by Daniel Wagner
+ * Copyright (C) 2006,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -21,6 +21,7 @@
 // AvPlug XML stuff
 
 #include "bebob/bebob_avplug.h"
+#include "configrom.h"
 
 #include "libfreebobavc/ieee1394service.h"
 
@@ -85,7 +86,7 @@ AvPlug::addXmlDescription( xmlNodePtr connectionSet )
     }
     free( result );
 
-    asprintf( &result, "%d",  m_nodeId);
+    asprintf( &result, "%d",  m_pConfigRom->getNodeId() );
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Node",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Node' node\n" );

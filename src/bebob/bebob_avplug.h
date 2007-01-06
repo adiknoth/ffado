@@ -1,5 +1,5 @@
 /* bebob_avplug.h
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -32,6 +32,7 @@
 #include "debugmodule/debugmodule.h"
 
 class Ieee1394Service;
+class ConfigRom;
 
 namespace BeBoB {
 
@@ -70,7 +71,7 @@ public:
 
     // \todo This constructors sucks. too many parameters. fix it.
     AvPlug( Ieee1394Service& ieee1394Service,
-	    int m_nodeId,
+	    ConfigRom& configRom,
             AvPlugManager& plugManager,
 	    AVCCommand::ESubunitType subunitType,
 	    subunit_id_t subunitId,
@@ -131,8 +132,8 @@ public:
 	EAvPlugDirection direction);
 
     void showPlug() const;
-    
-    
+
+
     struct ChannelInfo {
         stream_position_t          m_streamPosition;
         stream_position_location_t m_location;
@@ -196,7 +197,7 @@ protected:
 
 private:
     Ieee1394Service*             m_1394Service;
-    int                          m_nodeId;
+    ConfigRom*                   m_pConfigRom;
     AVCCommand::ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;
     function_block_type_t        m_functionBlockType;

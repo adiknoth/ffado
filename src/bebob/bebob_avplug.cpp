@@ -1,5 +1,5 @@
 /* bebob_avplug.cpp
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -19,6 +19,7 @@
  */
 
 #include "bebob/bebob_avplug.h"
+#include "configrom.h"
 
 #include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/avc_serialize.h"
@@ -31,7 +32,7 @@ IMPL_DEBUG_MODULE( AvPlug, AvPlug, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( AvPlugManager, AvPlugManager, DEBUG_LEVEL_NORMAL );
 
 AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
-                int nodeId,
+                ConfigRom& configRom,
                 AvPlugManager& plugManager,
                 AVCCommand::ESubunitType subunitType,
                 subunit_id_t subunitId,
@@ -42,7 +43,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 plug_id_t plugId,
                 int verboseLevel )
     : m_1394Service( &ieee1394Service )
-    , m_nodeId( nodeId )
+    , m_pConfigRom( &configRom )
     , m_subunitType( subunitType )
     , m_subunitId( subunitId )
     , m_functionBlockType( functionBlockType )
@@ -62,7 +63,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                  "subunitId = %d, functionBlockType = %d, "
                  "functionBlockId = %d, addressType = %d, "
                  "direction = %d, id = %d\n",
-                 m_nodeId,
+                 m_pConfigRom->getNodeId(),
                  m_subunitType,
                  m_subunitId,
                  m_functionBlockType,
@@ -74,7 +75,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
 
 AvPlug::AvPlug( const AvPlug& rhs )
     : m_1394Service( rhs.m_1394Service )
-    , m_nodeId( rhs.m_nodeId )
+    , m_pConfigRom( rhs.m_pConfigRom )
     , m_subunitType( rhs.m_subunitType )
     , m_subunitId( rhs.m_subunitId )
     , m_functionBlockType( rhs.m_functionBlockType )
@@ -105,55 +106,55 @@ AvPlug::discover()
 {
     if ( !discoverPlugType() ) {
         debugError( "discover: Could not discover plug type (%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverName() ) {
         debugError( "Could not discover name (%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverNoOfChannels() ) {
         debugError( "Could not discover number of channels "
                     "(%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverChannelPosition() ) {
         debugError( "Could not discover channel positions "
                     "(%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverChannelName() ) {
         debugError( "Could not discover channel name "
                     "(%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverClusterInfo() ) {
         debugError( "Could not discover channel name "
                     "(%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverStreamFormat() ) {
         debugError( "Could not discover stream format "
                     "(%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
     if ( !discoverSupportedStreamFormats() ) {
         debugError( "Could not discover supported stream formats "
                     "(%d,%d,%d,%d,%d)\n",
-                    m_nodeId, m_subunitType, m_subunitId, m_direction, m_id );
+                    m_pConfigRom->getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
         return false;
     }
 
@@ -986,7 +987,7 @@ AvPlug::setPlugAddrToPlugInfoCmd()
         debugError( "Unknown subunit type\n" );
     }
 
-    extPlugInfoCmd.setNodeId( m_nodeId );
+    extPlugInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
     extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     extPlugInfoCmd.setSubunitId( m_subunitId );
     extPlugInfoCmd.setSubunitType( m_subunitType );
@@ -1061,7 +1062,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
         debugError( "Unknown subunit type\n" );
     }
 
-    extStreamFormatInfoCmd.setNodeId( m_nodeId );
+    extStreamFormatInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
     extStreamFormatInfoCmd.setCommandType( AVCCommand::eCT_Status );
     extStreamFormatInfoCmd.setSubunitId( m_subunitId );
     extStreamFormatInfoCmd.setSubunitType( m_subunitType );
@@ -1100,7 +1101,7 @@ AvPlug::setSrcPlugAddrToSignalCmd()
         debugError( "Unknown subunit type\n" );
     }
 
-    signalSourceCmd.setNodeId( m_nodeId );
+    signalSourceCmd.setNodeId( m_pConfigRom->getNodeId() );
     signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 

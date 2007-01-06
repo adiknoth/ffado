@@ -1,5 +1,5 @@
 /* bebob_functionblock.cpp
- * Copyright (C) 2006 by Daniel Wagner
+ * Copyright (C) 2006,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -100,7 +100,7 @@ FunctionBlock::discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
     for ( int plugId = 0; plugId < plugMaxId; ++plugId ) {
         AvPlug* plug = new AvPlug(
             *( m_subunit->getAvDevice().get1394Service() ),
-            m_subunit->getAvDevice().getConfigRom().getNodeId(),
+            m_subunit->getAvDevice().getConfigRom(),
             m_subunit->getAvDevice().getPlugManager(),
             m_subunit->getSubunitType(),
             m_subunit->getSubunitId(),

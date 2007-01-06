@@ -45,7 +45,6 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int verboseLevel )
     : m_pConfigRom( configRom )
     , m_1394Service( &ieee1394service )
-    , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_plugManager( verboseLevel )
     , m_activeSyncInfo( 0 )
@@ -63,7 +62,6 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
 AvDevice::AvDevice()
     : m_pConfigRom( 0 )
     , m_1394Service( 0 )
-    , m_nodeId( -1 )
     , m_verboseLevel( 0 )
     , m_plugManager( 0 )
     , m_activeSyncInfo( 0 )
@@ -130,10 +128,10 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x000f1b, 0x00010064},  // ESI, Quatafire 610
 
+    {0x00130e, 0x00000003},  // Focusrite, Pro26IO (Saffire 26)
+
     {0x0040ab, 0x00010048},  // EDIROL, FA-101
     {0x0040ab, 0x00010049},  // EDIROL, FA-66
-
-    {0x00130e, 0x00000003},  // Focusrite, Pro26IO (Saffire 26)
 };
 
 bool
@@ -195,7 +193,7 @@ AvDevice::discoverPlugs()
     // and output plugs of unit
 
     PlugInfoCmd plugInfoCmd( m_1394Service );
-    plugInfoCmd.setNodeId( m_nodeId );
+    plugInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     plugInfoCmd.setVerbose( m_verboseLevel );
 
@@ -253,7 +251,7 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
           ++plugId )
     {
         AvPlug* plug  = new AvPlug( *m_1394Service,
-                                    m_nodeId,
+                                    *m_pConfigRom,
                                     m_plugManager,
                                     AVCCommand::eST_Unit,
                                     0xff,
@@ -286,7 +284,7 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
           ++plugId )
     {
         AvPlug* plug  = new AvPlug( *m_1394Service,
-                                    m_nodeId,
+                                    *m_pConfigRom,
                                     m_plugManager,
                                     AVCCommand::eST_Unit,
                                     0xff,
@@ -529,7 +527,7 @@ AvDevice::enumerateSubUnits()
     // So there is no need to do more than needed
 
     subUnitInfoCmd.m_page = 0;
-    subUnitInfoCmd.setNodeId( m_nodeId );
+    subUnitInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
     subUnitInfoCmd.setVerbose( m_verboseLevel );
     if ( !subUnitInfoCmd.fire() ) {
         debugError( "Subunit info command failed\n" );
@@ -783,7 +781,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
             PlugAddress::ePAM_Unit,
             unitPlugAddress ) );
 
-    extStreamFormatCmd.setNodeId( m_nodeId );
+    extStreamFormatCmd.setNodeId( m_pConfigRom->getNodeId() );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
 
     int i = 0;
@@ -1146,7 +1144,7 @@ AvDevice::startStreamByIndex(int i) {
             // do connection management: make connection
             iso_channel = iec61883_cmp_connect(
                 m_1394Service->getHandle(),
-                m_nodeId | 0xffc0,
+                m_pConfigRom->getNodeId() | 0xffc0,
                 &plug,
                 raw1394_get_local_id (m_1394Service->getHandle()),
                 &hostplug,
@@ -1161,7 +1159,7 @@ AvDevice::startStreamByIndex(int i) {
                 m_1394Service->getHandle(),
                 raw1394_get_local_id (m_1394Service->getHandle()),
                 &hostplug,
-                m_nodeId | 0xffc0,
+                m_pConfigRom->getNodeId() | 0xffc0,
                 &plug,
                 &m_transmitProcessorBandwidth);
 
@@ -1202,7 +1200,7 @@ AvDevice::stopStreamByIndex(int i) {
             // do connection management: break connection
             iec61883_cmp_disconnect(
                 m_1394Service->getHandle(),
-                m_nodeId | 0xffc0,
+                m_pConfigRom->getNodeId() | 0xffc0,
                 plug,
                 raw1394_get_local_id (m_1394Service->getHandle()),
                 hostplug,
@@ -1216,7 +1214,7 @@ AvDevice::stopStreamByIndex(int i) {
                 m_1394Service->getHandle(),
                 raw1394_get_local_id (m_1394Service->getHandle()),
                 hostplug,
-                m_nodeId | 0xffc0,
+                m_pConfigRom->getNodeId() | 0xffc0,
                 plug,
                 m_transmitProcessor->getChannel(),
                 m_transmitProcessorBandwidth);

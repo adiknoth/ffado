@@ -134,7 +134,7 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
         AVCCommand::ESubunitType subunitType =
             static_cast<AVCCommand::ESubunitType>( getSubunitType() );
         AvPlug* plug = new AvPlug( *m_avDevice->get1394Service(),
-                                   m_avDevice->getConfigRom().getNodeId(),
+                                   m_avDevice->getConfigRom(),
                                    m_avDevice->getPlugManager(),
                                    subunitType,
                                    getSubunitId(),
