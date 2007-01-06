@@ -147,7 +147,6 @@ protected:
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
     Ieee1394Service* m_1394Service;
-    int              m_nodeId;
     int              m_verboseLevel;
 
     AvPlugVector     m_pcrPlugs;
