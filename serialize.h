@@ -51,6 +51,8 @@ namespace Util {
                            Glib::ustring& str ) = 0;
 
         template <typename T> bool read( std::string strMemberName, T& value );
+
+        virtual bool isExisting( std::string strMemberName ) = 0;
     };
 
     class XMLSerialize: public IOSerialize {
@@ -79,6 +81,9 @@ namespace Util {
                            long long& value );
         virtual bool read( std::string strMemberName,
                            Glib::ustring& str );
+
+        virtual bool isExisting( std::string strMemberName );
+
     private:
         Glib::ustring    m_filepath;
         xmlpp::DomParser m_parser;
