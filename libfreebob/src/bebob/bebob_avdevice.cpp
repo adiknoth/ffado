@@ -1272,6 +1272,22 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
     return true;
 }
 
+static bool
+deserializeUpdatePlugs( Glib::ustring basePath,
+                        Util::IODeserialize& deser,
+                        AvPlugVector& vec )
+{
+    bool result = true;
+    for ( AvPlugVector::iterator it = vec.begin();
+          it != vec.end();
+          ++it )
+    {
+        AvPlug* pPlug = *it;
+        result &= pPlug->deserializeUpdate( basePath, deser );
+    }
+    return result;
+}
+
 bool
 AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
 {
@@ -1286,7 +1302,6 @@ AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
 
     return result;
 }
-
 
 AvDevice*
 AvDevice::deserialize( Glib::ustring basePath,
@@ -1310,6 +1325,9 @@ AvDevice::deserialize( Glib::ustring basePath,
 
         result &= deserializeVector<AvPlug>( basePath + "PCRPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get(), pDev->m_plugManager, pDev->m_pcrPlugs );
         result &= deserializeVector<AvPlug>( basePath + "ExternalPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get(), pDev->m_plugManager, pDev->m_externalPlugs );
+        result &= deserializeUpdatePlugs( basePath + "PCRPlug", deser, pDev->m_pcrPlugs );
+        result &= deserializeUpdatePlugs( basePath + "ExternalPlug", deser, pDev->m_externalPlugs );
+
 
         // XXX ...
     }

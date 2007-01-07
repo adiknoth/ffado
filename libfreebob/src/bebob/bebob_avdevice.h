@@ -146,22 +146,16 @@ protected:
                                            std::string syncDescription );
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
-    Ieee1394Service* m_1394Service;
-    int              m_verboseLevel;
-
-    AvPlugVector     m_pcrPlugs;
-    AvPlugVector     m_externalPlugs;
-
-    AvPlugConnectionVector m_plugConnections;
-
-    AvDeviceSubunitVector  m_subunits;
-
-    AvPlugManager    m_plugManager;
-
-    SyncInfoVector   m_syncInfos;
-    SyncInfo*        m_activeSyncInfo;
-
-    unsigned int m_id;
+    Ieee1394Service*          m_1394Service;
+    int                       m_verboseLevel;
+    AvPlugVector              m_pcrPlugs;
+    AvPlugVector              m_externalPlugs;
+    AvPlugConnectionVector    m_plugConnections;
+    AvDeviceSubunitVector     m_subunits;
+    AvPlugManager             m_plugManager;
+    SyncInfoVector            m_syncInfos;
+    SyncInfo*                 m_activeSyncInfo;
+    unsigned int              m_id;
 
     // streaming stuff
     FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;

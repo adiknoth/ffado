@@ -24,6 +24,8 @@
 #include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/avc_serialize.h"
 
+#include <sstream>
+
 namespace BeBoB {
 
 int AvPlug::m_globalIdCounter = 0;
@@ -1431,12 +1433,268 @@ AvPlug::toggleDirection( EAvPlugDirection direction ) const
 }
 
 bool
-AvPlug::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
+AvPlug::serializeChannelInfos( Glib::ustring basePath,
+                               Util::IOSerialize& ser,
+                               const ClusterInfo& clusterInfo ) const
+{
+    bool result = true;
+    int i = 0;
+    for ( ChannelInfoVector::const_iterator it = clusterInfo.m_channelInfos.begin();
+          it != clusterInfo.m_channelInfos.end();
+          ++it )
+    {
+        const ChannelInfo& info = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        result &= ser.write( strstrm.str() + "/m_streamPosition", info.m_streamPosition );
+        result &= ser.write( strstrm.str() + "/m_location", info.m_location );
+        result &= ser.write( strstrm.str() + "/m_name", info.m_name );
+    }
+
+    return result;
+}
+
+bool
+AvPlug::deserializeChannelInfos( Glib::ustring basePath,
+                                 Util::IODeserialize& deser,
+                                 ClusterInfo& clusterInfo )
+{
+    int i = 0;
+    bool bFinished = false;
+    bool result = true;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        // check for one element to exist. when one exist the other elements
+        // must also be there. otherwise just return (last) result.
+        if ( deser.isExisting( strstrm.str() + "/m_streamPosition" ) ) {
+            ChannelInfo info;
+
+            result &= deser.read( strstrm.str() + "/m_streamPosition", info.m_streamPosition );
+            result &= deser.read( strstrm.str() + "/m_location", info.m_location );
+            result &= deser.read( strstrm.str() + "/m_name", info.m_name );
+
+            if ( result ) {
+                clusterInfo.m_channelInfos.push_back( info );
+                i++;
+            } else {
+                bFinished = true;
+            }
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return result;
+}
+
+
+bool
+AvPlug::serializeClusterInfos( Glib::ustring basePath,
+                               Util::IOSerialize& ser ) const
+{
+    bool result = true;
+    int i = 0;
+    for ( ClusterInfoVector::const_iterator it = m_clusterInfos.begin();
+          it != m_clusterInfos.end();
+          ++it )
+    {
+        const ClusterInfo& info = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        result &= ser.write( strstrm.str() + "/m_index", info.m_index );
+        result &= ser.write( strstrm.str() + "/m_portType", info.m_portType );
+        result &= ser.write( strstrm.str() + "/m_name", info.m_name );
+        result &= ser.write( strstrm.str() + "/m_nrOfChannels", info.m_nrOfChannels );
+        result &= serializeChannelInfos( strstrm.str() + "/m_channelInfo", ser, info );
+        result &= ser.write( strstrm.str() + "/m_streamFormat", info.m_streamFormat );
+
+    }
+
+    return result;
+}
+
+bool
+AvPlug::deserializeClusterInfos( Glib::ustring basePath,
+                                 Util::IODeserialize& deser )
+{
+    int i = 0;
+    bool bFinished = false;
+    bool result = true;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        // check for one element to exist. when one exist the other elements
+        // must also be there. otherwise just return (last) result.
+        if ( deser.isExisting( strstrm.str() + "/m_index" ) ) {
+            ClusterInfo info;
+
+            result &= deser.read( strstrm.str() + "/m_index", info.m_index );
+            result &= deser.read( strstrm.str() + "/m_portType", info.m_portType );
+            result &= deser.read( strstrm.str() + "/m_name", info.m_name );
+            result &= deser.read( strstrm.str() + "/m_nrOfChannels", info.m_nrOfChannels );
+            result &= deserializeChannelInfos( strstrm.str() + "/m_channelInfo", deser, info );
+            result &= deser.read( strstrm.str() + "/m_streamFormat", info.m_streamFormat );
+
+            if ( result ) {
+                m_clusterInfos.push_back( info );
+                i++;
+            } else {
+                bFinished = true;
+            }
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return result;
+}
+
+
+bool
+AvPlug::serializeFormatInfos( Glib::ustring basePath,
+                              Util::IOSerialize& ser ) const
+{
+    bool result = true;
+    int i = 0;
+    for ( FormatInfoVector::const_iterator it = m_formatInfos.begin();
+          it != m_formatInfos.end();
+          ++it )
+    {
+        const FormatInfo& info = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        result &= ser.write( strstrm.str() + "/m_samplingFrequency", info.m_samplingFrequency );
+        result &= ser.write( strstrm.str() + "/m_isSyncStream", info.m_isSyncStream );
+        result &= ser.write( strstrm.str() + "/m_audioChannels", info.m_audioChannels );
+        result &= ser.write( strstrm.str() + "/m_midiChannels", info.m_midiChannels );
+        result &= ser.write( strstrm.str() + "/m_index", info.m_index );
+    }
+    return result;
+}
+
+bool
+AvPlug::deserializeFormatInfos( Glib::ustring basePath,
+                                Util::IODeserialize& deser )
+{
+    int i = 0;
+    bool bFinished = false;
+    bool result = true;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        // check for one element to exist. when one exist the other elements
+        // must also be there. otherwise just return (last) result.
+        if ( deser.isExisting( strstrm.str() + "/m_samplingFrequency" ) ) {
+            FormatInfo info;
+
+            result &= deser.read( strstrm.str() + "/m_samplingFrequency", info.m_samplingFrequency );
+            result &= deser.read( strstrm.str() + "/m_isSyncStream", info.m_isSyncStream );
+            result &= deser.read( strstrm.str() + "/m_audioChannels", info.m_audioChannels );
+            result &= deser.read( strstrm.str() + "/m_midiChannels", info.m_midiChannels );
+            result &= deser.read( strstrm.str() + "/m_index", info.m_index );
+
+            if ( result ) {
+                m_formatInfos.push_back( info );
+                i++;
+            } else {
+                bFinished = true;
+            }
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return result;
+}
+
+
+bool
+AvPlug::serializeAvPlugVector( Glib::ustring basePath,
+                               Util::IOSerialize& ser,
+                               const AvPlugVector& vec) const
+{
+    bool result = true;
+    int i = 0;
+    for ( AvPlugVector::const_iterator it = vec.begin();
+          it != vec.end();
+          ++it )
+    {
+        const AvPlug* pPlug = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        result &= ser.write( strstrm.str() + "/global_id", pPlug->getGlobalId() );
+    }
+    return result;
+}
+
+bool
+AvPlug::deserializeAvPlugVector( Glib::ustring basePath,
+                                 Util::IODeserialize& deser,
+                                 AvPlugVector& vec )
+{
+    int i = 0;
+    bool bFinished = false;
+    bool result = true;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        // check for one element to exist. when one exist the other elements
+        // must also be there. otherwise just return (last) result.
+        if ( deser.isExisting( strstrm.str() + "/global_id" ) ) {
+            unsigned int iPlugId;
+            result &= deser.read( strstrm.str() + "/global_id", iPlugId );
+
+            if ( result ) {
+                AvPlug* pPlug = m_plugManager->getPlug( iPlugId );
+                if ( pPlug ) {
+                    vec.push_back( pPlug );
+                } else {
+                    result = false;
+                    bFinished = true;
+                }
+                i++;
+            } else {
+                bFinished = true;
+            }
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return result;
+}
+
+bool
+AvPlug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 {
     bool result;
     result  = ser.write( basePath + "m_subunitType", m_subunitType );
     result &= ser.write( basePath + "m_subunitId", m_subunitId );
-    /// XXX ...
+    result &= ser.write( basePath + "m_functionBlockType", m_functionBlockType);
+    result &= ser.write( basePath + "m_functionBlockId", m_functionBlockId);
+    result &= ser.write( basePath + "m_addressType", m_addressType );
+    result &= ser.write( basePath + "m_direction", m_direction);
+    result &= ser.write( basePath + "m_id", m_id);
+    result &= ser.write( basePath + "m_infoPlugType", m_infoPlugType);
+    result &= ser.write( basePath + "m_nrOfChannels", m_nrOfChannels);
+    result &= ser.write( basePath + "m_name", m_name);
+    result &= serializeClusterInfos( basePath + "m_clusterInfos", ser );
+    result &= ser.write( basePath + "m_samplingFrequency", m_samplingFrequency);
+    result &= serializeFormatInfos( basePath + "m_formatInfo", ser );
+    result &= serializeAvPlugVector( basePath + "m_inputConnections", ser, m_inputConnections );
+    result &= serializeAvPlugVector( basePath + "m_outputConnections", ser, m_outputConnections );
+    result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel);
+    result &= ser.write( basePath + "m_globalId", m_globalId);
+    result &= ser.write( basePath + "m_globalIdCounter", m_globalIdCounter );
 
     return result;
 }
@@ -1459,7 +1717,22 @@ AvPlug::deserialize( Glib::ustring basePath,
     bool result;
     result  = deser.read( basePath + "m_subunitType", pPlug->m_subunitType );
     result &= deser.read( basePath + "m_subunitId", pPlug->m_subunitId );
-    // XXX ...
+    result &= deser.read( basePath + "m_functionBlockType", pPlug->m_functionBlockType );
+    result &= deser.read( basePath + "m_functionBlockId", pPlug->m_functionBlockId );
+    result &= deser.read( basePath + "m_addressType", pPlug->m_addressType );
+    result &= deser.read( basePath + "m_direction", pPlug->m_direction );
+    result &= deser.read( basePath + "m_id", pPlug->m_id );
+    result &= deser.read( basePath + "m_infoPlugType", pPlug->m_infoPlugType );
+    result &= deser.read( basePath + "m_nrOfChannels", pPlug->m_nrOfChannels );
+    result &= deser.read( basePath + "m_name", pPlug->m_name );
+    result &= pPlug->deserializeClusterInfos( basePath + "m_clusterInfos", deser );
+    result &= deser.read( basePath + "m_samplingFrequency", pPlug->m_samplingFrequency );
+    result &= pPlug->deserializeFormatInfos( basePath + "m_formatInfos", deser );
+    // input and output connections can't be processed here because not all plugs might
+    // deserialized at this point. so we do that in deserializeUpdate.
+    result &= deser.read( basePath + "m_verboseLevel", pPlug->m_verboseLevel );
+    result &= deser.read( basePath + "m_globalId", pPlug->m_globalId );
+    result &= deser.read( basePath + "m_globalIdCounter", pPlug->m_globalIdCounter );
 
     if ( !result ) {
         delete pPlug;
@@ -1467,6 +1740,16 @@ AvPlug::deserialize( Glib::ustring basePath,
     }
 
     return pPlug;
+}
+
+bool
+AvPlug::deserializeUpdate( Glib::ustring basePath,
+                           Util::IODeserialize& deser )
+{
+    bool result;
+    result  = deserializeAvPlugVector( basePath + "m_inputConnections", deser, m_inputConnections );
+    result &= deserializeAvPlugVector( basePath + "m_outputConnections", deser, m_outputConnections );
+    return result;
 }
 
 /////////////////////////////////////////
@@ -1752,6 +2035,22 @@ AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
              && ( plugId == plug->getPlugId() ) )
         {
             return plug;
+        }
+    }
+
+    return 0;
+}
+
+AvPlug*
+AvPlugManager::getPlug( int iGlobalId ) const
+{
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* pPlug = *it;
+        if ( pPlug->getGlobalId() == iGlobalId ) {
+            return pPlug;
         }
     }
 
