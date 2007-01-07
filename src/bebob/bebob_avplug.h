@@ -137,34 +137,40 @@ public:
 
     void showPlug() const;
 
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    static AvPlug* deserialize( Glib::ustring basePath,
+                                Util::IODeserialize& deser,
+                                Ieee1394Service& ieee1394Service,
+                                ConfigRom& configRom,
+                                AvPlugManager& plugManager );
+    bool deserializeUpdate( Glib::ustring basePath,
+                            Util::IODeserialize& deser );
 
+ public:
     struct ChannelInfo {
         stream_position_t          m_streamPosition;
         stream_position_location_t m_location;
-	std::string                m_name;
+	Glib::ustring              m_name;
     };
     typedef std::vector<ChannelInfo> ChannelInfoVector;
 
     struct ClusterInfo {
 	int                      m_index;
 	port_type_t              m_portType;
-	std::string              m_name;
+	Glib::ustring            m_name;
 
         nr_of_channels_t         m_nrOfChannels;
         ChannelInfoVector        m_channelInfos;
 	stream_format_t          m_streamFormat;
     };
     typedef std::vector<ClusterInfo> ClusterInfoVector;
-    ClusterInfoVector& getClusterInfos()
-    { return m_clusterInfos; }
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser );
-    static AvPlug* deserialize( Glib::ustring basePath,
-                                Util::IODeserialize& deser,
-                                Ieee1394Service& ieee1394Service,
-                                ConfigRom& configRom,
-                                AvPlugManager& plugManager );
+    ClusterInfoVector& getClusterInfos()
+        { return m_clusterInfos; }
+
 protected:
+    AvPlug();
+
     bool discoverPlugType();
     bool discoverName();
     bool discoverNoOfChannels();
@@ -205,36 +211,33 @@ protected:
 
     EAvPlugDirection toggleDirection( EAvPlugDirection direction ) const;
 
-private:
-    AvPlug();
+    const ClusterInfo* getClusterInfoByIndex( int index ) const;
+
+    bool serializeChannelInfos( Glib::ustring basePath,
+                                Util::IOSerialize& ser,
+                                const ClusterInfo& clusterInfo ) const;
+    bool deserializeChannelInfos( Glib::ustring basePath,
+                                  Util::IODeserialize& deser,
+                                  ClusterInfo& clusterInfo );
+
+    bool serializeClusterInfos( Glib::ustring basePath,
+                                Util::IOSerialize& ser ) const;
+    bool deserializeClusterInfos( Glib::ustring basePath,
+                                  Util::IODeserialize& deser );
+
+    bool serializeFormatInfos( Glib::ustring basePath,
+                               Util::IOSerialize& ser ) const;
+    bool deserializeFormatInfos( Glib::ustring basePath,
+                                 Util::IODeserialize& deser );
+
+    bool serializeAvPlugVector( Glib::ustring basePath,
+                                Util::IOSerialize& ser,
+                                const AvPlugVector& vec) const;
+    bool deserializeAvPlugVector( Glib::ustring basePath,
+                                  Util::IODeserialize& deser,
+                                  AvPlugVector& vec );
 
 private:
-    Ieee1394Service*             m_1394Service;
-    ConfigRom*                   m_pConfigRom;
-    AVCCommand::ESubunitType     m_subunitType;
-    subunit_id_t                 m_subunitId;
-    function_block_type_t        m_functionBlockType;
-    function_block_id_t          m_functionBlockId;
-    EAvPlugAddressType           m_addressType;
-    EAvPlugDirection             m_direction;
-    plug_id_t                    m_id;
-
-    // Info plug type
-    EAvPlugType m_infoPlugType;
-
-    // Number of channels
-    nr_of_channels_t             m_nrOfChannels;
-
-    // Plug name
-    std::string                  m_name;
-
-    // Channel & Cluster Info
-
-    ClusterInfoVector        m_clusterInfos;
-
-    // Sampling frequency
-    sampling_frequency_t m_samplingFrequency;
-
     // Supported stream formats
     struct FormatInfo {
         FormatInfo()
@@ -252,20 +255,28 @@ private:
     };
     typedef std::vector<FormatInfo> FormatInfoVector;
 
-    FormatInfoVector         m_formatInfos;
 
-    const ClusterInfo* getClusterInfoByIndex( int index ) const;
-
-    AvPlugVector             m_inputConnections;
-    AvPlugVector             m_outputConnections;
-
-    AvPlugManager*           m_plugManager;
-
-    int                      m_verboseLevel;
-
-    int                      m_globalId;
-
-    static int               m_globalIdCounter;
+    Ieee1394Service*             m_1394Service;
+    ConfigRom*                   m_pConfigRom;
+    AVCCommand::ESubunitType     m_subunitType;
+    subunit_id_t                 m_subunitId;
+    function_block_type_t        m_functionBlockType;
+    function_block_id_t          m_functionBlockId;
+    EAvPlugAddressType           m_addressType;
+    EAvPlugDirection             m_direction;
+    plug_id_t                    m_id;
+    EAvPlugType                  m_infoPlugType;
+    nr_of_channels_t             m_nrOfChannels;
+    Glib::ustring                m_name;
+    ClusterInfoVector            m_clusterInfos;
+    sampling_frequency_t         m_samplingFrequency;
+    FormatInfoVector             m_formatInfos;
+    AvPlugVector                 m_inputConnections;
+    AvPlugVector                 m_outputConnections;
+    AvPlugManager*               m_plugManager;
+    int                          m_verboseLevel;
+    int                          m_globalId;
+    static int                   m_globalIdCounter;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -293,6 +304,7 @@ public:
                      AvPlug::EAvPlugAddressType plugAddressType,
                      AvPlug::EAvPlugDirection plugDirection,
                      plug_id_t plugId ) const;
+    AvPlug* getPlug( int iGlobalId ) const;
     AvPlugVector getPlugsByType( AVCCommand::ESubunitType subunitType,
 				 subunit_id_t subunitId,
 				 function_block_type_t functionBlockType,
@@ -313,9 +325,8 @@ public:
     AvPlugCluster();
     virtual ~AvPlugCluster();
 
-    std::string  m_name;
-
-    AvPlugVector m_avPlugs;
+    Glib::ustring  m_name;
+    AvPlugVector   m_avPlugs;
 };
 
 class AvPlugConnection {

@@ -219,3 +219,12 @@ Util::XMLDeserialize::read( std::string strMemberName,
 
     return false;
 }
+
+bool
+Util::XMLDeserialize::isExisting( std::string strMemberName )
+{
+
+    xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
+    xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
+    return nodeSet.size() > 0;
+}
