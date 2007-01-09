@@ -149,7 +149,7 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x000000, 0x000001f2},  // Motu device, model entry not used
+    {0x0001f2, 0x00000000},  // Motu device, model entry not used
 
 };
 
@@ -193,6 +193,7 @@ MotuDevice::discover()
                         break;
                 }
         }
+
         if (m_motu_model != MOTUFW_MODEL_NONE) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, "found MOTU %s\n",
                         motufw_modelname[m_motu_model]);
