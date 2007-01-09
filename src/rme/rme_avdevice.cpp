@@ -150,7 +150,7 @@ struct VendorModelEntry {
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0001, 0x00000a35},  // RME Fireface-800
+    {0x00000a35, 0x0001},  // RME Fireface-800
 
 };
 
