@@ -581,7 +581,7 @@ quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
 	switch (i) {
 	case 0:
 		// TODO: do the stuff that is nescessary to make the device
-		// transmit a stream
+		// receive a stream
 
 		// Set the streamprocessor channel to the one obtained by 
 		// the connection management
@@ -598,7 +598,7 @@ quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
 		break;
 	case 1:
 		// TODO: do the stuff that is nescessary to make the device
-		// receive a stream
+		// transmit a stream
 
 		// Set the streamprocessor channel to the one obtained by 
 		// the connection management
@@ -910,7 +910,7 @@ assert(m_1394Service);
 	
   quadlet = 0;
   // Note: 1394Service::read() expects a physical ID, not the node id
-  if (m_1394Service->read(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 4, &quadlet) < 0) {
+  if (m_1394Service->read(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
     debugError("Error doing motu read from register 0x%06x\n",reg);
   }
 
@@ -926,7 +926,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
   data = htonl(data);
 
   // Note: 1394Service::write() expects a physical ID, not the node id
-  if (m_1394Service->write(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 4, &data) < 0) {
+  if (m_1394Service->write(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
     err = 1;
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }
