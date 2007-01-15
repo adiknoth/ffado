@@ -281,12 +281,18 @@ Ieee1394Service::resetHandler( unsigned int generation )
 bool
 Ieee1394Service::startRHThread()
 {
+    int i;
+
     if ( m_threadRunning ) {
         return true;
     }
     pthread_mutex_lock( &m_mutex );
-    pthread_create( &m_thread, 0, rHThread, this );
+    i = pthread_create( &m_thread, 0, rHThread, this );
     pthread_mutex_unlock( &m_mutex );
+    if (i) {
+        debugFatal("Could not start ieee1394 service thread\n");
+        return false;
+    }
     m_threadRunning = true;
 
     return true;
