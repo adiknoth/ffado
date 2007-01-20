@@ -19,6 +19,7 @@
  */
 
 #include "bebob/bebob_avplug.h"
+#include "bebob/bebob_avdevice.h"
 #include "configrom.h"
 
 #include "libfreebobavc/ieee1394service.h"
@@ -118,7 +119,9 @@ AvPlug::AvPlug()
 
 AvPlug::~AvPlug()
 {
-    m_plugManager->remPlug( *this );
+    if ( m_plugManager ) {
+        m_plugManager->remPlug( *this );
+    }
 }
 
 bool
@@ -1703,8 +1706,7 @@ AvPlug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 AvPlug*
 AvPlug::deserialize( Glib::ustring basePath,
                      Util::IODeserialize& deser,
-                     Ieee1394Service& ieee1394Service,
-                     ConfigRom& configRom,
+                     AvDevice& avDevice,
                      AvPlugManager& plugManager )
 {
     AvPlug* pPlug = new AvPlug;
@@ -1712,9 +1714,9 @@ AvPlug::deserialize( Glib::ustring basePath,
         return 0;
     }
 
-    pPlug->m_p1394Service = &ieee1394Service;
-    pPlug->m_pConfigRom = &configRom;
-    pPlug->m_plugManager = &plugManager;
+    pPlug->m_p1394Service = &avDevice.get1394Service();
+    pPlug->m_pConfigRom   = &avDevice.getConfigRom();
+    pPlug->m_plugManager  = &plugManager;
     bool result;
     result  = deser.read( basePath + "m_subunitType", pPlug->m_subunitType );
     result &= deser.read( basePath + "m_subunitId", pPlug->m_subunitId );
@@ -2129,8 +2131,8 @@ AvPlugManager::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 AvPlugManager*
 AvPlugManager::deserialize( Glib::ustring basePath,
                             Util::IODeserialize& deser,
-                            Ieee1394Service& ieee1394Service,
-                            ConfigRom& configRom )
+                            AvDevice& avDevice )
+
 {
     AvPlugManager* pMgr = new AvPlugManager;
 
@@ -2143,10 +2145,11 @@ AvPlugManager::deserialize( Glib::ustring basePath,
     do {
         std::ostringstream strstrm;
         strstrm << basePath << i;
+        // avDevice still holds a null pointer for the plug manager
+        // therefore we have to *this as additional argument
         AvPlug* pPlug = AvPlug::deserialize( strstrm.str() + "/",
                                              deser,
-                                             ieee1394Service,
-                                             configRom,
+                                             avDevice,
                                              *pMgr );
         if ( pPlug ) {
             pMgr->m_plugs.push_back( pPlug );
@@ -2186,9 +2189,7 @@ AvPlugConnection::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) co
 AvPlugConnection*
 AvPlugConnection::deserialize( Glib::ustring basePath,
                                Util::IODeserialize& deser,
-                               Ieee1394Service& /* ieee1394Service */,
-                               ConfigRom& /* configRom */,
-                               AvPlugManager& plugManager )
+                               AvDevice& avDevice )
 {
     AvPlugConnection* pConnection = new AvPlugConnection;
     if ( !pConnection ) {
@@ -2206,8 +2207,8 @@ AvPlugConnection::deserialize( Glib::ustring basePath,
         return 0;
     }
 
-    pConnection->m_srcPlug  = plugManager.getPlug( iSrcPlugId );
-    pConnection->m_destPlug = plugManager.getPlug( iDestPlugId );
+    pConnection->m_srcPlug  = avDevice.getPlugManager().getPlug( iSrcPlugId );
+    pConnection->m_destPlug = avDevice.getPlugManager().getPlug( iDestPlugId );
 
     if ( !pConnection->m_srcPlug || !pConnection->m_destPlug ) {
         delete pConnection;

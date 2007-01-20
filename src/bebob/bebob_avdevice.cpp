@@ -551,7 +551,8 @@ AvDevice::enumerateSubUnits()
         AvDeviceSubunit* subunit = 0;
         switch( subunit_type ) {
         case AVCCommand::eST_Audio:
-            subunit = new AvDeviceSubunitAudio( *this, subunitId,
+            subunit = new AvDeviceSubunitAudio( *this,
+                                                subunitId,
                                                 m_verboseLevel );
             if ( !subunit ) {
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
@@ -563,7 +564,8 @@ AvDevice::enumerateSubUnits()
 
             break;
         case AVCCommand::eST_Music:
-            subunit = new AvDeviceSubunitMusic( *this, subunitId,
+            subunit = new AvDeviceSubunitMusic( *this,
+                                                subunitId,
                                                 m_verboseLevel );
             if ( !subunit ) {
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
@@ -1247,9 +1249,7 @@ template <typename T> bool serializeVector( Glib::ustring path,
 
 template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
                                                            Util::IODeserialize& deser,
-                                                           Ieee1394Service& ieee1394Service,
-                                                           ConfigRom& configRom,
-                                                           AvPlugManager& plugManager,
+                                                           AvDevice& avDevice,
                                                            VT& vec )
 {
     int i = 0;
@@ -1259,9 +1259,7 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
         strstrm << path << i;
         T* ptr = T::deserialize( strstrm.str() + "/",
                                  deser,
-                                 ieee1394Service,
-                                 configRom,
-                                 plugManager );
+                                 avDevice );
         if ( ptr ) {
             vec.push_back( ptr );
             i++;
@@ -1324,15 +1322,15 @@ AvDevice::deserialize( Glib::ustring basePath,
         pDev->m_p1394Service = &ieee1394Service;
         bool result;
         result  = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
-        pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get() );
+        pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, *pDev );
         if ( !pDev->m_pPlugManager ) {
             delete pDev;
             return 0;
         }
         result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_pcrPlugs );
         result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_externalPlugs );
-        result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, ieee1394Service, *pDev->m_pConfigRom.get(), *pDev->m_pPlugManager, pDev->m_plugConnections );
-        result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, ieee1394Service, *pDev->m_pConfigRom.get(), *pDev->m_pPlugManager, pDev->m_subunits );
+        result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, *pDev, pDev->m_plugConnections );
+        result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, *pDev, pDev->m_subunits );
 
         // XXX ...
     }

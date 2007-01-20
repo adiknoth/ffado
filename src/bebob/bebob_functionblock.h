@@ -61,6 +61,10 @@ public:
 
     virtual const char* getName() = 0;
 
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    static FunctionBlock* deserialize( Glib::ustring basePath,
+				       Util::IODeserialize& deser,
+				       AvDevice& avDevice );
 protected:
     bool discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
                         plug_id_t plugMaxId );

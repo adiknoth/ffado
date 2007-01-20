@@ -40,6 +40,7 @@ class ConfigRom;
 
 namespace BeBoB {
 
+class AvDevice;
 class AvPlugManager;
 class AvPlug;
 
@@ -140,9 +141,9 @@ public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static AvPlug* deserialize( Glib::ustring basePath,
                                 Util::IODeserialize& deser,
-                                Ieee1394Service& ieee1394Service,
-                                ConfigRom& configRom,
+                                AvDevice& avDevice,
                                 AvPlugManager& plugManager );
+
     bool deserializeUpdate( Glib::ustring basePath,
                             Util::IODeserialize& deser );
 
@@ -316,8 +317,8 @@ public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static  AvPlugManager* deserialize( Glib::ustring basePath,
                                         Util::IODeserialize& deser,
-                                        Ieee1394Service& ieee1394Service,
-                                        ConfigRom& configRom );
+                                        AvDevice& avDevice );
+
 private:
     AvPlugManager();
 
@@ -339,9 +340,7 @@ public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static AvPlugConnection* deserialize( Glib::ustring basePath,
                                           Util::IODeserialize& deser,
-                                          Ieee1394Service& ieee1394Service,
-                                          ConfigRom& configRom,
-                                          AvPlugManager& plugManager );
+                                          AvDevice& avDevice );
 private:
     AvPlugConnection();
 

@@ -1,5 +1,5 @@
 /* bebob_avdevice_subunit.cpp
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -28,16 +28,16 @@
 #include "libfreebobavc/avc_extended_stream_format.h"
 #include "libfreebobavc/avc_serialize.h"
 
-namespace BeBoB {
+#include <sstream>
 
-IMPL_DEBUG_MODULE( AvDeviceSubunit, AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( BeBoB::AvDeviceSubunit, BeBoB::AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
 
 ////////////////////////////////////////////
 
-AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
-                                  AVCCommand::ESubunitType type,
-                                  subunit_t id,
-                                  int verboseLevel )
+BeBoB::AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
+                                         AVCCommand::ESubunitType type,
+                                         subunit_t id,
+                                         int verboseLevel )
     : m_avDevice( &avDevice )
     , m_sbType( type )
     , m_sbId( id )
@@ -46,7 +46,11 @@ AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
     setDebugLevel( m_verboseLevel );
 }
 
-AvDeviceSubunit::~AvDeviceSubunit()
+BeBoB::AvDeviceSubunit::AvDeviceSubunit()
+{
+}
+
+BeBoB::AvDeviceSubunit::~AvDeviceSubunit()
 {
     for ( AvPlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();
@@ -57,7 +61,7 @@ AvDeviceSubunit::~AvDeviceSubunit()
 }
 
 bool
-AvDeviceSubunit::discover()
+BeBoB::AvDeviceSubunit::discover()
 {
     if ( !discoverPlugs() ) {
         debugError( "plug discovering failed\n" );
@@ -68,7 +72,7 @@ AvDeviceSubunit::discover()
 }
 
 bool
-AvDeviceSubunit::discoverPlugs()
+BeBoB::AvDeviceSubunit::discoverPlugs()
 {
     PlugInfoCmd plugInfoCmd( m_avDevice->get1394Service(),
                              PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
@@ -106,7 +110,7 @@ AvDeviceSubunit::discoverPlugs()
 }
 
 bool
-AvDeviceSubunit::discoverConnections()
+BeBoB::AvDeviceSubunit::discoverConnections()
 {
     for ( AvPlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();
@@ -124,8 +128,8 @@ AvDeviceSubunit::discoverConnections()
 }
 
 bool
-AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
-                               plug_id_t plugMaxId )
+BeBoB::AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
+                                      plug_id_t plugMaxId )
 {
     for ( int plugIdx = 0;
           plugIdx < plugMaxId;
@@ -157,15 +161,15 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
 }
 
 bool
-AvDeviceSubunit::addPlug( AvPlug& plug )
+BeBoB::AvDeviceSubunit::addPlug( AvPlug& plug )
 {
     m_plugs.push_back( &plug );
     return true;
 }
 
 
-AvPlug*
-AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
+BeBoB::AvPlug*
+BeBoB::AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
 {
     for ( AvPlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();
@@ -183,31 +187,73 @@ AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
 
 
 bool
-AvDeviceSubunit::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+BeBoB::AvDeviceSubunit::serialize( Glib::ustring basePath,
+                                   Util::IOSerialize& ser ) const
 {
-    return true;
+    bool result;
+
+    result  = ser.write( basePath + "m_sbType", m_sbType );
+    result &= ser.write( basePath + "m_sbId", m_sbId );
+    result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel );
+    result &= serializeChild( basePath, ser );
+
+    return result;
 }
 
-AvDeviceSubunit*
-AvDeviceSubunit::deserialize( Glib::ustring basePath,
-                              Util::IODeserialize& deser,
-                              Ieee1394Service& ieee1394Service,
-                              ConfigRom& configRom,
-                              AvPlugManager& plugManager )
+BeBoB::AvDeviceSubunit*
+BeBoB::AvDeviceSubunit::deserialize( Glib::ustring basePath,
+                                     Util::IODeserialize& deser,
+                                     AvDevice& avDevice )
 {
-    return 0;
+    bool result;
+    AVCCommand::ESubunitType sbType;
+    result  = deser.read( basePath + "m_sbType", sbType );
+
+    AvDeviceSubunit* pSubunit = 0;
+    switch( sbType ) {
+    case AVCCommand::eST_Audio:
+        pSubunit = new AvDeviceSubunitAudio;
+        break;
+    case AVCCommand::eST_Music:
+        pSubunit = new AvDeviceSubunitMusic;
+        break;
+    default:
+        pSubunit = 0;
+    }
+
+    if ( !pSubunit ) {
+        return 0;
+    }
+
+    pSubunit->m_avDevice = &avDevice;
+    pSubunit->m_sbType = sbType;
+    result &= deser.read( basePath + "m_sbId", pSubunit->m_sbId );
+    result &= deser.read( basePath + "m_verboseLevel", pSubunit->m_verboseLevel );
+    result &= pSubunit->deserializeChild( basePath, deser, avDevice );
+
+    if ( !result ) {
+        delete pSubunit;
+        return 0;
+    }
+
+    return pSubunit;
 }
 
 ////////////////////////////////////////////
 
-AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice,
-                                            subunit_t id,
-                                            int verboseLevel )
+BeBoB::AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice,
+                                                   subunit_t id,
+                                                   int verboseLevel )
     : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id, verboseLevel )
 {
 }
 
-AvDeviceSubunitAudio::~AvDeviceSubunitAudio()
+BeBoB::AvDeviceSubunitAudio::AvDeviceSubunitAudio()
+    : AvDeviceSubunit()
+{
+}
+
+BeBoB::AvDeviceSubunitAudio::~AvDeviceSubunitAudio()
 {
     for ( FunctionBlockVector::iterator it = m_functions.begin();
           it != m_functions.end();
@@ -218,7 +264,7 @@ AvDeviceSubunitAudio::~AvDeviceSubunitAudio()
 }
 
 bool
-AvDeviceSubunitAudio::discover()
+BeBoB::AvDeviceSubunitAudio::discover()
 {
     if ( !AvDeviceSubunit::discover() ) {
         return false;
@@ -233,7 +279,7 @@ AvDeviceSubunitAudio::discover()
 }
 
 bool
-AvDeviceSubunitAudio::discoverConnections()
+BeBoB::AvDeviceSubunitAudio::discoverConnections()
 {
     if ( !AvDeviceSubunit::discoverConnections() ) {
         return false;
@@ -255,13 +301,13 @@ AvDeviceSubunitAudio::discoverConnections()
 }
 
 const char*
-AvDeviceSubunitAudio::getName()
+BeBoB::AvDeviceSubunitAudio::getName()
 {
     return "AudioSubunit";
 }
 
 bool
-AvDeviceSubunitAudio::discoverFunctionBlocks()
+BeBoB::AvDeviceSubunitAudio::discoverFunctionBlocks()
 {
     if ( !discoverFunctionBlocksDo(
              ExtendedSubunitInfoCmd::eFBT_AudioSubunitSelector) )
@@ -292,7 +338,7 @@ AvDeviceSubunitAudio::discoverFunctionBlocks()
 }
 
 bool
-AvDeviceSubunitAudio::discoverFunctionBlocksDo(
+BeBoB::AvDeviceSubunitAudio::discoverFunctionBlocksDo(
     ExtendedSubunitInfoCmd::EFunctionBlockType fbType )
 {
     int page = 0;
@@ -340,7 +386,7 @@ AvDeviceSubunitAudio::discoverFunctionBlocksDo(
 }
 
 bool
-AvDeviceSubunitAudio::createFunctionBlock(
+BeBoB::AvDeviceSubunitAudio::createFunctionBlock(
     ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
     ExtendedSubunitInfoPageData& data )
 {
@@ -435,8 +481,8 @@ AvDeviceSubunitAudio::createFunctionBlock(
     return true;
 }
 
-FunctionBlock::ESpecialPurpose
-AvDeviceSubunitAudio::convertSpecialPurpose(
+BeBoB::FunctionBlock::ESpecialPurpose
+BeBoB::AvDeviceSubunitAudio::convertSpecialPurpose(
     function_block_special_purpose_t specialPurpose )
 {
     FunctionBlock::ESpecialPurpose p;
@@ -453,24 +499,88 @@ AvDeviceSubunitAudio::convertSpecialPurpose(
     return p;
 }
 
+bool
+BeBoB::AvDeviceSubunitAudio::serializeChild( Glib::ustring basePath,
+                                             Util::IOSerialize& ser ) const
+{
+    bool result = true;
+    int i = 0;
+
+    for ( FunctionBlockVector::const_iterator it = m_functions.begin();
+          it != m_functions.end();
+          ++it )
+    {
+        FunctionBlock* pFB = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << "FunctionBlock" << i << "/";
+
+        result &= pFB->serialize( strstrm.str() , ser );
+
+        i++;
+    }
+
+    return result;
+}
+
+bool
+BeBoB::AvDeviceSubunitAudio::deserializeChild( Glib::ustring basePath,
+                                               Util::IODeserialize& deser,
+                                               AvDevice& avDevice )
+{
+    int i = 0;
+    bool bFinished = false;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << "FunctionBlock" << i << "/";
+        FunctionBlock* pFB = FunctionBlock::deserialize( strstrm.str(),
+                                                         deser,
+                                                         avDevice );
+        if ( pFB ) {
+            m_functions.push_back( pFB );
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return true;
+}
 
 ////////////////////////////////////////////
 
-AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice,
-                                            subunit_t id,
-                                            int verboseLevel )
+BeBoB::AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice,
+                                                   subunit_t id,
+                                                   int verboseLevel )
     : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id, verboseLevel )
 {
 }
 
-AvDeviceSubunitMusic::~AvDeviceSubunitMusic()
+BeBoB::AvDeviceSubunitMusic::AvDeviceSubunitMusic()
+    : AvDeviceSubunit()
+{
+}
+
+BeBoB::AvDeviceSubunitMusic::~AvDeviceSubunitMusic()
 {
 }
 
 const char*
-AvDeviceSubunitMusic::getName()
+BeBoB::AvDeviceSubunitMusic::getName()
 {
     return "MusicSubunit";
 }
 
+bool
+BeBoB::AvDeviceSubunitMusic::serializeChild( Glib::ustring basePath,
+                                             Util::IOSerialize& ser ) const
+{
+    return true;
+}
+
+bool
+BeBoB::AvDeviceSubunitMusic::deserializeChild( Glib::ustring basePath,
+                                               Util::IODeserialize& deser,
+                                               AvDevice& avDevice )
+{
+    return true;
 }

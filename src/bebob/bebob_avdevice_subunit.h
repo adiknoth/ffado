@@ -66,13 +66,19 @@ class AvDeviceSubunit {
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static AvDeviceSubunit* deserialize( Glib::ustring basePath,
 					 Util::IODeserialize& deser,
-					 Ieee1394Service& ieee1394Service,
-					 ConfigRom& configRom,
-					 AvPlugManager& plugManager );
+                                         AvDevice& avDevice );
  protected:
+    AvDeviceSubunit();
+
     bool discoverPlugs();
     bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
                        plug_id_t plugMaxId );
+
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const = 0;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice ) = 0;
 
  protected:
     AvDevice*                m_avDevice;
@@ -94,6 +100,7 @@ class AvDeviceSubunitAudio: public AvDeviceSubunit {
     AvDeviceSubunitAudio( AvDevice& avDevice,
 			  subunit_t id,
 			  int verboseLevel );
+    AvDeviceSubunitAudio();
     virtual ~AvDeviceSubunitAudio();
 
     virtual bool discover();
@@ -113,6 +120,12 @@ protected:
     FunctionBlock::ESpecialPurpose convertSpecialPurpose(
         function_block_special_purpose_t specialPurpose );
 
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
+
 protected:
     FunctionBlockVector m_functions;
 };
@@ -124,9 +137,17 @@ class AvDeviceSubunitMusic: public AvDeviceSubunit {
     AvDeviceSubunitMusic( AvDevice& avDevice,
 			  subunit_t id,
 			  int verboseLevel );
+    AvDeviceSubunitMusic();
     virtual ~AvDeviceSubunitMusic();
 
     virtual const char* getName();
+
+protected:
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
 };
 
 }
