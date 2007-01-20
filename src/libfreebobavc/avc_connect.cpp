@@ -27,7 +27,7 @@
 
 using namespace std;
 
-ConnectCmd::ConnectCmd(Ieee1394Service* ieee1394service)
+ConnectCmd::ConnectCmd(Ieee1394Service& ieee1394service)
     : AVCCommand( ieee1394service, AVC1394_CMD_CONNECT )
 {
 }

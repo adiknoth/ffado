@@ -27,10 +27,10 @@ const bool bVerbose = true;
 bool
 doApp( Ieee1394Service& ieee1394service, int node_id, int fb_id )
 {
-    FunctionBlockCmd fbCmd( &ieee1394service,
-                             FunctionBlockCmd::eFBT_Processing,
-                             fb_id,
-                             FunctionBlockCmd::eCA_Current );
+    FunctionBlockCmd fbCmd( ieee1394service,
+                            FunctionBlockCmd::eFBT_Processing,
+                            fb_id,
+                            FunctionBlockCmd::eCA_Current );
     fbCmd.setNodeId( node_id );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );

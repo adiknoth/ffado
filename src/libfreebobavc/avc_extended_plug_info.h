@@ -288,7 +288,7 @@ public:
         eSF_NotUsed                              = AVC1394_PLUG_INFO_SUBFUNCTION_SERIAL_BUS_NOT_USED,
     };
 
-    ExtendedPlugInfoCmd( Ieee1394Service* ieee1394service,
+    ExtendedPlugInfoCmd( Ieee1394Service& ieee1394service,
                          ESubFunction eSubFunction = eSF_ExtendedPlugInfoCmd );
     ExtendedPlugInfoCmd( const ExtendedPlugInfoCmd& rhs );
     virtual ~ExtendedPlugInfoCmd();

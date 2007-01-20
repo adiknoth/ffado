@@ -236,7 +236,7 @@ public:
         eCA_Delta      = 0x19,
     };
 
-    FunctionBlockCmd( Ieee1394Service* ieee1394service,
+    FunctionBlockCmd( Ieee1394Service& ieee1394service,
                       EFunctionBlockType eType,
                       function_block_id_t id,
                       EControlAttribute eCtrlAttrib );

@@ -286,7 +286,7 @@ FormatInformation::clone() const
 
 ////////////////////////////////////////////////////////////
 
-ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( Ieee1394Service* service,
+ExtendedStreamFormatCmd::ExtendedStreamFormatCmd( Ieee1394Service& service,
                                                   ESubFunction eSubFunction )
     : AVCCommand( service, AVC1394_STREAM_FORMAT_SUPPORT )
     , m_subFunction( eSubFunction )

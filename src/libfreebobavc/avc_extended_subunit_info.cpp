@@ -72,7 +72,7 @@ ExtendedSubunitInfoPageData::clone() const
 
 //////////////////////////////////////////////
 
-ExtendedSubunitInfoCmd::ExtendedSubunitInfoCmd( Ieee1394Service* ieee1394service )
+ExtendedSubunitInfoCmd::ExtendedSubunitInfoCmd( Ieee1394Service& ieee1394service )
     : AVCCommand( ieee1394service, AVC1394_CMD_SUBUNIT_INFO )
     , m_page( 0xff )
     , m_fbType( eFBT_AllFunctinBlockType )

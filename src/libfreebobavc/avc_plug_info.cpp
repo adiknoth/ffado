@@ -27,7 +27,7 @@
 
 using namespace std;
 
-PlugInfoCmd::PlugInfoCmd( Ieee1394Service* ieee1394service,
+PlugInfoCmd::PlugInfoCmd( Ieee1394Service& ieee1394service,
                           ESubFunction eSubFunction )
     : AVCCommand( ieee1394service, AVC1394_CMD_PLUG_INFO )
     , m_serialBusIsochronousInputPlugs( 0xff )

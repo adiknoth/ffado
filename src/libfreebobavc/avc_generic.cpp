@@ -32,9 +32,9 @@ IMPL_DEBUG_MODULE( AVCCommand, AVCCommand, DEBUG_LEVEL_NORMAL );
 
 int AVCCommand::m_time = 0;
 
-AVCCommand::AVCCommand( Ieee1394Service* ieee1394service,
+AVCCommand::AVCCommand( Ieee1394Service& ieee1394service,
                         opcode_t opcode )
-    : m_1394Service( ieee1394service )
+    : m_p1394Service( &ieee1394service )
     , m_nodeId( 0 )
     , m_ctype( eCT_Unknown )
     , m_subunit( 0xff )
@@ -185,10 +185,10 @@ AVCCommand::fire()
     }
 
     unsigned int resp_len;
-    quadlet_t* resp = m_1394Service->transactionBlock( m_nodeId,
-                                                       (quadlet_t*)m_fcpFrame,
-                                                       ( fcpFrameSize+3 ) / 4,
-                                                       &resp_len );
+    quadlet_t* resp = m_p1394Service->transactionBlock( m_nodeId,
+                                                        (quadlet_t*)m_fcpFrame,
+                                                        ( fcpFrameSize+3 ) / 4,
+                                                        &resp_len );
     bool result = false;
     if ( resp ) {
         resp_len *= 4;
@@ -231,7 +231,7 @@ AVCCommand::fire()
 
     debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n" );
 
-    m_1394Service->transactionBlockClose();
+    m_p1394Service->transactionBlockClose();
 
     usleep( m_time );
 

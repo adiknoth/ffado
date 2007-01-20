@@ -85,7 +85,7 @@ public:
 
     };
 
-    ExtendedSubunitInfoCmd( Ieee1394Service* ieee1394service );
+    ExtendedSubunitInfoCmd( Ieee1394Service& ieee1394service );
     ExtendedSubunitInfoCmd( const ExtendedSubunitInfoCmd& rhs );
     virtual ~ExtendedSubunitInfoCmd();
 

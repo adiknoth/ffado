@@ -256,7 +256,7 @@ private:
     typedef std::vector<FormatInfo> FormatInfoVector;
 
 
-    Ieee1394Service*             m_1394Service;
+    Ieee1394Service*             m_p1394Service;
     ConfigRom*                   m_pConfigRom;
     AVCCommand::ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;
@@ -313,20 +313,18 @@ public:
 				 AvPlug::EAvPlugDirection plugDirection,
 				 AvPlug::EAvPlugType type) const;
 
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    static  AvPlugManager* deserialize( Glib::ustring basePath,
+                                        Util::IODeserialize& deser,
+                                        Ieee1394Service& ieee1394Service,
+                                        ConfigRom& configRom );
 private:
+    AvPlugManager();
+
     int          m_verboseLevel;
     AvPlugVector m_plugs;
 
     DECLARE_DEBUG_MODULE;
-};
-
-class AvPlugCluster {
-public:
-    AvPlugCluster();
-    virtual ~AvPlugCluster();
-
-    Glib::ustring  m_name;
-    AvPlugVector   m_avPlugs;
 };
 
 class AvPlugConnection {
@@ -337,6 +335,15 @@ public:
         { return *m_srcPlug; }
     AvPlug& getDestPlug() const
         { return *m_destPlug; }
+
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    static AvPlugConnection* deserialize( Glib::ustring basePath,
+                                          Util::IODeserialize& deser,
+                                          Ieee1394Service& ieee1394Service,
+                                          ConfigRom& configRom,
+                                          AvPlugManager& plugManager );
+private:
+    AvPlugConnection();
 
 private:
     AvPlug* m_srcPlug;

@@ -27,7 +27,7 @@
 
 using namespace std;
 
-UnitInfoCmd::UnitInfoCmd( Ieee1394Service* ieee1349service )
+UnitInfoCmd::UnitInfoCmd( Ieee1394Service& ieee1349service )
     : AVCCommand( ieee1349service, AVC1394_CMD_UNIT_INFO )
     , m_reserved( 0xff )
     , m_unit_type( 0xff )

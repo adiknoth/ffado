@@ -77,7 +77,7 @@ AvPlug::addXmlDescription( xmlNodePtr connectionSet )
     }
     */
 
-    asprintf( &result, "%d", m_1394Service->getPort() );
+    asprintf( &result, "%d", m_p1394Service->getPort() );
     if ( !xmlNewChild( connection,  0,
                        BAD_CAST "Port",  BAD_CAST result ) ) {
         debugError( "Couldn't create 'Port' node\n" );

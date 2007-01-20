@@ -108,7 +108,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 bool
 doPlugType( Ieee1394Service& ieee1394service, int node_id )
 {
-    ExtendedPlugInfoCmd extPlugInfoCmd( &ieee1394service );
+    ExtendedPlugInfoCmd extPlugInfoCmd( ieee1394service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
     extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                 PlugAddress::ePAM_Unit,
@@ -147,7 +147,7 @@ doPlugType( Ieee1394Service& ieee1394service, int node_id )
 bool
 doPlugName( Ieee1394Service& ieee1394service, int node_id )
 {
-    ExtendedPlugInfoCmd extPlugInfoCmd( &ieee1394service );
+    ExtendedPlugInfoCmd extPlugInfoCmd( ieee1394service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
     extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                 PlugAddress::ePAM_Unit,

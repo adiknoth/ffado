@@ -48,7 +48,7 @@ public:
         eUT_Unit          = AVC1394_SUBUNIT_UNIT,
     };
 
-    UnitInfoCmd( Ieee1394Service* ieee1349service );
+    UnitInfoCmd( Ieee1394Service& ieee1349service );
     virtual ~UnitInfoCmd();
 
     virtual bool serialize( IOSSerialize& se );

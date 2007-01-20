@@ -257,7 +257,7 @@ public:
     typedef byte_t status_t;
     typedef byte_t index_in_stream_format_t;
 
-    ExtendedStreamFormatCmd( Ieee1394Service* ieee1349service, ESubFunction eSubFunction = eSF_ExtendedStreamFormatInformationCommand );
+    ExtendedStreamFormatCmd( Ieee1394Service& ieee1349service, ESubFunction eSubFunction = eSF_ExtendedStreamFormatInformationCommand );
     ExtendedStreamFormatCmd( const ExtendedStreamFormatCmd& rhs );
     virtual ~ExtendedStreamFormatCmd();
 

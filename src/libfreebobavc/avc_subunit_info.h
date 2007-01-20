@@ -31,7 +31,7 @@
 class SubUnitInfoCmd: public AVCCommand
 {
 public:
-    SubUnitInfoCmd( Ieee1394Service* ieee1349service );
+    SubUnitInfoCmd( Ieee1394Service& ieee1349service );
     virtual ~SubUnitInfoCmd();
 
     virtual bool serialize( IOSSerialize& se );

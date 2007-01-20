@@ -96,7 +96,7 @@ SignalSubunitAddress::clone() const
 ////////////////////////////////////////
 
 
-SignalSourceCmd::SignalSourceCmd( Ieee1394Service* ieee1394service )
+SignalSourceCmd::SignalSourceCmd( Ieee1394Service& ieee1394service )
     : AVCCommand( ieee1394service, AVC1394_CMD_SIGNAL_SOURCE )
     , m_resultStatus( 0xff )
     , m_outputStatus( 0xff )
