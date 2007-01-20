@@ -146,6 +146,21 @@ FunctionBlock::discoverConnections()
     return true;
 }
 
+bool
+FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+{
+    int dummy = 42;
+    return ser.write( basePath + "dummy", dummy );
+}
+
+FunctionBlock*
+FunctionBlock::deserialize( Glib::ustring basePath,
+                            Util::IODeserialize& deser,
+                            AvDevice& avDevice )
+{
+    return 0;
+}
+
 ///////////////////////
 
 FunctionBlockSelector::FunctionBlockSelector(
