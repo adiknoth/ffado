@@ -99,7 +99,7 @@ FunctionBlock::discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
 {
     for ( int plugId = 0; plugId < plugMaxId; ++plugId ) {
         AvPlug* plug = new AvPlug(
-            *( m_subunit->getAvDevice().get1394Service() ),
+            m_subunit->getAvDevice().get1394Service(),
             m_subunit->getAvDevice().getConfigRom(),
             m_subunit->getAvDevice().getPlugManager(),
             m_subunit->getSubunitType(),

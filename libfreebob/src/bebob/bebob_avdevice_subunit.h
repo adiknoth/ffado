@@ -1,5 +1,5 @@
 /* bebob_avdevice_subunit.h
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -62,6 +62,13 @@ class AvDeviceSubunit {
     AvDevice& getAvDevice() const
         { return *m_avDevice; }
 
+
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    static AvDeviceSubunit* deserialize( Glib::ustring basePath,
+					 Util::IODeserialize& deser,
+					 Ieee1394Service& ieee1394Service,
+					 ConfigRom& configRom,
+					 AvPlugManager& plugManager );
  protected:
     bool discoverPlugs();
     bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,

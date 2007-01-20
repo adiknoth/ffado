@@ -65,7 +65,7 @@ public:
 class SignalSourceCmd: public AVCCommand
 {
 public:
-    SignalSourceCmd( Ieee1394Service* ieee1394service );
+    SignalSourceCmd( Ieee1394Service& ieee1394service );
     virtual ~SignalSourceCmd();
 
     virtual bool serialize( IOSSerialize& se );

@@ -431,7 +431,7 @@ FunctionBlockCodec::clone() const
 /////////////////////////////////
 /////////////////////////////////
 
-FunctionBlockCmd::FunctionBlockCmd( Ieee1394Service* ieee1394service,
+FunctionBlockCmd::FunctionBlockCmd( Ieee1394Service& ieee1394service,
                                     EFunctionBlockType eType,
                                     function_block_id_t id,
                                     EControlAttribute eCtrlAttrib )

@@ -28,10 +28,10 @@ short int
 getVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id,
            FunctionBlockCmd::EControlAttribute control_attrib )
 {
-    FunctionBlockCmd fbCmd( &ieee1394service,
-                             FunctionBlockCmd::eFBT_Feature,
-                             ffb_id,
-                             control_attrib );
+    FunctionBlockCmd fbCmd( ieee1394service,
+                            FunctionBlockCmd::eFBT_Feature,
+                            ffb_id,
+                            control_attrib );
     fbCmd.setNodeId( node_id );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
@@ -55,10 +55,10 @@ getVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id,
 bool
 setVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id, int vol )
 {
-    FunctionBlockCmd fbCmd( &ieee1394service,
-                             FunctionBlockCmd::eFBT_Feature,
-                             ffb_id,
-                             FunctionBlockCmd::eCA_Current );
+    FunctionBlockCmd fbCmd( ieee1394service,
+                            FunctionBlockCmd::eFBT_Feature,
+                            ffb_id,
+                            FunctionBlockCmd::eCA_Current );
     fbCmd.setNodeId( node_id );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Control );

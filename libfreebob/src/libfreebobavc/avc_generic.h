@@ -115,12 +115,12 @@ protected:
 		       unsigned short frameSize ) const;
 
 protected:
-    AVCCommand( Ieee1394Service* ieee1394service, opcode_t opcode );
+    AVCCommand( Ieee1394Service& ieee1394service, opcode_t opcode );
     virtual ~AVCCommand() {}
 
     ECommandType getCommandType();
 
-    Ieee1394Service* m_1394Service;
+    Ieee1394Service* m_p1394Service;
     fb_nodeid_t      m_nodeId;
 
     fcp_frame_t      m_fcpFrame;

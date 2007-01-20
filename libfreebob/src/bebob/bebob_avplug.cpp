@@ -44,7 +44,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 EAvPlugDirection plugDirection,
                 plug_id_t plugId,
                 int verboseLevel )
-    : m_1394Service( &ieee1394Service )
+    : m_p1394Service( &ieee1394Service )
     , m_pConfigRom( &configRom )
     , m_subunitType( subunitType )
     , m_subunitId( subunitId )
@@ -76,7 +76,7 @@ AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
 }
 
 AvPlug::AvPlug( const AvPlug& rhs )
-    : m_1394Service( rhs.m_1394Service )
+    : m_p1394Service( rhs.m_p1394Service )
     , m_pConfigRom( rhs.m_pConfigRom )
     , m_subunitType( rhs.m_subunitType )
     , m_subunitId( rhs.m_subunitId )
@@ -99,7 +99,7 @@ AvPlug::AvPlug( const AvPlug& rhs )
 }
 
 AvPlug::AvPlug()
-    : m_1394Service( 0 )
+    : m_p1394Service( 0 )
     , m_pConfigRom( 0 )
     , m_subunitType( AVCCommand::eST_Reserved ) // a good value for unknown/undefined?
     , m_subunitId( 0 )
@@ -943,7 +943,7 @@ AvPlug::addPlugConnection( AvPlugVector& connections,
 ExtendedPlugInfoCmd
 AvPlug::setPlugAddrToPlugInfoCmd()
 {
-    ExtendedPlugInfoCmd extPlugInfoCmd( m_1394Service );
+    ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
 
     switch( m_subunitType ) {
     case AVCCommand::eST_Unit:
@@ -1020,7 +1020,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
     ExtendedStreamFormatCmd::ESubFunction subFunction)
 {
     ExtendedStreamFormatCmd extStreamFormatInfoCmd(
-        m_1394Service,
+        *m_p1394Service,
         subFunction );
     switch( m_subunitType ) {
     case AVCCommand::eST_Unit:
@@ -1093,7 +1093,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
 SignalSourceCmd
 AvPlug::setSrcPlugAddrToSignalCmd()
 {
-    SignalSourceCmd signalSourceCmd( m_1394Service );
+    SignalSourceCmd signalSourceCmd( *m_p1394Service );
 
     switch( m_subunitType ) {
     case AVCCommand::eST_Unit:
@@ -1631,6 +1631,7 @@ AvPlug::serializeAvPlugVector( Glib::ustring basePath,
         strstrm << basePath << i;
 
         result &= ser.write( strstrm.str() + "/global_id", pPlug->getGlobalId() );
+        i++;
     }
     return result;
 }
@@ -1711,7 +1712,7 @@ AvPlug::deserialize( Glib::ustring basePath,
         return 0;
     }
 
-    pPlug->m_1394Service = &ieee1394Service;
+    pPlug->m_p1394Service = &ieee1394Service;
     pPlug->m_pConfigRom = &configRom;
     pPlug->m_plugManager = &plugManager;
     bool result;
@@ -1747,8 +1748,10 @@ AvPlug::deserializeUpdate( Glib::ustring basePath,
                            Util::IODeserialize& deser )
 {
     bool result;
+
     result  = deserializeAvPlugVector( basePath + "m_inputConnections", deser, m_inputConnections );
     result &= deserializeAvPlugVector( basePath + "m_outputConnections", deser, m_outputConnections );
+
     return result;
 }
 
@@ -1820,6 +1823,12 @@ AvPlugManager::AvPlugManager( int verboseLevel )
     : m_verboseLevel( verboseLevel )
 {
     setDebugLevel( m_verboseLevel );
+}
+
+AvPlugManager::AvPlugManager()
+    : m_verboseLevel( 0 )
+{
+    setDebugLevel( 0 );
 }
 
 AvPlugManager::AvPlugManager( const AvPlugManager& rhs )
@@ -2081,32 +2090,75 @@ AvPlugManager::getPlugsByType( AVCCommand::ESubunitType subunitType,
           it !=  m_plugs.end();
           ++it )
     {
-        AvPlug* plug = *it;
+        AvPlug* pPlug = *it;
 
-        if (    ( subunitType == plug->getSubunitType() )
-             && ( subunitId == plug->getSubunitId() )
-             && ( functionBlockType == plug->getFunctionBlockType() )
-             && ( functionBlockId == plug->getFunctionBlockId() )
-             && ( plugAddressType == plug->getPlugAddressType() )
-             && ( plugDirection == plug->getPlugDirection() )
-             && ( type == plug->getPlugType() ) )
+        if (    ( subunitType == pPlug->getSubunitType() )
+             && ( subunitId == pPlug->getSubunitId() )
+             && ( functionBlockType == pPlug->getFunctionBlockType() )
+             && ( functionBlockId == pPlug->getFunctionBlockId() )
+             && ( plugAddressType == pPlug->getPlugAddressType() )
+             && ( plugDirection == pPlug->getPlugDirection() )
+             && ( type == pPlug->getPlugType() ) )
         {
-            plugVector.push_back( plug );
+            plugVector.push_back( pPlug );
         }
     }
 
     return plugVector;
 }
 
-////////////////////////////////////
-
-AvPlugCluster::AvPlugCluster()
+bool
+AvPlugManager::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 {
+    bool result = true;
+    int i = 0;
+    for ( AvPlugVector::const_iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        AvPlug* pPlug = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+        result &= pPlug->serialize( strstrm.str() + "/", ser );
+        i++;
+    }
+
+    return result;
 }
 
-AvPlugCluster::~AvPlugCluster()
+AvPlugManager*
+AvPlugManager::deserialize( Glib::ustring basePath,
+                            Util::IODeserialize& deser,
+                            Ieee1394Service& ieee1394Service,
+                            ConfigRom& configRom )
 {
+    AvPlugManager* pMgr = new AvPlugManager;
+
+    if ( !pMgr ) {
+        return 0;
+    }
+
+    int i = 0;
+    bool bFinished = false;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+        AvPlug* pPlug = AvPlug::deserialize( strstrm.str() + "/",
+                                             deser,
+                                             ieee1394Service,
+                                             configRom,
+                                             *pMgr );
+        if ( pPlug ) {
+            pMgr->m_plugs.push_back( pPlug );
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return pMgr;
 }
+
 
 ////////////////////////////////////
 
@@ -2114,6 +2166,55 @@ AvPlugConnection::AvPlugConnection( AvPlug& srcPlug, AvPlug& destPlug )
     : m_srcPlug( &srcPlug )
     , m_destPlug( &destPlug )
 {
+}
+
+AvPlugConnection::AvPlugConnection()
+    : m_srcPlug( 0 )
+    , m_destPlug( 0 )
+{
+}
+
+bool
+AvPlugConnection::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+{
+    bool result;
+    result  = ser.write( basePath + "m_srcPlug", m_srcPlug->getGlobalId() );
+    result &= ser.write( basePath + "m_destPlug", m_destPlug->getGlobalId() );
+    return result;
+}
+
+AvPlugConnection*
+AvPlugConnection::deserialize( Glib::ustring basePath,
+                               Util::IODeserialize& deser,
+                               Ieee1394Service& /* ieee1394Service */,
+                               ConfigRom& /* configRom */,
+                               AvPlugManager& plugManager )
+{
+    AvPlugConnection* pConnection = new AvPlugConnection;
+    if ( !pConnection ) {
+        return 0;
+    }
+
+    bool result;
+    int iSrcPlugId;
+    int iDestPlugId;
+    result  = deser.read( basePath + "m_srcPlug", iSrcPlugId );
+    result &= deser.read( basePath + "m_destPlug",  iDestPlugId );
+
+    if ( !result ) {
+        delete pConnection;
+        return 0;
+    }
+
+    pConnection->m_srcPlug  = plugManager.getPlug( iSrcPlugId );
+    pConnection->m_destPlug = plugManager.getPlug( iDestPlugId );
+
+    if ( !pConnection->m_srcPlug || !pConnection->m_destPlug ) {
+        delete pConnection;
+        return 0;
+    }
+
+    return pConnection;
 }
 
 }

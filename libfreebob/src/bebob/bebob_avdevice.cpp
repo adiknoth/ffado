@@ -44,9 +44,9 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int nodeId,
                     int verboseLevel )
     : m_pConfigRom( configRom )
-    , m_1394Service( &ieee1394service )
+    , m_p1394Service( &ieee1394service )
     , m_verboseLevel( verboseLevel )
-    , m_plugManager( verboseLevel )
+    , m_pPlugManager( new AvPlugManager( verboseLevel ) )
     , m_activeSyncInfo( 0 )
     , m_id( 0 )
     , m_receiveProcessor ( 0 )
@@ -61,9 +61,9 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
 
 AvDevice::AvDevice()
     : m_pConfigRom( 0 )
-    , m_1394Service( 0 )
+    , m_p1394Service( 0 )
     , m_verboseLevel( 0 )
-    , m_plugManager( 0 )
+    , m_pPlugManager( 0 )
     , m_activeSyncInfo( 0 )
     , m_id( 0 )
     , m_receiveProcessor ( 0 )
@@ -120,7 +120,8 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
 
-    {0x000a92, 0x00010066},  // Presonous FirePOD
+    {0x000a92, 0x00010000},  // PreSonus FIREBOX
+    {0x000a92, 0x00010066},  // PreSonus FirePOD
 
     {0x000aac, 0x00000003},  // TerraTec Electronic GmbH, Phase 88 FW
     {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
@@ -192,7 +193,7 @@ AvDevice::discoverPlugs()
     // Get number of available isochronous input
     // and output plugs of unit
 
-    PlugInfoCmd plugInfoCmd( m_1394Service );
+    PlugInfoCmd plugInfoCmd( *m_p1394Service );
     plugInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
     plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     plugInfoCmd.setVerbose( m_verboseLevel );
@@ -250,9 +251,9 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
           plugId < plugMaxId;
           ++plugId )
     {
-        AvPlug* plug  = new AvPlug( *m_1394Service,
+        AvPlug* plug  = new AvPlug( *m_p1394Service,
                                     *m_pConfigRom,
-                                    m_plugManager,
+                                    *m_pPlugManager,
                                     AVCCommand::eST_Unit,
                                     0xff,
                                     0xff,
@@ -283,9 +284,9 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
           plugId < plugMaxId;
           ++plugId )
     {
-        AvPlug* plug  = new AvPlug( *m_1394Service,
+        AvPlug* plug  = new AvPlug( *m_p1394Service,
                                     *m_pConfigRom,
-                                    m_plugManager,
+                                    *m_pPlugManager,
                                     AVCCommand::eST_Unit,
                                     0xff,
                                     0xff,
@@ -406,7 +407,7 @@ AvDevice::discoverSyncModes()
                                                     AvPlug::eAPD_Input,
                                                     AvPlug::eAPT_Digital );
 
-    AvPlugVector syncMSUInputPlugs = m_plugManager.getPlugsByType(
+    AvPlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
         AVCCommand::eST_Music,
         0,
         0xff,
@@ -418,7 +419,7 @@ AvDevice::discoverSyncModes()
         debugWarning( "No sync input plug for MSU subunit found\n" );
     }
 
-    AvPlugVector syncMSUOutputPlugs = m_plugManager.getPlugsByType(
+    AvPlugVector syncMSUOutputPlugs = m_pPlugManager->getPlugsByType(
         AVCCommand::eST_Music,
         0,
         0xff,
@@ -518,7 +519,7 @@ AvDevice::enumerateSubUnits()
     bool musicSubunitFound=false;
     bool audioSubunitFound=false;
 
-    SubUnitInfoCmd subUnitInfoCmd( m_1394Service );
+    SubUnitInfoCmd subUnitInfoCmd( *m_p1394Service );
     //subUnitInfoCmd.setVerbose( 1 );
     subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
 
@@ -770,7 +771,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 {
 
     ExtendedStreamFormatCmd extStreamFormatCmd(
-        m_1394Service,
+        *m_p1394Service,
         ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
                                      plug.getPlugId() );
@@ -867,7 +868,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 void
 AvDevice::showDevice() const
 {
-    m_plugManager.showPlugs();
+    m_pPlugManager->showPlugs();
 }
 
 void
@@ -941,7 +942,7 @@ AvDevice::prepare() {
 
     int samplerate=outputPlug->getSampleRate();
     m_receiveProcessor=new FreebobStreaming::AmdtpReceiveStreamProcessor(
-                             m_1394Service->getPort(),
+                             m_p1394Service->getPort(),
                              samplerate,
                              outputPlug->getNrOfChannels());
 
@@ -979,7 +980,7 @@ AvDevice::prepare() {
         // do the transmit processor
         samplerate=inputPlug->getSampleRate();
         m_transmitProcessor=new FreebobStreaming::AmdtpTransmitStreamProcessor(
-                                m_1394Service->getPort(),
+                                m_p1394Service->getPort(),
                                 samplerate,
                                 inputPlug->getNrOfChannels());
 
@@ -1143,10 +1144,10 @@ AvDevice::startStreamByIndex(int i) {
         case 0:
             // do connection management: make connection
             iso_channel = iec61883_cmp_connect(
-                m_1394Service->getHandle(),
+                m_p1394Service->getHandle(),
                 m_pConfigRom->getNodeId() | 0xffc0,
                 &plug,
-                raw1394_get_local_id (m_1394Service->getHandle()),
+                raw1394_get_local_id (m_p1394Service->getHandle()),
                 &hostplug,
                 &m_receiveProcessorBandwidth);
 
@@ -1156,8 +1157,8 @@ AvDevice::startStreamByIndex(int i) {
         case 1:
             // do connection management: make connection
             iso_channel = iec61883_cmp_connect(
-                m_1394Service->getHandle(),
-                raw1394_get_local_id (m_1394Service->getHandle()),
+                m_p1394Service->getHandle(),
+                raw1394_get_local_id (m_p1394Service->getHandle()),
                 &hostplug,
                 m_pConfigRom->getNodeId() | 0xffc0,
                 &plug,
@@ -1199,10 +1200,10 @@ AvDevice::stopStreamByIndex(int i) {
         case 0:
             // do connection management: break connection
             iec61883_cmp_disconnect(
-                m_1394Service->getHandle(),
+                m_p1394Service->getHandle(),
                 m_pConfigRom->getNodeId() | 0xffc0,
                 plug,
-                raw1394_get_local_id (m_1394Service->getHandle()),
+                raw1394_get_local_id (m_p1394Service->getHandle()),
                 hostplug,
                 m_receiveProcessor->getChannel(),
                 m_receiveProcessorBandwidth);
@@ -1211,8 +1212,8 @@ AvDevice::stopStreamByIndex(int i) {
         case 1:
             // do connection management: break connection
             iec61883_cmp_disconnect(
-                m_1394Service->getHandle(),
-                raw1394_get_local_id (m_1394Service->getHandle()),
+                m_p1394Service->getHandle(),
+                raw1394_get_local_id (m_p1394Service->getHandle()),
                 hostplug,
                 m_pConfigRom->getNodeId() | 0xffc0,
                 plug,
@@ -1273,9 +1274,9 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
 }
 
 static bool
-deserializeUpdatePlugs( Glib::ustring basePath,
-                        Util::IODeserialize& deser,
-                        AvPlugVector& vec )
+deserializeAvPlugUpdateConnections( Glib::ustring path,
+                                    Util::IODeserialize& deser,
+                                    AvPlugVector& vec )
 {
     bool result = true;
     for ( AvPlugVector::iterator it = vec.begin();
@@ -1283,20 +1284,21 @@ deserializeUpdatePlugs( Glib::ustring basePath,
           ++it )
     {
         AvPlug* pPlug = *it;
-        result &= pPlug->deserializeUpdate( basePath, deser );
+        result &= pPlug->deserializeUpdate( path, deser );
     }
     return result;
 }
 
 bool
-AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser )
+AvDevice::serialize( Glib::ustring
+                     basePath, Util::IOSerialize& ser )
 {
     bool result;
     result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
     result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel );
-
-    result &= serializeVector( basePath + "PCRPlug", ser, m_pcrPlugs );
-    result &= serializeVector( basePath + "ExternelPlug", ser, m_externalPlugs );
+    result &= m_pPlugManager->serialize( basePath + "AvPlug", ser ); // serialize all av plugs
+    result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
+    result &= serializeVector( basePath + "Subunit", ser, m_subunits );
 
     // XXX ...
 
@@ -1319,15 +1321,18 @@ AvDevice::deserialize( Glib::ustring basePath,
             return 0;
         }
 
-        pDev->m_1394Service = &ieee1394Service;
+        pDev->m_p1394Service = &ieee1394Service;
         bool result;
-        result = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
-
-        result &= deserializeVector<AvPlug>( basePath + "PCRPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get(), pDev->m_plugManager, pDev->m_pcrPlugs );
-        result &= deserializeVector<AvPlug>( basePath + "ExternalPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get(), pDev->m_plugManager, pDev->m_externalPlugs );
-        result &= deserializeUpdatePlugs( basePath + "PCRPlug", deser, pDev->m_pcrPlugs );
-        result &= deserializeUpdatePlugs( basePath + "ExternalPlug", deser, pDev->m_externalPlugs );
-
+        result  = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
+        pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, ieee1394Service, *pDev->m_pConfigRom.get() );
+        if ( !pDev->m_pPlugManager ) {
+            delete pDev;
+            return 0;
+        }
+        result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_pcrPlugs );
+        result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_externalPlugs );
+        result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, ieee1394Service, *pDev->m_pConfigRom.get(), *pDev->m_pPlugManager, pDev->m_plugConnections );
+        result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, ieee1394Service, *pDev->m_pConfigRom.get(), *pDev->m_pPlugManager, pDev->m_subunits );
 
         // XXX ...
     }

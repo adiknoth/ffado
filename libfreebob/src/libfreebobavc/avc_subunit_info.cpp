@@ -27,7 +27,7 @@
 
 using namespace std;
 
-SubUnitInfoCmd::SubUnitInfoCmd( Ieee1394Service* ieee1349service )
+SubUnitInfoCmd::SubUnitInfoCmd( Ieee1394Service& ieee1349service )
     : AVCCommand( ieee1349service, AVC1394_CMD_SUBUNIT_INFO )
 {
     clear();

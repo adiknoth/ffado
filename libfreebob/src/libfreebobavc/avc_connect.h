@@ -28,7 +28,7 @@
 class ConnectCmd: public AVCCommand
 {
 public:
-    ConnectCmd(Ieee1394Service* ieee1394service);
+    ConnectCmd(Ieee1394Service& ieee1394service);
     virtual ~ConnectCmd();
 
     virtual bool serialize( IOSSerialize& se );

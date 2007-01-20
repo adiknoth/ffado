@@ -775,7 +775,7 @@ const char* extendedPlugInfoInfoTypeToString( info_type_t infoType )
 
 //////////////////////////////////////////////
 
-ExtendedPlugInfoCmd::ExtendedPlugInfoCmd( Ieee1394Service* ieee1394service,
+ExtendedPlugInfoCmd::ExtendedPlugInfoCmd( Ieee1394Service& ieee1394service,
                                           ESubFunction eSubFunction )
     : AVCCommand( ieee1394service, AVC1394_CMD_PLUG_INFO )
 {

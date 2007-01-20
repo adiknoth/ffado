@@ -133,7 +133,7 @@ AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
     {
         AVCCommand::ESubunitType subunitType =
             static_cast<AVCCommand::ESubunitType>( getSubunitType() );
-        AvPlug* plug = new AvPlug( *m_avDevice->get1394Service(),
+        AvPlug* plug = new AvPlug( m_avDevice->get1394Service(),
                                    m_avDevice->getConfigRom(),
                                    m_avDevice->getPlugManager(),
                                    subunitType,
@@ -178,6 +178,23 @@ AvDeviceSubunit::getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId)
             return plug;
         }
     }
+    return 0;
+}
+
+
+bool
+AvDeviceSubunit::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+{
+    return true;
+}
+
+AvDeviceSubunit*
+AvDeviceSubunit::deserialize( Glib::ustring basePath,
+                              Util::IODeserialize& deser,
+                              Ieee1394Service& ieee1394Service,
+                              ConfigRom& configRom,
+                              AvPlugManager& plugManager )
+{
     return 0;
 }
 

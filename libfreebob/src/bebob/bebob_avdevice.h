@@ -72,11 +72,11 @@ public:
     virtual void showDevice() const;
     virtual bool setId(unsigned int id);
 
-    Ieee1394Service* get1394Service()
-        { return m_1394Service; }
+    Ieee1394Service& get1394Service()
+        { return *m_p1394Service; }
 
     AvPlugManager& getPlugManager()
-        { return m_plugManager; }
+        { return *m_pPlugManager; }
 
     struct SyncInfo {
         SyncInfo( AvPlug& source,
@@ -146,13 +146,13 @@ protected:
                                            std::string syncDescription );
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
-    Ieee1394Service*          m_1394Service;
+    Ieee1394Service*          m_p1394Service;
     int                       m_verboseLevel;
     AvPlugVector              m_pcrPlugs;
     AvPlugVector              m_externalPlugs;
     AvPlugConnectionVector    m_plugConnections;
     AvDeviceSubunitVector     m_subunits;
-    AvPlugManager             m_plugManager;
+    AvPlugManager*            m_pPlugManager;
     SyncInfoVector            m_syncInfos;
     SyncInfo*                 m_activeSyncInfo;
     unsigned int              m_id;
