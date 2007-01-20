@@ -53,15 +53,17 @@ DebugModule::DebugModule( std::string name,  debug_level_t level )
 
 DebugModule::~DebugModule()
 {
-    cerr << "Unregistering " 
-         << this->getName()
-         << " at DebugModuleManager"
-         << endl;
+    if ( m_level >= eDL_VeryVerbose ) {
+        cout << "Unregistering "
+             << this->getName()
+             << " at DebugModuleManager"
+             << endl;
+    }
     if ( !DebugModuleManager::instance()->unregisterModule( *this ) ) {
         cerr << "Could not unregister DebugModule at DebugModuleManager"
              << endl;
     }
-    
+
 }
 
 void
@@ -78,7 +80,7 @@ DebugModule::printShort( debug_level_t level,
     va_start( arg, format );
 
     DebugModuleManager::instance()->va_print( format, arg );
-    
+
     va_end( arg );
 }
 
@@ -174,8 +176,9 @@ DebugModuleManager::init()
 {
 	if (mb_initialized)
 		return true;
-		
-	fprintf(stderr, "DebugModuleManager init...\n");
+
+        // if ( m_level >= eDL_VeryVerbose )
+        //         cout << "DebugModuleManager init..." << endl;
 
 	pthread_mutex_init(&mb_write_lock, NULL);
 	pthread_cond_init(&mb_ready_cond, NULL);
@@ -254,7 +257,7 @@ DebugModuleManager::mb_flush()
 {
 	/* called WITHOUT the mb_write_lock */
 	while (mb_outbuffer != mb_inbuffer) {
-		fputs(mb_buffers[mb_outbuffer], stderr);
+		fputs(mb_buffers[mb_outbuffer], stdout);
 		mb_outbuffer = MB_NEXT(mb_outbuffer);
 	}
 }
@@ -264,14 +267,14 @@ DebugModuleManager::mb_thread_func(void *arg)
 {
 
     DebugModuleManager *m=static_cast<DebugModuleManager *>(arg);
-    
+
 	/* The mutex is only to eliminate collisions between multiple
 	 * writer threads and protect the condition variable. */
  	pthread_mutex_lock(&m->mb_write_lock);
 
 	while (m->mb_initialized) {
  		pthread_cond_wait(&m->mb_ready_cond, &m->mb_write_lock);
- 
+
  		/* releasing the mutex reduces contention */
  		pthread_mutex_unlock(&m->mb_write_lock);
  		m->mb_flush();
@@ -283,7 +286,7 @@ DebugModuleManager::mb_thread_func(void *arg)
 	return NULL;
 }
 
-void 
+void
 DebugModuleManager::print(const char *fmt, ...)
 {
 	char msg[MB_BUFFERSIZE];
@@ -314,11 +317,11 @@ DebugModuleManager::print(const char *fmt, ...)
 }
 
 
-void 
+void
 DebugModuleManager::va_print (const char *fmt, va_list ap)
 {
 	char msg[MB_BUFFERSIZE];
-	
+
 	/* format the message first, to reduce lock contention */
 	vsnprintf(msg, MB_BUFFERSIZE, fmt, ap);
 

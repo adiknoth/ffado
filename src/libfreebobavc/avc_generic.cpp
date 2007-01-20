@@ -173,14 +173,14 @@ AVCCommand::fire()
     unsigned short fcpFrameSize = se.getNrOfProducesBytes();
 
     if (getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%s:\n", getCmdName() );
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE,  "  Request:");
+        debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "%s:\n", getCmdName() );
+        debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,  "  Request:\n");
         showFcpFrame( m_fcpFrame, fcpFrameSize );
 
         StringSerializer se_dbg;
         serialize( se_dbg );
 
-        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s",
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
                          se_dbg.getString().c_str());
     }
 
@@ -205,19 +205,19 @@ AVCCommand::fire()
             BufferDeserialize de( buf, resp_len );
             result = deserialize( de );
 
-            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,"  Response:");
+            debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
             showFcpFrame( buf, de.getNrOfConsumedBytes() );
 
             StringSerializer se_dbg;
             serialize( se_dbg );
 
-            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s",
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
                              se_dbg.getString().c_str());
         }
         break;
         default:
             debugWarning( "unexpected response received (0x%x)\n", m_eResponse );
-            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,"  Response:");
+            debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
 
             BufferDeserialize de( buf, resp_len );
             deserialize( de );

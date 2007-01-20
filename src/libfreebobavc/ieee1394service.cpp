@@ -1,5 +1,5 @@
-/* tempate.cpp
- * Copyright (C) 2005 by Daniel Wagner
+/* ieee1394service.cpp
+ * Copyright (C) 2005,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -110,7 +110,7 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
             "read: node 0x%X, addr = 0x%016X, length = %d\n",
             nodeId, addr, length);
-        printBuffer( length, buffer );        
+        printBuffer( length, buffer );
         #endif
 
         return true;
@@ -189,7 +189,7 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
     }
 
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "pre avc1394_transaction_block2\n" );
+    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "  pre avc1394_transaction_block2\n" );
     printBuffer( len, buf );
     #endif
 
@@ -202,7 +202,7 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                     10 );
 
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "post avc1394_transaction_block2\n" );
+    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "  post avc1394_transaction_block2\n" );
     printBuffer( *resp_len, result );
     #endif
 
@@ -243,7 +243,7 @@ Ieee1394Service::printBuffer( size_t length, fb_quadlet_t* buffer ) const
             if ( i > 0 ) {
                 debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"\n");
             }
-            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"%4d: ",i*4);
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE," %4d: ",i*4);
         }
         debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE,"%08X ",buffer[i]);
     }
