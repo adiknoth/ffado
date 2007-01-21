@@ -88,6 +88,11 @@ public:
             , m_destination( &destination )
             , m_description( description )
             {}
+        SyncInfo()
+            : m_source( 0 )
+            , m_destination( 0 )
+            , m_description( "" )
+            {}
         AvPlug*     m_source;
         AvPlug*     m_destination;
         std::string m_description;
@@ -146,6 +151,14 @@ protected:
     bool checkSyncConnectionsAndAddToList( AvPlugVector& plhs,
                                            AvPlugVector& prhs,
                                            std::string syncDescription );
+
+    static bool serializeSyncInfoVector( Glib::ustring basePath,
+                                         Util::IOSerialize& ser,
+                                         const SyncInfoVector& vec );
+    static bool deserializeSyncInfoVector( Glib::ustring basePath,
+                                           Util::IODeserialize& deser,
+                                           AvDevice& avDevice,
+                                           SyncInfoVector& vec );
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
     Ieee1394Service*          m_p1394Service;
@@ -168,45 +181,6 @@ protected:
 
     DECLARE_DEBUG_MODULE;
 };
-
-template <typename T> bool serializeVector( Glib::ustring path,
-                                            Util::IOSerialize& ser,
-                                            const T& vec )
-{
-    bool result = true; // if vec.size() == 0
-    int i = 0;
-    for ( typename T::const_iterator it = vec.begin(); it != vec.end(); ++it ) {
-        std::ostringstream strstrm;
-        strstrm << path << i;
-        result &= ( *it )->serialize( strstrm.str() + "/", ser );
-        i++;
-    }
-    return result;
-}
-
-template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
-                                                           Util::IODeserialize& deser,
-                                                           AvDevice& avDevice,
-                                                           VT& vec )
-{
-    int i = 0;
-    bool bFinished = false;
-    do {
-        std::ostringstream strstrm;
-        strstrm << path << i << "/";
-        T* ptr = T::deserialize( strstrm.str(),
-                                 deser,
-                                 avDevice );
-        if ( ptr ) {
-            vec.push_back( ptr );
-            i++;
-        } else {
-            bFinished = true;
-        }
-    } while ( !bFinished );
-
-    return true;
-}
 
 }
 

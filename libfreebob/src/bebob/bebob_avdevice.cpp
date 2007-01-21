@@ -1231,6 +1231,109 @@ AvDevice::stopStreamByIndex(int i) {
     return 0;
 }
 
+template <typename T> bool serializeVector( Glib::ustring path,
+                                            Util::IOSerialize& ser,
+                                            const T& vec )
+{
+    bool result = true; // if vec.size() == 0
+    int i = 0;
+    for ( typename T::const_iterator it = vec.begin(); it != vec.end(); ++it ) {
+        std::ostringstream strstrm;
+        strstrm << path << i;
+        result &= ( *it )->serialize( strstrm.str() + "/", ser );
+        i++;
+    }
+    return result;
+}
+
+template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
+                                                           Util::IODeserialize& deser,
+                                                           AvDevice& avDevice,
+                                                           VT& vec )
+{
+    int i = 0;
+    bool bFinished = false;
+    do {
+        std::ostringstream strstrm;
+        strstrm << path << i << "/";
+        T* ptr = T::deserialize( strstrm.str(),
+                                 deser,
+                                 avDevice );
+        if ( ptr ) {
+            vec.push_back( ptr );
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return true;
+}
+
+bool
+AvDevice::serializeSyncInfoVector( Glib::ustring basePath,
+                                   Util::IOSerialize& ser,
+                                   const SyncInfoVector& vec )
+{
+    bool result = true;
+    int i = 0;
+
+    for ( SyncInfoVector::const_iterator it = vec.begin();
+          it != vec.end();
+          ++it )
+    {
+        const SyncInfo& info = *it;
+
+        std::ostringstream strstrm;
+        strstrm << basePath << i << "/";
+
+        result &= ser.write( strstrm.str() + "m_source", info.m_source->getGlobalId() );
+        result &= ser.write( strstrm.str() + "m_destination", info.m_destination->getGlobalId() );
+        result &= ser.write( strstrm.str() + "m_description", Glib::ustring( info.m_description ) );
+
+        i++;
+    }
+
+    return result;
+}
+
+bool
+AvDevice::deserializeSyncInfoVector( Glib::ustring basePath,
+                                     Util::IODeserialize& deser,
+                                     AvDevice& avDevice,
+                                     SyncInfoVector& vec )
+{
+    int i = 0;
+    bool bFinished = false;
+    do {
+        bool result;
+        std::ostringstream strstrm;
+        strstrm << basePath << i << "/";
+
+        plug_id_t sourceId;
+        plug_id_t destinationId;
+        Glib::ustring description;
+
+        result  = deser.read( strstrm.str() + "m_source", sourceId );
+        result &= deser.read( strstrm.str() + "m_destination", destinationId );
+        result &= deser.read( strstrm.str() + "m_description", description );
+
+        if ( result ) {
+            SyncInfo syncInfo;
+            syncInfo.m_source = avDevice.getPlugManager().getPlug( sourceId );
+            syncInfo.m_destination = avDevice.getPlugManager().getPlug( destinationId );
+            syncInfo.m_description = description;
+
+            vec.push_back( syncInfo );
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return true;
+}
+
 static bool
 deserializeAvPlugUpdateConnections( Glib::ustring path,
                                     Util::IODeserialize& deser,
@@ -1248,8 +1351,8 @@ deserializeAvPlugUpdateConnections( Glib::ustring path,
 }
 
 bool
-AvDevice::serialize( Glib::ustring
-                     basePath, Util::IOSerialize& ser ) const
+AvDevice::serialize( Glib::ustring basePath,
+                     Util::IOSerialize& ser ) const
 {
     bool result;
     result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
@@ -1257,8 +1360,22 @@ AvDevice::serialize( Glib::ustring
     result &= m_pPlugManager->serialize( basePath + "AvPlug", ser ); // serialize all av plugs
     result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
     result &= serializeVector( basePath + "Subunit", ser, m_subunits );
+    result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
 
-    // XXX ...
+    int i = 0;
+    for ( SyncInfoVector::const_iterator it = m_syncInfos.begin();
+          it != m_syncInfos.end();
+          ++it )
+    {
+        const SyncInfo& info = *it;
+        if ( m_activeSyncInfo == &info ) {
+            result &= ser.write( basePath + "m_activeSyncInfo",  i );
+            break;
+        }
+        i++;
+    }
+
+    result &= ser.write( basePath + "m_id", m_id );
 
     return result;
 }
@@ -1291,8 +1408,18 @@ AvDevice::deserialize( Glib::ustring basePath,
         result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_externalPlugs );
         result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, *pDev, pDev->m_plugConnections );
         result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, *pDev, pDev->m_subunits );
+        result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, *pDev, pDev->m_syncInfos );
 
-        // XXX ...
+        unsigned int i;
+        result &= deser.read( basePath + "m_activeSyncInfo", i );
+
+        if ( result ) {
+            if ( i < pDev->m_syncInfos.size() ) {
+                pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
+            }
+        }
+
+        result &= deser.read( basePath + "m_id", pDev->m_id );
     }
 
     return pDev;
