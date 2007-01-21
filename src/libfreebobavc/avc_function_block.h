@@ -1,5 +1,5 @@
 /* avc_function_block.h
- * Copyright (C) 2006 by Daniel Wagner
+ * Copyright (C) 2006,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -164,7 +164,7 @@ public:
 
     // Control selector encoding
     enum EControlSelectorEncoding {
-	eCSE_Processing_Unknown         = 0x00,
+        eCSE_Processing_Unknown         = 0x00,
         eCSE_Processing_Enable          = 0x01,
         eCSE_Processing_Mode            = 0x02,
         eCSE_Processing_Mixer           = 0x03,
@@ -199,7 +199,7 @@ class FunctionBlockCodec: public IBusData
 public:
     // CODEC type endcoding
     enum ECodecTypeEncoding {
-	eCTE_Unknown                    = 0x00,
+        eCTE_Unknown                    = 0x00,
         eCTE_Ac3Decoder                 = 0x01,
         eCTE_MpegDecoder                = 0x02,
         eCTE_DtsDecoder                 = 0x03,
