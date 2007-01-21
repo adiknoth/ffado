@@ -534,7 +534,8 @@ BeBoB::AvDeviceSubunitAudio::deserializeChild( Glib::ustring basePath,
         strstrm << basePath << "FunctionBlock" << i << "/";
         FunctionBlock* pFB = FunctionBlock::deserialize( strstrm.str(),
                                                          deser,
-                                                         avDevice );
+                                                         avDevice,
+                                                         *this );
         if ( pFB ) {
             m_functions.push_back( pFB );
             i++;

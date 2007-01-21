@@ -90,6 +90,7 @@ class FunctionBlockSelector: public IBusData
 public:
     // Control selector encoding
     enum EControlSelectorEncoding {
+        eCSE_Selector_Unknown           = 0x00,
         eCSE_Selector_Selector          = 0x01,
     };
 
@@ -114,6 +115,7 @@ class FunctionBlockFeature: public IBusData
 public:
     // Control selector encoding
     enum EControlSelectorEncoding {
+        eCSE_Feature_Unknown            = 0x00,
         eCSE_Feature_Mute               = 0x01,
         eCSE_Feature_Volume             = 0x02,
         eCSE_Feature_LRBalance          = 0x03,
@@ -162,12 +164,13 @@ public:
 
     // Control selector encoding
     enum EControlSelectorEncoding {
+	eCSE_Processing_Unknown         = 0x00,
         eCSE_Processing_Enable          = 0x01,
         eCSE_Processing_Mode            = 0x02,
         eCSE_Processing_Mixer           = 0x03,
         eCSE_Processing_EnhancedMixer   = 0xf1,
 
-        // lots of definition missing
+        // lots of definitions missing
 
     };
 
@@ -196,6 +199,7 @@ class FunctionBlockCodec: public IBusData
 public:
     // CODEC type endcoding
     enum ECodecTypeEncoding {
+	eCTE_Unknown                    = 0x00,
         eCTE_Ac3Decoder                 = 0x01,
         eCTE_MpegDecoder                = 0x02,
         eCTE_DtsDecoder                 = 0x03,

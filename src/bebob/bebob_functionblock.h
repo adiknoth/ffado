@@ -1,5 +1,5 @@
 /* bebob_functionblock.h
- * Copyright (C) 2006 by Daniel Wagner
+ * Copyright (C) 2006,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -48,12 +48,14 @@ public:
 
     FunctionBlock( AvDeviceSubunit& subunit,
 		   function_block_type_t type,
+                   function_block_type_t subtype,
                    function_block_id_t id,
                    ESpecialPurpose purpose,
                    no_of_input_plugs_t nrOfInputPlugs,
                    no_of_output_plugs_t nrOfOutputPlugs,
                    int verbose );
     FunctionBlock( const FunctionBlock& rhs );
+    FunctionBlock();
     virtual ~FunctionBlock();
 
     virtual bool discover();
@@ -64,7 +66,8 @@ public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static FunctionBlock* deserialize( Glib::ustring basePath,
 				       Util::IODeserialize& deser,
-				       AvDevice& avDevice );
+				       AvDevice& avDevice,
+                                       AvDeviceSubunit& subunit);
 protected:
     bool discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
                         plug_id_t plugMaxId );
@@ -72,13 +75,13 @@ protected:
 protected:
     AvDeviceSubunit*      m_subunit;
     function_block_type_t m_type;
+    function_block_type_t m_subtype;
     function_block_id_t   m_id;
     ESpecialPurpose       m_purpose;
     no_of_input_plugs_t   m_nrOfInputPlugs;
     no_of_output_plugs_t  m_nrOfOutputPlugs;
-    int m_verbose;
-
-    AvPlugVector m_plugs;
+    int                   m_verbose;
+    AvPlugVector          m_plugs;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -98,9 +101,17 @@ public:
                           no_of_output_plugs_t nrOfOutputPlugs,
                           int verbose);
     FunctionBlockSelector( const FunctionBlockSelector& rhs );
+    FunctionBlockSelector();
     virtual ~FunctionBlockSelector();
 
     virtual const char* getName();
+
+protected:
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
 };
 
 /////////////////////////////////////
@@ -115,9 +126,17 @@ public:
                          no_of_output_plugs_t nrOfOutputPlugs,
                          int verbose);
     FunctionBlockFeature( const FunctionBlockFeature& rhs );
+    FunctionBlockFeature();
     virtual ~FunctionBlockFeature();
 
     virtual const char* getName();
+
+protected:
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
 };
 
 /////////////////////////////////////
@@ -131,10 +150,18 @@ public:
                                 no_of_input_plugs_t nrOfInputPlugs,
                                 no_of_output_plugs_t nrOfOutputPlugs,
                                 int verbose );
+    FunctionBlockEnhancedMixer();
     FunctionBlockEnhancedMixer( const FunctionBlockEnhancedMixer& rhs );
     virtual ~FunctionBlockEnhancedMixer();
 
     virtual const char* getName();
+
+protected:
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
 };
 
 /////////////////////////////////////
@@ -149,9 +176,17 @@ public:
                              no_of_output_plugs_t nrOfOutputPlugs,
                              int verbose );
     FunctionBlockProcessing( const FunctionBlockProcessing& rhs );
+    FunctionBlockProcessing();
     virtual ~FunctionBlockProcessing();
 
     virtual const char* getName();
+
+protected:
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
 };
 
 /////////////////////////////////////
@@ -166,9 +201,17 @@ public:
                        no_of_output_plugs_t nrOfOutputPlugs,
                        int verbose);
     FunctionBlockCodec( const FunctionBlockCodec& rhs );
+    FunctionBlockCodec();
     virtual ~FunctionBlockCodec();
 
     virtual const char* getName();
+
+protected:
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const;
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   AvDevice& avDevice );
 };
 
 }

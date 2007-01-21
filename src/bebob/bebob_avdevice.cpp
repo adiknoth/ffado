@@ -1,5 +1,5 @@
 /* bebob_avdevice.cpp
- * Copyright (C) 2005,06 by Daniel Wagner
+ * Copyright (C) 2005,06,07 by Daniel Wagner
  *
  * This file is part of FreeBoB.
  *
@@ -1231,46 +1231,6 @@ AvDevice::stopStreamByIndex(int i) {
     return 0;
 }
 
-
-template <typename T> bool serializeVector( Glib::ustring path,
-                                            Util::IOSerialize& ser,
-                                            T& vec )
-{
-    bool result = true; // if vec.size() == 0
-    int i = 0;
-    for ( typename T::iterator it = vec.begin(); it != vec.end(); ++it ) {
-        std::ostringstream strstrm;
-        strstrm << path << i;
-        result &= ( *it )->serialize( strstrm.str() + "/", ser );
-        i++;
-    }
-    return result;
-}
-
-template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
-                                                           Util::IODeserialize& deser,
-                                                           AvDevice& avDevice,
-                                                           VT& vec )
-{
-    int i = 0;
-    bool bFinished = false;
-    do {
-        std::ostringstream strstrm;
-        strstrm << path << i;
-        T* ptr = T::deserialize( strstrm.str() + "/",
-                                 deser,
-                                 avDevice );
-        if ( ptr ) {
-            vec.push_back( ptr );
-            i++;
-        } else {
-            bFinished = true;
-        }
-    } while ( !bFinished );
-
-    return true;
-}
-
 static bool
 deserializeAvPlugUpdateConnections( Glib::ustring path,
                                     Util::IODeserialize& deser,
@@ -1289,7 +1249,7 @@ deserializeAvPlugUpdateConnections( Glib::ustring path,
 
 bool
 AvDevice::serialize( Glib::ustring
-                     basePath, Util::IOSerialize& ser )
+                     basePath, Util::IOSerialize& ser ) const
 {
     bool result;
     result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
