@@ -65,6 +65,7 @@ public:
     };
 
     enum EProcessingType {
+	ePT_Unknown                 = 0x00,
         ePT_Mixer                   = 0x01,
         ePT_Generic                 = 0x02,
         ePT_UpDown                  = 0x03,

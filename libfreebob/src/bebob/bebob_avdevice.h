@@ -39,6 +39,8 @@
 
 #include "iavdevice.h"
 
+#include <sstream>
+
 class ConfigRom;
 class Ieee1394Service;
 class SubunitPlugSpecificDataPlugAddress;
@@ -98,7 +100,7 @@ public:
         { return m_activeSyncInfo; }
     bool setActiveSync( const SyncInfo& syncInfo );
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser );
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static AvDevice* deserialize( Glib::ustring basePath,
                                   Util::IODeserialize& deser,
 				  Ieee1394Service& ieee1394Service );
@@ -166,6 +168,45 @@ protected:
 
     DECLARE_DEBUG_MODULE;
 };
+
+template <typename T> bool serializeVector( Glib::ustring path,
+                                            Util::IOSerialize& ser,
+                                            const T& vec )
+{
+    bool result = true; // if vec.size() == 0
+    int i = 0;
+    for ( typename T::const_iterator it = vec.begin(); it != vec.end(); ++it ) {
+        std::ostringstream strstrm;
+        strstrm << path << i;
+        result &= ( *it )->serialize( strstrm.str() + "/", ser );
+        i++;
+    }
+    return result;
+}
+
+template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
+                                                           Util::IODeserialize& deser,
+                                                           AvDevice& avDevice,
+                                                           VT& vec )
+{
+    int i = 0;
+    bool bFinished = false;
+    do {
+        std::ostringstream strstrm;
+        strstrm << path << i << "/";
+        T* ptr = T::deserialize( strstrm.str(),
+                                 deser,
+                                 avDevice );
+        if ( ptr ) {
+            vec.push_back( ptr );
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return true;
+}
 
 }
 
