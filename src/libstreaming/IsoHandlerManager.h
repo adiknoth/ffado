@@ -67,74 +67,74 @@ typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
 
 class IsoHandlerManager : public FreebobUtil::RunnableInterface
 {
-	friend class StreamProcessorManager;
+    friend class StreamProcessorManager;
 
     public:
 
         IsoHandlerManager();
         virtual ~IsoHandlerManager();
 
-		void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
-		int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
+        void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
+        int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
 
-		void setVerboseLevel(int l); ///< set the verbose level
+        void setVerboseLevel(int l); ///< set the verbose level
 
-		void dumpInfo(); ///< print some information about the manager to stdout/stderr
+        void dumpInfo(); ///< print some information about the manager to stdout/stderr
 
-		bool registerStream(IsoStream *); ///< register an iso stream with the manager
-		bool unregisterStream(IsoStream *); ///< unregister an iso stream from the manager
+        bool registerStream(IsoStream *); ///< register an iso stream with the manager
+        bool unregisterStream(IsoStream *); ///< unregister an iso stream from the manager
 
-		bool startHandlers(); ///< start the managed ISO handlers 
-		bool startHandlers(int cycle); ///< start the managed ISO handlers 
-		bool stopHandlers(); ///< stop the managed ISO handlers 
+        bool startHandlers(); ///< start the managed ISO handlers 
+        bool startHandlers(int cycle); ///< start the managed ISO handlers 
+        bool stopHandlers(); ///< stop the managed ISO handlers 
 
 		bool reset() {return true;}; ///< reset the ISO manager and all streams
 
-		bool prepare(); ///< prepare the ISO manager and all streams
-		
-		void disablePolling(IsoStream *); ///< disables polling on a stream
-		void enablePolling(IsoStream *); ///< enables polling on a stream
+        bool prepare(); ///< prepare the ISO manager and all streams
+        
+        void disablePolling(IsoStream *); ///< disables polling on a stream
+        void enablePolling(IsoStream *); ///< enables polling on a stream
 
 	public:
 	
 	    
-		// RunnableInterface interface
-		bool Execute(); // note that this is called in we while(running) loop
-		bool Init();
-
+    // RunnableInterface interface
+        bool Execute(); // note that this is called in we while(running) loop
+        bool Init();
+        
 	    // iterate all handlers
 	    bool iterate();
     private:
         // updates the cycle counter caches of all handlers
         void updateCycleCounters();
         
-		// note: there is a disctinction between streams and handlers
-		// because one handler can serve multiple streams (in case of 
-		// multichannel receive)
+        // note: there is a disctinction between streams and handlers
+        // because one handler can serve multiple streams (in case of 
+        // multichannel receive)
 
-		// only streams are allowed to be registered externally.
-		// we allocate a handler if we need one, otherwise the stream
-		// is assigned to another handler
+        // only streams are allowed to be registered externally.
+        // we allocate a handler if we need one, otherwise the stream
+        // is assigned to another handler
 
-		// the collection of handlers
- 		IsoHandlerVector m_IsoHandlers;
+        // the collection of handlers
+        IsoHandlerVector m_IsoHandlers;
 
-		bool registerHandler(IsoHandler *);
-		bool unregisterHandler(IsoHandler *);
-		void pruneHandlers();
+        bool registerHandler(IsoHandler *);
+        bool unregisterHandler(IsoHandler *);
+        void pruneHandlers();
 
-		// the collection of streams
- 		IsoStreamVector m_IsoStreams;
+        // the collection of streams
+        IsoStreamVector m_IsoStreams;
 
-		// poll stuff
-		int m_poll_timeout;
-		struct pollfd *m_poll_fds;
-		int m_poll_nfds;
+        // poll stuff
+        int m_poll_timeout;
+        struct pollfd *m_poll_fds;
+        int m_poll_nfds;
 
-		bool rebuildFdMap();
+        bool rebuildFdMap();
 
 
-	    DECLARE_DEBUG_MODULE;
+        DECLARE_DEBUG_MODULE;
 
 };
 

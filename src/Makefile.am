@@ -35,22 +35,22 @@ noinst_HEADERS = 					\
 	motu/motu_avdevice.h				\
 	rme/rme_avdevice.h
 
-libfreebob_la_SOURCES = 				\
+libfreebob_la_SOURCES = \
 	iavdevice.h					\
-	configrom.cpp					\
-	csr1212.c					\
-	devicemanager.cpp       			\
-	freebob.cpp 					\
-	xmlparser.c					\
+        configrom.cpp \
+        csr1212.c \
+        devicemanager.cpp \
+        freebob.cpp \
+        xmlparser.c \
 	threads.h					\
 	bebob/bebob_avdevice.h          		\
-	bebob/bebob_avdevice.cpp			\
+        bebob/bebob_avdevice.cpp \
 	bebob/bebob_avdevice_xml.cpp			\
 	bebob/bebob_avdevice_subunit.h			\
-	bebob/bebob_avdevice_subunit.cpp		\
+        bebob/bebob_avdevice_subunit.cpp \
 	bebob/bebob_avplug.h            		\
-	bebob/bebob_avplug.cpp				\
-	bebob/bebob_avplug_xml.cpp			\
+        bebob/bebob_avplug.cpp \
+        bebob/bebob_avplug_xml.cpp \
 	bebob/bebob_functionblock.h			\
 	bebob/bebob_functionblock.cpp 			\
 	bebob/bebob_dl_mgr.h				\
@@ -58,29 +58,29 @@ libfreebob_la_SOURCES = 				\
 	bebob/bebob_dl_codes.h				\
 	bebob/bebob_dl_codes.cpp			\
 	bebob/bebob_dl_bcd.h				\
-	bebob/bebob_dl_bcd.cpp				\
+        bebob/bebob_dl_bcd.cpp \
 	motu/motu_avdevice.cpp				\
 	motu/motu_avdevice.h				\
 	rme/rme_avdevice.cpp				\
 	rme/rme_avdevice.h				\
 	bounce/bounce_avdevice.h			\
-	bounce/bounce_avdevice.cpp			\
+        bounce/bounce_avdevice.cpp \
 	maudio/maudio_avdevice.h			\
-	maudio/maudio_avdevice.cpp			\
-	libfreebobavc/avc_connect.cpp			\
-	libfreebobavc/avc_definitions.cpp		\
-	libfreebobavc/avc_extended_cmd_generic.cpp	\
-	libfreebobavc/avc_extended_plug_info.cpp	\
-	libfreebobavc/avc_extended_stream_format.cpp	\
-	libfreebobavc/avc_extended_subunit_info.cpp	\
-	libfreebobavc/avc_function_block.cpp		\
+        maudio/maudio_avdevice.cpp \
+        libfreebobavc/avc_connect.cpp \
+        libfreebobavc/avc_definitions.cpp \
+        libfreebobavc/avc_extended_cmd_generic.cpp \
+        libfreebobavc/avc_extended_plug_info.cpp \
+        libfreebobavc/avc_extended_stream_format.cpp \
+        libfreebobavc/avc_extended_subunit_info.cpp \
+        libfreebobavc/avc_function_block.cpp \
 	libfreebobavc/avc_function_block.h		\
-	libfreebobavc/avc_generic.cpp			\
-	libfreebobavc/avc_plug_info.cpp			\
-	libfreebobavc/avc_signal_source.cpp		\
-	libfreebobavc/avc_subunit_info.cpp		\
-	libfreebobavc/avc_unit_info.cpp			\
-	libfreebobavc/ieee1394service.cpp		\
+        libfreebobavc/avc_generic.cpp \
+        libfreebobavc/avc_plug_info.cpp \
+        libfreebobavc/avc_signal_source.cpp \
+        libfreebobavc/avc_subunit_info.cpp \
+        libfreebobavc/avc_unit_info.cpp \
+        libfreebobavc/ieee1394service.cpp \
 	libfreebobavc/avc_serialize.cpp			\
 	libfreebobavc/avc_connect.h			\
 	libfreebobavc/avc_definitions.h			\
@@ -97,22 +97,22 @@ libfreebob_la_SOURCES = 				\
 	libfreebobavc/avc_serialize.h			\
 	debugmodule/debugmodule.h			\
 	debugmodule/debugmodule.cpp			\
-	libstreaming/cip.c				\
+        libstreaming/cip.c \
 	libstreaming/cyclecounter.h 			\
-	libstreaming/freebob_streaming.cpp		\
-	libstreaming/IsoHandler.cpp			\
-	libstreaming/IsoHandlerManager.cpp		\
-	libstreaming/IsoStream.cpp			\
-	libstreaming/PacketBuffer.cpp			\
+        libstreaming/freebob_streaming.cpp \
+        libstreaming/IsoHandler.cpp \
+        libstreaming/IsoHandlerManager.cpp \
+        libstreaming/IsoStream.cpp \
+        libstreaming/PacketBuffer.cpp \
 	libstreaming/PortManager.cpp			\
-	libstreaming/Port.cpp				\
-	libstreaming/StreamProcessor.cpp		\
-	libstreaming/StreamProcessorManager.cpp		\
+        libstreaming/Port.cpp \
+        libstreaming/StreamProcessor.cpp \
+        libstreaming/StreamProcessorManager.cpp \
 	libstreaming/AmdtpPortInfo.cpp			\
 	libstreaming/AmdtpPort.cpp			\
 	libstreaming/AmdtpStreamProcessor.cpp		\
 	libstreaming/ringbuffer.c			\
-	libstreaming/streamstatistics.cpp		\
+        libstreaming/streamstatistics.cpp \
 	libstreaming/MotuStreamProcessor.cpp		\
 	libstreaming/MotuPort.cpp			\
 	libstreaming/MotuPortInfo.cpp 			\
@@ -120,13 +120,13 @@ libfreebob_la_SOURCES = 				\
 	libutil/Atomic.h 				\
 	libutil/PosixThread.h  				\
 	libutil/Thread.h				\
-	libutil/DelayLockedLoop.cpp			\
-	libutil/PosixThread.cpp 			\
+        libutil/DelayLockedLoop.cpp \
+        libutil/PosixThread.cpp \
 	libutil/Time.c  				\
 	libutil/Time.h  				\
 	libutil/TimeSource.cpp 				\
 	libutil/TimeSource.h 				\
-	libutil/SystemTimeSource.cpp 			\
+        libutil/SystemTimeSource.cpp \
 	libutil/SystemTimeSource.h 			\
 	libutil/cycles.h				\
 	libutil/serialize.h				\

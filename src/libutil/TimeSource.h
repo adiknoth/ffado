@@ -38,12 +38,12 @@ class TimeSource {
 
 public:
 
-	TimeSource();
-	virtual ~TimeSource();
+    TimeSource();
+    virtual ~TimeSource();
 
     virtual freebob_microsecs_t getCurrentTime()=0;
     virtual freebob_microsecs_t getCurrentTimeAsUsecs()=0;
-
+    
 protected:
 
 };

@@ -57,73 +57,73 @@ class StreamProcessorManager :
 
 public:
 
-	StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
-	virtual ~StreamProcessorManager();
+    StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
+    virtual ~StreamProcessorManager();
 
-	bool init(); ///< to be called immediately after the construction
-	bool prepare(); ///< to be called after the processors are registered
+    bool init(); ///< to be called immediately after the construction
+    bool prepare(); ///< to be called after the processors are registered
 
-	virtual void setVerboseLevel(int l);
-	void dumpInfo();
+    virtual void setVerboseLevel(int l);
+    void dumpInfo();
 
-	// this is the setup API
-	bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
-	bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
+    // this is the setup API
+    bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
+    bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
-	void setPeriodSize(unsigned int period);
-	void setPeriodSize(unsigned int period, unsigned int nb_buffers);
-	int getPeriodSize() {return m_period;};
+    void setPeriodSize(unsigned int period);
+    void setPeriodSize(unsigned int period, unsigned int nb_buffers);
+    int getPeriodSize() {return m_period;};
 
-	void setNbBuffers(unsigned int nb_buffers);
-	int getNbBuffers() {return m_nb_buffers;};
+    void setNbBuffers(unsigned int nb_buffers);
+    int getNbBuffers() {return m_nb_buffers;};
 
-	int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
-	int getPortCount(enum Port::E_Direction);
-	Port* getPortByIndex(int idx, enum Port::E_Direction);
+    int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
+    int getPortCount(enum Port::E_Direction);
+    Port* getPortByIndex(int idx, enum Port::E_Direction);
 
-	// the client-side functions
-	bool xrunOccurred();
-	int getXrunCount() {return m_xruns;};
+    // the client-side functions
+    bool xrunOccurred();
+    int getXrunCount() {return m_xruns;};
 
-	bool waitForPeriod(); ///< wait for the next period
+    bool waitForPeriod(); ///< wait for the next period
 
-	bool transfer(); ///< transfer the buffer contents from/to client
-	bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
+    bool transfer(); ///< transfer the buffer contents from/to client
+    bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
 
-	bool handleXrun(); ///< reset the streams & buffers after xrun
+    bool handleXrun(); ///< reset the streams & buffers after xrun
 
-	bool start();
-	bool stop();
+    bool start();
+    bool stop();
 
     bool setThreadParameters(bool rt, int priority);
 
 	// the ISO-side functions
 protected:
- 	int signalWaiters(); // call this to signal a period boundary
-	// RunnableInterface interface
-	bool Execute(); // note that this is called in we while(running) loop
-	bool Init();
+    int signalWaiters(); // call this to signal a period boundary
+    // RunnableInterface interface
+    bool Execute(); // note that this is called in we while(running) loop
+    bool Init();
 
-	// thread sync primitives
-	sem_t m_period_semaphore;
+    // thread sync primitives
+    sem_t m_period_semaphore;
 
-	bool m_xrun_happened; 
+    bool m_xrun_happened; 
 
     bool m_thread_realtime;
     int m_thread_priority;
 
-	// processor list
-	StreamProcessorVector m_ReceiveProcessors;
-	StreamProcessorVector m_TransmitProcessors;
+    // processor list
+    StreamProcessorVector m_ReceiveProcessors;
+    StreamProcessorVector m_TransmitProcessors;
 
-	unsigned int m_nb_buffers;
-	unsigned int m_period;
-	unsigned int m_xruns;
-	
-	IsoHandlerManager *m_isoManager;
+    unsigned int m_nb_buffers;
+    unsigned int m_period;
+    unsigned int m_xruns;
+    
+    IsoHandlerManager *m_isoManager;
 
-	FreebobUtil::PosixThread *m_streamingThread;
-	FreebobUtil::PosixThread *m_isoManagerThread;
+    FreebobUtil::PosixThread *m_streamingThread;
+    FreebobUtil::PosixThread *m_isoManagerThread;
 
     unsigned int m_nbperiods;
 

@@ -49,29 +49,29 @@ class StreamProcessorManager;
 class StreamProcessor : public IsoStream, 
                         public PortManager {
 
-	friend class StreamProcessorManager;
+    friend class StreamProcessorManager;
 
 public:
-	enum EProcessorType {
-		E_Receive,
-		E_Transmit
-	};
+    enum EProcessorType {
+            E_Receive,
+            E_Transmit
+    };
 
-	StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate);
-	virtual ~StreamProcessor();
+    StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate);
+    virtual ~StreamProcessor();
 
-	virtual enum raw1394_iso_disposition 
-		putPacket(unsigned char *data, unsigned int length, 
-	              unsigned char channel, unsigned char tag, unsigned char sy, 
-		          unsigned int cycle, unsigned int dropped) = 0;
-	virtual enum raw1394_iso_disposition 
-		getPacket(unsigned char *data, unsigned int *length,
-	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length) = 0;
+    virtual enum raw1394_iso_disposition 
+            putPacket(unsigned char *data, unsigned int length, 
+                    unsigned char channel, unsigned char tag, unsigned char sy, 
+                        unsigned int cycle, unsigned int dropped) = 0;
+    virtual enum raw1394_iso_disposition 
+            getPacket(unsigned char *data, unsigned int *length,
+                    unsigned char *tag, unsigned char *sy,
+                    int cycle, unsigned int dropped, unsigned int max_length) = 0;
 
-	virtual enum EProcessorType getType() =0;
+    virtual enum EProcessorType getType() =0;
 
-	bool xrunOccurred() { return (m_xruns>0);};
+    bool xrunOccurred() { return (m_xruns>0);};
 
     /**
      * This is used for implementing the synchronisation.
@@ -83,54 +83,54 @@ public:
      * require this
      * @return 
      */
-	virtual bool isOnePeriodReady()=0;
-	
-	unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
+    virtual bool isOnePeriodReady()=0;
+    
+    unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
 	virtual void decrementFrameCounter();
 	virtual void incrementFrameCounter(int nbframes);
-	
-	// move to private?
+    
+    // move to private?
 	void resetFrameCounter();
     void resetXrunCounter();
 
-	bool isRunning(); ///< returns true if there is some stream data processed
-	void enable(); ///< enable the stream processing 
-	void disable() {m_disabled=true;}; ///< disable the stream processing 
-	bool isEnabled() {return !m_disabled;};
+    bool isRunning(); ///< returns true if there is some stream data processed
+    void enable(); ///< enable the stream processing 
+    void disable() {m_disabled=true;}; ///< disable the stream processing 
+    bool isEnabled() {return !m_disabled;};
 
-	virtual bool transfer(); ///< transfer the buffer contents from/to client
+    virtual bool transfer(); ///< transfer the buffer contents from/to client
 
-	virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
+    virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
-	virtual bool prepare(); ///< prepare the streams & buffers (e.g. prefill)
+    virtual bool prepare(); ///< prepare the streams & buffers (e.g. prefill)
 
-	virtual void dumpInfo();
+    virtual void dumpInfo();
 
-	virtual bool init();
+    virtual bool init();
 
- 	virtual void setVerboseLevel(int l);
+    virtual void setVerboseLevel(int l);
 
- 	virtual bool preparedForStop() {return true;};
- 	virtual bool preparedForStart() {return true;};
+    virtual bool preparedForStop() {return true;};
+    virtual bool preparedForStart() {return true;};
 
 protected:
 	
 
-	void setManager(StreamProcessorManager *manager) {m_manager=manager;};
-	void clearManager() {m_manager=0;};
+    void setManager(StreamProcessorManager *manager) {m_manager=manager;};
+    void clearManager() {m_manager=0;};
 
-	unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
-	unsigned int m_period; ///< cached from manager->getPeriod(), the period size
+    unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
+    unsigned int m_period; ///< cached from manager->getPeriod(), the period size
 
-	unsigned int m_xruns;
+    unsigned int m_xruns;
 	signed int m_framecounter;
 
-	unsigned int m_framerate;
+    unsigned int m_framerate;
 
-	StreamProcessorManager *m_manager;
+    StreamProcessorManager *m_manager;
 
-	bool m_running;
-	bool m_disabled;
+    bool m_running;
+    bool m_disabled;
 
     StreamStatistics m_PacketStat;
     StreamStatistics m_PeriodStat;
@@ -139,7 +139,7 @@ protected:
     
 
     DECLARE_DEBUG_MODULE;
-
+    
 
 };
 

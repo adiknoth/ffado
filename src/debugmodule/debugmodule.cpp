@@ -212,7 +212,7 @@ DebugModuleManager::instance()
 bool
 DebugModuleManager::registerModule( DebugModule& debugModule )
 {
-    m_debugModules.push_back( &debugModule );
+        m_debugModules.push_back( &debugModule );
     return true;
 }
 
@@ -228,7 +228,7 @@ DebugModuleManager::unregisterModule( DebugModule& debugModule )
             return true;
         }
     }
-
+    
     cerr << "DebugModuleManager::unregisterModule: Could not unregister "
          << "DebugModule (" << debugModule.getName() << ")" << endl;
     return false;

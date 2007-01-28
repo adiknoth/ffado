@@ -194,18 +194,18 @@ bool StreamProcessorManager::init()
 
 bool StreamProcessorManager::Init()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing runner...\n");
-	
-	// no xrun has occurred (yet)
-	m_xrun_happened=false;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing runner...\n");
 
-	if(sem_init(&m_period_semaphore, 0, 0)) {
+    // no xrun has occurred (yet)
+    m_xrun_happened=false;
+
+    if(sem_init(&m_period_semaphore, 0, 0)) {
 		debugFatal( "Cannot init packet transfer semaphore\n");
-		debugFatal( " Error: %s\n",strerror(errno));
-		return false;
+        debugFatal( " Error: %s\n",strerror(errno));
+        return false;
     }
- 
-	return true;
+
+    return true;
 }
 
 bool StreamProcessorManager::prepare() {
@@ -248,7 +248,7 @@ bool StreamProcessorManager::Execute()
 {
 
 	bool period_ready=true;
-    bool xrun_has_occured=false;
+        bool xrun_has_occured=false;
 	bool this_period_ready;
 
 // 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "------------- EXECUTE -----------\n");
@@ -257,7 +257,7 @@ bool StreamProcessorManager::Execute()
 		debugFatal("Could not iterate the isoManager\n");
 		return false;
 	}
-	
+ 	
  	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " RCV PROC: ");
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
 		it != m_ReceiveProcessors.end();
@@ -380,7 +380,7 @@ bool StreamProcessorManager::start() {
 	
 	// start the runner thread
 	m_isoManagerThread->Start();
-		
+
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to start running...\n");
 	// we have to wait until all streamprocessors indicate that they are running
 	// i.e. that there is actually some data stream flowing
@@ -591,7 +591,7 @@ bool StreamProcessorManager::handleXrun() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping processormanager...\n");
 	if(!stop()) {
 	   debugFatal("Could not stop.\n");
-	   return false;
+		return false;
 	}
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting Processors...\n");
@@ -632,7 +632,7 @@ bool StreamProcessorManager::handleXrun() {
 
 	if(!start()) {
 	   debugFatal("Could not start.\n");
-	   return false;
+		return false;
 	}
 
 

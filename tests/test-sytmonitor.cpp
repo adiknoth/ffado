@@ -1,21 +1,21 @@
 /***************************************************************************
-  Copyright (C) 2005 by Pieter Palmers   *
+Copyright (C) 2005 by Pieter Palmers   *
                                                                         *
-  This program is free software; you can redistribute it and/or modify  *
-  it under the terms of the GNU General Public License as published by  *
-  the Free Software Foundation; either version 2 of the License, or     *
-  (at your option) any later version.                                   *
+This program is free software; you can redistribute it and/or modify  *
+it under the terms of the GNU General Public License as published by  *
+the Free Software Foundation; either version 2 of the License, or     *
+(at your option) any later version.                                   *
                                                                         *
-  This program is distributed in the hope that it will be useful,       *
-  but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-  GNU General Public License for more details.                          *
+This program is distributed in the hope that it will be useful,       *
+but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+GNU General Public License for more details.                          *
                                                                         *
-  You should have received a copy of the GNU General Public License     *
-  along with this program; if not, write to the                         *
-  Free Software Foundation, Inc.,                                       *
-  59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
+You should have received a copy of the GNU General Public License     *
+along with this program; if not, write to the                         *
+Free Software Foundation, Inc.,                                       *
+59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+***************************************************************************/
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -91,58 +91,58 @@ parse_opt( int key, char* arg, struct argp_state* state )
     char* tail;
 
     switch (key) {
-	case 'p':
-	    if (arg) {
+        case 'p':
+            if (arg) {
             arguments->port = strtol( arg, &tail, 0 );
             if ( errno ) {
                 fprintf( stderr,  "Could not parse 'port' argument\n" );
                 return ARGP_ERR_UNKNOWN;
             }
-	    } else {
+            } else {
             if ( errno ) {
                 fprintf( stderr, "Could not parse 'port' argumen\n" );
                 return ARGP_ERR_UNKNOWN;
             }
-	    }
-	    break;
-	case 'R':
+            }
+            break;
+        case 'R':
         arguments->realtime = true;
-	    break;	    
-	case 'r':
-	    if (arg) {
+            break;	    
+        case 'r':
+            if (arg) {
             arguments->rtprio = strtol( arg, &tail, 0 );
             if ( errno ) {
                 fprintf( stderr,  "Could not parse 'realtime-priority' argument\n" );
                 return ARGP_ERR_UNKNOWN;
             }
-	    }
-	    break;	    	    
-	case ARGP_KEY_ARG:
-	    if (state->arg_num >= 128) {
+            }
+            break;	    	    
+        case ARGP_KEY_ARG:
+            if (state->arg_num >= 128) {
             // Too many arguments.
             argp_usage( state );
-	    }
-	    
-	    if(sscanf( arg, "%d,%d", 
-	       &arguments->args[state->arg_num].port, 
-	       &arguments->args[state->arg_num].channel) != 2) {
-           fprintf( stderr,  "Could not parse port-channel specification ('%s')\n", arg);
-	       
-	    } else {
+            }
+            
+            if(sscanf( arg, "%d,%d", 
+            &arguments->args[state->arg_num].port, 
+            &arguments->args[state->arg_num].channel) != 2) {
+        fprintf( stderr,  "Could not parse port-channel specification ('%s')\n", arg);
+            
+            } else {
             printf("Adding Port %d, Channel %d to list...\n",
-               arguments->args[state->arg_num].port,
-               arguments->args[state->arg_num].channel);
-	       arguments->nb_combos++;
-	    }
-	    break;
-	case ARGP_KEY_END:
-	    if (state->arg_num < 1) {
+            arguments->args[state->arg_num].port,
+            arguments->args[state->arg_num].channel);
+            arguments->nb_combos++;
+            }
+            break;
+        case ARGP_KEY_END:
+            if (state->arg_num < 1) {
             // Not enough arguments.
             argp_usage( state );
-	    }
-	    break;
-	default:
-	    return ARGP_ERR_UNKNOWN;
+            }
+            break;
+        default:
+            return ARGP_ERR_UNKNOWN;
     }
     return 0;
 }
@@ -153,7 +153,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 
 static void sighandler (int sig)
 {
-	run = 0;
+        run = 0;
 }
 
 int main(int argc, char *argv[])
@@ -161,18 +161,18 @@ int main(int argc, char *argv[])
 	int target_port=0;
 	int target_channel_1=0;
 	int target_channel_2=0;
-	bool run_realtime=false;
-	int realtime_prio=20;
-	int nb_iter;
-	int i;
-	struct sched_param params;
-	
-	IsoHandlerManager *m_isoManager=NULL;
+    bool run_realtime=false;
+    int realtime_prio=20;
+    int nb_iter;
+    int i;
+    struct sched_param params;
+    
+    IsoHandlerManager *m_isoManager=NULL;
     PosixThread * m_isoManagerThread=NULL;
     
     SytMonitor *monitors[128];
     int stream_offset_ticks[128];
-    	
+    
     struct arguments arguments;
 
     // Default values.
@@ -192,92 +192,92 @@ int main(int argc, char *argv[])
     memset(&stream_offset_ticks,0,sizeof(unsigned int) * 128);
     
     
-	run=1;
-	
-	run_realtime=arguments.realtime;
-	realtime_prio=arguments.rtprio;
+        run=1;
+        
+        run_realtime=arguments.realtime;
+        realtime_prio=arguments.rtprio;
 
-	signal (SIGINT, sighandler);
-	signal (SIGPIPE, sighandler);
+        signal (SIGINT, sighandler);
+        signal (SIGPIPE, sighandler);
 
-	debugOutput(DEBUG_LEVEL_NORMAL, "Freebob SYT monitor\n");
-	
-	m_isoManager=new IsoHandlerManager();
-	
-	if(!m_isoManager) {
-		debugOutput(DEBUG_LEVEL_NORMAL, "Could not create IsoHandlerManager\n");
-		goto finish;
-	}
-	
-	m_isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-		
+        debugOutput(DEBUG_LEVEL_NORMAL, "Freebob SYT monitor\n");
+        
+        m_isoManager=new IsoHandlerManager();
+        
+        if(!m_isoManager) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not create IsoHandlerManager\n");
+                goto finish;
+        }
+        
+        m_isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+                
     // the thread to execute the manager
- 	m_isoManagerThread=new PosixThread(
- 	      m_isoManager, 
- 	      run_realtime, realtime_prio,
- 	      PTHREAD_CANCEL_DEFERRED);
- 	      
-	if(!m_isoManagerThread) {
-		debugOutput(DEBUG_LEVEL_NORMAL, "Could not create iso manager thread\n");
-		goto finish;
-	}
-	
-	// register monitors
-	for (i=0;i<arguments.nb_combos;i++) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "Registering SytMonitor %d\n",i);
-	
-        // add a stream to the manager so that it has something to do
-        monitors[i]=new SytMonitor(arguments.args[i].port);
-        
-        if (!monitors[i]) {
-            debugOutput(DEBUG_LEVEL_NORMAL, "Could not create SytMonitor %d\n", i);
-            goto finish;
-        }	
-        
-        monitors[i]->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-        
-        if (!monitors[i]->init()) {
-            debugOutput(DEBUG_LEVEL_NORMAL, "Could not init SytMonitor %d\n", i);
-            goto finish;
+        m_isoManagerThread=new PosixThread(
+            m_isoManager, 
+            run_realtime, realtime_prio,
+            PTHREAD_CANCEL_DEFERRED);
+            
+        if(!m_isoManagerThread) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not create iso manager thread\n");
+                goto finish;
         }
         
-        monitors[i]->setChannel(arguments.args[i].channel);
+        // register monitors
+        for (i=0;i<arguments.nb_combos;i++) {
+            debugOutput(DEBUG_LEVEL_NORMAL, "Registering SytMonitor %d\n",i);
         
-        if(!m_isoManager->registerStream(monitors[i])) {
+            // add a stream to the manager so that it has something to do
+            monitors[i]=new SytMonitor(arguments.args[i].port);
+            
+            if (!monitors[i]) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not create SytMonitor %d\n", i);
+                goto finish;
+            }	
+        
+            monitors[i]->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+        
+            if (!monitors[i]->init()) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not init SytMonitor %d\n", i);
+                goto finish;
+            }
+        
+            monitors[i]->setChannel(arguments.args[i].channel);
+            
+            if(!m_isoManager->registerStream(monitors[i])) {
             debugOutput(DEBUG_LEVEL_NORMAL, "Could not register SytMonitor %d\n", i);
-            goto finish;
-        }
+                goto finish;
+            }
     }
+            
 
+        debugOutput(DEBUG_LEVEL_NORMAL,   "Preparing IsoHandlerManager...\n");
+        if (!m_isoManager->prepare()) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not prepare isoManager\n");
+                goto finish;
+        }
 
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Preparing IsoHandlerManager...\n");
-	if (!m_isoManager->prepare()) {
-		debugOutput(DEBUG_LEVEL_NORMAL, "Could not prepare isoManager\n");
-		goto finish;
-	}
-
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Starting ISO manager sync update thread...\n");
+        debugOutput(DEBUG_LEVEL_NORMAL,   "Starting ISO manager sync update thread...\n");
 
 	// start the runner thread
 	m_isoManagerThread->Start();
 
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Starting IsoHandlers...\n");
-	if (!m_isoManager->startHandlers(0)) {
-		debugOutput(DEBUG_LEVEL_NORMAL, "Could not start handlers...\n");
-		goto finish;
-	}
-	
-    if (arguments.realtime) {
-        // get rt priority for this thread too.
-        params.sched_priority = arguments.rtprio + 1;
-        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &params)) {
-            debugWarning("Couldn't set realtime prio for main thread...");
+        debugOutput(DEBUG_LEVEL_NORMAL,   "Starting IsoHandlers...\n");
+        if (!m_isoManager->startHandlers(0)) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not start handlers...\n");
+                goto finish;
         }
-    }
+        
+        if (arguments.realtime) {
+            // get rt priority for this thread too.
+            params.sched_priority = arguments.rtprio + 1;
+            if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &params)) {
+                debugWarning("Couldn't set realtime prio for main thread...");
+            }
+        }
     
-    // do the actual work
-    nb_iter=0;
-	while(run) {
+        // do the actual work
+        nb_iter=0;
+        while(run) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"--- Iterate ---\n");
         
         if(!m_isoManager->iterate()) {
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
                         if (cif.seconds==0) cif.seconds+=128;
 
                         if(cif.cycle==master_cif.cycle
-                           && cif.seconds==master_cif.seconds) { // this is the one
+                        && cif.seconds==master_cif.seconds) { // this is the one
                             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"  GOOD : [%2d: %04us %04uc, %04X]\n",
                                 i,cif.seconds, cif.cycle,cif.syt);
                             monitors[i]->consumeNextCycleInfo();
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
                                 if ((master_cif.pres_seconds==127) && (cif.pres_seconds==0)) {
                                     cif.pres_ticks += TICKS_PER_SECOND*128;
                                 }
-                               // average out the offset
+                            // average out the offset
                                 int err=(((long)master_cif.pres_ticks) - ((long)cif.pres_ticks));
                                 
                                 err = err - stream_offset_ticks[i];
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
                         } else {
                             if ((cif.seconds < master_cif.seconds) || 
                                 ((cif.seconds == master_cif.seconds) 
-                                 && (cif.cycle < master_cif.cycle))) {
+                                && (cif.cycle < master_cif.cycle))) {
                                 
                                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"  LAGS : [%2d: %04us %04uc, %04X]\n",
                                     i,cif.seconds, cif.cycle,cif.syt);
@@ -418,44 +418,43 @@ int main(int argc, char *argv[])
             }
         }
         
-        // show info every x iterations
+            // show info every x iterations
         if ((nb_iter++ % 4000)==0) {
-            m_isoManager->dumpInfo();
-            for (i=0;i<arguments.nb_combos;i++) {
-                monitors[i]->dumpInfo();
+                m_isoManager->dumpInfo();
+                for (i=0;i<arguments.nb_combos;i++) {
+                    monitors[i]->dumpInfo();
                 debugOutput(DEBUG_LEVEL_NORMAL,"    ==> Stream offset: %10d ticks\n",stream_offset_ticks[i]);
+                }
             }
         }
-	}
 
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping handlers...\n");
-	if(!m_isoManager->stopHandlers()) {
-	   debugOutput(DEBUG_LEVEL_NORMAL, "Could not stop ISO handlers\n");
-	   goto finish;
-	}
-	
-	// stop the sync thread
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping ISO manager sync update thread...\n");
-	m_isoManagerThread->Stop();
-	
-	// unregister monitors
-	for (i=0;i<arguments.nb_combos;i++) {
+        debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping handlers...\n");
+        if(!m_isoManager->stopHandlers()) {
+            debugOutput(DEBUG_LEVEL_NORMAL, "Could not stop ISO handlers\n");
+            goto finish;
+        }
+        
+        // stop the sync thread
+        debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping ISO manager sync update thread...\n");
+        m_isoManagerThread->Stop();
+        
+        // unregister monitors
+        for (i=0;i<arguments.nb_combos;i++) {
         debugOutput(DEBUG_LEVEL_NORMAL, "Unregistering SytMonitor %d\n",i);
-	
+        
         if(!m_isoManager->unregisterStream(monitors[i])) {
             debugOutput(DEBUG_LEVEL_NORMAL, "Could not unregister SytMonitor %d\n",i);
             goto finish;
-	    }
-	    delete monitors[i];
+            }
+            delete monitors[i];
     }
-	
-	delete m_isoManagerThread;
+        
+        delete m_isoManagerThread;
     delete m_isoManager;
 
 finish:
-	debugOutput(DEBUG_LEVEL_NORMAL, "Bye...\n");
-
-    delete DebugModuleManager::instance();
-        
-  return EXIT_SUCCESS;
+        debugOutput(DEBUG_LEVEL_NORMAL, "Bye...\n");
+     delete DebugModuleManager::instance();
+         
+return EXIT_SUCCESS;
 }
