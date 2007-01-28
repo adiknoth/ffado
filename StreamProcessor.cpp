@@ -59,15 +59,15 @@ StreamProcessor::~StreamProcessor() {
 void StreamProcessor::dumpInfo()
 {
 
-	debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
-	
-	IsoStream::dumpInfo();
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter  : %d\n", m_framecounter);
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns          : %d\n", m_xruns);
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running        : %d\n", m_running);
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled        : %d\n", !m_disabled);
-	
+    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
+    
+    IsoStream::dumpInfo();
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter  : %d\n", m_framecounter);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns          : %d\n", m_xruns);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running        : %d\n", m_running);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled        : %d\n", !m_disabled);
+    
     m_PeriodStat.dumpInfo();
     m_PacketStat.dumpInfo();
     m_WakeupStat.dumpInfo();
@@ -77,9 +77,9 @@ void StreamProcessor::dumpInfo()
 
 bool StreamProcessor::init()
 {
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-
-	return IsoStream::init();
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+    
+    return IsoStream::init();
 }
 
 /**
@@ -88,24 +88,24 @@ bool StreamProcessor::init()
  */
 bool StreamProcessor::reset() {
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-	resetFrameCounter();
+    resetFrameCounter();
 
-	resetXrunCounter();
+    resetXrunCounter();
 
-	// loop over the ports to reset them
-	if (!PortManager::resetPorts()) {
-		debugFatal("Could not reset ports\n");
-		return false;
-	}
+    // loop over the ports to reset them
+    if (!PortManager::resetPorts()) {
+        debugFatal("Could not reset ports\n");
+        return false;
+    }
 
-	// reset the iso stream
-	if (!IsoStream::reset()) {
-		debugFatal("Could not reset isostream\n");
-		return false;
-	}
-	return true;
+    // reset the iso stream
+    if (!IsoStream::reset()) {
+        debugFatal("Could not reset isostream\n");
+        return false;
+    }
+    return true;
 	
 }
 

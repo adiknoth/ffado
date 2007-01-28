@@ -51,55 +51,55 @@ class IsoStream;
 
 class IsoHandler : public FreebobUtil::TimeSource
 {
-	protected:
+    protected:
+    
+    public:
 	
-	public:
-	
-		enum EHandlerType {
-			EHT_Receive,
-			EHT_Transmit
-		};
-	
-		IsoHandler(int port);
+        enum EHandlerType {
+                EHT_Receive,
+                EHT_Transmit
+        };
 
-		IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq);
+        IsoHandler(int port);
 
-		virtual ~IsoHandler();
+        IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq);
 
-	    	virtual bool init();
-	    	
-		int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); else return -1; };
-		
-		void setVerboseLevel(int l);
+        virtual ~IsoHandler();
 
-		// no setter functions, because those would require a re-init
-		unsigned int getMaxPacketSize() { return m_max_packet_size;};
-		unsigned int getBuffersize() { return m_buf_packets;};
-		int getWakeupInterval() { return m_irq_interval;};
+        virtual bool init();
+        
+        int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); else return -1; };
+        
+        void setVerboseLevel(int l);
 
-		int getPacketCount() {return m_packetcount;};
-		void resetPacketCount() {m_packetcount=0;};
+        // no setter functions, because those would require a re-init
+        unsigned int getMaxPacketSize() { return m_max_packet_size;};
+        unsigned int getBuffersize() { return m_buf_packets;};
+        int getWakeupInterval() { return m_irq_interval;};
 
-		int getDroppedCount() {return m_dropped;};
-		void resetDroppedCount() {m_dropped=0;};
+        int getPacketCount() {return m_packetcount;};
+        void resetPacketCount() {m_packetcount=0;};
 
-		virtual enum EHandlerType getType() = 0;
+        int getDroppedCount() {return m_dropped;};
+        void resetDroppedCount() {m_dropped=0;};
+
+        virtual enum EHandlerType getType() = 0;
 
 		virtual bool start(int cycle) = 0;
 		virtual bool stop();
 		
-		int getFileDescriptor() { return raw1394_get_fd(m_handle);};
+        int getFileDescriptor() { return raw1394_get_fd(m_handle);};
 
-		void dumpInfo();
+        void dumpInfo();
 
-		bool inUse() {return (m_Client != 0) ;};
-		virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
+        bool inUse() {return (m_Client != 0) ;};
+        virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
 
-		virtual bool registerStream(IsoStream *);
-		virtual bool unregisterStream(IsoStream *);
+        virtual bool registerStream(IsoStream *);
+        virtual bool unregisterStream(IsoStream *);
 
-		int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
-		int getPort() {return m_port;};
+        int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
+        int getPort() {return m_port;};
 
 		virtual bool prepare() = 0;
 		
@@ -116,33 +116,33 @@ class IsoHandler : public FreebobUtil::TimeSource
         // register a master timing source
         bool setSyncMaster(FreebobUtil::TimeSource *t);
     
-	protected:
-	    raw1394handle_t m_handle;
+    protected:
+        raw1394handle_t m_handle;
         raw1394handle_t m_handle_util;
-   		int             m_port;
-		unsigned int    m_buf_packets;
-		unsigned int    m_max_packet_size;
-		int             m_irq_interval;
-		
+        int             m_port;
+        unsigned int    m_buf_packets;
+        unsigned int    m_max_packet_size;
+        int             m_irq_interval;
+        
 		unsigned int        m_cyclecounter_ticks;
         freebob_microsecs_t m_lastmeas_usecs;
         float               m_ticks_per_usec;
         float               m_ticks_per_usec_dll_err2;
         
-		int m_packetcount;
-		int m_dropped;
+        int m_packetcount;
+        int m_dropped;
 
-		IsoStream *m_Client;
+        IsoStream *m_Client;
 
         FreebobUtil::TimeSource *m_TimeSource;
 
-		virtual int handleBusReset(unsigned int generation);
+        virtual int handleBusReset(unsigned int generation);
 
 
-		DECLARE_DEBUG_MODULE;
+        DECLARE_DEBUG_MODULE;
 
-	private:
-		static int busreset_handler(raw1394handle_t handle, unsigned int generation);
+    private:
+        static int busreset_handler(raw1394handle_t handle, unsigned int generation);
 
         void initCycleCounter();
 
@@ -164,36 +164,36 @@ class IsoHandler : public FreebobUtil::TimeSource
 class IsoRecvHandler : public IsoHandler 
 {
 
-	public:
-		IsoRecvHandler(int port);
-		IsoRecvHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq);
-		virtual ~IsoRecvHandler();
+    public:
+        IsoRecvHandler(int port);
+        IsoRecvHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq);
+        virtual ~IsoRecvHandler();
 
-		bool init();
-	
-		enum EHandlerType getType() { return EHT_Receive;};
+        bool init();
+    
+        enum EHandlerType getType() { return EHT_Receive;};
 
 // 		int registerStream(IsoStream *);
 // 		int unregisterStream(IsoStream *);
 
-		bool start(int cycle);
+        bool start(int cycle);
 
-		bool prepare();
+        bool prepare();
 
-	protected:
-		int handleBusReset(unsigned int generation);
+    protected:
+        int handleBusReset(unsigned int generation);
 
-	private:
-		static enum raw1394_iso_disposition 
- 		iso_receive_handler(raw1394handle_t handle, unsigned char *data, 
-						unsigned int length, unsigned char channel,
-						unsigned char tag, unsigned char sy, unsigned int cycle, 
-						unsigned int dropped);
+    private:
+        static enum raw1394_iso_disposition 
+        iso_receive_handler(raw1394handle_t handle, unsigned char *data, 
+                            unsigned int length, unsigned char channel,
+                            unsigned char tag, unsigned char sy, unsigned int cycle, 
+                            unsigned int dropped);
 
-		enum raw1394_iso_disposition  
-			putPacket(unsigned char *data, unsigned int length, 
-		              unsigned char channel, unsigned char tag, unsigned char sy, 
-			          unsigned int cycle, unsigned int dropped);
+        enum raw1394_iso_disposition  
+                putPacket(unsigned char *data, unsigned int length, 
+                          unsigned char channel, unsigned char tag, unsigned char sy, 
+                          unsigned int cycle, unsigned int dropped);
 
 };
 
@@ -203,45 +203,45 @@ class IsoRecvHandler : public IsoHandler
 
 class IsoXmitHandler  : public IsoHandler 
 {
-   	public:
-		IsoXmitHandler(int port);
-		IsoXmitHandler(int port, unsigned int buf_packets, 
-			       unsigned int max_packet_size, int irq);
-		IsoXmitHandler(int port, unsigned int buf_packets, 
-			       unsigned int max_packet_size, int irq, 
-			       enum raw1394_iso_speed speed);
-        	virtual ~IsoXmitHandler();
+    public:
+        IsoXmitHandler(int port);
+        IsoXmitHandler(int port, unsigned int buf_packets, 
+                        unsigned int max_packet_size, int irq);
+        IsoXmitHandler(int port, unsigned int buf_packets, 
+                        unsigned int max_packet_size, int irq, 
+                        enum raw1394_iso_speed speed);
+        virtual ~IsoXmitHandler();
 
-		bool init();
-		
-		enum EHandlerType getType() { return EHT_Transmit;};
+        bool init();
+        
+        enum EHandlerType getType() { return EHT_Transmit;};
 
 // 		int registerStream(IsoStream *);
 // 		int unregisterStream(IsoStream *);
 
-		unsigned int getPreBuffers() {return m_prebuffers;};
-		void setPreBuffers(unsigned int n) {m_prebuffers=n;};
+        unsigned int getPreBuffers() {return m_prebuffers;};
+        void setPreBuffers(unsigned int n) {m_prebuffers=n;};
 
-		bool start(int cycle);
+        bool start(int cycle);
 
-		bool prepare();
+        bool prepare();
 
     protected:
-    	int handleBusReset(unsigned int generation);
+        int handleBusReset(unsigned int generation);
 
-	private:
-		static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
-				unsigned char *data, unsigned int *length,
-				unsigned char *tag, unsigned char *sy,
-				int cycle, unsigned int dropped);
-		enum raw1394_iso_disposition  
-			getPacket(unsigned char *data, unsigned int *length,
-		              unsigned char *tag, unsigned char *sy,
-		              int cycle, unsigned int dropped);
+    private:
+        static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
+                        unsigned char *data, unsigned int *length,
+                        unsigned char *tag, unsigned char *sy,
+                        int cycle, unsigned int dropped);
+        enum raw1394_iso_disposition  
+                getPacket(unsigned char *data, unsigned int *length,
+                        unsigned char *tag, unsigned char *sy,
+                        int cycle, unsigned int dropped);
 
-		enum raw1394_iso_speed m_speed;
-		
-		unsigned int m_prebuffers;
+        enum raw1394_iso_speed m_speed;
+        
+        unsigned int m_prebuffers;
 
 };
 

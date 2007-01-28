@@ -117,7 +117,7 @@ IsoHandler::IsoHandler(int port, unsigned int buf_packets, unsigned int max_pack
 
 IsoHandler::~IsoHandler() {
     if(m_handle) {
-        stop();
+            stop();
         raw1394_destroy_handle(m_handle);
     }
     if(m_handle_util) raw1394_destroy_handle(m_handle_util);
@@ -128,40 +128,40 @@ IsoHandler::~IsoHandler() {
 bool
 IsoHandler::init()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoHandler (%p) enter...\n",this);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "IsoHandler (%p) enter...\n",this);
 
-	m_handle = raw1394_new_handle_on_port( m_port );
-	if ( !m_handle ) {
-		if ( !errno ) {
+    m_handle = raw1394_new_handle_on_port( m_port );
+    if ( !m_handle ) {
+        if ( !errno ) {
 			cerr << "libraw1394 not compatible" << endl;
-		} else {
+        } else {
 			perror( "IsoHandler::Initialize: Could not get 1394 handle" );
 			cerr << "Is ieee1394 and raw1394 driver loaded?" << endl;
-		}
-		return false;
-	}
-	raw1394_set_userdata(m_handle, static_cast<void *>(this));
-	
-	// a second handle for utility stuff
-	m_handle_util = raw1394_new_handle_on_port( m_port );
-	if ( !m_handle_util ) {
-		if ( !errno ) {
+        }
+        return false;
+    }
+    raw1394_set_userdata(m_handle, static_cast<void *>(this));
+    
+    // a second handle for utility stuff
+    m_handle_util = raw1394_new_handle_on_port( m_port );
+    if ( !m_handle_util ) {
+        if ( !errno ) {
 			cerr << "libraw1394 not compatible" << endl;
-		} else {
+        } else {
 			perror( "IsoHandler::Initialize: Could not get 1394 handle" );
 			cerr << "Is ieee1394 and raw1394 driver loaded?" << endl;
-		}
-		return false;
+        }
+        return false;
+    }
+	
+    raw1394_set_userdata(m_handle_util, static_cast<void *>(this));
+	
+    if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
+        debugWarning("Could not enable busreset notification.\n");
+        debugWarning(" Error message: %s\n",strerror(errno));
 	}
 	
-	raw1394_set_userdata(m_handle_util, static_cast<void *>(this));
-	
-	if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
-		debugWarning("Could not enable busreset notification.\n");
-		debugWarning(" Error message: %s\n",strerror(errno));
-	}
-	
-	raw1394_set_bus_reset_handler(m_handle, busreset_handler);
+        raw1394_set_bus_reset_handler(m_handle, busreset_handler);
 
     // initialize the local timesource
     m_TimeSource_NbCycleWraps=0;
@@ -170,32 +170,32 @@ IsoHandler::init()
     
     raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
         CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-    
+
     new_counter= ntohl(buf) & 0xFFFFFFFF;
     m_TimeSource_LastSecs=CYCLE_COUNTER_GET_SECS(new_counter);
 
-    // update the cycle counter value for initial value
-    initCycleCounter();
-
-	return true;
-}
-
-bool
-IsoHandler::setSyncMaster(FreebobUtil::TimeSource *t)
-{
-    m_TimeSource=t;
-    
     // update the cycle counter value for initial value
     initCycleCounter();
     
     return true;
 }
 
+bool
+IsoHandler::setSyncMaster(FreebobUtil::TimeSource *t)
+{
+    m_TimeSource=t;
+
+    // update the cycle counter value for initial value
+    initCycleCounter();
+
+    return true;
+}
+
 bool IsoHandler::stop()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	raw1394_iso_stop(m_handle); 
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    raw1394_iso_stop(m_handle);
+    return true;
 }
 
 /**
@@ -205,13 +205,13 @@ bool IsoHandler::stop()
  */
  
 int IsoHandler::handleBusReset(unsigned int generation) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
-	
-	// as busreset can elect a new cycle master,
-	// we need to re-initialize our timing code
+    debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
+    
+    // as busreset can elect a new cycle master,
+    // we need to re-initialize our timing code
     initCycleCounter();
     
-	return 0;
+    return 0;
 }
 
 /**
@@ -224,18 +224,18 @@ unsigned int IsoHandler::getCycleCounter() {
     // calculate the cycle counter based upon the current time
     // and the estimated tick rate
     freebob_microsecs_t now=m_TimeSource->getCurrentTimeAsUsecs();
-    
+
     // linear interpolation
     int delta_usecs=now-m_lastmeas_usecs;
 
     float offset=m_ticks_per_usec * ((float)delta_usecs);
-    
+
     unsigned int pred_ticks=m_cyclecounter_ticks+(unsigned int)offset;
-    
+
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Get CC: d_usecs=%d, offset=%f, cc_ticks=%lu, pred_ticks=%lu\n",
       delta_usecs, offset, m_cyclecounter_ticks,pred_ticks
       );
-      
+
     // if we need to wrap, do it
     if (pred_ticks > TICKS_PER_SECOND * 128) {
         pred_ticks -= TICKS_PER_SECOND * 128;
@@ -246,7 +246,7 @@ unsigned int IsoHandler::getCycleCounter() {
 
 bool IsoHandler::updateCycleCounter() {
     quadlet_t buf=0;
-    
+
     freebob_microsecs_t prev_usecs=m_lastmeas_usecs;
     unsigned int prev_ticks=m_cyclecounter_ticks;
     
@@ -294,10 +294,10 @@ bool IsoHandler::updateCycleCounter() {
     raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
         CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
     new_usecs=m_TimeSource->getCurrentTimeAsUsecs();
-    
+
     new_counter= ntohl(buf) & 0xFFFFFFFF;
     new_ticks=CYCLE_COUNTER_TO_TICKS(new_counter);
-    
+
     // the difference in system time
     int delta_usecs=new_usecs-prev_usecs;
     // this cannot be 0, because m_TimeSource->getCurrentTimeAsUsecs should 
@@ -385,7 +385,7 @@ bool IsoHandler::updateCycleCounter() {
         if (m_cyclecounter_ticks > TICKS_PER_SECOND * 128) {
             m_cyclecounter_ticks -= TICKS_PER_SECOND * 128;
         }
-            
+
         m_lastmeas_usecs = new_usecs;
 
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"U TS: %10u -> %10u, d=%7uus, dt_est=%7u,  dt_meas=%7u, erate=%6.4f, mrate=%6f\n",
@@ -445,7 +445,7 @@ void IsoHandler::initCycleCounter() {
         raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
             CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
         new_usecs=m_TimeSource->getCurrentTimeAsUsecs();
-        
+
         new_counter= ntohl(buf) & 0xFFFFFFFF;
         new_ticks=CYCLE_COUNTER_TO_TICKS(new_counter);
         
@@ -489,62 +489,62 @@ void IsoHandler::initCycleCounter() {
 void IsoHandler::dumpInfo()
 {
 
-	int channel=-1;
-	if (m_Client) channel=m_Client->getChannel();
+    int channel=-1;
+    if (m_Client) channel=m_Client->getChannel();
 
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Handler type    : %s\n",
-	     (this->getType()==EHT_Receive ? "Receive" : "Transmit"));
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %2d, %2d\n",
-	     m_port, channel);
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count   : %10d (%5d dropped)\n",
-	     this->getPacketCount(), this->getDroppedCount());
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Handler type    : %s\n",
+            (this->getType()==EHT_Receive ? "Receive" : "Transmit"));
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %2d, %2d\n",
+            m_port, channel);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count   : %10d (%5d dropped)\n",
+            this->getPacketCount(), this->getDroppedCount());
     #ifdef DEBUG
     unsigned int cc=this->getCycleCounter();
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Cycle counter  : %10lu (%03us, %04ucycles, %04uticks)\n",
-	     cc,TICKS_TO_SECS(cc),TICKS_TO_CYCLES(cc),TICKS_TO_OFFSET(cc));
-	#endif
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "  Ticks/usec     : %8.6f (dll2: %8.6e)\n\n",
-	     this->getTicksPerUsec(), m_ticks_per_usec_dll_err2);
+            cc,TICKS_TO_SECS(cc),TICKS_TO_CYCLES(cc),TICKS_TO_OFFSET(cc));
+    #endif
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Ticks/usec     : %8.6f (dll2: %8.6e)\n\n",
+            this->getTicksPerUsec(), m_ticks_per_usec_dll_err2);
 
 };
 
 void IsoHandler::setVerboseLevel(int l)
 {
-	setDebugLevel(l);
+    setDebugLevel(l);
 }
 
 bool IsoHandler::registerStream(IsoStream *stream)
 {
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "registering stream (%p)\n", stream);
+    assert(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "registering stream (%p)\n", stream);
 
-	if (m_Client) {
-		debugFatal( "Generic IsoHandlers can have only one client\n");	
-		return false;
-	}
+    if (m_Client) {
+            debugFatal( "Generic IsoHandlers can have only one client\n");	
+            return false;
+    }
 
-	m_Client=stream;
+    m_Client=stream;
 
-	m_Client->setHandler(this);
+    m_Client->setHandler(this);
 
-	return true;
+    return true;
 
 }
 
 bool IsoHandler::unregisterStream(IsoStream *stream)
 {
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering stream (%p)\n", stream);
+    assert(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering stream (%p)\n", stream);
 
-	if(stream != m_Client) {
-		debugFatal( "no client registered\n");	
-		return false;
-	}
+    if(stream != m_Client) {
+            debugFatal( "no client registered\n");	
+            return false;
+    }
 
-	m_Client->clearHandler();
-	
-	m_Client=0;
-	return true;
+    m_Client->clearHandler();
+    
+    m_Client=0;
+    return true;
 
 }
 
@@ -594,15 +594,15 @@ freebob_microsecs_t IsoHandler::getCurrentTimeAsUsecs() {
 /* Child class implementations */
 
 IsoRecvHandler::IsoRecvHandler(int port)
-		: IsoHandler(port)
+                : IsoHandler(port)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 }
 IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets, 
                                unsigned int max_packet_size, int irq)
-		: IsoHandler(port, buf_packets,max_packet_size,irq)
+                : IsoHandler(port, buf_packets,max_packet_size,irq)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 }
 IsoRecvHandler::~IsoRecvHandler()
@@ -618,30 +618,30 @@ IsoRecvHandler::~IsoRecvHandler()
 
 bool
 IsoRecvHandler::init() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "init recv handler %p\n",this);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "init recv handler %p\n",this);
 
-	if(!(IsoHandler::init())) {
-		return false;
-	}
-	return true;
+    if(!(IsoHandler::init())) {
+        return false;
+    }
+    return true;
 
 }
 
 enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsigned int length, 
-		              unsigned char channel, unsigned char tag, unsigned char sy, 
-			          unsigned int cycle, unsigned int dropped) {
+                    unsigned char channel, unsigned char tag, unsigned char sy, 
+                    unsigned int cycle, unsigned int dropped) {
 
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-	             "received packet: length=%d, channel=%d, cycle=%d\n",
-	             length, channel, cycle );
-	m_packetcount++;
-	m_dropped+=dropped;
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+                 "received packet: length=%d, channel=%d, cycle=%d\n",
+                 length, channel, cycle );
+    m_packetcount++;
+    m_dropped+=dropped;
 
-	if(m_Client) {
-		return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
-	}
-	
-	return RAW1394_ISO_OK;
+    if(m_Client) {
+        return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
+    }
+    
+    return RAW1394_ISO_OK;
 }
 
 bool IsoRecvHandler::prepare()
@@ -650,73 +650,73 @@ bool IsoRecvHandler::prepare()
 // fixed to correctly initialise the iso_packet_infos field.  Bug is
 // confirmed present in libraw1394 1.2.1.
 //	raw1394_iso_shutdown(m_handle);
-	
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso receive handler (%p)\n",this);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n",m_buf_packets);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Max Packet size : %d \n",m_max_packet_size);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n",m_Client->getChannel());
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso receive handler (%p)\n",this);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n",m_buf_packets);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Max Packet size : %d \n",m_max_packet_size);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n",m_Client->getChannel());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
 
 	if(raw1394_iso_recv_init(m_handle,   iso_receive_handler,
-                                         m_buf_packets,
-                                         m_max_packet_size,
-	                                     m_Client->getChannel(),
-	                                     RAW1394_DMA_BUFFERFILL,
-                                         m_irq_interval)) {
-		debugFatal("Could not do receive initialisation!\n" );
-		debugFatal("  %s\n",strerror(errno));
+                             m_buf_packets,
+                             m_max_packet_size,
+                             m_Client->getChannel(),
+                             RAW1394_DMA_BUFFERFILL,
+                             m_irq_interval)) {
+        debugFatal("Could not do receive initialisation!\n" );
+        debugFatal("  %s\n",strerror(errno));
 
-		return false;
-	}
-	return true;
+        return false;
+    }
+    return true;
 }
 
 bool IsoRecvHandler::start(int cycle)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
-	
-	if(raw1394_iso_recv_start(m_handle, cycle, -1, 0)) {
-		debugFatal("Could not start receive handler (%s)\n",strerror(errno));
-		return false;
-	}
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
+    
+    if(raw1394_iso_recv_start(m_handle, cycle, -1, 0)) {
+        debugFatal("Could not start receive handler (%s)\n",strerror(errno));
+        return false;
+    }
+    return true;
 }
 
 int IsoRecvHandler::handleBusReset(unsigned int generation) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "handle bus reset...\n");
-	
-	//TODO: implement busreset
-	
-	// pass on the busreset signal
-	if(IsoHandler::handleBusReset(generation)) {
-		return -1;
-	}
-	return 0;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "handle bus reset...\n");
+    
+    //TODO: implement busreset
+    
+    // pass on the busreset signal
+    if(IsoHandler::handleBusReset(generation)) {
+        return -1;
+    }
+    return 0;
 }
 
 /* ----------------- XMIT --------------- */
 
 IsoXmitHandler::IsoXmitHandler(int port)
-		: IsoHandler(port), m_prebuffers(0)
+                : IsoHandler(port), m_prebuffers(0)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
 IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
                                unsigned int max_packet_size, int irq)
-		: IsoHandler(port, buf_packets, max_packet_size,irq),
-		  m_speed(RAW1394_ISO_SPEED_400), m_prebuffers(0)
+                : IsoHandler(port, buf_packets, max_packet_size,irq),
+                  m_speed(RAW1394_ISO_SPEED_400), m_prebuffers(0)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
 IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
                                unsigned int max_packet_size, int irq,
                                enum raw1394_iso_speed speed)
-		: IsoHandler(port, buf_packets,max_packet_size,irq),
-		  m_speed(speed), m_prebuffers(0)
+                : IsoHandler(port, buf_packets,max_packet_size,irq),
+                  m_speed(speed), m_prebuffers(0)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
 
@@ -734,13 +734,13 @@ IsoXmitHandler::~IsoXmitHandler()
 bool
 IsoXmitHandler::init() {
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "init xmit handler %p\n",this);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "init xmit handler %p\n",this);
 
-	if(!(IsoHandler::init())) {
-		return false;
-	}
+    if(!(IsoHandler::init())) {
+        return false;
+    }
 
-	return true;
+    return true;
 
 }
 
@@ -763,50 +763,50 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(unsigned char *data, unsi
 
 bool IsoXmitHandler::prepare()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso transmit handler (%p, client=%p)\n",this,m_Client);
-	
-// 	raw1394_iso_shutdown(m_handle);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n",m_buf_packets);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Max Packet size : %d \n",m_max_packet_size);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n",m_Client->getChannel());
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Speed           : %d \n",m_speed);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso transmit handler (%p, client=%p)\n",this,m_Client);
 
-	if(raw1394_iso_xmit_init(m_handle,
+// 	raw1394_iso_shutdown(m_handle);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n",m_buf_packets);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Max Packet size : %d \n",m_max_packet_size);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n",m_Client->getChannel());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Speed           : %d \n",m_speed);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
+
+    if(raw1394_iso_xmit_init(m_handle,
                              iso_transmit_handler,
                              m_buf_packets,
                              m_max_packet_size,
-	                         m_Client->getChannel(),
-	                         m_speed,
+                             m_Client->getChannel(),
+                             m_speed,
                              m_irq_interval)) {
-		debugFatal("Could not do xmit initialisation!\n" );
+        debugFatal("Could not do xmit initialisation!\n" );
 
-		return false;
-	}
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
 bool IsoXmitHandler::start(int cycle)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
-	if(raw1394_iso_xmit_start(m_handle, cycle, m_prebuffers)) {
-		debugFatal("Could not start xmit handler (%s)\n",strerror(errno));
-		return false;
-	}
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
+    if(raw1394_iso_xmit_start(m_handle, cycle, m_prebuffers)) {
+        debugFatal("Could not start xmit handler (%s)\n",strerror(errno));
+        return false;
+    }
+    return true;
 }
 
 int IsoXmitHandler::handleBusReset(unsigned int generation) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
-	//TODO: implement busreset
-	
-	// pass on the busreset signal
-	if(IsoHandler::handleBusReset(generation)) {
-		return -1;
-	}
-	
-	return 0;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
+    //TODO: implement busreset
+    
+    // pass on the busreset signal
+    if(IsoHandler::handleBusReset(generation)) {
+            return -1;
+    }
+    
+    return 0;
 }
 
 }

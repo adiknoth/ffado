@@ -105,8 +105,8 @@ bool IsoHandlerManager::iterate()
 
 // updates the internal cycle counter caches of the handlers
 void IsoHandlerManager::updateCycleCounters() {
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-	
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+    
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();
           ++it )
@@ -139,15 +139,15 @@ bool IsoHandlerManager::prepare()
 
 bool IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	assert(handler);
-	
-	m_IsoHandlers.push_back(handler);
-	
-	handler->setVerboseLevel(getDebugLevel());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    assert(handler);
+    
+    m_IsoHandlers.push_back(handler);
+    
+    handler->setVerboseLevel(getDebugLevel());
 
-	// rebuild the fd map for poll()'ing.
-	return rebuildFdMap();	
+    // rebuild the fd map for poll()'ing.
+    return rebuildFdMap();	
 
 }
 
@@ -205,35 +205,35 @@ bool IsoHandlerManager::rebuildFdMap() {
 
 void IsoHandlerManager::disablePolling(IsoStream *stream) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable polling on stream %p\n",stream);
-	int i=0;
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-	   if ((*it)->isStreamRegistered(stream)) {
-	       m_poll_fds[i].events = 0;
-	       m_poll_fds[i].revents = 0;
+    int i=0;
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+        it != m_IsoHandlers.end();
+        ++it )
+    {
+        if ((*it)->isStreamRegistered(stream)) {
+            m_poll_fds[i].events = 0;
+            m_poll_fds[i].revents = 0;
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling disabled\n");
-	   }
-	   i++;
-	}
+        }
+        i++;
+    }
 
 }
 
 void IsoHandlerManager::enablePolling(IsoStream *stream) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable polling on stream %p\n",stream);
-	int i=0;
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-	   if ((*it)->isStreamRegistered(stream)) {
-	       m_poll_fds[i].events = POLLIN;
-	       m_poll_fds[i].revents = 0;
+    int i=0;
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+        it != m_IsoHandlers.end();
+        ++it )
+    {
+        if ((*it)->isStreamRegistered(stream)) {
+            m_poll_fds[i].events = POLLIN;
+            m_poll_fds[i].revents = 0;
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling enabled\n");
-	   }
-	   i++;
-	}
+        }
+        i++;
+    }
 }
 
 
@@ -443,99 +443,99 @@ bool IsoHandlerManager::unregisterStream(IsoStream *stream)
 }
 
 void IsoHandlerManager::pruneHandlers() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	IsoHandlerVector toUnregister;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    IsoHandlerVector toUnregister;
 
-	// find all handlers that are not in use
+    // find all handlers that are not in use
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();
           ++it )
     {
-		if(!((*it)->inUse())) {
-			debugOutput( DEBUG_LEVEL_VERBOSE, " handler (%p) not in use\n",*it);
-			toUnregister.push_back(*it);
-		}
+        if(!((*it)->inUse())) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " handler (%p) not in use\n",*it);
+            toUnregister.push_back(*it);
+        }
     }
-	// delete them
+    // delete them
     for ( IsoHandlerVectorIterator it = toUnregister.begin();
           it != toUnregister.end();
           ++it )
     {
-		unregisterHandler(*it);
-		debugOutput( DEBUG_LEVEL_VERBOSE, " deleting handler (%p)\n",*it);
+        unregisterHandler(*it);
+        debugOutput( DEBUG_LEVEL_VERBOSE, " deleting handler (%p)\n",*it);
 
-		// Now the handler's been unregistered it won't be reused
-		// again.  Therefore it really needs to be formally deleted
-		// to free up the raw1394 handle.  Otherwise things fall
-		// apart after several xrun recoveries as the system runs
-		// out of resources to support all the disused but still
-		// allocated raw1394 handles.  At least this is the current
-		// theory as to why we end up with "memory allocation"
-		// failures after several Xrun recoveries.
-		delete *it;
+        // Now the handler's been unregistered it won't be reused
+        // again.  Therefore it really needs to be formally deleted
+        // to free up the raw1394 handle.  Otherwise things fall
+        // apart after several xrun recoveries as the system runs
+        // out of resources to support all the disused but still
+        // allocated raw1394 handles.  At least this is the current
+        // theory as to why we end up with "memory allocation"
+        // failures after several Xrun recoveries.
+        delete *it;
     }
 
 }
 
 bool IsoHandlerManager::startHandlers() {
-	return startHandlers(-1);
+    return startHandlers(-1);
 }
 
 bool IsoHandlerManager::startHandlers(int cycle) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-		debugOutput( DEBUG_LEVEL_VERBOSE, " starting handler (%p)\n",*it);
-		if(!(*it)->start(cycle)) {
-			debugOutput( DEBUG_LEVEL_VERBOSE, " could not start handler (%p)\n",*it);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+        it != m_IsoHandlers.end();
+        ++it )
+    {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " starting handler (%p)\n",*it);
+        if(!(*it)->start(cycle)) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " could not start handler (%p)\n",*it);
 			return false;
-		}
-	}
-	
+        }
+    }
+    
 	return true;
 }
 
 bool IsoHandlerManager::stopHandlers() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-		debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
-		if(!(*it)->stop()){
-			debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+        it != m_IsoHandlers.end();
+        ++it )
+    {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
+        if(!(*it)->stop()){
+            debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
 			return false;
-		}
-	}
+        }
+    }
 	return true;
 }
 
 void IsoHandlerManager::setVerboseLevel(int i) {
-	setDebugLevel(i);
+    setDebugLevel(i);
 
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();
           ++it )
     {
-		(*it)->setVerboseLevel(i);
+        (*it)->setVerboseLevel(i);
     }
 }
 
 void IsoHandlerManager::dumpInfo() {
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping IsoHandlerManager Stream handler information...\n");
-	int i=0;
-
+    int i=0;
+    
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();
           ++it )
     {
-		debugOutputShort( DEBUG_LEVEL_NORMAL, " IsoHandler %d (%p)\n",i++,*it);
+        debugOutputShort( DEBUG_LEVEL_NORMAL, " IsoHandler %d (%p)\n",i++,*it);
 
-		(*it)->dumpInfo();
+        (*it)->dumpInfo();
     }
 
 }

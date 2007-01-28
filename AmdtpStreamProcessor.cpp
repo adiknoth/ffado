@@ -93,9 +93,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) {
     
-	struct iec61883_packet *packet = (struct iec61883_packet *) data;
-	unsigned int nevents=0;
-	
+    struct iec61883_packet *packet = (struct iec61883_packet *) data;
+    unsigned int nevents=0;
+    
     packet->eoh0 = 0;
     
 #ifdef DEBUG
@@ -117,27 +117,27 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     packet->eoh1 = 2;
     packet->fmt = IEC61883_FMT_AMDTP;
 
-	// signal that we are running (a transmit stream is always 'runnable')
-	m_running=true;
-	
-	// don't process the stream when it is not enabled.
-	// however, we do have to generate (semi) valid packets
-	// that means that we'll send NODATA packets FIXME: check!!
-	if(m_disabled) {
-	   // no-data packets have syt=0xFFFF
-	   // and have the usual amount of events as dummy data 
+    // signal that we are running (a transmit stream is always 'runnable')
+    m_running=true;
+    
+    // don't process the stream when it is not enabled.
+    // however, we do have to generate (semi) valid packets
+    // that means that we'll send NODATA packets FIXME: check!!
+    if(m_disabled) {
+        // no-data packets have syt=0xFFFF
+        // and have the usual amount of events as dummy data 
         packet->fdf = IEC61883_FDF_NODATA;
         packet->syt = 0xffff;
         
         // the dbc is incremented even with no data packets
         m_dbc += m_syt_interval;
 
-		*length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
-		*tag = IEC61883_TAG_WITH_CIP;
-		*sy = 0;
-        
-		return RAW1394_ISO_DEFER;
-	}
+        *length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
+        *tag = IEC61883_TAG_WITH_CIP;
+        *sy = 0;
+
+        return RAW1394_ISO_DEFER;
+    }
     
     packet->fdf = m_fdf;
 	
@@ -446,7 +446,7 @@ bool AmdtpTransmitStreamProcessor::reset() {
     freebob_ringbuffer_reset(m_event_buffer);
     
     // reset the statistics
-	m_PeriodStat.reset();
+    m_PeriodStat.reset();
     m_PacketStat.reset();
     m_WakeupStat.reset();
     
@@ -1047,7 +1047,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         m_last_timestamp2=m_last_timestamp;
         
         unsigned int syt_timestamp=ntohs(packet->syt);
-         // reconstruct the top part of the timestamp using the current cycle number
+        // reconstruct the top part of the timestamp using the current cycle number
         unsigned int now_cycle_masked=cycle & 0xF;
         unsigned int syt_cycle=CYCLE_COUNTER_GET_CYCLES(syt_timestamp);
         
@@ -1089,7 +1089,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE," => correcting for timestamp difference wraparound\n");
                 measured_difference+=TICKS_PER_SECOND;
             }
-            
+
             // implement a 1st order DLL to estimate the framerate
             // this is the number of ticks between two samples
             float f=measured_difference;
@@ -1114,13 +1114,13 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         }
         
          debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"R-SYT for cycle (%2d %2d)=>%2d: %5uT (%04uC + %04uT) %04X %04X %d\n",
-         cycle,now_cycle_masked,delta_cycles,
+            cycle,now_cycle_masked,delta_cycles,
          CYCLE_COUNTER_TO_TICKS(m_last_timestamp),
          CYCLE_COUNTER_GET_CYCLES(m_last_timestamp),
          CYCLE_COUNTER_GET_OFFSET(m_last_timestamp),
          ntohs(packet->syt),m_last_timestamp&0xFFFF, dropped
          );
-             
+
 #ifdef DEBUG
         if(m_last_timestamp<m_last_timestamp2) {
             if(wraparound_occurred) {
@@ -1133,7 +1133,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             }
         }
 #endif
-        
+
         // don't process the stream samples when it is not enabled.
         if(m_disabled) {
             return RAW1394_ISO_DEFER;
@@ -1174,14 +1174,14 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 ((length / sizeof (quadlet_t)) - 2)/packet->dbs);
         }
 #endif
-        
+
         // update the frame counter
         incrementFrameCounter(nevents);
         if(m_framecounter>(signed int)m_period) {
            retval=RAW1394_ISO_DEFER;
            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"defer!\n");
         }
-        
+
     } else {
         // discard packet
         // can be important for sync though
@@ -1418,15 +1418,15 @@ void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 
 bool AmdtpReceiveStreamProcessor::reset() {
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-	// reset the event buffer, discard all content
-	freebob_ringbuffer_reset(m_event_buffer);
-	
+    // reset the event buffer, discard all content
+    freebob_ringbuffer_reset(m_event_buffer);
+    
 	// reset the last timestamp
 	m_last_timestamp=0;
 	
-	m_PeriodStat.reset();
+    m_PeriodStat.reset();
     m_PacketStat.reset();
     m_WakeupStat.reset();
 
@@ -1439,15 +1439,15 @@ bool AmdtpReceiveStreamProcessor::reset() {
 	m_last_timestamp=0;
 	m_last_timestamp2=0;
 	
-	m_one_period_passed=false;
-	
-	// reset all non-device specific stuff
-	// i.e. the iso stream and the associated ports
-	if(!ReceiveStreamProcessor::reset()) {
-		debugFatal("Could not do base class reset\n");
-		return false;
-	}
-	return true;
+    m_one_period_passed=false;
+
+    // reset all non-device specific stuff
+    // i.e. the iso stream and the associated ports
+    if(!ReceiveStreamProcessor::reset()) {
+            debugFatal("Could not do base class reset\n");
+            return false;
+    }
+    return true;
 }
 
 bool AmdtpReceiveStreamProcessor::prepare() {
