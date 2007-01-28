@@ -30,29 +30,29 @@ distclean-local: clean
 	rm -f *.stamp || true
 	if test -d reference; then rm -rf reference; fi
 
-install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(DOC_DIR)/reference/html
-	(installfiles=`echo reference/html/*.html`; \
-	if test "$$installfiles" = 'reference/html/*.html'; \
-	then echo '-- Nothing to install' ; \
-	else \
-	  for i in $$installfiles $(INSTIMAGES) reference/html/doxygen.css; do \
-	    echo '-- Installing '$$i ; \
-	    $(INSTALL_DATA) $$i $(DESTDIR)$(DOC_DIR)/reference/html; \
-	  done; \
-	fi)
-
-# we need doxygen stuff built so we can know what to uninstall
-uninstall-local: doxygen-build.stamp
-	(installfiles=`echo reference/html/*.html`; \
-	if test "$$installfiles" = 'reference/html/*.html'; \
-	then echo '-- Nothing to uninstall' ; \
-	else \
-	  for i in $$installfiles $(INSTIMAGES) reference/html/doxygen.css; do \
-	    echo '-- Unstalling '$$i ; \
-	    rm $(DESTDIR)$(DOC_DIR)/$$i; \
-	  done; \
-	fi)
+# install-data-local:
+# 	$(mkinstalldirs) $(DESTDIR)$(DOC_DIR)/reference/html
+# 	(installfiles=`echo reference/html/*.html`; \
+# 	if test "$$installfiles" = 'reference/html/*.html'; \
+# 	then echo '-- Nothing to install' ; \
+# 	else \
+# 	  for i in $$installfiles $(INSTIMAGES) reference/html/doxygen.css; do \
+# 	    echo '-- Installing '$$i ; \
+# 	    $(INSTALL_DATA) $$i $(DESTDIR)$(DOC_DIR)/reference/html; \
+# 	  done; \
+# 	fi)
+# 
+# # we need doxygen stuff built so we can know what to uninstall
+# uninstall-local: doxygen-build.stamp
+# 	(installfiles=`echo reference/html/*.html`; \
+# 	if test "$$installfiles" = 'reference/html/*.html'; \
+# 	then echo '-- Nothing to uninstall' ; \
+# 	else \
+# 	  for i in $$installfiles $(INSTIMAGES) reference/html/doxygen.css; do \
+# 	    echo '-- Unstalling '$$i ; \
+# 	    rm $(DESTDIR)$(DOC_DIR)/$$i; \
+# 	  done; \
+# 	fi)
 
 dist-hook: dist-hook-local
 	mkdir $(distdir)/reference
