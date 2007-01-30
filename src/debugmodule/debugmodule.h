@@ -136,27 +136,6 @@ typedef short debug_level_t;
 #define CHECK_PREEMPTION(onoff)
 #endif
 
-// Intel recommends that a serializing instruction 
-// should be called before and after rdtsc. 
-// CPUID is a serializing instruction. 
-#define read_rdtsc(time) \
-	__asm__ __volatile__( \
-	"pushl %%ebx\n\t" \
-	"cpuid\n\t" \
- 	"rdtsc\n\t" \
- 	"mov %%eax,(%0)\n\t" \
- 	"cpuid\n\t" \
-	"popl %%ebx\n\t" \
- 	: /* no output */ \
- 	: "S"(&time) \
- 	: "eax", "ecx", "edx", "memory")
-
-static inline unsigned long debugGetCurrentTSC() {
-    unsigned retval;
-    read_rdtsc(retval);
-    return retval;
-}
-
 unsigned char toAscii( unsigned char c );
 void quadlet2char( fb_quadlet_t quadlet, unsigned char* buff );
 void hexDump( unsigned char *data_start, unsigned int length );

@@ -992,9 +992,6 @@ AvDevice::prepare() {
 
         }
 
-        // FIXME: do this the proper way!
-        m_transmitProcessor->syncmaster=m_receiveProcessor;
-
         if (!addPlugToProcessor(*inputPlug,m_transmitProcessor,
             FreebobStreaming::AmdtpAudioPort::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
@@ -1109,6 +1106,7 @@ AvDevice::getStreamProcessorByIndex(int i) {
     return 0;
 }
 
+// FIXME: error checking
 int
 AvDevice::startStreamByIndex(int i) {
     int iso_channel=0;
@@ -1170,14 +1168,17 @@ AvDevice::startStreamByIndex(int i) {
             m_transmitProcessor->setChannel(iso_channel);
             break;
         default:
-            return 0;
+            return -1;
         }
 //     }
 
+    if (iso_channel < 0) return -1;
+    
     return 0;
 
 }
 
+// FIXME: error checking
 int
 AvDevice::stopStreamByIndex(int i) {
     // do connection management: break connection

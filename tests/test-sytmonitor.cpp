@@ -32,20 +32,21 @@ Free Software Foundation, Inc.,                                       *
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/cyclecounter.h"
+#include "src/libstreaming/cycletimer.h"
 
 #include "src/libstreaming/IsoHandlerManager.h"
 #include "SytMonitor.h"
 
 #include "src/libutil/PosixThread.h"
+#include "src/libutil/SystemTimeSource.h"
 
 #include "pthread.h"
 
 using namespace FreebobStreaming;
 using namespace FreebobUtil;
 
+
 DECLARE_GLOBAL_DEBUG_MODULE;
-IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
 
 int run;
 // Program documentation.
@@ -158,20 +159,20 @@ static void sighandler (int sig)
 
 int main(int argc, char *argv[])
 {
-	int target_port=0;
-	int target_channel_1=0;
-	int target_channel_2=0;
     bool run_realtime=false;
     int realtime_prio=20;
     int nb_iter;
     int i;
     struct sched_param params;
+    uint64_t last_print_time=0;
+    
+    SystemTimeSource masterTimeSource;
     
     IsoHandlerManager *m_isoManager=NULL;
     PosixThread * m_isoManagerThread=NULL;
     
     SytMonitor *monitors[128];
-    int stream_offset_ticks[128];
+    int64_t stream_offset_ticks[128];
     
     struct arguments arguments;
 
@@ -244,11 +245,16 @@ int main(int argc, char *argv[])
             monitors[i]->setChannel(arguments.args[i].channel);
             
             if(!m_isoManager->registerStream(monitors[i])) {
-            debugOutput(DEBUG_LEVEL_NORMAL, "Could not register SytMonitor %d\n", i);
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not register SytMonitor %d with isoManager\n", i);
                 goto finish;
             }
-    }
             
+            if (!masterTimeSource.registerSlave(monitors[i]->getHandler())) {
+                debugOutput(DEBUG_LEVEL_NORMAL, "Could not register SytMonitor %d's IsoHandler with masterTimeSource\n", i);
+                goto finish;
+                
+            }
+        }
 
         debugOutput(DEBUG_LEVEL_NORMAL,   "Preparing IsoHandlerManager...\n");
         if (!m_isoManager->prepare()) {
@@ -258,14 +264,15 @@ int main(int argc, char *argv[])
 
         debugOutput(DEBUG_LEVEL_NORMAL,   "Starting ISO manager sync update thread...\n");
 
-	// start the runner thread
-	m_isoManagerThread->Start();
 
         debugOutput(DEBUG_LEVEL_NORMAL,   "Starting IsoHandlers...\n");
         if (!m_isoManager->startHandlers(0)) {
                 debugOutput(DEBUG_LEVEL_NORMAL, "Could not start handlers...\n");
                 goto finish;
         }
+        
+        // start the runner thread
+        m_isoManagerThread->Start();
         
         if (arguments.realtime) {
             // get rt priority for this thread too.
@@ -277,11 +284,17 @@ int main(int argc, char *argv[])
     
         // do the actual work
         nb_iter=0;
+        
         while(run) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"--- Iterate ---\n");
         
-        if(!m_isoManager->iterate()) {
-            debugFatal("Could not iterate the isoManager\n");
+//         if(!m_isoManager->iterate()) {
+//             debugFatal("Could not iterate the isoManager\n");
+//             return false;
+//         }
+        
+        if(!masterTimeSource.updateTimeSource()) {
+            debugFatal("Could not update the masterTimeSource\n");
             return false;
         }
         
@@ -333,13 +346,13 @@ int main(int argc, char *argv[])
                             if ((cif.syt != 0xFFFF) && (master_cif.syt != 0xFFFF)) {
                                 // detect seconds wraparound
                                 if ((master_cif.pres_seconds==0) && (cif.pres_seconds==127)) {
-                                    master_cif.pres_ticks += TICKS_PER_SECOND*128;
+                                    master_cif.pres_ticks += TICKS_PER_SECOND*128LL;
                                 }
                                 if ((master_cif.pres_seconds==127) && (cif.pres_seconds==0)) {
-                                    cif.pres_ticks += TICKS_PER_SECOND*128;
+                                    cif.pres_ticks += TICKS_PER_SECOND*128LL;
                                 }
                             // average out the offset
-                                int err=(((long)master_cif.pres_ticks) - ((long)cif.pres_ticks));
+                                int64_t err=(((uint64_t)master_cif.pres_ticks) - ((uint64_t)cif.pres_ticks));
                                 
                                 err = err - stream_offset_ticks[i];
                                 
@@ -356,8 +369,8 @@ int main(int argc, char *argv[])
                                     debugOutput(DEBUG_LEVEL_NORMAL,
                                         "             [%04us %04uc, %04X (%02uc %04ut)]\n",
                                         master_cif.seconds,master_cif.cycle,
-                                        master_cif.syt, CYCLE_COUNTER_GET_CYCLES(master_cif.syt),
-                                        CYCLE_COUNTER_GET_OFFSET(master_cif.syt));
+                                        master_cif.syt, CYCLE_TIMER_GET_CYCLES(master_cif.syt),
+                                        CYCLE_TIMER_GET_OFFSET(master_cif.syt));
                                         
                                     debugOutput(DEBUG_LEVEL_NORMAL,
                                         "  Current  : %04X -> %10u (%04us %04uc %04ut)\n",
@@ -367,8 +380,8 @@ int main(int argc, char *argv[])
                                     debugOutput(DEBUG_LEVEL_NORMAL,
                                         "             [%04us %04uc, %04X (%02uc %04ut)]\n",
                                         cif.seconds,cif.cycle,
-                                        cif.syt, CYCLE_COUNTER_GET_CYCLES(cif.syt),
-                                        CYCLE_COUNTER_GET_OFFSET(cif.syt));
+                                        cif.syt, CYCLE_TIMER_GET_CYCLES(cif.syt),
+                                        CYCLE_TIMER_GET_OFFSET(cif.syt));
                                     debugOutput(DEBUG_LEVEL_NORMAL,"\n");
                                 }
                                 
@@ -419,13 +432,21 @@ int main(int argc, char *argv[])
         }
         
             // show info every x iterations
-        if ((nb_iter++ % 4000)==0) {
+            if (masterTimeSource.getCurrentTimeAsUsecs() 
+                - last_print_time > 1000000L) {
+                
                 m_isoManager->dumpInfo();
                 for (i=0;i<arguments.nb_combos;i++) {
                     monitors[i]->dumpInfo();
-                debugOutput(DEBUG_LEVEL_NORMAL,"    ==> Stream offset: %10d ticks\n",stream_offset_ticks[i]);
+                    debugOutputShort(DEBUG_LEVEL_NORMAL,"    ==> Stream offset: %10lld ticks (%6.4f ms)\n",
+                    stream_offset_ticks[i], (1.0*((double)stream_offset_ticks[i]))/24576.0);
                 }
+                masterTimeSource.printTimeSourceInfo();
+                last_print_time=masterTimeSource.getCurrentTimeAsUsecs();
             }
+            
+            // 125us/packet, so sleep for a while
+            usleep(100);
         }
 
         debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping handlers...\n");
@@ -454,7 +475,6 @@ int main(int argc, char *argv[])
 
 finish:
         debugOutput(DEBUG_LEVEL_NORMAL, "Bye...\n");
-     delete DebugModuleManager::instance();
-         
+
 return EXIT_SUCCESS;
 }

@@ -212,13 +212,31 @@ DebugModuleManager::instance()
 bool
 DebugModuleManager::registerModule( DebugModule& debugModule )
 {
+    bool already_present=false;
+    
+    for ( DebugModuleVectorIterator it = m_debugModules.begin();
+          it != m_debugModules.end();
+          ++it )
+    {
+        if ( *it == &debugModule ) {
+            already_present=true;
+            return true;
+        }
+    }
+    
+    if (already_present) {
+        cerr << "DebugModuleManager::registerModule: Module already registered: "
+            << "DebugModule (" << debugModule.getName() << ")" << endl;
+    } else {
         m_debugModules.push_back( &debugModule );
+    }
     return true;
 }
 
 bool
 DebugModuleManager::unregisterModule( DebugModule& debugModule )
 {
+    
     for ( DebugModuleVectorIterator it = m_debugModules.begin();
           it != m_debugModules.end();
           ++it )

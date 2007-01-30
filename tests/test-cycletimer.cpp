@@ -31,7 +31,7 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/cyclecounter.h"
+#include "src/libstreaming/cycletimer.h"
 
 #include "src/libstreaming/IsoHandler.h"
 #include "src/libstreaming/IsoStream.h"
@@ -46,7 +46,6 @@ using namespace FreebobStreaming;
 using namespace FreebobUtil;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
-IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
 
 int run;
 
@@ -76,10 +75,10 @@ static void sighandler (int sig)
 	run = 0;
 }
 
-int do_cyclecounter_test() {
+int do_cycletimer_test() {
     
-    struct CYCLE_TIMER_REGISTER cycle_counter;
-    uint32_t *cycle_counter_as_uint=(uint32_t *)&cycle_counter;
+    struct CYCLE_TIMER_REGISTER cycle_timer;
+    uint32_t *cycle_timer_as_uint=(uint32_t *)&cycle_timer;
     
     uint32_t i=0;
     uint32_t targetval=0;
@@ -90,10 +89,10 @@ int do_cyclecounter_test() {
     // test 1
     // 
     
-    *cycle_counter_as_uint=0;
+    *cycle_timer_as_uint=0;
     for (i=0;i<3072;i++) {
-        cycle_counter.offset=i;
-        targetval=CYCLE_COUNTER_GET_OFFSET(ctr_to_quadlet(cycle_counter));
+        cycle_timer.offset=i;
+        targetval=CYCLE_TIMER_GET_OFFSET(ctr_to_quadlet(cycle_timer));
         
         if(targetval != i) {
             debugOutput(DEBUG_LEVEL_NORMAL, "  test1 failed on i=%d (%08X), returns %d (%08X)\n",i,i,targetval,targetval);
@@ -102,8 +101,8 @@ int do_cyclecounter_test() {
     }
     
     for (i=0;i<8000;i++) {
-        cycle_counter.cycles=i;
-        targetval=CYCLE_COUNTER_GET_CYCLES(ctr_to_quadlet(cycle_counter));
+        cycle_timer.cycles=i;
+        targetval=CYCLE_TIMER_GET_CYCLES(ctr_to_quadlet(cycle_timer));
         
         if(targetval != i) {
             debugOutput(DEBUG_LEVEL_NORMAL, "  test2 failed on i=%d (%08X), returns %d (%08X)\n",i,i,targetval,targetval);
@@ -112,8 +111,8 @@ int do_cyclecounter_test() {
     }
     
     for (i=0;i<128;i++) {
-        cycle_counter.seconds=i;
-        targetval=CYCLE_COUNTER_GET_SECS(ctr_to_quadlet(cycle_counter));
+        cycle_timer.seconds=i;
+        targetval=CYCLE_TIMER_GET_SECS(ctr_to_quadlet(cycle_timer));
         
         if(targetval != i) {
             debugOutput(DEBUG_LEVEL_NORMAL, "  test3 failed on i=%d (%08X), returns %d (%08X)\n",i,i,targetval,targetval);
@@ -122,6 +121,41 @@ int do_cyclecounter_test() {
     }
     
     
+    // a value in ticks
+    // should be: 10sec, 1380cy, 640ticks
+    targetval=250000000L;
+    cycle_timer.seconds = TICKS_TO_SECS(targetval);
+    cycle_timer.cycles  = TICKS_TO_CYCLES(targetval);
+    cycle_timer.offset  = TICKS_TO_OFFSET(targetval);
+    
+    if((cycle_timer.seconds != 10) |
+        (cycle_timer.cycles != 1380) |
+        (cycle_timer.offset != 640))
+        {
+        debugOutput(DEBUG_LEVEL_NORMAL, "  test4 failed: (%u,10)sec (%u,1380)cy (%u,640)ticks\n",
+            cycle_timer.seconds,cycle_timer.cycles,cycle_timer.offset);
+        failures++;
+    } else {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  test4 ok\n");
+    }
+    
+    i=TICKS_TO_CYCLE_TIMER(targetval);
+    if (i != 0x14564280) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  test5 failed: (0x%08X,0x14564280)\n",
+            i);
+        failures++;   
+    } else {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  test5 ok\n");
+    }
+    
+    targetval=CYCLE_TIMER_TO_TICKS(i);
+    if (targetval!=250000000L) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  test6 failed: (%u,250000000)\n",
+            targetval);
+        failures++;   
+    } else {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  test6 ok\n");
+    }
     
     if (failures) {
         debugOutput(DEBUG_LEVEL_NORMAL, " %d failures\n",failures);
@@ -153,10 +187,10 @@ int main(int argc, char *argv[])
 	signal (SIGINT, sighandler);
 	signal (SIGPIPE, sighandler);
 
-	debugOutput(DEBUG_LEVEL_NORMAL, "Freebob Cycle counter test application\n");
+	debugOutput(DEBUG_LEVEL_NORMAL, "Freebob Cycle timer test application\n");
 	
-	debugOutput(DEBUG_LEVEL_NORMAL, "Testing cycle counter helper functions & macro's... \n");
-	if(do_cyclecounter_test()) {
+	debugOutput(DEBUG_LEVEL_NORMAL, "Testing cycle timer helper functions & macro's... \n");
+	if(do_cycletimer_test()) {
 	   debugOutput(DEBUG_LEVEL_NORMAL, " !!! FAILED !!!\n");
 	   exit(1);
 	} else {
@@ -318,7 +352,5 @@ int main(int argc, char *argv[])
 finish:
 	debugOutput(DEBUG_LEVEL_NORMAL, "Bye...\n");
 
-    delete DebugModuleManager::instance();
-        
   return EXIT_SUCCESS;
 }

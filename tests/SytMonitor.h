@@ -29,7 +29,7 @@
 #define __FREEBOB_SYTMONITOR__
 #include "src/libstreaming/IsoStream.h"
 #include "src/libstreaming/cip.h"
-#include "src/libstreaming/cyclecounter.h"
+#include "src/libstreaming/cycletimer.h"
 #include "src/libstreaming/ringbuffer.h"
 
 using namespace FreebobStreaming;
@@ -42,7 +42,7 @@ struct cycle_info {
     unsigned int pres_seconds;
     unsigned int pres_cycle;
     unsigned int pres_offset;
-    unsigned int pres_ticks;
+    uint64_t     pres_ticks;
 };
 
 class SytMonitor 
@@ -64,6 +64,8 @@ class SytMonitor
         bool consumeNextCycleInfo();
         
         bool putCycleInfo(struct cycle_info *cif);
+        
+        IsoHandler * getHandler() {return m_handler;};
         
 	protected:
 	   freebob_ringbuffer_t * m_cinfo_buffer;

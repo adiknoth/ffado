@@ -34,6 +34,8 @@
 #include "PortManager.h"
 #include "streamstatistics.h"
 
+#include <pthread.h>
+
 namespace FreebobStreaming {
 
 class StreamProcessorManager;
@@ -72,25 +74,8 @@ public:
     virtual enum EProcessorType getType() =0;
 
     bool xrunOccurred() { return (m_xruns>0);};
-
-    /**
-     * This is used for implementing the synchronisation.
-     * As long as this function doesn't return true, the current buffer
-     * contents are not transfered to the packet decoders.
-     *
-     * This means that there can be more events in the buffer than
-     * one period worth of them, should the synchronisation mechanism 
-     * require this
-     * @return 
-     */
-    virtual bool isOnePeriodReady()=0;
-    
-    unsigned int getNbPeriodsReady() { if(m_period) return m_framecounter/m_period; else return 0;};
-	virtual void decrementFrameCounter();
-	virtual void incrementFrameCounter(int nbframes);
     
     // move to private?
-	void resetFrameCounter();
     void resetXrunCounter();
 
     bool isRunning(); ///< returns true if there is some stream data processed
@@ -98,7 +83,8 @@ public:
     void disable() {m_disabled=true;}; ///< disable the stream processing 
     bool isEnabled() {return !m_disabled;};
 
-    virtual bool transfer(); ///< transfer the buffer contents from/to client
+    virtual bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from client
+    virtual bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
 
     virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
@@ -110,8 +96,11 @@ public:
 
     virtual void setVerboseLevel(int l);
 
-    virtual bool preparedForStop() {return true;};
-    virtual bool preparedForStart() {return true;};
+    virtual bool prepareForStop() {return true;};
+    virtual bool prepareForStart() {return true;};
+    
+    virtual bool prepareForEnable() {return true;};
+    virtual bool prepareForDisable() {return true;};
 
 protected:
 	
@@ -123,12 +112,11 @@ protected:
     unsigned int m_period; ///< cached from manager->getPeriod(), the period size
 
     unsigned int m_xruns;
-	signed int m_framecounter;
 
     unsigned int m_framerate;
 
     StreamProcessorManager *m_manager;
-
+    
     bool m_running;
     bool m_disabled;
 
@@ -140,6 +128,91 @@ protected:
 
     DECLARE_DEBUG_MODULE;
     
+    // frame counter & sync stuff
+    public:
+        /**
+         * @brief Can this StreamProcessor handle a nframes of frames?
+         *
+         * this function indicates if the streamprocessor can handle nframes
+         * of frames. It is used to detect underruns-to-be.
+         *
+         * @param nframes number of frames 
+         * @return true if the StreamProcessor can handle this amount of frames
+         *         false if it can't
+         */
+        virtual bool canClientTransferFrames(unsigned int nframes) {return true;};
+        
+        int getFrameCounter() {return m_framecounter;};
+    
+        void decrementFrameCounter(int nbframes, uint64_t new_timestamp);
+        void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
+        void setFrameCounter(int new_framecounter, uint64_t new_timestamp);
+        void resetFrameCounter();
+        
+        void setBufferTailTimestamp(uint64_t new_timestamp);
+        void setBufferHeadTimestamp(uint64_t new_timestamp);
+        void setBufferTimestamps(uint64_t new_head, uint64_t new_tail);
+        /**
+         * \brief return the time until the next period boundary (in microseconds)
+         *
+         * Return the time until the next period boundary. If this StreamProcessor 
+         * is the current synchronization source, this function is called to 
+         * determine when a buffer transfer can be made. When this value is
+         * smaller than 0, a period boundary is assumed to be crossed, hence a
+         * transfer can be made.
+         *
+         * \return the time in usecs
+         */
+        virtual int64_t getTimeUntilNextPeriodUsecs() = 0;
+        /**
+         * \brief return the time of the next period boundary (in microseconds)
+         *
+         * Returns the time of the next period boundary, in microseconds. The
+         * goal of this function is to determine the exact point of the period
+         * boundary. This is assumed to be the point at which the buffer transfer should
+         * take place, meaning that it can be used as a reference timestamp for transmitting
+         * StreamProcessors
+         *
+         * \return the time in usecs
+         */
+        virtual uint64_t getTimeAtPeriodUsecs() = 0;
+        
+        /**
+         * \brief return the time of the next period boundary (in internal units) 
+         *
+         * The same as getTimeUntilNextPeriodUsecs() but in internal units.
+         *
+         * @return the time in internal units
+         */
+        virtual uint64_t getTimeAtPeriod() = 0;
+        
+        void getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc);
+        void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
+                
+        bool setSyncSource(StreamProcessor *s);
+        float getTicksPerFrame() {return m_ticks_per_frame;};
+    
+    protected:
+        // the framecounter gives the number of frames in the buffer
+        signed int m_framecounter;
+        
+        // the buffer tail timestamp gives the timestamp of the last frame
+        // that was put into the buffer
+        uint64_t   m_buffer_tail_timestamp;
+        
+        // the buffer head timestamp gives the timestamp of the first frame
+        // that was put into the buffer
+        uint64_t   m_buffer_head_timestamp;
+        
+        
+        StreamProcessor *m_SyncSource;
+        
+        float m_ticks_per_frame;
+
+    private:
+        // this mutex protects the access to the framecounter
+        // and the buffer head timestamp.
+        pthread_mutex_t m_framecounter_lock;
 
 };
 

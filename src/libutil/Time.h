@@ -71,7 +71,7 @@ extern "C"
     static inline freebob_microsecs_t GetMicroSeconds (void) {
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        return (freebob_microsecs_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+        return (freebob_microsecs_t)ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
     }
 #endif
 

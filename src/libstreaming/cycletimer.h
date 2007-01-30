@@ -26,37 +26,45 @@
  *
  */
  
-/* Definitions and utility macro's to handle the ISO cyclecounter */
+/* Definitions and utility macro's to handle the ISO cycle timer */
 
-#ifndef __CYCLECOUNTER_H__
-#define __CYCLECOUNTER_H__
+#ifndef __CYCLETIMER_H__
+#define __CYCLETIMER_H__
 
 #define CSR_CYCLE_TIME            0x200
 #define CSR_REGISTER_BASE  0xfffff0000000ULL
 
-#define CYCLES_PER_SECOND   8000
-#define TICKS_PER_CYCLE     3072
-#define TICKS_PER_SECOND   (CYCLES_PER_SECOND * TICKS_PER_CYCLE)
+#define CYCLES_PER_SECOND   8000U
+#define TICKS_PER_CYCLE     3072U
+#define TICKS_PER_SECOND    24576000UL
 #define TICKS_PER_USEC     (TICKS_PER_SECOND/1000000.0)
 
 #define USECS_PER_TICK     (1.0/TICKS_PER_USEC)
 
-#define CYCLE_COUNTER_GET_SECS(x)   ((((x) & 0xFE000000) >> 25))
-#define CYCLE_COUNTER_GET_CYCLES(x) ((((x) & 0x01FFF000) >> 12))
-#define CYCLE_COUNTER_GET_OFFSET(x)  ((((x) & 0x00000FFF)))
-#define CYCLE_COUNTER_TO_TICKS(x) ((CYCLE_COUNTER_GET_SECS(x)   * TICKS_PER_SECOND) +\
-                                   (CYCLE_COUNTER_GET_CYCLES(x) * TICKS_PER_CYCLE ) +\
-                                   (CYCLE_COUNTER_GET_OFFSET(x)            ))
+#define CYCLE_TIMER_GET_SECS(x)   ((((x) & 0xFE000000U) >> 25))
+#define CYCLE_TIMER_GET_CYCLES(x) ((((x) & 0x01FFF000U) >> 12))
+#define CYCLE_TIMER_GET_OFFSET(x)  ((((x) & 0x00000FFFU)))
+#define CYCLE_TIMER_TO_TICKS(x) ((CYCLE_TIMER_GET_SECS(x)   * TICKS_PER_SECOND) +\
+                                   (CYCLE_TIMER_GET_CYCLES(x) * TICKS_PER_CYCLE ) +\
+                                   (CYCLE_TIMER_GET_OFFSET(x)            ))
                                    
 // non-efficient versions, to be avoided in critical code
 #define TICKS_TO_SECS(x) ((x)/TICKS_PER_SECOND)
 #define TICKS_TO_CYCLES(x) (((x)/TICKS_PER_CYCLE) % CYCLES_PER_SECOND)
 #define TICKS_TO_OFFSET(x) (((x)%TICKS_PER_CYCLE))
 
-#define CYCLE_COUNTER_UNWRAP_TICKS(x) ((x) \
-                                       + (127 * TICKS_PER_SECOND) \
+#define TICKS_TO_CYCLE_TIMER(x) (  ((TICKS_TO_SECS(x) & 0x7F) << 25) \
+                                 | ((TICKS_TO_CYCLES(x) & 0x1FFF) << 12) \
+                                 | ((TICKS_TO_OFFSET(x) & 0xFFF)))
+                                 
+#define TICKS_TO_SYT(x)         (((TICKS_TO_CYCLES(x) & 0xF) << 12) \
+                                 | ((TICKS_TO_OFFSET(x) & 0xFFF)))
+
+#define CYCLE_TIMER_UNWRAP_TICKS(x) (((uint64_t)(x)) \
+                                       + (127ULL * TICKS_PER_SECOND) \
                                        + (CYCLES_PER_SECOND * TICKS_PER_CYCLE) \
                                        + (TICKS_PER_CYCLE) \
                                       )
+#define CYCLE_TIMER_WRAP_TICKS(x) ((x % TICKS_PER_SECOND))
 
-#endif // __CYCLECOUNTER_H__
+#endif // __CYCLETIMER_H__

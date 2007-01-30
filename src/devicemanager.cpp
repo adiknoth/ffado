@@ -152,9 +152,11 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
         return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
     }
 
+#ifdef ENABLE_MOTU
     if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
         return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
     }
+
 
     if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
         return new Motu::MotuDevice( configRom, *m_1394Service, id, level );
@@ -167,6 +169,7 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
         return new Bounce::BounceDevice( configRom, *m_1394Service, id, level );
     }
+#endif
 
     return 0;
 }

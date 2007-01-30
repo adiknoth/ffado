@@ -63,26 +63,29 @@ SytMonitor::putPacket(unsigned char *data, unsigned int length,
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"%2u,%2u: CY=%4u, SYT=%08X (%3u secs + %4u cycles + %04u ticks)\n",
         m_port,channel,
         cycle,syt_timestamp,
-        CYCLE_COUNTER_GET_SECS(syt_timestamp), 
-        CYCLE_COUNTER_GET_CYCLES(syt_timestamp), 
-        CYCLE_COUNTER_GET_OFFSET(syt_timestamp)
+        CYCLE_TIMER_GET_SECS(syt_timestamp), 
+        CYCLE_TIMER_GET_CYCLES(syt_timestamp), 
+        CYCLE_TIMER_GET_OFFSET(syt_timestamp)
         
         );
     
     // reconstruct the full cycle
-    unsigned int cc_ticks=m_handler->getCycleCounter();
-    unsigned int cc_cycles=TICKS_TO_CYCLES(cc_ticks);
+    unsigned int cc=m_handler->getCycleTimer();
+    unsigned int cc_ticks=CYCLE_TIMER_TO_TICKS(cc);
     
-    unsigned int cc_seconds=TICKS_TO_SECS(cc_ticks);
+    unsigned int cc_cycles=CYCLE_TIMER_GET_CYCLES(cc);
     
-    // the cyclecounter has wrapped since this packet was received
+    unsigned int cc_seconds=CYCLE_TIMER_GET_SECS(cc);
+    
+    
+    // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this 
     // was received
     if (cycle>cc_cycles) cc_seconds--;
 
      // reconstruct the top part of the timestamp using the current cycle number
     unsigned int now_cycle_masked=cycle & 0xF;
-    unsigned int syt_cycle=CYCLE_COUNTER_GET_CYCLES(syt_timestamp);
+    unsigned int syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
     
     // if this is true, wraparound has occurred, undo this wraparound
     if(syt_cycle<now_cycle_masked) syt_cycle += 0x10;
@@ -94,7 +97,7 @@ SytMonitor::putPacket(unsigned char *data, unsigned int length,
     // reconstruct the cycle part of the timestamp
     unsigned int new_cycles=cycle + delta_cycles;
     
-    // if the cycles cause a wraparound of the cycle counter,
+    // if the cycles cause a wraparound of the cycle timer,
     // perform this wraparound
     if(new_cycles>7999) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
@@ -112,7 +115,7 @@ SytMonitor::putPacket(unsigned char *data, unsigned int length,
     m_full_timestamp |= (syt_timestamp & 0xFFF);
     
     // and the seconds part
-    // if the timestamp causes a wraparound of the cycle counter,
+    // if the timestamp causes a wraparound of the cycle timer,
     // the timestamp lies in the next second
     // if it didn't, the timestamp lies in this second
     if (wraparound_occurred) {
@@ -129,10 +132,10 @@ SytMonitor::putPacket(unsigned char *data, unsigned int length,
     cif.full_syt=m_full_timestamp;
     
     // now we reconstruct the presentation time
-    cif.pres_seconds = CYCLE_COUNTER_GET_SECS(m_full_timestamp);
-    cif.pres_cycle   = CYCLE_COUNTER_GET_CYCLES(m_full_timestamp);
-    cif.pres_offset  = CYCLE_COUNTER_GET_OFFSET(m_full_timestamp);
-    cif.pres_ticks   = CYCLE_COUNTER_TO_TICKS(m_full_timestamp);
+    cif.pres_seconds = CYCLE_TIMER_GET_SECS(m_full_timestamp);
+    cif.pres_cycle   = CYCLE_TIMER_GET_CYCLES(m_full_timestamp);
+    cif.pres_offset  = CYCLE_TIMER_GET_OFFSET(m_full_timestamp);
+    cif.pres_ticks   = CYCLE_TIMER_TO_TICKS(m_full_timestamp);
     
     if (wraparound_occurred) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"    (P: %08X, R: %08X)\n", 

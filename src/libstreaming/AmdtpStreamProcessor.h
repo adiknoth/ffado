@@ -37,6 +37,7 @@
 #include "cip.h"
 #include <libiec61883/iec61883.h>
 #include "ringbuffer.h"
+#include <pthread.h>
 
 #define AMDTP_MAX_PACKET_SIZE 2048
 
@@ -87,10 +88,14 @@ public:
     bool init();
     bool reset();
     bool prepare();
-    bool transfer();
-    virtual void setVerboseLevel(int l);
     
-    bool isOnePeriodReady();
+    bool prepareForStop();
+    bool prepareForStart();
+    
+    bool prepareForEnable();
+    
+    bool canClientTransferFrames(unsigned int nbframes);
+    bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from the client
 
     // We have 1 period of samples = m_period
     // this period takes m_period/m_framerate seconds of time
@@ -102,16 +107,13 @@ public:
     unsigned int getPacketsPerPeriod() {return (m_period)/m_syt_interval;};
     
     unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
+    
+    int64_t getTimeUntilNextPeriodUsecs();
 
-    // FIXME: do this the proper way!
-    AmdtpReceiveStreamProcessor *syncmaster;
-
-    // this updates the timestamp, and the
-    // 'bufferfill'
-    // should be called from the same thread
-    // that does the iteration
-    void decrementFrameCounter();
-	void incrementFrameCounter(int nbframes);
+    uint64_t getTimeAtPeriodUsecs();
+    uint64_t getTimeAtPeriod();
+    
+    void setVerboseLevel(int l);
     
 protected:
 
@@ -176,12 +178,13 @@ public:
 	bool init();
 	bool reset();
 	bool prepare();
-	bool transfer();
+	
+    bool prepareForStop();
+    bool prepareForStart();
+	
+    bool canClientTransferFrames(unsigned int nbframes);
+    bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
 
-	virtual void setVerboseLevel(int l);
-	
-	bool isOnePeriodReady();
-	
     // We have 1 period of samples = m_period
     // this period takes m_period/m_framerate seconds of time
     // during this time, 8000 packets are sent
@@ -193,11 +196,15 @@ public:
 	
 	unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
 
-    float getTicksPerFrame() {return m_ticks_per_frame;};
-    unsigned int getPeriodTimeStamp();
-    
     void dumpInfo();
     
+    int64_t getTimeUntilNextPeriodUsecs();
+
+    uint64_t getTimeAtPeriodUsecs();
+    uint64_t getTimeAtPeriod();
+	
+    void setVerboseLevel(int l);
+            
 protected:
 
     int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -210,13 +217,9 @@ protected:
     int m_dimension;
     unsigned int m_syt_interval;
     
-    unsigned int m_last_timestamp;
-    unsigned int m_last_timestamp2;
-    unsigned int m_last_timestamp_at_period_ticks;
-    
-    float m_ticks_per_frame;
-    
-    bool m_one_period_passed;
+    uint64_t m_last_timestamp; /// last timestamp (in ticks)
+    uint64_t m_last_timestamp2; /// last timestamp (in ticks)
+    uint64_t m_last_timestamp_at_period_ticks;
     
     DECLARE_DEBUG_MODULE;
 

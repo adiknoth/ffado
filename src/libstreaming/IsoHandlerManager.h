@@ -88,26 +88,36 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
         bool startHandlers(int cycle); ///< start the managed ISO handlers 
         bool stopHandlers(); ///< stop the managed ISO handlers 
 
-		bool reset() {return true;}; ///< reset the ISO manager and all streams
+        bool reset(); ///< reset the ISO manager and all streams
 
         bool prepare(); ///< prepare the ISO manager and all streams
         
         void disablePolling(IsoStream *); ///< disables polling on a stream
         void enablePolling(IsoStream *); ///< enables polling on a stream
 
-	public:
-	
-	    
     // RunnableInterface interface
+    public:
         bool Execute(); // note that this is called in we while(running) loop
         bool Init();
         
-	    // iterate all handlers
-	    bool iterate();
+    // the state machine
     private:
-        // updates the cycle counter caches of all handlers
-        void updateCycleCounters();
+        enum EHandlerStates {
+            E_Created,
+            E_Prepared,
+            E_Running,
+            E_Error
+        };
         
+        enum EHandlerStates m_State;
+        
+    private:
+        /// iterate all child handlers
+        bool iterate();
+    public: // FIXME: just so that SPM can do this (temp solution)
+        /// updates the cycle timer caches of all child handlers
+        void updateCycleTimers();
+    private:
         // note: there is a disctinction between streams and handlers
         // because one handler can serve multiple streams (in case of 
         // multichannel receive)
@@ -133,7 +143,7 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
 
         bool rebuildFdMap();
 
-
+        // debug stuff
         DECLARE_DEBUG_MODULE;
 
 };

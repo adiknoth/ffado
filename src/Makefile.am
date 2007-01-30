@@ -26,47 +26,46 @@ lib_LTLIBRARIES = libfreebob.la
 
 libfreebob_la_LIBADD = -lrt
 
-noinst_HEADERS = 					\
-	configrom.h					\
-	csr1212.h					\
-	devicemanager.h         			\
-	fbtypes.h					\
-	bounce/bounce_avdevice.h			\
-	motu/motu_avdevice.h				\
-	rme/rme_avdevice.h
+noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
+	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
+	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
+	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h \
+	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h libfreebobavc/avc_connect.h \
+	libfreebobavc/avc_definitions.h libfreebobavc/avc_extended_cmd_generic.h \
+	libfreebobavc/avc_extended_plug_info.h libfreebobavc/avc_extended_stream_format.h \
+	libfreebobavc/avc_extended_subunit_info.h libfreebobavc/avc_function_block.h libfreebobavc/avc_generic.h \
+	libfreebobavc/avc_plug_info.h libfreebobavc/avc_serialize.h libfreebobavc/avc_signal_source.h \
+	libfreebobavc/avc_subunit_info.h libfreebobavc/avc_unit_info.h libfreebobavc/ieee1394service.h \
+	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
+	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
+	libstreaming/IsoHandlerManager.h libstreaming/IsoStream.h libstreaming/MotuPort.h \
+	libstreaming/MotuPortInfo.h libstreaming/MotuStreamProcessor.h libstreaming/PacketBuffer.h \
+	libstreaming/Port.h libstreaming/PortManager.h libstreaming/ringbuffer.h \
+	libstreaming/StreamProcessor.h libstreaming/StreamProcessorManager.h libstreaming/streamstatistics.h \
+	libutil/Atomic.h libutil/cycles.h libutil/DelayLockedLoop.h libutil/PosixThread.h \
+	libutil/serialize.h libutil/SystemTimeSource.h libutil/Thread.h libutil/Time.h \
+	libutil/TimeSource.h
 
 libfreebob_la_SOURCES = \
-	iavdevice.h					\
         configrom.cpp \
         csr1212.c \
         devicemanager.cpp \
         freebob.cpp \
         xmlparser.c \
-	threads.h					\
-	bebob/bebob_avdevice.h          		\
         bebob/bebob_avdevice.cpp \
-	bebob/bebob_avdevice_xml.cpp			\
-	bebob/bebob_avdevice_subunit.h			\
         bebob/bebob_avdevice_subunit.cpp \
-	bebob/bebob_avplug.h            		\
+        bebob/bebob_avdevice_xml.cpp \
         bebob/bebob_avplug.cpp \
         bebob/bebob_avplug_xml.cpp \
-	bebob/bebob_functionblock.h			\
-	bebob/bebob_functionblock.cpp 			\
-	bebob/bebob_dl_mgr.h				\
-	bebob/bebob_dl_mgr.cpp				\
-	bebob/bebob_dl_codes.h				\
-	bebob/bebob_dl_codes.cpp			\
-	bebob/bebob_dl_bcd.h				\
         bebob/bebob_dl_bcd.cpp \
-	motu/motu_avdevice.cpp				\
-	motu/motu_avdevice.h				\
-	rme/rme_avdevice.cpp				\
-	rme/rme_avdevice.h				\
-	bounce/bounce_avdevice.h			\
+        bebob/bebob_dl_codes.cpp \
+        bebob/bebob_dl_mgr.cpp \
+        bebob/bebob_functionblock.cpp \
         bounce/bounce_avdevice.cpp \
-	maudio/maudio_avdevice.h			\
         maudio/maudio_avdevice.cpp \
+        motu/motu_avdevice.cpp \
+        rme/rme_avdevice.cpp \
+        debugmodule/debugmodule.cpp \
         libfreebobavc/avc_connect.cpp \
         libfreebobavc/avc_definitions.cpp \
         libfreebobavc/avc_extended_cmd_generic.cpp \
@@ -74,64 +73,37 @@ libfreebob_la_SOURCES = \
         libfreebobavc/avc_extended_stream_format.cpp \
         libfreebobavc/avc_extended_subunit_info.cpp \
         libfreebobavc/avc_function_block.cpp \
-	libfreebobavc/avc_function_block.h		\
         libfreebobavc/avc_generic.cpp \
         libfreebobavc/avc_plug_info.cpp \
+        libfreebobavc/avc_serialize.cpp \
         libfreebobavc/avc_signal_source.cpp \
         libfreebobavc/avc_subunit_info.cpp \
         libfreebobavc/avc_unit_info.cpp \
         libfreebobavc/ieee1394service.cpp \
-	libfreebobavc/avc_serialize.cpp			\
-	libfreebobavc/avc_connect.h			\
-	libfreebobavc/avc_definitions.h			\
-	libfreebobavc/avc_extended_cmd_generic.h	\
-	libfreebobavc/avc_extended_plug_info.h		\
-	libfreebobavc/avc_extended_stream_format.h	\
-	libfreebobavc/avc_extended_subunit_info.h	\
-	libfreebobavc/avc_generic.h			\
-	libfreebobavc/avc_plug_info.h			\
-	libfreebobavc/avc_signal_source.h		\
-	libfreebobavc/avc_subunit_info.h		\
-	libfreebobavc/avc_unit_info.h			\
-	libfreebobavc/ieee1394service.h			\
-	libfreebobavc/avc_serialize.h			\
-	debugmodule/debugmodule.h			\
-	debugmodule/debugmodule.cpp			\
+        libstreaming/AmdtpPort.cpp \
+        libstreaming/AmdtpPortInfo.cpp \
+        libstreaming/AmdtpStreamProcessor.cpp \
         libstreaming/cip.c \
-	libstreaming/cyclecounter.h 			\
         libstreaming/freebob_streaming.cpp \
         libstreaming/IsoHandler.cpp \
         libstreaming/IsoHandlerManager.cpp \
         libstreaming/IsoStream.cpp \
+        libstreaming/MotuPort.cpp \
+        libstreaming/MotuPortInfo.cpp \
+        libstreaming/MotuStreamProcessor.cpp \
         libstreaming/PacketBuffer.cpp \
-	libstreaming/PortManager.cpp			\
         libstreaming/Port.cpp \
+        libstreaming/PortManager.cpp \
+        libstreaming/ringbuffer.c \
         libstreaming/StreamProcessor.cpp \
         libstreaming/StreamProcessorManager.cpp \
-	libstreaming/AmdtpPortInfo.cpp			\
-	libstreaming/AmdtpPort.cpp			\
-	libstreaming/AmdtpStreamProcessor.cpp		\
-	libstreaming/ringbuffer.c			\
         libstreaming/streamstatistics.cpp \
-	libstreaming/MotuStreamProcessor.cpp		\
-	libstreaming/MotuPort.cpp			\
-	libstreaming/MotuPortInfo.cpp 			\
-	libutil/DelayLockedLoop.h 			\
-	libutil/Atomic.h 				\
-	libutil/PosixThread.h  				\
-	libutil/Thread.h				\
         libutil/DelayLockedLoop.cpp \
         libutil/PosixThread.cpp \
-	libutil/Time.c  				\
-	libutil/Time.h  				\
-	libutil/TimeSource.cpp 				\
-	libutil/TimeSource.h 				\
+        libutil/serialize.cpp \
         libutil/SystemTimeSource.cpp \
-	libutil/SystemTimeSource.h 			\
-	libutil/cycles.h				\
-	libutil/serialize.h				\
-	libutil/serialize.cpp
-
+        libutil/Time.c \
+        libutil/TimeSource.cpp
 
 libfreebob_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\

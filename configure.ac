@@ -112,6 +112,7 @@ AC_CHECK_LIB(pthread, pthread_create,,
 ])
 
 # Check for dependencies
+PKG_CHECK_MODULES(LIBRAW1394_122, libraw1394 >= 1.2.2, libraw1394_1_2_2=yes, libraw1394_1_2_2=no)
 PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.1)
 PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.0.0)
 PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.3)
@@ -128,6 +129,10 @@ AC_ARG_ENABLE(debug,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
 esac],[debug=false])
 
+if test "x$libraw1394_1_2_2" = xyes; then
+	CFLAGS="$CFLAGS -DLIBRAW1394_USE_CTRREAD_API"
+	CXXFLAGS="$CXXFLAGS -DLIBRAW1394_USE_CTRREAD_API" 
+fi
 
 dnl Check for MMX assembly
 
@@ -247,10 +252,12 @@ FreeBoB $VERSION is now configured for $canonical_host_type
 
   Source directory:     $srcdir
   Installation prefix:  $prefix
+  C compiler:           $C $CFLAGS
   C++ compiler:         $CXX $CXXFLAGS
 
   libraw1394 CFLAGS:    $LIBRAW1394_CFLAGS
   libraw1394 LIBS:      $LIBRAW1394_LIBS
+   use new cycle timer read api? $libraw1394_1_2_2
   libiec61883 CFLAGS:   $LIBIEC61883_CFLAGS
   libiec61883 LIBS:     $LIBIEC61883_LIBS
   libavc1394 CFLAGS:    $LIBAVC1394_CFLAGS
