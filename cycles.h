@@ -31,7 +31,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define __freebob_cycles_h__
 
 /*
- * Standard way to access the cycle counter on i586+ CPUs.
+ * Standard way to access the cycle timer on i586+ CPUs.
  * Currently only used on SMP.
  *
  * If you really have a SMP machine with i486 chips or older,

@@ -45,6 +45,8 @@ public:
     // implement the TimeSource interface
     freebob_microsecs_t getCurrentTime();
     freebob_microsecs_t getCurrentTimeAsUsecs();
+    inline freebob_microsecs_t unWrapTime(freebob_microsecs_t t) {return t;};
+    inline freebob_microsecs_t wrapTime(freebob_microsecs_t t) {return t;};
 
 protected:
     DECLARE_DEBUG_MODULE;

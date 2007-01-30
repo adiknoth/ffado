@@ -30,10 +30,26 @@
 
 #include "../debugmodule/debugmodule.h"
 
+#include <vector>
+
 typedef uint64_t freebob_microsecs_t;
 
 namespace FreebobUtil {
 
+class TimeSource;
+typedef std::vector<TimeSource *> TimeSourceVector;
+typedef std::vector<TimeSource *>::iterator TimeSourceVectorIterator;
+
+/*!
+\brief The base class for all TimeSource's.
+
+    Any object that can act as a source of timing 
+    information should subclass this class and implement
+    its virtual functions.
+    
+    A TimeSource can be slaved to another TimeSource, allowing
+    the mapping of the master's time to the slave's time.
+*/
 class TimeSource {
 
 public:
@@ -43,8 +59,39 @@ public:
 
     virtual freebob_microsecs_t getCurrentTime()=0;
     virtual freebob_microsecs_t getCurrentTimeAsUsecs()=0;
+    virtual freebob_microsecs_t unWrapTime(freebob_microsecs_t t)=0;
+    virtual freebob_microsecs_t wrapTime(freebob_microsecs_t t)=0;
+    
+    freebob_microsecs_t mapMasterTime(freebob_microsecs_t t);
+    
+    bool updateTimeSource();
+    
+    bool registerSlave(TimeSource *ts);
+    bool unregisterSlave(TimeSource *ts);
+
+    virtual void setVerboseLevel(int l);
+    
+    virtual void printTimeSourceInfo();
     
 protected:
+
+private:
+    bool setMaster(TimeSource *ts);
+    void clearMaster();
+    
+    void initSlaveTimeSource();
+    
+    TimeSource * m_Master;
+    TimeSourceVector m_Slaves;
+    
+    freebob_microsecs_t m_last_master_time;
+    freebob_microsecs_t m_last_time;
+    
+    double m_slave_rate;
+    int64_t m_slave_offset;
+    double m_last_err;
+    
+    DECLARE_DEBUG_MODULE;
 
 };
 

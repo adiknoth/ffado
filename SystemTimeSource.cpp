@@ -34,7 +34,7 @@ namespace FreebobUtil {
 IMPL_DEBUG_MODULE( SystemTimeSource, SystemTimeSource, DEBUG_LEVEL_NORMAL );
 
 SystemTimeSource::SystemTimeSource() {
-    InitTime();
+//     InitTime();
 }
 
 SystemTimeSource::~SystemTimeSource() {
@@ -42,7 +42,11 @@ SystemTimeSource::~SystemTimeSource() {
 }
     
 freebob_microsecs_t SystemTimeSource::getCurrentTime() {
-    return GetMicroSeconds();
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000000ULL + tv.tv_usec;
+    
+//     return GetMicroSeconds();
 }
 
 freebob_microsecs_t SystemTimeSource::getCurrentTimeAsUsecs() {
