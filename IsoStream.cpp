@@ -30,7 +30,6 @@
 #include "PacketBuffer.h"
 #include <assert.h>
 
-
 namespace FreebobStreaming
 {
 
@@ -82,7 +81,7 @@ void IsoStream::dumpInfo()
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
             m_port, m_channel);
 
-};
+}
 
 bool IsoStream::setChannel(int c) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "setting channel to %d\n",c);

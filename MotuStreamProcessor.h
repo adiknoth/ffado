@@ -35,6 +35,8 @@
 
 #include "../libutil/DelayLockedLoop.h"
 
+#ifdef ENABLE_MOTU
+
 namespace FreebobStreaming {
 
 class MotuAudioPort;
@@ -74,8 +76,8 @@ public:
 
 	void setTicksPerFrameDLL(float *dll) {m_ticks_per_frame=dll;};
 
-	virtual bool preparedForStop();
-	virtual bool preparedForStart();
+	virtual bool prepareForStop();
+	virtual bool prepareForStart();
 
 protected:
 
@@ -164,8 +166,8 @@ public:
 	signed int setEventSize(unsigned int size);
 	unsigned int getEventSize(void);
 
-	virtual bool preparedForStop();
-	virtual bool preparedForStart();
+	virtual bool prepareForStop();
+	virtual bool prepareForStart();
 
 protected:
 
@@ -182,11 +184,6 @@ protected:
 	 */
 	unsigned int m_event_size;
 
-	// The integrator of a Delay-Locked Loop (DLL) used to provide a
-	// continuously updated estimate of the number of ieee1394 frames
-	// per audio frame at the current sample rate.
-	float m_ticks_per_frame;
-
 	signed int m_last_cycle_ofs;
 	signed int m_next_cycle;
 
@@ -199,6 +196,8 @@ protected:
 };
 
 } // end of namespace FreebobStreaming
+
+#endif /* ENABLE_MOTU */
 
 #endif /* __FREEBOB_MOTUSTREAMPROCESSOR__ */
 

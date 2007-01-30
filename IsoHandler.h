@@ -67,6 +67,9 @@ class IsoHandler : public FreebobUtil::TimeSource
         virtual ~IsoHandler();
 
         virtual bool init();
+        virtual bool prepare();
+        virtual bool start(int cycle);
+        virtual bool stop();
         
         int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); else return -1; };
         
@@ -85,9 +88,6 @@ class IsoHandler : public FreebobUtil::TimeSource
 
         virtual enum EHandlerType getType() = 0;
 
-		virtual bool start(int cycle) = 0;
-		virtual bool stop();
-		
         int getFileDescriptor() { return raw1394_get_fd(m_handle);};
 
         void dumpInfo();
@@ -101,16 +101,16 @@ class IsoHandler : public FreebobUtil::TimeSource
         int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
         int getPort() {return m_port;};
 
-		virtual bool prepare() = 0;
-		
-		// get the most recent cycle counter value
-		// RT safe
-		unsigned int getCycleCounter();
-		
-		// update the cycle counter cache
-		// not RT safe
-		// the isohandlermanager is responsible for calling this!
-        bool updateCycleCounter();
+        /// get the most recent cycle timer value (in ticks)
+        unsigned int getCycleTimerTicks();
+        /// get the most recent cycle timer value (as is)
+        unsigned int getCycleTimer();
+        /// Maps a value of the active TimeSource to a Cycle Timer value.
+        unsigned int mapToCycleTimer(freebob_microsecs_t now);
+        /// Maps a Cycle Timer value to the active TimeSource's unit.
+        freebob_microsecs_t mapToTimeSource(unsigned int cc);
+        /// update the cycle timer cache
+        bool updateCycleTimer();
         float getTicksPerUsec() {return m_ticks_per_usec;};
 
         // register a master timing source
@@ -124,8 +124,8 @@ class IsoHandler : public FreebobUtil::TimeSource
         unsigned int    m_max_packet_size;
         int             m_irq_interval;
         
-		unsigned int        m_cyclecounter_ticks;
-        freebob_microsecs_t m_lastmeas_usecs;
+        uint64_t        m_cycletimer_ticks;
+        uint64_t m_lastmeas_usecs;
         float               m_ticks_per_usec;
         float               m_ticks_per_usec_dll_err2;
         
@@ -144,12 +144,27 @@ class IsoHandler : public FreebobUtil::TimeSource
     private:
         static int busreset_handler(raw1394handle_t handle, unsigned int generation);
 
-        void initCycleCounter();
+        void initCycleTimer();
+
+    // the state machine
+    private:
+        enum EHandlerStates {
+            E_Created,
+            E_Initialized,
+            E_Prepared,
+            E_Running,
+            E_Error
+        };
+        
+        enum EHandlerStates m_State;
 
     // implement the TimeSource interface
     public:
         freebob_microsecs_t getCurrentTime();
         freebob_microsecs_t getCurrentTimeAsUsecs();
+        inline freebob_microsecs_t unWrapTime(freebob_microsecs_t t);
+        inline freebob_microsecs_t wrapTime(freebob_microsecs_t t);
+        
     private:
         // to cope with wraparound
         unsigned int m_TimeSource_LastSecs;
@@ -172,9 +187,6 @@ class IsoRecvHandler : public IsoHandler
         bool init();
     
         enum EHandlerType getType() { return EHT_Receive;};
-
-// 		int registerStream(IsoStream *);
-// 		int unregisterStream(IsoStream *);
 
         bool start(int cycle);
 
@@ -215,9 +227,6 @@ class IsoXmitHandler  : public IsoHandler
         bool init();
         
         enum EHandlerType getType() { return EHT_Transmit;};
-
-// 		int registerStream(IsoStream *);
-// 		int unregisterStream(IsoStream *);
 
         unsigned int getPreBuffers() {return m_prebuffers;};
         void setPreBuffers(unsigned int n) {m_prebuffers=n;};

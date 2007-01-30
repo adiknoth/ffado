@@ -158,7 +158,6 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
         }
 
         // we are ready!
-	
         debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n\n");
         return dev;
 
@@ -190,7 +189,6 @@ int freebob_streaming_start(freebob_device_t *dev) {
     unsigned int i=0;
     debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Start -------------\n");
     
-	
     // create the connections for all devices
     // iterate over the found devices
     // add the stream processors of the devices to the managers
@@ -206,9 +204,12 @@ int freebob_streaming_start(freebob_device_t *dev) {
         }
     }
 
-	dev->processorManager->start();
-
+    if(dev->processorManager->start()) {
         return 0;
+    } else {
+        freebob_streaming_stop(dev);
+        return -1;
+    }
 }
 
 int freebob_streaming_stop(freebob_device_t *dev) {
@@ -224,7 +225,6 @@ int freebob_streaming_stop(freebob_device_t *dev) {
             IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
             assert(device);
                 
-
             int j=0;
             for(j=0; j<device->getStreamCount();j++) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %d\n",j,i);
@@ -249,25 +249,23 @@ int freebob_streaming_wait(freebob_device_t *dev) {
         static int periods_print=0;
         static int xruns=0;
                 
-                periods++;
-                if(periods>periods_print) {
-                        debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
-                        debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
-                        debugOutput(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
-                        debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
-                        dev->processorManager->dumpInfo();
-// 			debugOutput(DEBUG_LEVEL_VERBOSE, "--------------------------------------------\n");
-/*			quadlet_t *addr=(quadlet_t*)(dev->processorManager->getPortByIndex(0, Port::E_Capture)->getBufferAddress());
-                        if (addr) hexDumpQuadlets(addr,10);*/
-                        debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
-                        periods_print+=100;
-                }
+        periods++;
+        if(periods>periods_print) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
+                debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
+                dev->processorManager->dumpInfo();
+                debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
+                periods_print+=100;
+        }
+        
         if(dev->processorManager->waitForPeriod()) {
                 return dev->options.period_size;
         } else {
                 debugWarning("XRUN detected\n");
-                // do xrun recovery
                 
+                // do xrun recovery
                 dev->processorManager->handleXrun();
                 xruns++;
                 return -1;

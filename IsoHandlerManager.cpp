@@ -31,14 +31,14 @@
 #include "IsoStream.h"
 #include <assert.h>
 
-
 namespace FreebobStreaming
 {
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
 IsoHandlerManager::IsoHandlerManager() :
-   m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0)
+   m_State(E_Created),
+   m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0)
 {
 
 }
@@ -56,16 +56,37 @@ bool IsoHandlerManager::Init()
 	return true;
 }
 
-// the IsoHandlerManager thread updates the handler caches
-// it doesn't iterate them !!!
+/**
+ * the IsoHandlerManager thread execute function iterates the handlers.
+ *
+ * This means that once the thread is running, streams are
+ * transmitted and received (if present on the bus). Make sure
+ * that the clients are registered & ready before starting the
+ * thread!
+ *
+ * The register and unregister functions are thread unsafe, so
+ * should not be used when the thread is running.
+ *
+ * @return false if the handlers could not be iterated.
+ */
 bool IsoHandlerManager::Execute()
 {
-    updateCycleCounters();
-    usleep(USLEEP_AFTER_UPDATE);
+//     updateCycleTimers();
+    
+    if(!iterate()) {
+        debugFatal("Could not iterate the isoManager\n");
+        return false;
+    }    
     
     return true;
 }
 
+/**
+ * Poll the handlers managed by this manager, and iterate them
+ * when ready
+ *
+ * @return true when successful
+ */
 bool IsoHandlerManager::iterate()
 {
 	int err;
@@ -103,8 +124,8 @@ bool IsoHandlerManager::iterate()
 
 }
 
-// updates the internal cycle counter caches of the handlers
-void IsoHandlerManager::updateCycleCounters() {
+// updates the internal cycle timer caches of the handlers
+void IsoHandlerManager::updateCycleTimers() {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
     
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
@@ -112,30 +133,12 @@ void IsoHandlerManager::updateCycleCounters() {
           ++it )
     {
         int cnt=0;
-        while (!(*it)->updateCycleCounter() && (cnt++ < MAX_UPDATE_TRIES)) {
+        while (!(*it)->updateCycleTimer() && (cnt++ < MAX_UPDATE_TRIES)) {
             usleep(USLEEP_AFTER_UPDATE_FAILURE);
         }
     }
     
 }
-
-bool IsoHandlerManager::prepare()
-{
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
-        if(!(*it)->prepare()) {
-			debugFatal("Could not prepare handlers\n");
-			return false;
-        }
-    }
-
-	return true;
-}
-
-
 
 bool IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
@@ -204,8 +207,10 @@ bool IsoHandlerManager::rebuildFdMap() {
 }
 
 void IsoHandlerManager::disablePolling(IsoStream *stream) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable polling on stream %p\n",stream);
     int i=0;
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable polling on stream %p\n",stream);
+
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
@@ -215,14 +220,16 @@ void IsoHandlerManager::disablePolling(IsoStream *stream) {
             m_poll_fds[i].revents = 0;
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling disabled\n");
         }
+        
         i++;
     }
-
 }
 
 void IsoHandlerManager::enablePolling(IsoStream *stream) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable polling on stream %p\n",stream);
     int i=0;
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable polling on stream %p\n",stream);
+    
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
@@ -232,6 +239,7 @@ void IsoHandlerManager::enablePolling(IsoStream *stream) {
             m_poll_fds[i].revents = 0;
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling enabled\n");
         }
+        
         i++;
     }
 }
@@ -477,12 +485,52 @@ void IsoHandlerManager::pruneHandlers() {
 
 }
 
+
+bool IsoHandlerManager::prepare()
+{
+    bool retval=true;
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    
+    // check state
+    if(m_State != E_Created) {
+        debugError("Incorrect state, expected E_Created, got %d\n",(int)m_State);
+        return false;
+    }
+    
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+          it != m_IsoHandlers.end();
+          ++it )
+    {
+        if(!(*it)->prepare()) {
+            debugFatal("Could not prepare handlers\n");
+            retval=false;
+        }
+    }
+
+    if (retval) {
+        m_State=E_Prepared;
+    } else {
+        m_State=E_Error;
+    }
+
+    return retval;
+}
+
 bool IsoHandlerManager::startHandlers() {
     return startHandlers(-1);
 }
 
 bool IsoHandlerManager::startHandlers(int cycle) {
+    bool retval=true;
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    
+    // check state
+    if(m_State != E_Prepared) {
+        debugError("Incorrect state, expected E_Prepared, got %d\n",(int)m_State);
+        return false;
+    }
     
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
@@ -491,15 +539,29 @@ bool IsoHandlerManager::startHandlers(int cycle) {
         debugOutput( DEBUG_LEVEL_VERBOSE, " starting handler (%p)\n",*it);
         if(!(*it)->start(cycle)) {
             debugOutput( DEBUG_LEVEL_VERBOSE, " could not start handler (%p)\n",*it);
-			return false;
+            retval=false;
         }
     }
     
-	return true;
+    if (retval) {
+        m_State=E_Running;
+    } else {
+        m_State=E_Error;
+    }
+
+    return retval;
 }
 
 bool IsoHandlerManager::stopHandlers() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    
+    // check state
+    if(m_State != E_Running) {
+        debugError("Incorrect state, expected E_Running, got %d\n",(int)m_State);
+        return false;
+    }
+    
+    bool retval=true;
     
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
@@ -508,11 +570,32 @@ bool IsoHandlerManager::stopHandlers() {
         debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
         if(!(*it)->stop()){
             debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
-			return false;
+            retval=false;
         }
     }
-	return true;
+    
+    if (retval) {
+        m_State=E_Prepared;
+    } else {
+        m_State=E_Error;
+    }
+    
+    return retval;
 }
+
+bool IsoHandlerManager::reset() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    
+    // check state
+    if(m_State == E_Error) {
+        debugFatal("Resetting from error condition not yet supported...\n");
+        return false;
+    }
+    
+    // if not in an error condition, reset means stop the handlers
+    return stopHandlers();
+}
+
 
 void IsoHandlerManager::setVerboseLevel(int i) {
     setDebugLevel(i);
@@ -526,9 +609,11 @@ void IsoHandlerManager::setVerboseLevel(int i) {
 }
 
 void IsoHandlerManager::dumpInfo() {
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping IsoHandlerManager Stream handler information...\n");
     int i=0;
     
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping IsoHandlerManager Stream handler information...\n");
+    debugOutputShort( DEBUG_LEVEL_NORMAL, " State: %d\n",(int)m_State);
+
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();
           ++it )

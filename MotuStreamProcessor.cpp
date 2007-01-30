@@ -27,6 +27,7 @@
  *
  */
  
+#ifdef ENABLE_MOTU
 
 #include "MotuStreamProcessor.h"
 #include "Port.h"
@@ -100,7 +101,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	// The MOTU transmit stream is 'always' ready
 	m_running = true;
 	
-	// Initialise the cycle counter if this is the first time
+	// Initialise the cycle timer if this is the first time
 	// iso data has been requested.
 	if (!m_disabled && m_cycle_count<0) {
 		m_cycle_count = cycle;
@@ -175,7 +176,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 	if ((m_next_cycle=cycle+1) >= 8000)
 		m_next_cycle -= 8000;
 
-	// Deal cleanly with potential wrap-around cycle counter conditions
+	// Deal cleanly with potential wrap-around cycle timer conditions
 	unwrapped_cycle = cycle;
 	if (m_cycle_count-cycle > 7900)
 		unwrapped_cycle += 8000;
@@ -842,7 +843,7 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMBLAEvents(MotuAudioPort *p,
 	return 0;
 }
 
-bool MotuTransmitStreamProcessor::preparedForStop() {
+bool MotuTransmitStreamProcessor::prepareForStop() {
 
 	// If the stream is disabled or isn't running there's no need to
 	// wait since the MOTU *should* still be in a "zero data" state.
@@ -893,7 +894,7 @@ bool MotuTransmitStreamProcessor::preparedForStop() {
 	return m_closedown_count == 0;
 }
 
-bool MotuTransmitStreamProcessor::preparedForStart() {
+bool MotuTransmitStreamProcessor::prepareForStart() {
 // Reset some critical variables required so the stream starts cleanly. This
 // method is called once on every stream restart, including those during
 // xrun recovery.  Initialisations which should be done once should be
@@ -1522,7 +1523,7 @@ unsigned int MotuReceiveStreamProcessor::getEventSize(void) {
 	return m_event_size;
 }
 
-bool MotuReceiveStreamProcessor::preparedForStop() {
+bool MotuReceiveStreamProcessor::prepareForStop() {
 
 	// A MOTU receive stream can stop at any time.  However, signify
 	// that stopping is in progress because other streams (notably the
@@ -1534,7 +1535,7 @@ bool MotuReceiveStreamProcessor::preparedForStop() {
 	return true;
 }
 
-bool MotuReceiveStreamProcessor::preparedForStart() {
+bool MotuReceiveStreamProcessor::prepareForStart() {
 // Reset some critical variables required so the stream starts cleanly. This
 // method is called once on every stream restart, including those during
 // xrun recovery.  Initialisations which should be done once should be
@@ -1555,3 +1556,4 @@ bool MotuReceiveStreamProcessor::preparedForStart() {
 
                 
 } // end of namespace FreebobStreaming
+#endif

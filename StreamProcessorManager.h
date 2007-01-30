@@ -53,8 +53,6 @@ typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 class StreamProcessorManager :
                         public FreebobUtil::RunnableInterface {
 
-	friend class StreamRunner;
-
 public:
 
     StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
@@ -63,12 +61,16 @@ public:
     bool init(); ///< to be called immediately after the construction
     bool prepare(); ///< to be called after the processors are registered
 
-    virtual void setVerboseLevel(int l);
-    void dumpInfo();
+    bool start();
+    bool stop();
+
 
     // this is the setup API
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
+
+    bool enableStreamProcessors(); /// enable registered StreamProcessors
+    bool disableStreamProcessors(); /// disable registered StreamProcessors
 
     void setPeriodSize(unsigned int period);
     void setPeriodSize(unsigned int period, unsigned int nb_buffers);
@@ -82,22 +84,41 @@ public:
     Port* getPortByIndex(int idx, enum Port::E_Direction);
 
     // the client-side functions
-    bool xrunOccurred();
-    int getXrunCount() {return m_xruns;};
 
     bool waitForPeriod(); ///< wait for the next period
 
     bool transfer(); ///< transfer the buffer contents from/to client
     bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
-
+    
+    int getDelayedUsecs() {return m_delayed_usecs;};
+    bool xrunOccurred();
+    int getXrunCount() {return m_xruns;};
+    
+private:
+    int m_delayed_usecs;
+    // this stores the time at which the next transfer should occur
+    // usually this is in the past, but it is needed as a timestamp
+    // for the transmit SP's
+    uint64_t m_time_of_transfer;
+    
+public:
     bool handleXrun(); ///< reset the streams & buffers after xrun
-
-    bool start();
-    bool stop();
 
     bool setThreadParameters(bool rt, int priority);
 
-	// the ISO-side functions
+    virtual void setVerboseLevel(int l);
+    void dumpInfo();
+    
+    
+    // the sync source stuff
+private:
+    StreamProcessor *m_SyncSource;
+    
+public:
+    bool setSyncSource(StreamProcessor *s);
+    StreamProcessor * getSyncSource();
+
+    
 protected:
     int signalWaiters(); // call this to signal a period boundary
     // RunnableInterface interface
@@ -115,6 +136,8 @@ protected:
     // processor list
     StreamProcessorVector m_ReceiveProcessors;
     StreamProcessorVector m_TransmitProcessors;
+    
+
 
     unsigned int m_nb_buffers;
     unsigned int m_period;
