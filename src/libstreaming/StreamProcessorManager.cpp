@@ -32,6 +32,9 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "libstreaming/cycletimer.h"
+
+#define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 50
 
 namespace FreebobStreaming {
 
@@ -402,19 +405,27 @@ bool StreamProcessorManager::start() {
 		return false;
 	}
 
+        // we want to make sure that everything is running well, 
+        // so wait for a while
+	usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
+
 	debugOutput( DEBUG_LEVEL_VERBOSE, "StreamProcessors running...\n");
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting frame counters...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting counters...\n");
 	
 	// now we reset the frame counters
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
 		it != m_ReceiveProcessors.end();
 		++it ) {
 		
+		debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
+		
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
 		}
 
- 		(*it)->reset();
+		(*it)->reset();
+		
+		debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
 
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
@@ -426,11 +437,15 @@ bool StreamProcessorManager::start() {
 		it != m_TransmitProcessors.end();
 		++it ) {
 		
+		debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
+		
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
 		}
 		
  		(*it)->reset();
+		
+		debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
 		
 		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
 			(*it)->dumpInfo();
@@ -665,7 +680,8 @@ bool StreamProcessorManager::handleXrun() {
  */
 bool StreamProcessorManager::waitForPeriod() {
     int time_till_next_period;
-    
+    bool xrun_occurred=false;
+       
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 
     assert(m_SyncSource);
@@ -678,11 +694,26 @@ bool StreamProcessorManager::waitForPeriod() {
         // wait for the period
         usleep(time_till_next_period);
         
-        // check if it is still true
+        // check for underruns on the ISO side,
+        // those should make us bail out of the wait loop
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            // a xrun has occurred on the Iso side
+            xrun_occurred |= (*it)->xrunOccurred();
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            // a xrun has occurred on the Iso side
+            xrun_occurred |= (*it)->xrunOccurred();
+        }
+
+        // check if we were waked up too soon
         time_till_next_period=m_SyncSource->getTimeUntilNextPeriodUsecs();
     }
     
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", time_till_next_period);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", -time_till_next_period);
     
     // this is to notify the client of the delay 
     // that we introduced 
@@ -695,12 +726,13 @@ bool StreamProcessorManager::waitForPeriod() {
     // NOTE: before waitForPeriod() is called again, both the transmit
     //       and the receive processors should have done their transfer.
     m_time_of_transfer=m_SyncSource->getTimeAtPeriod();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "transfer at %llu ticks...\n", 
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n", 
         m_time_of_transfer);
+    
+    xrun_occurred=false;
     
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
-    bool xrun_occurred=false;
     
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
@@ -740,6 +772,8 @@ bool StreamProcessorManager::waitForPeriod() {
 #endif        
     }
     
+    m_nbperiods++;
+    
     // now we can signal the client that we are (should be) ready
     return !xrun_occurred;
 }
@@ -771,15 +805,7 @@ bool StreamProcessorManager::transfer() {
  */
 
 bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
-    int64_t time_of_transfer;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-    
-    // first we should find out on what time this transfer is
-    // supposed to be happening. this time will become the time
-    // stamp for the transmitted buffer.
-    // NOTE: maybe we should include the transfer delay here, that
-    //       would make it equal for all types of SP's
-    time_of_transfer=m_time_of_transfer;
     
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
@@ -787,24 +813,9 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
                 it != m_ReceiveProcessors.end();
                 ++it ) {
-            uint64_t buffer_tail_ts;
-            uint64_t fc;
-            int64_t ts;
-        
-            (*it)->getBufferTailTimestamp(&buffer_tail_ts,&fc);
-            ts =  buffer_tail_ts;
-            ts += (int64_t)((-(int64_t)fc) * m_SyncSource->getTicksPerFrame());
-            // NOTE: ts can be negative due to wraparound, it is the responsability of the 
-            //       SP to deal with that.
             
-            float tmp=m_SyncSource->getTicksPerFrame();
-            
-            debugOutput(DEBUG_LEVEL_VERBOSE, "=> TS=%11lld, BLT=%11llu, FC=%5d, TPF=%f\n",
-                ts, buffer_tail_ts, fc, tmp
-                );
-            debugOutput(DEBUG_LEVEL_VERBOSE, "   TPF=%f\n", tmp);
-             
-            #ifdef DEBUG
+            //#ifdef DEBUG
+            #if 0
             {
                 uint64_t ts_tail=0;
                 uint64_t fc_tail=0;
@@ -822,18 +833,19 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
                     (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
                 }
                 
-                debugOutput(DEBUG_LEVEL_VERBOSE,"R *  HEAD: TS=%llu, FC=%llu | TAIL: TS=%llu, FC=%llu, %d\n",
-                    ts_tail, fc_tail, ts_head, fc_head, cnt);
+                debugOutput(DEBUG_LEVEL_VERBOSE,"R => HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
+                    ts_head, fc_head, ts_tail, fc_tail, cnt);
             }
             #endif
     
-            if(!(*it)->getFrames(m_period, ts)) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u) from stream processor (%p)",
-                            m_period,*it);
+            if(!(*it)->getFrames(m_period, (int64_t)m_time_of_transfer)) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)",
+                            m_period, m_time_of_transfer,*it);
                     return false; // buffer underrun
             }
             
-            #ifdef DEBUG
+            //#ifdef DEBUG
+            #if 0
             {
                 uint64_t ts_tail=0;
                 uint64_t fc_tail=0;
@@ -851,8 +863,8 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
                     (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
                 }
                 
-                debugOutput(DEBUG_LEVEL_VERBOSE,"R > HEAD: TS=%llu, FC=%llu | TAIL: TS=%llu, FC=%llu, %d\n",
-                    ts_tail, fc_tail, ts_head, fc_head, cnt);            
+                debugOutput(DEBUG_LEVEL_VERBOSE,"R  > HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
+                    ts_head, fc_head, ts_tail, fc_tail, cnt);
             }
             #endif
     
@@ -862,7 +874,8 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
                 it != m_TransmitProcessors.end();
                 ++it ) {
                 
-            #ifdef DEBUG
+            //#ifdef DEBUG
+            #if 0
             {
                 uint64_t ts_tail=0;
                 uint64_t fc_tail=0;
@@ -880,18 +893,19 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
                     (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
                 }
                 
-                debugOutput(DEBUG_LEVEL_VERBOSE,"T *  HEAD: TS=%llu, FC=%llu | TAIL: TS=%llu, FC=%llu, %d\n",
-                    ts_tail, fc_tail, ts_head, fc_head, cnt);
+                debugOutput(DEBUG_LEVEL_VERBOSE,"T => HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
+                    ts_head, fc_head, ts_tail, fc_tail, cnt);
             }
             #endif
                 
-            if(!(*it)->putFrames(m_period,time_of_transfer)) {
+            if(!(*it)->putFrames(m_period, (int64_t)m_time_of_transfer)) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)",
-                        m_period, time_of_transfer, *it);
+                        m_period, m_time_of_transfer, *it);
                 return false; // buffer overrun
             }
             
-            #ifdef DEBUG
+            //#ifdef DEBUG
+            #if 0
             {
                 uint64_t ts_tail=0;
                 uint64_t fc_tail=0;
@@ -909,8 +923,8 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
                     (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
                 }
                 
-                debugOutput(DEBUG_LEVEL_VERBOSE,"T > HEAD: TS=%llu, FC=%llu | TAIL: TS=%llu, FC=%llu, %d\n",
-                    ts_tail, fc_tail, ts_head, fc_head, cnt);            
+                debugOutput(DEBUG_LEVEL_VERBOSE,"T  > HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
+                    ts_head, fc_head, ts_tail, fc_tail, cnt);
             }
             #endif
         }
@@ -922,7 +936,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
 void StreamProcessorManager::dumpInfo() {
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "----------------------------------------------------\n");
 	debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping StreamProcessorManager information...\n");
-	debugOutputShort( DEBUG_LEVEL_NORMAL, "Period count: %d\n", m_nbperiods);
+	debugOutputShort( DEBUG_LEVEL_NORMAL, "Period count: %6d\n", m_nbperiods);
 
 	debugOutputShort( DEBUG_LEVEL_NORMAL, " Receive processors...\n");
 	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();

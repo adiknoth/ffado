@@ -876,17 +876,32 @@ bool IsoRecvHandler::prepare()
     debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n",m_Client->getChannel());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
 
-    if(raw1394_iso_recv_init(m_handle,   
-                             iso_receive_handler,
-                             m_buf_packets,
-                             m_max_packet_size,
-                             m_Client->getChannel(),
-                             RAW1394_DMA_BUFFERFILL,
-                             m_irq_interval)) {
-        debugFatal("Could not do receive initialisation!\n" );
-        debugFatal("  %s\n",strerror(errno));
-
-        return false;
+    if(m_irq_interval > 1) {
+        if(raw1394_iso_recv_init(m_handle,   
+                                iso_receive_handler,
+                                m_buf_packets,
+                                m_max_packet_size,
+                                m_Client->getChannel(),
+                                RAW1394_DMA_BUFFERFILL,
+                                m_irq_interval)) {
+            debugFatal("Could not do receive initialisation!\n" );
+            debugFatal("  %s\n",strerror(errno));
+    
+            return false;
+        }
+    } else {
+        if(raw1394_iso_recv_init(m_handle,   
+                                iso_receive_handler,
+                                m_buf_packets,
+                                m_max_packet_size,
+                                m_Client->getChannel(),
+                                RAW1394_DMA_PACKET_PER_BUFFER,
+                                m_irq_interval)) {
+            debugFatal("Could not do receive initialisation!\n" );
+            debugFatal("  %s\n",strerror(errno));
+    
+            return false;
+        }    
     }
     return true;
 }

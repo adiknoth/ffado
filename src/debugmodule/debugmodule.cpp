@@ -275,7 +275,7 @@ DebugModuleManager::mb_flush()
 {
 	/* called WITHOUT the mb_write_lock */
 	while (mb_outbuffer != mb_inbuffer) {
-		fputs(mb_buffers[mb_outbuffer], stdout);
+		fputs(mb_buffers[mb_outbuffer], stderr);
 		mb_outbuffer = MB_NEXT(mb_outbuffer);
 	}
 }
