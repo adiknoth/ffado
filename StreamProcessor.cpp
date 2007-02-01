@@ -34,9 +34,9 @@
 
 namespace FreebobStreaming {
 
-IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_VERBOSE );
 
 StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate) 
 	: IsoStream(type, port)
@@ -50,6 +50,7 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 	, m_ticks_per_frame(0)
 	, m_running(false)
 	, m_disabled(true)
+	, m_is_disabled(true)
 {
 
 }
@@ -60,15 +61,22 @@ StreamProcessor::~StreamProcessor() {
 
 void StreamProcessor::dumpInfo()
 {
+    int64_t diff=(int64_t)m_buffer_head_timestamp - (int64_t)m_buffer_tail_timestamp;
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
     
     IsoStream::dumpInfo();
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter  : %d\n", m_framecounter);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns          : %d\n", m_xruns);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running        : %d\n", m_running);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled        : %d\n", !m_disabled);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter         : %d\n", m_framecounter);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer head timestamp : %011llu\n",m_buffer_head_timestamp);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer tail timestamp : %011llu\n",m_buffer_tail_timestamp);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Head - Tail           : %011lld\n",diff);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %d\n", m_xruns);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running               : %d\n", m_running);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
     
 //     m_PeriodStat.dumpInfo();
 //     m_PacketStat.dumpInfo();
@@ -110,6 +118,31 @@ bool StreamProcessor::reset() {
     }
     return true;
 	
+}
+    
+bool StreamProcessor::prepareForEnable() {
+    int64_t diff=(int64_t)m_buffer_head_timestamp - (int64_t)m_buffer_tail_timestamp;
+    
+    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForEnable for (%p)\n",this);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Frame Counter         : %05d\n",m_framecounter);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer head timestamp : %011llu\n",m_buffer_head_timestamp);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer tail timestamp : %011llu\n",m_buffer_tail_timestamp);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Head - Tail           : %011lld\n",diff);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    return true;
+}
+
+bool StreamProcessor::prepareForDisable() {
+    int64_t diff=(int64_t)m_buffer_head_timestamp - (int64_t)m_buffer_tail_timestamp;
+    
+    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForDisable for (%p)\n",this);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Frame Counter         : %05d\n",m_framecounter);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer head timestamp : %011llu\n",m_buffer_head_timestamp);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer tail timestamp : %011llu\n",m_buffer_tail_timestamp);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Head - Tail           : %011lld\n",diff);
+    debugOutput(DEBUG_LEVEL_VERBOSE," Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    return true;
+
 }
 
 bool StreamProcessor::prepare() {
@@ -171,7 +204,7 @@ bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
  */
 bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer...\n", nbframes);
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer at (%011lld)...\n", nbframes, ts);
         decrementFrameCounter(nbframes, ts);
 	return true;
 }
@@ -180,11 +213,49 @@ bool StreamProcessor::isRunning() {
 	return m_running;
 }
 
-void StreamProcessor::enable()  {
-	if(!m_running) {
-		debugWarning("The StreamProcessor is not running yet, enable() might not be a good idea.\n");
-	}
-	m_disabled=false;
+bool StreamProcessor::enable()  {
+    int cnt=0;
+    
+    if(!m_running) {
+            debugWarning("The StreamProcessor is not running yet, enable() might not be a good idea.\n");
+    }
+    
+    m_disabled=false;
+    
+    // now wait until it is effectively enabled
+    // time-out at 100ms
+    while(m_is_disabled && cnt++ < 1000) {
+        usleep(100);
+    }
+    
+    // check if the operation timed out
+    if(cnt==1000) {
+        debugWarning("Timeout when enabling StreamProcessor (%p)\n",this);
+        return false;
+    }
+    
+    return true;
+}
+
+bool StreamProcessor::disable()  {
+    int cnt=0;
+    
+    m_disabled=true;
+    
+    // now wait until it is effectively disabled
+    // time-out at 
+    while(!m_is_disabled && cnt++ < 1000) {
+        usleep(100);
+    }
+    
+    // check if the operation timed out (100ms)
+    if(cnt==1000) {
+        debugWarning("Timeout when disabling StreamProcessor (%p)\n",this);
+        return false;
+    }
+    
+    return true;
+
 }
 
 bool StreamProcessor::setSyncSource(StreamProcessor *s) {
@@ -194,10 +265,13 @@ bool StreamProcessor::setSyncSource(StreamProcessor *s) {
 
 /**
  * Decrements the frame counter, in a atomic way. This
- * also sets the buffer tail timestamp
+ * also sets the buffer head timestamp
  * is thread safe.
  */
 void StreamProcessor::decrementFrameCounter(int nbframes, uint64_t new_timestamp) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer head timestamp for (%p) to %11llu\n",
+                this, new_timestamp);
+                
     pthread_mutex_lock(&m_framecounter_lock);
     m_framecounter -= nbframes;
     m_buffer_head_timestamp = new_timestamp;
@@ -206,10 +280,13 @@ void StreamProcessor::decrementFrameCounter(int nbframes, uint64_t new_timestamp
 
 /**
  * Increments the frame counter, in a atomic way.
- * also sets the buffer head timestamp
+ * also sets the buffer tail timestamp
  * This is thread safe.
  */
 void StreamProcessor::incrementFrameCounter(int nbframes, uint64_t new_timestamp) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to %11llu\n",
+                this, new_timestamp);
+    
     pthread_mutex_lock(&m_framecounter_lock);
     m_framecounter += nbframes;
     m_buffer_tail_timestamp = new_timestamp;
@@ -218,22 +295,13 @@ void StreamProcessor::incrementFrameCounter(int nbframes, uint64_t new_timestamp
 }
 
 /**
- * Sets the frame counter, in a atomic way. 
- * also sets the buffer head timestamp
- * This is thread safe.
- */
-void StreamProcessor::setFrameCounter(int new_framecounter, uint64_t new_timestamp) {
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_framecounter = new_framecounter;
-    m_buffer_tail_timestamp = new_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-
-/**
  * Sets the buffer tail timestamp (in usecs)
  * This is thread safe.
  */
 void StreamProcessor::setBufferTailTimestamp(uint64_t new_timestamp) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to %11llu\n",
+                this, new_timestamp);
+    
     pthread_mutex_lock(&m_framecounter_lock);
     m_buffer_tail_timestamp = new_timestamp;
     pthread_mutex_unlock(&m_framecounter_lock);
@@ -244,6 +312,9 @@ void StreamProcessor::setBufferTailTimestamp(uint64_t new_timestamp) {
  * This is thread safe.
  */
 void StreamProcessor::setBufferHeadTimestamp(uint64_t new_timestamp) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer head timestamp for (%p) to %11llu\n",
+                this, new_timestamp);
+
     pthread_mutex_lock(&m_framecounter_lock);
     m_buffer_head_timestamp = new_timestamp;
     pthread_mutex_unlock(&m_framecounter_lock);
@@ -255,6 +326,11 @@ void StreamProcessor::setBufferHeadTimestamp(uint64_t new_timestamp) {
  * This is thread safe.
  */
 void StreamProcessor::setBufferTimestamps(uint64_t new_head, uint64_t new_tail) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer head timestamp for (%p) to %11llu\n",
+                this, new_head);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    and buffer tail timestamp for (%p) to %11llu\n",
+                this, new_tail);
+   
     pthread_mutex_lock(&m_framecounter_lock);
     m_buffer_head_timestamp = new_head;
     m_buffer_tail_timestamp = new_tail;

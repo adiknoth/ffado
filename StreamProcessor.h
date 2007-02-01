@@ -79,9 +79,9 @@ public:
     void resetXrunCounter();
 
     bool isRunning(); ///< returns true if there is some stream data processed
-    void enable(); ///< enable the stream processing 
-    void disable() {m_disabled=true;}; ///< disable the stream processing 
-    bool isEnabled() {return !m_disabled;};
+    bool enable(); ///< enable the stream processing 
+    bool disable(); ///< disable the stream processing 
+    bool isEnabled() {return !m_is_disabled;};
 
     virtual bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from client
     virtual bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
@@ -99,8 +99,8 @@ public:
     virtual bool prepareForStop() {return true;};
     virtual bool prepareForStart() {return true;};
     
-    virtual bool prepareForEnable() {return true;};
-    virtual bool prepareForDisable() {return true;};
+    virtual bool prepareForEnable();
+    virtual bool prepareForDisable();
 
 protected:
 	
@@ -119,7 +119,8 @@ protected:
     
     bool m_running;
     bool m_disabled;
-
+    bool m_is_disabled;
+    
     StreamStatistics m_PacketStat;
     StreamStatistics m_PeriodStat;
     
@@ -146,7 +147,6 @@ protected:
     
         void decrementFrameCounter(int nbframes, uint64_t new_timestamp);
         void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
-        void setFrameCounter(int new_framecounter, uint64_t new_timestamp);
         void resetFrameCounter();
         
         void setBufferTailTimestamp(uint64_t new_timestamp);
@@ -192,7 +192,7 @@ protected:
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame() {return m_ticks_per_frame;};
     
-    protected:
+    private:
         // the framecounter gives the number of frames in the buffer
         signed int m_framecounter;
         
@@ -204,7 +204,7 @@ protected:
         // that was put into the buffer
         uint64_t   m_buffer_head_timestamp;
         
-        
+    protected:
         StreamProcessor *m_SyncSource;
         
         float m_ticks_per_frame;

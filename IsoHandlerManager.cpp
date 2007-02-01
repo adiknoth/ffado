@@ -31,6 +31,9 @@
 #include "IsoStream.h"
 #include <assert.h>
 
+#define MINIMUM_INTERRUPTS_PER_PERIOD  4U
+#define PACKETS_PER_INTERRUPT          4U
+
 namespace FreebobStreaming
 {
 
@@ -284,12 +287,14 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
 		
+#if 0
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
 		// occurs at a period boundary (optimal CPU use)
 		
-		// NOTE: try and use 4 hardware interrupts per period for better latency.
-		unsigned int max_packet_size=4 * getpagesize() / packets_per_period;
+		// NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD hardware interrupts
+		//       per period for better latency.
+		unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}
@@ -299,9 +304,37 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		if (max_packet_size > (unsigned int)getpagesize())
                 	max_packet_size = getpagesize();
 
-		int irq_interval=packets_per_period / 4;
-        if(irq_interval <= 0) irq_interval=1;
+		unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+		if(irq_interval <= 0) irq_interval=1;
+#else
+		// hardware interrupts occur when one DMA block is full, and the size of one DMA
+		// block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ
+		// frequency, as the controller uses max_packet_size, and not the effective size
+		// when writing to the DMA buffer.
+		
+		// configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
+		unsigned int irq_interval=PACKETS_PER_INTERRUPT;
+		
+		// unless the period size doesn't allow this
+		if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
+			irq_interval=1;
+		}
+		
+		// FIXME: test
+		irq_interval=1;
+		
+		unsigned int max_packet_size=getpagesize() / irq_interval;
 
+		if (max_packet_size < stream->getMaxPacketSize()) {
+			max_packet_size=stream->getMaxPacketSize();
+		}
+
+		// Ensure we don't request a packet size bigger than the
+		// kernel-enforced maximum which is currently 1 page.
+		if (max_packet_size > (unsigned int)getpagesize())
+                	max_packet_size = getpagesize();
+
+#endif
 		/* the receive buffer size doesn't matter for the latency,
 		   but it has a minimal value in order for libraw to operate correctly (300) */
 		int buffers=400;
@@ -340,14 +373,16 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 	}
 	
 	if (stream->getType()==IsoStream::EST_Transmit) {
-	
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
+
+#if 0
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq  
 		// occurs at a period boundary (optimal CPU use)
-		// NOTE: try and use 4 interrupts per period for better latency.
-		unsigned int max_packet_size=4 * getpagesize() / packets_per_period;
+		// NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD interrupts per period
+		//       for better latency.
+		unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}
@@ -357,14 +392,48 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		if (max_packet_size > (unsigned int)getpagesize())
                 	max_packet_size = getpagesize();
 
- 		int irq_interval=packets_per_period / 4;
+ 		unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
  		if(irq_interval <= 0) irq_interval=1;
-        
+#else
+		// hardware interrupts occur when one DMA block is full, and the size of one DMA
+		// block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ
+		// frequency, as the controller uses max_packet_size, and not the effective size
+		// when writing to the DMA buffer.
+		
+		// configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
+		unsigned int irq_interval=PACKETS_PER_INTERRUPT;
+		
+		// unless the period size doesn't allow this
+		if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
+			irq_interval=1;
+		}
+		
+		// FIXME: test
+		irq_interval=1;
+
+		unsigned int max_packet_size=getpagesize() / irq_interval;
+
+		if (max_packet_size < stream->getMaxPacketSize()) {
+			max_packet_size=stream->getMaxPacketSize();
+		}
+
+		// Ensure we don't request a packet size bigger than the
+		// kernel-enforced maximum which is currently 1 page.
+		if (max_packet_size > (unsigned int)getpagesize())
+                	max_packet_size = getpagesize();
+#endif
 		// the transmit buffer size should be as low as possible for latency. 
 		// note however that the raw1394 subsystem tries to keep this buffer
 		// full, so we have to make sure that we have enough events in our
 		// event buffers
-		int buffers=packets_per_period;
+		
+		// every irq_interval packets an interrupt will occur. that is when
+		// buffers get transfered, meaning that we should have at least some
+		// margin here
+// 		int buffers=irq_interval * 2;
+
+		// half a period. the xmit handler will take care of this
+		int buffers=packets_per_period/2;
 		
 		// NOTE: this is dangerous: what if there is not enough prefill?
 // 		if (buffers<10) buffers=10;	

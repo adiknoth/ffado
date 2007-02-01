@@ -118,7 +118,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 
         // discover the devices on the bus
         if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Could not discover devices\n");
+                debugFatal("Could not discover devices\n");
                 delete dev->processorManager;
                 delete dev->m_deviceManager;
                 delete dev;
@@ -131,9 +131,14 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
             IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
             assert(device);
 
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Setting samplerate to %d for (%p)\n", 
+                        dev->options.sample_rate, device);
             // Set the device's sampling rate to that requested
             // FIXME: does this really belong here?  If so we need to handle errors.
             if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, " => Retry setting samplerate to %d for (%p)\n", 
+                            dev->options.sample_rate, device);
+            
                 // try again:
                 if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
                     delete dev->processorManager;
@@ -251,12 +256,12 @@ int freebob_streaming_wait(freebob_device_t *dev) {
                 
         periods++;
         if(periods>periods_print) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
-                debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
-                debugOutput(DEBUG_LEVEL_VERBOSE, "============================================\n");
+                debugOutputShort(DEBUG_LEVEL_VERBOSE, "\nfreebob_streaming_wait\n");
+                debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
+                debugOutputShort(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
+                debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
                 dev->processorManager->dumpInfo();
-                debugOutput(DEBUG_LEVEL_VERBOSE, "\n");
+                debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
                 periods_print+=100;
         }
         

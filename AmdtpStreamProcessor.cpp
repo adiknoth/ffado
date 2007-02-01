@@ -37,13 +37,12 @@
 
 #define RECEIVE_DLL_INTEGRATION_COEFFICIENT 0.015
 
-#define RECEIVE_PROCESSING_DELAY 51200
+#define RECEIVE_PROCESSING_DELAY (10000)
 
 // in ticks
-#define TRANSMIT_TRANSFER_DELAY 1000
-#define TRANSMIT_ADVANCE_CYCLES 10
-
-//#define DO_SYT_SYNC
+#define TRANSMIT_TRANSFER_DELAY 9000U
+// the number of cycles to send a packet in advance of it's timestamp
+#define TRANSMIT_ADVANCE_CYCLES 1U
 
 namespace FreebobStreaming {
 
@@ -116,29 +115,25 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     packet->eoh1 = 2;
     packet->fmt = IEC61883_FMT_AMDTP;
 
-    // signal that we are running (a transmit stream is always 'runnable')
-    m_running=true;
-    
-    // we calculate the timestamp of the next sample in the buffer, which will 
-    // allow us to check if we are to send this sample now, or later
-    
-    // FIXME: maybe we should use the buffer head timestamp for this?
-    
+    // recalculate the buffer head timestamp
     float ticks_per_frame=m_SyncSource->getTicksPerFrame();
     
     // the base timestamp is the one of the last sample in the buffer
-    int64_t timestamp = m_buffer_tail_timestamp;
+    uint64_t ts_tail;
+    uint64_t fc;
     
+    getBufferTailTimestamp(&ts_tail, &fc); // thread safe
+    
+    int64_t timestamp = ts_tail;
     
     // meaning that the first sample in the buffer lies m_framecounter * rate
-    // earlier. This would give the next equation:
+    // earlier. This gives the next equation:
     //   timestamp = m_last_timestamp - m_framecounter * rate
-    // but to preserve causality, we have to make sure that this timestamp is 
-    // always bigger than m_last_timestamp. this can be done by adding
-    // m_ringbuffersize_frames * rate.
-    timestamp += (int64_t)((((int64_t)m_ringbuffer_size_frames) 
-                                   - ((int64_t)m_framecounter)) 
-                          * ticks_per_frame);
+    timestamp -= (int64_t)((float)fc * ticks_per_frame);
+    
+    // FIXME: test
+    // substract the receive transfer delay
+    timestamp -= RECEIVE_PROCESSING_DELAY;
     
     // this happens if m_buffer_tail_timestamp wraps around while there are 
     // not much frames in the buffer. We should add the wraparound value of the ticks
@@ -157,28 +152,81 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     }
     
     // determine if we want to send a packet or not
-    uint64_t cycle_timer=m_handler->getCycleTimerTicks();
+    // note that we can't use getCycleTimer directly here,
+    // because packets are queued in advance. This means that
+    // we the packet we are constructing will be sent out 
+    // on 'cycle', not 'now'.
+    unsigned int ctr=m_handler->getCycleTimer();
+    int now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
     
-    int64_t until_next=timestamp-cycle_timer;
+    // the difference between 'now' and the cycle this
+    // packet is intended for
+    int cycle_diff = cycle - now_cycles;
+    
+    // detect wraparounds
+    if(cycle_diff < -(int)(CYCLES_PER_SECOND/2)) {
+        cycle_diff += CYCLES_PER_SECOND;
+    } else if(cycle_diff > (int)(CYCLES_PER_SECOND/2)) {
+        cycle_diff -= CYCLES_PER_SECOND;
+    }
+
+    // as long as the cycle parameter is not in sync with
+    // the current time, the stream is considered not
+    // to be 'running'
+    if(cycle_diff < 0 || cycle == -1) {
+        m_running=false;
+    } else {
+        m_running=true;
+    }
+    
+#ifdef DEBUG
+    if(cycle_diff < 0) {
+        debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
+            cycle, now_cycles);
+    }
+#endif
+    // if cycle lies cycle_diff cycles in the future, we should
+    // queue this packet cycle_diff * TICKS_PER_CYCLE earlier than
+    // we would if it were to be sent immediately.
+    
+    // determine the 'now' time in ticks
+    uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
+    
+    // time until the packet is to be sent (if > 0: send packet)
+    int64_t until_next=timestamp-(int64_t)cycle_timer;
+    
+    int64_t utn2=until_next; // debug!!
     
     // we send a packet some cycles in advance, to avoid the
     // following situation:
     // suppose we are only a few ticks away from 
-    // the moment to send this packet. This means that in
-    // order to keep causality, we have to make sure that
-    // the TRANSFER_DELAY is bigger than one cycle, which
-    // might be a little much.
-    // this means that we need one cycle of extra buffering.
+    // the moment to send this packet. therefore we decide
+    // not to send the packet, but send it in the next cycle.
+    // This means that the next time point will be 3072 ticks
+    // later, making that the timestamp will be expired when the 
+    // packet is sent, unless TRANSFER_DELAY > 3072.
+    // this means that we need at least one cycle of extra buffering.
     until_next -= TICKS_PER_CYCLE * TRANSMIT_ADVANCE_CYCLES;
     
+    // we have to queue it cycle_diff * TICKS_PER_CYCLE earlier
+    until_next -= cycle_diff * TICKS_PER_CYCLE;
+
     // the maximal difference we can allow (64secs)
     const int64_t max=TICKS_PER_SECOND*64L;
-    
+
+#ifdef DEBUG
     if(!m_disabled) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TS=%11llu, CTR=%11llu, FC=%5d, TPS=%10.6f, UTN=%11lld\n",
-            timestamp, cycle_timer, m_framecounter, ticks_per_frame, until_next
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TS=%11llu, CTR=%11llu, FC=%5d\n",
+            timestamp, cycle_timer, fc
+            );
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    UTN=%11lld, UTN2=%11lld\n",
+            until_next, utn2
+            );
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    CY_NOW=%04d, CY_TARGET=%04d, CY_DIFF=%04lld\n",
+            now_cycles, cycle, cycle_diff
             );
     }
+#endif
 
     if(until_next > max) {
         // this means that cycle_timer has wrapped, but
@@ -193,20 +241,25 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         // this value from until_next
         until_next += TICKS_PER_SECOND*128L;
     }
-    
+
+#ifdef DEBUG
     if(!m_disabled) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "   TS=%11llu, CTR=%11llu, FC=%5d, TPS=%10.6f, UTN=%11lld\n",
-            timestamp, cycle_timer, m_framecounter, ticks_per_frame, until_next
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " > TS=%11llu, CTR=%11llu, FC=%5d\n",
+            timestamp, cycle_timer, fc
+            );
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    UTN=%11lld, UTN2=%11lld\n",
+            until_next, utn2
             );
     }
-    
-    // don't process the stream when it is not enabled,
+#endif
+
+    // don't process the stream when it is not enabled, not running
     // or when the next sample is not due yet.
     
     // we do have to generate (semi) valid packets
     // that means that we'll send NODATA packets.
     // we don't add payload because DICE devices don't like that.
-    if((until_next>0) || m_disabled) {
+    if((until_next>0) || m_disabled || !m_running) {
         // no-data packets have syt=0xFFFF
         // and have the usual amount of events as dummy data (?)
         packet->fdf = IEC61883_FDF_NODATA;
@@ -223,10 +276,21 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         
         *tag = IEC61883_TAG_WITH_CIP;
         *sy = 0;
-
+        
+        if(m_disabled) {
+            // indicate that we are now in a disabled state.
+            m_is_disabled=true;
+        } else {
+            // indicate that we are now in an enabled state.
+            m_is_disabled=false;
+        }
+        
         return RAW1394_ISO_DEFER;
     }
     
+    // indicate that we are now in an enabled state.
+    m_is_disabled=false;
+            
     // construct the packet
     nevents = m_syt_interval;
     m_dbc += m_syt_interval;
@@ -244,7 +308,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         /* there is no more data in the ringbuffer */
 
         debugWarning("Transmit buffer underrun (cycle %d, FC=%d, PC=%d)\n", 
-                 cycle, m_framecounter, m_handler->getPacketCount());
+                 cycle, getFrameCounter(), m_handler->getPacketCount());
+
+        nevents=0;
 
         // TODO: we have to be a little smarter here
         //       because we have some slack on the device side (TRANSFER_DELAY)
@@ -256,7 +322,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         // send a valid packet
         packet->fdf = IEC61883_FDF_NODATA;
         packet->syt = 0xffff;
-        
+
         // this means no-data packets with payload (DICE doesn't like that)
         *length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
 
@@ -276,17 +342,23 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         packet->fdf = m_fdf;
 
         // convert the timestamp to SYT format
-        unsigned int timestamp_SYT = TICKS_TO_SYT(timestamp);
+        uint64_t ts=timestamp + TRANSMIT_TRANSFER_DELAY;
+        
+        // check if it wrapped
+        if (ts >= TICKS_PER_SECOND * 128L) {
+            ts -= TICKS_PER_SECOND * 128L;
+        }
+        
+        unsigned int timestamp_SYT = TICKS_TO_SYT(ts);
         packet->syt = ntohs(timestamp_SYT);
 
         retval=RAW1394_ISO_OK;
     }
     
     // calculate the new buffer head timestamp. this is
-    // the timestamp of the current packet plus
-    // SYT_INTERVAL * rate
-     
-    timestamp += (int64_t)((float)m_syt_interval * ticks_per_frame );
+    // the previous buffer head timestamp plus
+    // the number of frames sent * ticks_per_frame
+    timestamp += (int64_t)((float)nevents * ticks_per_frame );
     
     // check if it wrapped
     if (timestamp >= TICKS_PER_SECOND * 128L) {
@@ -335,7 +407,7 @@ bool AmdtpTransmitStreamProcessor::prefill() {
     // last buffer transfer.
     uint64_t ts;
     uint64_t fc;
-    m_SyncSource->getBufferHeadTimestamp(&ts, &fc);
+    m_SyncSource->getBufferHeadTimestamp(&ts, &fc); // thread safe
 
     // update the frame counter such that it reflects the buffer content,
     // and also update the buffer tail timestamp
@@ -439,7 +511,7 @@ bool AmdtpTransmitStreamProcessor::prepare() {
     m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
     
     // add the receive processing delay
-    m_ringbuffer_size_frames+=(uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame);
+//     m_ringbuffer_size_frames+=(uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame);
     
     if( !(m_event_buffer=freebob_ringbuffer_create(
             (m_dimension * m_ringbuffer_size_frames) * sizeof(quadlet_t)))) {
@@ -582,10 +654,45 @@ bool AmdtpTransmitStreamProcessor::prepareForEnable() {
     uint64_t ts;
     uint64_t fc;
     
-    m_SyncSource->getBufferHeadTimestamp(&ts, &fc);
-
-    setBufferTailTimestamp(ts);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Preparing to enable...\n");
     
+    m_SyncSource->getBufferHeadTimestamp(&ts, &fc); // thread safe
+    
+    // recalculate the buffer head timestamp
+    float ticks_per_frame=m_SyncSource->getTicksPerFrame();
+    
+    // set buffer head timestamp
+    // this makes that the next sample to be sent out
+    // has the same timestamp as the last one received
+    // plus one frame
+    ts += (uint64_t)ticks_per_frame;
+    setBufferHeadTimestamp(ts);
+    int64_t timestamp = ts;
+
+    // since we have a full buffer, we know that the buffer tail lies
+    // m_ringbuffer_size_frames * rate earlier
+    timestamp += (int64_t)((float)m_ringbuffer_size_frames * ticks_per_frame);
+    
+    // this happens when the last timestamp is near wrapping, and 
+    // m_framecounter is low.
+    // this means: m_last_timestamp is near wrapping and have just had
+    // a getPackets() from the client side. the projected next_period
+    // boundary lies beyond the wrap value.
+    // the action is to wrap the value.
+    if (timestamp >= TICKS_PER_SECOND * 128L) {
+        timestamp -= TICKS_PER_SECOND * 128L;
+    }
+
+    StreamProcessor::setBufferTailTimestamp(timestamp);
+    
+    debugOutput(DEBUG_LEVEL_VERBOSE,"TS=%10lld, TSTMP=%10llu, %f\n",
+                    ts, timestamp, ticks_per_frame);
+    
+    if (!StreamProcessor::prepareForEnable()) {
+        debugError("StreamProcessor::prepareForEnable failed\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -616,6 +723,8 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
     int xrun;
     unsigned int offset=0;
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "AmdtpTransmitStreamProcessor::putFrames(%d, %llu)\n",nbframes, ts);
     
     freebob_ringbuffer_data_t vec[2];
     // we received one period of frames
@@ -699,14 +808,39 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
         assert(bytes2write%cluster_size==0);
 
     }
+    
+    // recalculate the buffer tail timestamp
+    float ticks_per_frame=m_SyncSource->getTicksPerFrame();
+    
+    // this makes that the last sample to be sent out on ISO
+    // has the same timestamp as the last one transfered
+    // to the client
+    // plus one frame
+    ts += (uint64_t)ticks_per_frame;
+    int64_t timestamp = ts;
+    
+    // however we have to preserve causality, meaning that we have to make
+    // sure that the worst-case buffer head timestamp still lies in the future.
+    // this worst case timestamp occurs when the xmit buffer is completely full.
+    // therefore we add m_ringbuffer_size_frames * ticks_per_frame to the timestamp.
+    // this will make sure that the buffer head timestamp lies in the future.
+    // the netto effect of this is that the system works as if the buffer processing
+    // by the client doesn't take time.
+    
+    timestamp += (int64_t)((float)m_ringbuffer_size_frames * ticks_per_frame);
+    
+    // wrap the timestamp if nescessary
+    if (timestamp >= TICKS_PER_SECOND * 128L) {
+        timestamp -= TICKS_PER_SECOND * 128L;
+    }
+
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::putFrames(%d, %llu)\n",nbframes, timestamp);
 
     // update the frame counter such that it reflects the new value,
     // and also update the buffer tail timestamp
     // done in the SP base class
-    debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor::putFrames(%d, %llu)\n",nbframes, ts);
-    
-    if (!StreamProcessor::putFrames(nbframes, ts)) {
-        debugError("Could not do StreamProcessor::putFrames(%d, %llu)\n",nbframes, ts);
+    if (!StreamProcessor::putFrames(nbframes, timestamp)) {
+        debugError("Could not do StreamProcessor::putFrames(%d, %llu)\n",nbframes, timestamp);
         return false;
     }
 
@@ -1028,6 +1162,10 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         
         m_last_timestamp += CYCLE_TIMER_GET_OFFSET(syt_timestamp);
         m_last_timestamp += cc_seconds * TICKS_PER_SECOND;
+        
+        // the receive processing delay indicates how much
+        // extra time we need as slack
+        m_last_timestamp += RECEIVE_PROCESSING_DELAY;
 
         //=> now estimate the device frame rate
         if (m_last_timestamp2 && m_last_timestamp) {
@@ -1082,6 +1220,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
         //=> don't process the stream samples when it is not enabled.
         if(m_disabled) {
+
             // we keep track of the timestamp here
             // this makes sure that we will have a somewhat accurate
             // estimate as to when a period might be ready. i.e. it will not
@@ -1090,10 +1229,22 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // the next (possible) sample is not this one, but lies 
             // SYT_INTERVAL * rate later
             uint64_t ts=m_last_timestamp+(uint64_t)((float)m_syt_interval * m_ticks_per_frame);
+            
+            // wrap if nescessary
+            if (ts >= TICKS_PER_SECOND * 128L) {
+                ts -= TICKS_PER_SECOND * 128L;
+            }
+            // set the timestamps
             StreamProcessor::setBufferTimestamps(ts,ts);
+            
+            // indicate that we are now in a disabled state.
+            m_is_disabled=true;
             
             return RAW1394_ISO_DEFER;
         }
+        
+        // indicate that we are now in an enabled state.
+        m_is_disabled=false;
         
         //=> process the packet
         unsigned int write_size=nevents*sizeof(quadlet_t)*m_dimension;
@@ -1102,7 +1253,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         if (freebob_ringbuffer_write(m_event_buffer,(char *)(data+8),write_size) < write_size) 
         {
             debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n", 
-                 cycle, m_framecounter, m_handler->getPacketCount());
+                 cycle, getFrameCounter(), m_handler->getPacketCount());
             
             m_xruns++;
 
@@ -1223,12 +1374,15 @@ uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriod() {
     //                        + RECEIVE_PROCESSING_DELAY
     // currently this is in ticks
     
+    int64_t fc=getFrameCounter();
+    
     int64_t next_period_boundary =  m_last_timestamp;
-    next_period_boundary     += (int64_t)(((int64_t)m_period-(int64_t)m_framecounter) * m_ticks_per_frame);
-    next_period_boundary     += RECEIVE_PROCESSING_DELAY;
+    next_period_boundary     += (int64_t)(((int64_t)m_period
+                                          - fc) * m_ticks_per_frame);
+//     next_period_boundary     += RECEIVE_PROCESSING_DELAY;
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5d, TPF=%f\n",
-        next_period_boundary, m_last_timestamp, m_framecounter, m_ticks_per_frame
+        next_period_boundary, m_last_timestamp, fc, m_ticks_per_frame
         );
     
     // this happens if the timestamp wraps around while there are a lot of 
@@ -1248,7 +1402,7 @@ uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriod() {
     }
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "   NPD=%11lld, LTS=%11llu, FC=%5d, TPF=%f\n",
-        next_period_boundary, m_last_timestamp, m_framecounter, m_ticks_per_frame
+        next_period_boundary, m_last_timestamp, fc, m_ticks_per_frame
         );
 
     return next_period_boundary;
@@ -1282,7 +1436,7 @@ bool AmdtpReceiveStreamProcessor::reset() {
     m_PacketStat.reset();
     m_WakeupStat.reset();
     
-    m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+//     m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
 
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports
@@ -1553,7 +1707,7 @@ bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
     }
     
     if (!StreamProcessor::getFrames(nbframes, ts)) {
-        debugError("Could not do StreamProcessor::getFrames(%d, %llu)\n",nbframes, ts);
+        debugError("Could not do StreamProcessor::getFrames(%d, %llu)\n", nbframes, ts);
         return false;
     }
     
