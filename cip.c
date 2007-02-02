@@ -212,7 +212,7 @@ int
 iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *ptz,
 		struct iec61883_packet *packet)
 {
-  int nevents, nevents_dbc;
+  int nevents;
 
   packet->eoh0 = 0;
 

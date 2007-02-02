@@ -32,7 +32,7 @@
 
 #include "../debugmodule/debugmodule.h"
 #include <string>
-#include "ringbuffer.h"
+#include "libutil/ringbuffer.h"
 
 namespace FreebobStreaming {
 
