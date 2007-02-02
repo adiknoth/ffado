@@ -729,8 +729,8 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
     freebob_ringbuffer_data_t vec[2];
     // we received one period of frames
     // this is period_size*dimension of events
-    int events2write=nbframes*m_dimension;
-    int bytes2write=events2write*sizeof(quadlet_t);
+    unsigned int events2write=nbframes*m_dimension;
+    unsigned int bytes2write=events2write*sizeof(quadlet_t);
 
     /* write events2write bytes to the ringbuffer 
     *  first see if it can be done in one read.
@@ -740,7 +740,7 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
     *  then write the remaining data directly to the buffer in a third pass 
     *  Make sure that we cannot end up on a non-cluster aligned position!
     */
-    int cluster_size=m_dimension*sizeof(quadlet_t);
+    unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
 
     while(bytes2write>0) {
         int byteswritten=0;
@@ -1624,8 +1624,8 @@ bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 	// we received one period of frames on each connection
 	// this is period_size*dimension of events
 
-	int events2read=nbframes*m_dimension;
-	int bytes2read=events2read*sizeof(quadlet_t);
+	unsigned int events2read=nbframes*m_dimension;
+	unsigned int bytes2read=events2read*sizeof(quadlet_t);
 	/* read events2read bytes from the ringbuffer 
 	*  first see if it can be done in one read. 
 	*  if so, ok. 
@@ -1634,7 +1634,7 @@ bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 	*  then read the remaining data directly from the buffer in a third pass 
 	*  Make sure that we cannot end up on a non-cluster aligned position!
 	*/
-	int cluster_size=m_dimension*sizeof(quadlet_t);
+	unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
 	
 	while(bytes2read>0) {
 		unsigned int framesread=(nbframes*cluster_size-bytes2read)/cluster_size;

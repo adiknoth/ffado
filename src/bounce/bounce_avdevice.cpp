@@ -110,9 +110,9 @@ BounceDevice::probe( ConfigRom& configRom )
 bool
 BounceDevice::discover()
 {
-	unsigned int resp_len=0;
-	quadlet_t request[6];
-	quadlet_t *resp;
+// 	unsigned int resp_len=0;
+// 	quadlet_t request[6];
+// 	quadlet_t *resp;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering...\n" );
 

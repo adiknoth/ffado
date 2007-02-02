@@ -36,7 +36,7 @@
 #include "StreamProcessor.h"
 #include "cip.h"
 #include <libiec61883/iec61883.h>
-#include "ringbuffer.h"
+#include "libutil/ringbuffer.h"
 #include <pthread.h>
 
 #define AMDTP_MAX_PACKET_SIZE 2048

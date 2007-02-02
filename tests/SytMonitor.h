@@ -30,7 +30,7 @@
 #include "src/libstreaming/IsoStream.h"
 #include "src/libstreaming/cip.h"
 #include "src/libstreaming/cycletimer.h"
-#include "src/libstreaming/ringbuffer.h"
+#include "src/libutil/ringbuffer.h"
 
 using namespace FreebobStreaming;
 

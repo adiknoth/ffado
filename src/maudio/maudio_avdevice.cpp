@@ -313,8 +313,8 @@ AvDevice::prepare() {
             return false;
         }
 //     }
-
-    return true;*/
+*/
+    return true;
 }
 
 // bool

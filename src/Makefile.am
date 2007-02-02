@@ -39,10 +39,11 @@ noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
 	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
 	libstreaming/IsoHandlerManager.h libstreaming/IsoStream.h libstreaming/MotuPort.h \
-	libstreaming/MotuPortInfo.h libstreaming/MotuStreamProcessor.h libstreaming/PacketBuffer.h \
-	libstreaming/Port.h libstreaming/PortManager.h libstreaming/ringbuffer.h \
-	libstreaming/StreamProcessor.h libstreaming/StreamProcessorManager.h libstreaming/streamstatistics.h \
+	libstreaming/MotuPortInfo.h libstreaming/MotuStreamProcessor.h \
+	libstreaming/Port.h libstreaming/PortManager.h \
+	libstreaming/StreamProcessor.h libstreaming/StreamProcessorManager.h \
 	libutil/Atomic.h libutil/cycles.h libutil/DelayLockedLoop.h libutil/PosixThread.h \
+	libutil/ringbuffer.h libutil/PacketBuffer.h libutil/StreamStatistics.h \
 	libutil/serialize.h libutil/SystemTimeSource.h libutil/Thread.h libutil/Time.h \
 	libutil/TimeSource.h
 
@@ -51,6 +52,7 @@ libfreebob_la_SOURCES = \
         csr1212.c \
         devicemanager.cpp \
         freebob.cpp \
+        freebob_streaming.cpp \
         xmlparser.c \
         bebob/bebob_avdevice.cpp \
         bebob/bebob_avdevice_subunit.cpp \
@@ -84,23 +86,22 @@ libfreebob_la_SOURCES = \
         libstreaming/AmdtpPortInfo.cpp \
         libstreaming/AmdtpStreamProcessor.cpp \
         libstreaming/cip.c \
-        libstreaming/freebob_streaming.cpp \
         libstreaming/IsoHandler.cpp \
         libstreaming/IsoHandlerManager.cpp \
         libstreaming/IsoStream.cpp \
         libstreaming/MotuPort.cpp \
         libstreaming/MotuPortInfo.cpp \
         libstreaming/MotuStreamProcessor.cpp \
-        libstreaming/PacketBuffer.cpp \
         libstreaming/Port.cpp \
         libstreaming/PortManager.cpp \
-        libstreaming/ringbuffer.c \
         libstreaming/StreamProcessor.cpp \
         libstreaming/StreamProcessorManager.cpp \
-        libstreaming/streamstatistics.cpp \
         libutil/DelayLockedLoop.cpp \
+        libutil/PacketBuffer.cpp \
         libutil/PosixThread.cpp \
+        libutil/ringbuffer.c \
         libutil/serialize.cpp \
+        libutil/StreamStatistics.cpp \
         libutil/SystemTimeSource.cpp \
         libutil/Time.c \
         libutil/TimeSource.cpp

@@ -33,17 +33,10 @@
 */
 
 #include "libfreebob/freebob_streaming.h"
-#include "../devicemanager.h"
-#include "../iavdevice.h"
+#include "devicemanager.h"
+#include "iavdevice.h"
 
-#include "IsoHandler.h"
-#include "IsoStream.h"
-#include "StreamProcessor.h"
-#include "StreamProcessorManager.h"
-#include "AmdtpStreamProcessor.h"
-#include "IsoHandlerManager.h"
-#include "../libutil/PosixThread.h"
-#include "AmdtpPort.h"
+#include "libstreaming/StreamProcessorManager.h"
 
 #include <assert.h>
 

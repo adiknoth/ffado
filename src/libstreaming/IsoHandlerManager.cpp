@@ -469,7 +469,6 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 			return false;
 		}
 		debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
-
 	}
 
 	m_IsoStreams.push_back(stream);

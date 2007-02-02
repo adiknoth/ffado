@@ -65,7 +65,7 @@ freebob_get_version() {
 }
 
 
-const int
+int
 freebob_get_api_version() {
     return FREEBOB_API_VERSION;
 }

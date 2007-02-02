@@ -32,9 +32,10 @@
 
 #include "IsoStream.h"
 #include "PortManager.h"
-#include "streamstatistics.h"
 
 #include <pthread.h>
+
+#include "libutil/StreamStatistics.h"
 
 namespace FreebobStreaming {
 
@@ -149,9 +150,6 @@ protected:
         void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
         void resetFrameCounter();
         
-        void setBufferTailTimestamp(uint64_t new_timestamp);
-        void setBufferHeadTimestamp(uint64_t new_timestamp);
-        void setBufferTimestamps(uint64_t new_head, uint64_t new_tail);
         /**
          * \brief return the time until the next period boundary (in microseconds)
          *
@@ -188,7 +186,11 @@ protected:
         
         void getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc);
         void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
-                
+        
+        void setBufferTailTimestamp(uint64_t new_timestamp);
+        void setBufferHeadTimestamp(uint64_t new_timestamp);
+        void setBufferTimestamps(uint64_t new_head, uint64_t new_tail);
+        
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame() {return m_ticks_per_frame;};
     
@@ -244,7 +246,6 @@ public:
 protected:
 
      DECLARE_DEBUG_MODULE;
-
 
 };
 

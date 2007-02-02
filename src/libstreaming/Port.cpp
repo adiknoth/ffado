@@ -327,7 +327,7 @@ int Port::writeEvents(void *event, unsigned int nevents) {
 	unsigned int written=freebob_ringbuffer_write(m_ringbuffer, (char *)event,bytes2write)/m_eventsize;
 	
 	if(written) {
-		int i=0;
+		unsigned int i=0;
 		quadlet_t * tmp=(quadlet_t *)event;
 		debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Written %d events (",written);
 		for (i=0;i<written;i++) {
@@ -348,7 +348,7 @@ int Port::readEvents(void *event, unsigned int nevents) {
 	unsigned int read=freebob_ringbuffer_read(m_ringbuffer, (char *)event, bytes2read)/m_eventsize;
 	
 	if(read) {
-		int i=0;
+		unsigned int i=0;
 		quadlet_t * tmp=(quadlet_t *)event;
 		debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Read %d events (",read);
 		for (i=0;i<read;i++) {

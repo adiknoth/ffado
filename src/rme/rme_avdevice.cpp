@@ -50,49 +50,49 @@ char *rme_modelname[] = {"[unknown]","Fireface-800"};
  * interfaces.
  */
 
-static signed int allocate_iso_channel(raw1394handle_t handle) {
-/*
- * Allocates an iso channel for use by the interface in a similar way to
- * libiec61883.  Returns -1 on error (due to there being no free channels)
- * or an allocated channel number.
- * FIXME: As in libiec61883, channel 63 is not requested; this is either a
- * bug or it's omitted since that's the channel preferred by video devices.
- */
-	int c = -1;
-	for (c = 0; c < 63; c++)
-		if (raw1394_channel_modify (handle, c, RAW1394_MODIFY_ALLOC) == 0)
-			break;
-	if (c < 63)
-		return c;
-	return -1;
-}
+// static signed int allocate_iso_channel(raw1394handle_t handle) {
+// /*
+//  * Allocates an iso channel for use by the interface in a similar way to
+//  * libiec61883.  Returns -1 on error (due to there being no free channels)
+//  * or an allocated channel number.
+//  * FIXME: As in libiec61883, channel 63 is not requested; this is either a
+//  * bug or it's omitted since that's the channel preferred by video devices.
+//  */
+// 	int c = -1;
+// 	for (c = 0; c < 63; c++)
+// 		if (raw1394_channel_modify (handle, c, RAW1394_MODIFY_ALLOC) == 0)
+// 			break;
+// 	if (c < 63)
+// 		return c;
+// 	return -1;
+// }
 
-static signed int free_iso_channel(raw1394handle_t handle, signed int channel) {
-/*
- * Deallocates an iso channel.  Returns -1 on error or 0 on success.  Silently
- * ignores a request to deallocate a negative channel number.
- */
-	if (channel < 0)
-		return 0;
-	if (raw1394_channel_modify (handle, channel, RAW1394_MODIFY_FREE)!=0)
-		return -1;
-	return 0;
-}
+// static signed int free_iso_channel(raw1394handle_t handle, signed int channel) {
+// /*
+//  * Deallocates an iso channel.  Returns -1 on error or 0 on success.  Silently
+//  * ignores a request to deallocate a negative channel number.
+//  */
+// 	if (channel < 0)
+// 		return 0;
+// 	if (raw1394_channel_modify (handle, channel, RAW1394_MODIFY_FREE)!=0)
+// 		return -1;
+// 	return 0;
+// }
 
-static signed int get_iso_bandwidth_avail(raw1394handle_t handle) {
-/*
- * Returns the current value of the `bandwidth available' register on
- * the IRM, or -1 on error.
- */
-quadlet_t buffer;
-signed int result = raw1394_read (handle, raw1394_get_irm_id (handle),
-	CSR_REGISTER_BASE + CSR_BANDWIDTH_AVAILABLE,
-	sizeof (quadlet_t), &buffer);
-
-	if (result < 0)
-		return -1;
-	return ntohl(buffer);
-}
+// static signed int get_iso_bandwidth_avail(raw1394handle_t handle) {
+// /*
+//  * Returns the current value of the `bandwidth available' register on
+//  * the IRM, or -1 on error.
+//  */
+// quadlet_t buffer;
+// signed int result = raw1394_read (handle, raw1394_get_irm_id (handle),
+// 	CSR_REGISTER_BASE + CSR_BANDWIDTH_AVAILABLE,
+// 	sizeof (quadlet_t), &buffer);
+// 
+// 	if (result < 0)
+// 		return -1;
+// 	return ntohl(buffer);
+// }
 /* ======================================================================= */
 
 RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
@@ -231,9 +231,9 @@ RmeDevice::showDevice() const
 bool
 RmeDevice::prepare() {
 
-	int samp_freq = getSamplingFrequency();
+// 	int samp_freq = getSamplingFrequency();
 
-	raw1394handle_t handle = m_1394Service->getHandle();
+// 	raw1394handle_t handle = m_1394Service->getHandle();
 
 	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 

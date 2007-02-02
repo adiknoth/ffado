@@ -26,10 +26,11 @@
  *
  */
 
-#include "../libutil/Atomic.h"
+#include "libutil/Atomic.h"
 
 #include "StreamProcessor.h"
 #include "StreamProcessorManager.h"
+
 #include <assert.h>
 
 namespace FreebobStreaming {
@@ -43,14 +44,14 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 	, m_nb_buffers(0)
 	, m_period(0)
 	, m_xruns(0)
-	, m_framecounter(0)
 	, m_framerate(framerate)
 	, m_manager(NULL)
-	, m_SyncSource(NULL)
-	, m_ticks_per_frame(0)
 	, m_running(false)
 	, m_disabled(true)
 	, m_is_disabled(true)
+	, m_framecounter(0)
+	, m_SyncSource(NULL)
+	, m_ticks_per_frame(0)
 {
 
 }
