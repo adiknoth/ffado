@@ -163,10 +163,10 @@ freebob_print_xml_description( freebob_handle_t freebob_handle,
 			       int node_id,
 			       enum freebob_direction direction );
 
-const char*
+char*
 freebob_get_version();
 
-const int
+int
 freebob_get_api_version();
 
 /* various function */

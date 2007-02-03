@@ -40,12 +40,12 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
 
-const char*
+char*
 freebob_get_version() {
     return PACKAGE_STRING;
 }
 
-const int
+int
 freebob_get_api_version() {
     return FREEBOB_API_VERSION;
 }

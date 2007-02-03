@@ -3,5 +3,5 @@
 
 
 autoreconf -f -i -s
-./configure --enable-maintainer-mode
-make
+#./configure --enable-maintainer-mode
+#make
