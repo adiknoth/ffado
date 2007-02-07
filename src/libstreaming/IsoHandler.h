@@ -77,7 +77,7 @@ class IsoHandler : public FreebobUtil::TimeSource
 
         // no setter functions, because those would require a re-init
         unsigned int getMaxPacketSize() { return m_max_packet_size;};
-        unsigned int getBuffersize() { return m_buf_packets;};
+        unsigned int getNbBuffers() { return m_buf_packets;};
         int getWakeupInterval() { return m_irq_interval;};
 
         int getPacketCount() {return m_packetcount;};

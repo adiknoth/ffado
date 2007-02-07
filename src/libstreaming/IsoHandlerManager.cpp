@@ -31,6 +31,9 @@
 #include "IsoStream.h"
 #include <assert.h>
 
+#include "../libutil/PosixThread.h"
+
+
 #define MINIMUM_INTERRUPTS_PER_PERIOD  4U
 #define PACKETS_PER_INTERRUPT          4U
 
@@ -41,22 +44,54 @@ IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
 IsoHandlerManager::IsoHandlerManager() :
    m_State(E_Created),
-   m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0)
+   m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0),
+   m_realtime(false), m_priority(0)
 {
 
 }
 
+IsoHandlerManager::IsoHandlerManager(bool run_rt, unsigned int rt_prio) :
+   m_State(E_Created),
+   m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0),
+   m_realtime(run_rt), m_priority(rt_prio)
+{
+
+}
 
 IsoHandlerManager::~IsoHandlerManager()
 {
 
 }
 
+bool IsoHandlerManager::init()
+{
+    // the tread that performs the actual packet transfer
+    // needs high priority
+    unsigned int prio=m_priority+6;
+
+    if (prio>98) prio=98;
+
+    m_isoManagerThread=new FreebobUtil::PosixThread(
+        this, 
+        m_realtime, prio,
+        PTHREAD_CANCEL_DEFERRED);
+
+    if(!m_isoManagerThread) {
+        debugFatal("Could not create iso manager thread\n");
+        return false;
+    }
+
+    // propagate the debug level
+//     m_isoManagerThread->setVerboseLevel(getDebugLevel());
+
+    return true;
+}
+
 bool IsoHandlerManager::Init()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	return true;
+    return true;
 }
 
 /**
@@ -287,7 +322,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
 		
-#if 0
+#if 1
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
 		// occurs at a period boundary (optimal CPU use)
@@ -376,7 +411,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
 
-#if 0
+#if 1
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq  
 		// occurs at a period boundary (optimal CPU use)
@@ -430,10 +465,10 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// every irq_interval packets an interrupt will occur. that is when
 		// buffers get transfered, meaning that we should have at least some
 		// margin here
-// 		int buffers=irq_interval * 2;
+		int buffers=irq_interval * 2;
 
 		// half a period. the xmit handler will take care of this
-		int buffers=packets_per_period/2;
+// 		int buffers=packets_per_period/4;
 		
 		// NOTE: this is dangerous: what if there is not enough prefill?
 // 		if (buffers<10) buffers=10;	
@@ -611,6 +646,13 @@ bool IsoHandlerManager::startHandlers(int cycle) {
         }
     }
     
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Starting ISO iterator thread...\n");
+
+    // note: libraw1394 doesn't like it if you poll() and/or iterate() before 
+    //       starting the streams.
+    // start the iso runner thread
+    m_isoManagerThread->Start();
+    
     if (retval) {
         m_State=E_Running;
     } else {
@@ -631,11 +673,14 @@ bool IsoHandlerManager::stopHandlers() {
     
     bool retval=true;
     
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping ISO iterator thread...\n");
+    m_isoManagerThread->Stop();
+    
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
     {
-        debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler (%p)\n",*it);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handler (%p)\n",*it);
         if(!(*it)->stop()){
             debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
             retval=false;

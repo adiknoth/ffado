@@ -30,7 +30,6 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "../libutil/Thread.h"
-#include "../libutil/PosixThread.h"
 #include <semaphore.h>
 #include "Port.h"
 #include "StreamProcessor.h"
@@ -63,13 +62,14 @@ public:
 
     bool start();
     bool stop();
-
+    
+    bool syncStartAll();
 
     // this is the setup API
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
-    bool enableStreamProcessors(); /// enable registered StreamProcessors
+    bool enableStreamProcessors(unsigned int time_to_enable_at); /// enable registered StreamProcessors
     bool disableStreamProcessors(); /// disable registered StreamProcessors
 
     void setPeriodSize(unsigned int period);
@@ -136,8 +136,6 @@ protected:
     // processor list
     StreamProcessorVector m_ReceiveProcessors;
     StreamProcessorVector m_TransmitProcessors;
-    
-
 
     unsigned int m_nb_buffers;
     unsigned int m_period;
@@ -146,7 +144,6 @@ protected:
     IsoHandlerManager *m_isoManager;
 
     FreebobUtil::PosixThread *m_streamingThread;
-    FreebobUtil::PosixThread *m_isoManagerThread;
 
     unsigned int m_nbperiods;
 

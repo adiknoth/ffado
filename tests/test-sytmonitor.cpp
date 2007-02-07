@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     
     SytMonitor *monitors[128];
     int64_t stream_offset_ticks[128];
-    
+
     struct arguments arguments;
 
     // Default values.
@@ -190,38 +190,37 @@ int main(int argc, char *argv[])
         goto finish;
     }
     
-    memset(&stream_offset_ticks,0,sizeof(unsigned int) * 128);
+    memset(&stream_offset_ticks, 0, sizeof(int64_t) * 128);
     
+    run=1;
     
-        run=1;
-        
-        run_realtime=arguments.realtime;
-        realtime_prio=arguments.rtprio;
+    run_realtime=arguments.realtime;
+    realtime_prio=arguments.rtprio;
 
-        signal (SIGINT, sighandler);
-        signal (SIGPIPE, sighandler);
+    signal (SIGINT, sighandler);
+    signal (SIGPIPE, sighandler);
 
-        debugOutput(DEBUG_LEVEL_NORMAL, "Freebob SYT monitor\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "Freebob SYT monitor\n");
+    
+    m_isoManager=new IsoHandlerManager();
+    
+    if(!m_isoManager) {
+        debugOutput(DEBUG_LEVEL_NORMAL, "Could not create IsoHandlerManager\n");
+        goto finish;
+    }
         
-        m_isoManager=new IsoHandlerManager();
-        
-        if(!m_isoManager) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "Could not create IsoHandlerManager\n");
-                goto finish;
-        }
-        
-        m_isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-                
-    // the thread to execute the manager
-        m_isoManagerThread=new PosixThread(
-            m_isoManager, 
-            run_realtime, realtime_prio,
-            PTHREAD_CANCEL_DEFERRED);
+    m_isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
             
-        if(!m_isoManagerThread) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "Could not create iso manager thread\n");
-                goto finish;
-        }
+// the thread to execute the manager
+    m_isoManagerThread=new PosixThread(
+        m_isoManager, 
+        run_realtime, realtime_prio,
+        PTHREAD_CANCEL_DEFERRED);
+        
+    if(!m_isoManagerThread) {
+        debugOutput(DEBUG_LEVEL_NORMAL, "Could not create iso manager thread\n");
+        goto finish;
+    }
         
         // register monitors
         for (i=0;i<arguments.nb_combos;i++) {
@@ -353,6 +352,9 @@ int main(int argc, char *argv[])
                                 }
                             // average out the offset
                                 int64_t err=(((uint64_t)master_cif.pres_ticks) - ((uint64_t)cif.pres_ticks));
+                                
+                                debugOutput(DEBUG_LEVEL_NORMAL,"Diff for %d at cycle %04d: %6lld (MTS: %11llu | STS: %11llu\n",
+                                    i,cif.cycle,err, master_cif.pres_ticks, cif.pres_ticks);
                                 
                                 err = err - stream_offset_ticks[i];
                                 

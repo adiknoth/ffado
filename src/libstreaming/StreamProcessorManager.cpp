@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "../libutil/PosixThread.h"
+
 #include "libstreaming/cycletimer.h"
 
 #define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 50
@@ -164,8 +166,11 @@ bool StreamProcessorManager::init()
 
 	// the tread that runs the StreamProcessor
 	// checking the period boundaries
+	int prio=m_thread_priority+5;
+	if (prio>98) prio=98;
+	
 	m_streamingThread=new FreebobUtil::PosixThread(this,
-	   m_thread_realtime, m_thread_priority+5, 
+	   m_thread_realtime, prio, 
 	   PTHREAD_CANCEL_DEFERRED);
 	   
 	if(!m_streamingThread) {
@@ -173,28 +178,23 @@ bool StreamProcessorManager::init()
 		return false;
 	}
 	
-	m_isoManager=new IsoHandlerManager();
+	m_isoManager=new IsoHandlerManager(m_thread_realtime, m_thread_priority);
 	
 	if(!m_isoManager) {
 		debugFatal("Could not create IsoHandlerManager\n");
 		return false;
 	}
 	
+	// propagate the debug level
 	m_isoManager->setVerboseLevel(getDebugLevel());
 	
-	// the tread that keeps the handler's cycle timers up to date
-        // and performs the actual packet transfer
-        // needs high priority
- 	m_isoManagerThread=new FreebobUtil::PosixThread(
- 	      m_isoManager, 
- 	      m_thread_realtime, m_thread_priority+6,
- 	      PTHREAD_CANCEL_DEFERRED);
- 	      
-	if(!m_isoManagerThread) {
-		debugFatal("Could not create iso manager thread\n");
+	if(!m_isoManager->init()) {
+		debugFatal("Could not initialize IsoHandlerManager\n");
 		return false;
 	}
-
+	
+	m_xrun_happened=false;
+	
 	return true;
 }
 
@@ -203,13 +203,6 @@ bool StreamProcessorManager::Init()
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing runner...\n");
 
     // no xrun has occurred (yet)
-    m_xrun_happened=false;
-
-    if(sem_init(&m_period_semaphore, 0, 0)) {
-        debugFatal( "Cannot init period transfer semaphore\n");
-        debugFatal( " Error: %s\n",strerror(errno));
-        return false;
-    }
 
     return true;
 }
@@ -294,6 +287,129 @@ bool StreamProcessorManager::Execute()
         return true;
 }
 
+bool StreamProcessorManager::syncStartAll() {
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessor streams to start running...\n");
+    // we have to wait until all streamprocessors indicate that they are running
+    // i.e. that there is actually some data stream flowing
+    int wait_cycles=2000; // two seconds
+    bool notRunning=true;
+    while (notRunning && wait_cycles) {
+        wait_cycles--;
+        notRunning=false;
+        
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->isRunning()) notRunning=true;
+        }
+
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if(!(*it)->isRunning()) notRunning=true;
+        }
+        usleep(1000);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Running check: %d\n",notRunning);
+    }
+
+    if(!wait_cycles) { // timout has occurred
+        debugFatal("One or more streams are not starting up (timeout):\n");
+                    
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->isRunning()) {
+                debugFatal(" receive stream %p not running\n",*it);
+            } else {	
+                debugFatal(" receive stream %p running\n",*it);
+            }
+        }
+
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if(!(*it)->isRunning()) {
+                debugFatal(" transmit stream %p not running\n",*it);
+            } else {	
+                debugFatal(" transmit stream %p running\n",*it);
+            }
+        }
+        
+        return false;
+    }
+
+    // we want to make sure that everything is running well, 
+    // so wait for a while
+    usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting StreamProcessors...\n");
+
+    // now we reset the frame counters
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
+
+        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
+            (*it)->dumpInfo();
+        }
+
+        (*it)->reset();
+
+        debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
+
+        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
+            (*it)->dumpInfo();
+        }
+
+    }
+    
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
+        
+        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
+            (*it)->dumpInfo();
+        }
+        
+        (*it)->reset();
+        
+        debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
+        
+        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
+            (*it)->dumpInfo();
+        }
+    }
+	
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors...\n");
+    
+    uint64_t now=m_SyncSource->getTimeNow(); // fixme: should be in usecs, not ticks
+    
+    // FIXME: this should not be in cycles, but in 'time'
+    unsigned int enable_at=TICKS_TO_CYCLES(now)+300;
+        
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Sync Source StreamProcessor...\n");
+    if (!m_SyncSource->prepareForEnable()) {
+            debugFatal("Could not prepare Sync Source StreamProcessor for enable()...\n");
+        return false;
+    }
+
+    m_SyncSource->enable(enable_at);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, " All StreamProcessors...\n");
+    if (!enableStreamProcessors(enable_at)) {
+        debugFatal("Could not enable StreamProcessors...\n");
+        return false;
+    }
+
+    return true;
+}
+
 bool StreamProcessorManager::start() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Starting Processors...\n");
 	assert(m_isoManager);
@@ -347,124 +463,13 @@ bool StreamProcessorManager::start() {
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Starting streaming threads...\n");
 
-	// note: libraw1394 doesn't like it if you poll() and/or iterate() before 
-	//       starting the streams.
-	// start the runner thread
-	// FIXME: maybe this should go into the isomanager itself.
-	m_isoManagerThread->Start();
-	
 	// start the runner thread
 	// FIXME: not used anymore (for updatecycletimers ATM, but that's not good)
 	m_streamingThread->Start();
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to start running...\n");
-	// we have to wait until all streamprocessors indicate that they are running
-	// i.e. that there is actually some data stream flowing
-	int wait_cycles=2000; // two seconds
-	bool notRunning=true;
-	while (notRunning && wait_cycles) {
-		wait_cycles--;
-		notRunning=false;
-		
-		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-			it != m_ReceiveProcessors.end();
-			++it ) {
-			if(!(*it)->isRunning()) notRunning=true;
-		}
-	
-		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-			it != m_TransmitProcessors.end();
-			++it ) {
-			if(!(*it)->isRunning()) notRunning=true;
-		}
-		usleep(1000);
-	}
-	
-	if(!wait_cycles) { // timout has occurred
-		debugFatal("One or more streams are not starting up (timeout):\n");
-		           
-		for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-			it != m_ReceiveProcessors.end();
-			++it ) {
-			if(!(*it)->isRunning()) {
-				debugFatal(" receive stream %p not running\n",*it);
-			} else {	
-				debugFatal(" receive stream %p running\n",*it);
-			}
-		}
-	
-		for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-			it != m_TransmitProcessors.end();
-			++it ) {
-			if(!(*it)->isRunning()) {
-				debugFatal(" transmit stream %p not running\n",*it);
-			} else {	
-				debugFatal(" transmit stream %p running\n",*it);
-			}
-		}
-		return false;
-	}
-
-        // we want to make sure that everything is running well, 
-        // so wait for a while
-	usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, "StreamProcessors running...\n");
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting counters...\n");
-	
-	// now we reset the frame counters
-	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-		it != m_ReceiveProcessors.end();
-		++it ) {
-		
-		debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-
-		(*it)->reset();
-		
-		debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
-
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-		
-	}
-	
-	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-		it != m_TransmitProcessors.end();
-		++it ) {
-		
-		debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-		
- 		(*it)->reset();
-		
-		debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-	}
-	
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors...\n");
-	
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Sync Source StreamProcessor...\n");
-        if (!m_SyncSource->prepareForEnable()) {
-		debugFatal("Could not prepare Sync Source StreamProcessor for enable()...\n");
-		return false;
-	}
-	
-        m_SyncSource->enable();
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, " All StreamProcessors...\n");
-        if (!enableStreamProcessors()) {
-		debugFatal("Could not enable StreamProcessors...\n");
+	// start all SP's synchonized
+	if (!syncStartAll()) {
+		debugFatal("Could not syncStartAll...\n");
 		return false;
 	}
 	
@@ -510,7 +515,6 @@ bool StreamProcessorManager::stop() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping threads...\n");
 	
 	m_streamingThread->Stop();
-	m_isoManagerThread->Stop();
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handlers...\n");
 	if(!m_isoManager->stopHandlers()) {
@@ -550,22 +554,85 @@ bool StreamProcessorManager::stop() {
  * Enables the registered StreamProcessors
  * @return true if successful, false otherwise
  */
-bool StreamProcessorManager::enableStreamProcessors() {
-	// and we enable the streamprocessors
-	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-		it != m_ReceiveProcessors.end();
-		++it ) {		
-		(*it)->prepareForEnable();
-		(*it)->enable();
-	}
+bool StreamProcessorManager::enableStreamProcessors(unsigned int time_to_enable_at) {
+    // we prepare the streamprocessors for enable
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {		
+        (*it)->prepareForEnable();
+    }
 
-	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-		it != m_TransmitProcessors.end();
-		++it ) {
-		(*it)->prepareForEnable();
-		(*it)->enable();
-	}
-	return true;
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+        (*it)->prepareForEnable();
+    }
+
+    // then we enable the streamprocessors
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {		
+        (*it)->enable(time_to_enable_at);
+    }
+
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+        (*it)->enable(time_to_enable_at);
+    }
+
+    // now we wait for the SP's to get enabled
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to be enabled...\n");
+    // we have to wait until all streamprocessors indicate that they are running
+    // i.e. that there is actually some data stream flowing
+    int wait_cycles=2000; // two seconds
+    bool notEnabled=true;
+    while (notEnabled && wait_cycles) {
+        wait_cycles--;
+        notEnabled=false;
+        
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->isEnabled()) notEnabled=true;
+        }
+
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if(!(*it)->isEnabled()) notEnabled=true;
+        }
+        usleep(1000); // one cycle
+    }
+    
+    if(!wait_cycles) { // timout has occurred
+        debugFatal("One or more streams couldn't be enabled (timeout):\n");
+                    
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->isEnabled()) {
+                    debugFatal(" receive stream %p not enabled\n",*it);
+            } else {	
+                    debugFatal(" receive stream %p enabled\n",*it);
+            }
+        }
+    
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if(!(*it)->isEnabled()) {
+                    debugFatal(" transmit stream %p not enabled\n",*it);
+            } else {	
+                    debugFatal(" transmit stream %p enabled\n",*it);
+            }
+        }
+        return false;
+    }
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, " => all StreamProcessors enabled...\n");
+
+    return true;
 }
 
 /**
@@ -573,21 +640,84 @@ bool StreamProcessorManager::enableStreamProcessors() {
  * @return true if successful, false otherwise
  */
 bool StreamProcessorManager::disableStreamProcessors() {
-	// and we disable the streamprocessors
-	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-		it != m_ReceiveProcessors.end();
-		++it ) {
-		(*it)->prepareForDisable();
-		(*it)->disable();
-	}
+    // we prepare the streamprocessors for disable
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+        (*it)->prepareForDisable();
+    }
 
-	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-		it != m_TransmitProcessors.end();
-		++it ) {
-		(*it)->prepareForDisable();
-		(*it)->disable();
-	}
-	return true;
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+        (*it)->prepareForDisable();
+    }
+
+    // then we disable the streamprocessors
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+        (*it)->disable();
+    }
+
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+        (*it)->disable();
+    }
+
+    // now we wait for the SP's to get disabled
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to be disabled...\n");
+    // we have to wait until all streamprocessors indicate that they are running
+    // i.e. that there is actually some data stream flowing
+    int wait_cycles=2000; // two seconds
+    bool enabled=true;
+    while (enabled && wait_cycles) {
+        wait_cycles--;
+        enabled=false;
+        
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if((*it)->isEnabled()) enabled=true;
+        }
+
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if((*it)->isEnabled()) enabled=true;
+        }
+        usleep(1000); // one cycle
+    }
+    
+    if(!wait_cycles) { // timout has occurred
+        debugFatal("One or more streams couldn't be disabled (timeout):\n");
+                    
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->isEnabled()) {
+                    debugFatal(" receive stream %p not enabled\n",*it);
+            } else {	
+                    debugFatal(" receive stream %p enabled\n",*it);
+            }
+        }
+    
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if(!(*it)->isEnabled()) {
+                    debugFatal(" transmit stream %p not enabled\n",*it);
+            } else {	
+                    debugFatal(" transmit stream %p enabled\n",*it);
+            }
+        }
+        return false;
+    }
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, " => all StreamProcessors disabled...\n");
+    	
+    return true;
 }
 
 /**
@@ -616,52 +746,10 @@ bool StreamProcessorManager::handleXrun() {
 		return false;
 	}
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting Processors...\n");
-	
-	// now we reset the streamprocessors
-	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-		it != m_ReceiveProcessors.end();
-		++it ) {
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-		
-		(*it)->reset();
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-	}
-	
-	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-		it != m_TransmitProcessors.end();
-		++it ) {
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-		
-		(*it)->reset();
-		
-		if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-			(*it)->dumpInfo();
-		}
-	}
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors...\n");
-	
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Sync Source StreamProcessor...\n");
-        if (!m_SyncSource->prepareForEnable()) {
-		debugFatal("Could not prepare Sync Source StreamProcessor for enable()...\n");
-		return false;
-	}
-	
-        m_SyncSource->enable();
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, " All StreamProcessors...\n");
-        if (!enableStreamProcessors()) {
-		debugFatal("Could not enable StreamProcessors...\n");
+	debugOutput( DEBUG_LEVEL_VERBOSE, "Restarting StreamProcessors...\n");
+	// start all SP's synchonized
+	if (!syncStartAll()) {
+		debugFatal("Could not syncStartAll...\n");
 		return false;
 	}
 

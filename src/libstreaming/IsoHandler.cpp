@@ -193,7 +193,10 @@ IsoHandler::init()
     int err;
     err=raw1394_read_cycle_timer(m_handle_util, &ctr);
     if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s", strerror(err));
+        debugError("raw1394_read_cycle_timer failed.\n");
+        debugError(" Error: %s\n", strerror(err));
+        debugError(" Your system doesn't seem to support the raw1394_read_cycle_timer call\n");
+        return false;
     }
     new_timer=ctr.cycle_timer;
 #else
