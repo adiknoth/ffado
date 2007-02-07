@@ -39,6 +39,9 @@
 #define USLEEP_AFTER_UPDATE_FAILURE 10
 #define USLEEP_AFTER_UPDATE 100
 #define MAX_UPDATE_TRIES 10
+namespace FreebobUtil {
+    class PosixThread;
+}
 
 namespace FreebobStreaming
 {
@@ -72,6 +75,7 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
     public:
 
         IsoHandlerManager();
+        IsoHandlerManager(bool run_rt, unsigned int rt_prio);
         virtual ~IsoHandlerManager();
 
         void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
@@ -91,6 +95,8 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
         bool reset(); ///< reset the ISO manager and all streams
 
         bool prepare(); ///< prepare the ISO manager and all streams
+        
+        bool init();
         
         void disablePolling(IsoStream *); ///< disables polling on a stream
         void enablePolling(IsoStream *); ///< enables polling on a stream
@@ -143,6 +149,12 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
 
         bool rebuildFdMap();
 
+        // threading
+        bool m_realtime;
+        unsigned int m_priority;
+        FreebobUtil::PosixThread *m_isoManagerThread;
+        
+        
         // debug stuff
         DECLARE_DEBUG_MODULE;
 

@@ -30,6 +30,7 @@
 
 #include "StreamProcessor.h"
 #include "StreamProcessorManager.h"
+#include "cycletimer.h"
 
 #include <assert.h>
 
@@ -49,6 +50,7 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 	, m_running(false)
 	, m_disabled(true)
 	, m_is_disabled(true)
+	, m_cycle_to_enable_at(0)
 	, m_framecounter(0)
 	, m_SyncSource(NULL)
 	, m_ticks_per_frame(0)
@@ -210,51 +212,49 @@ bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 	return true;
 }
 
+uint64_t StreamProcessor::getTimeNow() {
+    return m_handler->getCycleTimerTicks();
+}
+
+
 bool StreamProcessor::isRunning() {
 	return m_running;
 }
 
-bool StreamProcessor::enable()  {
-    int cnt=0;
+bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
+    // FIXME: time_to_enable_at will be in 'time' not cycles
+    m_cycle_to_enable_at=time_to_enable_at;
     
     if(!m_running) {
             debugWarning("The StreamProcessor is not running yet, enable() might not be a good idea.\n");
     }
+
+#ifdef DEBUG
+    uint64_t now_cycles=TICKS_TO_CYCLES(m_handler->getCycleTimerTicks());
+    const int64_t max=(int64_t)(TICKS_PER_SECOND/2);
     
+    int64_t diff=m_cycle_to_enable_at-now_cycles;
+    
+    if (diff > max) {
+        diff-=TICKS_PER_SECOND;
+    } else if (diff < -max) {
+        diff+=TICKS_PER_SECOND;
+    }
+    
+    if (diff<0) {
+        debugWarning("Request to enable streamprocessor %d cycles ago.\n",diff);
+    }
+#endif
+
     m_disabled=false;
-    
-    // now wait until it is effectively enabled
-    // time-out at 100ms
-    while(m_is_disabled && cnt++ < 1000) {
-        usleep(100);
-    }
-    
-    // check if the operation timed out
-    if(cnt==1000) {
-        debugWarning("Timeout when enabling StreamProcessor (%p)\n",this);
-        return false;
-    }
     
     return true;
 }
 
 bool StreamProcessor::disable()  {
-    int cnt=0;
     
     m_disabled=true;
-    
-    // now wait until it is effectively disabled
-    // time-out at 
-    while(!m_is_disabled && cnt++ < 1000) {
-        usleep(100);
-    }
-    
-    // check if the operation timed out (100ms)
-    if(cnt==1000) {
-        debugWarning("Timeout when disabling StreamProcessor (%p)\n",this);
-        return false;
-    }
-    
+
     return true;
 
 }

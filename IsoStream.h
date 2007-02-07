@@ -103,7 +103,7 @@ class IsoStream
         int m_port;
 
         IsoHandler *m_handler;
-
+        
         DECLARE_DEBUG_MODULE;
 
 };

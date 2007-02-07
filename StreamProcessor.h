@@ -80,7 +80,7 @@ public:
     void resetXrunCounter();
 
     bool isRunning(); ///< returns true if there is some stream data processed
-    bool enable(); ///< enable the stream processing 
+    bool enable(uint64_t time_to_enable_at); ///< enable the stream processing 
     bool disable(); ///< disable the stream processing 
     bool isEnabled() {return !m_is_disabled;};
 
@@ -121,6 +121,7 @@ protected:
     bool m_running;
     bool m_disabled;
     bool m_is_disabled;
+    unsigned int m_cycle_to_enable_at;
     
     StreamStatistics m_PacketStat;
     StreamStatistics m_PeriodStat;
@@ -184,6 +185,8 @@ protected:
          */
         virtual uint64_t getTimeAtPeriod() = 0;
         
+        uint64_t getTimeNow();
+        
         void getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc);
         void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
         
@@ -193,6 +196,8 @@ protected:
         
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame() {return m_ticks_per_frame;};
+        
+        unsigned int getLastCycle() {return m_last_cycle;};
     
     private:
         // the framecounter gives the number of frames in the buffer
@@ -210,6 +215,8 @@ protected:
         StreamProcessor *m_SyncSource;
         
         float m_ticks_per_frame;
+        
+        unsigned int m_last_cycle;
 
     private:
         // this mutex protects the access to the framecounter
