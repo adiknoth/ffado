@@ -52,16 +52,14 @@ IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEB
 
 /* transmit */
 AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framerate, int dimension)
-	: TransmitStreamProcessor(port, framerate), m_dimension(dimension)
-	, m_last_timestamp(0), m_dbc(0), m_ringbuffer_size_frames(0)
-	{
-
+        : TransmitStreamProcessor(port, framerate), m_dimension(dimension)
+        , m_last_timestamp(0), m_dbc(0), m_ringbuffer_size_frames(0)
+{
 
 }
 
 AmdtpTransmitStreamProcessor::~AmdtpTransmitStreamProcessor() {
-	freebob_ringbuffer_free(m_event_buffer);
-	free(m_cluster_buffer);
+
 }
 
 /**
@@ -94,6 +92,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     unsigned int nevents=0;
     
+    m_last_cycle=cycle;
+    
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Xmit handler for cycle %d, (running=%d, enabled=%d,%d)\n",
         cycle, m_running, m_disabled, m_is_disabled);
     
@@ -123,7 +123,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     uint64_t ts_tail;
     uint64_t fc;
     
-    getBufferTailTimestamp(&ts_tail, &fc); // thread safe
+    m_data_buffer->getBufferTailTimestamp(&ts_tail, &fc); // thread safe
     
     int64_t timestamp = ts_tail;
     
@@ -133,8 +133,11 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     timestamp -= (int64_t)((float)fc * ticks_per_frame);
     
     // FIXME: test
-    // substract the receive transfer delay
-    timestamp -= RECEIVE_PROCESSING_DELAY;
+//     timestamp -= (uint64_t)(((float)m_handler->getWakeupInterval())
+//                                        * ((float)m_syt_interval) * ticks_per_frame);
+// 
+//     // substract the receive transfer delay
+//     timestamp -= RECEIVE_PROCESSING_DELAY;
     
     // this happens if m_buffer_tail_timestamp wraps around while there are 
     // not much frames in the buffer. We should add the wraparound value of the ticks
@@ -267,8 +270,18 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             
             debugOutput(DEBUG_LEVEL_VERBOSE,"Preparing to enable...\n");
             
-            m_SyncSource->getBufferHeadTimestamp(&ts, &fc); // thread safe
+            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts, &fc); // thread safe
             
+            // the number of cycles the sync source lags
+            // or leads (< 0)
+            int sync_lag_cycles=cycle-m_SyncSource->getLastCycle()-1;
+            if(sync_lag_cycles > (int)(CYCLES_PER_SECOND/2)) {
+                sync_lag_cycles -= CYCLES_PER_SECOND/2;
+            }
+            if (sync_lag_cycles < -((int)CYCLES_PER_SECOND/2)) {
+                sync_lag_cycles += CYCLES_PER_SECOND/2;
+            }
+
             // recalculate the buffer head timestamp
             float ticks_per_frame=m_SyncSource->getTicksPerFrame();
 
@@ -277,18 +290,22 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             // has the same timestamp as the last one received
             // plus one frame
             ts += (uint64_t)ticks_per_frame;
+            
+            // account for the cycle lag between sync SP and this SP
+            ts += sync_lag_cycles * TICKS_PER_CYCLE;
+            
             if (ts >= TICKS_PER_SECOND * 128L) {
                 ts -= TICKS_PER_SECOND * 128L;
             }
-            
-            setBufferHeadTimestamp(ts);
+
+//             m_data_buffer->setBufferHeadTimestamp(ts);
             int64_t timestamp = ts;
         
             // since we have frames_in_buffer frames in the buffer, 
             // we know that the buffer tail lies
             // frames_in_buffer * rate 
             // later
-            int frames_in_buffer=getFrameCounter();
+            int frames_in_buffer=m_data_buffer->getFrameCounter();
             timestamp += (int64_t)((float)frames_in_buffer * ticks_per_frame);
             
             // this happens when the last timestamp is near wrapping, and 
@@ -301,7 +318,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
                 timestamp -= TICKS_PER_SECOND * 128L;
             }
         
-            StreamProcessor::setBufferTailTimestamp(timestamp);
+            m_data_buffer->setBufferTailTimestamp(timestamp);
             
             debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, TSTMP=%10llu, FC=%4d, %f\n",
                             ts, timestamp, frames_in_buffer, ticks_per_frame);
@@ -348,12 +365,39 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     
     *tag = IEC61883_TAG_WITH_CIP;
     *sy = 0;
-     
-    unsigned int read_size=nevents*sizeof(quadlet_t)*m_dimension;
-
-    if ((freebob_ringbuffer_read(m_event_buffer,(char *)(data+8),read_size)) < 
-                            read_size) 
+    
+    if (m_data_buffer->readFrames(nevents, (char *)(data + 8)))
     {
+        *length = nevents*sizeof(quadlet_t)*m_dimension + 8;
+
+        // process all ports that should be handled on a per-packet base
+        // this is MIDI for AMDTP (due to the need of DBC)
+        if (!encodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
+            debugWarning("Problem encoding Packet Ports\n");
+        }
+
+        packet->fdf = m_fdf;
+
+        // convert the timestamp to SYT format
+        uint64_t ts=timestamp + TRANSMIT_TRANSFER_DELAY;
+        
+        // check if it wrapped
+        if (ts >= TICKS_PER_SECOND * 128L) {
+            ts -= TICKS_PER_SECOND * 128L;
+        }
+        
+        unsigned int timestamp_SYT = TICKS_TO_SYT(ts);
+        packet->syt = ntohs(timestamp_SYT);
+        
+        // update the frame counter such that it reflects the new value
+        // done in the SP base class
+        if (!StreamProcessor::getFrames(nevents)) {
+            debugError("Could not do StreamProcessor::getFrames(%d)\n",nevents);
+             return RAW1394_ISO_ERROR;
+        }
+        
+        return RAW1394_ISO_OK;    
+    } else {
         /* there is no more data in the ringbuffer */
         // convert the timestamp to SYT format
         uint64_t ts=timestamp + TRANSMIT_TRANSFER_DELAY;
@@ -391,47 +435,6 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         //*length = 2*sizeof(quadlet_t);
 
         return RAW1394_ISO_DEFER;
-    } else {
-        *length = read_size + 8;
-
-        // process all ports that should be handled on a per-packet base
-        // this is MIDI for AMDTP (due to the need of DBC)
-        if (!encodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
-            debugWarning("Problem encoding Packet Ports\n");
-        }
-
-        packet->fdf = m_fdf;
-
-        // convert the timestamp to SYT format
-        uint64_t ts=timestamp + TRANSMIT_TRANSFER_DELAY;
-        
-        // check if it wrapped
-        if (ts >= TICKS_PER_SECOND * 128L) {
-            ts -= TICKS_PER_SECOND * 128L;
-        }
-        
-        unsigned int timestamp_SYT = TICKS_TO_SYT(ts);
-        packet->syt = ntohs(timestamp_SYT);
-
-        // calculate the new buffer head timestamp. this is
-        // the previous buffer head timestamp plus
-        // the number of frames sent * ticks_per_frame
-        timestamp += (int64_t)((float)nevents * ticks_per_frame );
-        
-        // check if it wrapped
-        if (timestamp >= TICKS_PER_SECOND * 128L) {
-            timestamp -= TICKS_PER_SECOND * 128L;
-        }
-        
-        // update the frame counter such that it reflects the new value
-        // also update the buffer head timestamp
-        // done in the SP base class
-        if (!StreamProcessor::getFrames(nevents, timestamp)) {
-            debugError("Could not do StreamProcessor::getFrames(%d, %llu)\n",nevents, timestamp);
-             return RAW1394_ISO_ERROR;
-        }
-        
-        return RAW1394_ISO_OK;
     }
 
     // we shouldn't get here
@@ -469,14 +472,14 @@ bool AmdtpTransmitStreamProcessor::prefill() {
     // last buffer transfer.
     uint64_t ts;
     uint64_t fc;
-    m_SyncSource->getBufferHeadTimestamp(&ts, &fc); // thread safe
+    m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts, &fc); // thread safe
 
     // update the frame counter such that it reflects the buffer content,
     // the buffer tail timestamp is initialized when the SP is enabled
     // done in the SP base class
     if (!StreamProcessor::putFrames(m_ringbuffer_size_frames, ts)) {
-        debugError("Could not do StreamProcessor::putFrames(%d, %0)\n",
-            m_ringbuffer_size_frames);
+        debugError("Could not do StreamProcessor::putFrames(%d, %011llu)\n",
+            m_ringbuffer_size_frames,ts);
         return false;
     }
 
@@ -487,9 +490,6 @@ bool AmdtpTransmitStreamProcessor::reset() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-    // reset the event buffer, discard all content
-    freebob_ringbuffer_reset(m_event_buffer);
-    
     // reset the statistics
     m_PeriodStat.reset();
     m_PacketStat.reset();
@@ -565,27 +565,24 @@ bool AmdtpTransmitStreamProcessor::prepare() {
         m_dimension, 
         m_syt_interval);
 
-    // allocate the event buffer
-    m_ringbuffer_size_frames=m_nb_buffers * m_period;
-    
     // prepare the framerate estimate
     m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
     
+    // allocate the event buffer
+    m_ringbuffer_size_frames=m_nb_buffers * m_period;
+
     // add the receive processing delay
 //     m_ringbuffer_size_frames+=(uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame);
-    
-    if( !(m_event_buffer=freebob_ringbuffer_create(
-            (m_dimension * m_ringbuffer_size_frames) * sizeof(quadlet_t)))) {
-        debugFatal("Could not allocate memory event ringbuffer");
-        return false;
-    }
 
-    // allocate the temporary cluster buffer
-    if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
-        debugFatal("Could not allocate temporary cluster buffer");
-        freebob_ringbuffer_free(m_event_buffer);
-        return false;
-    }
+    assert(m_data_buffer);    
+    m_data_buffer->setBufferSize(m_ringbuffer_size_frames);
+    m_data_buffer->setEventSize(sizeof(quadlet_t));
+    m_data_buffer->setEventsPerFrame(m_dimension);
+    
+    m_data_buffer->setUpdatePeriod(m_period);
+    m_data_buffer->setNominalRate(m_ticks_per_frame);
+    
+    m_data_buffer->prepare();
 
     // set the parameters of ports we can:
     // we want the audio ports to be period buffered,
@@ -684,10 +681,11 @@ bool AmdtpTransmitStreamProcessor::prepare() {
     // while here they are not.
     
     // prefill the event buffer
-    if (!prefill()) {
-        debugFatal("Could not prefill buffers\n");
-        return false;    
-    }
+    // NOTE: do we need to prefill? reset() is called, so everything is prefilled then
+//     if (!prefill()) {
+//         debugFatal("Could not prefill buffers\n");
+//         return false;    
+//     }
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
     debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, FDF: %d, DBS: %d, SYT: %d\n",
@@ -723,118 +721,37 @@ bool AmdtpTransmitStreamProcessor::prepareForEnable() {
     return true;
 }
 
-bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int size) {
-    /* a naive implementation would look like this: */
+bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int nframes) {
+    bool retval;
     
-    unsigned int write_size=size*sizeof(quadlet_t)*m_dimension;
-    char *dummybuffer=(char *)calloc(sizeof(quadlet_t),size*m_dimension);
-    transmitSilenceBlock(dummybuffer, size, 0);
+    char *dummybuffer=(char *)calloc(sizeof(quadlet_t),nframes*m_dimension);
+    
+    transmitSilenceBlock(dummybuffer, nframes, 0);
 
-    if (freebob_ringbuffer_write(m_event_buffer,(char *)(dummybuffer),write_size) < write_size) {
+    // add the silence data to the ringbuffer
+    if(m_data_buffer->writeFrames(nframes, dummybuffer)) { 
+        retval=true;
+    } else {
         debugWarning("Could not write to event buffer\n");
+        retval=false;
     }
-    
+
     free(dummybuffer);
     
-    return true;
+    return retval;
 }
 
 bool AmdtpTransmitStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
     // there has to be enough space to put the frames in
-    return m_ringbuffer_size_frames - getFrameCounter() > nbframes;
+    return m_ringbuffer_size_frames - m_data_buffer->getFrameCounter() > nbframes;
 }
 
 bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
-    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
-
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-    int xrun;
-    unsigned int offset=0;
+    m_PeriodStat.mark(m_data_buffer->getBufferFill());
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "AmdtpTransmitStreamProcessor::putFrames(%d, %llu)\n",nbframes, ts);
     
-    freebob_ringbuffer_data_t vec[2];
-    // we received one period of frames
-    // this is period_size*dimension of events
-    unsigned int events2write=nbframes*m_dimension;
-    unsigned int bytes2write=events2write*sizeof(quadlet_t);
-
-    /* write events2write bytes to the ringbuffer 
-    *  first see if it can be done in one read.
-    *  if so, ok. 
-    *  otherwise write up to a multiple of clusters directly to the buffer
-    *  then do the buffer wrap around using ringbuffer_write
-    *  then write the remaining data directly to the buffer in a third pass 
-    *  Make sure that we cannot end up on a non-cluster aligned position!
-    */
-    unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
-
-    while(bytes2write>0) {
-        int byteswritten=0;
-        
-        unsigned int frameswritten=(nbframes*cluster_size-bytes2write)/cluster_size;
-        offset=frameswritten;
-        
-        freebob_ringbuffer_get_write_vector(m_event_buffer, vec);
-            
-        if(vec[0].len==0) { // this indicates a full event buffer
-            debugError("XMT: Event buffer overrun in processor %p\n",this);
-            break;
-        }
-            
-        /* if we don't take care we will get stuck in an infinite loop
-        * because we align to a cluster boundary later
-        * the remaining nb of bytes in one write operation can be 
-        * smaller than one cluster
-        * this can happen because the ringbuffer size is always a power of 2
-        */
-        if(vec[0].len<cluster_size) {
-            
-            // encode to the temporary buffer
-            xrun = transmitBlock(m_cluster_buffer, 1, offset);
-            
-            if(xrun<0) {
-                // xrun detected
-                debugError("XMT: Frame buffer underrun in processor %p\n",this);
-                break;
-            }
-                
-            // use the ringbuffer function to write one cluster 
-            // the write function handles the wrap around.
-            freebob_ringbuffer_write(m_event_buffer,
-                         m_cluster_buffer,
-                         cluster_size);
-                
-            // we advanced one cluster_size
-            bytes2write-=cluster_size;
-                
-        } else { // 
-            
-            if(bytes2write>vec[0].len) {
-                // align to a cluster boundary
-                byteswritten=vec[0].len-(vec[0].len%cluster_size);
-            } else {
-                byteswritten=bytes2write;
-            }
-                
-            xrun = transmitBlock(vec[0].buf,
-                         byteswritten/cluster_size,
-                         offset);
-            
-            if(xrun<0) {
-                    // xrun detected
-                debugError("XMT: Frame buffer underrun in processor %p\n",this);
-                break; // FIXME: return false ?
-            }
-
-            freebob_ringbuffer_write_advance(m_event_buffer, byteswritten);
-            bytes2write -= byteswritten;
-        }
-
-        // the bytes2write should always be cluster aligned
-        assert(bytes2write%cluster_size==0);
-
-    }
+    m_data_buffer->blockProcessWriteFrames(nbframes, ts);
     
     // recalculate the buffer tail timestamp
     float ticks_per_frame=m_SyncSource->getTicksPerFrame();
@@ -877,10 +794,10 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
  * write received events to the stream ringbuffers.
  */
 
-int AmdtpTransmitStreamProcessor::transmitBlock(char *data, 
+bool AmdtpTransmitStreamProcessor::processWriteBlock(char *data, 
                        unsigned int nevents, unsigned int offset)
 {
-    int problem=0;
+    bool no_problem=true;
 
     for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
@@ -898,7 +815,7 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
         case AmdtpPortInfo::E_MBLA:
             if(encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
                 debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
-                problem=1;
+                no_problem=false;
             }
             break;
         case AmdtpPortInfo::E_SPDIF: // still unimplemented
@@ -907,7 +824,7 @@ int AmdtpTransmitStreamProcessor::transmitBlock(char *data,
             break;
         }
     }
-    return problem;
+    return no_problem;
 
 }
 
@@ -1089,16 +1006,14 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents(AmdtpAudioPort *
 AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int framerate, int dimension)
     : ReceiveStreamProcessor(port, framerate), m_dimension(dimension), m_last_timestamp(0), m_last_timestamp2(0) {
 
-
 }
 
 AmdtpReceiveStreamProcessor::~AmdtpReceiveStreamProcessor() {
-    freebob_ringbuffer_free(m_event_buffer);
-    free(m_cluster_buffer);
 
 }
 
 bool AmdtpReceiveStreamProcessor::init() {
+
     // call the parent init
     // this has to be done before allocating the buffers, 
     // because this sets the buffersizes from the processormanager
@@ -1116,6 +1031,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                   unsigned int cycle, unsigned int dropped) {
     
     enum raw1394_iso_disposition retval=RAW1394_ISO_OK;
+    m_last_cycle=cycle;
     
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
@@ -1143,7 +1059,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"ch%2u: CY=%4u, SYT=%08X (%4u cycles + %04u ticks), FC=%04d, %d\n",
             channel, cycle,syt_timestamp,  
             CYCLE_TIMER_GET_CYCLES(syt_timestamp), CYCLE_TIMER_GET_OFFSET(syt_timestamp),
-            getFrameCounter(), m_is_disabled);
+            m_data_buffer->getFrameCounter(), m_is_disabled);
         
         // reconstruct the full cycle
         unsigned int cc=m_handler->getCycleTimer();
@@ -1198,18 +1114,27 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         
         // we have to keep in mind that there are also
         // some packets buffered by the ISO layer
-        // at most x=m_handler->getNbBuffers()
+        // at most x=m_handler->getWakeupInterval()
         // these contain at most x*syt_interval
         // frames, meaning that we might receive
         // this packet x*syt_interval*ticks_per_frame
         // later than expected (the real receive time)
-        m_last_timestamp += (uint64_t)(((float)m_handler->getNbBuffers())
-                                       * m_syt_interval * m_ticks_per_frame);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
+            m_last_timestamp, m_handler->getWakeupInterval(),m_syt_interval,m_ticks_per_frame);
+        
+        m_last_timestamp += (uint64_t)(((float)m_handler->getWakeupInterval())
+                                       * ((float)m_syt_interval) * m_ticks_per_frame);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE," ==> %lluticks\n", m_last_timestamp);
         
         // the receive processing delay indicates how much
         // extra time we need as slack
         m_last_timestamp += RECEIVE_PROCESSING_DELAY;
-
+        
+        // wrap if nescessary
+        if (m_last_timestamp >= TICKS_PER_SECOND * 128L) {
+            m_last_timestamp -= TICKS_PER_SECOND * 128L;
+        }
+        
         //=> now estimate the device frame rate
         if (m_last_timestamp2 && m_last_timestamp) {
             // try and estimate the frame rate from the device
@@ -1270,6 +1195,10 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             if (cycle == m_cycle_to_enable_at) {
                 m_is_disabled=false;
                 debugOutput(DEBUG_LEVEL_VERBOSE,"enabling StreamProcessor %p at %d\n", this, cycle);
+                // the previous timestamp is the one we need to start with
+                // because we're going to update the buffer again this loop
+                m_data_buffer->setBufferTailTimestamp(m_last_timestamp2);
+                
             } else {
                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"will enable StreamProcessor %p at %u, now is %d\n", this, m_cycle_to_enable_at, cycle);
             }
@@ -1295,19 +1224,27 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 ts -= TICKS_PER_SECOND * 128L;
             }
             // set the timestamps
-            StreamProcessor::setBufferTimestamps(ts,ts);
+            m_data_buffer->setBufferTailTimestamp(ts);
             
             return RAW1394_ISO_DEFER;
         }
         
         //=> process the packet
-        unsigned int write_size=nevents*sizeof(quadlet_t)*m_dimension;
-        
         // add the data payload to the ringbuffer
-        if (freebob_ringbuffer_write(m_event_buffer,(char *)(data+8),write_size) < write_size) 
-        {
+        if(m_data_buffer->writeFrames(nevents, (char *)(data+8))) { 
+            retval=RAW1394_ISO_OK;
+            
+            // process all ports that should be handled on a per-packet base
+            // this is MIDI for AMDTP (due to the need of DBC)
+            if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
+                debugWarning("Problem decoding Packet Ports\n");
+                retval=RAW1394_ISO_DEFER;
+            }
+            
+        } else {
+        
             debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n", 
-                 cycle, getFrameCounter(), m_handler->getPacketCount());
+                 cycle, m_data_buffer->getFrameCounter(), m_handler->getPacketCount());
             
             m_xruns++;
             
@@ -1317,14 +1254,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             m_is_disabled=true;
 
             retval=RAW1394_ISO_DEFER;
-        } else {
-            retval=RAW1394_ISO_OK;
-            // process all ports that should be handled on a per-packet base
-            // this is MIDI for AMDTP (due to the need of DBC)
-            if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
-                debugWarning("Problem decoding Packet Ports\n");
-                retval=RAW1394_ISO_DEFER;
-            }
+            
         }
 
 #ifdef DEBUG
@@ -1433,7 +1363,7 @@ uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriod() {
     //                        + RECEIVE_PROCESSING_DELAY
     // currently this is in ticks
     
-    int64_t fc=getFrameCounter();
+    int64_t fc=m_data_buffer->getFrameCounter();
     
     int64_t next_period_boundary =  m_last_timestamp;
     next_period_boundary     += (int64_t)(((int64_t)m_period
@@ -1482,14 +1412,10 @@ void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 
 }
 
-
 bool AmdtpReceiveStreamProcessor::reset() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-    // reset the event buffer, discard all content
-    freebob_ringbuffer_reset(m_event_buffer);
-    
     m_PeriodStat.reset();
     m_PacketStat.reset();
     m_WakeupStat.reset();
@@ -1561,18 +1487,16 @@ bool AmdtpReceiveStreamProcessor::prepare() {
         (uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame));
     ringbuffer_size_frames+=(uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame);
     
-    if( !(m_event_buffer=freebob_ringbuffer_create(
-            (m_dimension * ringbuffer_size_frames) * sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate memory event ringbuffer");
-		return false;
-	}
-
-	// allocate the temporary cluster buffer
-	if( !(m_cluster_buffer=(char *)calloc(m_dimension,sizeof(quadlet_t)))) {
-		debugFatal("Could not allocate temporary cluster buffer");
-		freebob_ringbuffer_free(m_event_buffer);
-		return false;
-	}
+    assert(m_data_buffer);    
+    m_data_buffer->setBufferSize(ringbuffer_size_frames);
+    m_data_buffer->setEventSize(sizeof(quadlet_t));
+    m_data_buffer->setEventsPerFrame(m_dimension);
+        
+    // the buffer is written every syt_interval
+    m_data_buffer->setUpdatePeriod(m_syt_interval);
+    m_data_buffer->setNominalRate(m_ticks_per_frame);
+    
+    m_data_buffer->prepare();
 
 	// set the parameters of ports we can:
 	// we want the audio ports to be period buffered,
@@ -1670,106 +1594,23 @@ bool AmdtpReceiveStreamProcessor::prepareForStop() {
 }
 
 bool AmdtpReceiveStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
-    return getFrameCounter() >= (int) nbframes;
+    return m_data_buffer->getFrameCounter() >= (int) nbframes;
 }
 
-bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
+bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes) {
 
-    m_PeriodStat.mark(freebob_ringbuffer_read_space(m_event_buffer)/(4*m_dimension));
+    m_PeriodStat.mark(m_data_buffer->getBufferFill());
 
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-	
-	int xrun;
-	unsigned int offset=0;
-	
-	freebob_ringbuffer_data_t vec[2];
-	// we received one period of frames on each connection
-	// this is period_size*dimension of events
-
-	unsigned int events2read=nbframes*m_dimension;
-	unsigned int bytes2read=events2read*sizeof(quadlet_t);
-	/* read events2read bytes from the ringbuffer 
-	*  first see if it can be done in one read. 
-	*  if so, ok. 
-	*  otherwise read up to a multiple of clusters directly from the buffer
-	*  then do the buffer wrap around using ringbuffer_read
-	*  then read the remaining data directly from the buffer in a third pass 
-	*  Make sure that we cannot end up on a non-cluster aligned position!
-	*/
-	unsigned int cluster_size=m_dimension*sizeof(quadlet_t);
-	
-	while(bytes2read>0) {
-		unsigned int framesread=(nbframes*cluster_size-bytes2read)/cluster_size;
-		offset=framesread;
-		
-		int bytesread=0;
-
-		freebob_ringbuffer_get_read_vector(m_event_buffer, vec);
-			
-		if(vec[0].len==0) { // this indicates an empty event buffer
-			debugError("RCV: Event buffer underrun in processor %p\n",this);
-			break;
-		}
-			
-		/* if we don't take care we will get stuck in an infinite loop
-		* because we align to a cluster boundary later
-		* the remaining nb of bytes in one read operation can be smaller than one cluster
-		* this can happen because the ringbuffer size is always a power of 2
-			*/
-		if(vec[0].len<cluster_size) {
-			// use the ringbuffer function to read one cluster 
-			// the read function handles wrap around
-			freebob_ringbuffer_read(m_event_buffer,m_cluster_buffer,cluster_size);
-
-			xrun = receiveBlock(m_cluster_buffer, 1, offset);
-				
-			if(xrun<0) {
-				// xrun detected
-				debugError("RCV: Frame buffer overrun in processor %p\n",this);
-				break;
-			}
-				
-				// we advanced one cluster_size
-			bytes2read-=cluster_size;
-				
-		} else { // 
-			
-			if(bytes2read>vec[0].len) {
-					// align to a cluster boundary
-				bytesread=vec[0].len-(vec[0].len%cluster_size);
-			} else {
-				bytesread=bytes2read;
-			}
-				
-			xrun = receiveBlock(vec[0].buf, bytesread/cluster_size, offset);
-				
-			if(xrun<0) {
-					// xrun detected
-				debugError("RCV: Frame buffer overrun in processor %p\n",this);
-				break;
-			}
-
-			freebob_ringbuffer_read_advance(m_event_buffer, bytesread);
-			bytes2read -= bytesread;
-		}
-			
-		// the bytes2read should always be cluster aligned
-		assert(bytes2read%cluster_size==0);
-	}
+    // ask the buffer to process nbframes of frames
+    // using it's registered client's processReadBlock(),
+    // which should be ours
+    m_data_buffer->blockProcessReadFrames(nbframes);
 	
     // update the frame counter such that it reflects the new value,
-    // and also update the buffer head timestamp as we pull frames
     // done in the SP base class
-
-    // wrap the timestamp if nescessary
-    if (ts < 0) {
-        ts += TICKS_PER_SECOND * 128L;
-    } else if (ts >= TICKS_PER_SECOND * 128L) {
-        ts -= TICKS_PER_SECOND * 128L;
-    }
     
-    if (!StreamProcessor::getFrames(nbframes, ts)) {
-        debugError("Could not do StreamProcessor::getFrames(%d, %llu)\n", nbframes, ts);
+    if (!StreamProcessor::getFrames(nbframes)) {
+        debugError("Could not do StreamProcessor::getFrames(%d)\n", nbframes);
         return false;
     }
     
@@ -1779,10 +1620,12 @@ bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 /**
  * \brief write received events to the stream ringbuffers.
  */
-int AmdtpReceiveStreamProcessor::receiveBlock(char *data, 
+bool AmdtpReceiveStreamProcessor::processReadBlock(char *data, 
 					   unsigned int nevents, unsigned int offset)
 {
-	int problem=0;
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p)->processReadBlock(%u, %u)\n",this,nevents,offset);
+	
+	bool no_problem=true;
 
 	for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
@@ -1800,7 +1643,7 @@ int AmdtpReceiveStreamProcessor::receiveBlock(char *data,
 		case AmdtpPortInfo::E_MBLA:
 			if(decodeMBLAEventsToPort(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
 				debugWarning("Could not decode packet MBLA to port %s",(*it)->getName().c_str());
-				problem=1;
+				no_problem=false;
 			}
 			break;
 		case AmdtpPortInfo::E_SPDIF: // still unimplemented
@@ -1812,7 +1655,7 @@ int AmdtpReceiveStreamProcessor::receiveBlock(char *data,
 			break;
 		}
     }
-	return problem;
+    return no_problem;
 
 }
 

@@ -391,8 +391,9 @@ bool StreamProcessorManager::syncStartAll() {
     uint64_t now=m_SyncSource->getTimeNow(); // fixme: should be in usecs, not ticks
     
     // FIXME: this should not be in cycles, but in 'time'
-    unsigned int enable_at=TICKS_TO_CYCLES(now)+300;
-        
+    unsigned int enable_at=TICKS_TO_CYCLES(now)+2000;
+    if (enable_at > 8000) enable_at -= 8000;
+
     debugOutput( DEBUG_LEVEL_VERBOSE, " Sync Source StreamProcessor...\n");
     if (!m_SyncSource->prepareForEnable()) {
             debugFatal("Could not prepare Sync Source StreamProcessor for enable()...\n");
@@ -834,9 +835,11 @@ bool StreamProcessorManager::waitForPeriod() {
 #ifdef DEBUG
         if ((*it)->xrunOccurred()) {
             debugWarning("Xrun on RECV SP %p due to ISO xrun\n",*it);
+            (*it)->dumpInfo();
         }
         if (!((*it)->canClientTransferFrames(m_period))) {
             debugWarning("Xrun on RECV SP %p due to buffer xrun\n",*it);
+            (*it)->dumpInfo();
         }
 #endif
         
@@ -926,7 +929,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
             }
             #endif
     
-            if(!(*it)->getFrames(m_period, (int64_t)m_time_of_transfer)) {
+            if(!(*it)->getFrames(m_period)) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)",
                             m_period, m_time_of_transfer,*it);
                     return false; // buffer underrun

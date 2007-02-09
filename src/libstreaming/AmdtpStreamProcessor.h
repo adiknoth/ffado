@@ -34,9 +34,9 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "StreamProcessor.h"
+
 #include "cip.h"
 #include <libiec61883/iec61883.h>
-#include "libutil/ringbuffer.h"
 #include <pthread.h>
 
 #define AMDTP_MAX_PACKET_SIZE 2048
@@ -116,11 +116,10 @@ public:
     void setVerboseLevel(int l);
     
 protected:
+    bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
 
     struct iec61883_cip m_cip_status;
-
-    freebob_ringbuffer_t * m_event_buffer;
-    char* m_cluster_buffer;
+    
     int m_dimension;
     unsigned int m_syt_interval;
 
@@ -183,7 +182,7 @@ public:
     bool prepareForStart();
 	
     bool canClientTransferFrames(unsigned int nbframes);
-    bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
+    bool getFrames(unsigned int nbframes); ///< transfer the buffer contents to the client
 
     // We have 1 period of samples = m_period
     // this period takes m_period/m_framerate seconds of time
@@ -207,13 +206,12 @@ public:
             
 protected:
 
-    int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
+    bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
+
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
     
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
-    freebob_ringbuffer_t * m_event_buffer;
-    char* m_cluster_buffer;
     int m_dimension;
     unsigned int m_syt_interval;
     

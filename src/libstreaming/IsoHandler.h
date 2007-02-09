@@ -71,7 +71,7 @@ class IsoHandler : public FreebobUtil::TimeSource
         virtual bool start(int cycle);
         virtual bool stop();
         
-        int iterate() { if(m_handle) return raw1394_loop_iterate(m_handle); else return -1; };
+        bool iterate();
         
         void setVerboseLevel(int l);
 

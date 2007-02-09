@@ -45,7 +45,7 @@ noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
 	libutil/Atomic.h libutil/cycles.h libutil/DelayLockedLoop.h libutil/PosixThread.h \
 	libutil/ringbuffer.h libutil/PacketBuffer.h libutil/StreamStatistics.h \
 	libutil/serialize.h libutil/SystemTimeSource.h libutil/Thread.h libutil/Time.h \
-	libutil/TimeSource.h
+	libutil/TimeSource.h libutil/TimestampedBuffer.h
 
 libfreebob_la_SOURCES = \
         configrom.cpp \
@@ -104,7 +104,8 @@ libfreebob_la_SOURCES = \
         libutil/StreamStatistics.cpp \
         libutil/SystemTimeSource.cpp \
         libutil/Time.c \
-        libutil/TimeSource.cpp
+        libutil/TimeSource.cpp \
+        libutil/TimestampedBuffer.cpp
 
 libfreebob_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\

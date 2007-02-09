@@ -135,6 +135,23 @@ IsoHandler::~IsoHandler() {
     if (m_TimeSource) delete m_TimeSource;
 }
 
+bool IsoHandler::iterate() {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "IsoHandler (%p) iterate...\n",this);
+
+    if(m_handle) {
+        if(raw1394_loop_iterate(m_handle)) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, 
+                 "IsoHandler (%p): Failed to iterate handler: %s\n",
+                 this,strerror(errno));
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        return false; 
+    }
+}
+
 bool
 IsoHandler::init()
 {
