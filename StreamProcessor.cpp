@@ -51,35 +51,32 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 	, m_disabled(true)
 	, m_is_disabled(true)
 	, m_cycle_to_enable_at(0)
-	, m_framecounter(0)
 	, m_SyncSource(NULL)
 	, m_ticks_per_frame(0)
 {
+    // create the timestamped buffer and register ourselves as its client
+    m_data_buffer=new FreebobUtil::TimestampedBuffer(this);
 
 }
 
 StreamProcessor::~StreamProcessor() {
-
+    if (m_data_buffer) delete m_data_buffer;
 }
 
 void StreamProcessor::dumpInfo()
 {
-    int64_t diff=(int64_t)m_buffer_head_timestamp - (int64_t)m_buffer_tail_timestamp;
-
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
     
     IsoStream::dumpInfo();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter         : %d\n", m_framecounter);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer head timestamp : %011llu\n",m_buffer_head_timestamp);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer tail timestamp : %011llu\n",m_buffer_tail_timestamp);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Head - Tail           : %011lld\n",diff);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011u\n",m_handler->getCycleTimerTicks());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %d\n", m_xruns);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running               : %d\n", m_running);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
+    
+    m_data_buffer->dumpInfo();
     
 //     m_PeriodStat.dumpInfo();
 //     m_PacketStat.dumpInfo();
@@ -91,8 +88,8 @@ bool StreamProcessor::init()
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
     
-    pthread_mutex_init(&m_framecounter_lock, NULL);
-
+    m_data_buffer->init();
+    
     return IsoStream::init();
 }
 
@@ -104,8 +101,12 @@ bool StreamProcessor::reset() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
 
-    resetFrameCounter();
-
+    // reset the event buffer, discard all content
+    if (!m_data_buffer->reset()) {
+        debugFatal("Could not reset data buffer\n");
+        return false;
+    }
+    
     resetXrunCounter();
 
     // loop over the ports to reset them
@@ -124,35 +125,23 @@ bool StreamProcessor::reset() {
 }
     
 bool StreamProcessor::prepareForEnable() {
-    int64_t diff=(int64_t)m_buffer_head_timestamp - (int64_t)m_buffer_tail_timestamp;
-    
     debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForEnable for (%p)\n",this);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Frame Counter         : %05d\n",m_framecounter);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer head timestamp : %011llu\n",m_buffer_head_timestamp);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer tail timestamp : %011llu\n",m_buffer_tail_timestamp);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Head - Tail           : %011lld\n",diff);
     debugOutput(DEBUG_LEVEL_VERBOSE," Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    m_data_buffer->dumpInfo();
     return true;
 }
 
 bool StreamProcessor::prepareForDisable() {
-    int64_t diff=(int64_t)m_buffer_head_timestamp - (int64_t)m_buffer_tail_timestamp;
-    
     debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForDisable for (%p)\n",this);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Frame Counter         : %05d\n",m_framecounter);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer head timestamp : %011llu\n",m_buffer_head_timestamp);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Buffer tail timestamp : %011llu\n",m_buffer_tail_timestamp);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Head - Tail           : %011lld\n",diff);
     debugOutput(DEBUG_LEVEL_VERBOSE," Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    m_data_buffer->dumpInfo();
     return true;
-
 }
 
 bool StreamProcessor::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
-// TODO: implement
-
+	
 	// init the ports
 	
 	if(!m_manager) {
@@ -190,7 +179,7 @@ bool StreamProcessor::prepare() {
 bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
 
 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Putting %d frames for %llu into frame buffer...\n", nbframes,ts);
-        incrementFrameCounter(nbframes, ts);
+        m_data_buffer->incrementFrameCounter(nbframes, ts);
 	return true;
 }
 
@@ -201,14 +190,12 @@ bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
  * buffer. This is for framecounter & timestamp bookkeeping.
  *
  * @param nbframes the number of frames that are read from the internal buffers
- * @param ts the new timestamp of the 'head' of the buffer, i.e. the first sample
- *           present in the buffer.
  * @return true if successful
  */
-bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
+bool StreamProcessor::getFrames(unsigned int nbframes) {
 
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer at (%011lld)...\n", nbframes, ts);
-        decrementFrameCounter(nbframes, ts);
+	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer...\n", nbframes);
+        m_data_buffer->decrementFrameCounter(nbframes);
 	return true;
 }
 
@@ -262,140 +249,6 @@ bool StreamProcessor::disable()  {
 bool StreamProcessor::setSyncSource(StreamProcessor *s) {
     m_SyncSource=s;
     return true;
-}
-
-/**
- * Decrements the frame counter, in a atomic way. This
- * also sets the buffer head timestamp
- * is thread safe.
- */
-void StreamProcessor::decrementFrameCounter(int nbframes, uint64_t new_timestamp) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer head timestamp for (%p) to %11llu\n",
-                this, new_timestamp);
-                
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_framecounter -= nbframes;
-    m_buffer_head_timestamp = new_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-
-/**
- * Increments the frame counter, in a atomic way.
- * also sets the buffer tail timestamp
- * This is thread safe.
- */
-void StreamProcessor::incrementFrameCounter(int nbframes, uint64_t new_timestamp) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to %11llu\n",
-                this, new_timestamp);
-    
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_framecounter += nbframes;
-    m_buffer_tail_timestamp = new_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-    
-}
-
-/**
- * Sets the buffer tail timestamp (in usecs)
- * This is thread safe.
- */
-void StreamProcessor::setBufferTailTimestamp(uint64_t new_timestamp) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to %11llu\n",
-                this, new_timestamp);
-    
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_buffer_tail_timestamp = new_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-
-/**
- * Sets the buffer head timestamp (in usecs)
- * This is thread safe.
- */
-void StreamProcessor::setBufferHeadTimestamp(uint64_t new_timestamp) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer head timestamp for (%p) to %11llu\n",
-                this, new_timestamp);
-
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_buffer_head_timestamp = new_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-
-/**
- * Sets both the buffer head and tail timestamps (in usecs)
- * (avoids multiple mutex lock/unlock's)
- * This is thread safe.
- */
-void StreamProcessor::setBufferTimestamps(uint64_t new_head, uint64_t new_tail) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer head timestamp for (%p) to %11llu\n",
-                this, new_head);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    and buffer tail timestamp for (%p) to %11llu\n",
-                this, new_tail);
-   
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_buffer_head_timestamp = new_head;
-    m_buffer_tail_timestamp = new_tail;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-/**
- * \brief return the timestamp of the first frame in the buffer
- * 
- * This function returns the timestamp of the very first sample in
- * the StreamProcessor's buffer. This is useful for slave StreamProcessors 
- * to find out what the base for their timestamp generation should
- * be. It also returns the framecounter value for which this timestamp
- * is valid.
- *
- * The system is built in such a way that we assume that the processing
- * of the buffers doesn't take any time. Assume we have a buffer transfer at 
- * time T1, meaning that the last sample of this buffer occurs at T1. As 
- * processing does not take time, we don't have to add anything to T1. When
- * transferring the processed buffer to the xmit processor, the timestamp
- * of the last sample is still T1.
- *
- * When starting the streams, we don't have any information on this last
- * timestamp. We prefill the buffer at the xmit side, and we should find
- * out what the timestamp for the last sample in the buffer is. If we sync
- * on a receive SP, we know that the last prefilled sample corresponds with
- * the first sample received - 1 sample duration. This is the same as if the last
- * transfer from iso to client would have emptied the receive buffer.
- *
- *
- * @param ts address to store the timestamp in
- * @param fc address to store the associated framecounter in
- */
-void StreamProcessor::getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc) {
-    pthread_mutex_lock(&m_framecounter_lock);
-    *fc = m_framecounter;
-    *ts = m_buffer_head_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-        
-/**
- * \brief return the timestamp of the last frame in the buffer
- * 
- * This function returns the timestamp of the last frame in
- * the StreamProcessor's buffer. It also returns the framecounter 
- * value for which this timestamp is valid.
- *
- * @param ts address to store the timestamp in
- * @param fc address to store the associated framecounter in
- */
-void StreamProcessor::getBufferTailTimestamp(uint64_t *ts, uint64_t *fc) {
-    pthread_mutex_lock(&m_framecounter_lock);
-    *fc = m_framecounter;
-    *ts = m_buffer_tail_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
-}
-
-/**
- * Resets the frame counter, in a atomic way. This
- * is thread safe.
- */
-void StreamProcessor::resetFrameCounter() {
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_framecounter = 0;
-    pthread_mutex_unlock(&m_framecounter_lock);
 }
 
 /**

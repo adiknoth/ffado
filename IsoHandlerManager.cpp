@@ -44,7 +44,7 @@ IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
 IsoHandlerManager::IsoHandlerManager() :
    m_State(E_Created),
-   m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0),
+   m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0),
    m_realtime(false), m_priority(0)
 {
 
@@ -322,7 +322,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
 		
-#if 1
+#if 0
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
 		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
 		// occurs at a period boundary (optimal CPU use)

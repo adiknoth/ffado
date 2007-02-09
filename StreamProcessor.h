@@ -37,6 +37,8 @@
 
 #include "libutil/StreamStatistics.h"
 
+#include "libutil/TimestampedBuffer.h"
+
 namespace FreebobStreaming {
 
 class StreamProcessorManager;
@@ -50,7 +52,8 @@ class StreamProcessorManager;
  
 */
 class StreamProcessor : public IsoStream, 
-                        public PortManager {
+                        public PortManager, 
+                        public FreebobUtil::TimestampedBufferClient {
 
     friend class StreamProcessorManager;
 
@@ -85,7 +88,7 @@ public:
     bool isEnabled() {return !m_is_disabled;};
 
     virtual bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from client
-    virtual bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
+    virtual bool getFrames(unsigned int nbframes); ///< transfer the buffer contents to the client
 
     virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
@@ -103,8 +106,10 @@ public:
     virtual bool prepareForEnable();
     virtual bool prepareForDisable();
 
+public:
+    FreebobUtil::TimestampedBuffer *m_data_buffer;
+
 protected:
-	
 
     void setManager(StreamProcessorManager *manager) {m_manager=manager;};
     void clearManager() {m_manager=0;};
@@ -145,12 +150,6 @@ protected:
          */
         virtual bool canClientTransferFrames(unsigned int nframes) {return true;};
         
-        int getFrameCounter() {return m_framecounter;};
-    
-        void decrementFrameCounter(int nbframes, uint64_t new_timestamp);
-        void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
-        void resetFrameCounter();
-        
         /**
          * \brief return the time until the next period boundary (in microseconds)
          *
@@ -187,41 +186,18 @@ protected:
         
         uint64_t getTimeNow();
         
-        void getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc);
-        void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
-        
-        void setBufferTailTimestamp(uint64_t new_timestamp);
-        void setBufferHeadTimestamp(uint64_t new_timestamp);
-        void setBufferTimestamps(uint64_t new_head, uint64_t new_tail);
-        
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame() {return m_ticks_per_frame;};
         
-        unsigned int getLastCycle() {return m_last_cycle;};
+        int getLastCycle() {return m_last_cycle;};
     
-    private:
-        // the framecounter gives the number of frames in the buffer
-        signed int m_framecounter;
-        
-        // the buffer tail timestamp gives the timestamp of the last frame
-        // that was put into the buffer
-        uint64_t   m_buffer_tail_timestamp;
-        
-        // the buffer head timestamp gives the timestamp of the first frame
-        // that was put into the buffer
-        uint64_t   m_buffer_head_timestamp;
         
     protected:
         StreamProcessor *m_SyncSource;
         
         float m_ticks_per_frame;
         
-        unsigned int m_last_cycle;
-
-    private:
-        // this mutex protects the access to the framecounter
-        // and the buffer head timestamp.
-        pthread_mutex_t m_framecounter_lock;
+        int m_last_cycle;
 
 };
 
@@ -251,8 +227,9 @@ public:
  	virtual void setVerboseLevel(int l);
 
 protected:
+    bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
 
-     DECLARE_DEBUG_MODULE;
+    DECLARE_DEBUG_MODULE;
 
 };
 
@@ -281,8 +258,9 @@ public:
  	virtual void setVerboseLevel(int l);
 
 protected:
+    bool processReadBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
 
-     DECLARE_DEBUG_MODULE;
+    DECLARE_DEBUG_MODULE;
 
 
 };
