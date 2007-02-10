@@ -21,7 +21,8 @@ INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
 	$(LIBAVC1394_CFLAGS)
 
 noinst_PROGRAMS = test-freebob test-extplugcmd test-fw410 freebob-server \
- 		test-volume test-mixer test-cycletimer test-sytmonitor
+ 		test-volume test-mixer test-cycletimer test-sytmonitor \
+ 		test-timestampedbuffer
 
 noinst_HEADERS = 
 
@@ -48,7 +49,6 @@ freebob_server_SOURCES = freebob-server.c
 freebob_server_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS) \
 	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
 
-
 #TESTS_ENVIRONMENT
 TEST = test-freebob
 
@@ -60,3 +60,7 @@ test_sytmonitor_LDADD = $(top_builddir)/src/libfreebob.la $(LIBIEC61883_LIBS) \
 	$(LIBRAW1394_LIBS) $(LIBAVC1394_LIBS)
 test_sytmonitor_SOURCES = test-sytmonitor.cpp SytMonitor.cpp \
                           SytMonitor.h
+
+test_timestampedbuffer_LDADD = $(top_builddir)/src/libfreebob.la $(LIBIEC61883_LIBS) \
+	$(LIBRAW1394_LIBS) $(LIBAVC1394_LIBS)
+test_timestampedbuffer_SOURCES = test-timestampedbuffer.cpp

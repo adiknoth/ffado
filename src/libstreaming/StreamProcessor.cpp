@@ -165,39 +165,39 @@ bool StreamProcessor::prepare() {
 
 }
 
-/**
- * @brief Notify the StreamProcessor that frames were written
- *
- * This notifies the StreamProcessor of the fact that frames were written to the internal
- * buffer. This is for framecounter & timestamp bookkeeping.
- *
- * @param nbframes the number of frames that are written to the internal buffers
- * @param ts the new timestamp of the 'tail' of the buffer, i.e. the last sample
- *           present in the buffer.
- * @return true if successful
- */
-bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
+// /**
+//  * @brief Notify the StreamProcessor that frames were written
+//  *
+//  * This notifies the StreamProcessor of the fact that frames were written to the internal
+//  * buffer. This is for framecounter & timestamp bookkeeping.
+//  *
+//  * @param nbframes the number of frames that are written to the internal buffers
+//  * @param ts the new timestamp of the 'tail' of the buffer, i.e. the last sample
+//  *           present in the buffer.
+//  * @return true if successful
+//  */
+// bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
+// 
+// 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Putting %d frames for %llu into frame buffer...\n", nbframes,ts);
+// //         m_data_buffer->incrementFrameCounter(nbframes, ts);
+// 	return true;
+// }
 
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Putting %d frames for %llu into frame buffer...\n", nbframes,ts);
-        m_data_buffer->incrementFrameCounter(nbframes, ts);
-	return true;
-}
-
-/**
- * @brief Notify the StreamProcessor that frames were read
- *
- * This notifies the StreamProcessor of the fact that frames were read from the internal
- * buffer. This is for framecounter & timestamp bookkeeping.
- *
- * @param nbframes the number of frames that are read from the internal buffers
- * @return true if successful
- */
-bool StreamProcessor::getFrames(unsigned int nbframes) {
-
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer...\n", nbframes);
-        m_data_buffer->decrementFrameCounter(nbframes);
-	return true;
-}
+// /**
+// * @brief Notify the StreamProcessor that frames were read
+// *
+// * This notifies the StreamProcessor of the fact that frames were read from the internal
+// * buffer. This is for framecounter & timestamp bookkeeping.
+// *
+// * @param nbframes the number of frames that are read from the internal buffers
+// * @return true if successful
+// */
+// bool StreamProcessor::getFrames(unsigned int nbframes) {
+// 
+// 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer...\n", nbframes);
+// //         m_data_buffer->decrementFrameCounter(nbframes);
+// 	return true;
+// }
 
 uint64_t StreamProcessor::getTimeNow() {
     return m_handler->getCycleTimerTicks();

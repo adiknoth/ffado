@@ -1,5 +1,5 @@
 /***************************************************************************
-Copyright (C) 2005 by Pieter Palmers   *
+Copyright (C) 2007 by Pieter Palmers   *
                                                                         *
 This program is free software; you can redistribute it and/or modify  *
 it under the terms of the GNU General Public License as published by  *
@@ -40,7 +40,7 @@ Free Software Foundation, Inc.,                                       *
 #include "src/libutil/PosixThread.h"
 #include "src/libutil/SystemTimeSource.h"
 
-#include "pthread.h"
+#include <pthread.h>
 
 using namespace FreebobStreaming;
 using namespace FreebobUtil;

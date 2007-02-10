@@ -391,10 +391,10 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         
         // update the frame counter such that it reflects the new value
         // done in the SP base class
-        if (!StreamProcessor::getFrames(nevents)) {
-            debugError("Could not do StreamProcessor::getFrames(%d)\n",nevents);
-             return RAW1394_ISO_ERROR;
-        }
+//         if (!StreamProcessor::getFrames(nevents)) {
+//             debugError("Could not do StreamProcessor::getFrames(%d)\n",nevents);
+//              return RAW1394_ISO_ERROR;
+//         }
         
         return RAW1394_ISO_OK;    
     } else {
@@ -470,18 +470,18 @@ bool AmdtpTransmitStreamProcessor::prefill() {
     // also initialize the base timestamp
     // this base timestamp is the timestamp of the
     // last buffer transfer.
-    uint64_t ts;
-    uint64_t fc;
-    m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts, &fc); // thread safe
+//     uint64_t ts;
+//     uint64_t fc;
+//     m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts, &fc); // thread safe
 
     // update the frame counter such that it reflects the buffer content,
     // the buffer tail timestamp is initialized when the SP is enabled
     // done in the SP base class
-    if (!StreamProcessor::putFrames(m_ringbuffer_size_frames, ts)) {
-        debugError("Could not do StreamProcessor::putFrames(%d, %011llu)\n",
-            m_ringbuffer_size_frames,ts);
-        return false;
-    }
+//     if (!StreamProcessor::putFrames(m_ringbuffer_size_frames, ts)) {
+//         debugError("Could not do StreamProcessor::putFrames(%d, %011llu)\n",
+//             m_ringbuffer_size_frames,ts);
+//         return false;
+//     }
 
     return true;
 }
@@ -581,6 +581,8 @@ bool AmdtpTransmitStreamProcessor::prepare() {
     
     m_data_buffer->setUpdatePeriod(m_period);
     m_data_buffer->setNominalRate(m_ticks_per_frame);
+    
+    m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
     
     m_data_buffer->prepare();
 
@@ -729,7 +731,7 @@ bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int nframes) {
     transmitSilenceBlock(dummybuffer, nframes, 0);
 
     // add the silence data to the ringbuffer
-    if(m_data_buffer->writeFrames(nframes, dummybuffer)) { 
+    if(m_data_buffer->writeFrames(nframes, dummybuffer, 0)) { 
         retval=true;
     } else {
         debugWarning("Could not write to event buffer\n");
@@ -783,10 +785,10 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
     // update the frame counter such that it reflects the new value,
     // and also update the buffer tail timestamp
     // done in the SP base class
-    if (!StreamProcessor::putFrames(nbframes, timestamp)) {
-        debugError("Could not do StreamProcessor::putFrames(%d, %llu)\n",nbframes, timestamp);
-        return false;
-    }
+//     if (!StreamProcessor::putFrames(nbframes, timestamp)) {
+//         debugError("Could not do StreamProcessor::putFrames(%d, %llu)\n",nbframes, timestamp);
+//         return false;
+//     }
 
     return true;
 }
@@ -1231,7 +1233,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         
         //=> process the packet
         // add the data payload to the ringbuffer
-        if(m_data_buffer->writeFrames(nevents, (char *)(data+8))) { 
+        if(m_data_buffer->writeFrames(nevents, (char *)(data+8), m_last_timestamp)) { 
             retval=RAW1394_ISO_OK;
             
             // process all ports that should be handled on a per-packet base
@@ -1274,10 +1276,10 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         // update the frame counter such that it reflects the new value,
         // and also update the buffer tail timestamp, as we add new frames
         // done in the SP base class
-        if (!StreamProcessor::putFrames(nevents, m_last_timestamp)) {
-            debugError("Could not do StreamProcessor::putFrames(%d, %llu)\n",nevents, m_last_timestamp);
-            return RAW1394_ISO_ERROR;
-        }
+//         if (!StreamProcessor::putFrames(nevents, m_last_timestamp)) {
+//             debugError("Could not do StreamProcessor::putFrames(%d, %llu)\n",nevents, m_last_timestamp);
+//             return RAW1394_ISO_ERROR;
+//         }
 
     } 
     
@@ -1496,6 +1498,8 @@ bool AmdtpReceiveStreamProcessor::prepare() {
     m_data_buffer->setUpdatePeriod(m_syt_interval);
     m_data_buffer->setNominalRate(m_ticks_per_frame);
     
+    m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
+    
     m_data_buffer->prepare();
 
 	// set the parameters of ports we can:
@@ -1605,15 +1609,15 @@ bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes) {
     // using it's registered client's processReadBlock(),
     // which should be ours
     m_data_buffer->blockProcessReadFrames(nbframes);
-	
+
     // update the frame counter such that it reflects the new value,
     // done in the SP base class
-    
+/*    
     if (!StreamProcessor::getFrames(nbframes)) {
         debugError("Could not do StreamProcessor::getFrames(%d)\n", nbframes);
         return false;
-    }
-    
+    }*/
+
     return true;
 }
 

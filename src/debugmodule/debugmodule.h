@@ -198,6 +198,8 @@ public:
     
     bool setMgrDebugLevel( std::string name, debug_level_t level );
 
+    void sync();
+
 protected:
     bool registerModule( DebugModule& debugModule );
     bool unregisterModule( DebugModule& debugModule );

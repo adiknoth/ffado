@@ -269,6 +269,11 @@ DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
     return false;
 }
 
+void
+DebugModuleManager::sync()
+{
+    mb_flush();
+}
 
 void
 DebugModuleManager::mb_flush()
