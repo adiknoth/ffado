@@ -35,14 +35,58 @@ namespace FreebobUtil {
 
 class TimestampedBufferClient;
 
+/**
+ * \brief Class implementing a frame buffer that is time-aware
+ *
+ * This class implements a buffer that is time-aware. Whenever new frames 
+ * are written to the buffer, the timestamp corresponding to the last frame
+ * in the buffer is updated. This allows to calculate the timestamp of any
+ * other frame in the buffer.
+ *
+ * The buffer is a frame buffer, having the following parameters defining
+ * it's behaviour:
+ * - buff_size: buffer size in frames (setBufferSize())
+ * - events_per_frame: the number of events per frame (setEventsPerFrame())
+ * - event_size: the storage size of the events (in bytes) (setEventSize())
+ *
+ * The total size of the buffer (in bytes) is at least 
+ * buff_size*events_per_frame*event_size.
+ *
+ * Timestamp tracking is done by requiring that a timestamp is specified every
+ * time frames are added to the buffer. In combination with the buffer fill and
+ * the frame rate (calculated internally), this allows to calculate the timestamp
+ * of any frame in the buffer. In order to initialize the internal data structures,
+ * the setNominalRate() and setUpdatePeriod() functions are provided.
+ *
+ * \note Currently the class only supports fixed size writes of size update_period.
+ *       This can change in the future, implementation ideas are already in place.
+ *
+ * The TimestampedBuffer class is time unit agnostic. It can handle any time unit
+ * as long as it fits in a 64 bit unsigned integer. The buffer supports wrapped 
+ * timestamps using (...).
+ *
+ * There are two methods of reading and writing to the buffer. 
+ *
+ * The first method uses conventional readFrames() and writeFrames() functions.
+ *
+ * The second method makes use of the TimestampedBufferClient interface. When a 
+ * TimestampedBuffer is created, it is required that a TimestampedBufferClient is
+ * registered. This client implements the processReadBlock and processWriteBlock
+ * functions. These are block processing 'callbacks' that allow zero-copy processing
+ * of the buffer contents. In order to initiate block processing, the
+ * blockProcessWriteFrames and blockProcessReadFrames functions are provided by 
+ * TimestampedBuffer.
+ *
+ */
 class TimestampedBuffer {
 
 public:
 
+
     TimestampedBuffer(TimestampedBufferClient *);
     virtual ~TimestampedBuffer();
     
-    bool writeFrames(unsigned int nbframes, char *data);
+    bool writeFrames(unsigned int nbframes, char *data, uint64_t ts);
     bool readFrames(unsigned int nbframes, char *data);
     
     bool blockProcessWriteFrames(unsigned int nbframes, int64_t ts);
@@ -56,30 +100,33 @@ public:
     bool setEventsPerFrame(unsigned int s);
     bool setBufferSize(unsigned int s);
     
+    bool setWrapValue(uint64_t w);
+    
     unsigned int getBufferFill();
     
     // timestamp stuff
     int getFrameCounter() {return m_framecounter;};
 
-    void decrementFrameCounter(int nbframes);
-    void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
-    void resetFrameCounter();
-    
     void getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc);
     void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
     
     void setBufferTailTimestamp(uint64_t new_timestamp);
    
     // dll stuff
-    void setNominalRate(double r) {m_nominal_rate=r;};
-    double getRate() {return m_dll_e2;};
+    bool setNominalRate(float r);
+    float getRate();
     
-    void setUpdatePeriod(unsigned int t) {m_update_period=t;};
+    bool setUpdatePeriod(unsigned int t);
     
     // misc stuff
     void dumpInfo();
-    
-    
+    void setVerboseLevel(int l) {setDebugLevel(l);};
+
+private:
+    void decrementFrameCounter(int nbframes);
+    void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
+    void resetFrameCounter();
+
 protected:
 
     freebob_ringbuffer_t * m_event_buffer;
@@ -90,6 +137,8 @@ protected:
     unsigned int m_buffer_size; // the number of frames in the buffer
     unsigned int m_bytes_per_frame;
     unsigned int m_bytes_per_buffer;
+    
+    uint64_t m_wrap_at; // value to wrap at
     
     TimestampedBufferClient *m_Client;
 
@@ -116,10 +165,13 @@ private:
     double m_dll_b;
     double m_dll_c;
     
-    double m_nominal_rate;
+    float m_nominal_rate;
     unsigned int m_update_period;
 };
 
+/**
+ * \brief Interface to be implemented by TimestampedBuffer clients
+ */
 class TimestampedBufferClient {
     public:
         TimestampedBufferClient() {};
