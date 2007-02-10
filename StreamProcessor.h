@@ -87,8 +87,8 @@ public:
     bool disable(); ///< disable the stream processing 
     bool isEnabled() {return !m_is_disabled;};
 
-    virtual bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from client
-    virtual bool getFrames(unsigned int nbframes); ///< transfer the buffer contents to the client
+    virtual bool putFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents from client
+    virtual bool getFrames(unsigned int nbframes) = 0; ///< transfer the buffer contents to the client
 
     virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
@@ -174,7 +174,7 @@ protected:
          * \return the time in usecs
          */
         virtual uint64_t getTimeAtPeriodUsecs() = 0;
-        
+
         /**
          * \brief return the time of the next period boundary (in internal units) 
          *
@@ -183,20 +183,19 @@ protected:
          * @return the time in internal units
          */
         virtual uint64_t getTimeAtPeriod() = 0;
-        
+
         uint64_t getTimeNow();
-        
+
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame() {return m_ticks_per_frame;};
-        
+
         int getLastCycle() {return m_last_cycle;};
-    
-        
+
     protected:
         StreamProcessor *m_SyncSource;
-        
+
         float m_ticks_per_frame;
-        
+
         int m_last_cycle;
 
 };
@@ -220,8 +219,9 @@ public:
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) 
 	              {return RAW1394_ISO_STOP;};
-	              
-	virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
+        virtual bool putFrames(unsigned int nbframes, int64_t ts) {return false;};
+	
+        virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped) = 0;
  	virtual void setVerboseLevel(int l);
@@ -250,7 +250,8 @@ public:
 		putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
-		          
+        virtual bool getFrames(unsigned int nbframes) {return false;};
+
 	virtual enum raw1394_iso_disposition 
 		getPacket(unsigned char *data, unsigned int *length,
 	              unsigned char *tag, unsigned char *sy,
