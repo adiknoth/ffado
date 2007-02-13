@@ -169,7 +169,6 @@ int main(int argc, char *argv[])
     SystemTimeSource masterTimeSource;
     
     IsoHandlerManager *m_isoManager=NULL;
-    PosixThread * m_isoManagerThread=NULL;
     
     SytMonitor *monitors[128];
     int64_t stream_offset_ticks[128];
@@ -211,17 +210,11 @@ int main(int argc, char *argv[])
         
     m_isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
             
-// the thread to execute the manager
-    m_isoManagerThread=new PosixThread(
-        m_isoManager, 
-        run_realtime, realtime_prio,
-        PTHREAD_CANCEL_DEFERRED);
-        
-    if(!m_isoManagerThread) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "Could not create iso manager thread\n");
+    if(!m_isoManager->init()) {
+        debugOutput(DEBUG_LEVEL_NORMAL, "Could not init() IsoHandlerManager\n");
         goto finish;
     }
-        
+
         // register monitors
         for (i=0;i<arguments.nb_combos;i++) {
             debugOutput(DEBUG_LEVEL_NORMAL, "Registering SytMonitor %d\n",i);
@@ -269,9 +262,6 @@ int main(int argc, char *argv[])
                 debugOutput(DEBUG_LEVEL_NORMAL, "Could not start handlers...\n");
                 goto finish;
         }
-        
-        // start the runner thread
-        m_isoManagerThread->Start();
         
         if (arguments.realtime) {
             // get rt priority for this thread too.
@@ -457,10 +447,6 @@ int main(int argc, char *argv[])
             goto finish;
         }
         
-        // stop the sync thread
-        debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping ISO manager sync update thread...\n");
-        m_isoManagerThread->Stop();
-        
         // unregister monitors
         for (i=0;i<arguments.nb_combos;i++) {
         debugOutput(DEBUG_LEVEL_NORMAL, "Unregistering SytMonitor %d\n",i);
@@ -472,7 +458,6 @@ int main(int argc, char *argv[])
             delete monitors[i];
     }
         
-        delete m_isoManagerThread;
     delete m_isoManager;
 
 finish:

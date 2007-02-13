@@ -157,6 +157,49 @@ int do_cycletimer_test() {
          debugOutput(DEBUG_LEVEL_NORMAL, "  test6 ok\n");
     }
     
+    int32_t subs;
+    subs=substractTicks(10, 8);
+    if (subs != 2) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, 8) != 2 : %ld\n",
+            subs);
+        failures++;   
+    }
+    
+    subs=substractTicks(10, 12);
+    if (subs != -2) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, 12) != -2 : %ld\n",
+            subs);
+        failures++;   
+    }
+    
+    subs=substractTicks(TICKS_PER_SECOND*128L + 10, 8);
+    if (subs != 2) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(TICKS_PER_SECOND*128L + 10, 8) != 2 : %ld\n",
+            subs);
+        failures++;   
+    }
+    
+    subs=substractTicks(TICKS_PER_SECOND*128L + 10, 12);
+    if (subs != -2) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(TICKS_PER_SECOND*128L + 10, 12) != -2 : %ld\n",
+            subs);
+        failures++;   
+    }
+    
+    subs=substractTicks(10, TICKS_PER_SECOND*128L + 8);
+    if (subs != 2) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, TICKS_PER_SECOND*128L + 8) != 2 : %ld\n",
+            subs);
+        failures++;   
+    }
+    
+    subs=substractTicks(10, TICKS_PER_SECOND*128L + 12);
+    if (subs != -2) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, TICKS_PER_SECOND*128L + 12) != -2 : %ld\n",
+            subs);
+        failures++;   
+    }    
+    
     if (failures) {
         debugOutput(DEBUG_LEVEL_NORMAL, " %d failures\n",failures);
         return -1;
@@ -172,8 +215,7 @@ int main(int argc, char *argv[])
 	run=1;
 	
 	IsoHandlerManager *m_isoManager=NULL;
-    PosixThread * m_isoManagerThread=NULL;
-    
+   
 #ifdef TEST_PORT_0	
     IsoStream *s=NULL;
 #endif
@@ -207,18 +249,13 @@ int main(int argc, char *argv[])
 	}
 	
 	m_isoManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-		
-    // the thread to iterate the manager
- 	m_isoManagerThread=new PosixThread(
- 	      m_isoManager, 
- 	      true, 80,
- 	      PTHREAD_CANCEL_DEFERRED);
- 	      
-	if(!m_isoManagerThread) {
-		debugOutput(DEBUG_LEVEL_NORMAL, "Could not create iso manager thread\n");
+	
+	if(!m_isoManager->init()) {
+		debugOutput(DEBUG_LEVEL_NORMAL, "Could not init() IsoHandlerManager\n");
 		goto finish;
 	}
-
+		
+	
 #ifdef TEST_PORT_0	
 	// add a stream to the manager so that it has something to do
 	s=new IsoStream(IsoStream::EST_Receive, 0);
@@ -297,10 +334,6 @@ int main(int argc, char *argv[])
 		goto finish;
 	}
 
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Starting ISO manager sync update thread...\n");
-	// start the runner thread
-	m_isoManagerThread->Start();
-	
 	debugOutput(DEBUG_LEVEL_NORMAL,   "Starting IsoHandler...\n");
 	if (!m_isoManager->startHandlers(0)) {
 		debugOutput(DEBUG_LEVEL_NORMAL, "Could not start handlers...\n");
@@ -317,10 +350,6 @@ int main(int argc, char *argv[])
 	   debugOutput(DEBUG_LEVEL_NORMAL, "Could not stop ISO handlers\n");
 	   goto finish;
 	}
-	
-	// stop the sync thread
-	debugOutput(DEBUG_LEVEL_NORMAL,   "Stopping ISO manager sync update thread...\n");
-	m_isoManagerThread->Stop();
 	
 #ifdef TEST_PORT_0	
 	if(!m_isoManager->unregisterStream(s)) {
@@ -346,7 +375,6 @@ int main(int argc, char *argv[])
 	delete s2;
 #endif
 	
-	delete m_isoManagerThread;
     delete m_isoManager;
 
 finish:

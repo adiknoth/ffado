@@ -31,6 +31,9 @@
 #ifndef __CYCLETIMER_H__
 #define __CYCLETIMER_H__
 
+#include <inttypes.h>
+#include "debugmodule/debugmodule.h"
+
 #define CSR_CYCLE_TIME            0x200
 #define CSR_REGISTER_BASE  0xfffff0000000ULL
 
@@ -67,5 +70,207 @@
                                        + (TICKS_PER_CYCLE) \
                                       )
 #define CYCLE_TIMER_WRAP_TICKS(x) ((x % TICKS_PER_SECOND))
+
+DECLARE_GLOBAL_DEBUG_MODULE;
+
+/**
+ * @brief Converts a SYT timestamp to a full timestamp in ticks.
+ *
+ * 
+ *
+ * @param syt_timestamp The SYT timestamp as present in the packet
+ * @param rcv_cycle The cycle this timestamp was received on
+ * @param ctr_now The current value of the cycle timer ('now')
+ * @return 
+ */
+static inline uint32_t sytToFullTicks(uint32_t syt_timestamp, unsigned int rcv_cycle, uint32_t ctr_now) {
+    uint32_t timestamp;
+    
+    // reconstruct the full cycle
+    uint32_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
+    uint32_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
+    
+    // the cycletimer has wrapped since this packet was received
+    // we want cc_seconds to reflect the 'seconds' at the point this 
+    // was received
+    if (rcv_cycle>cc_cycles) {
+        if (cc_seconds) {
+            cc_seconds--;
+        } else {
+            // seconds has wrapped around, so we'd better not substract 1
+            // the good value is 127
+            cc_seconds=127;
+        }
+    }
+    
+    // reconstruct the top part of the timestamp using the current cycle number
+    uint32_t rcv_cycle_masked=rcv_cycle & 0xF;
+    uint32_t syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
+    
+    // if this is true, wraparound has occurred, undo this wraparound
+    if(syt_cycle<rcv_cycle_masked) syt_cycle += 0x10;
+    
+    // this is the difference in cycles wrt the cycle the
+    // timestamp was received
+    uint32_t delta_cycles=syt_cycle-rcv_cycle_masked;
+    
+    // reconstruct the cycle part of the timestamp
+    uint32_t new_cycles=rcv_cycle + delta_cycles;
+    
+    // if the cycles cause a wraparound of the cycle timer,
+    // perform this wraparound
+    // and convert the timestamp into ticks
+    if(new_cycles<8000) {
+        timestamp  = new_cycles * TICKS_PER_CYCLE;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+            "Detected wraparound: %d + %d = %d\n",
+            rcv_cycle,delta_cycles,new_cycles);
+        
+        new_cycles-=8000; // wrap around
+#ifdef DEBUG
+        if (new_cycles >= 8000) {
+            debugWarning("insufficient unwrapping\n");
+        }
+#endif
+        timestamp  = new_cycles * TICKS_PER_CYCLE;
+        // add one second due to wraparound
+        timestamp += TICKS_PER_SECOND;
+    }
+    
+    timestamp += CYCLE_TIMER_GET_OFFSET(syt_timestamp);
+    timestamp += cc_seconds * TICKS_PER_SECOND;
+    return timestamp;
+}
+
+/**
+ * @brief Wraps x to the maximum number of ticks
+ *
+ * The input value is wrapped to the maximum value of the cycle
+ * timer, in ticks (128sec * 24576000 ticks/sec).
+ *
+ * @param x time to wrap
+ * @return wrapped time
+ */
+static inline uint32_t wrapAtMaxTicks(uint64_t x) {
+    if (x >= TICKS_PER_SECOND * 128L) {
+        x -= TICKS_PER_SECOND * 128L;
+    }
+
+#ifdef DEBUG
+        if (x >= TICKS_PER_SECOND * 128L) {
+            debugWarning("insufficient wrapping: %llu\n",x);
+        }
+#endif
+
+    return x;
+}
+
+/**
+ * @brief Wraps both at minimum and maximum value for ticks
+ * @param x value to wrap
+ * @return wrapped value
+ */
+static inline uint32_t wrapAtMinMaxTicks(int64_t x) {
+    
+    if (x < 0) {
+        x += TICKS_PER_SECOND * 128L;
+    } else if (x >= TICKS_PER_SECOND * 128L) {
+        x -= TICKS_PER_SECOND * 128L;
+    }
+
+#ifdef DEBUG
+        if (x >= TICKS_PER_SECOND * 128L) {
+            debugWarning("insufficient wrapping (max): %llu\n",x);
+        }
+        if (x < 0) {
+            debugWarning("insufficient wrapping (min): %lld\n",x);
+        }
+#endif
+    return x;
+
+}
+
+/**
+ * @brief Computes a difference between timestamps
+ *
+ * This function computes a difference between timestamps
+ * such that it respects wrapping.
+ *
+ * If x wraps around, but y doesn't, the result of x-y is 
+ * negative and very large. However the real difference is
+ * not large. It can be calculated by unwrapping x and then
+ * calculating x-y.
+ *
+ * @param x First timestamp 
+ * @param y Second timestamp
+ * @return the difference x-y, unwrapped
+ */
+static inline int32_t substractTicks(uint32_t x, uint32_t y) {
+    int64_t diff=(int64_t)x - (int64_t)y;
+    
+    // the maximal difference we allow (64secs)
+    const int64_t max=TICKS_PER_SECOND*64L;
+    
+    if(diff > max) {
+        // this means that y has wrapped, but
+        // x has not. we should unwrap y
+        // by adding TICKS_PER_SECOND*128L, meaning that we should substract
+        // this value from diff
+        diff -= TICKS_PER_SECOND*128L;
+    } else if (diff < -max) {
+        // this means that x has wrapped, but
+        // y has not. we should unwrap x
+        // by adding TICKS_PER_SECOND*128L, meaning that we should add
+        // this value to diff
+        diff += TICKS_PER_SECOND*128L;
+    }
+    
+    return (int32_t)diff;
+    
+}
+
+/**
+ * @brief Computes a sum of timestamps
+ *
+ * This function computes a sum of timestamps in ticks,
+ * wrapping the result if nescessary.
+ *
+ * @param x First timestamp 
+ * @param y Second timestamp
+ * @return the sum x+y, wrapped
+ */
+static inline uint32_t addTicks(uint32_t x, uint32_t y) {
+    uint64_t sum=x+y;
+
+    return wrapAtMaxTicks(sum);
+}
+
+/**
+ * @brief Computes a difference between cycles
+ *
+ * This function computes a difference between cycles
+ * such that it respects wrapping (at 8000 cycles).
+ *
+ * See substractTicks
+ *
+ * @param x First cycle value 
+ * @param y Second cycle value
+ * @return the difference x-y, unwrapped
+ */
+static inline int substractCycles(unsigned int x, unsigned int y) {
+    int diff = x - y;
+    
+    // the maximal difference we allow (64secs)
+    const int max=CYCLES_PER_SECOND/2;
+    
+    if(diff > max) {
+        diff -= CYCLES_PER_SECOND;
+    } else if (diff < -max) {
+        diff += CYCLES_PER_SECOND;
+    }
+    
+    return diff;
+}
 
 #endif // __CYCLETIMER_H__
