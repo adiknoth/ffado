@@ -195,10 +195,34 @@ int do_cycletimer_test() {
     
     subs=substractTicks(10, TICKS_PER_SECOND*128L + 12);
     if (subs != -2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, TICKS_PER_SECOND*128L + 12) != -2 : %ld\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, TICKS_PER_SECOND*128L + 12) != -2 : %l011llu\n",
             subs);
+        failures++;
+    }
+    
+    //---------
+    // now = 10sec, 1380cy, 640ticks
+    
+    uint32_t st=sytRecvToFullTicks(0x1234, 1000, 0x14564280);
+    if (st != 248860212LLU) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  sytToRecvFullTicks(0x1234, 1000, 0x14564280) != 248860212 : %011lu\n",
+            st);
         failures++;   
-    }    
+    }
+    
+    st=sytRecvToFullTicks(0xB2B6, 7000, TICKS_TO_CYCLE_TIMER(3118082282LU));
+    if (st != 3118089910LLU) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  sytToRecvFullTicks(0x1234, 1000, %08X) != 3118089910 : %011lu\n",
+            TICKS_TO_CYCLE_TIMER(3118082282LU), st);
+        failures++;   
+    }
+    
+    st=sytXmitToFullTicks(0xC4EA, 3000, TICKS_TO_CYCLE_TIMER(2958285668LU));
+    if (st != 2958349546LLU) {
+         debugOutput(DEBUG_LEVEL_NORMAL, "  sytToXmitFullTicks(0x1234, 1000, %08X) != 2958349546 : %011lu\n",
+            TICKS_TO_CYCLE_TIMER(2958285668LU), st);
+        failures++;   
+    }
     
     if (failures) {
         debugOutput(DEBUG_LEVEL_NORMAL, " %d failures\n",failures);

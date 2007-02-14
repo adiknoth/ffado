@@ -139,12 +139,12 @@ protected:
     // frame counter & sync stuff
     public:
         /**
-         * @brief Can this StreamProcessor handle a nframes of frames?
+         * @brief Can this StreamProcessor handle a transfer of nframes frames?
          *
-         * this function indicates if the streamprocessor can handle nframes
-         * of frames. It is used to detect underruns-to-be.
+         * this function indicates if the streamprocessor can handle a transfer of 
+         * nframes frames. It is used to detect underruns-to-be.
          *
-         * @param nframes number of frames 
+         * @param nframes number of frames
          * @return true if the StreamProcessor can handle this amount of frames
          *         false if it can't
          */

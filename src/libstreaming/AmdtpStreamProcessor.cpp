@@ -234,8 +234,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 
 #ifdef DEBUG
     if(!m_is_disabled) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " > TS=%11llu, CTR=%11llu, FC=%5d\n",
-            timestamp, cycle_timer, fc
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "R: TS=%011llu, NOW=%011llu, CYN=%04d, CYT=%04d\n",
+            timestamp, cycle_timer, now_cycles, cycle
             );
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    UTN=%11lld\n",
             until_next
@@ -245,7 +245,30 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             );
     }
 #endif
-    
+
+    #ifdef DEBUG
+    if((cycle % 1000) == 0) {
+        uint32_t timestamp_u=timestamp;
+        uint32_t syt = TICKS_TO_SYT(addTicks(timestamp_u, TRANSMIT_TRANSFER_DELAY));
+        uint32_t now=m_handler->getCycleTimer();
+        uint32_t now_ticks=CYCLE_TIMER_TO_TICKS(now);
+        
+        uint32_t test_ts=sytXmitToFullTicks(syt, cycle, now);
+
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "T %04d: SYT=%08X,            CY=%02d OFF=%04d\n",
+            cycle, syt, CYCLE_TIMER_GET_CYCLES(syt), CYCLE_TIMER_GET_OFFSET(syt)
+            );
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "T %04d: NOW=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
+            cycle, now_ticks, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_CYCLES(now), CYCLE_TIMER_GET_OFFSET(now)
+            );
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "T %04d: TSS=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
+            cycle, test_ts, TICKS_TO_SECS(test_ts), TICKS_TO_CYCLES(test_ts), TICKS_TO_OFFSET(test_ts)
+            );
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "T %04d: TSO=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
+            cycle, timestamp_u, TICKS_TO_SECS(timestamp_u), TICKS_TO_CYCLES(timestamp_u), TICKS_TO_OFFSET(timestamp_u)
+            );
+    }
+    #endif
     // don't process the stream when it is not enabled, not running
     // or when the next sample is not due yet.
     
@@ -917,7 +940,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         m_last_timestamp2=m_last_timestamp;
 
         //=> convert the SYT to a full timestamp in ticks
-        m_last_timestamp=sytToFullTicks((uint32_t)ntohs(packet->syt), 
+        m_last_timestamp=sytRecvToFullTicks((uint32_t)ntohs(packet->syt), 
                                         cycle, m_handler->getCycleTimer());
 
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "RECV: CY=%04u TS=%011llu\n",
@@ -1016,6 +1039,26 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             
             return RAW1394_ISO_DEFER;
         }
+        
+        #ifdef DEBUG
+        if((cycle % 1000) == 0) {
+            uint32_t syt = (uint32_t)ntohs(packet->syt);
+            uint32_t now=m_handler->getCycleTimer();
+            uint32_t now_ticks=CYCLE_TIMER_TO_TICKS(now);
+            
+            uint32_t test_ts=sytRecvToFullTicks(syt, cycle, now);
+
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "R %04d: SYT=%08X,            CY=%02d OFF=%04d\n",
+                cycle, syt, CYCLE_TIMER_GET_CYCLES(syt), CYCLE_TIMER_GET_OFFSET(syt)
+                );
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "R %04d: NOW=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
+                cycle, now_ticks, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_CYCLES(now), CYCLE_TIMER_GET_OFFSET(now)
+                );
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "R %04d: TSS=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
+                cycle, test_ts, TICKS_TO_SECS(test_ts), TICKS_TO_CYCLES(test_ts), TICKS_TO_OFFSET(test_ts)
+                );
+        }
+        #endif
         
         //=> process the packet
         // add the data payload to the ringbuffer

@@ -74,18 +74,20 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 /**
- * @brief Converts a SYT timestamp to a full timestamp in ticks.
+ * @brief Converts a received SYT timestamp to a full timestamp in ticks.
  *
- * 
  *
  * @param syt_timestamp The SYT timestamp as present in the packet
  * @param rcv_cycle The cycle this timestamp was received on
  * @param ctr_now The current value of the cycle timer ('now')
  * @return 
  */
-static inline uint32_t sytToFullTicks(uint32_t syt_timestamp, unsigned int rcv_cycle, uint32_t ctr_now) {
+static inline uint32_t sytRecvToFullTicks(uint32_t syt_timestamp, unsigned int rcv_cycle, uint32_t ctr_now) {
     uint32_t timestamp;
     
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08X CY=%04X CTR=%08X\n",
+        syt_timestamp,rcv_cycle,ctr_now);
+        
     // reconstruct the full cycle
     uint32_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
     uint32_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
@@ -139,7 +141,103 @@ static inline uint32_t sytToFullTicks(uint32_t syt_timestamp, unsigned int rcv_c
     }
     
     timestamp += CYCLE_TIMER_GET_OFFSET(syt_timestamp);
+    
     timestamp += cc_seconds * TICKS_PER_SECOND;
+    
+    #ifdef DEBUG
+        if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
+            debugWarning("back-converted timestamp not equal to SYT\n");
+            debugWarning("TS=%011llu TSC=%08X SYT=%04X\n",
+                  timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
+        }
+    #endif
+    
+    return timestamp;
+}
+
+/**
+ * @brief Converts a transmit SYT timestamp to a full timestamp in ticks.
+ *
+ * The difference between sytRecvToFullTicks and sytXmitToFullTicks is
+ * the way SYT cycle wraparound is detected: in the receive version, 
+ * wraparound is present if rcv_cycle > current_cycle. In the xmit
+ * version this is when current_cycle > xmt_cycle.
+ *
+ * @param syt_timestamp The SYT timestamp as present in the packet
+ * @param xmt_cycle The cycle this timestamp was received on
+ * @param ctr_now The current value of the cycle timer ('now')
+ * @return 
+ */
+static inline uint32_t sytXmitToFullTicks(uint32_t syt_timestamp, unsigned int xmt_cycle, uint32_t ctr_now) {
+    uint32_t timestamp;
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08X CY=%04X CTR=%08X\n",
+        syt_timestamp,xmt_cycle,ctr_now);
+        
+    // reconstruct the full cycle
+    uint32_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
+    uint32_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
+    
+    // the cycletimer has wrapped since this packet was received
+    // we want cc_seconds to reflect the 'seconds' at the point this 
+    // is to be transmitted
+    if (xmt_cycle<cc_cycles) {
+        if (cc_seconds) {
+            cc_seconds--;
+        } else {
+            // seconds has wrapped around, so we'd better not substract 1
+            // the good value is 127
+            cc_seconds=127;
+        }
+    }
+    
+    // reconstruct the top part of the timestamp using the current cycle number
+    uint32_t xmt_cycle_masked=xmt_cycle & 0xF;
+    uint32_t syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
+    
+    // if this is true, wraparound has occurred, undo this wraparound
+    if(syt_cycle<xmt_cycle_masked) syt_cycle += 0x10;
+    
+    // this is the difference in cycles wrt the cycle the
+    // timestamp was received
+    uint32_t delta_cycles=syt_cycle-xmt_cycle_masked;
+    
+    // reconstruct the cycle part of the timestamp
+    uint32_t new_cycles=xmt_cycle + delta_cycles;
+    
+    // if the cycles cause a wraparound of the cycle timer,
+    // perform this wraparound
+    // and convert the timestamp into ticks
+    if(new_cycles<8000) {
+        timestamp  = new_cycles * TICKS_PER_CYCLE;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+            "Detected wraparound: %d + %d = %d\n",
+            xmt_cycle,delta_cycles,new_cycles);
+        
+        new_cycles-=8000; // wrap around
+#ifdef DEBUG
+        if (new_cycles >= 8000) {
+            debugWarning("insufficient unwrapping\n");
+        }
+#endif
+        timestamp  = new_cycles * TICKS_PER_CYCLE;
+        // add one second due to wraparound
+        timestamp += TICKS_PER_SECOND;
+    }
+    
+    timestamp += CYCLE_TIMER_GET_OFFSET(syt_timestamp);
+    
+    timestamp += cc_seconds * TICKS_PER_SECOND;
+    
+    #ifdef DEBUG
+        if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
+            debugWarning("back-converted timestamp not equal to SYT\n");
+            debugWarning("TS=%011llu TSC=%08X SYT=%04X\n",
+                  timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
+        }
+    #endif
+    
     return timestamp;
 }
 

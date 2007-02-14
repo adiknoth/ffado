@@ -169,8 +169,8 @@ IsoHandler::init()
         if ( !errno ) {
             debugError("libraw1394 not compatible\n");
         } else {
-            debugError("Could not get 1394 handle: %s", strerror(errno) );
-            debugError("Are ieee1394 and raw1394 drivers loaded?");
+            debugError("Could not get 1394 handle: %s\n", strerror(errno) );
+            debugError("Are ieee1394 and raw1394 drivers loaded?\n");
         }
         return false;
     }
@@ -182,8 +182,8 @@ IsoHandler::init()
         if ( !errno ) {
             debugError("libraw1394 not compatible\n");
         } else {
-            debugError("Could not get 1394 handle: %s", strerror(errno) );
-            debugError("Are ieee1394 and raw1394 drivers loaded?");
+            debugError("Could not get 1394 handle: %s\n", strerror(errno) );
+            debugError("Are ieee1394 and raw1394 drivers loaded?\n");
         }
         
         raw1394_destroy_handle(m_handle);
@@ -339,7 +339,7 @@ unsigned int IsoHandler::getCycleTimerTicks() {
     int err;
     err=raw1394_read_cycle_timer(m_handle_util, &ctr);
     if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s", strerror(err));
+        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
     return CYCLE_TIMER_TO_TICKS(ctr.cycle_timer);
 
@@ -369,7 +369,7 @@ unsigned int IsoHandler::getCycleTimer() {
     int err;
     err=raw1394_read_cycle_timer(m_handle_util, &ctr);
     if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s", strerror(err));
+        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
     return ctr.cycle_timer;
 
@@ -493,7 +493,7 @@ bool IsoHandler::updateCycleTimer() {
     int err;
     err=raw1394_read_cycle_timer(m_handle_util, &ctr);
     if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s", strerror(err));
+        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
     new_usecs=(freebob_microsecs_t)ctr.local_time;
     new_timer=ctr.cycle_timer;
@@ -642,7 +642,7 @@ void IsoHandler::initCycleTimer() {
         int err;
         err=raw1394_read_cycle_timer(m_handle_util, &ctr);
         if(err) {
-            debugWarning("raw1394_read_cycle_timer: %s", strerror(err));
+            debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
         }
         prev_usecs=(freebob_microsecs_t)ctr.local_time;
         prev_timer=ctr.cycle_timer;
@@ -664,7 +664,7 @@ void IsoHandler::initCycleTimer() {
 #ifdef LIBRAW1394_USE_CTRREAD_API
         err=raw1394_read_cycle_timer(m_handle_util, &ctr);
         if(err) {
-            debugWarning("raw1394_read_cycle_timer: %s", strerror(err));
+            debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
         }
         new_usecs=(freebob_microsecs_t)ctr.local_time;
         new_timer=ctr.cycle_timer;
