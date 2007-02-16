@@ -258,10 +258,10 @@ bool TimestampedBuffer::prepare() {
     }
     
     // init the DLL
-    m_dll_e2=m_nominal_rate * (double)m_update_period;
+    m_dll_e2=m_nominal_rate * (float)m_update_period;
     
-    m_dll_b=((double)(0.877));
-    m_dll_c=((double)(0.384));
+    m_dll_b=((float)(0.877));
+    m_dll_c=((float)(0.384));
 
     return true;
 }
@@ -547,10 +547,10 @@ void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
     int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
     if (diff < 0) diff += m_wrap_at;
     
-    double rate;
+    float rate;
     
     if (diff) {
-        rate=(double)diff / (double)m_update_period;
+        rate=(float)diff / (float)m_update_period;
     } else {
         rate=m_nominal_rate;
     }
@@ -578,7 +578,7 @@ void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
     m_buffer_tail_timestamp = ts;
     
     m_dll_e2=m_update_period * m_nominal_rate;
-    m_buffer_next_tail_timestamp = (uint64_t)((double)m_buffer_tail_timestamp + m_dll_e2);
+    m_buffer_next_tail_timestamp = (uint64_t)((float)m_buffer_tail_timestamp + m_dll_e2);
     
     pthread_mutex_unlock(&m_framecounter_lock);    
     
@@ -638,7 +638,7 @@ uint64_t TimestampedBuffer::getTimestampFromTail(int nframes)
     int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
     if (diff < 0) diff += m_wrap_at;
     
-    double rate=(double)diff / (double)m_update_period;
+    float rate=(float)diff / (float)m_update_period;
     
     int64_t timestamp;
     
@@ -708,7 +708,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, uint64_t new_timesta
     int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
     if (diff < 0) diff += m_wrap_at;
     
-    double rate=(double)diff / (double)m_update_period;
+    float rate=(float)diff / (float)m_update_period;
         
     int64_t ts=new_timestamp;
     ts += (int64_t)m_tick_offset;
@@ -757,7 +757,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, uint64_t new_timesta
         diff += m_wrap_at;
     }
     
-    double err=diff;
+    float err=diff;
     
     debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "diff2=%lld err=%f\n",
                     diff, err);

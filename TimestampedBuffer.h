@@ -171,9 +171,9 @@ private:
     pthread_mutex_t m_framecounter_lock;
 
     // tracking DLL variables
-    double m_dll_e2;
-    double m_dll_b;
-    double m_dll_c;
+    float m_dll_e2;
+    float m_dll_b;
+    float m_dll_c;
     
     float m_nominal_rate;
     unsigned int m_update_period;
