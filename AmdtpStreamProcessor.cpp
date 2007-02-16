@@ -35,7 +35,7 @@
 #include <netinet/in.h>
 #include <assert.h>
 
-#define RECEIVE_PROCESSING_DELAY (0U)
+#define RECEIVE_PROCESSING_DELAY (TICKS_PER_CYCLE * 2)
 
 // in ticks
 #define TRANSMIT_TRANSFER_DELAY 9000U
