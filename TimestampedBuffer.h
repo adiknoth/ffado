@@ -111,7 +111,17 @@ public:
     void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
     
     void setBufferTailTimestamp(uint64_t new_timestamp);
-   
+    
+    uint64_t getTimestampFromTail(int nframes);
+    uint64_t getTimestampFromHead(int nframes);
+    
+    // buffer offset stuff
+    /// return the tick offset value
+    signed int getTickOffset() {return m_tick_offset;};
+    
+    bool setFrameOffset(int nframes);
+    bool setTickOffset(int nframes);
+    
     // dll stuff
     bool setNominalRate(float r);
     float getRate();
@@ -148,14 +158,14 @@ private:
     // the framecounter gives the number of frames in the buffer
     signed int m_framecounter;
     
+    // the offset that define the timing of the buffer
+    signed int m_tick_offset;
+    
     // the buffer tail timestamp gives the timestamp of the last frame
     // that was put into the buffer
     uint64_t   m_buffer_tail_timestamp;
     uint64_t   m_buffer_next_tail_timestamp;
     
-    // the buffer head timestamp gives the timestamp of the first frame
-    // that was put into the buffer
-//     uint64_t   m_buffer_head_timestamp;
     // this mutex protects the access to the framecounter
     // and the buffer head timestamp.
     pthread_mutex_t m_framecounter_lock;

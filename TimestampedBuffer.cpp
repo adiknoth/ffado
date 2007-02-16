@@ -38,10 +38,12 @@ IMPL_DEBUG_MODULE( TimestampedBuffer, TimestampedBuffer, DEBUG_LEVEL_VERBOSE );
 
 TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
     : m_event_buffer(NULL), m_cluster_buffer(NULL),
-      m_event_size(0), m_events_per_frame(0), m_buffer_size(0), 
+      m_event_size(0), m_events_per_frame(0), m_buffer_size(0),
       m_bytes_per_frame(0), m_bytes_per_buffer(0),
       m_wrap_at(0xFFFFFFFFFFFFFFFFLLU),
-      m_Client(c), m_framecounter(0), m_buffer_tail_timestamp(0), 
+      m_Client(c), m_framecounter(0),
+      m_tick_offset(0),
+      m_buffer_tail_timestamp(0),
       m_buffer_next_tail_timestamp(0),
       m_dll_e2(0.0), m_dll_b(0.877), m_dll_c(0.384),
       m_nominal_rate(0.0), m_update_period(0)
@@ -145,6 +147,22 @@ bool TimestampedBuffer::setBufferSize(unsigned int n) {
     m_bytes_per_frame=m_event_size*m_events_per_frame;
     m_bytes_per_buffer=m_bytes_per_frame*m_buffer_size;
 
+    return true;
+}
+
+/**
+ * Sets the buffer offset in ticks. 
+ *
+ * A positive value means that the buffer is 'delayed' for nticks ticks.
+ *
+ * @note These offsets are only used when reading timestamps. Any function
+ *       that returns a timestamp will incorporate this offset. 
+ * @param nframes the number of ticks (positive = delay buffer)
+ * @return true if successful
+ */
+bool TimestampedBuffer::setTickOffset(int nticks) {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Setting ticks offset to %d\n",nticks);
+    m_tick_offset=nticks;
     return true;
 }
 
@@ -518,28 +536,54 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
  * \ref new_timestamp.
  * 
  * This is thread safe.
+ *
+ * @note considers offsets
  * 
  * @param new_timestamp 
  */
 void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
+
+    // add the offsets
+    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    if (diff < 0) diff += m_wrap_at;
+    
+    double rate;
+    
+    if (diff) {
+        rate=(double)diff / (double)m_update_period;
+    } else {
+        rate=m_nominal_rate;
+    }
+        
+    int64_t ts=new_timestamp;
+    ts += m_tick_offset;
+    
+    if (ts >= (int64_t)m_wrap_at) {
+        ts -= m_wrap_at;
+    } else if (ts < 0) {
+        ts += m_wrap_at;
+    }
     
 #ifdef DEBUG
-    if (new_timestamp >= 128L*TICKS_PER_SECOND) {
+    if (new_timestamp >= m_wrap_at) {
         debugWarning("timestamp not wrapped: %llu\n",new_timestamp);
+    }    
+    if ((ts >= (int64_t)m_wrap_at) || (ts < 0 )) {
+        debugWarning("ts not wrapped correctly: %lld\n",ts);
     }
 #endif
     
     pthread_mutex_lock(&m_framecounter_lock);
     
-    m_buffer_tail_timestamp = new_timestamp;
+    m_buffer_tail_timestamp = ts;
     
     m_dll_e2=m_update_period * m_nominal_rate;
     m_buffer_next_tail_timestamp = (uint64_t)((double)m_buffer_tail_timestamp + m_dll_e2);
     
     pthread_mutex_unlock(&m_framecounter_lock);    
     
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Set buffer tail timestamp for (%p) to %11llu, NTS=%llu, DLL2=%f\n",
-                this, new_timestamp, m_buffer_next_tail_timestamp, m_dll_e2);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Set buffer tail timestamp for (%p) to %11llu => %11lld, NTS=%llu, DLL2=%f, RATE=%f\n",
+                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, rate);
 
 }
 
@@ -554,47 +598,10 @@ void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
  * @param fc address to store the associated framecounter in
  */
 void TimestampedBuffer::getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc) {
-    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    if (diff < 0) diff += m_wrap_at;
-    
-    double rate=(double)diff / (double)m_update_period;
-    
-    int64_t timestamp;
-    
-    pthread_mutex_lock(&m_framecounter_lock);
+    // NOTE: this is still ok with threads, because we use *fc to compute
+    //       the timestamp
     *fc = m_framecounter;
-
-    // ts(x) = m_buffer_tail_timestamp -
-    //         (m_buffer_next_tail_timestamp - m_buffer_tail_timestamp)/(samples_between_updates)*(x)
-    
-    // buffer head is the frame that is framecounter away from the tail
-    timestamp=(int64_t)m_buffer_tail_timestamp - (int64_t)((m_framecounter) * rate);
-
-    pthread_mutex_unlock(&m_framecounter_lock);
-    
-    #ifdef DEBUG
-    if(timestamp || m_buffer_tail_timestamp || *fc) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p): HTS = %011lld, TTS=%011llu, FC=%05u\n",
-                    this, timestamp, m_buffer_tail_timestamp, *fc, rate);
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p):  rate = %f\n", this, rate);
-    }
-    #endif
-    
-    if(timestamp >= (int64_t)m_wrap_at) {
-        timestamp -= m_wrap_at;
-    } else if(timestamp < 0) {
-        timestamp += m_wrap_at;
-    }
-    
-    *ts=timestamp;
-    
-    #ifdef DEBUG
-    if(timestamp || m_buffer_tail_timestamp || *fc) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p):  HTS = %011lld, FC=%05u\n",
-                this, *ts, *fc);
-    }
-    #endif
-
+    *ts=getTimestampFromTail(*fc);
 }
 
 /**
@@ -612,6 +619,56 @@ void TimestampedBuffer::getBufferTailTimestamp(uint64_t *ts, uint64_t *fc) {
     *fc = (uint64_t)m_framecounter;
     *ts = m_buffer_tail_timestamp;
     pthread_mutex_unlock(&m_framecounter_lock);
+}
+
+/**
+ * @brief Get timestamp for a specific position from the buffer tail
+ *
+ * Returns the timestamp for a position that is nframes earlier than the 
+ * buffer tail
+ *
+ * @param nframes number of frames
+ * @return timestamp value
+ */
+uint64_t TimestampedBuffer::getTimestampFromTail(int nframes)
+{
+    // ts(x) = m_buffer_tail_timestamp -
+    //         (m_buffer_next_tail_timestamp - m_buffer_tail_timestamp)/(samples_between_updates)*(x)
+    
+    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    if (diff < 0) diff += m_wrap_at;
+    
+    double rate=(double)diff / (double)m_update_period;
+    
+    int64_t timestamp;
+    
+    pthread_mutex_lock(&m_framecounter_lock);
+
+    timestamp=(int64_t)m_buffer_tail_timestamp - (int64_t)((nframes) * rate);
+
+    pthread_mutex_unlock(&m_framecounter_lock);
+    
+    if(timestamp >= (int64_t)m_wrap_at) {
+        timestamp -= m_wrap_at;
+    } else if(timestamp < 0) {
+        timestamp += m_wrap_at;
+    }
+    
+    return (uint64_t)timestamp;
+}
+
+/**
+ * @brief Get timestamp for a specific position from the buffer head
+ *
+ * Returns the timestamp for a position that is nframes later than the 
+ * buffer head
+ *
+ * @param nframes number of frames
+ * @return timestamp value
+ */
+uint64_t TimestampedBuffer::getTimestampFromHead(int nframes)
+{
+    return getTimestampFromTail(m_framecounter-nframes);
 }
 
 /**
@@ -638,26 +695,52 @@ void TimestampedBuffer::decrementFrameCounter(int nbframes) {
 /**
  * Increments the frame counter in a thread safe way.
  * Also updates the timestamp.
- * 
+ *
+ * @note the offsets defined by setTicksOffset and setFrameOffset
+ *       are added here.
+ *
  * @param nbframes the number of frames to add
  * @param new_timestamp the new timestamp
  */
 void TimestampedBuffer::incrementFrameCounter(int nbframes, uint64_t new_timestamp) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to %11llu\n",
-                this, new_timestamp);
+    
+    // add the offsets
+    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    if (diff < 0) diff += m_wrap_at;
+    
+    double rate=(double)diff / (double)m_update_period;
+        
+    int64_t ts=new_timestamp;
+    ts += (int64_t)m_tick_offset;
+    
+    if (ts >= (int64_t)m_wrap_at) {
+        ts -= m_wrap_at;
+    } else if (ts < 0) {
+        ts += m_wrap_at;
+    }
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to %11llu => %11lld\n",
+                this, new_timestamp, ts);
     
 #ifdef DEBUG
-    if (new_timestamp >= 128L*TICKS_PER_SECOND) {
+    if (new_timestamp >= m_wrap_at) {
         debugWarning("timestamp not wrapped: %llu\n",new_timestamp);
+    }    
+    if ((ts >= (int64_t)m_wrap_at) || (ts < 0 )) {
+        debugWarning("ts not wrapped correctly: %lld\n",ts);
     }
 #endif
-    
-    pthread_mutex_lock(&m_framecounter_lock);
-    m_framecounter += nbframes;
-    
+
     // update the DLL
-    int64_t diff = (int64_t)new_timestamp-(int64_t)m_buffer_next_tail_timestamp;
+    diff = ts-(int64_t)m_buffer_next_tail_timestamp;
     
+#ifdef DEBUG
+    if ((diff > 1000) || (diff < -1000)) {
+        debugWarning("(%p) difference rather large: %lld, %011lld, %011lld\n", 
+            this, diff, ts, m_buffer_next_tail_timestamp);
+    }
+#endif
+
     // idea to implement it for nbframes values that differ from m_update_period:
     // diff = diff * nbframes/m_update_period
     // m_buffer_next_tail_timestamp = m_buffer_tail_timestamp + diff
@@ -673,7 +756,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, uint64_t new_timesta
     } else if (diff < -max) {
         diff += m_wrap_at;
     }
-
+    
     double err=diff;
     
     debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "diff2=%lld err=%f\n",
@@ -681,31 +764,43 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, uint64_t new_timesta
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "B: FC=%10u, TS=%011llu, NTS=%011llu\n",
                     m_framecounter, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     
+    pthread_mutex_lock(&m_framecounter_lock);
+    m_framecounter += nbframes;
+    
     m_buffer_tail_timestamp=m_buffer_next_tail_timestamp;
-    m_buffer_next_tail_timestamp += (uint64_t)(m_dll_b * err + m_dll_e2);
+    m_buffer_next_tail_timestamp += (int64_t)(m_dll_b * err + m_dll_e2);
+    
+    m_dll_e2 += m_dll_c*err;
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "U: FC=%10u, TS=%011llu, NTS=%011llu\n",
                     m_framecounter, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     
     if (m_buffer_next_tail_timestamp >= m_wrap_at) {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Unwrapping next tail timestamp: %011llu",
+                m_buffer_next_tail_timestamp);
+                
         m_buffer_next_tail_timestamp -= m_wrap_at;
         
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Unwrapping next tail timestamp: %11llu\n",
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, " => %011llu\n",
                 m_buffer_next_tail_timestamp);
+
     }
     
-    m_dll_e2 += m_dll_c*err;
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "A: TS=%011llu, NTS=%011llu, DLLe2=%f\n",
-                m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "A: TS=%011llu, NTS=%011llu, DLLe2=%f, RATE=%f\n",
+                m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, rate);
     
     pthread_mutex_unlock(&m_framecounter_lock);
     
     if(m_buffer_tail_timestamp>=m_wrap_at) {
-        debugError("Wrapping failed for m_buffer_tail_timestamp!\n");
+        debugError("Wrapping failed for m_buffer_tail_timestamp! %011llu\n",m_buffer_tail_timestamp);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " IN=%011lld, TS=%011llu, NTS=%011llu\n",
+                    ts, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+        
     }
     if(m_buffer_next_tail_timestamp>=m_wrap_at) {
-        debugError("Wrapping failed for m_buffer_next_tail_timestamp!\n");
+        debugError("Wrapping failed for m_buffer_next_tail_timestamp! %011llu\n",m_buffer_next_tail_timestamp);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " IN=%011lld, TS=%011llu, NTS=%011llu\n",
+                    ts, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     }
     
     // this DLL allows the calculation of any sample timestamp relative to the buffer tail,
