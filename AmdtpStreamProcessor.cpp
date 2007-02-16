@@ -178,8 +178,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
                 debugWarning("m_data_buffer->getFrameCounter() != m_ringbuffer_size_frames\n");
             }
             #endif
-            debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, FC=%4d\n",
-                            ts_head, m_data_buffer->getFrameCounter());
+            debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, LAG=%03d, FC=%4d\n",
+                            ts_head, sync_lag_cycles, m_data_buffer->getFrameCounter());
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "will enable StreamProcessor %p at %u, now is %d\n",
@@ -236,7 +236,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     }
 #endif
 
-    #ifdef DEBUG
+    #ifdef DEBUG_OFF
     if((cycle % 1000) == 0) {
         uint32_t timestamp_u=timestamp;
         uint32_t syt = TICKS_TO_SYT(addTicks(timestamp_u, TRANSMIT_TRANSFER_DELAY));
@@ -627,11 +627,39 @@ bool AmdtpTransmitStreamProcessor::prepareForStop() {
     return true;
 }
 
-bool AmdtpTransmitStreamProcessor::prepareForEnable() {
+bool AmdtpTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"Preparing to enable...\n");
 
-    if (!StreamProcessor::prepareForEnable()) {
+    // for the transmit SP, we have to initialize the 
+    // buffer timestamp to something sane, because this timestamp
+    // is used when it is SyncSource
+    
+    // the time we initialize to will determine the time at which
+    // the first sample in the buffer will be sent, so we should
+    // make it at least 'time_to_enable_at'
+    
+    uint64_t now=m_handler->getCycleTimer();
+    unsigned int now_secs=CYCLE_TIMER_GET_SECS(now);
+    
+    // check if a wraparound on the secs will happen between
+    // now and the time we start
+    if (CYCLE_TIMER_GET_CYCLES(now)>time_to_enable_at) {
+        // the start will happen in the next second
+        now_secs++;
+        if (now_secs>=128) now_secs=0;
+    }
+    
+    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
+    ts_head+=time_to_enable_at*TICKS_PER_CYCLE;
+    
+    // we also add the nb of cycles we transmit in advance
+    ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
+    
+    m_data_buffer->setBufferTailTimestamp(ts_head);
+
+
+    if (!StreamProcessor::prepareForEnable(time_to_enable_at)) {
         debugError("StreamProcessor::prepareForEnable failed\n");
         return false;
     }
@@ -1010,7 +1038,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             return RAW1394_ISO_DEFER;
         }
         
-        #ifdef DEBUG
+        #ifdef DEBUG_OFF
         if((cycle % 1000) == 0) {
             uint32_t syt = (uint32_t)ntohs(packet->syt);
             uint32_t now=m_handler->getCycleTimer();

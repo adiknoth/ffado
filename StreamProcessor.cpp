@@ -128,17 +128,18 @@ bool StreamProcessor::reset() {
     return true;
 	
 }
-    
-bool StreamProcessor::prepareForEnable() {
+
+bool StreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
     debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForEnable for (%p)\n",this);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Enable at             : %011u\n",time_to_enable_at);
     m_data_buffer->dumpInfo();
     return true;
 }
 
 bool StreamProcessor::prepareForDisable() {
     debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForDisable for (%p)\n",this);
-    debugOutput(DEBUG_LEVEL_VERBOSE," Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011u\n",m_handler->getCycleTimerTicks());
     m_data_buffer->dumpInfo();
     return true;
 }
@@ -234,7 +235,8 @@ bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
     }
     
     if (diff<0) {
-        debugWarning("Request to enable streamprocessor %d cycles ago.\n",diff);
+        debugWarning("Request to enable streamprocessor %d cycles ago (now=%llu, cy=%llu).\n",
+            diff,now_cycles,time_to_enable_at);
     }
 #endif
 
