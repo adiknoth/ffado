@@ -83,7 +83,7 @@ void IsoStream::dumpInfo()
 }
 
 bool IsoStream::setChannel(int c) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "setting channel to %d\n",c);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setting channel for (%p) to %d\n",this, c);
 
     m_channel=c;
     return true;

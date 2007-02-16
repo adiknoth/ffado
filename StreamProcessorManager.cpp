@@ -904,120 +904,25 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
                 it != m_ReceiveProcessors.end();
                 ++it ) {
-            
-            //#ifdef DEBUG
-            #if 0
-            {
-                uint64_t ts_tail=0;
-                uint64_t fc_tail=0;
                 
-                uint64_t ts_head=0;
-                uint64_t fc_head=0;
-                
-                int cnt=0;
-                
-                (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-                
-                while((fc_head != fc_tail) && (cnt++ < 10)) {
-                    (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                    (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-                }
-                
-                debugOutput(DEBUG_LEVEL_VERBOSE,"R => HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
-                    ts_head, fc_head, ts_tail, fc_tail, cnt);
-            }
-            #endif
-    
             if(!(*it)->getFrames(m_period)) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)",
                             m_period, m_time_of_transfer,*it);
                     return false; // buffer underrun
             }
-            
-            //#ifdef DEBUG
-            #if 0
-            {
-                uint64_t ts_tail=0;
-                uint64_t fc_tail=0;
-                
-                uint64_t ts_head=0;
-                uint64_t fc_head=0;
-                
-                int cnt=0;
-                
-                (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-            
-                while((fc_head != fc_tail) && (cnt++ < 10)) {
-                    (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                    (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-                }
-                
-                debugOutput(DEBUG_LEVEL_VERBOSE,"R  > HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
-                    ts_head, fc_head, ts_tail, fc_tail, cnt);
-            }
-            #endif
-    
+
         }
     } else {
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
                 ++it ) {
                 
-            //#ifdef DEBUG
-            #if 0
-            {
-                uint64_t ts_tail=0;
-                uint64_t fc_tail=0;
-                
-                uint64_t ts_head=0;
-                uint64_t fc_head=0;
-                
-                int cnt=0;
-                
-                (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-                
-                while((fc_head != fc_tail) && (cnt++ < 10)) {
-                    (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                    (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-                }
-                
-                debugOutput(DEBUG_LEVEL_VERBOSE,"T => HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
-                    ts_head, fc_head, ts_tail, fc_tail, cnt);
-            }
-            #endif
-                
             if(!(*it)->putFrames(m_period, (int64_t)m_time_of_transfer)) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)",
                         m_period, m_time_of_transfer, *it);
                 return false; // buffer overrun
             }
-            
-            //#ifdef DEBUG
-            #if 0
-            {
-                uint64_t ts_tail=0;
-                uint64_t fc_tail=0;
-                
-                uint64_t ts_head=0;
-                uint64_t fc_head=0;
-                
-                int cnt=0;
-                
-                (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-            
-                while((fc_head != fc_tail) && (cnt++ < 10)) {
-                    (*it)->getBufferHeadTimestamp(&ts_head,&fc_head);
-                    (*it)->getBufferTailTimestamp(&ts_tail,&fc_tail);
-                }
-                
-                debugOutput(DEBUG_LEVEL_VERBOSE,"T  > HEAD: TS=%11llu, FC=%5llu | TAIL: TS=%11llu, FC=%5llu, %d\n",
-                    ts_head, fc_head, ts_tail, fc_tail, cnt);
-            }
-            #endif
+
         }
     }
 
