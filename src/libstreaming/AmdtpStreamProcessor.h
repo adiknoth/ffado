@@ -92,7 +92,7 @@ public:
     bool prepareForStop();
     bool prepareForStart();
     
-    bool prepareForEnable();
+    bool prepareForEnable(uint64_t time_to_enable_at);
     
     bool canClientTransferFrames(unsigned int nbframes);
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from the client

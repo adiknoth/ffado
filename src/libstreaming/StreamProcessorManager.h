@@ -69,7 +69,7 @@ public:
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
-    bool enableStreamProcessors(unsigned int time_to_enable_at); /// enable registered StreamProcessors
+    bool enableStreamProcessors(uint64_t time_to_enable_at); /// enable registered StreamProcessors
     bool disableStreamProcessors(); /// disable registered StreamProcessors
 
     void setPeriodSize(unsigned int period);

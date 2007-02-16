@@ -1084,6 +1084,8 @@ AvDevice::addPlugToProcessor(
     return true;
 }
 
+// #define TEST_XMIT_ONLY
+
 #ifdef TEST_XMIT_ONLY
 int
 AvDevice::getStreamCount() {

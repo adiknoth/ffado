@@ -394,15 +394,6 @@ bool StreamProcessorManager::syncStartAll() {
     unsigned int enable_at=TICKS_TO_CYCLES(now)+2000;
     if (enable_at > 8000) enable_at -= 8000;
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Sync Source StreamProcessor...\n");
-    if (!m_SyncSource->prepareForEnable()) {
-            debugFatal("Could not prepare Sync Source StreamProcessor for enable()...\n");
-        return false;
-    }
-
-    m_SyncSource->enable(enable_at);
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, " All StreamProcessors...\n");
     if (!enableStreamProcessors(enable_at)) {
         debugFatal("Could not enable StreamProcessors...\n");
         return false;
@@ -555,31 +546,57 @@ bool StreamProcessorManager::stop() {
  * Enables the registered StreamProcessors
  * @return true if successful, false otherwise
  */
-bool StreamProcessorManager::enableStreamProcessors(unsigned int time_to_enable_at) {
+bool StreamProcessorManager::enableStreamProcessors(uint64_t time_to_enable_at) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors at %llu...\n", time_to_enable_at);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Sync Source StreamProcessor (%p)...\n",m_SyncSource);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  Prepare...\n");
+    if (!m_SyncSource->prepareForEnable(time_to_enable_at)) {
+            debugFatal("Could not prepare Sync Source StreamProcessor for enable()...\n");
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  Enable...\n");
+    m_SyncSource->enable(time_to_enable_at);
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Other StreamProcessors...\n");
+    
     // we prepare the streamprocessors for enable
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
-            ++it ) {		
-        (*it)->prepareForEnable();
+            ++it ) {
+        if(*it != m_SyncSource) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " Prepare Receive SP (%p)...\n",*it);
+            (*it)->prepareForEnable(time_to_enable_at);
+        }
     }
 
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-        (*it)->prepareForEnable();
+        if(*it != m_SyncSource) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " Prepare Transmit SP (%p)...\n",*it);
+            (*it)->prepareForEnable(time_to_enable_at);
+        }
     }
 
     // then we enable the streamprocessors
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {		
-        (*it)->enable(time_to_enable_at);
+        if(*it != m_SyncSource) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " Enable Receive SP (%p)...\n",*it);
+            (*it)->enable(time_to_enable_at);
+        }
     }
 
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-        (*it)->enable(time_to_enable_at);
+        if(*it != m_SyncSource) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " Enable Transmit SP (%p)...\n",*it);
+            (*it)->enable(time_to_enable_at);
+        }
     }
 
     // now we wait for the SP's to get enabled

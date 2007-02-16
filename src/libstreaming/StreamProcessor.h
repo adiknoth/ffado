@@ -83,6 +83,10 @@ public:
     void resetXrunCounter();
 
     bool isRunning(); ///< returns true if there is some stream data processed
+    
+    virtual bool prepareForEnable(uint64_t time_to_enable_at);
+    virtual bool prepareForDisable();
+    
     bool enable(uint64_t time_to_enable_at); ///< enable the stream processing 
     bool disable(); ///< disable the stream processing 
     bool isEnabled() {return !m_is_disabled;};
@@ -102,9 +106,7 @@ public:
 
     virtual bool prepareForStop() {return true;};
     virtual bool prepareForStart() {return true;};
-    
-    virtual bool prepareForEnable();
-    virtual bool prepareForDisable();
+
 
 public:
     FreebobUtil::TimestampedBuffer *m_data_buffer;
