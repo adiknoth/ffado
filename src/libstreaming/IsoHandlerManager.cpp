@@ -34,7 +34,7 @@
 #include "../libutil/PosixThread.h"
 
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD  4U
+#define MINIMUM_INTERRUPTS_PER_PERIOD  2U
 #define PACKETS_PER_INTERRUPT          4U
 
 namespace FreebobStreaming
@@ -322,14 +322,14 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 		// setup the optimal parameters for the raw1394 ISO buffering
 		unsigned int packets_per_period=stream->getPacketsPerPeriod();
 		
-#if 0
+#if 1
 		// hardware interrupts occur when one DMA block is full, and the size of one DMA
-		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq is 
+		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq  
 		// occurs at a period boundary (optimal CPU use)
 		
 		// NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD hardware interrupts
 		//       per period for better latency.
-		unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
+		unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()) / packets_per_period;
 		if (max_packet_size < stream->getMaxPacketSize()) {
 			max_packet_size=stream->getMaxPacketSize();
 		}

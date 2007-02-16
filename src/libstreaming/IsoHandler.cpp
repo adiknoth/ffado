@@ -341,7 +341,7 @@ unsigned int IsoHandler::getCycleTimerTicks() {
     if(err) {
         debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
-    return CYCLE_TIMER_TO_TICKS(ctr.cycle_timer);
+    return CYCLE_TIMER_TO_TICKS((uint32_t)ctr.cycle_timer);
 
 #else
     // use the estimated version

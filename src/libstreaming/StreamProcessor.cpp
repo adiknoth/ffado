@@ -226,7 +226,7 @@ bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
     uint64_t now_cycles=TICKS_TO_CYCLES(m_handler->getCycleTimerTicks());
     const int64_t max=(int64_t)(TICKS_PER_SECOND/2);
     
-    int64_t diff=m_cycle_to_enable_at-now_cycles;
+    int64_t diff=(int64_t)m_cycle_to_enable_at-(int64_t)now_cycles;
     
     if (diff > max) {
         diff-=TICKS_PER_SECOND;
@@ -235,7 +235,7 @@ bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
     }
     
     if (diff<0) {
-        debugWarning("Request to enable streamprocessor %d cycles ago (now=%llu, cy=%llu).\n",
+        debugWarning("Request to enable streamprocessor %lld cycles ago (now=%llu, cy=%llu).\n",
             diff,now_cycles,time_to_enable_at);
     }
 #endif
