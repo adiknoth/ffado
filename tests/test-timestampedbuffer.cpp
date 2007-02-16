@@ -288,6 +288,8 @@ int main(int argc, char *argv[])
     
     t->setWrapValue(arguments.wrap_at);
     
+    t->setTickOffset(10000);
+    
     t->prepare();
     
     usleep(1000);

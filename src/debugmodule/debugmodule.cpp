@@ -98,8 +98,17 @@ DebugModule::print( debug_level_t level,
 
     va_list arg;
     va_start( arg, format );
+    
+    // remove the path info from the filename
+    char *f=(char *)file;
+    char *fname;
+    while((f=strstr(f, "/"))) {
+        f++; // move away from delimiter
+        fname=f;
+    }
+    
     DebugModuleManager::instance()->print( "%s (%s)[%4d] %s: ", getPreSequence( level ),
-                 file,  line,  function );
+                 fname,  line,  function );
     DebugModuleManager::instance()->va_print( format, arg );
     DebugModuleManager::instance()->print( "%s", getPostSequence( level ) );
     va_end( arg );

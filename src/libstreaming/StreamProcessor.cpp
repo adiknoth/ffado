@@ -76,6 +76,11 @@ void StreamProcessor::dumpInfo()
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
     
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n", 
+        24576000.0*m_SyncSource->m_data_buffer->getRate(),
+        24576000.0*m_data_buffer->getRate()
+        );
+    
     m_data_buffer->dumpInfo();
     
 //     m_PeriodStat.dumpInfo();
