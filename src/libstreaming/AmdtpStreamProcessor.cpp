@@ -38,7 +38,7 @@
 #define RECEIVE_PROCESSING_DELAY (TICKS_PER_CYCLE * 2)
 
 // in ticks
-#define TRANSMIT_TRANSFER_DELAY 9000U
+#define TRANSMIT_TRANSFER_DELAY 6000U
 // the number of cycles to send a packet in advance of it's timestamp
 #define TRANSMIT_ADVANCE_CYCLES 1U
 
@@ -131,7 +131,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     int cycle_diff = substractCycles(cycle, now_cycles);
     
 #ifdef DEBUG
-    if(cycle_diff < 0) {
+    if(m_running && (cycle_diff < 0)) {
         debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
             cycle, now_cycles);
     }
@@ -317,6 +317,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 
         return RAW1394_ISO_OK;
         
+    } else if (now_cycles<cycle) {
+        // we can still postpone the queueing of the packets
+        return RAW1394_ISO_AGAIN;
     } else { // there is no more data in the ringbuffer
 
         // TODO: maybe we have to be a little smarter here
@@ -398,6 +401,10 @@ uint64_t AmdtpTransmitStreamProcessor::getTimeAtPeriod() {
     return next_period_boundary;
 }
 
+int AmdtpTransmitStreamProcessor::getMinimalSyncDelay() {
+    return 0;
+}
+
 bool AmdtpTransmitStreamProcessor::prefill() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prefill transmit buffers...\n");
@@ -418,6 +425,16 @@ bool AmdtpTransmitStreamProcessor::reset() {
     m_PeriodStat.reset();
     m_PacketStat.reset();
     m_WakeupStat.reset();
+    
+    // we have to make sure that the buffer HEAD timestamp
+    // lies in the future for every possible buffer fill case.
+    int offset=(int)(m_ringbuffer_size_frames*m_ticks_per_frame);
+    
+    // we can substract the delay as it introduces
+    // unnescessary delay
+    offset -= m_SyncSource->getSyncDelay();
+    
+    m_data_buffer->setTickOffset(offset);
     
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports
@@ -504,10 +521,6 @@ bool AmdtpTransmitStreamProcessor::prepare() {
     m_data_buffer->setNominalRate(m_ticks_per_frame);
     
     m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
-    
-    // we have to make sure that the buffer HEAD timestamp
-    // lies in the future for every possible buffer fill case.
-    m_data_buffer->setTickOffset((int)(m_ringbuffer_size_frames*m_ticks_per_frame));
     
     m_data_buffer->prepare();
 
@@ -1126,6 +1139,14 @@ uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriod() {
     return next_period_boundary;
 }
 
+// returns the delay between the actual (real) time of a timestamp as received,
+// and the timestamp that is passed on for the same event. This is to cope with
+// ISO buffering
+int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
+    return (int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame);
+//     return RECEIVE_PROCESSING_DELAY;
+}
+
 void AmdtpReceiveStreamProcessor::dumpInfo()
 {
 
@@ -1159,8 +1180,7 @@ bool AmdtpReceiveStreamProcessor::reset() {
     // period boundary is predicted based upon earlier samples, and therefore can
     // pass before these packets are processed. Adding this extra term makes that
     // the period boundary is signalled later
-    m_data_buffer->setTickOffset(RECEIVE_PROCESSING_DELAY
-        + (int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame));
+    m_data_buffer->setTickOffset(m_SyncSource->getSyncDelay());
 
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports
@@ -1235,17 +1255,8 @@ bool AmdtpReceiveStreamProcessor::prepare() {
     
     m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
     
-    // The timestamp passed to this function is the time
-    // of the period transfer. This means that we have to
-    // add our max buffer size to it to ensure causality
-    // in all cases:
-    // we have to make sure that the buffer HEAD timestamp
-    // lies in the future for every possible buffer fill case.
-    
-    // the receive processing delay indicates how much
-    // extra time we use as slack
-    m_data_buffer->setTickOffset(RECEIVE_PROCESSING_DELAY);
-    
+    // offset is in reset()
+
     m_data_buffer->prepare();
 
 	// set the parameters of ports we can:

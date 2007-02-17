@@ -53,6 +53,8 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 	, m_cycle_to_enable_at(0)
 	, m_SyncSource(NULL)
 	, m_ticks_per_frame(0)
+	, m_last_cycle(0)
+	, m_sync_delay(0)
 {
     // create the timestamped buffer and register ourselves as its client
     m_data_buffer=new FreebobUtil::TimestampedBuffer(this);
@@ -171,39 +173,10 @@ bool StreamProcessor::prepare() {
 
 }
 
-// /**
-//  * @brief Notify the StreamProcessor that frames were written
-//  *
-//  * This notifies the StreamProcessor of the fact that frames were written to the internal
-//  * buffer. This is for framecounter & timestamp bookkeeping.
-//  *
-//  * @param nbframes the number of frames that are written to the internal buffers
-//  * @param ts the new timestamp of the 'tail' of the buffer, i.e. the last sample
-//  *           present in the buffer.
-//  * @return true if successful
-//  */
-// bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
-// 
-// 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Putting %d frames for %llu into frame buffer...\n", nbframes,ts);
-// //         m_data_buffer->incrementFrameCounter(nbframes, ts);
-// 	return true;
-// }
-
-// /**
-// * @brief Notify the StreamProcessor that frames were read
-// *
-// * This notifies the StreamProcessor of the fact that frames were read from the internal
-// * buffer. This is for framecounter & timestamp bookkeeping.
-// *
-// * @param nbframes the number of frames that are read from the internal buffers
-// * @return true if successful
-// */
-// bool StreamProcessor::getFrames(unsigned int nbframes) {
-// 
-// 	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Getting %d frames from frame buffer...\n", nbframes);
-// //         m_data_buffer->decrementFrameCounter(nbframes);
-// 	return true;
-// }
+int StreamProcessor::getBufferFill() {
+//     return m_data_buffer->getFrameCounter();
+    return m_data_buffer->getBufferFill();
+}
 
 uint64_t StreamProcessor::getTimeNow() {
     return m_handler->getCycleTimerTicks();

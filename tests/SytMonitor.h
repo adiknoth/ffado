@@ -59,6 +59,8 @@ class SytMonitor
 			          unsigned int cycle, unsigned int dropped);
 			          
 		void dumpInfo();
+		unsigned int getMaxPacketSize() {return 4096;};
+		unsigned int getPacketsPerPeriod() {return 1;};
 		
         bool readNextCycleInfo(struct cycle_info *cif);
         bool consumeNextCycleInfo();
