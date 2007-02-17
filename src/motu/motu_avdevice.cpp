@@ -500,10 +500,6 @@ MotuDevice::prepare() {
 		return false;
 	}
 
-	// Connect the transmit stream ticks-per-frame hook to the
-	// ticks-per-frame DLL integrator in the receive stream.
-	m_transmitProcessor->setTicksPerFrameDLL(m_receiveProcessor->getTicksPerFrameDLL());
-
 	// Now we add ports to the processor
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
