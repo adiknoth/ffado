@@ -120,9 +120,7 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
     private:
         /// iterate all child handlers
         bool iterate();
-    public: // FIXME: just so that SPM can do this (temp solution)
-        /// updates the cycle timer caches of all child handlers
-        void updateCycleTimers();
+
     private:
         // note: there is a disctinction between streams and handlers
         // because one handler can serve multiple streams (in case of 

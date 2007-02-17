@@ -32,11 +32,13 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "../libutil/PosixThread.h"
-
 #include "libstreaming/cycletimer.h"
 
 #define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 50
+
+#define RUNNING_TIMEOUT_MSEC 4000
+#define PREPARE_TIMEOUT_MSEC 4000
+#define ENABLE_TIMEOUT_MSEC 4000
 
 namespace FreebobStreaming {
 
@@ -164,20 +166,6 @@ bool StreamProcessorManager::init()
 {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	// the tread that runs the StreamProcessor
-	// checking the period boundaries
-	int prio=m_thread_priority+5;
-	if (prio>98) prio=98;
-	
-	m_streamingThread=new FreebobUtil::PosixThread(this,
-	   m_thread_realtime, prio, 
-	   PTHREAD_CANCEL_DEFERRED);
-	   
-	if(!m_streamingThread) {
-		debugFatal("Could not create streaming thread\n");
-		return false;
-	}
-	
 	m_isoManager=new IsoHandlerManager(m_thread_realtime, m_thread_priority);
 	
 	if(!m_isoManager) {
@@ -196,15 +184,6 @@ bool StreamProcessorManager::init()
 	m_xrun_happened=false;
 	
 	return true;
-}
-
-bool StreamProcessorManager::Init()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing runner...\n");
-
-    // no xrun has occurred (yet)
-
-    return true;
 }
 
 bool StreamProcessorManager::prepare() {
@@ -274,25 +253,13 @@ bool StreamProcessorManager::prepare() {
 	return true;
 }
 
-// FIXME: this can be removed
-bool StreamProcessorManager::Execute()
-{
-        // temp measure, polling
-        usleep(1000);
-
-        // FIXME: move this to an IsoHandlerManager sub-thread
-        // and make this private again in IHM
-        m_isoManager->updateCycleTimers();
-        
-        return true;
-}
 
 bool StreamProcessorManager::syncStartAll() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessor streams to start running...\n");
     // we have to wait until all streamprocessors indicate that they are running
     // i.e. that there is actually some data stream flowing
-    int wait_cycles=2000; // two seconds
+    int wait_cycles=RUNNING_TIMEOUT_MSEC; // two seconds
     bool notRunning=true;
     while (notRunning && wait_cycles) {
         wait_cycles--;
@@ -452,12 +419,6 @@ bool StreamProcessorManager::start() {
 		debugFatal("Could not start handlers...\n");
 		return false;
 	}
-	
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Starting streaming threads...\n");
-
-	// start the runner thread
-	// FIXME: not used anymore (for updatecycletimers ATM, but that's not good)
-	m_streamingThread->Start();
 
 	// start all SP's synchonized
 	if (!syncStartAll()) {
@@ -477,13 +438,12 @@ bool StreamProcessorManager::start() {
 bool StreamProcessorManager::stop() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping...\n");
 	assert(m_isoManager);
-	assert(m_streamingThread);
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to prepare to stop...\n");
 	// Most stream processors can just stop without special treatment.  However, some
 	// (like the MOTU) need to do a few things before it's safe to turn off the iso
 	// handling.
-	int wait_cycles=2000; // two seconds ought to be sufficient
+	int wait_cycles=PREPARE_TIMEOUT_MSEC; // two seconds ought to be sufficient
 	bool allReady = false;
 	while (!allReady && wait_cycles) {
 		wait_cycles--;
@@ -503,10 +463,6 @@ bool StreamProcessorManager::stop() {
 		usleep(1000);
 	}
 
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping threads...\n");
-	
-	m_streamingThread->Stop();
 	
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handlers...\n");
 	if(!m_isoManager->stopHandlers()) {
@@ -603,7 +559,7 @@ bool StreamProcessorManager::enableStreamProcessors(uint64_t time_to_enable_at) 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to be enabled...\n");
     // we have to wait until all streamprocessors indicate that they are running
     // i.e. that there is actually some data stream flowing
-    int wait_cycles=2000; // two seconds
+    int wait_cycles=ENABLE_TIMEOUT_MSEC; // two seconds
     bool notEnabled=true;
     while (notEnabled && wait_cycles) {
         wait_cycles--;
@@ -688,7 +644,7 @@ bool StreamProcessorManager::disableStreamProcessors() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to be disabled...\n");
     // we have to wait until all streamprocessors indicate that they are running
     // i.e. that there is actually some data stream flowing
-    int wait_cycles=2000; // two seconds
+    int wait_cycles=ENABLE_TIMEOUT_MSEC; // two seconds
     bool enabled=true;
     while (enabled && wait_cycles) {
         wait_cycles--;

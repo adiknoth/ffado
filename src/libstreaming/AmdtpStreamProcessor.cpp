@@ -367,22 +367,20 @@ int64_t AmdtpTransmitStreamProcessor::getTimeUntilNextPeriodUsecs() {
     // calculate the time until the next period
     int64_t until_next=substractTicks(time_at_period,cycle_timer);
     
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld, TPUS=%f\n",
-        time_at_period, cycle_timer, until_next, m_handler->getTicksPerUsec()
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
+        time_at_period, cycle_timer, until_next
         );
     
     // now convert to usecs
     // don't use the mapping function because it only works
     // for absolute times, not the relative time we are
     // using here (which can also be negative).
-    return (int64_t)(((float)until_next) / m_handler->getTicksPerUsec());
+    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
 }
 
 uint64_t AmdtpTransmitStreamProcessor::getTimeAtPeriodUsecs() {
     // then we should convert this into usecs
-    // FIXME: we assume that the TimeSource of the IsoHandler is
-    //        in usecs.
-    return m_handler->mapToTimeSource(getTimeAtPeriod());
+    return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
 }
 
 uint64_t AmdtpTransmitStreamProcessor::getTimeAtPeriod() {
@@ -1097,22 +1095,20 @@ int64_t AmdtpReceiveStreamProcessor::getTimeUntilNextPeriodUsecs() {
     // calculate the time until the next period
     int64_t until_next=substractTicks(time_at_period,cycle_timer);
     
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld, TPUS=%f\n",
-        time_at_period, cycle_timer, until_next, m_handler->getTicksPerUsec()
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
+        time_at_period, cycle_timer, until_next
         );
     
     // now convert to usecs
     // don't use the mapping function because it only works
     // for absolute times, not the relative time we are
     // using here (which can also be negative).
-    return (int64_t)(((float)until_next) / m_handler->getTicksPerUsec());
+    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
 }
 
 uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriodUsecs() {
     // then we should convert this into usecs
-    // FIXME: we assume that the TimeSource of the IsoHandler is
-    //        in usecs.
-    return m_handler->mapToTimeSource(getTimeAtPeriod());
+    return (uint64_t)((float)getTimeAtPeriod()*TICKS_PER_USEC);
 }
 
 uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriod() {

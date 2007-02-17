@@ -162,22 +162,6 @@ bool IsoHandlerManager::iterate()
 
 }
 
-// updates the internal cycle timer caches of the handlers
-void IsoHandlerManager::updateCycleTimers() {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-    
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-          it != m_IsoHandlers.end();
-          ++it )
-    {
-        int cnt=0;
-        while (!(*it)->updateCycleTimer() && (cnt++ < MAX_UPDATE_TRIES)) {
-            usleep(USLEEP_AFTER_UPDATE_FAILURE);
-        }
-    }
-    
-}
-
 bool IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");

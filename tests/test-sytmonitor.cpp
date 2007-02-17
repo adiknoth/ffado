@@ -240,12 +240,7 @@ int main(int argc, char *argv[])
                 debugOutput(DEBUG_LEVEL_NORMAL, "Could not register SytMonitor %d with isoManager\n", i);
                 goto finish;
             }
-            
-            if (!masterTimeSource.registerSlave(monitors[i]->getHandler())) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "Could not register SytMonitor %d's IsoHandler with masterTimeSource\n", i);
-                goto finish;
-                
-            }
+
         }
 
         debugOutput(DEBUG_LEVEL_NORMAL,   "Preparing IsoHandlerManager...\n");
