@@ -284,7 +284,7 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, uint64_t t
     // add the data payload to the ringbuffer
     if (freebob_ringbuffer_write(m_event_buffer,data,write_size) < write_size) 
     {
-        debugWarning("writeFrames buffer overrun\n");
+//         debugWarning("writeFrames buffer overrun\n");
         return false;
     }
     
@@ -310,7 +310,7 @@ bool TimestampedBuffer::readFrames(unsigned int nframes, char *data) {
     // get the data payload to the ringbuffer
     if ((freebob_ringbuffer_read(m_event_buffer,data,read_size)) < read_size) 
     {
-        debugWarning("readFrames buffer underrun\n");
+//         debugWarning("readFrames buffer underrun\n");
         return false;
     }
     
