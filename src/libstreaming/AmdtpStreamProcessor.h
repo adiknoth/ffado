@@ -94,7 +94,6 @@ public:
     
     bool prepareForEnable(uint64_t time_to_enable_at);
     
-    bool canClientTransferFrames(unsigned int nbframes);
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from the client
 
     // We have 1 period of samples = m_period
@@ -108,10 +107,6 @@ public:
     
     unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);}; 
     
-    int64_t getTimeUntilNextPeriodUsecs();
-
-    uint64_t getTimeAtPeriodUsecs();
-    uint64_t getTimeAtPeriod();
     int getMinimalSyncDelay();
     
     void setVerboseLevel(int l);
@@ -182,7 +177,6 @@ public:
     bool prepareForStop();
     bool prepareForStart();
 	
-    bool canClientTransferFrames(unsigned int nbframes);
     bool getFrames(unsigned int nbframes); ///< transfer the buffer contents to the client
 
     // We have 1 period of samples = m_period
@@ -198,10 +192,6 @@ public:
 
     void dumpInfo();
     
-    int64_t getTimeUntilNextPeriodUsecs();
-
-    uint64_t getTimeAtPeriodUsecs();
-    uint64_t getTimeAtPeriod();
     int getMinimalSyncDelay();
 	
     void setVerboseLevel(int l);

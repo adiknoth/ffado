@@ -362,45 +362,6 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 
 }
 
-int64_t AmdtpTransmitStreamProcessor::getTimeUntilNextPeriodUsecs() {
-    uint64_t time_at_period=getTimeAtPeriod();
-    
-    uint64_t cycle_timer=m_handler->getCycleTimerTicks();
-    
-    // calculate the time until the next period
-    int64_t until_next=substractTicks(time_at_period,cycle_timer);
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
-        time_at_period, cycle_timer, until_next
-        );
-    
-    // now convert to usecs
-    // don't use the mapping function because it only works
-    // for absolute times, not the relative time we are
-    // using here (which can also be negative).
-    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
-}
-
-uint64_t AmdtpTransmitStreamProcessor::getTimeAtPeriodUsecs() {
-    // then we should convert this into usecs
-    return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
-}
-
-uint64_t AmdtpTransmitStreamProcessor::getTimeAtPeriod() {
-    uint64_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
-    
-    #ifdef DEBUG
-    uint64_t ts,fc;
-    m_data_buffer->getBufferTailTimestamp(&ts,&fc);
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5u, TPF=%f\n",
-        next_period_boundary, ts, fc, m_ticks_per_frame
-        );
-    #endif
-    
-    return next_period_boundary;
-}
-
 int AmdtpTransmitStreamProcessor::getMinimalSyncDelay() {
     return 0;
 }
@@ -696,11 +657,6 @@ bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int nframes) {
     free(dummybuffer);
     
     return retval;
-}
-
-bool AmdtpTransmitStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
-    // there has to be enough space to put the frames in
-    return m_ringbuffer_size_frames - m_data_buffer->getFrameCounter() > nbframes;
 }
 
 bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
@@ -1100,45 +1056,6 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     return retval;
 }
 
-int64_t AmdtpReceiveStreamProcessor::getTimeUntilNextPeriodUsecs() {
-    uint64_t time_at_period=getTimeAtPeriod();
-    
-    uint64_t cycle_timer=m_handler->getCycleTimerTicks();
-    
-    // calculate the time until the next period
-    int64_t until_next=substractTicks(time_at_period,cycle_timer);
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
-        time_at_period, cycle_timer, until_next
-        );
-    
-    // now convert to usecs
-    // don't use the mapping function because it only works
-    // for absolute times, not the relative time we are
-    // using here (which can also be negative).
-    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
-}
-
-uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriodUsecs() {
-    // then we should convert this into usecs
-    return (uint64_t)((float)getTimeAtPeriod()*TICKS_PER_USEC);
-}
-
-uint64_t AmdtpReceiveStreamProcessor::getTimeAtPeriod() {
-    uint64_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
-    
-    #ifdef DEBUG
-    uint64_t ts,fc;
-    m_data_buffer->getBufferTailTimestamp(&ts,&fc);
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5u, TPF=%f\n",
-        next_period_boundary, ts, fc, m_ticks_per_frame
-        );
-    #endif
-    
-    return next_period_boundary;
-}
-
 // returns the delay between the actual (real) time of a timestamp as received,
 // and the timestamp that is passed on for the same event. This is to cope with
 // ISO buffering
@@ -1352,10 +1269,6 @@ bool AmdtpReceiveStreamProcessor::prepareForStart() {
 bool AmdtpReceiveStreamProcessor::prepareForStop() {
     disable();
     return true;
-}
-
-bool AmdtpReceiveStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
-    return m_data_buffer->getFrameCounter() >= (int) nbframes;
 }
 
 bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes) {

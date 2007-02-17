@@ -150,7 +150,7 @@ protected:
          * @return true if the StreamProcessor can handle this amount of frames
          *         false if it can't
          */
-        virtual bool canClientTransferFrames(unsigned int nframes) {return true;};
+        virtual bool canClientTransferFrames(unsigned int nframes) = 0;
         
         /**
          * \brief return the time until the next period boundary (in microseconds)
@@ -163,7 +163,7 @@ protected:
          *
          * \return the time in usecs
          */
-        virtual int64_t getTimeUntilNextPeriodUsecs() = 0;
+        int64_t getTimeUntilNextPeriodUsecs();
         /**
          * \brief return the time of the next period boundary (in microseconds)
          *
@@ -175,7 +175,7 @@ protected:
          *
          * \return the time in usecs
          */
-        virtual uint64_t getTimeAtPeriodUsecs() = 0;
+        uint64_t getTimeAtPeriodUsecs();
 
         /**
          * \brief return the time of the next period boundary (in internal units) 
@@ -250,6 +250,9 @@ public:
 		          unsigned int cycle, unsigned int dropped) = 0;
  	virtual void setVerboseLevel(int l);
 
+    uint64_t getTimeAtPeriod();
+    bool canClientTransferFrames(unsigned int nframes);
+
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
 
@@ -281,6 +284,9 @@ public:
 	              unsigned char *tag, unsigned char *sy,
 	              int cycle, unsigned int dropped, unsigned int max_length) = 0;
  	virtual void setVerboseLevel(int l);
+
+    uint64_t getTimeAtPeriod();
+    bool canClientTransferFrames(unsigned int nframes);
 
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};

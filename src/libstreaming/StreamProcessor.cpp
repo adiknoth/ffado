@@ -231,6 +231,29 @@ bool StreamProcessor::setSyncSource(StreamProcessor *s) {
     return true;
 }
 
+int64_t StreamProcessor::getTimeUntilNextPeriodUsecs() {
+    uint64_t time_at_period=getTimeAtPeriod();
+    
+    uint64_t cycle_timer=m_handler->getCycleTimerTicks();
+    
+    // calculate the time until the next period
+    int64_t until_next=substractTicks(time_at_period,cycle_timer);
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
+        time_at_period, cycle_timer, until_next
+        );
+    
+    // now convert to usecs
+    // don't use the mapping function because it only works
+    // for absolute times, not the relative time we are
+    // using here (which can also be negative).
+    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
+}
+
+uint64_t StreamProcessor::getTimeAtPeriodUsecs() {
+    return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
+}
+
 /**
  * Resets the xrun counter, in a atomic way. This
  * is thread safe.
@@ -261,6 +284,24 @@ void ReceiveStreamProcessor::setVerboseLevel(int l) {
 
 }
 
+uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {
+    uint64_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
+    
+    #ifdef DEBUG
+    uint64_t ts,fc;
+    m_data_buffer->getBufferTailTimestamp(&ts,&fc);
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5u, TPF=%f\n",
+        next_period_boundary, ts, fc, m_ticks_per_frame
+        );
+    #endif
+    
+    return next_period_boundary;
+}
+
+bool ReceiveStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
+    return m_data_buffer->getFrameCounter() >= (int) nbframes;
+}
 
 TransmitStreamProcessor::TransmitStreamProcessor( int port, int framerate) 
 	: StreamProcessor(IsoStream::EST_Transmit, port, framerate) {
@@ -276,5 +317,26 @@ void TransmitStreamProcessor::setVerboseLevel(int l) {
 	StreamProcessor::setVerboseLevel(l);
 
 }
+
+uint64_t TransmitStreamProcessor::getTimeAtPeriod() {
+    uint64_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
+    
+    #ifdef DEBUG
+    uint64_t ts,fc;
+    m_data_buffer->getBufferTailTimestamp(&ts,&fc);
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5u, TPF=%f\n",
+        next_period_boundary, ts, fc, m_ticks_per_frame
+        );
+    #endif
+    
+    return next_period_boundary;
+}
+
+bool TransmitStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
+    // there has to be enough space to put the frames in
+    return m_data_buffer->getBufferSize() - m_data_buffer->getFrameCounter() > nbframes;
+}
+
 
 }
