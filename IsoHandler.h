@@ -30,8 +30,6 @@
 
 #include "../debugmodule/debugmodule.h"
 
-#include "libutil/TimeSource.h"
-
 #include <libraw1394/raw1394.h>
 
 
@@ -49,7 +47,7 @@ class IsoStream;
 
 */
 
-class IsoHandler : public FreebobUtil::TimeSource
+class IsoHandler
 {
     protected:
     
@@ -105,17 +103,7 @@ class IsoHandler : public FreebobUtil::TimeSource
         unsigned int getCycleTimerTicks();
         /// get the most recent cycle timer value (as is)
         unsigned int getCycleTimer();
-        /// Maps a value of the active TimeSource to a Cycle Timer value.
-        unsigned int mapToCycleTimer(freebob_microsecs_t now);
-        /// Maps a Cycle Timer value to the active TimeSource's unit.
-        freebob_microsecs_t mapToTimeSource(unsigned int cc);
-        /// update the cycle timer cache
-        bool updateCycleTimer();
-        float getTicksPerUsec() {return m_ticks_per_usec;};
 
-        // register a master timing source
-        bool setSyncMaster(FreebobUtil::TimeSource *t);
-    
     protected:
         raw1394handle_t m_handle;
         raw1394handle_t m_handle_util;
@@ -124,17 +112,10 @@ class IsoHandler : public FreebobUtil::TimeSource
         unsigned int    m_max_packet_size;
         int             m_irq_interval;
         
-        uint64_t        m_cycletimer_ticks;
-        uint64_t m_lastmeas_usecs;
-        float               m_ticks_per_usec;
-        float               m_ticks_per_usec_dll_err2;
-        
         int m_packetcount;
         int m_dropped;
 
         IsoStream *m_Client;
-
-        FreebobUtil::TimeSource *m_TimeSource;
 
         virtual int handleBusReset(unsigned int generation);
 
@@ -143,8 +124,6 @@ class IsoHandler : public FreebobUtil::TimeSource
 
     private:
         static int busreset_handler(raw1394handle_t handle, unsigned int generation);
-
-        void initCycleTimer();
 
     // the state machine
     private:
@@ -157,18 +136,6 @@ class IsoHandler : public FreebobUtil::TimeSource
         };
         
         enum EHandlerStates m_State;
-
-    // implement the TimeSource interface
-    public:
-        freebob_microsecs_t getCurrentTime();
-        freebob_microsecs_t getCurrentTimeAsUsecs();
-        inline freebob_microsecs_t unWrapTime(freebob_microsecs_t t);
-        inline freebob_microsecs_t wrapTime(freebob_microsecs_t t);
-        
-    private:
-        // to cope with wraparound
-        unsigned int m_TimeSource_LastSecs;
-        unsigned int m_TimeSource_NbCycleWraps;
 
 };
 

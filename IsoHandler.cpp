@@ -92,26 +92,20 @@ int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation
 
 /* Base class implementation */
 IsoHandler::IsoHandler(int port)
-   : TimeSource(), m_handle(0), m_handle_util(0), m_port(port), 
+   :  m_handle(0), m_handle_util(0), m_port(port), 
    m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1),
-   m_cycletimer_ticks(0), m_lastmeas_usecs(0), m_ticks_per_usec(24.576), 
-   m_ticks_per_usec_dll_err2(0),
    m_packetcount(0), m_dropped(0), m_Client(0),
-   m_State(E_Created), m_TimeSource_LastSecs(0),m_TimeSource_NbCycleWraps(0)
+   m_State(E_Created)
 {
-    m_TimeSource=new FreebobUtil::SystemTimeSource();
 }
 
 IsoHandler::IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq)
-   : TimeSource(), m_handle(0), m_port(port), 
+   : m_handle(0), m_port(port), 
    m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), 
    m_irq_interval(irq), 
-   m_cycletimer_ticks(0), m_lastmeas_usecs(0), m_ticks_per_usec(24.576),
-   m_ticks_per_usec_dll_err2(0),
    m_packetcount(0), m_dropped(0), m_Client(0),
-   m_State(E_Created), m_TimeSource_LastSecs(0),m_TimeSource_NbCycleWraps(0)
+   m_State(E_Created)
 {
-    m_TimeSource=new FreebobUtil::SystemTimeSource();
 }
 
 IsoHandler::~IsoHandler() {
@@ -131,8 +125,7 @@ IsoHandler::~IsoHandler() {
     }
     
     if(m_handle_util) raw1394_destroy_handle(m_handle_util);
-    
-    if (m_TimeSource) delete m_TimeSource;
+
 }
 
 bool IsoHandler::iterate() {
@@ -201,35 +194,17 @@ IsoHandler::init()
         raw1394_set_bus_reset_handler(m_handle, busreset_handler);
     }
 
-    // initialize the local timesource
-    m_TimeSource_NbCycleWraps=0;
-    unsigned int new_timer;
-    
-#ifdef LIBRAW1394_USE_CTRREAD_API
-    struct raw1394_cycle_timer ctr;
+    // test the cycle timer read function
     int err;
-    err=raw1394_read_cycle_timer(m_handle_util, &ctr);
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    err=raw1394_read_cycle_timer(m_handle_util, &cycle_timer, &local_time);
     if(err) {
         debugError("raw1394_read_cycle_timer failed.\n");
         debugError(" Error: %s\n", strerror(err));
         debugError(" Your system doesn't seem to support the raw1394_read_cycle_timer call\n");
         return false;
     }
-    new_timer=ctr.cycle_timer;
-#else
-    // normally we should be able to use the same handle
-    // because it is not iterated on by any other stuff
-    // but I'm not sure
-    quadlet_t buf=0;
-    raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
-        CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-    new_timer= ntohl(buf) & 0xFFFFFFFF;
-#endif
-
-    m_TimeSource_LastSecs=CYCLE_TIMER_GET_SECS(new_timer);
-
-    // update the cycle timer value for initial value
-    initCycleTimer();
 
     // update the internal state
     m_State=E_Initialized;
@@ -295,17 +270,6 @@ bool IsoHandler::stop()
     return true;
 }
 
-bool
-IsoHandler::setSyncMaster(FreebobUtil::TimeSource *t)
-{
-    m_TimeSource=t;
-    
-    // update the cycle timer value for initial value
-    initCycleTimer();
-    
-    return true;
-}
-
 /**
  * Bus reset handler
  *
@@ -315,9 +279,6 @@ IsoHandler::setSyncMaster(FreebobUtil::TimeSource *t)
 int IsoHandler::handleBusReset(unsigned int generation) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
     
-    // as busreset can elect a new cycle master,
-    // we need to re-initialize our timing code
-    initCycleTimer();
     
     return 0;
 }
@@ -329,27 +290,18 @@ int IsoHandler::handleBusReset(unsigned int generation) {
  */
 
 unsigned int IsoHandler::getCycleTimerTicks() {
-
-#ifdef LIBRAW1394_USE_CTRREAD_API
     // the new api should be realtime safe.
     // it might cause a reschedule when turning preemption,
     // back on but that won't hurt us if we have sufficient 
     // priority 
-    struct raw1394_cycle_timer ctr;
     int err;
-    err=raw1394_read_cycle_timer(m_handle_util, &ctr);
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    err=raw1394_read_cycle_timer(m_handle_util, &cycle_timer, &local_time);
     if(err) {
         debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
-    return CYCLE_TIMER_TO_TICKS((uint32_t)ctr.cycle_timer);
-
-#else
-    // use the estimated version
-    freebob_microsecs_t now;
-    now=m_TimeSource->getCurrentTimeAsUsecs();
-    return mapToCycleTimer(now);
-#endif 
-
+    return CYCLE_TIMER_TO_TICKS(cycle_timer);
 }
 
 /**
@@ -359,362 +311,18 @@ unsigned int IsoHandler::getCycleTimerTicks() {
  */
 
 unsigned int IsoHandler::getCycleTimer() {
-
-#ifdef LIBRAW1394_USE_CTRREAD_API
     // the new api should be realtime safe.
     // it might cause a reschedule when turning preemption,
     // back on but that won't hurt us if we have sufficient 
     // priority 
-    struct raw1394_cycle_timer ctr;
     int err;
-    err=raw1394_read_cycle_timer(m_handle_util, &ctr);
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    err=raw1394_read_cycle_timer(m_handle_util, &cycle_timer, &local_time);
     if(err) {
         debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
-    return ctr.cycle_timer;
-
-#else
-    // use the estimated version
-    freebob_microsecs_t now;
-    now=m_TimeSource->getCurrentTimeAsUsecs();
-    return TICKS_TO_CYCLE_TIMER(mapToCycleTimer(now));
-#endif 
-
-}
-/**
- * Maps a value of the active TimeSource to a Cycle Timer value.
- *
- * This is usefull if you know a time value and want the corresponding
- * Cycle Timer value. Note that the value shouldn't be too far off
- * the current time, because then the mapping can be bad.
- *
- * @return the value of the cycle timer (in ticks)
- */
-
-unsigned int IsoHandler::mapToCycleTimer(freebob_microsecs_t now) {
-
-    // linear interpolation
-    int delta_usecs=now-m_lastmeas_usecs;
-
-    float offset=m_ticks_per_usec * ((float)delta_usecs);
-
-    int64_t pred_ticks=(int64_t)m_cycletimer_ticks+(int64_t)offset;
-
-    if (pred_ticks < 0) {
-        debugWarning("Predicted ticks < 0\n");
-    }
-    debugOutput(DEBUG_LEVEL_VERBOSE,"now=%llu, m_lastmeas_usec=%llu, delta_usec=%d\n",
-            now, m_lastmeas_usecs, delta_usecs);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"t/usec=%f, offset=%f, m_cc_t=%llu, pred_ticks=%lld\n",
-            m_ticks_per_usec, offset, m_cycletimer_ticks, pred_ticks);
-
-    // if we need to wrap, do it
-    if (pred_ticks > TICKS_PER_SECOND * 128L) {
-        pred_ticks -= TICKS_PER_SECOND * 128L;
-    }
-    
-    return pred_ticks;
-}
-
-/**
- * Maps a Cycle Timer value (in ticks) of the active TimeSource's unit.
- *
- * This is usefull if you know a Cycle Timer value and want the corresponding
- * timesource value. Note that the value shouldn't be too far off
- * the current cycle timer, because then the mapping can be bad.
- *
- * @return the mapped value 
- */
-
-freebob_microsecs_t IsoHandler::mapToTimeSource(unsigned int cc) {
-
-    // linear interpolation
-    int delta_cc=cc-m_cycletimer_ticks;
-
-    float offset= ((float)delta_cc) / m_ticks_per_usec;
-
-    int64_t pred_time=(int64_t)m_lastmeas_usecs+(int64_t)offset;
-
-    if (pred_time < 0) {
-        debugWarning("Predicted time < 0\n");
-        debugOutput(DEBUG_LEVEL_VERBOSE,"cc=%u, m_cycletimer_ticks=%llu, delta_cc=%d\n",
-                cc, m_cycletimer_ticks, delta_cc);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"t/usec=%f, offset=%f, m_lastmeas_usecs=%llu, pred_time=%lld\n",
-                m_ticks_per_usec, offset, m_lastmeas_usecs, pred_time);    
-    }
-
-
-    return pred_time;
-}
-
-bool IsoHandler::updateCycleTimer() {
-    freebob_microsecs_t prev_usecs=m_lastmeas_usecs;
-    uint64_t prev_ticks=m_cycletimer_ticks;
-    
-    freebob_microsecs_t new_usecs;
-    uint64_t new_ticks;
-    unsigned int new_timer;
-    
-    /* To estimate the cycle timer, we implement a 
-       DLL based routine, that maps the cycle timer
-       on the system clock.
-       
-       For more info, refer to:
-        "Using a DLL to filter time"
-        Fons Adriaensen
-        
-        Can be found at:
-        http://users.skynet.be/solaris/linuxaudio/downloads/usingdll.pdf
-        or maybe at:
-        http://www.kokkinizita.net/linuxaudio
-    
-        Basically what we do is estimate the next point (T1,CC1_est)
-        based upon the previous point (T0, CC0) and the estimated rate (R).
-        Then we compare our estimation with the measured cycle timer
-        at T1 (=CC1_meas). We then calculate the estimation error on R:
-        err=(CC1_meas-CC0)/(T1-T2) - (CC1_est-CC0)/(T1-T2)
-        and try to minimize this on average (DLL)
-        
-        Note that in order to have a contignous mapping, we should
-        update CC0<=CC1_est instead of CC0<=CC1_meas. The measurement 
-        serves only to correct the error 'on average'.
-        
-        In the code, the following variable names are used:
-        T0=prev_usecs
-        T1=next_usecs
-        
-        CC0=prev_ticks
-        CC1_est=est_ticks
-        CC1_meas=meas_ticks
-        
-     */
-#ifdef LIBRAW1394_USE_CTRREAD_API
-    struct raw1394_cycle_timer ctr;
-    int err;
-    err=raw1394_read_cycle_timer(m_handle_util, &ctr);
-    if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-    }
-    new_usecs=(freebob_microsecs_t)ctr.local_time;
-    new_timer=ctr.cycle_timer;
-#else
-    // normally we should be able to use the same handle
-    // because it is not iterated on by any other stuff
-    // but I'm not sure
-    quadlet_t buf=0;
-    raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
-        CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-    new_usecs=m_TimeSource->getCurrentTimeAsUsecs();
-    new_timer= ntohl(buf) & 0xFFFFFFFF;
-#endif    
-
-    new_ticks=CYCLE_TIMER_TO_TICKS(new_timer);
-
-    // the difference in system time
-    int64_t delta_usecs=new_usecs-prev_usecs;
-    // this cannot be 0, because m_TimeSource->getCurrentTimeAsUsecs should 
-    // never return the same value (maybe in future terrahz processors?)
-    assert(delta_usecs);
-    
-    // the measured cycle timer difference
-    int64_t delta_ticks_meas;
-    if (new_ticks >= prev_ticks) {
-        delta_ticks_meas=new_ticks - prev_ticks;
-    } else { // wraparound
-        delta_ticks_meas=CYCLE_TIMER_UNWRAP_TICKS(new_ticks) - prev_ticks;
-    }
-    
-    // the estimated cycle timer difference
-    int64_t delta_ticks_est=(int64_t)(m_ticks_per_usec * ((float)delta_usecs));
-    
-    // the measured & estimated rate
-    float rate_meas=((double)delta_ticks_meas/(double)delta_usecs);
-    float rate_est=((float)m_ticks_per_usec);
-    
-    // these make sure we don't update when the measurement is
-    // bad. We know the nominal rate, and it can't be that far
-    // off. The thing is that there is a problem in measuring
-    // both usecs and ticks at the same time (no provision in
-    // the kernel.
-    // We know that there are some tolerances on both
-    // the system clock and the firewire clock such that the 
-    // actual difference is rather small. So we discard values 
-    // that are too far from the nominal rate. 
-    // Otherwise the DLL has to have a very low bandwidth, in 
-    // order not to be desturbed too much by these bad measurements
-    // resulting in very slow locking.
-    
-    if (   (rate_meas < 24.576*(1.0+CC_MAX_RATE_ERROR)) 
-        && (rate_meas > 24.576*(1.0-CC_MAX_RATE_ERROR))) {
-
-#ifdef DEBUG
-
-        int64_t diff=(int64_t)delta_ticks_est;
-        
-        // calculate the difference in predicted ticks and
-        // measured ticks
-        diff -= delta_ticks_meas;
-        
-        
-        if (diff > 24000L || diff < -24000L) { // approx +/-1 msec error
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Bad pred (%p): diff=%lld, dt_est=%lld, dt_meas=%lld, d=%lldus, err=%fus\n", this,
-                diff, delta_ticks_est, delta_ticks_meas, delta_usecs, (((float)diff)/24.576)
-                );
-        } else {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Good pred: diff=%lld, dt_est=%lld, dt_meas=%lld, d=%lldus, err=%fus\n",
-                diff, delta_ticks_est, delta_ticks_meas, delta_usecs, (((float)diff)/24.576)
-                );
-        }
-#endif
-        // DLL the error to obtain the rate.
-        // (note: the DLL makes the error=0)
-        // only update the DLL if the rate is within 10% of the expected
-        // rate
-        float err=rate_meas-rate_est;
-        
-        // 2nd order DLL update
-//         const float w=6.28*0.0001;
-//         const float b=w*1.45;
-//         const float c=w*w;
-//         
-//         m_ticks_per_usec += b*err + m_ticks_per_usec_dll_err2;
-//         m_ticks_per_usec_dll_err2 += c * err;
-
-        // first order DLL update
-         m_ticks_per_usec += CC_DLL_COEFF*err;
-    
-        if (   (m_ticks_per_usec > 24.576*(1.0+CC_MAX_RATE_ERROR)) 
-            || (m_ticks_per_usec < 24.576*(1.0-CC_MAX_RATE_ERROR))) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Warning: DLL ticks/usec near clipping (%8.4f)\n",
-                        m_ticks_per_usec);
-        }
-        
-        // update the internal values
-        // note: the next cycletimer point is
-        //       the estimated one, not the measured one!
-        m_cycletimer_ticks += delta_ticks_est;
-        // if we need to wrap, do it
-        if (m_cycletimer_ticks > TICKS_PER_SECOND * 128L) {
-            m_cycletimer_ticks -= TICKS_PER_SECOND * 128L;
-        }
-
-        m_lastmeas_usecs = new_usecs;
-
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"U TS: %10llu -> %10llu, d=%7lldus, dt_est=%7lld,  dt_meas=%7lld, erate=%6.4f, mrate=%6f\n",
-              prev_ticks, m_cycletimer_ticks, delta_usecs,
-              delta_ticks_est, delta_ticks_meas, m_ticks_per_usec, rate_meas
-              );
-
-        // the estimate is good
-        return true;
-    } else {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"U TS: Not updating, rate out of range (%6.4f)\n",
-              rate_meas
-              );
-        return false;
-
-    }
-}
-
-void IsoHandler::initCycleTimer() {
-    freebob_microsecs_t prev_usecs;
-    unsigned int prev_ticks;
-    unsigned int prev_timer;
-    
-    freebob_microsecs_t new_usecs;
-    unsigned int new_ticks;
-    unsigned int new_timer;
-    
-    float rate=0.0;
-    
-    unsigned int try_cnt=0;
-    
-    // make sure that we start with a decent rate,
-    // meaning that we want two successive (usecs,ticks)
-    // points that make sense.
-    
-    while ( (try_cnt++ < CC_INIT_MAX_TRIES) &&
-           (   (rate > 24.576*(1.0+CC_MAX_RATE_ERROR)) 
-           || (rate < 24.576*(1.0-CC_MAX_RATE_ERROR)))) {
-           
-#ifdef LIBRAW1394_USE_CTRREAD_API
-        struct raw1394_cycle_timer ctr;
-        int err;
-        err=raw1394_read_cycle_timer(m_handle_util, &ctr);
-        if(err) {
-            debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-        }
-        prev_usecs=(freebob_microsecs_t)ctr.local_time;
-        prev_timer=ctr.cycle_timer;
-#else
-        // normally we should be able to use the same handle
-        // because it is not iterated on by any other stuff
-        // but I'm not sure
-        quadlet_t buf=0;
-        raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
-            CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-        prev_usecs=m_TimeSource->getCurrentTimeAsUsecs();
-        prev_timer= ntohl(buf) & 0xFFFFFFFF;
-#endif               
-        prev_ticks=CYCLE_TIMER_TO_TICKS(prev_timer);
-        
-        usleep(CC_SLEEP_TIME_AFTER_UPDATE);
-        
-        
-#ifdef LIBRAW1394_USE_CTRREAD_API
-        err=raw1394_read_cycle_timer(m_handle_util, &ctr);
-        if(err) {
-            debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-        }
-        new_usecs=(freebob_microsecs_t)ctr.local_time;
-        new_timer=ctr.cycle_timer;
-#else
-        // normally we should be able to use the same handle
-        // because it is not iterated on by any other stuff
-        // but I'm not sure
-        raw1394_read(m_handle_util, raw1394_get_local_id(m_handle_util), 
-            CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-        new_usecs=m_TimeSource->getCurrentTimeAsUsecs();
-        new_timer= ntohl(buf) & 0xFFFFFFFF;
-#endif    
-
-        new_ticks=CYCLE_TIMER_TO_TICKS(new_timer);
-        
-        unsigned int delta_ticks;
-        
-        if (new_ticks > prev_ticks) {
-            delta_ticks=new_ticks - prev_ticks;
-        } else { // wraparound
-            delta_ticks=CYCLE_TIMER_UNWRAP_TICKS(new_ticks) - prev_ticks;
-        }
-        
-        int delta_usecs=new_usecs-prev_usecs;
-        
-        // this cannot be 0, because m_TimeSource->getCurrentTimeAsUsecs should 
-        // never return the same value (maybe in future terrahz processors?)
-        assert(delta_usecs);
-        
-        rate=((float)delta_ticks/(float)delta_usecs);
-        
-        // update the internal values
-        m_cycletimer_ticks=new_ticks;
-        m_lastmeas_usecs=new_usecs;
-        
-        debugOutput(DEBUG_LEVEL_VERBOSE,"Try %d: rate=%6.4f\n",
-            try_cnt,rate
-            );
-
-    }
-    
-    // this is not fatal, the DLL will eventually correct this
-    if(try_cnt == CC_INIT_MAX_TRIES) {
-        debugWarning("Failed to properly initialize cycle timer...\n");
-    }
-    
-    // initialize this to the nominal value
-    m_ticks_per_usec = 24.576;
-    m_ticks_per_usec_dll_err2 = 0;
-    
+    return cycle_timer;
 }
 
 void IsoHandler::dumpInfo()
@@ -729,23 +337,7 @@ void IsoHandler::dumpInfo()
             m_port, channel);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count    : %10d (%5d dropped)\n",
             this->getPacketCount(), this->getDroppedCount());
-            
-    #ifdef DEBUG
-    unsigned int cc=this->getCycleTimerTicks();
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Cycle timer     : %10lu (%03us, %04ucycles, %04uticks)\n",
-            cc,TICKS_TO_SECS(cc),TICKS_TO_CYCLES(cc),TICKS_TO_OFFSET(cc));
-	     
-/*  freebob_microsecs_t now=m_TimeSource->getCurrentTimeAsUsecs();
-    cc=mapToCycleTimer(now);
-    freebob_microsecs_t now_mapped=mapToTimeSource(cc);
-    
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Mapping test   : now: %14llu, cc: %10lu, mapped now: %14llu\n",
-            now,cc,now_mapped);*/
-    #endif
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Ticks/usec      : %8.6f (dll2: %8.6e)\n\n",
-            this->getTicksPerUsec(), m_ticks_per_usec_dll_err2);
-
-};
+}
 
 void IsoHandler::setVerboseLevel(int l)
 {
@@ -786,53 +378,6 @@ bool IsoHandler::unregisterStream(IsoStream *stream)
     return true;
 
 }
-
-/* The timesource interface */
-freebob_microsecs_t IsoHandler::getCurrentTime() {
-    unsigned int new_timer;
-    
-    new_timer= getCycleTimerTicks();
-        
-    // this assumes that it never happens that there are more than 2
-    // minutes between calls
-    if (CYCLE_TIMER_GET_SECS(new_timer) < m_TimeSource_LastSecs) {
-        m_TimeSource_NbCycleWraps++;
-    }
-    
-    freebob_microsecs_t ticks=m_TimeSource_NbCycleWraps * 128L * TICKS_PER_SECOND
-            + CYCLE_TIMER_TO_TICKS(new_timer);
-    
-    m_TimeSource_LastSecs=CYCLE_TIMER_GET_SECS(new_timer);
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Wraps=%4u, LastSecs=%3u, nowSecs=%3u, ticks=%10u\n",
-              m_TimeSource_NbCycleWraps, m_TimeSource_LastSecs,
-              CYCLE_TIMER_GET_SECS(new_timer), ticks
-              );
-              
-    return  ticks;
-}
-
-freebob_microsecs_t IsoHandler::unWrapTime(freebob_microsecs_t t) {
-    return CYCLE_TIMER_UNWRAP_TICKS(t);
-}
-
-freebob_microsecs_t IsoHandler::wrapTime(freebob_microsecs_t t) {
-    return CYCLE_TIMER_WRAP_TICKS(t);
-}
-
-freebob_microsecs_t IsoHandler::getCurrentTimeAsUsecs() {
-    float tmp=getCurrentTime();
-    float tmp2 = tmp * USECS_PER_TICK;
-    freebob_microsecs_t retval=(freebob_microsecs_t)tmp2;
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"tmp=%f, tmp2=%f, retval=%u\n",
-              tmp, tmp2,retval
-              );
-    
-    return retval;
-}
-
-
 
 /* Child class implementations */
 

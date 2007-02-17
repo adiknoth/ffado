@@ -49,8 +49,7 @@ typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 \brief Manages a collection of StreamProcessors and provides a synchronisation interface
  
 */
-class StreamProcessorManager :
-                        public FreebobUtil::RunnableInterface {
+class StreamProcessorManager {
 
 public:
 
@@ -120,14 +119,7 @@ public:
 
     
 protected:
-    int signalWaiters(); // call this to signal a period boundary
-    // RunnableInterface interface
-    bool Execute(); // note that this is called in we while(running) loop
-    bool Init();
-
     // thread sync primitives
-    sem_t m_period_semaphore;
-
     bool m_xrun_happened; 
 
     bool m_thread_realtime;
@@ -142,8 +134,6 @@ protected:
     unsigned int m_xruns;
     
     IsoHandlerManager *m_isoManager;
-
-    FreebobUtil::PosixThread *m_streamingThread;
 
     unsigned int m_nbperiods;
 
