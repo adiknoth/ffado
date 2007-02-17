@@ -24,7 +24,7 @@ AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 1)
 m4_define(freebob_minor_version, 999)
-m4_define(freebob_micro_version, 0)
+m4_define(freebob_micro_version, 1)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
 
@@ -112,9 +112,8 @@ AC_CHECK_LIB(pthread, pthread_create,,
 ])
 
 # Check for dependencies
-PKG_CHECK_MODULES(LIBRAW1394_122, libraw1394 >= 1.2.2, libraw1394_1_2_2=yes, libraw1394_1_2_2=no)
-PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.2.1)
-PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.0.0)
+PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.3.0)
+PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
 PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.3)
 PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
@@ -122,26 +121,24 @@ PKG_CHECK_MODULES(LIBXMLCPP, libxml++-2.6 >= 2.14.0)
 
 # Setup CFLAGS and CXXFLAGS
 AC_ARG_ENABLE(debug,
-[  --enable-debug    Turn on debugging],
+    AC_HELP_STRING([--enable-debug],
+		   [Turn on debugging]),
 [case "${enableval}" in
   yes) debug=true;;
   no)  ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
 esac],[debug=false])
 
-if test "x$libraw1394_1_2_2" = xyes; then
-	CFLAGS="$CFLAGS -DLIBRAW1394_USE_CTRREAD_API"
-	CXXFLAGS="$CXXFLAGS -DLIBRAW1394_USE_CTRREAD_API" 
-fi
-
 dnl Check for MMX assembly
 
 AC_ARG_ENABLE(mmx,
-    [  --enable-mmx            enable MMX support (default=auto)],,
+    AC_HELP_STRING([--enable-mmx],
+		   [enable MMX support (default=auto)]),,
     enable_mmx=yes)
 
 AC_ARG_ENABLE(sse,
-    [  --enable-sse            enable SSE support (default=auto)],,
+    AC_HELP_STRING([--enable-sse],
+		   [enable SSE support (default=auto)]),,
     enable_sse=$enable_mmx)
 
 if test "x$enable_mmx" = xyes; then
@@ -203,6 +200,57 @@ AC_ARG_ENABLE(optimize,
     ]
 )
 
+dnl Conditional compilation of targets
+
+dnl Build BeBoB code?
+
+build_bebob=true
+AC_ARG_ENABLE(bebob,
+    AC_HELP_STRING([--enable-bebob],
+		   [build BeBoB support (default=yes)]),
+[case "${enableval}" in
+  yes) build_bebob=true;;
+  no)  build_bebob=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-bebob) ;;
+esac],[build_bebob=false])
+
+dnl Build Motu code?
+
+build_motu=false
+AC_ARG_ENABLE(motu,
+    AC_HELP_STRING([--enable-motu],
+		   [build Motu support (default=no)]),
+[case "${enableval}" in
+  yes) build_motu=true;;
+  no)  build_motu=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-motu) ;;
+esac],[build_motu=false])
+
+dnl Build DICE code?
+
+build_dice=false
+AC_ARG_ENABLE(dice,
+    AC_HELP_STRING([--enable-dice],
+		   [build DICE support (default=no)]),
+[case "${enableval}" in
+  yes) build_dice=true;;
+  no)  build_dice=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-dice) ;;
+esac],[build_dice=false])
+
+dnl Build Metric Halo code?
+
+build_metric_halo=false
+AC_ARG_ENABLE(metric-halo,
+    AC_HELP_STRING([--enable-metric-halo],
+		   [build Metric Halo support (default=no)]),
+[case "${enableval}" in
+  yes) build_metric_halo=true;;
+  no)  build_metric_halo=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-metric-halo) ;;
+esac],[build_metric_halo=false])
+
+
 CFLAGS="$CFLAGS -Wall -std=gnu99"
 CXXFLAGS="$CXXFLAGS -Wall -DDATADIR=\\\"\$(datadir)\\\"" 
 
@@ -212,6 +260,35 @@ if test "${debug}" = true; then
 else 
    CFLAGS="$CFLAGS -O2"
    CXXFLAGS="$CXXFLAGS -O2"
+fi;
+
+dnl Device classes
+if test "${build_bebob}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_BEBOB"
+   CXXFLAGS="$CXXFLAGS -DENABLE_BEBOB" 
+   supported_devices="${supported_devices}BeBoB  "
+fi;
+
+if test "${build_motu}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_MOTU"
+   CXXFLAGS="$CXXFLAGS -DENABLE_MOTU" 
+   supported_devices="${supported_devices}Motu  "
+fi;
+
+if test "${build_dice}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_DICE"
+   CXXFLAGS="$CXXFLAGS -DENABLE_DICE" 
+   supported_devices="${supported_devices}DICE  "
+fi;
+
+if test "${build_metric_halo}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_METRIC_HALO"
+   CXXFLAGS="$CXXFLAGS -DENABLE_METRIC_HALO"
+   supported_devices="${supported_devices}Metric Halo  "
+fi;
+
+if test "${supported_devices}" = ""; then
+    AC_ERROR(You need to enable at least one device class to support!)
 fi;
 
 AC_SUBST([CFLAGS])
@@ -250,14 +327,15 @@ AC_MSG_RESULT([
 
 FreeBoB $VERSION is now configured for $canonical_host_type
 
+  Building support for: $supported_devices
+
   Source directory:     $srcdir
   Installation prefix:  $prefix
-  C compiler:           $C $CFLAGS
+  C compiler:           $CC $CFLAGS
   C++ compiler:         $CXX $CXXFLAGS
 
   libraw1394 CFLAGS:    $LIBRAW1394_CFLAGS
   libraw1394 LIBS:      $LIBRAW1394_LIBS
-   use new cycle timer read api? $libraw1394_1_2_2
   libiec61883 CFLAGS:   $LIBIEC61883_CFLAGS
   libiec61883 LIBS:     $LIBIEC61883_LIBS
   libavc1394 CFLAGS:    $LIBAVC1394_CFLAGS
