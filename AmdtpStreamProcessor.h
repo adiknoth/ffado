@@ -73,9 +73,6 @@ class AmdtpTransmitStreamProcessor
 {
 
 public:
-    // FIXME: debug
-    friend class AmdtpReceiveStreamProcessor;
-    
     AmdtpTransmitStreamProcessor(int port, int framerate, int dimension);
 
     virtual ~AmdtpTransmitStreamProcessor();
@@ -158,9 +155,6 @@ class AmdtpReceiveStreamProcessor
 {
 
 public:
-    // FIXME: debug
-    friend class AmdtpTransmitStreamProcessor;
-
 	AmdtpReceiveStreamProcessor(int port, int framerate, int dimension);
 
 	virtual ~AmdtpReceiveStreamProcessor();

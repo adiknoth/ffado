@@ -35,8 +35,6 @@
 #include <netinet/in.h>
 #include <assert.h>
 
-#define RECEIVE_PROCESSING_DELAY (TICKS_PER_CYCLE * 2)
-
 // in ticks
 #define TRANSMIT_TRANSFER_DELAY 6000U
 // the number of cycles to send a packet in advance of it's timestamp
@@ -126,8 +124,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     unsigned int ctr=m_handler->getCycleTimer();
     int now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
     
-    // the difference between 'now' and the cycle this
-    // packet is intended for
+    // the difference between the cycle this
+    // packet is intended for and 'now'
     int cycle_diff = substractCycles(cycle, now_cycles);
     
 #ifdef DEBUG
@@ -174,8 +172,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             m_data_buffer->setBufferTailTimestamp(ts_head);
             
             #ifdef DEBUG
-            if ((unsigned int)m_data_buffer->getFrameCounter() != m_ringbuffer_size_frames) {
-                debugWarning("m_data_buffer->getFrameCounter() != m_ringbuffer_size_frames\n");
+            if ((unsigned int)m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()) {
+                debugWarning("m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()\n");
             }
             #endif
             debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, LAG=%03d, FC=%4d\n",
@@ -322,9 +320,6 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         return RAW1394_ISO_AGAIN;
     } else { // there is no more data in the ringbuffer
 
-        // TODO: maybe we have to be a little smarter here
-        //       because we have some slack on the device side (TRANSFER_DELAY)
-        //       we can allow some skipped packets
         debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n", 
                  now_cycles, cycle, TICKS_TO_CYCLES(ts));
 
@@ -470,7 +465,7 @@ bool AmdtpTransmitStreamProcessor::prepare() {
     // prepare the framerate estimate
     m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
     
-    // allocate the event buffer
+	// initialize internal buffer
     m_ringbuffer_size_frames=m_nb_buffers * m_period;
 
     assert(m_data_buffer);    
@@ -951,6 +946,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         m_is_disabled=true;
     }
 
+    // check if this is a valid packet
     if((packet->syt != 0xFFFF) 
        && (packet->fdf != 0xFF) 
        && (packet->fmt == 0x10)
@@ -1061,21 +1057,15 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 // ISO buffering
 int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
     return (int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame);
-//     return RECEIVE_PROCESSING_DELAY;
 }
 
-void AmdtpReceiveStreamProcessor::dumpInfo()
-{
-
+void AmdtpReceiveStreamProcessor::dumpInfo() {
     StreamProcessor::dumpInfo();
-
 }
-
 
 void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
 	setDebugLevel(l);
- 	ReceiveStreamProcessor::setVerboseLevel(l);
-
+	ReceiveStreamProcessor::setVerboseLevel(l);
 }
 
 bool AmdtpReceiveStreamProcessor::reset() {
@@ -1089,9 +1079,7 @@ bool AmdtpReceiveStreamProcessor::reset() {
     // this makes that the buffer lags a little compared to reality
     // the result is that we get some extra time before period boundaries
     // are signaled.
-    // The RECEIVE_PROCESSING_DELAY directly introduces some slack
-    // the other term handles the fact that the linux1394 stack does some
-    // buffering. This buffering causes the packets to be received at max
+    // ISO buffering causes the packets to be received at max
     // m_handler->getWakeupInterval() later than the time they were received.
     // hence their payload is available this amount of time later. However, the
     // period boundary is predicted based upon earlier samples, and therefore can
@@ -1153,13 +1141,8 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n",m_ticks_per_frame);
 
-    // allocate the event buffer
+	// initialize internal buffer
     unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
-    
-    // add the processing delay
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Adding %u frames of SYT slack buffering...\n",
-        (uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame));
-    ringbuffer_size_frames+=(uint)(RECEIVE_PROCESSING_DELAY/m_ticks_per_frame);
     
     assert(m_data_buffer);    
     m_data_buffer->setBufferSize(ringbuffer_size_frames);
@@ -1172,8 +1155,6 @@ bool AmdtpReceiveStreamProcessor::prepare() {
     
     m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
     
-    // offset is in reset()
-
     m_data_buffer->prepare();
 
 	// set the parameters of ports we can:
@@ -1233,7 +1214,6 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 				debugWarning("Unsupported port type specified\n");
 				break;
 		}
-
 	}
 
 	// the API specific settings of the ports should already be set, 

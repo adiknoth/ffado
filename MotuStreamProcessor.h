@@ -63,27 +63,24 @@ public:
 	bool init();
 	bool reset();
 	bool prepare();
-	bool transfer();
-	
-	bool isOnePeriodReady();
 
+	bool prepareForStop();
+	bool prepareForStart();
+	
+    bool prepareForEnable(uint64_t time_to_enable_at);
+    
+    bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from the client
+	
 	// These two are important to calculate the optimal ISO DMA buffers
 	// size.  An estimate will do.
 	unsigned int getPacketsPerPeriod() {return (m_period*8000) / m_framerate;};
 	unsigned int getMaxPacketSize() {return m_framerate<=48000?616:(m_framerate<=96000?1032:1160);}; 
 
-	virtual void setVerboseLevel(int l);
+    int getMinimalSyncDelay();
 
-	void setTicksPerFrameDLL(float *dll) {m_ticks_per_frame=dll;};
-
-	virtual bool prepareForStop();
-	virtual bool prepareForStart();
+	void setVerboseLevel(int l);
 
 protected:
-
-	freebob_ringbuffer_t * m_event_buffer;
-	char* m_tmp_event_buffer;
-	
 	/*
 	 * An iso packet mostly consists of multiple events.  m_event_size
 	 * is the size of a single 'event' in bytes.
@@ -93,18 +90,6 @@ protected:
 	// Keep track of transmission data block count
 	unsigned int m_tx_dbc;
 
-	// Transmission cycle count and cycle offset
-	signed int m_cycle_count;
-	float m_cycle_ofs;
-
-	// Used to detect missed cycles
-	signed int m_next_cycle;
-
-	// Hook to the DLL in the receive stream which provides a
-	// continuously updated estimate of the number of ieee1394 ticks
-	// per audio frame.
-	float *m_ticks_per_frame;
-
 	// Used to keep track of the close-down zeroing of output data
 	signed int m_closedown_count;
 	signed int m_streaming_active;
@@ -113,17 +98,16 @@ protected:
     
 	bool transferSilence(unsigned int size);
 
-	int transmitBlock(char *data, unsigned int nevents, 
-	                  unsigned int offset);
-	                  
+    bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
+
 	bool encodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
 	
 	int transmitSilenceBlock(char *data, unsigned int nevents, 
 	                  unsigned int offset);
 	                  
-	int encodePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
+	int encodePortToMotuEvents(MotuAudioPort *p, quadlet_t *data, 
 		unsigned int offset, unsigned int nevents);
-	int encodeSilencePortToMBLAEvents(MotuAudioPort *p, quadlet_t *data, 
+	int encodeSilencePortToMotuEvents(MotuAudioPort *p, quadlet_t *data, 
 		unsigned int offset, unsigned int nevents);
 
     DECLARE_DEBUG_MODULE;
@@ -146,23 +130,23 @@ public:
 	enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
 	              unsigned char channel, unsigned char tag, unsigned char sy, 
 		          unsigned int cycle, unsigned int dropped);
+		          
+    bool getFrames(unsigned int nbframes); ///< transfer the buffer contents to the client
 	
 	bool init();
 	bool reset();
 	bool prepare();
-	bool transfer();
-	
-	bool isOnePeriodReady();
 
     // these two are important to calculate the optimal
     // ISO DMA buffers size
     // an estimate will do
 	unsigned int getPacketsPerPeriod() {return (m_period*8000) / m_framerate;};
 	unsigned int getMaxPacketSize() {return m_framerate<=48000?616:(m_framerate<=96000?1032:1160);}; 
+    
+    int getMinimalSyncDelay();
 
 	virtual void setVerboseLevel(int l);
 	
-	float *getTicksPerFrameDLL(void) {return &m_ticks_per_frame;};
 	signed int setEventSize(unsigned int size);
 	unsigned int getEventSize(void);
 
@@ -171,26 +155,25 @@ public:
 
 protected:
 
-	int receiveBlock(char *data, unsigned int nevents, unsigned int offset);
-	bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
-	signed int decodeMBLAEventsToPort(MotuAudioPort *p, quadlet_t *data, unsigned int offset, unsigned int nevents);
-
-	freebob_ringbuffer_t * m_event_buffer;
-	char* m_tmp_event_buffer;
+	bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
 	
+	bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
+	signed int decodeMotuEventsToPort(MotuAudioPort *p, quadlet_t *data, unsigned int offset, unsigned int nevents);
+
 	/*
 	 * An iso packet mostly consists of multiple events.  m_event_size
 	 * is the size of a single 'event' in bytes.
 	 */
 	unsigned int m_event_size;
 
-	signed int m_last_cycle_ofs;
-	signed int m_next_cycle;
-
 	// Signifies a closedown is in progress, in which case incoming data 
         // is junked.
         signed int m_closedown_active;
-
+        
+    uint64_t m_last_timestamp; /// last timestamp (in ticks)
+    uint64_t m_last_timestamp2; /// last timestamp (in ticks)
+    uint64_t m_last_timestamp_at_period_ticks;
+    
     DECLARE_DEBUG_MODULE;
 
 };
