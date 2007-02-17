@@ -99,6 +99,7 @@ public:
     bool setEventSize(unsigned int s);
     bool setEventsPerFrame(unsigned int s);
     bool setBufferSize(unsigned int s);
+    unsigned int getBufferSize() {return m_buffer_size;};
     
     bool setWrapValue(uint64_t w);
     
