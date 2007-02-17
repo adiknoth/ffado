@@ -112,6 +112,7 @@ public:
 
     uint64_t getTimeAtPeriodUsecs();
     uint64_t getTimeAtPeriod();
+    int getMinimalSyncDelay();
     
     void setVerboseLevel(int l);
     
@@ -201,6 +202,7 @@ public:
 
     uint64_t getTimeAtPeriodUsecs();
     uint64_t getTimeAtPeriod();
+    int getMinimalSyncDelay();
 	
     void setVerboseLevel(int l);
             

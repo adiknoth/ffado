@@ -311,46 +311,41 @@ bool StreamProcessorManager::syncStartAll() {
     usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting StreamProcessors...\n");
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Finding minimal sync delay...\n");
 
-    // now we reset the frame counters
+    int max_of_min_delay=0;
+    int min_delay=0;
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
-
-        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-            (*it)->dumpInfo();
-        }
-
-        (*it)->reset();
-
-        debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
-
-        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-            (*it)->dumpInfo();
-        }
-
+        min_delay=(*it)->getMinimalSyncDelay();
+        if(min_delay>max_of_min_delay) max_of_min_delay=min_delay;
     }
     
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-            
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Before:\n");
-        
-        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-            (*it)->dumpInfo();
-        }
-        
+        min_delay=(*it)->getMinimalSyncDelay();
+        if(min_delay>max_of_min_delay) max_of_min_delay=min_delay;
+    }
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  %d ticks\n", max_of_min_delay);
+    m_SyncSource->setSyncDelay(max_of_min_delay);
+    
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting StreamProcessors...\n");
+    // now we reset the frame counters
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
         (*it)->reset();
-        
-        debugOutput( DEBUG_LEVEL_VERBOSE, "After:\n");
-        
-        if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-            (*it)->dumpInfo();
-        }
+    }
+    
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+        (*it)->reset();
     }
 	
     debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors...\n");
@@ -775,7 +770,7 @@ bool StreamProcessorManager::waitForPeriod() {
         time_till_next_period=m_SyncSource->getTimeUntilNextPeriodUsecs();
     }
     
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", -time_till_next_period);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", time_till_next_period);
     
     // this is to notify the client of the delay 
     // that we introduced 
@@ -791,6 +786,23 @@ bool StreamProcessorManager::waitForPeriod() {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n", 
         m_time_of_transfer);
     
+#ifdef DEBUG
+    int rcv_bf=0, xmt_bf=0;
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        rcv_bf = (*it)->getBufferFill();
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        xmt_bf = (*it)->getBufferFill();
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n", 
+        m_time_of_transfer,rcv_bf,xmt_bf,rcv_bf+xmt_bf);
+    
+#endif
+
     xrun_occurred=false;
     
     // check if xruns occurred on the Iso side.

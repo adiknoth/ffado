@@ -187,18 +187,40 @@ protected:
         virtual uint64_t getTimeAtPeriod() = 0;
 
         uint64_t getTimeNow();
+        
+        
+        /**
+         * Returns the sync delay. This is the time a syncsource
+         * delays a period signal, e.g. to cope with buffering.
+         * @return the sync delay
+         */
+        int getSyncDelay() {return m_sync_delay;};
+        /**
+         * sets the sync delay
+         * @param d sync delay
+         */
+        void setSyncDelay(int d) {m_sync_delay=d;};
+        
+        /**
+         * Returns the minimal sync delay a SP needs
+         * @return minimal sync delay
+         */
+        virtual int getMinimalSyncDelay() = 0;
 
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame() {return m_ticks_per_frame;};
 
         int getLastCycle() {return m_last_cycle;};
 
+        int getBufferFill();
+        
     protected:
         StreamProcessor *m_SyncSource;
 
         float m_ticks_per_frame;
 
         int m_last_cycle;
+        int m_sync_delay;
 
 };
 
