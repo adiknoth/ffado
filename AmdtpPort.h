@@ -25,6 +25,26 @@
  * 
  *
  */
+#ifdef ENABLE_BEBOB
+    #ifndef ENABLE_AMDTP_SP
+        #define ENABLE_AMDTP_SP
+    #endif
+#endif
+
+#ifdef ENABLE_DICE 
+    #ifndef ENABLE_AMDTP_SP
+        #define ENABLE_AMDTP_SP
+    #endif
+#endif
+
+#ifdef ENABLE_BOUNCE
+    #ifndef ENABLE_AMDTP_SP
+        #define ENABLE_AMDTP_SP
+    #endif
+#endif
+
+#ifdef ENABLE_AMDTP_SP
+
 #ifndef __FREEBOB_AMDTPPORT__
 #define __FREEBOB_AMDTPPORT__
 
@@ -99,4 +119,4 @@ protected:
 
 #endif /* __FREEBOB_AMDTPPORT__ */
 
-
+#endif // #ifdef ENABLE_AMDTP_SP
