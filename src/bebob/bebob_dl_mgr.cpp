@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 #include "bebob_dl_mgr.h"
 #include "bebob_dl_codes.h"
 #include "bebob_dl_bcd.h"
@@ -713,3 +715,5 @@ BeBoB::BootloaderManager::checkDeviceCompatibility( BCD& bcd )
 
     return false;
 }
+
+#endif //#ifdef ENABLE_BEBOB

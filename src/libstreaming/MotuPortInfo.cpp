@@ -25,12 +25,15 @@
  * 
  *
  */
+ 
+#ifdef ENABLE_MOTU
 
 #include "MotuPortInfo.h"
 #include <assert.h>
-
 
 namespace FreebobStreaming {
 
 
 } // end of namespace FreebobStreaming
+
+#endif //#ifdef ENABLE_MOTU

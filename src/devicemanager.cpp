@@ -31,6 +31,8 @@
 #include "motu/motu_avdevice.h"
 #include "rme/rme_avdevice.h"
 #include "maudio/maudio_avdevice.h"
+#include "dice/dice_avdevice.h"
+#include "metrichalo/mh_avdevice.h"
 
 #include <iostream>
 #include <sstream>
@@ -148,24 +150,43 @@ IAvDevice*
 DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id,  int level )
 {
+#ifdef ENABLE_BEBOB
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
         return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
     }
+#endif
 
-#ifdef ENABLE_MOTU
+#ifdef ENABLE_BEBOB
     if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
         return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
     }
+#endif
 
-
+#ifdef ENABLE_MOTU
     if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
         return new Motu::MotuDevice( configRom, *m_1394Service, id, level );
     }
+#endif
 
+#ifdef ENABLE_DICE
+    if ( Dice::DiceAvDevice::probe( *configRom.get() ) ) {
+        return new Dice::DiceAvDevice( configRom, *m_1394Service, id, level );
+    }
+#endif
+
+#ifdef ENABLE_METRIC_HALO
+    if ( MetricHalo::MHAvDevice::probe( *configRom.get() ) ) {
+        return new MetricHalo::MHAvDevice( configRom, *m_1394Service, id, level );
+    }
+#endif
+
+#ifdef ENABLE_RME
     if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
         return new Rme::RmeDevice( configRom, *m_1394Service, id, level );
     }
+#endif
 
+#ifdef ENABLE_BOUNCE
     if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
         return new Bounce::BounceDevice( configRom, *m_1394Service, id, level );
     }
@@ -365,12 +386,17 @@ DeviceManager::deinitialize()
 bool
 DeviceManager::saveCache( Glib::ustring fileName )
 {
-    int i = 0;
+    int i;
+    i=0; // avoids unused warning
+    
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* pAvDevice = *it;
+        IAvDevice* pAvDevice;
+        pAvDevice = *it; // avoids unused warning
+        
+        #ifdef ENABLE_BEBOB
         BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast< BeBoB::AvDevice* >( pAvDevice );
         if ( pBeBoBDevice ) {
             // Let's use a very simple path to find the devices later.
@@ -389,6 +415,7 @@ DeviceManager::saveCache( Glib::ustring fileName )
             i++;
             std::cout << "a bebob device serialized" << std::endl;
         }
+        #endif
     }
     return true;
 }
@@ -396,9 +423,9 @@ DeviceManager::saveCache( Glib::ustring fileName )
 bool
 DeviceManager::loadCache( Glib::ustring fileName )
 {
+    int i;
+    i=0; // avoids unused warning
     Util::XMLDeserialize deser( fileName );
-    BeBoB::AvDevice* pBeBoBDevice = 0;
-    int i = 0;
 
     typedef std::vector<ConfigRom*> ConfigRomVector;
     ConfigRomVector configRoms;
@@ -424,6 +451,8 @@ DeviceManager::loadCache( Glib::ustring fileName )
         configRoms.push_back( pConfigRom );
     }
 
+    #ifdef ENABLE_BEBOB
+    BeBoB::AvDevice* pBeBoBDevice = 0;
     do {
         ostringstream strstrm;
         strstrm << "id" << i;
@@ -448,6 +477,7 @@ DeviceManager::loadCache( Glib::ustring fileName )
             }
         }
     } while ( pBeBoBDevice );
-
+    #endif
+    
     return true;
 }

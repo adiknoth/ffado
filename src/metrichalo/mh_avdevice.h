@@ -1,6 +1,5 @@
-/* rme_avdevice.h
- * Copyright (C) 2006 Jonathan Woithe
- * Copyright (C) 2006,2007 by Pieter Palmers
+/* mh_avdevice.h
+ * Copyright (C) 2007 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -19,10 +18,10 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_RME
+#ifdef ENABLE_METRIC_HALO
 
-#ifndef RMEDEVICE_H
-#define RMEDEVICE_H
+#ifndef MHDEVICE_H
+#define MHDEVICE_H
 
 #include "iavdevice.h"
 
@@ -30,12 +29,12 @@
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebob/xmlparser.h"
 
-// #include "libstreaming/RmeStreamProcessor.h"
+// #include "libstreaming/MHStreamProcessor.h"
 
 class ConfigRom;
 class Ieee1394Service;
 
-namespace Rme {
+namespace MetricHalo {
 
 // struct to define the supported devices
 struct VendorModelEntry {
@@ -45,14 +44,13 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class RmeDevice : public IAvDevice {
+class MHAvDevice : public IAvDevice {
 public:
-
-    RmeDevice( std::auto_ptr<ConfigRom>( configRom ),
+    MHAvDevice( std::auto_ptr<ConfigRom>( configRom ),
 	      Ieee1394Service& ieee1394Service,
 		  int nodeId,
 		  int verboseLevel );
-    virtual ~RmeDevice();
+    virtual ~MHAvDevice();
 
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
@@ -78,8 +76,6 @@ public:
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-
-    signed int getEventSize(unsigned int dir);
   
 protected:
     std::auto_ptr<ConfigRom>( m_configRom );
@@ -91,23 +87,11 @@ protected:
     int              m_verboseLevel;
     signed int m_id;
     signed int m_iso_recv_channel, m_iso_send_channel;
-    signed int m_bandwidth;
     
-//	FreebobStreaming::RmeReceiveStreamProcessor *m_receiveProcessor;
-//	FreebobStreaming::RmeTransmitStreamProcessor *m_transmitProcessor;
+//	FreebobStreaming::MHReceiveStreamProcessor *m_receiveProcessor;
+//	FreebobStreaming::MHTransmitStreamProcessor *m_transmitProcessor;
 
 private:
-//	bool addPort(FreebobStreaming::StreamProcessor *s_processor,
-//		char *name, 
-//		enum FreebobStreaming::Port::E_Direction direction,
-//		int position, int size);
-//	bool addDirPorts(
-//		enum FreebobStreaming::Port::E_Direction direction,
-//		unsigned int sample_rate, unsigned int optical_mode);
-        
-	unsigned int ReadRegister(unsigned int reg);
-	signed int WriteRegister(unsigned int reg, quadlet_t data);
-
     // debug support
     DECLARE_DEBUG_MODULE;
 };
@@ -116,4 +100,4 @@ private:
 
 #endif
 
-#endif //#ifdef ENABLE_RME
+#endif //#ifdef ENABLE_MH

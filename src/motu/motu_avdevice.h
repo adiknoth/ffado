@@ -74,13 +74,24 @@ class Ieee1394Service;
 
 namespace Motu {
 
-class MotuDevice : public IAvDevice {
-public:
-    enum EMotuModel {
+enum EMotuModel {
       MOTUFW_MODEL_NONE     = 0x0000,
       MOTUFW_MODEL_828mkII  = 0x0001,
       MOTUFW_MODEL_TRAVELER = 0x0002,
-    };
+};
+
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+    unsigned int unit_version;
+    unsigned int unit_specifier_id;
+    enum EMotuModel model;
+    char *vendor_name;
+    char *model_name;
+};
+
+class MotuDevice : public IAvDevice {
+public:
 
     MotuDevice( std::auto_ptr<ConfigRom>( configRom ),
           Ieee1394Service& ieee1394Service,
@@ -122,6 +133,7 @@ protected:
     Ieee1394Service* m_1394Service;
     
     signed int       m_motu_model;
+    struct VendorModelEntry * m_model;
     int              m_nodeId;
     int              m_verboseLevel;
     signed int m_id;
@@ -142,18 +154,6 @@ private:
         
 	unsigned int ReadRegister(unsigned int reg);
 	signed int WriteRegister(unsigned int reg, quadlet_t data);
-
-        // IEEE1394 Vendor IDs.  One would expect only MOTU, but you never
-        // know if a clone might appear some day.
-        enum EVendorId {
-                MOTUFW_VENDOR_MOTU = 0x000001f2,
-        };
-        
-        // IEEE1394 Unit directory version IDs for different MOTU hardware
-        enum EUnitVersionId {
-                MOTUFW_UNITVER_828mkII  = 0x00000003,
-                MOTUFW_UNITVER_TRAVELER = 0x00000009,
-        };
 
     // debug support
     DECLARE_DEBUG_MODULE;

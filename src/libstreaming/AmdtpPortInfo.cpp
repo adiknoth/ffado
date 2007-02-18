@@ -6,7 +6,7 @@
  *
  *   http://freebob.sf.net
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ *   Copyright (C) 2005,2006,2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
  *
  *   This program is free software {} you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,26 @@
  *
  */
 
+#ifdef ENABLE_BEBOB
+    #ifndef ENABLE_AMDTP_SP
+        #define ENABLE_AMDTP_SP
+    #endif
+#endif
+
+#ifdef ENABLE_DICE 
+    #ifndef ENABLE_AMDTP_SP
+        #define ENABLE_AMDTP_SP
+    #endif
+#endif
+
+#ifdef ENABLE_BOUNCE
+    #ifndef ENABLE_AMDTP_SP
+        #define ENABLE_AMDTP_SP
+    #endif
+#endif
+
+#ifdef ENABLE_AMDTP_SP
+
 #include "AmdtpPortInfo.h"
 #include <assert.h>
 
@@ -34,3 +54,5 @@ namespace FreebobStreaming {
 
 
 } // end of namespace FreebobStreaming
+
+#endif // #ifdef ENABLE_AMDTP_SP

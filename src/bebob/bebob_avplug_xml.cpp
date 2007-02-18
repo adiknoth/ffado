@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
+ 
+#ifdef ENABLE_BEBOB
 
 // AvPlug XML stuff
 
@@ -297,3 +299,5 @@ AvPlug::addXmlDescriptionStreamFormats( xmlNodePtr streamFormatNode )
 }
 
 }
+
+#endif //#ifdef ENABLE_BEBOB

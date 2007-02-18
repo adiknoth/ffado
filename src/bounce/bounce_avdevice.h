@@ -19,6 +19,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BOUNCE
+
 #ifndef BOUNCEDEVICE_H
 #define BOUNCEDEVICE_H
 
@@ -99,3 +101,5 @@ private:
 }
 
 #endif
+
+#endif // #ifdef ENABLE_BOUNCE

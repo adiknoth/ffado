@@ -1,5 +1,5 @@
 /* motu_avdevice.cpp
- * Copyright (C) 2006 by Pieter Palmers
+ * Copyright (C) 2006,2007 by Pieter Palmers
  * Copyright (C) 2006 by Jonathan Woithe
  *
  * This file is part of FreeBob.
@@ -45,7 +45,13 @@ namespace Motu {
 
 IMPL_DEBUG_MODULE( MotuDevice, MotuDevice, DEBUG_LEVEL_NORMAL );
 
-char *motufw_modelname[] = {"[unknown]","828MkII", "Traveler"}; 
+// to define the supported devices
+static VendorModelEntry supportedDeviceList[] =
+{
+//  {vendor_id, model_id, unit_version, unit_specifier_id, model, vendor_name,model_name}
+    {0x000001f2, 0, 0x00000003, 0x000001f2, MOTUFW_MODEL_828mkII, "MOTU", "828MkII"},
+    {0x000001f2, 0, 0x00000009, 0x000001f2, MOTUFW_MODEL_TRAVELER, "MOTU", "Traveler"},
+};
 
 /* ======================================================================= */
 /* Provide a mechanism for allocating iso channels and bandwidth to MOTU 
@@ -144,37 +150,25 @@ MotuDevice::getConfigRom() const
     return *m_configRom;
 }
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-};
-
-static VendorModelEntry supportedDeviceList[] =
-{
-    {0x0001f2, 0x00000000},  // Motu device, model entry not used
-
-};
-
 bool
 MotuDevice::probe( ConfigRom& configRom )
 {
     unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+//     unsigned int modelId = configRom.getModelId();
+    unsigned int unitVersion = configRom.getUnitVersion();
+    unsigned int unitSpecifierId = configRom.getUnitSpecifierId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             //&& ( supportedDeviceList[i].model_id == modelId ) 
-             )
+//              && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].unit_version == unitVersion ) 
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId ) 
+           )
         {
-            switch (configRom.getUnitVersion()) {
-                case MOTUFW_UNITVER_828mkII: 
-                    return true;
-                case MOTUFW_UNITVER_TRAVELER:
-                    return true;
-            }
+            return true;
         }
     }
 
@@ -184,25 +178,33 @@ MotuDevice::probe( ConfigRom& configRom )
 bool
 MotuDevice::discover()
 {
-        // Find out if this device is one we know about
-        if (m_configRom->getUnitSpecifierId() == MOTUFW_VENDOR_MOTU) {
-                switch (m_configRom->getUnitVersion()) {
-                    case MOTUFW_UNITVER_828mkII: 
-                        m_motu_model = MOTUFW_MODEL_828mkII; 
-                        break;
-                    case MOTUFW_UNITVER_TRAVELER:
-                        m_motu_model = MOTUFW_MODEL_TRAVELER;
-                        break;
-                }
+    unsigned int vendorId = m_configRom->getNodeVendorId();
+//     unsigned int modelId = m_configRom->getModelId();
+    unsigned int unitVersion = m_configRom->getUnitVersion();
+    unsigned int unitSpecifierId = m_configRom->getUnitSpecifierId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+//              && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].unit_version == unitVersion ) 
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId ) 
+           )
+        {
+            m_model = &(supportedDeviceList[i]);
+            m_motu_model=supportedDeviceList[i].model;
         }
+    }
 
-        if (m_motu_model != MOTUFW_MODEL_NONE) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "found MOTU %s\n",
-                        motufw_modelname[m_motu_model]);
-                return true;
-	}
+    if (m_model != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model->vendor_name, m_model->model_name);
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 int 
@@ -363,9 +365,9 @@ bool MotuDevice::setId( unsigned int id) {
 void
 MotuDevice::showDevice() const
 {
-	debugOutput(DEBUG_LEVEL_VERBOSE,
-		"MOTU %s at node %d\n", motufw_modelname[m_motu_model],
-		m_nodeId);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+        "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
+        m_nodeId);
 }
 
 bool

@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 #ifndef BEBOB_DL_MGR_H
 #define BEBOB_DL_MGR_H
 
@@ -124,3 +126,5 @@ namespace BeBoB {
 }
 
 #endif
+
+#endif //#ifdef ENABLE_BEBOB

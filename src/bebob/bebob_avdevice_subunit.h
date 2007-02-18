@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 #ifndef BEBOB_AVDEVICESUBUNIT_H
 #define BEBOB_AVDEVICESUBUNIT_H
 
@@ -153,3 +155,5 @@ protected:
 }
 
 #endif
+
+#endif //#ifdef ENABLE_BEBOB

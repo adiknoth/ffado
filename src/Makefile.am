@@ -30,7 +30,9 @@ noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
 	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h \
-	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h libfreebobavc/avc_connect.h \
+	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
+	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
+	libfreebobavc/avc_connect.h \
 	libfreebobavc/avc_definitions.h libfreebobavc/avc_extended_cmd_generic.h \
 	libfreebobavc/avc_extended_plug_info.h libfreebobavc/avc_extended_stream_format.h \
 	libfreebobavc/avc_extended_subunit_info.h libfreebobavc/avc_function_block.h libfreebobavc/avc_generic.h \
@@ -64,7 +66,9 @@ libfreebob_la_SOURCES = \
         bebob/bebob_dl_mgr.cpp \
         bebob/bebob_functionblock.cpp \
         bounce/bounce_avdevice.cpp \
+        dice/dice_avdevice.cpp \
         maudio/maudio_avdevice.cpp \
+        metrichalo/mh_avdevice.cpp \
         motu/motu_avdevice.cpp \
         rme/rme_avdevice.cpp \
         debugmodule/debugmodule.cpp \
@@ -120,8 +124,9 @@ nobase_dist_pkgdata_DATA = 				\
 
 ###############
 
-bin_PROGRAMS = freebob-downloader freebob-sync
+bin_PROGRAMS = @BIN_PROGRAMS@
 
+EXTRA_PROGRAMS = freebob-downloader freebob-sync
 freebob_downloader_SOURCES = freebob-downloader.cpp
 freebob_downloader_LDADD = $(top_builddir)/src/libfreebob.la
 

@@ -202,9 +202,8 @@ AC_ARG_ENABLE(optimize,
 
 dnl Conditional compilation of targets
 
-dnl Build BeBoB code?
+dnl --- Build BeBoB code?
 
-build_bebob=true
 AC_ARG_ENABLE(bebob,
     AC_HELP_STRING([--enable-bebob],
 		   [build BeBoB support (default=yes)]),
@@ -212,11 +211,11 @@ AC_ARG_ENABLE(bebob,
   yes) build_bebob=true;;
   no)  build_bebob=false;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-bebob) ;;
-esac],[build_bebob=false])
+esac],
+[build_bebob=true])
 
-dnl Build Motu code?
+dnl --- Build Motu code?
 
-build_motu=false
 AC_ARG_ENABLE(motu,
     AC_HELP_STRING([--enable-motu],
 		   [build Motu support (default=no)]),
@@ -224,11 +223,11 @@ AC_ARG_ENABLE(motu,
   yes) build_motu=true;;
   no)  build_motu=false;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-motu) ;;
-esac],[build_motu=false])
+esac],
+[build_motu=false])
 
-dnl Build DICE code?
+dnl --- Build DICE code?
 
-build_dice=false
 AC_ARG_ENABLE(dice,
     AC_HELP_STRING([--enable-dice],
 		   [build DICE support (default=no)]),
@@ -236,19 +235,56 @@ AC_ARG_ENABLE(dice,
   yes) build_dice=true;;
   no)  build_dice=false;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-dice) ;;
-esac],[build_dice=false])
+esac],
+[build_dice=false])
 
-dnl Build Metric Halo code?
+dnl --- Build Metric Halo code?
 
-build_metric_halo=false
 AC_ARG_ENABLE(metric-halo,
     AC_HELP_STRING([--enable-metric-halo],
-		   [build Metric Halo support (default=no)]),
+		   [build Metric Halo support (note: completely useless) (default=no)]),
 [case "${enableval}" in
   yes) build_metric_halo=true;;
   no)  build_metric_halo=false;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-metric-halo) ;;
-esac],[build_metric_halo=false])
+esac],
+[build_metric_halo=false])
+
+dnl --- Build Metric Halo code?
+
+AC_ARG_ENABLE(rme,
+    AC_HELP_STRING([--enable-rme],
+		   [build RME support (note: completely useless) (default=no)]),
+[case "${enableval}" in
+  yes) build_rme=true;;
+  no)  build_rme=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-rme) ;;
+esac],
+[build_rme=false])
+
+dnl --- Build Bounce device code?
+
+AC_ARG_ENABLE(bounce,
+    AC_HELP_STRING([--enable-bounce],
+		   [build Bounce device support (default=no)]),
+[case "${enableval}" in
+  yes) build_bounce=true;;
+  no)  build_bounce=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-bounce) ;;
+esac],
+[build_bounce=false])
+
+dnl --- Build support for all supported devices?
+
+AC_ARG_ENABLE(all-devices,
+    AC_HELP_STRING([--enable-all-devices],
+		   [build support for all supported devices (default=no)]),
+[case "${enableval}" in
+  yes) build_all=true;;
+  no)  build_all=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-all-devices) ;;
+esac],
+[build_all=false])
 
 
 CFLAGS="$CFLAGS -Wall -std=gnu99"
@@ -263,28 +299,55 @@ else
 fi;
 
 dnl Device classes
+if test "${build_all}" = true; then
+    build_bebob=true
+    build_motu=true
+    build_dice=true
+    build_metric_halo=true
+    build_bounce=true
+    build_rme=true
+fi;
+
 if test "${build_bebob}" = true; then
    CFLAGS="$CFLAGS -DENABLE_BEBOB"
    CXXFLAGS="$CXXFLAGS -DENABLE_BEBOB" 
    supported_devices="${supported_devices}BeBoB  "
+   BIN_PROGRAMS="$BIN_PROGRAMS freebob-downloader freebob-sync"
 fi;
 
 if test "${build_motu}" = true; then
    CFLAGS="$CFLAGS -DENABLE_MOTU"
    CXXFLAGS="$CXXFLAGS -DENABLE_MOTU" 
    supported_devices="${supported_devices}Motu  "
+   BIN_PROGRAMS="$BIN_PROGRAMS"
 fi;
 
 if test "${build_dice}" = true; then
    CFLAGS="$CFLAGS -DENABLE_DICE"
    CXXFLAGS="$CXXFLAGS -DENABLE_DICE" 
    supported_devices="${supported_devices}DICE  "
+   BIN_PROGRAMS="$BIN_PROGRAMS"
 fi;
 
 if test "${build_metric_halo}" = true; then
    CFLAGS="$CFLAGS -DENABLE_METRIC_HALO"
    CXXFLAGS="$CXXFLAGS -DENABLE_METRIC_HALO"
-   supported_devices="${supported_devices}Metric Halo  "
+   supported_devices="${supported_devices}Metric Halo (useless)  "
+   BIN_PROGRAMS="$BIN_PROGRAMS"
+fi;
+
+if test "${build_bounce}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_BOUNCE"
+   CXXFLAGS="$CXXFLAGS -DENABLE_BOUNCE"
+   supported_devices="${supported_devices}Bounce  "
+   BIN_PROGRAMS="$BIN_PROGRAMS"
+fi;
+
+if test "${build_rme}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_RME"
+   CXXFLAGS="$CXXFLAGS -DENABLE_RME" 
+   supported_devices="${supported_devices}RME (useless)  "
+   BIN_PROGRAMS="$BIN_PROGRAMS"
 fi;
 
 if test "${supported_devices}" = ""; then
@@ -310,6 +373,8 @@ AC_SUBST([LIBAVC1394_CFLAGS])
 AC_SUBST([LIBAVC1394_LIBS])
 AC_SUBST([LIBXML_LIBS])
 AC_SUBST([LIBXML_CFLAGS])
+
+AC_SUBST([BIN_PROGRAMS])
 
 AC_CONFIG_FILES([Makefile
 		 doc/Makefile

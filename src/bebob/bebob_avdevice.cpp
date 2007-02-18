@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 #include "bebob/bebob_avdevice.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "configrom.h"
@@ -39,6 +41,30 @@ namespace BeBoB {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
+static VendorModelEntry supportedDeviceList[] =
+{
+    {0x00000f, 0x00010065, "Mackie", "Onyx Firewire"},
+    
+    {0x0003db, 0x00010048, "Apogee Electronics", "Rosetta 200"},
+
+    {0x0007f5, 0x00010048, "BridgeCo", "RD Audio1"},
+
+    {0x000a92, 0x00010000, "PreSonus", "FIREBOX"},
+    {0x000a92, 0x00010066, "PreSonus", "FirePOD"},
+
+    {0x000aac, 0x00000003, "TerraTec Electronic GmbH", "Phase 88 FW"},
+    {0x000aac, 0x00000004, "TerraTec Electronic GmbH", "Phase X24 FW (model version 4)"},
+    {0x000aac, 0x00000007, "TerraTec Electronic GmbH", "Phase X24 FW (model version 7)"},
+
+    {0x000f1b, 0x00010064, "ESI", "Quatafire 610"},
+
+    {0x00130e, 0x00000003, "Focusrite", "Saffire Pro26IO"},
+
+    {0x0040ab, 0x00010048, "EDIROL", "FA-101"},
+    {0x0040ab, 0x00010049, "EDIROL", "FA-66"},
+};
+
+
 AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId,
@@ -48,6 +74,8 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_verboseLevel( verboseLevel )
     , m_pPlugManager( new AvPlugManager( verboseLevel ) )
     , m_activeSyncInfo( 0 )
+    , m_model ( NULL )
+    , m_nodeId ( nodeId )
     , m_id( 0 )
     , m_receiveProcessor ( 0 )
     , m_receiveProcessorBandwidth ( -1 )
@@ -65,6 +93,8 @@ AvDevice::AvDevice()
     , m_verboseLevel( 0 )
     , m_pPlugManager( 0 )
     , m_activeSyncInfo( 0 )
+    , m_model ( NULL )
+    , m_nodeId ( -1 )
     , m_id( 0 )
     , m_receiveProcessor ( 0 )
     , m_receiveProcessorBandwidth ( -1 )
@@ -107,34 +137,6 @@ AvDevice::getConfigRom() const
     return *m_pConfigRom;
 }
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-};
-
-static VendorModelEntry supportedDeviceList[] =
-{
-    {0x00000f, 0x00010065},  // Mackie, Onyx Firewire
-
-    {0x0003db, 0x00010048},  // Apogee Electronics, Rosetta 200
-
-    {0x0007f5, 0x00010048},  // BridgeCo, RD Audio1
-
-    {0x000a92, 0x00010000},  // PreSonus FIREBOX
-    {0x000a92, 0x00010066},  // PreSonus FirePOD
-
-    {0x000aac, 0x00000003},  // TerraTec Electronic GmbH, Phase 88 FW
-    {0x000aac, 0x00000004},  // TerraTec Electronic GmbH, Phase X24 FW (model version 4)
-    {0x000aac, 0x00000007},  // TerraTec Electronic GmbH, Phase X24 FW (model version 7)
-
-    {0x000f1b, 0x00010064},  // ESI, Quatafire 610
-
-    {0x00130e, 0x00000003},  // Focusrite, Pro26IO (Saffire 26)
-
-    {0x0040ab, 0x00010048},  // EDIROL, FA-101
-    {0x0040ab, 0x00010049},  // EDIROL, FA-66
-};
-
 bool
 AvDevice::probe( ConfigRom& configRom )
 {
@@ -158,6 +160,26 @@ AvDevice::probe( ConfigRom& configRom )
 bool
 AvDevice::discover()
 {
+    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+    unsigned int modelId = m_pConfigRom->getModelId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].model_id == modelId ) 
+           )
+        {
+            m_model = &(supportedDeviceList[i]);
+        }
+    }
+
+    if (m_model != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model->vendor_name, m_model->model_name);
+    } else return false;
+    
     if ( !enumerateSubUnits() ) {
         debugError( "Could not enumarate sub units\n" );
         return false;
@@ -870,6 +892,10 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 void
 AvDevice::showDevice() const
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+        "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
+        m_nodeId);
+        
     m_pPlugManager->showPlugs();
 }
 
@@ -1580,3 +1606,5 @@ AvDevice::deserialize( Glib::ustring basePath,
 }
 
 } // end of namespace
+
+#endif //#ifdef ENABLE_BEBOB

@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 // AvDevice XML stuff
 
 #include "bebob/bebob_avdevice.h"
@@ -119,3 +121,5 @@ AvDevice::addXmlDescription( xmlNodePtr deviceNode )
 }
 
 }
+
+#endif //#ifdef ENABLE_BEBOB

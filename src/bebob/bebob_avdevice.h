@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 #ifndef BEBOB_AVDEVICE_H
 #define BEBOB_AVDEVICE_H
 
@@ -46,6 +48,13 @@ class Ieee1394Service;
 class SubunitPlugSpecificDataPlugAddress;
 
 namespace BeBoB {
+
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+    char *vendor_name;
+    char *model_name; 
+};
 
 class AvDevice : public IAvDevice {
 public:
@@ -170,6 +179,8 @@ protected:
     AvPlugManager*            m_pPlugManager;
     SyncInfoVector            m_syncInfos;
     SyncInfo*                 m_activeSyncInfo;
+    struct VendorModelEntry*  m_model;
+    int                       m_nodeId;
     unsigned int              m_id;
 
     // streaming stuff
@@ -185,3 +196,5 @@ protected:
 }
 
 #endif
+
+#endif //#ifdef ENABLE_BEBOB

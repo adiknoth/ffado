@@ -25,6 +25,8 @@
  * 
  *
  */
+#ifdef ENABLE_MOTU
+
 #ifndef __FREEBOB_MOTUPORTINFO__
 #define __FREEBOB_MOTUPORTINFO__
 
@@ -90,4 +92,5 @@ protected:
 
 #endif /* __FREEBOB_MOTUPORTINFO__ */
 
+#endif //#ifdef ENABLE_MOTU
 

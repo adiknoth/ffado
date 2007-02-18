@@ -19,6 +19,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BOUNCE
+
 #include "bounce/bounce_avdevice.h"
 #include "configrom.h"
 
@@ -376,6 +378,6 @@ BounceDevice::stopStreamByIndex(int i) {
 	return 0;
 }
 
+} // namespace
 
-
-}
+#endif // #ifdef ENABLE_BOUNCE

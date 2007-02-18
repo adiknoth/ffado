@@ -1,6 +1,6 @@
 /* rme_avdevice.cpp
  * Copyright (C) 2006 by Jonathan Woithe
- * Copyright (C) 2006 by Pieter Palmers
+ * Copyright (C) 2006,2007 by Pieter Palmers
  *
  * This file is part of FreeBob.
  *
@@ -18,6 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
+
+#ifdef ENABLE_RME
+#warning RME support is currently useless (detection only)
 
 #include "rme/rme_avdevice.h"
 #include "configrom.h"
@@ -43,7 +46,11 @@ namespace Rme {
 
 IMPL_DEBUG_MODULE( RmeDevice, RmeDevice, DEBUG_LEVEL_NORMAL );
 
-char *rme_modelname[] = {"[unknown]","Fireface-800"}; 
+// to define the supported devices
+static VendorModelEntry supportedDeviceList[] =
+{
+    {0x00000a35, 0x0001, "RME", "Fireface-800"},  // RME Fireface-800
+};
 
 /* ======================================================================= */
 /* Provide a mechanism for allocating iso channels and bandwidth to MOTU 
@@ -101,7 +108,7 @@ RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int verboseLevel )
     : m_configRom( configRom )
     , m_1394Service( &ieee1394service )
-    , m_rme_model( RME_MODEL_NONE )
+    , m_model( NULL )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_id(0)
@@ -143,17 +150,6 @@ RmeDevice::getConfigRom() const
     return *m_configRom;
 }
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-};
-
-static VendorModelEntry supportedDeviceList[] =
-{
-    {0x00000a35, 0x0001},  // RME Fireface-800
-
-};
-
 bool
 RmeDevice::probe( ConfigRom& configRom )
 {
@@ -178,21 +174,28 @@ RmeDevice::probe( ConfigRom& configRom )
 bool
 RmeDevice::discover()
 {
-        // Find out if this device is one we know about
-        if (m_configRom->getUnitSpecifierId() == RME_VENDOR_RME) {
-                switch (m_configRom->getModelId()) {
-                    case RME_MODELID_FIREFACE800: 
-                        m_rme_model = RME_MODEL_FIREFACE800; 
-                        break;
-                }
-        }
-        if (m_rme_model != RME_MODEL_NONE) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "found RME %s\n",
-                        rme_modelname[m_rme_model]);
-                return true;
-	}
+    unsigned int vendorId = m_configRom->getNodeVendorId();
+    unsigned int modelId = m_configRom->getModelId();
 
-	return false;
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].model_id == modelId ) 
+           )
+        {
+            m_model = &(supportedDeviceList[i]);
+        }
+    }
+
+    if (m_model != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model->vendor_name, m_model->model_name);
+        return true;
+    }
+
+    return false;
 }
 
 int 
@@ -224,7 +227,7 @@ void
 RmeDevice::showDevice() const
 {
 	debugOutput(DEBUG_LEVEL_VERBOSE,
-		"RME %s at node %d\n", rme_modelname[m_rme_model],
+		"%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
 		m_nodeId);
 }
 
@@ -546,3 +549,5 @@ signed int RmeDevice::WriteRegister(unsigned int reg, quadlet_t data) {
 #endif
 
 }
+
+#endif //#ifdef ENABLE_RME

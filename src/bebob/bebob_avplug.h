@@ -18,6 +18,8 @@
  * MA 02111-1307 USA.
  */
 
+#ifdef ENABLE_BEBOB
+
 #ifndef BEBOB_AVPLUG_H
 #define BEBOB_AVPLUG_H
 
@@ -355,3 +357,5 @@ typedef std::vector<AvPlugConnection> AvPlugConnectionOwnerVector;
 }
 
 #endif
+
+#endif //#ifdef ENABLE_BEBOB
