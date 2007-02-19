@@ -127,7 +127,7 @@ ConfigRom::initialize()
                                  5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
                                  &csr_info );
     if (!m_csr || csr1212_parse_csr( m_csr ) != CSR1212_SUCCESS) {
-        debugError( "Could not parse config rom of node %d on port %d", m_nodeId, m_1394Service->getPort() );
+        debugError( "Could not parse config rom of node %d on port %d\n", m_nodeId, m_1394Service->getPort() );
         if (m_csr) {
             csr1212_destroy_csr(m_csr);
             m_csr = 0;
@@ -214,10 +214,10 @@ busRead( struct csr1212_csr* csr,
          void* private_data )
 {
     struct config_csr_info* csr_info = (struct config_csr_info*) private_data;
-
+    
     if ( !csr_info->service->read( csr_info->nodeId,
                                    addr,
-                                   length/4,
+                                   (size_t)length/4,
                                    ( quadlet_t* )buffer) )
     {
         //debugOutput( DEBUG_LEVEL_VERBOSE, "ConfigRom: Read failed\n");
@@ -485,10 +485,12 @@ ConfigRom::printConfigRom() const
     printf( "\tModel Name:\t\t%s\n",          getModelName().c_str() );
     printf( "\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );
     printf( "\tModel Id:\t\t0x%08x\n",        getModelId() );
+    printf( "\tUnit Specifier ID:\t0x%06x\n",  getUnitSpecifierId() );
+    printf( "\tUnit version:\t\t0x%08x\n",        getUnitVersion() );
     printf( "\tISO resource manager:\t%d\n",  isIsoResourseManager() );
     printf( "\tCycle master capable:\t%d\n",  isSupportsIsoOperations() );
     printf( "\tBus manager capable:\t%d\n",   isBusManagerCapable() );
-    printf( "\tCycle clock accurancy:\t%d\n", getCycleClockAccurancy() );
+    printf( "\tCycle clock accuracy:\t%d\n", getCycleClockAccurancy() );
     printf( "\tMax rec:\t\t%d (max asy payload: %d bytes)\n",
             getMaxRec(), getAsyMaxPayload() );
 }

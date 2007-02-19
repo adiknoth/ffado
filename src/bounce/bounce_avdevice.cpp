@@ -43,6 +43,12 @@
 
 namespace Bounce {
 
+// to define the supported devices
+static VendorModelEntry supportedDeviceList[] =
+{
+    {0x0B0001, 0x0B0001, 0x0B0001, "FreeBoB", "Bounce"},
+};
+
 IMPL_DEBUG_MODULE( BounceDevice, BounceDevice, DEBUG_LEVEL_VERBOSE );
 
 
@@ -55,6 +61,7 @@ BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_samplerate (44100)
+    , m_model( NULL )
     , m_id(0)
     , m_receiveProcessor ( 0 )
     , m_receiveProcessorBandwidth ( -1 )
@@ -78,28 +85,21 @@ BounceDevice::getConfigRom() const
     return *m_configRom;
 }
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-};
-
-static VendorModelEntry supportedDeviceList[] =
-{
-//     {0x0000, 0x000000},
-};
-
 bool
 BounceDevice::probe( ConfigRom& configRom )
 {
-    unsigned int vendorId = configRom.getNodeVendorId();
+//     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
+    unsigned int unitSpecifierId = configRom.getUnitSpecifierId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
+        if ( 
+//             ( supportedDeviceList[i].vendor_id == vendorId )
+             ( supportedDeviceList[i].model_id == modelId )
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId ) 
            )
         {
             return true;
@@ -116,6 +116,29 @@ BounceDevice::discover()
 // 	quadlet_t request[6];
 // 	quadlet_t *resp;
 
+//     unsigned int vendorId = m_configRom->getNodeVendorId();
+    unsigned int modelId = m_configRom->getModelId();
+    unsigned int unitSpecifierId = m_configRom->getUnitSpecifierId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( //( supportedDeviceList[i].vendor_id == vendorId )
+             ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId ) 
+           )
+        {
+            m_model = &(supportedDeviceList[i]);
+        }
+    }
+
+    if (m_model != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model->vendor_name, m_model->model_name);
+        return true;
+    }
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering...\n" );
 
 	std::string vendor=std::string(FREEBOB_BOUNCE_SERVER_VENDORNAME);
@@ -170,6 +193,8 @@ BounceDevice::showDevice() const
     debugOutput(DEBUG_LEVEL_NORMAL, "\nI am the bouncedevice, the bouncedevice I am...\n" );
     debugOutput(DEBUG_LEVEL_NORMAL, "Vendor            :  %s\n", m_configRom->getVendorName().c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "Model             :  %s\n", m_configRom->getModelName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor Name       :  %s\n", m_model->vendor_name);
+    debugOutput(DEBUG_LEVEL_NORMAL, "Model Name        :  %s\n", m_model->model_name);
     debugOutput(DEBUG_LEVEL_NORMAL, "Node              :  %d\n", m_nodeId);
     debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", m_configRom->getGuid());
     debugOutput(DEBUG_LEVEL_NORMAL, "AVC test response :  %s\n", xmlDescription.c_str());

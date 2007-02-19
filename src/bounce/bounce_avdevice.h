@@ -41,6 +41,15 @@ class Ieee1394Service;
 
 namespace Bounce {
 
+// struct to define the supported devices
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+    unsigned int unit_specifier_id;
+    char *vendor_name;
+    char *model_name;
+};
+
 class BounceDevice : public IAvDevice {
 public:
     BounceDevice( std::auto_ptr<ConfigRom>( configRom ),
@@ -81,6 +90,7 @@ private:
 	std::string xmlDescription;
 
     unsigned int m_samplerate;
+    struct VendorModelEntry* m_model;
     unsigned int m_id;
 
 	// streaming stuff

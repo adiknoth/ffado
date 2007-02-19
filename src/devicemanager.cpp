@@ -371,7 +371,6 @@ DeviceManager::getXmlDescription()
             return 0;
         }
 
-        free(result);
     }
 
     return doc;

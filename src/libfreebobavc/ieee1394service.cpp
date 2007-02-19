@@ -32,7 +32,7 @@
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
-    : m_handle( 0 )
+    : m_handle( 0 ), m_resetHandle( 0 )
     , m_port( -1 )
     , m_threadRunning( false )
 {
@@ -108,7 +108,7 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
 
         #ifdef DEBUG
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-            "read: node 0x%X, addr = 0x%016X, length = %d\n",
+            "read: node 0x%X, addr = 0x%016llX, length = %u\n",
             nodeId, addr, length);
         printBuffer( length, buffer );
         #endif
@@ -116,7 +116,7 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
         return true;
     } else {
         #ifdef DEBUG
-        debugError("raw1394_read failed: node 0x%X, addr = 0x%016X, length = %d\n",
+        debugError("raw1394_read failed: node 0x%X, addr = 0x%016llX, length = %u\n",
               nodeId, addr, length);
         #endif
 
