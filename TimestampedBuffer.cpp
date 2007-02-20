@@ -103,10 +103,13 @@ bool TimestampedBuffer::setWrapValue(uint64_t w) {
  *
  * Returns the effective rate calculated by the DLL.
  *
- * @return rate (in frames/timeunit)
+ * @return rate (in timeunits/frame)
  */
 float TimestampedBuffer::getRate() {
-    return ((float) m_update_period)/m_dll_e2;
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"getRate: %f/%f=%f\n",
+        m_dll_e2,(float)m_update_period, m_dll_e2/((float) m_update_period));
+    
+    return m_dll_e2/((float) m_update_period);
 }
 
 /**
@@ -544,17 +547,6 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
 void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
 
     // add the offsets
-    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    if (diff < 0) diff += m_wrap_at;
-    
-    float rate;
-    
-    if (diff) {
-        rate=(float)diff / (float)m_update_period;
-    } else {
-        rate=m_nominal_rate;
-    }
-        
     int64_t ts=new_timestamp;
     ts += m_tick_offset;
     
@@ -573,6 +565,9 @@ void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
     }
 #endif
     
+    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    if (diff < 0) diff += m_wrap_at;
+
     pthread_mutex_lock(&m_framecounter_lock);
     
     m_buffer_tail_timestamp = ts;
@@ -583,7 +578,55 @@ void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
     pthread_mutex_unlock(&m_framecounter_lock);    
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Set buffer tail timestamp for (%p) to %11llu => %11lld, NTS=%llu, DLL2=%f, RATE=%f\n",
-                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, rate);
+                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, m_nominal_rate);
+
+}
+
+/**
+ * @brief Sets the buffer head timestamp.
+ * 
+ * Set the buffer tail timestamp such that the buffer head timestamp becomes 
+ * \ref new_timestamp. This does not consider offsets, because it's use is to
+ * make sure the following is true after setBufferHeadTimestamp(x):
+ *   x == getBufferHeadTimestamp()
+ * 
+ * This is thread safe.
+ * 
+ * @param new_timestamp 
+ */
+void TimestampedBuffer::setBufferHeadTimestamp(uint64_t new_timestamp) {
+    
+#ifdef DEBUG
+    if (new_timestamp >= m_wrap_at) {
+        debugWarning("timestamp not wrapped: %llu\n",new_timestamp);
+    }    
+#endif
+
+    int64_t ts=new_timestamp;
+
+    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    if (diff < 0) diff += m_wrap_at;
+    
+    pthread_mutex_lock(&m_framecounter_lock);
+    
+    // add the time
+    ts += (int64_t)(m_nominal_rate * (float)m_framecounter);
+    
+    if (ts >= (int64_t)m_wrap_at) {
+        ts -= m_wrap_at;
+    } else if (ts < 0) {
+        ts += m_wrap_at;
+    }
+    
+    m_buffer_tail_timestamp = ts;
+    
+    m_dll_e2=m_update_period * m_nominal_rate;
+    m_buffer_next_tail_timestamp = (uint64_t)((float)m_buffer_tail_timestamp + m_dll_e2);
+    
+    pthread_mutex_unlock(&m_framecounter_lock);    
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Set buffer head timestamp for (%p) to %11llu => %11lld, NTS=%llu, DLL2=%f, RATE=%f\n",
+                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, m_nominal_rate);
 
 }
 
