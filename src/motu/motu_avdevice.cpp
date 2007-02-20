@@ -344,16 +344,15 @@ MotuDevice::prepare() {
 	// the size of the packet.  We allocate based on the maximum packet
 	// size (1160 bytes at 192 kHz) so the sampling frequency can be
 	// changed dynamically if this ends up being useful in future.
+	// Therefore we get a *per stream* bandwidth figure of 25+1160.
 	m_bandwidth = 25 + 1160;
-
-    // FIXME: bandwidth equally split over the channels
 
 	// Assign iso channels if not already done
 	if (m_iso_recv_channel < 0)
-		m_iso_recv_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth/2);
+		m_iso_recv_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth);
 		
 	if (m_iso_send_channel < 0)
-		m_iso_send_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth/2);
+		m_iso_send_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth);
 
 	debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
 		m_iso_recv_channel, m_iso_send_channel);
