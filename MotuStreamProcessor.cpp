@@ -281,8 +281,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 		// Set up each frames's SPH.  Note that the (int) typecast
 		// appears to do rounding.
 
+float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
 		for (i=0; i<n_events; i++, quadlet += dbs) {
-			*quadlet = htonl( TICKS_TO_CYCLE_TIMER(ts) );
+			unsigned int ts_frame = ts;
+			ts_frame += (unsigned int)((float)i * ticks_per_frame);
+			*quadlet = htonl( TICKS_TO_CYCLE_TIMER(ts_frame) );
 		}
 
 		// Process all ports that should be handled on a per-packet base
@@ -580,8 +583,8 @@ bool MotuTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
         if (now_secs>=128) now_secs=0;
     }
     
-    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
-    ts_head+=time_to_enable_at*TICKS_PER_CYCLE;
+//    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
+    uint64_t ts_head = time_to_enable_at*TICKS_PER_CYCLE;
     
     // we also add the nb of cycles we transmit in advance
     ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
@@ -958,8 +961,15 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         m_last_timestamp2=m_last_timestamp;
 
         //=> convert the SYT to a full timestamp in ticks
-        m_last_timestamp=sytRecvToFullTicks((uint32_t)ntohl(*(quadlet_t *)(data+8)), 
-                                        cycle, m_handler->getCycleTimer());
+//        m_last_timestamp=sytRecvToFullTicks((uint32_t)ntohl(*(quadlet_t *)(data+8)), 
+//                                        cycle, m_handler->getCycleTimer());
+//***
+// FIXME: it given that we later advance this to be the timestamp of the sample immediately following
+// this packet, it perhaps makes more sense to acquire the timestamp of the last frame in the packet.
+// Then it's just a matter of adding m_ticks_per_frame rather than frame_size times this.
+uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
+//        m_last_timestamp = ((first_sph & 0x1fff000)>>12)*3072 + (first_sph & 0xfff);
+        m_last_timestamp = CYCLE_TIMER_TO_TICKS(first_sph & 0x1ffffff);
 
 		// Signal that we're running
         if(!m_running && n_events && m_last_timestamp2 && m_last_timestamp) {
