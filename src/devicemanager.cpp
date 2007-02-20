@@ -298,6 +298,7 @@ DeviceManager::getAvDeviceCount( )
 FreebobStreaming::StreamProcessor *
 DeviceManager::getSyncSource() {
     IAvDevice* device = getAvDeviceByIndex(0);
+    return device->getStreamProcessorByIndex(0);
     
     #warning TEST CODE FOR BOUNCE DEVICE !!
     if (device->getConfigRom().getNodeId()==0) {

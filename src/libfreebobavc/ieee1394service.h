@@ -125,6 +125,37 @@ public:
     bool addBusResetHandler( Functor* functor );
     bool remBusResetHandler( Functor* functor );
 
+// ISO channel stuff
+public:
+    signed int getAvailableBandwidth();
+    signed int allocateIsoChannelGeneric(unsigned int bandwidth);
+    signed int allocateIsoChannelCMP(nodeid_t xmit_node, int xmit_plug, 
+                                     nodeid_t recv_node, int recv_plug);
+    bool freeIsoChannel(signed int channel);
+    
+private:
+    enum EAllocType {
+        AllocFree = 0, // not allocated (by us)
+        AllocGeneric = 1, // allocated with generic functions
+        AllocCMP=2 // allocated with CMP
+    };
+
+    struct ChannelInfo {
+        int channel;
+        int bandwidth;
+        enum EAllocType alloctype;
+        nodeid_t xmit_node;
+        int xmit_plug;
+        nodeid_t recv_node;
+        int recv_plug;
+    };
+    
+    // the info for the channels we manage
+    struct ChannelInfo m_channels[64];
+    
+    bool unregisterIsoChannel(unsigned int c);
+    bool registerIsoChannel(unsigned int c, struct ChannelInfo cinfo);
+
 private:
 
     bool startRHThread();

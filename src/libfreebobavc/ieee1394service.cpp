@@ -20,6 +20,8 @@
 #include "ieee1394service.h"
 
 #include <libavc1394/avc1394.h>
+#include <libraw1394/csr.h>
+#include <libiec61883/iec61883.h>
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -37,6 +39,16 @@ Ieee1394Service::Ieee1394Service()
     , m_threadRunning( false )
 {
     pthread_mutex_init( &m_mutex, 0 );
+    
+    for (unsigned int i=0; i<64; i++) {
+        m_channels[i].channel=-1;
+        m_channels[i].bandwidth=-1;
+        m_channels[i].alloctype=AllocFree;
+        m_channels[i].xmit_node=0xFFFF;
+        m_channels[i].xmit_plug=-1;
+        m_channels[i].recv_node=0xFFFF;
+        m_channels[i].recv_plug=-1;
+    }
 }
 
 Ieee1394Service::~Ieee1394Service()
@@ -347,4 +359,235 @@ Ieee1394Service::remBusResetHandler( Functor* functor )
         }
     }
     return false;
+}
+
+/**
+ * Allocates an iso channel for use by the interface in a similar way to
+ * libiec61883.  Returns -1 on error (due to there being no free channels)
+ * or an allocated channel number.
+ *
+ * Does not perform anything other than registering the channel and the 
+ * bandwidth at the IRM
+ *
+ * Also allocates the necessary bandwidth (in ISO allocation units).
+ * 
+ * FIXME: As in libiec61883, channel 63 is not requested; this is either a
+ * bug or it's omitted since that's the channel preferred by video devices.
+ *
+ * @param bandwidth the bandwidth to allocate for this channel
+ * @return the channel number
+ */
+signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
+    struct ChannelInfo cinfo;
+
+    int c = -1;
+    for (c = 0; c < 63; c++) {
+        if (raw1394_channel_modify (m_handle, c, RAW1394_MODIFY_ALLOC) == 0)
+            break;
+    }
+    if (c < 63) {
+        if (raw1394_bandwidth_modify(m_handle, bandwidth, RAW1394_MODIFY_ALLOC) < 0) {
+            debugFatal("Could not allocate bandwidth of %d\n", bandwidth);
+            
+            raw1394_channel_modify (m_handle, c, RAW1394_MODIFY_FREE);
+            return -1;
+        } else {
+            cinfo.channel=c;
+            cinfo.bandwidth=bandwidth;
+            cinfo.alloctype=AllocGeneric;
+            
+            if (registerIsoChannel(c, cinfo)) {
+                return c;
+            } else {
+                raw1394_bandwidth_modify(m_handle, bandwidth, RAW1394_MODIFY_FREE);
+                raw1394_channel_modify (m_handle, c, RAW1394_MODIFY_FREE);
+                return -1;
+            }
+        }
+    }
+    return -1;
+}
+
+/**
+ * Allocates an iso channel for use by the interface in a similar way to
+ * libiec61883.  Returns -1 on error (due to there being no free channels)
+ * or an allocated channel number.
+ *
+ * Uses IEC61883 Connection Management Procedure to establish the connection.
+ *
+ * Also allocates the necessary bandwidth (in ISO allocation units).
+ *
+ * @param xmit_node  node id of the transmitter
+ * @param xmit_plug  the output plug to use. If -1, find the first online plug, and
+ * upon return, contains the plug number used.
+ * @param recv_node  node id of the receiver
+ * @param recv_plug the input plug to use. If -1, find the first online plug, and
+ * upon return, contains the plug number used.
+ *
+ * @return the channel number
+ */
+
+signed int Ieee1394Service::allocateIsoChannelCMP(
+    nodeid_t xmit_node, int xmit_plug, 
+    nodeid_t recv_node, int recv_plug
+    ) {
+
+    struct ChannelInfo cinfo;
+    
+    int c = -1;
+    int bandwidth=1;
+    
+    // do connection management: make connection
+    c = iec61883_cmp_connect(
+        m_handle,
+        xmit_node | 0xffc0,
+        &xmit_plug,
+        recv_node | 0xffc0,
+        &recv_plug,
+        &bandwidth);
+
+    if((c<0) || (c>63)) {
+        debugError("Could not do CMP from %04X:%02d to %04X:%02d\n",
+            xmit_node, xmit_plug, recv_node, recv_plug
+            );
+        return -1;
+    }
+
+    cinfo.channel=c;
+    cinfo.bandwidth=bandwidth;
+    cinfo.alloctype=AllocCMP;
+    
+    cinfo.xmit_node=xmit_node;
+    cinfo.xmit_plug=xmit_plug;
+    cinfo.recv_node=recv_node;
+    cinfo.recv_plug=recv_plug;
+        
+    if (registerIsoChannel(c, cinfo)) {
+        return c;
+    }
+
+    return -1;
+}
+
+/**
+ * Deallocates an iso channel.  Silently ignores a request to deallocate 
+ * a negative channel number.
+ *
+ * Figures out the method that was used to allocate the channel (generic, cmp, ...)
+ * and uses the appropriate method to deallocate. Also frees the bandwidth
+ * that was reserved along with this channel.
+ * 
+ * @param c channel number
+ * @return true if successful
+ */
+bool Ieee1394Service::freeIsoChannel(signed int c) {
+    
+    if (c < 0 || c > 63) {
+        debugWarning("Invalid channel number: %d", c);
+        return false;
+    }
+    
+    switch (m_channels[c].alloctype) {
+        default:
+            debugError("BUG: invalid allocation type!\n");
+            return false;
+            
+        case AllocFree: 
+            debugWarning("Channel %d not registered\n", c);
+            return false;
+            
+        case AllocGeneric:
+            if (unregisterIsoChannel(c)) {
+                return false;
+            } else {
+                if (raw1394_bandwidth_modify(m_handle, m_channels[c].bandwidth, RAW1394_MODIFY_FREE) !=0) {
+                    debugWarning("Failed to deallocate bandwidth\n");
+                }
+                if (raw1394_channel_modify (m_handle, m_channels[c].channel, RAW1394_MODIFY_FREE) != 0) {
+                    debugWarning("Failed to free channel\n");
+                }
+                return true;
+            }
+            
+        case AllocCMP:
+            if (unregisterIsoChannel(c)) {
+                return false;
+            } else {
+                if(iec61883_cmp_disconnect(
+                        m_handle, 
+                        m_channels[c].xmit_node | 0xffc0,
+                        m_channels[c].xmit_plug,
+                        m_channels[c].recv_node | 0xffc0,
+                        m_channels[c].recv_plug,
+                        m_channels[c].channel,
+                        m_channels[c].bandwidth) != 0) {
+                    debugWarning("Could not do CMP disconnect for channel %d!\n",c);
+                }
+            }
+            return true;
+    }
+    
+    // unreachable
+    debugError("BUG: unreachable code reached!\n");
+    
+    return false;
+}
+
+/**
+ * Registers a channel as managed by this ieee1394service
+ * @param c channel number
+ * @param cinfo channel info struct
+ * @return true if successful
+ */
+bool Ieee1394Service::registerIsoChannel(unsigned int c, struct ChannelInfo cinfo) {
+    if (c < 63) {
+        if (m_channels[c].alloctype != AllocFree) {
+            debugWarning("Channel %d already registered with bandwidth %d\n",
+                m_channels[c].channel, m_channels[c].bandwidth);
+        }
+        
+        memcpy(&m_channels[c], &cinfo, sizeof(struct ChannelInfo));
+        
+    } else return false;
+    return true;
+}
+
+/**
+ * unegisters a channel from this ieee1394service
+ * @param c channel number
+ * @return true if successful
+ */
+bool Ieee1394Service::unregisterIsoChannel(unsigned int c) {
+    if (c < 63) {
+        if (m_channels[c].alloctype == AllocFree) {
+            debugWarning("Channel %d not registered\n", c);
+            return false;
+        }
+        
+        m_channels[c].channel=-1;
+        m_channels[c].bandwidth=-1;
+        m_channels[c].alloctype=AllocFree;
+        m_channels[c].xmit_node=0xFFFF;
+        m_channels[c].xmit_plug=-1;
+        m_channels[c].recv_node=0xFFFF;
+        m_channels[c].recv_plug=-1;
+        
+    } else return false;
+    return true;
+}
+
+/**
+ * Returns the current value of the `bandwidth available' register on
+ * the IRM, or -1 on error.
+ * @return 
+ */
+signed int Ieee1394Service::getAvailableBandwidth() {
+    quadlet_t buffer;
+    signed int result = raw1394_read (m_handle, raw1394_get_irm_id (m_handle),
+        CSR_REGISTER_BASE + CSR_BANDWIDTH_AVAILABLE,
+        sizeof (quadlet_t), &buffer);
+
+    if (result < 0)
+        return -1;
+    return ntohl(buffer);
 }

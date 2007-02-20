@@ -50,56 +50,6 @@ static VendorModelEntry supportedDeviceList[] =
     {0x000001f2, 0, 0x00000009, 0x000001f2, MOTUFW_MODEL_TRAVELER, "MOTU", "Traveler"},
 };
 
-/* ======================================================================= */
-/* Provide a mechanism for allocating iso channels and bandwidth to MOTU 
- * interfaces.
- */
-
-static signed int allocate_iso_channel(raw1394handle_t handle) {
-/*
- * Allocates an iso channel for use by the interface in a similar way to
- * libiec61883.  Returns -1 on error (due to there being no free channels)
- * or an allocated channel number.
- * FIXME: As in libiec61883, channel 63 is not requested; this is either a
- * bug or it's omitted since that's the channel preferred by video devices.
- */
-	int c = -1;
-	for (c = 0; c < 63; c++)
-		if (raw1394_channel_modify (handle, c, RAW1394_MODIFY_ALLOC) == 0)
-			break;
-	if (c < 63)
-		return c;
-	return -1;
-}
-
-static signed int free_iso_channel(raw1394handle_t handle, signed int channel) {
-/*
- * Deallocates an iso channel.  Returns -1 on error or 0 on success.  Silently
- * ignores a request to deallocate a negative channel number.
- */
-	if (channel < 0)
-		return 0;
-	if (raw1394_channel_modify (handle, channel, RAW1394_MODIFY_FREE)!=0)
-		return -1;
-	return 0;
-}
-
-static signed int get_iso_bandwidth_avail(raw1394handle_t handle) {
-/*
- * Returns the current value of the `bandwidth available' register on
- * the IRM, or -1 on error.
- */
-quadlet_t buffer;
-signed int result = raw1394_read (handle, raw1394_get_irm_id (handle),
-	CSR_REGISTER_BASE + CSR_BANDWIDTH_AVAILABLE,
-	sizeof (quadlet_t), &buffer);
-
-	if (result < 0)
-		return -1;
-	return ntohl(buffer);
-}
-/* ======================================================================= */
-
 MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId,
@@ -126,19 +76,17 @@ MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
 
 MotuDevice::~MotuDevice()
 {
-	// Free ieee1394 bus resources if they have been allocated
-	if (m_1394Service != NULL) {
-		raw1394handle_t handle = m_1394Service->getHandle();
-		if (m_bandwidth >= 0)
-			if (raw1394_bandwidth_modify(handle, m_bandwidth, RAW1394_MODIFY_FREE) < 0)
-				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free bandwidth of %d\n", m_bandwidth);
-		if (m_iso_recv_channel >= 0)
-			if (raw1394_channel_modify(handle, m_iso_recv_channel, RAW1394_MODIFY_FREE) < 0)
-				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
-		if (m_iso_send_channel >= 0)
-			if (raw1394_channel_modify(handle, m_iso_send_channel, RAW1394_MODIFY_FREE) < 0)
-				debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
-	}
+    // Free ieee1394 bus resources if they have been allocated
+    if (m_1394Service != NULL) {
+        if(m_1394Service->freeIsoChannel(m_iso_recv_channel)) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
+            
+        }
+        if(m_1394Service->freeIsoChannel(m_iso_send_channel)) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
+            
+        }
+    }
 }
 
 ConfigRom&
@@ -376,23 +324,7 @@ MotuDevice::prepare() {
 	unsigned int event_size_in = getEventSize(MOTUFW_DIR_IN);
 	unsigned int event_size_out= getEventSize(MOTUFW_DIR_OUT);
 
-	raw1394handle_t handle = m_1394Service->getHandle();
-
 	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
-
-	// Assign iso channels if not already done
-	if (m_iso_recv_channel < 0)
-		m_iso_recv_channel = allocate_iso_channel(handle);
-	if (m_iso_send_channel < 0)
-		m_iso_send_channel = allocate_iso_channel(handle);
-
-	debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
-		m_iso_recv_channel, m_iso_send_channel);
-
-	if (m_iso_recv_channel<0 || m_iso_send_channel<0) {
-		debugFatal("Could not allocate iso channels!\n");
-		return false;
-	}
 
 	// Allocate bandwidth if not previously done.
 	// FIXME: The bandwidth allocation calculation can probably be
@@ -413,17 +345,29 @@ MotuDevice::prepare() {
 	// size (1160 bytes at 192 kHz) so the sampling frequency can be
 	// changed dynamically if this ends up being useful in future.
 	m_bandwidth = 25 + 1160;
-	debugOutput(DEBUG_LEVEL_VERBOSE, "Available bandwidth: %d\n", 
-		get_iso_bandwidth_avail(handle));
-	if (raw1394_bandwidth_modify(handle, m_bandwidth, RAW1394_MODIFY_ALLOC) < 0) {
-		debugFatal("Could not allocate bandwidth of %d\n", m_bandwidth);
-		m_bandwidth = -1;
+
+    // FIXME: bandwidth equally split over the channels
+
+	// Assign iso channels if not already done
+	if (m_iso_recv_channel < 0)
+		m_iso_recv_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth/2);
+		
+	if (m_iso_send_channel < 0)
+		m_iso_send_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth/2);
+
+	debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
+		m_iso_recv_channel, m_iso_send_channel);
+
+	if (m_iso_recv_channel<0 || m_iso_send_channel<0) {
+		// be nice and deallocate
+		if (m_iso_recv_channel >= 0)
+			m_1394Service->freeIsoChannel(m_iso_recv_channel);
+		if (m_iso_send_channel >= 0)
+			m_1394Service->freeIsoChannel(m_iso_send_channel);
+		
+		debugFatal("Could not allocate iso channels!\n");
 		return false;
 	}
-	debugOutput(DEBUG_LEVEL_VERBOSE, 
-		"allocated bandwidth of %d for MOTU device\n", m_bandwidth);
-	debugOutput(DEBUG_LEVEL_VERBOSE,
-		"remaining bandwidth: %d\n", get_iso_bandwidth_avail(handle));
 
 	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
 		m_1394Service->getPort(), samp_freq, event_size_in);

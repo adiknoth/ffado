@@ -1111,154 +1111,7 @@ AvDevice::addPlugToProcessor(
 // #define TEST_XMIT_ONLY
 
 #ifdef TEST_XMIT_ONLY
-int
-AvDevice::getStreamCount() {
-//     return 2; // one receive, one transmit
-    return 1; // one receive, one transmit
-}
 
-FreebobStreaming::StreamProcessor *
-AvDevice::getStreamProcessorByIndex(int i) {
-    switch (i) {
-    case 0:
-//         return m_receiveProcessor;
-//     case 1:
-//         if (m_snoopMode) {
-//             return m_receiveProcessor2;
-//         } else {
-            return m_transmitProcessor;
-//         }
-    default:
-        return NULL;
-    }
-    return 0;
-}
-
-// FIXME: error checking
-int
-AvDevice::startStreamByIndex(int i) {
-    int iso_channel=0;
-    int plug=0;
-    int hostplug=-1;
-
-//     if (m_snoopMode) {
-//
-//         switch (i) {
-//         case 0:
-//             // snooping doesn't use CMP, but obtains the info of the channel
-//             // from the target plug
-//
-//             // TODO: get isochannel from plug
-//
-//             // set the channel obtained by the connection management
-//             m_receiveProcessor->setChannel(iso_channel);
-//             break;
-//         case 1:
-//             // snooping doesn't use CMP, but obtains the info of the channel
-//             // from the target plug
-//
-//             // TODO: get isochannel from plug
-//
-//             // set the channel obtained by the connection management
-//             m_receiveProcessor2->setChannel(iso_channel);
-//
-//             break;
-//         default:
-//             return 0;
-//         }
-//     } else {
-
-        switch (i) {
-        case 0:
-//             // do connection management: make connection
-//             iso_channel = iec61883_cmp_connect(
-//                 m_p1394Service->getHandle(),
-//                 m_pConfigRom->getNodeId() | 0xffc0,
-//                 &plug,
-//                 raw1394_get_local_id (m_p1394Service->getHandle()),
-//                 &hostplug,
-//                 &m_receiveProcessorBandwidth);
-// 
-//             // set the channel obtained by the connection management
-//             m_receiveProcessor->setChannel(iso_channel);
-//             break;
-//         case 1:
-            // do connection management: make connection
-            iso_channel = iec61883_cmp_connect(
-                m_p1394Service->getHandle(),
-                raw1394_get_local_id (m_p1394Service->getHandle()),
-                &hostplug,
-                m_pConfigRom->getNodeId() | 0xffc0,
-                &plug,
-                &m_transmitProcessorBandwidth);
-
-            // set the channel obtained by the connection management
-            m_transmitProcessor->setChannel(iso_channel);
-            break;
-        default:
-            return -1;
-        }
-//     }
-
-    if (iso_channel < 0) return -1;
-    
-    return 0;
-
-}
-
-// FIXME: error checking
-int
-AvDevice::stopStreamByIndex(int i) {
-    // do connection management: break connection
-
-    int plug=0;
-    int hostplug=-1;
-//     if (m_snoopMode) {
-//         switch (i) {
-//         case 0:
-//             // do connection management: break connection
-//
-//             break;
-//         case 1:
-//             // do connection management: break connection
-//
-//             break;
-//         default:
-//             return 0;
-//         }
-//     } else {
-        switch (i) {
-        case 0:
-//             // do connection management: break connection
-//             iec61883_cmp_disconnect(
-//                 m_p1394Service->getHandle(),
-//                 m_pConfigRom->getNodeId() | 0xffc0,
-//                 plug,
-//                 raw1394_get_local_id (m_p1394Service->getHandle()),
-//                 hostplug,
-//                 m_receiveProcessor->getChannel(),
-//                 m_receiveProcessorBandwidth);
-// 
-//             break;
-//         case 1:
-            // do connection management: break connection
-            iec61883_cmp_disconnect(
-                m_p1394Service->getHandle(),
-                raw1394_get_local_id (m_p1394Service->getHandle()),
-                hostplug,
-                m_pConfigRom->getNodeId() | 0xffc0,
-                plug,
-                m_transmitProcessor->getChannel(),
-                m_transmitProcessorBandwidth);
-
-            break;
-        default:
-            return 0;
-        }
-//     }
-
-    return 0;
-}
 #else
 int
 AvDevice::getStreamCount() {
@@ -1285,9 +1138,7 @@ AvDevice::getStreamProcessorByIndex(int i) {
 // FIXME: error checking
 int
 AvDevice::startStreamByIndex(int i) {
-    int iso_channel=0;
-    int plug=0;
-    int hostplug=-1;
+    int iso_channel=-1;
 
 //     if (m_snoopMode) {
 //
@@ -1318,29 +1169,18 @@ AvDevice::startStreamByIndex(int i) {
 
         switch (i) {
         case 0:
-            // do connection management: make connection
-            iso_channel = iec61883_cmp_connect(
-                m_p1394Service->getHandle(),
-                m_pConfigRom->getNodeId() | 0xffc0,
-                &plug,
-                raw1394_get_local_id (m_p1394Service->getHandle()),
-                &hostplug,
-                &m_receiveProcessorBandwidth);
-
-            // set the channel obtained by the connection management
+            iso_channel=m_p1394Service->allocateIsoChannelCMP(
+                m_pConfigRom->getNodeId() | 0xffc0, 0, 
+                m_p1394Service->getLocalNodeId()| 0xffc0, -1);
+            
             m_receiveProcessor->setChannel(iso_channel);
             break;
+            
         case 1:
-            // do connection management: make connection
-            iso_channel = iec61883_cmp_connect(
-                m_p1394Service->getHandle(),
-                raw1394_get_local_id (m_p1394Service->getHandle()),
-                &hostplug,
-                m_pConfigRom->getNodeId() | 0xffc0,
-                &plug,
-                &m_transmitProcessorBandwidth);
+            iso_channel=m_p1394Service->allocateIsoChannelCMP(
+                m_p1394Service->getLocalNodeId()| 0xffc0, -1,
+                m_pConfigRom->getNodeId() | 0xffc0, 0);
 
-            // set the channel obtained by the connection management
             m_transmitProcessor->setChannel(iso_channel);
             break;
         default:
@@ -1377,29 +1217,13 @@ AvDevice::stopStreamByIndex(int i) {
 //     } else {
         switch (i) {
         case 0:
-            // do connection management: break connection
-            iec61883_cmp_disconnect(
-                m_p1394Service->getHandle(),
-                m_pConfigRom->getNodeId() | 0xffc0,
-                plug,
-                raw1394_get_local_id (m_p1394Service->getHandle()),
-                hostplug,
-                m_receiveProcessor->getChannel(),
-                m_receiveProcessorBandwidth);
-
+            m_p1394Service->freeIsoChannel(m_receiveProcessor->getChannel());
             break;
+            
         case 1:
-            // do connection management: break connection
-            iec61883_cmp_disconnect(
-                m_p1394Service->getHandle(),
-                raw1394_get_local_id (m_p1394Service->getHandle()),
-                hostplug,
-                m_pConfigRom->getNodeId() | 0xffc0,
-                plug,
-                m_transmitProcessor->getChannel(),
-                m_transmitProcessorBandwidth);
-
+            m_p1394Service->freeIsoChannel(m_transmitProcessor->getChannel());
             break;
+            
         default:
             return 0;
         }
