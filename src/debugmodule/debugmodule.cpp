@@ -100,8 +100,8 @@ DebugModule::print( debug_level_t level,
     va_start( arg, format );
     
     // remove the path info from the filename
-    char *f=(char *)file;
-    char *fname;
+    const char *f = file;
+    const char *fname = file;
     while((f=strstr(f, "/"))) {
         f++; // move away from delimiter
         fname=f;
