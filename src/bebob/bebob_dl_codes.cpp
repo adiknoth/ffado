@@ -17,9 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_BEBOB
-
 #include "bebob/bebob_dl_codes.h"
 #include "bebob/bebob_dl_bcd.h"
 
@@ -345,5 +342,3 @@ BeBoB::CommandCodesGo::deserialize( IISDeserialize& de )
 
     return result;
 }
-
-#endif //#ifdef ENABLE_BEBOB

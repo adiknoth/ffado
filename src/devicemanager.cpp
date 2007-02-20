@@ -26,18 +26,38 @@
 
 #include "libfreebobavc/ieee1394service.h"
 #include "debugmodule/debugmodule.h"
-#include "bebob/bebob_avdevice.h"
-#include "bounce/bounce_avdevice.h"
-#include "motu/motu_avdevice.h"
-#include "rme/rme_avdevice.h"
-#include "maudio/maudio_avdevice.h"
-#include "dice/dice_avdevice.h"
-#include "metrichalo/mh_avdevice.h"
 
 #include <iostream>
 #include <sstream>
 
 #include <unistd.h>
+
+#include "libstreaming/StreamProcessor.h"
+
+#ifdef ENABLE_BEBOB
+    #include "bebob/bebob_avdevice.h"
+    #include "maudio/maudio_avdevice.h"
+#endif
+
+#ifdef ENABLE_BOUNCE
+    #include "bounce/bounce_avdevice.h"
+#endif
+
+#ifdef ENABLE_MOTU
+#include "motu/motu_avdevice.h"
+#endif
+
+#ifdef ENABLE_RME
+#include "rme/rme_avdevice.h"
+#endif
+
+#ifdef ENABLE_DICE
+#include "dice/dice_avdevice.h"
+#endif
+
+#ifdef ENABLE_METRIC_HALO
+#include "metrichalo/mh_avdevice.h"
+#endif
 
 using namespace std;
 
@@ -100,6 +120,11 @@ DeviceManager::discover( int verboseLevel )
           ++nodeId )
     {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
+
+        if (nodeId == m_1394Service->getLocalNodeId()) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Skipping local node (%d)...\n", nodeId );
+            continue;
+        }
 
         std::auto_ptr<ConfigRom> configRom =
             std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
@@ -260,6 +285,27 @@ unsigned int
 DeviceManager::getAvDeviceCount( )
 {
 	return m_avDevices.size();
+}
+
+/**
+ * Return the streamprocessor that is to be used as
+ * the sync source.
+ *
+ * Algorithm still to be determined
+ *
+ * @return StreamProcessor that is sync source
+ */
+FreebobStreaming::StreamProcessor *
+DeviceManager::getSyncSource() {
+    IAvDevice* device = getAvDeviceByIndex(0);
+    
+    #warning TEST CODE FOR BOUNCE DEVICE !!
+    if (device->getConfigRom().getNodeId()==0) {
+        return device->getStreamProcessorByIndex(0);
+    } else {
+        return device->getStreamProcessorByIndex(1);
+    }
+    
 }
 
 xmlDocPtr

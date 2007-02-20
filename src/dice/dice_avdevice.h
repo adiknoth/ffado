@@ -17,9 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_DICE
-
 #ifndef DICEDEVICE_H
 #define DICEDEVICE_H
 
@@ -99,5 +96,3 @@ private:
 }
 
 #endif
-
-#endif //#ifdef ENABLE_DICE

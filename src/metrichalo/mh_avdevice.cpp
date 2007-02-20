@@ -18,7 +18,6 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_METRIC_HALO
 #warning Metric Halo support is currently useless
 
 #include "metrichalo/mh_avdevice.h"
@@ -238,5 +237,3 @@ signed int MHAvDevice::getIsoSendChannel(void) {
 }
 
 }
-
-#endif //#ifdef ENABLE_METRIC_HALO

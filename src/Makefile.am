@@ -24,6 +24,11 @@ INCLUDES = 						\
 
 lib_LTLIBRARIES = libfreebob.la
 
+libfreebob_la_LDFLAGS = 				\
+	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
+	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
+	$(LIBXML_LIBS) $(LIBXMLCPP_LIBS) -lpthread -lrt
+
 libfreebob_la_LIBADD = -lrt
 
 noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
@@ -49,6 +54,7 @@ noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
 	libutil/serialize.h libutil/SystemTimeSource.h libutil/Thread.h libutil/Time.h \
 	libutil/TimeSource.h libutil/TimestampedBuffer.h
 
+# common sources
 libfreebob_la_SOURCES = \
         configrom.cpp \
         csr1212.c \
@@ -56,21 +62,6 @@ libfreebob_la_SOURCES = \
         freebob.cpp \
         freebob_streaming.cpp \
         xmlparser.c \
-        bebob/bebob_avdevice.cpp \
-        bebob/bebob_avdevice_subunit.cpp \
-        bebob/bebob_avdevice_xml.cpp \
-        bebob/bebob_avplug.cpp \
-        bebob/bebob_avplug_xml.cpp \
-        bebob/bebob_dl_bcd.cpp \
-        bebob/bebob_dl_codes.cpp \
-        bebob/bebob_dl_mgr.cpp \
-        bebob/bebob_functionblock.cpp \
-        bounce/bounce_avdevice.cpp \
-        dice/dice_avdevice.cpp \
-        maudio/maudio_avdevice.cpp \
-        metrichalo/mh_avdevice.cpp \
-        motu/motu_avdevice.cpp \
-        rme/rme_avdevice.cpp \
         debugmodule/debugmodule.cpp \
         libfreebobavc/avc_connect.cpp \
         libfreebobavc/avc_definitions.cpp \
@@ -86,16 +77,10 @@ libfreebob_la_SOURCES = \
         libfreebobavc/avc_subunit_info.cpp \
         libfreebobavc/avc_unit_info.cpp \
         libfreebobavc/ieee1394service.cpp \
-        libstreaming/AmdtpPort.cpp \
-        libstreaming/AmdtpPortInfo.cpp \
-        libstreaming/AmdtpStreamProcessor.cpp \
         libstreaming/cip.c \
         libstreaming/IsoHandler.cpp \
         libstreaming/IsoHandlerManager.cpp \
         libstreaming/IsoStream.cpp \
-        libstreaming/MotuPort.cpp \
-        libstreaming/MotuPortInfo.cpp \
-        libstreaming/MotuStreamProcessor.cpp \
         libstreaming/Port.cpp \
         libstreaming/PortManager.cpp \
         libstreaming/StreamProcessor.cpp \
@@ -111,30 +96,66 @@ libfreebob_la_SOURCES = \
         libutil/TimeSource.cpp \
         libutil/TimestampedBuffer.cpp
 
-libfreebob_la_LDFLAGS = 				\
-	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
-	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
-	$(LIBXML_LIBS) $(LIBXMLCPP_LIBS) -lpthread -lrt
+# class specific sources
+bebob_src = \
+        bebob/bebob_avdevice.cpp \
+        bebob/bebob_avdevice_subunit.cpp \
+        bebob/bebob_avdevice_xml.cpp \
+        bebob/bebob_avplug.cpp \
+        bebob/bebob_avplug_xml.cpp \
+        bebob/bebob_dl_bcd.cpp \
+        bebob/bebob_dl_codes.cpp \
+        bebob/bebob_dl_mgr.cpp \
+        bebob/bebob_functionblock.cpp \
+        maudio/maudio_avdevice.cpp
 
-nobase_dist_pkgdata_DATA = 				\
+motu_src = \
+        motu/motu_avdevice.cpp \
+        libstreaming/MotuPort.cpp \
+        libstreaming/MotuPortInfo.cpp \
+        libstreaming/MotuStreamProcessor.cpp
+
+dice_src = \
+        dice/dice_avdevice.cpp
+
+bounce_src = \
+        bounce/bounce_avdevice.cpp
+
+metric_halo_src = \
+        metrichalo/mh_avdevice.cpp
+
+rme_src = \
+        rme/rme_avdevice.cpp
+
+amdtp_src = \
+        libstreaming/AmdtpPort.cpp \
+        libstreaming/AmdtpPortInfo.cpp \
+        libstreaming/AmdtpStreamProcessor.cpp
+
+# data
+#  generic
+nobase_dist_pkgdata_DATA =
+#  bebob specific
+bebob_pkgdata = 				\
 	maudio/refdesign.xml				\
 	maudio/fw410.xml 				\
 	maudio/fwap.xml
 
+# programs intended for installation in the 'bin' directory
+#  generic
+bin_PROGRAMS = 
 
-###############
+#  class specific
+bebob_bin = freebob-downloader freebob-sync
 
-bin_PROGRAMS = @BIN_PROGRAMS@
-
-EXTRA_PROGRAMS = freebob-downloader freebob-sync
 freebob_downloader_SOURCES = freebob-downloader.cpp
 freebob_downloader_LDADD = $(top_builddir)/src/libfreebob.la
 
 freebob_sync_SOURCES = freebob-sync.cpp
 freebob_sync_LDADD = $(top_builddir)/src/libfreebob.la
 
-###############
-
+# programs not intended for installation
+# generic
 noinst_PROGRAMS = test-dll test-debugmodule test-unittests test-ser
 
 test_dll_SOURCES = libutil/test-dll.cpp
@@ -148,3 +169,54 @@ test_unittests_LDADD = $(top_builddir)/src/libfreebob.la
 
 test_ser_SOURCES = ser.cpp
 test_ser_LDADD = $(top_builddir)/src/libfreebob.la
+
+# build customisation
+
+if BUILD_BEBOB
+libfreebob_la_SOURCES += $(bebob_src)
+bin_PROGRAMS += $(bebob_bin)
+noinst_PROGRAMS += $(bebob_noinst)
+nobase_dist_pkgdata_DATA += $(bebob_pkgdata)
+endif
+
+if BUILD_BOUNCE
+libfreebob_la_SOURCES += $(bounce_src)
+bin_PROGRAMS += $(bounce_bin)
+noinst_PROGRAMS += $(bounce_noinst)
+nobase_dist_pkgdata_DATA += $(bounce_pkgdata)
+endif
+
+if BUILD_DICE
+libfreebob_la_SOURCES += $(dice_src)
+bin_PROGRAMS += $(dice_bin)
+noinst_PROGRAMS += $(dice_noinst)
+nobase_dist_pkgdata_DATA += $(dice_pkgdata)
+endif
+
+if BUILD_MOTU
+libfreebob_la_SOURCES += $(motu_src)
+bin_PROGRAMS += $(motu_bin)
+noinst_PROGRAMS += $(motu_noinst)
+nobase_dist_pkgdata_DATA += $(motu_pkgdata)
+endif
+
+if BUILD_METRIC_HALO
+libfreebob_la_SOURCES += $(metric_halo_src)
+bin_PROGRAMS += $(metric_halo_bin)
+noinst_PROGRAMS += $(metric_halo_noinst)
+nobase_dist_pkgdata_DATA += $(metric_halo_pkgdata)
+endif
+
+if BUILD_RME
+libfreebob_la_SOURCES += $(rme_src)
+bin_PROGRAMS += $(rme_bin)
+noinst_PROGRAMS += $(rme_noinst)
+nobase_dist_pkgdata_DATA += $(rme_pkgdata)
+endif
+
+if BUILD_AMDTP
+libfreebob_la_SOURCES += $(amdtp_src)
+bin_PROGRAMS += $(amdtp_bin)
+noinst_PROGRAMS += $(amdtp_noinst)
+nobase_dist_pkgdata_DATA += $(amdtp_pkgdata)
+endif

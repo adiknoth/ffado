@@ -154,6 +154,8 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 }
 
 bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting sync source to (%p)\n", s);
+
     m_SyncSource=s;
     return true;
 }
@@ -410,7 +412,7 @@ bool StreamProcessorManager::start() {
 	}
 		
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Starting IsoHandlers...\n");
-	if (!m_isoManager->startHandlers(0)) {
+	if (!m_isoManager->startHandlers(-1)) {
 		debugFatal("Could not start handlers...\n");
 		return false;
 	}

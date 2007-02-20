@@ -41,27 +41,36 @@ public:
     int getPort()
 	{ return m_port; }
    /**
-    * getNodecount - get number of nodes on the bus
+    * @brief get number of nodes on the bus
     *
     * Since the root node always has
     * the highest node ID, this number can be used to determine that ID (it's
     * LOCAL_BUS|(count-1)).
     *
-    * Returns: the number of nodes on the bus to which the port is connected.
+    * @return the number of nodes on the bus to which the port is connected.
     * This value can change with every bus reset.
     */
     int getNodeCount();
-
+    
    /**
-    * read - send async read request to a node and wait for response.
-    * @node: target node (\XXX needs 0xffc0 stuff)
-    * @addr: address to read from
-    * @length: amount of data to read in quadlets
-    * @buffer: pointer to buffer where data will be saved
+    * @brief get the node id of the local node
+    *
+    * @return the node id of the local node
+    * This value can change with every bus reset.
+    */
+    nodeid_t getLocalNodeId();
+    
+   /**
+    * @brief send async read request to a node and wait for response.
     *
     * This does the complete transaction and will return when it's finished.
     *
-    * Returns: true on success or false on failure (sets errno)
+    * @param node target node (\todo needs 0xffc0 stuff)
+    * @param addr address to read from
+    * @param length amount of data to read in quadlets
+    * @param buffer pointer to buffer where data will be saved
+    
+    * @return true on success or false on failure (sets errno)
     */
     bool read( fb_nodeid_t nodeId,
 	       fb_nodeaddr_t addr,
@@ -77,15 +86,16 @@ public:
                       fb_octlet_t* buffer );
 
     /**
-    * write - send async write request to a node and wait for response.
-    * @node: target node (\XXX needs 0xffc0 stuff)
-    * @addr: address to write to
-    * @length: amount of data to write in quadlets
-    * @data: pointer to data to be sent
+    * @brief send async write request to a node and wait for response.
     *
     * This does the complete transaction and will return when it's finished.
     *
-    * Returns: true on success or false on failure (sets errno)
+    * @param node target node (\XXX needs 0xffc0 stuff)
+    * @param addr address to write to
+    * @param length amount of data to write in quadlets
+    * @param data pointer to data to be sent
+    *
+    * @return true on success or false on failure (sets errno)
     */
     bool write( fb_nodeid_t nodeId,
 		fb_nodeaddr_t addr,

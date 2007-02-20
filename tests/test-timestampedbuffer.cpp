@@ -294,191 +294,279 @@ int main(int argc, char *argv[])
     
     usleep(1000);
     
-    debugOutput(DEBUG_LEVEL_NORMAL, "Start test 1...\n");
-
-    int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
-    int dummyframe_out[arguments.events_per_frame*arguments.frames_per_packet];
-   
-    for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
-        dummyframe_in[i]=i;
-    }
-    
-    uint64_t time=arguments.start_at_cycle*3072;
-    
-    // initialize the timestamp
-    uint64_t timestamp=time;
-    if (timestamp >= arguments.wrap_at) {
-        // here we need a modulo because start_at_cycle can be large
-        timestamp %= arguments.wrap_at;
-    }
-    t->setBufferTailTimestamp(timestamp);
-    
-    timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
-    if (timestamp >= arguments.wrap_at) {
-        timestamp -= arguments.wrap_at;
-    }
-   
-    for(unsigned int cycle=arguments.start_at_cycle;
-        cycle < arguments.start_at_cycle+arguments.total_cycles; 
-        cycle++) {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Start setBufferHeadTimestamp test...\n");
+    {
+        bool pass=true;
+        uint64_t time=arguments.start_at_cycle*3072;
+        int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
         
-        // simulate the rate adaptation
-        int64_t diff=(time%arguments.wrap_at)-timestamp;
-        
-        if (diff>(int64_t)arguments.wrap_at/2) {
-            diff -= arguments.wrap_at;
-        } else if (diff<(-(int64_t)arguments.wrap_at)/2){
-            diff += arguments.wrap_at;
+        // initialize the timestamp
+        uint64_t timestamp=time;
+        if (timestamp >= arguments.wrap_at) {
+            // here we need a modulo because start_at_cycle can be large
+            timestamp %= arguments.wrap_at;
         }
         
-        debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
+        // account for the fact that there is offset,
+        // and that setBufferHeadTimestamp doesn't take offset
+        // into account
+        uint64_t timestamp2=timestamp+t->getTickOffset();
+        if (timestamp2>=arguments.wrap_at) {
+            timestamp2-=arguments.wrap_at;
+        }
         
-        if(diff>0) {
-            uint64_t ts_head, fc_head;
-            uint64_t ts_tail, fc_tail;
-            
-            // write one packet
+        t->setBufferHeadTimestamp(timestamp2);
+        
+        timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
+        if (timestamp >= arguments.wrap_at) {
+            timestamp -= arguments.wrap_at;
+        }
+        
+        // write some packets
+        for (unsigned int i=0;i<20;i++) {
             t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
-
-            // read the buffer head timestamp
-            t->getBufferHeadTimestamp(&ts_head, &fc_head);
-            t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-            debugOutput(DEBUG_LEVEL_NORMAL, 
-                    " TS after write: HEAD: %011llu, FC=%04u\n",
-                    ts_head,fc_head);
-            debugOutput(DEBUG_LEVEL_NORMAL, 
-                    "                 TAIL: %011llu, FC=%04u\n",
-                    ts_tail,fc_tail);
-
-            // read one packet
-            t->readFrames(arguments.frames_per_packet, (char *)&dummyframe_out);
-
-            // read the buffer head timestamp
-            t->getBufferHeadTimestamp(&ts_head, &fc_head);
-            t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-            debugOutput(DEBUG_LEVEL_NORMAL, 
-                    " TS after write: HEAD: %011llu, FC=%04u\n",
-                    ts_head,fc_head);
-            debugOutput(DEBUG_LEVEL_NORMAL, 
-                    "                 TAIL: %011llu, FC=%04u\n",
-                    ts_tail,fc_tail);
-
-            // check
-            bool pass=true;
-            for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
-                pass = pass && (dummyframe_in[i]==dummyframe_out[i]);
-            }
-            if (!pass) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "write/read check for cycle %d failed\n",cycle);
-            }
-
-            // update the timestamp
             timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
             if (timestamp >= arguments.wrap_at) {
                 timestamp -= arguments.wrap_at;
             }
         }
-
-        // simulate the cycle timer clock in ticks
-        time += 3072;
-        if (time >= arguments.wrap_at) {
-            time -= arguments.wrap_at;
-        }
-        
-        // allow for the messagebuffer thread to catch up
-        usleep(200);
-        
-        if(!run) break;
-    }
-
-    // second run, now do block processing
-    debugOutput(DEBUG_LEVEL_NORMAL, "Start test 2...\n");
-    unsigned int blocksize=32;
-    int dummyframe_out_block[arguments.events_per_frame*arguments.frames_per_packet*blocksize];
     
-    time=arguments.start_at_cycle*3072;
-    
-    // initialize the timestamp
-    timestamp=time;
-    if (timestamp >= arguments.wrap_at) {
-        // here we need a modulo because start_at_cycle can be large
-        timestamp %= arguments.wrap_at;
-    }
-    t->setBufferTailTimestamp(timestamp);
-    
-    timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
-    if (timestamp >= arguments.wrap_at) {
-        timestamp -= arguments.wrap_at;
-    }
-   
-    for(unsigned int cycle=arguments.start_at_cycle;
-        cycle < arguments.start_at_cycle+arguments.total_cycles; 
-        cycle++) {
-        
-        // simulate the rate adaptation
-        int64_t diff=(time%arguments.wrap_at)-timestamp;
-        
-        if (diff>(int64_t)arguments.wrap_at/2) {
-            diff -= arguments.wrap_at;
-        } else if (diff<(-(int64_t)arguments.wrap_at)/2){
-            diff += arguments.wrap_at;
-        }
-        
-        debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
-        
-        if(diff>0) {
-            uint64_t ts_head, fc_head;
-            uint64_t ts_tail, fc_tail;
-            
-            // write one packet
-            t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
-
-            // read the buffer head timestamp
-            t->getBufferHeadTimestamp(&ts_head, &fc_head);
-            t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-            debugOutput(DEBUG_LEVEL_NORMAL, 
-                    " TS after write: HEAD: %011llu, FC=%04u\n",
-                    ts_head,fc_head);
-            debugOutput(DEBUG_LEVEL_NORMAL, 
-                    "                 TAIL: %011llu, FC=%04u\n",
-                    ts_tail,fc_tail);
-
-            if (fc_head > blocksize) {
-                debugOutput(DEBUG_LEVEL_NORMAL,"Reading one block (%u frames)\n",blocksize);
+        for(unsigned int cycle=arguments.start_at_cycle;
+            cycle < arguments.start_at_cycle+arguments.total_cycles; 
+            cycle++) {
+                uint64_t ts_head, fc_head;
                 
-                // read one block
-                t->readFrames(blocksize, (char *)&dummyframe_out_block);
+                t->setBufferHeadTimestamp(timestamp);
+                t->getBufferHeadTimestamp(&ts_head, &fc_head);
+                
+                if (timestamp != ts_head) {
+                    debugError(" cycle %4u error: %011llu != %011llu\n",
+                        timestamp, ts_head);
+                        pass=false;
+                }
+                
+                timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
+                if (timestamp >= arguments.wrap_at) {
+                    timestamp -= arguments.wrap_at;
+                }
+            
+            // simulate the cycle timer clock in ticks
+            time += 3072;
+            if (time >= arguments.wrap_at) {
+                time -= arguments.wrap_at;
+            }
+            
+            // allow for the messagebuffer thread to catch up
+            usleep(200);
+            
+            if(!run) break;
+        }
+        
+        if(!pass) {
+            debugError("Test failed, exiting...\n");
+    
+            delete t;
+            delete c;
+            
+            return -1;
+            
+        }
+    }
+    
+
+    
+    debugOutput(DEBUG_LEVEL_NORMAL, "Start read/write test...\n");
+    {
+        int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
+        int dummyframe_out[arguments.events_per_frame*arguments.frames_per_packet];
+    
+        for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
+            dummyframe_in[i]=i;
+        }
+        
+        uint64_t time=arguments.start_at_cycle*3072;
+        
+        // initialize the timestamp
+        uint64_t timestamp=time;
+        if (timestamp >= arguments.wrap_at) {
+            // here we need a modulo because start_at_cycle can be large
+            timestamp %= arguments.wrap_at;
+        }
+        t->setBufferTailTimestamp(timestamp);
+        
+        timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
+        if (timestamp >= arguments.wrap_at) {
+            timestamp -= arguments.wrap_at;
+        }
+    
+        for(unsigned int cycle=arguments.start_at_cycle;
+            cycle < arguments.start_at_cycle+arguments.total_cycles; 
+            cycle++) {
+            
+            // simulate the rate adaptation
+            int64_t diff=(time%arguments.wrap_at)-timestamp;
+            
+            if (diff>(int64_t)arguments.wrap_at/2) {
+                diff -= arguments.wrap_at;
+            } else if (diff<(-(int64_t)arguments.wrap_at)/2){
+                diff += arguments.wrap_at;
+            }
+            
+            debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
+            
+            if(diff>0) {
+                uint64_t ts_head, fc_head;
+                uint64_t ts_tail, fc_tail;
+                
+                // write one packet
+                t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
     
                 // read the buffer head timestamp
                 t->getBufferHeadTimestamp(&ts_head, &fc_head);
                 t->getBufferTailTimestamp(&ts_tail, &fc_tail);
                 debugOutput(DEBUG_LEVEL_NORMAL, 
-                        " TS after read: HEAD: %011llu, FC=%04u\n",
+                        " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
                 debugOutput(DEBUG_LEVEL_NORMAL, 
-                        "                TAIL: %011llu, FC=%04u\n",
+                        "                 TAIL: %011llu, FC=%04u\n",
                         ts_tail,fc_tail);
+    
+                // read one packet
+                t->readFrames(arguments.frames_per_packet, (char *)&dummyframe_out);
+    
+                // read the buffer head timestamp
+                t->getBufferHeadTimestamp(&ts_head, &fc_head);
+                t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                debugOutput(DEBUG_LEVEL_NORMAL, 
+                        " TS after write: HEAD: %011llu, FC=%04u\n",
+                        ts_head,fc_head);
+                debugOutput(DEBUG_LEVEL_NORMAL, 
+                        "                 TAIL: %011llu, FC=%04u\n",
+                        ts_tail,fc_tail);
+    
+                // check
+                bool pass=true;
+                for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
+                    pass = pass && (dummyframe_in[i]==dummyframe_out[i]);
+                }
+                if (!pass) {
+                    debugOutput(DEBUG_LEVEL_NORMAL, "write/read check for cycle %d failed\n",cycle);
+                }
+    
+                // update the timestamp
+                timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
+                if (timestamp >= arguments.wrap_at) {
+                    timestamp -= arguments.wrap_at;
+                }
+            }
+    
+            // simulate the cycle timer clock in ticks
+            time += 3072;
+            if (time >= arguments.wrap_at) {
+                time -= arguments.wrap_at;
             }
             
-            // update the timestamp
-            timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
-            if (timestamp >= arguments.wrap_at) {
-                timestamp -= arguments.wrap_at;
-            }
+            // allow for the messagebuffer thread to catch up
+            usleep(200);
+            
+            if(!run) break;
         }
-
-        // simulate the cycle timer clock in ticks
-        time += 3072;
-        if (time >= arguments.wrap_at) {
-            time -= arguments.wrap_at;
-        }
-        
-        // allow for the messagebuffer thread to catch up
-        usleep(200);
-        
-        if(!run) break;
     }
     
+    // second run, now do block processing
+    debugOutput(DEBUG_LEVEL_NORMAL, "Start block read test...\n");
+    {
+        unsigned int blocksize=32;
+        int dummyframe_out_block[arguments.events_per_frame*arguments.frames_per_packet*blocksize];
+        int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
+    
+        for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
+            dummyframe_in[i]=i;
+        }
+        
+        uint64_t time=arguments.start_at_cycle*3072;
+        
+        // initialize the timestamp
+        uint64_t timestamp=time;
+        if (timestamp >= arguments.wrap_at) {
+            // here we need a modulo because start_at_cycle can be large
+            timestamp %= arguments.wrap_at;
+        }
+        t->setBufferTailTimestamp(timestamp);
+        
+        timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
+        if (timestamp >= arguments.wrap_at) {
+            timestamp -= arguments.wrap_at;
+        }
+    
+        for(unsigned int cycle=arguments.start_at_cycle;
+            cycle < arguments.start_at_cycle+arguments.total_cycles; 
+            cycle++) {
+            
+            // simulate the rate adaptation
+            int64_t diff=(time%arguments.wrap_at)-timestamp;
+            
+            if (diff>(int64_t)arguments.wrap_at/2) {
+                diff -= arguments.wrap_at;
+            } else if (diff<(-(int64_t)arguments.wrap_at)/2){
+                diff += arguments.wrap_at;
+            }
+            
+            debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
+            
+            if(diff>0) {
+                uint64_t ts_head, fc_head;
+                uint64_t ts_tail, fc_tail;
+                
+                // write one packet
+                t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
+    
+                // read the buffer head timestamp
+                t->getBufferHeadTimestamp(&ts_head, &fc_head);
+                t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                debugOutput(DEBUG_LEVEL_NORMAL, 
+                        " TS after write: HEAD: %011llu, FC=%04u\n",
+                        ts_head,fc_head);
+                debugOutput(DEBUG_LEVEL_NORMAL, 
+                        "                 TAIL: %011llu, FC=%04u\n",
+                        ts_tail,fc_tail);
+    
+                if (fc_head > blocksize) {
+                    debugOutput(DEBUG_LEVEL_NORMAL,"Reading one block (%u frames)\n",blocksize);
+                    
+                    // read one block
+                    t->readFrames(blocksize, (char *)&dummyframe_out_block);
+        
+                    // read the buffer head timestamp
+                    t->getBufferHeadTimestamp(&ts_head, &fc_head);
+                    t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                    debugOutput(DEBUG_LEVEL_NORMAL, 
+                            " TS after read: HEAD: %011llu, FC=%04u\n",
+                            ts_head,fc_head);
+                    debugOutput(DEBUG_LEVEL_NORMAL, 
+                            "                TAIL: %011llu, FC=%04u\n",
+                            ts_tail,fc_tail);
+                }
+                
+                // update the timestamp
+                timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
+                if (timestamp >= arguments.wrap_at) {
+                    timestamp -= arguments.wrap_at;
+                }
+            }
+    
+            // simulate the cycle timer clock in ticks
+            time += 3072;
+            if (time >= arguments.wrap_at) {
+                time -= arguments.wrap_at;
+            }
+            
+            // allow for the messagebuffer thread to catch up
+            usleep(200);
+            
+            if(!run) break;
+        }
+    }
 
     delete t;
     delete c;

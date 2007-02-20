@@ -18,8 +18,6 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_BEBOB
-
 #include "bebob_dl_bcd.h"
 
 #include <cstdio>
@@ -383,5 +381,3 @@ BeBoB::BCD::displayInfo()
     printf( "\tCNE Offset:\t\t0x%08x\n", m_cneOffset );
     printf( "\tCNE CRC:\t\t0x%08x\n", m_cneCRC );
 }
-
-#endif //#ifdef ENABLE_BEBOB

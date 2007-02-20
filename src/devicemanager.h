@@ -31,6 +31,9 @@
 
 class Ieee1394Service;
 class IAvDevice;
+namespace FreebobStreaming {
+    class StreamProcessor;
+}
 
 typedef std::vector< IAvDevice* > IAvDeviceVector;
 typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
@@ -60,6 +63,8 @@ class DeviceManager{
 
     bool saveCache( Glib::ustring fileName );
     bool loadCache( Glib::ustring fileName );
+
+    FreebobStreaming::StreamProcessor *getSyncSource();
 
 protected:
     IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),

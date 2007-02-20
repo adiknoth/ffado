@@ -17,9 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_BEBOB
-
 #include "bebob/bebob_functionblock.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_avdevice.h"
@@ -552,5 +549,3 @@ BeBoB::FunctionBlockCodec::deserializeChild( Glib::ustring basePath,
 {
     return true;
 }
-
-#endif //#ifdef ENABLE_BEBOB

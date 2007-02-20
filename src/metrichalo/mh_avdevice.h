@@ -18,8 +18,6 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_METRIC_HALO
-
 #ifndef MHDEVICE_H
 #define MHDEVICE_H
 
@@ -99,5 +97,3 @@ private:
 }
 
 #endif
-
-#endif //#ifdef ENABLE_MH

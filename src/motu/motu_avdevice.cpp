@@ -18,9 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_MOTU
-
 #include "motu/motu_avdevice.h"
 #include "configrom.h"
 
@@ -936,4 +933,3 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
 }
 
 }
-#endif // ENABLE_MOTU

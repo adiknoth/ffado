@@ -18,8 +18,6 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_BEBOB
-
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice.h"
 #include "configrom.h"
@@ -2221,5 +2219,3 @@ AvPlugConnection::deserialize( Glib::ustring basePath,
 }
 
 }
-
-#endif //#ifdef ENABLE_BEBOB

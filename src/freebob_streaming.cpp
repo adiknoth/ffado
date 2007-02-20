@@ -117,7 +117,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
                 delete dev;
                 return 0;
         }
-
+        
         // iterate over the found devices
         // add the stream processors of the devices to the managers
         for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
@@ -126,6 +126,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 
             debugOutput(DEBUG_LEVEL_VERBOSE, "Setting samplerate to %d for (%p)\n", 
                         dev->options.sample_rate, device);
+                        
             // Set the device's sampling rate to that requested
             // FIXME: does this really belong here?  If so we need to handle errors.
             if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
@@ -153,6 +154,12 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
                     debugWarning("Could not register stream processor (%p) with the Processor manager\n",streamproc);
                 }
             }
+        }
+        
+        // set the sync source
+        if (!dev->processorManager->setSyncSource(dev->m_deviceManager->getSyncSource())) {
+            debugWarning("Could not set processorManager sync source (%p)\n",
+                dev->m_deviceManager->getSyncSource());
         }
 
         // we are ready!

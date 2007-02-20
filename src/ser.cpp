@@ -1,5 +1,4 @@
 #include "devicemanager.h"
-#include "bebob/bebob_avdevice.h"
 #include "libutil/serialize.h"
 
 #include <iostream>

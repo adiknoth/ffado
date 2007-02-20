@@ -24,7 +24,7 @@ AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 1)
 m4_define(freebob_minor_version, 999)
-m4_define(freebob_micro_version, 1)
+m4_define(freebob_micro_version, 2)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
 
@@ -286,6 +286,15 @@ AC_ARG_ENABLE(all-devices,
 esac],
 [build_all=false])
 
+AC_ARG_ENABLE(tests,
+    AC_HELP_STRING([--enable-tests],
+		   [build programs in the tests directory (default=yes)]),
+[case "${enableval}" in
+  yes) build_tests=true;;
+  no)  build_tests=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-tests) ;;
+esac],
+[build_tests=true])
 
 CFLAGS="$CFLAGS -Wall -std=gnu99"
 CXXFLAGS="$CXXFLAGS -Wall -DDATADIR=\\\"\$(datadir)\\\"" 
@@ -308,51 +317,61 @@ if test "${build_all}" = true; then
     build_rme=true
 fi;
 
+build_amdtp=false
+
 if test "${build_bebob}" = true; then
    CFLAGS="$CFLAGS -DENABLE_BEBOB"
    CXXFLAGS="$CXXFLAGS -DENABLE_BEBOB" 
    supported_devices="${supported_devices}BeBoB  "
-   BIN_PROGRAMS="$BIN_PROGRAMS freebob-downloader freebob-sync"
+   build_amdtp=true
 fi;
 
 if test "${build_motu}" = true; then
    CFLAGS="$CFLAGS -DENABLE_MOTU"
    CXXFLAGS="$CXXFLAGS -DENABLE_MOTU" 
    supported_devices="${supported_devices}Motu  "
-   BIN_PROGRAMS="$BIN_PROGRAMS"
 fi;
 
 if test "${build_dice}" = true; then
    CFLAGS="$CFLAGS -DENABLE_DICE"
    CXXFLAGS="$CXXFLAGS -DENABLE_DICE" 
    supported_devices="${supported_devices}DICE  "
-   BIN_PROGRAMS="$BIN_PROGRAMS"
+   build_amdtp=true
 fi;
 
 if test "${build_metric_halo}" = true; then
    CFLAGS="$CFLAGS -DENABLE_METRIC_HALO"
    CXXFLAGS="$CXXFLAGS -DENABLE_METRIC_HALO"
    supported_devices="${supported_devices}Metric Halo (useless)  "
-   BIN_PROGRAMS="$BIN_PROGRAMS"
 fi;
 
 if test "${build_bounce}" = true; then
    CFLAGS="$CFLAGS -DENABLE_BOUNCE"
    CXXFLAGS="$CXXFLAGS -DENABLE_BOUNCE"
    supported_devices="${supported_devices}Bounce  "
-   BIN_PROGRAMS="$BIN_PROGRAMS"
+   build_amdtp=true
 fi;
 
 if test "${build_rme}" = true; then
    CFLAGS="$CFLAGS -DENABLE_RME"
    CXXFLAGS="$CXXFLAGS -DENABLE_RME" 
    supported_devices="${supported_devices}RME (useless)  "
-   BIN_PROGRAMS="$BIN_PROGRAMS"
 fi;
 
 if test "${supported_devices}" = ""; then
     AC_ERROR(You need to enable at least one device class to support!)
 fi;
+
+AM_CONDITIONAL(BUILD_BEBOB,test "${build_bebob}" = true)
+AM_CONDITIONAL(BUILD_MOTU,test "${build_motu}" = true)
+AM_CONDITIONAL(BUILD_DICE,test "${build_dice}" = true)
+AM_CONDITIONAL(BUILD_METRIC_HALO,test "${build_metric_halo}" = true)
+AM_CONDITIONAL(BUILD_BOUNCE,test "${build_bounce}" = true)
+AM_CONDITIONAL(BUILD_RME,test "${build_rme}" = true)
+
+AM_CONDITIONAL(BUILD_AMDTP,test "${build_amdtp}" = true)
+
+AM_CONDITIONAL(BUILD_TESTS,test "${build_tests}" = true)
 
 AC_SUBST([CFLAGS])
 AC_SUBST([CXXFLAGS])
@@ -393,6 +412,9 @@ AC_MSG_RESULT([
 FreeBoB $VERSION is now configured for $canonical_host_type
 
   Building support for: $supported_devices
+   build AMDTP support: $build_amdtp
+   
+  Building tests:       $build_tests
 
   Source directory:     $srcdir
   Installation prefix:  $prefix

@@ -79,8 +79,8 @@ void StreamProcessor::dumpInfo()
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
     
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n", 
-        24576000.0*m_SyncSource->m_data_buffer->getRate(),
-        24576000.0*m_data_buffer->getRate()
+        24576000.0/m_SyncSource->m_data_buffer->getRate(),
+        24576000.0/m_data_buffer->getRate()
         );
     
     m_data_buffer->dumpInfo();
@@ -196,8 +196,8 @@ bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
     }
 
 #ifdef DEBUG
-    uint64_t now_cycles=TICKS_TO_CYCLES(m_handler->getCycleTimerTicks());
-    const int64_t max=(int64_t)(TICKS_PER_SECOND/2);
+    uint64_t now_cycles=CYCLE_TIMER_GET_CYCLES(m_handler->getCycleTimer());
+    const int64_t max=(int64_t)(CYCLES_PER_SECOND/2);
     
     int64_t diff=(int64_t)m_cycle_to_enable_at-(int64_t)now_cycles;
     

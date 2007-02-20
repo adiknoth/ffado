@@ -112,6 +112,7 @@ public:
     void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
     
     void setBufferTailTimestamp(uint64_t new_timestamp);
+    void setBufferHeadTimestamp(uint64_t new_timestamp);
     
     uint64_t getTimestampFromTail(int nframes);
     uint64_t getTimestampFromHead(int nframes);

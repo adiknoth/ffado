@@ -1,4 +1,10 @@
-/*
+/* freebob-server.c
+ * Copyright (C) 2006,2007 Pieter Palmers
+ *
+ * This file is part of FreeBob.
+*/
+/* Inspired on:
+*
 * avc_vcr.c - An example of an AV/C Tape Recorder target implementation
 *
 * Copyright Dan Dennedy <dan@dennedy.org>
@@ -30,6 +36,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+
+#include <arpa/inet.h>
 
 #include <libraw1394/raw1394.h>
 #include <libraw1394/csr.h>
@@ -290,6 +298,11 @@ int init_config_rom(raw1394handle_t handle)
 	/* change the vendor description for kicks */
 	i = strlen(dir.textual_leafs[0]);
 	strncpy(dir.textual_leafs[0], FREEBOB_BOUNCE_SERVER_VENDORNAME "                                          ", i);
+	
+	dir.vendor_id=FREEBOB_BOUNCE_SERVER_VENDORID;
+	dir.model_id=FREEBOB_BOUNCE_SERVER_MODELID;
+	
+	/* update the rom */
 	retval = rom1394_set_directory(rom, &dir);
 	printf("rom1394_set_directory returned %d, romsize %d:",retval,rom_size);
 	for (i = 0; i < rom_size; i++)
@@ -303,7 +316,7 @@ int init_config_rom(raw1394handle_t handle)
 	rom1394_free_directory( &dir);
 	
 	/* add an AV/C unit directory */
-	dir.unit_spec_id    = 0x0000a02d;
+	dir.unit_spec_id    = FREEBOB_BOUNCE_SERVER_SPECID;
 	dir.unit_sw_version = 0x00010001;
 	leaf = FREEBOB_BOUNCE_SERVER_MODELNAME;
 	dir.nr_textual_leafs = 1;
@@ -346,11 +359,14 @@ int init_config_rom(raw1394handle_t handle)
 int main( int argc, char **argv )
 {
 	raw1394handle_t handle;
-
+    int p=0;
+    
 	signal (SIGINT, sighandler);
 	signal (SIGPIPE, sighandler);
 
 	handle = raw1394_new_handle();
+
+    if (argc==2) p=atoi(argv[1]);
 
 	if ( !handle )
 	{
@@ -366,10 +382,12 @@ int main( int argc, char **argv )
 		exit( EXIT_FAILURE );
 	}
 
-	if ( raw1394_set_port( handle, 0 ) < 0 )
+	if ( raw1394_set_port( handle, p ) < 0 )
 	{
 		perror( "couldn't set port" );
 		exit( EXIT_FAILURE );
+	} else {
+	   printf("Using port %d\n",p);
 	}
 
 	struct configrom_backup cfgrom_backup;

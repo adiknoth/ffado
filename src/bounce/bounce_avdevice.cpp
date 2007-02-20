@@ -18,9 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_BOUNCE
-
 #include "bounce/bounce_avdevice.h"
 #include "configrom.h"
 
@@ -246,7 +243,6 @@ BounceDevice::addPortsToProcessor(
                 return false;
             } else {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-
             }
         }
 
@@ -338,9 +334,14 @@ BounceDevice::startStreamByIndex(int i) {
 // 			&m_receiveProcessorBandwidth);
 //
 // 		// set the channel obtained by the connection management
- 		m_receiveProcessor->setChannel(1);
- 		break;
- 	case 1:
+    #warning TEST CODE FOR BOUNCE DEVICE !!
+        if (m_configRom->getNodeId()==0) {
+            m_receiveProcessor->setChannel(1);
+        } else {
+            m_receiveProcessor->setChannel(0);
+        }
+		break;
+	case 1:
 // 		// do connection management: make connection
 // 		iso_channel = iec61883_cmp_connect(
 // 			m_1394Service->getHandle(),
@@ -352,7 +353,12 @@ BounceDevice::startStreamByIndex(int i) {
 //
 // 		// set the channel obtained by the connection management
 // // 		m_receiveProcessor2->setChannel(iso_channel);
-  		m_transmitProcessor->setChannel(0);
+    #warning TEST CODE FOR BOUNCE DEVICE !!
+        if (m_configRom->getNodeId()==0) {
+            m_transmitProcessor->setChannel(0);
+        } else {
+            m_transmitProcessor->setChannel(1);
+        }
  		break;
  	default:
  		return -1;
@@ -404,5 +410,3 @@ BounceDevice::stopStreamByIndex(int i) {
 }
 
 } // namespace
-
-#endif // #ifdef ENABLE_BOUNCE

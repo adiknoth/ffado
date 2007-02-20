@@ -17,9 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_BEBOB
-
 #ifndef BEBOB_FUNCTION_BLOCK_H
 #define BEBOB_FUNCTION_BLOCK_H
 
@@ -219,5 +216,3 @@ protected:
 }
 
 #endif
-
-#endif //#ifdef ENABLE_BEBOB

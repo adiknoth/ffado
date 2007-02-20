@@ -18,8 +18,6 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_BEBOB
-
 #ifndef MAUDIODEVICE_H
 #define MAUDIODEVICE_H
 
@@ -88,5 +86,3 @@ protected:
 }
 
 #endif
-
-#endif //#ifdef ENABLE_BEBOB

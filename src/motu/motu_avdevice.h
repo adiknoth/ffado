@@ -19,8 +19,6 @@
  * MA 02111-1307 USA.
  */
 
-#ifdef ENABLE_MOTU
-
 #ifndef MOTUDEVICE_H
 #define MOTUDEVICE_H
 
@@ -162,5 +160,3 @@ private:
 }
 
 #endif
-
-#endif // ENABLE_MOTU

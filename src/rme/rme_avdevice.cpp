@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_RME
 #warning RME support is currently useless (detection only)
 
 #include "rme/rme_avdevice.h"
@@ -549,5 +547,3 @@ signed int RmeDevice::WriteRegister(unsigned int reg, quadlet_t data) {
 #endif
 
 }
-
-#endif //#ifdef ENABLE_RME

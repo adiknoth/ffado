@@ -19,10 +19,14 @@
 
 INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
 	$(LIBAVC1394_CFLAGS)
+	
+noinst_PROGRAMS =
 
-noinst_PROGRAMS = test-freebob test-extplugcmd test-fw410 freebob-server \
+if BUILD_TESTS
+noinst_PROGRAMS += test-freebob test-extplugcmd test-fw410 freebob-server \
  		test-volume test-mixer test-cycletimer test-sytmonitor \
  		test-timestampedbuffer
+endif
 
 noinst_HEADERS = 
 

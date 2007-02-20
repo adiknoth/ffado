@@ -25,31 +25,9 @@
  * 
  *
  */
-#ifdef ENABLE_BEBOB
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_DICE 
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_BOUNCE
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_AMDTP_SP
-
 #include "AmdtpPort.h"
 #include <assert.h>
 
 namespace FreebobStreaming {
 
 } // end of namespace FreebobStreaming
-
-#endif // #ifdef ENABLE_AMDTP_SP

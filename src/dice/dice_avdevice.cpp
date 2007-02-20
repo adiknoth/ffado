@@ -17,8 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
-
-#ifdef ENABLE_DICE
 #warning DICE support is currently useless
 
 #include "dice/dice_avdevice.h"
@@ -240,5 +238,3 @@ signed int DiceAvDevice::getIsoSendChannel(void) {
 }
 
 }
-
-#endif //#ifdef ENABLE_DICE

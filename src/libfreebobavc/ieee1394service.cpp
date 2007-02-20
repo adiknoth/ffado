@@ -97,6 +97,10 @@ Ieee1394Service::getNodeCount()
     return raw1394_get_nodecount( m_handle );
 }
 
+nodeid_t Ieee1394Service::getLocalNodeId() {
+    return raw1394_get_local_id(m_handle) & 0x3F;
+}
+
 bool
 Ieee1394Service::read( fb_nodeid_t nodeId,
                        fb_nodeaddr_t addr,

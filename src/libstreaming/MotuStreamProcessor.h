@@ -35,8 +35,6 @@
 
 #include "../libutil/DelayLockedLoop.h"
 
-#ifdef ENABLE_MOTU
-
 namespace FreebobStreaming {
 
 class MotuAudioPort;
@@ -179,8 +177,6 @@ protected:
 };
 
 } // end of namespace FreebobStreaming
-
-#endif /* ENABLE_MOTU */
 
 #endif /* __FREEBOB_MOTUSTREAMPROCESSOR__ */
 

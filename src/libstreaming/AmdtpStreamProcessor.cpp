@@ -25,27 +25,6 @@
  * 
  *
  */
-
-#ifdef ENABLE_BEBOB
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_DICE 
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_BOUNCE
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_AMDTP_SP
-
 #include "AmdtpStreamProcessor.h"
 #include "Port.h"
 #include "AmdtpPort.h"
@@ -56,7 +35,7 @@
 #include <assert.h>
 
 // in ticks
-#define TRANSMIT_TRANSFER_DELAY 6000U
+#define TRANSMIT_TRANSFER_DELAY 9000U
 // the number of cycles to send a packet in advance of it's timestamp
 #define TRANSMIT_ADVANCE_CYCLES 1U
 
@@ -189,7 +168,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             // T1.
             ts_head = addTicks(ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
             
-            m_data_buffer->setBufferTailTimestamp(ts_head);
+            m_data_buffer->setBufferHeadTimestamp(ts_head);
             
             #ifdef DEBUG
             if ((unsigned int)m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()) {
@@ -212,8 +191,6 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     
     // the base timestamp is the one of the next sample in the buffer
     m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
-    
-    int64_t timestamp = ts_head;
 
     // we send a packet some cycles in advance, to avoid the
     // following situation:
@@ -235,146 +212,119 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
     
     // time until the packet is to be sent (if > 0: send packet)
-    int64_t until_next=substractTicks(timestamp, cycle_timer + ticks_to_advance);
+    int64_t until_next=substractTicks(ts_head, cycle_timer + ticks_to_advance);
 
-#ifdef DEBUG
-    if(!m_is_disabled) {
-        uint32_t timestamp_u=timestamp;
-        uint32_t syt = addTicks(timestamp_u, TRANSMIT_TRANSFER_DELAY);
-
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "T: TS=%011llu, NOW=%011llu, CYN=%04d, CYT=%04d\n",
-            timestamp, cycle_timer, now_cycles, cycle
-            );
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    UTN=%11lld\n",
-            until_next
-            );
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "    CY_NOW=%04d, CY_TARGET=%04d, CY_DIFF=%04d, CY_SYT=%04d\n",
-            now_cycles, cycle, cycle_diff, TICKS_TO_CYCLES(syt)
-            );
-    }
-#endif
-
-    #ifdef DEBUG_OFF
-    if((cycle % 1000) == 0) {
-        uint32_t timestamp_u=timestamp;
-        uint32_t syt = TICKS_TO_SYT(addTicks(timestamp_u, TRANSMIT_TRANSFER_DELAY));
-        uint32_t now=m_handler->getCycleTimer();
-        uint32_t now_ticks=CYCLE_TIMER_TO_TICKS(now);
-        
-        uint32_t test_ts=sytXmitToFullTicks(syt, cycle, now);
-
-        debugOutput(DEBUG_LEVEL_VERBOSE, "T %04d: SYT=%08X,            CY=%02d OFF=%04d\n",
-            cycle, syt, CYCLE_TIMER_GET_CYCLES(syt), CYCLE_TIMER_GET_OFFSET(syt)
-            );
-        debugOutput(DEBUG_LEVEL_VERBOSE, "T %04d: NOW=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
-            cycle, now_ticks, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_CYCLES(now), CYCLE_TIMER_GET_OFFSET(now)
-            );
-        debugOutput(DEBUG_LEVEL_VERBOSE, "T %04d: TSS=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
-            cycle, test_ts, TICKS_TO_SECS(test_ts), TICKS_TO_CYCLES(test_ts), TICKS_TO_OFFSET(test_ts)
-            );
-        debugOutput(DEBUG_LEVEL_VERBOSE, "T %04d: TSO=%011lu, SEC=%03u CY=%02u OFF=%04u\n",
-            cycle, timestamp_u, TICKS_TO_SECS(timestamp_u), TICKS_TO_CYCLES(timestamp_u), TICKS_TO_OFFSET(timestamp_u)
-            );
-    }
-    #endif
-    // don't process the stream when it is not enabled, not running
-    // or when the next sample is not due yet.
+    // if until_next < 0 we should send a filled packet
+    // otherwise we should send a NO-DATA packet
+    if((until_next<0) && (m_running)) {
+        // add the transmit transfer delay to construct the playout time (=SYT timestamp)
+        uint64_t ts_packet=addTicks(ts_head, TRANSMIT_TRANSFER_DELAY);
     
-    // we do have to generate (semi) valid packets
-    // that means that we'll send NODATA packets.
-    if((until_next>0) || m_is_disabled || !m_running) {
-        // no-data packets have syt=0xFFFF
-        // and have the usual amount of events as dummy data (?)
-        packet->fdf = IEC61883_FDF_NODATA;
-        packet->syt = 0xffff;
-        
-        // FIXME: either make this a setting or choose 
-        bool send_payload=true;
-        if(send_payload) {
-            // the dbc is incremented even with no data packets
-            m_dbc += m_syt_interval;
-    
-            // this means no-data packets with payload (DICE doesn't like that)
-            *length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
-        } else {
-            // dbc is not incremented
+        // if we are disabled, send a silent packet
+        // and advance the buffer head timestamp
+        if(m_is_disabled) {
             
-            // this means no-data packets without payload
-            *length = 2*sizeof(quadlet_t);
-        }
+            transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
+            m_dbc += fillDataPacketHeader(packet, length, ts_packet);
+            
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u TSH=%011llu TSP=%011llu\n",
+                cycle, ts_head, ts_packet);
 
+            // update the base timestamp
+            uint32_t ts_step=(uint32_t)((float)(m_syt_interval)
+                             *m_SyncSource->m_data_buffer->getRate());
+            
+            // the next buffer head timestamp
+            ts_head=addTicks(ts_head,ts_step);
+            m_data_buffer->setBufferHeadTimestamp(ts_head);
+            
+            // defer to make sure we get to be enabled asap
+            return RAW1394_ISO_DEFER;
+            
+        } else { // enabled & packet due, read from the buffer
+            if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8))) {
+                m_dbc += fillDataPacketHeader(packet, length, ts_packet);
+                
+                // process all ports that should be handled on a per-packet base
+                // this is MIDI for AMDTP (due to the need of DBC)
+                if (!encodePacketPorts((quadlet_t *)(data+8), m_syt_interval, packet->dbc)) {
+                    debugWarning("Problem encoding Packet Ports\n");
+                }
+                
+                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT: CY=%04u TSH=%011llu TSP=%011llu\n",
+                    cycle, ts_head, ts_packet);
+                
+                return RAW1394_ISO_OK;
+                
+            } else if (now_cycles<cycle) {
+                // we can still postpone the queueing of the packets
+                // because the ISO transmit packet buffer is not empty yet
+                return RAW1394_ISO_AGAIN;
+                
+            } else { // there is no more data in the ringbuffer
+                // compose a silent packet, we should always
+                // send a valid packet
+                transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
+                m_dbc += fillDataPacketHeader(packet, length, ts_packet);
+            
+                debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n", 
+                        now_cycles, cycle, TICKS_TO_CYCLES(ts_packet));
+                // signal underrun
+                m_xruns++;
+                // disable the processing, will be re-enabled when
+                // the xrun is handled
+                m_disabled=true;
+                m_is_disabled=true;
+                
+                return RAW1394_ISO_DEFER;
+            }
+        }
+        
+    } else { // no packet due, send no-data packet
+        m_dbc += fillNoDataPacketHeader(packet, length);
         return RAW1394_ISO_DEFER;
     }
     
-    // construct the packet
-    
-    // add the transmit transfer delay to construct the playout time (=SYT timestamp)
-    uint64_t ts=addTicks(timestamp, TRANSMIT_TRANSFER_DELAY);
-
-    unsigned int nevents = m_syt_interval;
-    if (m_data_buffer->readFrames(nevents, (char *)(data + 8))) {
-    
-        m_dbc += m_syt_interval;
-        
-        packet->fdf = m_fdf;
-
-        // convert the timestamp to SYT format
-        uint16_t timestamp_SYT = TICKS_TO_SYT(ts);
-        packet->syt = ntohs(timestamp_SYT);
-        
-        *length = nevents*sizeof(quadlet_t)*m_dimension + 8;
-
-        // process all ports that should be handled on a per-packet base
-        // this is MIDI for AMDTP (due to the need of DBC)
-        if (!encodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
-            debugWarning("Problem encoding Packet Ports\n");
-        }
-
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT: CY=%04u TS=%011llu TSS=%011llu\n",
-            cycle, timestamp, ts);
-
-        return RAW1394_ISO_OK;
-        
-    } else if (now_cycles<cycle) {
-        // we can still postpone the queueing of the packets
-        return RAW1394_ISO_AGAIN;
-    } else { // there is no more data in the ringbuffer
-
-        debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n", 
-                 now_cycles, cycle, TICKS_TO_CYCLES(ts));
-
-        // signal underrun
-        m_xruns++;
-
-        // disable the processing, will be re-enabled when
-        // the xrun is handled
-        m_disabled=true;
-        m_is_disabled=true;
-
-        // compose a no-data packet, we should always
-        // send a valid packet
-        
-        // FIXME: either make this a setting or choose 
-        bool send_payload=true;
-        if(send_payload) {
-            // the dbc is incremented even with no data packets
-            m_dbc += m_syt_interval;
-    
-            // this means no-data packets with payload (DICE doesn't like that)
-            *length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
-        } else {
-            // dbc is not incremented
-            
-            // this means no-data packets without payload
-            *length = 2*sizeof(quadlet_t);
-        }
-
-        return RAW1394_ISO_DEFER;
-    }
-
     // we shouldn't get here
     return RAW1394_ISO_ERROR;
 
+}
+
+unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader(
+        struct iec61883_packet *packet, unsigned int* length,
+        uint32_t ts) {
+    
+    packet->fdf = m_fdf;
+
+    // convert the timestamp to SYT format
+    uint16_t timestamp_SYT = TICKS_TO_SYT(ts);
+    packet->syt = ntohs(timestamp_SYT);
+    
+    *length = m_syt_interval*sizeof(quadlet_t)*m_dimension + 8;
+
+    return m_syt_interval;
+}
+
+unsigned int AmdtpTransmitStreamProcessor::fillNoDataPacketHeader(
+        struct iec61883_packet *packet, unsigned int* length) {
+    
+    // no-data packets have syt=0xFFFF
+    // and have the usual amount of events as dummy data (?)
+    packet->fdf = IEC61883_FDF_NODATA;
+    packet->syt = 0xffff;
+    
+    // FIXME: either make this a setting or choose 
+    bool send_payload=true;
+    if(send_payload) {
+        // this means no-data packets with payload (DICE doesn't like that)
+        *length = 2*sizeof(quadlet_t) + m_syt_interval * m_dimension * sizeof(quadlet_t);
+        return m_syt_interval;
+    } else {
+        // dbc is not incremented
+        // this means no-data packets without payload
+        *length = 2*sizeof(quadlet_t);
+        return 0;
+    }
 }
 
 int AmdtpTransmitStreamProcessor::getMinimalSyncDelay() {
@@ -936,13 +886,23 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     if(dropped>0) {
         debugWarning("Dropped %d packets on cycle %d\n",dropped, cycle);
     }
-#endif
+
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"ch%2u: CY=%4u, SYT=%08X (%4ucy + %04uticks) (running=%d, disabled=%d,%d)\n",
         channel, cycle,ntohs(packet->syt),  
         CYCLE_TIMER_GET_CYCLES(ntohs(packet->syt)), CYCLE_TIMER_GET_OFFSET(ntohs(packet->syt)),
         m_running,m_disabled,m_is_disabled);
 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
+        "RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d\n", 
+        channel, packet->fdf,
+        packet->syt,
+        packet->dbs,
+        packet->dbc,
+        packet->fmt, 
+        length);
+
+#endif
     // check our enable status
     if (!m_disabled && m_is_disabled) {
         // this means that we are trying to enable
@@ -1076,7 +1036,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 // and the timestamp that is passed on for the same event. This is to cope with
 // ISO buffering
 int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
-    return (int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame);
+    return ((int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame)+10000);
 }
 
 void AmdtpReceiveStreamProcessor::dumpInfo() {
@@ -1440,5 +1400,3 @@ int AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(AmdtpAudioPort *p, quadl
 }
 
 } // end of namespace FreebobStreaming
-
-#endif // #ifdef ENABLE_AMDTP_SP

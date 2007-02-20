@@ -25,26 +25,6 @@
  * 
  *
  */
-#ifdef ENABLE_BEBOB
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_DICE 
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_BOUNCE
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_AMDTP_SP
-
 #ifndef __FREEBOB_AMDTPSTREAMPROCESSOR__
 #define __FREEBOB_AMDTPSTREAMPROCESSOR__
 
@@ -140,6 +120,10 @@ protected:
     
     bool prefill();
     
+    unsigned int fillNoDataPacketHeader(struct iec61883_packet *packet, unsigned int* length);
+    unsigned int fillDataPacketHeader(struct iec61883_packet *packet, unsigned int* length, uint32_t ts);
+    
+    
     bool transferSilence(unsigned int size);
 
     int transmitBlock(char *data, unsigned int nevents, 
@@ -233,6 +217,4 @@ protected:
 } // end of namespace FreebobStreaming
 
 #endif /* __FREEBOB_AMDTPSTREAMPROCESSOR__ */
-
-#endif // #ifdef ENABLE_AMDTP_SP
 
