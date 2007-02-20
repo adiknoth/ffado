@@ -25,9 +25,6 @@
  * 
  *
  */
- 
-#ifdef ENABLE_MOTU
-
 #ifndef __FREEBOB_MOTUPORT__
 #define __FREEBOB_MOTUPORT__
 
@@ -119,6 +116,4 @@ protected:
 } // end of namespace FreebobStreaming
 
 #endif /* __FREEBOB_MOTUPORT__ */
-
-#endif //#ifdef ENABLE_MOTU
 

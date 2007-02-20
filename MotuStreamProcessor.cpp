@@ -26,9 +26,6 @@
  * 
  *
  */
- 
-#ifdef ENABLE_MOTU
-
 #include "MotuStreamProcessor.h"
 #include "Port.h"
 #include "MotuPort.h"
@@ -1397,4 +1394,3 @@ void MotuReceiveStreamProcessor::setVerboseLevel(int l) {
 }
 
 } // end of namespace FreebobStreaming
-#endif

@@ -25,27 +25,6 @@
  * 
  *
  */
- 
-#ifdef ENABLE_BEBOB
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_DICE 
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_BOUNCE
-    #ifndef ENABLE_AMDTP_SP
-        #define ENABLE_AMDTP_SP
-    #endif
-#endif
-
-#ifdef ENABLE_AMDTP_SP
-
 #ifndef __FREEBOB_AMDTPPORTINFO__
 #define __FREEBOB_AMDTPPORTINFO__
 
@@ -106,5 +85,3 @@ protected:
 } // end of namespace FreebobStreaming
 
 #endif /* __FREEBOB_AMDTPPORTINFO__ */
-
-#endif // #ifdef ENABLE_AMDTP_SP
