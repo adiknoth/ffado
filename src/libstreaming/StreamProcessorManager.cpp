@@ -40,6 +40,8 @@
 #define PREPARE_TIMEOUT_MSEC 4000
 #define ENABLE_TIMEOUT_MSEC 4000
 
+#define ENABLE_DELAY_CYCLES 2000
+
 namespace FreebobStreaming {
 
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_NORMAL );
@@ -258,7 +260,7 @@ bool StreamProcessorManager::prepare() {
 
 bool StreamProcessorManager::syncStartAll() {
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessor streams to start running...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for StreamProcessor streams to start running...\n");
     // we have to wait until all streamprocessors indicate that they are running
     // i.e. that there is actually some data stream flowing
     int wait_cycles=RUNNING_TIMEOUT_MSEC; // two seconds
@@ -267,24 +269,40 @@ bool StreamProcessorManager::syncStartAll() {
         wait_cycles--;
         notRunning=false;
         
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-                it != m_ReceiveProcessors.end();
-                ++it ) {
-            if(!(*it)->isRunning()) notRunning=true;
-        }
-
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-                it != m_TransmitProcessors.end();
-                ++it ) {
-            if(!(*it)->isRunning()) notRunning=true;
-        }
+//         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+//                 it != m_ReceiveProcessors.end();
+//                 ++it ) {
+//             if(!(*it)->isRunning()) notRunning=true;
+//         }
+// 
+//         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+//                 it != m_TransmitProcessors.end();
+//                 ++it ) {
+//             if(!(*it)->isRunning()) notRunning=true;
+//         }
+        
+        // EXPERIMENT:
+        // the only stream that should be running is the sync
+        // source stream, as this is the one that defines
+        // when to signal buffers. Maybe we get an xrun at startup,
+        // but that should be handled.
+        
+        // the problem is that otherwise a setup with a device 
+        // that waits for decent input before sending output 
+        // will not start up (e.g. the bounce device), because
+        // all streams are required to be running.
+        
+        // other streams still have at least ENABLE_DELAY_CYCLES cycles 
+        // to start up
+        if(!m_SyncSource->isRunning()) notRunning=true;
+        
         usleep(1000);
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Running check: %d\n",notRunning);
     }
 
     if(!wait_cycles) { // timout has occurred
         debugFatal("One or more streams are not starting up (timeout):\n");
-                    
+
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
                 it != m_ReceiveProcessors.end();
                 ++it ) {
@@ -304,7 +322,6 @@ bool StreamProcessorManager::syncStartAll() {
                 debugFatal(" transmit stream %p running\n",*it);
             }
         }
-        
         return false;
     }
 
@@ -355,7 +372,7 @@ bool StreamProcessorManager::syncStartAll() {
     uint64_t now=m_SyncSource->getTimeNow(); // fixme: should be in usecs, not ticks
     
     // FIXME: this should not be in cycles, but in 'time'
-    unsigned int enable_at=TICKS_TO_CYCLES(now)+2000;
+    unsigned int enable_at=TICKS_TO_CYCLES(now)+ENABLE_DELAY_CYCLES;
     if (enable_at > 8000) enable_at -= 8000;
 
     if (!enableStreamProcessors(enable_at)) {
@@ -745,7 +762,7 @@ bool StreamProcessorManager::waitForPeriod() {
 
     assert(m_SyncSource);
     
-    time_till_next_period=m_SyncSource->getTimeUntilNextPeriodUsecs();
+    time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
     
     while(time_till_next_period > 0) {
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
@@ -769,7 +786,7 @@ bool StreamProcessorManager::waitForPeriod() {
         }
 
         // check if we were waked up too soon
-        time_till_next_period=m_SyncSource->getTimeUntilNextPeriodUsecs();
+        time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
     }
     
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", time_till_next_period);

@@ -158,44 +158,44 @@ int do_cycletimer_test() {
     }
     
     int32_t subs;
-    subs=substractTicks(10, 8);
+    subs=diffTicks(10, 8);
     if (subs != 2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, 8) != 2 : %ld\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  diffTicks(10, 8) != 2 : %ld\n",
             subs);
         failures++;   
     }
     
-    subs=substractTicks(10, 12);
+    subs=diffTicks(10, 12);
     if (subs != -2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, 12) != -2 : %ld\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  diffTicks(10, 12) != -2 : %ld\n",
             subs);
         failures++;   
     }
     
-    subs=substractTicks(TICKS_PER_SECOND*128L + 10, 8);
+    subs=diffTicks(TICKS_PER_SECOND*128L + 10, 8);
     if (subs != 2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(TICKS_PER_SECOND*128L + 10, 8) != 2 : %ld\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  diffTicks(TICKS_PER_SECOND*128L + 10, 8) != 2 : %ld\n",
             subs);
         failures++;   
     }
     
-    subs=substractTicks(TICKS_PER_SECOND*128L + 10, 12);
+    subs=diffTicks(TICKS_PER_SECOND*128L + 10, 12);
     if (subs != -2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(TICKS_PER_SECOND*128L + 10, 12) != -2 : %ld\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  diffTicks(TICKS_PER_SECOND*128L + 10, 12) != -2 : %ld\n",
             subs);
         failures++;   
     }
     
-    subs=substractTicks(10, TICKS_PER_SECOND*128L + 8);
+    subs=diffTicks(10, TICKS_PER_SECOND*128L + 8);
     if (subs != 2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, TICKS_PER_SECOND*128L + 8) != 2 : %ld\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  diffTicks(10, TICKS_PER_SECOND*128L + 8) != 2 : %ld\n",
             subs);
         failures++;   
     }
     
-    subs=substractTicks(10, TICKS_PER_SECOND*128L + 12);
+    subs=diffTicks(10, TICKS_PER_SECOND*128L + 12);
     if (subs != -2) {
-         debugOutput(DEBUG_LEVEL_NORMAL, "  substractTicks(10, TICKS_PER_SECOND*128L + 12) != -2 : %l011llu\n",
+         debugOutput(DEBUG_LEVEL_NORMAL, "  diffTicks(10, TICKS_PER_SECOND*128L + 12) != -2 : %l011llu\n",
             subs);
         failures++;
     }

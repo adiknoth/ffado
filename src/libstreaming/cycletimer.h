@@ -97,7 +97,45 @@ static inline uint32_t wrapAtMaxTicks(uint64_t x) {
 }
 
 /**
+ * @brief Wraps x to the minimum number of ticks
+ *
+ * The input value is wrapped to the minimum value of the cycle
+ * timer, in ticks (= 0).
+ *
+ * @param x time to wrap
+ * @return wrapped time
+ */
+static inline uint32_t wrapAtMinTicks(int64_t x) {
+    if (x < 0) {
+        x += TICKS_PER_SECOND * 128L;
+    }
+
+#ifdef DEBUG
+        if (x < 0) {
+            debugWarning("insufficient wrapping: %lld\n",x);
+            
+            debugWarning("correcting...\n");
+            while (x < 0) {
+                x += TICKS_PER_SECOND * 128L;
+                
+                if (x < 0) {
+                    debugWarning(" insufficient wrapping: %lld\n",x);
+                }
+            }
+        }
+
+#endif
+
+    return (uint32_t)x;
+}
+
+/**
  * @brief Wraps both at minimum and maximum value for ticks
+ *
+ * The input value is wrapped to the maximum value of the cycle
+ * timer, in ticks (128sec * 24576000 ticks/sec), and 
+ * to the minimum value of the cycle timer, in ticks (= 0).
+ *
  * @param x value to wrap
  * @return wrapped value
  */
@@ -136,7 +174,7 @@ static inline uint32_t wrapAtMinMaxTicks(int64_t x) {
  * @param y Second timestamp
  * @return the difference x-y, unwrapped
  */
-static inline int32_t substractTicks(uint32_t x, uint32_t y) {
+static inline int32_t diffTicks(uint32_t x, uint32_t y) {
     int64_t diff=(int64_t)x - (int64_t)y;
     
     // the maximal difference we allow (64secs)
@@ -164,7 +202,7 @@ static inline int32_t substractTicks(uint32_t x, uint32_t y) {
  * @brief Computes a sum of timestamps
  *
  * This function computes a sum of timestamps in ticks,
- * wrapping the result if nescessary.
+ * wrapping the result if necessary.
  *
  * @param x First timestamp 
  * @param y Second timestamp
@@ -174,6 +212,22 @@ static inline uint32_t addTicks(uint32_t x, uint32_t y) {
     uint64_t sum=x+y;
 
     return wrapAtMaxTicks(sum);
+}
+
+/**
+ * @brief Computes a substraction of timestamps
+ *
+ * This function computes a substraction of timestamps in ticks,
+ * wrapping the result if necessary.
+ *
+ * @param x First timestamp 
+ * @param y Second timestamp
+ * @return the difference x-y, wrapped
+ */
+static inline uint32_t substractTicks(uint32_t x, uint32_t y) {
+    int64_t subs=x-y;
+
+    return wrapAtMinTicks(subs);
 }
 
 /**
@@ -350,13 +404,13 @@ static inline uint32_t sytXmitToFullTicks(uint32_t syt_timestamp, unsigned int x
  * This function computes a difference between cycles
  * such that it respects wrapping (at 8000 cycles).
  *
- * See substractTicks
+ * See diffTicks
  *
  * @param x First cycle value 
  * @param y Second cycle value
  * @return the difference x-y, unwrapped
  */
-static inline int substractCycles(unsigned int x, unsigned int y) {
+static inline int diffCycles(unsigned int x, unsigned int y) {
     int diff = x - y;
     
     // the maximal difference we allow (64secs)

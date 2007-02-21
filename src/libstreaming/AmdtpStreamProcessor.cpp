@@ -125,7 +125,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     
     // the difference between the cycle this
     // packet is intended for and 'now'
-    int cycle_diff = substractCycles(cycle, now_cycles);
+    int cycle_diff = diffCycles(cycle, now_cycles);
     
 #ifdef DEBUG
     if(m_running && (cycle_diff < 0)) {
@@ -138,7 +138,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // the current time, the stream is considered not
     // to be 'running'
     // NOTE: this works only at startup
-    if (!m_running && cycle_diff >= 0 && cycle != -1) {
+    if (!m_running && cycle_diff >= 0 && cycle >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Xmit StreamProcessor %p started running at cycle %d\n",this, cycle);
             m_running=true;
     }
@@ -156,7 +156,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             
             // the number of cycles the sync source lags (> 0)
             // or leads (< 0)
-            int sync_lag_cycles=substractCycles(cycle, m_SyncSource->getLastCycle());
+            int sync_lag_cycles=diffCycles(cycle, m_SyncSource->getLastCycle());
             
             // account for the cycle lag between sync SP and this SP
             // the last update of the sync source's timestamps was sync_lag_cycles
@@ -166,16 +166,22 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             // ts_head however is for cycle CT-sync_lag_cycles, and lies
             // therefore sync_lag_cycles * TICKS_PER_CYCLE earlier than
             // T1.
-            ts_head = addTicks(ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
+            ts_head = addTicks(ts_head, (sync_lag_cycles) * TICKS_PER_CYCLE);
             
+            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
+            
+            // account for one extra packet of frames
+            ts_head = substractTicks(ts_head, 
+                        (uint32_t)((float)m_syt_interval * m_SyncSource->m_data_buffer->getRate()));
+
             m_data_buffer->setBufferHeadTimestamp(ts_head);
-            
+
             #ifdef DEBUG
             if ((unsigned int)m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()) {
                 debugWarning("m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()\n");
             }
             #endif
-            debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, LAG=%03d, FC=%4d\n",
+            debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10llu, LAG=%03d, FC=%4d\n",
                             ts_head, sync_lag_cycles, m_data_buffer->getFrameCounter());
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
@@ -201,7 +207,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // later, making that the timestamp will be expired when the 
     // packet is sent, unless TRANSFER_DELAY > 3072.
     // this means that we need at least one cycle of extra buffering.
-    uint64_t ticks_to_advance = TICKS_PER_CYCLE * TRANSMIT_ADVANCE_CYCLES;
+    uint32_t ticks_to_advance = TICKS_PER_CYCLE * TRANSMIT_ADVANCE_CYCLES;
     
     // if cycle lies cycle_diff cycles in the future, we should
     // queue this packet cycle_diff * TICKS_PER_CYCLE earlier than
@@ -209,16 +215,18 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     ticks_to_advance += cycle_diff * TICKS_PER_CYCLE;
 
     // determine the 'now' time in ticks
-    uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
+    uint32_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
+    
+    cycle_timer = addTicks(cycle_timer, ticks_to_advance);
     
     // time until the packet is to be sent (if > 0: send packet)
-    int64_t until_next=substractTicks(ts_head, cycle_timer + ticks_to_advance);
+    int32_t until_next=diffTicks(ts_head, cycle_timer);
 
     // if until_next < 0 we should send a filled packet
     // otherwise we should send a NO-DATA packet
     if((until_next<0) && (m_running)) {
         // add the transmit transfer delay to construct the playout time (=SYT timestamp)
-        uint64_t ts_packet=addTicks(ts_head, TRANSMIT_TRANSFER_DELAY);
+        uint32_t ts_packet=addTicks(ts_head, TRANSMIT_TRANSFER_DELAY);
     
         // if we are disabled, send a silent packet
         // and advance the buffer head timestamp
@@ -227,7 +235,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
             m_dbc += fillDataPacketHeader(packet, length, ts_packet);
             
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u TSH=%011llu TSP=%011llu\n",
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u TSH=%011llu TSP=%011lu\n",
                 cycle, ts_head, ts_packet);
 
             // update the base timestamp
@@ -251,7 +259,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
                     debugWarning("Problem encoding Packet Ports\n");
                 }
                 
-                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT: CY=%04u TSH=%011llu TSP=%011llu\n",
+                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: CY=%04u TSH=%011llu TSP=%011lu\n",
                     cycle, ts_head, ts_packet);
                 
                 return RAW1394_ISO_OK;
@@ -281,6 +289,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         }
         
     } else { // no packet due, send no-data packet
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT NONE: CY=%04u TSH=%011llu\n",
+                cycle, ts_head);
+                
         m_dbc += fillNoDataPacketHeader(packet, length);
         return RAW1394_ISO_DEFER;
     }
@@ -355,10 +366,6 @@ bool AmdtpTransmitStreamProcessor::reset() {
     // we have to make sure that the buffer HEAD timestamp
     // lies in the future for every possible buffer fill case.
     int offset=(int)(m_ringbuffer_size_frames*m_ticks_per_frame);
-    
-    // we can substract the delay as it introduces
-    // unnescessary delay
-    offset -= m_SyncSource->getSyncDelay();
     
     m_data_buffer->setTickOffset(offset);
     
@@ -592,6 +599,10 @@ bool AmdtpTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) 
     
     // we also add the nb of cycles we transmit in advance
     ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
+    
+    // we want the SP to start sending silent packets somewhat earlier than the
+    // time it is enabled
+    ts_head=substractTicks(ts_head, 100*TICKS_PER_CYCLE);
     
     m_data_buffer->setBufferTailTimestamp(ts_head);
 
@@ -887,7 +898,6 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         debugWarning("Dropped %d packets on cycle %d\n",dropped, cycle);
     }
 
-
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"ch%2u: CY=%4u, SYT=%08X (%4ucy + %04uticks) (running=%d, disabled=%d,%d)\n",
         channel, cycle,ntohs(packet->syt),  
         CYCLE_TIMER_GET_CYCLES(ntohs(packet->syt)), CYCLE_TIMER_GET_OFFSET(ntohs(packet->syt)),
@@ -913,7 +923,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // the previous timestamp is the one we need to start with
             // because we're going to update the buffer again this loop
             // using writeframes
-            m_data_buffer->setBufferTailTimestamp(m_last_timestamp2);
+            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
@@ -1036,7 +1046,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 // and the timestamp that is passed on for the same event. This is to cope with
 // ISO buffering
 int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
-    return ((int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame)+10000);
+    return ((int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame));
 }
 
 void AmdtpReceiveStreamProcessor::dumpInfo() {
@@ -1055,17 +1065,8 @@ bool AmdtpReceiveStreamProcessor::reset() {
     m_PeriodStat.reset();
     m_PacketStat.reset();
     m_WakeupStat.reset();
-    
-    // this makes that the buffer lags a little compared to reality
-    // the result is that we get some extra time before period boundaries
-    // are signaled.
-    // ISO buffering causes the packets to be received at max
-    // m_handler->getWakeupInterval() later than the time they were received.
-    // hence their payload is available this amount of time later. However, the
-    // period boundary is predicted based upon earlier samples, and therefore can
-    // pass before these packets are processed. Adding this extra term makes that
-    // the period boundary is signalled later
-    m_data_buffer->setTickOffset(m_SyncSource->getSyncDelay());
+
+    m_data_buffer->setTickOffset(0);
 
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports

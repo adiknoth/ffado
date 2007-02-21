@@ -108,7 +108,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     
     // the difference between the cycle this
     // packet is intended for and 'now'
-    int cycle_diff = substractCycles(cycle, now_cycles);
+    int cycle_diff = diffCycles(cycle, now_cycles);
     
 	// Signal that streaming is still active
 	m_streaming_active = 1;
@@ -117,7 +117,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // the current time, the stream is considered not
     // to be 'running'
     // NOTE: this works only at startup
-    if (!m_running && cycle_diff >= 0 && cycle != -1) {
+    if (!m_running && cycle_diff >= 0 && cycle >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Xmit StreamProcessor %p started running at cycle %d\n",this, cycle);
             m_running=true;
     }
@@ -134,7 +134,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             
             // the number of cycles the sync source lags (> 0)
             // or leads (< 0)
-            int sync_lag_cycles=substractCycles(cycle, m_SyncSource->getLastCycle());
+            int sync_lag_cycles=diffCycles(cycle, m_SyncSource->getLastCycle());
             
             // account for the cycle lag between sync SP and this SP
             // the last update of the sync source's timestamps was sync_lag_cycles
@@ -198,7 +198,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
     
     // time until the packet is to be sent (if > 0: send packet)
-    int64_t until_next=substractTicks(timestamp, cycle_timer + ticks_to_advance);
+    int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
     
 	// Size of a single data frame in quadlets
 	unsigned dbs = m_event_size / 4;
@@ -368,10 +368,6 @@ bool MotuTransmitStreamProcessor::reset() {
     // we have to make sure that the buffer HEAD timestamp
     // lies in the future for every possible buffer fill case.
     int offset=(int)(m_data_buffer->getBufferSize()*m_ticks_per_frame);
-    
-    // we can substract the delay as it introduces
-    // unnescessary delay
-    offset -= m_SyncSource->getSyncDelay();
     
     m_data_buffer->setTickOffset(offset);
     
@@ -590,7 +586,6 @@ bool MotuTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
     ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
     
     m_data_buffer->setBufferTailTimestamp(ts_head);
-
 
     if (!StreamProcessor::prepareForEnable(time_to_enable_at)) {
         debugError("StreamProcessor::prepareForEnable failed\n");
@@ -1045,17 +1040,8 @@ int MotuReceiveStreamProcessor::getMinimalSyncDelay() {
 bool MotuReceiveStreamProcessor::reset() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
-	
-    // this makes that the buffer lags a little compared to reality
-    // the result is that we get some extra time before period boundaries
-    // are signaled.
-    // ISO buffering causes the packets to be received at max
-    // m_handler->getWakeupInterval() later than the time they were received.
-    // hence their payload is available this amount of time later. However, the
-    // period boundary is predicted based upon earlier samples, and therefore can
-    // pass before these packets are processed. Adding this extra term makes that
-    // the period boundary is signalled later
-    m_data_buffer->setTickOffset(m_SyncSource->getSyncDelay());
+
+    m_data_buffer->setTickOffset(0);
 
 	// reset all non-device specific stuff
 	// i.e. the iso stream and the associated ports

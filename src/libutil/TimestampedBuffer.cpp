@@ -564,9 +564,6 @@ void TimestampedBuffer::setBufferTailTimestamp(uint64_t new_timestamp) {
         debugWarning("ts not wrapped correctly: %lld\n",ts);
     }
 #endif
-    
-    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    if (diff < 0) diff += m_wrap_at;
 
     pthread_mutex_lock(&m_framecounter_lock);
     
@@ -604,9 +601,6 @@ void TimestampedBuffer::setBufferHeadTimestamp(uint64_t new_timestamp) {
 
     int64_t ts=new_timestamp;
 
-    int64_t diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    if (diff < 0) diff += m_wrap_at;
-    
     pthread_mutex_lock(&m_framecounter_lock);
     
     // add the time

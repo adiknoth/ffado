@@ -1,5 +1,6 @@
 /* ieee1394service.cpp
  * Copyright (C) 2005,07 by Daniel Wagner
+ * Copyright (C) 2007 by Pieter Palmers
  *
  * This file is part of FreeBoB.
  *
@@ -31,7 +32,7 @@
 #include <iostream>
 #include <iomanip>
 
-IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_VERBOSE );
 
 Ieee1394Service::Ieee1394Service()
     : m_handle( 0 ), m_resetHandle( 0 )
@@ -378,6 +379,8 @@ Ieee1394Service::remBusResetHandler( Functor* functor )
  * @return the channel number
  */
 signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using generic method...\n" );
+    
     struct ChannelInfo cinfo;
 
     int c = -1;
@@ -432,6 +435,8 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
     nodeid_t recv_node, int recv_plug
     ) {
 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using IEC61883 CMP...\n" );
+    
     struct ChannelInfo cinfo;
     
     int c = -1;
@@ -481,28 +486,32 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
  * @return true if successful
  */
 bool Ieee1394Service::freeIsoChannel(signed int c) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Freeing ISO channel %d...\n", c );
     
     if (c < 0 || c > 63) {
-        debugWarning("Invalid channel number: %d", c);
+        debugWarning("Invalid channel number: %d\n", c);
         return false;
     }
     
     switch (m_channels[c].alloctype) {
         default:
-            debugError("BUG: invalid allocation type!\n");
+            debugError(" BUG: invalid allocation type!\n");
             return false;
             
         case AllocFree: 
-            debugWarning("Channel %d not registered\n", c);
+            debugWarning(" Channel %d not registered\n", c);
             return false;
             
         case AllocGeneric:
+            debugOutput(DEBUG_LEVEL_VERBOSE, " allocated using generic routine...\n" );
             if (unregisterIsoChannel(c)) {
                 return false;
             } else {
+                debugOutput(DEBUG_LEVEL_VERBOSE, " freeing %d bandwidth units...\n", m_channels[c].bandwidth );
                 if (raw1394_bandwidth_modify(m_handle, m_channels[c].bandwidth, RAW1394_MODIFY_FREE) !=0) {
                     debugWarning("Failed to deallocate bandwidth\n");
                 }
+                debugOutput(DEBUG_LEVEL_VERBOSE, " freeing channel %d...\n", m_channels[c].channel );
                 if (raw1394_channel_modify (m_handle, m_channels[c].channel, RAW1394_MODIFY_FREE) != 0) {
                     debugWarning("Failed to free channel\n");
                 }
@@ -510,9 +519,11 @@ bool Ieee1394Service::freeIsoChannel(signed int c) {
             }
             
         case AllocCMP:
+            debugOutput(DEBUG_LEVEL_VERBOSE, " allocated using IEC61883 CMP...\n" );
             if (unregisterIsoChannel(c)) {
                 return false;
             } else {
+                debugOutput(DEBUG_LEVEL_VERBOSE, " performing IEC61883 CMP disconnect...\n" );
                 if(iec61883_cmp_disconnect(
                         m_handle, 
                         m_channels[c].xmit_node | 0xffc0,
