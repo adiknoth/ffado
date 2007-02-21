@@ -231,13 +231,23 @@ bool StreamProcessor::setSyncSource(StreamProcessor *s) {
     return true;
 }
 
-int64_t StreamProcessor::getTimeUntilNextPeriodUsecs() {
+int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
     uint64_t time_at_period=getTimeAtPeriod();
     
+    // we delay the period signal with the sync delay
+    // this makes that the period signals lag a little compared to reality
+    // ISO buffering causes the packets to be received at max
+    // m_handler->getWakeupInterval() later than the time they were received.
+    // hence their payload is available this amount of time later. However, the
+    // period boundary is predicted based upon earlier samples, and therefore can
+    // pass before these packets are processed. Adding this extra term makes that
+    // the period boundary is signalled later
+    time_at_period = addTicks(time_at_period, m_SyncSource->getSyncDelay());
+
     uint64_t cycle_timer=m_handler->getCycleTimerTicks();
     
     // calculate the time until the next period
-    int64_t until_next=substractTicks(time_at_period,cycle_timer);
+    int32_t until_next=diffTicks(time_at_period,cycle_timer);
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
         time_at_period, cycle_timer, until_next
@@ -320,7 +330,7 @@ void TransmitStreamProcessor::setVerboseLevel(int l) {
 
 uint64_t TransmitStreamProcessor::getTimeAtPeriod() {
     uint64_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
-    
+
     #ifdef DEBUG
     uint64_t ts,fc;
     m_data_buffer->getBufferTailTimestamp(&ts,&fc);

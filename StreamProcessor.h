@@ -153,9 +153,9 @@ protected:
         virtual bool canClientTransferFrames(unsigned int nframes) = 0;
         
         /**
-         * \brief return the time until the next period boundary (in microseconds)
+         * \brief return the time until the next period boundary should be signaled (in microseconds)
          *
-         * Return the time until the next period boundary. If this StreamProcessor 
+         * Return the time until the next period boundary signal. If this StreamProcessor 
          * is the current synchronization source, this function is called to 
          * determine when a buffer transfer can be made. When this value is
          * smaller than 0, a period boundary is assumed to be crossed, hence a
@@ -163,7 +163,7 @@ protected:
          *
          * \return the time in usecs
          */
-        int64_t getTimeUntilNextPeriodUsecs();
+        int64_t getTimeUntilNextPeriodSignalUsecs();
         /**
          * \brief return the time of the next period boundary (in microseconds)
          *
@@ -180,7 +180,7 @@ protected:
         /**
          * \brief return the time of the next period boundary (in internal units) 
          *
-         * The same as getTimeUntilNextPeriodUsecs() but in internal units.
+         * The same as getTimeUntilNextPeriodSignalUsecs() but in internal units.
          *
          * @return the time in internal units
          */
