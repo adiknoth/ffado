@@ -20,9 +20,9 @@
 // AvDevice XML stuff
 
 #include "bebob/bebob_avdevice.h"
-#include "configrom.h"
+#include "libieee1394/configrom.h"
 
-#include "libfreebobavc/ieee1394service.h"
+#include "libieee1394/ieee1394service.h"
 
 namespace BeBoB {
 

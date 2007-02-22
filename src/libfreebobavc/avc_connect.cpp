@@ -20,7 +20,7 @@
 
 #include "avc_connect.h"
 #include "avc_serialize.h"
-#include "ieee1394service.h"
+#include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
 #include <iostream>

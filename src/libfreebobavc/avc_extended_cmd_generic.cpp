@@ -20,7 +20,7 @@
 
 #include "avc_extended_cmd_generic.h"
 #include "avc_serialize.h"
-#include "ieee1394service.h"
+#include "libieee1394/ieee1394service.h"
 
 UnitPlugAddress::UnitPlugAddress( EPlugType plugType,  plug_type_t plugId )
     : m_plugType( plugType )

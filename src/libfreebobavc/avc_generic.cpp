@@ -20,7 +20,7 @@
 
 #include "avc_generic.h"
 #include "avc_serialize.h"
-#include "ieee1394service.h"
+#include "libieee1394/ieee1394service.h"
 
 #include "debugmodule/debugmodule.h"
 

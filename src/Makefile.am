@@ -31,7 +31,8 @@ libfreebob_la_LDFLAGS = 				\
 
 libfreebob_la_LIBADD = -lrt
 
-noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
+noinst_HEADERS = libieee1394/configrom.h libieee1394/csr1212.h \
+    libieee1394/ieee1394service.h debugmodule/debugmodule.h \
 	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h \
@@ -42,7 +43,7 @@ noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
 	libfreebobavc/avc_extended_plug_info.h libfreebobavc/avc_extended_stream_format.h \
 	libfreebobavc/avc_extended_subunit_info.h libfreebobavc/avc_function_block.h libfreebobavc/avc_generic.h \
 	libfreebobavc/avc_plug_info.h libfreebobavc/avc_serialize.h libfreebobavc/avc_signal_source.h \
-	libfreebobavc/avc_subunit_info.h libfreebobavc/avc_unit_info.h libfreebobavc/ieee1394service.h \
+	libfreebobavc/avc_subunit_info.h libfreebobavc/avc_unit_info.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
 	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
 	libstreaming/IsoHandlerManager.h libstreaming/IsoStream.h libstreaming/MotuPort.h \
@@ -56,8 +57,6 @@ noinst_HEADERS = configrom.h csr1212.h debugmodule/debugmodule.h \
 
 # common sources
 libfreebob_la_SOURCES = \
-        configrom.cpp \
-        csr1212.c \
         devicemanager.cpp \
         freebob.cpp \
         freebob_streaming.cpp \
@@ -76,7 +75,9 @@ libfreebob_la_SOURCES = \
         libfreebobavc/avc_signal_source.cpp \
         libfreebobavc/avc_subunit_info.cpp \
         libfreebobavc/avc_unit_info.cpp \
-        libfreebobavc/ieee1394service.cpp \
+        libieee1394/configrom.cpp \
+        libieee1394/csr1212.c \
+        libieee1394/ieee1394service.cpp \
         libstreaming/cip.c \
         libstreaming/IsoHandler.cpp \
         libstreaming/IsoHandlerManager.cpp \

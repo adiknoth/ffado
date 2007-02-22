@@ -21,9 +21,8 @@
 #include "bebob/bebob_dl_mgr.h"
 #include "bebob/bebob_dl_bcd.h"
 
-#include "configrom.h"
-
-#include "libfreebobavc/ieee1394service.h"
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
 
 #include <argp.h>
 #include <iostream>

@@ -20,9 +20,9 @@
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice.h"
-#include "configrom.h"
+#include "libieee1394/configrom.h"
 
-#include "libfreebobavc/ieee1394service.h"
+#include "libieee1394/ieee1394service.h"
 #include "libfreebobavc/avc_serialize.h"
 
 #include <sstream>

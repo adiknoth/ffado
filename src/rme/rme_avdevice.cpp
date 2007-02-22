@@ -21,17 +21,11 @@
 #warning RME support is currently useless (detection only)
 
 #include "rme/rme_avdevice.h"
-#include "configrom.h"
 
-#include "libfreebobavc/ieee1394service.h"
-#include "libfreebobavc/avc_definitions.h"
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
 
 #include "debugmodule/debugmodule.h"
-
-//#include "libstreaming/MotuStreamProcessor.h"
-//#include "libstreaming/MotuPort.h"
-
-#include "libutil/DelayLockedLoop.h"
 
 #include <string>
 #include <stdint.h>

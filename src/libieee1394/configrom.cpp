@@ -19,7 +19,7 @@
  */
 
 #include "configrom.h"
-#include "libfreebobavc/ieee1394service.h"
+#include "ieee1394service.h"
 
 #include <stdio.h>
 #include <string.h>

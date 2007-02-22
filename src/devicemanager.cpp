@@ -22,9 +22,10 @@
 
 #include "devicemanager.h"
 #include "iavdevice.h"
-#include "configrom.h"
 
-#include "libfreebobavc/ieee1394service.h"
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
+
 #include "debugmodule/debugmodule.h"
 
 #include <iostream>

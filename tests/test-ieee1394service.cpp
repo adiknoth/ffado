@@ -32,7 +32,10 @@
 #include <netinet/in.h>
 
 #include "src/threads.h"
-#include "src/libfreebobavc/ieee1394service.h"
+
+#include "src/libieee1394/configrom.h"
+#include "src/libieee1394/ieee1394service.h"
+
 #include <libraw1394/raw1394.h>
 
 DECLARE_GLOBAL_DEBUG_MODULE;

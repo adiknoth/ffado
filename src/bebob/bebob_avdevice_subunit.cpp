@@ -22,7 +22,7 @@
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_avdevice.h"
 #include "bebob/bebob_avplug.h"
-#include "configrom.h"
+#include "libieee1394/configrom.h"
 
 #include "libfreebobavc/avc_plug_info.h"
 #include "libfreebobavc/avc_extended_stream_format.h"

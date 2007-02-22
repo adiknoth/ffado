@@ -20,8 +20,7 @@
 #include "bebob/bebob_functionblock.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_avdevice.h"
-#include "configrom.h"
-
+#include "libieee1394/configrom.h"
 
 IMPL_DEBUG_MODULE( BeBoB::FunctionBlock, BeBoB::FunctionBlock, DEBUG_LEVEL_NORMAL );
 

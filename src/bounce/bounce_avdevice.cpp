@@ -19,14 +19,15 @@
  * MA 02111-1307 USA.
  */
 #include "bounce/bounce_avdevice.h"
-#include "configrom.h"
+
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
 
 #include "libfreebobavc/avc_plug_info.h"
 #include "libfreebobavc/avc_extended_plug_info.h"
 #include "libfreebobavc/avc_subunit_info.h"
 #include "libfreebobavc/avc_extended_stream_format.h"
 #include "libfreebobavc/avc_serialize.h"
-#include "libfreebobavc/ieee1394service.h"
 #include "libfreebobavc/avc_definitions.h"
 
 #include "debugmodule/debugmodule.h"

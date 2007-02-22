@@ -22,8 +22,9 @@
 #include "dice/dice_avdevice.h"
 #include "dice/dice_defines.h"
 
-#include "configrom.h"
-#include "libfreebobavc/ieee1394service.h"
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
+
 #include "libstreaming/AmdtpStreamProcessor.h"
 
 #include "debugmodule/debugmodule.h"
