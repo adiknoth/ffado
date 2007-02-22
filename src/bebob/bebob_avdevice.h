@@ -72,6 +72,8 @@ public:
     virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
     virtual bool prepare();
+    bool lock();
+    bool unlock();
 
     virtual int startStreamByIndex(int i);
     virtual int stopStreamByIndex(int i);

@@ -65,6 +65,8 @@ public:
 	virtual int getSamplingFrequency( );
     
 	virtual bool prepare();
+    bool lock();
+    bool unlock();
 	
 	virtual int getStreamCount();
 	

@@ -184,6 +184,19 @@ bool BounceDevice::setId( unsigned int id) {
     return true;
 }
 
+bool
+BounceDevice::lock() {
+
+    return true;
+}
+
+
+bool
+BounceDevice::unlock() {
+
+    return true;
+}
+
 void
 BounceDevice::showDevice() const
 {

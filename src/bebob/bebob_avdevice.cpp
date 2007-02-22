@@ -951,6 +951,19 @@ bool AvDevice::setId( unsigned int id)
 }
 
 bool
+AvDevice::lock() {
+
+    return true;
+}
+
+
+bool
+AvDevice::unlock() {
+
+    return true;
+}
+
+bool
 AvDevice::prepare() {
     ///////////
     // get plugs

@@ -307,6 +307,19 @@ bool MotuDevice::setId( unsigned int id) {
 	return true;
 }
 
+bool
+MotuDevice::lock() {
+
+    return true;
+}
+
+
+bool
+MotuDevice::unlock() {
+
+    return true;
+}
+
 void
 MotuDevice::showDevice() const
 {

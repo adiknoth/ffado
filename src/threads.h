@@ -40,37 +40,37 @@ class MemberFunctor0
 {
 public:
     MemberFunctor0( const CalleePtr& pCallee, 
-		    MemFunPtr pMemFun, 
-		    bool bDelete = true )
+            MemFunPtr pMemFun, 
+            bool bDelete = true )
         : m_pCallee( pCallee )
         , m_pMemFun( pMemFun )
-	, m_pSem( 0 )
-	, m_bDelete( bDelete )
+        , m_pSem( 0 )
+        , m_bDelete( bDelete )
         {}
 
     MemberFunctor0( const CalleePtr& pCallee, 
-		    MemFunPtr pMemFun, 
-		    sem_t* pSem,
-		    bool bDelete = true )
+            MemFunPtr pMemFun, 
+            sem_t* pSem,
+            bool bDelete = true )
         : m_pCallee( pCallee )
         , m_pMemFun( pMemFun )
-	, m_pSem( pSem )
-	, m_bDelete( bDelete )
+        , m_pSem( pSem )
+        , m_bDelete( bDelete )
         {}
 
     virtual ~MemberFunctor0()
         {}
 
     virtual void operator() ()
-        { 
-	    ( ( *m_pCallee ).*m_pMemFun )(); 
-	    if ( m_pSem ) {
-		sem_post( m_pSem);
-	    }
-	    if (m_bDelete) {
-		delete this;
-	    }
-	}
+        {
+            ( ( *m_pCallee ).*m_pMemFun )(); 
+            if ( m_pSem ) {
+                sem_post( m_pSem);
+            }
+            if (m_bDelete) {
+            delete this;
+        }
+    }
 
 private:
     CalleePtr  m_pCallee;
@@ -85,40 +85,40 @@ class MemberFunctor1
 {
 public:
     MemberFunctor1( const CalleePtr& pCallee, 
-		    MemFunPtr pMemFun, 
-		    Parm0 parm0,
-		    bool bDelete = true)
+            MemFunPtr pMemFun, 
+            Parm0 parm0,
+            bool bDelete = true)
         : m_pCallee( pCallee )
         , m_pMemFun( pMemFun )
-	, m_parm0( parm0 )
-	, m_pSem( 0 )
-	, m_bDelete( bDelete )	
+        , m_parm0( parm0 )
+        , m_pSem( 0 )
+        , m_bDelete( bDelete )	
         {}
 
     MemberFunctor1( const CalleePtr& pCallee, 
-		    MemFunPtr pMemFun, 
-		    Parm0 parm0,
-		    sem_t* pSem,
-		    bool bDelete = true )
+            MemFunPtr pMemFun, 
+            Parm0 parm0,
+            sem_t* pSem,
+            bool bDelete = true )
         : m_pCallee( pCallee )
         , m_pMemFun( pMemFun )
-	, m_parm0( parm0 )
-	, m_pSem( 0 )
-	, m_bDelete( bDelete )
+        , m_parm0( parm0 )
+        , m_pSem( 0 )
+        , m_bDelete( bDelete )
         {}
     virtual ~MemberFunctor1()
-        {}
+    {}
 
     virtual void operator() ()
-        { 
-	    ( ( *m_pCallee ).*m_pMemFun )( m_parm0 ); 
-	    if ( m_pSem ) {
-		sem_post( m_pSem);
-	    }
-	    if (m_bDelete) {
-		delete this;
-	    }
-	}
+    {
+            ( ( *m_pCallee ).*m_pMemFun )( m_parm0 ); 
+            if ( m_pSem ) {
+                sem_post( m_pSem);
+            }
+            if (m_bDelete) {
+                delete this;
+            }
+    }
 
 private:
     CalleePtr  m_pCallee;

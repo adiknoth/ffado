@@ -124,6 +124,13 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
             IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
             assert(device);
 
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Locking device (%p)\n", device);
+            
+            if (!device->lock()) {
+                debugWarning("Could not lock device, skipping device (%p)!\n", device);
+                continue;
+            }
+            
             debugOutput(DEBUG_LEVEL_VERBOSE, "Setting samplerate to %d for (%p)\n", 
                         dev->options.sample_rate, device);
                         
@@ -180,14 +187,27 @@ int freebob_streaming_prepare(freebob_device_t *dev) {
 }
 
 void freebob_streaming_finish(freebob_device_t *dev) {
+    unsigned int i=0;
+    
+    assert(dev);
+    
+    // iterate over the found devices
+    for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
+        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        assert(device);
 
-        assert(dev);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Unlocking device (%p)\n", device);
 
-        delete dev->processorManager;
-        delete dev->m_deviceManager;
-        delete dev;
+        if (!device->unlock()) {
+            debugWarning("Could not unlock device (%p)!\n", device);
+        }
+    }
+    
+    delete dev->processorManager;
+    delete dev->m_deviceManager;
+    delete dev;
 
-        return;
+    return;
 }
 
 int freebob_streaming_start(freebob_device_t *dev) {

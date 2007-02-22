@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 
-#include "string.h"
+#include <string.h>
 
 #include <iostream>
 #include <iomanip>
@@ -56,9 +56,24 @@ Ieee1394Service::~Ieee1394Service()
 {
     stopRHThread();
 
+    for ( arm_mapping_vec_t::iterator it = m_arm_mappings.begin();
+          it != m_arm_mappings.end();
+          ++it )
+    {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler for 0x%016llX\n", (*it)->start);
+        int err=raw1394_arm_unregister(m_resetHandle, (*it)->start);
+        if (err) {
+            debugError(" Failed to unregister ARM handler for 0x%016llX\n", (*it)->start);
+            debugError(" Error: %s\n", strerror(errno));
+        } else {
+            delete *it;
+        }
+    }
+
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
     }
+    
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
     }
@@ -74,7 +89,7 @@ Ieee1394Service::initialize( int port )
         if ( !errno ) {
             debugFatal("libraw1394 not compatible\n");
         } else {
-            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s",
+            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s\n",
                 strerror(errno) );
             debugFatal("Is ieee1394 and raw1394 driver loaded?\n");
         }
@@ -99,6 +114,9 @@ Ieee1394Service::initialize( int port )
     raw1394_set_userdata( m_resetHandle, this );
     raw1394_set_bus_reset_handler( m_resetHandle,
                                    this->resetHandlerLowLevel );
+
+    m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
+                                   this->armHandlerLowLevel );
     startRHThread();
 
     return true;
@@ -295,6 +313,101 @@ Ieee1394Service::resetHandler( unsigned int generation )
     return true;
 }
 
+bool Ieee1394Service::registerARMrange(nodeaddr_t start,
+                     size_t length, byte_t *initial_value,
+                     arm_options_t access_rights,
+                     arm_options_t notification_options,
+                     arm_options_t client_transactions,
+                     Functor* functor) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Registering ARM handler for 0x%016llX, length %u\n", start,length);
+                     
+    arm_mapping_t *new_mapping=NULL;
+    new_mapping = new arm_mapping_t;
+    
+    new_mapping->start=start;
+    new_mapping->length=length;
+    new_mapping->access_rights=access_rights;
+    new_mapping->notification_options=notification_options;
+    new_mapping->client_transactions=client_transactions;
+    new_mapping->functor=functor;
+    
+    int err=raw1394_arm_register(m_resetHandle, start, 
+                         length, initial_value, (octlet_t)new_mapping,
+                         access_rights,
+                         notification_options,
+                         client_transactions);
+    if (err) {
+        debugError("Failed to register ARM handler for 0x%016llX\n", start);
+        debugError(" Error: %s\n", strerror(errno));
+        delete new_mapping;
+        return false;
+    }
+    
+    m_arm_mappings.push_back( new_mapping );
+
+    return true;
+}
+
+bool Ieee1394Service::unregisterARMrange( nodeaddr_t start ) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler for 0x%016llX\n", start);
+    
+    for ( arm_mapping_vec_t::iterator it = m_arm_mappings.begin();
+          it != m_arm_mappings.end();
+          ++it )
+    {
+        if((*it)->start == start) {
+            int err=raw1394_arm_unregister(m_resetHandle, start);
+            if (err) {
+                debugError("Failed to unregister ARM handler for 0x%016llX\n", start);
+                debugError(" Error: %s\n", strerror(errno));
+            } else {
+                m_arm_mappings.erase(it);
+                delete *it;
+                return true;
+            }
+        }
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " no handler found!\n");
+    
+    return false;
+}
+    
+int 
+Ieee1394Service::armHandlerLowLevel(raw1394handle_t handle, 
+                     unsigned long arm_tag,
+                     byte_t request_type, unsigned int requested_length,
+                     void *data)
+{
+    Ieee1394Service* instance
+        = (Ieee1394Service*) raw1394_get_userdata( handle );
+    instance->armHandler( arm_tag, request_type, requested_length, data );
+
+    return 0;
+}
+
+bool
+Ieee1394Service::armHandler(  unsigned long arm_tag,
+                     byte_t request_type, unsigned int requested_length,
+                     void *data)
+{
+    for ( arm_mapping_vec_t::iterator it = m_arm_mappings.begin();
+          it != m_arm_mappings.end();
+          ++it )
+    {
+        if((*it) == (arm_mapping_t *)arm_tag) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,"ARM handler for address 0x%016llX called\n", (*it)->start);
+            Functor* func = (*it)->functor;
+            ( *func )();
+            return true;
+        }
+    }
+
+    debugOutput(DEBUG_LEVEL_VERBOSE,"default ARM handler called\n");
+
+    m_default_arm_handler(m_resetHandle, arm_tag, request_type, requested_length, data );
+    return true;
+}
+
 bool
 Ieee1394Service::startRHThread()
 {
@@ -343,6 +456,7 @@ Ieee1394Service::rHThread( void* arg )
 bool
 Ieee1394Service::addBusResetHandler( Functor* functor )
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Adding busreset handler (%p)\n", functor);
     m_busResetHandlers.push_back( functor );
     return true;
 }
@@ -350,15 +464,19 @@ Ieee1394Service::addBusResetHandler( Functor* functor )
 bool
 Ieee1394Service::remBusResetHandler( Functor* functor )
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Removing busreset handler (%p)\n", functor);
+    
     for ( reset_handler_vec_t::iterator it = m_busResetHandlers.begin();
           it != m_busResetHandlers.end();
           ++it )
     {
         if ( *it == functor ) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " found\n");
             m_busResetHandlers.erase( it );
             return true;
         }
     }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " not found\n");
     return false;
 }
 

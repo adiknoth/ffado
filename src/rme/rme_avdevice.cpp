@@ -168,6 +168,19 @@ bool RmeDevice::setId( unsigned int id) {
 	return true;
 }
 
+bool
+RmeDevice::lock() {
+
+    return true;
+}
+
+
+bool
+RmeDevice::unlock() {
+
+    return true;
+}
+
 void
 RmeDevice::showDevice() const
 {

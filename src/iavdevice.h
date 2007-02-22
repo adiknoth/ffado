@@ -33,7 +33,8 @@ namespace FreebobStreaming {
 /*!
 \brief Interface that is to be implemented to support a device.
 
- This interface should be used to implement freebob support for a specific device.
+ This interface should be used to implement freebob support 
+ for a specific device.
 
 */
 class IAvDevice {
@@ -44,28 +45,26 @@ public:
 	virtual ConfigRom& getConfigRom() const = 0;
 	
 	/**
-	 * This is called by the probe function to discover & configure the device
-	 *
+	 * @brief This is called by the DeviceManager to discover & configure the device
 	 * 
 	 * @return true if the device was discovered successfully
 	 */
 	virtual bool discover() = 0;
 	
 	/**
-	 * Set the samping frequency
+	 * @brief Set the samping frequency
 	 * @param samplingFrequency 
 	 * @return true if successfull
 	 */
 	virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency ) = 0;
 	/**
-	 * get the samplingfrequency as an integer
+	 * @brief get the samplingfrequency as an integer
 	 * @return the sampling frequency as integer
 	 */
 	virtual int getSamplingFrequency( ) = 0;
 	
     /**
-     * This is called by the device manager to give the device
-     * a unique ID.
+     * @brief This is called by the device manager to give the device a unique ID.
      *
      * The purpose of this is to allow for unique port naming
      * in case there are multiple identical devices on the bus.
@@ -95,7 +94,7 @@ public:
     virtual bool setId(unsigned int id) = 0;
 	
 	/**
-	 * Constructs an XML description of the device [obsolete]
+	 * @brief Constructs an XML description of the device [obsolete]
 	 *
 	 * this is a leftover from v1.0 and isn't used
 	 * just provide an empty implementation that returns true
@@ -107,22 +106,54 @@ public:
 	virtual bool addXmlDescription( xmlNodePtr deviceNode ) = 0;
 	
 	/**
-	 * Outputs the device configuration to stderr/stdout [debug helper]
+	 * @brief Outputs the device configuration to stderr/stdout [debug helper]
 	 *
 	 * This function prints out a (detailed) description of the 
 	 * device detected, and its configuration.
 	 */
 	virtual void showDevice() const = 0;
+
+	/** 
+	 * @brief Lock the device
+	 *
+	 * This is called by the streaming layer before we start manipulating
+	 * and/or using the device.
+	 *
+	 * It should implement the mechanisms provided by the device to 
+	 * make sure that no other controller claims control of the device.
+	 *
+	 */
+	virtual bool lock() = 0;
 	
 	/** 
-	 * Prepare the device
-	 *  \todo when exactly is this called? and what should it do?
+	 * @brief Unlock the device
+	 *
+	 * This is called by the streaming layer after we finish manipulating
+	 * and/or using the device.
+	 *
+	 * It should implement the mechanisms provided by the device to 
+	 * give up exclusive control of the device.
+	 *
+	 */
+	virtual bool unlock() = 0;
+
+	/** 
+	 * @brief Prepare the device
+	 *
+	 * This is called by the streaming layer after the configuration 
+	 * parameters (e.g. sample rate) are set, and before 
+	 * getStreamProcessor[*] functions are called.
+	 *
+	 * It should be used to prepare the device's streamprocessors
+	 * based upon the device's current configuration. Normally
+	 * the streaming layer will not change the device's configuration
+	 * after calling this function.
+	 *
 	 */
 	virtual bool prepare() = 0;
 	
-	/// 
 	/**
-	 * Returns the number of ISO streams implemented/used by this device
+	 * @brief Returns the number of ISO streams implemented/used by this device
 	 *
 	 * Most likely this is 2 streams, i.e. one transmit stream and one
 	 * receive stream. However there are devices that implement more, for 
@@ -134,19 +165,20 @@ public:
 	 * \note you have to have a StreamProcessor for every stream. I.e.
 	 *       getStreamProcessorByIndex(i) should return a valid StreamProcessor
 	 *       for i=0 to i=getStreamCount()-1
-	 * \note
 	 *
 	 * @return 
 	 */
 	virtual int getStreamCount() = 0;
 	
 	/** 
-	 * Returns the StreamProcessor object for the stream with index i
+	 * @brief Returns the StreamProcessor object for the stream with index i
+	 *
 	 * \note a streamprocessor returned by getStreamProcessorByIndex(i)
 	 *       cannot be the same object as one returned by
 	 *       getStreamProcessorByIndex(j) if i isn't equal to j
-	 * \note you could have two streamprocessors handling the same ISO
-	 *       channel if that's needed
+	 * \note you cannot have two streamprocessors handling the same ISO
+	 *       channel (on the same port)
+	 *
 	 * \param i : Stream index
 	 * \pre \ref i smaller than getStreamCount()
 	 * @return a StreamProcessor object if successfull, NULL otherwise
@@ -154,24 +186,15 @@ public:
 	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i) = 0;
 	
 	/** 
-	 * starts the stream with index i
+	 * @brief starts the stream with index i
 	 *
 	 * This function is called by the streaming layer when this stream should
 	 * be started, i.e. the device should start sending data or should be prepared to 
 	 * be ready to receive data.
 	 *
 	 * It returns the channel number that was assigned for this stream.
-	 * 
-	 * For BeBoB's this implements the IEC61883 connection management procedure (CMP).
-	 * This CMP is a way to negotiate the channel that should be used, the bandwidth 
-	 * consumed and to start the device's streaming mode.
-	 *
-	 * Note that this IEC61883 CMP is nescessary to allow multiple ISO devices on the bus,
-	 * because otherwise there is no way to know what ISO channels are already in use.
-	 * or is there?
-	 * \note I wouldn't know how to assign channels for devices that don't implement
-	 *       IEC61883 CMP (like the Motu?). As long as there is only one device on the
-	 *       bus this is no problem and can be solved with static assignments. 
+	 * Channel allocation should be done using the allocation functions provided by the
+	 * Ieee1394Service object that is passed in the constructor.
 	 *
 	 * \param i : Stream index
 	 * \pre \ref i smaller than getStreamCount()
@@ -180,7 +203,7 @@ public:
 	virtual int startStreamByIndex(int i) = 0;
 	
 	/** 
-	 * stops the stream with index \ref i
+	 * @brief stops the stream with index \ref i
 	 *
 	 * \param i : Stream index
 	 * \pre \ref i smaller than getStreamCount()

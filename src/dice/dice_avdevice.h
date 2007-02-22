@@ -1,4 +1,4 @@
-/* mh_avdevice.h
+/* dice_avdevice.h
  * Copyright (C) 2007 by Pieter Palmers
  *
  * This file is part of FreeBob.
@@ -47,29 +47,32 @@ public:
 	      Ieee1394Service& ieee1394Service,
 		  int nodeId,
 		  int verboseLevel );
-    virtual ~DiceAvDevice();
+    ~DiceAvDevice();
 
     static bool probe( ConfigRom& configRom );
-    virtual bool discover();
-    virtual ConfigRom& getConfigRom() const;
+    bool discover();
+    ConfigRom& getConfigRom() const;
 
     // obsolete, will be removed soon, unused
-    virtual bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
+    bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
 
-    virtual void showDevice() const;
+    void showDevice() const;
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    virtual int getSamplingFrequency( );
+    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    int getSamplingFrequency( );
 
-    virtual bool setId(unsigned int id);
+    bool setId(unsigned int id);
 
-    virtual int getStreamCount();
-    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    int getStreamCount();
+    FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
-    virtual bool prepare();
-
-    virtual int startStreamByIndex(int i);
-    virtual int stopStreamByIndex(int i);
+    bool prepare();
+    
+    bool lock();
+    bool unlock();
+    
+    int startStreamByIndex(int i);
+    int stopStreamByIndex(int i);
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);

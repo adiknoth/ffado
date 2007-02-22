@@ -20,10 +20,11 @@
 #warning DICE support is currently useless
 
 #include "dice/dice_avdevice.h"
-#include "configrom.h"
+#include "dice/dice_defines.h"
 
+#include "configrom.h"
 #include "libfreebobavc/ieee1394service.h"
-#include "libfreebobavc/avc_definitions.h"
+#include "libstreaming/AmdtpStreamProcessor.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -31,14 +32,12 @@
 #include <stdint.h>
 #include <assert.h>
 #include <netinet/in.h>
-
 #include <libraw1394/csr.h>
 
-#include "libstreaming/AmdtpStreamProcessor.h"
 
 namespace Dice {
 
-IMPL_DEBUG_MODULE( DiceAvDevice, DiceAvDevice, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( DiceAvDevice, DiceAvDevice, DEBUG_LEVEL_VERBOSE );
 
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
@@ -58,7 +57,6 @@ DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_id(0)
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
-    
 {
     setDebugLevel( verboseLevel );
     
@@ -154,6 +152,19 @@ DiceAvDevice::showDevice() const
 
 bool
 DiceAvDevice::prepare() {
+
+    return true;
+}
+
+bool
+DiceAvDevice::lock() {
+
+    return true;
+}
+
+
+bool
+DiceAvDevice::unlock() {
 
     return true;
 }

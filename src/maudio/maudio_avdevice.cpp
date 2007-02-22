@@ -135,6 +135,18 @@ int AvDevice::getSamplingFrequency( ) {
     return 44100;
 }
 
+bool
+AvDevice::lock() {
+
+    return true;
+}
+
+
+bool
+AvDevice::unlock() {
+
+    return true;
+}
 
 void
 AvDevice::showDevice() const

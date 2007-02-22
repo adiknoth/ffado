@@ -143,6 +143,19 @@ bool MHAvDevice::setId( unsigned int id) {
     return true;
 }
 
+bool
+MHAvDevice::lock() {
+
+    return true;
+}
+
+
+bool
+MHAvDevice::unlock() {
+
+    return true;
+}
+
 void
 MHAvDevice::showDevice() const
 {
