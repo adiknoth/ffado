@@ -35,6 +35,7 @@
 
 #include "src/libieee1394/configrom.h"
 #include "src/libieee1394/ieee1394service.h"
+#include "src/libieee1394/ARMHandler.h"
 
 #include <libraw1394/raw1394.h>
 
@@ -63,37 +64,56 @@ int main(int argc, char *argv[])
     signal (SIGPIPE, sighandler);
 
     printf("Freebob Ieee1394Service test application\n");
-
-    MyFunctor *test_busreset=new MyFunctor();
-    MyFunctor *test_arm=new MyFunctor();
-
+    
     Ieee1394Service *m_service=NULL;
 
     m_service=new Ieee1394Service();
     m_service->initialize(2);
     
+    MyFunctor *test_busreset=new MyFunctor();
+    
     printf(" adding (%p) as busreset handler\n", test_busreset);
     
-    m_service->addBusResetHandler(test_busreset);
+    m_service->addBusResetHandler(test_busreset);    
+    
+    nodeaddr_t addr =  m_service->findFreeARMBlock(0x0000FFFFE0000000ULL, 4, 4 );
+    
+    ARMHandler *test_arm=new ARMHandler(addr,
+                         4,
+                         RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
+                         RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
+                         0);
     
     printf(" adding (%p) as arm handler\n", test_arm);
     
-    m_service->registerARMrange(0x0000FFFFE0000000ULL,
-                         8, NULL,
+    if (!m_service->registerARMhandler(test_arm)) {
+        printf("  failed\n");
+    }
+    
+    addr =  m_service->findFreeARMBlock(0x0000FFFFE0000000ULL, 4, 4 );
+                         
+    ARMHandler *test_arm2=new ARMHandler(addr,
+                         4,
                          RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
                          RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
-                         0,
-                         test_arm);
+                         0);
+
+    printf(" adding (%p) as arm handler\n", test_arm2);
+    
+    if (!m_service->registerARMhandler(test_arm2)) {
+        printf("  failed\n");
+    }
     
     while(run) {
         fflush(stderr);
         fflush(stdout);
         sleep(1);
     }
-    
+
     delete m_service;
     delete test_busreset;
     delete test_arm;
+    delete test_arm2;
     
     printf("Bye...\n");
 

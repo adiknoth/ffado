@@ -31,8 +31,10 @@ libfreebob_la_LDFLAGS = 				\
 
 libfreebob_la_LIBADD = -lrt
 
-noinst_HEADERS = libieee1394/configrom.h libieee1394/csr1212.h \
-    libieee1394/ieee1394service.h debugmodule/debugmodule.h \
+noinst_HEADERS = \
+    libieee1394/configrom.h libieee1394/csr1212.h \
+    libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
+    debugmodule/debugmodule.h \
 	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h \
@@ -75,6 +77,7 @@ libfreebob_la_SOURCES = \
         libfreebobavc/avc_signal_source.cpp \
         libfreebobavc/avc_subunit_info.cpp \
         libfreebobavc/avc_unit_info.cpp \
+        libieee1394/ARMHandler.cpp \
         libieee1394/configrom.cpp \
         libieee1394/csr1212.c \
         libieee1394/ieee1394service.cpp \
