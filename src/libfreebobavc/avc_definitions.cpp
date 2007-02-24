@@ -54,6 +54,15 @@ convertESamplingFrequency(ESamplingFrequency freq)
     case eSF_192000Hz:
         value = 192000;
         break;
+    case eSF_AnyLow:
+        value = 48000;
+        break;
+    case eSF_AnyMid:
+        value = 96000;
+        break;
+    case eSF_AnyHigh:
+        value = 192000;
+        break;
     default:
         value = 0;
     }

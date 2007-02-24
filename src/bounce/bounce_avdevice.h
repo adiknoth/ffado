@@ -72,9 +72,8 @@ public:
 	
 	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
 	
-	virtual int startStreamByIndex(int i);
-	
-	virtual int stopStreamByIndex(int i);
+    bool startStreamByIndex(int i);
+    bool stopStreamByIndex(int i);
     
     virtual void showDevice() const;
     virtual bool setId(unsigned int id);

@@ -76,10 +76,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_model ( NULL )
     , m_nodeId ( nodeId )
     , m_id( 0 )
-    , m_receiveProcessor ( 0 )
-    , m_receiveProcessorBandwidth ( -1 )
-    , m_transmitProcessor ( 0 )
-    , m_transmitProcessorBandwidth ( -1 )
+    , m_snoopMode( false )
 {
     setDebugLevel( verboseLevel );
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
@@ -95,10 +92,7 @@ AvDevice::AvDevice()
     , m_model ( NULL )
     , m_nodeId ( -1 )
     , m_id( 0 )
-    , m_receiveProcessor ( 0 )
-    , m_receiveProcessorBandwidth ( -1 )
-    , m_transmitProcessor ( 0 )
-    , m_transmitProcessorBandwidth ( -1 )
+    , m_snoopMode( false )
 {
 }
 
@@ -981,61 +975,64 @@ AvDevice::prepare() {
     }
 
     int samplerate=outputPlug->getSampleRate();
-    m_receiveProcessor=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+    
+    // create & add streamprocessors
+    FreebobStreaming::StreamProcessor *p;
+    
+    p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
                              samplerate,
                              outputPlug->getNrOfChannels());
 
-    if(!m_receiveProcessor->init()) {
+    if(!p->init()) {
         debugFatal("Could not initialize receive processor!\n");
+        delete p;
         return false;
     }
 
-    if (!addPlugToProcessor(*outputPlug,m_receiveProcessor,
-        FreebobStreaming::AmdtpAudioPort::E_Capture)) {
+    if (!addPlugToProcessor(*outputPlug,p,
+        FreebobStreaming::Port::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
+        delete p;
         return false;
     }
+    
+    m_receiveProcessors.push_back(p);
 
     // do the transmit processor
-//     if (m_snoopMode) {
-//         // we are snooping, so these are receive too.
-//         samplerate=inputPlug->getSampleRate();
-//         m_receiveProcessor2=new FreebobStreaming::AmdtpReceiveStreamProcessor(
-//                                   channel,
-//                                   m_1394Service->getPort(),
-//                                   samplerate,
-//                                   inputPlug->getNrOfChannels());
-//
-//         if(!m_receiveProcessor2->init()) {
-//             debugFatal("Could not initialize snooping receive processor!\n");
-//             return false;
-//         }
-//         if (!addPlugToProcessor(*inputPlug,m_receiveProcessor2,
-//             FreebobStreaming::AmdtpAudioPort::E_Capture)) {
-//             debugFatal("Could not add plug to processor!\n");
-//             return false;
-//         }
-//     } else {
-        // do the transmit processor
-        samplerate=inputPlug->getSampleRate();
-        m_transmitProcessor=new FreebobStreaming::AmdtpTransmitStreamProcessor(
+    if (m_snoopMode) {
+        // we are snooping, so this is receive too.
+        p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+                                  m_p1394Service->getPort(),
+                                  samplerate,
+                                  inputPlug->getNrOfChannels());
+    } else {
+        p=new FreebobStreaming::AmdtpTransmitStreamProcessor(
                                 m_p1394Service->getPort(),
                                 samplerate,
                                 inputPlug->getNrOfChannels());
+    }
+    
+    if(!p->init()) {
+        debugFatal("Could not initialize transmit processor %s!\n",
+            (m_snoopMode?" in snoop mode":""));
+        delete p;
+        return false;
+    }
 
-        if(!m_transmitProcessor->init()) {
-            debugFatal("Could not initialize transmit processor!\n");
-            return false;
-
-        }
-
-        if (!addPlugToProcessor(*inputPlug,m_transmitProcessor,
-            FreebobStreaming::AmdtpAudioPort::E_Playback)) {
+    if (m_snoopMode) {
+        if (!addPlugToProcessor(*inputPlug,p,
+            FreebobStreaming::Port::E_Capture)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
-//     }
+    } else {
+        if (!addPlugToProcessor(*inputPlug,p,
+            FreebobStreaming::Port::E_Playback)) {
+            debugFatal("Could not add plug to processor!\n");
+            return false;
+        }
+    }
 
     return true;
 }
@@ -1078,8 +1075,7 @@ AvDevice::addPlugToProcessor(
                         // and how to handle this (pp: here)
                         channelInfo->m_streamPosition - 1,
                         channelInfo->m_location,
-                        FreebobStreaming::AmdtpPortInfo::E_MBLA,
-                        clusterInfo->m_portType
+                        FreebobStreaming::AmdtpPortInfo::E_MBLA
                 );
                 break;
 
@@ -1092,8 +1088,7 @@ AvDevice::addPlugToProcessor(
                         // and how to handle this (pp: here)
                         channelInfo->m_streamPosition - 1,
                         channelInfo->m_location,
-                        FreebobStreaming::AmdtpPortInfo::E_Midi,
-                        clusterInfo->m_portType
+                        FreebobStreaming::AmdtpPortInfo::E_Midi
                 );
 
                 break;
@@ -1122,130 +1117,96 @@ AvDevice::addPlugToProcessor(
     return true;
 }
 
-// #define TEST_XMIT_ONLY
-
-#ifdef TEST_XMIT_ONLY
-
-#else
 int
 AvDevice::getStreamCount() {
-    return 2; // one receive, one transmit
+    return m_receiveProcessors.size() + m_transmitProcessors.size();
 }
 
 FreebobStreaming::StreamProcessor *
 AvDevice::getStreamProcessorByIndex(int i) {
-    switch (i) {
-    case 0:
-        return m_receiveProcessor;
-    case 1:
-//         if (m_snoopMode) {
-//             return m_receiveProcessor2;
-//         } else {
-            return m_transmitProcessor;
-//         }
-    default:
-        return NULL;
+
+    if (i<(int)m_receiveProcessors.size()) {
+        return m_receiveProcessors.at(i);
+    } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
+        return m_transmitProcessors.at(i-m_receiveProcessors.size());
     }
-    return 0;
+
+    return NULL;
 }
 
-// FIXME: error checking
-int
+bool
 AvDevice::startStreamByIndex(int i) {
     int iso_channel=-1;
-
-//     if (m_snoopMode) {
-//
-//         switch (i) {
-//         case 0:
-//             // snooping doesn't use CMP, but obtains the info of the channel
-//             // from the target plug
-//
-//             // TODO: get isochannel from plug
-//
-//             // set the channel obtained by the connection management
-//             m_receiveProcessor->setChannel(iso_channel);
-//             break;
-//         case 1:
-//             // snooping doesn't use CMP, but obtains the info of the channel
-//             // from the target plug
-//
-//             // TODO: get isochannel from plug
-//
-//             // set the channel obtained by the connection management
-//             m_receiveProcessor2->setChannel(iso_channel);
-//
-//             break;
-//         default:
-//             return 0;
-//         }
-//     } else {
-
-        switch (i) {
-        case 0:
-            iso_channel=m_p1394Service->allocateIsoChannelCMP(
-                m_pConfigRom->getNodeId() | 0xffc0, 0, 
-                m_p1394Service->getLocalNodeId()| 0xffc0, -1);
-            
-            m_receiveProcessor->setChannel(iso_channel);
-            break;
-            
-        case 1:
-            iso_channel=m_p1394Service->allocateIsoChannelCMP(
-                m_p1394Service->getLocalNodeId()| 0xffc0, -1,
-                m_pConfigRom->getNodeId() | 0xffc0, 0);
-
-            m_transmitProcessor->setChannel(iso_channel);
-            break;
-        default:
-            return -1;
-        }
-//     }
-
-    if (iso_channel < 0) return -1;
     
-    return 0;
-
-}
-
-// FIXME: error checking
-int
-AvDevice::stopStreamByIndex(int i) {
-    // do connection management: break connection
-
-    int plug=0;
-    int hostplug=-1;
-//     if (m_snoopMode) {
-//         switch (i) {
-//         case 0:
-//             // do connection management: break connection
-//
-//             break;
-//         case 1:
-//             // do connection management: break connection
-//
-//             break;
-//         default:
-//             return 0;
-//         }
-//     } else {
-        switch (i) {
-        case 0:
-            m_p1394Service->freeIsoChannel(m_receiveProcessor->getChannel());
-            break;
-            
-        case 1:
-            m_p1394Service->freeIsoChannel(m_transmitProcessor->getChannel());
-            break;
-            
-        default:
-            return 0;
+    if (i<(int)m_receiveProcessors.size()) {
+        int n=i;
+        FreebobStreaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        
+        iso_channel=m_p1394Service->allocateIsoChannelCMP(
+            m_pConfigRom->getNodeId() | 0xffc0, 0, 
+            m_p1394Service->getLocalNodeId()| 0xffc0, -1);
+        
+        if (iso_channel<0) {
+            debugError("Could not allocate ISO channel for SP %d\n",i);
+            return false;
         }
-//     }
-
-    return 0;
+        
+        p->setChannel(iso_channel);
+        return true;
+        
+    } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
+        int n=i-m_receiveProcessors.size();
+        FreebobStreaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        
+        iso_channel=m_p1394Service->allocateIsoChannelCMP(
+            m_p1394Service->getLocalNodeId()| 0xffc0, -1,
+            m_pConfigRom->getNodeId() | 0xffc0, 0);
+        
+        if (iso_channel<0) {
+            debugError("Could not allocate ISO channel for SP %d\n",i);
+            return false;
+        }
+        
+        p->setChannel(iso_channel);
+        return true;
+    }
+    
+    debugError("SP index %d out of range!\n",i);
+    return false;
 }
-#endif
+
+bool
+AvDevice::stopStreamByIndex(int i) {
+   if (i<(int)m_receiveProcessors.size()) {
+        int n=i;
+        FreebobStreaming::StreamProcessor *p=m_receiveProcessors.at(n);
+
+        // deallocate ISO channel
+        if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
+            debugError("Could not deallocate iso channel for SP %d\n",i);
+            return false;
+        }
+        p->setChannel(-1);
+        
+        return true;
+        
+    } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
+        int n=i-m_receiveProcessors.size();
+        FreebobStreaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        
+        // deallocate ISO channel
+        if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
+            debugError("Could not deallocate iso channel for SP %d\n",i);
+            return false;
+        }
+        p->setChannel(-1);
+        
+        return true;
+    }
+    
+    debugError("SP index %d out of range!\n",i);
+    return false;
+}
 
 template <typename T> bool serializeVector( Glib::ustring path,
                                             Util::IOSerialize& ser,

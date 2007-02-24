@@ -51,7 +51,7 @@ MHAvDevice::MHAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int nodeId,
                     int verboseLevel )
     : m_configRom( configRom )
-    , m_1394Service( &ieee1394service )
+    , m_p1394Service( &ieee1394service )
     , m_model( NULL )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
@@ -191,55 +191,15 @@ MHAvDevice::getStreamProcessorByIndex(int i) {
     return NULL;
 }
 
-int
+bool
 MHAvDevice::startStreamByIndex(int i) {
 
-    // NOTE: this assumes that you have two streams
-    switch (i) {
-    case 0:
-        // TODO: do the stuff that is nescessary to make the device
-        // transmit a stream
-
-        // Set the streamprocessor channel to the one obtained by 
-        // the connection management
-//        m_receiveProcessor->setChannel(m_iso_recv_channel);
-
-        break;
-    case 1:
-        // TODO: do the stuff that is nescessary to make the device
-        // receive a stream
-
-        // Set the streamprocessor channel to the one obtained by 
-        // the connection management
-//        m_transmitProcessor->setChannel(m_iso_send_channel);
-
-        break;
-        
-    default: // Invalid stream index
-        return -1;
-    }
-
-    return 0;
+    return false;
 }
 
-int
+bool
 MHAvDevice::stopStreamByIndex(int i) {
-
-    // TODO: connection management: break connection
-    // cfr the start function
-
-    // NOTE: this assumes that you have two streams
-    switch (i) {
-    case 0:
-        break;
-    case 1:
-        break;
-        
-    default: // Invalid stream index
-        return -1;
-    }
-
-    return 0;
+    return false;
 }
 
 signed int MHAvDevice::getIsoRecvChannel(void) {

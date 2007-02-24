@@ -73,6 +73,13 @@ class AmdtpTransmitStreamProcessor
 {
 
 public:
+    /**
+     * Create a AMDTP transmit StreamProcessor
+     * @param port 1394 port
+     * @param framerate frame rate
+     * @param dimension number of substreams in the ISO stream 
+     *                  (midi-muxed is only one stream)
+     */
     AmdtpTransmitStreamProcessor(int port, int framerate, int dimension);
 
     virtual ~AmdtpTransmitStreamProcessor();
@@ -159,6 +166,13 @@ class AmdtpReceiveStreamProcessor
 {
 
 public:
+    /**
+     * Create a AMDTP receive StreamProcessor
+     * @param port 1394 port
+     * @param framerate frame rate
+     * @param dimension number of substreams in the ISO stream 
+     *                  (midi-muxed is only one stream)
+     */
 	AmdtpReceiveStreamProcessor(int port, int framerate, int dimension);
 
 	virtual ~AmdtpReceiveStreamProcessor();

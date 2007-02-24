@@ -58,6 +58,8 @@ public:
    /**
     * @brief get the node id of the local node
     *
+    * @note does not include the bus part (0xFFC0)
+    *
     * @return the node id of the local node
     * This value can change with every bus reset.
     */
@@ -113,6 +115,26 @@ public:
                         fb_nodeaddr_t addr,
                         fb_octlet_t data );
 
+    /**
+     * @brief send 64-bit compare-swap lock request and wait for response.
+     *
+     * swaps the content of \ref addr with \ref swap_value , but only if
+     * the content of \ref addr equals \ref compare_with
+     *
+     * @param nodeId target node ID
+     * @param addr address within target node address space
+     * @param compare_with value to compare \ref addr with
+     * @param swap_value new value to put in \ref addr
+     * @param result the value (originally) in \ref addr
+     *
+     * @return true if succesful, false otherwise
+     */
+    bool lockCompareSwap64(  fb_nodeid_t nodeId,
+                        fb_nodeaddr_t addr,
+                        fb_octlet_t  compare_value,
+                        fb_octlet_t  swap_value,
+                        fb_octlet_t* result );
+
     fb_quadlet_t* transactionBlock( fb_nodeid_t nodeId,
                                     fb_quadlet_t* buf,
                                     int len,
@@ -135,14 +157,14 @@ public:
      * @return true on success or false on failure
      **/
 
-    bool registerARMhandler( ARMHandler *h );
+    bool registerARMHandler( ARMHandler *h );
 
     /**
      * @brief unregister ARM range
      * @param h pointer to the handler to unregister
      * @return true if successful, false otherwise
      */
-    bool unregisterARMhandler( ARMHandler *h );
+    bool unregisterARMHandler( ARMHandler *h );
     
     nodeaddr_t findFreeARMBlock( nodeaddr_t start, size_t length, size_t step );
 

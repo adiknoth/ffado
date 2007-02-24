@@ -212,6 +212,24 @@ Ieee1394Service::write_octlet( fb_nodeid_t nodeId,
                   reinterpret_cast<fb_quadlet_t*>( &data ) );
 }
 
+bool 
+Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
+                        fb_nodeaddr_t addr,
+                        fb_octlet_t  compare_value,
+                        fb_octlet_t  swap_value,
+                        fb_octlet_t* result )
+{
+    #ifdef DEBUG
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016X\n",
+                nodeId, addr);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"  if (*(addr)==0x%016llX) *(addr)=0x%016llX\n",
+                compare_value, swap_value);
+    #endif
+
+    return raw1394_lock64(m_handle, nodeId, addr, RAW1394_EXTCODE_COMPARE_SWAP,
+                          swap_value, compare_value, result) == 0;
+}
+
 fb_quadlet_t*
 Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    fb_quadlet_t* buf,
@@ -327,7 +345,7 @@ Ieee1394Service::resetHandler( unsigned int generation )
     return true;
 }
 
-bool Ieee1394Service::registerARMhandler(ARMHandler *h) {
+bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Registering ARM handler (%p) for 0x%016llX, length %u\n",
         h, h->getStart(), h->getLength());
 
@@ -347,7 +365,7 @@ bool Ieee1394Service::registerARMhandler(ARMHandler *h) {
     return true;
 }
 
-bool Ieee1394Service::unregisterARMhandler( ARMHandler *h ) {
+bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler (%p) for 0x%016llX\n", 
         h, h->getStart());
     
@@ -406,7 +424,6 @@ nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, s
     }
     debugOutput(DEBUG_LEVEL_VERBOSE, " Could not find free block in %d tries\n",cnt);
     return 0xFFFFFFFFFFFFFFFFLLU;
-    
 }
 
 int 

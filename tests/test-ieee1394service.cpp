@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     
     printf(" adding (%p) as arm handler\n", test_arm);
     
-    if (!m_service->registerARMhandler(test_arm)) {
+    if (!m_service->registerARMHandler(test_arm)) {
         printf("  failed\n");
     }
     
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     printf(" adding (%p) as arm handler\n", test_arm2);
     
-    if (!m_service->registerARMhandler(test_arm2)) {
+    if (!m_service->registerARMHandler(test_arm2)) {
         printf("  failed\n");
     }
     

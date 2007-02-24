@@ -118,8 +118,8 @@ public:
     bool lock();
     bool unlock();
     
-    virtual int startStreamByIndex(int i);
-    virtual int stopStreamByIndex(int i);
+    bool startStreamByIndex(int i);
+    bool stopStreamByIndex(int i);
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
@@ -130,7 +130,7 @@ public:
   
 protected:
     std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_1394Service;
+    Ieee1394Service* m_p1394Service;
     
     signed int       m_motu_model;
     struct VendorModelEntry * m_model;

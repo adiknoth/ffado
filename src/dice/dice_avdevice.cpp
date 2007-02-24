@@ -190,7 +190,7 @@ DiceAvDevice::getStreamProcessorByIndex(int i) {
     return NULL;
 }
 
-int
+bool
 DiceAvDevice::startStreamByIndex(int i) {
 
     // NOTE: this assumes that you have two streams
@@ -215,13 +215,13 @@ DiceAvDevice::startStreamByIndex(int i) {
         break;
         
     default: // Invalid stream index
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-int
+bool
 DiceAvDevice::stopStreamByIndex(int i) {
 
     // TODO: connection management: break connection
@@ -235,10 +235,10 @@ DiceAvDevice::stopStreamByIndex(int i) {
         break;
         
     default: // Invalid stream index
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 signed int DiceAvDevice::getIsoRecvChannel(void) {

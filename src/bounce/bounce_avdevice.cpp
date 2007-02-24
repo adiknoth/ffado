@@ -243,8 +243,7 @@ BounceDevice::addPortsToProcessor(
                 // and how to handle this (pp: here)
                 i,
                 0,
-                FreebobStreaming::AmdtpPortInfo::E_MBLA,
-                0
+                FreebobStreaming::AmdtpPortInfo::E_MBLA
         );
 
         if (!p) {
@@ -330,7 +329,7 @@ BounceDevice::getStreamProcessorByIndex(int i) {
 	return 0;
 }
 
-int
+bool
 BounceDevice::startStreamByIndex(int i) {
 // 	int iso_channel=0;
 // 	int plug=0;
@@ -375,14 +374,14 @@ BounceDevice::startStreamByIndex(int i) {
         }
  		break;
  	default:
- 		return -1;
+ 		return false;
  	}
 
-	return 0;
+	return true;
 
 }
 
-int
+bool
 BounceDevice::stopStreamByIndex(int i) {
 	// do connection management: break connection
 
@@ -420,7 +419,7 @@ BounceDevice::stopStreamByIndex(int i) {
 // 		return 0;
 // 	}
 
-	return 0;
+	return false;
 }
 
 } // namespace

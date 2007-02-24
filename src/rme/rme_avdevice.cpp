@@ -49,7 +49,7 @@ RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int nodeId,
                     int verboseLevel )
     : m_configRom( configRom )
-    , m_1394Service( &ieee1394service )
+    , m_p1394Service( &ieee1394service )
     , m_model( NULL )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
@@ -71,12 +71,12 @@ RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
 RmeDevice::~RmeDevice()
 {
     // Free ieee1394 bus resources if they have been allocated
-    if (m_1394Service != NULL) {
-        if(m_1394Service->freeIsoChannel(m_iso_recv_channel)) {
+    if (m_p1394Service != NULL) {
+        if(m_p1394Service->freeIsoChannel(m_iso_recv_channel)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
             
         }
-        if(m_1394Service->freeIsoChannel(m_iso_send_channel)) {
+        if(m_p1394Service->freeIsoChannel(m_iso_send_channel)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
             
         }
@@ -201,14 +201,14 @@ RmeDevice::getStreamProcessorByIndex(int i) {
     return NULL;
 }
 
-int
+bool
 RmeDevice::startStreamByIndex(int i) {
-    return -1;
+    return false;
 }
 
-int
+bool
 RmeDevice::stopStreamByIndex(int i) {
-    return -1;
+    return false;
 
 }
 

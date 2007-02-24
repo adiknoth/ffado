@@ -56,12 +56,9 @@ public:
 		E_Midi, ///< midi
 		E_SPDIF,///< IEC.... format
 	};
-	enum E_Types {
 
-	};
-
-	AmdtpPortInfo(std::string name, int position, int location, enum E_Formats format, int type)
-	  : m_name(name), m_position(position), m_location(location), m_format(format), m_type(type)
+	AmdtpPortInfo(std::string name, int position, int location, enum E_Formats format)
+	  : m_name(name), m_position(position), m_location(location), m_format(format)
 	{};
 	virtual ~AmdtpPortInfo() {};
 
@@ -70,7 +67,6 @@ public:
 	int getLocation()     {return m_location;};
 	int getPosition()     {return m_position;};
 	enum E_Formats getFormat()       {return m_format;};
-	int getType()         {return m_type;};
 
 protected:
     std::string m_name;
@@ -78,7 +74,6 @@ protected:
     int m_position;
     int m_location;
     enum E_Formats m_format;
-    int m_type;
 
 };
 

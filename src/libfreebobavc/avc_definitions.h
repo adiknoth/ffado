@@ -89,6 +89,10 @@ enum ESamplingFrequency {
     eSF_96000Hz = 0x05,
     eSF_176400Hz = 0x06,
     eSF_192000Hz = 0x07,
+    eSF_AnyLow   = 0x0B,
+    eSF_AnyMid   = 0x0C,
+    eSF_AnyHigh  = 0x0D,
+    eSF_None     = 0x0E,
     eSF_DontCare = 0x0F,
 };
 

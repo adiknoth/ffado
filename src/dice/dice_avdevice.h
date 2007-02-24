@@ -71,8 +71,8 @@ public:
     bool lock();
     bool unlock();
     
-    int startStreamByIndex(int i);
-    int stopStreamByIndex(int i);
+    bool startStreamByIndex(int i);
+    bool stopStreamByIndex(int i);
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);

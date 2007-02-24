@@ -225,7 +225,10 @@ int freebob_streaming_start(freebob_device_t *dev) {
         for(j=0; j<device->getStreamCount();j++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Starting stream %d of device %d\n",j,i);
             // start the stream
-            device->startStreamByIndex(j);
+            if (!device->startStreamByIndex(j)) {
+                debugWarning("Could not start stream %d of device %d\n",j,i);
+                continue;
+            }
         }
     }
 
@@ -254,7 +257,11 @@ int freebob_streaming_stop(freebob_device_t *dev) {
             for(j=0; j<device->getStreamCount();j++) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %d\n",j,i);
                 // stop the stream
-                device->stopStreamByIndex(j);
+                // start the stream
+                if (!device->stopStreamByIndex(j)) {
+                    debugWarning("Could not stop stream %d of device %d\n",j,i);
+                    continue;
+                }
             }
         }
 

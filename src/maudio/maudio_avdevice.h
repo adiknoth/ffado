@@ -62,10 +62,9 @@ public:
     virtual bool prepare();
     bool lock();
     bool unlock();
-    
 
-    virtual int startStreamByIndex(int i);
-    virtual int stopStreamByIndex(int i);
+    bool startStreamByIndex(int i);
+    bool stopStreamByIndex(int i);
 
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );

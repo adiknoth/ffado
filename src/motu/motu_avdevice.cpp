@@ -56,7 +56,7 @@ MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int nodeId,
                     int verboseLevel )
     : m_configRom( configRom )
-    , m_1394Service( &ieee1394service )
+    , m_p1394Service( &ieee1394service )
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
@@ -78,12 +78,12 @@ MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
 MotuDevice::~MotuDevice()
 {
     // Free ieee1394 bus resources if they have been allocated
-    if (m_1394Service != NULL) {
-        if(m_1394Service->freeIsoChannel(m_iso_recv_channel)) {
+    if (m_p1394Service != NULL) {
+        if(m_p1394Service->freeIsoChannel(m_iso_recv_channel)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
             
         }
-        if(m_1394Service->freeIsoChannel(m_iso_send_channel)) {
+        if(m_p1394Service->freeIsoChannel(m_iso_send_channel)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
             
         }
@@ -363,10 +363,10 @@ MotuDevice::prepare() {
 
 	// Assign iso channels if not already done
 	if (m_iso_recv_channel < 0)
-		m_iso_recv_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth);
+		m_iso_recv_channel = m_p1394Service->allocateIsoChannelGeneric(m_bandwidth);
 		
 	if (m_iso_send_channel < 0)
-		m_iso_send_channel = m_1394Service->allocateIsoChannelGeneric(m_bandwidth);
+		m_iso_send_channel = m_p1394Service->allocateIsoChannelGeneric(m_bandwidth);
 
 	debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
 		m_iso_recv_channel, m_iso_send_channel);
@@ -374,16 +374,16 @@ MotuDevice::prepare() {
 	if (m_iso_recv_channel<0 || m_iso_send_channel<0) {
 		// be nice and deallocate
 		if (m_iso_recv_channel >= 0)
-			m_1394Service->freeIsoChannel(m_iso_recv_channel);
+			m_p1394Service->freeIsoChannel(m_iso_recv_channel);
 		if (m_iso_send_channel >= 0)
-			m_1394Service->freeIsoChannel(m_iso_send_channel);
+			m_p1394Service->freeIsoChannel(m_iso_send_channel);
 		
 		debugFatal("Could not allocate iso channels!\n");
 		return false;
 	}
 
 	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
-		m_1394Service->getPort(), samp_freq, event_size_in);
+		m_p1394Service->getPort(), samp_freq, event_size_in);
 
 	// The first thing is to initialize the processor.  This creates the
 	// data structures.
@@ -447,7 +447,7 @@ MotuDevice::prepare() {
 
 	// Do the same for the transmit processor
 	m_transmitProcessor=new FreebobStreaming::MotuTransmitStreamProcessor(
-		m_1394Service->getPort(), getSamplingFrequency(), event_size_out);
+		m_p1394Service->getPort(), getSamplingFrequency(), event_size_out);
 
 	m_transmitProcessor->setVerboseLevel(getDebugLevel());
 	
@@ -526,7 +526,7 @@ MotuDevice::getStreamProcessorByIndex(int i) {
 	return 0;
 }
 
-int
+bool
 MotuDevice::startStreamByIndex(int i) {
 
 quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
@@ -569,13 +569,13 @@ quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
 		break;
 		
 	default: // Invalid stream index
-		return -1;
+		return false;
 	}
 
-	return 0;
+	return true;
 }
 
-int
+bool
 MotuDevice::stopStreamByIndex(int i) {
 
 quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
@@ -603,10 +603,10 @@ quadlet_t isoctrl = ReadRegister(MOTUFW_REG_ISOCTRL);
 		break;
 		
 	default: // Invalid stream index
-		return -1;
+		return false;
 	}
 
-	return 0;
+	return true;
 }
 
 signed int MotuDevice::getIsoRecvChannel(void) {
@@ -860,11 +860,11 @@ unsigned int MotuDevice::ReadRegister(unsigned int reg) {
  */
 
 quadlet_t quadlet;
-assert(m_1394Service);
+assert(m_p1394Service);
 	
   quadlet = 0;
   // Note: 1394Service::read() expects a physical ID, not the node id
-  if (m_1394Service->read(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
+  if (m_p1394Service->read(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
     debugError("Error doing motu read from register 0x%06x\n",reg);
   }
 
@@ -880,7 +880,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
   data = htonl(data);
 
   // Note: 1394Service::write() expects a physical ID, not the node id
-  if (m_1394Service->write(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
+  if (m_p1394Service->write(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
     err = 1;
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }

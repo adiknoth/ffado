@@ -31,7 +31,7 @@ namespace FreebobStreaming {
 	class StreamProcessor;
 }
 /*!
-\brief Interface that is to be implemented to support a device.
+@brief Interface that is to be implemented to support a device.
 
  This interface should be used to implement freebob support 
  for a specific device.
@@ -47,14 +47,14 @@ public:
 	/**
 	 * @brief This is called by the DeviceManager to discover & configure the device
 	 * 
-	 * @return true if the device was discovered successfully
+	 * @return true if the device was discovered successfuly
 	 */
 	virtual bool discover() = 0;
 	
 	/**
 	 * @brief Set the samping frequency
 	 * @param samplingFrequency 
-	 * @return true if successfull
+	 * @return true if successful
 	 */
 	virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency ) = 0;
 	/**
@@ -77,7 +77,7 @@ public:
      * which won't work. This ID will allow you to construct
      * the port names as 'dev1_OutputLeft' and 'dev2_OutputLeft'
      *
-     * \note Currently this is a simple integer that is equal to
+     * @note Currently this is a simple integer that is equal to
      *       the position of the device in the devicemanager's 
      *       device list. Therefore it is dependant on the order
      *       in which the devices are detected. The side-effect
@@ -89,7 +89,7 @@ public:
      *       bus & time independant. 
      *
      * @param id 
-     * @return true if successfull
+     * @return true if successful
      */
     virtual bool setId(unsigned int id) = 0;
 	
@@ -101,7 +101,7 @@ public:
 	 * untill it is removed
 	 *
 	 * @param deviceNode 
-	 * @return true if successfull
+	 * @return true if successful, false if not
 	 */
 	virtual bool addXmlDescription( xmlNodePtr deviceNode ) = 0;
 	
@@ -122,6 +122,7 @@ public:
 	 * It should implement the mechanisms provided by the device to 
 	 * make sure that no other controller claims control of the device.
 	 *
+	 * @return true if successful, false if not
 	 */
 	virtual bool lock() = 0;
 	
@@ -134,6 +135,7 @@ public:
 	 * It should implement the mechanisms provided by the device to 
 	 * give up exclusive control of the device.
 	 *
+	 * @return true if successful, false if not
 	 */
 	virtual bool unlock() = 0;
 
@@ -149,6 +151,7 @@ public:
 	 * the streaming layer will not change the device's configuration
 	 * after calling this function.
 	 *
+	 * @return true if successful, false if not
 	 */
 	virtual bool prepare() = 0;
 	
@@ -162,26 +165,26 @@ public:
 	 * - 2 sync streams (1 xmit/1 recv), which are an optional sync source
 	 *   for the device.
 	 *
-	 * \note you have to have a StreamProcessor for every stream. I.e.
+	 * @note you have to have a StreamProcessor for every stream. I.e.
 	 *       getStreamProcessorByIndex(i) should return a valid StreamProcessor
 	 *       for i=0 to i=getStreamCount()-1
 	 *
-	 * @return 
+	 * @return number of streams available (both transmit and receive)
 	 */
 	virtual int getStreamCount() = 0;
 	
 	/** 
 	 * @brief Returns the StreamProcessor object for the stream with index i
 	 *
-	 * \note a streamprocessor returned by getStreamProcessorByIndex(i)
+	 * @note a streamprocessor returned by getStreamProcessorByIndex(i)
 	 *       cannot be the same object as one returned by
 	 *       getStreamProcessorByIndex(j) if i isn't equal to j
-	 * \note you cannot have two streamprocessors handling the same ISO
+	 * @note you cannot have two streamprocessors handling the same ISO
 	 *       channel (on the same port)
 	 *
-	 * \param i : Stream index
-	 * \pre \ref i smaller than getStreamCount()
-	 * @return a StreamProcessor object if successfull, NULL otherwise
+	 * @param i : Stream index
+	 * @pre @ref i smaller than getStreamCount()
+	 * @return a StreamProcessor object if successful, NULL otherwise
 	 */
 	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i) = 0;
 	
@@ -196,20 +199,20 @@ public:
 	 * Channel allocation should be done using the allocation functions provided by the
 	 * Ieee1394Service object that is passed in the constructor.
 	 *
-	 * \param i : Stream index
-	 * \pre \ref i smaller than getStreamCount()
-	 * \return the ISO channel number assigned to this stream
+	 * @param i : Stream index
+	 * @pre @ref i smaller than getStreamCount()
+	 * @return true if successful, false if not
 	 */
-	virtual int startStreamByIndex(int i) = 0;
+	virtual bool startStreamByIndex(int i) = 0;
 	
 	/** 
-	 * @brief stops the stream with index \ref i
+	 * @brief stops the stream with index @ref i
 	 *
-	 * \param i : Stream index
-	 * \pre \ref i smaller than getStreamCount()
-	 * \return 0 on success, -1 else
+	 * @param i : Stream index
+	 * @pre @ref i smaller than getStreamCount()
+	 * @return true if successful, false if not
 	 */
-	virtual int stopStreamByIndex(int i) = 0;
+	virtual bool stopStreamByIndex(int i) = 0;
 
 };
 

@@ -75,8 +75,8 @@ public:
     bool lock();
     bool unlock();
 
-    virtual int startStreamByIndex(int i);
-    virtual int stopStreamByIndex(int i);
+    bool startStreamByIndex(int i);
+    bool stopStreamByIndex(int i);
 
     virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual void showDevice() const;
@@ -181,13 +181,12 @@ protected:
     struct VendorModelEntry*  m_model;
     int                       m_nodeId;
     unsigned int              m_id;
+    bool                      m_snoopMode;
 
     // streaming stuff
-    FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
-    int m_receiveProcessorBandwidth;
-
-    FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
-    int m_transmitProcessorBandwidth;
+    typedef std::vector< FreebobStreaming::StreamProcessor * > StreamProcessorVector;
+    StreamProcessorVector m_receiveProcessors;
+    StreamProcessorVector m_transmitProcessors;
 
     DECLARE_DEBUG_MODULE;
 };
