@@ -48,7 +48,7 @@ Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
     , m_filepath( fileName )
 {
     try {
-        m_doc.create_root_node( "bebob_cache" );
+        m_doc.create_root_node( "freebob_cache" );
     } catch ( const exception& ex ) {
         cout << "Exception caught: " << ex.what();
     }
@@ -177,7 +177,11 @@ Util::XMLDeserialize::read( std::string strMemberName,
                             long long& value )
 
 {
-    xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
+    xmlpp::Document *pDoc=m_parser.get_document();
+    if(!pDoc) {
+        return false;
+    }
+    xmlpp::Node* pNode = pDoc->get_root_node();
 
     xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
@@ -202,8 +206,12 @@ bool
 Util::XMLDeserialize::read( std::string strMemberName,
                             Glib::ustring& str )
 {
-    xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
-
+    xmlpp::Document *pDoc=m_parser.get_document();
+    if(!pDoc) {
+        return false;
+    }
+    xmlpp::Node* pNode = pDoc->get_root_node();
+    
     xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
           it != nodeSet.end();
@@ -223,8 +231,11 @@ Util::XMLDeserialize::read( std::string strMemberName,
 bool
 Util::XMLDeserialize::isExisting( std::string strMemberName )
 {
-
-    xmlpp::Node* pNode = m_parser.get_document()->get_root_node();
+    xmlpp::Document *pDoc=m_parser.get_document();
+    if(!pDoc) {
+        return false;
+    }
+    xmlpp::Node* pNode = pDoc->get_root_node();
     xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     return nodeSet.size() > 0;
 }

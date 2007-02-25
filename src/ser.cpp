@@ -3,14 +3,20 @@
 
 #include <iostream>
 
-const char FileName[] = "bebob.xml";
+const char FileName[] = "serialize-test.xml";
 
 static bool
 serialize( const char* pFileName )
 {
     DeviceManager devMgr;
-    devMgr.initialize( 0 );
-    devMgr.discover( 0 );
+    if (!devMgr.initialize( 0 )) {
+        std::cerr << "could not init DeviceManager" << std::endl;
+        return false;
+    }
+    if (!devMgr.discover( 0 )) {
+        std::cerr << "could not discover devices" << std::endl;
+        return false;
+    }
     return devMgr.saveCache( pFileName );
 }
 
@@ -18,7 +24,10 @@ static bool
 deserialize( const char* pFileName )
 {
     DeviceManager devMgr;
-    devMgr.initialize( 0 );
+    if (!devMgr.initialize( 0 )) {
+        std::cerr << "could not init DeviceManager" << std::endl;
+        return false;
+    }
     return devMgr.loadCache( pFileName );
 }
 
