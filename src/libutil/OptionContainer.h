@@ -27,6 +27,7 @@
 #define __FREEBOB_OPTIONCONTAINER__
 
 #include "../debugmodule/debugmodule.h"
+#include "libutil/serialize.h"
 
 #include <vector>
 #include <string>
@@ -39,12 +40,12 @@ protected:
     class Option {
     public:
         enum EType {
-            EInvalid,
-            EString,
-            EBool,
-            EDouble,
-            EInt,
-            EUInt,
+            EInvalid = 0,
+            EString = 1,
+            EBool = 2,
+            EDouble = 3,
+            EInt = 4,
+            EUInt = 5,
         };
     
     public:
@@ -72,7 +73,11 @@ protected:
         double getDouble() {return m_doubleValue;};
         int64_t getInt() {return m_intValue;};
         uint64_t getUInt() {return m_uintValue;};
-        
+    
+    public: // serialization support
+        bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+        static Option deserialize( Glib::ustring basePath,
+                                    Util::IODeserialize& deser);
     private:
         std::string m_Name;
         
@@ -147,7 +152,14 @@ public: // provide an iterator interface
     {
         return(m_Options.end());
     }
-    
+
+protected: // serialization support
+    bool serializeOptions( Glib::ustring basePath, 
+                           Util::IOSerialize& ser) const;
+    static bool deserializeOptions( Glib::ustring basePath,
+                                    Util::IODeserialize& deser,
+                                    OptionContainer& container);
+
 private:
     int findOption(Option o);
     int findOption(std::string name);

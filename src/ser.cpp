@@ -6,10 +6,10 @@
 const char FileName[] = "serialize-test.xml";
 
 static bool
-serialize( const char* pFileName )
+serialize( const char* pFileName, int port )
 {
     DeviceManager devMgr;
-    if (!devMgr.initialize( 0 )) {
+    if (!devMgr.initialize( port )) {
         std::cerr << "could not init DeviceManager" << std::endl;
         return false;
     }
@@ -34,7 +34,12 @@ deserialize( const char* pFileName )
 int
 main(  int argc,  char** argv )
 {
-    if ( !serialize( FileName ) ) {
+    int port=0;
+    if (argc==2) {
+        port=atoi(argv[1]);
+    }
+    
+    if ( !serialize( FileName, port ) ) {
         std::cerr << "serializing failed" << std::endl;
         return -1;
     }

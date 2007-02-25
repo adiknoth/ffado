@@ -1371,6 +1371,8 @@ AvDevice::serialize( Glib::ustring basePath,
         }
         i++;
     }
+    
+    result &= serializeOptions( basePath + "Options", ser );
 
 //     result &= ser.write( basePath + "m_id", id );
 
@@ -1415,8 +1417,9 @@ AvDevice::deserialize( Glib::ustring basePath,
                 pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
             }
         }
+        
+        result &= deserializeOptions( basePath + "Options", deser, *pDev );
 
-//         result &= deser.read( basePath + "m_id", pDev->m_id );
     }
 
     return pDev;
