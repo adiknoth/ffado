@@ -22,8 +22,8 @@
 #define MAUDIODEVICE_H
 
 #include "debugmodule/debugmodule.h"
-#include "libfreebobavc/avc_definitions.h"
-#include "libfreebobavc/avc_extended_cmd_generic.h"
+#include "libavc/avc_definitions.h"
+#include "libavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
 
 #include "bebob/bebob_avdevice.h"

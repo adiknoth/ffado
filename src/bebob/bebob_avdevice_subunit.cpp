@@ -24,9 +24,9 @@
 #include "bebob/bebob_avplug.h"
 #include "libieee1394/configrom.h"
 
-#include "libfreebobavc/avc_plug_info.h"
-#include "libfreebobavc/avc_extended_stream_format.h"
-#include "libfreebobavc/avc_serialize.h"
+#include "libavc/avc_plug_info.h"
+#include "libavc/avc_extended_stream_format.h"
+#include "libavc/avc_serialize.h"
 
 #include <sstream>
 

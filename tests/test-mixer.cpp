@@ -18,8 +18,8 @@
 * MA 02111-1307 USA.
 */
 
-#include "libfreebobavc/avc_function_block.h"
-#include "libfreebobavc/avc_serialize.h"
+#include "libavc/avc_function_block.h"
+#include "libavc/avc_serialize.h"
 
 #include "libieee1394/ieee1394service.h"
 

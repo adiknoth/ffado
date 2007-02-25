@@ -23,7 +23,7 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libfreebobavc/avc_definitions.h"
+#include "libavc/avc_definitions.h"
 
 #include "debugmodule/debugmodule.h"
 

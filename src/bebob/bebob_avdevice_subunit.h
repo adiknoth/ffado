@@ -24,9 +24,9 @@
 #include "bebob/bebob_functionblock.h"
 
 #include "debugmodule/debugmodule.h"
-#include "libfreebobavc/avc_extended_subunit_info.h"
-#include "libfreebobavc/avc_definitions.h"
-#include "libfreebobavc/avc_generic.h"
+#include "libavc/avc_extended_subunit_info.h"
+#include "libavc/avc_definitions.h"
+#include "libavc/avc_generic.h"
 
 #include <vector>
 

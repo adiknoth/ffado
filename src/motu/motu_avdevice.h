@@ -25,7 +25,7 @@
 #include "iavdevice.h"
 
 #include "debugmodule/debugmodule.h"
-#include "libfreebobavc/avc_definitions.h"
+#include "libavc/avc_definitions.h"
 #include "libfreebob/xmlparser.h"
 
 #include "libstreaming/MotuStreamProcessor.h"

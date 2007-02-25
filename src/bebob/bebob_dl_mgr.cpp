@@ -24,7 +24,7 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libfreebobavc/avc_serialize.h"
+#include "libavc/avc_serialize.h"
 
 #include <netinet/in.h>
 

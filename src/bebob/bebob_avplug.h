@@ -21,12 +21,12 @@
 #ifndef BEBOB_AVPLUG_H
 #define BEBOB_AVPLUG_H
 
-#include "libfreebobavc/avc_signal_source.h"
-#include "libfreebobavc/avc_extended_stream_format.h"
-#include "libfreebobavc/avc_extended_plug_info.h"
-#include "libfreebobavc/avc_extended_cmd_generic.h"
-#include "libfreebobavc/avc_definitions.h"
-#include "libfreebobavc/avc_generic.h"
+#include "libavc/avc_signal_source.h"
+#include "libavc/avc_extended_stream_format.h"
+#include "libavc/avc_extended_plug_info.h"
+#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/avc_definitions.h"
+#include "libavc/avc_generic.h"
 #include "libfreebob/xmlparser.h"
 
 #include "libutil/serialize.h"

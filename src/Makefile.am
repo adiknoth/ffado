@@ -40,12 +40,12 @@ noinst_HEADERS = \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
-	libfreebobavc/avc_connect.h \
-	libfreebobavc/avc_definitions.h libfreebobavc/avc_extended_cmd_generic.h \
-	libfreebobavc/avc_extended_plug_info.h libfreebobavc/avc_extended_stream_format.h \
-	libfreebobavc/avc_extended_subunit_info.h libfreebobavc/avc_function_block.h libfreebobavc/avc_generic.h \
-	libfreebobavc/avc_plug_info.h libfreebobavc/avc_serialize.h libfreebobavc/avc_signal_source.h \
-	libfreebobavc/avc_subunit_info.h libfreebobavc/avc_unit_info.h \
+	libavc/avc_connect.h \
+	libavc/avc_definitions.h libavc/avc_extended_cmd_generic.h \
+	libavc/avc_extended_plug_info.h libavc/avc_extended_stream_format.h \
+	libavc/avc_extended_subunit_info.h libavc/avc_function_block.h libavc/avc_generic.h \
+	libavc/avc_plug_info.h libavc/avc_serialize.h libavc/avc_signal_source.h \
+	libavc/avc_subunit_info.h libavc/avc_unit_info.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
 	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
 	libstreaming/IsoHandlerManager.h libstreaming/IsoStream.h libstreaming/MotuPort.h \
@@ -65,19 +65,19 @@ libfreebob_la_SOURCES = \
         freebob_streaming.cpp \
         xmlparser.c \
         debugmodule/debugmodule.cpp \
-        libfreebobavc/avc_connect.cpp \
-        libfreebobavc/avc_definitions.cpp \
-        libfreebobavc/avc_extended_cmd_generic.cpp \
-        libfreebobavc/avc_extended_plug_info.cpp \
-        libfreebobavc/avc_extended_stream_format.cpp \
-        libfreebobavc/avc_extended_subunit_info.cpp \
-        libfreebobavc/avc_function_block.cpp \
-        libfreebobavc/avc_generic.cpp \
-        libfreebobavc/avc_plug_info.cpp \
-        libfreebobavc/avc_serialize.cpp \
-        libfreebobavc/avc_signal_source.cpp \
-        libfreebobavc/avc_subunit_info.cpp \
-        libfreebobavc/avc_unit_info.cpp \
+        libavc/avc_connect.cpp \
+        libavc/avc_definitions.cpp \
+        libavc/avc_extended_cmd_generic.cpp \
+        libavc/avc_extended_plug_info.cpp \
+        libavc/avc_extended_stream_format.cpp \
+        libavc/avc_extended_subunit_info.cpp \
+        libavc/avc_function_block.cpp \
+        libavc/avc_generic.cpp \
+        libavc/avc_plug_info.cpp \
+        libavc/avc_serialize.cpp \
+        libavc/avc_signal_source.cpp \
+        libavc/avc_subunit_info.cpp \
+        libavc/avc_unit_info.cpp \
         libieee1394/ARMHandler.cpp \
         libieee1394/configrom.cpp \
         libieee1394/csr1212.c \

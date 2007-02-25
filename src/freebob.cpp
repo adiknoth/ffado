@@ -29,7 +29,7 @@
 #include "devicemanager.h"
 #include "iavdevice.h"
 
-#include "libfreebobavc/avc_generic.h"
+#include "libavc/avc_generic.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -22,7 +22,7 @@
 
 #include "bebob/bebob_avplug.h"
 
-#include "libfreebobavc/avc_definitions.h"
+#include "libavc/avc_definitions.h"
 #include "debugmodule/debugmodule.h"
 
 namespace BeBoB {
