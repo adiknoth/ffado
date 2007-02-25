@@ -136,7 +136,6 @@ protected:
     struct VendorModelEntry * m_model;
     int              m_nodeId;
     int              m_verboseLevel;
-    signed int m_id;
     signed int m_iso_recv_channel, m_iso_send_channel;
     signed int m_bandwidth;
     

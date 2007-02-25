@@ -39,6 +39,7 @@
 #include "iavdevice.h"
 
 #include <sstream>
+#include <vector>
 
 class ConfigRom;
 class Ieee1394Service;
@@ -180,8 +181,6 @@ protected:
     SyncInfo*                 m_activeSyncInfo;
     struct VendorModelEntry*  m_model;
     int                       m_nodeId;
-    unsigned int              m_id;
-    bool                      m_snoopMode;
 
     // streaming stuff
     typedef std::vector< FreebobStreaming::StreamProcessor * > StreamProcessorVector;

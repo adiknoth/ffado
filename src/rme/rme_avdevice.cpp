@@ -32,6 +32,9 @@
 #include <assert.h>
 #include <netinet/in.h>
 
+#include <iostream>
+#include <sstream>
+
 #include <libraw1394/csr.h>
 
 namespace Rme {
@@ -53,12 +56,6 @@ RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_model( NULL )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
-    , m_id(0)
-    , m_iso_recv_channel ( -1 )
-    , m_iso_send_channel ( -1 )
-    , m_bandwidth ( -1 )
-//    , m_receiveProcessor ( 0 )
-//    , m_transmitProcessor ( 0 )
     
 {
     setDebugLevel( verboseLevel );
@@ -70,17 +67,7 @@ RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
 
 RmeDevice::~RmeDevice()
 {
-    // Free ieee1394 bus resources if they have been allocated
-    if (m_p1394Service != NULL) {
-        if(m_p1394Service->freeIsoChannel(m_iso_recv_channel)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
-            
-        }
-        if(m_p1394Service->freeIsoChannel(m_iso_send_channel)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
-            
-        }
-    }
+
 }
 
 ConfigRom&
@@ -157,9 +144,14 @@ RmeDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 }
 
 bool RmeDevice::setId( unsigned int id) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
-	m_id=id;
-	return true;
+    // FIXME: decent ID system nescessary
+    std::ostringstream idstr;
+
+    idstr << "dev" << id;
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
+    
+    return setOption("id",idstr.str());
 }
 
 bool
@@ -210,18 +202,6 @@ bool
 RmeDevice::stopStreamByIndex(int i) {
     return false;
 
-}
-
-signed int RmeDevice::getIsoRecvChannel(void) {
-	return m_iso_recv_channel;
-}
-
-signed int RmeDevice::getIsoSendChannel(void) {
-	return m_iso_send_channel;
-}
-
-signed int RmeDevice::getEventSize(unsigned int dir) {
-    return 0;
 }
 
 }

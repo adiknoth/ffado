@@ -18,6 +18,7 @@
  * MA 02111-1307 USA.
  */
 #include "maudio/maudio_avdevice.h"
+#include "bebob/bebob_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -40,19 +41,12 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int iNodeId,
                     int iVerboseLevel )
-    :  m_pConfigRom( configRom )
-    , m_p1394Service( &ieee1394service )
-    , m_iNodeId( iNodeId )
-    , m_iVerboseLevel( iVerboseLevel )
-    , m_pFilename( 0 )
-    , m_id(0)
-    , m_receiveProcessor ( 0 )
-    , m_receiveProcessorBandwidth ( -1 )
-    , m_transmitProcessor ( 0 )
-    , m_transmitProcessorBandwidth ( -1 )
+    : BeBoB::AvDevice( configRom,
+                    ieee1394service,
+                    iNodeId,
+                    iVerboseLevel )
+    , m_model ( NULL )
 {
-    setDebugLevel( iVerboseLevel );
-    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
                  iNodeId );
 }
@@ -61,27 +55,13 @@ AvDevice::~AvDevice()
 {
 }
 
-ConfigRom&
-AvDevice::getConfigRom() const
-{
-    return *m_pConfigRom;
-}
-
-struct VendorModelEntry {
-    unsigned int m_iVendorId;
-    unsigned int m_iModelId;
-    const char*  m_pFilename;
-};
-
 static VendorModelEntry supportedDeviceList[] =
 {
-    //{0x0007f5, 0x00010048, "refdesign.xml"},  // BridgeCo, RD Audio1
+    //{0x0007f5, 0x00010048, "BridgeCo", "RD Audio1", "refdesign.xml"},
 
-    {0x000d6c, 0x00010046, "fw410.xml"},       // M-Audio, FW 410
-    {0x000d6c, 0x00010058, "fw410.xml"},       // M-Audio, FW 410; Version 5.10.0.5036
-    {0x000d6c, 0x00010060, "fwap.xml"},        // M-Audio, FW Audiophile (to be verified);
-
-    
+    {0x000d6c, 0x00010046, "M-Audio", "FW 410", "fw410.xml"},
+    {0x000d6c, 0x00010058, "M-Audio", "FW 410", "fw410.xml"},       // Version 5.10.0.5036
+    {0x000d6c, 0x00010060, "M-Audio", "FW Audiophile", "fwap.xml"},
 };
 
 bool
@@ -94,35 +74,40 @@ AvDevice::probe( ConfigRom& configRom )
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
-        if ( ( supportedDeviceList[i].m_iVendorId == iVendorId )
-             && ( supportedDeviceList[i].m_iModelId == iModelId ) )
+        if ( ( supportedDeviceList[i].vendor_id == iVendorId )
+             && ( supportedDeviceList[i].model_id == iModelId ) )
         {
             return true;
         }
     }
-
     return false;
 }
 
 bool
 AvDevice::discover()
 {
-    unsigned int iVendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int iModelId = m_pConfigRom->getModelId();
+    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+    unsigned int modelId = m_pConfigRom->getModelId();
+
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
-        if ( ( supportedDeviceList[i].m_iVendorId == iVendorId )
-             && ( supportedDeviceList[i].m_iModelId == iModelId ) )
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].model_id == modelId ) 
+           )
         {
-            m_pFilename = supportedDeviceList[i].m_pFilename;
+            m_model = &(supportedDeviceList[i]);
             break;
         }
     }
 
-    return m_pFilename != 0;    
+    if (m_model != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model->vendor_name, m_model->model_name);
+    } else return false;
     
+    return true;
 }
 
 bool
@@ -136,19 +121,6 @@ int AvDevice::getSamplingFrequency( ) {
     return 44100;
 }
 
-bool
-AvDevice::lock() {
-
-    return true;
-}
-
-
-bool
-AvDevice::unlock() {
-
-    return true;
-}
-
 void
 AvDevice::showDevice() const
 {
@@ -158,7 +130,7 @@ bool
 AvDevice::addXmlDescription( xmlNodePtr pDeviceNode )
 {
     char* pFilename;
-    if ( asprintf( &pFilename, "%s/libfreebob/maudio/%s", DATADIR, m_pFilename ) < 0 ) {
+    if ( asprintf( &pFilename, "%s/libfreebob/maudio/%s", DATADIR, m_model->filename ) < 0 ) {
         debugError( "addXmlDescription: Could not create filename string\n" );
         return false;
     }
@@ -212,7 +184,7 @@ AvDevice::addXmlDescription( xmlNodePtr pDeviceNode )
                         for ( xmlNodePtr pSubNode = pNode->xmlChildrenNode; pSubNode; pSubNode = pSubNode->next ) {
                             if ( ( !xmlStrcmp( pSubNode->name,  ( const xmlChar * ) "Node" ) ) ) {
                                 char* result;
-                                asprintf( &result, "%d", m_iNodeId );
+                                asprintf( &result, "%d", m_nodeId );
                                 xmlNodeSetContent( pSubNode, BAD_CAST result );
                                 free( result );
                             }
@@ -243,206 +215,10 @@ AvDevice::addXmlDescription( xmlNodePtr pDeviceNode )
     return true;
 }
 
-bool AvDevice::setId( unsigned int id)
-{
-    // FIXME: decent ID system nescessary
-    m_id=id;
-    return true;
-}
-
 bool
 AvDevice::prepare() {
-/*    ///////////
-    // get plugs
 
-    AvPlug* inputplug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
-    if ( !inputplug ) {
-        debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
-        return false;
-    }
-    AvPlug* outputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output, 0 );
-    if ( !inputplug ) {
-        debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
-        return false;
-    }
-
-    int samplerate=outputPlug->getSampleRate();
-    m_receiveProcessor=new FreebobStreaming::AmdtpReceiveStreamProcessor(
-                             m_p1394Service->getPort(),
-                             samplerate,
-                             outputPlug->getNrOfChannels());
-
-    if(!m_receiveProcessor->init()) {
-        debugFatal("Could not initialize receive processor!\n");
-        return false;
-    }
-
-    if (!addPlugToProcessor(*outputPlug,m_receiveProcessor, 
-        FreebobStreaming::AmdtpAudioPort::E_Capture)) {
-        debugFatal("Could not add plug to processor!\n");
-        return false;
-    }
-
-    // do the transmit processor
-//     if (m_snoopMode) {
-//         // we are snooping, so these are receive too.
-//         samplerate=inputPlug->getSampleRate();
-//         m_receiveProcessor2=new FreebobStreaming::AmdtpReceiveStreamProcessor(
-//                                   channel,
-//                                   m_p1394Service->getPort(),
-//                                   samplerate,
-//                                   inputPlug->getNrOfChannels());
-//         
-//         if(!m_receiveProcessor2->init()) {
-//             debugFatal("Could not initialize snooping receive processor!\n");
-//             return false;
-//         }
-//         if (!addPlugToProcessor(*inputPlug,m_receiveProcessor2, 
-//             FreebobStreaming::AmdtpAudioPort::E_Capture)) {
-//             debugFatal("Could not add plug to processor!\n");
-//             return false;
-//         }
-//     } else {
-        // do the transmit processor
-        samplerate=inputPlug->getSampleRate();
-        m_transmitProcessor=new FreebobStreaming::AmdtpTransmitStreamProcessor(
-                                m_p1394Service->getPort(),
-                                samplerate,
-                                inputPlug->getNrOfChannels());
-                                
-        if(!m_transmitProcessor->init()) {
-            debugFatal("Could not initialize transmit processor!\n");
-            return false;
-        
-        }
-        
-        // FIXME: do this the proper way!
-        m_transmitProcessor->syncmaster=m_receiveProcessor;
-    
-        if (!addPlugToProcessor(*inputPlug,m_transmitProcessor, 
-            FreebobStreaming::AmdtpAudioPort::E_Playback)) {
-            debugFatal("Could not add plug to processor!\n");
-            return false;
-        }
-//     }
-*/
     return true;
-}
-
-// bool
-// AvDevice::addPlugToProcessor(
-//     AvPlug& plug, 
-//     FreebobStreaming::StreamProcessor *processor, 
-//     FreebobStreaming::AmdtpAudioPort::E_Direction direction) {
-// 
-//     AvPlug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
-//     for ( AvPlug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
-//           it != clusterInfos.end();
-//           ++it )
-//     {
-//         const AvPlug::ClusterInfo* clusterInfo = &( *it );
-// 
-//         AvPlug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
-//         for ( AvPlug::ChannelInfoVector::const_iterator it = channelInfos.begin();
-//               it != channelInfos.end();
-//               ++it )
-//         {
-//             const AvPlug::ChannelInfo* channelInfo = &( *it );
-//             std::ostringstream portname;
-//             
-//             portname << "dev" << m_id << "_" << channelInfo->m_name;
-//             
-//             FreebobStreaming::Port *p=NULL;
-//             switch(clusterInfo->m_portType) {
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Headphone:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Microphone:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
-//                 p=new FreebobStreaming::AmdtpAudioPort(
-//                         portname.str(),
-//                         direction, 
-//                         // \todo: streaming backend expects indexing starting from 0
-//                         // but bebob reports it starting from 1. Decide where
-//                         // and how to handle this (pp: here)
-//                         channelInfo->m_streamPosition - 1, 
-//                         channelInfo->m_location, 
-//                         FreebobStreaming::AmdtpPortInfo::E_MBLA, 
-//                         clusterInfo->m_portType
-//                 );
-//                 break;
-// 
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
-//                 p=new FreebobStreaming::AmdtpMidiPort(
-//                         portname.str(),
-//                         direction, 
-//                         // \todo: streaming backend expects indexing starting from 0
-//                         // but bebob reports it starting from 1. Decide where
-//                         // and how to handle this (pp: here)
-//                         channelInfo->m_streamPosition - 1, 
-//                         channelInfo->m_location, 
-//                         FreebobStreaming::AmdtpPortInfo::E_Midi, 
-//                         clusterInfo->m_portType
-//                 );
-// 
-//                 break;
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_SPDIF:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_ADAT:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_TDIF:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MADI:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Digital:
-//             case ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
-//             default:
-//             // unsupported
-//                 break;
-//             }
-// 
-//             if (!p) {
-//                 debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->m_name.c_str());
-//             } else {
-//         
-//                 if (!processor->addPort(p)) {
-//                     debugWarning("Could not register port with stream processor\n");
-//                     return false;
-//                 }
-//             }
-//          }
-//     }
-//     return true;
-// }
-
-int 
-AvDevice::getStreamCount() {
-    return 0;
-//     return 2; // one receive, one transmit
-}
-
-FreebobStreaming::StreamProcessor *
-AvDevice::getStreamProcessorByIndex(int i) {
-    switch (i) {
-    case 0:
-        return m_receiveProcessor;
-    case 1:
-//         if (m_snoopMode) {
-//             return m_receiveProcessor2;
-//         } else {
-            return m_transmitProcessor;
-//         }
-    default:
-        return NULL;
-    }
-    return 0;
-}
-
-bool
-AvDevice::startStreamByIndex(int i) {
-    return false;
-}
-
-bool
-AvDevice::stopStreamByIndex(int i) {
-
-    return false;
 }
 
 }

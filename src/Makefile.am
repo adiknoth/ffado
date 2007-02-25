@@ -53,7 +53,8 @@ noinst_HEADERS = \
 	libstreaming/Port.h libstreaming/PortManager.h \
 	libstreaming/StreamProcessor.h libstreaming/StreamProcessorManager.h \
 	libutil/Atomic.h libutil/cycles.h libutil/DelayLockedLoop.h libutil/PosixThread.h \
-	libutil/ringbuffer.h libutil/PacketBuffer.h libutil/StreamStatistics.h \
+	libutil/ringbuffer.h libutil/OptionContainer.h \
+	libutil/PacketBuffer.h libutil/StreamStatistics.h \
 	libutil/serialize.h libutil/SystemTimeSource.h libutil/Thread.h libutil/Time.h \
 	libutil/TimeSource.h libutil/TimestampedBuffer.h
 
@@ -91,6 +92,7 @@ libfreebob_la_SOURCES = \
         libstreaming/StreamProcessorManager.cpp \
         libutil/DelayLockedLoop.cpp \
         libutil/PacketBuffer.cpp \
+        libutil/OptionContainer.cpp \
         libutil/PosixThread.cpp \
         libutil/ringbuffer.c \
         libutil/serialize.cpp \

@@ -26,6 +26,8 @@
 #include "libfreebobavc/avc_extended_cmd_generic.h"
 #include "libfreebob/xmlparser.h"
 
+#include "bebob/bebob_avdevice.h"
+
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
 #include "libstreaming/AmdtpPortInfo.h"
@@ -37,7 +39,15 @@ class Ieee1394Service;
 
 namespace MAudio {
 
-class AvDevice : public IAvDevice {
+struct VendorModelEntry {
+    unsigned int vendor_id;
+    unsigned int model_id;
+    char *vendor_name;
+    char *model_name; 
+    char *filename;
+};
+
+class AvDevice : public BeBoB::AvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
 	      Ieee1394Service& ieee1394Service,
@@ -46,41 +56,18 @@ public:
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
-    virtual bool discover();
-    virtual ConfigRom& getConfigRom() const;
-    virtual bool addXmlDescription( xmlNodePtr pDeviceNode );
-    virtual void showDevice() const;
+    bool discover();
     
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    virtual int getSamplingFrequency( );
-        
-    virtual bool setId(unsigned int id);
+    bool addXmlDescription( xmlNodePtr pDeviceNode );
+    void showDevice() const;
+    
+    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    int getSamplingFrequency( );
 
-    virtual int getStreamCount();
-    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
-
-    virtual bool prepare();
-    bool lock();
-    bool unlock();
-
-    bool startStreamByIndex(int i);
-    bool stopStreamByIndex(int i);
+    bool prepare();
 
 protected:
-    std::auto_ptr<ConfigRom>( m_pConfigRom );
-    Ieee1394Service* m_p1394Service;
-    int              m_iNodeId;
-    int              m_iVerboseLevel;
-    const char*      m_pFilename;
-    
-    unsigned int m_id;
-
-    // streaming stuff
-    FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
-    int m_receiveProcessorBandwidth;
-
-    FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
-    int m_transmitProcessorBandwidth;
+    struct VendorModelEntry*  m_model;
     
     DECLARE_DEBUG_MODULE;
 };

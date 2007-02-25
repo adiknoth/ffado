@@ -23,12 +23,13 @@
 
 #include "libfreebobavc/avc_definitions.h"
 #include "libfreebob/xmlparser.h"
+#include "libutil/OptionContainer.h"
 
 class ConfigRom;
 class Ieee1394Service;
 
 namespace FreebobStreaming {
-	class StreamProcessor;
+    class StreamProcessor;
 }
 /*!
 @brief Interface that is to be implemented to support a device.
@@ -37,7 +38,7 @@ namespace FreebobStreaming {
  for a specific device.
 
 */
-class IAvDevice {
+class IAvDevice : public FreebobUtil::OptionContainer {
 public:
 	virtual ~IAvDevice() {}
 	

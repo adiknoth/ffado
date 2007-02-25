@@ -33,6 +33,8 @@
 #include <stdint.h>
 #include <assert.h>
 #include <netinet/in.h>
+#include <iostream>
+#include <sstream>
 
 #include <libraw1394/csr.h>
 
@@ -55,15 +57,13 @@ MHAvDevice::MHAvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_model( NULL )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
-    , m_id(0)
-    , m_iso_recv_channel ( -1 )
-    , m_iso_send_channel ( -1 )
     
 {
     setDebugLevel( verboseLevel );
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::MHAvDevice (NodeID %d)\n",
                  nodeId );
+    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
 
 }
 
@@ -139,9 +139,14 @@ MHAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 }
 
 bool MHAvDevice::setId( unsigned int id) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
-    m_id=id;
-    return true;
+    // FIXME: decent ID system nescessary
+    std::ostringstream idstr;
+
+    idstr << "dev" << id;
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
+    
+    return setOption("id",idstr.str());
 }
 
 bool
@@ -173,41 +178,23 @@ MHAvDevice::prepare() {
 
 int 
 MHAvDevice::getStreamCount() {
-    return 0; // one receive, one transmit
+    return 0;
 }
 
 FreebobStreaming::StreamProcessor *
 MHAvDevice::getStreamProcessorByIndex(int i) {
 
-//    switch (i) {
-//    case 0:
-//        return m_receiveProcessor;
-//    case 1:
-//        return m_transmitProcessor;
-//    default:
-//        return NULL;
-//    }
-//    return 0;
     return NULL;
 }
 
 bool
 MHAvDevice::startStreamByIndex(int i) {
-
     return false;
 }
 
 bool
 MHAvDevice::stopStreamByIndex(int i) {
     return false;
-}
-
-signed int MHAvDevice::getIsoRecvChannel(void) {
-    return m_iso_recv_channel;
-}
-
-signed int MHAvDevice::getIsoSendChannel(void) {
-    return m_iso_send_channel;
 }
 
 }

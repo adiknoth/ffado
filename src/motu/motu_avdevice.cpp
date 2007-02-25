@@ -36,6 +36,8 @@
 #include <stdint.h>
 #include <assert.h>
 #include <netinet/in.h>
+#include <iostream>
+#include <sstream>
 
 #include <libraw1394/csr.h>
 
@@ -60,7 +62,6 @@ MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
-    , m_id(0)
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
     , m_bandwidth ( -1 )
@@ -303,9 +304,14 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 }
 
 bool MotuDevice::setId( unsigned int id) {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
-	m_id=id;
-	return true;
+    // FIXME: decent ID system nescessary
+    std::ostringstream idstr;
+
+    idstr << "dev" << id;
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
+    
+    return setOption("id",idstr.str());
 }
 
 bool
@@ -398,7 +404,13 @@ MotuDevice::prepare() {
 	
 	char *buff;
 	FreebobStreaming::Port *p=NULL;
-
+	
+	// retrieve the ID
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+    }
+    
 	// Add audio capture ports
 	if (!addDirPorts(FreebobStreaming::Port::E_Capture, samp_freq, optical_in_mode)) {
 		return false;
@@ -407,7 +419,7 @@ MotuDevice::prepare() {
 	// Add MIDI port.  The MOTU only has one MIDI input port, with each
 	// MIDI byte sent using a 3 byte sequence starting at byte 4 of the
 	// event data.
-	asprintf(&buff,"dev%d_cap_MIDI0",m_id);
+	asprintf(&buff,"%s_cap_MIDI0",id.c_str());
 	p = new FreebobStreaming::MotuMidiPort(buff,
 		FreebobStreaming::Port::E_Capture, 4);
 	if (!p) {
@@ -424,7 +436,7 @@ MotuDevice::prepare() {
 	free(buff);
 
 	// example of adding an control port:
-//    asprintf(&buff,"dev%d_cap_%s",m_id,"myportnamehere");
+//    asprintf(&buff,"%s_cap_%s",id.c_str(),"myportnamehere");
 //    p=new FreebobStreaming::MotuControlPort(
 //            buff,
 //            FreebobStreaming::Port::E_Capture, 
@@ -467,7 +479,7 @@ MotuDevice::prepare() {
 	// Add MIDI port.  The MOTU only has one output MIDI port, with each
 	// MIDI byte transmitted using a 3 byte sequence starting at byte 4
 	// of the event data.
-	asprintf(&buff,"dev%d_pbk_MIDI0",m_id);
+	asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
 	p = new FreebobStreaming::MotuMidiPort(buff,
 		FreebobStreaming::Port::E_Capture, 4);
 	if (!p) {
@@ -484,7 +496,7 @@ MotuDevice::prepare() {
 	free(buff);
 
 	// example of adding an control port:
-//    asprintf(&buff,"dev%d_pbk_%s",m_id,"myportnamehere");
+//    asprintf(&buff,"%s_pbk_%s",id.c_str(),"myportnamehere");
 //    
 //    p=new FreebobStreaming::MotuControlPort(
 //            buff,
@@ -764,6 +776,12 @@ FreebobStreaming::StreamProcessor *s_processor;
 unsigned int i, ofs;
 char *buff;
 
+	// retrieve the ID
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+    }
+
 	if (direction == FreebobStreaming::Port::E_Capture) {
 		s_processor = m_receiveProcessor;
 	} else {
@@ -776,7 +794,7 @@ char *buff;
 	// 1x and 2x sampling rates.
 	if (sample_rate<=96000) {
 		for (i=0; i<2; i++, ofs+=3) {
-			asprintf(&buff,"dev%d_%s_%s-%c", m_id, mode_str,
+			asprintf(&buff,"%s_%s_%s-%c", id.c_str(), mode_str,
 			  aux_str, i==0?'L':'R');
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
@@ -786,7 +804,7 @@ char *buff;
 	// Unconditionally add the 8 analog capture ports since they are
 	// always present no matter what the device configuration is.
 	for (i=0; i<8; i++, ofs+=3) {
-		asprintf(&buff,"dev%d_%s_Analog%d", m_id, mode_str, i+1);
+		asprintf(&buff,"%s_%s_Analog%d", id.c_str(), mode_str, i+1);
 		if (!addPort(s_processor, buff, direction, ofs, 0))
 			return false;
 	}
@@ -798,12 +816,12 @@ char *buff;
 	if (sample_rate <= 96000) {
 		for (i=0; i<2; i++, ofs+=3) {
 			if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
-				asprintf(&buff,"dev%d_%s_AES/EBU%d", m_id, mode_str, i+1);
+				asprintf(&buff,"%s_%s_AES/EBU%d", id.c_str(), mode_str, i+1);
 			} else {
 				if (direction == FreebobStreaming::Port::E_Capture)
-					asprintf(&buff,"dev%d_%s_Mic%d", m_id, mode_str, i+1);
+					asprintf(&buff,"%s_%s_Mic%d", id.c_str(), mode_str, i+1);
 				else
-					asprintf(&buff,"dev%d_%s_MainOut-%c", m_id, mode_str, i==0?'L':'R');
+					asprintf(&buff,"%s_%s_MainOut-%c", id.c_str(), mode_str, i==0?'L':'R');
 			}
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
@@ -814,7 +832,7 @@ char *buff;
 	// as the optical mode is not TOSLINK.
 	if (sample_rate<=96000 && optical_mode!=MOTUFW_OPTICAL_MODE_TOSLINK) {
 		for (i=0; i<2; i++, ofs+=3) {
-			asprintf(&buff,"dev%d_%s_SPDIF%d", m_id, mode_str, i+1);
+			asprintf(&buff,"%s_%s_SPDIF%d", id.c_str(), mode_str, i+1);
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
@@ -824,7 +842,7 @@ char *buff;
 	// as the optical mode is set to TOSLINK.
 	if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_TOSLINK) {
 		for (i=0; i<2; i++, ofs+=3) {
-			asprintf(&buff,"dev%d_%s_TOSLINK%d", m_id, mode_str, i+1);
+			asprintf(&buff,"%s_%s_TOSLINK%d", id.c_str(), mode_str, i+1);
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
@@ -834,7 +852,7 @@ char *buff;
 	// as the optical mode is set to ADAT.
 	if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
 		for (i=0; i<4; i++, ofs+=3) {
-			asprintf(&buff,"dev%d_%s_ADAT%d", m_id, mode_str, i+1);
+			asprintf(&buff,"%s_%s_ADAT%d", id.c_str(), mode_str, i+1);
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}
@@ -844,7 +862,7 @@ char *buff;
 	// optical mode is set to ADAT.
 	if (sample_rate<=48000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
 		for (i=4; i<8; i++, ofs+=3) {
-			asprintf(&buff,"dev%d_%s_ADAT%d", m_id, mode_str, i+1);
+			asprintf(&buff,"%s_%s_ADAT%d", id.c_str(), mode_str, i+1);
 			if (!addPort(s_processor, buff, direction, ofs, 0))
 				return false;
 		}

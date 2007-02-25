@@ -30,8 +30,18 @@
 #include "libstreaming/AmdtpPort.h"
 #include "libstreaming/AmdtpPortInfo.h"
 
+#include "libieee1394/ARMHandler.h"
+
 #include "iavdevice.h"
 #include "libfreebob/freebob_bounce.h"
+
+#include <vector>
+
+#define BOUNCE_REGISTER_BASE 0x0000FFFFE0000000ULL
+#define BOUNCE_REGISTER_LENGTH (4*256)
+#define BOUNCE_REGISTER_TX_ISOCHANNEL 0x10
+#define BOUNCE_REGISTER_RX_ISOCHANNEL 0x14
+#define BOUNCE_INVALID_OFFSET 0xFFFFF00000000000ULL
 
 class ConfigRom;
 class Ieee1394Service;
@@ -48,6 +58,8 @@ struct VendorModelEntry {
 };
 
 class BounceDevice : public IAvDevice {
+private:
+    class BounceNotifier;
 public:
     BounceDevice( std::auto_ptr<ConfigRom>( configRom ),
 		  Ieee1394Service& ieee1394Service,
@@ -80,7 +92,7 @@ public:
 
 protected:
     std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_1394Service;
+    Ieee1394Service* m_p1394Service;
     int              m_nodeId;
     int              m_verboseLevel;
 
@@ -89,21 +101,46 @@ private:
 
     unsigned int m_samplerate;
     struct VendorModelEntry* m_model;
-    unsigned int m_id;
 
-	// streaming stuff
-	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
-	int m_receiveProcessorBandwidth;
-	
-	FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
-	int m_transmitProcessorBandwidth;
+    // streaming stuff
+    typedef std::vector< FreebobStreaming::StreamProcessor * > StreamProcessorVector;
+    StreamProcessorVector m_receiveProcessors;
+    StreamProcessorVector m_transmitProcessors;
 
     bool addPortsToProcessor(
-	   FreebobStreaming::StreamProcessor *processor, 
-	   FreebobStreaming::AmdtpAudioPort::E_Direction direction);
-
+       FreebobStreaming::StreamProcessor *processor, 
+       FreebobStreaming::Port::E_Direction direction);
 
     DECLARE_DEBUG_MODULE;
+    
+private: // generic helpers
+    int allocateIsoChannel(unsigned int packet_size);
+    bool deallocateIsoChannel(int channel);
+    
+private: // I/O helpers
+    // quadlet read/write routines
+    bool readReg(fb_nodeaddr_t, fb_quadlet_t *);
+    bool writeReg(fb_nodeaddr_t, fb_quadlet_t);
+    bool readRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
+    bool writeRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
+    
+private:
+    BounceNotifier *m_Notifier;
+    /**
+     * this class reacts on the ohter side writing to the 
+     * hosts address space
+     */
+    #define BOUNCE_NOTIFIER_BASE_ADDRESS 0x0000FFFFE0000000ULL
+    #define BOUNCE_NOTIFIER_BLOCK_LENGTH 4
+    class BounceNotifier : public ARMHandler
+    {
+    public:
+        BounceNotifier(BounceDevice *, nodeaddr_t start);
+        virtual ~BounceNotifier();
+        
+    private:
+        BounceDevice *m_bouncedevice;
+    };
 };
 
 }

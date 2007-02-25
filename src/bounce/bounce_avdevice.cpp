@@ -55,21 +55,19 @@ BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
                             int nodeId,
                             int verboseLevel )
     : m_configRom( configRom )
-    , m_1394Service( &ieee1394service )
+    , m_p1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_verboseLevel( verboseLevel )
     , m_samplerate (44100)
     , m_model( NULL )
-    , m_id(0)
-    , m_receiveProcessor ( 0 )
-    , m_receiveProcessorBandwidth ( -1 )
-    , m_transmitProcessor ( 0 )
-    , m_transmitProcessorBandwidth ( -1 )
+    , m_Notifier ( NULL )
 {
     setDebugLevel( verboseLevel );
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
                  nodeId );
+    addOption(FreebobUtil::OptionContainer::Option("snoopMode",false));
+    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
 }
 
 BounceDevice::~BounceDevice()
@@ -152,7 +150,7 @@ BounceDevice::discover()
 			| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | 0x00);
 
 	request[1] =  0xFFFFFFFF;
-        resp = m_1394Service->transactionBlock( m_nodeId,
+        resp = m_p1394Service->transactionBlock( m_nodeId,
                                                        request,
                                                        2,
 		                                               &resp_len );
@@ -180,9 +178,14 @@ bool BounceDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency ) 
 }
 
 bool BounceDevice::setId( unsigned int id) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
-    m_id=id;
-    return true;
+    // FIXME: decent ID system nescessary
+    std::ostringstream idstr;
+
+    idstr << "dev" << id;
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
+    
+    return setOption("id",idstr.str());
 }
 
 bool
@@ -224,15 +227,20 @@ BounceDevice::addXmlDescription( xmlNodePtr deviceNode )
 
 bool
 BounceDevice::addPortsToProcessor(
-	FreebobStreaming::StreamProcessor *processor,
-	FreebobStreaming::AmdtpAudioPort::E_Direction direction) {
+    FreebobStreaming::StreamProcessor *processor,
+    FreebobStreaming::Port::E_Direction direction) {
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to processor\n");
-
+    
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+    }
+    
     int i=0;
     for (i=0;i<BOUNCE_NR_OF_CHANNELS;i++) {
         char *buff;
-        asprintf(&buff,"dev%d%s_Port%d",m_id,direction==FreebobStreaming::AmdtpAudioPort::E_Playback?"p":"c",i);
+        asprintf(&buff,"%s%s_Port%d",id.c_str(),direction==FreebobStreaming::AmdtpAudioPort::E_Playback?"p":"c",i);
 
         FreebobStreaming::Port *p=NULL;
         p=new FreebobStreaming::AmdtpAudioPort(
@@ -268,158 +276,285 @@ BounceDevice::addPortsToProcessor(
 
 bool
 BounceDevice::prepare() {
-
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing BounceDevice...\n" );
+    
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
 
-	m_receiveProcessor=new FreebobStreaming::AmdtpReceiveStreamProcessor(
-	                         m_1394Service->getPort(),
-	                         m_samplerate,
-	                         BOUNCE_NR_OF_CHANNELS);
+    // create & add streamprocessors
+    FreebobStreaming::StreamProcessor *p;
+    
+    p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+                             m_p1394Service->getPort(),
+                             m_samplerate,
+                             BOUNCE_NR_OF_CHANNELS);
 
-	if(!m_receiveProcessor->init()) {
-		debugFatal("Could not initialize receive processor!\n");
-		return false;
+    if(!p->init()) {
+        debugFatal("Could not initialize receive processor!\n");
+        delete p;
+        return false;
+    }
 
-	}
+    if (!addPortsToProcessor(p,
+            FreebobStreaming::Port::E_Capture)) {
+        debugFatal("Could not add plug to processor!\n");
+        delete p;
+        return false;
+    }
 
- 	if (!addPortsToProcessor(m_receiveProcessor,
- 		FreebobStreaming::AmdtpAudioPort::E_Capture)) {
- 		debugFatal("Could not add ports to processor!\n");
- 		return false;
- 	}
+    m_receiveProcessors.push_back(p);
 
-	// do the transmit processor
-	m_transmitProcessor=new FreebobStreaming::AmdtpTransmitStreamProcessor(
-	                         m_1394Service->getPort(),
-	                         m_samplerate,
-	                         BOUNCE_NR_OF_CHANNELS);
+    // do the transmit processor
+    if (snoopMode) {
+        // we are snooping, so this is receive too.
+        p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+                                  m_p1394Service->getPort(),
+                                  m_samplerate,
+                                  BOUNCE_NR_OF_CHANNELS);
+    } else {
+        p=new FreebobStreaming::AmdtpTransmitStreamProcessor(
+                                m_p1394Service->getPort(),
+                                m_samplerate,
+                                BOUNCE_NR_OF_CHANNELS);
+    }
+    
+    if(!p->init()) {
+        debugFatal("Could not initialize transmit processor %s!\n",
+            (snoopMode?" in snoop mode":""));
+        delete p;
+        return false;
+    }
 
-	m_transmitProcessor->setVerboseLevel(getDebugLevel());
+    if (snoopMode) {
+        if (!addPortsToProcessor(p,
+            FreebobStreaming::Port::E_Capture)) {
+            debugFatal("Could not add plug to processor!\n");
+            delete p;
+            return false;
+        }
+        m_receiveProcessors.push_back(p);
+    } else {
+        if (!addPortsToProcessor(p,
+            FreebobStreaming::Port::E_Playback)) {
+            debugFatal("Could not add plug to processor!\n");
+            delete p;
+            return false;
+        }
+        m_transmitProcessors.push_back(p);
+    }
 
-	if(!m_transmitProcessor->init()) {
-		debugFatal("Could not initialize transmit processor!\n");
-		return false;
-
-	}
-
- 	if (!addPortsToProcessor(m_transmitProcessor,
- 		FreebobStreaming::AmdtpAudioPort::E_Playback)) {
- 		debugFatal("Could not add ports to processor!\n");
- 		return false;
- 	}
-
-	return true;
+    return true;
 }
 
 int
 BounceDevice::getStreamCount() {
- 	return 2; // one receive, one transmit
+    return m_receiveProcessors.size() + m_transmitProcessors.size();
 }
 
 FreebobStreaming::StreamProcessor *
 BounceDevice::getStreamProcessorByIndex(int i) {
-	switch (i) {
-	case 0:
-		return m_receiveProcessor;
-	case 1:
- 		return m_transmitProcessor;
-	default:
-		return NULL;
-	}
-	return 0;
+    if (i<(int)m_receiveProcessors.size()) {
+        return m_receiveProcessors.at(i);
+    } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
+        return m_transmitProcessors.at(i-m_receiveProcessors.size());
+    }
+
+    return NULL;
 }
 
 bool
 BounceDevice::startStreamByIndex(int i) {
-// 	int iso_channel=0;
-// 	int plug=0;
-// 	int hostplug=-1;
-//
- 	switch (i) {
-	case 0:
-// 		// do connection management: make connection
-// 		iso_channel = iec61883_cmp_connect(
-// 			m_1394Service->getHandle(),
-// 			m_nodeId | 0xffc0,
-// 			&plug,
-// 			raw1394_get_local_id (m_1394Service->getHandle()),
-// 			&hostplug,
-// 			&m_receiveProcessorBandwidth);
-//
-// 		// set the channel obtained by the connection management
-    #warning TEST CODE FOR BOUNCE DEVICE !!
-        if (m_configRom->getNodeId()==0) {
-            m_receiveProcessor->setChannel(1);
-        } else {
-            m_receiveProcessor->setChannel(0);
+    if (i<(int)m_receiveProcessors.size()) {
+        int n=i;
+        FreebobStreaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        
+        // allocate ISO channel
+        int isochannel=allocateIsoChannel(p->getMaxPacketSize());
+        if(isochannel<0) {
+            debugError("Could not allocate iso channel for SP %d\n",i);
+            return false;
         }
-		break;
-	case 1:
-// 		// do connection management: make connection
-// 		iso_channel = iec61883_cmp_connect(
-// 			m_1394Service->getHandle(),
-// 			raw1394_get_local_id (m_1394Service->getHandle()),
-// 			&hostplug,
-// 			m_nodeId | 0xffc0,
-// 			&plug,
-// 			&m_transmitProcessorBandwidth);
-//
-// 		// set the channel obtained by the connection management
-// // 		m_receiveProcessor2->setChannel(iso_channel);
-    #warning TEST CODE FOR BOUNCE DEVICE !!
-        if (m_configRom->getNodeId()==0) {
-            m_transmitProcessor->setChannel(0);
-        } else {
-            m_transmitProcessor->setChannel(1);
+        p->setChannel(isochannel);
+        
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!readReg(BOUNCE_REGISTER_TX_ISOCHANNEL, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register\n", n);
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
         }
- 		break;
- 	default:
- 		return false;
- 	}
-
-	return true;
-
+        if(reg_isoch != 0xFFFFFFFFUL) {
+            debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X)\n", reg_isoch);
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+        
+        // write value of ISO_CHANNEL register
+        reg_isoch=isochannel;
+        if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
+            debugError("Could not write ISO_CHANNEL register\n");
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+        
+        return true;
+        
+    } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
+        int n=i-m_receiveProcessors.size();
+        FreebobStreaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        
+        // allocate ISO channel
+        int isochannel=allocateIsoChannel(p->getMaxPacketSize());
+        if(isochannel<0) {
+            debugError("Could not allocate iso channel for SP %d\n",i);
+            return false;
+        }
+        p->setChannel(isochannel);
+        
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!readReg(BOUNCE_REGISTER_RX_ISOCHANNEL, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register\n");
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+        if(reg_isoch != 0xFFFFFFFFUL) {
+            debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X)\n", reg_isoch);
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+        
+        // write value of ISO_CHANNEL register
+        reg_isoch=isochannel;
+        if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
+            debugError("Could not write ISO_CHANNEL register\n");
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    debugError("SP index %d out of range!\n",i);
+    
+    return false;
 }
 
 bool
 BounceDevice::stopStreamByIndex(int i) {
-	// do connection management: break connection
-
-// 	int plug=0;
-// 	int hostplug=-1;
-//
-// 	switch (i) {
-// 	case 0:
-// 		// do connection management: break connection
-// 		iec61883_cmp_disconnect(
-// 			m_1394Service->getHandle(),
-// 			m_nodeId | 0xffc0,
-// 			plug,
-// 			raw1394_get_local_id (m_1394Service->getHandle()),
-// 			hostplug,
-// 			m_receiveProcessor->getChannel(),
-// 			m_receiveProcessorBandwidth);
-//
-// 		break;
-// 	case 1:
-// 		// do connection management: break connection
-// 		iec61883_cmp_disconnect(
-// 			m_1394Service->getHandle(),
-// 			raw1394_get_local_id (m_1394Service->getHandle()),
-// 			hostplug,
-// 			m_nodeId | 0xffc0,
-// 			plug,
-// 			m_transmitProcessor->getChannel(),
-// 			m_transmitProcessorBandwidth);
-//
-// 		// set the channel obtained by the connection management
-// // 		m_receiveProcessor2->setChannel(iso_channel);
-// 		break;
-// 	default:
-// 		return 0;
-// 	}
 
 	return false;
 }
+
+// helper functions
+
+// allocate ISO resources for the SP's
+int BounceDevice::allocateIsoChannel(unsigned int packet_size) {
+    unsigned int bandwidth=8+packet_size;
+    
+    int ch=m_p1394Service->allocateIsoChannelGeneric(bandwidth);
+        
+    debugOutput(DEBUG_LEVEL_VERBOSE, "allocated channel %d, bandwidth %d\n",
+        ch, bandwidth);
+    
+    return ch;
+}
+// deallocate ISO resources
+bool BounceDevice::deallocateIsoChannel(int channel) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "freeing channel %d\n",channel);
+    return m_p1394Service->freeIsoChannel(channel);
+}
+
+// I/O functions
+
+bool
+BounceDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX\n", offset);
+    
+    if(offset >= BOUNCE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016llX\n", offset);
+        return false;
+    }
+    
+    fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    
+    if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
+        debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
+        return false;
+    }
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
+   
+    return true;
+}
+
+bool
+BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",  
+        offset, data);
+    
+    if(offset >= BOUNCE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016llX\n", offset);
+        return false;
+    }
+    
+    fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    
+    if(!m_p1394Service->write_quadlet( nodeId, addr, data ) ) {
+        debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
+        return false;
+    }
+    return true;
+}
+
+bool 
+BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n", 
+        offset, length);
+    
+    if(offset >= BOUNCE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016llX\n", offset);
+        return false;
+    }
+    
+    fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    
+    if(!m_p1394Service->read( nodeId, addr, length, data ) ) {
+        debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
+        return false;
+    }
+    return true;
+}
+
+bool 
+BounceDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",  
+        offset, length);
+    
+    if(offset >= BOUNCE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016llX\n", offset);
+        return false;
+    }
+    
+    fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+
+    if(!m_p1394Service->write( nodeId, addr, length, data ) ) {
+        debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
+        return false;
+    }
+    return true;
+}
+
 
 } // namespace

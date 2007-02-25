@@ -75,12 +75,12 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_activeSyncInfo( 0 )
     , m_model ( NULL )
     , m_nodeId ( nodeId )
-    , m_id( 0 )
-    , m_snoopMode( false )
 {
     setDebugLevel( verboseLevel );
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
+    addOption(FreebobUtil::OptionContainer::Option("snoopMode",false));
+    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
 }
 
 AvDevice::AvDevice()
@@ -91,13 +91,14 @@ AvDevice::AvDevice()
     , m_activeSyncInfo( 0 )
     , m_model ( NULL )
     , m_nodeId ( -1 )
-    , m_id( 0 )
-    , m_snoopMode( false )
 {
+    addOption(FreebobUtil::OptionContainer::Option("snoopMode",false));
+    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
 }
 
 AvDevice::~AvDevice()
 {
+
     for ( AvDeviceSubunitVector::iterator it = m_subunits.begin();
           it != m_subunits.end();
           ++it )
@@ -165,6 +166,7 @@ AvDevice::discover()
            )
         {
             m_model = &(supportedDeviceList[i]);
+            break;
         }
     }
 
@@ -941,8 +943,13 @@ bool AvDevice::setActiveSync(const SyncInfo& syncInfo)
 bool AvDevice::setId( unsigned int id)
 {
     // FIXME: decent ID system nescessary
-    m_id=id;
-	return true;
+    std::ostringstream idstr;
+
+    idstr << "dev" << id;
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
+    
+    return setOption("id",idstr.str());
 }
 
 bool
@@ -960,6 +967,11 @@ AvDevice::unlock() {
 
 bool
 AvDevice::prepare() {
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
     ///////////
     // get plugs
 
@@ -1000,7 +1012,7 @@ AvDevice::prepare() {
     m_receiveProcessors.push_back(p);
 
     // do the transmit processor
-    if (m_snoopMode) {
+    if (snoopMode) {
         // we are snooping, so this is receive too.
         p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
                                   m_p1394Service->getPort(),
@@ -1015,23 +1027,25 @@ AvDevice::prepare() {
     
     if(!p->init()) {
         debugFatal("Could not initialize transmit processor %s!\n",
-            (m_snoopMode?" in snoop mode":""));
+            (snoopMode?" in snoop mode":""));
         delete p;
         return false;
     }
 
-    if (m_snoopMode) {
+    if (snoopMode) {
         if (!addPlugToProcessor(*inputPlug,p,
             FreebobStreaming::Port::E_Capture)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
+        m_receiveProcessors.push_back(p);
     } else {
         if (!addPlugToProcessor(*inputPlug,p,
             FreebobStreaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
+        m_transmitProcessors.push_back(p);
     }
 
     return true;
@@ -1042,7 +1056,12 @@ AvDevice::addPlugToProcessor(
     AvPlug& plug,
     FreebobStreaming::StreamProcessor *processor,
     FreebobStreaming::AmdtpAudioPort::E_Direction direction) {
-
+    
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+    }
+    
     AvPlug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
     for ( AvPlug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
           it != clusterInfos.end();
@@ -1058,7 +1077,7 @@ AvDevice::addPlugToProcessor(
             const AvPlug::ChannelInfo* channelInfo = &( *it );
             std::ostringstream portname;
 
-            portname << "dev" << m_id << "_" << channelInfo->m_name;
+            portname << id << "_" << channelInfo->m_name;
 
             FreebobStreaming::Port *p=NULL;
             switch(clusterInfo->m_portType) {
@@ -1331,6 +1350,7 @@ bool
 AvDevice::serialize( Glib::ustring basePath,
                      Util::IOSerialize& ser ) const
 {
+    
     bool result;
     result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
     result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel );
@@ -1352,7 +1372,7 @@ AvDevice::serialize( Glib::ustring basePath,
         i++;
     }
 
-    result &= ser.write( basePath + "m_id", m_id );
+//     result &= ser.write( basePath + "m_id", id );
 
     return result;
 }
@@ -1396,7 +1416,7 @@ AvDevice::deserialize( Glib::ustring basePath,
             }
         }
 
-        result &= deser.read( basePath + "m_id", pDev->m_id );
+//         result &= deser.read( basePath + "m_id", pDev->m_id );
     }
 
     return pDev;

@@ -85,11 +85,6 @@ protected:
     
     int              m_nodeId;
     int              m_verboseLevel;
-    signed int m_id;
-    signed int m_iso_recv_channel, m_iso_send_channel;
-    
-//	FreebobStreaming::MHReceiveStreamProcessor *m_receiveProcessor;
-//	FreebobStreaming::MHTransmitStreamProcessor *m_transmitProcessor;
 
 private:
     // debug support

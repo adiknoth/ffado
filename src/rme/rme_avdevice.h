@@ -74,11 +74,6 @@ public:
 
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
-
-    signed int getIsoRecvChannel(void);
-    signed int getIsoSendChannel(void);
-
-    signed int getEventSize(unsigned int dir);
   
 protected:
     std::auto_ptr<ConfigRom>( m_configRom );
@@ -88,24 +83,8 @@ protected:
     
     int              m_nodeId;
     int              m_verboseLevel;
-    signed int m_id;
-    signed int m_iso_recv_channel, m_iso_send_channel;
-    signed int m_bandwidth;
-    
-//	FreebobStreaming::RmeReceiveStreamProcessor *m_receiveProcessor;
-//	FreebobStreaming::RmeTransmitStreamProcessor *m_transmitProcessor;
 
 private:
-//	bool addPort(FreebobStreaming::StreamProcessor *s_processor,
-//		char *name, 
-//		enum FreebobStreaming::Port::E_Direction direction,
-//		int position, int size);
-//	bool addDirPorts(
-//		enum FreebobStreaming::Port::E_Direction direction,
-//		unsigned int sample_rate, unsigned int optical_mode);
-        
-	unsigned int ReadRegister(unsigned int reg);
-	signed int WriteRegister(unsigned int reg, quadlet_t data);
 
     // debug support
     DECLARE_DEBUG_MODULE;
