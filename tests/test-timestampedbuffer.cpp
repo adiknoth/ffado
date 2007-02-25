@@ -38,7 +38,7 @@ Free Software Foundation, Inc.,                                       *
 
 #include <pthread.h>
 
-using namespace FreebobUtil;
+using namespace Util;
 
 class TimestampedBufferTestClient 
     : public TimestampedBufferClient {

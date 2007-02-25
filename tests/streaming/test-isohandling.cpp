@@ -38,7 +38,7 @@
 #include "src/libutil/PosixThread.h"
 #include "src/libstreaming/AmdtpPort.h"
 
-using namespace FreebobStreaming;
+using namespace Streaming;
 
 
 int run;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
-	FreebobUtil::PosixThread *thread=new FreebobUtil::PosixThread(procMan);
+	Util::PosixThread *thread=new Util::PosixThread(procMan);
 
 
 	procMan->prepare();

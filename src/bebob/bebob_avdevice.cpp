@@ -79,8 +79,8 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     setDebugLevel( verboseLevel );
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
-    addOption(FreebobUtil::OptionContainer::Option("snoopMode",false));
-    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
+    addOption(Util::OptionContainer::Option("snoopMode",false));
+    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 }
 
 AvDevice::AvDevice()
@@ -92,8 +92,8 @@ AvDevice::AvDevice()
     , m_model ( NULL )
     , m_nodeId ( -1 )
 {
-    addOption(FreebobUtil::OptionContainer::Option("snoopMode",false));
-    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
+    addOption(Util::OptionContainer::Option("snoopMode",false));
+    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 }
 
 AvDevice::~AvDevice()
@@ -989,9 +989,9 @@ AvDevice::prepare() {
     int samplerate=outputPlug->getSampleRate();
     
     // create & add streamprocessors
-    FreebobStreaming::StreamProcessor *p;
+    Streaming::StreamProcessor *p;
     
-    p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+    p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
                              samplerate,
                              outputPlug->getNrOfChannels());
@@ -1003,7 +1003,7 @@ AvDevice::prepare() {
     }
 
     if (!addPlugToProcessor(*outputPlug,p,
-        FreebobStreaming::Port::E_Capture)) {
+        Streaming::Port::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
         delete p;
         return false;
@@ -1014,12 +1014,12 @@ AvDevice::prepare() {
     // do the transmit processor
     if (snoopMode) {
         // we are snooping, so this is receive too.
-        p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+        p=new Streaming::AmdtpReceiveStreamProcessor(
                                   m_p1394Service->getPort(),
                                   samplerate,
                                   inputPlug->getNrOfChannels());
     } else {
-        p=new FreebobStreaming::AmdtpTransmitStreamProcessor(
+        p=new Streaming::AmdtpTransmitStreamProcessor(
                                 m_p1394Service->getPort(),
                                 samplerate,
                                 inputPlug->getNrOfChannels());
@@ -1034,14 +1034,14 @@ AvDevice::prepare() {
 
     if (snoopMode) {
         if (!addPlugToProcessor(*inputPlug,p,
-            FreebobStreaming::Port::E_Capture)) {
+            Streaming::Port::E_Capture)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
         m_receiveProcessors.push_back(p);
     } else {
         if (!addPlugToProcessor(*inputPlug,p,
-            FreebobStreaming::Port::E_Playback)) {
+            Streaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
@@ -1054,8 +1054,8 @@ AvDevice::prepare() {
 bool
 AvDevice::addPlugToProcessor(
     AvPlug& plug,
-    FreebobStreaming::StreamProcessor *processor,
-    FreebobStreaming::AmdtpAudioPort::E_Direction direction) {
+    Streaming::StreamProcessor *processor,
+    Streaming::AmdtpAudioPort::E_Direction direction) {
     
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
@@ -1079,14 +1079,14 @@ AvDevice::addPlugToProcessor(
 
             portname << id << "_" << channelInfo->m_name;
 
-            FreebobStreaming::Port *p=NULL;
+            Streaming::Port *p=NULL;
             switch(clusterInfo->m_portType) {
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Headphone:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Microphone:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
-                p=new FreebobStreaming::AmdtpAudioPort(
+                p=new Streaming::AmdtpAudioPort(
                         portname.str(),
                         direction,
                         // \todo: streaming backend expects indexing starting from 0
@@ -1094,12 +1094,12 @@ AvDevice::addPlugToProcessor(
                         // and how to handle this (pp: here)
                         channelInfo->m_streamPosition - 1,
                         channelInfo->m_location,
-                        FreebobStreaming::AmdtpPortInfo::E_MBLA
+                        Streaming::AmdtpPortInfo::E_MBLA
                 );
                 break;
 
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
-                p=new FreebobStreaming::AmdtpMidiPort(
+                p=new Streaming::AmdtpMidiPort(
                         portname.str(),
                         direction,
                         // \todo: streaming backend expects indexing starting from 0
@@ -1107,7 +1107,7 @@ AvDevice::addPlugToProcessor(
                         // and how to handle this (pp: here)
                         channelInfo->m_streamPosition - 1,
                         channelInfo->m_location,
-                        FreebobStreaming::AmdtpPortInfo::E_Midi
+                        Streaming::AmdtpPortInfo::E_Midi
                 );
 
                 break;
@@ -1141,7 +1141,7 @@ AvDevice::getStreamCount() {
     return m_receiveProcessors.size() + m_transmitProcessors.size();
 }
 
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 AvDevice::getStreamProcessorByIndex(int i) {
 
     if (i<(int)m_receiveProcessors.size()) {
@@ -1159,7 +1159,7 @@ AvDevice::startStreamByIndex(int i) {
     
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
-        FreebobStreaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
         
         iso_channel=m_p1394Service->allocateIsoChannelCMP(
             m_pConfigRom->getNodeId() | 0xffc0, 0, 
@@ -1175,7 +1175,7 @@ AvDevice::startStreamByIndex(int i) {
         
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
-        FreebobStreaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
         
         iso_channel=m_p1394Service->allocateIsoChannelCMP(
             m_p1394Service->getLocalNodeId()| 0xffc0, -1,
@@ -1198,7 +1198,7 @@ bool
 AvDevice::stopStreamByIndex(int i) {
    if (i<(int)m_receiveProcessors.size()) {
         int n=i;
-        FreebobStreaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
 
         // deallocate ISO channel
         if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
@@ -1211,7 +1211,7 @@ AvDevice::stopStreamByIndex(int i) {
         
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
-        FreebobStreaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
         
         // deallocate ISO channel
         if(!m_p1394Service->freeIsoChannel(p->getChannel())) {

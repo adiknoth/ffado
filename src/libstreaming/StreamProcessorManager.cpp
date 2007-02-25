@@ -42,7 +42,7 @@
 
 #define ENABLE_DELAY_CYCLES 2000
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_NORMAL );
 

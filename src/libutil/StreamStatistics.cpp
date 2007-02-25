@@ -29,7 +29,7 @@
 #include "StreamStatistics.h"
 #include <stdio.h>
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 StreamStatistics::StreamStatistics()
     : m_name("")

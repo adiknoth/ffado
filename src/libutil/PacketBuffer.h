@@ -32,7 +32,7 @@
 #include <libraw1394/raw1394.h>
 #include "libutil/ringbuffer.h"
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 class PacketBuffer {
 // note: all sizes in quadlets

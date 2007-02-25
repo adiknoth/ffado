@@ -66,8 +66,8 @@ BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
                  nodeId );
-    addOption(FreebobUtil::OptionContainer::Option("snoopMode",false));
-    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
+    addOption(Util::OptionContainer::Option("snoopMode",false));
+    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 }
 
 BounceDevice::~BounceDevice()
@@ -227,8 +227,8 @@ BounceDevice::addXmlDescription( xmlNodePtr deviceNode )
 
 bool
 BounceDevice::addPortsToProcessor(
-    FreebobStreaming::StreamProcessor *processor,
-    FreebobStreaming::Port::E_Direction direction) {
+    Streaming::StreamProcessor *processor,
+    Streaming::Port::E_Direction direction) {
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to processor\n");
     
@@ -240,10 +240,10 @@ BounceDevice::addPortsToProcessor(
     int i=0;
     for (i=0;i<BOUNCE_NR_OF_CHANNELS;i++) {
         char *buff;
-        asprintf(&buff,"%s%s_Port%d",id.c_str(),direction==FreebobStreaming::AmdtpAudioPort::E_Playback?"p":"c",i);
+        asprintf(&buff,"%s%s_Port%d",id.c_str(),direction==Streaming::AmdtpAudioPort::E_Playback?"p":"c",i);
 
-        FreebobStreaming::Port *p=NULL;
-        p=new FreebobStreaming::AmdtpAudioPort(
+        Streaming::Port *p=NULL;
+        p=new Streaming::AmdtpAudioPort(
                 buff,
                 direction,
                 // \todo: streaming backend expects indexing starting from 0
@@ -251,7 +251,7 @@ BounceDevice::addPortsToProcessor(
                 // and how to handle this (pp: here)
                 i,
                 0,
-                FreebobStreaming::AmdtpPortInfo::E_MBLA
+                Streaming::AmdtpPortInfo::E_MBLA
         );
 
         if (!p) {
@@ -284,9 +284,9 @@ BounceDevice::prepare() {
     }
 
     // create & add streamprocessors
-    FreebobStreaming::StreamProcessor *p;
+    Streaming::StreamProcessor *p;
     
-    p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+    p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
                              m_samplerate,
                              BOUNCE_NR_OF_CHANNELS);
@@ -298,7 +298,7 @@ BounceDevice::prepare() {
     }
 
     if (!addPortsToProcessor(p,
-            FreebobStreaming::Port::E_Capture)) {
+            Streaming::Port::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
         delete p;
         return false;
@@ -309,12 +309,12 @@ BounceDevice::prepare() {
     // do the transmit processor
     if (snoopMode) {
         // we are snooping, so this is receive too.
-        p=new FreebobStreaming::AmdtpReceiveStreamProcessor(
+        p=new Streaming::AmdtpReceiveStreamProcessor(
                                   m_p1394Service->getPort(),
                                   m_samplerate,
                                   BOUNCE_NR_OF_CHANNELS);
     } else {
-        p=new FreebobStreaming::AmdtpTransmitStreamProcessor(
+        p=new Streaming::AmdtpTransmitStreamProcessor(
                                 m_p1394Service->getPort(),
                                 m_samplerate,
                                 BOUNCE_NR_OF_CHANNELS);
@@ -329,7 +329,7 @@ BounceDevice::prepare() {
 
     if (snoopMode) {
         if (!addPortsToProcessor(p,
-            FreebobStreaming::Port::E_Capture)) {
+            Streaming::Port::E_Capture)) {
             debugFatal("Could not add plug to processor!\n");
             delete p;
             return false;
@@ -337,7 +337,7 @@ BounceDevice::prepare() {
         m_receiveProcessors.push_back(p);
     } else {
         if (!addPortsToProcessor(p,
-            FreebobStreaming::Port::E_Playback)) {
+            Streaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
             delete p;
             return false;
@@ -353,7 +353,7 @@ BounceDevice::getStreamCount() {
     return m_receiveProcessors.size() + m_transmitProcessors.size();
 }
 
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 BounceDevice::getStreamProcessorByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         return m_receiveProcessors.at(i);
@@ -368,7 +368,7 @@ bool
 BounceDevice::startStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
-        FreebobStreaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
         
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());
@@ -406,7 +406,7 @@ BounceDevice::startStreamByIndex(int i) {
         
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
-        FreebobStreaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
         
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());

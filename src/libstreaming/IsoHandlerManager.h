@@ -39,11 +39,11 @@
 #define USLEEP_AFTER_UPDATE_FAILURE 10
 #define USLEEP_AFTER_UPDATE 100
 #define MAX_UPDATE_TRIES 10
-namespace FreebobUtil {
+namespace Util {
     class PosixThread;
 }
 
-namespace FreebobStreaming
+namespace Streaming
 {
 
 class IsoHandler;
@@ -68,7 +68,7 @@ typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
 
 */
 
-class IsoHandlerManager : public FreebobUtil::RunnableInterface
+class IsoHandlerManager : public Util::RunnableInterface
 {
     friend class StreamProcessorManager;
 
@@ -150,7 +150,7 @@ class IsoHandlerManager : public FreebobUtil::RunnableInterface
         // threading
         bool m_realtime;
         unsigned int m_priority;
-        FreebobUtil::PosixThread *m_isoManagerThread;
+        Util::PosixThread *m_isoManagerThread;
         
         
         // debug stuff

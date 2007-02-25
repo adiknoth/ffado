@@ -188,7 +188,7 @@ RmeDevice::getStreamCount() {
  	return 0; // one receive, one transmit
 }
 
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 RmeDevice::getStreamProcessorByIndex(int i) {
     return NULL;
 }

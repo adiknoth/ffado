@@ -30,7 +30,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "Thread.h"
 #include <pthread.h>
 
-namespace FreebobUtil
+namespace Util
 {
 
 /*!

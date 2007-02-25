@@ -28,7 +28,7 @@
 #include "DelayLockedLoop.h"
 #include <stdio.h>
 
-using namespace FreebobUtil;
+using namespace Util;
 
 int main() {
     int i=0;

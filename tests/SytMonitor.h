@@ -32,7 +32,7 @@
 #include "src/libstreaming/cycletimer.h"
 #include "src/libutil/ringbuffer.h"
 
-using namespace FreebobStreaming;
+using namespace Streaming;
 
 struct cycle_info {
     unsigned int cycle;

@@ -63,7 +63,7 @@ MHAvDevice::MHAvDevice( std::auto_ptr< ConfigRom >( configRom ),
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::MHAvDevice (NodeID %d)\n",
                  nodeId );
-    addOption(FreebobUtil::OptionContainer::Option("id",std::string("dev?")));
+    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 
 }
 
@@ -181,7 +181,7 @@ MHAvDevice::getStreamCount() {
     return 0;
 }
 
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 MHAvDevice::getStreamProcessorByIndex(int i) {
 
     return NULL;

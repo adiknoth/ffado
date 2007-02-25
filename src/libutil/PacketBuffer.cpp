@@ -30,7 +30,7 @@
 #include <assert.h>
 
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 IMPL_DEBUG_MODULE( PacketBuffer, PacketBuffer, DEBUG_LEVEL_VERBOSE );
 

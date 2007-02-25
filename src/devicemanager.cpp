@@ -296,7 +296,7 @@ DeviceManager::getAvDeviceCount( )
  *
  * @return StreamProcessor that is sync source
  */
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 DeviceManager::getSyncSource() {
     IAvDevice* device = getAvDeviceByIndex(0);
     return device->getStreamProcessorByIndex(0);

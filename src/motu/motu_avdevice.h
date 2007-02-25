@@ -112,7 +112,7 @@ public:
     virtual bool setId(unsigned int id);
 
     virtual int getStreamCount();
-    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
     virtual bool prepare();
     bool lock();
@@ -139,16 +139,16 @@ protected:
     signed int m_iso_recv_channel, m_iso_send_channel;
     signed int m_bandwidth;
     
-	FreebobStreaming::MotuReceiveStreamProcessor *m_receiveProcessor;
-	FreebobStreaming::MotuTransmitStreamProcessor *m_transmitProcessor;
+	Streaming::MotuReceiveStreamProcessor *m_receiveProcessor;
+	Streaming::MotuTransmitStreamProcessor *m_transmitProcessor;
 
 private:
-	bool addPort(FreebobStreaming::StreamProcessor *s_processor,
+	bool addPort(Streaming::StreamProcessor *s_processor,
 		char *name, 
-		enum FreebobStreaming::Port::E_Direction direction,
+		enum Streaming::Port::E_Direction direction,
 		int position, int size);
 	bool addDirPorts(
-		enum FreebobStreaming::Port::E_Direction direction,
+		enum Streaming::Port::E_Direction direction,
 		unsigned int sample_rate, unsigned int optical_mode);
         
 	unsigned int ReadRegister(unsigned int reg);

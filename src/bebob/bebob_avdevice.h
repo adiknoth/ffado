@@ -70,7 +70,7 @@ public:
     virtual int getSamplingFrequency( );
 
     virtual int getStreamCount();
-    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
     virtual bool prepare();
     bool lock();
@@ -148,8 +148,8 @@ protected:
                  AvPlug::EAvPlugDirection plugDirection,
                  AvPlug::EAvPlugType type);
 
-    bool addPlugToProcessor( AvPlug& plug, FreebobStreaming::StreamProcessor *processor,
-                             FreebobStreaming::AmdtpAudioPort::E_Direction direction);
+    bool addPlugToProcessor( AvPlug& plug, Streaming::StreamProcessor *processor,
+                             Streaming::AmdtpAudioPort::E_Direction direction);
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    AvPlug::EAvPlugDirection direction,
@@ -183,7 +183,7 @@ protected:
     int                       m_nodeId;
 
     // streaming stuff
-    typedef std::vector< FreebobStreaming::StreamProcessor * > StreamProcessorVector;
+    typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
     StreamProcessorVector m_receiveProcessors;
     StreamProcessorVector m_transmitProcessors;
 

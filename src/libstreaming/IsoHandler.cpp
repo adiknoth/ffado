@@ -50,7 +50,7 @@ using namespace std;
 #define CC_INIT_MAX_TRIES 10
 
 
-namespace FreebobStreaming
+namespace Streaming
 {
 
 IMPL_DEBUG_MODULE( IsoHandler, IsoHandler, DEBUG_LEVEL_NORMAL );

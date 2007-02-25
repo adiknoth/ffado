@@ -37,7 +37,7 @@
 
 #include <vector>
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 class StreamProcessor;
 class IsoHandlerManager;

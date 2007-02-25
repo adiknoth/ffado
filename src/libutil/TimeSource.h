@@ -34,7 +34,7 @@
 
 typedef uint64_t freebob_microsecs_t;
 
-namespace FreebobUtil {
+namespace Util {
 
 class TimeSource;
 typedef std::vector<TimeSource *> TimeSourceVector;
@@ -95,7 +95,7 @@ private:
 
 };
 
-} // end of namespace FreebobUtil
+} // end of namespace Util
 
 #endif /* __FREEBOB_TIMESOURCE__ */
 

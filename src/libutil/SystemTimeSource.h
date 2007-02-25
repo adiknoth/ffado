@@ -31,10 +31,10 @@
 #include "../debugmodule/debugmodule.h"
 #include "TimeSource.h"
 
-namespace FreebobUtil {
+namespace Util {
 
 class SystemTimeSource 
-    : public FreebobUtil::TimeSource
+    : public Util::TimeSource
 {
 
 public:
@@ -53,7 +53,7 @@ protected:
 
 };
 
-} // end of namespace FreebobUtil
+} // end of namespace Util
 
 #endif /* __FREEBOB_SYSTEMTIMESOURCE__ */
 

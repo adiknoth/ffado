@@ -39,7 +39,7 @@
 
 #include "libutil/TimestampedBuffer.h"
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 class StreamProcessorManager;
 
@@ -53,7 +53,7 @@ class StreamProcessorManager;
 */
 class StreamProcessor : public IsoStream, 
                         public PortManager, 
-                        public FreebobUtil::TimestampedBufferClient {
+                        public Util::TimestampedBufferClient {
 
     friend class StreamProcessorManager;
 
@@ -109,7 +109,7 @@ public:
 
 
 public:
-    FreebobUtil::TimestampedBuffer *m_data_buffer;
+    Util::TimestampedBuffer *m_data_buffer;
 
 protected:
 

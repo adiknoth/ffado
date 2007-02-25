@@ -388,7 +388,7 @@ MotuDevice::prepare() {
 		return false;
 	}
 
-	m_receiveProcessor=new FreebobStreaming::MotuReceiveStreamProcessor(
+	m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(
 		m_p1394Service->getPort(), samp_freq, event_size_in);
 
 	// The first thing is to initialize the processor.  This creates the
@@ -403,7 +403,7 @@ MotuDevice::prepare() {
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
 	
 	char *buff;
-	FreebobStreaming::Port *p=NULL;
+	Streaming::Port *p=NULL;
 	
 	// retrieve the ID
     std::string id=std::string("dev?");
@@ -412,7 +412,7 @@ MotuDevice::prepare() {
     }
     
 	// Add audio capture ports
-	if (!addDirPorts(FreebobStreaming::Port::E_Capture, samp_freq, optical_in_mode)) {
+	if (!addDirPorts(Streaming::Port::E_Capture, samp_freq, optical_in_mode)) {
 		return false;
 	}
 
@@ -420,8 +420,8 @@ MotuDevice::prepare() {
 	// MIDI byte sent using a 3 byte sequence starting at byte 4 of the
 	// event data.
 	asprintf(&buff,"%s_cap_MIDI0",id.c_str());
-	p = new FreebobStreaming::MotuMidiPort(buff,
-		FreebobStreaming::Port::E_Capture, 4);
+	p = new Streaming::MotuMidiPort(buff,
+		Streaming::Port::E_Capture, 4);
 	if (!p) {
 		debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
 	} else {
@@ -437,9 +437,9 @@ MotuDevice::prepare() {
 
 	// example of adding an control port:
 //    asprintf(&buff,"%s_cap_%s",id.c_str(),"myportnamehere");
-//    p=new FreebobStreaming::MotuControlPort(
+//    p=new Streaming::MotuControlPort(
 //            buff,
-//            FreebobStreaming::Port::E_Capture, 
+//            Streaming::Port::E_Capture, 
 //            0 // you can add all other port specific stuff you 
 //              // need to pass by extending MotuXXXPort and MotuPortInfo
 //    );
@@ -458,7 +458,7 @@ MotuDevice::prepare() {
 //    }
 
 	// Do the same for the transmit processor
-	m_transmitProcessor=new FreebobStreaming::MotuTransmitStreamProcessor(
+	m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(
 		m_p1394Service->getPort(), getSamplingFrequency(), event_size_out);
 
 	m_transmitProcessor->setVerboseLevel(getDebugLevel());
@@ -472,7 +472,7 @@ MotuDevice::prepare() {
 	debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
 	// Add audio playback ports
-	if (!addDirPorts(FreebobStreaming::Port::E_Playback, samp_freq, optical_out_mode)) {
+	if (!addDirPorts(Streaming::Port::E_Playback, samp_freq, optical_out_mode)) {
 		return false;
 	}
 
@@ -480,8 +480,8 @@ MotuDevice::prepare() {
 	// MIDI byte transmitted using a 3 byte sequence starting at byte 4
 	// of the event data.
 	asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
-	p = new FreebobStreaming::MotuMidiPort(buff,
-		FreebobStreaming::Port::E_Capture, 4);
+	p = new Streaming::MotuMidiPort(buff,
+		Streaming::Port::E_Capture, 4);
 	if (!p) {
 		debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
 	} else {
@@ -498,9 +498,9 @@ MotuDevice::prepare() {
 	// example of adding an control port:
 //    asprintf(&buff,"%s_pbk_%s",id.c_str(),"myportnamehere");
 //    
-//    p=new FreebobStreaming::MotuControlPort(
+//    p=new Streaming::MotuControlPort(
 //            buff,
-//            FreebobStreaming::Port::E_Playback, 
+//            Streaming::Port::E_Playback, 
 //            0 // you can add all other port specific stuff you 
 //              // need to pass by extending MotuXXXPort and MotuPortInfo
 //    );
@@ -525,7 +525,7 @@ MotuDevice::getStreamCount() {
  	return 2; // one receive, one transmit
 }
 
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 MotuDevice::getStreamProcessorByIndex(int i) {
 	switch (i) {
 	case 0:
@@ -729,8 +729,8 @@ signed int size = 4+6+8*3;
 }
 /* ======================================================================= */
 
-bool MotuDevice::addPort(FreebobStreaming::StreamProcessor *s_processor,
-  char *name, enum FreebobStreaming::Port::E_Direction direction, 
+bool MotuDevice::addPort(Streaming::StreamProcessor *s_processor,
+  char *name, enum Streaming::Port::E_Direction direction, 
   int position, int size) {
 /*
  * Internal helper function to add a MOTU port to a given stream processor. 
@@ -738,9 +738,9 @@ bool MotuDevice::addPort(FreebobStreaming::StreamProcessor *s_processor,
  * boilerplate code.  Note that the port name is freed by this function
  * prior to exit.
  */
-FreebobStreaming::Port *p=NULL;
+Streaming::Port *p=NULL;
 
-	p = new FreebobStreaming::MotuAudioPort(name, direction, position, size);
+	p = new Streaming::MotuAudioPort(name, direction, position, size);
 
 	if (!p) {
 		debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
@@ -760,7 +760,7 @@ FreebobStreaming::Port *p=NULL;
 /* ======================================================================= */
 
 bool MotuDevice::addDirPorts(
-  enum FreebobStreaming::Port::E_Direction direction, 
+  enum Streaming::Port::E_Direction direction, 
   unsigned int sample_rate, unsigned int optical_mode) {
 /*
  * Internal helper method: adds all required ports for the given direction
@@ -770,9 +770,9 @@ bool MotuDevice::addDirPorts(
  * rate or optical mode.  However, it might be better to unconditionally
  * create all ports and just disable those which are not active.
  */
-const char *mode_str = direction==FreebobStreaming::Port::E_Capture?"cap":"pbk";
-const char *aux_str = direction==FreebobStreaming::Port::E_Capture?"Mix1":"Phones";
-FreebobStreaming::StreamProcessor *s_processor;
+const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
+const char *aux_str = direction==Streaming::Port::E_Capture?"Mix1":"Phones";
+Streaming::StreamProcessor *s_processor;
 unsigned int i, ofs;
 char *buff;
 
@@ -782,7 +782,7 @@ char *buff;
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
     }
 
-	if (direction == FreebobStreaming::Port::E_Capture) {
+	if (direction == Streaming::Port::E_Capture) {
 		s_processor = m_receiveProcessor;
 	} else {
 		s_processor = m_transmitProcessor;
@@ -818,7 +818,7 @@ char *buff;
 			if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
 				asprintf(&buff,"%s_%s_AES/EBU%d", id.c_str(), mode_str, i+1);
 			} else {
-				if (direction == FreebobStreaming::Port::E_Capture)
+				if (direction == Streaming::Port::E_Capture)
 					asprintf(&buff,"%s_%s_Mic%d", id.c_str(), mode_str, i+1);
 				else
 					asprintf(&buff,"%s_%s_MainOut-%c", id.c_str(), mode_str, i==0?'L':'R');

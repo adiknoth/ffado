@@ -31,7 +31,7 @@
 
 #include <string>
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 class StreamStatistics {
 public:

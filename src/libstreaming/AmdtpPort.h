@@ -36,7 +36,7 @@
 #include "Port.h"
 #include "AmdtpPortInfo.h"
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 /*!
 \brief The Base Class for an AMDTP Audio Port
@@ -93,6 +93,6 @@ protected:
 	
 };
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming
 
 #endif /* __FREEBOB_AMDTPPORT__ */

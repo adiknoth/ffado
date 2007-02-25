@@ -28,7 +28,7 @@
 class ConfigRom;
 class Ieee1394Service;
 
-namespace FreebobStreaming {
+namespace Streaming {
     class StreamProcessor;
 }
 /*!
@@ -38,7 +38,7 @@ namespace FreebobStreaming {
  for a specific device.
 
 */
-class IAvDevice : public FreebobUtil::OptionContainer {
+class IAvDevice : public Util::OptionContainer {
 public:
 	virtual ~IAvDevice() {}
 	
@@ -187,7 +187,7 @@ public:
 	 * @pre @ref i smaller than getStreamCount()
 	 * @return a StreamProcessor object if successful, NULL otherwise
 	 */
-	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i) = 0;
+	virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i) = 0;
 	
 	/** 
 	 * @brief starts the stream with index i

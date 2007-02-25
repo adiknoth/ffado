@@ -49,7 +49,7 @@
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 
-using namespace FreebobStreaming;
+using namespace Streaming;
 
 struct _freebob_device
 {	

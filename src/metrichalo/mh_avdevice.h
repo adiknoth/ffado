@@ -65,7 +65,7 @@ public:
     virtual bool setId(unsigned int id);
 
     virtual int getStreamCount();
-    virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
     virtual bool prepare();
     bool lock();

@@ -42,8 +42,8 @@
 // #define TEST_PORT_1
 // #define TEST_PORT_2
 
-using namespace FreebobStreaming;
-using namespace FreebobUtil;
+using namespace Streaming;
+using namespace Util;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 

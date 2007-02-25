@@ -32,7 +32,7 @@
 #include <vector>
 #include <string>
 
-namespace FreebobUtil {
+namespace Util {
 
 class OptionContainer {
 
@@ -173,7 +173,7 @@ protected:
 
 };
 
-} // end of namespace FreebobUtil
+} // end of namespace Util
 
 #endif /* __FREEBOB_OPTIONCONTAINER__ */
 

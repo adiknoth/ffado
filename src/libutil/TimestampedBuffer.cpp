@@ -32,7 +32,7 @@
 #include "TimestampedBuffer.h"
 #include "assert.h"
 
-namespace FreebobUtil {
+namespace Util {
 
 IMPL_DEBUG_MODULE( TimestampedBuffer, TimestampedBuffer, DEBUG_LEVEL_VERBOSE );
 
@@ -866,4 +866,4 @@ void TimestampedBuffer::dumpInfo() {
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  rate                  : %f (%f)\n",m_dll_e2,m_dll_e2/m_update_period);
 }
 
-} // end of namespace FreebobUtil
+} // end of namespace Util

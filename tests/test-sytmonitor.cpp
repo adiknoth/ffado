@@ -42,8 +42,8 @@ Free Software Foundation, Inc.,                                       *
 
 #include <pthread.h>
 
-using namespace FreebobStreaming;
-using namespace FreebobUtil;
+using namespace Streaming;
+using namespace Util;
 
 
 DECLARE_GLOBAL_DEBUG_MODULE;

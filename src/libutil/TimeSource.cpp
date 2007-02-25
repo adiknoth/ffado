@@ -35,7 +35,7 @@
 
 #include "libutil/Time.h"
 
-namespace FreebobUtil {
+namespace Util {
 
 IMPL_DEBUG_MODULE( TimeSource, TimeSource, DEBUG_LEVEL_NORMAL );
 
@@ -320,4 +320,4 @@ void TimeSource::printTimeSourceInfo() {
     }
 }
 
-} // end of namespace FreebobUtil
+} // end of namespace Util

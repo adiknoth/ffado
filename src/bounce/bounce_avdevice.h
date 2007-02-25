@@ -82,7 +82,7 @@ public:
 	
 	virtual int getStreamCount();
 	
-	virtual FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+	virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 	
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
@@ -103,13 +103,13 @@ private:
     struct VendorModelEntry* m_model;
 
     // streaming stuff
-    typedef std::vector< FreebobStreaming::StreamProcessor * > StreamProcessorVector;
+    typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
     StreamProcessorVector m_receiveProcessors;
     StreamProcessorVector m_transmitProcessors;
 
     bool addPortsToProcessor(
-       FreebobStreaming::StreamProcessor *processor, 
-       FreebobStreaming::Port::E_Direction direction);
+       Streaming::StreamProcessor *processor, 
+       Streaming::Port::E_Direction direction);
 
     DECLARE_DEBUG_MODULE;
     

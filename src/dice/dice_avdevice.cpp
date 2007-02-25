@@ -175,7 +175,7 @@ DiceAvDevice::getStreamCount() {
     return 0; // one receive, one transmit
 }
 
-FreebobStreaming::StreamProcessor *
+Streaming::StreamProcessor *
 DiceAvDevice::getStreamProcessorByIndex(int i) {
 
 //    switch (i) {

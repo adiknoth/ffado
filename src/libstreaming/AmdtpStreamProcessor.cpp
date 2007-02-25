@@ -39,7 +39,7 @@
 // the number of cycles to send a packet in advance of it's timestamp
 #define TRANSMIT_ADVANCE_CYCLES 1U
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 IMPL_DEBUG_MODULE( AmdtpTransmitStreamProcessor, AmdtpTransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
@@ -1400,4 +1400,4 @@ int AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(AmdtpAudioPort *p, quadl
 	return 0;
 }
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming

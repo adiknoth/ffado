@@ -37,7 +37,7 @@
 #define MINIMUM_INTERRUPTS_PER_PERIOD  2U
 #define PACKETS_PER_INTERRUPT          4U
 
-namespace FreebobStreaming
+namespace Streaming
 {
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
@@ -71,7 +71,7 @@ bool IsoHandlerManager::init()
 
     if (prio>98) prio=98;
 
-    m_isoManagerThread=new FreebobUtil::PosixThread(
+    m_isoManagerThread=new Util::PosixThread(
         this, 
         m_realtime, prio,
         PTHREAD_CANCEL_DEFERRED);
@@ -722,5 +722,5 @@ void IsoHandlerManager::dumpInfo() {
 
 }
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming
 

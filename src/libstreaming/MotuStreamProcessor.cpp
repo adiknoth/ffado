@@ -41,7 +41,7 @@
 // the number of cycles to send a packet in advance of it's timestamp
 #define TRANSMIT_ADVANCE_CYCLES 1U
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 IMPL_DEBUG_MODULE( MotuTransmitStreamProcessor, MotuTransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
@@ -1389,4 +1389,4 @@ void MotuReceiveStreamProcessor::setVerboseLevel(int l) {
 	ReceiveStreamProcessor::setVerboseLevel(l);
 }
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming

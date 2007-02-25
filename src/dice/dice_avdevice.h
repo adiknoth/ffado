@@ -64,7 +64,7 @@ public:
     bool setId(unsigned int id);
 
     int getStreamCount();
-    FreebobStreaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
     bool prepare();
     
@@ -88,8 +88,8 @@ protected:
     signed int m_id;
     signed int m_iso_recv_channel, m_iso_send_channel;
     
-	FreebobStreaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
-	FreebobStreaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
+	Streaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
+	Streaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
 
 private:
     // debug support

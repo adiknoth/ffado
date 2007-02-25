@@ -54,7 +54,7 @@
 #define IEC61883_AM824_LABEL_MIDI_2X      	0x82
 #define IEC61883_AM824_LABEL_MIDI_3X      	0x83
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 class Port;
 class AmdtpAudioPort;
@@ -228,7 +228,7 @@ protected:
 };
 
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming
 
 #endif /* __FREEBOB_AMDTPSTREAMPROCESSOR__ */
 

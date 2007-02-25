@@ -28,7 +28,7 @@
 
 #include "DelayLockedLoop.h"
 
-namespace FreebobUtil {
+namespace Util {
 
 /**
  * Creates a new Delay Locked Loop with a predefined order and

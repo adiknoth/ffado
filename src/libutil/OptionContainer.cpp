@@ -31,7 +31,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace FreebobUtil {
+namespace Util {
 
 IMPL_DEBUG_MODULE( OptionContainer, OptionContainer, DEBUG_LEVEL_NORMAL );
 
@@ -463,4 +463,4 @@ OptionContainer::deserializeOptions( Glib::ustring basePath,
 }
 
 
-} // end of namespace FreebobUtil
+} // end of namespace Util
