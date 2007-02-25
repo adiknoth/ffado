@@ -19,11 +19,14 @@
  */
 
 #include "serialize.h"
+#include "OptionContainer.h"
+
 #include <libraw1394/raw1394.h>
 
 #include <stdio.h>
 
 using namespace Util;
+using namespace FreebobUtil;
 
 ///////////////////////////////////////
 
@@ -404,6 +407,165 @@ testU3()
 }
 
 /////////////////////////////////////
+class testOC : public OptionContainer {
+public:
+    testOC() {};
+    ~testOC() {};
+    
+    bool test() {
+        bool result=true;
+        
+        Option op1=Option();
+        if(addOption(op1)) {
+            printf( "adding an empty option should not succeed\n" );
+            result=false;
+        }
+        
+        op1=Option("option1");
+        if(addOption(op1)) {
+            printf( "adding an option without a value should not succeed\n" );
+            result=false;
+        }
+        
+        op1=Option("option1", (float)(1.0));
+        if(!addOption(op1)) {
+            printf( "could not add valid option (1)\n" );
+            result=false;
+        }
+        if(addOption(op1)) {
+            printf( "adding the same option twice should not succeed\n" );
+            result=false;
+        }
+        if(!removeOption(op1)) {
+            printf( "could not remove option by reference\n" );
+            result=false;
+        }
+        if(hasOption(op1)) {
+            printf( "option not removed (by reference)\n" );
+            result=false;
+        }
+        
+        op1=Option("option1", (int64_t)1);
+        if(!addOption(op1)) {
+            printf( "could not add valid option (2)\n" );
+            result=false;
+        }
+        if(!removeOption("option1")) {
+            printf( "could not remove option by name\n" );
+            result=false;
+        }
+        if(hasOption(op1)) {
+            printf( "option not removed (by name)\n" );
+            result=false;
+        }
+        
+        op1=Option("option1", (int64_t)(-1));
+        if(!addOption(op1)) {
+            printf( "could not add valid option (3)\n" );
+            result=false;
+        }
+        Option op2=Option("option1", (double)(1.75));
+        if(addOption(op2)) {
+            printf( "adding two options with the same name should not be allowed\n" );
+            result=false;
+        }
+        
+        op2=Option("option2", (double)(1.75));
+        if(!addOption(op2)) {
+            printf( "adding an option with a different name should be allowed (1)\n" );
+            result=false;
+        }
+        Option op3=Option("option3", (int64_t)(1.75));
+        if(!addOption(op3)) {
+            printf( "adding an option with a different name should be allowed (2)\n" );
+            result=false;
+        }
+        
+        if(countOptions() != 3) {
+            printf( "countOptions failed\n" );
+            result=false;
+        }
+            
+        int i=0;
+        for ( OptionContainer::iterator it = begin();
+          it != end();
+          ++it )
+        {
+    //         printf(" (%s)",(*it).getName().c_str());
+            i++;
+        }
+        if(i!=3) {
+            printf( "did not iterate through the right amount of options\n" );
+            result=false;
+        }
+        
+        clearOptions();
+        return result;
+    }
+    
+    void prepare() {
+        Option op1=Option("option1", (int64_t)(-1));
+        if(!addOption(op1)) {
+            printf( "prepare: could not add valid option (3)\n" );
+        }
+        
+        Option op2=Option("option2", (double)(1.75));
+        if(!addOption(op2)) {
+            printf( "prepare: adding an option with a different name should be allowed (1)\n" );
+        }
+        Option op3=Option("option3", (int64_t)(1.75));
+        if(!addOption(op3)) {
+            printf( "prepare: adding an option with a different name should be allowed (2)\n" );
+        }
+    }
+};
+
+static bool
+testU4()
+{
+    bool result=true;
+    testOC oc;
+    if(!oc.test()) {
+        printf( "OptionContainer test failed\n" );
+        result=false;
+    }
+    
+    // now manipulate it externally
+    oc.prepare();
+    
+    if(!oc.hasOption("option1")) {
+        printf( "option1 should be present\n" );
+        result=false;
+    }
+    if(!oc.hasOption("option2")) {
+        printf( "option2 should be present\n" );
+        result=false;
+    }
+    if(!oc.hasOption("option3")) {
+        printf( "option3 should be present\n" );
+        result=false;
+    }
+    if(oc.hasOption("option4")) {
+        printf( "option4 should not be present\n" );
+        result=false;
+    }
+
+    oc.setOption("option1", 1024);
+    int tst;
+    if (!oc.getOption("option1", tst)) {
+        printf( "could not get option1 value\n" );
+        result=false;
+    }
+    
+    if(tst != 1024) {
+        printf( "option1 should be 1024\n" );
+        result=false;
+    }
+    
+    return result;
+}
+
+/////////////////////////////////////
 /////////////////////////////////////
 /////////////////////////////////////
 
@@ -419,6 +581,7 @@ TestEntry TestTable[] = {
     { "serialize 1",  testU1 },
     { "serialize 2",  testU2 },
     { "serialize 3",  testU3 },
+    { "OptionContainer 1",  testU4 },
 };
 
 int
