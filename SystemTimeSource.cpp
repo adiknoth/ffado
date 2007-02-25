@@ -29,7 +29,7 @@
 #include "SystemTimeSource.h"
 #include "Time.h"
 
-namespace FreebobUtil {
+namespace Util {
 
 IMPL_DEBUG_MODULE( SystemTimeSource, SystemTimeSource, DEBUG_LEVEL_NORMAL );
 
@@ -53,4 +53,4 @@ freebob_microsecs_t SystemTimeSource::getCurrentTimeAsUsecs() {
     return getCurrentTime();
 }
 
-} // end of namespace FreebobUtil
+} // end of namespace Util

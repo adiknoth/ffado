@@ -28,7 +28,7 @@
 #ifndef __FREEBOB_DELAYLOCKEDLOOP__
 #define __FREEBOB_DELAYLOCKEDLOOP__
 
-namespace FreebobUtil {
+namespace Util {
 
 class DelayLockedLoop {
 

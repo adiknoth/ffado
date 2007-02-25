@@ -29,7 +29,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <errno.h>
 #include <assert.h>
 
-namespace FreebobUtil
+namespace Util
 {
 
 IMPL_DEBUG_MODULE( Thread, Thread, DEBUG_LEVEL_VERBOSE );

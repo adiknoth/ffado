@@ -26,7 +26,6 @@
 #include <stdio.h>
 
 using namespace Util;
-using namespace FreebobUtil;
 
 ///////////////////////////////////////
 

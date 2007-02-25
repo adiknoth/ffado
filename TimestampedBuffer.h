@@ -31,7 +31,7 @@
 #include "../debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
 
-namespace FreebobUtil {
+namespace Util {
 
 class TimestampedBufferClient;
 
@@ -194,7 +194,7 @@ class TimestampedBufferClient {
 
 };
 
-} // end of namespace FreebobUtil
+} // end of namespace Util
 
 #endif /* __FREEBOB_TIMESTAMPEDBUFFER__ */
 
