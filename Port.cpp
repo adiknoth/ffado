@@ -31,7 +31,7 @@
 #include <assert.h>
 
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 IMPL_DEBUG_MODULE( Port, Port, DEBUG_LEVEL_NORMAL );
 

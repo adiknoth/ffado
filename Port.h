@@ -34,7 +34,7 @@
 #include <string>
 #include "libutil/ringbuffer.h"
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 /*!
 \brief The Base Class for Ports

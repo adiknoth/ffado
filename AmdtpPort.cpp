@@ -28,6 +28,6 @@
 #include "AmdtpPort.h"
 #include <assert.h>
 
-namespace FreebobStreaming {
+namespace Streaming {
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming

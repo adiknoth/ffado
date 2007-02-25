@@ -34,7 +34,7 @@
 
 #include <assert.h>
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
 IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_VERBOSE );
@@ -57,7 +57,7 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 	, m_sync_delay(0)
 {
     // create the timestamped buffer and register ourselves as its client
-    m_data_buffer=new FreebobUtil::TimestampedBuffer(this);
+    m_data_buffer=new Util::TimestampedBuffer(this);
 
 }
 

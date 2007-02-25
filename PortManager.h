@@ -33,7 +33,7 @@
 
 #include <vector>
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 class Port;
 typedef std::vector<Port *> PortVector;

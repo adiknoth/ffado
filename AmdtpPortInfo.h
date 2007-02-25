@@ -31,7 +31,7 @@
 #include "../debugmodule/debugmodule.h"
 #include <string>
 
-namespace FreebobStreaming {
+namespace Streaming {
 /*!
 \brief Class containing the stream information for an AMDTP channel
 
@@ -77,6 +77,6 @@ protected:
 
 };
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming
 
 #endif /* __FREEBOB_AMDTPPORTINFO__ */

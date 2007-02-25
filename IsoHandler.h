@@ -34,7 +34,7 @@
 
 
 enum raw1394_iso_disposition ;
-namespace FreebobStreaming
+namespace Streaming
 {
 
 class IsoStream;

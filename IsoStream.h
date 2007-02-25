@@ -32,7 +32,7 @@
 #include "../debugmodule/debugmodule.h"
 #include "IsoHandler.h"
 
-namespace FreebobStreaming
+namespace Streaming
 {
 
 class PacketBuffer;

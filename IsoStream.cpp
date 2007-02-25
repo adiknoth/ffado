@@ -29,7 +29,7 @@
 #include "IsoStream.h"
 #include <assert.h>
 
-namespace FreebobStreaming
+namespace Streaming
 {
 
 IMPL_DEBUG_MODULE( IsoStream, IsoStream, DEBUG_LEVEL_NORMAL );

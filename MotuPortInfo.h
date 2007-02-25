@@ -31,7 +31,7 @@
 #include "../debugmodule/debugmodule.h"
 #include <string>
 
-namespace FreebobStreaming {
+namespace Streaming {
 /*!
 \brief Class containing the stream information for a Motu channel
 
@@ -86,6 +86,6 @@ protected:
 
 };
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming
 
 #endif /* __FREEBOB_MOTUPORTINFO__ */

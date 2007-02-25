@@ -36,7 +36,7 @@
 #include "Port.h"
 #include "MotuPortInfo.h"
 
-namespace FreebobStreaming {
+namespace Streaming {
 
 /*!
 \brief The Base Class for Motu Audio Port
@@ -113,7 +113,7 @@ protected:
 	
 };
 
-} // end of namespace FreebobStreaming
+} // end of namespace Streaming
 
 #endif /* __FREEBOB_MOTUPORT__ */
 
