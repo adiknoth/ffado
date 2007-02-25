@@ -28,6 +28,9 @@
 
 #include "OptionContainer.h"
 
+#include <iostream>
+#include <sstream>
+
 namespace FreebobUtil {
 
 IMPL_DEBUG_MODULE( OptionContainer, OptionContainer, DEBUG_LEVEL_NORMAL );
@@ -107,6 +110,47 @@ void OptionContainer::Option::set(bool v)        { m_boolValue = v; m_Type=EBool
 void OptionContainer::Option::set(double v)      { m_doubleValue = v; m_Type=EDouble;}
 void OptionContainer::Option::set(int64_t v)     { m_intValue = v; m_Type=EInt;}
 void OptionContainer::Option::set(uint64_t v)    { m_uintValue = v; m_Type=EUInt;}
+
+bool
+OptionContainer::Option::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+{
+    bool result;
+    result  = ser.write( basePath + "m_Name", Glib::ustring(m_Name) );
+    result &= ser.write( basePath + "m_stringValue", Glib::ustring(m_stringValue) );
+    result &= ser.write( basePath + "m_boolValue", m_boolValue );
+    result &= ser.write( basePath + "m_doubleValue", m_doubleValue );
+    result &= ser.write( basePath + "m_intValue", m_intValue );
+    result &= ser.write( basePath + "m_uintValue", m_uintValue );
+    result &= ser.write( basePath + "m_Type", m_Type );
+
+    return result;
+}
+
+
+OptionContainer::Option
+OptionContainer::Option::deserialize( Glib::ustring basePath,
+                     Util::IODeserialize& deser )
+{
+    bool result;
+    Option op=Option();
+    Glib::ustring tmpstr;
+    
+    result  = deser.read( basePath + "m_Name", tmpstr );
+    op.m_Name = tmpstr;
+    result &= deser.read( basePath + "m_stringValue", tmpstr );
+    op.m_stringValue = tmpstr;
+    result &= deser.read( basePath + "m_boolValue", op.m_boolValue );
+    result &= deser.read( basePath + "m_doubleValue", op.m_doubleValue );
+    result &= deser.read( basePath + "m_intValue", op.m_intValue );
+    result &= deser.read( basePath + "m_uintValue", op.m_uintValue );
+    result &= deser.read( basePath + "m_Type", op.m_Type );
+
+    if(result) {
+        return op;
+    } else {
+        return Option();
+    }
+}
 
 // ------------------------
 OptionContainer::OptionContainer() {
@@ -368,5 +412,55 @@ int OptionContainer::findOption(std::string name) {
     }
     return -1;
 }
+
+// serialization support
+
+bool
+OptionContainer::serializeOptions( Glib::ustring basePath,
+                                   Util::IOSerialize& ser) const
+{
+    bool result = true;
+    int i = 0;
+
+    for ( OptionVector::const_iterator it = m_Options.begin();
+          it != m_Options.end();
+          ++it )
+    {
+        const Option& pOption = *it;
+
+        std::ostringstream strstrm;
+        strstrm << basePath << "/" << "Option" << i;
+        result &= pOption.serialize( strstrm.str() + "/", ser );
+        i++;
+    }
+
+    return result;
+}
+
+bool
+OptionContainer::deserializeOptions( Glib::ustring basePath,
+                                     Util::IODeserialize& deser,
+                                     OptionContainer& container)
+{
+    int i = 0;
+    bool bFinished = false;
+    bool result=true;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << "/" << "Option" << i;
+        
+        Option pOption = Option::deserialize( strstrm.str() + "/",
+                                              deser );
+        if ( pOption.getType() != Option::EInvalid ) {
+            result &= container.addOption(pOption);
+            i++;
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return result;
+}
+
 
 } // end of namespace FreebobUtil
