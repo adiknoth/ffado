@@ -184,7 +184,7 @@ uint64_t StreamProcessor::getTimeNow() {
 
 
 bool StreamProcessor::isRunning() {
-	return m_running;
+    return m_running;
 }
 
 bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
@@ -214,16 +214,12 @@ bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
 #endif
 
     m_disabled=false;
-    
     return true;
 }
 
 bool StreamProcessor::disable()  {
-    
     m_disabled=true;
-
     return true;
-
 }
 
 bool StreamProcessor::setSyncSource(StreamProcessor *s) {
