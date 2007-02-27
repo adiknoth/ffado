@@ -47,9 +47,15 @@ namespace Streaming {
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_NORMAL );
 
 StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int nb_buffers)
-	: m_SyncSource(NULL), m_nb_buffers(nb_buffers), m_period(period), m_xruns(0), 
-	m_isoManager(0), m_nbperiods(0) {
-
+    : m_is_slave( false )
+    , m_SyncSource(NULL)
+    , m_nb_buffers(nb_buffers)
+    , m_period(period)
+    , m_xruns(0)
+    , m_isoManager(0)
+    , m_nbperiods(0)
+{
+    addOption(Util::OptionContainer::Option("slaveMode",false));
 }
 
 StreamProcessorManager::~StreamProcessorManager() {
@@ -194,58 +200,71 @@ bool StreamProcessorManager::prepare() {
 
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 	
-	// if no sync source is set, select one here
-	if(m_SyncSource == NULL) {
-	   debugWarning("Sync Source is not set. Defaulting to first StreamProcessor.\n");
-	}
-	
-	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-		it != m_ReceiveProcessors.end();
-		++it ) {
-			if(m_SyncSource == NULL) {
-				debugWarning(" => Sync Source is %p.\n", *it);
-				m_SyncSource = *it;
-			}
-	}
+    m_is_slave=false;
+    if(!getOption("snoopMode", m_is_slave)) {
+        debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
+    }
 
-	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-		it != m_TransmitProcessors.end();
-		++it ) {
-			if(m_SyncSource == NULL) {
-				debugWarning(" => Sync Source is %p.\n", *it);
-				m_SyncSource = *it;
-			}
-	}
+    // if no sync source is set, select one here
+    if(m_SyncSource == NULL) {
+       debugWarning("Sync Source is not set. Defaulting to first StreamProcessor.\n");
+    }
 
-        // now do the actual preparation
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare Receive processors...\n");
-	for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-		it != m_ReceiveProcessors.end();
-		++it ) {
-			if(!(*it)->setSyncSource(m_SyncSource)) {
-				debugFatal(  " could not set sync source (%p)...\n",(*it));
-				return false;
-			}
-			
-			if(!(*it)->prepare()) {
-				debugFatal(  " could not prepare (%p)...\n",(*it));
-				return false;
-			}
-	}
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+            if(m_SyncSource == NULL) {
+                debugWarning(" => Sync Source is %p.\n", *it);
+                m_SyncSource = *it;
+            }
+    }
+    
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+            if(m_SyncSource == NULL) {
+                debugWarning(" => Sync Source is %p.\n", *it);
+                m_SyncSource = *it;
+            }
+    }
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare Transmit processors...\n");
-	for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-		it != m_TransmitProcessors.end();
-		++it ) {
-			if(!(*it)->setSyncSource(m_SyncSource)) {
-				debugFatal(  " could not set sync source (%p)...\n",(*it));
-				return false;
-			}		
-			if(!(*it)->prepare()) {
-				debugFatal( " could not prepare (%p)...\n",(*it));
-				return false;
-			}
-	}
+    // now do the actual preparation
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare Receive processors...\n");
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        
+        if(!(*it)->setSyncSource(m_SyncSource)) {
+            debugFatal(  " could not set sync source (%p)...\n",(*it));
+            return false;
+        }
+
+        if(!(*it)->setOption("slaveMode", m_is_slave)) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " note: could not set slaveMode option for (%p)...\n",(*it));
+        }
+
+        if(!(*it)->prepare()) {
+            debugFatal(  " could not prepare (%p)...\n",(*it));
+            return false;
+        }
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare Transmit processors...\n");
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        if(!(*it)->setSyncSource(m_SyncSource)) {
+            debugFatal(  " could not set sync source (%p)...\n",(*it));
+            return false;
+        }
+        if(!(*it)->setOption("slaveMode", m_is_slave)) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " note: could not set slaveMode option for (%p)...\n",(*it));
+        }
+        if(!(*it)->prepare()) {
+            debugFatal( " could not prepare (%p)...\n",(*it));
+            return false;
+        }
+    }
 
     // if there are no stream processors registered, 
     // fail
@@ -817,7 +836,7 @@ bool StreamProcessorManager::waitForPeriod() {
         ++it ) {
         xmt_bf = (*it)->getBufferFill();
     }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n", 
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n", 
         m_time_of_transfer,rcv_bf,xmt_bf,rcv_bf+xmt_bf);
     
 #endif

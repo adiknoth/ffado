@@ -42,6 +42,7 @@
 
 #ifdef ENABLE_BOUNCE
     #include "bounce/bounce_avdevice.h"
+    #include "bounce/bounce_slave_avdevice.h"
 #endif
 
 #ifdef ENABLE_MOTU
@@ -67,7 +68,8 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : m_1394Service( 0 )
 {
-
+    addOption(Util::OptionContainer::Option("slaveMode",false));
+    addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
 DeviceManager::~DeviceManager()
@@ -104,6 +106,14 @@ DeviceManager::initialize( int port )
 bool
 DeviceManager::discover( int verboseLevel )
 {
+    bool slaveMode=false;
+    if(!getOption("slaveMode", slaveMode)) {
+        debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
+    }
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
 
     setDebugLevel( verboseLevel );
     m_1394Service->setVerbose( verboseLevel );
@@ -116,16 +126,77 @@ DeviceManager::discover( int verboseLevel )
     }
     m_avDevices.clear();
 
-    for ( fb_nodeid_t nodeId = 0;
-          nodeId < m_1394Service->getNodeCount();
-          ++nodeId )
-    {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
+    if (!slaveMode) {
+        for ( fb_nodeid_t nodeId = 0;
+              nodeId < m_1394Service->getNodeCount();
+              ++nodeId )
+        {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
+    
+            if (nodeId == m_1394Service->getLocalNodeId()) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Skipping local node (%d)...\n", nodeId );
+                continue;
+            }
+    
+            std::auto_ptr<ConfigRom> configRom =
+                std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
+                                                         nodeId ) );
+            if ( !configRom->initialize() ) {
+                // \todo If a PHY on the bus is in power safe mode then
+                // the config rom is missing. So this might be just
+                // such this case and we can safely skip it. But it might
+                // be there is a real software problem on our side.
+                // This should be handled more carefuly.
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                             "Could not read config rom from device (node id %d). "
+                             "Skip device discovering for this node\n",
+                             nodeId );
+                continue;
+            }
+    
+            IAvDevice* avDevice = getDriverForDevice( configRom,
+                                                      nodeId,
+                                                      verboseLevel );
+            if ( avDevice ) {
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                             "discover: driver found for device %d\n",
+                             nodeId );
 
-        if (nodeId == m_1394Service->getLocalNodeId()) {
-            debugOutput( DEBUG_LEVEL_VERBOSE, "Skipping local node (%d)...\n", nodeId );
-            continue;
+                if ( !avDevice->discover() ) {
+                    debugError( "discover: could not discover device\n" );
+                    delete avDevice;
+                    continue;
+                }
+
+                if ( !avDevice->setId( m_avDevices.size() ) ) {
+                    debugError( "setting Id failed\n" );
+                }
+                
+                if (snoopMode) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE,
+                                 "Enabling snoop mode on node %d...\n", nodeId );
+
+                    if(!avDevice->setOption("snoopMode", snoopMode)) {
+                        debugWarning("Could not set snoop mode for device on node %d\n",nodeId);
+                        delete avDevice;
+                        continue;
+                    }
+                }
+                
+                avDevice->setVerboseLevel( verboseLevel );
+                
+                if ( verboseLevel ) {
+                    avDevice->showDevice();
+                }
+
+                m_avDevices.push_back( avDevice );
+            }
         }
+        return true;
+        
+    } else { // slave mode
+        fb_nodeid_t nodeId = m_1394Service->getLocalNodeId();
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Starting in slave mode on node %d...\n", nodeId );
 
         std::auto_ptr<ConfigRom> configRom =
             std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
@@ -140,12 +211,10 @@ DeviceManager::discover( int verboseLevel )
                          "Could not read config rom from device (node id %d). "
                          "Skip device discovering for this node\n",
                          nodeId );
-            continue;
+            return false;
         }
 
-        IAvDevice* avDevice = getDriverForDevice( configRom,
-                                                  nodeId,
-                                                  verboseLevel );
+        IAvDevice* avDevice = getSlaveDriver( configRom, verboseLevel );
         if ( avDevice ) {
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "discover: driver found for device %d\n",
@@ -154,7 +223,7 @@ DeviceManager::discover( int verboseLevel )
             if ( !avDevice->discover() ) {
                 debugError( "discover: could not discover device\n" );
                 delete avDevice;
-                continue;
+                return false;
             }
 
             if ( !avDevice->setId( m_avDevices.size() ) ) {
@@ -166,9 +235,9 @@ DeviceManager::discover( int verboseLevel )
 
             m_avDevices.push_back( avDevice );
         }
+    
+        return true;
     }
-
-    return true;
 }
 
 
@@ -177,44 +246,64 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id,  int level )
 {
 #ifdef ENABLE_BEBOB
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
         return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
     }
 #endif
 
 #ifdef ENABLE_BEBOB
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
     if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
         return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
     }
 #endif
 
 #ifdef ENABLE_MOTU
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
     if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
         return new Motu::MotuDevice( configRom, *m_1394Service, id, level );
     }
 #endif
 
 #ifdef ENABLE_DICE
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Dice...\n" );
     if ( Dice::DiceAvDevice::probe( *configRom.get() ) ) {
         return new Dice::DiceAvDevice( configRom, *m_1394Service, id, level );
     }
 #endif
 
 #ifdef ENABLE_METRIC_HALO
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Metric Halo...\n" );
     if ( MetricHalo::MHAvDevice::probe( *configRom.get() ) ) {
         return new MetricHalo::MHAvDevice( configRom, *m_1394Service, id, level );
     }
 #endif
 
 #ifdef ENABLE_RME
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying RME...\n" );
     if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
         return new Rme::RmeDevice( configRom, *m_1394Service, id, level );
     }
 #endif
 
 #ifdef ENABLE_BOUNCE
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Bounce...\n" );
     if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
         return new Bounce::BounceDevice( configRom, *m_1394Service, id, level );
+    }
+#endif
+
+    return 0;
+}
+
+IAvDevice*
+DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ), int level )
+{
+
+#ifdef ENABLE_BOUNCE
+    if ( Bounce::BounceSlaveDevice::probe( *configRom.get() ) ) {
+        return new Bounce::BounceSlaveDevice( configRom, *m_1394Service, level );
     }
 #endif
 
@@ -299,13 +388,18 @@ DeviceManager::getAvDeviceCount( )
 Streaming::StreamProcessor *
 DeviceManager::getSyncSource() {
     IAvDevice* device = getAvDeviceByIndex(0);
-    return device->getStreamProcessorByIndex(0);
-    
+
+    bool slaveMode=false;
+    if(!getOption("slaveMode", slaveMode)) {
+        debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
+    }
+   
     #warning TEST CODE FOR BOUNCE DEVICE !!
-    if (device->getConfigRom().getNodeId()==0) {
-        return device->getStreamProcessorByIndex(0);
-    } else {
+    // this makes the bounce slave use the xmit SP as sync source
+    if (slaveMode) {
         return device->getStreamProcessorByIndex(1);
+    } else {
+        return device->getStreamProcessorByIndex(0);
     }
     
 }

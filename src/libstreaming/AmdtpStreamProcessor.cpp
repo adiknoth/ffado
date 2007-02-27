@@ -1210,15 +1210,15 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 		return false;
 	}
 
-
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
-		     m_framerate,m_dimension,m_syt_interval);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
-		     m_period,m_nb_buffers);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
-		     m_port,m_channel);
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
+             m_framerate,m_dimension,m_syt_interval);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
+             m_period,m_nb_buffers);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
+             m_port,m_channel);
+    
+    return true;
 
 }
 

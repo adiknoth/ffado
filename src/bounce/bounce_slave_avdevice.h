@@ -28,20 +28,66 @@
 #ifndef __FREEBOB_BOUNCESLAVEDEVICE__
 #define __FREEBOB_BOUNCESLAVEDEVICE__
 
-#include "../debugmodule/debugmodule.h"
+#include "debugmodule/debugmodule.h"
+#include "bounce_avdevice.h"
 
 namespace Bounce {
 
-class BounceSlaveDevice {
-
+class BounceSlaveDevice : public BounceDevice {
+    class BounceSlaveNotifier;
 public:
 
-	BounceSlaveDevice();
-	virtual ~BounceSlaveDevice();
+    BounceSlaveDevice( std::auto_ptr<ConfigRom>( configRom ),
+          Ieee1394Service& ieee1394Service,
+          int verboseLevel );
+    virtual ~BounceSlaveDevice();
+    
+    static bool probe( ConfigRom& configRom );
+    bool discover();
+    bool prepare();
+    bool lock();
+    bool unlock();
+    
+    bool startStreamByIndex(int i);
+    bool stopStreamByIndex(int i);
+    
 
 protected:
     DECLARE_DEBUG_MODULE;
+private:
+    bool waitForRegisterNotEqualTo(nodeaddr_t offset, fb_quadlet_t v);
+    bool initMemSpace();
+    bool restoreMemSpace();
+    
+private: // configrom shit
 
+    struct configrom_backup {
+        quadlet_t rom[0x100];
+        size_t rom_size;
+        unsigned char rom_version;
+    };
+    struct configrom_backup m_original_config_rom;
+    
+    struct configrom_backup 
+        save_config_rom(raw1394handle_t handle);
+    int restore_config_rom(raw1394handle_t handle, struct configrom_backup old);
+    int init_config_rom(raw1394handle_t handle);
+    
+private:
+    BounceSlaveNotifier *m_Notifier;
+    /**
+     * this class reacts on the ohter side writing to the 
+     * hosts address space
+     */
+    class BounceSlaveNotifier : public ARMHandler
+    {
+    public:
+        BounceSlaveNotifier(BounceSlaveDevice *, nodeaddr_t start);
+        virtual ~BounceSlaveNotifier();
+        
+    private:
+        BounceSlaveDevice *m_bounceslavedevice;
+    };
 };
 
 } // end of namespace Bounce

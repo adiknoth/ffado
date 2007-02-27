@@ -24,6 +24,7 @@
 #include "debugmodule/debugmodule.h"
 
 #include "libfreebob/xmlparser.h"
+#include "libutil/OptionContainer.h"
 
 #include <glibmm/ustring.h>
 
@@ -41,7 +42,7 @@ typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
 class ConfigRom;
 
 
-class DeviceManager{
+class DeviceManager : public Util::OptionContainer {
  public:
     DeviceManager();
     ~DeviceManager();
@@ -69,6 +70,8 @@ class DeviceManager{
 protected:
     IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id,
+                                   int level );
+    IAvDevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ),
                                    int level );
 
 protected:

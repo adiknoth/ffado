@@ -27,6 +27,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "IEC61883.h"
+
 #include <libraw1394/raw1394.h>
 #include <pthread.h>
 
@@ -34,7 +36,7 @@
 
 class ARMHandler;
 
-class Ieee1394Service{
+class Ieee1394Service : public IEC61883 {
 public:
     Ieee1394Service();
     ~Ieee1394Service();

@@ -108,10 +108,32 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
                 delete dev;
                 return 0;
         }
-
+        
+        // set slave mode option
+        bool slaveMode=(dev->options.slave_mode != 0);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "setting slave mode to %d\n", slaveMode);
+        if(!dev->m_deviceManager->setOption("slaveMode", slaveMode)) {
+                debugWarning("Failed to set slave mode option\n");
+        }
+        // set snoop mode option
+        bool snoopMode=(dev->options.snoop_mode != 0);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "setting snoop mode to %d\n", snoopMode);
+        if(!dev->m_deviceManager->setOption("snoopMode", snoopMode)) {
+                debugWarning("Failed to set snoop mode option\n");
+        }
+        
         // discover the devices on the bus
         if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
                 debugFatal("Could not discover devices\n");
+                delete dev->processorManager;
+                delete dev->m_deviceManager;
+                delete dev;
+                return 0;
+        }
+        
+        // are there devices on the bus?
+        if(dev->m_deviceManager->getAvDeviceCount()==0) {
+                debugFatal("There are no devices on the bus\n");
                 delete dev->processorManager;
                 delete dev->m_deviceManager;
                 delete dev;
@@ -176,14 +198,14 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 }
 
 int freebob_streaming_prepare(freebob_device_t *dev) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Preparing...\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Preparing...\n");
         
-        if (!dev->processorManager->prepare()) {
+    if (!dev->processorManager->prepare()) {
         debugFatal("Could not prepare streaming...\n");
         return false;
-        }
+    }
 
-        return true;
+    return true;
 }
 
 void freebob_streaming_finish(freebob_device_t *dev) {

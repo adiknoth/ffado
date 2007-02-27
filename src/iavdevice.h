@@ -215,6 +215,10 @@ public:
 	 */
 	virtual bool stopStreamByIndex(int i) = 0;
 
+    /**
+     * set verbosity level
+     */
+    virtual void setVerboseLevel(int l) {setDebugLevel(l);};
 };
 
 #endif

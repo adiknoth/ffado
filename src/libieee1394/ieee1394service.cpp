@@ -116,6 +116,7 @@ Ieee1394Service::initialize( int port )
 
     m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
                                    this->armHandlerLowLevel );
+    
     startRHThread();
 
     return true;

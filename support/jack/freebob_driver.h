@@ -136,25 +136,28 @@ typedef struct _freebob_driver freebob_driver_t;
 
 typedef struct _freebob_jack_settings freebob_jack_settings_t;
 struct _freebob_jack_settings {
-	int period_size_set;
-	jack_nframes_t period_size;
-	
-	int sample_rate_set;
-	int sample_rate;
-	
-	int buffer_size_set;
-	jack_nframes_t buffer_size;
-
-        int port_set;
-        int port;
-       
-        int node_id_set;
-        int node_id;
-
-	int playback_ports;
-	int capture_ports;
-
-        freebob_handle_t fb_handle;
+    int period_size_set;
+    jack_nframes_t period_size;
+    
+    int sample_rate_set;
+    int sample_rate;
+    
+    int buffer_size_set;
+    jack_nframes_t buffer_size;
+    
+    int port_set;
+    int port;
+   
+    int node_id_set;
+    int node_id;
+    
+    int playback_ports;
+    int capture_ports;
+    
+    int slave_mode;
+    int snoop_mode;
+    
+    freebob_handle_t fb_handle;
 };
 
 #ifdef FREEBOB_DRIVER_WITH_MIDI

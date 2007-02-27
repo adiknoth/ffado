@@ -28,8 +28,9 @@
 #ifndef __FREEBOB_STREAMPROCESSORMANAGER__
 #define __FREEBOB_STREAMPROCESSORMANAGER__
 
-#include "../debugmodule/debugmodule.h"
-#include "../libutil/Thread.h"
+#include "debugmodule/debugmodule.h"
+#include "libutil/Thread.h"
+#include "libutil/OptionContainer.h"
 #include <semaphore.h>
 #include "Port.h"
 #include "StreamProcessor.h"
@@ -49,8 +50,9 @@ typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 \brief Manages a collection of StreamProcessors and provides a synchronisation interface
  
 */
-class StreamProcessorManager {
-
+class StreamProcessorManager : public Util::OptionContainer {
+    friend class StreamProcessor;
+    
 public:
 
     StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
@@ -107,7 +109,9 @@ public:
 
     virtual void setVerboseLevel(int l);
     void dumpInfo();
-    
+
+private: // slaving support
+    bool m_is_slave;
     
     // the sync source stuff
 private:
@@ -117,8 +121,8 @@ public:
     bool setSyncSource(StreamProcessor *s);
     StreamProcessor * getSyncSource();
 
-    
 protected:
+
     // thread sync primitives
     bool m_xrun_happened; 
 

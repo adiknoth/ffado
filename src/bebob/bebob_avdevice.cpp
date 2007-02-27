@@ -724,40 +724,55 @@ AvDevice::getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection )
 bool
 AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
-
-    AvPlug* plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
-    if ( !plug ) {
-        debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
-        return false;
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
-
-    if ( !setSamplingFrequencyPlug( *plug,
-                                    AvPlug::eAPD_Input,
-                                    samplingFrequency ) )
-    {
-        debugError( "setSampleRate: Setting sample rate failed\n" );
-        return false;
+    
+    if(snoopMode) {
+        int current_sr=getSamplingFrequency();
+        if (current_sr != convertESamplingFrequency( samplingFrequency ) ) {
+            debugError("In snoop mode it is impossible to set the sample rate.\n");
+            debugError("Please start the client with the correct setting.\n");
+            return false;
+        }
+        return true;
+    } else {
+        AvPlug* plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
+        if ( !plug ) {
+            debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
+            return false;
+        }
+    
+        if ( !setSamplingFrequencyPlug( *plug,
+                                        AvPlug::eAPD_Input,
+                                        samplingFrequency ) )
+        {
+            debugError( "setSampleRate: Setting sample rate failed\n" );
+            return false;
+        }
+    
+        plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output,  0 );
+        if ( !plug ) {
+            debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
+            return false;
+        }
+    
+        if ( !setSamplingFrequencyPlug( *plug,
+                                        AvPlug::eAPD_Output,
+                                        samplingFrequency ) )
+        {
+            debugError( "setSampleRate: Setting sample rate failed\n" );
+            return false;
+        }
+    
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "setSampleRate: Set sample rate to %d\n",
+                     convertESamplingFrequency( samplingFrequency ) );
+        return true;
     }
-
-    plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output,  0 );
-    if ( !plug ) {
-        debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
-        return false;
-    }
-
-    if ( !setSamplingFrequencyPlug( *plug,
-                                    AvPlug::eAPD_Output,
-                                    samplingFrequency ) )
-    {
-        debugError( "setSampleRate: Setting sample rate failed\n" );
-        return false;
-    }
-
-
-    debugOutput( DEBUG_LEVEL_VERBOSE,
-                 "setSampleRate: Set sample rate to %d\n",
-                 convertESamplingFrequency( samplingFrequency ) );
-    return true;
+    // not executable
+    return false;
 }
 
 int
@@ -954,14 +969,32 @@ bool AvDevice::setId( unsigned int id)
 
 bool
 AvDevice::lock() {
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    if (snoopMode) {
+        // don't lock
+    } else {
+    
+    }
 
     return true;
 }
 
-
 bool
 AvDevice::unlock() {
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
 
+    if (snoopMode) {
+        // don't unlock
+    } else {
+    
+    }
     return true;
 }
 
@@ -971,7 +1004,7 @@ AvDevice::prepare() {
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
-
+    
     ///////////
     // get plugs
 
@@ -988,6 +1021,7 @@ AvDevice::prepare() {
 
     int samplerate=outputPlug->getSampleRate();
     
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing receive processor...\n");
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
     
@@ -1012,6 +1046,8 @@ AvDevice::prepare() {
     m_receiveProcessors.push_back(p);
 
     // do the transmit processor
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing transmit processor%s...\n",
+            (snoopMode?" in snoop mode":""));
     if (snoopMode) {
         // we are snooping, so this is receive too.
         p=new Streaming::AmdtpReceiveStreamProcessor(
@@ -1038,15 +1074,19 @@ AvDevice::prepare() {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
-        m_receiveProcessors.push_back(p);
     } else {
         if (!addPlugToProcessor(*inputPlug,p,
             Streaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
-        m_transmitProcessors.push_back(p);
     }
+    
+    // we put this SP into the transmit SP vector,
+    // no matter if we are in snoop mode or not
+    // this allows us to find out what direction
+    // a certain stream should have.
+    m_transmitProcessors.push_back(p);
 
     return true;
 }
@@ -1156,19 +1196,41 @@ AvDevice::getStreamProcessorByIndex(int i) {
 bool
 AvDevice::startStreamByIndex(int i) {
     int iso_channel=-1;
-    
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
         
-        iso_channel=m_p1394Service->allocateIsoChannelCMP(
-            m_pConfigRom->getNodeId() | 0xffc0, 0, 
-            m_p1394Service->getLocalNodeId()| 0xffc0, -1);
-        
+        if(snoopMode) { // a stream from the device to another host
+            // FIXME: put this into a decent framework!
+            // we should check the oPCR[n] on the device
+            struct iec61883_oPCR opcr;
+            if (iec61883_get_oPCRX(
+                    m_p1394Service->getHandle(), 
+                    m_pConfigRom->getNodeId() | 0xffc0,
+                    (quadlet_t *)&opcr,
+                    n)) {
+                    
+                debugWarning("Error getting the channel for SP %d\n",i);
+                return false;
+            }
+            
+            iso_channel=opcr.channel;
+        } else {
+            iso_channel=m_p1394Service->allocateIsoChannelCMP(
+                m_pConfigRom->getNodeId() | 0xffc0, n, 
+                m_p1394Service->getLocalNodeId()| 0xffc0, -1);
+        }
         if (iso_channel<0) {
             debugError("Could not allocate ISO channel for SP %d\n",i);
             return false;
         }
+        
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Started SP %d on channel %d\n",i,iso_channel);
         
         p->setChannel(iso_channel);
         return true;
@@ -1177,14 +1239,34 @@ AvDevice::startStreamByIndex(int i) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
         
-        iso_channel=m_p1394Service->allocateIsoChannelCMP(
-            m_p1394Service->getLocalNodeId()| 0xffc0, -1,
-            m_pConfigRom->getNodeId() | 0xffc0, 0);
+        if(snoopMode) { // a stream from another host to the device 
+            // FIXME: put this into a decent framework!
+            // we should check the iPCR[n] on the device
+            struct iec61883_iPCR ipcr;
+            if (iec61883_get_iPCRX(
+                    m_p1394Service->getHandle(), 
+                    m_pConfigRom->getNodeId() | 0xffc0,
+                    (quadlet_t *)&ipcr,
+                    n)) {
+                    
+                debugWarning("Error getting the channel for SP %d\n",i);
+                return false;
+            }
+            
+            iso_channel=ipcr.channel;
+            
+        } else {
+            iso_channel=m_p1394Service->allocateIsoChannelCMP(
+                m_p1394Service->getLocalNodeId()| 0xffc0, -1,
+                m_pConfigRom->getNodeId() | 0xffc0, n);
+        }
         
         if (iso_channel<0) {
             debugError("Could not allocate ISO channel for SP %d\n",i);
             return false;
         }
+        
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Started SP %d on channel %d\n",i,iso_channel);
         
         p->setChannel(iso_channel);
         return true;
@@ -1196,14 +1278,23 @@ AvDevice::startStreamByIndex(int i) {
 
 bool
 AvDevice::stopStreamByIndex(int i) {
-   if (i<(int)m_receiveProcessors.size()) {
+    bool snoopMode=false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
 
-        // deallocate ISO channel
-        if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
-            debugError("Could not deallocate iso channel for SP %d\n",i);
-            return false;
+        if(snoopMode) {
+
+        } else {
+            // deallocate ISO channel
+            if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
+                debugError("Could not deallocate iso channel for SP %d\n",i);
+                return false;
+            }
         }
         p->setChannel(-1);
         
@@ -1213,10 +1304,14 @@ AvDevice::stopStreamByIndex(int i) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
         
-        // deallocate ISO channel
-        if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
-            debugError("Could not deallocate iso channel for SP %d\n",i);
-            return false;
+        if(snoopMode) {
+
+        } else {
+            // deallocate ISO channel
+            if(!m_p1394Service->freeIsoChannel(p->getChannel())) {
+                debugError("Could not deallocate iso channel for SP %d\n",i);
+                return false;
+            }
         }
         p->setChannel(-1);
         

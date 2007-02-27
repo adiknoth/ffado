@@ -144,7 +144,8 @@ protected:
                         unsigned int offset);
     int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
                                 unsigned int offset, unsigned int nevents);
-
+    void updatePreparedState();
+    
     unsigned long m_last_timestamp;
 
     unsigned int m_dbc;
@@ -215,6 +216,7 @@ protected:
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
     
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void updatePreparedState();
 
     int m_dimension;
     unsigned int m_syt_interval;

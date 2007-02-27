@@ -121,6 +121,12 @@ typedef struct freebob_options {
 	
 	/* verbosity */
 	int verbose;
+	
+	/* slave mode */
+	int slave_mode;
+	
+	/* snoop mode */
+	int snoop_mode;
 
 } freebob_options_t;
 

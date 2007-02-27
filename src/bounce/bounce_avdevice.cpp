@@ -44,7 +44,7 @@ namespace Bounce {
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0B0001, 0x0B0001, 0x0B0001, "FreeBoB", "Bounce"},
+    {0x0B0001LU, 0x0B0001LU, 0x0B0001LU, "FreeBoB", "Bounce"},
 };
 
 IMPL_DEBUG_MODULE( BounceDevice, BounceDevice, DEBUG_LEVEL_VERBOSE );
@@ -57,7 +57,8 @@ BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
     : m_configRom( configRom )
     , m_p1394Service( &ieee1394service )
     , m_nodeId( nodeId )
-    , m_verboseLevel( verboseLevel )
+//     , m_verboseLevel( verboseLevel )
+    , m_verboseLevel( DEBUG_LEVEL_VERBOSE )
     , m_samplerate (44100)
     , m_model( NULL )
     , m_Notifier ( NULL )
@@ -84,9 +85,12 @@ BounceDevice::getConfigRom() const
 bool
 BounceDevice::probe( ConfigRom& configRom )
 {
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "probing BounceDevice\n");
 //     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
     unsigned int unitSpecifierId = configRom.getUnitSpecifierId();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "modelId = 0x%08X, specid = 0x%08X\n", modelId, unitSpecifierId);
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -108,10 +112,9 @@ BounceDevice::probe( ConfigRom& configRom )
 bool
 BounceDevice::discover()
 {
-// 	unsigned int resp_len=0;
-// 	quadlet_t request[6];
-// 	quadlet_t *resp;
-
+    debugOutput( DEBUG_LEVEL_VERBOSE, "discovering BounceDevice (NodeID %d)\n",
+                 m_nodeId );
+                 
 //     unsigned int vendorId = m_configRom->getNodeVendorId();
     unsigned int modelId = m_configRom->getModelId();
     unsigned int unitSpecifierId = m_configRom->getUnitSpecifierId();
@@ -134,35 +137,7 @@ BounceDevice::discover()
                 m_model->vendor_name, m_model->model_name);
         return true;
     }
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering...\n" );
-
-	std::string vendor=std::string(FREEBOB_BOUNCE_SERVER_VENDORNAME);
-	std::string model=std::string(FREEBOB_BOUNCE_SERVER_MODELNAME);
-
-	if (!(m_configRom->getVendorName().compare(0,vendor.length(),vendor,0,vendor.length())==0)
-	    || !(m_configRom->getModelName().compare(0,model.length(),model,0,model.length())==0)) {
-		return false;
-	}
-/*
-// AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT
-	request[0] = htonl( AVC1394_CTYPE_STATUS | (AVC1394_SUBUNIT_TYPE_FREEBOB_BOUNCE_SERVER << 19) | (0 << 16)
-			| AVC1394_COMMAND_INPUT_PLUG_SIGNAL_FORMAT | 0x00);
-
-	request[1] =  0xFFFFFFFF;
-        resp = m_p1394Service->transactionBlock( m_nodeId,
-                                                       request,
-                                                       2,
-		                                               &resp_len );
-// 	hexDump((unsigned char *)request,6*4);
-	if(resp) {
-		char *buffer=(char *)&resp[1];
-		resp[resp_len-1]=0;
-		xmlDescription=buffer;
-// 		hexDump((unsigned char *)resp,6*4);
-	}
-*/
-	return true;
+    return false;
 }
 
 int BounceDevice::getSamplingFrequency( ) {
@@ -211,7 +186,6 @@ BounceDevice::showDevice() const
     debugOutput(DEBUG_LEVEL_NORMAL, "Model Name        :  %s\n", m_model->model_name);
     debugOutput(DEBUG_LEVEL_NORMAL, "Node              :  %d\n", m_nodeId);
     debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", m_configRom->getGuid());
-    debugOutput(DEBUG_LEVEL_NORMAL, "AVC test response :  %s\n", xmlDescription.c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "\n" );
 }
 
@@ -433,7 +407,7 @@ BounceDevice::startStreamByIndex(int i) {
         
         // write value of ISO_CHANNEL register
         reg_isoch=isochannel;
-        if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
+        if(!writeReg(BOUNCE_REGISTER_RX_ISOCHANNEL, reg_isoch)) {
             debugError("Could not write ISO_CHANNEL register\n");
             p->setChannel(-1);
             deallocateIsoChannel(isochannel);
@@ -450,8 +424,74 @@ BounceDevice::startStreamByIndex(int i) {
 
 bool
 BounceDevice::stopStreamByIndex(int i) {
-
-	return false;
+    if (i<(int)m_receiveProcessors.size()) {
+        int n=i;
+        Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        unsigned int isochannel=p->getChannel();
+        
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!readReg(BOUNCE_REGISTER_TX_ISOCHANNEL, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register\n");
+            return false;
+        }
+        if(reg_isoch != isochannel) {
+            debugError("ISO_CHANNEL register != 0x%08X (=0x%08X)\n", isochannel, reg_isoch);
+            return false;
+        }
+        
+        // write value of ISO_CHANNEL register
+        reg_isoch=0xFFFFFFFFUL;
+        if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
+            debugError("Could not write ISO_CHANNEL register" );
+            return false;
+        }
+        
+        // deallocate ISO channel
+        if(!deallocateIsoChannel(isochannel)) {
+            debugError("Could not deallocate iso channel for SP\n",i);
+            return false;
+        }
+        
+        p->setChannel(-1);
+        return true;
+        
+    } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
+        int n=i-m_receiveProcessors.size();
+        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        
+        unsigned int isochannel=p->getChannel();
+        
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!readReg(BOUNCE_REGISTER_RX_ISOCHANNEL, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register\n");
+            return false;
+        }
+        if(reg_isoch != isochannel) {
+            debugError("ISO_CHANNEL register != 0x%08X (=0x%08X)\n", isochannel, reg_isoch);
+            return false;
+        }
+        
+        // write value of ISO_CHANNEL register
+        reg_isoch=0xFFFFFFFFUL;
+        if(!writeReg(BOUNCE_REGISTER_RX_ISOCHANNEL, reg_isoch)) {
+            debugError("Could not write ISO_CHANNEL register\n");
+            return false;
+        }
+        
+        // deallocate ISO channel
+        if(!deallocateIsoChannel(isochannel)) {
+            debugError("Could not deallocate iso channel for SP (%d)\n",i);
+            return false;
+        }
+        
+        p->setChannel(-1);
+        return true;
+    }
+    
+    debugError("SP index %d out of range!\n",i);
+    return false;
 }
 
 // helper functions

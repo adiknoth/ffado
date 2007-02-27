@@ -50,9 +50,9 @@ namespace Bounce {
 
 // struct to define the supported devices
 struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    unsigned int unit_specifier_id;
+    uint32_t vendor_id;
+    uint32_t model_id;
+    uint32_t unit_specifier_id;
     char *vendor_name;
     char *model_name;
 };
@@ -68,27 +68,27 @@ public:
     virtual ~BounceDevice();
 
     static bool probe( ConfigRom& configRom );
-    virtual bool discover();
-    virtual ConfigRom& getConfigRom() const;
+    bool discover();
+    ConfigRom& getConfigRom() const;
     
-    virtual bool addXmlDescription( xmlNodePtr deviceNode );
+    bool addXmlDescription( xmlNodePtr deviceNode );
     
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-	virtual int getSamplingFrequency( );
+    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    int getSamplingFrequency( );
     
-	virtual bool prepare();
+    bool prepare();
     bool lock();
     bool unlock();
-	
-	virtual int getStreamCount();
-	
-	virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
-	
+
+    int getStreamCount();
+
+    Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
+
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
     
-    virtual void showDevice() const;
-    virtual bool setId(unsigned int id);
+    void showDevice() const;
+    bool setId(unsigned int id);
 
 protected:
     std::auto_ptr<ConfigRom>( m_configRom );
@@ -96,7 +96,6 @@ protected:
     int              m_nodeId;
     int              m_verboseLevel;
 
-private:
 	std::string xmlDescription;
 
     unsigned int m_samplerate;
@@ -116,8 +115,8 @@ private:
 private: // generic helpers
     int allocateIsoChannel(unsigned int packet_size);
     bool deallocateIsoChannel(int channel);
-    
-private: // I/O helpers
+
+protected: // I/O helpers
     // quadlet read/write routines
     bool readReg(fb_nodeaddr_t, fb_quadlet_t *);
     bool writeReg(fb_nodeaddr_t, fb_quadlet_t);

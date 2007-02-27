@@ -34,10 +34,11 @@ libfreebob_la_LIBADD = -lrt
 noinst_HEADERS = \
     libieee1394/configrom.h libieee1394/csr1212.h \
     libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
+    libieee1394/IEC61883.h \
     debugmodule/debugmodule.h \
 	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
-	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h \
+	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
 	libavc/avc_connect.h \
@@ -82,6 +83,7 @@ libfreebob_la_SOURCES = \
         libieee1394/configrom.cpp \
         libieee1394/csr1212.c \
         libieee1394/ieee1394service.cpp \
+        libieee1394/IEC61883.cpp \
         libstreaming/cip.c \
         libstreaming/IsoHandler.cpp \
         libstreaming/IsoHandlerManager.cpp \
@@ -125,7 +127,8 @@ dice_src = \
         dice/dice_avdevice.cpp
 
 bounce_src = \
-        bounce/bounce_avdevice.cpp
+        bounce/bounce_avdevice.cpp \
+        bounce/bounce_slave_avdevice.cpp
 
 metric_halo_src = \
         metrichalo/mh_avdevice.cpp

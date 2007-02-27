@@ -36,8 +36,8 @@
 #include <pthread.h>
 
 #include "libutil/StreamStatistics.h"
-
 #include "libutil/TimestampedBuffer.h"
+#include "libutil/OptionContainer.h"
 
 namespace Streaming {
 
@@ -53,7 +53,8 @@ class StreamProcessorManager;
 */
 class StreamProcessor : public IsoStream, 
                         public PortManager, 
-                        public Util::TimestampedBufferClient {
+                        public Util::TimestampedBufferClient,
+                        public Util::OptionContainer {
 
     friend class StreamProcessorManager;
 
@@ -111,11 +112,11 @@ public:
 public:
     Util::TimestampedBuffer *m_data_buffer;
 
-protected:
-
+protected: // SPM related
     void setManager(StreamProcessorManager *manager) {m_manager=manager;};
     void clearManager() {m_manager=0;};
-
+    
+protected:
     unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
     unsigned int m_period; ///< cached from manager->getPeriod(), the period size
 

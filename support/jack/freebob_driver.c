@@ -641,6 +641,8 @@ freebob_driver_new (jack_client_t * client,
 	driver->device_options.nb_buffers=params->buffer_size;
 	driver->device_options.node_id=params->node_id;
 	driver->device_options.port=params->port;
+	driver->device_options.slave_mode=params->slave_mode;
+	driver->device_options.snoop_mode=params->snoop_mode;
 
 	if(!params->capture_ports) {
 		driver->device_options.directions |= FREEBOB_IGNORE_CAPTURE;
@@ -1027,7 +1029,7 @@ driver_get_descriptor ()
 	desc = calloc (1, sizeof (jack_driver_desc_t));
 
 	strcpy (desc->name, "freebob");
-	desc->nparams = 6;
+	desc->nparams = 8;
   
 	params = calloc (desc->nparams, sizeof (jack_driver_param_desc_t));
 	desc->params = params;
@@ -1080,6 +1082,22 @@ driver_get_descriptor ()
 	strcpy (params[i].short_desc, "Provide playback ports.");
 	strcpy (params[i].long_desc, params[i].short_desc);
 
+	i++;
+	strcpy (params[i].name, "slave");
+	params[i].character  = 'x';
+	params[i].type       = JackDriverParamUInt;
+	params[i].value.ui   = 0U;
+	strcpy (params[i].short_desc, "Act as a BounceDevice slave");
+	strcpy (params[i].long_desc, params[i].short_desc);
+
+	i++;
+	strcpy (params[i].name, "slave");
+	params[i].character  = 'X';
+	params[i].type       = JackDriverParamUInt;
+	params[i].value.ui   = 0U;
+	strcpy (params[i].short_desc, "Operate in snoop mode");
+	strcpy (params[i].long_desc, params[i].short_desc);
+
 	return desc;
 }
 
@@ -1114,6 +1132,8 @@ driver_initialize (jack_client_t *client, JSList * params)
 	cmlparams.node_id=-1;
 	cmlparams.playback_ports=1;
 	cmlparams.capture_ports=1;
+	cmlparams.slave_mode=0;
+	cmlparams.snoop_mode=0;
 	
 	for (node = params; node; node = jack_slist_next (node))
 	{
@@ -1141,6 +1161,12 @@ driver_initialize (jack_client_t *client, JSList * params)
 			break;
 		case 'o':
 			cmlparams.playback_ports = param->value.ui;
+			break;
+		case 'x':
+			cmlparams.slave_mode = param->value.ui;
+			break;
+		case 'X':
+			cmlparams.snoop_mode = param->value.ui;
 			break;
 		}
 	}
