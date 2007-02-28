@@ -740,6 +740,9 @@ int freebob_streaming_start(freebob_device_t *dev) {
 		break;
 		}
 		
+		// reset the connection, such that the buffers are empty
+		freebob_streaming_reset_connection(dev, connection);
+
 		if(connection->iso.iso_channel<0) {
 			printError("Could not do CMP for connection %d\n",i);
 			i-=1;
