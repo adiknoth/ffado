@@ -155,13 +155,14 @@ DeviceManager::discover( int verboseLevel )
             }
     
             IAvDevice* avDevice = getDriverForDevice( configRom,
-                                                      nodeId,
-                                                      verboseLevel );
+                                                      nodeId );
             if ( avDevice ) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
                              "discover: driver found for device %d\n",
                              nodeId );
 
+                avDevice->setVerboseLevel( verboseLevel );
+                
                 if ( !avDevice->discover() ) {
                     debugError( "discover: could not discover device\n" );
                     delete avDevice;
@@ -177,13 +178,11 @@ DeviceManager::discover( int verboseLevel )
                                  "Enabling snoop mode on node %d...\n", nodeId );
 
                     if(!avDevice->setOption("snoopMode", snoopMode)) {
-                        debugWarning("Could not set snoop mode for device on node %d\n",nodeId);
+                        debugWarning("Could not set snoop mode for device on node %d\n", nodeId);
                         delete avDevice;
                         continue;
                     }
                 }
-                
-                avDevice->setVerboseLevel( verboseLevel );
                 
                 if ( verboseLevel ) {
                     avDevice->showDevice();
@@ -214,11 +213,13 @@ DeviceManager::discover( int verboseLevel )
             return false;
         }
 
-        IAvDevice* avDevice = getSlaveDriver( configRom, verboseLevel );
+        IAvDevice* avDevice = getSlaveDriver( configRom );
         if ( avDevice ) {
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "discover: driver found for device %d\n",
                          nodeId );
+            
+            avDevice->setVerboseLevel( verboseLevel );
 
             if ( !avDevice->discover() ) {
                 debugError( "discover: could not discover device\n" );
@@ -232,6 +233,7 @@ DeviceManager::discover( int verboseLevel )
             if ( verboseLevel ) {
                 avDevice->showDevice();
             }
+            
 
             m_avDevices.push_back( avDevice );
         }
@@ -243,54 +245,54 @@ DeviceManager::discover( int verboseLevel )
 
 IAvDevice*
 DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
-                                   int id,  int level )
+                                   int id )
 {
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
-        return new BeBoB::AvDevice( configRom, *m_1394Service, id, level );
+        return new BeBoB::AvDevice( configRom, *m_1394Service, id );
     }
 #endif
 
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
     if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
-        return new MAudio::AvDevice( configRom, *m_1394Service, id, level );
+        return new MAudio::AvDevice( configRom, *m_1394Service, id );
     }
 #endif
 
 #ifdef ENABLE_MOTU
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
     if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
-        return new Motu::MotuDevice( configRom, *m_1394Service, id, level );
+        return new Motu::MotuDevice( configRom, *m_1394Service, id );
     }
 #endif
 
 #ifdef ENABLE_DICE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Dice...\n" );
     if ( Dice::DiceAvDevice::probe( *configRom.get() ) ) {
-        return new Dice::DiceAvDevice( configRom, *m_1394Service, id, level );
+        return new Dice::DiceAvDevice( configRom, *m_1394Service, id );
     }
 #endif
 
 #ifdef ENABLE_METRIC_HALO
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Metric Halo...\n" );
     if ( MetricHalo::MHAvDevice::probe( *configRom.get() ) ) {
-        return new MetricHalo::MHAvDevice( configRom, *m_1394Service, id, level );
+        return new MetricHalo::MHAvDevice( configRom, *m_1394Service, id );
     }
 #endif
 
 #ifdef ENABLE_RME
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying RME...\n" );
     if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
-        return new Rme::RmeDevice( configRom, *m_1394Service, id, level );
+        return new Rme::RmeDevice( configRom, *m_1394Service, id );
     }
 #endif
 
 #ifdef ENABLE_BOUNCE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Bounce...\n" );
     if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
-        return new Bounce::BounceDevice( configRom, *m_1394Service, id, level );
+        return new Bounce::BounceDevice( configRom, *m_1394Service, id );
     }
 #endif
 
@@ -298,12 +300,12 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
 }
 
 IAvDevice*
-DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ), int level )
+DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 {
 
 #ifdef ENABLE_BOUNCE
     if ( Bounce::BounceSlaveDevice::probe( *configRom.get() ) ) {
-        return new Bounce::BounceSlaveDevice( configRom, *m_1394Service, level );
+        return new Bounce::BounceSlaveDevice( configRom, *m_1394Service );
     }
 #endif
 

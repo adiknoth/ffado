@@ -38,8 +38,7 @@ class BounceSlaveDevice : public BounceDevice {
 public:
 
     BounceSlaveDevice( std::auto_ptr<ConfigRom>( configRom ),
-          Ieee1394Service& ieee1394Service,
-          int verboseLevel );
+          Ieee1394Service& ieee1394Service );
     virtual ~BounceSlaveDevice();
     
     static bool probe( ConfigRom& configRom );
@@ -50,10 +49,7 @@ public:
     
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
-    
 
-protected:
-    DECLARE_DEBUG_MODULE;
 private:
     bool waitForRegisterNotEqualTo(nodeaddr_t offset, fb_quadlet_t v);
     bool initMemSpace();

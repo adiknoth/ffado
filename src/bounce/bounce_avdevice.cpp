@@ -47,39 +47,22 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0B0001LU, 0x0B0001LU, 0x0B0001LU, "FreeBoB", "Bounce"},
 };
 
-IMPL_DEBUG_MODULE( BounceDevice, BounceDevice, DEBUG_LEVEL_VERBOSE );
-
-
 BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
                             Ieee1394Service& ieee1394service,
-                            int nodeId,
-                            int verboseLevel )
-    : m_configRom( configRom )
-    , m_p1394Service( &ieee1394service )
-    , m_nodeId( nodeId )
-//     , m_verboseLevel( verboseLevel )
-    , m_verboseLevel( DEBUG_LEVEL_VERBOSE )
+                            int nodeId )
+    : IAvDevice( configRom, ieee1394service, nodeId )
     , m_samplerate (44100)
     , m_model( NULL )
     , m_Notifier ( NULL )
 {
-    setDebugLevel( verboseLevel );
-
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
                  nodeId );
     addOption(Util::OptionContainer::Option("snoopMode",false));
-    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 }
 
 BounceDevice::~BounceDevice()
 {
 
-}
-
-ConfigRom&
-BounceDevice::getConfigRom() const
-{
-    return *m_configRom;
 }
 
 bool
@@ -115,9 +98,9 @@ BounceDevice::discover()
     debugOutput( DEBUG_LEVEL_VERBOSE, "discovering BounceDevice (NodeID %d)\n",
                  m_nodeId );
                  
-//     unsigned int vendorId = m_configRom->getNodeVendorId();
-    unsigned int modelId = m_configRom->getModelId();
-    unsigned int unitSpecifierId = m_configRom->getUnitSpecifierId();
+//     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+    unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int unitSpecifierId = m_pConfigRom->getUnitSpecifierId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -152,17 +135,6 @@ bool BounceDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency ) 
     } else return false;
 }
 
-bool BounceDevice::setId( unsigned int id) {
-    // FIXME: decent ID system nescessary
-    std::ostringstream idstr;
-
-    idstr << "dev" << id;
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
-    
-    return setOption("id",idstr.str());
-}
-
 bool
 BounceDevice::lock() {
 
@@ -180,21 +152,13 @@ void
 BounceDevice::showDevice() const
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "\nI am the bouncedevice, the bouncedevice I am...\n" );
-    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor            :  %s\n", m_configRom->getVendorName().c_str());
-    debugOutput(DEBUG_LEVEL_NORMAL, "Model             :  %s\n", m_configRom->getModelName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor            :  %s\n", m_pConfigRom->getVendorName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Model             :  %s\n", m_pConfigRom->getModelName().c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "Vendor Name       :  %s\n", m_model->vendor_name);
     debugOutput(DEBUG_LEVEL_NORMAL, "Model Name        :  %s\n", m_model->model_name);
     debugOutput(DEBUG_LEVEL_NORMAL, "Node              :  %d\n", m_nodeId);
-    debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", m_configRom->getGuid());
+    debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", m_pConfigRom->getGuid());
     debugOutput(DEBUG_LEVEL_NORMAL, "\n" );
-}
-
-bool
-BounceDevice::addXmlDescription( xmlNodePtr deviceNode )
-{
-
-    return false;
-
 }
 
 #define BOUNCE_NR_OF_CHANNELS 2

@@ -32,18 +32,22 @@ namespace Streaming {
     class StreamProcessor;
 }
 /*!
-@brief Interface that is to be implemented to support a device.
+@brief Base class for device support
 
- This interface should be used to implement freebob support 
+ This class should be subclassed to implement freebob support 
  for a specific device.
 
 */
 class IAvDevice : public Util::OptionContainer {
 public:
-	virtual ~IAvDevice() {}
+	IAvDevice( std::auto_ptr< ConfigRom >( configRom ),
+                    Ieee1394Service& ieee1394service,
+                    int nodeId );
+	
+	virtual ~IAvDevice() {};
 	
 	/// Returns the ConfigRom object of the device node.
-	virtual ConfigRom& getConfigRom() const = 0;
+	ConfigRom& getConfigRom() const;
 	
 	/**
 	 * @brief This is called by the DeviceManager to discover & configure the device
@@ -92,7 +96,7 @@ public:
      * @param id 
      * @return true if successful
      */
-    virtual bool setId(unsigned int id) = 0;
+    bool setId(unsigned int id);
 	
 	/**
 	 * @brief Constructs an XML description of the device [obsolete]
@@ -104,7 +108,7 @@ public:
 	 * @param deviceNode 
 	 * @return true if successful, false if not
 	 */
-	virtual bool addXmlDescription( xmlNodePtr deviceNode ) = 0;
+	bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
 	
 	/**
 	 * @brief Outputs the device configuration to stderr/stdout [debug helper]
@@ -218,7 +222,15 @@ public:
     /**
      * set verbosity level
      */
-    virtual void setVerboseLevel(int l) {setDebugLevel(l);};
+    virtual void setVerboseLevel(int l);
+
+protected:
+    std::auto_ptr<ConfigRom>( m_pConfigRom );
+    Ieee1394Service*          m_p1394Service;
+    int                       m_verboseLevel;
+    int                       m_nodeId;
+
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif

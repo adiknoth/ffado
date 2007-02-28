@@ -38,8 +38,6 @@
 
 namespace Dice {
 
-IMPL_DEBUG_MODULE( DiceAvDevice, DiceAvDevice, DEBUG_LEVEL_VERBOSE );
-
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
@@ -48,19 +46,12 @@ static VendorModelEntry supportedDeviceList[] =
 
 DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
-                    int nodeId,
-                    int verboseLevel )
-    : m_configRom( configRom )
-    , m_1394Service( &ieee1394service )
+                    int nodeId )
+    :  IAvDevice( configRom, ieee1394service, nodeId )
     , m_model( NULL )
-    , m_nodeId( nodeId )
-    , m_verboseLevel( verboseLevel )
-    , m_id(0)
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
 {
-    setDebugLevel( verboseLevel );
-    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::DiceAvDevice (NodeID %d)\n",
                  nodeId );
 
@@ -69,12 +60,6 @@ DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
 DiceAvDevice::~DiceAvDevice()
 {
 
-}
-
-ConfigRom&
-DiceAvDevice::getConfigRom() const
-{
-    return *m_configRom;
 }
 
 bool
@@ -101,8 +86,8 @@ DiceAvDevice::probe( ConfigRom& configRom )
 bool
 DiceAvDevice::discover()
 {
-    unsigned int vendorId = m_configRom->getNodeVendorId();
-    unsigned int modelId = m_configRom->getModelId();
+    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+    unsigned int modelId = m_pConfigRom->getModelId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -135,12 +120,6 @@ DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
 
     return false;
-}
-
-bool DiceAvDevice::setId( unsigned int id) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %d...\n", id);
-    m_id=id;
-    return true;
 }
 
 void

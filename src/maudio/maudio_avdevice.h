@@ -51,14 +51,12 @@ class AvDevice : public BeBoB::AvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
 	      Ieee1394Service& ieee1394Service,
-              int nodeId,
-	      int verboseLevel );
+              int nodeId );
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
     bool discover();
     
-    bool addXmlDescription( xmlNodePtr pDeviceNode );
     void showDevice() const;
     
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
@@ -68,8 +66,7 @@ public:
 
 protected:
     struct VendorModelEntry*  m_model;
-    
-    DECLARE_DEBUG_MODULE;
+
 };
 
 }

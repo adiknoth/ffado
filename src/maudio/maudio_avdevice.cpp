@@ -35,16 +35,12 @@
 
 namespace MAudio {
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
-
 AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
-                    int iNodeId,
-                    int iVerboseLevel )
+                    int iNodeId )
     : BeBoB::AvDevice( configRom,
                     ieee1394service,
-                    iNodeId,
-                    iVerboseLevel )
+                    iNodeId )
     , m_model ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
@@ -124,95 +120,6 @@ int AvDevice::getSamplingFrequency( ) {
 void
 AvDevice::showDevice() const
 {
-}
-
-bool
-AvDevice::addXmlDescription( xmlNodePtr pDeviceNode )
-{
-    char* pFilename;
-    if ( asprintf( &pFilename, "%s/libfreebob/maudio/%s", DATADIR, m_model->filename ) < 0 ) {
-        debugError( "addXmlDescription: Could not create filename string\n" );
-        return false;
-    }
-
-    xmlDocPtr pDoc = xmlParseFile( pFilename );
-
-    if ( !pDoc ) {
-        debugError( "addXmlDescription: No file '%s' found'\n", pFilename );
-        free( pFilename );
-        return false;;
-    }
-
-    xmlNodePtr pCur = xmlDocGetRootElement( pDoc );
-    if ( !pCur ) {
-        debugError( "addXmlDescription: Document '%s' has not root element\n", pFilename );
-        xmlFreeDoc( pDoc );
-        free( pFilename );
-        return false;
-    }
-
-    if ( xmlStrcmp( pCur->name, ( const xmlChar * ) "FreeBoBConnectionInfo" ) ) {
-        debugError( "addXmlDescription: No node 'FreeBoBConnectionInfo' found\n" );
-        xmlFreeDoc( pDoc );
-        free( pFilename );
-        return false;
-    }
-
-    pCur = pCur->xmlChildrenNode;
-    while ( pCur ) {
-        if ( !xmlStrcmp( pCur->name, ( const xmlChar * ) "Device" ) ) {
-            break;
-        }
-        pCur = pCur->next;
-    }
-
-    if ( pCur ) {
-        pCur = pCur->xmlChildrenNode;
-        while ( pCur ) {
-            if ( ( !xmlStrcmp( pCur->name, ( const xmlChar * ) "ConnectionSet" ) ) ) {
-                xmlNodePtr pDevDesc = xmlCopyNode( pCur, 1 );
-                if ( !pDevDesc ) {
-                    debugError( "addXmlDescription: Could not copy node 'ConnectionSet'\n" );
-                    xmlFreeDoc( pDoc );
-                    free( pFilename );
-                    return false;
-                }
-
-                // set correct node id
-                for ( xmlNodePtr pNode = pDevDesc->xmlChildrenNode; pNode; pNode = pNode->next ) {
-                    if ( ( !xmlStrcmp( pNode->name,  ( const xmlChar * ) "Connection" ) ) ) {
-                        for ( xmlNodePtr pSubNode = pNode->xmlChildrenNode; pSubNode; pSubNode = pSubNode->next ) {
-                            if ( ( !xmlStrcmp( pSubNode->name,  ( const xmlChar * ) "Node" ) ) ) {
-                                char* result;
-                                asprintf( &result, "%d", m_nodeId );
-                                xmlNodeSetContent( pSubNode, BAD_CAST result );
-                                free( result );
-                            }
-                        }
-                    }
-                }
-
-                xmlAddChild( pDeviceNode, pDevDesc );
-            }
-            if ( ( !xmlStrcmp( pCur->name, ( const xmlChar * ) "StreamFormats" ) ) ) {
-                xmlNodePtr pDevDesc = xmlCopyNode( pCur, 1 );
-                if ( !pDevDesc ) {
-                    debugError( "addXmlDescription: Could not copy node 'StreamFormats'\n" );
-                    xmlFreeDoc( pDoc );
-                    free( pFilename );
-                    return false;
-                }
-                xmlAddChild( pDeviceNode, pDevDesc );
-            }
-
-            pCur = pCur->next;
-        }
-    }
-
-    xmlFreeDoc( pDoc );
-    free( pFilename );
-
-    return true;
 }
 
 bool

@@ -64,6 +64,7 @@ libfreebob_la_SOURCES = \
         devicemanager.cpp \
         freebob.cpp \
         freebob_streaming.cpp \
+        iavdevice.cpp \
         xmlparser.c \
         debugmodule/debugmodule.cpp \
         libavc/avc_connect.cpp \

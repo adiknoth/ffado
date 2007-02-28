@@ -69,10 +69,8 @@ class DeviceManager : public Util::OptionContainer {
 
 protected:
     IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
-                                   int id,
-                                   int level );
-    IAvDevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ),
-                                   int level );
+                                   int id );
+    IAvDevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
 
 protected:
     Ieee1394Service* m_1394Service;

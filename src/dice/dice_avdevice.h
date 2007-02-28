@@ -45,23 +45,16 @@ class DiceAvDevice : public IAvDevice {
 public:
     DiceAvDevice( std::auto_ptr<ConfigRom>( configRom ),
 	      Ieee1394Service& ieee1394Service,
-		  int nodeId,
-		  int verboseLevel );
+		  int nodeId);
     ~DiceAvDevice();
 
     static bool probe( ConfigRom& configRom );
     bool discover();
-    ConfigRom& getConfigRom() const;
-
-    // obsolete, will be removed soon, unused
-    bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
 
     void showDevice() const;
 
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     int getSamplingFrequency( );
-
-    bool setId(unsigned int id);
 
     int getStreamCount();
     Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
@@ -78,22 +71,13 @@ public:
     signed int getIsoSendChannel(void);
   
 protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_1394Service;
-    
     struct VendorModelEntry *m_model;
     
-    int              m_nodeId;
-    int              m_verboseLevel;
-    signed int m_id;
     signed int m_iso_recv_channel, m_iso_send_channel;
     
 	Streaming::AmdtpReceiveStreamProcessor *m_receiveProcessor;
 	Streaming::AmdtpTransmitStreamProcessor *m_transmitProcessor;
 
-private:
-    // debug support
-    DECLARE_DEBUG_MODULE;
 };
 
 }

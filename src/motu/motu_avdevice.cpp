@@ -43,8 +43,6 @@
 
 namespace Motu {
 
-IMPL_DEBUG_MODULE( MotuDevice, MotuDevice, DEBUG_LEVEL_NORMAL );
-
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
@@ -55,13 +53,9 @@ static VendorModelEntry supportedDeviceList[] =
 
 MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
-                    int nodeId,
-                    int verboseLevel )
-    : m_configRom( configRom )
-    , m_p1394Service( &ieee1394service )
+                    int nodeId)
+    : IAvDevice( configRom, ieee1394service, nodeId )
     , m_motu_model( MOTUFW_MODEL_NONE )
-    , m_nodeId( nodeId )
-    , m_verboseLevel( verboseLevel )
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
     , m_bandwidth ( -1 )
@@ -69,8 +63,6 @@ MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_transmitProcessor ( 0 )
     
 {
-    setDebugLevel( verboseLevel );
-    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
                  nodeId );
 
@@ -89,12 +81,6 @@ MotuDevice::~MotuDevice()
             
         }
     }
-}
-
-ConfigRom&
-MotuDevice::getConfigRom() const
-{
-    return *m_configRom;
 }
 
 bool
@@ -125,10 +111,10 @@ MotuDevice::probe( ConfigRom& configRom )
 bool
 MotuDevice::discover()
 {
-    unsigned int vendorId = m_configRom->getNodeVendorId();
-//     unsigned int modelId = m_configRom->getModelId();
-    unsigned int unitVersion = m_configRom->getUnitVersion();
-    unsigned int unitSpecifierId = m_configRom->getUnitSpecifierId();
+    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+//     unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int unitVersion = m_pConfigRom->getUnitVersion();
+    unsigned int unitSpecifierId = m_pConfigRom->getUnitSpecifierId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -301,17 +287,6 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 		}
 	}
 	return supported;
-}
-
-bool MotuDevice::setId( unsigned int id) {
-    // FIXME: decent ID system nescessary
-    std::ostringstream idstr;
-
-    idstr << "dev" << id;
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
-    
-    return setOption("id",idstr.str());
 }
 
 bool

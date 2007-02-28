@@ -47,47 +47,29 @@ public:
 
     RmeDevice( std::auto_ptr<ConfigRom>( configRom ),
 	      Ieee1394Service& ieee1394Service,
-		  int nodeId,
-		  int verboseLevel );
+		  int nodeId );
     virtual ~RmeDevice();
 
     static bool probe( ConfigRom& configRom );
-    virtual bool discover();
-    virtual ConfigRom& getConfigRom() const;
+    bool discover();
 
-    // obsolete, will be removed soon, unused
-    virtual bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
+    void showDevice() const;
 
-    virtual void showDevice() const;
+    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    int getSamplingFrequency( );
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    virtual int getSamplingFrequency( );
+    int getStreamCount();
+    Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
-    virtual bool setId(unsigned int id);
-
-    virtual int getStreamCount();
-    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
-
-    virtual bool prepare();
+    bool prepare();
     bool lock();
     bool unlock();
 
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
-  
+
 protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_p1394Service;
-    
     struct VendorModelEntry *m_model;
-    
-    int              m_nodeId;
-    int              m_verboseLevel;
-
-private:
-
-    // debug support
-    DECLARE_DEBUG_MODULE;
 };
 
 }

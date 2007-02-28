@@ -58,13 +58,13 @@ class AvDevice : public IAvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
               Ieee1394Service& ieee1394Service,
-              int nodeId,
-              int verboseLevel );
+              int nodeId );
     virtual ~AvDevice();
+    
+    void setVerboseLevel(int l);
 
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
-    virtual ConfigRom& getConfigRom() const;
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
@@ -79,9 +79,7 @@ public:
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
 
-    virtual bool addXmlDescription( xmlNodePtr deviceNode );
     virtual void showDevice() const;
-    virtual bool setId(unsigned int id);
 
     Ieee1394Service& get1394Service()
         { return *m_p1394Service; }
@@ -118,9 +116,7 @@ public:
     static AvDevice* deserialize( Glib::ustring basePath,
                                   Util::IODeserialize& deser,
 				  Ieee1394Service& ieee1394Service );
-
 protected:
-    AvDevice();
 
     bool enumerateSubUnits();
 
@@ -169,9 +165,6 @@ protected:
                                            AvDevice& avDevice,
                                            SyncInfoVector& vec );
 protected:
-    std::auto_ptr<ConfigRom>( m_pConfigRom );
-    Ieee1394Service*          m_p1394Service;
-    int                       m_verboseLevel;
     AvPlugVector              m_pcrPlugs;
     AvPlugVector              m_externalPlugs;
     AvPlugConnectionVector    m_plugConnections;
@@ -180,14 +173,11 @@ protected:
     SyncInfoVector            m_syncInfos;
     SyncInfo*                 m_activeSyncInfo;
     struct VendorModelEntry*  m_model;
-    int                       m_nodeId;
 
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
     StreamProcessorVector m_receiveProcessors;
     StreamProcessorVector m_transmitProcessors;
-
-    DECLARE_DEBUG_MODULE;
 };
 
 }

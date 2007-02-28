@@ -42,16 +42,11 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0B0001, 0x0B0001, 0x0B0001, "FreeBoB", "Bounce Slave"},
 };
 
-IMPL_DEBUG_MODULE( BounceSlaveDevice, BounceSlaveDevice, DEBUG_LEVEL_VERBOSE );
-
 BounceSlaveDevice::BounceSlaveDevice( std::auto_ptr< ConfigRom >( configRom ),
-                            Ieee1394Service& ieee1394service,
-                            int verboseLevel )
+                            Ieee1394Service& ieee1394service )
     : BounceDevice( configRom,
                     ieee1394service,
-                    ieee1394service.getLocalNodeId(),
-//                     verboseLevel )
-                    DEBUG_LEVEL_VERBOSE )
+                    ieee1394service.getLocalNodeId() )
 {
     addOption(Util::OptionContainer::Option("isoTimeoutSecs",(int64_t)120));
 }
@@ -103,7 +98,7 @@ bool BounceSlaveDevice::initMemSpace() {
     }
     
     // refresh our config rom cache
-    if ( !m_configRom->initialize() ) {
+    if ( !m_pConfigRom->initialize() ) {
         // \todo If a PHY on the bus is in power safe mode then
         // the config rom is missing. So this might be just
         // such this case and we can safely skip it. But it might

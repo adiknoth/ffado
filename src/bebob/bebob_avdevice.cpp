@@ -38,8 +38,6 @@
 
 namespace BeBoB {
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
-
 static VendorModelEntry supportedDeviceList[] =
 {
     {0x00000f, 0x00010065, "Mackie", "Onyx Firewire"},
@@ -63,37 +61,17 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0040ab, 0x00010049, "EDIROL", "FA-66"},
 };
 
-
 AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
-                    int nodeId,
-                    int verboseLevel )
-    : m_pConfigRom( configRom )
-    , m_p1394Service( &ieee1394service )
-    , m_verboseLevel( verboseLevel )
-    , m_pPlugManager( new AvPlugManager( verboseLevel ) )
+                    int nodeId )
+    : IAvDevice( configRom, ieee1394service, nodeId )
+    , m_pPlugManager( new AvPlugManager( DEBUG_LEVEL_NORMAL ) )
     , m_activeSyncInfo( 0 )
     , m_model ( NULL )
-    , m_nodeId ( nodeId )
 {
-    setDebugLevel( verboseLevel );
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
     addOption(Util::OptionContainer::Option("snoopMode",false));
-    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
-}
-
-AvDevice::AvDevice()
-    : m_pConfigRom( 0 )
-    , m_p1394Service( 0 )
-    , m_verboseLevel( 0 )
-    , m_pPlugManager( 0 )
-    , m_activeSyncInfo( 0 )
-    , m_model ( NULL )
-    , m_nodeId ( -1 )
-{
-    addOption(Util::OptionContainer::Option("snoopMode",false));
-    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 }
 
 AvDevice::~AvDevice()
@@ -125,10 +103,12 @@ AvDevice::~AvDevice()
     }
 }
 
-ConfigRom&
-AvDevice::getConfigRom() const
+void
+AvDevice::setVerboseLevel(int l) 
 {
-    return *m_pConfigRom;
+//     m_pPlugManager->setVerboseLevel(l);
+    
+    IAvDevice::setVerboseLevel(l);
 }
 
 bool
@@ -955,18 +935,6 @@ bool AvDevice::setActiveSync(const SyncInfo& syncInfo)
     return syncInfo.m_source->setConnection( *syncInfo.m_destination );
 }
 
-bool AvDevice::setId( unsigned int id)
-{
-    // FIXME: decent ID system nescessary
-    std::ostringstream idstr;
-
-    idstr << "dev" << id;
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
-    
-    return setOption("id",idstr.str());
-}
-
 bool
 AvDevice::lock() {
     bool snoopMode=false;
@@ -1479,20 +1447,23 @@ AvDevice::deserialize( Glib::ustring basePath,
                        Util::IODeserialize& deser,
                        Ieee1394Service& ieee1394Service )
 {
-    AvDevice* pDev = new AvDevice;
+
+    ConfigRom *configRom =
+        ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service );
+        
+    if ( !configRom ) {
+        return NULL;
+    }
+
+    AvDevice* pDev = new AvDevice(
+        std::auto_ptr<ConfigRom>(configRom), 
+        ieee1394Service, configRom->getNodeId());
 
     if ( pDev ) {
-        pDev->m_pConfigRom = std::auto_ptr<ConfigRom> (
-            ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service )
-            );
-        if ( !pDev->m_pConfigRom.get() ) {
-            delete pDev;
-            return 0;
-        }
-
-        pDev->m_p1394Service = &ieee1394Service;
         bool result;
         result  = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
+        
+        if (pDev->m_pPlugManager) delete pDev->m_pPlugManager;
         pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, *pDev );
         if ( !pDev->m_pPlugManager ) {
             delete pDev;
@@ -1514,7 +1485,6 @@ AvDevice::deserialize( Glib::ustring basePath,
         }
         
         result &= deserializeOptions( basePath + "Options", deser, *pDev );
-
     }
 
     return pDev;

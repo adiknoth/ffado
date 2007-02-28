@@ -93,23 +93,16 @@ public:
 
     MotuDevice( std::auto_ptr<ConfigRom>( configRom ),
           Ieee1394Service& ieee1394Service,
-		  int nodeId,
-		  int verboseLevel );
+		  int nodeId );
     virtual ~MotuDevice();
 
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
-    virtual ConfigRom& getConfigRom() const;
-
-    // obsolete, will be removed soon, unused
-    virtual bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
 
     virtual void showDevice() const;
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
-
-    virtual bool setId(unsigned int id);
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
@@ -129,13 +122,8 @@ public:
     signed int getEventSize(unsigned int dir);
   
 protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_p1394Service;
-    
     signed int       m_motu_model;
     struct VendorModelEntry * m_model;
-    int              m_nodeId;
-    int              m_verboseLevel;
     signed int m_iso_recv_channel, m_iso_send_channel;
     signed int m_bandwidth;
     
@@ -154,8 +142,6 @@ private:
 	unsigned int ReadRegister(unsigned int reg);
 	signed int WriteRegister(unsigned int reg, quadlet_t data);
 
-    // debug support
-    DECLARE_DEBUG_MODULE;
 };
 
 }

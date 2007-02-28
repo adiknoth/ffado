@@ -63,15 +63,11 @@ private:
 public:
     BounceDevice( std::auto_ptr<ConfigRom>( configRom ),
 		  Ieee1394Service& ieee1394Service,
-		  int nodeId,
-		  int verboseLevel );
+		  int nodeId );
     virtual ~BounceDevice();
 
     static bool probe( ConfigRom& configRom );
     bool discover();
-    ConfigRom& getConfigRom() const;
-    
-    bool addXmlDescription( xmlNodePtr deviceNode );
     
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     int getSamplingFrequency( );
@@ -88,16 +84,8 @@ public:
     bool stopStreamByIndex(int i);
     
     void showDevice() const;
-    bool setId(unsigned int id);
 
 protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_p1394Service;
-    int              m_nodeId;
-    int              m_verboseLevel;
-
-	std::string xmlDescription;
-
     unsigned int m_samplerate;
     struct VendorModelEntry* m_model;
 
@@ -109,8 +97,6 @@ protected:
     bool addPortsToProcessor(
        Streaming::StreamProcessor *processor, 
        Streaming::Port::E_Direction direction);
-
-    DECLARE_DEBUG_MODULE;
     
 private: // generic helpers
     int allocateIsoChannel(unsigned int packet_size);
@@ -126,7 +112,7 @@ protected: // I/O helpers
 private:
     BounceNotifier *m_Notifier;
     /**
-     * this class reacts on the ohter side writing to the 
+     * this class reacts on the other side writing to the 
      * hosts address space
      */
     #define BOUNCE_NOTIFIER_BASE_ADDRESS 0x0000FFFFE0000000ULL
