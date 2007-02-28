@@ -408,16 +408,16 @@ bool MotuTransmitStreamProcessor::prepare() {
 	unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
 
     // allocate the internal buffer
-    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
 	unsigned int events_per_frame = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 
     assert(m_data_buffer);    
     m_data_buffer->setBufferSize(ringbuffer_size_frames);
-    m_data_buffer->setEventSize(m_event_size/events_per_frame);
-    m_data_buffer->setEventsPerFrame(events_per_frame);
+    m_data_buffer->setEventSize(m_event_size);
+    m_data_buffer->setEventsPerFrame(1);
     
     m_data_buffer->setUpdatePeriod(m_period);
-    m_data_buffer->setNominalRate(ticks_per_frame);
+    m_data_buffer->setNominalRate(m_ticks_per_frame);
     
     // FIXME: check if the timestamp wraps at one second
     m_data_buffer->setWrapValue(TICKS_PER_SECOND);
@@ -918,6 +918,7 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // using writeframes
             m_data_buffer->setBufferTailTimestamp(m_last_timestamp2);
 
+debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts2=%lld\n",m_last_timestamp2);
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "will enable StreamProcessor %p at %u, now is %d\n",
@@ -988,12 +989,16 @@ uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
 
             // set the timestamp as if there will be a sample put into
             // the buffer by the next packet.
+if (ts > TICKS_PER_SECOND)
+  ts -= TICKS_PER_SECOND;
             m_data_buffer->setBufferTailTimestamp(ts);
+debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
             
             return RAW1394_ISO_DEFER;
         }
 
 		debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
+debugOutput(DEBUG_LEVEL_VERBOSE,"enabled: %p, last ts=%lld, ts2=%lld\n",m_data_buffer, m_last_timestamp, m_last_timestamp2);
 
         //=> process the packet
         // add the data payload to the ringbuffer
@@ -1073,7 +1078,7 @@ bool MotuReceiveStreamProcessor::prepare() {
 	debugOutput( DEBUG_LEVEL_VERBOSE, "Event size: %d\n", m_event_size);
     
     // prepare the framerate estimate
-    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
 	
 	// initialize internal buffer
 	unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
@@ -1082,11 +1087,14 @@ bool MotuReceiveStreamProcessor::prepare() {
 
     assert(m_data_buffer);    
     m_data_buffer->setBufferSize(ringbuffer_size_frames);
-    m_data_buffer->setEventSize(m_event_size/events_per_frame);
-    m_data_buffer->setEventsPerFrame(events_per_frame);	
+    m_data_buffer->setEventSize(m_event_size);
+    m_data_buffer->setEventsPerFrame(1);	
     
-    m_data_buffer->setUpdatePeriod(m_period);
-    m_data_buffer->setNominalRate(ticks_per_frame);
+// JMW: The rx buffer receives a new timestamp once per received frame so I think the
+// buffer update period is events_per_frame, not events per period.
+//    m_data_buffer->setUpdatePeriod(m_period);
+    m_data_buffer->setUpdatePeriod(events_per_frame);
+    m_data_buffer->setNominalRate(m_ticks_per_frame);
     
     m_data_buffer->setWrapValue(TICKS_PER_SECOND);
     
