@@ -72,7 +72,8 @@ void StreamProcessor::dumpInfo()
     
     IsoStream::dumpInfo();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    if (m_handler)
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011u\n",m_handler->getCycleTimerTicks());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %d\n", m_xruns);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running               : %d\n", m_running);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
