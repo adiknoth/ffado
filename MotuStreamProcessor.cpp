@@ -916,9 +916,13 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // the previous timestamp is the one we need to start with
             // because we're going to update the buffer again this loop
             // using writeframes
-            m_data_buffer->setBufferTailTimestamp(m_last_timestamp2);
+//            m_data_buffer->setBufferTailTimestamp(m_last_timestamp2);
+            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 
-debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts2=%lld\n",m_last_timestamp2);
+debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n",
+  m_last_timestamp, m_last_timestamp2, m_last_timestamp-m_last_timestamp2,
+  m_data_buffer);
+
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "will enable StreamProcessor %p at %u, now is %d\n",
@@ -964,6 +968,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts2=%lld\n",m_last_timestamp2);
 // this packet, it perhaps makes more sense to acquire the timestamp of the last frame in the packet.
 // Then it's just a matter of adding m_ticks_per_frame rather than frame_size times this.
 uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
+//uint32_t first_sph = ntohl(*(quadlet_t *)(data+8+(event_length*(n_events-1))));
 //        m_last_timestamp = ((first_sph & 0x1fff000)>>12)*3072 + (first_sph & 0xfff);
         m_last_timestamp = CYCLE_TIMER_TO_TICKS(first_sph & 0x1ffffff);
 
@@ -986,19 +991,21 @@ uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
             float frame_size=m_framerate<=48000?8:(m_framerate<=96000?16:32);
             uint64_t ts=addTicks(m_last_timestamp,
                                  (uint64_t)(frame_size * m_ticks_per_frame));
+//            uint64_t ts=addTicks(m_last_timestamp,
+//                                 (uint64_t)(m_ticks_per_frame));
 
             // set the timestamp as if there will be a sample put into
             // the buffer by the next packet.
 if (ts > TICKS_PER_SECOND)
   ts -= TICKS_PER_SECOND;
             m_data_buffer->setBufferTailTimestamp(ts);
-debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
+//debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
             
             return RAW1394_ISO_DEFER;
         }
 
 		debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
-debugOutput(DEBUG_LEVEL_VERBOSE,"enabled: %p, last ts=%lld, ts2=%lld\n",m_data_buffer, m_last_timestamp, m_last_timestamp2);
+//debugOutput(DEBUG_LEVEL_VERBOSE,"enabled: %p, last ts=%lld, ts2=%lld\n",m_data_buffer, m_last_timestamp, m_last_timestamp2);
 
         //=> process the packet
         // add the data payload to the ringbuffer
