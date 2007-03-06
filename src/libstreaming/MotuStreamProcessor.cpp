@@ -52,6 +52,33 @@ IMPL_DEBUG_MODULE( MotuReceiveStreamProcessor, MotuReceiveStreamProcessor, DEBUG
 // A macro to extract specific bits from a native endian quadlet
 #define get_bits(_d,_start,_len) (((_d)>>((_start)-(_len)+1)) & ((1<<(_len))-1))
 
+// Convert an SPH timestamp as received from the MOTU to a full timestamp in ticks.
+static inline uint32_t sphRecvToFullTicks(uint32_t sph, uint32_t ct_now) {
+
+uint32_t timestamp = CYCLE_TIMER_TO_TICKS(sph & 0x1ffffff);
+uint32_t now_cycles = CYCLE_TIMER_GET_CYCLES(ct_now);
+
+uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
+  // If the cycles have wrapped, correct ts_sec so it represents when timestamp
+  // was received.  The timestamps sent by the MOTU are always 1 or two cycles 
+  // in advance of the cycle timer (reasons unknown at this stage).  In addition,
+  // iso buffering can delay the arrival of packets for quite a number of cycles
+  // (have seen a delay >12 cycles).
+  if (abs(CYCLE_TIMER_GET_CYCLES(sph) - now_cycles) > 1000) {
+debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
+    if (ts_sec)
+      ts_sec--;
+    else
+      ts_sec = 127;
+  }
+  return timestamp + ts_sec*TICKS_PER_SECOND;
+}
+
+// Convert a full timestamp into an SPH timestamp as required by the MOTU
+static inline uint32_t fullTicksToSph(uint32_t timestamp) {
+  return timestamp & 0x1ffffff;
+}
+
 /* transmit */
 MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate,
 		unsigned int event_size)
@@ -232,7 +259,10 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
         // FIXME: Currently we don't read the buffer at all during closedown.
         // We could (and silently junk the contents) if it turned out to be
         // more helpful.
-	
+
+//if (!m_is_disabled && m_running)
+//  return RAW1394_ISO_OK;
+//else	
         return RAW1394_ISO_DEFER;
     }
 
@@ -283,9 +313,33 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
 float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
 		for (i=0; i<n_events; i++, quadlet += dbs) {
-			unsigned int ts_frame = ts;
+//			unsigned int ts_frame = ts;
+			unsigned int ts_frame = timestamp;
 			ts_frame += (unsigned int)((float)i * ticks_per_frame);
-			*quadlet = htonl( TICKS_TO_CYCLE_TIMER(ts_frame) );
+			*quadlet = htonl( TICKS_TO_CYCLE_TIMER(ts_frame) & 0x1ffffff);
+if (cycle==0) {
+  debugOutput(DEBUG_LEVEL_VERBOSE,"%d %d %d\n",
+    TICKS_TO_SECS(ts_frame),
+    TICKS_TO_CYCLES(ts_frame),
+    TICKS_TO_OFFSET(ts_frame));
+}
+#if TESTTONE
+			// FIXME: remove this hacked in 1 kHz test signal to
+			// analog-1 when testing is complete.  Note that the tone is
+			// *never* added during closedown.
+			if (m_closedown_count<0) {
+				static signed int a_cx = 0;
+				signed int val;
+				val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx/24576000.0)));
+ 				if ((a_cx+=512) >= 24576000) {
+					a_cx -= 24576000;
+				}
+				*(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
+				*(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
+				*(data+8+i*m_event_size+18) = val & 0xff;
+			}
+#endif
+
 		}
 
 		// Process all ports that should be handled on a per-packet base
@@ -420,7 +474,7 @@ bool MotuTransmitStreamProcessor::prepare() {
     m_data_buffer->setNominalRate(m_ticks_per_frame);
     
     // FIXME: check if the timestamp wraps at one second
-    m_data_buffer->setWrapValue(TICKS_PER_SECOND);
+    m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
     
     m_data_buffer->prepare();
 
@@ -970,7 +1024,8 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n
 uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
 //uint32_t first_sph = ntohl(*(quadlet_t *)(data+8+(event_length*(n_events-1))));
 //        m_last_timestamp = ((first_sph & 0x1fff000)>>12)*3072 + (first_sph & 0xfff);
-        m_last_timestamp = CYCLE_TIMER_TO_TICKS(first_sph & 0x1ffffff);
+//        m_last_timestamp = CYCLE_TIMER_TO_TICKS(first_sph & 0x1ffffff);
+m_last_timestamp = sphRecvToFullTicks(first_sph, m_handler->getCycleTimer());
 
 		// Signal that we're running
         if(!m_running && n_events && m_last_timestamp2 && m_last_timestamp) {
@@ -996,8 +1051,8 @@ uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
 
             // set the timestamp as if there will be a sample put into
             // the buffer by the next packet.
-if (ts > TICKS_PER_SECOND)
-  ts -= TICKS_PER_SECOND;
+if (ts >= 128L* TICKS_PER_SECOND)
+  ts -= 128L*TICKS_PER_SECOND;
             m_data_buffer->setBufferTailTimestamp(ts);
 //debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
             
@@ -1103,7 +1158,7 @@ bool MotuReceiveStreamProcessor::prepare() {
     m_data_buffer->setUpdatePeriod(events_per_frame);
     m_data_buffer->setNominalRate(m_ticks_per_frame);
     
-    m_data_buffer->setWrapValue(TICKS_PER_SECOND);
+    m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
     
     m_data_buffer->prepare();
 
