@@ -701,37 +701,33 @@ bool Ieee1394Service::freeIsoChannel(signed int c) {
             
         case AllocGeneric:
             debugOutput(DEBUG_LEVEL_VERBOSE, " allocated using generic routine...\n" );
-            if (unregisterIsoChannel(c)) {
-                return false;
-            } else {
-                debugOutput(DEBUG_LEVEL_VERBOSE, " freeing %d bandwidth units...\n", m_channels[c].bandwidth );
-                if (raw1394_bandwidth_modify(m_handle, m_channels[c].bandwidth, RAW1394_MODIFY_FREE) !=0) {
-                    debugWarning("Failed to deallocate bandwidth\n");
-                }
-                debugOutput(DEBUG_LEVEL_VERBOSE, " freeing channel %d...\n", m_channels[c].channel );
-                if (raw1394_channel_modify (m_handle, m_channels[c].channel, RAW1394_MODIFY_FREE) != 0) {
-                    debugWarning("Failed to free channel\n");
-                }
-                return true;
+            debugOutput(DEBUG_LEVEL_VERBOSE, " freeing %d bandwidth units...\n", m_channels[c].bandwidth );
+            if (raw1394_bandwidth_modify(m_handle, m_channels[c].bandwidth, RAW1394_MODIFY_FREE) !=0) {
+                debugWarning("Failed to deallocate bandwidth\n");
             }
+            debugOutput(DEBUG_LEVEL_VERBOSE, " freeing channel %d...\n", m_channels[c].channel );
+            if (raw1394_channel_modify (m_handle, m_channels[c].channel, RAW1394_MODIFY_FREE) != 0) {
+                debugWarning("Failed to free channel\n");
+            }
+            if (!unregisterIsoChannel(c))
+                return false;
+            return true;
             
         case AllocCMP:
             debugOutput(DEBUG_LEVEL_VERBOSE, " allocated using IEC61883 CMP...\n" );
-            if (unregisterIsoChannel(c)) {
-                return false;
-            } else {
-                debugOutput(DEBUG_LEVEL_VERBOSE, " performing IEC61883 CMP disconnect...\n" );
-                if(iec61883_cmp_disconnect(
-                        m_handle, 
-                        m_channels[c].xmit_node | 0xffc0,
-                        m_channels[c].xmit_plug,
-                        m_channels[c].recv_node | 0xffc0,
-                        m_channels[c].recv_plug,
-                        m_channels[c].channel,
-                        m_channels[c].bandwidth) != 0) {
-                    debugWarning("Could not do CMP disconnect for channel %d!\n",c);
-                }
+            debugOutput(DEBUG_LEVEL_VERBOSE, " performing IEC61883 CMP disconnect...\n" );
+            if(iec61883_cmp_disconnect(
+                    m_handle, 
+                    m_channels[c].xmit_node | 0xffc0,
+                    m_channels[c].xmit_plug,
+                    m_channels[c].recv_node | 0xffc0,
+                    m_channels[c].recv_plug,
+                    m_channels[c].channel,
+                    m_channels[c].bandwidth) != 0) {
+                debugWarning("Could not do CMP disconnect for channel %d!\n",c);
             }
+            if (!unregisterIsoChannel(c))
+                return false;
             return true;
     }
     
