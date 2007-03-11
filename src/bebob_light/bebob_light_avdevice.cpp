@@ -1374,7 +1374,7 @@ AvDevice::addXmlDescriptionPlug( AvPlug& plug,
             }
             free( result );
 
-            asprintf( &result, "%d", channelInfo->m_location );
+            asprintf( &result, "%d", channelInfo->m_location-1 );
             if ( !xmlNewChild( stream,  0,
                                BAD_CAST "Location",  BAD_CAST result ) )
             {

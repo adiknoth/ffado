@@ -2000,14 +2000,14 @@ inline int freebob_streaming_decode_midi(freebob_connection_t *connection,
 		if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
 			/* idea:
 			spec says: current_midi_port=(dbc+j)%8;
-			=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
+			=> if we start at (dbc+stream->location)%8, 
 			we'll start at the right event for the midi port.
 			=> if we increment j with 8, we stay at the right event.
 			*/
 			buffer=((quadlet_t *)(stream->user_buffer));
 			written=0;
 			
- 			for(j = (dbc & 0x07)+stream->spec.location-1; j < nsamples; j += 8) {
+ 			for(j = (dbc & 0x07)+stream->spec.location; j < nsamples; j += 8) {
 				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
 				quadlet_t sample_int=ntohl(*target_event);
   				if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
@@ -2055,19 +2055,11 @@ inline int freebob_streaming_encode_midi(freebob_connection_t *connection,
 		assert (stream);
 		assert (stream->spec.position < connection->spec.dimension);
 		assert(stream->user_buffer);
-
+		
 		if (stream->spec.format == IEC61883_STREAM_TYPE_MIDI) {
-			// first prefill the buffer with NO_DATA's on all time muxed channels
-			for(j=0; (j < nsamples); j++) {
-				target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
-				
-				*target_event=htonl(IEC61883_AM824_SET_LABEL(0,IEC61883_AM824_LABEL_MIDI_NO_DATA));
-
-			}
-			
 			/* idea:
 				spec says: current_midi_port=(dbc+j)%8;
-				=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
+				=> if we start at (dbc+stream->location)%8, 
 				we'll start at the right event for the midi port.
 				=> if we increment j with 8, we stay at the right event.
 			*/
@@ -2075,8 +2067,7 @@ inline int freebob_streaming_encode_midi(freebob_connection_t *connection,
 			if(stream->midi_counter<=0) { // we can send a byte
 				read=freebob_ringbuffer_read(stream->buffer, (char *)(stream->user_buffer), 1*sizeof(quadlet_t))/sizeof(quadlet_t);
 				if(read) {
-// 					j = (dbc%8)+stream->spec.location-1; 
-					j = (dbc & 0x07)+stream->spec.location-1; 
+					j = (dbc & 0x07)+stream->spec.location; 
 					target_event=(quadlet_t *)(events + ((j * connection->spec.dimension) + stream->spec.position));
 					buffer=((quadlet_t *)(stream->user_buffer));
 				
@@ -2089,7 +2080,6 @@ inline int freebob_streaming_encode_midi(freebob_connection_t *connection,
 		}
 	}
 	return 0;
-
 }
 
 
