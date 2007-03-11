@@ -46,8 +46,10 @@ doApp( Ieee1394Service& ieee1394service, int node_id, int fb_id )
 //         = FunctionBlockProcessingEnhancedMixer::eSS_Level;
 
     fbCmd.setVerbose( bVerbose );
-    ieee1394service.setVerbose( bVerbose );
-
+    if (bVerbose) {
+        ieee1394service.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+    }
+    
     if ( !fbCmd.fire() ) {
         printf( "cmd failed\n" );
     }
