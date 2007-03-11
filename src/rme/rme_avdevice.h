@@ -52,7 +52,7 @@ public:
     static bool probe( ConfigRom& configRom );
     bool discover();
 
-    void showDevice() const;
+    void showDevice();
 
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     int getSamplingFrequency( );

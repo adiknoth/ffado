@@ -102,7 +102,10 @@ freebob_destroy_handle( freebob_handle_t freebob_handle )
 int
 freebob_discover_devices( freebob_handle_t freebob_handle, int verbose )
 {
-    return freebob_handle->m_deviceManager->discover(verbose)? 0 : -1;
+    if (verbose) {
+        freebob_handle->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+   }
+    return freebob_handle->m_deviceManager->discover()? 0 : -1;
 }
 
 int
@@ -129,7 +132,7 @@ freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int sample
     IAvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-            return freebob_handle->m_deviceManager->discover(0)? 0 : -1;
+            return freebob_handle->m_deviceManager->discover()? 0 : -1;
         }
     }
     return -1;

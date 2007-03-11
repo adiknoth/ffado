@@ -301,7 +301,7 @@ MotuDevice::unlock() {
 }
 
 void
-MotuDevice::showDevice() const
+MotuDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,

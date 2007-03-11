@@ -213,6 +213,22 @@ Ieee1394Service::write_octlet( fb_nodeid_t nodeId,
                   reinterpret_cast<fb_quadlet_t*>( &data ) );
 }
 
+fb_octlet_t
+Ieee1394Service::byteSwap_octlet(fb_octlet_t value) {
+    #if __BYTE_ORDER == __BIG_ENDIAN
+        return value;
+    #elif __BYTE_ORDER == __LITTLE_ENDIAN
+        fb_octlet_t value_new;
+        fb_quadlet_t *in_ptr=reinterpret_cast<fb_quadlet_t *>(&value);
+        fb_quadlet_t *out_ptr=reinterpret_cast<fb_quadlet_t *>(&value_new);
+        *(out_ptr+1)=htonl(*(in_ptr));
+        *(out_ptr)=htonl(*(in_ptr+1));
+        return value_new;
+    #else
+        #error Unknown endiannes
+    #endif
+}
+
 bool 
 Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
                         fb_nodeaddr_t addr,
@@ -221,14 +237,43 @@ Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
                         fb_octlet_t* result )
 {
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016llX\n",
                 nodeId, addr);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"  if (*(addr)==0x%016llX) *(addr)=0x%016llX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  if (*(addr)==0x%016llX) *(addr)=0x%016llX\n",
                 compare_value, swap_value);
+    fb_octlet_t buffer;
+    if(!read_octlet( nodeId, addr,&buffer )) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not read owner register\n");
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Owner register before = 0x%016llX\n", buffer);
+    }
+    
+    buffer=0x123456789ABCDEF0LL;
+        debugOutput(DEBUG_LEVEL_VERBOSE,"before byteswap = 0x%016llX\n", buffer);
+    buffer=byteSwap_octlet(buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"after byteswap = 0x%016llX\n", buffer);
+    
+    
     #endif
-
-    return raw1394_lock64(m_handle, nodeId, addr, RAW1394_EXTCODE_COMPARE_SWAP,
-                          swap_value, compare_value, result) == 0;
+    
+    // do endiannes swapping
+    compare_value=byteSwap_octlet(compare_value);
+    swap_value=byteSwap_octlet(swap_value);
+    
+    int retval=raw1394_lock64(m_handle, nodeId, addr, RAW1394_EXTCODE_COMPARE_SWAP,
+                          swap_value, compare_value, result);
+    
+    #ifdef DEBUG
+    if(!read_octlet( nodeId, addr,&buffer )) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not read owner register\n");
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Owner register after = 0x%016llX\n", buffer);
+    }
+    #endif
+    
+    *result=byteSwap_octlet(*result);
+    
+    return (retval == 0);
 }
 
 fb_quadlet_t*
@@ -271,13 +316,6 @@ bool
 Ieee1394Service::transactionBlockClose()
 {
     avc1394_transaction_block_close( m_handle );
-    return true;
-}
-
-bool
-Ieee1394Service::setVerbose( int verboseLevel )
-{
-    setDebugLevel(verboseLevel);
     return true;
 }
 
@@ -794,4 +832,10 @@ signed int Ieee1394Service::getAvailableBandwidth() {
     if (result < 0)
         return -1;
     return ntohl(buffer);
+}
+
+void
+Ieee1394Service::setVerboseLevel(int l) 
+{
+    setDebugLevel(l);
 }

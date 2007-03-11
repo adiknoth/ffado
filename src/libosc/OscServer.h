@@ -63,7 +63,9 @@ protected:
     
     OscNode * m_rootNode;
 
-protected:
+public:
+    void setVerboseLevel(int l);
+private:
     DECLARE_DEBUG_MODULE;
 
 };

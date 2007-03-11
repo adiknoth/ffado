@@ -86,7 +86,7 @@ public:
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
     
-    void showDevice() const;
+    void showDevice();
 
 protected:
     unsigned int m_samplerate;

@@ -69,6 +69,7 @@ DeviceManager::DeviceManager()
     : OscNode("devicemanager")
     , m_1394Service( 0 )
     , m_oscServer( NULL )
+    , m_verboseLevel( DEBUG_LEVEL_NORMAL )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -89,6 +90,24 @@ DeviceManager::~DeviceManager()
     }
 
     delete m_1394Service;
+}
+
+void
+DeviceManager::setVerboseLevel(int l) 
+{
+    m_verboseLevel=l;
+    setDebugLevel(l);
+    
+    if (m_1394Service) m_1394Service->setVerboseLevel(l);
+    if (m_oscServer) m_oscServer->setVerboseLevel(l);
+    OscNode::setVerboseLevel(l);
+    
+    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+          it != m_avDevices.end();
+          ++it )
+    {
+        (*it)->setVerboseLevel(l);
+    }
 }
 
 bool
@@ -142,12 +161,13 @@ DeviceManager::initialize( int port )
         m_1394Service = 0;
         return false;
     }
-
+    
+    setVerboseLevel(m_verboseLevel);
     return true;
 }
 
 bool
-DeviceManager::discover( int verboseLevel )
+DeviceManager::discover( )
 {
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {
@@ -158,8 +178,7 @@ DeviceManager::discover( int verboseLevel )
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
 
-    setDebugLevel( verboseLevel );
-    m_1394Service->setVerbose( verboseLevel );
+    setVerboseLevel(m_verboseLevel);
 
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
@@ -207,7 +226,7 @@ DeviceManager::discover( int verboseLevel )
                              "discover: driver found for device %d\n",
                              nodeId );
 
-                avDevice->setVerboseLevel( verboseLevel );
+                avDevice->setVerboseLevel( m_verboseLevel );
                 
                 if ( !avDevice->discover() ) {
                     debugError( "discover: could not discover device\n" );
@@ -230,7 +249,7 @@ DeviceManager::discover( int verboseLevel )
                     }
                 }
                 
-                if ( verboseLevel ) {
+                if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
                     avDevice->showDevice();
                 }
 
@@ -270,7 +289,7 @@ DeviceManager::discover( int verboseLevel )
                          "discover: driver found for device %d\n",
                          nodeId );
             
-            avDevice->setVerboseLevel( verboseLevel );
+            avDevice->setVerboseLevel( m_verboseLevel );
 
             if ( !avDevice->discover() ) {
                 debugError( "discover: could not discover device\n" );
@@ -281,10 +300,9 @@ DeviceManager::discover( int verboseLevel )
             if ( !avDevice->setId( m_avDevices.size() ) ) {
                 debugError( "setting Id failed\n" );
             }
-            if ( verboseLevel ) {
+            if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
                 avDevice->showDevice();
             }
-            
 
             m_avDevices.push_back( avDevice );
         }

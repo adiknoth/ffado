@@ -54,7 +54,7 @@ public:
     bool initialize( int port );
     bool deinitialize();
 
-    bool discover( int verboseLevel );
+    bool discover( );
 
     bool isValidNode( int node );
     int getNbDevices();
@@ -79,7 +79,12 @@ protected:
     IAvDeviceVector  m_avDevices;
     
     OSC::OscServer*  m_oscServer;
-
+    
+// debug stuff
+public:
+    void setVerboseLevel(int l);
+private:
+    int m_verboseLevel;
     DECLARE_DEBUG_MODULE;
 };
 

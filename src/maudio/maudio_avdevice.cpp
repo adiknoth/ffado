@@ -118,7 +118,7 @@ int AvDevice::getSamplingFrequency( ) {
 }
 
 void
-AvDevice::showDevice() const
+AvDevice::showDevice()
 {
 }
 

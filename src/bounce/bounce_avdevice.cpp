@@ -149,7 +149,7 @@ BounceDevice::unlock() {
 }
 
 void
-BounceDevice::showDevice() const
+BounceDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "\nI am the bouncedevice, the bouncedevice I am...\n" );
     debugOutput(DEBUG_LEVEL_NORMAL, "Vendor            :  %s\n", m_pConfigRom->getVendorName().c_str());

@@ -47,7 +47,7 @@ doApp( Ieee1394Service& ieee1394service, int node_id, int fb_id )
 
     fbCmd.setVerbose( bVerbose );
     if (bVerbose) {
-        ieee1394service.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+        ieee1394service.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
     }
     
     if ( !fbCmd.fire() ) {

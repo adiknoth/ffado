@@ -98,7 +98,7 @@ public:
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
 
-    virtual void showDevice() const;
+    virtual void showDevice();
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );

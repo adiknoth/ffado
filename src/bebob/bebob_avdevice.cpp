@@ -880,7 +880,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 }
 
 void
-AvDevice::showDevice() const
+AvDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,

@@ -78,6 +78,8 @@ private:
     typedef vector< OscNode * >::iterator OscNodeVectorIterator;
     OscNodeVector m_ChildNodes;
 
+public:
+    void setVerboseLevel(int l);
 protected:
     DECLARE_DEBUG_MODULE;
 

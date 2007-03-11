@@ -78,7 +78,7 @@ public:
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
 
-    virtual void showDevice() const;
+    virtual void showDevice();
 
     Ieee1394Service& get1394Service()
         { return *m_p1394Service; }

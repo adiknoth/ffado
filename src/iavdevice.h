@@ -107,7 +107,7 @@ public:
 	 * This function prints out a (detailed) description of the 
 	 * device detected, and its configuration.
 	 */
-	virtual void showDevice() const = 0;
+	virtual void showDevice() = 0;
 
 	/** 
 	 * @brief Lock the device
@@ -134,6 +134,28 @@ public:
 	 * @return true if successful, false if not
 	 */
 	virtual bool unlock() = 0;
+
+    /** 
+     * @brief Enable streaming on all 'started' streams
+     *
+     * Enables the ISO streaming on all streams that are 'started'
+     * using startStreamByIndex. This is useful to control a 'master enable'
+     * function on the device.
+     *
+     * @return true if successful
+     */
+    virtual bool enableStreaming();
+    
+    /** 
+     * @brief Disable streaming on all streams
+     *
+     * Disables ISO streaming on all streams.
+     * This is useful to control a 'master enable'
+     * function on the device.
+     *
+     * @return true if successful
+     */
+    virtual bool disableStreaming();
 
 	/** 
 	 * @brief Prepare the device

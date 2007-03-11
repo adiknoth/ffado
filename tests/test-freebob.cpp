@@ -225,7 +225,10 @@ main( int argc, char **argv )
             delete m_deviceManager;
             return -1;
         }
-        if ( !m_deviceManager->discover(arguments.verbose) ) {
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->discover() ) {
             fprintf( stderr, "Could not discover devices\n" );
             delete m_deviceManager;
             return -1;
@@ -250,8 +253,10 @@ main( int argc, char **argv )
             delete m_deviceManager;
             return -1;
         }
-
-        if ( !m_deviceManager->discover(arguments.verbose) ) {
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->discover() ) {
             fprintf( stderr, "Could not discover devices\n" );
             delete m_deviceManager;
             return -1;
@@ -261,7 +266,7 @@ main( int argc, char **argv )
             IAvDevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
             if ( avDevice ) {
                 if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-                    m_deviceManager->discover(arguments.verbose);
+                    m_deviceManager->discover();
                 } else {
                     fprintf( stderr, "Could not set samplerate\n" );
                 }
@@ -312,8 +317,10 @@ main( int argc, char **argv )
             delete m_deviceManager;
             return -1;
         }
-
-        if ( !m_deviceManager->discover(arguments.verbose) ) {
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->discover() ) {
             fprintf( stderr, "Could not discover devices\n" );
             delete m_deviceManager;
             return -1;

@@ -82,6 +82,8 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
             delete dev;
             return 0;
     }
+    
+    dev->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
             debugFatal( "Could not initialize device manager\n" );
             delete dev->m_deviceManager;
@@ -124,7 +126,7 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
     }
     
     // discover the devices on the bus
-    if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
+    if(!dev->m_deviceManager->discover()) {
             debugFatal("Could not discover devices\n");
             delete dev->processorManager;
             delete dev->m_deviceManager;
@@ -253,6 +255,10 @@ int freebob_streaming_start(freebob_device_t *dev) {
                 continue;
             }
         }
+
+        if (!device->enableStreaming()) {
+            debugWarning("Could not enable streaming on device %d!\n",i);
+        }
     }
 
     if(dev->processorManager->start()) {
@@ -275,7 +281,11 @@ int freebob_streaming_stop(freebob_device_t *dev) {
     for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
         IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
         assert(device);
-            
+
+        if (!device->disableStreaming()) {
+            debugWarning("Could not disable streaming on device %d!\n",i);
+        }
+        
         int j=0;
         for(j=0; j<device->getStreamCount();j++) {
             debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %d\n",j,i);

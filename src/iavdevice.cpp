@@ -71,4 +71,16 @@ IAvDevice::setVerboseLevel(int l)
 {
     m_verboseLevel=l;
     setDebugLevel(l);
+//     m_pConfigRom->setVerboseLevel(l);
+    m_p1394Service->setVerboseLevel(l);
+}
+
+bool
+IAvDevice::enableStreaming() {
+    return true;
+}
+
+bool
+IAvDevice::disableStreaming() {
+    return true;
 }

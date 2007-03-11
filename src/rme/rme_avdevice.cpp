@@ -141,7 +141,7 @@ RmeDevice::unlock() {
 }
 
 void
-RmeDevice::showDevice() const
+RmeDevice::showDevice()
 {
 	debugOutput(DEBUG_LEVEL_VERBOSE,
 		"%s %s at node %d\n", m_model->vendor_name, m_model->model_name,

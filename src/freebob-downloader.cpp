@@ -144,7 +144,7 @@ main( int argc, char** argv )
         return -1;
     }
 
-    service.setVerbose( arguments.verbose > 0 );
+    service.setVerboseLevel( arguments.verbose );
     BeBoB::BootloaderManager blMgr( service, node_id );
     if ( arguments.force == 1 ) {
         blMgr.setForceOperations( true );

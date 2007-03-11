@@ -50,6 +50,12 @@ OscServer::~OscServer() {
     if (m_rootNode) delete m_rootNode;
 }
 
+void
+OscServer::setVerboseLevel(int l) {
+    setDebugLevel(l);
+    if (m_rootNode) m_rootNode->setVerboseLevel(l);
+}
+
 bool
 OscServer::start()
 {

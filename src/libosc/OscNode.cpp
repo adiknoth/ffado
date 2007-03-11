@@ -63,6 +63,17 @@ OscNode::~OscNode() {
     }
 }
 
+void
+OscNode::setVerboseLevel(int l) {
+    setDebugLevel(l);
+    for ( OscNodeVectorIterator it = m_ChildNodes.begin();
+      it != m_ChildNodes.end();
+      ++it )
+    {
+        (*it)->setVerboseLevel(l);
+    }
+}
+
 // generic message processing
 OscResponse
 OscNode::processOscMessage(string path, OscMessage *m)

@@ -59,7 +59,7 @@ public:
     static bool probe( ConfigRom& configRom );
     bool discover();
 
-    void showDevice() const;
+    void showDevice();
 
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     int getSamplingFrequency( );
@@ -74,11 +74,11 @@ public:
     
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
-  
-protected:
-    std::auto_ptr<ConfigRom>( m_configRom );
-    Ieee1394Service* m_p1394Service;
     
+    bool enableStreaming();
+    bool disableStreaming();
+    
+protected:
     struct VendorModelEntry *m_model;
     
     // streaming stuff
@@ -115,6 +115,7 @@ private: // helper functions
     bool maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask);
     
     typedef std::vector< std::string > diceNameVector;
+    typedef std::vector< std::string >::iterator diceNameVectorIterator;
     diceNameVector splitNameString(std::string in);
     diceNameVector getTxNameString(unsigned int i);
     diceNameVector getRxNameString(unsigned int i);

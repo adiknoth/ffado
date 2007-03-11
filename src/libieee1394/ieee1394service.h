@@ -123,6 +123,8 @@ public:
      * swaps the content of \ref addr with \ref swap_value , but only if
      * the content of \ref addr equals \ref compare_with
      *
+     * @note takes care of endiannes
+     *
      * @param nodeId target node ID
      * @param addr address within target node address space
      * @param compare_with value to compare \ref addr with
@@ -146,7 +148,6 @@ public:
 
     raw1394handle_t getHandle() {return m_handle;};
 
-    bool setVerbose( int verboseLevel );
     int getVerboseLevel();
 
     bool addBusResetHandler( Functor* functor );
@@ -239,6 +240,11 @@ private:
     typedef std::vector< ARMHandler * > arm_handler_vec_t;
     arm_handler_vec_t m_armHandlers;
     
+    fb_octlet_t byteSwap_octlet(fb_octlet_t value);
+    
+public:
+    void setVerboseLevel(int l);
+private:
     DECLARE_DEBUG_MODULE;
 };
 

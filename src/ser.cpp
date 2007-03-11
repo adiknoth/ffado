@@ -13,7 +13,10 @@ serialize( const char* pFileName, int port )
         std::cerr << "could not init DeviceManager" << std::endl;
         return false;
     }
-    if (!devMgr.discover( 0 )) {
+    
+//     devMgr.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    
+    if (!devMgr.discover( )) {
         std::cerr << "could not discover devices" << std::endl;
         return false;
     }

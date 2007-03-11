@@ -39,7 +39,9 @@ getVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id,
     fbCmd.m_pFBFeature->m_pVolume = new FunctionBlockFeatureVolume;
 
     fbCmd.setVerbose( bVerbose );
-    ieee1394service.setVerbose( bVerbose );
+    if (bVerbose) {
+        ieee1394service.setVerboseLevel( DEBUG_LEVEL_VERBOSE );
+    }
 
     if ( !fbCmd.fire() ) {
         printf( "cmd failed\n" );
@@ -67,7 +69,9 @@ setVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id, int vol )
     fbCmd.m_pFBFeature->m_pVolume->m_volume = vol;
 
     fbCmd.setVerbose( bVerbose );
-    ieee1394service.setVerbose( bVerbose );
+    if (bVerbose) {
+        ieee1394service.setVerboseLevel( DEBUG_LEVEL_VERBOSE );
+    }
 
     bool bStatus = fbCmd.fire();
     if ( !bStatus ) {

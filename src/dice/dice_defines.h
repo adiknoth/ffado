@@ -20,6 +20,10 @@
 #ifndef DICEDEFINES_H
 #define DICEDEFINES_H
 
+#define DICE_VER_1_0_4_0
+// #define DICE_VER_1_0_7_0
+
+
 #define DICE_INVALID_OFFSET                  0xFFFFF00000000000ULL
 
 /*
@@ -71,22 +75,34 @@
 #define DICE_REGISTER_TX_AC3_ENABLE_BASE        0x011C
 
 #define DICE_REGISTER_TX_PARAM(size, i, offset) \
-            ( ((i) * (size) * 4ULL) + (offset) )
+            ( ((i) * (size) ) + (offset) )
 
 //  RX_PAR_SPACE registers
 #define DICE_REGISTER_RX_NB_RX                  0x0000
 #define DICE_REGISTER_RX_SZ_RX                  0x0004
 
-#define DICE_REGISTER_RX_ISOC_BASE              0x0008
-#define DICE_REGISTER_RX_SEQ_START_BASE         0x000C
-#define DICE_REGISTER_RX_NB_AUDIO_BASE          0x0010
-#define DICE_REGISTER_RX_MIDI_BASE              0x0014
-#define DICE_REGISTER_RX_NAMES_BASE             0x0018
-#define DICE_REGISTER_RX_AC3_CAPABILITIES_BASE  0x0118
-#define DICE_REGISTER_RX_AC3_ENABLE_BASE        0x011C
+#ifdef DICE_VER_1_0_4_0
+    #define DICE_REGISTER_RX_ISOC_BASE              0x0008
+    #define DICE_REGISTER_RX_SEQ_START_BASE         0x0014
+    #define DICE_REGISTER_RX_NB_AUDIO_BASE          0x000C
+    #define DICE_REGISTER_RX_MIDI_BASE              0x0010
+    #define DICE_REGISTER_RX_NAMES_BASE             0x0018
+    #define DICE_REGISTER_RX_AC3_CAPABILITIES_BASE  0x0118
+    #define DICE_REGISTER_RX_AC3_ENABLE_BASE        0x011C
+#endif
+
+#ifdef DICE_VER_1_0_7_0
+    #define DICE_REGISTER_RX_ISOC_BASE              0x0008
+    #define DICE_REGISTER_RX_SEQ_START_BASE         0x000C
+    #define DICE_REGISTER_RX_NB_AUDIO_BASE          0x0010
+    #define DICE_REGISTER_RX_MIDI_BASE              0x0014
+    #define DICE_REGISTER_RX_NAMES_BASE             0x0018
+    #define DICE_REGISTER_RX_AC3_CAPABILITIES_BASE  0x0118
+    #define DICE_REGISTER_RX_AC3_ENABLE_BASE        0x011C
+#endif
 
 #define DICE_REGISTER_RX_PARAM(size, i, offset) \
-            ( ((i) * (size) * 4ULL) + (offset) )
+            ( ((i) * (size) ) + (offset) )
 
 // Register Bitfields
 //  GLOBAL_PAR_SPACE registers
@@ -183,7 +199,7 @@
 #define DICE_RATE_ANY_HIGH              0x09
 #define DICE_RATE_NONE                  0x0A
 
-#define DICE_RATE_MASK                  0xFFFF0000LU
+#define DICE_RATE_MASK                  0x0000FF00LU
 #define DICE_GET_RATE(reg)              (((reg) & DICE_RATE_MASK) >> 8)
 #define DICE_SET_RATE(reg,rate)         (((reg) & ~DICE_RATE_MASK) | (((rate) << 8) & DICE_RATE_MASK) )
 

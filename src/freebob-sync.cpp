@@ -131,7 +131,10 @@ main( int argc, char** argv )
         debugFatal( "Could not initialize device manager\n" );
         return -1;
     }
-    if ( !pDeviceManager->discover( arguments.verbose ) ) {
+    if ( arguments.verbose ) {
+        pDeviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    }
+    if ( !pDeviceManager->discover( ) ) {
         debugError( "Could not discover devices\n" );
         return -1;
     }
