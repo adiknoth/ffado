@@ -85,6 +85,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 	              int cycle, unsigned int dropped, unsigned int max_length) {
     
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
+    if (cycle<0) return RAW1394_ISO_OK;
     
     m_last_cycle=cycle;
     
@@ -144,9 +145,11 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     }
     
     uint64_t ts_head, fc;
-    if (!m_disabled && m_is_disabled) {
-        // this means that we are trying to enable
-        if ((unsigned int)cycle == m_cycle_to_enable_at) {
+    if (!m_disabled && m_is_disabled) { // this means that we are trying to enable
+        // check if we are on or past the enable point
+        int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
+        
+        if (cycles_past_enable >= 0) {
             m_is_disabled=false;
             
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %u\n", this, cycle);
@@ -169,6 +172,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             ts_head = addTicks(ts_head, (sync_lag_cycles) * TICKS_PER_CYCLE);
             
             ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
+            
+            // account for the number of cycles we are too late to enable
+            ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
             
             // account for one extra packet of frames
             ts_head = substractTicks(ts_head, 
@@ -232,20 +238,23 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         // and advance the buffer head timestamp
         if(m_is_disabled) {
             
-            transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
-            m_dbc += fillDataPacketHeader(packet, length, ts_packet);
-            
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u TSH=%011llu TSP=%011lu\n",
-                cycle, ts_head, ts_packet);
-
-            // update the base timestamp
-            uint32_t ts_step=(uint32_t)((float)(m_syt_interval)
-                             *m_SyncSource->m_data_buffer->getRate());
-            
-            // the next buffer head timestamp
-            ts_head=addTicks(ts_head,ts_step);
-            m_data_buffer->setBufferHeadTimestamp(ts_head);
-            
+//             transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
+//             m_dbc += fillDataPacketHeader(packet, length, ts_packet);
+//             
+//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u TSH=%011llu TSP=%011lu\n",
+//                 cycle, ts_head, ts_packet);
+// 
+//             // update the base timestamp
+//             uint32_t ts_step=(uint32_t)((float)(m_syt_interval)
+//                              *m_SyncSource->m_data_buffer->getRate());
+//             
+//             // the next buffer head timestamp
+//             ts_head=addTicks(ts_head,ts_step);
+//             m_data_buffer->setBufferHeadTimestamp(ts_head);
+//             
+            // no-data
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u NONE\n", cycle);
+            m_dbc += fillNoDataPacketHeader(packet, length);
             // defer to make sure we get to be enabled asap
             return RAW1394_ISO_DEFER;
             
@@ -588,21 +597,27 @@ bool AmdtpTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) 
     
     // check if a wraparound on the secs will happen between
     // now and the time we start
-    if (CYCLE_TIMER_GET_CYCLES(now)>time_to_enable_at) {
-        // the start will happen in the next second
+    int until_enable=(int)time_to_enable_at - (int)CYCLE_TIMER_GET_CYCLES(now);
+    
+    if(until_enable>4000) {
+        // wraparound on CYCLE_TIMER_GET_CYCLES(now)
+        // this means that we are late starting up,
+        // and that the start lies in the previous second
+        if (now_secs==0) now_secs=127;
+        else now_secs--;
+    } else if (until_enable<-4000) {
+        // wraparound on time_to_enable_at
+        // this means that we are early and that the start
+        // point lies in the next second
         now_secs++;
         if (now_secs>=128) now_secs=0;
     }
-    
+
     uint64_t ts_head= now_secs*TICKS_PER_SECOND;
     ts_head+=time_to_enable_at*TICKS_PER_CYCLE;
     
     // we also add the nb of cycles we transmit in advance
     ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
-    
-    // we want the SP to start sending silent packets somewhat earlier than the
-    // time it is enabled
-    ts_head=substractTicks(ts_head, 100*TICKS_PER_CYCLE);
     
     m_data_buffer->setBufferTailTimestamp(ts_head);
 
@@ -751,7 +766,7 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned i
         // we encode this directly (no function call) due to the high frequency
         /* idea:
         spec says: current_midi_port=(dbc+j)%8;
-        => if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
+        => if we start at (dbc+stream->location-1)%8, 
         we'll start at the right event for the midi port.
         => if we increment j with 8, we stay at the right event.
         */
@@ -759,7 +774,7 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned i
         //        predict how much loops will be present here
         // first prefill the buffer with NO_DATA's on all time muxed channels
         
-        for(j = (dbc & 0x07)+mp->getLocation()-1; j < nevents; j += 8) {
+        for(j = (dbc & 0x07)+mp->getLocation(); j < nevents; j += 8) {
         
             target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
             
@@ -913,10 +928,11 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         length);
 
 #endif
-    // check our enable status
-    if (!m_disabled && m_is_disabled) {
-        // this means that we are trying to enable
-        if (cycle == m_cycle_to_enable_at) {
+    if (!m_disabled && m_is_disabled) { // this means that we are trying to enable
+        // check if we are on or past the enable point
+        int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
+        
+        if (cycles_past_enable >= 0) {
             m_is_disabled=false;
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %d (SYT=%04X)\n", 
                 this, cycle, ntohs(packet->syt));
@@ -1318,13 +1334,13 @@ bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned in
 		// we decode this directly (no function call) due to the high frequency
 		/* idea:
 		spec says: current_midi_port=(dbc+j)%8;
-		=> if we start at (dbc+stream->location-1)%8 [due to location_min=1], 
+		=> if we start at (dbc+stream->location-1)%8, 
 		we'll start at the right event for the midi port.
 		=> if we increment j with 8, we stay at the right event.
 		*/
 		// FIXME: as we know in advance how big a packet is (syt_interval) we can 
 		//        predict how much loops will be present here
-		for(j = (dbc & 0x07)+mp->getLocation()-1; j < nevents; j += 8) {
+		for(j = (dbc & 0x07)+mp->getLocation(); j < nevents; j += 8) {
 			target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
 			quadlet_t sample_int=ntohl(*target_event);
 			// FIXME: this assumes that 2X and 3X speed isn't used, 

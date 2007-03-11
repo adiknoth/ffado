@@ -150,8 +150,8 @@ int
 iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *cip,
 		struct iec61883_packet *packet);
 
-#endif
-
 #ifdef __cplusplus
 }
+#endif
+
 #endif
