@@ -23,8 +23,12 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include "libfreebob/xmlparser.h"
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
+
 #include "libutil/OptionContainer.h"
+#include "libosc/OscServer.h"
+#include "libosc/OscNode.h"
 
 #include <glibmm/ustring.h>
 
@@ -39,11 +43,11 @@ namespace Streaming {
 typedef std::vector< IAvDevice* > IAvDeviceVector;
 typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
 
-class ConfigRom;
-
-
-class DeviceManager : public Util::OptionContainer {
- public:
+class DeviceManager 
+    : public Util::OptionContainer,
+      public OSC::OscNode
+{
+public:
     DeviceManager();
     ~DeviceManager();
 
@@ -60,8 +64,6 @@ class DeviceManager : public Util::OptionContainer {
     IAvDevice* getAvDeviceByIndex( int idx );
     unsigned int getAvDeviceCount();
 
-    xmlDocPtr getXmlDescription();
-
     bool saveCache( Glib::ustring fileName );
     bool loadCache( Glib::ustring fileName );
 
@@ -75,6 +77,8 @@ protected:
 protected:
     Ieee1394Service* m_1394Service;
     IAvDeviceVector  m_avDevices;
+    
+    OSC::OscServer*  m_oscServer;
 
     DECLARE_DEBUG_MODULE;
 };

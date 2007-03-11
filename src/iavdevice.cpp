@@ -32,13 +32,20 @@ IMPL_DEBUG_MODULE( IAvDevice, IAvDevice, DEBUG_LEVEL_VERBOSE );
 IAvDevice::IAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    : m_pConfigRom( configRom )
+    : OscNode()
+    , m_pConfigRom( configRom )
     , m_p1394Service( &ieee1394service )
     , m_verboseLevel( DEBUG_LEVEL_NORMAL )
     , m_nodeId ( nodeId )
 {
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));
-
+    
+    std::ostringstream nodestr;
+    nodestr << "node" << nodeId;
+    setOscBase(nodestr.str());
+    ConfigRom& c = getConfigRom();
+    
+    addChildOscNode(&c);
 }
 
 

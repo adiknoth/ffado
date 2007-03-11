@@ -34,13 +34,13 @@
 
 #include "libstreaming/cycletimer.h"
 
-#define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 50
+#define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 5
 
 #define RUNNING_TIMEOUT_MSEC 4000
 #define PREPARE_TIMEOUT_MSEC 4000
 #define ENABLE_TIMEOUT_MSEC 4000
 
-#define ENABLE_DELAY_CYCLES 2000
+#define ENABLE_DELAY_CYCLES 100
 
 namespace Streaming {
 
@@ -276,7 +276,6 @@ bool StreamProcessorManager::prepare() {
 	return true;
 }
 
-
 bool StreamProcessorManager::syncStartAll() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for StreamProcessor streams to start running...\n");
@@ -288,17 +287,17 @@ bool StreamProcessorManager::syncStartAll() {
         wait_cycles--;
         notRunning=false;
         
-//         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-//                 it != m_ReceiveProcessors.end();
-//                 ++it ) {
-//             if(!(*it)->isRunning()) notRunning=true;
-//         }
-// 
-//         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-//                 it != m_TransmitProcessors.end();
-//                 ++it ) {
-//             if(!(*it)->isRunning()) notRunning=true;
-//         }
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->isRunning()) notRunning=true;
+        }
+
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            if(!(*it)->isRunning()) notRunning=true;
+        }
         
         // EXPERIMENT:
         // the only stream that should be running is the sync
@@ -313,7 +312,7 @@ bool StreamProcessorManager::syncStartAll() {
         
         // other streams still have at least ENABLE_DELAY_CYCLES cycles 
         // to start up
-        if(!m_SyncSource->isRunning()) notRunning=true;
+//         if(!m_SyncSource->isRunning()) notRunning=true;
         
         usleep(1000);
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Running check: %d\n",notRunning);

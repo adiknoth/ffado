@@ -32,6 +32,7 @@
 *
 */
 
+#include "libfreebob/freebob.h"
 #include "libfreebob/freebob_streaming.h"
 #include "devicemanager.h"
 #include "iavdevice.h"
@@ -52,148 +53,148 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 using namespace Streaming;
 
 struct _freebob_device
-{	
-        DeviceManager * m_deviceManager;
-        StreamProcessorManager *processorManager;
+{
+    DeviceManager * m_deviceManager;
+    StreamProcessorManager *processorManager;
 
-        freebob_options_t options;
-        freebob_device_info_t device_info;
+    freebob_options_t options;
+    freebob_device_info_t device_info;
 }; 
 
 freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, freebob_options_t options) {
-        unsigned int i=0;
+    unsigned int i=0;
 
-        struct _freebob_device *dev = new struct _freebob_device;
+    struct _freebob_device *dev = new struct _freebob_device;
 
-        debugFatal("%s built %s %s\n", freebob_get_version(), __DATE__, __TIME__);
+    debugFatal("%s built %s %s\n", freebob_get_version(), __DATE__, __TIME__);
 
-        if(!dev) {
-                debugFatal( "Could not allocate streaming device\n" );
-                return 0;
-        }
+    if(!dev) {
+            debugFatal( "Could not allocate streaming device\n" );
+            return 0;
+    }
 
-        memcpy((void *)&dev->options, (void *)&options, sizeof(dev->options));
-        memcpy((void *)&dev->device_info, (void *)device_info, sizeof(dev->device_info));
+    memcpy((void *)&dev->options, (void *)&options, sizeof(dev->options));
+    memcpy((void *)&dev->device_info, (void *)device_info, sizeof(dev->device_info));
 
-        dev->m_deviceManager = new DeviceManager();
-        if ( !dev->m_deviceManager ) {
-                debugFatal( "Could not allocate device manager\n" );
-                delete dev;
-                return 0;
-        }
-        if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
-                debugFatal( "Could not initialize device manager\n" );
-                delete dev->m_deviceManager;
-                delete dev;
-                return 0;
-        }
+    dev->m_deviceManager = new DeviceManager();
+    if ( !dev->m_deviceManager ) {
+            debugFatal( "Could not allocate device manager\n" );
+            delete dev;
+            return 0;
+    }
+    if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
+            debugFatal( "Could not initialize device manager\n" );
+            delete dev->m_deviceManager;
+            delete dev;
+            return 0;
+    }
 
-        // create a processor manager to manage the actual stream
-        // processors	
-        dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
-        if(!dev->processorManager) {
-                debugFatal("Could not create StreamProcessorManager\n");
-                delete dev->m_deviceManager;
-                delete dev;
-                return 0;
+    // create a processor manager to manage the actual stream
+    // processors	
+    dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
+    if(!dev->processorManager) {
+            debugFatal("Could not create StreamProcessorManager\n");
+            delete dev->m_deviceManager;
+            delete dev;
+            return 0;
+    }
+    
+    dev->processorManager->setThreadParameters(dev->options.realtime, dev->options.packetizer_priority);
+    
+    dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    if(!dev->processorManager->init()) {
+            debugFatal("Could not init StreamProcessorManager\n");
+            delete dev->processorManager;
+            delete dev->m_deviceManager;
+            delete dev;
+            return 0;
+    }
+    
+    // set slave mode option
+    bool slaveMode=(dev->options.slave_mode != 0);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setting slave mode to %d\n", slaveMode);
+    if(!dev->m_deviceManager->setOption("slaveMode", slaveMode)) {
+            debugWarning("Failed to set slave mode option\n");
+    }
+    // set snoop mode option
+    bool snoopMode=(dev->options.snoop_mode != 0);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setting snoop mode to %d\n", snoopMode);
+    if(!dev->m_deviceManager->setOption("snoopMode", snoopMode)) {
+            debugWarning("Failed to set snoop mode option\n");
+    }
+    
+    // discover the devices on the bus
+    if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
+            debugFatal("Could not discover devices\n");
+            delete dev->processorManager;
+            delete dev->m_deviceManager;
+            delete dev;
+            return 0;
+    }
+    
+    // are there devices on the bus?
+    if(dev->m_deviceManager->getAvDeviceCount()==0) {
+            debugFatal("There are no devices on the bus\n");
+            delete dev->processorManager;
+            delete dev->m_deviceManager;
+            delete dev;
+            return 0;
+    }
+    
+    // iterate over the found devices
+    // add the stream processors of the devices to the managers
+    for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
+        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        assert(device);
+
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Locking device (%p)\n", device);
+        
+        if (!device->lock()) {
+            debugWarning("Could not lock device, skipping device (%p)!\n", device);
+            continue;
         }
         
-        dev->processorManager->setThreadParameters(dev->options.realtime, dev->options.packetizer_priority);
-        
-        dev->processorManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-        if(!dev->processorManager->init()) {
-                debugFatal("Could not init StreamProcessorManager\n");
-                delete dev->processorManager;
-                delete dev->m_deviceManager;
-                delete dev;
-                return 0;
-        }
-        
-        // set slave mode option
-        bool slaveMode=(dev->options.slave_mode != 0);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "setting slave mode to %d\n", slaveMode);
-        if(!dev->m_deviceManager->setOption("slaveMode", slaveMode)) {
-                debugWarning("Failed to set slave mode option\n");
-        }
-        // set snoop mode option
-        bool snoopMode=(dev->options.snoop_mode != 0);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "setting snoop mode to %d\n", snoopMode);
-        if(!dev->m_deviceManager->setOption("snoopMode", snoopMode)) {
-                debugWarning("Failed to set snoop mode option\n");
-        }
-        
-        // discover the devices on the bus
-        if(!dev->m_deviceManager->discover(DEBUG_LEVEL_NORMAL)) {
-                debugFatal("Could not discover devices\n");
-                delete dev->processorManager;
-                delete dev->m_deviceManager;
-                delete dev;
-                return 0;
-        }
-        
-        // are there devices on the bus?
-        if(dev->m_deviceManager->getAvDeviceCount()==0) {
-                debugFatal("There are no devices on the bus\n");
-                delete dev->processorManager;
-                delete dev->m_deviceManager;
-                delete dev;
-                return 0;
-        }
-        
-        // iterate over the found devices
-        // add the stream processors of the devices to the managers
-        for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
-            IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
-            assert(device);
-
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Locking device (%p)\n", device);
-            
-            if (!device->lock()) {
-                debugWarning("Could not lock device, skipping device (%p)!\n", device);
-                continue;
-            }
-            
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Setting samplerate to %d for (%p)\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Setting samplerate to %d for (%p)\n", 
+                    dev->options.sample_rate, device);
+                    
+        // Set the device's sampling rate to that requested
+        // FIXME: does this really belong here?  If so we need to handle errors.
+        if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " => Retry setting samplerate to %d for (%p)\n", 
                         dev->options.sample_rate, device);
-                        
-            // Set the device's sampling rate to that requested
-            // FIXME: does this really belong here?  If so we need to handle errors.
-            if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, " => Retry setting samplerate to %d for (%p)\n", 
-                            dev->options.sample_rate, device);
-            
-                // try again:
-                if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
-                    delete dev->processorManager;
-                    delete dev->m_deviceManager;
-                    delete dev;
-                    debugFatal("Could not set sampling frequency to %d\n",dev->options.sample_rate);
-                    return 0;
-                }
-            }
-
-            // prepare the device
-            device->prepare();
-
-            int j=0;
-            for(j=0; j<device->getStreamCount();j++) {
-                StreamProcessor *streamproc=device->getStreamProcessorByIndex(j);
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Registering stream processor %d of device %d with processormanager\n",j,i);
-                if (!dev->processorManager->registerProcessor(streamproc)) {
-                    debugWarning("Could not register stream processor (%p) with the Processor manager\n",streamproc);
-                }
-            }
-        }
         
-        // set the sync source
-        if (!dev->processorManager->setSyncSource(dev->m_deviceManager->getSyncSource())) {
-            debugWarning("Could not set processorManager sync source (%p)\n",
-                dev->m_deviceManager->getSyncSource());
+            // try again:
+            if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+                delete dev->processorManager;
+                delete dev->m_deviceManager;
+                delete dev;
+                debugFatal("Could not set sampling frequency to %d\n",dev->options.sample_rate);
+                return 0;
+            }
         }
 
-        // we are ready!
-        debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n\n");
-        return dev;
+        // prepare the device
+        device->prepare();
+
+        int j=0;
+        for(j=0; j<device->getStreamCount();j++) {
+            StreamProcessor *streamproc=device->getStreamProcessorByIndex(j);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Registering stream processor %d of device %d with processormanager\n",j,i);
+            if (!dev->processorManager->registerProcessor(streamproc)) {
+                debugWarning("Could not register stream processor (%p) with the Processor manager\n",streamproc);
+            }
+        }
+    }
+    
+    // set the sync source
+    if (!dev->processorManager->setSyncSource(dev->m_deviceManager->getSyncSource())) {
+        debugWarning("Could not set processorManager sync source (%p)\n",
+            dev->m_deviceManager->getSyncSource());
+    }
+
+    // we are ready!
+    debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n\n");
+    return dev;
 
 }
 
@@ -263,192 +264,184 @@ int freebob_streaming_start(freebob_device_t *dev) {
 }
 
 int freebob_streaming_stop(freebob_device_t *dev) {
-        unsigned int i;
-        debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Stop -------------\n");
+    unsigned int i;
+    debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Stop -------------\n");
 
-        dev->processorManager->stop();
+    dev->processorManager->stop();
 
-        // create the connections for all devices
-        // iterate over the found devices
-        // add the stream processors of the devices to the managers
-        for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
-            IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
-            assert(device);
-                
-            int j=0;
-            for(j=0; j<device->getStreamCount();j++) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %d\n",j,i);
-                // stop the stream
-                // start the stream
-                if (!device->stopStreamByIndex(j)) {
-                    debugWarning("Could not stop stream %d of device %d\n",j,i);
-                    continue;
-                }
+    // create the connections for all devices
+    // iterate over the found devices
+    // add the stream processors of the devices to the managers
+    for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
+        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        assert(device);
+            
+        int j=0;
+        for(j=0; j<device->getStreamCount();j++) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %d\n",j,i);
+            // stop the stream
+            // start the stream
+            if (!device->stopStreamByIndex(j)) {
+                debugWarning("Could not stop stream %d of device %d\n",j,i);
+                continue;
             }
         }
+    }
 
-        return 0;
+    return 0;
 }
 
 int freebob_streaming_reset(freebob_device_t *dev) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Reset -------------\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE,"------------- Reset -------------\n");
 
-// 	dev->processorManager->reset();
+    // dev->processorManager->reset();
 
-        return 0;
+    return 0;
 }
 
 int freebob_streaming_wait(freebob_device_t *dev) {
-        static int periods=0;
-        static int periods_print=0;
-        static int xruns=0;
-                
-        periods++;
-        if(periods>periods_print) {
-                debugOutputShort(DEBUG_LEVEL_VERBOSE, "\nfreebob_streaming_wait\n");
-                debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
-                debugOutputShort(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
-                debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
-                dev->processorManager->dumpInfo();
-                debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
-                periods_print+=100;
-        }
+    static int periods=0;
+    static int periods_print=0;
+    static int xruns=0;
+    
+    periods++;
+    if(periods>periods_print) {
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "\nfreebob_streaming_wait\n");
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n",xruns);
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
+        dev->processorManager->dumpInfo();
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
+        periods_print+=100;
+    }
+    
+    if(dev->processorManager->waitForPeriod()) {
+        return dev->options.period_size;
+    } else {
+        debugWarning("XRUN detected\n");
         
-        if(dev->processorManager->waitForPeriod()) {
-                return dev->options.period_size;
-        } else {
-                debugWarning("XRUN detected\n");
-                
-                // do xrun recovery
-                dev->processorManager->handleXrun();
-                xruns++;
-                return -1;
-        }
+        // do xrun recovery
+        dev->processorManager->handleXrun();
+        xruns++;
+        return -1;
+    }
 }
 
 int freebob_streaming_transfer_capture_buffers(freebob_device_t *dev) {
-        return dev->processorManager->transfer(StreamProcessor::E_Receive);
+    return dev->processorManager->transfer(StreamProcessor::E_Receive);
 }
 
 int freebob_streaming_transfer_playback_buffers(freebob_device_t *dev) {
-        return dev->processorManager->transfer(StreamProcessor::E_Transmit);
+    return dev->processorManager->transfer(StreamProcessor::E_Transmit);
 }
 
 int freebob_streaming_transfer_buffers(freebob_device_t *dev) {
-        return dev->processorManager->transfer();
+    return dev->processorManager->transfer();
 }
 
 
 int freebob_streaming_write(freebob_device_t *dev, int i, freebob_sample_t *buffer, int nsamples) {
-// debugFatal("Not implemented\n");
-        Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
-        // use an assert here performancewise, 
-        // it should already have failed before, if not correct
-        assert(p); 
+    Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
+    // use an assert here performancewise, 
+    // it should already have failed before, if not correct
+    assert(p); 
         
-        return p->writeEvents((void *)buffer, nsamples);
+    return p->writeEvents((void *)buffer, nsamples);
 }
 
 int freebob_streaming_read(freebob_device_t *dev, int i, freebob_sample_t *buffer, int nsamples) {
-        Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
-        // use an assert here performancewise, 
-        // it should already have failed before, if not correct
-        assert(p); 
+    Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
+    // use an assert here performancewise, 
+    // it should already have failed before, if not correct
+    assert(p); 
         
-        return p->readEvents((void *)buffer, nsamples);
+    return p->readEvents((void *)buffer, nsamples);
 }
-
-pthread_t freebob_streaming_get_packetizer_thread(freebob_device_t *dev) {
-// 	debugFatal("Not implemented\n");
-        return 0;
-}
-
 
 int freebob_streaming_get_nb_capture_streams(freebob_device_t *dev) {
-        return dev->processorManager->getPortCount(Port::E_Capture);
+    return dev->processorManager->getPortCount(Port::E_Capture);
 }
 
 int freebob_streaming_get_nb_playback_streams(freebob_device_t *dev) {
-        return dev->processorManager->getPortCount(Port::E_Playback);
+    return dev->processorManager->getPortCount(Port::E_Playback);
 }
 
 int freebob_streaming_get_capture_stream_name(freebob_device_t *dev, int i, char* buffer, size_t buffersize) {
-        Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
-        if(!p) {
-                debugWarning("Could not get capture port at index %d\n",i);
-                return -1;
-        }
+    Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
+    if(!p) {
+        debugWarning("Could not get capture port at index %d\n",i);
+        return -1;
+    }
 
-        std::string name=p->getName();
-        if (!strncpy(buffer, name.c_str(), buffersize)) {
-                debugWarning("Could not copy name\n");
-                return -1;
-        } else return 0;
+    std::string name=p->getName();
+    if (!strncpy(buffer, name.c_str(), buffersize)) {
+        debugWarning("Could not copy name\n");
+        return -1;
+    } else return 0;
 }
 
 int freebob_streaming_get_playback_stream_name(freebob_device_t *dev, int i, char* buffer, size_t buffersize) {
-        
-        Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
-        if(!p) {
-                debugWarning("Could not get playback port at index %d\n",i);
-                return -1;
-        }
+    Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
+    if(!p) {
+        debugWarning("Could not get playback port at index %d\n",i);
+        return -1;
+    }
 
-        std::string name=p->getName();
-        if (!strncpy(buffer, name.c_str(), buffersize)) {
-                debugWarning("Could not copy name\n");
-                return -1;
-        } else return 0;
+    std::string name=p->getName();
+    if (!strncpy(buffer, name.c_str(), buffersize)) {
+        debugWarning("Could not copy name\n");
+        return -1;
+    } else return 0;
 }
 
 freebob_streaming_stream_type freebob_streaming_get_capture_stream_type(freebob_device_t *dev, int i) {
-        Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
-        if(!p) {
-                debugWarning("Could not get capture port at index %d\n",i);
-                return freebob_stream_type_invalid;
-        }
-        switch(p->getPortType()) {
-        case Port::E_Audio:
-                return freebob_stream_type_audio;
-        case Port::E_Midi:
-                return freebob_stream_type_midi;
-        case Port::E_Control:
-                return freebob_stream_type_control;
-        default:
-                return freebob_stream_type_unknown;
-        }
+    Port *p=dev->processorManager->getPortByIndex(i, Port::E_Capture);
+    if(!p) {
+        debugWarning("Could not get capture port at index %d\n",i);
+        return freebob_stream_type_invalid;
+    }
+    switch(p->getPortType()) {
+    case Port::E_Audio:
+        return freebob_stream_type_audio;
+    case Port::E_Midi:
+        return freebob_stream_type_midi;
+    case Port::E_Control:
+        return freebob_stream_type_control;
+    default:
+        return freebob_stream_type_unknown;
+    }
 }
 
 freebob_streaming_stream_type freebob_streaming_get_playback_stream_type(freebob_device_t *dev, int i) {
-        Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
-        if(!p) {
-                debugWarning("Could not get playback port at index %d\n",i);
-                return freebob_stream_type_invalid;
-        }
-        switch(p->getPortType()) {
-        case Port::E_Audio:
-                return freebob_stream_type_audio;
-        case Port::E_Midi:
-                return freebob_stream_type_midi;
-        case Port::E_Control:
-                return freebob_stream_type_control;
-        default:
-                return freebob_stream_type_unknown;
-        }
+    Port *p=dev->processorManager->getPortByIndex(i, Port::E_Playback);
+    if(!p) {
+        debugWarning("Could not get playback port at index %d\n",i);
+        return freebob_stream_type_invalid;
+    }
+    switch(p->getPortType()) {
+    case Port::E_Audio:
+        return freebob_stream_type_audio;
+    case Port::E_Midi:
+        return freebob_stream_type_midi;
+    case Port::E_Control:
+        return freebob_stream_type_control;
+    default:
+        return freebob_stream_type_unknown;
+    }
 }
 
 int freebob_streaming_set_stream_buffer_type(freebob_device_t *dev, int i, 
-        freebob_streaming_buffer_type t, enum Port::E_Direction direction) {
+    freebob_streaming_buffer_type t, enum Port::E_Direction direction) {
 
-        Port *p=dev->processorManager->getPortByIndex(i, direction);
-        if(!p) {
-                debugWarning("Could not get %s port at index %d\n",
-                    (direction==Port::E_Playback?"Playback":"Capture"),i);
-                return -1;
-        }
+    Port *p=dev->processorManager->getPortByIndex(i, direction);
+    if(!p) {
+        debugWarning("Could not get %s port at index %d\n",
+            (direction==Port::E_Playback?"Playback":"Capture"),i);
+        return -1;
+    }
         
-        switch(t) {
-        case freebob_buffer_type_int24:
+    switch(t) {
+    case freebob_buffer_type_int24:
         if (!p->setDataType(Port::E_Int24)) {
             debugWarning("%s: Could not set data type to Int24\n",p->getName().c_str());
             return -1;
@@ -458,7 +451,7 @@ int freebob_streaming_set_stream_buffer_type(freebob_device_t *dev, int i,
             return -1;
         }
         break;
-        case freebob_buffer_type_float:
+    case freebob_buffer_type_float:
         if (!p->setDataType(Port::E_Float)) {
             debugWarning("%s: Could not set data type to Float\n",p->getName().c_str());
             return -1;
@@ -468,7 +461,7 @@ int freebob_streaming_set_stream_buffer_type(freebob_device_t *dev, int i,
             return -1;
         }
         break;
-        case freebob_buffer_type_midi:
+    case freebob_buffer_type_midi:
         if (!p->setDataType(Port::E_MidiEvent)) {
             debugWarning("%s: Could not set data type to MidiEvent\n",p->getName().c_str());
             return -1;
@@ -478,10 +471,10 @@ int freebob_streaming_set_stream_buffer_type(freebob_device_t *dev, int i,
             return -1;
         }
         break;
-        default:
-    debugWarning("%s: Unsupported buffer type\n",p->getName().c_str());
-    return -1;
-        }
+    default:
+        debugWarning("%s: Unsupported buffer type\n",p->getName().c_str());
+        return -1;
+    }
     return 0;
 
 }
@@ -495,19 +488,19 @@ int freebob_streaming_set_capture_buffer_type(freebob_device_t *dev, int i, free
 }
 
 int freebob_streaming_stream_onoff(freebob_device_t *dev, int i, 
-        int on, enum Port::E_Direction direction) {
-        Port *p=dev->processorManager->getPortByIndex(i, direction);
-        if(!p) {
-                debugWarning("Could not get %s port at index %d\n",
-                    (direction==Port::E_Playback?"Playback":"Capture"),i);
-                return -1;
-        }
-        if(on) {
+    int on, enum Port::E_Direction direction) {
+    Port *p=dev->processorManager->getPortByIndex(i, direction);
+    if(!p) {
+        debugWarning("Could not get %s port at index %d\n",
+            (direction==Port::E_Playback?"Playback":"Capture"),i);
+        return -1;
+    }
+    if(on) {
         p->enable();
-        } else {
+    } else {
         p->disable();
-        }
-        return 0;
+    }
+    return 0;
 }
 
 int freebob_streaming_playback_stream_onoff(freebob_device_t *dev, int number, int on) {

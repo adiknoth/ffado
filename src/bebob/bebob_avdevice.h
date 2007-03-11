@@ -25,7 +25,6 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 #include "libavc/avc_extended_cmd_generic.h"
-#include "libfreebob/xmlparser.h"
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"

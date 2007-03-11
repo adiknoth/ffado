@@ -22,8 +22,8 @@
 #define IAVDEVICE_H
 
 #include "libavc/avc_definitions.h"
-#include "libfreebob/xmlparser.h"
 #include "libutil/OptionContainer.h"
+#include "libosc/OscNode.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -38,7 +38,10 @@ namespace Streaming {
  for a specific device.
 
 */
-class IAvDevice : public Util::OptionContainer {
+class IAvDevice 
+    : public Util::OptionContainer,
+      public OSC::OscNode
+{
 public:
 	IAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
@@ -97,18 +100,6 @@ public:
      * @return true if successful
      */
     bool setId(unsigned int id);
-	
-	/**
-	 * @brief Constructs an XML description of the device [obsolete]
-	 *
-	 * this is a leftover from v1.0 and isn't used
-	 * just provide an empty implementation that returns true
-	 * untill it is removed
-	 *
-	 * @param deviceNode 
-	 * @return true if successful, false if not
-	 */
-	bool addXmlDescription( xmlNodePtr deviceNode ) {return true;};
 	
 	/**
 	 * @brief Outputs the device configuration to stderr/stdout [debug helper]

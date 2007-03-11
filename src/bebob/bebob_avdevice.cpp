@@ -1101,7 +1101,7 @@ AvDevice::addPlugToProcessor(
                         // but bebob reports it starting from 1. Decide where
                         // and how to handle this (pp: here)
                         channelInfo->m_streamPosition - 1,
-                        channelInfo->m_location,
+                        channelInfo->m_location - 1,
                         Streaming::AmdtpPortInfo::E_MBLA
                 );
                 break;
@@ -1114,7 +1114,7 @@ AvDevice::addPlugToProcessor(
                         // but bebob reports it starting from 1. Decide where
                         // and how to handle this (pp: here)
                         channelInfo->m_streamPosition - 1,
-                        channelInfo->m_location,
+                        channelInfo->m_location - 1,
                         Streaming::AmdtpPortInfo::E_Midi
                 );
 

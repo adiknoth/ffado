@@ -161,8 +161,6 @@ BounceDevice::showDevice() const
     debugOutput(DEBUG_LEVEL_NORMAL, "\n" );
 }
 
-#define BOUNCE_NR_OF_CHANNELS 2
-
 bool
 BounceDevice::addPortsToProcessor(
     Streaming::StreamProcessor *processor,
@@ -176,9 +174,9 @@ BounceDevice::addPortsToProcessor(
     }
     
     int i=0;
-    for (i=0;i<BOUNCE_NR_OF_CHANNELS;i++) {
+    for (i=0;i<BOUNCE_NB_AUDIO_CHANNELS;i++) {
         char *buff;
-        asprintf(&buff,"%s%s_Port%d",id.c_str(),direction==Streaming::AmdtpAudioPort::E_Playback?"p":"c",i);
+        asprintf(&buff,"%s%s_Port%d",id.c_str(),direction==Streaming::Port::E_Playback?"p":"c",i);
 
         Streaming::Port *p=NULL;
         p=new Streaming::AmdtpAudioPort(
@@ -204,9 +202,38 @@ BounceDevice::addPortsToProcessor(
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
             }
         }
-
         free(buff);
+    }
+    
+    for (i=0;i<BOUNCE_NB_MIDI_CHANNELS;i++) {
+        char *buff;
+        asprintf(&buff,"%s_Midi%s%d",id.c_str(),direction==Streaming::Port::E_Playback?"Out":"In",i);
 
+        Streaming::Port *p=NULL;
+        p=new Streaming::AmdtpMidiPort(
+                buff,
+                direction,
+                // \todo: streaming backend expects indexing starting from 0
+                // but bebob reports it starting from 1. Decide where
+                // and how to handle this (pp: here)
+                BOUNCE_NB_AUDIO_CHANNELS,
+                i,
+                Streaming::AmdtpPortInfo::E_Midi
+        );
+
+        if (!p) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+        } else {
+
+            if (!processor->addPort(p)) {
+                debugWarning("Could not register port with stream processor\n");
+                free(buff);
+                return false;
+            } else {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+            }
+        }
+        free(buff);
      }
 
 	return true;
@@ -227,7 +254,7 @@ BounceDevice::prepare() {
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
                              m_samplerate,
-                             BOUNCE_NR_OF_CHANNELS);
+                             BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
 
     if(!p->init()) {
         debugFatal("Could not initialize receive processor!\n");
@@ -248,14 +275,14 @@ BounceDevice::prepare() {
     if (snoopMode) {
         // we are snooping, so this is receive too.
         p=new Streaming::AmdtpReceiveStreamProcessor(
-                                  m_p1394Service->getPort(),
-                                  m_samplerate,
-                                  BOUNCE_NR_OF_CHANNELS);
+                                m_p1394Service->getPort(),
+                                m_samplerate,
+                                BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
     } else {
         p=new Streaming::AmdtpTransmitStreamProcessor(
                                 m_p1394Service->getPort(),
                                 m_samplerate,
-                                BOUNCE_NR_OF_CHANNELS);
+                                BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
     }
     
     if(!p->init()) {

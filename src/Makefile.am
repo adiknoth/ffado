@@ -18,8 +18,8 @@
 
 INCLUDES = 						\
 	$(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) 	\
-	$(LIBAVC1394_CFLAGS) $(LIBXML_CFLAGS)      	\
-	$(LIBXMLCPP_CFLAGS)				\
+	$(LIBAVC1394_CFLAGS)	\
+	$(LIBXMLCPP_CFLAGS)	$(LIBLO_CFLAGS)			\
 	-I$(top_srcdir) -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libfreebob.la
@@ -27,7 +27,8 @@ lib_LTLIBRARIES = libfreebob.la
 libfreebob_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
 	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
-	$(LIBXML_LIBS) $(LIBXMLCPP_LIBS) -lpthread -lrt
+	$(LIBXMLCPP_LIBS) $(LIBLO_LIBS) \
+	-lpthread -lrt
 
 libfreebob_la_LIBADD = -lrt
 
@@ -47,7 +48,9 @@ noinst_HEADERS = \
 	libavc/avc_extended_subunit_info.h libavc/avc_function_block.h libavc/avc_generic.h \
 	libavc/avc_plug_info.h libavc/avc_serialize.h libavc/avc_signal_source.h \
 	libavc/avc_subunit_info.h libavc/avc_unit_info.h \
+	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
+	libstreaming/AmdtpSlaveStreamProcessor.h \
 	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
 	libstreaming/IsoHandlerManager.h libstreaming/IsoStream.h libstreaming/MotuPort.h \
 	libstreaming/MotuPortInfo.h libstreaming/MotuStreamProcessor.h \
@@ -65,7 +68,6 @@ libfreebob_la_SOURCES = \
         freebob.cpp \
         freebob_streaming.cpp \
         iavdevice.cpp \
-        xmlparser.c \
         debugmodule/debugmodule.cpp \
         libavc/avc_connect.cpp \
         libavc/avc_definitions.cpp \
@@ -85,6 +87,11 @@ libfreebob_la_SOURCES = \
         libieee1394/csr1212.c \
         libieee1394/ieee1394service.cpp \
         libieee1394/IEC61883.cpp \
+        libosc/OscArgument.cpp \
+        libosc/OscMessage.cpp \
+        libosc/OscNode.cpp \
+        libosc/OscResponse.cpp \
+        libosc/OscServer.cpp \
         libstreaming/cip.c \
         libstreaming/IsoHandler.cpp \
         libstreaming/IsoHandlerManager.cpp \
@@ -109,9 +116,7 @@ libfreebob_la_SOURCES = \
 bebob_src = \
         bebob/bebob_avdevice.cpp \
         bebob/bebob_avdevice_subunit.cpp \
-        bebob/bebob_avdevice_xml.cpp \
         bebob/bebob_avplug.cpp \
-        bebob/bebob_avplug_xml.cpp \
         bebob/bebob_dl_bcd.cpp \
         bebob/bebob_dl_codes.cpp \
         bebob/bebob_dl_mgr.cpp \
@@ -129,7 +134,8 @@ dice_src = \
 
 bounce_src = \
         bounce/bounce_avdevice.cpp \
-        bounce/bounce_slave_avdevice.cpp
+        bounce/bounce_slave_avdevice.cpp \
+        libstreaming/AmdtpSlaveStreamProcessor.cpp
 
 metric_halo_src = \
         metrichalo/mh_avdevice.cpp
@@ -166,7 +172,9 @@ freebob_sync_LDADD = $(top_builddir)/src/libfreebob.la
 
 # programs not intended for installation
 # generic
-noinst_PROGRAMS = test-dll test-debugmodule test-unittests test-ser
+noinst_PROGRAMS = test-dll test-debugmodule \
+                  test-unittests-util test-unittests-osc \
+                  test-ser
 
 test_dll_SOURCES = libutil/test-dll.cpp
 test_dll_LDADD = $(top_builddir)/src/libfreebob.la
@@ -174,8 +182,11 @@ test_dll_LDADD = $(top_builddir)/src/libfreebob.la
 test_debugmodule_SOURCES = debugmodule/test_debugmodule.cpp
 test_debugmodule_LDADD = $(top_builddir)/src/libfreebob.la
 
-test_unittests_SOURCES = libutil/unittests.cpp
-test_unittests_LDADD = $(top_builddir)/src/libfreebob.la
+test_unittests_util_SOURCES = libutil/unittests.cpp
+test_unittests_util_LDADD = $(top_builddir)/src/libfreebob.la
+
+test_unittests_osc_SOURCES = libosc/unittests.cpp
+test_unittests_osc_LDADD = $(top_builddir)/src/libfreebob.la
 
 test_ser_SOURCES = ser.cpp
 test_ser_LDADD = $(top_builddir)/src/libfreebob.la

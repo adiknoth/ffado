@@ -24,7 +24,6 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 #include "libavc/avc_extended_cmd_generic.h"
-#include "libfreebob/xmlparser.h"
 
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
@@ -33,7 +32,6 @@
 #include "libieee1394/ARMHandler.h"
 
 #include "iavdevice.h"
-#include "libfreebob/freebob_bounce.h"
 
 #include <vector>
 
@@ -42,6 +40,11 @@
 #define BOUNCE_REGISTER_TX_ISOCHANNEL 0x10
 #define BOUNCE_REGISTER_RX_ISOCHANNEL 0x14
 #define BOUNCE_INVALID_OFFSET 0xFFFFF00000000000ULL
+
+#define BOUNCE_NB_AUDIO_CHANNELS 4
+
+// don't define more than 8 midi channels!
+#define BOUNCE_NB_MIDI_CHANNELS  2
 
 class ConfigRom;
 class Ieee1394Service;

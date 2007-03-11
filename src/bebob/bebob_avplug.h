@@ -27,7 +27,6 @@
 #include "libavc/avc_extended_cmd_generic.h"
 #include "libavc/avc_definitions.h"
 #include "libavc/avc_generic.h"
-#include "libfreebob/xmlparser.h"
 
 #include "libutil/serialize.h"
 
@@ -129,9 +128,6 @@ public:
         { return m_inputConnections; }
     const AvPlugVector& getOutputConnections() const
         { return m_outputConnections; }
-
-    bool addXmlDescription( xmlNodePtr conectionSet );
-    bool addXmlDescriptionStreamFormats( xmlNodePtr streamFormats );
 
     static PlugAddress::EPlugDirection convertPlugDirection(
 	EAvPlugDirection direction);

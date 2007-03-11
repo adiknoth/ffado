@@ -27,11 +27,15 @@
 #include "libutil/serialize.h"
 #include "debugmodule/debugmodule.h"
 
+#include "libosc/OscNode.h"
+
 #include <string>
 
 class Ieee1394Service;
 
-class ConfigRom {
+class ConfigRom
+    : public OSC::OscNode
+{
  public:
     ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId );
     virtual ~ConfigRom();
@@ -108,6 +112,9 @@ class ConfigRom {
     struct csr1212_keyval* m_vendorNameKv;
     struct csr1212_keyval* m_modelNameKv;
     struct csr1212_csr*    m_csr;
+
+protected: // OSC handling
+    OSC::OscResponse processOscMessage(OSC::OscMessage *m);
 
 private:
     ConfigRom( const ConfigRom& ); // do not allow copy ctor

@@ -66,7 +66,9 @@ using namespace std;
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
-    : m_1394Service( 0 )
+    : OscNode("devicemanager")
+    , m_1394Service( 0 )
+    , m_oscServer( NULL )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -74,6 +76,11 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
+    if (m_oscServer) {
+        m_oscServer->stop();
+        delete m_oscServer;
+    }
+
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -95,6 +102,42 @@ DeviceManager::initialize( int port )
 
     if ( !m_1394Service->initialize( port ) ) {
         debugFatal( "Could not initialize Ieee1349Service object\n" );
+        delete m_1394Service;
+        m_1394Service = 0;
+        return false;
+    }
+    
+    m_oscServer = new OSC::OscServer("17820");
+    
+    if (!m_oscServer) {
+        debugFatal("failed to create osc server\n");
+        delete m_1394Service;
+        m_1394Service = 0;
+        return false;
+    }
+    
+    if (!m_oscServer->init()) {
+        debugFatal("failed to init osc server\n");
+        delete m_oscServer;
+        m_oscServer = NULL;
+        delete m_1394Service;
+        m_1394Service = 0;
+        return false;
+    }
+    
+    if (!m_oscServer->registerAtRootNode(this)) {
+        debugFatal("failed to register devicemanager at server\n");
+        delete m_oscServer;
+        m_oscServer = NULL;
+        delete m_1394Service;
+        m_1394Service = 0;
+        return false;
+    }
+    
+    if (!m_oscServer->start()) {
+        debugFatal("failed to start osc server\n");
+        delete m_oscServer;
+        m_oscServer = NULL;
         delete m_1394Service;
         m_1394Service = 0;
         return false;
@@ -122,6 +165,9 @@ DeviceManager::discover( int verboseLevel )
           it != m_avDevices.end();
           ++it )
     {
+        if (!removeChildOscNode(*it)) {
+            debugWarning("failed to unregister AvDevice from OSC server\n");
+        }
         delete *it;
     }
     m_avDevices.clear();
@@ -189,6 +235,11 @@ DeviceManager::discover( int verboseLevel )
                 }
 
                 m_avDevices.push_back( avDevice );
+                
+                if (!addChildOscNode(avDevice)) {
+                    debugWarning("failed to register AvDevice at OSC server\n");
+                }
+
             }
         }
         return true;
@@ -404,120 +455,6 @@ DeviceManager::getSyncSource() {
         return device->getStreamProcessorByIndex(0);
     }
     
-}
-
-xmlDocPtr
-DeviceManager::getXmlDescription()
-{
-    xmlDocPtr doc = xmlNewDoc( BAD_CAST "1.0" );
-    if ( !doc ) {
-        debugError( "Couldn't create new xml doc\n" );
-        return 0;
-    }
-
-    xmlNodePtr rootNode = xmlNewNode( 0,  BAD_CAST "FreeBoBConnectionInfo" );
-    if ( !rootNode ) {
-        debugError( "Couldn't create root node\n" );
-        xmlFreeDoc( doc );
-        xmlCleanupParser();
-        return 0;
-    }
-    xmlDocSetRootElement( doc, rootNode );
-
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
-          it != m_avDevices.end();
-          ++it )
-    {
-        IAvDevice* avDevice = *it;
-
-        xmlNodePtr deviceNode = xmlNewChild( rootNode, 0,
-                                             BAD_CAST "Device", 0 );
-        if ( !deviceNode ) {
-            debugError( "Couldn't create device node\n" );
-            xmlFreeDoc( doc );
-            xmlCleanupParser();
-            return 0;
-        }
-
-        char* result;
-        asprintf( &result, "%d", avDevice->getConfigRom().getNodeId() );
-        if ( !xmlNewChild( deviceNode,  0,
-                           BAD_CAST "NodeId",  BAD_CAST result ) )
-        {
-            debugError( "Couldn't create 'NodeId' node" );
-            free(result);
-            return 0;
-        }
-        free( result );
-
-        std::string res = "Connection Information for "
-                          + avDevice->getConfigRom().getVendorName()
-                          +", "
-                          + avDevice->getConfigRom().getModelName()
-                          + " configuration";
-        if ( !xmlNewChild( deviceNode,
-                           0,
-                           BAD_CAST "Comment",
-                           BAD_CAST res.c_str() ) ) {
-            debugError( "Couldn't create comment node\n" );
-            xmlFreeDoc( doc );
-            xmlCleanupParser();
-            free(result);
-            return 0;
-        }
-
-        res = avDevice->getConfigRom().getVendorName();
-
-        if ( !xmlNewChild( deviceNode,
-                           0,
-                           BAD_CAST "Vendor",
-                           BAD_CAST res.c_str() ) ) {
-            debugError( "Couldn't create vendor node\n" );
-            xmlFreeDoc( doc );
-            xmlCleanupParser();
-            free(result);
-            return 0;
-        }
-
-        res = avDevice->getConfigRom().getModelName();
-
-        if ( !xmlNewChild( deviceNode,
-                           0,
-                           BAD_CAST "Model",
-                           BAD_CAST res.c_str() ) ) {
-            debugError( "Couldn't create model node\n" );
-            xmlFreeDoc( doc );
-            xmlCleanupParser();
-            free(result);
-            return 0;
-        }
-
-        asprintf( &result, "%08x%08x",
-                  ( quadlet_t )( avDevice->getConfigRom().getGuid() >> 32 ),
-                  ( quadlet_t )( avDevice->getConfigRom().getGuid() & 0xfffffff ) );
-        if ( !xmlNewChild( deviceNode,  0,
-                           BAD_CAST "GUID",  BAD_CAST result ) ) {
-            debugError( "Couldn't create 'GUID' node\n" );
-            xmlFreeDoc( doc );
-            xmlCleanupParser();
-
-            free(result);
-            return 0;
-        }
-        free( result );
-
-
-        if ( !avDevice->addXmlDescription( deviceNode ) ) {
-            debugError( "Adding XML description failed\n" );
-            xmlFreeDoc( doc );
-            xmlCleanupParser();
-            free(result);
-            return 0;
-        }
-
-    }
-
-    return doc;
 }
 
 bool

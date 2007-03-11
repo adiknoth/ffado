@@ -31,6 +31,16 @@
 #include "debugmodule/debugmodule.h"
 #include "bounce_avdevice.h"
 
+#define FREEBOB_MAX_NAME_LEN 256
+
+#define FREEBOB_BOUNCE_SERVER_VENDORNAME  "FreeBoB Server"
+#define FREEBOB_BOUNCE_SERVER_MODELNAME   "freebob-server"
+
+// NOTE: this is currently free, but it is not really allowed to use
+#define FREEBOB_BOUNCE_SERVER_VENDORID    0x000B0001
+#define FREEBOB_BOUNCE_SERVER_MODELID     0x000B0001
+#define FREEBOB_BOUNCE_SERVER_SPECID      0x000B0001
+
 namespace Bounce {
 
 class BounceSlaveDevice : public BounceDevice {

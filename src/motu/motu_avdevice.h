@@ -26,7 +26,6 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
-#include "libfreebob/xmlparser.h"
 
 #include "libstreaming/MotuStreamProcessor.h"
 

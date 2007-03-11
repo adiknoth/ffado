@@ -1,6 +1,6 @@
 # configure.ac - Configure script for FreeBoB.
 # Copyright (C) 2005,06 by Daniel Wagner.
-# Copyright (C) 2006    by Pieter Palmers.
+# Copyright (C) 2006,07 by Pieter Palmers.
 #
 # This file is part of FreeBoB.
 #
@@ -24,7 +24,7 @@ AC_PREREQ(2.57)
 
 m4_define(freebob_major_version, 1)
 m4_define(freebob_minor_version, 999)
-m4_define(freebob_micro_version, 3)
+m4_define(freebob_micro_version, 4)
 
 m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
 
@@ -116,8 +116,8 @@ PKG_CHECK_MODULES(LIBRAW1394, libraw1394 >= 1.3.0)
 PKG_CHECK_MODULES(LIBIEC61883, libiec61883 >= 1.1.0)
 PKG_CHECK_MODULES(LIBAVC1394, libavc1394 >= 0.5.3)
 PKG_CHECK_MODULES(ALSA, alsa >= 1.0.0)
-PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.0)
 PKG_CHECK_MODULES(LIBXMLCPP, libxml++-2.6 >= 2.14.0)
+PKG_CHECK_MODULES(LIBLO, liblo >= 0.22)
 
 # Setup CFLAGS and CXXFLAGS
 AC_ARG_ENABLE(debug,
@@ -390,8 +390,8 @@ AC_SUBST([LIBIEC61883_CFLAGS])
 AC_SUBST([LIBIEC61883_LIBS])
 AC_SUBST([LIBAVC1394_CFLAGS])
 AC_SUBST([LIBAVC1394_LIBS])
-AC_SUBST([LIBXML_LIBS])
-AC_SUBST([LIBXML_CFLAGS])
+AC_SUBST([LIBLO_LIBS])
+AC_SUBST([LIBLO_CFLAGS])
 
 AC_SUBST([BIN_PROGRAMS])
 

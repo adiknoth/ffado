@@ -23,19 +23,15 @@ INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src $(LIBXML_CFLAGS) \
 noinst_PROGRAMS =
 
 if BUILD_TESTS
-noinst_PROGRAMS += test-freebob test-freebob-cpp test-extplugcmd test-fw410 freebob-server \
+noinst_PROGRAMS += test-freebob test-extplugcmd test-fw410 \
  		test-volume test-mixer test-cycletimer test-sytmonitor \
  		test-timestampedbuffer test-ieee1394service
 endif
 
 noinst_HEADERS = 
 
-test_freebob_SOURCES = test-freebob.c
+test_freebob_SOURCES = test-freebob.cpp
 test_freebob_LDADD   = $(top_builddir)/src/libfreebob.la \
-	$(LIBXML_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
-	
-test_freebob_cpp_SOURCES = test-freebob-cpp.cpp
-test_freebob_cpp_LDADD   = $(top_builddir)/src/libfreebob.la \
 	$(LIBXML_LIBS) $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS)
 
 test_extplugcmd_SOURCES = test-extplugcmd.cpp
@@ -56,10 +52,6 @@ test_fw410_LDADD   = $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
 test_ieee1394service_SOURCES = test-ieee1394service.cpp
 test_ieee1394service_LDADD   = $(top_builddir)/src/libfreebob.la \
                                $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
-
-freebob_server_SOURCES = freebob-server.c
-freebob_server_LDADD   = $(top_builddir)/src/libfreebob.la $(LIBXML_LIBS) \
-	$(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
 
 #TESTS_ENVIRONMENT
 TEST = test-freebob

@@ -450,16 +450,6 @@ int freebob_streaming_transfer_playback_buffers(freebob_device_t *dev);
 
 int freebob_streaming_transfer_capture_buffers(freebob_device_t *dev);
 
-/**
- * Returns the packetizer thread to allow RT enabling by the host.
- * 
- * @param dev the freebob device
- *
- * @return the thread.
- */
-pthread_t freebob_streaming_get_packetizer_thread(freebob_device_t *dev);
-
-
 #ifdef __cplusplus
 }
 #endif

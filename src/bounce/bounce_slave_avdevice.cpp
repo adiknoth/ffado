@@ -25,11 +25,13 @@
  * 
  *
  */
+
+#include "libstreaming/AmdtpSlaveStreamProcessor.h"
+
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
 #include "bounce_slave_avdevice.h"
-#include "libfreebob/freebob_bounce.h"
 
 #include <libraw1394/raw1394.h>
 #include <libavc1394/rom1394.h>
@@ -173,19 +175,51 @@ BounceSlaveDevice::unlock() {
 
 bool
 BounceSlaveDevice::prepare() {
-    // snooping does not make sense for a slave device
-    setOption("snoopMode", false);
+    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing BounceSlaveDevice...\n" );
     
-    // prepare the base class
-    // FIXME: when doing proper discovery this won't work anymore
-    //        as it relies on a completely symmetric transmit/receive
-    if(!BounceDevice::prepare()) {
-        debugError("Base class preparation failed\n");
+    // create & add streamprocessors
+    Streaming::StreamProcessor *p;
+    
+    p=new Streaming::AmdtpSlaveReceiveStreamProcessor(
+                             m_p1394Service->getPort(),
+                             m_samplerate,
+                             BOUNCE_NB_AUDIO_CHANNELS);
+
+    if(!p->init()) {
+        debugFatal("Could not initialize receive processor!\n");
+        delete p;
         return false;
     }
+
+    if (!addPortsToProcessor(p,
+            Streaming::Port::E_Capture)) {
+        debugFatal("Could not add plug to processor!\n");
+        delete p;
+        return false;
+    }
+
+    m_receiveProcessors.push_back(p);
+
+    // do the transmit processor
+    p=new Streaming::AmdtpSlaveTransmitStreamProcessor(
+                                m_p1394Service->getPort(),
+                                m_samplerate,
+                                BOUNCE_NB_AUDIO_CHANNELS);
     
-    // do any customisations here
-    
+    if(!p->init()) {
+        debugFatal("Could not initialize transmit processor!\n");
+        delete p;
+        return false;
+    }
+
+    if (!addPortsToProcessor(p,
+        Streaming::Port::E_Playback)) {
+        debugFatal("Could not add plug to processor!\n");
+        delete p;
+        return false;
+    }
+    m_transmitProcessors.push_back(p);
+
     return true;
 }
 
