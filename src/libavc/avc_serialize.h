@@ -21,6 +21,8 @@
 #ifndef Serialize_h
 #define Serialize_h
 
+#include "debugmodule/debugmodule.h"
+
 #include <libraw1394/raw1394.h> // byte_t and quadlet_t declaration
 #include <string>
 
@@ -61,6 +63,7 @@ public:
 
 private:
     unsigned int m_cnt;
+    DECLARE_DEBUG_MODULE;
 
 };
 

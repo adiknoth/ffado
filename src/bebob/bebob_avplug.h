@@ -95,19 +95,19 @@ public:
     bool setConnection( AvPlug& plug );
 
     int getGlobalId() const
-	{ return m_globalId; }
+        { return m_globalId; }
     plug_id_t getPlugId() const
-	{ return m_id; }
+        { return m_id; }
     AVCCommand::ESubunitType getSubunitType() const
-	{ return m_subunitType; }
+        { return m_subunitType; }
     subunit_id_t getSubunitId() const
-	{ return m_subunitId; }
+        { return m_subunitId; }
     const char* getName() const
-	{ return m_name.c_str(); }
+        { return m_name.c_str(); }
     EAvPlugDirection getPlugDirection() const
-	{ return m_direction; }
+        { return m_direction; }
     sampling_frequency_t getSamplingFrequency() const
-	{ return m_samplingFrequency; }
+        { return m_samplingFrequency; }
     int getSampleRate() const; // 22050, 24000, 32000, ...
     int getNrOfChannels() const;
     int getNrOfStreams() const;
@@ -117,10 +117,10 @@ public:
     EAvPlugAddressType getPlugAddressType() const
         { return m_addressType; }
     EAvPlugType getPlugType() const
-	{ return m_infoPlugType; }
+        { return m_infoPlugType; }
 
     function_block_type_t getFunctionBlockType() const
-	{ return m_functionBlockType; }
+        { return m_functionBlockType; }
     function_block_id_t getFunctionBlockId() const
         { return m_functionBlockId; }
 

@@ -25,10 +25,12 @@
 
 #include <netinet/in.h>
 
+IMPL_DEBUG_MODULE( CoutSerializer, CoutSerializer, DEBUG_LEVEL_NORMAL );
+
 bool
 CoutSerializer::write( byte_t d, const char* name )
 {
-    printf( "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
     m_cnt += sizeof( byte_t );
 
     return true;
@@ -37,7 +39,7 @@ CoutSerializer::write( byte_t d, const char* name )
 bool
 CoutSerializer::write( quadlet_t d, const char* name )
 {
-    printf( "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
     m_cnt += sizeof( quadlet_t );
     return true;
 }

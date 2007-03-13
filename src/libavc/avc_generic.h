@@ -44,6 +44,9 @@ public:
     virtual bool deserialize( IISDeserialize& de ) = 0;
 
     virtual IBusData* clone() const = 0;
+    
+protected:
+    DECLARE_DEBUG_MODULE;
 };
 
 class AVCCommand

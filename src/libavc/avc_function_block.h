@@ -25,6 +25,8 @@
 #include "avc_generic.h"
 
 #include <libavc1394/avc1394.h>
+#include <vector>
+using namespace std;
 
 class FunctionBlockFeatureVolume: public IBusData
 {
@@ -77,8 +79,11 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual FunctionBlockProcessingEnhancedMixer* clone() const;
 
-    control_selector_t m_controlSelector;
-    status_selector_t  m_statusSelector;
+    control_selector_t        m_controlSelector;
+    status_selector_t         m_statusSelector;
+    control_data_ext_length_t m_controlDataLength;
+    vector<mixer_programmable_state_t> m_ProgramableStateData;
+    vector<mixer_level_t>              m_LevelData;
 };
 
 ///////////////////////////////////////////

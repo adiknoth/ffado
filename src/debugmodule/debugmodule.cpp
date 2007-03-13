@@ -53,12 +53,12 @@ DebugModule::DebugModule( std::string name,  debug_level_t level )
 
 DebugModule::~DebugModule()
 {
-    if ( m_level >= eDL_VeryVerbose ) {
-        cout << "Unregistering "
-             << this->getName()
-             << " at DebugModuleManager"
-             << endl;
-    }
+//     if ( m_level >= eDL_VeryVerbose ) {
+//         cout << "Unregistering "
+//              << this->getName()
+//              << " at DebugModuleManager"
+//              << endl;
+//     }
     if ( !DebugModuleManager::instance()->unregisterModule( *this ) ) {
         cerr << "Could not unregister DebugModule at DebugModuleManager"
              << endl;

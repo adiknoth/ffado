@@ -1960,15 +1960,33 @@ AvPlugManager::showPlugs() const
     {
         AvPlug* plug = *it;
         if ( plug->getFunctionBlockType() != 0xff ) {
+            std::ostringstream strstrm;
+            switch(plug->getFunctionBlockType()) {
+                case 0x80:
+                    strstrm << "Selector FB";
+                    break;
+                case 0x81:
+                    strstrm << "Feature FB";
+                    break;
+                case 0x82:
+                    strstrm << "Processing FB";
+                    break;
+                case 0x83:
+                    strstrm << "CODEC FB";
+                    break;
+                default:
+                    strstrm << plug->getFunctionBlockType();
+            }
+
             if ( plug->getPlugDirection() == AvPlug::eAPD_Input ) {
-                debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(%d) %s\" -> \"(0x%02x,%d)\"\n",
+                debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(%d) %s\" -> \"(%s, ID %d)\"\n",
                         plug->getGlobalId(),
                         plug->getName(),
-                        plug->getFunctionBlockType(),
+                        strstrm.str().c_str(),
                         plug->getFunctionBlockId() );
             } else {
-                debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(0x%02x,%d)\" -> \t\"(%d) %s\"\n",
-                        plug->getFunctionBlockType(),
+                debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(%s, ID %d)\" -> \t\"(%d) %s\"\n",
+                        strstrm.str().c_str(),
                         plug->getFunctionBlockId(),
                         plug->getGlobalId(),
                         plug->getName() );
