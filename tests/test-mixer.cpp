@@ -69,22 +69,23 @@ int
 main( int argc, char **argv )
 {
 
-    if (argc < 2) {
-        printf("usage: NODE_ID FB_ID\n");
+    if (argc < 3) {
+        printf("usage: PORT NODE_ID FB_ID\n");
         exit(0);
     }
 
     int errno = 0;
     char* tail;
-    int node_id = strtol( argv[1], &tail, 0 );
-    int fb_id   = strtol( argv[2], &tail, 0 );
+    int port = strtol( argv[1], &tail, 0 );
+    int node_id = strtol( argv[2], &tail, 0 );
+    int fb_id   = strtol( argv[3], &tail, 0 );
 
     if (errno) {
         perror("argument parsing failed:");
         return -1;
     }
     Ieee1394Service ieee1394service;
-    if ( !ieee1394service.initialize( 0 ) ) {
+    if ( !ieee1394service.initialize( port ) ) {
         fprintf( stderr, "could not set port on ieee1394service\n" );
         return -1;
     }
