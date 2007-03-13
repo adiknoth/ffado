@@ -107,14 +107,15 @@ AvDevice::discover()
 }
 
 bool
-AvDevice::setSamplingFrequency( ESamplingFrequency eSamplingFrequency )
+AvDevice::setSampleRate( ESampleRate eSampleRate )
 {
     // not supported
     return false;
 }
 
-int AvDevice::getSamplingFrequency( ) {
-    return 44100;
+ESampleRate
+AvDevice::getSampleRate( ) {
+    return parseSampleRate(44100);
 }
 
 void

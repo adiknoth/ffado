@@ -100,8 +100,8 @@ public:
 
     virtual void showDevice();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    virtual int getSamplingFrequency( );
+    bool setSampleRate( ESampleRate );
+    ESampleRate getSampleRate( );
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);

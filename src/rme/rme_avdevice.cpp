@@ -108,16 +108,16 @@ RmeDevice::discover()
     return false;
 }
 
-int 
-RmeDevice::getSamplingFrequency( ) {
+ESampleRate 
+RmeDevice::getSampleRate( ) {
 /*
  * Retrieve the current sample rate from the RME device.
  */
-	return 48000;
+	return parseSampleRate(48000);
 }
 
 bool
-RmeDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+RmeDevice::setSampleRate( ESampleRate samplingFrequency )
 {
 /*
  * Set the RME device's samplerate.

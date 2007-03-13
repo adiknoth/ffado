@@ -65,8 +65,8 @@ public:
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    virtual int getSamplingFrequency( );
+    bool setSampleRate( ESampleRate );
+    ESampleRate getSampleRate( );
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);

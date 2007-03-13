@@ -54,8 +54,8 @@ public:
 
     void showDevice();
 
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    int getSamplingFrequency( );
+    bool setSampleRate( ESampleRate );
+    ESampleRate getSampleRate( );
 
     int getStreamCount();
     Streaming::StreamProcessor *getStreamProcessorByIndex(int i);

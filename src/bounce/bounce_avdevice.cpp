@@ -51,7 +51,7 @@ BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
                             Ieee1394Service& ieee1394service,
                             int nodeId )
     : IAvDevice( configRom, ieee1394service, nodeId )
-    , m_samplerate (44100)
+    , m_samplerate (eSF_44100Hz)
     , m_model( NULL )
     , m_Notifier ( NULL )
 {
@@ -123,16 +123,15 @@ BounceDevice::discover()
     return false;
 }
 
-int BounceDevice::getSamplingFrequency( ) {
+ESampleRate
+BounceDevice::getSampleRate( ) {
     return m_samplerate;
 }
 
-bool BounceDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency ) {
-    int retval=convertESamplingFrequency( samplingFrequency );
-    if (retval) {
-        m_samplerate=retval;
-        return true;
-    } else return false;
+bool
+BounceDevice::setSampleRate( ESampleRate sampleRate ) {
+    m_samplerate=sampleRate;
+    return true;
 }
 
 bool

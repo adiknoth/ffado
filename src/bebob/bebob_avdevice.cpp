@@ -200,13 +200,13 @@ AvDevice::discoverPlugs()
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of iso input plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of iso input plugs = %d\n",
                  plugInfoCmd.m_serialBusIsochronousInputPlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of iso output plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of iso output plugs = %d\n",
                  plugInfoCmd.m_serialBusIsochronousOutputPlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of external input plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of external input plugs = %d\n",
                  plugInfoCmd.m_externalInputPlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of external output plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of external output plugs = %d\n",
                  plugInfoCmd.m_externalOutputPlugs );
 
     if ( !discoverPlugsPCR( AvPlug::eAPD_Input,
@@ -265,7 +265,7 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
             return false;
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "plug '%s' found\n",
                      plug->getName() );
         m_pcrPlugs.push_back( plug );
     }
@@ -297,7 +297,7 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
             return false;
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "plug '%s' found\n",
                      plug->getName() );
         m_externalPlugs.push_back( plug );
     }
@@ -500,7 +500,7 @@ AvDevice::discoverSyncModes()
                     break;
                 }
             }
-            debugOutput( DEBUG_LEVEL_NORMAL,
+            debugOutput( DEBUG_LEVEL_VERBOSE,
                          "Active Sync Connection: '%s' -> '%s'\n",
                          plug->getName(),
                          msuPlug->getName() );
@@ -702,7 +702,7 @@ AvDevice::getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection )
 }
 
 bool
-AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+AvDevice::setSampleRate( ESampleRate sampleRate )
 {
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
@@ -710,66 +710,69 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     }
     
     if(snoopMode) {
-        int current_sr=getSamplingFrequency();
-        if (current_sr != convertESamplingFrequency( samplingFrequency ) ) {
+        ESampleRate current_sr=getSampleRate();
+        if (current_sr != sampleRate ) {
             debugError("In snoop mode it is impossible to set the sample rate.\n");
-            debugError("Please start the client with the correct setting.\n");
+            debugError("Please start the client with the correct setting (%d).\n",
+                convertESampleRate(sampleRate));
             return false;
         }
         return true;
     } else {
         AvPlug* plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
         if ( !plug ) {
-            debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
+            debugError( "Could not retrieve iso input plug 0\n" );
             return false;
         }
     
         if ( !setSamplingFrequencyPlug( *plug,
                                         AvPlug::eAPD_Input,
-                                        samplingFrequency ) )
+                                        toAvcSamplingFrequency( sampleRate ) ) )
         {
-            debugError( "setSampleRate: Setting sample rate failed\n" );
+            debugError( "Setting sample rate failed\n" );
             return false;
         }
     
         plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output,  0 );
         if ( !plug ) {
-            debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
+            debugError( "Could not retrieve iso output plug 0\n" );
             return false;
         }
     
         if ( !setSamplingFrequencyPlug( *plug,
                                         AvPlug::eAPD_Output,
-                                        samplingFrequency ) )
+                                        toAvcSamplingFrequency( sampleRate ) ) )
         {
-            debugError( "setSampleRate: Setting sample rate failed\n" );
+            debugError( "Setting sample rate failed\n" );
             return false;
         }
     
         debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "setSampleRate: Set sample rate to %d\n",
-                     convertESamplingFrequency( samplingFrequency ) );
+                     "Set sample rate to %d\n",
+                     convertESampleRate( sampleRate ) );
         return true;
     }
     // not executable
     return false;
 }
 
-int
-AvDevice::getSamplingFrequency( ) {
+ESampleRate
+AvDevice::getSampleRate( ) {
     AvPlug* inputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
     if ( !inputPlug ) {
-        debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
-        return false;
+        debugError( "getSampleRate: Could not retrieve iso input plug 0\n" );
+        return eSF_DontCare;
     }
     AvPlug* outputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output, 0 );
     if ( !outputPlug ) {
-        debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
-        return false;
+        debugError( "getSampleRate: Could not retrieve iso output plug 0\n" );
+        return eSF_DontCare;
     }
 
-    int samplerate_playback=inputPlug->getSampleRate();
-    int samplerate_capture=outputPlug->getSampleRate();
+    ESampleRate samplerate_playback=fromAvcSamplingFrequency(
+        parseAvcSamplingFrequency(inputPlug->getSamplingFrequency()));
+    ESampleRate samplerate_capture=fromAvcSamplingFrequency(
+        parseAvcSamplingFrequency(outputPlug->getSamplingFrequency()));
 
     if (samplerate_playback != samplerate_capture) {
         debugWarning("Samplerates for capture and playback differ!\n");
@@ -814,7 +817,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
              && ( extStreamFormatCmd.getResponse() ==
                   AVCCommand::eR_Implemented ) )
         {
-            ESamplingFrequency foundFreq = eSF_DontCare;
+            ESamplingFrequency foundFreq = eSF_AVC_DontCare;
 
             FormatInformation* formatInfo =
                 extStreamFormatCmd.getFormatInformation();
@@ -849,16 +852,16 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
                    ExtendedStreamFormatCmd::eR_Implemented ) );
 
     if ( !cmdSuccess ) {
-        debugError( "setSampleRatePlug: Failed to retrieve format info\n" );
+        debugError( "setSamplingFrequencyPlug: Failed to retrieve format info\n" );
         return false;
     }
 
     if ( !correctFormatFound ) {
-        debugError( "setSampleRatePlug: %s plug %d does not support "
+        debugError( "setSamplingFrequencyPlug: %s plug %d does not support "
                     "sample rate %d\n",
                     plug.getName(),
                     plug.getPlugId(),
-                    convertESamplingFrequency( samplingFrequency ) );
+                    convertAvcSamplingFrequency( samplingFrequency ) );
         return false;
     }
 
@@ -868,9 +871,9 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
     extStreamFormatCmd.setVerbose( m_verboseLevel );
 
     if ( !extStreamFormatCmd.fire() ) {
-        debugError( "setSampleRate: Could not set sample rate %d "
+        debugError( "setSamplingFrequencyPlug: Could not set sample rate %d "
                     "to %s plug %d\n",
-                    convertESamplingFrequency( samplingFrequency ),
+                    convertAvcSamplingFrequency( samplingFrequency ),
                     plug.getName(),
                     plug.getPlugId() );
         return false;
@@ -978,16 +981,16 @@ AvDevice::prepare() {
 
     AvPlug* inputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
     if ( !inputPlug ) {
-        debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
+        debugError( "Could not retrieve iso input plug 0\n" );
         return false;
     }
     AvPlug* outputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output, 0 );
     if ( !outputPlug ) {
-        debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
+        debugError( "Could not retrieve iso output plug 0\n" );
         return false;
     }
 
-    int samplerate=outputPlug->getSampleRate();
+    ESampleRate samplerate=parseSampleRate(outputPlug->getSampleRate());
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing receive processor...\n");
     // create & add streamprocessors
@@ -995,7 +998,7 @@ AvDevice::prepare() {
     
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
-                             samplerate,
+                             convertESampleRate(samplerate),
                              outputPlug->getNrOfChannels());
 
     if(!p->init()) {
@@ -1020,12 +1023,12 @@ AvDevice::prepare() {
         // we are snooping, so this is receive too.
         p=new Streaming::AmdtpReceiveStreamProcessor(
                                   m_p1394Service->getPort(),
-                                  samplerate,
+                                  convertESampleRate(samplerate),
                                   inputPlug->getNrOfChannels());
     } else {
         p=new Streaming::AmdtpTransmitStreamProcessor(
                                 m_p1394Service->getPort(),
-                                samplerate,
+                                convertESampleRate(samplerate),
                                 inputPlug->getNrOfChannels());
     }
     

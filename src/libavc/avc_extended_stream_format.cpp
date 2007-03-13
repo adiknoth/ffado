@@ -73,7 +73,7 @@ StreamFormatInfo::clone() const
 FormatInformationStreamsSync::FormatInformationStreamsSync()
     : FormatInformationStreams()
     , m_reserved0( 0xff )
-    , m_samplingFrequency( eSF_DontCare )
+    , m_samplingFrequency( eSF_AVC_DontCare )
     , m_rateControl( eRC_DontCare )
     , m_reserved1( 0xff )
 {
@@ -134,7 +134,7 @@ std::ostream& operator<<( std::ostream& stream, FormatInformationStreamsCompound
 
 FormatInformationStreamsCompound::FormatInformationStreamsCompound()
     : FormatInformationStreams()
-    , m_samplingFrequency( eSF_DontCare )
+    , m_samplingFrequency( eSF_AVC_DontCare )
     , m_rateControl( eRC_DontCare )
     , m_numberOfStreamFormatInfos( 0 )
 {

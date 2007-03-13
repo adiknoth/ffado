@@ -23,6 +23,7 @@
 
 #include <libavc1394/avc1394.h>
 #include <ostream>
+#include "freebob-interface.h"
 
 typedef byte_t ctype_t;
 typedef byte_t unit_t;
@@ -80,20 +81,16 @@ typedef quadlet_t company_id_t;
  * \brief the possible sampling frequencies
  */
 enum ESamplingFrequency {
-    eSF_22050Hz = 0x00,
-    eSF_24000Hz = 0x01,
-    eSF_32000Hz = 0x02,
-    eSF_44100Hz = 0x03,
-    eSF_48000Hz = 0x04,
-    eSF_88200Hz = 0x0A,
-    eSF_96000Hz = 0x05,
-    eSF_176400Hz = 0x06,
-    eSF_192000Hz = 0x07,
-    eSF_AnyLow   = 0x0B,
-    eSF_AnyMid   = 0x0C,
-    eSF_AnyHigh  = 0x0D,
-    eSF_None     = 0x0E,
-    eSF_DontCare = 0x0F,
+    eSF_AVC_22050Hz = 0x00,
+    eSF_AVC_24000Hz = 0x01,
+    eSF_AVC_32000Hz = 0x02,
+    eSF_AVC_44100Hz = 0x03,
+    eSF_AVC_48000Hz = 0x04,
+    eSF_AVC_88200Hz = 0x0A,
+    eSF_AVC_96000Hz = 0x05,
+    eSF_AVC_176400Hz = 0x06,
+    eSF_AVC_192000Hz = 0x07,
+    eSF_AVC_DontCare = 0x0F,
 };
 
 /**
@@ -101,13 +98,16 @@ enum ESamplingFrequency {
  * @param freq 
  * @return 
  */
-int convertESamplingFrequency(ESamplingFrequency freq);
+int convertAvcSamplingFrequency(ESamplingFrequency freq);
 /**
  * \brief Convert from integer to ESamplingFrequency
  * @param sampleRate 
  * @return 
  */
-ESamplingFrequency parseSampleRate( int sampleRate );
+ESamplingFrequency parseAvcSamplingFrequency( int sampleRate );
+
+ESampleRate fromAvcSamplingFrequency( ESamplingFrequency r );
+ESamplingFrequency toAvcSamplingFrequency( ESampleRate r );
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
 

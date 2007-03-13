@@ -16,57 +16,102 @@
 # along with FreeBoB; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-INCLUDES = 						\
-	$(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS) 	\
-	$(LIBAVC1394_CFLAGS)	\
-	$(LIBXMLCPP_CFLAGS)	$(LIBLO_CFLAGS)			\
-	-I$(top_srcdir) -I$(top_srcdir)/src
+INCLUDES =                         \
+    $(LIBRAW1394_CFLAGS) $(LIBIEC61883_CFLAGS)     \
+    $(LIBAVC1394_CFLAGS)    \
+    $(LIBXMLCPP_CFLAGS)    $(LIBLO_CFLAGS)            \
+    -I$(top_srcdir) -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libfreebob.la
 
-libfreebob_la_LDFLAGS = 				\
-	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
-	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
-	$(LIBXMLCPP_LIBS) $(LIBLO_LIBS) \
-	-lpthread -lrt
+libfreebob_la_LDFLAGS =                 \
+    -version-info $(LT_VERSION) $(LIBRAW1394_LIBS)     \
+    $(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS)         \
+    $(LIBXMLCPP_LIBS) $(LIBLO_LIBS) \
+    -lpthread -lrt
 
 libfreebob_la_LIBADD = -lrt
 
 noinst_HEADERS = \
-    libieee1394/configrom.h libieee1394/csr1212.h \
-    libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
+    libieee1394/configrom.h \
+    libieee1394/csr1212.h \
+    libieee1394/ieee1394service.h \
+    libieee1394/ARMHandler.h \
     libieee1394/IEC61883.h \
     debugmodule/debugmodule.h \
-	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
-	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
-	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h \
-	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
-	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
-	libavc/avc_connect.h \
-	libavc/avc_definitions.h libavc/avc_extended_cmd_generic.h \
-	libavc/avc_extended_plug_info.h libavc/avc_extended_stream_format.h \
-	libavc/avc_extended_subunit_info.h libavc/avc_function_block.h libavc/avc_generic.h \
-	libavc/avc_plug_info.h libavc/avc_serialize.h libavc/avc_signal_source.h \
-	libavc/avc_subunit_info.h libavc/avc_unit_info.h \
-	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
-	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
-	libstreaming/AmdtpSlaveStreamProcessor.h \
-	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
-	libstreaming/IsoHandlerManager.h libstreaming/IsoStream.h libstreaming/MotuPort.h \
-	libstreaming/MotuPortInfo.h libstreaming/MotuStreamProcessor.h \
-	libstreaming/Port.h libstreaming/PortManager.h \
-	libstreaming/StreamProcessor.h libstreaming/StreamProcessorManager.h \
-	libutil/Atomic.h libutil/cycles.h libutil/DelayLockedLoop.h libutil/PosixThread.h \
-	libutil/ringbuffer.h libutil/OptionContainer.h \
-	libutil/PacketBuffer.h libutil/StreamStatistics.h \
-	libutil/serialize.h libutil/SystemTimeSource.h libutil/Thread.h libutil/Time.h \
-	libutil/TimeSource.h libutil/TimestampedBuffer.h
+    devicemanager.h \
+    fbtypes.h \
+    iavdevice.h \
+    threads.h \
+    freebob-interface.h \
+    bebob/bebob_avdevice.h \
+    bebob/bebob_avdevice_subunit.h \
+    bebob/bebob_avplug.h \
+    bebob/bebob_dl_bcd.h \
+    bebob/bebob_dl_codes.h \
+    bebob/bebob_dl_mgr.h \
+    bebob/bebob_functionblock.h \
+    bounce/bounce_avdevice.h \
+    bounce/bounce_slave_avdevice.h \
+    maudio/maudio_avdevice.h \
+    motu/motu_avdevice.h rme/rme_avdevice.h \
+    metrichalo/mh_avdevice.h \
+    dice/dice_avdevice.h \
+    libavc/avc_connect.h \
+    libavc/avc_definitions.h \
+    libavc/avc_extended_cmd_generic.h \
+    libavc/avc_extended_plug_info.h \
+    libavc/avc_extended_stream_format.h \
+    libavc/avc_extended_subunit_info.h \
+    libavc/avc_function_block.h \
+    libavc/avc_generic.h \
+    libavc/avc_plug_info.h \
+    libavc/avc_serialize.h \
+    libavc/avc_signal_source.h \
+    libavc/avc_subunit_info.h \
+    libavc/avc_unit_info.h \
+    libosc/OscArgument.h \
+    libosc/OscNode.h \
+    libosc/OscResponse.h \
+    libosc/OscServer.h \
+    libosc/OscMessage.h \
+    libstreaming/AmdtpPort.h \
+    libstreaming/AmdtpPortInfo.h \
+    libstreaming/AmdtpStreamProcessor.h \
+    libstreaming/AmdtpSlaveStreamProcessor.h \
+    libstreaming/cip.h \
+    libstreaming/cycletimer.h \
+    libstreaming/IsoHandler.h \
+    libstreaming/IsoHandlerManager.h \
+    libstreaming/IsoStream.h \
+    libstreaming/MotuPort.h \
+    libstreaming/MotuPortInfo.h \
+    libstreaming/MotuStreamProcessor.h \
+    libstreaming/Port.h \
+    libstreaming/PortManager.h \
+    libstreaming/StreamProcessor.h \
+    libstreaming/StreamProcessorManager.h \
+    libutil/Atomic.h \
+    libutil/cycles.h \
+    libutil/DelayLockedLoop.h \
+    libutil/PosixThread.h \
+    libutil/ringbuffer.h \
+    libutil/OptionContainer.h \
+    libutil/PacketBuffer.h \
+    libutil/StreamStatistics.h \
+    libutil/serialize.h \
+    libutil/SystemTimeSource.h \
+    libutil/Thread.h \
+    libutil/Time.h \
+    libutil/TimeSource.h \
+    libutil/TimestampedBuffer.h
 
 # common sources
 libfreebob_la_SOURCES = \
         devicemanager.cpp \
         freebob.cpp \
         freebob_streaming.cpp \
+        freebob-interface.cpp \
         iavdevice.cpp \
         debugmodule/debugmodule.cpp \
         libavc/avc_connect.cpp \
@@ -152,10 +197,10 @@ amdtp_src = \
 #  generic
 nobase_dist_pkgdata_DATA =
 #  bebob specific
-bebob_pkgdata = 				\
-	maudio/refdesign.xml				\
-	maudio/fw410.xml 				\
-	maudio/fwap.xml
+bebob_pkgdata =                 \
+    maudio/refdesign.xml                \
+    maudio/fw410.xml                 \
+    maudio/fwap.xml
 
 # programs intended for installation in the 'bin' directory
 #  generic

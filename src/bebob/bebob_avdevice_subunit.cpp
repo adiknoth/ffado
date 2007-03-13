@@ -87,9 +87,9 @@ BeBoB::AvDeviceSubunit::discoverPlugs()
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of source plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of source plugs = %d\n",
                  plugInfoCmd.m_sourcePlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of destination output "
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of destination output "
                  "plugs = %d\n", plugInfoCmd.m_destinationPlugs );
 
     if ( !discoverPlugs( AvPlug::eAPD_Input,
@@ -153,7 +153,7 @@ BeBoB::AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
             return false;
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "plug '%s' found\n",
                      plug->getName() );
         m_plugs.push_back( plug );
     }

@@ -72,8 +72,8 @@ public:
     static bool probe( ConfigRom& configRom );
     bool discover();
     
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    int getSamplingFrequency( );
+    bool setSampleRate( ESampleRate );
+    ESampleRate getSampleRate( );
     
     bool prepare();
     bool lock();
@@ -89,7 +89,7 @@ public:
     void showDevice();
 
 protected:
-    unsigned int m_samplerate;
+    ESampleRate m_samplerate;
     struct VendorModelEntry* m_model;
 
     // streaming stuff

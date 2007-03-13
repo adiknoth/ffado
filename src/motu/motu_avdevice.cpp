@@ -138,8 +138,8 @@ MotuDevice::discover()
     return false;
 }
 
-int 
-MotuDevice::getSamplingFrequency( ) {
+ESampleRate
+MotuDevice::getSampleRate( ) {
 /*
  * Retrieve the current sample rate from the MOTU device.
  */
@@ -162,11 +162,11 @@ MotuDevice::getSamplingFrequency( ) {
 			rate *= 4;
 			break;
 	}
-	return rate;
+	return parseSampleRate(rate);
 }
 
 bool
-MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+MotuDevice::setSampleRate( ESampleRate sampleRate )
 {
 /*
  * Set the MOTU device's samplerate.
@@ -175,7 +175,7 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 	quadlet_t q, new_rate=0;
 	int i, supported=true, cancel_adat=false;
 
-	switch ( samplingFrequency ) {
+	switch ( sampleRate ) {
 		case eSF_22050Hz:
 			supported=false;
 			break;
@@ -311,7 +311,7 @@ MotuDevice::showDevice()
 bool
 MotuDevice::prepare() {
 
-	int samp_freq = getSamplingFrequency();
+	int samp_freq = getSampleRate();
 	unsigned int optical_in_mode = getOpticalMode(MOTUFW_DIR_IN);
 	unsigned int optical_out_mode = getOpticalMode(MOTUFW_DIR_OUT);
 	unsigned int event_size_in = getEventSize(MOTUFW_DIR_IN);
@@ -432,7 +432,8 @@ MotuDevice::prepare() {
 
 	// Do the same for the transmit processor
 	m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(
-		m_p1394Service->getPort(), getSamplingFrequency(), event_size_out);
+		m_p1394Service->getPort(), convertESampleRate(getSampleRate()),
+		event_size_out);
 
 	m_transmitProcessor->setVerboseLevel(getDebugLevel());
 	
@@ -663,7 +664,7 @@ signed int MotuDevice::getEventSize(unsigned int dir) {
 // At the very least an event consists of the SPH (4 bytes), the control/MIDI
 // bytes (6 bytes) and 8 analog audio channels (each 3 bytes long).  Note that
 // all audio channels are sent using 3 bytes.
-signed int sample_rate = getSamplingFrequency();
+signed int sample_rate = getSampleRate();
 signed int optical_mode = getOpticalMode(dir);
 signed int size = 4+6+8*3;
 

@@ -122,7 +122,7 @@ BeBoB::FunctionBlock::discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
             return false;
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "plug '%s' found\n",
                      plug->getName() );
         m_plugs.push_back( plug );
     }

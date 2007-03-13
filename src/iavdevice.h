@@ -21,9 +21,10 @@
 #ifndef IAVDEVICE_H
 #define IAVDEVICE_H
 
-#include "libavc/avc_definitions.h"
+#include "freebob-interface.h"
 #include "libutil/OptionContainer.h"
 #include "libosc/OscNode.h"
+#include <ostream>
 
 class ConfigRom;
 class Ieee1394Service;
@@ -31,6 +32,7 @@ class Ieee1394Service;
 namespace Streaming {
     class StreamProcessor;
 }
+
 /*!
 @brief Base class for device support
 
@@ -60,16 +62,16 @@ public:
 	virtual bool discover() = 0;
 	
 	/**
-	 * @brief Set the samping frequency
-	 * @param samplingFrequency 
+	 * @brief Set the sample rate
+	 * @param sampleRate 
 	 * @return true if successful
 	 */
-	virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency ) = 0;
+	virtual bool setSampleRate( ESampleRate sampleRate ) = 0;
 	/**
-	 * @brief get the samplingfrequency as an integer
-	 * @return the sampling frequency as integer
+	 * @brief get the sample rate as an integer
+	 * @return the sample rate as ESampleRate
 	 */
-	virtual int getSamplingFrequency( ) = 0;
+	virtual ESampleRate getSampleRate( ) = 0;
 	
     /**
      * @brief This is called by the device manager to give the device a unique ID.

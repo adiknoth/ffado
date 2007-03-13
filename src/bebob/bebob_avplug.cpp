@@ -265,7 +265,7 @@ AvPlug::getNrOfChannels() const
 int
 AvPlug::getSampleRate() const
 {
-    return convertESamplingFrequency( static_cast<ESamplingFrequency>( m_samplingFrequency ) );
+    return convertAvcSamplingFrequency( static_cast<ESamplingFrequency>( m_samplingFrequency ) );
 }
 
 bool
@@ -1892,10 +1892,10 @@ AvPlugManager::showPlugs() const
     // there is room for improvement. Something for a lazy sunday afternoon (tip: maybe drink some
     // beer to get into the mood)
 
-    printf( "\nSummary\n" );
-    printf( "-------\n\n" );
-    printf( "Nr | AddressType     | Direction | SubUnitType | SubUnitId | FunctionBlockType | FunctionBlockId | Id   | Type         |Name\n" );
-    printf( "---+-----------------+-----------+-------------+-----------+-------------------+-----------------+------+--------------+------\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "\nSummary\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "-------\n\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "Nr | AddressType     | Direction | SubUnitType | SubUnitId | FunctionBlockType | FunctionBlockId | Id   | Type         |Name\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "---+-----------------+-----------+-------------+-----------+-------------------+-----------------+------+--------------+------\n" );
 
     for ( AvPlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
@@ -1903,7 +1903,7 @@ AvPlugManager::showPlugs() const
     {
         AvPlug* plug = *it;
 
-        printf( "%2d | %15s | %9s | %11s |      0x%02x |              0x%02x |            0x%02x | 0x%02x | %12s | %s\n",
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "%2d | %15s | %9s | %11s |      0x%02x |              0x%02x |            0x%02x | 0x%02x | %12s | %s\n",
                 plug->getGlobalId(),
                 avPlugAddressTypeToString( plug->getPlugAddressType() ),
                 avPlugDirectionToString( plug->getDirection() ),
@@ -1916,8 +1916,8 @@ AvPlugManager::showPlugs() const
                 plug->getName() );
     }
 
-    printf( "\nConnections\n" );
-    printf( "-----------\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "\nConnections\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "-----------\n" );
 
     AvPlugConnectionOwnerVector connections;
 
@@ -1942,13 +1942,13 @@ AvPlugManager::showPlugs() const
         }
     }
 
-    printf( "digraph avcconnections {\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "digraph avcconnections {\n" );
     for ( AvPlugConnectionOwnerVector::iterator it = connections.begin();
           it != connections.end();
           ++it )
     {
         AvPlugConnection& con = *it;
-        printf( "\t\"(%d) %s\" -> \"(%d) %s\"\n",
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(%d) %s\" -> \"(%d) %s\"\n",
                 con.getSrcPlug().getGlobalId(),
                 con.getSrcPlug().getName(),
                 con.getDestPlug().getGlobalId(),
@@ -1961,13 +1961,13 @@ AvPlugManager::showPlugs() const
         AvPlug* plug = *it;
         if ( plug->getFunctionBlockType() != 0xff ) {
             if ( plug->getPlugDirection() == AvPlug::eAPD_Input ) {
-                printf( "\t\"(%d) %s\" -> \"(0x%02x,%d)\"\n",
+                debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(%d) %s\" -> \"(0x%02x,%d)\"\n",
                         plug->getGlobalId(),
                         plug->getName(),
                         plug->getFunctionBlockType(),
                         plug->getFunctionBlockId() );
             } else {
-                printf( "\t\"(0x%02x,%d)\" -> \t\"(%d) %s\"\n",
+                debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(0x%02x,%d)\" -> \t\"(%d) %s\"\n",
                         plug->getFunctionBlockType(),
                         plug->getFunctionBlockId(),
                         plug->getGlobalId(),
@@ -1990,13 +1990,13 @@ AvPlugManager::showPlugs() const
           ++it )
     {
         AvPlug* plug = *it;
-        printf( "\t\"(%d) %s\" [color=%s,style=filled];\n",
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "\t\"(%d) %s\" [color=%s,style=filled];\n",
                 plug->getGlobalId(), plug->getName(),
                 colorStrings[plug->getPlugAddressType() ] );
     }
 
-    printf("}\n" );
-    printf( "Use \"dot -Tps FILENAME.dot -o FILENAME.ps\" "
+    debugOutputShort( DEBUG_LEVEL_NORMAL,"}\n" );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "Use \"dot -Tps FILENAME.dot -o FILENAME.ps\" "
             "to generate graph\n");
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Plug details\n" );

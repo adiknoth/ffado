@@ -58,8 +58,8 @@ public:
     
     void showDevice();
     
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    int getSamplingFrequency( );
+    bool setSampleRate( ESampleRate samplingFrequency );
+    ESampleRate getSampleRate( );
 
     bool prepare();
 

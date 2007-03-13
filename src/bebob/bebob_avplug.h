@@ -238,7 +238,7 @@ private:
     // Supported stream formats
     struct FormatInfo {
         FormatInfo()
-            : m_samplingFrequency( eSF_DontCare )
+            : m_samplingFrequency( eSF_AVC_DontCare )
             , m_isSyncStream( false )
             , m_audioChannels( 0 )
             , m_midiChannels( 0 )

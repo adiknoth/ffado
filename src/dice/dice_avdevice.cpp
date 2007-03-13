@@ -137,14 +137,14 @@ DiceAvDevice::discover()
     return true;
 }
 
-int 
-DiceAvDevice::getSamplingFrequency( ) {
-    ESamplingFrequency samplingFrequency;
+ESampleRate
+DiceAvDevice::getSampleRate( ) {
+    ESampleRate samplingFrequency;
     
     fb_quadlet_t clockreg;
     if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
         debugError("Could not read CLOCK_SELECT register\n");
-        return false;
+        return eSF_DontCare;
     }
     
     clockreg = DICE_GET_RATE(clockreg);
@@ -164,14 +164,14 @@ DiceAvDevice::getSamplingFrequency( ) {
         default:                 samplingFrequency = eSF_DontCare; break;
     }
     
-    return convertESamplingFrequency(samplingFrequency);
+    return samplingFrequency;
 }
 
 bool
-DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+DiceAvDevice::setSampleRate( ESampleRate samplingFrequency )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Setting sample rate: %d\n", 
-        convertESamplingFrequency(samplingFrequency));
+        convertESampleRate(samplingFrequency));
         
     bool supported=false;
     fb_quadlet_t select=0x0;
@@ -227,7 +227,7 @@ DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     }
 
     if (!supported) {
-        debugWarning("Unsupported sample rate: %d\n", convertESamplingFrequency(samplingFrequency));
+        debugWarning("Unsupported sample rate: %d\n", convertESampleRate(samplingFrequency));
         return false;
     }
 
@@ -270,50 +270,50 @@ DiceAvDevice::showDevice()
     fb_quadlet_t tmp_quadlet;
     fb_octlet_t tmp_octlet;
     
-    debugOutput(DEBUG_LEVEL_VERBOSE,
+    debugOutputShort(DEBUG_LEVEL_NORMAL,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
         m_nodeId);
 
-    debugOutput(DEBUG_LEVEL_VERBOSE," DICE Parameter Space info:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Global  : offset=0x%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  TX      : offset=0x%04X size=%04d\n", m_tx_reg_offset, m_tx_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"                nb=%4d size=%04d\n", m_nb_tx, m_tx_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  RX      : offset=0x%04X size=%04d\n", m_rx_reg_offset, m_rx_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"                nb=%4d size=%04d\n", m_nb_rx, m_rx_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  UNUSED1 : offset=0x%04X size=%04d\n", m_unused1_reg_offset, m_unused1_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  UNUSED2 : offset=0x%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL," DICE Parameter Space info:\n");
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Global  : offset=0x%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  TX      : offset=0x%04X size=%04d\n", m_tx_reg_offset, m_tx_reg_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"                nb=%4d size=%04d\n", m_nb_tx, m_tx_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  RX      : offset=0x%04X size=%04d\n", m_rx_reg_offset, m_rx_reg_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"                nb=%4d size=%04d\n", m_nb_rx, m_rx_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  UNUSED1 : offset=0x%04X size=%04d\n", m_unused1_reg_offset, m_unused1_reg_size);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  UNUSED2 : offset=0x%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
 
-    debugOutput(DEBUG_LEVEL_VERBOSE," Global param space:\n");
+    debugOutputShort(DEBUG_LEVEL_NORMAL," Global param space:\n");
     
     readGlobalRegBlock(DICE_REGISTER_GLOBAL_OWNER, (fb_quadlet_t *)&tmp_octlet,sizeof(fb_octlet_t));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Owner            : 0x%016X\n",tmp_octlet);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Owner            : 0x%016X\n",tmp_octlet);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08X\n",tmp_quadlet);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Notification     : 0x%08X\n",tmp_quadlet);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Nick name        : %s\n",getDeviceNickName().c_str());
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Nick name        : %s\n",getDeviceNickName().c_str());
     
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock Select     : 0x%02X 0x%02X\n",
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Clock Select     : 0x%02X 0x%02X\n",
         (tmp_quadlet>>8) & 0xFF, tmp_quadlet & 0xFF);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Enable           : %s\n",
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Enable           : %s\n",
         (tmp_quadlet&0x1?"true":"false"));
     
     readGlobalReg(DICE_REGISTER_GLOBAL_STATUS, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock Status     : %s 0x%02X\n",
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Clock Status     : %s 0x%02X\n",
         (tmp_quadlet&0x1?"locked":"not locked"), (tmp_quadlet>>8) & 0xFF);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Extended Status  : 0x%08X\n",tmp_quadlet);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Extended Status  : 0x%08X\n",tmp_quadlet);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_SAMPLE_RATE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_VERSION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
         tmp_quadlet,
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_A(tmp_quadlet),
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_B(tmp_quadlet),
@@ -322,75 +322,75 @@ DiceAvDevice::showDevice()
         );
     
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08X\n",tmp_quadlet & 0x1FFF007F);
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Clock caps       : 0x%08X\n",tmp_quadlet & 0x1FFF007F);
 
     diceNameVector names=getClockSourceNameString();
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock sources    :\n");
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Clock sources    :\n");
     
     for ( diceNameVectorIterator it = names.begin();
           it != names.end();
           ++it )
     {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"    %s\n", (*it).c_str());
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"    %s\n", (*it).c_str());
     }
     
-    debugOutput(DEBUG_LEVEL_VERBOSE," TX param space:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Nb of xmit        : %1d\n", m_nb_tx);
+    debugOutputShort(DEBUG_LEVEL_NORMAL," TX param space:\n");
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Nb of xmit        : %1d\n", m_nb_tx);
     for (unsigned int i=0;i<m_nb_tx;i++) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"  Transmitter %d:\n",i);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"  Transmitter %d:\n",i);
         
         readTxReg(i, DICE_REGISTER_TX_ISOC_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   ISO channel       : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_SPEED_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO speed         : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   ISO speed         : %3d\n", tmp_quadlet);
         
         readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Nb audio channels : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_MIDI_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Nb midi channels  : %3d\n", tmp_quadlet);
         
         readTxReg(i, DICE_REGISTER_TX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_AC3_ENABLE_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
         
         diceNameVector channel_names=getTxNameString(i);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Channel names     :\n");
         for ( diceNameVectorIterator it = channel_names.begin();
             it != channel_names.end();
             ++it )
         {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
+            debugOutputShort(DEBUG_LEVEL_NORMAL,"     %s\n", (*it).c_str());
         }
     }
     
-    debugOutput(DEBUG_LEVEL_VERBOSE," RX param space:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Nb of recv        : %1d\n", m_nb_tx);
+    debugOutputShort(DEBUG_LEVEL_NORMAL," RX param space:\n");
+    debugOutputShort(DEBUG_LEVEL_NORMAL,"  Nb of recv        : %1d\n", m_nb_tx);
     for (unsigned int i=0;i<m_nb_rx;i++) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"  Receiver %d:\n",i);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"  Receiver %d:\n",i);
         
         readTxReg(i, DICE_REGISTER_RX_ISOC_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   ISO channel       : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_SEQ_START_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Sequence start    : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Sequence start    : %3d\n", tmp_quadlet);
         
         readTxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Nb audio channels : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_MIDI_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Nb midi channels  : %3d\n", tmp_quadlet);
         
         readTxReg(i, DICE_REGISTER_RX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
         
         diceNameVector channel_names=getRxNameString(i);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
+        debugOutputShort(DEBUG_LEVEL_NORMAL,"   Channel names     :\n");
         for ( diceNameVectorIterator it = channel_names.begin();
             it != channel_names.end();
             ++it )
         {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
+            debugOutputShort(DEBUG_LEVEL_NORMAL,"     %s\n", (*it).c_str());
         }
     }
 }
@@ -413,10 +413,11 @@ DiceAvDevice::showDevice()
 // the size of the packet.
 bool
 DiceAvDevice::prepare() {
-    int samplerate=getSamplingFrequency();
+    int samplerate=getSampleRate();
 
     // prepare receive SP's
-    for (unsigned int i=0;i<m_nb_tx;i++) {
+    for (unsigned int i=0;i<1;i++) {
+//     for (unsigned int i=0;i<m_nb_tx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
         unsigned int nb_channels=0;
@@ -503,7 +504,8 @@ DiceAvDevice::prepare() {
     }
     
     // prepare transmit SP's
-    for (unsigned int i=0;i<m_nb_rx;i++) {
+    for (unsigned int i=0;i<1;i++) {
+//    for (unsigned int i=0;i<m_nb_rx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
         unsigned int nb_channels=0;

@@ -110,15 +110,14 @@ MHAvDevice::discover()
     return false;
 }
 
-int 
-MHAvDevice::getSamplingFrequency( ) {
-    return 0;
+ESampleRate
+MHAvDevice::getSampleRate( ) {
+    return eSF_DontCare;
 }
 
 bool
-MHAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+MHAvDevice::setSampleRate( ESampleRate sampleRate )
 {
-
     return false;
 }
 
