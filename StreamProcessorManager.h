@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_STREAMPROCESSORMANAGER__
-#define __FREEBOB_STREAMPROCESSORMANAGER__
+
+#ifndef __FFADO_STREAMPROCESSORMANAGER__
+#define __FFADO_STREAMPROCESSORMANAGER__
 
 #include "debugmodule/debugmodule.h"
 #include "libutil/Thread.h"
@@ -48,11 +44,11 @@ typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 
 /*!
 \brief Manages a collection of StreamProcessors and provides a synchronisation interface
- 
+
 */
 class StreamProcessorManager : public Util::OptionContainer {
     friend class StreamProcessor;
-    
+
 public:
 
     StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
@@ -63,7 +59,7 @@ public:
 
     bool start();
     bool stop();
-    
+
     bool syncStartAll();
 
     // this is the setup API
@@ -90,18 +86,18 @@ public:
 
     bool transfer(); ///< transfer the buffer contents from/to client
     bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
-    
+
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
     int getXrunCount() {return m_xruns;};
-    
+
 private:
     int m_delayed_usecs;
     // this stores the time at which the next transfer should occur
     // usually this is in the past, but it is needed as a timestamp
     // for the transmit SP's
     uint64_t m_time_of_transfer;
-    
+
 public:
     bool handleXrun(); ///< reset the streams & buffers after xrun
 
@@ -112,11 +108,11 @@ public:
 
 private: // slaving support
     bool m_is_slave;
-    
+
     // the sync source stuff
 private:
     StreamProcessor *m_SyncSource;
-    
+
 public:
     bool setSyncSource(StreamProcessor *s);
     StreamProcessor * getSyncSource();
@@ -124,7 +120,7 @@ public:
 protected:
 
     // thread sync primitives
-    bool m_xrun_happened; 
+    bool m_xrun_happened;
 
     bool m_thread_realtime;
     int m_thread_priority;
@@ -136,7 +132,7 @@ protected:
     unsigned int m_nb_buffers;
     unsigned int m_period;
     unsigned int m_xruns;
-    
+
     IsoHandlerManager *m_isoManager;
 
     unsigned int m_nbperiods;
@@ -147,6 +143,6 @@ protected:
 
 }
 
-#endif /* __FREEBOB_STREAMPROCESSORMANAGER__ */
+#endif /* __FFADO_STREAMPROCESSORMANAGER__ */
 
 

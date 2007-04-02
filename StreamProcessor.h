@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_STREAMPROCESSOR__
-#define __FREEBOB_STREAMPROCESSOR__
+
+#ifndef __FFADO_STREAMPROCESSOR__
+#define __FFADO_STREAMPROCESSOR__
 
 #include "../debugmodule/debugmodule.h"
 
@@ -46,13 +42,13 @@ class StreamProcessorManager;
 /*!
 \brief Class providing a generic interface for Stream Processors
 
- A stream processor multiplexes or demultiplexes an ISO stream into a 
+ A stream processor multiplexes or demultiplexes an ISO stream into a
  collection of ports. This class should be subclassed, and the relevant
  functions should be overloaded.
- 
+
 */
-class StreamProcessor : public IsoStream, 
-                        public PortManager, 
+class StreamProcessor : public IsoStream,
+                        public PortManager,
                         public Util::TimestampedBufferClient,
                         public Util::OptionContainer {
 
@@ -67,11 +63,11 @@ public:
     StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate);
     virtual ~StreamProcessor();
 
-    virtual enum raw1394_iso_disposition 
-            putPacket(unsigned char *data, unsigned int length, 
-                    unsigned char channel, unsigned char tag, unsigned char sy, 
+    virtual enum raw1394_iso_disposition
+            putPacket(unsigned char *data, unsigned int length,
+                    unsigned char channel, unsigned char tag, unsigned char sy,
                         unsigned int cycle, unsigned int dropped) = 0;
-    virtual enum raw1394_iso_disposition 
+    virtual enum raw1394_iso_disposition
             getPacket(unsigned char *data, unsigned int *length,
                     unsigned char *tag, unsigned char *sy,
                     int cycle, unsigned int dropped, unsigned int max_length) = 0;
@@ -79,17 +75,17 @@ public:
     virtual enum EProcessorType getType() =0;
 
     bool xrunOccurred() { return (m_xruns>0);};
-    
+
     // move to private?
     void resetXrunCounter();
 
     bool isRunning(); ///< returns true if there is some stream data processed
-    
+
     virtual bool prepareForEnable(uint64_t time_to_enable_at);
     virtual bool prepareForDisable();
-    
-    bool enable(uint64_t time_to_enable_at); ///< enable the stream processing 
-    bool disable(); ///< disable the stream processing 
+
+    bool enable(uint64_t time_to_enable_at); ///< enable the stream processing
+    bool disable(); ///< disable the stream processing
     bool isEnabled() {return !m_is_disabled;};
 
     virtual bool putFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents from client
@@ -115,7 +111,7 @@ public:
 protected: // SPM related
     void setManager(StreamProcessorManager *manager) {m_manager=manager;};
     void clearManager() {m_manager=0;};
-    
+
 protected:
     unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
     unsigned int m_period; ///< cached from manager->getPeriod(), the period size
@@ -125,26 +121,26 @@ protected:
     unsigned int m_framerate;
 
     StreamProcessorManager *m_manager;
-    
+
     bool m_running;
     bool m_disabled;
     bool m_is_disabled;
     unsigned int m_cycle_to_enable_at;
-    
+
     StreamStatistics m_PacketStat;
     StreamStatistics m_PeriodStat;
-    
+
     StreamStatistics m_WakeupStat;
-    
+
 
     DECLARE_DEBUG_MODULE;
-    
+
     // frame counter & sync stuff
     public:
         /**
          * @brief Can this StreamProcessor handle a transfer of nframes frames?
          *
-         * this function indicates if the streamprocessor can handle a transfer of 
+         * this function indicates if the streamprocessor can handle a transfer of
          * nframes frames. It is used to detect underruns-to-be.
          *
          * @param nframes number of frames
@@ -152,12 +148,12 @@ protected:
          *         false if it can't
          */
         virtual bool canClientTransferFrames(unsigned int nframes) = 0;
-        
+
         /**
          * \brief return the time until the next period boundary should be signaled (in microseconds)
          *
-         * Return the time until the next period boundary signal. If this StreamProcessor 
-         * is the current synchronization source, this function is called to 
+         * Return the time until the next period boundary signal. If this StreamProcessor
+         * is the current synchronization source, this function is called to
          * determine when a buffer transfer can be made. When this value is
          * smaller than 0, a period boundary is assumed to be crossed, hence a
          * transfer can be made.
@@ -179,7 +175,7 @@ protected:
         uint64_t getTimeAtPeriodUsecs();
 
         /**
-         * \brief return the time of the next period boundary (in internal units) 
+         * \brief return the time of the next period boundary (in internal units)
          *
          * The same as getTimeUntilNextPeriodSignalUsecs() but in internal units.
          *
@@ -188,8 +184,8 @@ protected:
         virtual uint64_t getTimeAtPeriod() = 0;
 
         uint64_t getTimeNow();
-        
-        
+
+
         /**
          * Returns the sync delay. This is the time a syncsource
          * delays a period signal, e.g. to cope with buffering.
@@ -201,7 +197,7 @@ protected:
          * @param d sync delay
          */
         void setSyncDelay(int d) {m_sync_delay=d;};
-        
+
         /**
          * Returns the minimal sync delay a SP needs
          * @return minimal sync delay
@@ -214,7 +210,7 @@ protected:
         int getLastCycle() {return m_last_cycle;};
 
         int getBufferFill();
-        
+
     protected:
         StreamProcessor *m_SyncSource;
 
@@ -232,24 +228,24 @@ protected:
 class ReceiveStreamProcessor : public StreamProcessor {
 
 public:
-	ReceiveStreamProcessor(int port, int framerate);
+    ReceiveStreamProcessor(int port, int framerate);
 
-	virtual ~ReceiveStreamProcessor();
+    virtual ~ReceiveStreamProcessor();
 
 
-	virtual enum EProcessorType getType() {return E_Receive;};
-	
-	virtual enum raw1394_iso_disposition 
-		getPacket(unsigned char *data, unsigned int *length,
-	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length) 
-	              {return RAW1394_ISO_STOP;};
+    virtual enum EProcessorType getType() {return E_Receive;};
+
+    virtual enum raw1394_iso_disposition
+        getPacket(unsigned char *data, unsigned int *length,
+                  unsigned char *tag, unsigned char *sy,
+                  int cycle, unsigned int dropped, unsigned int max_length)
+                  {return RAW1394_ISO_STOP;};
         virtual bool putFrames(unsigned int nbframes, int64_t ts) {return false;};
-	
-        virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length, 
-	              unsigned char channel, unsigned char tag, unsigned char sy, 
-		          unsigned int cycle, unsigned int dropped) = 0;
- 	virtual void setVerboseLevel(int l);
+
+        virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length,
+                  unsigned char channel, unsigned char tag, unsigned char sy,
+                  unsigned int cycle, unsigned int dropped) = 0;
+     virtual void setVerboseLevel(int l);
 
     uint64_t getTimeAtPeriod();
     bool canClientTransferFrames(unsigned int nframes);
@@ -268,23 +264,23 @@ protected:
 class TransmitStreamProcessor : public StreamProcessor {
 
 public:
-	TransmitStreamProcessor(int port, int framerate);
+    TransmitStreamProcessor(int port, int framerate);
 
-	virtual ~TransmitStreamProcessor();
+    virtual ~TransmitStreamProcessor();
 
-	virtual enum EProcessorType getType() {return E_Transmit;};
+    virtual enum EProcessorType getType() {return E_Transmit;};
 
-	virtual enum raw1394_iso_disposition 
-		putPacket(unsigned char *data, unsigned int length, 
-	              unsigned char channel, unsigned char tag, unsigned char sy, 
-		          unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
+    virtual enum raw1394_iso_disposition
+        putPacket(unsigned char *data, unsigned int length,
+                  unsigned char channel, unsigned char tag, unsigned char sy,
+                  unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
         virtual bool getFrames(unsigned int nbframes) {return false;};
 
-	virtual enum raw1394_iso_disposition 
-		getPacket(unsigned char *data, unsigned int *length,
-	              unsigned char *tag, unsigned char *sy,
-	              int cycle, unsigned int dropped, unsigned int max_length) = 0;
- 	virtual void setVerboseLevel(int l);
+    virtual enum raw1394_iso_disposition
+        getPacket(unsigned char *data, unsigned int *length,
+                  unsigned char *tag, unsigned char *sy,
+                  int cycle, unsigned int dropped, unsigned int max_length) = 0;
+     virtual void setVerboseLevel(int l);
 
     uint64_t getTimeAtPeriod();
     bool canClientTransferFrames(unsigned int nframes);
@@ -299,6 +295,6 @@ protected:
 
 }
 
-#endif /* __FREEBOB_STREAMPROCESSOR__ */
+#endif /* __FFADO_STREAMPROCESSOR__ */
 
 

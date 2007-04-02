@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_ISOHANDLERMANAGER__
-#define __FREEBOB_ISOHANDLERMANAGER__
+
+#ifndef __FFADO_ISOHANDLERMANAGER__
+#define __FFADO_ISOHANDLERMANAGER__
 
 #include "../debugmodule/debugmodule.h"
 #include "../libutil/Thread.h"
@@ -88,16 +84,16 @@ class IsoHandlerManager : public Util::RunnableInterface
         bool registerStream(IsoStream *); ///< register an iso stream with the manager
         bool unregisterStream(IsoStream *); ///< unregister an iso stream from the manager
 
-        bool startHandlers(); ///< start the managed ISO handlers 
-        bool startHandlers(int cycle); ///< start the managed ISO handlers 
-        bool stopHandlers(); ///< stop the managed ISO handlers 
+        bool startHandlers(); ///< start the managed ISO handlers
+        bool startHandlers(int cycle); ///< start the managed ISO handlers
+        bool stopHandlers(); ///< stop the managed ISO handlers
 
         bool reset(); ///< reset the ISO manager and all streams
 
         bool prepare(); ///< prepare the ISO manager and all streams
-        
+
         bool init();
-        
+
         void disablePolling(IsoStream *); ///< disables polling on a stream
         void enablePolling(IsoStream *); ///< enables polling on a stream
 
@@ -105,7 +101,7 @@ class IsoHandlerManager : public Util::RunnableInterface
     public:
         bool Execute(); // note that this is called in we while(running) loop
         bool Init();
-        
+
     // the state machine
     private:
         enum EHandlerStates {
@@ -114,16 +110,16 @@ class IsoHandlerManager : public Util::RunnableInterface
             E_Running,
             E_Error
         };
-        
+
         enum EHandlerStates m_State;
-        
+
     private:
         /// iterate all child handlers
         bool iterate();
 
     private:
         // note: there is a disctinction between streams and handlers
-        // because one handler can serve multiple streams (in case of 
+        // because one handler can serve multiple streams (in case of
         // multichannel receive)
 
         // only streams are allowed to be registered externally.
@@ -151,8 +147,8 @@ class IsoHandlerManager : public Util::RunnableInterface
         bool m_realtime;
         unsigned int m_priority;
         Util::PosixThread *m_isoManagerThread;
-        
-        
+
+
         // debug stuff
         DECLARE_DEBUG_MODULE;
 
@@ -160,7 +156,7 @@ class IsoHandlerManager : public Util::RunnableInterface
 
 }
 
-#endif /* __FREEBOB_ISOHANDLERMANAGER__  */
+#endif /* __FFADO_ISOHANDLERMANAGER__  */
 
 
 

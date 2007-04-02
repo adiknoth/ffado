@@ -1,29 +1,24 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "IsoHandler.h"
@@ -56,43 +51,43 @@ namespace Streaming
 IMPL_DEBUG_MODULE( IsoHandler, IsoHandler, DEBUG_LEVEL_NORMAL );
 
 /* the C callbacks */
-enum raw1394_iso_disposition 
+enum raw1394_iso_disposition
 IsoXmitHandler::iso_transmit_handler(raw1394handle_t handle,
-		unsigned char *data, unsigned int *length,
-		unsigned char *tag, unsigned char *sy,
-		int cycle, unsigned int dropped) {
+        unsigned char *data, unsigned int *length,
+        unsigned char *tag, unsigned char *sy,
+        int cycle, unsigned int dropped) {
 
-	IsoXmitHandler *xmitHandler=static_cast<IsoXmitHandler *>(raw1394_get_userdata(handle));
-	assert(xmitHandler);
+    IsoXmitHandler *xmitHandler=static_cast<IsoXmitHandler *>(raw1394_get_userdata(handle));
+    assert(xmitHandler);
 
-	return xmitHandler->getPacket(data, length, tag, sy, cycle, dropped);
+    return xmitHandler->getPacket(data, length, tag, sy, cycle, dropped);
 }
 
-enum raw1394_iso_disposition 
-IsoRecvHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data, 
-						unsigned int length, unsigned char channel,
-						unsigned char tag, unsigned char sy, unsigned int cycle, 
-						unsigned int dropped) {
+enum raw1394_iso_disposition
+IsoRecvHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data,
+                        unsigned int length, unsigned char channel,
+                        unsigned char tag, unsigned char sy, unsigned int cycle,
+                        unsigned int dropped) {
 
-	IsoRecvHandler *recvHandler=static_cast<IsoRecvHandler *>(raw1394_get_userdata(handle));
-	assert(recvHandler);
+    IsoRecvHandler *recvHandler=static_cast<IsoRecvHandler *>(raw1394_get_userdata(handle));
+    assert(recvHandler);
 
-	return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped);
+    return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped);
 }
 
 int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation)
-{	
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Busreset happened, generation %d...\n", generation);
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Busreset happened, generation %d...\n", generation);
 
-	IsoHandler *handler=static_cast<IsoHandler *>(raw1394_get_userdata(handle));
-	assert(handler);
-	return handler->handleBusReset(generation);
+    IsoHandler *handler=static_cast<IsoHandler *>(raw1394_get_userdata(handle));
+    assert(handler);
+    return handler->handleBusReset(generation);
 }
 
 
 /* Base class implementation */
 IsoHandler::IsoHandler(int port)
-   :  m_handle(0), m_handle_util(0), m_port(port), 
+   :  m_handle(0), m_handle_util(0), m_port(port),
    m_buf_packets(400), m_max_packet_size(1024), m_irq_interval(-1),
    m_packetcount(0), m_dropped(0), m_Client(0),
    m_State(E_Created)
@@ -100,9 +95,9 @@ IsoHandler::IsoHandler(int port)
 }
 
 IsoHandler::IsoHandler(int port, unsigned int buf_packets, unsigned int max_packet_size, int irq)
-   : m_handle(0), m_port(port), 
-   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size), 
-   m_irq_interval(irq), 
+   : m_handle(0), m_port(port),
+   m_buf_packets(buf_packets), m_max_packet_size( max_packet_size),
+   m_irq_interval(irq),
    m_packetcount(0), m_dropped(0), m_Client(0),
    m_State(E_Created)
 {
@@ -120,10 +115,10 @@ IsoHandler::~IsoHandler() {
         if (m_State == E_Running) {
             stop();
         }
-        
+
         raw1394_destroy_handle(m_handle);
     }
-    
+
     if(m_handle_util) raw1394_destroy_handle(m_handle_util);
 
 }
@@ -133,7 +128,7 @@ bool IsoHandler::iterate() {
 
     if(m_handle) {
         if(raw1394_loop_iterate(m_handle)) {
-            debugOutput( DEBUG_LEVEL_VERBOSE, 
+            debugOutput( DEBUG_LEVEL_VERBOSE,
                  "IsoHandler (%p): Failed to iterate handler: %s\n",
                  this,strerror(errno));
             return false;
@@ -141,7 +136,7 @@ bool IsoHandler::iterate() {
             return true;
         }
     } else {
-        return false; 
+        return false;
     }
 }
 
@@ -155,7 +150,7 @@ IsoHandler::init()
         debugError("Incorrect state, expected E_Created, got %d\n",(int)m_State);
         return false;
     }
-    
+
     // the main handle for the ISO traffic
     m_handle = raw1394_new_handle_on_port( m_port );
     if ( !m_handle ) {
@@ -168,7 +163,7 @@ IsoHandler::init()
         return false;
     }
     raw1394_set_userdata(m_handle, static_cast<void *>(this));
-    
+
     // a second handle for utility stuff
     m_handle_util = raw1394_new_handle_on_port( m_port );
     if ( !m_handle_util ) {
@@ -178,12 +173,12 @@ IsoHandler::init()
             debugError("Could not get 1394 handle: %s\n", strerror(errno) );
             debugError("Are ieee1394 and raw1394 drivers loaded?\n");
         }
-        
+
         raw1394_destroy_handle(m_handle);
         return false;
     }
     raw1394_set_userdata(m_handle_util, static_cast<void *>(this));
-	
+
     // bus reset handling
     if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
         debugWarning("Could not enable busreset notification.\n");
@@ -208,7 +203,7 @@ IsoHandler::init()
 
     // update the internal state
     m_State=E_Initialized;
-    
+
     return true;
 }
 
@@ -221,22 +216,22 @@ bool IsoHandler::prepare()
         debugError("Incorrect state, expected E_Initialized, got %d\n",(int)m_State);
         return false;
     }
-    
+
     // Don't call until libraw1394's raw1394_new_handle() function has been
     // fixed to correctly initialise the iso_packet_infos field.  Bug is
     // confirmed present in libraw1394 1.2.1.
 
 //     raw1394_iso_shutdown(m_handle);
-    
+
     m_State = E_Prepared;
-    
+
     return true;
 }
 
 bool IsoHandler::start(int cycle)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    
+
     // check the state
     if(m_State != E_Prepared) {
         debugError("Incorrect state, expected E_Prepared, got %d\n",(int)m_State);
@@ -251,22 +246,22 @@ bool IsoHandler::start(int cycle)
 bool IsoHandler::stop()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    
+
     // check state
     if(m_State != E_Running) {
         debugError("Incorrect state, expected E_Running, got %d\n",(int)m_State);
         return false;
     }
-    
+
     // this is put here to try and avoid the
     // Runaway context problem
     // don't know if it will help though.
     raw1394_iso_xmit_sync(m_handle);
-    
+
     raw1394_iso_stop(m_handle);
-    
+
     m_State=E_Prepared;
-    
+
     return true;
 }
 
@@ -275,11 +270,11 @@ bool IsoHandler::stop()
  *
  * @return ?
  */
- 
+
 int IsoHandler::handleBusReset(unsigned int generation) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
-    
-    
+
+
     return 0;
 }
 
@@ -292,8 +287,8 @@ int IsoHandler::handleBusReset(unsigned int generation) {
 unsigned int IsoHandler::getCycleTimerTicks() {
     // the new api should be realtime safe.
     // it might cause a reschedule when turning preemption,
-    // back on but that won't hurt us if we have sufficient 
-    // priority 
+    // back on but that won't hurt us if we have sufficient
+    // priority
     int err;
     uint32_t cycle_timer;
     uint64_t local_time;
@@ -313,8 +308,8 @@ unsigned int IsoHandler::getCycleTimerTicks() {
 unsigned int IsoHandler::getCycleTimer() {
     // the new api should be realtime safe.
     // it might cause a reschedule when turning preemption,
-    // back on but that won't hurt us if we have sufficient 
-    // priority 
+    // back on but that won't hurt us if we have sufficient
+    // priority
     int err;
     uint32_t cycle_timer;
     uint64_t local_time;
@@ -350,7 +345,7 @@ bool IsoHandler::registerStream(IsoStream *stream)
     debugOutput( DEBUG_LEVEL_VERBOSE, "registering stream (%p)\n", stream);
 
     if (m_Client) {
-            debugFatal( "Generic IsoHandlers can have only one client\n");	
+            debugFatal( "Generic IsoHandlers can have only one client\n");
             return false;
     }
 
@@ -368,12 +363,12 @@ bool IsoHandler::unregisterStream(IsoStream *stream)
     debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering stream (%p)\n", stream);
 
     if(stream != m_Client) {
-            debugFatal( "no client registered\n");	
+            debugFatal( "no client registered\n");
             return false;
     }
 
     m_Client->clearHandler();
-    
+
     m_Client=0;
     return true;
 
@@ -386,7 +381,7 @@ IsoRecvHandler::IsoRecvHandler(int port)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 }
-IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets, 
+IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets,
                                unsigned int max_packet_size, int irq)
                 : IsoHandler(port, buf_packets,max_packet_size,irq)
 {
@@ -410,8 +405,8 @@ IsoRecvHandler::init() {
 }
 
 enum raw1394_iso_disposition IsoRecvHandler::putPacket(
-                    unsigned char *data, unsigned int length, 
-                    unsigned char channel, unsigned char tag, unsigned char sy, 
+                    unsigned char *data, unsigned int length,
+                    unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped) {
 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
@@ -423,13 +418,13 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(
     if(m_Client) {
         return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
     }
-    
+
     return RAW1394_ISO_OK;
 }
 
 bool IsoRecvHandler::prepare()
 {
-    
+
     // prepare the generic IsoHandler
     if(!IsoHandler::prepare()) {
         return false;
@@ -442,7 +437,7 @@ bool IsoRecvHandler::prepare()
     debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
 
     if(m_irq_interval > 1) {
-        if(raw1394_iso_recv_init(m_handle,   
+        if(raw1394_iso_recv_init(m_handle,
                                 iso_receive_handler,
                                 m_buf_packets,
                                 m_max_packet_size,
@@ -451,11 +446,11 @@ bool IsoRecvHandler::prepare()
                                 m_irq_interval)) {
             debugFatal("Could not do receive initialisation!\n" );
             debugFatal("  %s\n",strerror(errno));
-    
+
             return false;
         }
     } else {
-        if(raw1394_iso_recv_init(m_handle,   
+        if(raw1394_iso_recv_init(m_handle,
                                 iso_receive_handler,
                                 m_buf_packets,
                                 m_max_packet_size,
@@ -464,9 +459,9 @@ bool IsoRecvHandler::prepare()
                                 m_irq_interval)) {
             debugFatal("Could not do receive initialisation!\n" );
             debugFatal("  %s\n",strerror(errno));
-    
+
             return false;
-        }    
+        }
     }
     return true;
 }
@@ -474,12 +469,12 @@ bool IsoRecvHandler::prepare()
 bool IsoRecvHandler::start(int cycle)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
-    
+
     // start the generic IsoHandler
     if(!IsoHandler::start(cycle)) {
         return false;
     }
-    
+
     if(raw1394_iso_recv_start(m_handle, cycle, -1, 0)) {
         debugFatal("Could not start receive handler (%s)\n",strerror(errno));
         return false;
@@ -489,9 +484,9 @@ bool IsoRecvHandler::start(int cycle)
 
 int IsoRecvHandler::handleBusReset(unsigned int generation) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "handle bus reset...\n");
-    
+
     //TODO: implement busreset
-    
+
     // pass on the busreset signal
     if(IsoHandler::handleBusReset(generation)) {
         return -1;
@@ -507,7 +502,7 @@ IsoXmitHandler::IsoXmitHandler(int port)
     debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
-IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
+IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
                                unsigned int max_packet_size, int irq)
                 : IsoHandler(port, buf_packets, max_packet_size,irq),
                   m_speed(RAW1394_ISO_SPEED_400), m_prebuffers(0)
@@ -515,7 +510,7 @@ IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
     debugOutput( DEBUG_LEVEL_VERBOSE, "IsoXmitHandler enter...\n");
 
 }
-IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets, 
+IsoXmitHandler::IsoXmitHandler(int port, unsigned int buf_packets,
                                unsigned int max_packet_size, int irq,
                                enum raw1394_iso_speed speed)
                 : IsoHandler(port, buf_packets,max_packet_size,irq),
@@ -574,11 +569,11 @@ bool IsoXmitHandler::prepare()
 bool IsoXmitHandler::start(int cycle)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
-    
+
     if(!(IsoHandler::start(cycle))) {
         return false;
     }
-    
+
     if(raw1394_iso_xmit_start(m_handle, cycle, m_prebuffers)) {
         debugFatal("Could not start xmit handler (%s)\n",strerror(errno));
         return false;
@@ -607,12 +602,12 @@ enum raw1394_iso_disposition IsoXmitHandler::getPacket(
 int IsoXmitHandler::handleBusReset(unsigned int generation) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
     //TODO: implement busreset
-    
+
     // pass on the busreset signal
     if(IsoHandler::handleBusReset(generation)) {
             return -1;
     }
-    
+
     return 0;
 }
 
@@ -621,15 +616,15 @@ int IsoXmitHandler::handleBusReset(unsigned int generation) {
 /* multichannel receive  */
 #if 0
 IsoRecvHandler::IsoRecvHandler(int port)
-		: IsoHandler(port)
+        : IsoHandler(port)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 }
-IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets, 
+IsoRecvHandler::IsoRecvHandler(int port, unsigned int buf_packets,
                                unsigned int max_packet_size, int irq)
-		: IsoHandler(port, buf_packets,max_packet_size,irq)
+        : IsoHandler(port, buf_packets,max_packet_size,irq)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
 }
 IsoRecvHandler::~IsoRecvHandler()
@@ -639,45 +634,45 @@ IsoRecvHandler::~IsoRecvHandler()
 // confirmed present in libraw1394 1.2.1.  In any case,
 // raw1394_destroy_handle() (in the base class destructor) will do any iso
 // system shutdown required.
-	raw1394_iso_shutdown(m_handle);
+    raw1394_iso_shutdown(m_handle);
 
 }
 
 bool
 IsoRecvHandler::initialize() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	IsoHandler *base=static_cast<IsoHandler *>(this);
+    IsoHandler *base=static_cast<IsoHandler *>(this);
 
-	if(!(base->initialize())) {
-		return false;
-	}
+    if(!(base->initialize())) {
+        return false;
+    }
 
-	raw1394_set_userdata(m_handle, static_cast<void *>(this));
+    raw1394_set_userdata(m_handle, static_cast<void *>(this));
 
-	if(raw1394_iso_multichannel_recv_init(m_handle,
+    if(raw1394_iso_multichannel_recv_init(m_handle,
                                          iso_receive_handler,
                                          m_buf_packets,
                                          m_max_packet_size,
                                          m_irq_interval)) {
-		debugFatal("Could not do multichannel receive initialisation!\n" );
+        debugFatal("Could not do multichannel receive initialisation!\n" );
 
-		return false;
-	}
+        return false;
+    }
 
-	return true;
+    return true;
 
 }
 
-enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsigned int length, 
-		              unsigned char channel, unsigned char tag, unsigned char sy, 
-			          unsigned int cycle, unsigned int dropped) {
+enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsigned int length,
+                      unsigned char channel, unsigned char tag, unsigned char sy,
+                      unsigned int cycle, unsigned int dropped) {
 
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-	             "received packet: length=%d, channel=%d, cycle=%d\n",
-	             length, channel, cycle );
-	
-	return RAW1394_ISO_OK;
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+                 "received packet: length=%d, channel=%d, cycle=%d\n",
+                 length, channel, cycle );
+
+    return RAW1394_ISO_OK;
 }
 
 // an recv handler can have multiple destination IsoStreams
@@ -685,56 +680,56 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
 // streams to be registered again.
 int IsoRecvHandler::registerStream(IsoRecvStream *stream)
 {
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    assert(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	m_Clients.push_back(stream);
+    m_Clients.push_back(stream);
 
-	listen(stream->getChannel());
-	return 0;
+    listen(stream->getChannel());
+    return 0;
 
 }
 
 int IsoRecvHandler::unregisterStream(IsoRecvStream *stream)
 {
-	assert(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    assert(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
     for ( IsoRecvStreamVectorIterator it = m_Clients.begin();
           it != m_Clients.end();
           ++it )
     {
         IsoRecvStream* s = *it;
-        if ( s == stream ) { 
-			unListen(s->getChannel());
+        if ( s == stream ) {
+            unListen(s->getChannel());
             m_Clients.erase(it);
-			return 0;
+            return 0;
         }
     }
 
-	return -1; //not found
+    return -1; //not found
 
 }
 
 void IsoRecvHandler::listen(int channel) {
-	int retval;
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    int retval;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	retval=raw1394_iso_recv_listen_channel(m_handle, channel);
+    retval=raw1394_iso_recv_listen_channel(m_handle, channel);
 
 }
 
 void IsoRecvHandler::unListen(int channel) {
-	int retval;
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    int retval;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-	retval=raw1394_iso_recv_unlisten_channel(m_handle, channel);
+    retval=raw1394_iso_recv_unlisten_channel(m_handle, channel);
 
 }
 
 int IsoRecvHandler::start(int cycle)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	return raw1394_iso_recv_start(m_handle, cycle, -1, 0);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    return raw1394_iso_recv_start(m_handle, cycle, -1, 0);
 }
 #endif

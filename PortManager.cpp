@@ -1,29 +1,24 @@
-/* $Id$ */
-
 /*
- *   FreeBob porting API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "PortManager.h"
@@ -40,186 +35,186 @@ PortManager::PortManager() {
 }
 
 PortManager::~PortManager() {
-// 	deleteAllPorts();
+//     deleteAllPorts();
 }
 
 // bool PortManager::setPortBuffersize(unsigned int newsize) {
-// 	debugOutput( DEBUG_LEVEL_VERBOSE, "setting port buffer size to %d\n",newsize);
-// 
-// 
-// 	for ( PortVectorIterator it = m_Ports.begin();
-// 	  it != m_Ports.end();
-// 	  ++it )
-// 	{
-// 		if(!(*it)->setBufferSize(newsize)) {
-// 			debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
-// 			return false;
-// 		}
-// 	}
-// 
-// 	return true; //not found
-// 
+//     debugOutput( DEBUG_LEVEL_VERBOSE, "setting port buffer size to %d\n",newsize);
+//
+//
+//     for ( PortVectorIterator it = m_Ports.begin();
+//       it != m_Ports.end();
+//       ++it )
+//     {
+//         if(!(*it)->setBufferSize(newsize)) {
+//             debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
+//             return false;
+//         }
+//     }
+//
+//     return true; //not found
+//
 // }
 
 /**
- * 
- * @param port 
- * @return 
+ *
+ * @param port
+ * @return
  */
 bool PortManager::addPort(Port *port)
 {
-	assert(port);
+    assert(port);
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s\n",port->getName().c_str());
-	m_Ports.push_back(port);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s\n",port->getName().c_str());
+    m_Ports.push_back(port);
 
-	return true;
+    return true;
 }
 
 bool PortManager::deletePort(Port *port)
 {
-	assert(port);
-	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
+    assert(port);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
 
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		if(*it == port) {
-			m_Ports.erase(it);
-// 			delete *it;
-			return true;
-		}
-	}
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        if(*it == port) {
+            m_Ports.erase(it);
+//             delete *it;
+            return true;
+        }
+    }
 
-	debugOutput( DEBUG_LEVEL_VERBOSE, "port %s not found \n",port->getName().c_str());
-	
-	return false; //not found
+    debugOutput( DEBUG_LEVEL_VERBOSE, "port %s not found \n",port->getName().c_str());
+
+    return false; //not found
 
 }
 
 void PortManager::deleteAllPorts()
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "deleting all ports\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "deleting all ports\n");
 
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		m_Ports.erase(it);
-// 		delete *it;
-	}
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        m_Ports.erase(it);
+//         delete *it;
+    }
 
-	return;
+    return;
 
 }
 
 int PortManager::getPortCount(enum Port::E_PortType type) {
-	int count=0;
+    int count=0;
 
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		if ( (*it)->getPortType() == type ) { 
-			count++;
-		}
-	}
-	return count;
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        if ( (*it)->getPortType() == type ) {
+            count++;
+        }
+    }
+    return count;
 }
 
 int PortManager::getPortCount() {
-	int count=0;
+    int count=0;
 
-	count+=m_Ports.size();
+    count+=m_Ports.size();
 
-	return count;
+    return count;
 }
 
 Port * PortManager::getPortAtIdx(unsigned int index) {
 
-	return m_Ports.at(index);
+    return m_Ports.at(index);
 
 }
 
 void PortManager::setVerboseLevel(int i) {
 
-	setDebugLevel(i);
+    setDebugLevel(i);
 
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		(*it)->setVerboseLevel(i);
-	}
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        (*it)->setVerboseLevel(i);
+    }
 
 }
 
 
 bool PortManager::resetPorts() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "reset ports\n");
-	
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		if(!(*it)->reset()) {
-			debugFatal("Could not reset port %s",(*it)->getName().c_str());
-			return false;
-		}
-	}
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "reset ports\n");
+
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        if(!(*it)->reset()) {
+            debugFatal("Could not reset port %s",(*it)->getName().c_str());
+            return false;
+        }
+    }
+    return true;
 }
 
 bool PortManager::initPorts() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "init ports\n");
-	
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		if(!(*it)->init()) {
-			debugFatal("Could not init port %s",(*it)->getName().c_str());
-			return false;
-		}
-	}
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "init ports\n");
+
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        if(!(*it)->init()) {
+            debugFatal("Could not init port %s",(*it)->getName().c_str());
+            return false;
+        }
+    }
+    return true;
 }
 
 bool PortManager::preparePorts() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "preparing ports\n");
-	
-	// clear the cache lists
-	m_PeriodPorts.clear();
-	m_PacketPorts.clear();
-	
-	for ( PortVectorIterator it = m_Ports.begin();
-	  it != m_Ports.end();
-	  ++it )
-	{
-		if(!(*it)->prepare()) {
-			debugFatal("Could not prepare port %s",(*it)->getName().c_str());
-			return false;
-		}
-		
-		// now prepare the cache lists
-		switch((*it)->getSignalType()) {
-			case Port::E_PacketSignalled:
-				m_PacketPorts.push_back(*it);
-				break;
-			case Port::E_PeriodSignalled:
-				m_PeriodPorts.push_back(*it);
-				break;
-			default:
-				debugWarning("%s has unsupported port type\n",
-				             (*it)->getName().c_str());	
-			break;
-		}
-	}
-	
-	
-	
-	return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "preparing ports\n");
+
+    // clear the cache lists
+    m_PeriodPorts.clear();
+    m_PacketPorts.clear();
+
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
+      ++it )
+    {
+        if(!(*it)->prepare()) {
+            debugFatal("Could not prepare port %s",(*it)->getName().c_str());
+            return false;
+        }
+
+        // now prepare the cache lists
+        switch((*it)->getSignalType()) {
+            case Port::E_PacketSignalled:
+                m_PacketPorts.push_back(*it);
+                break;
+            case Port::E_PeriodSignalled:
+                m_PeriodPorts.push_back(*it);
+                break;
+            default:
+                debugWarning("%s has unsupported port type\n",
+                             (*it)->getName().c_str());
+            break;
+        }
+    }
+
+
+
+    return true;
 }
 
 }
