@@ -1,18 +1,16 @@
-/*	Time.c
- 	FreeBob Streaming API
- 	FreeBob = Firewire (pro-)audio for linux
+/*
+    Copyright (C) 2005-2007 by Pieter Palmers
 
- 	http://freebob.sf.net
+    This file is part of FFADO
+    FFADO = Free Firewire (pro-)audio drivers for linux
 
-	Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+    FFADO is based upon FreeBoB.
 
-	
 	Based upon JackTime.c from the jackdmp package.
 	Original Copyright:
 
 	Copyright (C) 2001-2003 Paul Davis
 	Copyright (C) 2004-2006 Grame
-
 
 	This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

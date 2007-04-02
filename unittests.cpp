@@ -1,19 +1,22 @@
 /* unittests.cpp
- * Copyright (C) 2006,07 by Daniel Wagner
+ * Copyright (C) 2005-2007 by by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
+ * FFADO is based upon FreeBoB.
+ *
+ * FFADO is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
+ * along with FFADO; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -415,13 +418,13 @@ class testOC : public OptionContainer {
 public:
     testOC() {};
     ~testOC() {};
-    
+
     bool test() {
         bool result=true;
-        
+
         Option op1=Option();
         result &= TEST_SHOULD_RETURN_FALSE(addOption(op1));
-        
+
         op1=Option("option1");
         result &= TEST_SHOULD_RETURN_FALSE(addOption(op1));
 
@@ -431,7 +434,7 @@ public:
         result &= TEST_SHOULD_RETURN_TRUE(removeOption(op1));
         result &= TEST_SHOULD_RETURN_FALSE(hasOption(op1));
 
-        
+
         op1=Option("option1", (int64_t)1);
         result &= TEST_SHOULD_RETURN_TRUE(addOption(op1));
 
@@ -439,21 +442,21 @@ public:
 
         result &= TEST_SHOULD_RETURN_FALSE(hasOption(op1));
 
-        
+
         op1=Option("option1", (int64_t)(-1));
         result &= TEST_SHOULD_RETURN_TRUE(addOption(op1));
 
         Option op2=Option("option1", (double)(1.75));
         result &= TEST_SHOULD_RETURN_FALSE(addOption(op2));
 
-        
+
         op2=Option("option2", (double)(1.75));
         result &= TEST_SHOULD_RETURN_TRUE(addOption(op2));
 
         Option op3=Option("option3", (int64_t)(1.75));
         result &= TEST_SHOULD_RETURN_TRUE(addOption(op3));
 
-        
+
         result &= TEST_SHOULD_RETURN_TRUE(countOptions() == 3);
 
         int i=0;
@@ -465,17 +468,17 @@ public:
             i++;
         }
         result &= TEST_SHOULD_RETURN_TRUE(i==3);
-        
+
         clearOptions();
         return result;
     }
-    
+
     void prepare() {
         Option op1=Option("option1", (int64_t)(-1));
         if(!addOption(op1)) {
             printf( "prepare: could not add valid option (3)\n" );
         }
-        
+
         Option op2=Option("option2", (double)(1.75));
         if(!addOption(op2)) {
             printf( "prepare: adding an option with a different name should be allowed (1)\n" );
@@ -493,20 +496,20 @@ testU4()
     bool result=true;
     testOC oc;
     result &= TEST_SHOULD_RETURN_TRUE(oc.test());
-    
+
     // now manipulate it externally
     oc.prepare();
-    
+
     result &= TEST_SHOULD_RETURN_TRUE(oc.hasOption("option1"));
     result &= TEST_SHOULD_RETURN_TRUE(oc.hasOption("option2"));
     result &= TEST_SHOULD_RETURN_TRUE(oc.hasOption("option3"));
     result &= TEST_SHOULD_RETURN_FALSE(oc.hasOption("option4"));
-    
+
     oc.setOption("option1", 1024);
     int tst;
     result &= TEST_SHOULD_RETURN_TRUE(oc.getOption("option1", tst));
     result &= TEST_SHOULD_RETURN_TRUE(tst == 1024);
-    
+
     return result;
 }
 
