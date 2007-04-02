@@ -1,19 +1,22 @@
-/* freebob-downloader.cpp
- * Copyright (C) 2006 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB.
+ *
+ * This is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ *
+ * FFADO is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
+ * along with FFADO; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA.
  */
@@ -31,9 +34,9 @@
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "freebob_downloader 0.1";
-const char *argp_program_bug_address = "<freebob-devel@lists.sf.net>";
-static char doc[] = "freebob_downloader -- firmware downloader application\n\n"
+const char *argp_program_version = "bridgeco-downloader 0.1";
+const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
+static char doc[] = "bridgeco-downloader -- firmware downloader application for BridgeCo devices\n\n"
                     "OPERATION: display\n"
                     "           setguid GUID\n"
                     "           firmware FILE\n"
@@ -134,8 +137,8 @@ main( int argc, char** argv )
     char* tail;
     int node_id = strtol(arguments.args[0], &tail, 0);
     if (errno) {
-	perror("argument parsing failed:");
-	return -1;
+    perror("argument parsing failed:");
+    return -1;
     }
 
     Ieee1394Service service;
@@ -219,5 +222,3 @@ main( int argc, char** argv )
 
     return 0;
 }
-
-

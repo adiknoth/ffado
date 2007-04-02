@@ -1,29 +1,24 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "IsoHandlerManager.h"
@@ -72,7 +67,7 @@ bool IsoHandlerManager::init()
     if (prio>98) prio=98;
 
     m_isoManagerThread=new Util::PosixThread(
-        this, 
+        this,
         m_realtime, prio,
         PTHREAD_CANCEL_DEFERRED);
 
@@ -110,12 +105,12 @@ bool IsoHandlerManager::Init()
 bool IsoHandlerManager::Execute()
 {
 //     updateCycleTimers();
-    
+
     if(!iterate()) {
         debugFatal("Could not iterate the isoManager\n");
         return false;
-    }    
-    
+    }
+
     return true;
 }
 
@@ -127,38 +122,38 @@ bool IsoHandlerManager::Execute()
  */
 bool IsoHandlerManager::iterate()
 {
-	int err;
-	int i=0;
-	debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-	
-	err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
-	
-	if (err == -1) {
-		if (errno == EINTR) {
-			return true;
-		}
-		debugFatal("poll error: %s\n", strerror (errno));
-		return false;
-	}
+    int err;
+    int i=0;
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 
-	for (i = 0; i < m_poll_nfds; i++) {
-		if (m_poll_fds[i].revents & POLLERR) {
-			debugWarning("error on fd for %d\n",i);
-		}
+    err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
 
-		if (m_poll_fds[i].revents & POLLHUP) {
-			debugWarning("hangup on fd for %d\n",i);
-		}
-		
-		if(m_poll_fds[i].revents & (POLLIN)) {
-			IsoHandler *s=m_IsoHandlers.at(i);
-			assert(s);
-			
-			s->iterate();
-		}
-	}
+    if (err == -1) {
+        if (errno == EINTR) {
+            return true;
+        }
+        debugFatal("poll error: %s\n", strerror (errno));
+        return false;
+    }
 
-	return true;
+    for (i = 0; i < m_poll_nfds; i++) {
+        if (m_poll_fds[i].revents & POLLERR) {
+            debugWarning("error on fd for %d\n",i);
+        }
+
+        if (m_poll_fds[i].revents & POLLHUP) {
+            debugWarning("hangup on fd for %d\n",i);
+        }
+
+        if(m_poll_fds[i].revents & (POLLIN)) {
+            IsoHandler *s=m_IsoHandlers.at(i);
+            assert(s);
+
+            s->iterate();
+        }
+    }
+
+    return true;
 
 }
 
@@ -166,71 +161,71 @@ bool IsoHandlerManager::registerHandler(IsoHandler *handler)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
     assert(handler);
-    
+
     m_IsoHandlers.push_back(handler);
-    
+
     handler->setVerboseLevel(getDebugLevel());
 
     // rebuild the fd map for poll()'ing.
-    return rebuildFdMap();	
+    return rebuildFdMap();
 
 }
 
 bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	assert(handler);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    assert(handler);
 
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-		if ( *it == handler ) {
-			// erase the iso handler from the list
-			m_IsoHandlers.erase(it);
-			// rebuild the fd map for poll()'ing.
-			return rebuildFdMap();
-		}
-	}
-	debugFatal("Could not find handler (%p)\n", handler);
-	
-	return false; //not found
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+      it != m_IsoHandlers.end();
+      ++it )
+    {
+        if ( *it == handler ) {
+            // erase the iso handler from the list
+            m_IsoHandlers.erase(it);
+            // rebuild the fd map for poll()'ing.
+            return rebuildFdMap();
+        }
+    }
+    debugFatal("Could not find handler (%p)\n", handler);
+
+    return false; //not found
 
 }
 
 bool IsoHandlerManager::rebuildFdMap() {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-	int i=0;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    int i=0;
 
-	m_poll_nfds=0;
-	if(m_poll_fds) free(m_poll_fds);
+    m_poll_nfds=0;
+    if(m_poll_fds) free(m_poll_fds);
 
-	// count the number of handlers
-	m_poll_nfds=m_IsoHandlers.size();
+    // count the number of handlers
+    m_poll_nfds=m_IsoHandlers.size();
 
-	// allocate the fd array
-	m_poll_fds   = (struct pollfd *) calloc (m_poll_nfds, sizeof (struct pollfd));
-	if(!m_poll_fds) {
-		debugFatal("Could not allocate memory for poll FD array\n");
-		return false;
-	}
+    // allocate the fd array
+    m_poll_fds   = (struct pollfd *) calloc (m_poll_nfds, sizeof (struct pollfd));
+    if(!m_poll_fds) {
+        debugFatal("Could not allocate memory for poll FD array\n");
+        return false;
+    }
 
-	// fill the fd map
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-		m_poll_fds[i].fd=(*it)->getFileDescriptor();
-		m_poll_fds[i].events = POLLIN;
-		i++;
-	}
+    // fill the fd map
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+      it != m_IsoHandlers.end();
+      ++it )
+    {
+        m_poll_fds[i].fd=(*it)->getFileDescriptor();
+        m_poll_fds[i].events = POLLIN;
+        i++;
+    }
 
-	return true;
+    return true;
 }
 
 void IsoHandlerManager::disablePolling(IsoStream *stream) {
     int i=0;
-    
+
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable polling on stream %p\n",stream);
 
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
@@ -242,16 +237,16 @@ void IsoHandlerManager::disablePolling(IsoStream *stream) {
             m_poll_fds[i].revents = 0;
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling disabled\n");
         }
-        
+
         i++;
     }
 }
 
 void IsoHandlerManager::enablePolling(IsoStream *stream) {
     int i=0;
-    
+
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable polling on stream %p\n",stream);
-    
+
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
@@ -261,7 +256,7 @@ void IsoHandlerManager::enablePolling(IsoStream *stream) {
             m_poll_fds[i].revents = 0;
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "polling enabled\n");
         }
-        
+
         i++;
     }
 }
@@ -278,262 +273,262 @@ void IsoHandlerManager::enablePolling(IsoStream *stream) {
  * @return true if registration succeeds
  *
  * \todo : currently there is a one-to-one mapping
- *        between streams and handlers, this is not ok for 
+ *        between streams and handlers, this is not ok for
  *        multichannel receive
  */
 bool IsoHandlerManager::registerStream(IsoStream *stream)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Registering stream %p\n",stream);
-	assert(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Registering stream %p\n",stream);
+    assert(stream);
 
-	// make sure the stream isn't already attached to a handler
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-		if((*it)->isStreamRegistered(stream)) {
-			debugWarning( "stream already registered!\n");
-			(*it)->unregisterStream(stream);
-			
-		}
-	}
-	
-	// clean up all handlers that aren't used
-	pruneHandlers();
+    // make sure the stream isn't already attached to a handler
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+      it != m_IsoHandlers.end();
+      ++it )
+    {
+        if((*it)->isStreamRegistered(stream)) {
+            debugWarning( "stream already registered!\n");
+            (*it)->unregisterStream(stream);
 
-	// allocate a handler for this stream
-	if (stream->getType()==IsoStream::EST_Receive) {
-		// setup the optimal parameters for the raw1394 ISO buffering
-		unsigned int packets_per_period=stream->getPacketsPerPeriod();
-		
-#if 1
-		// hardware interrupts occur when one DMA block is full, and the size of one DMA
-		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq  
-		// occurs at a period boundary (optimal CPU use)
-		
-		// NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD hardware interrupts
-		//       per period for better latency.
-		unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()) / packets_per_period;
-		if (max_packet_size < stream->getMaxPacketSize()) {
-			max_packet_size=stream->getMaxPacketSize();
-		}
+        }
+    }
 
-		// Ensure we don't request a packet size bigger than the
-		// kernel-enforced maximum which is currently 1 page.
-		if (max_packet_size > (unsigned int)getpagesize())
-                	max_packet_size = getpagesize();
+    // clean up all handlers that aren't used
+    pruneHandlers();
 
-		unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
-		if(irq_interval <= 0) irq_interval=1;
-#else
-		// hardware interrupts occur when one DMA block is full, and the size of one DMA
-		// block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ
-		// frequency, as the controller uses max_packet_size, and not the effective size
-		// when writing to the DMA buffer.
-		
-		// configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
-		unsigned int irq_interval=PACKETS_PER_INTERRUPT;
-		
-		// unless the period size doesn't allow this
-		if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
-			irq_interval=1;
-		}
-		
-		// FIXME: test
-		irq_interval=1;
-		
-		unsigned int max_packet_size=getpagesize() / irq_interval;
-
-		if (max_packet_size < stream->getMaxPacketSize()) {
-			max_packet_size=stream->getMaxPacketSize();
-		}
-
-		// Ensure we don't request a packet size bigger than the
-		// kernel-enforced maximum which is currently 1 page.
-		if (max_packet_size > (unsigned int)getpagesize())
-                	max_packet_size = getpagesize();
-
-#endif
-		/* the receive buffer size doesn't matter for the latency,
-		   but it has a minimal value in order for libraw to operate correctly (300) */
-		int buffers=400;
-		
-		// create the actual handler
-		IsoRecvHandler *h = new IsoRecvHandler(stream->getPort(), buffers,
-		                                       max_packet_size, irq_interval);
-
-		debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoRecvHandler\n");
-
-		if(!h) {
-			debugFatal("Could not create IsoRecvHandler\n");
-			return false;
-		}
-
-		h->setVerboseLevel(getDebugLevel());
-
-		// init the handler
-		if(!h->init()) {
-			debugFatal("Could not initialize receive handler\n");
-			return false;
-		}
-
-		// register the stream with the handler
-		if(!h->registerStream(stream)) {
-			debugFatal("Could not register receive stream with handler\n");
-			return false;
-		}
-
-		// register the handler with the manager
-		if(!registerHandler(h)) {
-			debugFatal("Could not register receive handler with manager\n");
-			return false;
-		}
-		debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
-	}
-	
-	if (stream->getType()==IsoStream::EST_Transmit) {
-		// setup the optimal parameters for the raw1394 ISO buffering
-		unsigned int packets_per_period=stream->getPacketsPerPeriod();
+    // allocate a handler for this stream
+    if (stream->getType()==IsoStream::EST_Receive) {
+        // setup the optimal parameters for the raw1394 ISO buffering
+        unsigned int packets_per_period=stream->getPacketsPerPeriod();
 
 #if 1
-		// hardware interrupts occur when one DMA block is full, and the size of one DMA
-		// block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq  
-		// occurs at a period boundary (optimal CPU use)
-		// NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD interrupts per period
-		//       for better latency.
-		unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
-		if (max_packet_size < stream->getMaxPacketSize()) {
-			max_packet_size=stream->getMaxPacketSize();
-		}
+        // hardware interrupts occur when one DMA block is full, and the size of one DMA
+        // block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq
+        // occurs at a period boundary (optimal CPU use)
 
-		// Ensure we don't request a packet size bigger than the
-		// kernel-enforced maximum which is currently 1 page.
-		if (max_packet_size > (unsigned int)getpagesize())
-                	max_packet_size = getpagesize();
+        // NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD hardware interrupts
+        //       per period for better latency.
+        unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()) / packets_per_period;
+        if (max_packet_size < stream->getMaxPacketSize()) {
+            max_packet_size=stream->getMaxPacketSize();
+        }
 
- 		unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
- 		if(irq_interval <= 0) irq_interval=1;
+        // Ensure we don't request a packet size bigger than the
+        // kernel-enforced maximum which is currently 1 page.
+        if (max_packet_size > (unsigned int)getpagesize())
+                    max_packet_size = getpagesize();
+
+        unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval=1;
 #else
-		// hardware interrupts occur when one DMA block is full, and the size of one DMA
-		// block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ
-		// frequency, as the controller uses max_packet_size, and not the effective size
-		// when writing to the DMA buffer.
-		
-		// configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
-		unsigned int irq_interval=PACKETS_PER_INTERRUPT;
-		
-		// unless the period size doesn't allow this
-		if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
-			irq_interval=1;
-		}
-		
-		// FIXME: test
-		irq_interval=1;
+        // hardware interrupts occur when one DMA block is full, and the size of one DMA
+        // block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ
+        // frequency, as the controller uses max_packet_size, and not the effective size
+        // when writing to the DMA buffer.
 
-		unsigned int max_packet_size=getpagesize() / irq_interval;
+        // configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
+        unsigned int irq_interval=PACKETS_PER_INTERRUPT;
 
-		if (max_packet_size < stream->getMaxPacketSize()) {
-			max_packet_size=stream->getMaxPacketSize();
-		}
+        // unless the period size doesn't allow this
+        if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
+            irq_interval=1;
+        }
 
-		// Ensure we don't request a packet size bigger than the
-		// kernel-enforced maximum which is currently 1 page.
-		if (max_packet_size > (unsigned int)getpagesize())
-                	max_packet_size = getpagesize();
+        // FIXME: test
+        irq_interval=1;
+
+        unsigned int max_packet_size=getpagesize() / irq_interval;
+
+        if (max_packet_size < stream->getMaxPacketSize()) {
+            max_packet_size=stream->getMaxPacketSize();
+        }
+
+        // Ensure we don't request a packet size bigger than the
+        // kernel-enforced maximum which is currently 1 page.
+        if (max_packet_size > (unsigned int)getpagesize())
+                    max_packet_size = getpagesize();
+
 #endif
-		// the transmit buffer size should be as low as possible for latency. 
-		// note however that the raw1394 subsystem tries to keep this buffer
-		// full, so we have to make sure that we have enough events in our
-		// event buffers
-		
-		// every irq_interval packets an interrupt will occur. that is when
-		// buffers get transfered, meaning that we should have at least some
-		// margin here
-		int buffers=irq_interval * 2;
+        /* the receive buffer size doesn't matter for the latency,
+           but it has a minimal value in order for libraw to operate correctly (300) */
+        int buffers=400;
 
-		// half a period. the xmit handler will take care of this
-// 		int buffers=packets_per_period/4;
-		
-		// NOTE: this is dangerous: what if there is not enough prefill?
-// 		if (buffers<10) buffers=10;	
-		
-		// create the actual handler
-		IsoXmitHandler *h = new IsoXmitHandler(stream->getPort(), buffers,
-		                                       max_packet_size, irq_interval);
+        // create the actual handler
+        IsoRecvHandler *h = new IsoRecvHandler(stream->getPort(), buffers,
+                                               max_packet_size, irq_interval);
 
-		debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoXmitHandler\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoRecvHandler\n");
 
-		if(!h) {
-			debugFatal("Could not create IsoXmitHandler\n");
-			return false;
-		}
+        if(!h) {
+            debugFatal("Could not create IsoRecvHandler\n");
+            return false;
+        }
 
-		h->setVerboseLevel(getDebugLevel());
+        h->setVerboseLevel(getDebugLevel());
 
-		// init the handler
-		if(!h->init()) {
-			debugFatal("Could not initialize transmit handler\n");
-			return false;
-		}
+        // init the handler
+        if(!h->init()) {
+            debugFatal("Could not initialize receive handler\n");
+            return false;
+        }
 
-		// register the stream with the handler
-		if(!h->registerStream(stream)) {
-			debugFatal("Could not register transmit stream with handler\n");
-			return false;
-		}
+        // register the stream with the handler
+        if(!h->registerStream(stream)) {
+            debugFatal("Could not register receive stream with handler\n");
+            return false;
+        }
 
-		// register the handler with the manager
-		if(!registerHandler(h)) {
-			debugFatal("Could not register transmit handler with manager\n");
-			return false;
-		}
-		debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
-	}
+        // register the handler with the manager
+        if(!registerHandler(h)) {
+            debugFatal("Could not register receive handler with manager\n");
+            return false;
+        }
+        debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
+    }
 
-	m_IsoStreams.push_back(stream);
-	debugOutput( DEBUG_LEVEL_VERBOSE, " %d streams, %d handlers registered\n",
-	                                  m_IsoStreams.size(), m_IsoHandlers.size());
+    if (stream->getType()==IsoStream::EST_Transmit) {
+        // setup the optimal parameters for the raw1394 ISO buffering
+        unsigned int packets_per_period=stream->getPacketsPerPeriod();
 
-	return true;
+#if 1
+        // hardware interrupts occur when one DMA block is full, and the size of one DMA
+        // block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq
+        // occurs at a period boundary (optimal CPU use)
+        // NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD interrupts per period
+        //       for better latency.
+        unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
+        if (max_packet_size < stream->getMaxPacketSize()) {
+            max_packet_size=stream->getMaxPacketSize();
+        }
+
+        // Ensure we don't request a packet size bigger than the
+        // kernel-enforced maximum which is currently 1 page.
+        if (max_packet_size > (unsigned int)getpagesize())
+                    max_packet_size = getpagesize();
+
+         unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+         if(irq_interval <= 0) irq_interval=1;
+#else
+        // hardware interrupts occur when one DMA block is full, and the size of one DMA
+        // block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ
+        // frequency, as the controller uses max_packet_size, and not the effective size
+        // when writing to the DMA buffer.
+
+        // configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
+        unsigned int irq_interval=PACKETS_PER_INTERRUPT;
+
+        // unless the period size doesn't allow this
+        if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
+            irq_interval=1;
+        }
+
+        // FIXME: test
+        irq_interval=1;
+
+        unsigned int max_packet_size=getpagesize() / irq_interval;
+
+        if (max_packet_size < stream->getMaxPacketSize()) {
+            max_packet_size=stream->getMaxPacketSize();
+        }
+
+        // Ensure we don't request a packet size bigger than the
+        // kernel-enforced maximum which is currently 1 page.
+        if (max_packet_size > (unsigned int)getpagesize())
+                    max_packet_size = getpagesize();
+#endif
+        // the transmit buffer size should be as low as possible for latency.
+        // note however that the raw1394 subsystem tries to keep this buffer
+        // full, so we have to make sure that we have enough events in our
+        // event buffers
+
+        // every irq_interval packets an interrupt will occur. that is when
+        // buffers get transfered, meaning that we should have at least some
+        // margin here
+        int buffers=irq_interval * 2;
+
+        // half a period. the xmit handler will take care of this
+//         int buffers=packets_per_period/4;
+
+        // NOTE: this is dangerous: what if there is not enough prefill?
+//         if (buffers<10) buffers=10;
+
+        // create the actual handler
+        IsoXmitHandler *h = new IsoXmitHandler(stream->getPort(), buffers,
+                                               max_packet_size, irq_interval);
+
+        debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoXmitHandler\n");
+
+        if(!h) {
+            debugFatal("Could not create IsoXmitHandler\n");
+            return false;
+        }
+
+        h->setVerboseLevel(getDebugLevel());
+
+        // init the handler
+        if(!h->init()) {
+            debugFatal("Could not initialize transmit handler\n");
+            return false;
+        }
+
+        // register the stream with the handler
+        if(!h->registerStream(stream)) {
+            debugFatal("Could not register transmit stream with handler\n");
+            return false;
+        }
+
+        // register the handler with the manager
+        if(!registerHandler(h)) {
+            debugFatal("Could not register transmit handler with manager\n");
+            return false;
+        }
+        debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
+    }
+
+    m_IsoStreams.push_back(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " %d streams, %d handlers registered\n",
+                                      m_IsoStreams.size(), m_IsoHandlers.size());
+
+    return true;
 }
 
 bool IsoHandlerManager::unregisterStream(IsoStream *stream)
 {
-	debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering stream %p\n",stream);
-	assert(stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering stream %p\n",stream);
+    assert(stream);
 
-	// make sure the stream isn't attached to a handler anymore
-	for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-	  it != m_IsoHandlers.end();
-	  ++it )
-	{
-		if((*it)->isStreamRegistered(stream)) {
-			if(!(*it)->unregisterStream(stream)) {
-				debugOutput( DEBUG_LEVEL_VERBOSE, " could not unregister stream (%p) from handler (%p)...\n",stream,*it);
-				return false;
-			}
-			
-			debugOutput( DEBUG_LEVEL_VERBOSE, " unregistered stream (%p) from handler (%p)...\n",stream,*it);
-		}
-	}
+    // make sure the stream isn't attached to a handler anymore
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+      it != m_IsoHandlers.end();
+      ++it )
+    {
+        if((*it)->isStreamRegistered(stream)) {
+            if(!(*it)->unregisterStream(stream)) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, " could not unregister stream (%p) from handler (%p)...\n",stream,*it);
+                return false;
+            }
 
-	// clean up all handlers that aren't used
-	pruneHandlers();
+            debugOutput( DEBUG_LEVEL_VERBOSE, " unregistered stream (%p) from handler (%p)...\n",stream,*it);
+        }
+    }
 
-	// remove the stream from the registered streams list
-	for ( IsoStreamVectorIterator it = m_IsoStreams.begin();
-	  it != m_IsoStreams.end();
-	  ++it )
-	{
-		if ( *it == stream ) { 
-			m_IsoStreams.erase(it);
-			
-			debugOutput( DEBUG_LEVEL_VERBOSE, " deleted stream (%p) from list...\n", *it);
-			return true;
-		}
-	}
+    // clean up all handlers that aren't used
+    pruneHandlers();
 
-	return false; //not found
+    // remove the stream from the registered streams list
+    for ( IsoStreamVectorIterator it = m_IsoStreams.begin();
+      it != m_IsoStreams.end();
+      ++it )
+    {
+        if ( *it == stream ) {
+            m_IsoStreams.erase(it);
+
+            debugOutput( DEBUG_LEVEL_VERBOSE, " deleted stream (%p) from list...\n", *it);
+            return true;
+        }
+    }
+
+    return false; //not found
 
 }
 
@@ -576,15 +571,15 @@ void IsoHandlerManager::pruneHandlers() {
 bool IsoHandlerManager::prepare()
 {
     bool retval=true;
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    
+
     // check state
     if(m_State != E_Created) {
         debugError("Incorrect state, expected E_Created, got %d\n",(int)m_State);
         return false;
     }
-    
+
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();
           ++it )
@@ -610,15 +605,15 @@ bool IsoHandlerManager::startHandlers() {
 
 bool IsoHandlerManager::startHandlers(int cycle) {
     bool retval=true;
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    
+
     // check state
     if(m_State != E_Prepared) {
         debugError("Incorrect state, expected E_Prepared, got %d\n",(int)m_State);
         return false;
     }
-    
+
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
@@ -629,14 +624,14 @@ bool IsoHandlerManager::startHandlers(int cycle) {
             retval=false;
         }
     }
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "Starting ISO iterator thread...\n");
 
-    // note: libraw1394 doesn't like it if you poll() and/or iterate() before 
+    // note: libraw1394 doesn't like it if you poll() and/or iterate() before
     //       starting the streams.
     // start the iso runner thread
     m_isoManagerThread->Start();
-    
+
     if (retval) {
         m_State=E_Running;
     } else {
@@ -648,18 +643,18 @@ bool IsoHandlerManager::startHandlers(int cycle) {
 
 bool IsoHandlerManager::stopHandlers() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    
+
     // check state
     if(m_State != E_Running) {
         debugError("Incorrect state, expected E_Running, got %d\n",(int)m_State);
         return false;
     }
-    
+
     bool retval=true;
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping ISO iterator thread...\n");
     m_isoManagerThread->Stop();
-    
+
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
@@ -670,25 +665,25 @@ bool IsoHandlerManager::stopHandlers() {
             retval=false;
         }
     }
-    
+
     if (retval) {
         m_State=E_Prepared;
     } else {
         m_State=E_Error;
     }
-    
+
     return retval;
 }
 
 bool IsoHandlerManager::reset() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    
+
     // check state
     if(m_State == E_Error) {
         debugFatal("Resetting from error condition not yet supported...\n");
         return false;
     }
-    
+
     // if not in an error condition, reset means stop the handlers
     return stopHandlers();
 }
@@ -707,7 +702,7 @@ void IsoHandlerManager::setVerboseLevel(int i) {
 
 void IsoHandlerManager::dumpInfo() {
     int i=0;
-    
+
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping IsoHandlerManager Stream handler information...\n");
     debugOutputShort( DEBUG_LEVEL_NORMAL, " State: %d\n",(int)m_State);
 

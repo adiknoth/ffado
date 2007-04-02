@@ -1,22 +1,25 @@
-/* motu_avdevice.h
- * Copyright (C) 2006 by Pieter Palmers
- * Copyright (C) 2006 Jonathan Woithe
+/*
+ * Copyright (C) 2005-2007 by Pieter Palmers
+ * Copyright (C) 2005-2007 by Jonathan Woithe
  *
- * This file is part of FreeBob.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBob is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef MOTUDEVICE_H
@@ -39,32 +42,32 @@
 #define MOTUFW_RATE_BASE_MASK           (0x00000008)
 #define MOTUFW_RATE_MULTIPLIER_MASK     (0x00000030)
 
-#define MOTUFW_OPTICAL_MODE_OFF		0x00
-#define MOTUFW_OPTICAL_MODE_ADAT	0x01
-#define MOTUFW_OPTICAL_MODE_TOSLINK	0x02
-#define MOTUFW_OPTICAL_IN_MODE_MASK	(0x00000300)
-#define MOTUFW_OPTICAL_OUT_MODE_MASK	(0x00000c00)
-#define MOTUFW_OPTICAL_MODE_MASK	(MOTUFW_OPTICAL_IN_MODE_MASK|MOTUFW_OPTICAL_MODE_MASK)
+#define MOTUFW_OPTICAL_MODE_OFF        0x00
+#define MOTUFW_OPTICAL_MODE_ADAT    0x01
+#define MOTUFW_OPTICAL_MODE_TOSLINK    0x02
+#define MOTUFW_OPTICAL_IN_MODE_MASK    (0x00000300)
+#define MOTUFW_OPTICAL_OUT_MODE_MASK    (0x00000c00)
+#define MOTUFW_OPTICAL_MODE_MASK    (MOTUFW_OPTICAL_IN_MODE_MASK|MOTUFW_OPTICAL_MODE_MASK)
 
-#define MOTUFW_CLKSRC_MASK		0x00000007
-#define MOTUFW_CLKSRC_INTERNAL		0
-#define MOTUFW_CLKSRC_ADAT_OPTICAL	1
-#define MOTUFW_CLKSRC_SPDIF_TOSLINK	2
-#define MOTUFW_CLKSRC_SMTPE		3
-#define MOTUFW_CLKSRC_WORDCLOCK		4
-#define MOTUFW_CLKSRC_ADAT_9PIN		5
-#define MOTUFW_CLKSRC_AES_EBU		7
+#define MOTUFW_CLKSRC_MASK        0x00000007
+#define MOTUFW_CLKSRC_INTERNAL        0
+#define MOTUFW_CLKSRC_ADAT_OPTICAL    1
+#define MOTUFW_CLKSRC_SPDIF_TOSLINK    2
+#define MOTUFW_CLKSRC_SMTPE        3
+#define MOTUFW_CLKSRC_WORDCLOCK        4
+#define MOTUFW_CLKSRC_ADAT_9PIN        5
+#define MOTUFW_CLKSRC_AES_EBU        7
 
-#define MOTUFW_DIR_IN			1
-#define MOTUFW_DIR_OUT			2
-#define MOTUFW_DIR_INOUT		(MOTUFW_DIR_IN | MOTUFW_DIR_OUT)
+#define MOTUFW_DIR_IN            1
+#define MOTUFW_DIR_OUT            2
+#define MOTUFW_DIR_INOUT        (MOTUFW_DIR_IN | MOTUFW_DIR_OUT)
 
 /* Device registers */
-#define MOTUFW_REG_ISOCTRL		0x0b00
-#define MOTUFW_REG_OPTICAL_CTRL		0x0b10
-#define MOTUFW_REG_CLK_CTRL		0x0b14
+#define MOTUFW_REG_ISOCTRL        0x0b00
+#define MOTUFW_REG_OPTICAL_CTRL        0x0b10
+#define MOTUFW_REG_CLK_CTRL        0x0b14
 #define MOTUFW_REG_ROUTE_PORT_CONF      0x0c04
-#define MOTUFW_REG_CLKSRC_NAME0		0x0c60
+#define MOTUFW_REG_CLKSRC_NAME0        0x0c60
 
 class ConfigRom;
 class Ieee1394Service;
@@ -92,7 +95,7 @@ public:
 
     MotuDevice( std::auto_ptr<ConfigRom>( configRom ),
           Ieee1394Service& ieee1394Service,
-		  int nodeId );
+          int nodeId );
     virtual ~MotuDevice();
 
     static bool probe( ConfigRom& configRom );
@@ -109,7 +112,7 @@ public:
     virtual bool prepare();
     bool lock();
     bool unlock();
-    
+
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
 
@@ -119,27 +122,27 @@ public:
     signed int setOpticalMode(unsigned int dir, unsigned int mode);
 
     signed int getEventSize(unsigned int dir);
-  
+
 protected:
     signed int       m_motu_model;
     struct VendorModelEntry * m_model;
     signed int m_iso_recv_channel, m_iso_send_channel;
     signed int m_bandwidth;
-    
-	Streaming::MotuReceiveStreamProcessor *m_receiveProcessor;
-	Streaming::MotuTransmitStreamProcessor *m_transmitProcessor;
+
+    Streaming::MotuReceiveStreamProcessor *m_receiveProcessor;
+    Streaming::MotuTransmitStreamProcessor *m_transmitProcessor;
 
 private:
-	bool addPort(Streaming::StreamProcessor *s_processor,
-		char *name, 
-		enum Streaming::Port::E_Direction direction,
-		int position, int size);
-	bool addDirPorts(
-		enum Streaming::Port::E_Direction direction,
-		unsigned int sample_rate, unsigned int optical_mode);
-        
-	unsigned int ReadRegister(unsigned int reg);
-	signed int WriteRegister(unsigned int reg, quadlet_t data);
+    bool addPort(Streaming::StreamProcessor *s_processor,
+        char *name,
+        enum Streaming::Port::E_Direction direction,
+        int position, int size);
+    bool addDirPorts(
+        enum Streaming::Port::E_Direction direction,
+        unsigned int sample_rate, unsigned int optical_mode);
+
+    unsigned int ReadRegister(unsigned int reg);
+    signed int WriteRegister(unsigned int reg, quadlet_t data);
 
 };
 

@@ -1,11 +1,11 @@
 /*
-Modifications for Freebob (C) 2006, Pieter Palmers
+Modifications for FFADO by Pieter Palmers
 
 Copied from the jackd/jackdmp sources
 function names changed in order to avoid naming problems when using this in
 a jackd backend.
 
-Copyright (C) 2001 Paul Davis 
+Copyright (C) 2001 Paul Davis
 Copyright (C) 2004-2006 Grame
 
 This program is free software; you can redistribute it and/or modify
@@ -53,10 +53,10 @@ void* PosixThread::ThreadHandler(void* arg)
     debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: start\n");
 
     // If Init succeed start the thread loop
-	bool res = true;
+    bool res = true;
     while (obj->fRunning && res) {
         res = runnable->Execute();
-		//pthread_testcancel();
+        //pthread_testcancel();
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: exit\n");
@@ -66,7 +66,7 @@ void* PosixThread::ThreadHandler(void* arg)
 int PosixThread::Start()
 {
     int res;
-	fRunning = true;
+    fRunning = true;
 
     if (fRealTime) {
 
@@ -120,7 +120,7 @@ int PosixThread::Start()
             debugError("Cannot set create thread %d %s", res, strerror(errno));
             return -1;
         }
-        
+
         return 0;
     }
 }
@@ -141,10 +141,10 @@ int PosixThread::Kill()
 int PosixThread::Stop()
 {
     if (fThread) { // If thread has been started
-		debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop\n");
-		void* status;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop\n");
+        void* status;
         fRunning = false; // Request for the thread to stop
-		pthread_join(fThread, &status);
+        pthread_join(fThread, &status);
         return 0;
     } else {
         return -1;

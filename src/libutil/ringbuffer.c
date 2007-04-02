@@ -1,5 +1,5 @@
 /*
-  Modifications for FreeBoB by Pieter Palmers
+  Modifications for FFADO by Pieter Palmers
     
   Copied from the jackd sources
   function names changed in order to avoid naming problems when using this in
@@ -38,13 +38,13 @@
 /* Create a new ringbuffer to hold at least `sz' bytes of data. The
    actual buffer size is rounded up to the next power of two.  */
 
-freebob_ringbuffer_t *
-freebob_ringbuffer_create (size_t sz)
+ffado_ringbuffer_t *
+ffado_ringbuffer_create (size_t sz)
 {
   int power_of_two;
-  freebob_ringbuffer_t *rb;
+  ffado_ringbuffer_t *rb;
 
-  rb = malloc (sizeof (freebob_ringbuffer_t));
+  rb = malloc (sizeof (ffado_ringbuffer_t));
 
   for (power_of_two = 1; 1 << power_of_two < sz; power_of_two++);
 
@@ -62,7 +62,7 @@ freebob_ringbuffer_create (size_t sz)
 /* Free all data associated with the ringbuffer `rb'. */
 
 void
-freebob_ringbuffer_free (freebob_ringbuffer_t * rb)
+ffado_ringbuffer_free (ffado_ringbuffer_t * rb)
 {
 #ifdef USE_MLOCK
   if (rb->mlocked) {
@@ -75,7 +75,7 @@ freebob_ringbuffer_free (freebob_ringbuffer_t * rb)
 /* Lock the data block of `rb' using the system call 'mlock'.  */
 
 int
-freebob_ringbuffer_mlock (freebob_ringbuffer_t * rb)
+ffado_ringbuffer_mlock (ffado_ringbuffer_t * rb)
 {
 #ifdef USE_MLOCK
   if (mlock (rb->buf, rb->size)) {
@@ -90,7 +90,7 @@ freebob_ringbuffer_mlock (freebob_ringbuffer_t * rb)
    safe. */
 
 void
-freebob_ringbuffer_reset (freebob_ringbuffer_t * rb)
+ffado_ringbuffer_reset (ffado_ringbuffer_t * rb)
 {
   rb->read_ptr = 0;
   rb->write_ptr = 0;
@@ -101,7 +101,7 @@ freebob_ringbuffer_reset (freebob_ringbuffer_t * rb)
    pointer.  */
 
 size_t
-freebob_ringbuffer_read_space (const freebob_ringbuffer_t * rb)
+ffado_ringbuffer_read_space (const ffado_ringbuffer_t * rb)
 {
   size_t w, r;
 
@@ -120,7 +120,7 @@ freebob_ringbuffer_read_space (const freebob_ringbuffer_t * rb)
    pointer.  */
 
 size_t
-freebob_ringbuffer_write_space (const freebob_ringbuffer_t * rb)
+ffado_ringbuffer_write_space (const ffado_ringbuffer_t * rb)
 {
   size_t w, r;
 
@@ -140,14 +140,14 @@ freebob_ringbuffer_write_space (const freebob_ringbuffer_t * rb)
    `dest'.  Returns the actual number of bytes copied. */
 
 size_t
-freebob_ringbuffer_read (freebob_ringbuffer_t * rb, char *dest, size_t cnt)
+ffado_ringbuffer_read (ffado_ringbuffer_t * rb, char *dest, size_t cnt)
 {
   size_t free_cnt;
   size_t cnt2;
   size_t to_read;
   size_t n1, n2;
 
-  if ((free_cnt = freebob_ringbuffer_read_space (rb)) == 0) {
+  if ((free_cnt = ffado_ringbuffer_read_space (rb)) == 0) {
     return 0;
   }
 
@@ -181,7 +181,7 @@ freebob_ringbuffer_read (freebob_ringbuffer_t * rb, char *dest, size_t cnt)
 copied. */
 
 size_t
-freebob_ringbuffer_peek (freebob_ringbuffer_t * rb, char *dest, size_t cnt)
+ffado_ringbuffer_peek (ffado_ringbuffer_t * rb, char *dest, size_t cnt)
 {
   size_t free_cnt;
   size_t cnt2;
@@ -191,7 +191,7 @@ freebob_ringbuffer_peek (freebob_ringbuffer_t * rb, char *dest, size_t cnt)
 
   tmp_read_ptr = rb->read_ptr;
 
-  if ((free_cnt = freebob_ringbuffer_read_space (rb)) == 0) {
+  if ((free_cnt = ffado_ringbuffer_read_space (rb)) == 0) {
     return 0;
   }
 
@@ -225,14 +225,14 @@ freebob_ringbuffer_peek (freebob_ringbuffer_t * rb, char *dest, size_t cnt)
    `src'.  Returns the actual number of bytes copied. */
 
 size_t
-freebob_ringbuffer_write (freebob_ringbuffer_t * rb, const char *src, size_t cnt)
+ffado_ringbuffer_write (ffado_ringbuffer_t * rb, const char *src, size_t cnt)
 {
   size_t free_cnt;
   size_t cnt2;
   size_t to_write;
   size_t n1, n2;
 
-  if ((free_cnt = freebob_ringbuffer_write_space (rb)) == 0) {
+  if ((free_cnt = ffado_ringbuffer_write_space (rb)) == 0) {
     return 0;
   }
 
@@ -264,7 +264,7 @@ freebob_ringbuffer_write (freebob_ringbuffer_t * rb, const char *src, size_t cnt
 /* Advance the read pointer `cnt' places. */
 
 void
-freebob_ringbuffer_read_advance (freebob_ringbuffer_t * rb, size_t cnt)
+ffado_ringbuffer_read_advance (ffado_ringbuffer_t * rb, size_t cnt)
 {
   rb->read_ptr += cnt;
   rb->read_ptr &= rb->size_mask;
@@ -273,7 +273,7 @@ freebob_ringbuffer_read_advance (freebob_ringbuffer_t * rb, size_t cnt)
 /* Advance the write pointer `cnt' places. */
 
 void
-freebob_ringbuffer_write_advance (freebob_ringbuffer_t * rb, size_t cnt)
+ffado_ringbuffer_write_advance (ffado_ringbuffer_t * rb, size_t cnt)
 {
   rb->write_ptr += cnt;
   rb->write_ptr &= rb->size_mask;
@@ -285,8 +285,8 @@ freebob_ringbuffer_write_advance (freebob_ringbuffer_t * rb, size_t cnt)
    length.  */
 
 void
-freebob_ringbuffer_get_read_vector (const freebob_ringbuffer_t * rb,
-				 freebob_ringbuffer_data_t * vec)
+ffado_ringbuffer_get_read_vector (const ffado_ringbuffer_t * rb,
+				 ffado_ringbuffer_data_t * vec)
 {
   size_t free_cnt;
   size_t cnt2;
@@ -329,8 +329,8 @@ freebob_ringbuffer_get_read_vector (const freebob_ringbuffer_t * rb,
    length.  */
 
 void
-freebob_ringbuffer_get_write_vector (const freebob_ringbuffer_t * rb,
-				  freebob_ringbuffer_data_t * vec)
+ffado_ringbuffer_get_write_vector (const ffado_ringbuffer_t * rb,
+				  ffado_ringbuffer_data_t * vec)
 {
   size_t free_cnt;
   size_t cnt2;

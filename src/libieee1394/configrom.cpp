@@ -1,21 +1,26 @@
-/* configrom.cpp
- * Copyright (C) 2005 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Jonathan Woithe
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "configrom.h"
@@ -158,13 +163,13 @@ ConfigRom::initialize()
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_vendorNameKv ),
                 len );
 
-	while ((buf + len - 1) == '\0') {
+    while ((buf + len - 1) == '\0') {
             len--;
         }
         // \todo XXX seems a bit strage to do this but the nodemgr.c code does
         // it. try to figure out why this is needed (or not)
-	buf[len++] = ' ';
-	buf[len] = '\0';
+    buf[len++] = ' ';
+    buf[len] = '\0';
 
 
         debugOutput( DEBUG_LEVEL_VERBOSE, "Vendor name: '%s'\n", buf );
@@ -177,13 +182,13 @@ ConfigRom::initialize()
         memcpy( buf,
                 ( void* )CSR1212_TEXTUAL_DESCRIPTOR_LEAF_DATA( m_modelNameKv ),
                 len );
-	while ((buf + len - 1) == '\0') {
+    while ((buf + len - 1) == '\0') {
             len--;
         }
         // \todo XXX for edirol fa-66 it seems somehow broken. see above
         // todo as well.
-	buf[len++] = ' ';
-	buf[len] = '\0';
+    buf[len++] = ' ';
+    buf[len] = '\0';
 
         debugOutput( DEBUG_LEVEL_VERBOSE, "Model name: '%s'\n", buf);
         m_modelName = buf;
@@ -216,7 +221,7 @@ busRead( struct csr1212_csr* csr,
          void* private_data )
 {
     struct config_csr_info* csr_info = (struct config_csr_info*) private_data;
-    
+
     if ( !csr_info->service->read( csr_info->nodeId,
                                    addr,
                                    (size_t)length/4,
@@ -248,31 +253,31 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "process unit directory:\n" );
     csr1212_for_each_dir_entry(csr, kv, ud_kv, dentry) {
-	switch (kv->key.id) {
-	    case CSR1212_KV_ID_VENDOR:
-		if (kv->key.type == CSR1212_KV_TYPE_IMMEDIATE) {
+    switch (kv->key.id) {
+        case CSR1212_KV_ID_VENDOR:
+        if (kv->key.type == CSR1212_KV_TYPE_IMMEDIATE) {
                     debugOutput( DEBUG_LEVEL_VERBOSE,
                                  "\tvendor_id = 0x%08x\n",
                                  kv->value.immediate);
                     m_vendorId = kv->value.immediate;
-		}
-		break;
+        }
+        break;
 
-	    case CSR1212_KV_ID_MODEL:
+        case CSR1212_KV_ID_MODEL:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tmodel_id = 0x%08x\n",
                              kv->value.immediate);
                 m_modelId = kv->value.immediate;
-		break;
+        break;
 
-	    case CSR1212_KV_ID_SPECIFIER_ID:
+        case CSR1212_KV_ID_SPECIFIER_ID:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tspecifier_id = 0x%08x\n",
                              kv->value.immediate);
                 m_unit_specifier_id = kv->value.immediate;
-		break;
+        break;
 
-	    case CSR1212_KV_ID_VERSION:
+        case CSR1212_KV_ID_VERSION:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "\tversion = 0x%08x\n",
                              kv->value.immediate);
@@ -283,44 +288,44 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                         m_avcDevice = true;
                     }
                 }
-		break;
+        break;
 
-	    case CSR1212_KV_ID_DESCRIPTOR:
-		if (kv->key.type == CSR1212_KV_TYPE_LEAF &&
-		    CSR1212_DESCRIPTOR_LEAF_TYPE(kv) == 0 &&
-		    CSR1212_DESCRIPTOR_LEAF_SPECIFIER_ID(kv) == 0 &&
-		    CSR1212_TEXTUAL_DESCRIPTOR_LEAF_WIDTH(kv) == 0 &&
-		    CSR1212_TEXTUAL_DESCRIPTOR_LEAF_CHAR_SET(kv) == 0 &&
-		    CSR1212_TEXTUAL_DESCRIPTOR_LEAF_LANGUAGE(kv) == 0)
-		{
-		    switch (last_key_id) {
-			case CSR1212_KV_ID_VENDOR:
-			    csr1212_keep_keyval(kv);
+        case CSR1212_KV_ID_DESCRIPTOR:
+        if (kv->key.type == CSR1212_KV_TYPE_LEAF &&
+            CSR1212_DESCRIPTOR_LEAF_TYPE(kv) == 0 &&
+            CSR1212_DESCRIPTOR_LEAF_SPECIFIER_ID(kv) == 0 &&
+            CSR1212_TEXTUAL_DESCRIPTOR_LEAF_WIDTH(kv) == 0 &&
+            CSR1212_TEXTUAL_DESCRIPTOR_LEAF_CHAR_SET(kv) == 0 &&
+            CSR1212_TEXTUAL_DESCRIPTOR_LEAF_LANGUAGE(kv) == 0)
+        {
+            switch (last_key_id) {
+            case CSR1212_KV_ID_VENDOR:
+                csr1212_keep_keyval(kv);
                             m_vendorNameKv = kv;
-			    break;
+                break;
 
-			case CSR1212_KV_ID_MODEL:
+            case CSR1212_KV_ID_MODEL:
                             m_modelNameKv = kv;
-			    csr1212_keep_keyval(kv);
-			    break;
+                csr1212_keep_keyval(kv);
+                break;
 
-		    }
-		} /* else if (kv->key.type == CSR1212_KV_TYPE_DIRECTORY) ... */
-		break;
+            }
+        } /* else if (kv->key.type == CSR1212_KV_TYPE_DIRECTORY) ... */
+        break;
 
-	    case CSR1212_KV_ID_DEPENDENT_INFO:
-		if (kv->key.type == CSR1212_KV_TYPE_DIRECTORY) {
-		    /* This should really be done in SBP2 as this is
-		     * doing SBP2 specific parsing. */
-		    processUnitDirectory(csr, kv, id);
-		}
+        case CSR1212_KV_ID_DEPENDENT_INFO:
+        if (kv->key.type == CSR1212_KV_TYPE_DIRECTORY) {
+            /* This should really be done in SBP2 as this is
+             * doing SBP2 specific parsing. */
+            processUnitDirectory(csr, kv, id);
+        }
 
-		break;
+        break;
 
-	    default:
-		break;
-	}
-	last_key_id = kv->key.id;
+        default:
+        break;
+    }
+    last_key_id = kv->key.id;
     }
 }
 
@@ -333,37 +338,37 @@ ConfigRom::processRootDirectory(struct csr1212_csr* csr)
     unsigned int last_key_id = 0;
 
     csr1212_for_each_dir_entry(csr, kv, csr->root_kv, dentry) {
-	switch (kv->key.id) {
-	    case CSR1212_KV_ID_VENDOR:
+    switch (kv->key.id) {
+        case CSR1212_KV_ID_VENDOR:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "vendor id = 0x%08x\n", kv->value.immediate);
-		break;
+        break;
 
-	    case CSR1212_KV_ID_NODE_CAPABILITIES:
+        case CSR1212_KV_ID_NODE_CAPABILITIES:
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "capabilities = 0x%08x\n", kv->value.immediate);
-		break;
+        break;
 
-	    case CSR1212_KV_ID_UNIT:
-		processUnitDirectory(csr, kv, &ud_id);
-		break;
+        case CSR1212_KV_ID_UNIT:
+        processUnitDirectory(csr, kv, &ud_id);
+        break;
 
-	    case CSR1212_KV_ID_DESCRIPTOR:
-		if (last_key_id == CSR1212_KV_ID_VENDOR) {
-		    if (kv->key.type == CSR1212_KV_TYPE_LEAF &&
-			CSR1212_DESCRIPTOR_LEAF_TYPE(kv) == 0 &&
-			CSR1212_DESCRIPTOR_LEAF_SPECIFIER_ID(kv) == 0 &&
-			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_WIDTH(kv) == 0 &&
-			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_CHAR_SET(kv) == 0 &&
-			CSR1212_TEXTUAL_DESCRIPTOR_LEAF_LANGUAGE(kv) == 0)
+        case CSR1212_KV_ID_DESCRIPTOR:
+        if (last_key_id == CSR1212_KV_ID_VENDOR) {
+            if (kv->key.type == CSR1212_KV_TYPE_LEAF &&
+            CSR1212_DESCRIPTOR_LEAF_TYPE(kv) == 0 &&
+            CSR1212_DESCRIPTOR_LEAF_SPECIFIER_ID(kv) == 0 &&
+            CSR1212_TEXTUAL_DESCRIPTOR_LEAF_WIDTH(kv) == 0 &&
+            CSR1212_TEXTUAL_DESCRIPTOR_LEAF_CHAR_SET(kv) == 0 &&
+            CSR1212_TEXTUAL_DESCRIPTOR_LEAF_LANGUAGE(kv) == 0)
                     {
                         m_vendorNameKv = kv;
-			csr1212_keep_keyval(kv);
-		    }
-		}
-		break;
-	}
-	last_key_id = kv->key.id;
+            csr1212_keep_keyval(kv);
+            }
+        }
+        break;
+    }
+    last_key_id = kv->key.id;
     }
 
 }
@@ -577,13 +582,13 @@ ConfigRom::setNodeId( fb_nodeid_t nodeId )
 OSC::OscResponse
 ConfigRom::processOscMessage(OSC::OscMessage *m) {
     OSC::OscResponse r=OSC::OscResponse(OSC::OscResponse::eUnhandled);
-    
+
     unsigned int nbArgs=m->nbArguments();
     if (nbArgs>=1) {
         OSC::OscArgument arg0=m->getArgument(0);
         if(arg0.isString()) { // commands
             string cmd=arg0.getString();
-            
+
             debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) CMD? %s\n", this, cmd.c_str());
             if(cmd == "params") {
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Listing node children...\n");
@@ -622,7 +627,7 @@ ConfigRom::processOscMessage(OSC::OscMessage *m) {
             }
         }
     }
-    
+
     return r;
 
 }

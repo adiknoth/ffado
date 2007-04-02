@@ -1,21 +1,24 @@
-/* bebob_avplug.h
- * Copyright (C) 2005,06,07 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef BEBOB_AVPLUG_H
@@ -49,12 +52,12 @@ class AvPlug {
 public:
 
     enum EAvPlugAddressType {
-	eAPA_PCR,
-	eAPA_ExternalPlug,
-	eAPA_AsynchronousPlug,
-	eAPA_SubunitPlug,
-	eAPA_FunctionBlockPlug,
-	eAPA_Undefined,
+    eAPA_PCR,
+    eAPA_ExternalPlug,
+    eAPA_AsynchronousPlug,
+    eAPA_SubunitPlug,
+    eAPA_FunctionBlockPlug,
+    eAPA_Undefined,
     };
 
     enum EAvPlugType {
@@ -68,23 +71,23 @@ public:
     };
 
     enum EAvPlugDirection {
-	eAPD_Input,
-	eAPD_Output,
-	eAPD_Unknown,
+    eAPD_Input,
+    eAPD_Output,
+    eAPD_Unknown,
     };
 
     // \todo This constructors sucks. too many parameters. fix it.
     AvPlug( Ieee1394Service& ieee1394Service,
-	    ConfigRom& configRom,
+        ConfigRom& configRom,
             AvPlugManager& plugManager,
-	    AVCCommand::ESubunitType subunitType,
-	    subunit_id_t subunitId,
-	    function_block_type_t functionBlockType,
-	    function_block_type_t functionBlockId,
-	    EAvPlugAddressType plugAddressType,
-	    EAvPlugDirection plugDirection,
-	    plug_id_t plugId,
-	    int verboseLevel );
+        AVCCommand::ESubunitType subunitType,
+        subunit_id_t subunitId,
+        function_block_type_t functionBlockType,
+        function_block_type_t functionBlockId,
+        EAvPlugAddressType plugAddressType,
+        EAvPlugDirection plugDirection,
+        plug_id_t plugId,
+        int verboseLevel );
     AvPlug( const AvPlug& rhs );
     virtual ~AvPlug();
 
@@ -95,19 +98,19 @@ public:
     bool setConnection( AvPlug& plug );
 
     int getGlobalId() const
-	{ return m_globalId; }
+        { return m_globalId; }
     plug_id_t getPlugId() const
-	{ return m_id; }
+        { return m_id; }
     AVCCommand::ESubunitType getSubunitType() const
-	{ return m_subunitType; }
+        { return m_subunitType; }
     subunit_id_t getSubunitId() const
-	{ return m_subunitId; }
+        { return m_subunitId; }
     const char* getName() const
-	{ return m_name.c_str(); }
+        { return m_name.c_str(); }
     EAvPlugDirection getPlugDirection() const
-	{ return m_direction; }
+        { return m_direction; }
     sampling_frequency_t getSamplingFrequency() const
-	{ return m_samplingFrequency; }
+        { return m_samplingFrequency; }
     int getSampleRate() const; // 22050, 24000, 32000, ...
     int getNrOfChannels() const;
     int getNrOfStreams() const;
@@ -117,10 +120,10 @@ public:
     EAvPlugAddressType getPlugAddressType() const
         { return m_addressType; }
     EAvPlugType getPlugType() const
-	{ return m_infoPlugType; }
+        { return m_infoPlugType; }
 
     function_block_type_t getFunctionBlockType() const
-	{ return m_functionBlockType; }
+        { return m_functionBlockType; }
     function_block_id_t getFunctionBlockId() const
         { return m_functionBlockId; }
 
@@ -130,7 +133,7 @@ public:
         { return m_outputConnections; }
 
     static PlugAddress::EPlugDirection convertPlugDirection(
-	EAvPlugDirection direction);
+    EAvPlugDirection direction);
 
     void showPlug() const;
 
@@ -147,18 +150,18 @@ public:
     struct ChannelInfo {
         stream_position_t          m_streamPosition;
         stream_position_location_t m_location;
-	Glib::ustring              m_name;
+    Glib::ustring              m_name;
     };
     typedef std::vector<ChannelInfo> ChannelInfoVector;
 
     struct ClusterInfo {
-	int                      m_index;
-	port_type_t              m_portType;
-	Glib::ustring            m_name;
+    int                      m_index;
+    port_type_t              m_portType;
+    Glib::ustring            m_name;
 
         nr_of_channels_t         m_nrOfChannels;
         ChannelInfoVector        m_channelInfos;
-	stream_format_t          m_streamFormat;
+    stream_format_t          m_streamFormat;
     };
     typedef std::vector<ClusterInfo> ClusterInfoVector;
 
@@ -182,12 +185,12 @@ protected:
     ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
 
     ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
-	ExtendedStreamFormatCmd::ESubFunction subFunction);
+    ExtendedStreamFormatCmd::ESubFunction subFunction);
 
     SignalSourceCmd setSrcPlugAddrToSignalCmd();
 
     void setDestPlugAddrToSignalCmd(
-	SignalSourceCmd& signalSourceCmd, AvPlug& plug );
+    SignalSourceCmd& signalSourceCmd, AvPlug& plug );
 
     void debugOutputClusterInfos( int debugLevel );
 
@@ -244,11 +247,11 @@ private:
             , m_midiChannels( 0 )
             , m_index( 0xff )
             {}
-	sampling_frequency_t  m_samplingFrequency;
-	bool                  m_isSyncStream;
-	number_of_channels_t  m_audioChannels;
-	number_of_channels_t  m_midiChannels;
-	byte_t                m_index;
+    sampling_frequency_t  m_samplingFrequency;
+    bool                  m_isSyncStream;
+    number_of_channels_t  m_audioChannels;
+    number_of_channels_t  m_midiChannels;
+    byte_t                m_index;
     };
     typedef std::vector<FormatInfo> FormatInfoVector;
 
@@ -296,19 +299,19 @@ public:
 
     AvPlug* getPlug( AVCCommand::ESubunitType subunitType,
                      subunit_id_t subunitId,
-		     function_block_type_t functionBlockType,
-		     function_block_id_t functionBlockId,
+             function_block_type_t functionBlockType,
+             function_block_id_t functionBlockId,
                      AvPlug::EAvPlugAddressType plugAddressType,
                      AvPlug::EAvPlugDirection plugDirection,
                      plug_id_t plugId ) const;
     AvPlug* getPlug( int iGlobalId ) const;
     AvPlugVector getPlugsByType( AVCCommand::ESubunitType subunitType,
-				 subunit_id_t subunitId,
-				 function_block_type_t functionBlockType,
-				 function_block_id_t functionBlockId,
-				 AvPlug::EAvPlugAddressType plugAddressType,
-				 AvPlug::EAvPlugDirection plugDirection,
-				 AvPlug::EAvPlugType type) const;
+                 subunit_id_t subunitId,
+                 function_block_type_t functionBlockType,
+                 function_block_id_t functionBlockId,
+                 AvPlug::EAvPlugAddressType plugAddressType,
+                 AvPlug::EAvPlugDirection plugDirection,
+                 AvPlug::EAvPlugType type) const;
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static  AvPlugManager* deserialize( Glib::ustring basePath,
@@ -350,4 +353,4 @@ typedef std::vector<AvPlugConnection> AvPlugConnectionOwnerVector;
 
 }
 
-#endif
+#endif // BEBOB_AVPLUG_H

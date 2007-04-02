@@ -1,25 +1,28 @@
-/* avc_definitions.h
- * Copyright (C) 2005 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
-#ifndef AVCDefinitions_h
-#define AVCDefinitions_h
+#ifndef AVDDEFINITIONS_H
+#define AVDDEFINITIONS_H
 
 #include <libavc1394/avc1394.h>
 #include <ostream>
@@ -69,6 +72,9 @@ typedef byte_t audio_channel_number_t;
 typedef byte_t selector_length_t;
 typedef byte_t control_selector_t;
 typedef byte_t control_data_length_t;
+typedef uint16_t control_data_ext_length_t;
+typedef uint16_t mixer_level_t;
+typedef byte_t mixer_programmable_state_t;
 typedef byte_t input_fb_plug_number_t;
 typedef byte_t input_audio_channel_number_t;
 typedef byte_t output_audio_channel_number_t;
@@ -98,14 +104,14 @@ enum ESamplingFrequency {
 
 /**
  * \brief Convert from ESamplingFrequency to an integer
- * @param freq 
- * @return 
+ * @param freq
+ * @return
  */
 int convertESamplingFrequency(ESamplingFrequency freq);
 /**
  * \brief Convert from integer to ESamplingFrequency
- * @param sampleRate 
- * @return 
+ * @param sampleRate
+ * @return
  */
 ESamplingFrequency parseSampleRate( int sampleRate );
 
@@ -122,4 +128,4 @@ std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequ
 
 #define AVC1394_SUBUNIT_ID_RESERVED 0x06
 
-#endif // AVCDefinitions_h
+#endif // AVDDEFINITIONS_H

@@ -1,27 +1,24 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "OscArgument.h"
@@ -30,7 +27,7 @@ namespace OSC {
 
 IMPL_DEBUG_MODULE( OscArgument, OscArgument, DEBUG_LEVEL_VERBOSE );
 
-OscArgument::OscArgument(int32_t i) 
+OscArgument::OscArgument(int32_t i)
     : m_isInt(true)
     , m_intVal(i)
     , m_isInt64(false)
@@ -41,7 +38,7 @@ OscArgument::OscArgument(int32_t i)
     , m_stringVal("")
 {}
 
-OscArgument::OscArgument(int64_t i) 
+OscArgument::OscArgument(int64_t i)
     : m_isInt(false)
     , m_intVal(0)
     , m_isInt64(true)
@@ -52,7 +49,7 @@ OscArgument::OscArgument(int64_t i)
     , m_stringVal("")
 {}
 
-OscArgument::OscArgument(float f) 
+OscArgument::OscArgument(float f)
     : m_isInt(false)
     , m_intVal(0)
     , m_isInt64(false)
@@ -63,7 +60,7 @@ OscArgument::OscArgument(float f)
     , m_stringVal("")
 {}
 
-OscArgument::OscArgument(string s) 
+OscArgument::OscArgument(string s)
     : m_isInt(false)
     , m_intVal(0)
     , m_isInt64(false)

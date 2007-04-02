@@ -1,12 +1,12 @@
-/* freebob_driver.h
+/*
+ *   FireWire Backend for Jack
+ *   using FFADO
+ *   FFADO = Firewire (pro-)audio for linux
  *
- *   FreeBob Backend for Jack
- *   FreeBob = Firewire (pro-)audio for linux
- *
- *   http://freebob.sf.net
+ *   http://ffado.sf.net
  *   http://jackit.sf.net
  *
- *   Copyright (C) 2005 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ *   Copyright (C) 2005-2007 Pieter Palmers
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,13 +28,12 @@
  *
  */ 
  
-#ifndef __JACK_FREEBOB_DRIVER_H__
-#define __JACK_FREEBOB_DRIVER_H__
+#ifndef __JACK_FFADO_DRIVER_H__
+#define __JACK_FFADO_DRIVER_H__
 
-#define FREEBOB_DRIVER_WITH_MIDI
+#define FFADO_DRIVER_WITH_ASEQ_MIDI
 
-#include <libfreebob/freebob.h>
-#include <libfreebob/freebob_streaming.h>
+#include <libffado/ffado.h>
 
 #include <jack/driver.h>
 #include <jack/engine.h>
@@ -113,9 +112,9 @@
 #endif
 
 // thread priority setup
-#define FREEBOB_RT_PRIORITY_PACKETIZER_RELATIVE	5
+#define FFADO_RT_PRIORITY_PACKETIZER_RELATIVE	5
 
-#ifdef FREEBOB_DRIVER_WITH_MIDI
+#ifdef FFADO_DRIVER_WITH_ASEQ_MIDI
 
 	#define ALSA_SEQ_BUFF_SIZE 1024
 	#define MIDI_TRANSMIT_BUFFER_SIZE 1024
@@ -124,18 +123,18 @@
 	// make sure events are not only delivered on period boundarys
 	// but I think it should be smaller than the packetizer thread in order not 
 	// to lose any packets
-	#define FREEBOB_RT_PRIORITY_MIDI_RELATIVE 	4
+	#define FFADO_RT_PRIORITY_MIDI_RELATIVE 	4
 
 #endif
 
-typedef struct _freebob_driver freebob_driver_t;
+typedef struct _ffado_driver ffado_driver_t;
 
 /*
  * Jack Driver command line parameters
  */
 
-typedef struct _freebob_jack_settings freebob_jack_settings_t;
-struct _freebob_jack_settings {
+typedef struct _ffado_jack_settings ffado_jack_settings_t;
+struct _ffado_jack_settings {
     int period_size_set;
     jack_nframes_t period_size;
     
@@ -157,22 +156,21 @@ struct _freebob_jack_settings {
     int slave_mode;
     int snoop_mode;
     
-    freebob_handle_t fb_handle;
+    ffado_handle_t fb_handle;
 };
 
-#ifdef FREEBOB_DRIVER_WITH_MIDI
-
+#ifdef FFADO_DRIVER_WITH_ASEQ_MIDI
 
 typedef struct {
 	int stream_nr;
 	int seq_port_nr;
 	snd_midi_event_t *parser;
 	snd_seq_t *seq_handle;
-} freebob_midi_port_t;
+} ffado_midi_port_t;
 
-typedef struct _freebob_driver_midi_handle {
-	freebob_device_t *dev;
-	freebob_driver_t *driver;
+typedef struct _ffado_driver_midi_handle {
+	ffado_device_t *dev;
+	ffado_driver_t *driver;
 
 	snd_seq_t *seq_handle;
 	
@@ -184,14 +182,14 @@ typedef struct _freebob_driver_midi_handle {
 	int nb_input_ports;
 	int nb_output_ports;
 
-	freebob_midi_port_t **input_ports;
-	freebob_midi_port_t **output_ports;
+	ffado_midi_port_t **input_ports;
+	ffado_midi_port_t **output_ports;
 
-	freebob_midi_port_t **input_stream_port_map;
+	ffado_midi_port_t **input_stream_port_map;
 	int *output_port_stream_map;
 
 
-} freebob_driver_midi_handle_t;
+} ffado_driver_midi_handle_t;
 
 #endif
 /*
@@ -199,7 +197,7 @@ typedef struct _freebob_driver_midi_handle {
  */
  
 
-struct _freebob_driver
+struct _ffado_driver
 {
 	JACK_DRIVER_NT_DECL
 	
@@ -219,10 +217,10 @@ struct _freebob_driver
 	int process_count;
 	
 	/* settings from the command line */
-	freebob_jack_settings_t settings;
+	ffado_jack_settings_t settings;
 	
 	/* the freebob virtual device */
-	freebob_device_t *dev;
+	ffado_device_t *dev;
 	
     JSList                       *capture_ports;
     JSList                       *playback_ports;
@@ -230,17 +228,17 @@ struct _freebob_driver
     channel_t                     playback_nchannels;
     channel_t                     capture_nchannels;
     	
-	freebob_device_info_t device_info;
-	freebob_options_t device_options;
+	ffado_device_info_t device_info;
+	ffado_options_t device_options;
 
-#ifdef FREEBOB_DRIVER_WITH_MIDI
-	freebob_driver_midi_handle_t *midi_handle;
+#ifdef FFADO_DRIVER_WITH_ASEQ_MIDI
+	ffado_driver_midi_handle_t *midi_handle;
 #endif
 
 }; 
 
 
 
-#endif /* __JACK_FREEBOB_DRIVER_H__ */
+#endif /* __JACK_FFADO_DRIVER_H__ */
 
 

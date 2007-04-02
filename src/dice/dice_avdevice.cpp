@@ -1,21 +1,24 @@
-/* dice_avdevice.cpp
- * Copyright (C) 2007 by Pieter Palmers
+/*
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBob.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBob is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "dice/dice_avdevice.h"
@@ -93,7 +96,7 @@ DiceAvDevice::probe( ConfigRom& configRom )
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             return true;
@@ -114,7 +117,7 @@ DiceAvDevice::discover()
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             m_model = &(supportedDeviceList[i]);
@@ -125,7 +128,7 @@ DiceAvDevice::discover()
         debugWarning("DiceAvDevice::discover() called for a non-dice device");
         return false;
     }
-    
+
     if ( !initIoFunctions() ) {
         debugError("Could not initialize I/O functions\n");
         return false;
@@ -137,16 +140,16 @@ DiceAvDevice::discover()
     return true;
 }
 
-int 
+int
 DiceAvDevice::getSamplingFrequency( ) {
     ESamplingFrequency samplingFrequency;
-    
+
     fb_quadlet_t clockreg;
     if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
         debugError("Could not read CLOCK_SELECT register\n");
         return false;
     }
-    
+
     clockreg = DICE_GET_RATE(clockreg);
 
     switch (clockreg) {
@@ -163,19 +166,19 @@ DiceAvDevice::getSamplingFrequency( ) {
         case DICE_RATE_NONE:     samplingFrequency = eSF_None;     break;
         default:                 samplingFrequency = eSF_DontCare; break;
     }
-    
+
     return convertESamplingFrequency(samplingFrequency);
 }
 
 bool
 DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting sample rate: %d\n", 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting sample rate: %d\n",
         convertESamplingFrequency(samplingFrequency));
-        
+
     bool supported=false;
     fb_quadlet_t select=0x0;
-    
+
     switch ( samplingFrequency ) {
     default:
     case eSF_22050Hz:
@@ -235,7 +238,7 @@ DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
         debugError("Cannot change samplerate while streaming is enabled\n");
         return false;
     }
-    
+
     fb_quadlet_t clockreg;
     if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
         debugError("Could not read CLOCK_SELECT register\n");
@@ -255,12 +258,12 @@ DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
         debugError("Could not read CLOCK_SELECT register\n");
         return false;
     }
-    
+
     if(clockreg != clockreg_verify) {
         debugError("Samplerate register write failed\n");
         return false;
     }
-    
+
     return true;
 }
 
@@ -269,7 +272,7 @@ DiceAvDevice::showDevice()
 {
     fb_quadlet_t tmp_quadlet;
     fb_octlet_t tmp_octlet;
-    
+
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
         m_nodeId);
@@ -284,34 +287,34 @@ DiceAvDevice::showDevice()
     debugOutput(DEBUG_LEVEL_VERBOSE,"  UNUSED2 : offset=0x%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
 
     debugOutput(DEBUG_LEVEL_VERBOSE," Global param space:\n");
-    
+
     readGlobalRegBlock(DICE_REGISTER_GLOBAL_OWNER, (fb_quadlet_t *)&tmp_octlet,sizeof(fb_octlet_t));
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Owner            : 0x%016X\n",tmp_octlet);
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08X\n",tmp_quadlet);
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Nick name        : %s\n",getDeviceNickName().c_str());
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock Select     : 0x%02X 0x%02X\n",
         (tmp_quadlet>>8) & 0xFF, tmp_quadlet & 0xFF);
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Enable           : %s\n",
         (tmp_quadlet&0x1?"true":"false"));
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_STATUS, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock Status     : %s 0x%02X\n",
         (tmp_quadlet&0x1?"locked":"not locked"), (tmp_quadlet>>8) & 0xFF);
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Extended Status  : 0x%08X\n",tmp_quadlet);
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_SAMPLE_RATE, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_VERSION, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
         tmp_quadlet,
@@ -320,40 +323,40 @@ DiceAvDevice::showDevice()
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_C(tmp_quadlet),
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_D(tmp_quadlet)
         );
-    
+
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08X\n",tmp_quadlet & 0x1FFF007F);
 
     diceNameVector names=getClockSourceNameString();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock sources    :\n");
-    
+
     for ( diceNameVectorIterator it = names.begin();
           it != names.end();
           ++it )
     {
         debugOutput(DEBUG_LEVEL_VERBOSE,"    %s\n", (*it).c_str());
     }
-    
+
     debugOutput(DEBUG_LEVEL_VERBOSE," TX param space:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Nb of xmit        : %1d\n", m_nb_tx);
     for (unsigned int i=0;i<m_nb_tx;i++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"  Transmitter %d:\n",i);
-        
+
         readTxReg(i, DICE_REGISTER_TX_ISOC_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_SPEED_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO speed         : %3d\n", tmp_quadlet);
-        
+
         readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_MIDI_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
-        
+
         readTxReg(i, DICE_REGISTER_TX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_AC3_ENABLE_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
-        
+
         diceNameVector channel_names=getTxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
         for ( diceNameVectorIterator it = channel_names.begin();
@@ -363,27 +366,27 @@ DiceAvDevice::showDevice()
             debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
         }
     }
-    
+
     debugOutput(DEBUG_LEVEL_VERBOSE," RX param space:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Nb of recv        : %1d\n", m_nb_tx);
     for (unsigned int i=0;i<m_nb_rx;i++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"  Receiver %d:\n",i);
-        
+
         readTxReg(i, DICE_REGISTER_RX_ISOC_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_SEQ_START_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Sequence start    : %3d\n", tmp_quadlet);
-        
+
         readTxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_MIDI_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
-        
+
         readTxReg(i, DICE_REGISTER_RX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
-        
+
         diceNameVector channel_names=getRxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
         for ( diceNameVectorIterator it = channel_names.begin();
@@ -420,7 +423,7 @@ DiceAvDevice::prepare() {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
         unsigned int nb_channels=0;
-        
+
         if(!readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &nb_audio)) {
             debugError("Could not read DICE_REGISTER_TX_NB_AUDIO_BASE register for ATX%u",i);
             continue;
@@ -429,24 +432,24 @@ DiceAvDevice::prepare() {
             debugError("Could not read DICE_REGISTER_TX_MIDI_BASE register for ATX%u",i);
             continue;
         }
-        
+
         // request the channel names
         diceNameVector names_audio=getTxNameString(i);
-        
+
         if (names_audio.size() != nb_audio) {
             debugWarning("The audio channel name vector is incorrect, using default names\n");
             names_audio.clear();
-            
+
             for (unsigned int j=0;j<nb_audio;j++) {
                 std::ostringstream newname;
                 newname << "input_" << j;
                 names_audio.push_back(newname.str());
             }
         }
-        
+
         nb_channels=nb_audio;
         if(nb_midi) nb_channels += 1; // midi-muxed counts as one
-        
+
         // construct the MIDI names
         diceNameVector names_midi;
         for (unsigned int j=0;j<nb_midi;j++) {
@@ -454,7 +457,7 @@ DiceAvDevice::prepare() {
             newname << "midi_in_" << j;
             names_midi.push_back(newname.str());
         }
-        
+
         // construct the streamprocessor
         Streaming::AmdtpReceiveStreamProcessor *p;
         p=new Streaming::AmdtpReceiveStreamProcessor(
@@ -477,12 +480,12 @@ DiceAvDevice::prepare() {
             channelInfo.streamLocation=0;
 
             if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Capture)) {
-                debugError("Could not add channel %s to StreamProcessor\n", 
+                debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
                 continue;
             }
         }
-        
+
         // add midi ports to the processor
         for (unsigned int j=0;j<nb_midi;j++) {
             diceChannelInfo channelInfo;
@@ -492,22 +495,22 @@ DiceAvDevice::prepare() {
             channelInfo.streamLocation=j;
 
             if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Capture)) {
-                debugError("Could not add channel %s to StreamProcessor\n", 
+                debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
                 continue;
             }
         }
-        
+
         // add the SP to the vector
         m_receiveProcessors.push_back(p);
     }
-    
+
     // prepare transmit SP's
     for (unsigned int i=0;i<m_nb_rx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
         unsigned int nb_channels=0;
-        
+
         if(!readTxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &nb_audio)) {
             debugError("Could not read DICE_REGISTER_RX_NB_AUDIO_BASE register for ARX%u",i);
             continue;
@@ -516,24 +519,24 @@ DiceAvDevice::prepare() {
             debugError("Could not read DICE_REGISTER_RX_MIDI_BASE register for ARX%u",i);
             continue;
         }
-        
+
         // request the channel names
         diceNameVector names_audio=getRxNameString(i);
-        
+
         if (names_audio.size() != nb_audio) {
             debugWarning("The audio channel name vector is incorrect, using default names\n");
             names_audio.clear();
-            
+
             for (unsigned int j=0;j<nb_audio;j++) {
                 std::ostringstream newname;
                 newname << "output_" << j;
                 names_audio.push_back(newname.str());
             }
         }
-        
+
         nb_channels=nb_audio;
         if(nb_midi) nb_channels += 1; // midi-muxed counts as one
-        
+
         // construct the MIDI names
         diceNameVector names_midi;
         for (unsigned int j=0;j<nb_midi;j++) {
@@ -541,7 +544,7 @@ DiceAvDevice::prepare() {
             newname << "midi_out_" << j;
             names_midi.push_back(newname.str());
         }
-        
+
         // construct the streamprocessor
         Streaming::AmdtpTransmitStreamProcessor *p;
         p=new Streaming::AmdtpTransmitStreamProcessor(
@@ -564,12 +567,12 @@ DiceAvDevice::prepare() {
             channelInfo.streamLocation=0;
 
             if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Playback)) {
-                debugError("Could not add channel %s to StreamProcessor\n", 
+                debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
                 continue;
             }
         }
-        
+
         // add midi ports to the processor
         for (unsigned int j=0;j<nb_midi;j++) {
             diceChannelInfo channelInfo;
@@ -579,12 +582,12 @@ DiceAvDevice::prepare() {
             channelInfo.streamLocation=j;
 
             if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Playback)) {
-                debugError("Could not add channel %s to StreamProcessor\n", 
+                debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
                 continue;
             }
         }
-        
+
         m_transmitProcessors.push_back(p);
     }
     return true;
@@ -595,7 +598,7 @@ DiceAvDevice::addChannelToProcessor(
     diceChannelInfo *channelInfo,
     Streaming::StreamProcessor *processor,
     Streaming::Port::E_Direction direction) {
-    
+
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
@@ -608,7 +611,7 @@ DiceAvDevice::addChannelToProcessor(
     } else {
         portname << "c";
     }
-    
+
     portname << "_" << channelInfo->name;
 
     Streaming::Port *p=NULL;
@@ -654,29 +657,29 @@ DiceAvDevice::addChannelToProcessor(
 bool
 DiceAvDevice::lock() {
     fb_octlet_t result;
-    
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n", 
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n",
         m_model->vendor_name, m_model->model_name, m_nodeId);
-        
+
     // get a notifier to handle device notifications
     nodeaddr_t notify_address;
     notify_address = m_p1394Service->findFreeARMBlock(
                         DICE_NOTIFIER_BASE_ADDRESS,
                         DICE_NOTIFIER_BLOCK_LENGTH,
                         DICE_NOTIFIER_BLOCK_LENGTH);
-    
+
     if (notify_address == 0xFFFFFFFFFFFFFFFFLLU) {
         debugError("Could not find free ARM block for notification\n");
         return false;
     }
-    
+
     m_notifier=new DiceAvDevice::DiceNotifier(this, notify_address);
-    
+
     if(!m_notifier) {
         debugError("Could not allocate notifier\n");
         return false;
     }
-    
+
     if (!m_p1394Service->registerARMHandler(m_notifier)) {
         debugError("Could not register notifier\n");
         delete m_notifier;
@@ -685,7 +688,7 @@ DiceAvDevice::lock() {
     }
 
     // register this notifier
-    fb_nodeaddr_t addr = DICE_REGISTER_BASE 
+    fb_nodeaddr_t addr = DICE_REGISTER_BASE
                        + m_global_reg_offset
                        + DICE_REGISTER_GLOBAL_OWNER;
 
@@ -695,16 +698,16 @@ DiceAvDevice::lock() {
         debugError("register offset not initialized yet\n");
         return false;
     }
-    
+
     fb_nodeaddr_t swap_value = ((0xFFC0) | m_p1394Service->getLocalNodeId());
     swap_value = swap_value << 48;
     swap_value |= m_notifier->getStart();
-    
-    if (!m_p1394Service->lockCompareSwap64(  m_nodeId | 0xFFC0, addr, DICE_OWNER_NO_OWNER, 
+
+    if (!m_p1394Service->lockCompareSwap64(  m_nodeId | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
                                        swap_value, &result )) {
         debugWarning("Could not register ourselves as device owner\n");
     }
-    
+
     if (result != DICE_OWNER_NO_OWNER) {
         debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016llX\n", result);
     }
@@ -716,13 +719,13 @@ DiceAvDevice::lock() {
 bool
 DiceAvDevice::unlock() {
     fb_octlet_t result;
-    
+
     if(!m_notifier) {
         debugWarning("Request to unlock, but no notifier present!\n");
         return false;
     }
-    
-    fb_nodeaddr_t addr = DICE_REGISTER_BASE 
+
+    fb_nodeaddr_t addr = DICE_REGISTER_BASE
                        + m_global_reg_offset
                        + DICE_REGISTER_GLOBAL_OWNER;
 
@@ -732,16 +735,16 @@ DiceAvDevice::unlock() {
         debugError("register offset not initialized yet\n");
         return false;
     }
-    
+
     fb_nodeaddr_t compare_value = ((0xFFC0) | m_p1394Service->getLocalNodeId());
-    compare_value <<= 48; 
+    compare_value <<= 48;
     compare_value |= m_notifier->getStart();
-    
-    if (!m_p1394Service->lockCompareSwap64(  m_nodeId | 0xFFC0, addr, compare_value, 
+
+    if (!m_p1394Service->lockCompareSwap64(  m_nodeId | 0xFFC0, addr, compare_value,
                                        DICE_OWNER_NO_OWNER, &result )) {
         debugWarning("Could not unregister ourselves as device owner\n");
     }
-    
+
     m_p1394Service->unregisterARMHandler(m_notifier);
     delete m_notifier;
     m_notifier=NULL;
@@ -787,7 +790,7 @@ DiceAvDevice::startStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
-        
+
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());
         if(isochannel<0) {
@@ -795,7 +798,7 @@ DiceAvDevice::startStreamByIndex(int i) {
             return false;
         }
         p->setChannel(isochannel);
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
@@ -810,7 +813,7 @@ DiceAvDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=isochannel;
         if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
@@ -819,13 +822,13 @@ DiceAvDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         return true;
-        
+
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-        
+
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());
         if(isochannel<0) {
@@ -833,7 +836,7 @@ DiceAvDevice::startStreamByIndex(int i) {
             return false;
         }
         p->setChannel(isochannel);
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
@@ -848,7 +851,7 @@ DiceAvDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=isochannel;
         if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
@@ -857,12 +860,12 @@ DiceAvDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         return true;
     }
-    
+
     debugError("SP index %d out of range!\n",i);
-    
+
     return false;
 }
 
@@ -878,7 +881,7 @@ DiceAvDevice::stopStreamByIndex(int i) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
         unsigned int isochannel=p->getChannel();
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
@@ -889,29 +892,29 @@ DiceAvDevice::stopStreamByIndex(int i) {
             debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ATX %d\n", isochannel, reg_isoch, n);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=0xFFFFFFFFUL;
         if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
             debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
             return false;
         }
-        
+
         // deallocate ISO channel
         if(!deallocateIsoChannel(isochannel)) {
             debugError("Could not deallocate iso channel for SP %d (ATX %d)\n",i,n);
             return false;
         }
-        
+
         p->setChannel(-1);
         return true;
-        
+
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-        
+
         unsigned int isochannel=p->getChannel();
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
@@ -922,26 +925,26 @@ DiceAvDevice::stopStreamByIndex(int i) {
             debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ARX %d\n", isochannel, reg_isoch, n);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=0xFFFFFFFFUL;
         if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
             debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
             return false;
         }
-        
+
         // deallocate ISO channel
         if(!deallocateIsoChannel(isochannel)) {
             debugError("Could not deallocate iso channel for SP %d (ARX %d)\n",i,n);
             return false;
         }
-        
+
         p->setChannel(-1);
         return true;
     }
-    
+
     debugError("SP index %d out of range!\n",i);
-    
+
     return false;
 }
 
@@ -950,12 +953,12 @@ DiceAvDevice::stopStreamByIndex(int i) {
 // allocate ISO resources for the SP's
 int DiceAvDevice::allocateIsoChannel(unsigned int packet_size) {
     unsigned int bandwidth=8+packet_size;
-    
+
     int ch=m_p1394Service->allocateIsoChannelGeneric(bandwidth);
-        
+
     debugOutput(DEBUG_LEVEL_VERBOSE, "allocated channel %d, bandwidth %d\n",
         ch, bandwidth);
-    
+
     return ch;
 }
 // deallocate ISO resources
@@ -978,7 +981,7 @@ bool
 DiceAvDevice::isIsoStreamingEnabled() {
     fb_quadlet_t result;
     readGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, &result);
-    // I don't know what exactly is 'enable', 
+    // I don't know what exactly is 'enable',
     // but disable is definately == 0
     return (result != DICE_ISOSTREAMING_DISABLE);
 }
@@ -1006,13 +1009,13 @@ DiceAvDevice::diceNameVector
 DiceAvDevice::getTxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_TX_NAMES_SIZE+1];
-    
-    if (!readTxRegBlock(i, DICE_REGISTER_TX_NAMES_BASE, 
+
+    if (!readTxRegBlock(i, DICE_REGISTER_TX_NAMES_BASE,
                         (fb_quadlet_t *)namestring, DICE_TX_NAMES_SIZE)) {
         debugError("Could not read TX name string \n");
         return names;
     }
-    
+
     namestring[DICE_TX_NAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
 }
@@ -1021,13 +1024,13 @@ DiceAvDevice::diceNameVector
 DiceAvDevice::getRxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_RX_NAMES_SIZE+1];
-    
-    if (!readRxRegBlock(i, DICE_REGISTER_RX_NAMES_BASE, 
+
+    if (!readRxRegBlock(i, DICE_REGISTER_RX_NAMES_BASE,
                         (fb_quadlet_t *)namestring, DICE_RX_NAMES_SIZE)) {
         debugError("Could not read RX name string \n");
         return names;
     }
-    
+
     namestring[DICE_RX_NAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
 }
@@ -1036,13 +1039,13 @@ DiceAvDevice::diceNameVector
 DiceAvDevice::getClockSourceNameString() {
     diceNameVector names;
     char namestring[DICE_CLOCKSOURCENAMES_SIZE+1];
-    
-    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES, 
+
+    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES,
                         (fb_quadlet_t *)namestring, DICE_CLOCKSOURCENAMES_SIZE)) {
         debugError("Could not read CLOCKSOURCE name string \n");
         return names;
     }
-    
+
     namestring[DICE_CLOCKSOURCENAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
 }
@@ -1050,13 +1053,13 @@ DiceAvDevice::getClockSourceNameString() {
 std::string
 DiceAvDevice::getDeviceNickName() {
     char namestring[DICE_NICK_NAME_SIZE+1];
-    
-    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME, 
+
+    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
                         (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
         debugError("Could not read nickname string \n");
         return std::string("(unknown)");
     }
-    
+
     namestring[DICE_NICK_NAME_SIZE]='\0';
     return std::string(namestring);
 }
@@ -1095,55 +1098,55 @@ DiceAvDevice::initIoFunctions() {
         return false;
     }
     m_global_reg_offset*=4;
-    
+
     if(!readReg(DICE_REGISTER_GLOBAL_PAR_SPACE_SZ, &m_global_reg_size)) {
         debugError("Could not initialize m_global_reg_size\n");
         return false;
     }
     m_global_reg_size*=4;
-    
+
     if(!readReg(DICE_REGISTER_TX_PAR_SPACE_OFF, &m_tx_reg_offset)) {
         debugError("Could not initialize m_tx_reg_offset\n");
         return false;
     }
     m_tx_reg_offset*=4;
-    
+
     if(!readReg(DICE_REGISTER_TX_PAR_SPACE_SZ, &m_tx_reg_size)) {
         debugError("Could not initialize m_tx_reg_size\n");
         return false;
     }
     m_tx_reg_size*=4;
-    
+
     if(!readReg(DICE_REGISTER_RX_PAR_SPACE_OFF, &m_rx_reg_offset)) {
         debugError("Could not initialize m_rx_reg_offset\n");
         return false;
     }
     m_rx_reg_offset*=4;
-    
+
     if(!readReg(DICE_REGISTER_RX_PAR_SPACE_SZ, &m_rx_reg_size)) {
         debugError("Could not initialize m_rx_reg_size\n");
         return false;
     }
     m_rx_reg_size*=4;
-    
+
     if(!readReg(DICE_REGISTER_UNUSED1_SPACE_OFF, &m_unused1_reg_offset)) {
         debugError("Could not initialize m_unused1_reg_offset\n");
         return false;
     }
     m_unused1_reg_offset*=4;
-    
+
     if(!readReg(DICE_REGISTER_UNUSED1_SPACE_SZ, &m_unused1_reg_size)) {
         debugError("Could not initialize m_unused1_reg_size\n");
         return false;
     }
     m_unused1_reg_size*=4;
-    
+
     if(!readReg(DICE_REGISTER_UNUSED2_SPACE_OFF, &m_unused2_reg_offset)) {
         debugError("Could not initialize m_unused2_reg_offset\n");
         return false;
     }
     m_unused2_reg_offset*=4;
-    
+
     if(!readReg(DICE_REGISTER_UNUSED2_SPACE_SZ, &m_unused2_reg_size)) {
         debugError("Could not initialize m_unused2_reg_size\n");
         return false;
@@ -1159,7 +1162,7 @@ DiceAvDevice::initIoFunctions() {
         return false;
     }
     m_tx_size*=4;
-    
+
     if(!readReg(m_tx_reg_offset + DICE_REGISTER_RX_NB_RX, &m_nb_rx)) {
         debugError("Could not initialize m_nb_rx\n");
         return false;
@@ -1169,7 +1172,7 @@ DiceAvDevice::initIoFunctions() {
         return false;
     }
     m_rx_size*=4;
-    
+
     debugOutput(DEBUG_LEVEL_VERBOSE,"DICE Parameter Space info:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE," Global  : offset=%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
     debugOutput(DEBUG_LEVEL_VERBOSE," TX      : offset=%04X size=%04d\n", m_tx_reg_offset, m_tx_reg_size);
@@ -1178,47 +1181,47 @@ DiceAvDevice::initIoFunctions() {
     debugOutput(DEBUG_LEVEL_VERBOSE,"               nb=%4d size=%04d\n", m_nb_rx, m_rx_size);
     debugOutput(DEBUG_LEVEL_VERBOSE," UNUSED1 : offset=%04X size=%04d\n", m_unused1_reg_offset, m_unused1_reg_size);
     debugOutput(DEBUG_LEVEL_VERBOSE," UNUSED2 : offset=%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
-    
+
     return true;
 }
 
 bool
 DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX\n", offset);
-    
+
     if(offset >= DICE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
-    
+
     *result=ntohl(*result);
-    
+
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
-   
+
     return true;
 }
 
 bool
 DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",  
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
-    
+
     if(offset >= DICE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     if(!m_p1394Service->write_quadlet( nodeId, addr, htonl(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
@@ -1226,55 +1229,55 @@ DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     return true;
 }
 
-bool 
+bool
 DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
         offset, length);
-    
+
     if(offset >= DICE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     if(!m_p1394Service->read( nodeId, addr, length/4, data ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
     }
-    
+
     for(unsigned int i=0;i<length/4;i++) {
         *(data+i)=ntohl(*(data+i));
     }
-    
+
     return true;
 }
 
-bool 
+bool
 DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",  
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
         offset, length);
-    
+
     if(offset >= DICE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     fb_quadlet_t data_out[length/4];
-    
+
     for(unsigned int i=0;i<length/4;i++) {
         data_out[i]=ntohl(*(data+i));
     }
-    
+
     if(!m_p1394Service->write( nodeId, addr, length/4, data_out ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
     }
-    
+
     return true;
 }
 
@@ -1288,32 +1291,32 @@ DiceAvDevice::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
 
 bool
 DiceAvDevice::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register offset 0x%08llX, data: 0x%08X\n",  
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
 
     fb_nodeaddr_t offset_gl=globalOffsetGen(offset, sizeof(fb_quadlet_t));
     return writeReg(m_global_reg_offset + offset_gl, data);
 }
 
-bool 
+bool
 DiceAvDevice::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
     return readRegBlock(m_global_reg_offset + offset_gl, data, length);
 }
 
-bool 
+bool
 DiceAvDevice::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
     return writeRegBlock(m_global_reg_offset + offset_gl, data, length);
 }
 
-fb_nodeaddr_t 
+fb_nodeaddr_t
 DiceAvDevice::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
 
     // registry offsets should always be smaller than 0x7FFFFFFF
@@ -1327,14 +1330,14 @@ DiceAvDevice::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
         debugError("register offset+length too large: 0x%0llX\n", offset + length);
         return DICE_INVALID_OFFSET;
     }
-    
+
     return offset;
 }
 
 bool
 DiceAvDevice::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading tx %d register offset 0x%04llX\n", i, offset);
-    
+
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, sizeof(fb_quadlet_t));
     return readReg(m_tx_reg_offset + offset_tx, result);
 }
@@ -1348,25 +1351,25 @@ DiceAvDevice::writeTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data
     return writeReg(m_tx_reg_offset + offset_tx, data);
 }
 
-bool 
+bool
 DiceAvDevice::readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
-    
+
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
     return readRegBlock(m_tx_reg_offset + offset_tx, data, length);
 }
 
-bool 
+bool
 DiceAvDevice::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
     return writeRegBlock(m_tx_reg_offset + offset_tx, data, length);
 }
 
-fb_nodeaddr_t 
+fb_nodeaddr_t
 DiceAvDevice::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
     // registry offsets should always be smaller than 0x7FFFFFFF
     // because otherwise base + offset > 64bit
@@ -1401,39 +1404,39 @@ DiceAvDevice::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 bool
 DiceAvDevice::readRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx %d register offset 0x%04llX\n", i, offset);
-    
+
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, sizeof(fb_quadlet_t));
     return readReg(m_rx_reg_offset + offset_rx, result);
 }
 
 bool
 DiceAvDevice::writeRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register offset 0x%08llX, data: 0x%08X\n",  
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
-        
+
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, sizeof(fb_quadlet_t));
     return writeReg(m_rx_reg_offset + offset_rx, data);
 }
 
-bool 
+bool
 DiceAvDevice::readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
-    
+
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
     return readRegBlock(m_rx_reg_offset + offset_rx, data, length);
 }
 
-bool 
+bool
 DiceAvDevice::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
     return writeRegBlock(m_rx_reg_offset + offset_rx, data, length);
 }
 
-fb_nodeaddr_t 
+fb_nodeaddr_t
 DiceAvDevice::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
     // registry offsets should always be smaller than 0x7FFFFFFF
     // because otherwise base + offset > 64bit
@@ -1468,7 +1471,7 @@ DiceAvDevice::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 // the notifier
 
 DiceAvDevice::DiceNotifier::DiceNotifier(DiceAvDevice *d, nodeaddr_t start)
- : ARMHandler(start, DICE_NOTIFIER_BLOCK_LENGTH, 
+ : ARMHandler(start, DICE_NOTIFIER_BLOCK_LENGTH,
               RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
               RAW1394_ARM_WRITE, 0)
  , m_dicedevice(d)
@@ -1476,7 +1479,7 @@ DiceAvDevice::DiceNotifier::DiceNotifier(DiceAvDevice *d, nodeaddr_t start)
 
 }
 
-DiceAvDevice::DiceNotifier::~DiceNotifier() 
+DiceAvDevice::DiceNotifier::~DiceNotifier()
 {
 
 }

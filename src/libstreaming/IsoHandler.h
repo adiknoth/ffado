@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_ISOHANDLER__
-#define __FREEBOB_ISOHANDLER__
+
+#ifndef __FFADO_ISOHANDLER__
+#define __FFADO_ISOHANDLER__
 
 #include "../debugmodule/debugmodule.h"
 
@@ -50,9 +46,9 @@ class IsoStream;
 class IsoHandler
 {
     protected:
-    
+
     public:
-	
+
         enum EHandlerType {
                 EHT_Receive,
                 EHT_Transmit
@@ -68,9 +64,9 @@ class IsoHandler
         virtual bool prepare();
         virtual bool start(int cycle);
         virtual bool stop();
-        
+
         bool iterate();
-        
+
         void setVerboseLevel(int l);
 
         // no setter functions, because those would require a re-init
@@ -111,7 +107,7 @@ class IsoHandler
         unsigned int    m_buf_packets;
         unsigned int    m_max_packet_size;
         int             m_irq_interval;
-        
+
         int m_packetcount;
         int m_dropped;
 
@@ -134,16 +130,16 @@ class IsoHandler
             E_Running,
             E_Error
         };
-        
+
         enum EHandlerStates m_State;
 
 };
 
 /*!
-\brief ISO receive handler class (not multichannel) 
+\brief ISO receive handler class (not multichannel)
 */
 
-class IsoRecvHandler : public IsoHandler 
+class IsoRecvHandler : public IsoHandler
 {
 
     public:
@@ -152,7 +148,7 @@ class IsoRecvHandler : public IsoHandler
         virtual ~IsoRecvHandler();
 
         bool init();
-    
+
         enum EHandlerType getType() { return EHT_Receive;};
 
         bool start(int cycle);
@@ -163,15 +159,15 @@ class IsoRecvHandler : public IsoHandler
         int handleBusReset(unsigned int generation);
 
     private:
-        static enum raw1394_iso_disposition 
-        iso_receive_handler(raw1394handle_t handle, unsigned char *data, 
+        static enum raw1394_iso_disposition
+        iso_receive_handler(raw1394handle_t handle, unsigned char *data,
                             unsigned int length, unsigned char channel,
-                            unsigned char tag, unsigned char sy, unsigned int cycle, 
+                            unsigned char tag, unsigned char sy, unsigned int cycle,
                             unsigned int dropped);
 
-        enum raw1394_iso_disposition  
-                putPacket(unsigned char *data, unsigned int length, 
-                          unsigned char channel, unsigned char tag, unsigned char sy, 
+        enum raw1394_iso_disposition
+                putPacket(unsigned char *data, unsigned int length,
+                          unsigned char channel, unsigned char tag, unsigned char sy,
                           unsigned int cycle, unsigned int dropped);
 
 };
@@ -180,19 +176,19 @@ class IsoRecvHandler : public IsoHandler
 \brief ISO transmit handler class
 */
 
-class IsoXmitHandler  : public IsoHandler 
+class IsoXmitHandler  : public IsoHandler
 {
     public:
         IsoXmitHandler(int port);
-        IsoXmitHandler(int port, unsigned int buf_packets, 
+        IsoXmitHandler(int port, unsigned int buf_packets,
                         unsigned int max_packet_size, int irq);
-        IsoXmitHandler(int port, unsigned int buf_packets, 
-                        unsigned int max_packet_size, int irq, 
+        IsoXmitHandler(int port, unsigned int buf_packets,
+                        unsigned int max_packet_size, int irq,
                         enum raw1394_iso_speed speed);
         virtual ~IsoXmitHandler();
 
         bool init();
-        
+
         enum EHandlerType getType() { return EHT_Transmit;};
 
         unsigned int getPreBuffers() {return m_prebuffers;};
@@ -210,20 +206,20 @@ class IsoXmitHandler  : public IsoHandler
                         unsigned char *data, unsigned int *length,
                         unsigned char *tag, unsigned char *sy,
                         int cycle, unsigned int dropped);
-        enum raw1394_iso_disposition  
+        enum raw1394_iso_disposition
                 getPacket(unsigned char *data, unsigned int *length,
                         unsigned char *tag, unsigned char *sy,
                         int cycle, unsigned int dropped);
 
         enum raw1394_iso_speed m_speed;
-        
+
         unsigned int m_prebuffers;
 
 };
 
 }
 
-#endif /* __FREEBOB_ISOHANDLER__  */
+#endif /* __FFADO_ISOHANDLER__  */
 
 
 

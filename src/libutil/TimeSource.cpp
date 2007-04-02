@@ -1,31 +1,25 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-
 
 #include "TimeSource.h"
 
@@ -55,36 +49,36 @@ TimeSource::~TimeSource() {
  * @return true if successful
  */
 void TimeSource::initSlaveTimeSource() {
-    freebob_microsecs_t my_time;
-    freebob_microsecs_t master_time;
-    freebob_microsecs_t my_time2;
-    freebob_microsecs_t master_time2;
-    
+    ffado_microsecs_t my_time;
+    ffado_microsecs_t master_time;
+    ffado_microsecs_t my_time2;
+    ffado_microsecs_t master_time2;
+
     if (m_Master) {
         my_time=getCurrentTime();
         master_time=m_Master->getCurrentTime();
-        
+
         struct timespec ts;
-        
+
         // sleep for ten milliseconds
         ts.tv_sec=0;
         ts.tv_nsec=10000000L;
-        
+
         nanosleep(&ts,NULL);
-        
+
         my_time2=getCurrentTime();
         master_time2=m_Master->getCurrentTime();
-        
+
         float diff_slave=my_time2-my_time;
         float diff_master=master_time2-master_time;
-        
+
         m_slave_rate=diff_slave/diff_master;
-        
+
         // average of the two offset estimates
-        m_slave_offset  = my_time-wrapTime((freebob_microsecs_t)(master_time*m_slave_rate));
-        m_slave_offset += my_time2-wrapTime((freebob_microsecs_t)(master_time2*m_slave_rate));
+        m_slave_offset  = my_time-wrapTime((ffado_microsecs_t)(master_time*m_slave_rate));
+        m_slave_offset += my_time2-wrapTime((ffado_microsecs_t)(master_time2*m_slave_rate));
         m_slave_offset /= 2;
-        
+
         m_last_master_time=master_time2;
         m_last_time=my_time2;
 
@@ -94,39 +88,39 @@ void TimeSource::initSlaveTimeSource() {
             my_time, my_time2, diff_slave);
         debugOutput(DEBUG_LEVEL_NORMAL,"init slave: slave rate=%f, slave_offset=%lu\n",
             m_slave_rate, m_slave_offset
-            );                
+            );
     }
-    
+
 
 }
 
 /**
- * Maps a time point of the master to a time point 
+ * Maps a time point of the master to a time point
  * on it's own timeline
  *
  * @return the mapped time point
  */
-freebob_microsecs_t TimeSource::mapMasterTime(freebob_microsecs_t master_time) {
+ffado_microsecs_t TimeSource::mapMasterTime(ffado_microsecs_t master_time) {
     if(m_Master) {
         // calculate the slave based upon the master
         // and the estimated rate
-        
+
         // linear interpolation
         int delta_master=master_time-m_last_master_time;
-    
+
         float offset=m_slave_rate * ((float)delta_master);
-        
-        freebob_microsecs_t mapped=m_last_time+(int)offset;
-        
+
+        ffado_microsecs_t mapped=m_last_time+(int)offset;
+
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"map time: master=%d, offset=%f, slave_base=%lu, pred_ticks=%lu\n",
             master_time, offset, m_last_time,mapped
             );
-        
+
         return wrapTime(mapped);
-        
+
     } else {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Requested map for non-slave TimeSource\n");
-        
+
         return master_time;
     }
 }
@@ -139,22 +133,22 @@ bool TimeSource::updateTimeSource() {
     // update all slaves
     for ( TimeSourceVectorIterator it = m_Slaves.begin();
           it != m_Slaves.end(); ++it ) {
-          
-        // update the slave with the current 
+
+        // update the slave with the current
         // master time
         if (!(*it)->updateTimeSource()) return false;
     }
-    
+
     // this TimeSource has a master
     if(m_Master) {
-        freebob_microsecs_t my_time=getCurrentTime();
-        freebob_microsecs_t master_time=m_Master->getCurrentTime();
-    
-        // we assume that the master and slave time are 
+        ffado_microsecs_t my_time=getCurrentTime();
+        ffado_microsecs_t master_time=m_Master->getCurrentTime();
+
+        // we assume that the master and slave time are
         // measured at the same time, but that of course is
         // not really true. The DLL will have to filter this
         // out.
-        
+
         // the difference in master time
         int64_t delta_master;
         if (master_time > m_last_master_time) {
@@ -162,7 +156,7 @@ bool TimeSource::updateTimeSource() {
         } else { // wraparound
             delta_master=m_Master->unWrapTime(master_time)-m_last_master_time;
         }
-        
+
         // the difference in slave time
         int64_t delta_slave;
         if (my_time > m_last_time) {
@@ -170,18 +164,18 @@ bool TimeSource::updateTimeSource() {
         } else { // wraparound
             delta_slave=unWrapTime(my_time)-m_last_time;
         }
-        
+
         // the estimated slave difference
         int delta_slave_est=(int)(m_slave_rate * ((double)delta_master));
-        
+
         // the measured & estimated rate
         double rate_meas=((double)delta_slave/(double)delta_master);
         double rate_est=((double)m_slave_rate);
-        
+
         m_last_err=(rate_meas-rate_est);
-        
+
         m_slave_rate += 0.01*m_last_err;
-        
+
         debugOutput(DEBUG_LEVEL_VERBOSE,"update slave: master=%llu, master2=%llu, diff=%lld\n",
             master_time, m_last_master_time, delta_master);
         debugOutput(DEBUG_LEVEL_VERBOSE,"update slave: slave =%llu, slave2 =%llu, diff=%lld, diff_est=%d\n",
@@ -190,16 +184,16 @@ bool TimeSource::updateTimeSource() {
             rate_meas, rate_est, m_last_err, m_slave_rate
             );
 
-        
+
         m_last_master_time=master_time;
-        
+
         int64_t tmp = delta_slave_est;
         tmp += m_last_time;
-        
-        m_last_time = tmp;
-        
 
-            
+        m_last_time = tmp;
+
+
+
     }
 
     return true;
@@ -208,19 +202,19 @@ bool TimeSource::updateTimeSource() {
 /**
  * Sets the master TimeSource for this timesource.
  * This TimeSource will sync to the master TimeSource,
- * making that it will be able to map a time point of 
+ * making that it will be able to map a time point of
  * the master to a time point on it's own timeline
  *
- * @param ts master TimeSource  
+ * @param ts master TimeSource
  * @return true if successful
  */
 bool TimeSource::setMaster(TimeSource *ts) {
     if (m_Master==NULL) {
         m_Master=ts;
-        
+
         // initialize ourselves.
         initSlaveTimeSource();
-        
+
         return true;
     } else return false;
 }
@@ -237,8 +231,8 @@ void TimeSource::clearMaster() {
 /**
  * Registers a slave timesource to this master.
  * A slave TimeSource will sync to this TimeSource,
- * making that it will be able to map a time point of 
- * the master (this) TimeSource to a time point on 
+ * making that it will be able to map a time point of
+ * the master (this) TimeSource to a time point on
  * it's own timeline
  *
  * @param ts slave TimeSource to register
@@ -246,13 +240,13 @@ void TimeSource::clearMaster() {
  */
 bool TimeSource::registerSlave(TimeSource *ts) {
     // TODO: we should check for circular master-slave relationships.
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "Registering slave (%p)\n", ts);
     assert(ts);
-    
+
     // inherit debug level
-    ts->setVerboseLevel(getDebugLevel()); 
-    
+    ts->setVerboseLevel(getDebugLevel());
+
     if(ts->setMaster(this)) {
         m_Slaves.push_back(ts);
         return true;
@@ -274,15 +268,15 @@ bool TimeSource::unregisterSlave(TimeSource *ts) {
     for ( TimeSourceVectorIterator it = m_Slaves.begin();
           it != m_Slaves.end(); ++it ) {
 
-        if ( *it == ts ) { 
+        if ( *it == ts ) {
             m_Slaves.erase(it);
             ts->clearMaster();
             return true;
         }
     }
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, " TimeSource (%p) not found\n", ts);
-    
+
     return false;
 }
 
@@ -297,7 +291,7 @@ void TimeSource::setVerboseLevel(int l) {
 
     for ( TimeSourceVectorIterator it = m_Slaves.begin();
           it != m_Slaves.end(); ++it ) {
-        
+
         (*it)->setVerboseLevel(l);
     }
 
@@ -312,10 +306,10 @@ void TimeSource::printTimeSourceInfo() {
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Last master time : %llu\n",m_last_master_time );
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Last slave time  : %llu\n",m_last_time );
 
-   
+
     for ( TimeSourceVectorIterator it = m_Slaves.begin();
           it != m_Slaves.end(); ++it ) {
-        
+
         (*it)->printTimeSourceInfo();
     }
 }

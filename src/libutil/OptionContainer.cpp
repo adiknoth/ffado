@@ -1,29 +1,24 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "OptionContainer.h"
@@ -35,7 +30,7 @@ namespace Util {
 
 IMPL_DEBUG_MODULE( OptionContainer, OptionContainer, DEBUG_LEVEL_NORMAL );
 
-OptionContainer::Option::Option() 
+OptionContainer::Option::Option()
     : m_Name(""),
     m_stringValue(""),
     m_boolValue(false),
@@ -45,7 +40,7 @@ OptionContainer::Option::Option()
     m_Type(EInvalid)
 {}
 
-OptionContainer::Option::Option(std::string n) 
+OptionContainer::Option::Option(std::string n)
     : m_Name(n),
     m_stringValue(""),
     m_boolValue(false),
@@ -55,7 +50,7 @@ OptionContainer::Option::Option(std::string n)
     m_Type(EInvalid)
 {}
 
-OptionContainer::Option::Option(std::string n, std::string v) 
+OptionContainer::Option::Option(std::string n, std::string v)
     : m_Name(n),
     m_stringValue(v),
     m_boolValue(false),
@@ -65,7 +60,7 @@ OptionContainer::Option::Option(std::string n, std::string v)
     m_Type(EString)
 {}
 
-OptionContainer::Option::Option(std::string n, bool v) 
+OptionContainer::Option::Option(std::string n, bool v)
     : m_Name(n),
     m_stringValue(""),
     m_boolValue(v),
@@ -75,7 +70,7 @@ OptionContainer::Option::Option(std::string n, bool v)
     m_Type(EBool)
 {}
 
-OptionContainer::Option::Option(std::string n, double v) 
+OptionContainer::Option::Option(std::string n, double v)
     : m_Name(n),
     m_stringValue(""),
     m_boolValue(false),
@@ -85,7 +80,7 @@ OptionContainer::Option::Option(std::string n, double v)
     m_Type(EDouble)
 {}
 
-OptionContainer::Option::Option(std::string n, int64_t v) 
+OptionContainer::Option::Option(std::string n, int64_t v)
     : m_Name(n),
     m_stringValue(""),
     m_boolValue(false),
@@ -95,7 +90,7 @@ OptionContainer::Option::Option(std::string n, int64_t v)
     m_Type(EInt)
 {}
 
-OptionContainer::Option::Option(std::string n, uint64_t v) 
+OptionContainer::Option::Option(std::string n, uint64_t v)
     : m_Name(n),
     m_stringValue(""),
     m_boolValue(false),
@@ -134,7 +129,7 @@ OptionContainer::Option::deserialize( Glib::ustring basePath,
     bool result;
     Option op=Option();
     Glib::ustring tmpstr;
-    
+
     result  = deser.read( basePath + "m_Name", tmpstr );
     op.m_Name = tmpstr;
     result &= deser.read( basePath + "m_stringValue", tmpstr );
@@ -340,9 +335,9 @@ bool OptionContainer::addOption(Option o) {
     if (hasOption(o)){
         return false;
     }
-    
+
     m_Options.push_back(o);
-    
+
     return true;
 }
 
@@ -448,7 +443,7 @@ OptionContainer::deserializeOptions( Glib::ustring basePath,
     do {
         std::ostringstream strstrm;
         strstrm << basePath << "/" << "Option" << i;
-        
+
         Option pOption = Option::deserialize( strstrm.str() + "/",
                                               deser );
         if ( pOption.getType() != Option::EInvalid ) {

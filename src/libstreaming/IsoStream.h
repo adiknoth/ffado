@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_ISOSTREAM__
-#define __FREEBOB_ISOSTREAM__
+
+#ifndef __FFADO_ISOSTREAM__
+#define __FFADO_ISOSTREAM__
 
 #include <libraw1394/raw1394.h>
 #include "../debugmodule/debugmodule.h"
@@ -54,15 +50,15 @@ class IsoStream
                 EST_Transmit
         };
 
-        IsoStream(enum EStreamType type) 
+        IsoStream(enum EStreamType type)
                     : m_type(type), m_channel(-1), m_port(0), m_handler(0)
         {};
-        IsoStream(enum EStreamType type, int port) 
+        IsoStream(enum EStreamType type, int port)
                     : m_type(type), m_channel(-1), m_port(port), m_handler(0)
         {};
         virtual ~IsoStream()
         {};
-    
+
         virtual void setVerboseLevel(int l) { setDebugLevel( l ); };
 
         int getChannel() {return m_channel;};
@@ -74,14 +70,14 @@ class IsoStream
 
         virtual unsigned int getPacketsPerPeriod() {return 1;};
         virtual unsigned int getMaxPacketSize() {return 1024;}; //FIXME: arbitrary
-        
+
         virtual bool init();
 
-        virtual enum raw1394_iso_disposition 
-                putPacket(unsigned char *data, unsigned int length, 
-                        unsigned char channel, unsigned char tag, unsigned char sy, 
+        virtual enum raw1394_iso_disposition
+                putPacket(unsigned char *data, unsigned int length,
+                        unsigned char channel, unsigned char tag, unsigned char sy,
                             unsigned int cycle, unsigned int dropped);
-        virtual enum raw1394_iso_disposition 
+        virtual enum raw1394_iso_disposition
                 getPacket(unsigned char *data, unsigned int *length,
                         unsigned char *tag, unsigned char *sy,
                         int cycle, unsigned int dropped, unsigned int max_length);
@@ -89,10 +85,10 @@ class IsoStream
         void dumpInfo();
 
         int getNodeId();
-        
+
         virtual bool reset();
-        virtual bool prepare();	
-    
+        virtual bool prepare();
+
     protected:
 
         void setHandler( IsoHandler * h) ;
@@ -103,14 +99,14 @@ class IsoStream
         int m_port;
 
         IsoHandler *m_handler;
-        
+
         DECLARE_DEBUG_MODULE;
 
 };
 
 }
 
-#endif /* __FREEBOB_ISOSTREAM__ */
+#endif /* __FFADO_ISOSTREAM__ */
 
 
 

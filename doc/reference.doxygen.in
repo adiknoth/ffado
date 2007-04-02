@@ -17,7 +17,7 @@
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = LIBFREEBOB
+PROJECT_NAME           = LIBFFADO
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
@@ -365,10 +365,20 @@ WARN_LOGFILE           =
 INPUT                  = @top_srcdir@/doc/ \
                          @top_srcdir@/src/ \
                          @top_srcdir@/src/debugmodule \
+                         @top_srcdir@/src/libavc \
+                         @top_srcdir@/src/libieee1394 \
+                         @top_srcdir@/src/libosc \
                          @top_srcdir@/src/libstreaming \
                          @top_srcdir@/src/libutil \
-                         @top_srcdir@/src/libfreebobavc \
-                         @top_srcdir@/libfreebob/
+                         @top_srcdir@/src/bebob \
+                         @top_srcdir@/src/bounce \
+                         @top_srcdir@/src/dice \
+                         @top_srcdir@/src/maudio \
+                         @top_srcdir@/src/metrichalo \
+                         @top_srcdir@/src/motu \
+                         @top_srcdir@/src/rme \
+                         @top_srcdir@/libffado/
+
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

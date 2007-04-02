@@ -1,21 +1,24 @@
-/* mh_avdevice.cpp
- * Copyright (C) 2007 by Pieter Palmers
+/*
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBob.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBob is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #warning Metric Halo support is currently useless
@@ -51,7 +54,7 @@ MHAvDevice::MHAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     int nodeId )
     :  IAvDevice( configRom, ieee1394service, nodeId )
     , m_model( NULL )
-    
+
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::MHAvDevice (NodeID %d)\n",
                  nodeId );
@@ -73,7 +76,7 @@ MHAvDevice::probe( ConfigRom& configRom )
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             return true;
@@ -94,7 +97,7 @@ MHAvDevice::discover()
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             m_model = &(supportedDeviceList[i]);
@@ -110,7 +113,7 @@ MHAvDevice::discover()
     return false;
 }
 
-int 
+int
 MHAvDevice::getSamplingFrequency( ) {
     return 0;
 }
@@ -149,7 +152,7 @@ MHAvDevice::prepare() {
     return true;
 }
 
-int 
+int
 MHAvDevice::getStreamCount() {
     return 0;
 }

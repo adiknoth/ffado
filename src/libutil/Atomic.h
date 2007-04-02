@@ -1,11 +1,11 @@
 /*
-Modifications for Freebob (C) 2006 Pieter Palmers
+Modifications for FFADO by Pieter Palmers
 
 Copied from the jackd/jackdmp sources
 function names changed in order to avoid naming problems when using this in
 a jackd backend.
 
-Copyright (C) 2004-2006 Grame  
+Copyright (C) 2004-2006 Grame
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 */
 
-#ifndef __FreebobAtomic__
-#define __FreebobAtomic__
+#ifndef __FFADOATOMIC__
+#define __FFADOATOMIC__
 
 typedef unsigned short UInt16;
 typedef unsigned long UInt32;
@@ -39,34 +39,34 @@ static inline int CAS(register UInt32 value, register UInt32 newvalue, register 
 {
     register int result;
     asm volatile (
-        "# CAS					\n"
-        "	lwarx	r0, 0, %1	\n"         // creates a reservation on addr
-        "	cmpw	r0, %2		\n"			//  test value at addr
-        "	bne-	1f          \n"
-        "	sync            	\n"         //  synchronize instructions
-        "	stwcx.	%3, 0, %1	\n"         //  if the reservation is not altered
+        "# CAS                    \n"
+        "    lwarx    r0, 0, %1    \n"         // creates a reservation on addr
+        "    cmpw    r0, %2        \n"            //  test value at addr
+        "    bne-    1f          \n"
+        "    sync                \n"         //  synchronize instructions
+        "    stwcx.    %3, 0, %1    \n"         //  if the reservation is not altered
         //  stores the new value at addr
-        "	bne-	1f          \n"
+        "    bne-    1f          \n"
         "   li      %0, 1       \n"
-        "	b		2f          \n"
+        "    b        2f          \n"
         "1:                     \n"
         "   li      %0, 0       \n"
         "2:                     \n"
-		: "=r" (result)
-		: "r" (addr), "r" (value), "r" (newvalue)
-		: "r0"
-		);
+        : "=r" (result)
+        : "r" (addr), "r" (value), "r" (newvalue)
+        : "r0"
+        );
     return result;
 }
 
 #endif
 
-#if defined(__i386__) || defined(__x86_64__) 
+#if defined(__i386__) || defined(__x86_64__)
 
 #ifdef __SMP__
-#	define LOCK "lock ; "
+#    define LOCK "lock ; "
 #else
-#	define LOCK ""
+#    define LOCK ""
 #endif
 
 static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* addr)
@@ -76,9 +76,9 @@ static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* ad
         "# CAS \n\t"
         LOCK "cmpxchg %2, (%1) \n\t"
         "sete %0               \n\t"
-		: "=a" (ret)
-		: "c" (addr), "d" (newvalue), "a" (value)
-		);
+        : "=a" (ret)
+        : "c" (addr), "d" (newvalue), "a" (value)
+        );
     return ret;
 }
 
@@ -95,33 +95,33 @@ static inline int CAS(register UInt32 value, register UInt32 newvalue, register 
     register int result;
     register UInt32 tmp;
     asm volatile (
-        "# CAS					\n"
-        "	lwarx	%4, 0, %1	\n"         // creates a reservation on addr
-        "	cmpw	%4, %2		\n"        //  test value at addr
-        "	bne-	1f          \n"
-        "	sync            	\n"         //  synchronize instructions
-        "	stwcx.	%3, 0, %1	\n"         //  if the reservation is not altered
+        "# CAS                    \n"
+        "    lwarx    %4, 0, %1    \n"         // creates a reservation on addr
+        "    cmpw    %4, %2        \n"        //  test value at addr
+        "    bne-    1f          \n"
+        "    sync                \n"         //  synchronize instructions
+        "    stwcx.    %3, 0, %1    \n"         //  if the reservation is not altered
         //  stores the new value at addr
-        "	bne-	1f          \n"
+        "    bne-    1f          \n"
         "   li      %0, 1       \n"
-        "	b		2f          \n"
+        "    b        2f          \n"
         "1:                     \n"
         "   li      %0, 0       \n"
         "2:                     \n"
-		: "=r" (result)
-		: "r" (addr), "r" (value), "r" (newvalue), "r" (tmp)
-		);
+        : "=r" (result)
+        : "r" (addr), "r" (value), "r" (newvalue), "r" (tmp)
+        );
     return result;
 }
 
 #endif
 
-#if defined(__i386__) || defined(__x86_64__) 
+#if defined(__i386__) || defined(__x86_64__)
 
 #ifdef __SMP__
-#	define LOCK "lock ; "
+#    define LOCK "lock ; "
 #else
-#	define LOCK ""
+#    define LOCK ""
 #endif
 
 static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* addr)
@@ -131,9 +131,9 @@ static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* ad
         "# CAS \n\t"
         LOCK "cmpxchg %2, (%1) \n\t"
         "sete %0               \n\t"
-		: "=a" (ret)
-		: "c" (addr), "d" (newvalue), "a" (value)
-		);
+        : "=a" (ret)
+        : "c" (addr), "d" (newvalue), "a" (value)
+        );
     return ret;
 }
 
@@ -186,6 +186,5 @@ static inline long ZERO_ATOMIC(volatile SInt32* val)
     return actual;
 }
 
-
-#endif
+#endif // __FFADO_ATOMIC__
 

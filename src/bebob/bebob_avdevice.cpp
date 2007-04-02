@@ -1,21 +1,24 @@
-/* bebob_avdevice.cpp
- * Copyright (C) 2005,06,07 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "bebob/bebob_avdevice.h"
@@ -41,7 +44,7 @@ namespace BeBoB {
 static VendorModelEntry supportedDeviceList[] =
 {
     {0x00000f, 0x00010065, "Mackie", "Onyx Firewire"},
-    
+
     {0x0003db, 0x00010048, "Apogee Electronics", "Rosetta 200"},
 
     {0x0007f5, 0x00010048, "BridgeCo", "RD Audio1"},
@@ -104,10 +107,10 @@ AvDevice::~AvDevice()
 }
 
 void
-AvDevice::setVerboseLevel(int l) 
+AvDevice::setVerboseLevel(int l)
 {
 //     m_pPlugManager->setVerboseLevel(l);
-    
+
     IAvDevice::setVerboseLevel(l);
 }
 
@@ -142,7 +145,7 @@ AvDevice::discover()
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             m_model = &(supportedDeviceList[i]);
@@ -154,7 +157,7 @@ AvDevice::discover()
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
                 m_model->vendor_name, m_model->model_name);
     } else return false;
-    
+
     if ( !enumerateSubUnits() ) {
         debugError( "Could not enumarate sub units\n" );
         return false;
@@ -708,7 +711,7 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
-    
+
     if(snoopMode) {
         int current_sr=getSamplingFrequency();
         if (current_sr != convertESamplingFrequency( samplingFrequency ) ) {
@@ -723,7 +726,7 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
             debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
             return false;
         }
-    
+
         if ( !setSamplingFrequencyPlug( *plug,
                                         AvPlug::eAPD_Input,
                                         samplingFrequency ) )
@@ -731,13 +734,13 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
             debugError( "setSampleRate: Setting sample rate failed\n" );
             return false;
         }
-    
+
         plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output,  0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
             return false;
         }
-    
+
         if ( !setSamplingFrequencyPlug( *plug,
                                         AvPlug::eAPD_Output,
                                         samplingFrequency ) )
@@ -745,7 +748,7 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
             debugError( "setSampleRate: Setting sample rate failed\n" );
             return false;
         }
-    
+
         debugOutput( DEBUG_LEVEL_VERBOSE,
                      "setSampleRate: Set sample rate to %d\n",
                      convertESamplingFrequency( samplingFrequency ) );
@@ -885,7 +888,7 @@ AvDevice::showDevice()
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
         m_nodeId);
-        
+
     m_pPlugManager->showPlugs();
 }
 
@@ -945,7 +948,7 @@ AvDevice::lock() {
     if (snoopMode) {
         // don't lock
     } else {
-    
+
     }
 
     return true;
@@ -961,7 +964,7 @@ AvDevice::unlock() {
     if (snoopMode) {
         // don't unlock
     } else {
-    
+
     }
     return true;
 }
@@ -972,7 +975,7 @@ AvDevice::prepare() {
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
-    
+
     ///////////
     // get plugs
 
@@ -988,11 +991,11 @@ AvDevice::prepare() {
     }
 
     int samplerate=outputPlug->getSampleRate();
-    
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing receive processor...\n");
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
-    
+
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
                              samplerate,
@@ -1010,7 +1013,7 @@ AvDevice::prepare() {
         delete p;
         return false;
     }
-    
+
     m_receiveProcessors.push_back(p);
 
     // do the transmit processor
@@ -1028,7 +1031,7 @@ AvDevice::prepare() {
                                 samplerate,
                                 inputPlug->getNrOfChannels());
     }
-    
+
     if(!p->init()) {
         debugFatal("Could not initialize transmit processor %s!\n",
             (snoopMode?" in snoop mode":""));
@@ -1049,7 +1052,7 @@ AvDevice::prepare() {
             return false;
         }
     }
-    
+
     // we put this SP into the transmit SP vector,
     // no matter if we are in snoop mode or not
     // this allows us to find out what direction
@@ -1064,12 +1067,12 @@ AvDevice::addPlugToProcessor(
     AvPlug& plug,
     Streaming::StreamProcessor *processor,
     Streaming::AmdtpAudioPort::E_Direction direction) {
-    
+
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
     }
-    
+
     AvPlug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
     for ( AvPlug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
           it != clusterInfos.end();
@@ -1172,74 +1175,74 @@ AvDevice::startStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
-        
+
         if(snoopMode) { // a stream from the device to another host
             // FIXME: put this into a decent framework!
             // we should check the oPCR[n] on the device
             struct iec61883_oPCR opcr;
             if (iec61883_get_oPCRX(
-                    m_p1394Service->getHandle(), 
+                    m_p1394Service->getHandle(),
                     m_pConfigRom->getNodeId() | 0xffc0,
                     (quadlet_t *)&opcr,
                     n)) {
-                    
+
                 debugWarning("Error getting the channel for SP %d\n",i);
                 return false;
             }
-            
+
             iso_channel=opcr.channel;
         } else {
             iso_channel=m_p1394Service->allocateIsoChannelCMP(
-                m_pConfigRom->getNodeId() | 0xffc0, n, 
+                m_pConfigRom->getNodeId() | 0xffc0, n,
                 m_p1394Service->getLocalNodeId()| 0xffc0, -1);
         }
         if (iso_channel<0) {
             debugError("Could not allocate ISO channel for SP %d\n",i);
             return false;
         }
-        
+
         debugOutput(DEBUG_LEVEL_VERBOSE, "Started SP %d on channel %d\n",i,iso_channel);
-        
+
         p->setChannel(iso_channel);
         return true;
-        
+
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-        
-        if(snoopMode) { // a stream from another host to the device 
+
+        if(snoopMode) { // a stream from another host to the device
             // FIXME: put this into a decent framework!
             // we should check the iPCR[n] on the device
             struct iec61883_iPCR ipcr;
             if (iec61883_get_iPCRX(
-                    m_p1394Service->getHandle(), 
+                    m_p1394Service->getHandle(),
                     m_pConfigRom->getNodeId() | 0xffc0,
                     (quadlet_t *)&ipcr,
                     n)) {
-                    
+
                 debugWarning("Error getting the channel for SP %d\n",i);
                 return false;
             }
-            
+
             iso_channel=ipcr.channel;
-            
+
         } else {
             iso_channel=m_p1394Service->allocateIsoChannelCMP(
                 m_p1394Service->getLocalNodeId()| 0xffc0, -1,
                 m_pConfigRom->getNodeId() | 0xffc0, n);
         }
-        
+
         if (iso_channel<0) {
             debugError("Could not allocate ISO channel for SP %d\n",i);
             return false;
         }
-        
+
         debugOutput(DEBUG_LEVEL_VERBOSE, "Started SP %d on channel %d\n",i,iso_channel);
-        
+
         p->setChannel(iso_channel);
         return true;
     }
-    
+
     debugError("SP index %d out of range!\n",i);
     return false;
 }
@@ -1265,13 +1268,13 @@ AvDevice::stopStreamByIndex(int i) {
             }
         }
         p->setChannel(-1);
-        
+
         return true;
-        
+
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-        
+
         if(snoopMode) {
 
         } else {
@@ -1282,10 +1285,10 @@ AvDevice::stopStreamByIndex(int i) {
             }
         }
         p->setChannel(-1);
-        
+
         return true;
     }
-    
+
     debugError("SP index %d out of range!\n",i);
     return false;
 }
@@ -1413,7 +1416,7 @@ bool
 AvDevice::serialize( Glib::ustring basePath,
                      Util::IOSerialize& ser ) const
 {
-    
+
     bool result;
     result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
     result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel );
@@ -1434,7 +1437,7 @@ AvDevice::serialize( Glib::ustring basePath,
         }
         i++;
     }
-    
+
     result &= serializeOptions( basePath + "Options", ser );
 
 //     result &= ser.write( basePath + "m_id", id );
@@ -1450,19 +1453,19 @@ AvDevice::deserialize( Glib::ustring basePath,
 
     ConfigRom *configRom =
         ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service );
-        
+
     if ( !configRom ) {
         return NULL;
     }
 
     AvDevice* pDev = new AvDevice(
-        std::auto_ptr<ConfigRom>(configRom), 
+        std::auto_ptr<ConfigRom>(configRom),
         ieee1394Service, configRom->getNodeId());
 
     if ( pDev ) {
         bool result;
         result  = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
-        
+
         if (pDev->m_pPlugManager) delete pDev->m_pPlugManager;
         pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, *pDev );
         if ( !pDev->m_pPlugManager ) {
@@ -1483,7 +1486,7 @@ AvDevice::deserialize( Glib::ustring basePath,
                 pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
             }
         }
-        
+
         result &= deserializeOptions( basePath + "Options", deser, *pDev );
     }
 

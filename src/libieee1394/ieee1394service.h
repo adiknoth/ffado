@@ -1,26 +1,29 @@
-/* Ieee1394Service.cpp
- * Copyright (C) 2005,06 by Daniel Wagner
- * Copyright (C) 2007 by Pieter Palmers
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
-#ifndef FREEBOBIEEE1394SERVICE_H
-#define FREEBOBIEEE1394SERVICE_H
+#ifndef FFADO_IEEE1394SERVICE_H
+#define FFADO_IEEE1394SERVICE_H
 
 #include "fbtypes.h"
 #include "threads.h"
@@ -44,7 +47,7 @@ public:
     bool initialize( int port );
 
     int getPort()
-	{ return m_port; }
+    { return m_port; }
    /**
     * @brief get number of nodes on the bus
     *
@@ -56,7 +59,7 @@ public:
     * This value can change with every bus reset.
     */
     int getNodeCount();
-    
+
    /**
     * @brief get the node id of the local node
     *
@@ -66,7 +69,7 @@ public:
     * This value can change with every bus reset.
     */
     nodeid_t getLocalNodeId();
-    
+
    /**
     * @brief send async read request to a node and wait for response.
     *
@@ -76,13 +79,13 @@ public:
     * @param addr address to read from
     * @param length amount of data to read in quadlets
     * @param buffer pointer to buffer where data will be saved
-    
+
     * @return true on success or false on failure (sets errno)
     */
     bool read( fb_nodeid_t nodeId,
-	       fb_nodeaddr_t addr,
-	       size_t length,
-	       fb_quadlet_t* buffer );
+           fb_nodeaddr_t addr,
+           size_t length,
+           fb_quadlet_t* buffer );
 
     bool read_quadlet( fb_nodeid_t nodeId,
                        fb_nodeaddr_t addr,
@@ -105,9 +108,9 @@ public:
     * @return true on success or false on failure (sets errno)
     */
     bool write( fb_nodeid_t nodeId,
-		fb_nodeaddr_t addr,
-		size_t length,
-		fb_quadlet_t* data );
+        fb_nodeaddr_t addr,
+        size_t length,
+        fb_quadlet_t* data );
 
     bool write_quadlet( fb_nodeid_t nodeId,
                         fb_nodeaddr_t addr,
@@ -142,7 +145,7 @@ public:
     fb_quadlet_t* transactionBlock( fb_nodeid_t nodeId,
                                     fb_quadlet_t* buf,
                                     int len,
-				    unsigned int* resp_len );
+                    unsigned int* resp_len );
 
     bool transactionBlockClose();
 
@@ -152,7 +155,7 @@ public:
 
     bool addBusResetHandler( Functor* functor );
     bool remBusResetHandler( Functor* functor );
-    
+
     /**
      * @brief register an AddressRangeMapping Handler
      * @param h pointer to the handler to register
@@ -168,17 +171,17 @@ public:
      * @return true if successful, false otherwise
      */
     bool unregisterARMHandler( ARMHandler *h );
-    
+
     nodeaddr_t findFreeARMBlock( nodeaddr_t start, size_t length, size_t step );
 
 // ISO channel stuff
 public:
     signed int getAvailableBandwidth();
     signed int allocateIsoChannelGeneric(unsigned int bandwidth);
-    signed int allocateIsoChannelCMP(nodeid_t xmit_node, int xmit_plug, 
+    signed int allocateIsoChannelCMP(nodeid_t xmit_node, int xmit_plug,
                                      nodeid_t recv_node, int recv_plug);
     bool freeIsoChannel(signed int channel);
-    
+
 private:
     enum EAllocType {
         AllocFree = 0, // not allocated (by us)
@@ -195,10 +198,10 @@ private:
         nodeid_t recv_node;
         int recv_plug;
     };
-    
+
     // the info for the channels we manage
     struct ChannelInfo m_channels[64];
-    
+
     bool unregisterIsoChannel(unsigned int c);
     bool registerIsoChannel(unsigned int c, struct ChannelInfo cinfo);
 
@@ -210,14 +213,14 @@ private:
 
     void printBuffer( unsigned int level, size_t length, fb_quadlet_t* buffer ) const;
     void printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const;
-    
+
     static int resetHandlerLowLevel( raw1394handle_t handle,
                     unsigned int generation );
     bool resetHandler( unsigned int generation );
-    
+
     static int armHandlerLowLevel(raw1394handle_t handle, unsigned long arm_tag,
                      byte_t request_type, unsigned int requested_length,
-                     void *data); 
+                     void *data);
     bool armHandler(  unsigned long arm_tag,
                      byte_t request_type, unsigned int requested_length,
                      void *data);
@@ -233,19 +236,19 @@ private:
 
     typedef std::vector< Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;
-    
+
     // ARM stuff
     arm_tag_handler_t m_default_arm_handler;
-    
+
     typedef std::vector< ARMHandler * > arm_handler_vec_t;
     arm_handler_vec_t m_armHandlers;
-    
+
     fb_octlet_t byteSwap_octlet(fb_octlet_t value);
-    
+
 public:
     void setVerboseLevel(int l);
 private:
     DECLARE_DEBUG_MODULE;
 };
 
-#endif
+#endif // FFADO_IEEE1394SERVICE_H

@@ -1,37 +1,33 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_IEC61883__
-#define __FREEBOB_IEC61883__
+
+#ifndef __FFADO_IEC61883__
+#define __FFADO_IEC61883__
 
 #include "../debugmodule/debugmodule.h"
 
 /*
- * This is shamelessly stolen from iec61883-private, 
+ * This is shamelessly stolen from iec61883-private,
  * but I need these functions!
  * FIXME: this will only work until somebody decides to change
  *        these in libiec61883.
@@ -44,7 +40,7 @@ extern "C" {
  * Plug Control Registers
  **/
 
-/* maximum number of PCRs allowed within the standard 
+/* maximum number of PCRs allowed within the standard
  * MPR/PCR addresses defined in IEC-61883.
  * This refers to the number of output or input PCRs--
  * not the MPRs and not the combined total.
@@ -146,15 +142,15 @@ struct iec61883_iPCR {
  * @n: The node id of the node to read
  * @a: The CSR offset address (relative to base) of the register to read.
  * @value: A pointer to a quadlet where the plug register's value will be stored.
- * 
- * This function handles bus to host endian conversion. It returns 0 for 
+ *
+ * This function handles bus to host endian conversion. It returns 0 for
  * suceess or -1 for error (errno available).
  **/
 int
 iec61883_plug_get(raw1394handle_t h, nodeid_t n, nodeaddr_t a, quadlet_t *value);
 
 
-/** 
+/**
  * iec61883_plug_set - Write a node's plug register.
  * @h: A raw1394 handle.
  * @n: The node id of the node to read
@@ -203,6 +199,6 @@ protected:
 
 };
 
-#endif /* __FREEBOB_IEC61883__ */
+#endif /* __FFADO_IEC61883__ */
 
 

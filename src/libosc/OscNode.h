@@ -1,30 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_OSCNODE__
-#define __FREEBOB_OSCNODE__
+
+#ifndef __FFADO_OSCNODE__
+#define __FFADO_OSCNODE__
 
 #include "../debugmodule/debugmodule.h"
 
@@ -54,26 +52,26 @@ public:
     bool removeChildOscNode(OscNode *);
 
     string getOscBase() {return m_oscBase;};
-    
+
     void setOscNodeAutoDelete(bool b) {m_oscAutoDelete=b;};
     bool doOscNodeAutoDelete() {return m_oscAutoDelete;};
-    
+
     void printOscNode(string path);
     void printOscNode();
-    
+
     virtual OscResponse processOscMessage(OscMessage *m);
     virtual OscResponse processOscMessage(string path, OscMessage *m);
-    
+
 protected:
     void setOscBase(string s) {m_oscBase=s;};
 
 private:
     OscResponse processOscMessageDefault(OscMessage *m, OscResponse);
     OscMessage oscListChildren(OscMessage);
-    
+
     string m_oscBase;
     bool m_oscAutoDelete;
-    
+
     typedef vector< OscNode * > OscNodeVector;
     typedef vector< OscNode * >::iterator OscNodeVectorIterator;
     OscNodeVector m_ChildNodes;
@@ -87,6 +85,6 @@ protected:
 
 } // end of namespace OSC
 
-#endif /* __FREEBOB_OSCNODE__ */
+#endif /* __FFADO_OSCNODE__ */
 
 

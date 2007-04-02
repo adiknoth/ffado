@@ -1,21 +1,24 @@
-/* avc_extended_cmd_generic.h
- * Copyright (C) 2005 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef AVCEXTENDEDCMDGENERIC_H
@@ -37,7 +40,7 @@ public:
         ePT_PCR              = 0x00,
         ePT_ExternalPlug     = 0x01,
         ePT_AsynchronousPlug = 0x02,
-	ePT_Unknown          = 0xff,
+    ePT_Unknown          = 0xff,
     };
 
     UnitPlugAddress( EPlugType plugType,  plug_type_t plugId );
@@ -204,14 +207,14 @@ public:
     enum EPlugDirection {
         ePD_Input     = 0x00,
         ePD_Output    = 0x01,
-	ePD_Undefined = 0xff,
+    ePD_Undefined = 0xff,
     };
 
     enum EPlugAddressMode {
         ePAM_Unit          = 0x00,
         ePAM_Subunit       = 0x01,
         ePAM_FunctionBlock = 0x02,
-	ePAM_Undefined     = 0xff,
+    ePAM_Undefined     = 0xff,
     };
 
     PlugAddress( EPlugDirection plugDirection,
@@ -258,16 +261,16 @@ public:
     };
 
     PlugAddressSpecificData( EPlugDirection plugDirection,
-			     EPlugAddressMode plugAddressMode,
-			     UnitPlugSpecificDataPlugAddress& unitPlugAddress );
+                 EPlugAddressMode plugAddressMode,
+                 UnitPlugSpecificDataPlugAddress& unitPlugAddress );
     PlugAddressSpecificData( EPlugDirection plugDirection,
-			     EPlugAddressMode plugAddressMode,
-			     SubunitPlugSpecificDataPlugAddress& subUnitPlugAddress );
+                 EPlugAddressMode plugAddressMode,
+                 SubunitPlugSpecificDataPlugAddress& subUnitPlugAddress );
     PlugAddressSpecificData( EPlugDirection plugDirection,
-			     EPlugAddressMode plugAddressMode,
-			     FunctionBlockPlugSpecificDataPlugAddress& functionBlockPlugAddress );
+                 EPlugAddressMode plugAddressMode,
+                 FunctionBlockPlugSpecificDataPlugAddress& functionBlockPlugAddress );
     PlugAddressSpecificData( EPlugDirection plugDirection,
-			     EPlugAddressMode plugAddressMode );
+                 EPlugAddressMode plugAddressMode );
     PlugAddressSpecificData( const  PlugAddressSpecificData& pa );
 
     virtual ~PlugAddressSpecificData();

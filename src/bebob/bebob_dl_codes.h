@@ -1,21 +1,24 @@
-/* bebob_dl_codes.h
- * Copyright (C) 2006 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifdef ENABLE_BEBOB
@@ -63,7 +66,7 @@ namespace BeBoB {
                       size_t    msgSize,
                       fb_byte_t operandSizeRequestField,
                       fb_byte_t operandSizeResponseField );
-	virtual ~CommandCodes();
+    virtual ~CommandCodes();
 
         virtual bool serialize( IOSSerialize& se );
         virtual bool deserialize( IISDeserialize& de );
@@ -73,8 +76,8 @@ namespace BeBoB {
         EBootloaderCommandCodes getCommandCode() const
             { return static_cast<EBootloaderCommandCodes>( m_commandCode ); }
 
-	fb_byte_t getProtocolVersion() const
-	    { return m_protocolVersion; }
+    fb_byte_t getProtocolVersion() const
+        { return m_protocolVersion; }
         size_t getMsgSize() const
             { return m_msgSize; }
         fb_byte_t getOperandSizeRequest() const
@@ -162,15 +165,15 @@ namespace BeBoB {
     public:
         enum EObject {
             eO_Application    = 0,
-	    eO_Config         = 1,
-	    eO_Debugger       = 2,
+        eO_Config         = 1,
+        eO_Debugger       = 2,
             eO_Bootloader     = 3,
-	    eO_WarpImage      = 4,
-	    eO_SerialBootCode = 5,
+        eO_WarpImage      = 4,
+        eO_SerialBootCode = 5,
         };
 
         CommandCodesDownloadStart( fb_quadlet_t protocolVersion,
-				     EObject object );
+                     EObject object );
         virtual ~CommandCodesDownloadStart();
 
         virtual bool serialize( IOSSerialize& se );
@@ -217,9 +220,9 @@ namespace BeBoB {
         virtual bool serialize( IOSSerialize& se );
         virtual bool deserialize( IISDeserialize& de );
 
-	bool setSeqNumber( fb_quadlet_t seqNumber )
-	    { m_seqNumber = seqNumber; return true; }
-	bool setAddress( fb_quadlet_t address )
+    bool setSeqNumber( fb_quadlet_t seqNumber )
+        { m_seqNumber = seqNumber; return true; }
+    bool setAddress( fb_quadlet_t address )
             { m_address = address; return true; }
         bool setNumberBytes( fb_quadlet_t numByte )
             { m_numBytes = numByte; return true; }
@@ -232,8 +235,8 @@ namespace BeBoB {
         fb_quadlet_t m_address;
         fb_quadlet_t m_numBytes;
 
-	fb_quadlet_t m_resp_seqNumber;
-	fb_quadlet_t m_resp_errorCode;
+    fb_quadlet_t m_resp_seqNumber;
+    fb_quadlet_t m_resp_errorCode;
     };
 
     /////////////////////////
@@ -286,7 +289,7 @@ namespace BeBoB {
     public:
         enum EStartMode {
             eSM_Application = 0,
-	    eSM_Debugger = 2,
+        eSM_Debugger = 2,
         };
 
         CommandCodesGo( fb_quadlet_t protocolVersion, EStartMode startMode );
@@ -305,7 +308,7 @@ namespace BeBoB {
 
     private:
         fb_quadlet_t m_startMode;
-	fb_quadlet_t m_resp_validCRC;
+    fb_quadlet_t m_resp_validCRC;
     };
 
 

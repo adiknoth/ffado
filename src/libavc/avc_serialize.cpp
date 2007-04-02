@@ -1,21 +1,24 @@
-/* avc_serialize.cpp
- * Copyright (C) 2005,07 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "avc_serialize.h"
@@ -25,10 +28,12 @@
 
 #include <netinet/in.h>
 
+IMPL_DEBUG_MODULE( CoutSerializer, CoutSerializer, DEBUG_LEVEL_NORMAL );
+
 bool
 CoutSerializer::write( byte_t d, const char* name )
 {
-    printf( "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:\t0x%02x\t%s\n", m_cnt, d, name );
     m_cnt += sizeof( byte_t );
 
     return true;
@@ -37,7 +42,7 @@ CoutSerializer::write( byte_t d, const char* name )
 bool
 CoutSerializer::write( quadlet_t d, const char* name )
 {
-    printf( "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:\t0x%08x\t%s\n", m_cnt, d, name );
     m_cnt += sizeof( quadlet_t );
     return true;
 }
