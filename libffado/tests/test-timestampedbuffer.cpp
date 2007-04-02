@@ -1,21 +1,25 @@
-/***************************************************************************
-Copyright (C) 2007 by Pieter Palmers   *
-                                                                        *
-This program is free software; you can redistribute it and/or modify  *
-it under the terms of the GNU General Public License as published by  *
-the Free Software Foundation; either version 2 of the License, or     *
-(at your option) any later version.                                   *
-                                                                        *
-This program is distributed in the hope that it will be useful,       *
-but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-GNU General Public License for more details.                          *
-                                                                        *
-You should have received a copy of the GNU General Public License     *
-along with this program; if not, write to the                         *
-Free Software Foundation, Inc.,                                       *
-59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
-***************************************************************************/
+/*
+ * Copyright (C) 2005-2007 by by Pieter Palmers
+ *
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
+ *
+ * FFADO is based upon FreeBoB.
+ *
+ * FFADO is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * FFADO is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FFADO; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -40,12 +44,12 @@ Free Software Foundation, Inc.,                                       *
 
 using namespace Util;
 
-class TimestampedBufferTestClient 
+class TimestampedBufferTestClient
     : public TimestampedBufferClient {
 public:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
-    
+
     void setVerboseLevel(int l) {setDebugLevel(l);};
 private:
     DECLARE_DEBUG_MODULE;
@@ -57,7 +61,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 
 int run;
 // Program documentation.
-static char doc[] = "FreeBoB -- Timestamped buffer test\n\n";
+static char doc[] = "FFADO -- Timestamped buffer test\n\n";
 
 // A description of the arguments we accept.
 static char args_doc[] = "";
@@ -211,7 +215,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
                     return ARGP_ERR_UNKNOWN;
                 }
             }
-            break;                        
+            break;
        default:
             return ARGP_ERR_UNKNOWN;
     }
@@ -229,10 +233,10 @@ static void sighandler (int sig)
 
 int main(int argc, char *argv[])
 {
-    
+
     TimestampedBuffer *t=NULL;
     TimestampedBufferTestClient *c=NULL;
-    
+
     struct arguments arguments;
 
     // Default values.
@@ -244,31 +248,31 @@ int main(int argc, char *argv[])
     arguments.total_cycles = 2000;
     arguments.buffersize = 1024;
     arguments.start_at_cycle = 0;
-    
+
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
         fprintf( stderr, "Could not parse command line\n" );
         exit(1);
     }
-    
+
     setDebugLevel(arguments.verbose);
-    
+
     run=1;
 
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
-    
+
     c=new TimestampedBufferTestClient();
-    
+
     if(!c) {
         debugOutput(DEBUG_LEVEL_NORMAL, "Could not create TimestampedBufferTestClient\n");
         exit(1);
     }
     c->setVerboseLevel(arguments.verbose);
-    
+
     t=new TimestampedBuffer(c);
-    
+
     if(!t) {
         debugOutput(DEBUG_LEVEL_NORMAL, "Could not create TimestampedBuffer\n");
         delete c;
@@ -277,36 +281,36 @@ int main(int argc, char *argv[])
     t->setVerboseLevel(arguments.verbose);
 
     t->init();
-    
-    // Setup the buffer 
+
+    // Setup the buffer
     t->setBufferSize(arguments.buffersize);
     t->setEventSize(sizeof(int));
     t->setEventsPerFrame(arguments.events_per_frame);
 
     t->setUpdatePeriod(arguments.frames_per_packet);
     t->setNominalRate(arguments.rate);
-    
+
     t->setWrapValue(arguments.wrap_at);
-    
+
     t->setTickOffset(10000);
-    
+
     t->prepare();
-    
+
     usleep(1000);
-    
+
     debugOutput(DEBUG_LEVEL_NORMAL, "Start setBufferHeadTimestamp test...\n");
     {
         bool pass=true;
         uint64_t time=arguments.start_at_cycle*3072;
         int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
-        
+
         // initialize the timestamp
         uint64_t timestamp=time;
         if (timestamp >= arguments.wrap_at) {
             // here we need a modulo because start_at_cycle can be large
             timestamp %= arguments.wrap_at;
         }
-        
+
         // account for the fact that there is offset,
         // and that setBufferHeadTimestamp doesn't take offset
         // into account
@@ -314,14 +318,14 @@ int main(int argc, char *argv[])
         if (timestamp2>=arguments.wrap_at) {
             timestamp2-=arguments.wrap_at;
         }
-        
+
         t->setBufferHeadTimestamp(timestamp2);
-        
+
         timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
         if (timestamp >= arguments.wrap_at) {
             timestamp -= arguments.wrap_at;
         }
-        
+
         // write some packets
         for (unsigned int i=0;i<20;i++) {
             t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
@@ -330,62 +334,62 @@ int main(int argc, char *argv[])
                 timestamp -= arguments.wrap_at;
             }
         }
-    
+
         for(unsigned int cycle=arguments.start_at_cycle;
-            cycle < arguments.start_at_cycle+arguments.total_cycles; 
+            cycle < arguments.start_at_cycle+arguments.total_cycles;
             cycle++) {
                 uint64_t ts_head, fc_head;
-                
+
                 t->setBufferHeadTimestamp(timestamp);
                 t->getBufferHeadTimestamp(&ts_head, &fc_head);
-                
+
                 if (timestamp != ts_head) {
                     debugError(" cycle %4u error: %011llu != %011llu\n",
                         timestamp, ts_head);
                         pass=false;
                 }
-                
+
                 timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
                 if (timestamp >= arguments.wrap_at) {
                     timestamp -= arguments.wrap_at;
                 }
-            
+
             // simulate the cycle timer clock in ticks
             time += 3072;
             if (time >= arguments.wrap_at) {
                 time -= arguments.wrap_at;
             }
-            
+
             // allow for the messagebuffer thread to catch up
             usleep(200);
-            
+
             if(!run) break;
         }
-        
+
         if(!pass) {
             debugError("Test failed, exiting...\n");
-    
+
             delete t;
             delete c;
-            
+
             return -1;
-            
+
         }
     }
-    
 
-    
+
+
     debugOutput(DEBUG_LEVEL_NORMAL, "Start read/write test...\n");
     {
         int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
         int dummyframe_out[arguments.events_per_frame*arguments.frames_per_packet];
-    
+
         for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
             dummyframe_in[i]=i;
         }
-        
+
         uint64_t time=arguments.start_at_cycle*3072;
-        
+
         // initialize the timestamp
         uint64_t timestamp=time;
         if (timestamp >= arguments.wrap_at) {
@@ -393,57 +397,57 @@ int main(int argc, char *argv[])
             timestamp %= arguments.wrap_at;
         }
         t->setBufferTailTimestamp(timestamp);
-        
+
         timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
         if (timestamp >= arguments.wrap_at) {
             timestamp -= arguments.wrap_at;
         }
-    
+
         for(unsigned int cycle=arguments.start_at_cycle;
-            cycle < arguments.start_at_cycle+arguments.total_cycles; 
+            cycle < arguments.start_at_cycle+arguments.total_cycles;
             cycle++) {
-            
+
             // simulate the rate adaptation
             int64_t diff=(time%arguments.wrap_at)-timestamp;
-            
+
             if (diff>(int64_t)arguments.wrap_at/2) {
                 diff -= arguments.wrap_at;
             } else if (diff<(-(int64_t)arguments.wrap_at)/2){
                 diff += arguments.wrap_at;
             }
-            
+
             debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
-            
+
             if(diff>0) {
                 uint64_t ts_head, fc_head;
                 uint64_t ts_tail, fc_tail;
-                
+
                 // write one packet
                 t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
-    
+
                 // read the buffer head timestamp
                 t->getBufferHeadTimestamp(&ts_head, &fc_head);
                 t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-                debugOutput(DEBUG_LEVEL_NORMAL, 
+                debugOutput(DEBUG_LEVEL_NORMAL,
                         " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
-                debugOutput(DEBUG_LEVEL_NORMAL, 
+                debugOutput(DEBUG_LEVEL_NORMAL,
                         "                 TAIL: %011llu, FC=%04u\n",
                         ts_tail,fc_tail);
-    
+
                 // read one packet
                 t->readFrames(arguments.frames_per_packet, (char *)&dummyframe_out);
-    
+
                 // read the buffer head timestamp
                 t->getBufferHeadTimestamp(&ts_head, &fc_head);
                 t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-                debugOutput(DEBUG_LEVEL_NORMAL, 
+                debugOutput(DEBUG_LEVEL_NORMAL,
                         " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
-                debugOutput(DEBUG_LEVEL_NORMAL, 
+                debugOutput(DEBUG_LEVEL_NORMAL,
                         "                 TAIL: %011llu, FC=%04u\n",
                         ts_tail,fc_tail);
-    
+
                 // check
                 bool pass=true;
                 for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
@@ -452,40 +456,40 @@ int main(int argc, char *argv[])
                 if (!pass) {
                     debugOutput(DEBUG_LEVEL_NORMAL, "write/read check for cycle %d failed\n",cycle);
                 }
-    
+
                 // update the timestamp
                 timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
                 if (timestamp >= arguments.wrap_at) {
                     timestamp -= arguments.wrap_at;
                 }
             }
-    
+
             // simulate the cycle timer clock in ticks
             time += 3072;
             if (time >= arguments.wrap_at) {
                 time -= arguments.wrap_at;
             }
-            
+
             // allow for the messagebuffer thread to catch up
             usleep(200);
-            
+
             if(!run) break;
         }
     }
-    
+
     // second run, now do block processing
     debugOutput(DEBUG_LEVEL_NORMAL, "Start block read test...\n");
     {
         unsigned int blocksize=32;
         int dummyframe_out_block[arguments.events_per_frame*arguments.frames_per_packet*blocksize];
         int dummyframe_in[arguments.events_per_frame*arguments.frames_per_packet];
-    
+
         for (unsigned int i=0;i<arguments.events_per_frame*arguments.frames_per_packet;i++) {
             dummyframe_in[i]=i;
         }
-        
+
         uint64_t time=arguments.start_at_cycle*3072;
-        
+
         // initialize the timestamp
         uint64_t timestamp=time;
         if (timestamp >= arguments.wrap_at) {
@@ -493,84 +497,84 @@ int main(int argc, char *argv[])
             timestamp %= arguments.wrap_at;
         }
         t->setBufferTailTimestamp(timestamp);
-        
+
         timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
         if (timestamp >= arguments.wrap_at) {
             timestamp -= arguments.wrap_at;
         }
-    
+
         for(unsigned int cycle=arguments.start_at_cycle;
-            cycle < arguments.start_at_cycle+arguments.total_cycles; 
+            cycle < arguments.start_at_cycle+arguments.total_cycles;
             cycle++) {
-            
+
             // simulate the rate adaptation
             int64_t diff=(time%arguments.wrap_at)-timestamp;
-            
+
             if (diff>(int64_t)arguments.wrap_at/2) {
                 diff -= arguments.wrap_at;
             } else if (diff<(-(int64_t)arguments.wrap_at)/2){
                 diff += arguments.wrap_at;
             }
-            
+
             debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
-            
+
             if(diff>0) {
                 uint64_t ts_head, fc_head;
                 uint64_t ts_tail, fc_tail;
-                
+
                 // write one packet
                 t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
-    
+
                 // read the buffer head timestamp
                 t->getBufferHeadTimestamp(&ts_head, &fc_head);
                 t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-                debugOutput(DEBUG_LEVEL_NORMAL, 
+                debugOutput(DEBUG_LEVEL_NORMAL,
                         " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
-                debugOutput(DEBUG_LEVEL_NORMAL, 
+                debugOutput(DEBUG_LEVEL_NORMAL,
                         "                 TAIL: %011llu, FC=%04u\n",
                         ts_tail,fc_tail);
-    
+
                 if (fc_head > blocksize) {
                     debugOutput(DEBUG_LEVEL_NORMAL,"Reading one block (%u frames)\n",blocksize);
-                    
+
                     // read one block
                     t->readFrames(blocksize, (char *)&dummyframe_out_block);
-        
+
                     // read the buffer head timestamp
                     t->getBufferHeadTimestamp(&ts_head, &fc_head);
                     t->getBufferTailTimestamp(&ts_tail, &fc_tail);
-                    debugOutput(DEBUG_LEVEL_NORMAL, 
+                    debugOutput(DEBUG_LEVEL_NORMAL,
                             " TS after read: HEAD: %011llu, FC=%04u\n",
                             ts_head,fc_head);
-                    debugOutput(DEBUG_LEVEL_NORMAL, 
+                    debugOutput(DEBUG_LEVEL_NORMAL,
                             "                TAIL: %011llu, FC=%04u\n",
                             ts_tail,fc_tail);
                 }
-                
+
                 // update the timestamp
                 timestamp += (uint64_t)(arguments.rate * arguments.frames_per_packet);
                 if (timestamp >= arguments.wrap_at) {
                     timestamp -= arguments.wrap_at;
                 }
             }
-    
+
             // simulate the cycle timer clock in ticks
             time += 3072;
             if (time >= arguments.wrap_at) {
                 time -= arguments.wrap_at;
             }
-            
+
             // allow for the messagebuffer thread to catch up
             usleep(200);
-            
+
             if(!run) break;
         }
     }
 
     delete t;
     delete c;
-        
+
     return EXIT_SUCCESS;
 }
 

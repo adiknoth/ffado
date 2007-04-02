@@ -1,8 +1,3 @@
-/*
- * This is the main page of the FreeBoB reference manual, built using
- * doxygen.
- */
-
 /**
 @page amdtpdescription The AMDTP StreamProcessor
 

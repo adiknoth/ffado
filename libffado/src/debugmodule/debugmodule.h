@@ -1,21 +1,25 @@
-/* debugmodule.h
- * Copyright (C) 2005 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef DEBUGMODULE_H
@@ -30,9 +34,9 @@
 typedef short debug_level_t;
 
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
-#define MB_BUFFERS	8192
+#define MB_BUFFERS    8192
 #define MB_NEXT(index) ((index+1) & (MB_BUFFERS-1))
-#define MB_BUFFERSIZE	256		/* message length limit */
+#define MB_BUFFERSIZE    256        /* message length limit */
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -77,11 +81,11 @@ typedef short debug_level_t;
 #define DECLARE_GLOBAL_DEBUG_MODULE extern DebugModule m_debugModule
 #define IMPL_GLOBAL_DEBUG_MODULE( RegisterName, Level )            \
                 DebugModule m_debugModule =                        \
-		    DebugModule( #RegisterName, Level )
+            DebugModule( #RegisterName, Level )
 
 #define setDebugLevel( Level ) {                                    \
                 m_debugModule.setLevel( Level ); \
-				}
+                }
 
 /*                m_debugModule.print( eDL_Normal,                        \
                                      __FILE__,                     \
@@ -89,14 +93,14 @@ typedef short debug_level_t;
                                      __LINE__,                     \
                                      "Setting debug level to %d\n",  \
                                      Level ); \
-				}*/
+                }*/
 
 #define getDebugLevel(  )                                     \
                 m_debugModule.getLevel( )
 
 
 #ifdef DEBUG
-    
+
     #define debugOutput( level, format, args... )                  \
                 m_debugModule.print( level,                        \
                                      __FILE__,                     \
@@ -128,10 +132,10 @@ typedef short debug_level_t;
 // #define DO_PREEMPTION_CHECKING
 
 #include <sys/time.h>
- 
+
 #ifdef DO_PREEMPTION_CHECKING
 #define CHECK_PREEMPTION(onoff) \
-	gettimeofday((struct timeval *)1, (struct timezone *)onoff)
+    gettimeofday((struct timeval *)1, (struct timezone *)onoff)
 #else
 #define CHECK_PREEMPTION(onoff)
 #endif
@@ -195,7 +199,7 @@ public:
 
     static DebugModuleManager* instance();
     ~DebugModuleManager();
-    
+
     bool setMgrDebugLevel( std::string name, debug_level_t level );
 
     void sync();
@@ -205,10 +209,10 @@ protected:
     bool unregisterModule( DebugModule& debugModule );
 
     bool init();
-    
+
     void print(const char *fmt, ...);
     void va_print(const char *fmt, va_list);
-    
+
 private:
     DebugModuleManager();
 
@@ -226,7 +230,7 @@ private:
 
     static void *mb_thread_func(void *arg);
     void mb_flush();
-    
+
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;
 };

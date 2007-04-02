@@ -1,5 +1,5 @@
 /*
-Modifications for Freebob (C) 2006, Pieter Palmers
+Modifications for FFADO by Pieter Palmers
 
 Copied from the jackd/jackdmp sources
 function names changed in order to avoid naming problems when using this in
@@ -76,7 +76,7 @@ class Thread
 
         virtual int Start() = 0;
         virtual int Kill() = 0;
-		virtual int Stop() = 0;
+        virtual int Stop() = 0;
 
         virtual int AcquireRealTime() = 0;
         virtual int AcquireRealTime(int priority) = 0;
@@ -86,9 +86,9 @@ class Thread
         {}
 
         virtual pthread_t GetThreadID() = 0;
-        
+
     protected:
-    		DECLARE_DEBUG_MODULE;
+            DECLARE_DEBUG_MODULE;
 
 };
 

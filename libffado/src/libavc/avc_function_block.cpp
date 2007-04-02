@@ -1,21 +1,24 @@
-/* avc_function_block.cpp
- * Copyright (C) 2006 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "avc_function_block.h"
@@ -143,19 +146,118 @@ FunctionBlockProcessingEnhancedMixer::~FunctionBlockProcessingEnhancedMixer()
 bool
 FunctionBlockProcessingEnhancedMixer::serialize( IOSSerialize& se )
 {
+    int todo,done;
     bool bStatus;
+    byte_t data_length_hi, data_length_lo;
+    
     bStatus  = se.write( m_controlSelector, "FunctionBlockProcessingEnhancedMixer controlSelector" );
     bStatus &= se.write( m_statusSelector,  "FunctionBlockProcessingEnhancedMixer statusSelector" );
+    
+    switch (m_statusSelector) {
+        case eSS_ProgramableState:
+            m_controlDataLength=m_LevelData.size();
+            data_length_hi=(m_controlDataLength >> 8);
+            data_length_lo=(m_controlDataLength & 0xFF);
+            bStatus &= se.write( data_length_hi,  "FunctionBlockProcessingEnhancedMixer controlDataLengthHi" );
+            bStatus &= se.write( data_length_lo,  "FunctionBlockProcessingEnhancedMixer controlDataLengthLo" );
 
+            for (int i=0;i<m_controlDataLength/8;i++) {
+                byte_t value=0;
+                
+                for (int j=0;j<8;j++) {
+                    control_data_ext_length_t bit_value=m_ProgramableStateData.at(i*8+j);
+                    value |= bit_value << (7-j);
+                }
+                
+                bStatus &= se.write( value,  "FunctionBlockProcessingEnhancedMixer data" );
+            }
+            
+            todo=m_controlDataLength%8;
+            done=m_controlDataLength-todo;
+            if (todo) {
+                byte_t value=0;
+                for (int j=0;j<todo;j++) {
+                    control_data_ext_length_t bit_value=m_ProgramableStateData.at(done*8+j);
+                    value |= bit_value << (7-j);
+                }
+                bStatus &= se.write( value,  "FunctionBlockProcessingEnhancedMixer data" );
+            }
+            break;
+        case eSS_Level:
+            m_controlDataLength=m_LevelData.size()/2;
+            data_length_hi=(m_controlDataLength >> 8);
+            data_length_lo=(m_controlDataLength & 0xFF);
+            bStatus &= se.write( data_length_hi,  "FunctionBlockProcessingEnhancedMixer controlDataLengthHi" );
+            bStatus &= se.write( data_length_lo,  "FunctionBlockProcessingEnhancedMixer controlDataLengthLo" );
+
+            for (int i=0;i<m_controlDataLength/2;i++) {
+                mixer_level_t value=m_LevelData.at(i);
+                byte_t value_hi=value >> 8;
+                byte_t value_lo=value & 0xFF;
+                
+                bStatus &= se.write( value_hi,  "FunctionBlockProcessingEnhancedMixer data" );
+                bStatus &= se.write( value_lo,  "FunctionBlockProcessingEnhancedMixer data" );
+            }
+            break;
+    }
     return bStatus;
 }
 
 bool
 FunctionBlockProcessingEnhancedMixer::deserialize( IISDeserialize& de )
 {
-    bool bStatus;
+    int todo;
+    bool bStatus=true;
     bStatus  = de.read( &m_controlSelector );
+
+    // NOTE: the returned value is currently bogus, so overwrite it
+    m_controlSelector=FunctionBlockProcessing::eCSE_Processing_EnhancedMixer;
+
     bStatus &= de.read( &m_statusSelector );
+
+    byte_t data_length_hi;
+    byte_t data_length_lo;
+    bStatus &= de.read( &data_length_hi );
+    bStatus &= de.read( &data_length_lo );
+
+    m_controlDataLength = (data_length_hi << 8) + data_length_lo;
+    switch (m_statusSelector) {
+        case eSS_ProgramableState:
+            m_ProgramableStateData.clear();
+            for (int i=0;i<m_controlDataLength/8;i++) {
+                byte_t value;
+                bStatus &= de.read( &value);
+
+                for (int j=7;j>=0;j--) {
+                    byte_t bit_value;
+                    bit_value=(((1<<j) & value) ? 1 : 0);
+                    m_ProgramableStateData.push_back(bit_value);
+                }
+            }
+
+            todo=m_controlDataLength%8;
+            if (todo) {
+                byte_t value;
+                bStatus &= de.read( &value);
+
+                for (int j=7;j>7-todo;j--) {
+                    byte_t bit_value;
+                    bit_value=(((1<<j) & value) ? 1 : 0);
+                    m_ProgramableStateData.push_back(bit_value);
+                }
+            }
+            break;
+        case eSS_Level:
+            m_LevelData.clear();
+            for (int i=0;i<m_controlDataLength/2;i++) {
+                byte_t mixer_value_hi=0, mixer_value_lo=0;
+                bStatus &= de.read( &mixer_value_hi);
+                bStatus &= de.read( &mixer_value_lo);
+                mixer_level_t value = (mixer_value_hi << 8) + mixer_value_lo;
+                m_LevelData.push_back(value);
+            }
+            break;
+    }
 
     return bStatus;
 }
@@ -357,14 +459,32 @@ FunctionBlockProcessing::serialize( IOSSerialize& se )
 bool
 FunctionBlockProcessing::deserialize( IISDeserialize& de )
 {
+    // NOTE: apparently the fbCmd of the STATUS type,
+    // with EnhancedMixer controlSelector returns with this
+    // controlSelector type changed to Mixer, making it
+    // impossible to choose the correct response handler
+    // based upon the response only.
+    
+    // HACK: we assume that it is the same as the sent one
+    // we also look at our data structure to figure out what we sent
+    byte_t controlSelector=eCSE_Processing_Unknown;
+    if(m_pMixer) {
+        controlSelector=eCSE_Processing_Mixer;
+    } else if(m_pEnhancedMixer) {
+        controlSelector=eCSE_Processing_EnhancedMixer;
+    }
+    
     bool bStatus;
     bStatus  = de.read( &m_selectorLength );
     bStatus &= de.read( &m_fbInputPlugNumber );
     bStatus &= de.read( &m_inputAudioChannelNumber );
     bStatus &= de.read( &m_outputAudioChannelNumber );
 
-    byte_t controlSelector;
-    bStatus &= de.peek( &controlSelector );
+    byte_t controlSelector_response;
+    bStatus &= de.peek( &controlSelector_response );
+/*    debugOutput(DEBUG_LEVEL_VERBOSE,"ctrlsel: orig = %02X, resp = %02X\n",
+        controlSelector, controlSelector_response);*/
+    
     switch( controlSelector ) {
     case eCSE_Processing_Mixer:
         if ( !m_pMixer ) {
@@ -382,6 +502,14 @@ FunctionBlockProcessing::deserialize( IISDeserialize& de )
     case eCSE_Processing_Mode:
     default:
         bStatus = false;
+    }
+
+    byte_t tmp;
+    if (de.peek(&tmp)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Unprocessed bytes:\n");
+        while (de.read(&tmp)) {
+            debugOutput(DEBUG_LEVEL_VERBOSE," %02X\n",tmp);
+        }
     }
 
     return bStatus;

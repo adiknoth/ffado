@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libfreebob
-Description: FreeBoB
+Name: libffado
+Description: FFADO
 Version: @VERSION@
-Libs: -L${libdir} -lfreebob
+Libs: -L${libdir} -lffado
 Cflags: -I${includedir}

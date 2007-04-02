@@ -1,19 +1,30 @@
-# Makefile.am - Makefile template
-# Copyright (C) 2005,06 by Daniel Wagner.
-# Copyright (C) 2006 by Pieter Palmers.
+# Makefile.am
 #
-# This file is part of FreeBoB.
+# Copyright (C) 2005-2007 by Daniel Wagner.
+# Copyright (C) 2005-2007 by Pieter Palmers.
 #
-# FreeBoB is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-# FreeBoB is distributed in the hope that it will be useful,
+# This file is part of FFADO.
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# FFADO is free software.
+#
+# you can redistribute and/or modify the library code
+# under the terms of the GNU Lesser General Public License 
+# version 2.1, as published by the Free Software Foundation
+#
+# you can redistribute and/or modify the applications
+# under the terms of the GNU General Public License
+# version 2, as published by the Free Software Foundation
+#
+# FFADO is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License
-# along with FreeBoB; if not, write to the Free Software
+# GNU (Lesser) General Public License for more details.
+#
+# You should have received a copy of the GNU (Lesser) General Public License
+# along with FFADO; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 INCLUDES = 						\
@@ -22,21 +33,21 @@ INCLUDES = 						\
 	$(LIBXMLCPP_CFLAGS)	$(LIBLO_CFLAGS)			\
 	-I$(top_srcdir) -I$(top_srcdir)/src
 
-lib_LTLIBRARIES = libfreebob.la
+lib_LTLIBRARIES = libffado.la
 
-libfreebob_la_LDFLAGS = 				\
+libffado_la_LDFLAGS = 				\
 	-version-info $(LT_VERSION) $(LIBRAW1394_LIBS) 	\
 	$(LIBIEC61883_LIBS) $(LIBAVC1394_LIBS) 		\
 	$(LIBXMLCPP_LIBS) $(LIBLO_LIBS) \
 	-lpthread -lrt
 
-libfreebob_la_LIBADD = -lrt
+libffado_la_LIBADD = -lrt
 
 noinst_HEADERS = \
-    libieee1394/configrom.h libieee1394/csr1212.h \
-    libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
-    libieee1394/IEC61883.h \
-    debugmodule/debugmodule.h \
+	libieee1394/configrom.h libieee1394/csr1212.h \
+	libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
+	libieee1394/IEC61883.h \
+	debugmodule/debugmodule.h \
 	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h \
@@ -63,90 +74,90 @@ noinst_HEADERS = \
 	libutil/TimeSource.h libutil/TimestampedBuffer.h
 
 # common sources
-libfreebob_la_SOURCES = \
-        devicemanager.cpp \
-        freebob.cpp \
-        freebob_streaming.cpp \
-        iavdevice.cpp \
-        debugmodule/debugmodule.cpp \
-        libavc/avc_connect.cpp \
-        libavc/avc_definitions.cpp \
-        libavc/avc_extended_cmd_generic.cpp \
-        libavc/avc_extended_plug_info.cpp \
-        libavc/avc_extended_stream_format.cpp \
-        libavc/avc_extended_subunit_info.cpp \
-        libavc/avc_function_block.cpp \
-        libavc/avc_generic.cpp \
-        libavc/avc_plug_info.cpp \
-        libavc/avc_serialize.cpp \
-        libavc/avc_signal_source.cpp \
-        libavc/avc_subunit_info.cpp \
-        libavc/avc_unit_info.cpp \
-        libieee1394/ARMHandler.cpp \
-        libieee1394/configrom.cpp \
-        libieee1394/csr1212.c \
-        libieee1394/ieee1394service.cpp \
-        libieee1394/IEC61883.cpp \
-        libosc/OscArgument.cpp \
-        libosc/OscMessage.cpp \
-        libosc/OscNode.cpp \
-        libosc/OscResponse.cpp \
-        libosc/OscServer.cpp \
-        libstreaming/cip.c \
-        libstreaming/IsoHandler.cpp \
-        libstreaming/IsoHandlerManager.cpp \
-        libstreaming/IsoStream.cpp \
-        libstreaming/Port.cpp \
-        libstreaming/PortManager.cpp \
-        libstreaming/StreamProcessor.cpp \
-        libstreaming/StreamProcessorManager.cpp \
-        libutil/DelayLockedLoop.cpp \
-        libutil/PacketBuffer.cpp \
-        libutil/OptionContainer.cpp \
-        libutil/PosixThread.cpp \
-        libutil/ringbuffer.c \
-        libutil/serialize.cpp \
-        libutil/StreamStatistics.cpp \
-        libutil/SystemTimeSource.cpp \
-        libutil/Time.c \
-        libutil/TimeSource.cpp \
-        libutil/TimestampedBuffer.cpp
+libffado_la_SOURCES = \
+	    devicemanager.cpp \
+	    ffado.cpp \
+	    ffado_streaming.cpp \
+	    iavdevice.cpp \
+	    debugmodule/debugmodule.cpp \
+	    libavc/avc_connect.cpp \
+	    libavc/avc_definitions.cpp \
+	    libavc/avc_extended_cmd_generic.cpp \
+	    libavc/avc_extended_plug_info.cpp \
+	    libavc/avc_extended_stream_format.cpp \
+	    libavc/avc_extended_subunit_info.cpp \
+	    libavc/avc_function_block.cpp \
+	    libavc/avc_generic.cpp \
+	    libavc/avc_plug_info.cpp \
+	    libavc/avc_serialize.cpp \
+	    libavc/avc_signal_source.cpp \
+	    libavc/avc_subunit_info.cpp \
+	    libavc/avc_unit_info.cpp \
+	    libieee1394/ARMHandler.cpp \
+	    libieee1394/configrom.cpp \
+	    libieee1394/csr1212.c \
+	    libieee1394/ieee1394service.cpp \
+	    libieee1394/IEC61883.cpp \
+	    libosc/OscArgument.cpp \
+	    libosc/OscMessage.cpp \
+	    libosc/OscNode.cpp \
+	    libosc/OscResponse.cpp \
+	    libosc/OscServer.cpp \
+	    libstreaming/cip.c \
+	    libstreaming/IsoHandler.cpp \
+	    libstreaming/IsoHandlerManager.cpp \
+	    libstreaming/IsoStream.cpp \
+	    libstreaming/Port.cpp \
+	    libstreaming/PortManager.cpp \
+	    libstreaming/StreamProcessor.cpp \
+	    libstreaming/StreamProcessorManager.cpp \
+	    libutil/DelayLockedLoop.cpp \
+	    libutil/PacketBuffer.cpp \
+	    libutil/OptionContainer.cpp \
+	    libutil/PosixThread.cpp \
+	    libutil/ringbuffer.c \
+	    libutil/serialize.cpp \
+	    libutil/StreamStatistics.cpp \
+	    libutil/SystemTimeSource.cpp \
+	    libutil/Time.c \
+	    libutil/TimeSource.cpp \
+	    libutil/TimestampedBuffer.cpp
 
 # class specific sources
 bebob_src = \
-        bebob/bebob_avdevice.cpp \
-        bebob/bebob_avdevice_subunit.cpp \
-        bebob/bebob_avplug.cpp \
-        bebob/bebob_dl_bcd.cpp \
-        bebob/bebob_dl_codes.cpp \
-        bebob/bebob_dl_mgr.cpp \
-        bebob/bebob_functionblock.cpp \
-        maudio/maudio_avdevice.cpp
+	    bebob/bebob_avdevice.cpp \
+	    bebob/bebob_avdevice_subunit.cpp \
+	    bebob/bebob_avplug.cpp \
+	    bebob/bebob_dl_bcd.cpp \
+	    bebob/bebob_dl_codes.cpp \
+	    bebob/bebob_dl_mgr.cpp \
+	    bebob/bebob_functionblock.cpp \
+	    maudio/maudio_avdevice.cpp
 
 motu_src = \
-        motu/motu_avdevice.cpp \
-        libstreaming/MotuPort.cpp \
-        libstreaming/MotuPortInfo.cpp \
-        libstreaming/MotuStreamProcessor.cpp
+	    motu/motu_avdevice.cpp \
+	    libstreaming/MotuPort.cpp \
+	    libstreaming/MotuPortInfo.cpp \
+	    libstreaming/MotuStreamProcessor.cpp
 
 dice_src = \
-        dice/dice_avdevice.cpp
+	    dice/dice_avdevice.cpp
 
 bounce_src = \
-        bounce/bounce_avdevice.cpp \
-        bounce/bounce_slave_avdevice.cpp \
-        libstreaming/AmdtpSlaveStreamProcessor.cpp
+	    bounce/bounce_avdevice.cpp \
+	    bounce/bounce_slave_avdevice.cpp \
+	    libstreaming/AmdtpSlaveStreamProcessor.cpp
 
 metric_halo_src = \
-        metrichalo/mh_avdevice.cpp
+	    metrichalo/mh_avdevice.cpp
 
 rme_src = \
-        rme/rme_avdevice.cpp
+	    rme/rme_avdevice.cpp
 
 amdtp_src = \
-        libstreaming/AmdtpPort.cpp \
-        libstreaming/AmdtpPortInfo.cpp \
-        libstreaming/AmdtpStreamProcessor.cpp
+	    libstreaming/AmdtpPort.cpp \
+	    libstreaming/AmdtpPortInfo.cpp \
+	    libstreaming/AmdtpStreamProcessor.cpp
 
 # data
 #  generic
@@ -162,81 +173,81 @@ bebob_pkgdata = 				\
 bin_PROGRAMS = 
 
 #  class specific
-bebob_bin = freebob-downloader freebob-sync
+bebob_bin = bridgeco-downloader bebob-sync
 
-freebob_downloader_SOURCES = freebob-downloader.cpp
-freebob_downloader_LDADD = $(top_builddir)/src/libfreebob.la
+bridgeco_downloader_SOURCES = bridgeco-downloader.cpp
+bridgeco_downloader_LDADD = $(top_builddir)/src/libffado.la
 
-freebob_sync_SOURCES = freebob-sync.cpp
-freebob_sync_LDADD = $(top_builddir)/src/libfreebob.la
+bebob_sync_SOURCES = bebob-sync.cpp
+bebob_sync_LDADD = $(top_builddir)/src/libffado.la
 
 # programs not intended for installation
 # generic
 noinst_PROGRAMS = test-dll test-debugmodule \
-                  test-unittests-util test-unittests-osc \
-                  test-ser
+	              test-unittests-util test-unittests-osc \
+	              test-ser
 
 test_dll_SOURCES = libutil/test-dll.cpp
-test_dll_LDADD = $(top_builddir)/src/libfreebob.la
+test_dll_LDADD = $(top_builddir)/src/libffado.la
 
 test_debugmodule_SOURCES = debugmodule/test_debugmodule.cpp
-test_debugmodule_LDADD = $(top_builddir)/src/libfreebob.la
+test_debugmodule_LDADD = $(top_builddir)/src/libffado.la
 
 test_unittests_util_SOURCES = libutil/unittests.cpp
-test_unittests_util_LDADD = $(top_builddir)/src/libfreebob.la
+test_unittests_util_LDADD = $(top_builddir)/src/libffado.la
 
 test_unittests_osc_SOURCES = libosc/unittests.cpp
-test_unittests_osc_LDADD = $(top_builddir)/src/libfreebob.la
+test_unittests_osc_LDADD = $(top_builddir)/src/libffado.la
 
 test_ser_SOURCES = ser.cpp
-test_ser_LDADD = $(top_builddir)/src/libfreebob.la
+test_ser_LDADD = $(top_builddir)/src/libffado.la
 
 # build customisation
 
 if BUILD_BEBOB
-libfreebob_la_SOURCES += $(bebob_src)
+libffado_la_SOURCES += $(bebob_src)
 bin_PROGRAMS += $(bebob_bin)
 noinst_PROGRAMS += $(bebob_noinst)
 nobase_dist_pkgdata_DATA += $(bebob_pkgdata)
 endif
 
 if BUILD_BOUNCE
-libfreebob_la_SOURCES += $(bounce_src)
+libffado_la_SOURCES += $(bounce_src)
 bin_PROGRAMS += $(bounce_bin)
 noinst_PROGRAMS += $(bounce_noinst)
 nobase_dist_pkgdata_DATA += $(bounce_pkgdata)
 endif
 
 if BUILD_DICE
-libfreebob_la_SOURCES += $(dice_src)
+libffado_la_SOURCES += $(dice_src)
 bin_PROGRAMS += $(dice_bin)
 noinst_PROGRAMS += $(dice_noinst)
 nobase_dist_pkgdata_DATA += $(dice_pkgdata)
 endif
 
 if BUILD_MOTU
-libfreebob_la_SOURCES += $(motu_src)
+libffado_la_SOURCES += $(motu_src)
 bin_PROGRAMS += $(motu_bin)
 noinst_PROGRAMS += $(motu_noinst)
 nobase_dist_pkgdata_DATA += $(motu_pkgdata)
 endif
 
 if BUILD_METRIC_HALO
-libfreebob_la_SOURCES += $(metric_halo_src)
+libffado_la_SOURCES += $(metric_halo_src)
 bin_PROGRAMS += $(metric_halo_bin)
 noinst_PROGRAMS += $(metric_halo_noinst)
 nobase_dist_pkgdata_DATA += $(metric_halo_pkgdata)
 endif
 
 if BUILD_RME
-libfreebob_la_SOURCES += $(rme_src)
+libffado_la_SOURCES += $(rme_src)
 bin_PROGRAMS += $(rme_bin)
 noinst_PROGRAMS += $(rme_noinst)
 nobase_dist_pkgdata_DATA += $(rme_pkgdata)
 endif
 
 if BUILD_AMDTP
-libfreebob_la_SOURCES += $(amdtp_src)
+libffado_la_SOURCES += $(amdtp_src)
 bin_PROGRAMS += $(amdtp_bin)
 noinst_PROGRAMS += $(amdtp_noinst)
 nobase_dist_pkgdata_DATA += $(amdtp_pkgdata)

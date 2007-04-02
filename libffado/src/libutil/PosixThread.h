@@ -1,5 +1,5 @@
 /*
-Modifications for Freebob (C) 2006, Pieter Palmers
+Modifications for FFADO by Pieter Palmers
 
 Copied from the jackd/jackdmp sources
 function names changed in order to avoid naming problems when using this in
@@ -24,8 +24,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 */
 
-#ifndef __POSIXTHREAD__
-#define __POSIXTHREAD__
+#ifndef __FFADO_POSIXTHREAD__
+#define __FFADO_POSIXTHREAD__
 
 #include "Thread.h"
 #include <pthread.h>
@@ -45,7 +45,7 @@ class PosixThread : public Thread
         pthread_t fThread;
         int fPriority;
         bool fRealTime;
-		volatile bool fRunning;
+        volatile bool fRunning;
         int fCancellation;
 
         static void* ThreadHandler(void* arg);
@@ -67,7 +67,7 @@ class PosixThread : public Thread
 
         virtual int Start();
         virtual int Kill();
-		virtual int Stop();
+        virtual int Stop();
 
         virtual int AcquireRealTime();
         virtual int AcquireRealTime(int priority);
@@ -75,11 +75,11 @@ class PosixThread : public Thread
 
         pthread_t GetThreadID();
 
-	protected:
+    protected:
 
 };
 
 } // end of namespace
 
 
-#endif
+#endif // __FFADO_POSIXTHREAD__

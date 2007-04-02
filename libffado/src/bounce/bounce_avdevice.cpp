@@ -1,23 +1,27 @@
-/* bounce_avdevice.cpp
- * Copyright (C) 2006 by Pieter Palmers
- * Copyright (C) 2006 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Pieter Palmers
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
+
 #include "bounce/bounce_avdevice.h"
 
 #include "libieee1394/configrom.h"
@@ -44,7 +48,7 @@ namespace Bounce {
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0B0001LU, 0x0B0001LU, 0x0B0001LU, "FreeBoB", "Bounce"},
+    {0x0B0001LU, 0x0B0001LU, 0x0B0001LU, "FFADO", "Bounce"},
 };
 
 BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
@@ -79,10 +83,10 @@ BounceDevice::probe( ConfigRom& configRom )
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
-        if ( 
+        if (
 //             ( supportedDeviceList[i].vendor_id == vendorId )
              ( supportedDeviceList[i].model_id == modelId )
-             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId ) 
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
            )
         {
             return true;
@@ -97,7 +101,7 @@ BounceDevice::discover()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "discovering BounceDevice (NodeID %d)\n",
                  m_nodeId );
-                 
+
 //     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
     unsigned int modelId = m_pConfigRom->getModelId();
     unsigned int unitSpecifierId = m_pConfigRom->getUnitSpecifierId();
@@ -107,8 +111,8 @@ BounceDevice::discover()
           ++i )
     {
         if ( //( supportedDeviceList[i].vendor_id == vendorId )
-             ( supportedDeviceList[i].model_id == modelId ) 
-             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId ) 
+             ( supportedDeviceList[i].model_id == modelId )
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
            )
         {
             m_model = &(supportedDeviceList[i]);
@@ -167,12 +171,12 @@ BounceDevice::addPortsToProcessor(
     Streaming::Port::E_Direction direction) {
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to processor\n");
-    
+
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
     }
-    
+
     int i=0;
     for (i=0;i<BOUNCE_NB_AUDIO_CHANNELS;i++) {
         char *buff;
@@ -204,7 +208,7 @@ BounceDevice::addPortsToProcessor(
         }
         free(buff);
     }
-    
+
     for (i=0;i<BOUNCE_NB_MIDI_CHANNELS;i++) {
         char *buff;
         asprintf(&buff,"%s_Midi%s%d",id.c_str(),direction==Streaming::Port::E_Playback?"Out":"In",i);
@@ -236,13 +240,13 @@ BounceDevice::addPortsToProcessor(
         free(buff);
      }
 
-	return true;
+    return true;
 }
 
 bool
 BounceDevice::prepare() {
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing BounceDevice...\n" );
-    
+
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -250,7 +254,7 @@ BounceDevice::prepare() {
 
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
-    
+
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
                              m_samplerate,
@@ -284,7 +288,7 @@ BounceDevice::prepare() {
                                 m_samplerate,
                                 BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
     }
-    
+
     if(!p->init()) {
         debugFatal("Could not initialize transmit processor %s!\n",
             (snoopMode?" in snoop mode":""));
@@ -334,7 +338,7 @@ BounceDevice::startStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
-        
+
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());
         if(isochannel<0) {
@@ -342,7 +346,7 @@ BounceDevice::startStreamByIndex(int i) {
             return false;
         }
         p->setChannel(isochannel);
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readReg(BOUNCE_REGISTER_TX_ISOCHANNEL, &reg_isoch)) {
@@ -357,7 +361,7 @@ BounceDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=isochannel;
         if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
@@ -366,13 +370,13 @@ BounceDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         return true;
-        
+
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-        
+
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());
         if(isochannel<0) {
@@ -380,7 +384,7 @@ BounceDevice::startStreamByIndex(int i) {
             return false;
         }
         p->setChannel(isochannel);
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readReg(BOUNCE_REGISTER_RX_ISOCHANNEL, &reg_isoch)) {
@@ -395,7 +399,7 @@ BounceDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=isochannel;
         if(!writeReg(BOUNCE_REGISTER_RX_ISOCHANNEL, reg_isoch)) {
@@ -404,12 +408,12 @@ BounceDevice::startStreamByIndex(int i) {
             deallocateIsoChannel(isochannel);
             return false;
         }
-        
+
         return true;
     }
-    
+
     debugError("SP index %d out of range!\n",i);
-    
+
     return false;
 }
 
@@ -419,7 +423,7 @@ BounceDevice::stopStreamByIndex(int i) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
         unsigned int isochannel=p->getChannel();
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readReg(BOUNCE_REGISTER_TX_ISOCHANNEL, &reg_isoch)) {
@@ -430,29 +434,29 @@ BounceDevice::stopStreamByIndex(int i) {
             debugError("ISO_CHANNEL register != 0x%08X (=0x%08X)\n", isochannel, reg_isoch);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=0xFFFFFFFFUL;
         if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
             debugError("Could not write ISO_CHANNEL register" );
             return false;
         }
-        
+
         // deallocate ISO channel
         if(!deallocateIsoChannel(isochannel)) {
             debugError("Could not deallocate iso channel for SP\n",i);
             return false;
         }
-        
+
         p->setChannel(-1);
         return true;
-        
+
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-        
+
         unsigned int isochannel=p->getChannel();
-        
+
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readReg(BOUNCE_REGISTER_RX_ISOCHANNEL, &reg_isoch)) {
@@ -463,24 +467,24 @@ BounceDevice::stopStreamByIndex(int i) {
             debugError("ISO_CHANNEL register != 0x%08X (=0x%08X)\n", isochannel, reg_isoch);
             return false;
         }
-        
+
         // write value of ISO_CHANNEL register
         reg_isoch=0xFFFFFFFFUL;
         if(!writeReg(BOUNCE_REGISTER_RX_ISOCHANNEL, reg_isoch)) {
             debugError("Could not write ISO_CHANNEL register\n");
             return false;
         }
-        
+
         // deallocate ISO channel
         if(!deallocateIsoChannel(isochannel)) {
             debugError("Could not deallocate iso channel for SP (%d)\n",i);
             return false;
         }
-        
+
         p->setChannel(-1);
         return true;
     }
-    
+
     debugError("SP index %d out of range!\n",i);
     return false;
 }
@@ -490,12 +494,12 @@ BounceDevice::stopStreamByIndex(int i) {
 // allocate ISO resources for the SP's
 int BounceDevice::allocateIsoChannel(unsigned int packet_size) {
     unsigned int bandwidth=8+packet_size;
-    
+
     int ch=m_p1394Service->allocateIsoChannelGeneric(bandwidth);
-        
+
     debugOutput(DEBUG_LEVEL_VERBOSE, "allocated channel %d, bandwidth %d\n",
         ch, bandwidth);
-    
+
     return ch;
 }
 // deallocate ISO resources
@@ -509,37 +513,37 @@ bool BounceDevice::deallocateIsoChannel(int channel) {
 bool
 BounceDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX\n", offset);
-    
+
     if(offset >= BOUNCE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
-   
+
     return true;
 }
 
 bool
 BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",  
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
-    
+
     if(offset >= BOUNCE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     if(!m_p1394Service->write_quadlet( nodeId, addr, data ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
@@ -547,19 +551,19 @@ BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     return true;
 }
 
-bool 
+bool
 BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n", 
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
         offset, length);
-    
+
     if(offset >= BOUNCE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
-    
+
     if(!m_p1394Service->read( nodeId, addr, length, data ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
@@ -567,16 +571,16 @@ BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     return true;
 }
 
-bool 
+bool
 BounceDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",  
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
         offset, length);
-    
+
     if(offset >= BOUNCE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-    
+
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
 

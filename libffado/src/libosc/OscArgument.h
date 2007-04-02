@@ -1,30 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_OSCARGUMENT__
-#define __FREEBOB_OSCARGUMENT__
+
+#ifndef __FFADO_OSCARGUMENT__
+#define __FFADO_OSCARGUMENT__
 
 #include "../debugmodule/debugmodule.h"
 
@@ -43,9 +41,9 @@ public:
     OscArgument(float);
     OscArgument(string);
     virtual ~OscArgument();
-    
+
     bool operator == ( const OscArgument& rhs );
-    
+
     int32_t getInt() { return m_intVal;};
     bool isInt() { return m_isInt;};
     int64_t getInt64() { return m_int64Val;};
@@ -54,19 +52,19 @@ public:
     bool isFloat() { return m_isFloat;};
     string& getString() { return m_stringVal;};
     bool isString() { return m_isString;};
-    
+
     void print();
-    
+
 protected:
     bool m_isInt;
     int32_t m_intVal;
-    
+
     bool m_isInt64;
     int64_t m_int64Val;
-    
+
     bool m_isFloat;
     float m_floatVal;
-    
+
     bool m_isString;
     string m_stringVal;
 
@@ -77,6 +75,6 @@ protected:
 
 } // end of namespace OSC
 
-#endif /* __FREEBOB_OSCARGUMENT__ */
+#endif /* __FFADO_OSCARGUMENT__ */
 
 

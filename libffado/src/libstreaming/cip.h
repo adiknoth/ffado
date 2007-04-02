@@ -1,3 +1,23 @@
+/*
+ * libiec61883 - Linux IEEE 1394 streaming media library.
+ * Copyright (C) 2004 Kristian Hogsberg, Dan Dennedy, and Dan Maas.
+ * This file written by Kristian Hogsberg.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #ifndef _IEC61883_CIP_PRIVATE_H
 #define _IEC61883_CIP_PRIVATE_H
 
@@ -20,49 +40,49 @@ extern "C" {
 
 
 struct iec61883_packet {
-	/* First quadlet */
-	uint8_t dbs      : 8;
-	uint8_t eoh0     : 2;
-	uint8_t sid      : 6;
+    /* First quadlet */
+    uint8_t dbs      : 8;
+    uint8_t eoh0     : 2;
+    uint8_t sid      : 6;
 
-	uint8_t dbc      : 8;
-	uint8_t fn       : 2;
-	uint8_t qpc      : 3;
-	uint8_t sph      : 1;
-	uint8_t reserved : 2;
+    uint8_t dbc      : 8;
+    uint8_t fn       : 2;
+    uint8_t qpc      : 3;
+    uint8_t sph      : 1;
+    uint8_t reserved : 2;
 
-	/* Second quadlet */
-	uint8_t fdf      : 8;
-	uint8_t eoh1     : 2;
-	uint8_t fmt      : 6;
+    /* Second quadlet */
+    uint8_t fdf      : 8;
+    uint8_t eoh1     : 2;
+    uint8_t fmt      : 6;
 
-	uint16_t syt      : 16;
+    uint16_t syt      : 16;
 
-	unsigned char data[0];
+    unsigned char data[0];
 };
 
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
 
 struct iec61883_packet {
-	/* First quadlet */
-	uint8_t sid      : 6;
-	uint8_t eoh0     : 2;
-	uint8_t dbs      : 8;
+    /* First quadlet */
+    uint8_t sid      : 6;
+    uint8_t eoh0     : 2;
+    uint8_t dbs      : 8;
 
-	uint8_t reserved : 2;
-	uint8_t sph      : 1;
-	uint8_t qpc      : 3;
-	uint8_t fn       : 2;
-	uint8_t dbc      : 8;
+    uint8_t reserved : 2;
+    uint8_t sph      : 1;
+    uint8_t qpc      : 3;
+    uint8_t fn       : 2;
+    uint8_t dbc      : 8;
 
-	/* Second quadlet */
-	uint8_t fmt      : 6;
-	uint8_t eoh1     : 2;
-	uint8_t fdf      : 8;
+    /* Second quadlet */
+    uint8_t fmt      : 6;
+    uint8_t eoh1     : 2;
+    uint8_t fdf      : 8;
 
-	uint16_t syt      : 16;
+    uint16_t syt      : 16;
 
-	unsigned char data[0];
+    unsigned char data[0];
 };
 
 #else
@@ -83,7 +103,7 @@ struct iec61883_packet {
 #define IEC61883_TAG_RESERVED2   3 /* Reserved */
 
 #define IEC61883_FDF_NODATA   0xFF
-		
+
 /* AM824 format definitions. */
 #define IEC61883_FDF_AM824 0x00
 #define IEC61883_FDF_AM824_CONTROLLED 0x04
@@ -103,52 +123,52 @@ struct iec61883_packet {
 /* IEC-60958 format definitions. */
 #define IEC60958_LABEL   0x0
 #define IEC60958_PAC_B   0x3 /* Preamble Code 'B': Start of channel 1, at
-			      * the start of a data block. */
+                  * the start of a data block. */
 #define IEC60958_PAC_RSV 0x2 /* Preamble Code 'RESERVED' */
 #define IEC60958_PAC_M   0x1 /* Preamble Code 'M': Start of channel 1 that
-			      *	is not at the start of a data block. */
+                  *    is not at the start of a data block. */
 #define IEC60958_PAC_W   0x0 /* Preamble Code 'W': start of channel 2. */
 #define IEC60958_DATA_VALID   0 /* When cleared means data is valid. */
 #define IEC60958_DATA_INVALID 1 /* When set means data is not suitable for an ADC. */
 
 struct iec61883_fraction {
-	int integer;
-	int numerator;
-	int denominator;
+    int integer;
+    int numerator;
+    int denominator;
 };
 
 struct iec61883_cip {
-	struct iec61883_fraction cycle_offset;
-	struct iec61883_fraction ticks_per_syt_offset;
-	struct iec61883_fraction ready_samples;
-	struct iec61883_fraction samples_per_cycle;
-	int dbc, dbs;
-	int cycle_count;
-	int cycle_count2;
-	int mode;
-	int syt_interval;
-	int dimension;
-	int rate;
-	int fdf;
-	int format;
+    struct iec61883_fraction cycle_offset;
+    struct iec61883_fraction ticks_per_syt_offset;
+    struct iec61883_fraction ready_samples;
+    struct iec61883_fraction samples_per_cycle;
+    int dbc, dbs;
+    int cycle_count;
+    int cycle_count2;
+    int mode;
+    int syt_interval;
+    int dimension;
+    int rate;
+    int fdf;
+    int format;
 };
 
 void
 iec61883_cip_init(struct iec61883_cip *cip, int format, int fdf,
-		int rate, int dbs, int syt_interval);
-void 
+        int rate, int dbs, int syt_interval);
+void
 iec61883_cip_set_transmission_mode(struct iec61883_cip *ptz, int mode);
 
-int 
+int
 iec61883_cip_get_max_packet_size(struct iec61883_cip *ptz);
 
 int
 iec61883_cip_fill_header(int node_id, struct iec61883_cip *cip,
-		struct iec61883_packet *packet);
+        struct iec61883_packet *packet);
 
 int
 iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *cip,
-		struct iec61883_packet *packet);
+        struct iec61883_packet *packet);
 
 #ifdef __cplusplus
 }

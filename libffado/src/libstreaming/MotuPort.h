@@ -1,32 +1,29 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Jonathan Woithe
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_MOTUPORT__
-#define __FREEBOB_MOTUPORT__
+
+#ifndef __FFADO_MOTUPORT__
+#define __FFADO_MOTUPORT__
 
 /**
  * This file implements the ports used in Motu devices
@@ -43,22 +40,22 @@ namespace Streaming {
 
 
 */
-class MotuAudioPort 
-	: public AudioPort, public MotuPortInfo
+class MotuAudioPort
+    : public AudioPort, public MotuPortInfo
 {
 
 public:
 
-	MotuAudioPort(std::string name, 
-	                   enum E_Direction direction,
-		           int position,
-		           int size)
-	: AudioPort(name, direction),
-	  MotuPortInfo(name, position, size) // TODO: add more port information parameters here if nescessary
-	{};
+    MotuAudioPort(std::string name,
+                       enum E_Direction direction,
+                   int position,
+                   int size)
+    : AudioPort(name, direction),
+      MotuPortInfo(name, position, size) // TODO: add more port information parameters here if nescessary
+    {};
 
-	virtual ~MotuAudioPort() {};
- 
+    virtual ~MotuAudioPort() {};
+
 protected:
 
 };
@@ -68,24 +65,24 @@ protected:
 
 
 */
-class MotuMidiPort 
-	: public MidiPort, public MotuPortInfo
+class MotuMidiPort
+    : public MidiPort, public MotuPortInfo
 {
 
 public:
 
-	MotuMidiPort(std::string name, 
-	                   enum E_Direction direction,
-		           int position)
-		: MidiPort(name, direction),
-		  MotuPortInfo(name, position, 0)  // TODO: add more port information parameters here if nescessary
-	{};
+    MotuMidiPort(std::string name,
+                       enum E_Direction direction,
+                   int position)
+        : MidiPort(name, direction),
+          MotuPortInfo(name, position, 0)  // TODO: add more port information parameters here if nescessary
+    {};
 
 
-	virtual ~MotuMidiPort() {};
+    virtual ~MotuMidiPort() {};
 
 protected:
-	
+
 };
 
 /*!
@@ -93,27 +90,27 @@ protected:
 
 
 */
-class MotuControlPort 
-	: public ControlPort, public MotuPortInfo
+class MotuControlPort
+    : public ControlPort, public MotuPortInfo
 {
 
 public:
 
-	MotuControlPort(std::string name, 
-	                   enum E_Direction direction,
-		           int position)
-		: ControlPort(name, direction),
-		  MotuPortInfo(name, position, 2) // TODO: add more port information parameters here if nescessary 
-	{};
+    MotuControlPort(std::string name,
+                       enum E_Direction direction,
+                   int position)
+        : ControlPort(name, direction),
+          MotuPortInfo(name, position, 2) // TODO: add more port information parameters here if nescessary
+    {};
 
 
-	virtual ~MotuControlPort() {};
+    virtual ~MotuControlPort() {};
 
 protected:
-	
+
 };
 
 } // end of namespace Streaming
 
-#endif /* __FREEBOB_MOTUPORT__ */
+#endif /* __FFADO_MOTUPORT__ */
 

@@ -1,23 +1,27 @@
-/* bounce_avdevice.h
- * Copyright (C) 2006 by Pieter Palmers
- * Copyright (C) 2006 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Pieter Palmers
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
+
 #ifndef BOUNCEDEVICE_H
 #define BOUNCEDEVICE_H
 
@@ -65,16 +69,16 @@ private:
     class BounceNotifier;
 public:
     BounceDevice( std::auto_ptr<ConfigRom>( configRom ),
-		  Ieee1394Service& ieee1394Service,
-		  int nodeId );
+          Ieee1394Service& ieee1394Service,
+          int nodeId );
     virtual ~BounceDevice();
 
     static bool probe( ConfigRom& configRom );
     bool discover();
-    
+
     bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     int getSamplingFrequency( );
-    
+
     bool prepare();
     bool lock();
     bool unlock();
@@ -85,7 +89,7 @@ public:
 
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
-    
+
     void showDevice();
 
 protected:
@@ -98,9 +102,9 @@ protected:
     StreamProcessorVector m_transmitProcessors;
 
     bool addPortsToProcessor(
-       Streaming::StreamProcessor *processor, 
+       Streaming::StreamProcessor *processor,
        Streaming::Port::E_Direction direction);
-    
+
 private: // generic helpers
     int allocateIsoChannel(unsigned int packet_size);
     bool deallocateIsoChannel(int channel);
@@ -111,11 +115,11 @@ protected: // I/O helpers
     bool writeReg(fb_nodeaddr_t, fb_quadlet_t);
     bool readRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
     bool writeRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-    
+
 private:
     BounceNotifier *m_Notifier;
     /**
-     * this class reacts on the other side writing to the 
+     * this class reacts on the other side writing to the
      * hosts address space
      */
     #define BOUNCE_NOTIFIER_BASE_ADDRESS 0x0000FFFFE0000000ULL
@@ -125,7 +129,7 @@ private:
     public:
         BounceNotifier(BounceDevice *, nodeaddr_t start);
         virtual ~BounceNotifier();
-        
+
     private:
         BounceDevice *m_bouncedevice;
     };

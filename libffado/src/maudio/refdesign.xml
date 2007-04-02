@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<FreeBoBConnectionInfo>
+<FFADOConnectionInfo>
   <Device>
     <NodeId>1</NodeId>
     <Comment>Connection Information for bridgeCo AG, Switzerland , Ref-Design_Audio1 configuration</Comment>
@@ -189,4 +189,4 @@
       </Format>
     </StreamFormats>
   </Device>
-</FreeBoBConnectionInfo>
+</FFADOConnectionInfo>

@@ -1,22 +1,26 @@
-/* bebob_avdevice_subunit.h
- * Copyright (C) 2005,06,07 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
+
 #ifndef BEBOB_AVDEVICESUBUNIT_H
 #define BEBOB_AVDEVICESUBUNIT_H
 
@@ -37,9 +41,9 @@ class AvDevice;
 class AvDeviceSubunit {
  public:
     AvDeviceSubunit( AvDevice& avDevice,
-		     AVCCommand::ESubunitType type,
-		     subunit_t id,
-		     int verboseLevel );
+             AVCCommand::ESubunitType type,
+             subunit_t id,
+             int verboseLevel );
     virtual ~AvDeviceSubunit();
 
     virtual bool discover();
@@ -49,12 +53,12 @@ class AvDeviceSubunit {
     bool addPlug( AvPlug& plug );
 
     subunit_t getSubunitId()
-	{ return m_sbId; }
+    { return m_sbId; }
     AVCCommand::ESubunitType getSubunitType()
-	{ return m_sbType; }
+    { return m_sbType; }
 
     AvPlugVector& getPlugs()
-	{ return m_plugs; }
+    { return m_plugs; }
     AvPlug* getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId);
 
 
@@ -64,7 +68,7 @@ class AvDeviceSubunit {
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static AvDeviceSubunit* deserialize( Glib::ustring basePath,
-					 Util::IODeserialize& deser,
+                     Util::IODeserialize& deser,
                                          AvDevice& avDevice );
  protected:
     AvDeviceSubunit();
@@ -97,8 +101,8 @@ typedef std::vector<AvDeviceSubunit*> AvDeviceSubunitVector;
 class AvDeviceSubunitAudio: public AvDeviceSubunit {
  public:
     AvDeviceSubunitAudio( AvDevice& avDevice,
-			  subunit_t id,
-			  int verboseLevel );
+              subunit_t id,
+              int verboseLevel );
     AvDeviceSubunitAudio();
     virtual ~AvDeviceSubunitAudio();
 
@@ -134,8 +138,8 @@ protected:
 class AvDeviceSubunitMusic: public AvDeviceSubunit {
  public:
     AvDeviceSubunitMusic( AvDevice& avDevice,
-			  subunit_t id,
-			  int verboseLevel );
+              subunit_t id,
+              int verboseLevel );
     AvDeviceSubunitMusic();
     virtual ~AvDeviceSubunitMusic();
 

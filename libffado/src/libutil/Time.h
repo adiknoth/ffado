@@ -1,31 +1,30 @@
 /*
-Time.h
-FreeBob Streaming API
-FreeBob = Firewire (pro-)audio for linux
+    Copyright (C) 2005-2007 by Pieter Palmers
 
-http://freebob.sf.net
+    This file is part of FFADO
+    FFADO = Free Firewire (pro-)audio drivers for linux
 
-Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
-	
-Based upon JackTime.h from the jackdmp package.
-Original Copyright:
+    FFADO is based upon FreeBoB.
 
-Copyright (C) 2001-2003 Paul Davis
-Copyright (C) 2004-2006 Grame
+    Based upon JackTime.h from the jackdmp package.
+    Original Copyright:
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
+    Copyright (C) 2001-2003 Paul Davis
+    Copyright (C) 2004-2006 Grame
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program; if not, write to the Free Software 
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 */
 
@@ -42,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * monotonic clock with units of microseconds.
  */
 
-typedef uint64_t freebob_microsecs_t;
+typedef uint64_t ffado_microsecs_t;
 
 
 #ifdef __cplusplus
@@ -53,25 +52,25 @@ extern "C"
 
 #include <unistd.h>
 
-    static inline void FreebobSleep(long usec) {
+    static inline void FFADOSleep(long usec) {
         usleep(usec);
     }
 
 #ifdef GETCYCLE_TIME
-	#include "cycles.h"
-    extern freebob_microsecs_t __freebob_cpu_mhz;
-    extern freebob_microsecs_t GetMhz();
+    #include "cycles.h"
+    extern ffado_microsecs_t __ffado_cpu_mhz;
+    extern ffado_microsecs_t GetMhz();
     extern void InitTime();
-    static inline freebob_microsecs_t GetMicroSeconds (void) {
-        return get_cycles() / __freebob_cpu_mhz;
+    static inline ffado_microsecs_t GetMicroSeconds (void) {
+        return get_cycles() / __ffado_cpu_mhz;
     }
 #else
-	#include <time.h>
+    #include <time.h>
     extern void InitTime();
-    static inline freebob_microsecs_t GetMicroSeconds (void) {
+    static inline ffado_microsecs_t GetMicroSeconds (void) {
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        return (freebob_microsecs_t)ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
+        return (ffado_microsecs_t)ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
     }
 #endif
 

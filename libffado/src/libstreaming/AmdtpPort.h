@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2005,2006 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB.
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_AMDTPPORT__
-#define __FREEBOB_AMDTPPORT__
+
+#ifndef __FFADO_AMDTPPORT__
+#define __FFADO_AMDTPPORT__
 
 /**
  * This file implements the AMDTP ports as used in the BeBoB's
@@ -42,25 +38,25 @@ namespace Streaming {
 \brief The Base Class for an AMDTP Audio Port
 
  The AMDTP/AM824/IEC61883-6 port that represents audio.
- 
+
 */
-class AmdtpAudioPort 
-	: public AudioPort, public AmdtpPortInfo
+class AmdtpAudioPort
+    : public AudioPort, public AmdtpPortInfo
 {
 
 public:
 
-	AmdtpAudioPort(std::string name, 
-	                   enum E_Direction direction,
-		           int position, 
-		           int location, 
-		           enum E_Formats format)
-	: AudioPort(name, direction),
-	  AmdtpPortInfo(name, position, location, format)
-	{};
+    AmdtpAudioPort(std::string name,
+                       enum E_Direction direction,
+                   int position,
+                   int location,
+                   enum E_Formats format)
+    : AudioPort(name, direction),
+      AmdtpPortInfo(name, position, location, format)
+    {};
 
-	virtual ~AmdtpAudioPort() {};
- 
+    virtual ~AmdtpAudioPort() {};
+
 protected:
 
 };
@@ -69,30 +65,30 @@ protected:
 \brief The Base Class for an AMDTP Midi Port
 
  The AMDTP/AM824/IEC61883-6 port that represents midi.
- 
+
 */
-class AmdtpMidiPort 
-	: public MidiPort, public AmdtpPortInfo
+class AmdtpMidiPort
+    : public MidiPort, public AmdtpPortInfo
 {
 
 public:
 
-	AmdtpMidiPort(std::string name, 
-	                   enum E_Direction direction,
-		           int position, 
-		           int location, 
-		           enum E_Formats format)
-		: MidiPort(name, direction),
-		  AmdtpPortInfo(name, position, location, format) 
-	{};
+    AmdtpMidiPort(std::string name,
+                       enum E_Direction direction,
+                   int position,
+                   int location,
+                   enum E_Formats format)
+        : MidiPort(name, direction),
+          AmdtpPortInfo(name, position, location, format)
+    {};
 
 
-	virtual ~AmdtpMidiPort() {};
+    virtual ~AmdtpMidiPort() {};
 
 protected:
-	
+
 };
 
 } // end of namespace Streaming
 
-#endif /* __FREEBOB_AMDTPPORT__ */
+#endif /* __FFADO_AMDTPPORT__ */

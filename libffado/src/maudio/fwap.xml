@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<FreeBoBConnectionInfo>
+<FFADOConnectionInfo>
   <Device>
     <NodeId>0</NodeId>
     <Comment>Connection Information for M-Audio, FW Audiophile configuration</Comment>
@@ -154,4 +154,4 @@
       </Format>
     </StreamFormats>
   </Device>
-</FreeBoBConnectionInfo>
+</FFADOConnectionInfo>

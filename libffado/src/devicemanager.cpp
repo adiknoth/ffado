@@ -1,21 +1,25 @@
- /* devicemanager.cpp
- * Copyright (C) 2005,06,07 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include "fbtypes.h"
@@ -93,15 +97,15 @@ DeviceManager::~DeviceManager()
 }
 
 void
-DeviceManager::setVerboseLevel(int l) 
+DeviceManager::setVerboseLevel(int l)
 {
     m_verboseLevel=l;
     setDebugLevel(l);
-    
+
     if (m_1394Service) m_1394Service->setVerboseLevel(l);
     if (m_oscServer) m_oscServer->setVerboseLevel(l);
     OscNode::setVerboseLevel(l);
-    
+
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -125,16 +129,16 @@ DeviceManager::initialize( int port )
         m_1394Service = 0;
         return false;
     }
-    
+
     m_oscServer = new OSC::OscServer("17820");
-    
+
     if (!m_oscServer) {
         debugFatal("failed to create osc server\n");
         delete m_1394Service;
         m_1394Service = 0;
         return false;
     }
-    
+
     if (!m_oscServer->init()) {
         debugFatal("failed to init osc server\n");
         delete m_oscServer;
@@ -143,7 +147,7 @@ DeviceManager::initialize( int port )
         m_1394Service = 0;
         return false;
     }
-    
+
     if (!m_oscServer->registerAtRootNode(this)) {
         debugFatal("failed to register devicemanager at server\n");
         delete m_oscServer;
@@ -152,7 +156,7 @@ DeviceManager::initialize( int port )
         m_1394Service = 0;
         return false;
     }
-    
+
     if (!m_oscServer->start()) {
         debugFatal("failed to start osc server\n");
         delete m_oscServer;
@@ -161,7 +165,7 @@ DeviceManager::initialize( int port )
         m_1394Service = 0;
         return false;
     }
-    
+
     setVerboseLevel(m_verboseLevel);
     return true;
 }
@@ -197,12 +201,12 @@ DeviceManager::discover( )
               ++nodeId )
         {
             debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
-    
+
             if (nodeId == m_1394Service->getLocalNodeId()) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Skipping local node (%d)...\n", nodeId );
                 continue;
             }
-    
+
             std::auto_ptr<ConfigRom> configRom =
                 std::auto_ptr<ConfigRom>( new ConfigRom( *m_1394Service,
                                                          nodeId ) );
@@ -218,7 +222,7 @@ DeviceManager::discover( )
                              nodeId );
                 continue;
             }
-    
+
             IAvDevice* avDevice = getDriverForDevice( configRom,
                                                       nodeId );
             if ( avDevice ) {
@@ -227,7 +231,7 @@ DeviceManager::discover( )
                              nodeId );
 
                 avDevice->setVerboseLevel( m_verboseLevel );
-                
+
                 if ( !avDevice->discover() ) {
                     debugError( "discover: could not discover device\n" );
                     delete avDevice;
@@ -237,7 +241,7 @@ DeviceManager::discover( )
                 if ( !avDevice->setId( m_avDevices.size() ) ) {
                     debugError( "setting Id failed\n" );
                 }
-                
+
                 if (snoopMode) {
                     debugOutput( DEBUG_LEVEL_VERBOSE,
                                  "Enabling snoop mode on node %d...\n", nodeId );
@@ -248,13 +252,13 @@ DeviceManager::discover( )
                         continue;
                     }
                 }
-                
+
                 if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
                     avDevice->showDevice();
                 }
 
                 m_avDevices.push_back( avDevice );
-                
+
                 if (!addChildOscNode(avDevice)) {
                     debugWarning("failed to register AvDevice at OSC server\n");
                 }
@@ -262,7 +266,7 @@ DeviceManager::discover( )
             }
         }
         return true;
-        
+
     } else { // slave mode
         fb_nodeid_t nodeId = m_1394Service->getLocalNodeId();
         debugOutput( DEBUG_LEVEL_VERBOSE, "Starting in slave mode on node %d...\n", nodeId );
@@ -288,7 +292,7 @@ DeviceManager::discover( )
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "discover: driver found for device %d\n",
                          nodeId );
-            
+
             avDevice->setVerboseLevel( m_verboseLevel );
 
             if ( !avDevice->discover() ) {
@@ -306,7 +310,7 @@ DeviceManager::discover( )
 
             m_avDevices.push_back( avDevice );
         }
-    
+
         return true;
     }
 }
@@ -391,8 +395,8 @@ DeviceManager::isValidNode(int node)
         IAvDevice* avDevice = *it;
 
         if (avDevice->getConfigRom().getNodeId() == node) {
-        	return true;
-	}
+            return true;
+    }
     }
     return false;
 }
@@ -439,13 +443,13 @@ DeviceManager::getAvDevice( int nodeId )
 IAvDevice*
 DeviceManager::getAvDeviceByIndex( int idx )
 {
-	return m_avDevices.at(idx);
+    return m_avDevices.at(idx);
 }
 
 unsigned int
 DeviceManager::getAvDeviceCount( )
 {
-	return m_avDevices.size();
+    return m_avDevices.size();
 }
 
 /**
@@ -464,7 +468,7 @@ DeviceManager::getSyncSource() {
     if(!getOption("slaveMode", slaveMode)) {
         debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
     }
-   
+
     #warning TEST CODE FOR BOUNCE DEVICE !!
     // this makes the bounce slave use the xmit SP as sync source
     if (slaveMode) {
@@ -472,7 +476,6 @@ DeviceManager::getSyncSource() {
     } else {
         return device->getStreamProcessorByIndex(0);
     }
-    
 }
 
 bool
@@ -486,14 +489,14 @@ DeviceManager::saveCache( Glib::ustring fileName )
 {
     int i;
     i=0; // avoids unused warning
-    
+
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
         IAvDevice* pAvDevice;
         pAvDevice = *it; // avoids unused warning
-        
+
         #ifdef ENABLE_BEBOB
         BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast< BeBoB::AvDevice* >( pAvDevice );
         if ( pBeBoBDevice ) {
@@ -576,6 +579,6 @@ DeviceManager::loadCache( Glib::ustring fileName )
         }
     } while ( pBeBoBDevice );
     #endif
-    
+
     return true;
 }

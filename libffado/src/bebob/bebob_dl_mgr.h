@@ -1,22 +1,26 @@
-/* bebob_dl_mgr.h
- * Copyright (C) 2006 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
+
 #ifndef BEBOB_DL_MGR_H
 #define BEBOB_DL_MGR_H
 
@@ -50,29 +54,29 @@ namespace BeBoB {
         bool downloadCnE( std::string filename );
         bool programGUID( octlet_t guid );
 
-	void busresetHandler();
+    void busresetHandler();
 
-	Ieee1394Service* get1394Serivce() const
+    Ieee1394Service* get1394Serivce() const
             { return m_ieee1394service; }
 
-	bool setForceOperations( bool enabled )
+    bool setForceOperations( bool enabled )
             { m_forceEnabled = enabled; return true; }
 
-	bool setStartBootloader( bool bStartBootloader )
-	    { m_bStartBootloader = bStartBootloader; return true; }
+    bool setStartBootloader( bool bStartBootloader )
+        { m_bStartBootloader = bStartBootloader; return true; }
     protected:
-	enum EObjectType {
-	    eOT_Application,
-	    eOT_CnE
-	};
+    enum EObjectType {
+        eOT_Application,
+        eOT_CnE
+    };
 
-	void waitForBusReset();
+    void waitForBusReset();
         bool writeRequest( CommandCodes& cmd );
-	bool readResponse( CommandCodes& writeRequestCmd );
-	bool downloadObject( BCD& bcd, EObjectType eObject );
+    bool readResponse( CommandCodes& writeRequestCmd );
+    bool downloadObject( BCD& bcd, EObjectType eObject );
 
         bool programGUIDCmd( octlet_t guid );
-	bool startBootloaderCmd();
+    bool startBootloaderCmd();
         bool startApplicationCmd();
         bool initializePersParamCmd();
         bool initializeConfigToFactorySettingCmd();
@@ -110,15 +114,15 @@ namespace BeBoB {
         bool               m_isAppRunning;
         info_register_t    m_cachedInfoRegs;
 
-	pthread_mutex_t m_mutex;
-	pthread_cond_t  m_cond;
+    pthread_mutex_t m_mutex;
+    pthread_cond_t  m_cond;
 
-	Functor*        m_functor;
+    Functor*        m_functor;
 
         bool            m_forceEnabled;
-	bool            m_bStartBootloader;
+    bool            m_bStartBootloader;
 
-	DECLARE_DEBUG_MODULE;
+    DECLARE_DEBUG_MODULE;
     };
 }
 

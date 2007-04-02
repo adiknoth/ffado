@@ -1,19 +1,20 @@
-# configure.ac - Configure script for FreeBoB.
+# configure.ac - Configure script for FFADO.
 # Copyright (C) 2005,06 by Daniel Wagner.
 # Copyright (C) 2006,07 by Pieter Palmers.
 #
-# This file is part of FreeBoB.
+# This file is part of FFADO.
+# FFADO is based upon FreeBoB.
 #
-# FreeBoB is free software; you can redistribute it and/or modify
+# FFADO is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# FreeBoB is distributed in the hope that it will be useful,
+# FFADO is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License
-# along with FreeBoB; if not, write to the Free Software
+# along with FFADO; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #                                               -*- Autoconf -*-
@@ -22,13 +23,13 @@
 AC_PREREQ(2.57)
 
 
-m4_define(freebob_major_version, 1)
-m4_define(freebob_minor_version, 999)
-m4_define(freebob_micro_version, 4)
+m4_define(ffado_major_version, 1)
+m4_define(ffado_minor_version, 999)
+m4_define(ffado_micro_version, 4)
 
-m4_define(freebob_version, freebob_major_version.freebob_minor_version.freebob_micro_version)
+m4_define(ffado_version, ffado_major_version.ffado_minor_version.ffado_micro_version)
 
-AC_INIT(libfreebob, freebob_version, <freebob-devel@lists.sf.net>)
+AC_INIT(libffado, ffado_version, <ffado-devel@lists.sf.net>)
 
 # Before making a release, the LT_VERSION string should be modified.
 # The string is of the form C:R:A.
@@ -38,19 +39,19 @@ AC_INIT(libfreebob, freebob_version, <freebob-devel@lists.sf.net>)
 #   change to C+1:0:0
 # - If the interface is the same as the previous version, change to C:R+1:A
 
-LT_VERSION=2:0:0
+LT_VERSION=1:0:0
 AC_SUBST(LT_VERSION)
 
-AC_DEFINE(FREEBOB_MAJOR_VERSION, freebob_major_version,[Freebob major version])
-AC_DEFINE(FREEBOB_MINOR_VERSION, freebob_minor_version,[Freebob minor version])
-AC_DEFINE(FREEBOB_MICRO_VERSION, freebob_micro_version,[Freebob micro version])
-AC_SUBST(FREEBOB_MINOR_VERSION, freebob_minor_version)
-AC_SUBST(FREEBOB_MAJOR_VERSION, freebob_major_version)
-AC_SUBST(FREEBOB_MICRO_VERSION, freebob_micro_version)
+AC_DEFINE(FFADO_MAJOR_VERSION, ffado_major_version,[FFADO major version])
+AC_DEFINE(FFADO_MINOR_VERSION, ffado_minor_version,[FFADO minor version])
+AC_DEFINE(FFADO_MICRO_VERSION, ffado_micro_version,[FFADO micro version])
+AC_SUBST(FFADO_MINOR_VERSION, ffado_minor_version)
+AC_SUBST(FFADO_MAJOR_VERSION, ffado_major_version)
+AC_SUBST(FFADO_MICRO_VERSION, ffado_micro_version)
 
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
-AC_CONFIG_SRCDIR([src/freebob.cpp])
+AC_CONFIG_SRCDIR([src/ffado.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_GNU_SOURCE
 AC_LANG(C++)
@@ -108,7 +109,7 @@ esac
 
 AC_CHECK_LIB(pthread, pthread_create,,
 [
-        AC_ERROR(You need the pthread library to compile freebob)
+        AC_ERROR(You need the pthread library to compile ffado)
 ])
 
 # Check for dependencies
@@ -180,22 +181,22 @@ if test "x$enable_mmx" = xyes; then
   COMMON_X86_OPT_FLAGS="-DREENTRANT -O3 -fomit-frame-pointer -ffast-math -funroll-loops"
 
   if test "$target_cpu" = "i586"; then
-      FREEBOB_OPT_CFLAGS="-march=i586 "
+      FFADO_OPT_CFLAGS="-march=i586 "
   elif test "$target_cpu" = "i686"; then
-      FREEBOB_OPT_CFLAGS="-march=i686"
+      FFADO_OPT_CFLAGS="-march=i686"
   else
       :
   fi
 
-  FREEBOB_OPT_CFLAGS="$COMMON_X86_OPT_FLAGS $FREEBOB_OPT_CFLAGS $MMX_FLAGS $SSE_FLAGS"
+  FFADO_OPT_CFLAGS="$COMMON_X86_OPT_FLAGS $FFADO_OPT_CFLAGS $MMX_FLAGS $SSE_FLAGS"
 
 
 AC_ARG_ENABLE(optimize,
     AC_HELP_STRING([--enable-optimize],
 		   [ask the compiler for its best optimizations]),
     [ if test x$enable_optimize != xno ; then
-	CFLAGS="$CFLAGS $FREEBOB_OPT_CFLAGS" ;
-	CXXFLAGS="$CXXFLAGS $FREEBOB_OPT_CFLAGS"
+	CFLAGS="$CFLAGS $FFADO_OPT_CFLAGS" ;
+	CXXFLAGS="$CXXFLAGS $FFADO_OPT_CFLAGS"
       fi 
     ]
 )
@@ -398,18 +399,18 @@ AC_SUBST([BIN_PROGRAMS])
 AC_CONFIG_FILES([Makefile
 		 doc/Makefile
 		 doc/reference.doxygen
-		 libfreebob/Makefile
+		 libffado/Makefile
 		 src/Makefile
 		 tests/Makefile
 		 tests/streaming/Makefile
-		 libfreebob.pc])
+		 libffado.pc])
 
 AC_OUTPUT
 
 # Print a summary so that important information isn't missed.
 AC_MSG_RESULT([
 
-FreeBoB $VERSION is now configured for $canonical_host_type
+FFADO $VERSION is now configured for $canonical_host_type
 
   Building support for: $supported_devices
    build AMDTP support: $build_amdtp

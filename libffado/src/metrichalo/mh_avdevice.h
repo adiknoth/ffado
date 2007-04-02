@@ -1,21 +1,24 @@
-/* mh_avdevice.h
- * Copyright (C) 2007 by Pieter Palmers
+/*
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBob.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBob is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBob is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBob; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef MHDEVICE_H
@@ -44,8 +47,8 @@ struct VendorModelEntry {
 class MHAvDevice : public IAvDevice {
 public:
     MHAvDevice( std::auto_ptr<ConfigRom>( configRom ),
-	      Ieee1394Service& ieee1394Service,
-		  int nodeId );
+          Ieee1394Service& ieee1394Service,
+          int nodeId );
     virtual ~MHAvDevice();
 
     static bool probe( ConfigRom& configRom );
@@ -68,7 +71,7 @@ public:
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-  
+
 protected:
     struct VendorModelEntry *m_model;
 

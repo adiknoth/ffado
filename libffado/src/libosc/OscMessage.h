@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_OSCMESSAGE__
-#define __FREEBOB_OSCMESSAGE__
+
+#ifndef __FFADO_OSCMESSAGE__
+#define __FFADO_OSCMESSAGE__
 
 #include <string>
 #include <lo/lo.h>
@@ -46,21 +42,21 @@ public:
     OscMessage();
     OscMessage(string path, const char* types, lo_arg** argv, int argc);
     virtual ~OscMessage();
-    
+
     lo_message makeLoMessage();
-    
+
     void addArgument(int32_t v);
     void addArgument(int64_t v);
     void addArgument(float v);
     void addArgument(string v);
-    
+
     OscArgument& getArgument(unsigned int idx);
     unsigned int nbArguments();
-    
+
     void setPath(string v);
     string getPath() {return m_Path;};
     void print();
-    
+
 protected:
     typedef std::vector< OscArgument > OscArgumentVector;
     typedef std::vector< OscArgument >::iterator OscArgumentVectorIterator;
@@ -74,6 +70,6 @@ protected:
 
 } // end of namespace OSC
 
-#endif /* __FREEBOB_OSCMESSAGE__ */
+#endif /* __FFADO_OSCMESSAGE__ */
 
 

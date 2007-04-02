@@ -1,12 +1,15 @@
-/* freebob.cpp
- * Copyright (C) 2005 Pieter Palmers, Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBoB
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
+ *
+ * FFADO is based upon FreeBoB
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * License version 2.1, as published by the Free Software Foundation;
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,7 +24,7 @@
 
 #include "config.h"
 
-#include "libfreebob/freebob.h"
+#include "libffado/ffado.h"
 
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
@@ -35,15 +38,15 @@
 #include <string.h>
 
 DECLARE_GLOBAL_DEBUG_MODULE;
-IMPL_GLOBAL_DEBUG_MODULE( FreeBoB, DEBUG_LEVEL_VERBOSE );
+IMPL_GLOBAL_DEBUG_MODULE( FFADO, DEBUG_LEVEL_VERBOSE );
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// this is very much nescessary, as otherwise the 
-// message buffer thread doesn't get killed when the 
-// library is dlclose()'d 
+// this is very much nescessary, as otherwise the
+// message buffer thread doesn't get killed when the
+// library is dlclose()'d
 
 static void exitfunc(void) __attribute__((destructor));
 
@@ -57,20 +60,20 @@ static void exitfunc(void)
 #endif
 
 const char*
-freebob_get_version() {
+ffado_get_version() {
     return PACKAGE_STRING;
 }
 
 
 int
-freebob_get_api_version() {
-    return FREEBOB_API_VERSION;
+ffado_get_api_version() {
+    return FFADO_API_VERSION;
 }
 
-freebob_handle_t
-freebob_new_handle( int port )
+ffado_handle_t
+ffado_new_handle( int port )
 {
-    freebob_handle_t handle = new struct freebob_handle;
+    ffado_handle_t handle = new struct ffado_handle;
     if (! handle ) {
         debugFatal( "Could not allocate memory for new handle\n" );
         return 0;
@@ -92,53 +95,53 @@ freebob_new_handle( int port )
 }
 
 int
-freebob_destroy_handle( freebob_handle_t freebob_handle )
+ffado_destroy_handle( ffado_handle_t ffado_handle )
 {
-    delete freebob_handle->m_deviceManager;
-    delete freebob_handle;
+    delete ffado_handle->m_deviceManager;
+    delete ffado_handle;
     return 0;
 }
 
 int
-freebob_discover_devices( freebob_handle_t freebob_handle, int verbose )
+ffado_discover_devices( ffado_handle_t ffado_handle, int verbose )
 {
     if (verbose) {
-        freebob_handle->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+        ffado_handle->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
    }
-    return freebob_handle->m_deviceManager->discover()? 0 : -1;
+    return ffado_handle->m_deviceManager->discover()? 0 : -1;
 }
 
 int
-freebob_node_is_valid_freebob_device( freebob_handle_t freebob_handle, int node_id )
+ffado_node_is_valid_ffado_device( ffado_handle_t ffado_handle, int node_id )
 {
-    return freebob_handle->m_deviceManager->isValidNode( node_id );
+    return ffado_handle->m_deviceManager->isValidNode( node_id );
 }
 
 int
-freebob_get_nb_devices_on_bus( freebob_handle_t freebob_handle )
+ffado_get_nb_devices_on_bus( ffado_handle_t ffado_handle )
 {
-    return freebob_handle->m_deviceManager->getNbDevices();
+    return ffado_handle->m_deviceManager->getNbDevices();
 }
 
 int
-freebob_get_device_node_id( freebob_handle_t freebob_handle, int device_nr )
+ffado_get_device_node_id( ffado_handle_t ffado_handle, int device_nr )
 {
-    return freebob_handle->m_deviceManager->getDeviceNodeId(device_nr);
+    return ffado_handle->m_deviceManager->getDeviceNodeId(device_nr);
 }
 
 int
-freebob_set_samplerate( freebob_handle_t freebob_handle, int node_id, int samplerate )
+ffado_set_samplerate( ffado_handle_t ffado_handle, int node_id, int samplerate )
 {
-    IAvDevice* avDevice = freebob_handle->m_deviceManager->getAvDevice( node_id );
+    IAvDevice* avDevice = ffado_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
-            return freebob_handle->m_deviceManager->discover()? 0 : -1;
+            return ffado_handle->m_deviceManager->discover()? 0 : -1;
         }
     }
     return -1;
 }
 
-void freebob_sleep_after_avc_command( int time )
+void ffado_sleep_after_avc_command( int time )
 {
     AVCCommand::setSleepAfterAVCCommand( time );
 }

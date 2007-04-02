@@ -1,32 +1,28 @@
-/* $Id$ */
-
 /*
- *   FreeBob Streaming API
- *   FreeBob = Firewire (pro-)audio for linux
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- *   http://freebob.sf.net
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- *   Copyright (C) 2007 Pieter Palmers <pieterpalmers@users.sourceforge.net>
+ * FFADO is based upon FreeBoB
  *
- *   This program is free software {} you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation {} either version 2 of the License, or
- *   (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY {} without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program {} if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * 
- *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
-#ifndef __FREEBOB_OSCSERVER__
-#define __FREEBOB_OSCSERVER__
+
+#ifndef __FFADO_OSCSERVER__
+#define __FFADO_OSCSERVER__
 
 #include <lo/lo.h>
 #include <string>
@@ -45,22 +41,22 @@ public:
 
     OscServer(string port);
     virtual ~OscServer();
-    
+
     bool init();
     bool start();
     bool stop();
-    
+
     bool registerAtRootNode(OscNode *);
     bool unregisterAtRootNode(OscNode *);
 
 private:
-    static void error_cb(int num, const char* msg, const char* path);	
+    static void error_cb(int num, const char* msg, const char* path);
     static int  generic_cb(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* user_data);
-    
+
 protected:
     string             m_port;
     lo_server_thread   m_server;
-    
+
     OscNode * m_rootNode;
 
 public:
@@ -72,6 +68,6 @@ private:
 
 } // end of namespace OSC
 
-#endif /* __FREEBOB_OSCSERVER__ */
+#endif /* __FFADO_OSCSERVER__ */
 
 

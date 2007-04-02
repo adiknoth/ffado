@@ -1,23 +1,27 @@
-/* ieee1394service.cpp
- * Copyright (C) 2005,07 by Daniel Wagner
- * Copyright (C) 2007 by Pieter Palmers
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
+
 #include "ieee1394service.h"
 #include "ARMHandler.h"
 
@@ -41,7 +45,7 @@ Ieee1394Service::Ieee1394Service()
     , m_threadRunning( false )
 {
     pthread_mutex_init( &m_mutex, 0 );
-    
+
     for (unsigned int i=0; i<64; i++) {
         m_channels[i].channel=-1;
         m_channels[i].bandwidth=-1;
@@ -72,7 +76,7 @@ Ieee1394Service::~Ieee1394Service()
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
     }
-    
+
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
     }
@@ -116,7 +120,7 @@ Ieee1394Service::initialize( int port )
 
     m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
                                    this->armHandlerLowLevel );
-    
+
     startRHThread();
 
     return true;
@@ -229,7 +233,7 @@ Ieee1394Service::byteSwap_octlet(fb_octlet_t value) {
     #endif
 }
 
-bool 
+bool
 Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
                         fb_nodeaddr_t addr,
                         fb_octlet_t  compare_value,
@@ -243,36 +247,30 @@ Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
                 compare_value, swap_value);
     fb_octlet_t buffer;
     if(!read_octlet( nodeId, addr,&buffer )) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not read owner register\n");
+        debugWarning("Could not read register\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"Owner register before = 0x%016llX\n", buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"before = 0x%016llX\n", buffer);
     }
-    
-    buffer=0x123456789ABCDEF0LL;
-        debugOutput(DEBUG_LEVEL_VERBOSE,"before byteswap = 0x%016llX\n", buffer);
-    buffer=byteSwap_octlet(buffer);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"after byteswap = 0x%016llX\n", buffer);
-    
-    
+
     #endif
-    
+
     // do endiannes swapping
     compare_value=byteSwap_octlet(compare_value);
     swap_value=byteSwap_octlet(swap_value);
-    
+
     int retval=raw1394_lock64(m_handle, nodeId, addr, RAW1394_EXTCODE_COMPARE_SWAP,
                           swap_value, compare_value, result);
-    
+
     #ifdef DEBUG
     if(!read_octlet( nodeId, addr,&buffer )) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not read owner register\n");
+        debugWarning("Could not read register\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"Owner register after = 0x%016llX\n", buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"after = 0x%016llX\n", buffer);
     }
     #endif
-    
+
     *result=byteSwap_octlet(*result);
-    
+
     return (retval == 0);
 }
 
@@ -286,11 +284,6 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
         buf[i] = ntohl( buf[i] );
     }
 
-    #ifdef DEBUG
-    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "  pre avc1394_transaction_block2\n" );
-    printBuffer( DEBUG_LEVEL_VERY_VERBOSE, len, buf );
-    #endif
-
     fb_quadlet_t* result =
         avc1394_transaction_block2( m_handle,
                                     nodeId,
@@ -298,11 +291,6 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                     len,
                                     resp_len,
                                     10 );
-
-    #ifdef DEBUG
-    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "  post avc1394_transaction_block2\n" );
-    printBuffer( DEBUG_LEVEL_VERY_VERBOSE, *resp_len, result );
-    #endif
 
     for ( unsigned int i = 0; i < *resp_len; ++i ) {
         result[i] = htonl( result[i] );
@@ -388,7 +376,7 @@ bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Registering ARM handler (%p) for 0x%016llX, length %u\n",
         h, h->getStart(), h->getLength());
 
-    int err=raw1394_arm_register(m_resetHandle, h->getStart(), 
+    int err=raw1394_arm_register(m_resetHandle, h->getStart(),
                          h->getLength(), h->getBuffer(), (octlet_t)h,
                          h->getAccessRights(),
                          h->getNotificationOptions(),
@@ -398,16 +386,16 @@ bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
         debugError(" Error: %s\n", strerror(errno));
         return false;
     }
-    
+
     m_armHandlers.push_back( h );
 
     return true;
 }
 
 bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler (%p) for 0x%016llX\n", 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler (%p) for 0x%016llX\n",
         h, h->getStart());
-    
+
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
           ++it )
@@ -438,14 +426,14 @@ bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
 nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, size_t step ) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Finding free ARM block of %d bytes, from 0x%016llX in steps of %d bytes\n",
         length, start, step);
-        
+
     int cnt=0;
     const int maxcnt=10;
     int err=1;
     while(err && cnt++ < maxcnt) {
         // try to register
         err=raw1394_arm_register(m_resetHandle, start, length, 0, 0, 0, 0, 0);
-        
+
         if (err) {
             debugOutput(DEBUG_LEVEL_VERBOSE, " -> cannot use 0x%016llX\n", start);
             debugError("    Error: %s\n", strerror(errno));
@@ -465,8 +453,8 @@ nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, s
     return 0xFFFFFFFFFFFFFFFFLLU;
 }
 
-int 
-Ieee1394Service::armHandlerLowLevel(raw1394handle_t handle, 
+int
+Ieee1394Service::armHandlerLowLevel(raw1394handle_t handle,
                      unsigned long arm_tag,
                      byte_t request_type, unsigned int requested_length,
                      void *data)
@@ -492,12 +480,12 @@ Ieee1394Service::armHandler(  unsigned long arm_tag,
             arm_req_resp  = (struct raw1394_arm_request_response *) data;
             raw1394_arm_request_t arm_req=arm_req_resp->request;
             raw1394_arm_response_t arm_resp=arm_req_resp->response;
-            
+
             debugOutput(DEBUG_LEVEL_VERBOSE,"ARM handler for address 0x%016llX called\n",
                 (*it)->getStart());
             debugOutput(DEBUG_LEVEL_VERBOSE," request type   : 0x%02X\n",request_type);
             debugOutput(DEBUG_LEVEL_VERBOSE," request length : %04d\n",requested_length);
-            
+
             switch(request_type) {
                 case RAW1394_ARM_READ:
                     (*it)->handleRead(arm_req);
@@ -582,7 +570,7 @@ bool
 Ieee1394Service::remBusResetHandler( Functor* functor )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Removing busreset handler (%p)\n", functor);
-    
+
     for ( reset_handler_vec_t::iterator it = m_busResetHandlers.begin();
           it != m_busResetHandlers.end();
           ++it )
@@ -602,11 +590,11 @@ Ieee1394Service::remBusResetHandler( Functor* functor )
  * libiec61883.  Returns -1 on error (due to there being no free channels)
  * or an allocated channel number.
  *
- * Does not perform anything other than registering the channel and the 
+ * Does not perform anything other than registering the channel and the
  * bandwidth at the IRM
  *
  * Also allocates the necessary bandwidth (in ISO allocation units).
- * 
+ *
  * FIXME: As in libiec61883, channel 63 is not requested; this is either a
  * bug or it's omitted since that's the channel preferred by video devices.
  *
@@ -615,7 +603,7 @@ Ieee1394Service::remBusResetHandler( Functor* functor )
  */
 signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using generic method...\n" );
-    
+
     struct ChannelInfo cinfo;
 
     int c = -1;
@@ -626,14 +614,19 @@ signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
     if (c < 63) {
         if (raw1394_bandwidth_modify(m_handle, bandwidth, RAW1394_MODIFY_ALLOC) < 0) {
             debugFatal("Could not allocate bandwidth of %d\n", bandwidth);
-            
+
             raw1394_channel_modify (m_handle, c, RAW1394_MODIFY_FREE);
             return -1;
         } else {
             cinfo.channel=c;
             cinfo.bandwidth=bandwidth;
             cinfo.alloctype=AllocGeneric;
-            
+
+            cinfo.xmit_node=-1;
+            cinfo.xmit_plug=-1;
+            cinfo.recv_node=-1;
+            cinfo.recv_plug=-1;
+
             if (registerIsoChannel(c, cinfo)) {
                 return c;
             } else {
@@ -666,17 +659,17 @@ signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
  */
 
 signed int Ieee1394Service::allocateIsoChannelCMP(
-    nodeid_t xmit_node, int xmit_plug, 
+    nodeid_t xmit_node, int xmit_plug,
     nodeid_t recv_node, int recv_plug
     ) {
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using IEC61883 CMP...\n" );
-    
+
     struct ChannelInfo cinfo;
-    
+
     int c = -1;
     int bandwidth=1;
-    
+
     // do connection management: make connection
     c = iec61883_cmp_connect(
         m_handle,
@@ -696,12 +689,12 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
     cinfo.channel=c;
     cinfo.bandwidth=bandwidth;
     cinfo.alloctype=AllocCMP;
-    
+
     cinfo.xmit_node=xmit_node;
     cinfo.xmit_plug=xmit_plug;
     cinfo.recv_node=recv_node;
     cinfo.recv_plug=recv_plug;
-        
+
     if (registerIsoChannel(c, cinfo)) {
         return c;
     }
@@ -710,33 +703,33 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
 }
 
 /**
- * Deallocates an iso channel.  Silently ignores a request to deallocate 
+ * Deallocates an iso channel.  Silently ignores a request to deallocate
  * a negative channel number.
  *
  * Figures out the method that was used to allocate the channel (generic, cmp, ...)
  * and uses the appropriate method to deallocate. Also frees the bandwidth
  * that was reserved along with this channel.
- * 
+ *
  * @param c channel number
  * @return true if successful
  */
 bool Ieee1394Service::freeIsoChannel(signed int c) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Freeing ISO channel %d...\n", c );
-    
+
     if (c < 0 || c > 63) {
         debugWarning("Invalid channel number: %d\n", c);
         return false;
     }
-    
+
     switch (m_channels[c].alloctype) {
         default:
             debugError(" BUG: invalid allocation type!\n");
             return false;
-            
-        case AllocFree: 
+
+        case AllocFree:
             debugWarning(" Channel %d not registered\n", c);
             return false;
-            
+
         case AllocGeneric:
             debugOutput(DEBUG_LEVEL_VERBOSE, " allocated using generic routine...\n" );
             debugOutput(DEBUG_LEVEL_VERBOSE, " freeing %d bandwidth units...\n", m_channels[c].bandwidth );
@@ -750,12 +743,12 @@ bool Ieee1394Service::freeIsoChannel(signed int c) {
             if (!unregisterIsoChannel(c))
                 return false;
             return true;
-            
+
         case AllocCMP:
             debugOutput(DEBUG_LEVEL_VERBOSE, " allocated using IEC61883 CMP...\n" );
             debugOutput(DEBUG_LEVEL_VERBOSE, " performing IEC61883 CMP disconnect...\n" );
             if(iec61883_cmp_disconnect(
-                    m_handle, 
+                    m_handle,
                     m_channels[c].xmit_node | 0xffc0,
                     m_channels[c].xmit_plug,
                     m_channels[c].recv_node | 0xffc0,
@@ -768,10 +761,10 @@ bool Ieee1394Service::freeIsoChannel(signed int c) {
                 return false;
             return true;
     }
-    
+
     // unreachable
     debugError("BUG: unreachable code reached!\n");
-    
+
     return false;
 }
 
@@ -787,9 +780,9 @@ bool Ieee1394Service::registerIsoChannel(unsigned int c, struct ChannelInfo cinf
             debugWarning("Channel %d already registered with bandwidth %d\n",
                 m_channels[c].channel, m_channels[c].bandwidth);
         }
-        
+
         memcpy(&m_channels[c], &cinfo, sizeof(struct ChannelInfo));
-        
+
     } else return false;
     return true;
 }
@@ -805,7 +798,7 @@ bool Ieee1394Service::unregisterIsoChannel(unsigned int c) {
             debugWarning("Channel %d not registered\n", c);
             return false;
         }
-        
+
         m_channels[c].channel=-1;
         m_channels[c].bandwidth=-1;
         m_channels[c].alloctype=AllocFree;
@@ -813,7 +806,7 @@ bool Ieee1394Service::unregisterIsoChannel(unsigned int c) {
         m_channels[c].xmit_plug=-1;
         m_channels[c].recv_node=0xFFFF;
         m_channels[c].recv_plug=-1;
-        
+
     } else return false;
     return true;
 }
@@ -821,7 +814,7 @@ bool Ieee1394Service::unregisterIsoChannel(unsigned int c) {
 /**
  * Returns the current value of the `bandwidth available' register on
  * the IRM, or -1 on error.
- * @return 
+ * @return
  */
 signed int Ieee1394Service::getAvailableBandwidth() {
     quadlet_t buffer;
@@ -835,7 +828,7 @@ signed int Ieee1394Service::getAvailableBandwidth() {
 }
 
 void
-Ieee1394Service::setVerboseLevel(int l) 
+Ieee1394Service::setVerboseLevel(int l)
 {
     setDebugLevel(l);
 }

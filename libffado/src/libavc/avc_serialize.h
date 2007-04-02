@@ -1,25 +1,30 @@
-/* avc_serialize.h
- * Copyright (C) 2005,07 by Daniel Wagner
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
- * This file is part of FreeBoB.
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FreeBoB is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * FreeBoB is distributed in the hope that it will be useful,
+ * FFADO is based upon FreeBoB
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with FreeBoB; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
-#ifndef Serialize_h
-#define Serialize_h
+#ifndef SERIALIZE_H
+#define SERIALIZE_H
+
+#include "debugmodule/debugmodule.h"
 
 #include <libraw1394/raw1394.h> // byte_t and quadlet_t declaration
 #include <string>
@@ -61,6 +66,7 @@ public:
 
 private:
     unsigned int m_cnt;
+    DECLARE_DEBUG_MODULE;
 
 };
 
@@ -96,7 +102,7 @@ public:
     virtual bool write( quadlet_t value,  const char* name = "" );
 
     int getNrOfProducesBytes() const
-	{ return m_curPos - m_buffer; }
+    { return m_curPos - m_buffer; }
 
 protected:
     inline bool isCurPosValid() const;
@@ -134,5 +140,5 @@ private:
     size_t m_length;         // size of buffer
 };
 
-#endif // Serialize_h
+#endif // SERIALIZE_H
 

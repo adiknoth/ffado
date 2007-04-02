@@ -84,7 +84,7 @@
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="13396" isRoot="false" isAbstract="false" name="std::vector&lt; Port * >::iterator" elementReference="13393" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="13397" isRoot="false" isAbstract="false" name="PortVectorIterator" elementReference="13396" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="13401" isRoot="false" isAbstract="false" name="Port*" elementReference="12717" />
-        <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14009" isRoot="false" isAbstract="false" name="FreebobRunnableInterface*" elementReference="14008" />
+        <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14009" isRoot="false" isAbstract="false" name="FFADORunnableInterface*" elementReference="14008" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14530" isRoot="false" isAbstract="false" name="unsigned char*" elementReference="14529" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14540" isRoot="false" isAbstract="false" name="unsigned int*" elementReference="12734" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14561" isRoot="false" isAbstract="false" name="StreamProcessorManager*" elementReference="14516" />
@@ -95,7 +95,7 @@
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14630" isRoot="false" isAbstract="false" name="StreamProcessor*" elementReference="14508" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="14665" isRoot="false" isAbstract="false" name="IsoHandlerManager*" elementReference="14659" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="15179" isRoot="false" isAbstract="false" name="quadlet_t*" elementReference="15178" />
-        <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="15190" isRoot="false" isAbstract="false" name="freebob_ringbuffer_t*" elementReference="15166" />
+        <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="15190" isRoot="false" isAbstract="false" name="ffado_ringbuffer_t*" elementReference="15166" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="15236" isRoot="false" isAbstract="false" name="IsoHandler*" elementReference="15194" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="15278" isRoot="false" isAbstract="false" name="PacketBuffer*" elementReference="15167" />
         <UML:DataType stereotype="12706" isSpecification="false" isLeaf="false" visibility="public" namespace="88018" xmi.id="15280" isRoot="false" isAbstract="false" name="std::vector&lt; IsoStream * >" elementReference="13393" />
@@ -108,10 +108,10 @@
        </UML:Namespace.ownedElement>
       </UML:Package>
       <UML:Class comment="Id$ *//*
-  FreeBob Streaming API
-  FreeBob = Firewire (pro-)audio for linux
+  FFADO Streaming API
+  FFADO = Firewire (pro-)audio for linux
 
-  http://freebob.sf.net
+  http://ffado.sf.net
 
   Copyright (C) 2005,2006 Pieter Palmers &lt;pieterpalmers@users.sourceforge.net>
 
@@ -957,10 +957,10 @@
        </UML:Classifier.feature>
       </UML:Class>
       <UML:Class comment="Id$ *//*
-  FreeBob Streaming API
-  FreeBob = Firewire (pro-)audio for linux
+  FFADO Streaming API
+  FFADO = Firewire (pro-)audio for linux
 
-  http://freebob.sf.net
+  http://ffado.sf.net
 
   Copyright (C) 2005,2006 Pieter Palmers &lt;pieterpalmers@users.sourceforge.net>
 
@@ -1033,10 +1033,10 @@
       </UML:Class>
       <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13000" isRoot="false" isAbstract="false" name="enum E_Formats" />
       <UML:Class comment="Id$ *//*
-  FreeBob Streaming API
-  FreeBob = Firewire (pro-)audio for linux
+  FFADO Streaming API
+  FFADO = Firewire (pro-)audio for linux
 
-  http://freebob.sf.net
+  http://ffado.sf.net
 
   Copyright (C) 2005,2006 Pieter Palmers &lt;pieterpalmers@users.sourceforge.net>
 
@@ -1530,7 +1530,7 @@ This file implements the AMDTP ports as used in the BeBoB's" isSpecification="fa
       <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13990" isRoot="false" isAbstract="false" name="UInt32" />
       <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13991" isRoot="false" isAbstract="false" name="SInt32" />
       <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13992" isRoot="false" isAbstract="false" name="UInt64" />
-      <UML:Class comment="Modifications for Freebob (C) 2006, Pieter Palmers
+      <UML:Class comment="Modifications for FFADO (C) 2006, Pieter Palmers
 Copied from the jackd/jackdmp sources
 function names changed in order to avoid naming problems when using this in
 a jackd backend.
@@ -1548,7 +1548,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //*!
-\brief The POSIX thread base class." isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13993" isRoot="false" isAbstract="false" name="FreebobPosixThread" >
+\brief The POSIX thread base class." isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13993" isRoot="false" isAbstract="false" name="FFADOPosixThread" >
        <UML:GeneralizableElement.generalization>
         <UML:Generalization xmi.idref="13995" />
         <UML:Generalization xmi.idref="13995" />
@@ -1659,7 +1659,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14006" value="" type="12744" name="arg" />
          </UML:BehavioralFeature.parameter>
         </UML:Operation>
-        <UML:Operation stereotype="12714" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14007" isRoot="false" isAbstract="false" isQuery="false" name="FreebobPosixThread" >
+        <UML:Operation stereotype="12714" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14007" isRoot="false" isAbstract="false" isQuery="false" name="FFADOPosixThread" >
          <UML:BehavioralFeature.parameter>
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14010" value="" type="14009" name="runnable" />
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14011" value="" type="12708" name="real_time" />
@@ -1667,18 +1667,18 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14013" value="" type="12705" name="cancellation" />
          </UML:BehavioralFeature.parameter>
         </UML:Operation>
-        <UML:Operation stereotype="12714" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14014" isRoot="false" isAbstract="false" isQuery="false" name="FreebobPosixThread" >
+        <UML:Operation stereotype="12714" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14014" isRoot="false" isAbstract="false" isQuery="false" name="FFADOPosixThread" >
          <UML:BehavioralFeature.parameter>
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14015" value="" type="14009" name="runnable" />
          </UML:BehavioralFeature.parameter>
         </UML:Operation>
-        <UML:Operation stereotype="12714" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14016" isRoot="false" isAbstract="false" isQuery="false" name="FreebobPosixThread" >
+        <UML:Operation stereotype="12714" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14016" isRoot="false" isAbstract="false" isQuery="false" name="FFADOPosixThread" >
          <UML:BehavioralFeature.parameter>
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14017" value="" type="14009" name="runnable" />
           <UML:Parameter isSpecification="false" visibility="private" xmi.id="14018" value="" type="12705" name="cancellation" />
          </UML:BehavioralFeature.parameter>
         </UML:Operation>
-        <UML:Operation isSpecification="false" isLeaf="false" visibility="public" xmi.id="14019" isRoot="false" isAbstract="false" isQuery="false" name="~ FreebobPosixThread" />
+        <UML:Operation isSpecification="false" isLeaf="false" visibility="public" xmi.id="14019" isRoot="false" isAbstract="false" isQuery="false" name="~ FFADOPosixThread" />
         <UML:Operation isSpecification="false" isLeaf="false" visibility="public" xmi.id="14020" isRoot="false" isAbstract="false" isQuery="false" name="Start" >
          <UML:BehavioralFeature.parameter>
           <UML:Parameter kind="return" xmi.id="MEHNFjw1LEDL" type="12705" />
@@ -1717,15 +1717,15 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
         </UML:Operation>
        </UML:Classifier.feature>
       </UML:Class>
-      <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13994" isRoot="false" isAbstract="false" name="FreebobThread" />
+      <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13994" isRoot="false" isAbstract="false" name="FFADOThread" />
       <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="13998" isRoot="false" isAbstract="false" name="pthread_t" />
       <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="14002" isRoot="false" isAbstract="false" name="volatile bool" />
-      <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="14008" isRoot="false" isAbstract="false" name="FreebobRunnableInterface" />
+      <UML:Class isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="14008" isRoot="false" isAbstract="false" name="FFADORunnableInterface" />
       <UML:Class comment="Id$ *//*
-  FreeBob Streaming API
-  FreeBob = Firewire (pro-)audio for linux
+  FFADO Streaming API
+  FFADO = Firewire (pro-)audio for linux
 
-  http://freebob.sf.net
+  http://ffado.sf.net
 
   Copyright (C) 2005,2006 Pieter Palmers &lt;pieterpalmers@users.sourceforge.net>
 
@@ -2553,10 +2553,10 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
        </UML:Namespace.ownedElement>
       </UML:Class>
       <UML:Class comment="Id$ *//*
-  FreeBob Streaming API
-  FreeBob = Firewire (pro-)audio for linux
+  FFADO Streaming API
+  FFADO = Firewire (pro-)audio for linux
 
-  http://freebob.sf.net
+  http://ffado.sf.net
 
   Copyright (C) 2005,2006 Pieter Palmers &lt;pieterpalmers@users.sourceforge.net>
 
@@ -3555,7 +3555,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
           <UML:Parameter kind="return" xmi.id="12fhMmzFMi2U" type="12705" />
          </UML:BehavioralFeature.parameter>
         </UML:Operation>
-        <UML:Operation comment="// FreebobRunnableInterface interface// note that this is called in we while(running) loop" isSpecification="false" isLeaf="false" visibility="protected" xmi.id="14649" isRoot="false" isAbstract="false" isQuery="false" name="Execute" >
+        <UML:Operation comment="// FFADORunnableInterface interface// note that this is called in we while(running) loop" isSpecification="false" isLeaf="false" visibility="protected" xmi.id="14649" isRoot="false" isAbstract="false" isQuery="false" name="Execute" >
          <UML:BehavioralFeature.parameter>
           <UML:Parameter kind="return" xmi.id="LlXy8i6aXj2o" type="12708" />
          </UML:BehavioralFeature.parameter>
@@ -3685,7 +3685,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
          </UML:BehavioralFeature.parameter>
         </UML:Operation>
         <UML:Operation isSpecification="false" isLeaf="false" visibility="public" xmi.id="14668" isRoot="false" isAbstract="false" isQuery="false" name="~ StreamRunner" />
-        <UML:Operation comment="// FreebobRunnableInterface interface// note that this is called in we while(running) loop" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14669" isRoot="false" isAbstract="false" isQuery="false" name="Execute" >
+        <UML:Operation comment="// FFADORunnableInterface interface// note that this is called in we while(running) loop" isSpecification="false" isLeaf="false" visibility="public" xmi.id="14669" isRoot="false" isAbstract="false" isQuery="false" name="Execute" >
          <UML:BehavioralFeature.parameter>
           <UML:Parameter kind="return" xmi.id="9wZVdbzyKUvQ" type="12708" />
          </UML:BehavioralFeature.parameter>
@@ -3697,13 +3697,13 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
         </UML:Operation>
        </UML:Classifier.feature>
       </UML:Class>
-      <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="15165" isRoot="false" isAbstract="false" name="freebob_ringbuffer_data_t" />
-      <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="15166" isRoot="false" isAbstract="false" name="freebob_ringbuffer_t" />
+      <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="15165" isRoot="false" isAbstract="false" name="ffado_ringbuffer_data_t" />
+      <UML:Class stereotype="13989" isSpecification="false" isLeaf="false" visibility="public" namespace="1" xmi.id="15166" isRoot="false" isAbstract="false" name="ffado_ringbuffer_t" />
       <UML:Class comment="Id$ *//*
-  FreeBob Streaming API
-  FreeBob = Firewire (pro-)audio for linux
+  FFADO Streaming API
+  FFADO = Firewire (pro-)audio for linux
 
-  http://freebob.sf.net
+  http://ffado.sf.net
 
   Copyright (C) 2005,2006 Pieter Palmers &lt;pieterpalmers@users.sourceforge.net>
 
