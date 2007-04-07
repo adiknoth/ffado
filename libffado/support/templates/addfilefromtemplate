@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# (C) 2007, Pieter Palmers
+# Licensed under GPL
+#
+# addfilefromtemplate TemplateBase ClassName NameSpace
+#
+
+CLASS_NAME="$2"
+NAMESPACE="$3"
+TEMPLATE="$1"
+
+CLASS_UPPER=`echo "$CLASS_NAME" | tr '[:lower:]' '[:upper:]'`
+
+sed -e "s/XXX/$CLASS_NAME/g" "$TEMPLATE.cpp" |\
+    sed -e "s/YYY/$NAMESPACE/g" |\
+    sed -e "s/hhh/$CLASS_NAME\.h/g" \
+    > "$CLASS_NAME.cpp"
+
+sed -e "s/XXX/$CLASS_NAME/g" "$TEMPLATE.h" |\
+    sed -e "s/YYY/$NAMESPACE/g" |\
+    sed -e "s/hhh/$CLASS_NAME\.h/g" |\
+    sed -e "s/FREEBOB_0/FREEBOB_$CLASS_UPPER/g" \
+    > "$CLASS_NAME.h"
+
+svn add "$CLASS_NAME.cpp" "$CLASS_NAME.h"
