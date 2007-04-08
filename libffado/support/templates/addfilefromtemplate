@@ -20,7 +20,7 @@ sed -e "s/XXX/$CLASS_NAME/g" "$TEMPLATE.cpp" |\
 sed -e "s/XXX/$CLASS_NAME/g" "$TEMPLATE.h" |\
     sed -e "s/YYY/$NAMESPACE/g" |\
     sed -e "s/hhh/$CLASS_NAME\.h/g" |\
-    sed -e "s/FREEBOB_0/FREEBOB_$CLASS_UPPER/g" \
+    sed -e "s/FFADO_0/FFADO_$CLASS_UPPER/g" \
     > "$CLASS_NAME.h"
 
 svn add "$CLASS_NAME.cpp" "$CLASS_NAME.h"
