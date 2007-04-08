@@ -241,6 +241,13 @@ public:
      */
     virtual void setVerboseLevel(int l);
 
+    /**
+     * @brief return the node id of this device
+     *
+     * @return the node id
+     */
+    int getNodeId() { return m_nodeId;};
+
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
     Ieee1394Service*          m_p1394Service;
