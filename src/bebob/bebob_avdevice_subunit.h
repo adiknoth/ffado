@@ -111,7 +111,8 @@ class AvDeviceSubunitAudio: public AvDeviceSubunit {
 
     virtual const char* getName();
 
-
+    FunctionBlockVector getFunctionBlocks() { return m_functions; };
+    
 protected:
     bool discoverFunctionBlocks();
     bool discoverFunctionBlocksDo(

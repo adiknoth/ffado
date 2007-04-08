@@ -51,6 +51,7 @@ noinst_HEADERS = \
 	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h \
+	bebob/GenericMixer.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
 	libavc/avc_connect.h \
@@ -132,6 +133,7 @@ bebob_src = \
 	    bebob/bebob_dl_codes.cpp \
 	    bebob/bebob_dl_mgr.cpp \
 	    bebob/bebob_functionblock.cpp \
+	    bebob/GenericMixer.cpp \
 	    maudio/maudio_avdevice.cpp
 
 motu_src = \

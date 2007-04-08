@@ -269,6 +269,8 @@ BeBoB::AvDeviceSubunitAudio::~AvDeviceSubunitAudio()
 bool
 BeBoB::AvDeviceSubunitAudio::discover()
 {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering Audio Subunit...\n");
+    
     if ( !AvDeviceSubunit::discover() ) {
         return false;
     }
@@ -284,6 +286,7 @@ BeBoB::AvDeviceSubunitAudio::discover()
 bool
 BeBoB::AvDeviceSubunitAudio::discoverConnections()
 {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering connections...\n");
     if ( !AvDeviceSubunit::discoverConnections() ) {
         return false;
     }
@@ -312,6 +315,9 @@ BeBoB::AvDeviceSubunitAudio::getName()
 bool
 BeBoB::AvDeviceSubunitAudio::discoverFunctionBlocks()
 {
+    debugOutput( DEBUG_LEVEL_NORMAL,
+                 "Discovering function blocks...\n");
+
     if ( !discoverFunctionBlocksDo(
              ExtendedSubunitInfoCmd::eFBT_AudioSubunitSelector) )
     {
@@ -336,6 +342,22 @@ BeBoB::AvDeviceSubunitAudio::discoverFunctionBlocks()
         debugError( "Could not discover function block codec\n" );
         return false;
     }
+
+    // print a function block list
+#ifdef DEBUG
+    if (getDebugLevel() >= DEBUG_LEVEL_NORMAL) {
+    
+        for ( FunctionBlockVector::iterator it = m_functions.begin();
+            it != m_functions.end();
+            ++it )
+        {
+            debugOutput(DEBUG_LEVEL_NORMAL, "%20s FB, type 0x%X, id=%d\n",
+                (*it)->getName(),
+                (*it)->getType(),
+                (*it)->getId());
+        }
+    }
+#endif
 
     return true;
 }

@@ -36,7 +36,7 @@ class AvDeviceSubunit;
 class FunctionBlock {
 public:
     enum EFunctionBlockType {
-        eFBT_AllFunctinBlockType    = 0xff,
+        eFBT_AllFunctionBlockType   = 0xff,
         eFBT_AudioSubunitSelector   = 0x80,
         eFBT_AudioSubunitFeature    = 0x81,
         eFBT_AudioSubunitProcessing = 0x82,
@@ -65,6 +65,10 @@ public:
     virtual bool discoverConnections();
 
     virtual const char* getName() = 0;
+    
+    function_block_type_t getType() {return m_type;};
+    function_block_type_t getSubtype() {return m_subtype;};
+    function_block_id_t getId() {return m_id;};
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static FunctionBlock* deserialize( Glib::ustring basePath,
