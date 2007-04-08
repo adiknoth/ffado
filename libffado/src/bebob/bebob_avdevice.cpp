@@ -23,6 +23,7 @@
 
 #include "bebob/bebob_avdevice.h"
 #include "bebob/bebob_avdevice_subunit.h"
+#include "bebob/GenericMixer.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -71,6 +72,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_pPlugManager( new AvPlugManager( DEBUG_LEVEL_NORMAL ) )
     , m_activeSyncInfo( 0 )
     , m_model ( NULL )
+    , m_Mixer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  nodeId );
@@ -79,6 +81,12 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
 
 AvDevice::~AvDevice()
 {
+    if(m_Mixer != NULL) {
+        if (!removeChildOscNode(m_Mixer)) {
+            debugWarning("failed to unregister mixer from OSC namespace\n");
+        }
+        delete m_Mixer;
+    }
 
     for ( AvDeviceSubunitVector::iterator it = m_subunits.begin();
           it != m_subunits.end();
@@ -183,6 +191,25 @@ AvDevice::discover()
         return false;
     }
 
+    // create a GenericMixer and add it as an OSC child node
+    //  remove if already there
+    if(m_Mixer != NULL) {
+        if (!removeChildOscNode(m_Mixer)) {
+            debugWarning("failed to unregister mixer from OSC namespace\n");
+        }
+        delete m_Mixer;
+    }
+    
+    //  create the mixer & register it
+    if(getAudioSubunit(0) == NULL) {
+        debugWarning("Could not find audio subunit, mixer not available.\n");
+        m_Mixer = NULL;
+    } else {
+        m_Mixer = new GenericMixer(*m_p1394Service , *this);
+        if (!addChildOscNode(m_Mixer)) {
+            debugWarning("failed to register mixer in OSC namespace\n");
+        }
+    }
     return true;
 }
 

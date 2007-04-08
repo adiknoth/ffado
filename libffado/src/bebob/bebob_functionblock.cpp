@@ -79,7 +79,7 @@ BeBoB::FunctionBlock::~FunctionBlock()
 bool
 BeBoB::FunctionBlock::discover()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE,
+    debugOutput( DEBUG_LEVEL_NORMAL,
                  "discover function block %s (nr of input plugs = %d, "
                  "nr of output plugs = %d)\n",
                  getName(),

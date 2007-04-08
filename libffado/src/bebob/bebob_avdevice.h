@@ -32,6 +32,7 @@
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"
+#include "bebob/GenericMixer.h"
 
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
@@ -119,6 +120,10 @@ public:
     static AvDevice* deserialize( Glib::ustring basePath,
                                   Util::IODeserialize& deser,
                   Ieee1394Service& ieee1394Service );
+    AvDeviceSubunitAudio* getAudioSubunit( subunit_id_t subunitId )
+        { return dynamic_cast<AvDeviceSubunitAudio*>(
+                   getSubunit( AVC1394_SUBUNIT_AUDIO , subunitId ));};
+
 protected:
 
     bool enumerateSubUnits();
@@ -176,6 +181,7 @@ protected:
     SyncInfoVector            m_syncInfos;
     SyncInfo*                 m_activeSyncInfo;
     struct VendorModelEntry*  m_model;
+    GenericMixer*             m_Mixer;
 
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
