@@ -61,12 +61,18 @@ IAvDevice::getConfigRom() const
 bool
 IAvDevice::setId( unsigned int id)
 {
+    bool retval;
     // FIXME: decent ID system nescessary
     std::ostringstream idstr;
     idstr << "dev" << id;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
 
-    return setOption("id",idstr.str());
+    
+    retval=setOption("id",idstr.str());
+    if (retval) {
+        setOscBase(idstr.str());
+    }
+    return retval;
 }
 
 void
