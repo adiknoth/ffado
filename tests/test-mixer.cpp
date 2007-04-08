@@ -24,8 +24,12 @@
 
 #include "libavc/avc_function_block.h"
 #include "libavc/avc_serialize.h"
+#include "debugmodule/debugmodule.h"
 
 #include "libieee1394/ieee1394service.h"
+#include <string.h>
+
+DECLARE_GLOBAL_DEBUG_MODULE;
 
 const bool bVerbose = true;
 
@@ -41,13 +45,13 @@ doApp( Ieee1394Service& ieee1394service, int node_id, int fb_id )
     fbCmd.setCommandType( AVCCommand::eCT_Status );
     fbCmd.m_pFBProcessing->m_pEnhancedMixer = new FunctionBlockProcessingEnhancedMixer;
 
-    fbCmd.m_pFBProcessing->m_fbInputPlugNumber = 0x01;
+    debugOutput(DEBUG_LEVEL_NORMAL, "Requesting mixer programmable state...\n");
+
+    fbCmd.m_pFBProcessing->m_fbInputPlugNumber = 0x00;
     fbCmd.m_pFBProcessing->m_inputAudioChannelNumber  = 0xff;
     fbCmd.m_pFBProcessing->m_outputAudioChannelNumber = 0xff;
     fbCmd.m_pFBProcessing->m_pEnhancedMixer->m_statusSelector
         = FunctionBlockProcessingEnhancedMixer::eSS_ProgramableState;
-//     fbCmd.m_pFBProcessing->m_pEnhancedMixer->m_statusSelector
-//         = FunctionBlockProcessingEnhancedMixer::eSS_Level;
 
     fbCmd.setVerbose( bVerbose );
     if (bVerbose) {
@@ -55,7 +59,86 @@ doApp( Ieee1394Service& ieee1394service, int node_id, int fb_id )
     }
 
     if ( !fbCmd.fire() ) {
-        printf( "cmd failed\n" );
+        debugError( "cmd failed\n" );
+    }
+
+    if ( bVerbose ) {
+        CoutSerializer se;
+        fbCmd.serialize( se );
+    }
+    
+    debugOutput(DEBUG_LEVEL_NORMAL, "Requesting mixer level state...\n");
+    
+    fbCmd.m_pFBProcessing->m_fbInputPlugNumber = 0x00;
+    fbCmd.m_pFBProcessing->m_inputAudioChannelNumber  = 0x00;
+    fbCmd.m_pFBProcessing->m_outputAudioChannelNumber = 0x00;
+    fbCmd.m_pFBProcessing->m_pEnhancedMixer->m_statusSelector
+        = FunctionBlockProcessingEnhancedMixer::eSS_Level;
+    
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+    }
+
+    if ( bVerbose ) {
+        CoutSerializer se;
+        fbCmd.serialize( se );
+    }
+
+    return true;
+}
+
+bool
+doApp2( Ieee1394Service& ieee1394service, int node_id, int fb_id )
+{
+    FunctionBlockCmd fbCmd( ieee1394service,
+                            FunctionBlockCmd::eFBT_Selector,
+                            fb_id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( node_id );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Status );
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber=0;
+
+    debugOutput(DEBUG_LEVEL_NORMAL, "Requesting selector state...\n");
+
+    fbCmd.setVerbose( bVerbose );
+    if (bVerbose) {
+        ieee1394service.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
+    }
+    
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+    }
+
+    if ( bVerbose ) {
+        CoutSerializer se;
+        fbCmd.serialize( se );
+    }
+
+    return true;
+}
+
+bool
+doApp3( Ieee1394Service& ieee1394service, int node_id, int fb_id , int val )
+{
+    FunctionBlockCmd fbCmd( ieee1394service,
+                            FunctionBlockCmd::eFBT_Selector,
+                            fb_id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( node_id );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Control );
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber=val;
+
+    debugOutput(DEBUG_LEVEL_NORMAL, "Setting selector state to %d...\n", val);
+
+    fbCmd.setVerbose( bVerbose );
+    if (bVerbose) {
+        ieee1394service.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
+    }
+    
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
     }
 
     if ( bVerbose ) {
@@ -74,7 +157,7 @@ main( int argc, char **argv )
 {
 
     if (argc < 3) {
-        printf("usage: PORT NODE_ID FB_ID\n");
+        debugError("usage: PORT NODE_ID FB_ID\n");
         exit(0);
     }
 
@@ -85,16 +168,22 @@ main( int argc, char **argv )
     int fb_id   = strtol( argv[3], &tail, 0 );
 
     if (errno) {
-        perror("argument parsing failed:");
+        debugError("argument parsing failed: %s", strerror(errno));
         return -1;
     }
     Ieee1394Service ieee1394service;
     if ( !ieee1394service.initialize( port ) ) {
-        fprintf( stderr, "could not set port on ieee1394service\n" );
+        debugError( "could not set port on ieee1394service\n" );
         return -1;
     }
 
     doApp( ieee1394service, node_id, fb_id );
+    doApp2( ieee1394service, node_id, fb_id );
+     doApp3( ieee1394service, node_id, fb_id , 0 );
+     sleep(1);
+     doApp3( ieee1394service, node_id, fb_id , 1 );
+     sleep(1);
+     doApp3( ieee1394service, node_id, fb_id , 0 );
 
     return 0;
 }
