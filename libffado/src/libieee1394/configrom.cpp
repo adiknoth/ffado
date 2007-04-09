@@ -591,7 +591,7 @@ ConfigRom::processOscMessage(OSC::OscMessage *m) {
 
             debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) CMD? %s\n", this, cmd.c_str());
             if(cmd == "params") {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "Listing node children...\n");
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Listing node params...\n");
                 OSC::OscMessage& rm=r.getMessage();
                 rm.addArgument("GUID");
                 rm.addArgument("VendorName");

@@ -177,7 +177,11 @@ OscServer::generic_cb(const char* path, const char* types, lo_arg** argv, int ar
         }
         return 0;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, " Not handled...\n");
+        if (r.isError()) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " Error in message...\n");
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " Not handled...\n");
+        }
         m.print();
         return 1;  // not handled
     }
