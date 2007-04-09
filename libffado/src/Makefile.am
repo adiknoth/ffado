@@ -61,6 +61,7 @@ noinst_HEADERS = \
 	libavc/avc_plug_info.h libavc/avc_serialize.h libavc/avc_signal_source.h \
 	libavc/avc_subunit_info.h libavc/avc_unit_info.h \
 	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
+	libosc/OscClient.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
 	libstreaming/AmdtpSlaveStreamProcessor.h \
 	libstreaming/cip.h libstreaming/cycletimer.h libstreaming/IsoHandler.h \
@@ -100,6 +101,7 @@ libffado_la_SOURCES = \
 	    libieee1394/ieee1394service.cpp \
 	    libieee1394/IEC61883.cpp \
 	    libosc/OscArgument.cpp \
+	    libosc/OscClient.cpp \
 	    libosc/OscMessage.cpp \
 	    libosc/OscNode.cpp \
 	    libosc/OscResponse.cpp \
