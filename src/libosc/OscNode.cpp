@@ -75,7 +75,7 @@ OscNode::setVerboseLevel(int l) {
 OscResponse
 OscNode::processOscMessage(string path, OscMessage *m)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) MSG: %s\n",this, path.c_str());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) {%s} MSG: %s\n", this, m_oscBase.c_str(), path.c_str());
 
     // delete leading slash
     if(path.find_first_of('/')==0) path=path.substr(1,path.size());
@@ -90,6 +90,7 @@ OscNode::processOscMessage(string path, OscMessage *m)
         OscResponse retVal;
 
         // process the message
+        m->setPath(""); // handled by the node itself
         retVal=processOscMessage(m);
 
         if(retVal.isHandled()) {
@@ -99,6 +100,8 @@ OscNode::processOscMessage(string path, OscMessage *m)
         }
 
     } else { // it targets a deeper node
+        OscResponse retVal;
+        
         string newpath=path.substr(firstsep+1);
         int secondsep=newpath.find_first_of('/');
         string newbase;
@@ -108,6 +111,11 @@ OscNode::processOscMessage(string path, OscMessage *m)
             newbase=path.substr(firstsep+1,secondsep);
         }
 
+        // first try to find a child node that might be able
+        // to handle this.
+        // NOTE: the current model allows only one node to 
+        //       handle a request, and then the default
+        //       handler.
         for ( OscNodeVectorIterator it = m_ChildNodes.begin();
           it != m_ChildNodes.end();
           ++it )
@@ -116,9 +124,19 @@ OscNode::processOscMessage(string path, OscMessage *m)
                 return (*it)->processOscMessage(newpath,m);
             }
         }
+        
+        // The path is not registered as a child node.
+        // This node should handle it
         debugOutput( DEBUG_LEVEL_VERBOSE, "Child node %s not found \n",newbase.c_str());
 
-        return OscResponse(OscResponse::eError);
+        m->setPath(newpath); // the remaining portion of the path
+        retVal=processOscMessage(m);
+
+        if(retVal.isHandled()) {
+            return retVal; // completely handled
+        }
+        // (partially) unhandled
+        return processOscMessageDefault(m, retVal);
     }
     return OscResponse(OscResponse::eError);
 }
@@ -129,7 +147,7 @@ OscNode::processOscMessage(string path, OscMessage *m)
 OscResponse
 OscNode::processOscMessage(OscMessage *m)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) MSG PROCESS: %s\n", this, m->getPath().c_str());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) {%s} DEFAULT PROCESS: %s\n", this, m_oscBase.c_str(), m->getPath().c_str());
     m->print();
     return OscResponse(OscResponse::eUnhandled); // handled but no response
 }

@@ -103,9 +103,9 @@ test_OscNode_T1() {
     result &= TEST_SHOULD_RETURN_FALSE(n1.processOscMessage("base1/child1",&m).isError());
     result &= TEST_SHOULD_RETURN_FALSE(n1.processOscMessage("base1/child1/subchild1",&m).isError());
     result &= TEST_SHOULD_RETURN_FALSE(n1.processOscMessage("base1/child1/subchild2",&m).isError());
-    result &= TEST_SHOULD_RETURN_TRUE(n1.processOscMessage("base1/child1/subchild3",&m).isError());
     result &= TEST_SHOULD_RETURN_FALSE(n1.processOscMessage("base1/child2",&m).isError());
-    result &= TEST_SHOULD_RETURN_TRUE(n1.processOscMessage("base1/child2/subchild1",&m).isError());
+    result &= TEST_SHOULD_RETURN_FALSE(n1.processOscMessage("base1/child1/subchild3",&m).isHandled());
+    result &= TEST_SHOULD_RETURN_FALSE(n1.processOscMessage("base1/child2/subchild1/test1",&m).isHandled());
 
     return result;
 }
