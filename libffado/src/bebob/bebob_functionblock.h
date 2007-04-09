@@ -137,6 +137,23 @@ public:
     virtual ~FunctionBlockFeature();
 
     virtual const char* getName();
+    
+    // FIXME: this is not pretty!
+    enum EControlSelectorEncoding {
+        eCSE_Feature_Unknown            = 0x00,
+        eCSE_Feature_Mute               = 0x01,
+        eCSE_Feature_Volume             = 0x02,
+        eCSE_Feature_LRBalance          = 0x03,
+        eCSE_Feature_FRBalance          = 0x04,
+        eCSE_Feature_Bass               = 0x05,
+        eCSE_Feature_Mid                = 0x06,
+        eCSE_Feature_Treble             = 0x07,
+        eCSE_Feature_GEQ                = 0x08,
+        eCSE_Feature_AGC                = 0x09,
+        eCSE_Feature_Delay              = 0x0a,
+        eCSE_Feature_BassBoost          = 0x0b,
+        eCSE_Feature_Loudness           = 0x0c,
+    };
 
 protected:
     virtual bool serializeChild( Glib::ustring basePath,
