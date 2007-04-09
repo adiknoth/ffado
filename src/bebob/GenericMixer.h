@@ -47,12 +47,31 @@ public:
     virtual OSC::OscResponse processOscMessage(OSC::OscMessage *m);
 
 protected:
-    OSC::OscMessage mixerListChildren();
-    OSC::OscResponse mixerGetSelectorValue(int id);
-    OSC::OscResponse mixerSetSelectorValue(int id, int value);
+    OSC::OscResponse processOscMessageRoot(OSC::OscMessage *m);
+    OSC::OscResponse processOscMessageSelector(std::string, OSC::OscMessage *m);
+    OSC::OscResponse processOscMessageFeature(std::string, OSC::OscMessage *m);
+    OSC::OscResponse processOscMessageProcessing(std::string, OSC::OscMessage *m);
+
+protected:
+    OSC::OscResponse rootListChildren();
+    OSC::OscResponse selectorListChildren(int);
+    OSC::OscResponse selectorListParams(int id);
+    OSC::OscResponse selectorGetParam(int id, std::string p, OSC::OscMessage *src);
+    OSC::OscResponse selectorSetParam(int id, std::string p, OSC::OscMessage *src);
+
+    OSC::OscResponse featureListChildren(int);
+    OSC::OscResponse featureListParams(int id);
+    OSC::OscResponse featureGetParam(int id, std::string p, OSC::OscMessage *src);
+    OSC::OscResponse featureSetParam(int id, std::string p, OSC::OscMessage *src);
     
-    OSC::OscResponse mixerSetFeatureVolumeValue(int id, int channel, int volume);
-    OSC::OscResponse mixerGetFeatureVolumeValue(int fb_id, int channel);
+    OSC::OscResponse processingListChildren(int);
+    OSC::OscResponse codecListChildren(int);
+    
+    bool getSelectorValue(int id, int &value);
+    bool setSelectorValue(int id, int value);
+    
+    bool getFeatureVolumeValue(int fb_id, int channel, int &volume);
+    bool setFeatureVolumeValue(int id, int channel, int volume);
     
 protected:
     Ieee1394Service      &m_p1394Service;
