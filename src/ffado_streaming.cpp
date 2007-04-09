@@ -25,7 +25,7 @@
  * Implementation of the FFADO Streaming API
  */
 
-#include "libffado/ffado.h"
+#include "../libffado/ffado.h"
 #include "devicemanager.h"
 #include "iavdevice.h"
 

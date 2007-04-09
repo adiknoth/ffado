@@ -24,7 +24,7 @@
 
 #include "config.h"
 
-#include "libffado/ffado.h"
+#include "../libffado/ffado.h"
 
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
