@@ -103,7 +103,7 @@ GenericMixer::processOscMessage(OscMessage *m) {
                 }
                 
                 if (type == "volume") {
-                    if ( !(nbArgs==7)) {
+                    if ( !(nbArgs>=5)) {
                         debugWarning("set volume: Wrong nb of arguments\n");
                         return OscResponse(OscResponse::eError);
                     }
