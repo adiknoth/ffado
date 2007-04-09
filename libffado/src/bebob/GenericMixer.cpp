@@ -140,6 +140,21 @@ GenericMixer::processOscMessage(OscMessage *m) {
                     return mixerGetSelectorValue(id);
                 }
                 
+                if (type == "volume") {
+                    if ( !(nbArgs==6)) {
+                        debugWarning("set volume: Wrong nb of arguments\n");
+                        return OscResponse(OscResponse::eError);
+                    }
+                    if(!m->getArgument(3).isNumeric()) {
+                        debugWarning("set volume: Wrong argument (3) type\n");
+                        return OscResponse(OscResponse::eError);
+                    }
+
+                    int channel=m->getArgument(3).toInt();
+                    
+                    return mixerGetFeatureVolumeValue(id, channel);
+                }
+                
                 return OscResponse(OscResponse::eError);
 
             }
