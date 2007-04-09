@@ -42,7 +42,6 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual FunctionBlockFeatureVolume* clone() const;
 
-    control_selector_t     m_controlSelector;
     control_data_length_t  m_controlDataLength;
     u_int16_t              m_volume;
 };
@@ -146,8 +145,9 @@ public:
     virtual bool deserialize( IISDeserialize& de );
     virtual FunctionBlockFeature* clone() const;
 
-    selector_length_t      m_selectorLength;
-    audio_channel_number_t m_audioChannelNumber;
+    selector_length_t           m_selectorLength;
+    audio_channel_number_t      m_audioChannelNumber;
+    control_selector_t          m_controlSelector;
 
     FunctionBlockFeatureVolume*     m_pVolume;
 };

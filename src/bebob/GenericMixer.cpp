@@ -93,20 +93,35 @@ GenericMixer::processOscMessage(OscMessage *m) {
                         debugWarning("set selector: Wrong nb of arguments\n");
                         return OscResponse(OscResponse::eError);
                     }
-                    if(!(m->getArgument(3).isInt64() || m->getArgument(3).isFloat())) {
+                    if(!m->getArgument(3).isNumeric()) {
                         debugWarning("set selector: Wrong argument type\n");
                         return OscResponse(OscResponse::eError);
                     }
-                        
-                    int value=m->getArgument(3).getInt();
-                    
-                    if (m->getArgument(3).isFloat()) {
-                        value=(int)(m->getArgument(3).getFloat());
-                    }
+                    int value=m->getArgument(3).toInt();
                     
                     return mixerSetSelectorValue(id, value);
                 }
                 
+                if (type == "volume") {
+                    if ( !(nbArgs==7)) {
+                        debugWarning("set volume: Wrong nb of arguments\n");
+                        return OscResponse(OscResponse::eError);
+                    }
+                    if(!m->getArgument(3).isNumeric()) {
+                        debugWarning("set volume: Wrong argument (3) type\n");
+                        return OscResponse(OscResponse::eError);
+                    }
+                    if(!m->getArgument(4).isNumeric()) {
+                        debugWarning("set volume: Wrong argument (4) type\n");
+                        return OscResponse(OscResponse::eError);
+                    }
+                    
+                    int channel=m->getArgument(3).toInt();
+                    int volume=m->getArgument(4).toInt();
+                    
+                    return mixerSetFeatureVolumeValue(id, channel, volume);
+                }
+
                 return OscResponse(OscResponse::eError);
             }
             if(cmd == "get") {
@@ -229,5 +244,65 @@ GenericMixer::mixerSetSelectorValue(int fb_id, int value) {
     return OscResponse(m);
 }
 
+OscResponse 
+GenericMixer::mixerSetFeatureVolumeValue(int fb_id, int channel, 
+                                        int volume) {
+    OscMessage m;
+    
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d channel %d to %d...\n",
+        fb_id, channel, volume);
+
+    FunctionBlockCmd fbCmd( m_p1394Service,
+                            FunctionBlockCmd::eFBT_Feature,
+                            fb_id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( m_device.getNodeId()  );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Control );
+    fbCmd.m_pFBFeature->m_audioChannelNumber=channel;
+    fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
+    fbCmd.m_pFBFeature->m_pVolume->m_volume=volume;
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+    }
+
+    if (fbCmd.getResponse() != AVCCommand::eR_Accepted) {
+        return OscResponse(OscResponse::eError);
+    }
+
+    return OscResponse(m);
+}
+
+OscResponse 
+GenericMixer::mixerGetFeatureVolumeValue(int fb_id, int channel) {
+    OscMessage m;
+    
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d channel %d...\n",
+        fb_id, channel);
+
+    FunctionBlockCmd fbCmd( m_p1394Service,
+                            FunctionBlockCmd::eFBT_Feature,
+                            fb_id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( m_device.getNodeId()  );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Status );
+    fbCmd.m_pFBFeature->m_audioChannelNumber=channel;
+    fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
+    fbCmd.m_pFBFeature->m_pVolume->m_volume=0;
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+    }
+
+    if (fbCmd.getResponse() != AVCCommand::eR_Accepted) {
+        return OscResponse(OscResponse::eError);
+    }
+    
+    m.addArgument((int32_t)(fbCmd.m_pFBFeature->m_pVolume->m_volume));
+
+    return OscResponse(m);
+}
 
 } // end of namespace BeBoB

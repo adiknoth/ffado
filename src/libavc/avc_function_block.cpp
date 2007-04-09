@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -29,15 +30,13 @@
 
 FunctionBlockFeatureVolume::FunctionBlockFeatureVolume()
     : IBusData()
-    , m_controlSelector( FunctionBlockFeature::eCSE_Feature_Volume )
     , m_controlDataLength( 2 )
     , m_volume( 0 )
 {
 }
 
 FunctionBlockFeatureVolume::FunctionBlockFeatureVolume( const FunctionBlockFeatureVolume& rhs )
-    : m_controlSelector( rhs.m_controlSelector )
-    , m_controlDataLength( rhs.m_controlDataLength )
+    : m_controlDataLength( rhs.m_controlDataLength )
     , m_volume( rhs.m_volume )
 {
 }
@@ -51,8 +50,7 @@ FunctionBlockFeatureVolume::serialize( IOSSerialize& se )
 {
     bool bStatus;
     byte_t val;
-    bStatus = se.write( m_controlSelector,    "FunctionBlockFeatureVolume controlSelector" );
-    bStatus &= se.write( m_controlDataLength,  "FunctionBlockFeatureVolume controlDataLength" );
+    bStatus = se.write( m_controlDataLength,  "FunctionBlockFeatureVolume controlDataLength" );
     val = (byte_t)(m_volume >> 8);
     bStatus &= se.write( val,                  "FunctionBlockFeatureVolume volume high" );
     val = m_volume & 0xff;
@@ -66,8 +64,7 @@ FunctionBlockFeatureVolume::deserialize( IISDeserialize& de )
 {
     bool bStatus;
     byte_t val;
-    bStatus = de.read( &m_controlSelector );
-    bStatus &= de.read( &m_controlDataLength );
+    bStatus = de.read( &m_controlDataLength );
     bStatus &= de.read( &val );
     m_volume = val << 8;
     bStatus &= de.read( &val );
@@ -326,7 +323,8 @@ FunctionBlockFeature::FunctionBlockFeature()
     : IBusData()
     , m_selectorLength( 0x02 )
     , m_audioChannelNumber( 0x00 )
-    , m_pVolume( 0 )
+    , m_controlSelector( eCSE_Feature_Unknown )
+    , m_pVolume( new FunctionBlockFeatureVolume )
 {
 }
 
@@ -334,6 +332,7 @@ FunctionBlockFeature::FunctionBlockFeature( const FunctionBlockFeature& rhs )
     : IBusData()
     , m_selectorLength( rhs.m_selectorLength )
     , m_audioChannelNumber( rhs.m_audioChannelNumber )
+    , m_controlSelector( rhs.m_controlSelector )
 {
     if ( rhs.m_pVolume ) {
         m_pVolume = new FunctionBlockFeatureVolume( *rhs.m_pVolume );
@@ -343,7 +342,7 @@ FunctionBlockFeature::FunctionBlockFeature( const FunctionBlockFeature& rhs )
 FunctionBlockFeature::~FunctionBlockFeature()
 {
     delete m_pVolume;
-    m_pVolume = 0;
+    m_pVolume = NULL;
 }
 
 bool
@@ -352,8 +351,9 @@ FunctionBlockFeature::serialize( IOSSerialize& se )
     bool bStatus;
     bStatus  = se.write( m_selectorLength,     "FunctionBlockFeature selectorLength" );
     bStatus &= se.write( m_audioChannelNumber, "FunctionBlockFeature audioChannelNumber" );
+    bStatus &= se.write( m_controlSelector,    "FunctionBlockFeature controlSelector" );
 
-    if ( m_pVolume ) {
+    if ( m_controlSelector == eCSE_Feature_Volume ) {
         bStatus &= m_pVolume->serialize( se );
     } else {
         bStatus = false;
@@ -368,14 +368,10 @@ FunctionBlockFeature::deserialize( IISDeserialize& de )
     bool bStatus;
     bStatus  = de.read( &m_selectorLength );
     bStatus &= de.read( &m_audioChannelNumber );
+    bStatus &= de.read( &m_controlSelector );
 
-    byte_t controlSelector;
-    bStatus &= de.peek( &controlSelector );
-    switch( controlSelector ) {
+    switch( m_controlSelector ) {
     case eCSE_Feature_Volume:
-        if ( !m_pVolume ) {
-            m_pVolume = new FunctionBlockFeatureVolume;
-        }
         bStatus &= m_pVolume->deserialize( de );
         break;
     case eCSE_Feature_Mute:

@@ -50,6 +50,10 @@ protected:
     OSC::OscMessage mixerListChildren();
     OSC::OscResponse mixerGetSelectorValue(int id);
     OSC::OscResponse mixerSetSelectorValue(int id, int value);
+    
+    OSC::OscResponse mixerSetFeatureVolumeValue(int id, int channel, int volume);
+    OSC::OscResponse mixerGetFeatureVolumeValue(int fb_id, int channel);
+    
 protected:
     Ieee1394Service      &m_p1394Service;
     AvDevice             &m_device;
