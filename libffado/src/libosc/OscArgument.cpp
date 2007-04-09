@@ -90,6 +90,45 @@ OscArgument::operator == ( const OscArgument& rhs )
     }
 }
 
+int32_t 
+OscArgument::toInt() {
+    if(m_isInt) {
+        return m_intVal;
+    } else if(m_isInt64) {
+        return (int32_t)(m_int64Val & 0xFFFFFFFF);
+    } else if(m_isFloat) {
+        return (int32_t)(m_floatVal);
+    } else {
+        return 0;
+    }
+}
+
+int64_t 
+OscArgument::toInt64() {
+    if(m_isInt) {
+        return (int64_t)(m_intVal);
+    } else if(m_isInt64) {
+        return m_int64Val;
+    } else if(m_isFloat) {
+        return (int64_t)(m_floatVal);
+    } else {
+        return 0;
+    }
+}
+
+float 
+OscArgument::toFloat() {
+    if(m_isInt) {
+        return (float)(m_intVal);
+    } else if(m_isInt64) {
+        return (float)(m_int64Val);
+    } else if(m_isFloat) {
+        return m_floatVal;
+    } else {
+        return 0;
+    }
+}
+
 void
 OscArgument::print()
 {

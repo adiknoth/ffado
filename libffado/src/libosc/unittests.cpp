@@ -62,7 +62,9 @@ test_OscMessage_T1() {
     result &= TEST_SHOULD_RETURN_TRUE(m.getArgument(0).getFloat()==(float)1.1);
     result &= TEST_SHOULD_RETURN_TRUE(m.getArgument(1).getString()==string("teststring"));
     result &= TEST_SHOULD_RETURN_TRUE(m.getArgument(2).getInt()==1);
-
+    
+    result &= TEST_SHOULD_RETURN_TRUE(m.getArgument(0).toInt()==1);
+    
     return result;
 }
 
