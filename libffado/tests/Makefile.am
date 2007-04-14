@@ -33,7 +33,7 @@ noinst_PROGRAMS =
 if BUILD_TESTS
 noinst_PROGRAMS += test-ffado test-extplugcmd test-fw410 \
 	     test-volume test-mixer test-cycletimer test-sytmonitor \
-	     test-timestampedbuffer test-ieee1394service
+	     test-timestampedbuffer test-ieee1394service test-streamdump
 endif
 
 noinst_HEADERS =
@@ -56,6 +56,9 @@ test_mixer_LDADD = $(top_builddir)/src/libffado.la \
 
 test_fw410_SOURCES = test-fw410.cpp
 test_fw410_LDADD   = $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
+
+test_streamdump_SOURCES = test-streamdump.cpp
+test_streamdump_LDADD   = $(LIBAVC1394_LIBS) $(LIBIEC61883_LIBS) -lrom1394
 
 test_ieee1394service_SOURCES = test-ieee1394service.cpp
 test_ieee1394service_LDADD   = $(top_builddir)/src/libffado.la \
