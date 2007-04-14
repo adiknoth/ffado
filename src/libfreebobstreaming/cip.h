@@ -14,21 +14,24 @@
 
 struct iec61883_packet {
 	/* First quadlet */
-	unsigned int dbs      : 8;
 	unsigned int eoh0     : 2;
 	unsigned int sid      : 6;
+	
+	unsigned int dbs      : 8; 
 
-	unsigned int dbc      : 8;
 	unsigned int fn       : 2;
 	unsigned int qpc      : 3;
 	unsigned int sph      : 1;
 	unsigned int reserved : 2;
+	
+	unsigned int dbc      : 8;
 
 	/* Second quadlet */
-	unsigned int fdf      : 8;
 	unsigned int eoh1     : 2;
 	unsigned int fmt      : 6;
 
+	unsigned int fdf      : 8;
+	
 	unsigned int syt      : 16;
 
 	unsigned char data[0];
