@@ -1,6 +1,6 @@
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 1027)
+--- configure.ac	(revision 1029)
 +++ configure.ac	(working copy)
 @@ -612,6 +612,23 @@
  fi
@@ -46,7 +46,7 @@ Index: configure.ac
  echo \| Build with PortAudio support.......................... : $HAVE_PA
 Index: drivers/freebob/freebob_driver.c
 ===================================================================
---- drivers/freebob/freebob_driver.c	(revision 1027)
+--- drivers/freebob/freebob_driver.c	(revision 1029)
 +++ drivers/freebob/freebob_driver.c	(working copy)
 @@ -182,8 +182,10 @@
  
@@ -74,7 +74,7 @@ Index: drivers/freebob/freebob_driver.c
  	jack_slist_free (driver->playback_ports);
 Index: drivers/Makefile.am
 ===================================================================
---- drivers/Makefile.am	(revision 1027)
+--- drivers/Makefile.am	(revision 1029)
 +++ drivers/Makefile.am	(working copy)
 @@ -30,5 +30,11 @@
  FREEBOB_DIR =
