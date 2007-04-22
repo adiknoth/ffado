@@ -55,6 +55,7 @@ AC_CONFIG_SRCDIR([src/ffado.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_GNU_SOURCE
 AC_LANG(C++)
+AC_PROG_CXX
 
 # Prefix handling
 AC_MSG_CHECKING(prefix)
