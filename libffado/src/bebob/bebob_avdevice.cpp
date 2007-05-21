@@ -60,6 +60,7 @@ static VendorModelEntry supportedDeviceList[] =
     {0x000f1b, 0x00010064, "ESI", "Quatafire 610"},
 
     {0x00130e, 0x00000003, "Focusrite", "Saffire Pro26IO"},
+    {0x00130e, 0x00000006, "Focusrite", "Saffire Pro10IO"}, 
 
     {0x0040ab, 0x00010048, "EDIROL", "FA-101"},
     {0x0040ab, 0x00010049, "EDIROL", "FA-66"},
