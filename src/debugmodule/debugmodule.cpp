@@ -29,6 +29,8 @@
 
 #include <iostream>
 
+#define DO_MESSAGE_BUFFER_PRINT
+
 using namespace std;
 
 struct ColorEntry  {
@@ -340,6 +342,8 @@ DebugModuleManager::print(const char *fmt, ...)
             msg);
         return;
     }
+
+#ifdef DO_MESSAGE_BUFFER_PRINT
     if (pthread_mutex_trylock(&mb_write_lock) == 0) {
         strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
         mb_inbuffer = MB_NEXT(mb_inbuffer);
@@ -350,6 +354,9 @@ DebugModuleManager::print(const char *fmt, ...)
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now
     }
+#else
+    fprintf(stderr,msg);
+#endif
 }
 
 
@@ -369,6 +376,7 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
         return;
     }
 
+#ifdef DO_MESSAGE_BUFFER_PRINT
     if (pthread_mutex_trylock(&mb_write_lock) == 0) {
         strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
         mb_inbuffer = MB_NEXT(mb_inbuffer);
@@ -379,6 +387,9 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now
     }
+#else
+    fprintf(stderr,msg);
+#endif
 }
 
 //----------------------------------------
