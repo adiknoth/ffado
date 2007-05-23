@@ -88,7 +88,6 @@ protected:
 public:
     void setVerboseLevel(int l);
 private:
-    int m_verboseLevel;
     DECLARE_DEBUG_MODULE;
 };
 

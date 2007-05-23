@@ -216,6 +216,18 @@ AC_ARG_ENABLE(bebob,
 esac],
 [build_bebob=true])
 
+dnl --- Build Generic AV/C code (Apple class driver compatible)?
+
+AC_ARG_ENABLE(generic-avc,
+    AC_HELP_STRING([--enable-generic-avc],
+		   [build Generic AV/C support (default=yes)]),
+[case "${enableval}" in
+  yes) build_genericavc=true;;
+  no)  build_genericavc=false;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-generic-avc) ;;
+esac],
+[build_genericavc=true])
+
 dnl --- Build Motu code?
 
 AC_ARG_ENABLE(motu,
@@ -312,6 +324,7 @@ fi;
 dnl Device classes
 if test "${build_all}" = true; then
     build_bebob=true
+    build_genericavc=true
     build_motu=true
     build_dice=true
     build_metric_halo=true
@@ -325,6 +338,13 @@ if test "${build_bebob}" = true; then
    CFLAGS="$CFLAGS -DENABLE_BEBOB"
    CXXFLAGS="$CXXFLAGS -DENABLE_BEBOB" 
    supported_devices="${supported_devices}BeBoB  "
+   build_amdtp=true
+fi;
+
+if test "${build_genericavc}" = true; then
+   CFLAGS="$CFLAGS -DENABLE_GENERICAVC"
+   CXXFLAGS="$CXXFLAGS -DENABLE_GENERICAVC" 
+   supported_devices="${supported_devices}GenericAVC  "
    build_amdtp=true
 fi;
 
@@ -365,6 +385,7 @@ if test "${supported_devices}" = ""; then
 fi;
 
 AM_CONDITIONAL(BUILD_BEBOB,test "${build_bebob}" = true)
+AM_CONDITIONAL(BUILD_GENERICAVC,test "${build_genericavc}" = true)
 AM_CONDITIONAL(BUILD_MOTU,test "${build_motu}" = true)
 AM_CONDITIONAL(BUILD_DICE,test "${build_dice}" = true)
 AM_CONDITIONAL(BUILD_METRIC_HALO,test "${build_metric_halo}" = true)

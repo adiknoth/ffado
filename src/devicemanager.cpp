@@ -44,6 +44,10 @@
     #include "maudio/maudio_avdevice.h"
 #endif
 
+#ifdef ENABLE_GENERICAVC
+    #include "genericavc/avc_avdevice.h"
+#endif
+
 #ifdef ENABLE_BOUNCE
     #include "bounce/bounce_avdevice.h"
     #include "bounce/bounce_slave_avdevice.h"
@@ -73,7 +77,6 @@ DeviceManager::DeviceManager()
     : OscNode("devicemanager")
     , m_1394Service( 0 )
     , m_oscServer( NULL )
-    , m_verboseLevel( DEBUG_LEVEL_NORMAL )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -99,7 +102,7 @@ DeviceManager::~DeviceManager()
 void
 DeviceManager::setVerboseLevel(int l)
 {
-    m_verboseLevel=l;
+    debugOutput( DEBUG_LEVEL_NORMAL, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
 
     if (m_1394Service) m_1394Service->setVerboseLevel(l);
@@ -166,7 +169,7 @@ DeviceManager::initialize( int port )
         return false;
     }
 
-    setVerboseLevel(m_verboseLevel);
+    setVerboseLevel(getDebugLevel());
     return true;
 }
 
@@ -182,7 +185,7 @@ DeviceManager::discover( )
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
 
-    setVerboseLevel(m_verboseLevel);
+    setVerboseLevel(getDebugLevel());
 
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
@@ -230,7 +233,7 @@ DeviceManager::discover( )
                              "discover: driver found for device %d\n",
                              nodeId );
 
-                avDevice->setVerboseLevel( m_verboseLevel );
+                avDevice->setVerboseLevel( getDebugLevel() );
 
                 if ( !avDevice->discover() ) {
                     debugError( "discover: could not discover device\n" );
@@ -253,7 +256,7 @@ DeviceManager::discover( )
                     }
                 }
 
-                if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
+                if ( getDebugLevel() >= DEBUG_LEVEL_VERBOSE ) {
                     avDevice->showDevice();
                 }
 
@@ -293,7 +296,7 @@ DeviceManager::discover( )
                          "discover: driver found for device %d\n",
                          nodeId );
 
-            avDevice->setVerboseLevel( m_verboseLevel );
+            avDevice->setVerboseLevel( getDebugLevel() );
 
             if ( !avDevice->discover() ) {
                 debugError( "discover: could not discover device\n" );
@@ -304,7 +307,7 @@ DeviceManager::discover( )
             if ( !avDevice->setId( m_avDevices.size() ) ) {
                 debugError( "setting Id failed\n" );
             }
-            if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
+            if ( getDebugLevel() >= DEBUG_LEVEL_VERBOSE ) {
                 avDevice->showDevice();
             }
 
@@ -324,6 +327,13 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
         return new BeBoB::AvDevice( configRom, *m_1394Service, id );
+    }
+#endif
+
+#ifdef ENABLE_GENERICAVC
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
+    if ( GenericAVC::AvDevice::probe( *configRom.get() ) ) {
+        return new GenericAVC::AvDevice( configRom, *m_1394Service, id );
     }
 #endif
 

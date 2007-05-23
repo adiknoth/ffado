@@ -138,6 +138,10 @@ bebob_src = \
 	    bebob/GenericMixer.cpp \
 	    maudio/maudio_avdevice.cpp
 
+genericavc_src = \
+	    genericavc/avc_avdevice.cpp \
+	    genericavc/avc_avdevice.h
+
 motu_src = \
 	    motu/motu_avdevice.cpp \
 	    libstreaming/MotuPort.cpp \
@@ -213,6 +217,13 @@ libffado_la_SOURCES += $(bebob_src)
 bin_PROGRAMS += $(bebob_bin)
 noinst_PROGRAMS += $(bebob_noinst)
 nobase_dist_pkgdata_DATA += $(bebob_pkgdata)
+endif
+
+if BUILD_GENERICAVC
+libffado_la_SOURCES += $(genericavc_src)
+bin_PROGRAMS += $(genericavc_bin)
+noinst_PROGRAMS += $(genericavc_noinst)
+nobase_dist_pkgdata_DATA += $(genericavc_pkgdata)
 endif
 
 if BUILD_BOUNCE

@@ -223,6 +223,9 @@ main( int argc, char **argv )
             fprintf( stderr, "Could not allocate device manager\n" );
             return -1;
         }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
         if ( !m_deviceManager->initialize( arguments.port ) ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
@@ -250,6 +253,9 @@ main( int argc, char **argv )
         if ( !m_deviceManager ) {
             fprintf( stderr, "Could not allocate device manager\n" );
             return -1;
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
         }
         if ( !m_deviceManager->initialize( arguments.port ) ) {
             fprintf( stderr, "Could not initialize device manager\n" );
