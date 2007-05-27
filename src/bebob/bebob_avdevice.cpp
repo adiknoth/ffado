@@ -66,6 +66,8 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0040ab, 0x00010049, "EDIROL", "FA-66"},
 
     {0x000d6c, 0x00010062, "M-Audio", "FW Solo"},
+    {0x000d6c, 0x00010081, "M-Audio", "NRV10"},
+
 };
 
 AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
