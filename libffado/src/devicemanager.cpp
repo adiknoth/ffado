@@ -485,52 +485,57 @@ DeviceManager::deinitialize()
 }
 
 bool
-DeviceManager::saveCache( Glib::ustring fileName )
+DeviceManager::buildCache()
 {
-    int i;
-    i=0; // avoids unused warning
-
+    bool result = true;
     for ( IAvDeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* pAvDevice;
-        pAvDevice = *it; // avoids unused warning
+        IAvDevice* pAvDevice = *it;
 
-        #ifdef ENABLE_BEBOB
         BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast< BeBoB::AvDevice* >( pAvDevice );
         if ( pBeBoBDevice ) {
-            // Let's use a very simple path to find the devices later.
-            // Since under hood there will an xml node name this should
-            // adhere the needed naming rules. Of course we could give it
-            // a good node name and add an attribute but that would mean
-            // we have to expose a bigger interface from IOSerialize/IODesialize,
-            // which is just not needed. KISS.
-            ostringstream strstrm;
-            strstrm << "id" << i;
-            Glib::ustring basePath = "BeBoB/" + strstrm.str() + "/";
-
-            Util::XMLSerialize ser( fileName );
-            pBeBoBDevice->serialize( basePath, ser );
-
-            i++;
-            std::cout << "a bebob device serialized" << std::endl;
+            result &= saveCache( pBeBoBDevice );
         }
-        #endif
     }
-    return true;
+
+    return result;
+}
+
+Glib::ustring
+DeviceManager::getCachePath()
+{
+    Glib::ustring cachePath;
+    char* pCachePath;
+    if ( asprintf( &pCachePath, "%s/cache/libfreebob/",  CACHEDIR ) < 0 ) {
+        debugError( "saveCache: Could not create path string for cache pool (trying '/var/cache/freebob' instead)\n" );
+        cachePath == "/var/cache/freebob/";
+    } else {
+        cachePath = pCachePath;
+        free( pCachePath );
+    }
+    return cachePath;
 }
 
 bool
-DeviceManager::loadCache( Glib::ustring fileName )
+DeviceManager::saveCache( IAvDevice* pAvDevice )
 {
-    int i;
-    i=0; // avoids unused warning
-    Util::XMLDeserialize deser( fileName );
+    BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast<BeBoB::AvDevice*>( pAvDevice );
+    if ( !pBeBoBDevice ) {
+        return true;
+    }
 
-    typedef std::vector<ConfigRom*> ConfigRomVector;
-    ConfigRomVector configRoms;
+    Glib::ustring sFileName = getCachePath() + pAvDevice->getConfigRom().getGuidString() + ".xml";
+    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
 
+    Util::XMLSerialize ser( sFileName );
+    return pBeBoBDevice->serialize( "/", ser );
+}
+
+bool
+DeviceManager::loadCache( Glib::ustring cachePath )
+{
     for ( fb_nodeid_t nodeId = 0;
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
@@ -549,36 +554,25 @@ DeviceManager::loadCache( Glib::ustring fileName )
             delete pConfigRom;
             continue;
         }
-        configRoms.push_back( pConfigRom );
-    }
 
-    #ifdef ENABLE_BEBOB
-    BeBoB::AvDevice* pBeBoBDevice = 0;
-    do {
-        ostringstream strstrm;
-        strstrm << "id" << i;
-        pBeBoBDevice = BeBoB::AvDevice::deserialize(
-            "BeBoB/" + strstrm.str() + "/",
-            deser,
-            *m_1394Service );
+        Glib::ustring sFileName = getCachePath() + pConfigRom->getGuidString() + ".xml";
 
-        ++i;
-        if ( pBeBoBDevice ) {
-            for (ConfigRomVector::iterator it = configRoms.begin();
-                 it != configRoms.end();
-                 ++it )
-            {
-                ConfigRom* pConfigRom = *it;
+        if ( access( sFileName.c_str(),  R_OK ) == 0 ) {
+            debugOutput( DEBUG_LEVEL_NORMAL, "load from %s\n", sFileName.c_str() );
+            Util::XMLDeserialize deser( sFileName );
 
-                if ( pBeBoBDevice->getConfigRom() == *pConfigRom ) {
-                    pBeBoBDevice->getConfigRom().setNodeId( pConfigRom->getNodeId() );
-                    // m_avDevices.push_back( pBeBoBDevice );
-
-                }
+            BeBoB::AvDevice* pBeBoBDevice = BeBoB::AvDevice::deserialize( "/", deser, *m_1394Service );
+            if ( pBeBoBDevice ) {
+                debugOutput( DEBUG_LEVEL_NORMAL, "loadCache: could create valid bebob driver from %s\n", sFileName.c_str() );
+                pBeBoBDevice->getConfigRom().setNodeId( pConfigRom->getNodeId() );
+                m_avDevices.push_back( pBeBoBDevice );
             }
         }
-    } while ( pBeBoBDevice );
-    #endif
+
+        // throw away this config rom instance, the deserialize code has created it's own from
+        // the cache.
+        delete pConfigRom;
+    }
 
     return true;
 }

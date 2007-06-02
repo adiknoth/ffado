@@ -1,5 +1,5 @@
 # configure.ac - Configure script for FFADO.
-# Copyright (C) 2005,06 by Daniel Wagner.
+# Copyright (C) 2005,06,07 by Daniel Wagner.
 # Copyright (C) 2006,07 by Pieter Palmers.
 #
 # This file is part of FFADO.
@@ -25,7 +25,7 @@ AC_PREREQ(2.57)
 
 m4_define(ffado_major_version, 1)
 m4_define(ffado_minor_version, 999)
-m4_define(ffado_micro_version, 4)
+m4_define(ffado_micro_version, 5)
 
 m4_define(ffado_version, ffado_major_version.ffado_minor_version.ffado_micro_version)
 
@@ -299,8 +299,7 @@ esac],
 [build_tests=true])
 
 CFLAGS="$CFLAGS -Wall -std=gnu99"
-CXXFLAGS="$CXXFLAGS -Wall -DDATADIR=\\\"\$(datadir)\\\"" 
-
+CXXFLAGS="$CXXFLAGS -Wall -DDATADIR=\\\"\$(datadir)\\\"  -DCACHEDIR=\\\"\$(localstatedir)\\\""
 if test "${debug}" = true; then
    CFLAGS="$CFLAGS -g -DDEBUG"
    CXXFLAGS="$CXXFLAGS -g -DDEBUG" 

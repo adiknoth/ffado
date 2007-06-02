@@ -386,6 +386,18 @@ ConfigRom::getGuid() const
 }
 
 const Glib::ustring
+ConfigRom::getGuidString() const
+{
+    char* buf;
+    asprintf( &buf, "%08x%08x",
+              ( unsigned int ) ( getGuid() >> 32 ),
+              ( unsigned int ) ( getGuid() & 0xffffffff ) );
+    Glib::ustring result = buf;
+    free( buf );
+    return result;
+}
+
+const Glib::ustring
 ConfigRom::getModelName() const
 {
     return m_modelName;
