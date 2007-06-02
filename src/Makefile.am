@@ -172,6 +172,9 @@ bebob_pkgdata = 				\
 	maudio/fw410.xml 				\
 	maudio/fwap.xml
 
+install-data-hook:
+	mkdir -p $(localstatedir)/cache/libffado
+
 # programs intended for installation in the 'bin' directory
 #  generic
 bin_PROGRAMS = 

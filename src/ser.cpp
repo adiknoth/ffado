@@ -26,46 +26,35 @@
 
 #include <iostream>
 
-const char FileName[] = "serialize-test.xml";
+const char FileName[] = "bebob.xml";
 
 static bool
-serialize( const char* pFileName, int port )
+serialize( const char* pFileName )
 {
     DeviceManager devMgr;
-    if (!devMgr.initialize( port )) {
-        std::cerr << "could not init DeviceManager" << std::endl;
+    if ( !devMgr.initialize( 0 ) )
         return false;
-    }
-
-//     devMgr.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-    if (!devMgr.discover( )) {
-        std::cerr << "could not discover devices" << std::endl;
+    if ( !devMgr.discover() )
         return false;
-    }
-    return devMgr.saveCache( pFileName );
+    devMgr.setVerboseLevel( 4 );
+    return devMgr.buildCache();
 }
 
 static bool
 deserialize( const char* pFileName )
 {
     DeviceManager devMgr;
-    if (!devMgr.initialize( 0 )) {
-        std::cerr << "could not init DeviceManager" << std::endl;
+    if ( !devMgr.initialize( 0 ) )
         return false;
-    }
+
+    devMgr.setVerboseLevel( 4 );
     return devMgr.loadCache( pFileName );
 }
 
 int
 main(  int argc,  char** argv )
 {
-    int port=0;
-    if (argc==2) {
-        port=atoi(argv[1]);
-    }
-
-    if ( !serialize( FileName, port ) ) {
+    if ( !serialize( FileName ) ) {
         std::cerr << "serializing failed" << std::endl;
         return -1;
     }

@@ -51,6 +51,7 @@ class ConfigRom
 
     const fb_nodeid_t getNodeId() const;
     const fb_octlet_t getGuid() const;
+    const Glib::ustring getGuidString() const;
     const Glib::ustring getModelName() const;
     const Glib::ustring getVendorName() const;
 
