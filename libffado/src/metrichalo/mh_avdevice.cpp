@@ -118,6 +118,11 @@ MHAvDevice::getSamplingFrequency( ) {
     return 0;
 }
 
+int
+MHAvDevice::getConfigurationId( ) {
+    return 0;
+}
+
 bool
 MHAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {

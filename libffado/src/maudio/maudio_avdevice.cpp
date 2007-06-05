@@ -121,6 +121,12 @@ int AvDevice::getSamplingFrequency( ) {
     return 44100;
 }
 
+int
+AvDevice::getConfigurationId()
+{
+    return 0;
+}
+
 void
 AvDevice::showDevice()
 {

@@ -105,16 +105,17 @@ public:
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
+    virtual int getConfigurationId( );
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
     virtual bool prepare();
-    bool lock();
-    bool unlock();
+    virtual bool lock();
+    virtual bool unlock();
 
-    bool startStreamByIndex(int i);
-    bool stopStreamByIndex(int i);
+    virtual bool startStreamByIndex(int i);
+    virtual bool stopStreamByIndex(int i);
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
