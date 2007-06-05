@@ -76,6 +76,18 @@ public:
     virtual int getSamplingFrequency( ) = 0;
 
     /**
+     * @brief get a unique configuration identifier for current device setup
+     *
+     * Since each different setup (such as different sample frequency)
+     * can change the corresponding AV/C model, it is necessary to 
+     * distinguish between those models in case where caching of 
+     * AV/C models is enabled.
+     *
+     * @return a unique configuration identifier as integer
+     */
+    virtual int getConfigurationId( ) = 0;
+
+    /**
      * @brief This is called by the device manager to give the device a unique ID.
      *
      * The purpose of this is to allow for unique port naming

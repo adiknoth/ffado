@@ -131,6 +131,10 @@ int BounceDevice::getSamplingFrequency( ) {
     return m_samplerate;
 }
 
+int BounceDevice::getConfigurationId( ) {
+    return 0;
+}
+
 bool BounceDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency ) {
     int retval=convertESamplingFrequency( samplingFrequency );
     if (retval) {

@@ -58,14 +58,15 @@ public:
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
-    bool discover();
+    virtual bool discover();
 
-    void showDevice();
+    virtual void showDevice();
 
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    int getSamplingFrequency( );
+    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+    virtual int getConfigurationId( );
 
-    bool prepare();
+    virtual bool prepare();
 
 protected:
     struct VendorModelEntry*  m_model;

@@ -74,23 +74,24 @@ public:
     virtual ~BounceDevice();
 
     static bool probe( ConfigRom& configRom );
-    bool discover();
+    virtual bool discover();
 
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    int getSamplingFrequency( );
+    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+    virtual int getConfigurationId( );
 
-    bool prepare();
-    bool lock();
-    bool unlock();
+    virtual bool prepare();
+    virtual bool lock();
+    virtual bool unlock();
 
-    int getStreamCount();
+    virtual int getStreamCount();
 
-    Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
-    bool startStreamByIndex(int i);
-    bool stopStreamByIndex(int i);
+    virtual bool startStreamByIndex(int i);
+    virtual bool stopStreamByIndex(int i);
 
-    void showDevice();
+    virtual void showDevice();
 
 protected:
     unsigned int m_samplerate;

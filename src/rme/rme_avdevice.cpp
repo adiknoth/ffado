@@ -75,7 +75,7 @@ RmeDevice::probe( ConfigRom& configRom )
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             return true;
@@ -96,7 +96,7 @@ RmeDevice::discover()
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) 
+             && ( supportedDeviceList[i].model_id == modelId )
            )
         {
             m_model = &(supportedDeviceList[i]);
@@ -112,12 +112,18 @@ RmeDevice::discover()
     return false;
 }
 
-int 
+int
 RmeDevice::getSamplingFrequency( ) {
 /*
  * Retrieve the current sample rate from the RME device.
  */
 	return 48000;
+}
+
+int
+RmeDevice::getConfigurationId()
+{
+    return 0;
 }
 
 bool
@@ -160,7 +166,7 @@ RmeDevice::prepare() {
 	return true;
 }
 
-int 
+int
 RmeDevice::getStreamCount() {
  	return 0; // one receive, one transmit
 }

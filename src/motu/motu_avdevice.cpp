@@ -169,6 +169,12 @@ MotuDevice::getSamplingFrequency( ) {
     return rate;
 }
 
+int
+MotuDevice::getConfigurationId()
+{
+    return 0;
+}
+
 bool
 MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {

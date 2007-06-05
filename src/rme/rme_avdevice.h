@@ -54,22 +54,23 @@ public:
     virtual ~RmeDevice();
 
     static bool probe( ConfigRom& configRom );
-    bool discover();
+    virtual bool discover();
 
-    void showDevice();
+    virtual void showDevice();
 
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    int getSamplingFrequency( );
+    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual int getSamplingFrequency( );
+    virtual int getConfigurationId( );
 
-    int getStreamCount();
-    Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual int getStreamCount();
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
-    bool prepare();
-    bool lock();
-    bool unlock();
+    virtual bool prepare();
+    virtual bool lock();
+    virtual bool unlock();
 
-    bool startStreamByIndex(int i);
-    bool stopStreamByIndex(int i);
+    virtual bool startStreamByIndex(int i);
+    virtual bool stopStreamByIndex(int i);
 
 protected:
     struct VendorModelEntry *m_model;

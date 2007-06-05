@@ -170,6 +170,12 @@ DiceAvDevice::getSamplingFrequency( ) {
     return convertESamplingFrequency(samplingFrequency);
 }
 
+int
+DiceAvDevice::getConfigurationId()
+{
+    return 0;
+}
+
 bool
 DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 {
