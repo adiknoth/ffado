@@ -196,8 +196,8 @@ bool StreamProcessorManager::prepare() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
 
     m_is_slave=false;
-    if(!getOption("snoopMode", m_is_slave)) {
-        debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
+    if(!getOption("slaveMode", m_is_slave)) {
+        debugWarning("Could not retrieve slaveMode parameter, defaulting to false\n");
     }
 
     // if no sync source is set, select one here
