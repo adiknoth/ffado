@@ -150,7 +150,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
         if ((unsigned int)cycle == m_cycle_to_enable_at) {
             m_is_disabled=false;
 
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %u\n", this, cycle);
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling Tx StreamProcessor %p at %u\n", this, cycle);
 
             // initialize the buffer head & tail
             m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
@@ -960,7 +960,7 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         // this means that we are trying to enable
         if (cycle == m_cycle_to_enable_at) {
             m_is_disabled=false;
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %d\n",
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling Rx StreamProcessor %p at %d\n",
                 this, cycle);
 
             // the previous timestamp is the one we need to start with

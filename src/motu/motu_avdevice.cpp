@@ -76,10 +76,10 @@ MotuDevice::~MotuDevice()
 {
     // Free ieee1394 bus resources if they have been allocated
     if (m_p1394Service != NULL) {
-        if (m_iso_recv_channel>=0 && m_p1394Service->freeIsoChannel(m_iso_recv_channel)) {
+        if (m_iso_recv_channel>=0 && !m_p1394Service->freeIsoChannel(m_iso_recv_channel)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
         }
-        if (m_iso_send_channel>=0 && m_p1394Service->freeIsoChannel(m_iso_send_channel)) {
+        if (m_iso_send_channel>=0 && !m_p1394Service->freeIsoChannel(m_iso_send_channel)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
         }
     }
