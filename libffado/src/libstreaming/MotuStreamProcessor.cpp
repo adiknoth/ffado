@@ -133,6 +133,9 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // packet is intended for and 'now'
     int cycle_diff = diffCycles(cycle, now_cycles);
 
+//debugOutput(DEBUG_LEVEL_VERBOSE,"tx: enabled=%d, cycle=%d, now_cycles=%d, diff=%d\n",
+//  !m_is_disabled,cycle, now_cycles, cycle_diff);
+
     // Signal that streaming is still active
     m_streaming_active = 1;
 
@@ -147,7 +150,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
     if (!m_disabled && m_is_disabled) {
         // this means that we are trying to enable
-        if ((unsigned int)cycle == m_cycle_to_enable_at) {
+
+        // check if we are on or past the enable point
+        signed int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
+        
+        if (cycles_past_enable >= 0) {
             m_is_disabled=false;
 
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling Tx StreamProcessor %p at %u\n", this, cycle);
@@ -179,6 +186,13 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, LAG=%03d, FC=%4d\n",
                             ts_head, sync_lag_cycles, m_data_buffer->getFrameCounter());
         } else {
+static int foo=0;
+if (!foo) {
+  debugOutput(DEBUG_LEVEL_VERBOSE,
+    "will enable tx StreamProcessor %p at %u, now is %d\n",
+    this, m_cycle_to_enable_at, cycle);
+  foo=1;
+}
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "will enable StreamProcessor %p at %u, now is %d\n",
                         this, m_cycle_to_enable_at, cycle);
@@ -313,12 +327,14 @@ float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
             unsigned int ts_frame = timestamp;
             ts_frame += (unsigned int)((float)i * ticks_per_frame);
             *quadlet = htonl( TICKS_TO_CYCLE_TIMER(ts_frame) & 0x1ffffff);
+#if 0
 if (cycle==0) {
   debugOutput(DEBUG_LEVEL_VERBOSE,"%d %d %d\n",
     TICKS_TO_SECS(ts_frame),
     TICKS_TO_CYCLES(ts_frame),
     TICKS_TO_OFFSET(ts_frame));
 }
+#endif
 #if TESTTONE
             // FIXME: remove this hacked in 1 kHz test signal to
             // analog-1 when testing is complete.  Note that the tone is
@@ -955,6 +971,8 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // this avoids a function call like StreamProcessor::updateLastCycle()
     m_last_cycle=cycle;
 
+//debugOutput(DEBUG_LEVEL_VERBOSE,"rx: enabled=%d, cycle=%d\n",!m_is_disabled,cycle);
+
     // check our enable status
     if (!m_disabled && m_is_disabled) {
         // this means that we are trying to enable
@@ -974,6 +992,13 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n
   m_data_buffer);
 
         } else {
+static int foo=0;
+if (!foo) {
+debugOutput(DEBUG_LEVEL_VERBOSE,
+  "will enable rx StreamProcessor %p at %u, now is %d\n",
+  this, m_cycle_to_enable_at, cycle);
+  foo=1;
+}
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "will enable StreamProcessor %p at %u, now is %d\n",
                     this, m_cycle_to_enable_at, cycle);
