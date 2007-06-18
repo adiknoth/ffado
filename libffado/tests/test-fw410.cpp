@@ -184,7 +184,7 @@ main(int argc, char **argv)
         sleep(1);
     }
 
-    sleep( 5 );
+    sleep( 3 );
 
     for ( unsigned int i = 0; i < sizeof( cons ) / sizeof( cons[0] ); ++i ) {
         Connection* pCons = &cons[i];
