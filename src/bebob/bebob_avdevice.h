@@ -173,6 +173,10 @@ protected:
                                            Util::IODeserialize& deser,
                                            AvDevice& avDevice,
                                            SyncInfoVector& vec );
+    int getConfigurationIdSampleRate();
+    int getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection );
+    int getConfigurationIdSyncMode();
+
 protected:
     AvPlugVector              m_pcrPlugs;
     AvPlugVector              m_externalPlugs;

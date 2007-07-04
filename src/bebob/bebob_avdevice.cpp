@@ -813,118 +813,119 @@ AvDevice::getSamplingFrequency( ) {
 }
 
 int
-AvDevice::getConfigurationId()
+AvDevice::getConfigurationIdSampleRate()
 {
-    // create a unique configuration id.
-    // this implementation should do the trick but it is done in a very
-    // rough way. some cleanup and improvements have to be done for the
-    // 'final' version.
-
-    int id = 0;
-    // get sample rate
-    {
-        ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         m_nodeId );
-        extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
-                                                        PlugAddress::ePAM_Unit,
-                                                        unitPlugAddress ) );
-
-        extStreamFormatCmd.setNodeId( m_nodeId );
-        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-        extStreamFormatCmd.setVerbose( true );
-
-        if ( !extStreamFormatCmd.fire() ) {
-            debugError( "getConfigurationId: stream format command failed\n" );
-            return false;
-        }
-
-        FormatInformation* formatInfo =
-            extStreamFormatCmd.getFormatInformation();
-        FormatInformationStreamsCompound* compoundStream
-            = dynamic_cast< FormatInformationStreamsCompound* > (
-                formatInfo->m_streams );
-        if ( compoundStream ) {
-            //debugOutput( DEBUG_LEVEL_VERBOSE,
-            printf("getConfigurationId: sampling frequency %d\n",
-                   compoundStream->m_samplingFrequency );
-            id |= compoundStream->m_samplingFrequency;
-        }
-    }
-
-    // get number of channels input plug
-    //
-    // in theory we don't need this information. sample rate + sync mode should
-    // ge enough. though to be on the safe side let's us this information as well.
-    // yeah and the number of channels for the output plug should also be added.
-    {
-        ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
-        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                         m_nodeId );
-        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+    ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                     m_nodeId );
+    extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
-        extPlugInfoCmd.setNodeId( m_nodeId );
-        extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-        extPlugInfoCmd.setVerbose( true );
-        ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
-            ExtendedPlugInfoInfoType::eIT_NoOfChannels );
-        extendedPlugInfoInfoType.initialize();
-        extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
 
-        if ( !extPlugInfoCmd.fire() ) {
-            debugError( "getConfigurationId: number of channels command failed\n" );
-            return false;
-        }
+    extStreamFormatCmd.setNodeId( m_nodeId );
+    extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+    extStreamFormatCmd.setVerbose( true );
 
-        ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
-        if ( infoType
-             && infoType->m_plugNrOfChns )
-        {
-            printf( "getConfigurationId: number of channels %d\n",
-                    infoType->m_plugNrOfChns->m_nrOfChannels  );
-            id |= infoType->m_plugNrOfChns->m_nrOfChannels << 8;
-        }
+    if ( !extStreamFormatCmd.fire() ) {
+        debugError( "Stream format command failed\n" );
+        return false;
     }
 
-    // sync mode: get plug id/type of signal source for sync plug
+    FormatInformation* formatInfo =
+        extStreamFormatCmd.getFormatInformation();
+    FormatInformationStreamsCompound* compoundStream
+        = dynamic_cast< FormatInformationStreamsCompound* > (
+            formatInfo->m_streams );
+    if ( compoundStream ) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Sample rate 0x%02x\n",
+                    compoundStream->m_samplingFrequency );
+        return compoundStream->m_samplingFrequency;
+    }
+
+    debugError( "Could not retrieve sample rate\n" );
+    return 0;
+}
+
+int
+AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
+{
+    ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                     m_nodeId );
+    extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
+                                                PlugAddress::ePAM_Unit,
+                                                unitPlugAddress ) );
+    extPlugInfoCmd.setNodeId( m_nodeId );
+    extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    extPlugInfoCmd.setVerbose( true );
+    ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
+        ExtendedPlugInfoInfoType::eIT_NoOfChannels );
+    extendedPlugInfoInfoType.initialize();
+    extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+
+    if ( !extPlugInfoCmd.fire() ) {
+        debugError( "Number of channels command failed\n" );
+        return false;
+    }
+
+    ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+    if ( infoType
+         && infoType->m_plugNrOfChns )
     {
-        SignalSourceCmd signalSourceCmd( *m_p1394Service );
-        SignalUnitAddress signalUnitAddr;
-        signalUnitAddr.m_plugId = 0x01;
-        signalSourceCmd.setSignalDestination( signalUnitAddr );
-        signalSourceCmd.setNodeId( m_nodeId );
-        signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
-        signalSourceCmd.setSubunitId( 0xff );
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Number of channels 0x%02x\n",
+                    infoType->m_plugNrOfChns->m_nrOfChannels );
+        return infoType->m_plugNrOfChns->m_nrOfChannels;
+    }
 
-        signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
+    debugError( "Could not retrieve number of channels\n" );
+    return 0;
+}
 
-        if ( !signalSourceCmd.fire() ) {
-            debugError( "getConfigurationId: number of channels command failed\n" );
-            return false;
-        }
+int
+AvDevice::getConfigurationIdSyncMode()
+{
+    SignalSourceCmd signalSourceCmd( *m_p1394Service );
+    SignalUnitAddress signalUnitAddr;
+    signalUnitAddr.m_plugId = 0x01;
+    signalSourceCmd.setSignalDestination( signalUnitAddr );
+    signalSourceCmd.setNodeId( m_nodeId );
+    signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
+    signalSourceCmd.setSubunitId( 0xff );
 
-        SignalAddress* pSyncPlugSignalAddress = signalSourceCmd.getSignalSource();
-        SignalUnitAddress* pSyncPlugUnitAddress
-            = dynamic_cast<SignalUnitAddress*>( pSyncPlugSignalAddress );
-        if ( pSyncPlugUnitAddress ) {
-            printf( "getConfigurationId: sync plug (unit) 0x%04x\n",
-                    pSyncPlugUnitAddress->m_plugId );
-        }
+    signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
 
-        SignalSubunitAddress* pSyncPlugSubunitAddress
-            = dynamic_cast<SignalSubunitAddress*>( pSyncPlugSignalAddress );
-        if ( pSyncPlugSubunitAddress ) {
-            printf( "getConfigurationId: sync plug 0x%04x\n",
+    if ( !signalSourceCmd.fire() ) {
+        debugError( "Number of channels command failed\n" );
+        return false;
+    }
+
+    SignalAddress* pSyncPlugSignalAddress = signalSourceCmd.getSignalSource();
+    SignalSubunitAddress* pSyncPlugSubunitAddress
+        = dynamic_cast<SignalSubunitAddress*>( pSyncPlugSignalAddress );
+    if ( pSyncPlugSubunitAddress ) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Sync mode 0x%02x\n",
                     ( pSyncPlugSubunitAddress->m_subunitType << 3
                       | pSyncPlugSubunitAddress->m_subunitId ) << 8
                     | pSyncPlugSubunitAddress->m_plugId );
 
-            id |= ( ( pSyncPlugSubunitAddress->m_subunitType << 3
-                    | pSyncPlugSubunitAddress->m_subunitId ) << 8
-                    | pSyncPlugSubunitAddress->m_plugId ) << 16;
-        }
+        return ( pSyncPlugSubunitAddress->m_subunitType << 3
+                 | pSyncPlugSubunitAddress->m_subunitId ) << 8
+            | pSyncPlugSubunitAddress->m_plugId;
     }
+
+    debugError( "Could not retrieve sync mode\n" );
+    return 0;
+}
+
+int
+AvDevice::getConfigurationId()
+{
+    // create a unique configuration id.
+    int id = 0;
+    id = getConfigurationIdSampleRate();
+    id |= ( getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input )
+            + getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) ) << 8;
+    id |= getConfigurationIdSyncMode() << 16;
 
     return id;
 }
