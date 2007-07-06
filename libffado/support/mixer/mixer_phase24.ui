@@ -1,0 +1,798 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>mixer_phase24ui</class>
+<comment>Python:
+Python:# Import the OSC module
+Python:import osc
+</comment>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>mixer_phase24ui</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>360</width>
+            <height>489</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Terratec Phase 24 Control</string>
+    </property>
+    <widget class="QGroupBox">
+        <property name="name">
+            <cstring>groupBox1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>340</width>
+                <height>200</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string>Hardware Mixer</string>
+        </property>
+        <widget class="QSlider">
+            <property name="name">
+                <cstring>sldSPDIFIn</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>70</x>
+                    <y>70</y>
+                    <width>24</width>
+                    <height>120</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>25600</number>
+            </property>
+            <property name="lineStep">
+                <number>10000</number>
+            </property>
+            <property name="pageStep">
+                <number>1000</number>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="tickmarks">
+                <enum>Both</enum>
+            </property>
+            <property name="tickInterval">
+                <number>10000</number>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_3</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>40</y>
+                    <width>43</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Analog</string>
+            </property>
+        </widget>
+        <widget class="QSlider">
+            <property name="name">
+                <cstring>sldLineIn</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>70</y>
+                    <width>24</width>
+                    <height>120</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>25600</number>
+            </property>
+            <property name="lineStep">
+                <number>10000</number>
+            </property>
+            <property name="pageStep">
+                <number>1000</number>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="tickmarks">
+                <enum>Both</enum>
+            </property>
+            <property name="tickInterval">
+                <number>10000</number>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_4_2_3_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>50</x>
+                    <y>20</y>
+                    <width>20</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>In</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_4_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>60</x>
+                    <y>40</y>
+                    <width>40</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>SPDIF</string>
+            </property>
+        </widget>
+        <widget class="QSlider">
+            <property name="name">
+                <cstring>sldSPDIFOut</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>220</x>
+                    <y>70</y>
+                    <width>24</width>
+                    <height>120</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>25600</number>
+            </property>
+            <property name="lineStep">
+                <number>10000</number>
+            </property>
+            <property name="pageStep">
+                <number>1000</number>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="tickmarks">
+                <enum>Both</enum>
+            </property>
+            <property name="tickInterval">
+                <number>10000</number>
+            </property>
+        </widget>
+        <widget class="QSlider">
+            <property name="name">
+                <cstring>sldInput34</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>180</x>
+                    <y>70</y>
+                    <width>24</width>
+                    <height>120</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>25600</number>
+            </property>
+            <property name="lineStep">
+                <number>10000</number>
+            </property>
+            <property name="pageStep">
+                <number>1000</number>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="tickmarks">
+                <enum>Both</enum>
+            </property>
+            <property name="tickInterval">
+                <number>10000</number>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>140</x>
+                    <y>40</y>
+                    <width>22</width>
+                    <height>21</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>1/2</string>
+            </property>
+        </widget>
+        <widget class="QSlider">
+            <property name="name">
+                <cstring>sldInput12</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>140</x>
+                    <y>70</y>
+                    <width>24</width>
+                    <height>120</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>25600</number>
+            </property>
+            <property name="lineStep">
+                <number>10000</number>
+            </property>
+            <property name="pageStep">
+                <number>1000</number>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="tickmarks">
+                <enum>Both</enum>
+            </property>
+            <property name="tickInterval">
+                <number>10000</number>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_4_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>210</x>
+                    <y>40</y>
+                    <width>40</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>SPDIF</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>180</x>
+                    <y>40</y>
+                    <width>22</width>
+                    <height>21</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>3/4</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_4_2_3_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>180</x>
+                    <y>20</y>
+                    <width>24</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Out</string>
+            </property>
+        </widget>
+        <widget class="QSlider">
+            <property name="name">
+                <cstring>sldMaster</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>290</x>
+                    <y>70</y>
+                    <width>24</width>
+                    <height>120</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>25600</number>
+            </property>
+            <property name="lineStep">
+                <number>10000</number>
+            </property>
+            <property name="pageStep">
+                <number>1000</number>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="tickmarks">
+                <enum>Both</enum>
+            </property>
+            <property name="tickInterval">
+                <number>10000</number>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_4_2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>280</x>
+                    <y>40</y>
+                    <width>50</width>
+                    <height>21</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Master</string>
+            </property>
+        </widget>
+    </widget>
+    <widget class="QGroupBox">
+        <property name="name">
+            <cstring>groupBox2</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>220</y>
+                <width>340</width>
+                <height>140</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string>Routing</string>
+        </property>
+        <widget class="QComboBox">
+            <item>
+                <property name="text">
+                    <string>Wave Out 1/2</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Wave Out 3/4</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Line in</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>SPDIF in</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Mixer</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Wave Out SPDIF</string>
+                </property>
+            </item>
+            <property name="name">
+                <cstring>cmbOutSource34</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>210</x>
+                    <y>60</y>
+                    <width>120</width>
+                    <height>31</height>
+                </rect>
+            </property>
+        </widget>
+        <widget class="QComboBox">
+            <item>
+                <property name="text">
+                    <string>Wave Out 1/2</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Wave Out 3/4</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Line in</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>SPDIF in</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Mixer</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Wave Out SPDIF</string>
+                </property>
+            </item>
+            <property name="name">
+                <cstring>cmbOutSource12</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>210</x>
+                    <y>20</y>
+                    <width>120</width>
+                    <height>31</height>
+                </rect>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>60</y>
+                    <width>190</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>3/4</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>20</y>
+                    <width>190</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>1/2</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_2_3</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>100</y>
+                    <width>190</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>SPDIF</string>
+            </property>
+        </widget>
+        <widget class="QComboBox">
+            <item>
+                <property name="text">
+                    <string>Wave Out 1/2</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Wave Out 3/4</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Line in</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>SPDIF in</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Mixer</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Wave Out SPDIF</string>
+                </property>
+            </item>
+            <property name="name">
+                <cstring>cmbOutSourceSPDIF</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>210</x>
+                    <y>100</y>
+                    <width>120</width>
+                    <height>31</height>
+                </rect>
+            </property>
+        </widget>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>textLabel1_2_2</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>30</x>
+                <y>370</y>
+                <width>190</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>3/4 Out Level</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>textLabel1_2_2_3</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>30</x>
+                <y>410</y>
+                <width>190</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Analog In Level</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>textLabel1_2_2_2_3_2</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>30</x>
+                <y>450</y>
+                <width>190</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Sync Source</string>
+        </property>
+    </widget>
+    <widget class="QComboBox">
+        <item>
+            <property name="text">
+                <string>Line</string>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string>Headphone</string>
+            </property>
+        </item>
+        <property name="name">
+            <cstring>cmbFrontLevel</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>370</y>
+                <width>120</width>
+                <height>31</height>
+            </rect>
+        </property>
+    </widget>
+    <widget class="QComboBox">
+        <item>
+            <property name="text">
+                <string>0</string>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string>1</string>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string>2</string>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string>3</string>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string>4</string>
+            </property>
+        </item>
+        <property name="name">
+            <cstring>cmbLineLevel</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>410</y>
+                <width>120</width>
+                <height>31</height>
+            </rect>
+        </property>
+    </widget>
+    <widget class="QComboBox">
+        <item>
+            <property name="text">
+                <string>Internal</string>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string>External</string>
+            </property>
+        </item>
+        <property name="name">
+            <cstring>cmbSetSyncSource</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>450</y>
+                <width>120</width>
+                <height>31</height>
+            </rect>
+        </property>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>sldInput12</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setVolume12(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldInput34</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setVolume34(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldLineIn</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setVolumeLineIn(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldSPDIFOut</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setVolumeSPDIFOut(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldSPDIFIn</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setVolumeSPDIFIn(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldMaster</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setVolumeMaster(int)</slot>
+    </connection>
+    <connection>
+        <sender>cmbFrontLevel</sender>
+        <signal>activated(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setFrontLevel(int)</slot>
+    </connection>
+    <connection>
+        <sender>cmbSetSyncSource</sender>
+        <signal>activated(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setSyncSource(int)</slot>
+    </connection>
+    <connection>
+        <sender>cmbOutSourceSPDIF</sender>
+        <signal>activated(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setOutSourceSPDIF(int)</slot>
+    </connection>
+    <connection>
+        <sender>cmbOutSource12</sender>
+        <signal>activated(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setOutSource12(int)</slot>
+    </connection>
+    <connection>
+        <sender>cmbOutSource34</sender>
+        <signal>activated(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setOutSource34(int)</slot>
+    </connection>
+    <connection>
+        <sender>cmbLineLevel</sender>
+        <signal>activated(int)</signal>
+        <receiver>mixer_phase24ui</receiver>
+        <slot>setLineLevel(int)</slot>
+    </connection>
+</connections>
+<tabstops>
+    <tabstop>sldInput12</tabstop>
+    <tabstop>sldInput34</tabstop>
+    <tabstop>sldLineIn</tabstop>
+    <tabstop>sldSPDIFOut</tabstop>
+    <tabstop>sldSPDIFIn</tabstop>
+    <tabstop>sldMaster</tabstop>
+    <tabstop>cmbFrontLevel</tabstop>
+    <tabstop>cmbOutSource12</tabstop>
+    <tabstop>cmbOutSource34</tabstop>
+    <tabstop>cmbOutSourceSPDIF</tabstop>
+    <tabstop>cmbSetSyncSource</tabstop>
+</tabstops>
+<slots>
+    <slot>setVolume12( int )</slot>
+    <slot>setVolume34( int )</slot>
+    <slot>setVolumeLineIn( int )</slot>
+    <slot>setVolumeSPDIFOut( int )</slot>
+    <slot>setVolumeSPDIFIn( int )</slot>
+    <slot>setVolumeMaster( int )</slot>
+    <slot>setFrontLevel( int )</slot>
+    <slot>setOutSource12( int )</slot>
+    <slot>setOutSource34( int )</slot>
+    <slot>setOutSourceSPDIF( int )</slot>
+    <slot>setSyncSource( int )</slot>
+    <slot>setLineLevel( int )</slot>
+</slots>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
