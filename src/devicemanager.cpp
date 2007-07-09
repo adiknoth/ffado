@@ -30,23 +30,18 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "debugmodule/debugmodule.h"
-
-#include <iostream>
-#include <sstream>
-
-#include <unistd.h>
-
 #include "libstreaming/StreamProcessor.h"
 
+#include "debugmodule/debugmodule.h"
+
 #ifdef ENABLE_BEBOB
-    #include "bebob/bebob_avdevice.h"
-    #include "maudio/maudio_avdevice.h"
+#include "bebob/bebob_avdevice.h"
+#include "maudio/maudio_avdevice.h"
 #endif
 
 #ifdef ENABLE_BOUNCE
-    #include "bounce/bounce_avdevice.h"
-    #include "bounce/bounce_slave_avdevice.h"
+#include "bounce/bounce_avdevice.h"
+#include "bounce/bounce_slave_avdevice.h"
 #endif
 
 #ifdef ENABLE_MOTU
@@ -64,6 +59,11 @@
 #ifdef ENABLE_METRIC_HALO
 #include "metrichalo/mh_avdevice.h"
 #endif
+
+#include <iostream>
+#include <sstream>
+#include <unistd.h>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -493,11 +493,7 @@ DeviceManager::buildCache()
           ++it )
     {
         IAvDevice* pAvDevice = *it;
-
-        BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast< BeBoB::AvDevice* >( pAvDevice );
-        if ( pBeBoBDevice ) {
-            result &= saveCache( pBeBoBDevice );
-        }
+        result &= saveCache( pAvDevice );
     }
 
     return result;
@@ -508,9 +504,9 @@ DeviceManager::getCachePath()
 {
     Glib::ustring cachePath;
     char* pCachePath;
-    if ( asprintf( &pCachePath, "%s/cache/libfreebob/",  CACHEDIR ) < 0 ) {
-        debugError( "saveCache: Could not create path string for cache pool (trying '/var/cache/freebob' instead)\n" );
-        cachePath == "/var/cache/freebob/";
+    if ( asprintf( &pCachePath, "%s/cache/libffado/",  CACHEDIR ) < 0 ) {
+        debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
+        cachePath == "/var/cache/libffado/";
     } else {
         cachePath = pCachePath;
         free( pCachePath );
@@ -521,12 +517,37 @@ DeviceManager::getCachePath()
 bool
 DeviceManager::saveCache( IAvDevice* pAvDevice )
 {
+    // so far only BeBoB based devices needed a cache for speed up.
     BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast<BeBoB::AvDevice*>( pAvDevice );
     if ( !pBeBoBDevice ) {
         return true;
     }
 
-    Glib::ustring sFileName = getCachePath() + pAvDevice->getConfigRom().getGuidString() + ".xml";
+    // the path looks like this:
+    // PATH_TO_CACHE + GUID + CONFIGURATION_ID
+
+    Glib::ustring sDevicePath = getCachePath() + pAvDevice->getConfigRom().getGuidString();
+    struct stat buf;
+    if ( stat( sDevicePath.c_str(), &buf ) == 0 ) {
+        if ( !S_ISDIR( buf.st_mode ) ) {
+            debugError( "\"%s\" is not a directory\n",  sDevicePath.c_str() );
+            return false;
+        }
+    } else {
+        if (  mkdir( sDevicePath.c_str(), S_IRWXU | S_IRWXG ) != 0 ) {
+            debugError( "Could not create \"%s\" directory\n", sDevicePath.c_str() );
+            return false;
+        }
+    }
+
+    char* configId;
+    asprintf(&configId, "%08x", pBeBoBDevice->getConfigurationId() );
+    if ( !configId ) {
+        debugError( "Could not create id string\n" );
+        return false;
+    }
+    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
+    free( configId );
     debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
 
     Util::XMLSerialize ser( sFileName );
