@@ -60,19 +60,28 @@ uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
   // in advance of the cycle timer (reasons unknown at this stage).  In addition,
   // iso buffering can delay the arrival of packets for quite a number of cycles
   // (have seen a delay >12 cycles).
-  if (abs(CYCLE_TIMER_GET_CYCLES(sph) - now_cycles) > 1000) {
+  // Every so often we also see sph wrapping ahead of ct_now, so deal with that
+  // too.
+  if (CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000) {
 debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
     if (ts_sec)
       ts_sec--;
     else
       ts_sec = 127;
+  } else
+  if (now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000) {
+debugOutput(DEBUG_LEVEL_VERBOSE, "inverted wrap: now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
+    if (ts_sec == 127)
+      ts_sec = 0;
+    else
+      ts_sec++;
   }
   return timestamp + ts_sec*TICKS_PER_SECOND;
 }
 
 // Convert a full timestamp into an SPH timestamp as required by the MOTU
-static inline uint32_t fullTicksToSph(uint32_t timestamp) {
-  return timestamp & 0x1ffffff;
+static inline uint32_t fullTicksToSph(int64_t timestamp) {
+  return TICKS_TO_CYCLE_TIMER(timestamp) & 0x1ffffff;
 }
 
 /* transmit */
@@ -118,6 +127,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
     quadlet_t *quadlet = (quadlet_t *)data;
     signed int i;
+
+    // The number of events per packet expected by the MOTU is solely
+    // dependent on the current sample rate.  An 'event' is one sample from
+    // all channels plus possibly other midi and control data.
+    signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 
     m_last_cycle=cycle;
 
@@ -176,6 +190,15 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             // T1.
             ts_head = addTicks(ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
 
+// These are just copied from AmdtpStreamProcessor.  At some point we should
+// verify that they make sense for the MOTU.
+            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
+            // account for the number of cycles we are too late to enable
+            ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
+            // account for one extra packet of frames
+            ts_head = substractTicks(ts_head,
+              (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
+
             m_data_buffer->setBufferTailTimestamp(ts_head);
 
             #ifdef DEBUG
@@ -215,6 +238,14 @@ if (!foo) {
 
     int64_t timestamp = ts_head;
 
+#if 0
+if (cycle<10000) {
+  debugOutput(DEBUG_LEVEL_VERBOSE,"cycle %d at %3d:%04d:%04d, timestamp=%3d:%04d:%04d (%d)\n",
+    cycle,
+    CYCLE_TIMER_GET_SECS(ctr), CYCLE_TIMER_GET_CYCLES(ctr), CYCLE_TIMER_GET_OFFSET(ctr),
+    TICKS_TO_SECS((uint32_t)timestamp), TICKS_TO_CYCLES((uint32_t)timestamp),TICKS_TO_OFFSET((uint32_t)timestamp),(uint32_t)timestamp);
+}
+#endif
     // we send a packet some cycles in advance, to avoid the
     // following situation:
     // suppose we are only a few ticks away from
@@ -236,6 +267,8 @@ if (!foo) {
 
     // time until the packet is to be sent (if > 0: send packet)
     int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
+
+until_next = (cycle >= TICKS_TO_CYCLES((uint32_t)timestamp))?-1:1;
 
     // Size of a single data frame in quadlets
     unsigned dbs = m_event_size / 4;
@@ -275,11 +308,6 @@ if (!foo) {
 //else
         return RAW1394_ISO_DEFER;
     }
-
-    // The number of events expected by the MOTU is solely dependent on
-    // the current sample rate.  An 'event' is one sample from all channels
-    // plus possibly other midi and control data.
-    signed n_events = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 
     // add the transmit transfer delay to construct the playout time
     uint64_t ts=addTicks(timestamp, TRANSMIT_TRANSFER_DELAY);
@@ -323,13 +351,20 @@ if (!foo) {
 
 float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
         for (i=0; i<n_events; i++, quadlet += dbs) {
-//            unsigned int ts_frame = ts;
-            unsigned int ts_frame = timestamp;
-            ts_frame += (unsigned int)((float)i * ticks_per_frame);
-            *quadlet = htonl( TICKS_TO_CYCLE_TIMER(ts_frame) & 0x1ffffff);
+//FIXME: not sure which is best for the MOTU
+//            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
+            int64_t ts_frame = addTicks(timestamp, (unsigned int)(i * ticks_per_frame));
+            *quadlet = htonl(fullTicksToSph(ts_frame));
 #if 0
-if (cycle==0) {
-  debugOutput(DEBUG_LEVEL_VERBOSE,"%d %d %d\n",
+if (i==0) {
+  debugOutput(DEBUG_LEVEL_VERBOSE,"  ts_frame=%8x (%3d:%04d:%04d)\n",ts_frame,
+    TICKS_TO_SECS(ts_frame), TICKS_TO_CYCLES(ts_frame), TICKS_TO_OFFSET(ts_frame));
+}
+#endif
+#if 0
+if (cycle<2) {
+  debugOutput(DEBUG_LEVEL_VERBOSE,"cycle %d: %d %d %d\n",
+    cycle,
     TICKS_TO_SECS(ts_frame),
     TICKS_TO_CYCLES(ts_frame),
     TICKS_TO_OFFSET(ts_frame));
@@ -639,14 +674,26 @@ bool MotuTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
 
     // check if a wraparound on the secs will happen between
     // now and the time we start
-    if (CYCLE_TIMER_GET_CYCLES(now)>time_to_enable_at) {
-        // the start will happen in the next second
+    int until_enable=(int)time_to_enable_at - (int)CYCLE_TIMER_GET_CYCLES(now);
+
+    if(until_enable>4000) {
+        // wraparound on CYCLE_TIMER_GET_CYCLES(now)
+        // this means that we are late starting up,
+        // and that the start lies in the previous second
+        if (now_secs==0) now_secs=127;
+        else now_secs--;
+    } else if (until_enable<-4000) {
+        // wraparound on time_to_enable_at
+        // this means that we are early and that the start
+        // point lies in the next second
         now_secs++;
         if (now_secs>=128) now_secs=0;
     }
 
-//    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
-    uint64_t ts_head = time_to_enable_at*TICKS_PER_CYCLE;
+////    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
+//    uint64_t ts_head = time_to_enable_at*TICKS_PER_CYCLE;
+    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
+    ts_head+=time_to_enable_at*TICKS_PER_CYCLE; 
 
     // we also add the nb of cycles we transmit in advance
     ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
@@ -688,8 +735,13 @@ bool MotuTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "MotuTransmitStreamProcessor::putFrames(%d, %llu)\n", nbframes, ts);
 
     // transfer the data
+#if 0
+debugOutput(DEBUG_LEVEL_VERBOSE, "1 - timestamp is %d\n", ts);
+#endif
     m_data_buffer->blockProcessWriteFrames(nbframes, ts);
-
+#if 0
+debugOutput(DEBUG_LEVEL_VERBOSE, "  done\n");
+#endif
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " New timestamp: %llu\n", ts);
 
     return true;
@@ -976,7 +1028,11 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // check our enable status
     if (!m_disabled && m_is_disabled) {
         // this means that we are trying to enable
-        if (cycle == m_cycle_to_enable_at) {
+
+        // check if we are on or past the enable point
+        int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
+
+        if (cycles_past_enable >= 0) {
             m_is_disabled=false;
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling Rx StreamProcessor %p at %d\n",
                 this, cycle);
@@ -1042,12 +1098,22 @@ debugOutput(DEBUG_LEVEL_VERBOSE,
 // FIXME: it given that we later advance this to be the timestamp of the sample immediately following
 // this packet, it perhaps makes more sense to acquire the timestamp of the last frame in the packet.
 // Then it's just a matter of adding m_ticks_per_frame rather than frame_size times this.
+#if 0
 uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
 //uint32_t first_sph = ntohl(*(quadlet_t *)(data+8+(event_length*(n_events-1))));
 //        m_last_timestamp = ((first_sph & 0x1fff000)>>12)*3072 + (first_sph & 0xfff);
 //        m_last_timestamp = CYCLE_TIMER_TO_TICKS(first_sph & 0x1ffffff);
 m_last_timestamp = sphRecvToFullTicks(first_sph, m_handler->getCycleTimer());
+float frame_size=m_framerate<=48000?8:(m_framerate<=96000?16:32);
+uint64_t ts=addTicks(m_last_timestamp, (uint64_t)((frame_size-1) * m_ticks_per_frame));
+m_last_timestamp = ts;
+#endif
 
+#if 1
+uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
+m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
+#endif
+                                                         
         // Signal that we're running
         if(!m_running && n_events && m_last_timestamp2 && m_last_timestamp) {
             debugOutput(DEBUG_LEVEL_VERBOSE,"Receive StreamProcessor %p started running at %d\n", this, cycle);
@@ -1071,23 +1137,27 @@ m_last_timestamp = sphRecvToFullTicks(first_sph, m_handler->getCycleTimer());
 //                                 (uint64_t)(m_ticks_per_frame));
 
             // set the timestamp as if there will be a sample put into
-            // the buffer by the next packet.
+            // the buffer by the next packet.  This means we use the timestamp
+            // corresponding to the last frame which would have been added to the
+            // buffer this cycle if we weren't disabled.
 if (ts >= 128L* TICKS_PER_SECOND)
   ts -= 128L*TICKS_PER_SECOND;
-            m_data_buffer->setBufferTailTimestamp(ts);
+//            m_data_buffer->setBufferTailTimestamp(ts);
+            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 //debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
 
             return RAW1394_ISO_DEFER;
         }
 
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
-//debugOutput(DEBUG_LEVEL_VERBOSE,"enabled: %p, last ts=%lld, ts2=%lld\n",m_data_buffer, m_last_timestamp, m_last_timestamp2);
+//debugOutput(DEBUG_LEVEL_VERBOSE,"cycle=%d, mp=%d, last ts=%lld, ts2=%lld\n",cycle,m_period, m_last_timestamp, m_last_timestamp2);
 
         //=> process the packet
         // add the data payload to the ringbuffer
+        // Note: the last argument to writeFrames is the timestamp of the *last sample* being
+        // added.
         if(m_data_buffer->writeFrames(n_events, (char *)(data+8), m_last_timestamp)) {
             retval=RAW1394_ISO_OK;
-
             int dbc = get_bits(ntohl(quadlet[0]), 8, 8);
 
             // process all ports that should be handled on a per-packet base
