@@ -192,12 +192,12 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
 // These are just copied from AmdtpStreamProcessor.  At some point we should
 // verify that they make sense for the MOTU.
-            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
+//            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
             // account for the number of cycles we are too late to enable
             ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
             // account for one extra packet of frames
-            ts_head = substractTicks(ts_head,
-              (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
+//            ts_head = substractTicks(ts_head,
+//              (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
 
             m_data_buffer->setBufferTailTimestamp(ts_head);
 
@@ -268,7 +268,7 @@ if (cycle<10000) {
     // time until the packet is to be sent (if > 0: send packet)
     int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
 
-until_next = (cycle >= TICKS_TO_CYCLES((uint32_t)timestamp))?-1:1;
+until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
 
     // Size of a single data frame in quadlets
     unsigned dbs = m_event_size / 4;
@@ -334,10 +334,6 @@ until_next = (cycle >= TICKS_TO_CYCLES((uint32_t)timestamp))?-1:1;
         quadlet++;
 
         *length = n_events*m_event_size + 8;
-
-        // convert the timestamp to Motu format
-        // I assume that it is in ticks, and wraps as the cycle timer
-        #warning syt conversion to be done
 
         // FIXME: if we choose to read the buffer even during closedown,
         // here is where the data is silenced.
@@ -510,9 +506,15 @@ bool MotuTransmitStreamProcessor::prepare() {
 
     // allocate the internal buffer
     m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
-    unsigned int events_per_frame = m_framerate<=48000?8:(m_framerate<=96000?16:32);
 
     assert(m_data_buffer);
+    // Note: terminology is slightly confused here.  From the point of view
+    // of the buffer the event size is the size of a single complete "event"
+    // in the MOTU datastream, which consists of one sample from each audio
+    // channel plus a timestamp and other control data.  Almost by
+    // definition then, the buffer's "events per frame" must be 1.  With
+    // these values, data copies to/from the MOTU data stream can be handled
+    // by the generic copying functions.
     m_data_buffer->setBufferSize(ringbuffer_size_frames);
     m_data_buffer->setEventSize(m_event_size);
     m_data_buffer->setEventsPerFrame(1);
