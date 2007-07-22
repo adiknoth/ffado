@@ -63,14 +63,14 @@ uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
   // Every so often we also see sph wrapping ahead of ct_now, so deal with that
   // too.
   if (CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000) {
-debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
+//debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
     if (ts_sec)
       ts_sec--;
     else
       ts_sec = 127;
   } else
   if (now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000) {
-debugOutput(DEBUG_LEVEL_VERBOSE, "inverted wrap: now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
+//debugOutput(DEBUG_LEVEL_VERBOSE, "inverted wrap: now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
     if (ts_sec == 127)
       ts_sec = 0;
     else
@@ -192,12 +192,12 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
 // These are just copied from AmdtpStreamProcessor.  At some point we should
 // verify that they make sense for the MOTU.
-//            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
+            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
             // account for the number of cycles we are too late to enable
             ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
             // account for one extra packet of frames
-//            ts_head = substractTicks(ts_head,
-//              (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
+            ts_head = substractTicks(ts_head,
+              (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
 
             m_data_buffer->setBufferTailTimestamp(ts_head);
 
@@ -346,6 +346,7 @@ until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
         // appears to do rounding.
 
 float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
+//debugOutput(DEBUG_LEVEL_VERBOSE, "ticks per frame=%10.6f\n",ticks_per_frame);
         for (i=0; i<n_events; i++, quadlet += dbs) {
 //FIXME: not sure which is best for the MOTU
 //            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
@@ -1115,6 +1116,7 @@ m_last_timestamp = ts;
 uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
 m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
 #endif
+//debugOutput(DEBUG_LEVEL_VERBOSE,"ave ticks=%g\n",(m_last_timestamp-m_last_timestamp2)/8.0);
                                                          
         // Signal that we're running
         if(!m_running && n_events && m_last_timestamp2 && m_last_timestamp) {
@@ -1132,9 +1134,9 @@ m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
 
             // the next (possible) sample is not this one, but lies
             // SYT_INTERVAL * rate later
-            float frame_size=m_framerate<=48000?8:(m_framerate<=96000?16:32);
+            float frames_per_packet=m_framerate<=48000?8:(m_framerate<=96000?16:32);
             uint64_t ts=addTicks(m_last_timestamp,
-                                 (uint64_t)(frame_size * m_ticks_per_frame));
+                                 (uint64_t)(frames_per_packet * m_ticks_per_frame));
 //            uint64_t ts=addTicks(m_last_timestamp,
 //                                 (uint64_t)(m_ticks_per_frame));
 
@@ -1142,10 +1144,19 @@ m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
             // the buffer by the next packet.  This means we use the timestamp
             // corresponding to the last frame which would have been added to the
             // buffer this cycle if we weren't disabled.
-if (ts >= 128L* TICKS_PER_SECOND)
-  ts -= 128L*TICKS_PER_SECOND;
-//            m_data_buffer->setBufferTailTimestamp(ts);
-            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
+            //
+            // FIXME: in theory m_last_timestamp is already equal to the
+            // timestamp of the last frame/sample in this packet since
+            // that's what we used to set it in the first place.  However,
+            // if m_last_timestamp is used to set the buffer tail we get a
+            // series of "difference too large" warnings during the early
+            // stages after enabling.  These tend to indicate that the
+            // buffer timestamp is one packet out.  Using ts (which predicts
+            // the timestamp of the last frame of the *next* packet) seems
+            // to stop these warnings most of the time and allow for a
+            // smoother startup.
+            m_data_buffer->setBufferTailTimestamp(ts);
+//            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 //debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
 
             return RAW1394_ISO_DEFER;
