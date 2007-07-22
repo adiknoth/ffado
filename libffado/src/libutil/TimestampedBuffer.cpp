@@ -806,7 +806,9 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, uint64_t new_timesta
     pthread_mutex_lock(&m_framecounter_lock);
     m_framecounter += nbframes;
 
-    m_buffer_tail_timestamp=m_buffer_next_tail_timestamp;
+//    m_buffer_tail_timestamp=m_buffer_next_tail_timestamp;
+//    m_buffer_next_tail_timestamp += (int64_t)(m_dll_b * err + m_dll_e2);
+    m_buffer_tail_timestamp=ts;
     m_buffer_next_tail_timestamp += (int64_t)(m_dll_b * err + m_dll_e2);
 
     m_dll_e2 += m_dll_c*err;
