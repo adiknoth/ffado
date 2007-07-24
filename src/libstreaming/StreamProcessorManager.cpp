@@ -779,7 +779,7 @@ bool StreamProcessorManager::waitForPeriod() {
     time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
 
     while(time_till_next_period > 0) {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
 
         // wait for the period
         usleep(time_till_next_period);
@@ -919,12 +919,28 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
     if (t==StreamProcessor::E_Receive) {
+        
+        // determine the time at which we want reception to start
+        float rate=m_SyncSource->getTicksPerFrame();
+        int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
+        
+        int64_t receive_timestamp = substractTicks(m_time_of_transfer,one_frame_in_ticks);
+        
+        if(receive_timestamp<0) {
+            debugWarning("receive ts < 0.0 : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
+             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
+        }
+        if(receive_timestamp>(128L*TICKS_PER_SECOND)) {
+            debugWarning("receive ts > 128L*TICKS_PER_SECOND : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
+             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
+        }
+        
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
                 it != m_ReceiveProcessors.end();
                 ++it ) {
 
-            if(!(*it)->getFrames(m_period)) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)",
+            if(!(*it)->getFrames(m_period, receive_timestamp)) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)\n",
                             m_period, m_time_of_transfer,*it);
                     return false; // buffer underrun
             }
@@ -936,7 +952,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
                 ++it ) {
 
             if(!(*it)->putFrames(m_period, (int64_t)m_time_of_transfer)) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)",
+                debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)\n",
                         m_period, m_time_of_transfer, *it);
                 return false; // buffer overrun
             }

@@ -379,7 +379,7 @@ AmdtpSlaveReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int le
         // this packet x*syt_interval*ticks_per_frame
         // later than expected (the real receive time)
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
-            m_last_timestamp, m_handler->getWakeupInterval(),m_syt_interval,m_ticks_per_frame);
+            m_last_timestamp, m_handler->getWakeupInterval(),m_syt_interval,getTicksPerFrame());
 
         //=> signal that we're running (if we are)
         if(!m_running && nevents && m_last_timestamp2 && m_last_timestamp) {
@@ -398,7 +398,7 @@ AmdtpSlaveReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int le
             // the next (possible) sample is not this one, but lies
             // SYT_INTERVAL * rate later
             uint64_t ts=addTicks(m_last_timestamp,
-                                 (uint64_t)((float)m_syt_interval * m_ticks_per_frame));
+                                 (uint64_t)((float)m_syt_interval * getTicksPerFrame()));
 
             // set the timestamp as if there will be a sample put into
             // the buffer by the next packet.

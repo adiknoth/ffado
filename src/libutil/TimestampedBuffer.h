@@ -31,7 +31,13 @@
 #include "../debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
 
+typedef float ffado_timestamp_t;
+#define TIMESTAMP_FORMAT_SPEC "%14.3f"
+// typedef int64_t ffado_timestamp_t;
+// #define TIMESTAMP_FORMAT_SPEC "%012lld"
+
 namespace Util {
+
 
 class TimestampedBufferClient;
 
@@ -85,11 +91,13 @@ public:
 
     TimestampedBuffer(TimestampedBufferClient *);
     virtual ~TimestampedBuffer();
-
-    bool writeFrames(unsigned int nbframes, char *data, uint64_t ts);
+    
+    bool writeDummyFrame();
+    
+    bool writeFrames(unsigned int nbframes, char *data, ffado_timestamp_t ts);
     bool readFrames(unsigned int nbframes, char *data);
 
-    bool blockProcessWriteFrames(unsigned int nbframes, int64_t ts);
+    bool blockProcessWriteFrames(unsigned int nbframes, ffado_timestamp_t ts);
     bool blockProcessReadFrames(unsigned int nbframes);
 
     bool init();
@@ -101,28 +109,30 @@ public:
     bool setBufferSize(unsigned int s);
     unsigned int getBufferSize() {return m_buffer_size;};
 
-    bool setWrapValue(uint64_t w);
+    unsigned int getBytesPerFrame() {return m_bytes_per_frame;};
+
+    bool setWrapValue(ffado_timestamp_t w);
 
     unsigned int getBufferFill();
 
     // timestamp stuff
     int getFrameCounter() {return m_framecounter;};
 
-    void getBufferHeadTimestamp(uint64_t *ts, uint64_t *fc);
-    void getBufferTailTimestamp(uint64_t *ts, uint64_t *fc);
+    void getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int *fc);
+    void getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc);
 
-    void setBufferTailTimestamp(uint64_t new_timestamp);
-    void setBufferHeadTimestamp(uint64_t new_timestamp);
+    void setBufferTailTimestamp(ffado_timestamp_t new_timestamp);
+    void setBufferHeadTimestamp(ffado_timestamp_t new_timestamp);
 
-    uint64_t getTimestampFromTail(int nframes);
-    uint64_t getTimestampFromHead(int nframes);
+    ffado_timestamp_t getTimestampFromTail(int nframes);
+    ffado_timestamp_t getTimestampFromHead(int nframes);
 
     // buffer offset stuff
     /// return the tick offset value
-    signed int getTickOffset() {return m_tick_offset;};
+    ffado_timestamp_t getTickOffset() {return m_tick_offset;};
 
     bool setFrameOffset(int nframes);
-    bool setTickOffset(int nframes);
+    bool setTickOffset(ffado_timestamp_t);
 
     // dll stuff
     bool setNominalRate(float r);
@@ -136,7 +146,7 @@ public:
 
 private:
     void decrementFrameCounter(int nbframes);
-    void incrementFrameCounter(int nbframes, uint64_t new_timestamp);
+    void incrementFrameCounter(int nbframes, ffado_timestamp_t new_timestamp);
     void resetFrameCounter();
 
 protected:
@@ -150,7 +160,7 @@ protected:
     unsigned int m_bytes_per_frame;
     unsigned int m_bytes_per_buffer;
 
-    uint64_t m_wrap_at; // value to wrap at
+    ffado_timestamp_t m_wrap_at; // value to wrap at
 
     TimestampedBufferClient *m_Client;
 
@@ -161,12 +171,12 @@ private:
     signed int m_framecounter;
 
     // the offset that define the timing of the buffer
-    signed int m_tick_offset;
+    ffado_timestamp_t m_tick_offset;
 
     // the buffer tail timestamp gives the timestamp of the last frame
     // that was put into the buffer
-    uint64_t   m_buffer_tail_timestamp;
-    uint64_t   m_buffer_next_tail_timestamp;
+    ffado_timestamp_t   m_buffer_tail_timestamp;
+    ffado_timestamp_t   m_buffer_next_tail_timestamp;
 
     // this mutex protects the access to the framecounter
     // and the buffer head timestamp.

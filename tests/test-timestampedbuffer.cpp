@@ -338,10 +338,13 @@ int main(int argc, char *argv[])
         for(unsigned int cycle=arguments.start_at_cycle;
             cycle < arguments.start_at_cycle+arguments.total_cycles;
             cycle++) {
-                uint64_t ts_head, fc_head;
+                ffado_timestamp_t ts_head_tmp;
+                uint64_t ts_head;
+                signed int fc_head;
 
                 t->setBufferHeadTimestamp(timestamp);
-                t->getBufferHeadTimestamp(&ts_head, &fc_head);
+                t->getBufferHeadTimestamp(&ts_head_tmp, &fc_head);
+                ts_head=(uint64_t)ts_head_tmp;
 
                 if (timestamp != ts_head) {
                     debugError(" cycle %4u error: %011llu != %011llu\n",
@@ -419,15 +422,18 @@ int main(int argc, char *argv[])
             debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
 
             if(diff>0) {
-                uint64_t ts_head, fc_head;
-                uint64_t ts_tail, fc_tail;
+                ffado_timestamp_t ts_head_tmp, ts_tail_tmp;
+                uint64_t ts_head, ts_tail;
+                signed int fc_head, fc_tail;
 
                 // write one packet
                 t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
 
                 // read the buffer head timestamp
-                t->getBufferHeadTimestamp(&ts_head, &fc_head);
-                t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                t->getBufferHeadTimestamp(&ts_head_tmp, &fc_head);
+                t->getBufferTailTimestamp(&ts_tail_tmp, &fc_tail);
+                ts_head=(uint64_t)ts_head_tmp;
+                ts_tail=(uint64_t)ts_tail_tmp;
                 debugOutput(DEBUG_LEVEL_NORMAL,
                         " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
@@ -439,8 +445,10 @@ int main(int argc, char *argv[])
                 t->readFrames(arguments.frames_per_packet, (char *)&dummyframe_out);
 
                 // read the buffer head timestamp
-                t->getBufferHeadTimestamp(&ts_head, &fc_head);
-                t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                t->getBufferHeadTimestamp(&ts_head_tmp, &fc_head);
+                t->getBufferTailTimestamp(&ts_tail_tmp, &fc_tail);
+                ts_head=(uint64_t)ts_head_tmp;
+                ts_tail=(uint64_t)ts_tail_tmp;
                 debugOutput(DEBUG_LEVEL_NORMAL,
                         " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
@@ -519,15 +527,18 @@ int main(int argc, char *argv[])
             debugOutput(DEBUG_LEVEL_NORMAL, "Simulating cycle %d @ time=%011llu, diff=%lld\n",cycle,time,diff);
 
             if(diff>0) {
-                uint64_t ts_head, fc_head;
-                uint64_t ts_tail, fc_tail;
+                ffado_timestamp_t ts_head_tmp, ts_tail_tmp;
+                uint64_t ts_head, ts_tail;
+                signed int fc_head, fc_tail;
 
                 // write one packet
                 t->writeFrames(arguments.frames_per_packet, (char *)&dummyframe_in, timestamp);
 
                 // read the buffer head timestamp
-                t->getBufferHeadTimestamp(&ts_head, &fc_head);
-                t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                t->getBufferHeadTimestamp(&ts_head_tmp, &fc_head);
+                t->getBufferTailTimestamp(&ts_tail_tmp, &fc_tail);
+                ts_head=(uint64_t)ts_head_tmp;
+                ts_tail=(uint64_t)ts_tail_tmp;
                 debugOutput(DEBUG_LEVEL_NORMAL,
                         " TS after write: HEAD: %011llu, FC=%04u\n",
                         ts_head,fc_head);
@@ -535,15 +546,17 @@ int main(int argc, char *argv[])
                         "                 TAIL: %011llu, FC=%04u\n",
                         ts_tail,fc_tail);
 
-                if (fc_head > blocksize) {
+                if (fc_head > (signed int)blocksize) {
                     debugOutput(DEBUG_LEVEL_NORMAL,"Reading one block (%u frames)\n",blocksize);
 
                     // read one block
                     t->readFrames(blocksize, (char *)&dummyframe_out_block);
 
                     // read the buffer head timestamp
-                    t->getBufferHeadTimestamp(&ts_head, &fc_head);
-                    t->getBufferTailTimestamp(&ts_tail, &fc_tail);
+                    t->getBufferHeadTimestamp(&ts_head_tmp, &fc_head);
+                    t->getBufferTailTimestamp(&ts_tail_tmp, &fc_tail);
+                    ts_head=(uint64_t)ts_head_tmp;
+                    ts_tail=(uint64_t)ts_tail_tmp;
                     debugOutput(DEBUG_LEVEL_NORMAL,
                             " TS after read: HEAD: %011llu, FC=%04u\n",
                             ts_head,fc_head);

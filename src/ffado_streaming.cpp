@@ -58,7 +58,7 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
 
     struct _ffado_device *dev = new struct _ffado_device;
 
-    debugFatal("%s built %s %s\n", ffado_get_version(), __DATE__, __TIME__);
+    debugWarning("%s built %s %s\n", ffado_get_version(), __DATE__, __TIME__);
 
     if(!dev) {
             debugFatal( "Could not allocate streaming device\n" );

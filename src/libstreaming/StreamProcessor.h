@@ -89,7 +89,7 @@ public:
     bool isEnabled() {return !m_is_disabled;};
 
     virtual bool putFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents from client
-    virtual bool getFrames(unsigned int nbframes) = 0; ///< transfer the buffer contents to the client
+    virtual bool getFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents to the client
 
     virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
@@ -177,7 +177,7 @@ protected:
         /**
          * \brief return the time of the next period boundary (in internal units)
          *
-         * The same as getTimeUntilNextPeriodSignalUsecs() but in internal units.
+         * The same as getTimeAtPeriodUsecs() but in internal units.
          *
          * @return the time in internal units
          */
@@ -205,7 +205,7 @@ protected:
         virtual int getMinimalSyncDelay() = 0;
 
         bool setSyncSource(StreamProcessor *s);
-        float getTicksPerFrame() {return m_ticks_per_frame;};
+        float getTicksPerFrame();
 
         int getLastCycle() {return m_last_cycle;};
 
@@ -274,7 +274,7 @@ public:
         putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
-        virtual bool getFrames(unsigned int nbframes) {return false;};
+        virtual bool getFrames(unsigned int nbframes, int64_t ts) {return false;};
 
     virtual enum raw1394_iso_disposition
         getPacket(unsigned char *data, unsigned int *length,

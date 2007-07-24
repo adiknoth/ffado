@@ -327,10 +327,14 @@ DebugModuleManager::print(const char *fmt, ...)
 {
     char msg[MB_BUFFERSIZE];
     va_list ap;
-
+    unsigned int ntries=5;
+    struct timespec wait = {0,50000};
+    
     /* format the message first, to reduce lock contention */
     va_start(ap, fmt);
-    vsnprintf(msg, MB_BUFFERSIZE, fmt, ap);
+    if (vsnprintf(msg, MB_BUFFERSIZE, fmt, ap) >= MB_BUFFERSIZE) {
+        print("WARNING: message truncated!\n");
+    }
     va_end(ap);
 
     if (!mb_initialized) {
@@ -340,12 +344,21 @@ DebugModuleManager::print(const char *fmt, ...)
             msg);
         return;
     }
-    if (pthread_mutex_trylock(&mb_write_lock) == 0) {
-        strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
-        mb_inbuffer = MB_NEXT(mb_inbuffer);
-        pthread_cond_signal(&mb_ready_cond);
-        pthread_mutex_unlock(&mb_write_lock);
-    } else {            /* lock collision */
+    
+    while (ntries) { // try a few times
+        if (pthread_mutex_trylock(&mb_write_lock) == 0) {
+            strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
+            mb_inbuffer = MB_NEXT(mb_inbuffer);
+            pthread_cond_signal(&mb_ready_cond);
+            pthread_mutex_unlock(&mb_write_lock);
+            break;
+        } else {
+            nanosleep(&wait, NULL);
+            ntries--;
+        }
+    }
+    
+    if (ntries==0) {  /* lock collision */
 //         atomic_add(&mb_overruns, 1);
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now
@@ -357,10 +370,14 @@ void
 DebugModuleManager::va_print (const char *fmt, va_list ap)
 {
     char msg[MB_BUFFERSIZE];
+    unsigned int ntries=5;
+    struct timespec wait = {0,50000};
 
     /* format the message first, to reduce lock contention */
-    vsnprintf(msg, MB_BUFFERSIZE, fmt, ap);
-
+    if (vsnprintf(msg, MB_BUFFERSIZE, fmt, ap) >= MB_BUFFERSIZE) {
+        print("WARNING: message truncated!\n");
+    }
+    
     if (!mb_initialized) {
         /* Unable to print message with realtime safety.
          * Complain and print it anyway. */
@@ -369,12 +386,20 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
         return;
     }
 
-    if (pthread_mutex_trylock(&mb_write_lock) == 0) {
-        strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
-        mb_inbuffer = MB_NEXT(mb_inbuffer);
-        pthread_cond_signal(&mb_ready_cond);
-        pthread_mutex_unlock(&mb_write_lock);
-    } else {            /* lock collision */
+    while (ntries) { // try a few times
+        if (pthread_mutex_trylock(&mb_write_lock) == 0) {
+            strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
+            mb_inbuffer = MB_NEXT(mb_inbuffer);
+            pthread_cond_signal(&mb_ready_cond);
+            pthread_mutex_unlock(&mb_write_lock);
+            break;
+        } else {
+            nanosleep(&wait, NULL);
+            ntries--;
+        }
+    }
+    
+    if (ntries==0) {  /* lock collision */
 //         atomic_add(&mb_overruns, 1);
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now

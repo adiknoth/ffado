@@ -1362,7 +1362,7 @@ bool MotuReceiveStreamProcessor::prepareForStart() {
     return true;
 }
 
-bool MotuReceiveStreamProcessor::getFrames(unsigned int nbframes) {
+bool MotuReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 
     m_PeriodStat.mark(m_data_buffer->getBufferFill());
 
