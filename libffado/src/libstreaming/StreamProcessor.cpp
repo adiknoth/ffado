@@ -28,6 +28,7 @@
 #include "cycletimer.h"
 
 #include <assert.h>
+#include <math.h>
 
 namespace Streaming {
 
@@ -74,6 +75,7 @@ void StreamProcessor::dumpInfo()
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
 
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_framerate);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
         24576000.0/m_SyncSource->m_data_buffer->getRate(),
         24576000.0/m_data_buffer->getRate()
@@ -223,6 +225,23 @@ bool StreamProcessor::setSyncSource(StreamProcessor *s) {
     return true;
 }
 
+float
+StreamProcessor::getTicksPerFrame() {
+    if (m_data_buffer) {
+        float rate=m_data_buffer->getRate();
+        if (fabsf(m_ticks_per_frame - rate)>(m_ticks_per_frame*0.1)) {
+            debugWarning("TimestampedBuffer rate (%10.5f) more that 10%% off nominal (%10.5f)\n",rate,m_ticks_per_frame);
+            return m_ticks_per_frame;
+        }
+//         return m_ticks_per_frame;
+        if (rate<0.0) debugError("rate < 0! (%f)\n",rate);
+        
+        return rate;
+    } else {
+        return 0.0;
+    }
+}
+
 int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
     uint64_t time_at_period=getTimeAtPeriod();
 
@@ -287,18 +306,20 @@ void ReceiveStreamProcessor::setVerboseLevel(int l) {
 }
 
 uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {
-    uint64_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
+    ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
 
     #ifdef DEBUG
-    uint64_t ts,fc;
+    ffado_timestamp_t ts;
+    signed int fc;
+    
     m_data_buffer->getBufferTailTimestamp(&ts,&fc);
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5u, TPF=%f\n",
-        next_period_boundary, ts, fc, m_ticks_per_frame
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD="TIMESTAMP_FORMAT_SPEC", LTS="TIMESTAMP_FORMAT_SPEC", FC=%5u, TPF=%f\n",
+        next_period_boundary, ts, fc, getTicksPerFrame()
         );
     #endif
 
-    return next_period_boundary;
+    return (uint64_t)next_period_boundary;
 }
 
 bool ReceiveStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
@@ -321,18 +342,19 @@ void TransmitStreamProcessor::setVerboseLevel(int l) {
 }
 
 uint64_t TransmitStreamProcessor::getTimeAtPeriod() {
-    uint64_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
+    ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
 
     #ifdef DEBUG
-    uint64_t ts,fc;
+    ffado_timestamp_t ts;
+    signed int fc;
     m_data_buffer->getBufferTailTimestamp(&ts,&fc);
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD=%11lld, LTS=%11llu, FC=%5u, TPF=%f\n",
-        next_period_boundary, ts, fc, m_ticks_per_frame
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD="TIMESTAMP_FORMAT_SPEC", LTS="TIMESTAMP_FORMAT_SPEC", FC=%5u, TPF=%f\n",
+        next_period_boundary, ts, fc, getTicksPerFrame()
         );
     #endif
 
-    return next_period_boundary;
+    return (uint64_t)next_period_boundary;
 }
 
 bool TransmitStreamProcessor::canClientTransferFrames(unsigned int nbframes) {

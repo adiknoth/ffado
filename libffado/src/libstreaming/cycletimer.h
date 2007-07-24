@@ -77,7 +77,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
  * @param x time to wrap
  * @return wrapped time
  */
-static inline uint32_t wrapAtMaxTicks(uint64_t x) {
+static inline uint64_t wrapAtMaxTicks(uint64_t x) {
     if (x >= TICKS_PER_SECOND * 128L) {
         x -= TICKS_PER_SECOND * 128L;
     }
@@ -100,7 +100,7 @@ static inline uint32_t wrapAtMaxTicks(uint64_t x) {
  * @param x time to wrap
  * @return wrapped time
  */
-static inline uint32_t wrapAtMinTicks(int64_t x) {
+static inline int64_t wrapAtMinTicks(int64_t x) {
     if (x < 0) {
         x += TICKS_PER_SECOND * 128L;
     }
@@ -121,7 +121,7 @@ static inline uint32_t wrapAtMinTicks(int64_t x) {
 
 #endif
 
-    return (uint32_t)x;
+    return (int64_t)x;
 }
 
 /**
@@ -134,7 +134,7 @@ static inline uint32_t wrapAtMinTicks(int64_t x) {
  * @param x value to wrap
  * @return wrapped value
  */
-static inline uint32_t wrapAtMinMaxTicks(int64_t x) {
+static inline int64_t wrapAtMinMaxTicks(int64_t x) {
 
     if (x < 0) {
         x += TICKS_PER_SECOND * 128L;
@@ -169,27 +169,36 @@ static inline uint32_t wrapAtMinMaxTicks(int64_t x) {
  * @param y Second timestamp
  * @return the difference x-y, unwrapped
  */
-static inline int32_t diffTicks(uint32_t x, uint32_t y) {
+static inline int64_t diffTicks(int64_t x, int64_t y) {
     int64_t diff=(int64_t)x - (int64_t)y;
 
     // the maximal difference we allow (64secs)
-    const int64_t max=TICKS_PER_SECOND*64L;
+    const int64_t wrapvalue=((int64_t)TICKS_PER_SECOND)*128LL;
+    const int64_t max=wrapvalue/2LL;
 
     if(diff > max) {
         // this means that y has wrapped, but
         // x has not. we should unwrap y
         // by adding TICKS_PER_SECOND*128L, meaning that we should substract
         // this value from diff
-        diff -= TICKS_PER_SECOND*128L;
+        diff -= wrapvalue;
     } else if (diff < -max) {
         // this means that x has wrapped, but
         // y has not. we should unwrap x
         // by adding TICKS_PER_SECOND*128L, meaning that we should add
         // this value to diff
-        diff += TICKS_PER_SECOND*128L;
+        diff += wrapvalue;
     }
 
-    return (int32_t)diff;
+#ifdef DEBUG
+    if(diff > max || diff < -max) {
+        debugWarning("difference does not make any sense\n");
+        debugWarning("diff=%lld max=%ldd\n", diff, max);
+        
+    }
+#endif
+
+    return (int64_t)diff;
 
 }
 
@@ -203,7 +212,7 @@ static inline int32_t diffTicks(uint32_t x, uint32_t y) {
  * @param y Second timestamp
  * @return the sum x+y, wrapped
  */
-static inline uint32_t addTicks(uint32_t x, uint32_t y) {
+static inline uint64_t addTicks(uint64_t x, uint64_t y) {
     uint64_t sum=x+y;
 
     return wrapAtMaxTicks(sum);
@@ -219,7 +228,7 @@ static inline uint32_t addTicks(uint32_t x, uint32_t y) {
  * @param y Second timestamp
  * @return the difference x-y, wrapped
  */
-static inline uint32_t substractTicks(uint32_t x, uint32_t y) {
+static inline uint64_t substractTicks(uint64_t x, uint64_t y) {
     int64_t subs=x-y;
 
     return wrapAtMinTicks(subs);
@@ -234,15 +243,15 @@ static inline uint32_t substractTicks(uint32_t x, uint32_t y) {
  * @param ctr_now The current value of the cycle timer ('now')
  * @return
  */
-static inline uint32_t sytRecvToFullTicks(uint32_t syt_timestamp, unsigned int rcv_cycle, uint32_t ctr_now) {
-    uint32_t timestamp;
+static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int rcv_cycle, uint64_t ctr_now) {
+    uint64_t timestamp;
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08X CY=%04X CTR=%08X\n",
         syt_timestamp,rcv_cycle,ctr_now);
 
     // reconstruct the full cycle
-    uint32_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
-    uint32_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
+    uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
+    uint64_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
 
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
@@ -258,18 +267,18 @@ static inline uint32_t sytRecvToFullTicks(uint32_t syt_timestamp, unsigned int r
     }
 
     // reconstruct the top part of the timestamp using the current cycle number
-    uint32_t rcv_cycle_masked=rcv_cycle & 0xF;
-    uint32_t syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
+    uint64_t rcv_cycle_masked=rcv_cycle & 0xF;
+    uint64_t syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
 
     // if this is true, wraparound has occurred, undo this wraparound
     if(syt_cycle<rcv_cycle_masked) syt_cycle += 0x10;
 
     // this is the difference in cycles wrt the cycle the
     // timestamp was received
-    uint32_t delta_cycles=syt_cycle-rcv_cycle_masked;
+    uint64_t delta_cycles=syt_cycle-rcv_cycle_masked;
 
     // reconstruct the cycle part of the timestamp
-    uint32_t new_cycles=rcv_cycle + delta_cycles;
+    uint64_t new_cycles=rcv_cycle + delta_cycles;
 
     // if the cycles cause a wraparound of the cycle timer,
     // perform this wraparound
@@ -320,15 +329,15 @@ static inline uint32_t sytRecvToFullTicks(uint32_t syt_timestamp, unsigned int r
  * @param ctr_now The current value of the cycle timer ('now')
  * @return
  */
-static inline uint32_t sytXmitToFullTicks(uint32_t syt_timestamp, unsigned int xmt_cycle, uint32_t ctr_now) {
-    uint32_t timestamp;
+static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int xmt_cycle, uint64_t ctr_now) {
+    uint64_t timestamp;
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08X CY=%04X CTR=%08X\n",
         syt_timestamp,xmt_cycle,ctr_now);
 
     // reconstruct the full cycle
-    uint32_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
-    uint32_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
+    uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
+    uint64_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
 
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
@@ -344,18 +353,18 @@ static inline uint32_t sytXmitToFullTicks(uint32_t syt_timestamp, unsigned int x
     }
 
     // reconstruct the top part of the timestamp using the current cycle number
-    uint32_t xmt_cycle_masked=xmt_cycle & 0xF;
-    uint32_t syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
+    uint64_t xmt_cycle_masked=xmt_cycle & 0xF;
+    uint64_t syt_cycle=CYCLE_TIMER_GET_CYCLES(syt_timestamp);
 
     // if this is true, wraparound has occurred, undo this wraparound
     if(syt_cycle<xmt_cycle_masked) syt_cycle += 0x10;
 
     // this is the difference in cycles wrt the cycle the
     // timestamp was received
-    uint32_t delta_cycles=syt_cycle-xmt_cycle_masked;
+    uint64_t delta_cycles=syt_cycle-xmt_cycle_masked;
 
     // reconstruct the cycle part of the timestamp
-    uint32_t new_cycles=xmt_cycle + delta_cycles;
+    uint64_t new_cycles=xmt_cycle + delta_cycles;
 
     // if the cycles cause a wraparound of the cycle timer,
     // perform this wraparound
