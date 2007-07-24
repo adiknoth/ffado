@@ -33,7 +33,7 @@
 // in ticks
 #define TRANSMIT_TRANSFER_DELAY 9000U
 // the number of cycles to send a packet in advance of it's timestamp
-#define TRANSMIT_ADVANCE_CYCLES 1U
+#define TRANSMIT_ADVANCE_CYCLES 4U
 
 namespace Streaming {
 
@@ -140,7 +140,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             m_running=true;
     }
 
-    uint64_t ts_head, fc;
+    uint64_t ts_head;
+    signed int fc;
     if (!m_disabled && m_is_disabled) { // this means that we are trying to enable
         // check if we are on or past the enable point
         int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
@@ -151,8 +152,10 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %u\n", this, cycle);
 
             // initialize the buffer head & tail
-            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
-
+            ffado_timestamp_t ts_head_tmp;
+            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
+            ts_head=(uint64_t)ts_head_tmp;
+            
             // the number of cycles the sync source lags (> 0)
             // or leads (< 0)
             int sync_lag_cycles=diffCycles(cycle, m_SyncSource->getLastCycle());
@@ -198,7 +201,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     }
 
     // the base timestamp is the one of the next sample in the buffer
-    m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
+    ffado_timestamp_t ts_head_tmp;
+    m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
+    ts_head=(uint64_t)ts_head_tmp;
 
     // we send a packet some cycles in advance, to avoid the
     // following situation:
@@ -370,7 +375,7 @@ bool AmdtpTransmitStreamProcessor::reset() {
 
     // we have to make sure that the buffer HEAD timestamp
     // lies in the future for every possible buffer fill case.
-    int offset=(int)(m_ringbuffer_size_frames*m_ticks_per_frame);
+    int offset=(int)(m_ringbuffer_size_frames*getTicksPerFrame());
 
     m_data_buffer->setTickOffset(offset);
 
@@ -445,7 +450,8 @@ bool AmdtpTransmitStreamProcessor::prepare() {
         m_syt_interval);
 
     // prepare the framerate estimate
-    m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    m_ticks_per_frame=ticks_per_frame;
 
     // initialize internal buffer
     m_ringbuffer_size_frames=m_nb_buffers * m_period;
@@ -456,7 +462,7 @@ bool AmdtpTransmitStreamProcessor::prepare() {
     m_data_buffer->setEventsPerFrame(m_dimension);
 
     m_data_buffer->setUpdatePeriod(m_period);
-    m_data_buffer->setNominalRate(m_ticks_per_frame);
+    m_data_buffer->setNominalRate(ticks_per_frame);
 
     m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
 
@@ -975,7 +981,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         // this packet x*syt_interval*ticks_per_frame
         // later than expected (the real receive time)
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
-            m_last_timestamp, m_handler->getWakeupInterval(),m_syt_interval,m_ticks_per_frame);
+            m_last_timestamp, m_handler->getWakeupInterval(),m_syt_interval,getTicksPerFrame());
 
         //=> signal that we're running (if we are)
         if(!m_running && nevents && m_last_timestamp2 && m_last_timestamp) {
@@ -994,7 +1000,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // the next (possible) sample is not this one, but lies
             // SYT_INTERVAL * rate later
             uint64_t ts=addTicks(m_last_timestamp,
-                                 (uint64_t)((float)m_syt_interval * m_ticks_per_frame));
+                                 (uint64_t)((float)m_syt_interval * getTicksPerFrame()));
 
             // set the timestamp as if there will be a sample put into
             // the buffer by the next packet.
@@ -1058,7 +1064,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 // and the timestamp that is passed on for the same event. This is to cope with
 // ISO buffering
 int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
-    return ((int)(m_handler->getWakeupInterval() * m_syt_interval * m_ticks_per_frame));
+    return ((int)(m_handler->getWakeupInterval() * m_syt_interval * getTicksPerFrame()));
 }
 
 void AmdtpReceiveStreamProcessor::dumpInfo() {
@@ -1130,9 +1136,10 @@ bool AmdtpReceiveStreamProcessor::prepare() {
     }
 
     // prepare the framerate estimate
-    m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    m_ticks_per_frame=ticks_per_frame;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n",m_ticks_per_frame);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n",ticks_per_frame);
 
     // initialize internal buffer
     unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
@@ -1144,7 +1151,7 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 
     // the buffer is written every syt_interval
     m_data_buffer->setUpdatePeriod(m_syt_interval);
-    m_data_buffer->setNominalRate(m_ticks_per_frame);
+    m_data_buffer->setNominalRate(ticks_per_frame);
 
     m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
 
@@ -1244,10 +1251,62 @@ bool AmdtpReceiveStreamProcessor::prepareForStop() {
     return true;
 }
 
-bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes) {
+bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 
     m_PeriodStat.mark(m_data_buffer->getBufferFill());
+    uint64_t ts_head;
+    signed int fc;
+    int32_t lag_ticks;
+    float lag_frames;
 
+    // in order to sync up multiple received streams, we should 
+    // use the ts parameter. It specifies the time of the block's 
+    // first sample.
+    
+    ffado_timestamp_t ts_head_tmp;
+    m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc);
+    ts_head=(uint64_t)ts_head_tmp;
+    lag_ticks=diffTicks(ts, ts_head);
+    float rate=m_data_buffer->getRate();
+    
+    assert(rate!=0.0);
+    
+    lag_frames=(((float)lag_ticks)/rate);
+    
+    if (lag_frames>=1.0) {
+        // the stream leads
+        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f)\n",this,lag_ticks,lag_frames,rate);
+        
+        if (lag_frames>=10.0) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "  %lld, %llu, %d\n", ts, ts_head, fc);
+        }
+        
+        // ditch the excess frames
+        char dummy[m_data_buffer->getBytesPerFrame()]; // one frame of garbage
+        int frames_to_ditch=(int)(lag_frames);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): ditching %d frames (@ ts=%lld)\n",this,frames_to_ditch,ts);
+        
+        while (frames_to_ditch--) {
+//             m_data_buffer->readFrames(1, dummy);
+        }
+        
+    } else if (lag_frames<=-1.0) {
+        // the stream leads
+        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f)\n",this,lag_ticks,lag_frames,rate);
+        
+        if (lag_frames<=-10.0) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "  %lld, %llu, %d\n", ts, ts_head, fc);
+        }
+        
+        // add some padding frames
+        int frames_to_add=(int)lag_frames;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): adding %d frames (@ ts=%lld)\n",this,-frames_to_add,ts);
+        
+        while (frames_to_add++) {
+//             m_data_buffer->writeDummyFrame();
+        }
+    }
+    
     // ask the buffer to process nbframes of frames
     // using it's registered client's processReadBlock(),
     // which should be ours

@@ -125,7 +125,7 @@ public:
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped);
 
-    bool getFrames(unsigned int nbframes); ///< transfer the buffer contents to the client
+    bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
 
     bool init();
     bool reset();

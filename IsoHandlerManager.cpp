@@ -336,6 +336,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 
         // FIXME: test
         irq_interval=1;
+#warning Using fixed irq_interval
 
         unsigned int max_packet_size=getpagesize() / irq_interval;
 
@@ -424,6 +425,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 
         // FIXME: test
         irq_interval=1;
+#warning Using fixed irq_interval
 
         unsigned int max_packet_size=getpagesize() / irq_interval;
 
