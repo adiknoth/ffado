@@ -203,7 +203,16 @@ bool TimestampedBuffer::setBufferSize(unsigned int n) {
  */
 bool TimestampedBuffer::setTickOffset(ffado_timestamp_t nticks) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"Setting ticks offset to "TIMESTAMP_FORMAT_SPEC"\n",nticks);
+
+    // JMW: I think we need to update the internal DLL state to take account
+    // of the new offset.  Doing so certainly makes for a smoother MOTU
+    // startup.
+    pthread_mutex_lock(&m_framecounter_lock);
+    m_buffer_tail_timestamp = m_buffer_tail_timestamp - m_tick_offset + nticks;
+    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((float)m_buffer_tail_timestamp + m_dll_e2);
     m_tick_offset=nticks;
+    pthread_mutex_unlock(&m_framecounter_lock);
+
     return true;
 }
 
