@@ -865,6 +865,14 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
         debugWarning("ts not wrapped correctly: "TIMESTAMP_FORMAT_SPEC"\n",ts);
     }
 #endif
+// FIXME: JMW: at some points during startup the timestamp doesn't change.
+// This still needs to be verified in more detail.  
+if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
+  pthread_mutex_lock(&m_framecounter_lock);
+  m_framecounter += nbframes;
+  pthread_mutex_unlock(&m_framecounter_lock);
+  return;
+}
     
     // update the DLL
     pthread_mutex_lock(&m_framecounter_lock);
