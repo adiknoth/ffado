@@ -238,6 +238,7 @@ if (!foo) {
 
     int64_t timestamp = ts_head;
 
+//debugOutput(DEBUG_LEVEL_VERBOSE,"tx cycle %d, base timestamp %lld\n",cycle, ts_head);
 #if 0
 if (cycle<10000) {
   debugOutput(DEBUG_LEVEL_VERBOSE,"cycle %d at %3d:%04d:%04d, timestamp=%3d:%04d:%04d (%d)\n",
@@ -1155,15 +1156,16 @@ m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
             // the timestamp of the last frame of the *next* packet) seems
             // to stop these warnings most of the time and allow for a
             // smoother startup.
-            m_data_buffer->setBufferTailTimestamp(ts);
-//            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
+            // On second thoughts, perhaps it doesn't help much after all.
+//            m_data_buffer->setBufferTailTimestamp(ts);
+            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 //debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
 
             return RAW1394_ISO_DEFER;
         }
 
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
-//debugOutput(DEBUG_LEVEL_VERBOSE,"cycle=%d, mp=%d, last ts=%lld, ts2=%lld\n",cycle,m_period, m_last_timestamp, m_last_timestamp2);
+//debugOutput(DEBUG_LEVEL_VERBOSE,"rx cycle=%d, last ts=%lld\n",cycle, m_last_timestamp);
 
         //=> process the packet
         // add the data payload to the ringbuffer
