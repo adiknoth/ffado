@@ -123,8 +123,8 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
 // FIXME: the actual delays in the system need to be worked out so
 // we can get this thing synchronised.  For now this seems to work.
-    uint64_t ts_head, fc;
-
+    int fc;
+    ffado_timestamp_t ts_head;
     quadlet_t *quadlet = (quadlet_t *)data;
     signed int i;
 
@@ -188,15 +188,15 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             // ts_head however is for cycle CT-sync_lag_cycles, and lies
             // therefore sync_lag_cycles * TICKS_PER_CYCLE earlier than
             // T1.
-            ts_head = addTicks(ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
+            ts_head = addTicks((int64_t)ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
 
 // These are just copied from AmdtpStreamProcessor.  At some point we should
 // verify that they make sense for the MOTU.
-            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
+            ts_head = substractTicks((int64_t)ts_head, TICKS_PER_CYCLE);
             // account for the number of cycles we are too late to enable
-            ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
+            ts_head = addTicks((int64_t)ts_head, cycles_past_enable * TICKS_PER_CYCLE);
             // account for one extra packet of frames
-            ts_head = substractTicks(ts_head,
+            ts_head = substractTicks((int64_t)ts_head,
               (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
 
             m_data_buffer->setBufferTailTimestamp(ts_head);
@@ -311,7 +311,7 @@ until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
     }
 
     // add the transmit transfer delay to construct the playout time
-    uint64_t ts=addTicks(timestamp, TRANSMIT_TRANSFER_DELAY);
+    ffado_timestamp_t ts=addTicks(timestamp, TRANSMIT_TRANSFER_DELAY);
 
     if (m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
 
@@ -408,8 +408,9 @@ if (cycle<2) {
         return RAW1394_ISO_AGAIN;
     } else { // there is no more data in the ringbuffer
 
-        debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n",
-                 now_cycles, cycle, TICKS_TO_CYCLES(ts));
+// FIXME: port to new timestamp type
+//        debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n",
+//                 now_cycles, cycle, TICKS_TO_CYCLES(ts));
 
         // signal underrun
         m_xruns++;
