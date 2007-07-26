@@ -31,7 +31,9 @@
 #include "../debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
 
-typedef float ffado_timestamp_t;
+//typedef float ffado_timestamp_t;
+//#define TIMESTAMP_FORMAT_SPEC "%14.3f"
+typedef double ffado_timestamp_t;
 #define TIMESTAMP_FORMAT_SPEC "%14.3f"
 // typedef int64_t ffado_timestamp_t;
 // #define TIMESTAMP_FORMAT_SPEC "%012lld"

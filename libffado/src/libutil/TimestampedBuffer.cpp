@@ -914,8 +914,8 @@ if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
 
     m_buffer_tail_timestamp=m_buffer_next_tail_timestamp;
     m_buffer_next_tail_timestamp += (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
-//     m_buffer_tail_timestamp=ts;
-//     m_buffer_next_tail_timestamp += (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
+//    m_buffer_tail_timestamp=ts;
+//    m_buffer_next_tail_timestamp += (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
     
     m_dll_e2 += m_dll_c*err;
     

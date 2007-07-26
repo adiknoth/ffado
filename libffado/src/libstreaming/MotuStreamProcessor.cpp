@@ -124,7 +124,8 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 // FIXME: the actual delays in the system need to be worked out so
 // we can get this thing synchronised.  For now this seems to work.
     int fc;
-    ffado_timestamp_t ts_head;
+    int64_t ts_head;
+    ffado_timestamp_t ts_tmp;
     quadlet_t *quadlet = (quadlet_t *)data;
     signed int i;
 
@@ -174,7 +175,8 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling Tx StreamProcessor %p at %u\n", this, cycle);
 
             // initialize the buffer head & tail
-            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
+            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_tmp, &fc); // thread safe
+            ts_head = (int64_t)ts_tmp;
 
             // the number of cycles the sync source lags (> 0)
             // or leads (< 0)
@@ -234,8 +236,8 @@ if (!foo) {
 
 
     // the base timestamp is the one of the next sample in the buffer
-    m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
-
+    m_data_buffer->getBufferHeadTimestamp(&ts_tmp, &fc); // thread safe
+    ts_head = (int64_t)ts_tmp;
     int64_t timestamp = ts_head;
 
 //debugOutput(DEBUG_LEVEL_VERBOSE,"tx cycle %d, base timestamp %lld\n",cycle, ts_head);
@@ -256,18 +258,21 @@ if (cycle<10000) {
     // later, making that the timestamp will be expired when the
     // packet is sent, unless TRANSFER_DELAY > 3072.
     // this means that we need at least one cycle of extra buffering.
-    uint64_t ticks_to_advance = TICKS_PER_CYCLE * TRANSMIT_ADVANCE_CYCLES;
+    int64_t ticks_to_advance = TICKS_PER_CYCLE * TRANSMIT_ADVANCE_CYCLES;
 
     // if cycle lies cycle_diff cycles in the future, we should
     // queue this packet cycle_diff * TICKS_PER_CYCLE earlier than
     // we would if it were to be sent immediately.
-    ticks_to_advance += cycle_diff * TICKS_PER_CYCLE;
+    ticks_to_advance += (int64_t)cycle_diff * TICKS_PER_CYCLE;
 
     // determine the 'now' time in ticks
     uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
 
     // time until the packet is to be sent (if > 0: send packet)
+//debugOutput(DEBUG_LEVEL_VERBOSE,"pre: timestamp=%lld, cycle_timer=%lld, adv=%lld, cdiff=%d\n",
+// timestamp, cycle_timer,ticks_to_advance,cycle_diff);
     int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
+//debugOutput(DEBUG_LEVEL_VERBOSE,"post\n");
 
 until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
 

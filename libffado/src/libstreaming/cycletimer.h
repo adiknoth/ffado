@@ -193,7 +193,7 @@ static inline int64_t diffTicks(int64_t x, int64_t y) {
 #ifdef DEBUG
     if(diff > max || diff < -max) {
         debugWarning("difference does not make any sense\n");
-        debugWarning("diff=%lld max=%ldd\n", diff, max);
+        debugWarning("diff=%lld max=%lld\n", diff, max);
         
     }
 #endif
