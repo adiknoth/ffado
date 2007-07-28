@@ -38,7 +38,7 @@ IMPL_DEBUG_MODULE( BeBoB::AvDeviceSubunit, BeBoB::AvDeviceSubunit, DEBUG_LEVEL_V
 ////////////////////////////////////////////
 
 BeBoB::AvDeviceSubunit::AvDeviceSubunit( AvDevice& avDevice,
-                                         AVCCommand::ESubunitType type,
+                                         ESubunitType type,
                                          subunit_t id,
                                          int verboseLevel )
     : m_avDevice( &avDevice )
@@ -138,8 +138,8 @@ BeBoB::AvDeviceSubunit::discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
           plugIdx < plugMaxId;
           ++plugIdx )
     {
-        AVCCommand::ESubunitType subunitType =
-            static_cast<AVCCommand::ESubunitType>( getSubunitType() );
+        ESubunitType subunitType =
+            static_cast<ESubunitType>( getSubunitType() );
         AvPlug* plug = new AvPlug( m_avDevice->get1394Service(),
                                    m_avDevice->getConfigRom(),
                                    m_avDevice->getPlugManager(),
@@ -209,15 +209,15 @@ BeBoB::AvDeviceSubunit::deserialize( Glib::ustring basePath,
                                      AvDevice& avDevice )
 {
     bool result;
-    AVCCommand::ESubunitType sbType;
+    ESubunitType sbType;
     result  = deser.read( basePath + "m_sbType", sbType );
 
     AvDeviceSubunit* pSubunit = 0;
     switch( sbType ) {
-    case AVCCommand::eST_Audio:
+    case eST_Audio:
         pSubunit = new AvDeviceSubunitAudio;
         break;
-    case AVCCommand::eST_Music:
+    case eST_Music:
         pSubunit = new AvDeviceSubunitMusic;
         break;
     default:
@@ -247,7 +247,7 @@ BeBoB::AvDeviceSubunit::deserialize( Glib::ustring basePath,
 BeBoB::AvDeviceSubunitAudio::AvDeviceSubunitAudio( AvDevice& avDevice,
                                                    subunit_t id,
                                                    int verboseLevel )
-    : AvDeviceSubunit( avDevice, AVCCommand::eST_Audio, id, verboseLevel )
+    : AvDeviceSubunit( avDevice, eST_Audio, id, verboseLevel )
 {
 }
 
@@ -577,7 +577,7 @@ BeBoB::AvDeviceSubunitAudio::deserializeChild( Glib::ustring basePath,
 BeBoB::AvDeviceSubunitMusic::AvDeviceSubunitMusic( AvDevice& avDevice,
                                                    subunit_t id,
                                                    int verboseLevel )
-    : AvDeviceSubunit( avDevice, AVCCommand::eST_Music, id, verboseLevel )
+    : AvDeviceSubunit( avDevice, eST_Music, id, verboseLevel )
 {
 }
 

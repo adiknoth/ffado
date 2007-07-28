@@ -38,6 +38,12 @@ class Ieee1394Service;
 const int fcpFrameMaxLength = 512;
 typedef unsigned char fcp_frame_t[fcpFrameMaxLength];
 
+enum EAVCDiscoveryMode {
+    eDM_BeBoB        = 0x00,
+    eDM_GenericAVC   = 0x01,
+    eDM_Invalid      = 0xFF,
+};
+
 class IBusData {
 public:
     IBusData() {}
@@ -47,7 +53,7 @@ public:
     virtual bool deserialize( IISDeserialize& de ) = 0;
 
     virtual IBusData* clone() const = 0;
-    
+
 protected:
     DECLARE_DEBUG_MODULE;
 };
@@ -73,25 +79,6 @@ public:
         eCT_Notify          = AVC1394_CTYP_NOTIFY,
         eCT_GeneralInquiry  = AVC1394_CTYP_GENERAL_INQUIRY,
         eCT_Unknown         = 0xff,
-    };
-
-    enum ESubunitType {
-        eST_Monitor       = AVC1394_SUBUNIT_VIDEO_MONITOR,
-        eST_Audio         = AVC1394_SUBUNIT_AUDIO,
-        eST_Printer       = AVC1394_SUBUNIT_PRINTER,
-        eST_Disc          = AVC1394_SUBUNIT_DISC_RECORDER,
-        eST_VCR           = AVC1394_SUBUNIT_VCR,
-        eST_Tuner         = AVC1394_SUBUNIT_TUNER,
-        eST_CA            = AVC1394_SUBUNIT_CA,
-        eST_Camera        = AVC1394_SUBUNIT_VIDEO_CAMERA,
-        eST_Panel         = AVC1394_SUBUNIT_PANEL,
-        eST_BulltinBoard  = AVC1394_SUBUNIT_BULLETIN_BOARD,
-        eST_CameraStorage = AVC1394_SUBUNIT_CAMERA_STORAGE,
-        eST_Music         = AVC1394_SUBUNIT_MUSIC,
-        eST_VendorUnique  = AVC1394_SUBUNIT_VENDOR_UNIQUE,
-        eST_Reserved      = AVC1394_SUBUNIT_RESERVED,
-        eST_Extended      = AVC1394_SUBUNIT_EXTENDED,
-        eST_Unit          = AVC1394_SUBUNIT_UNIT,
     };
 
     virtual bool serialize( IOSSerialize& se );
@@ -138,7 +125,8 @@ private:
     EResponse    m_eResponse;
     ECommandType m_commandType;
     static int   m_time;
-
+    
+protected:
     DECLARE_DEBUG_MODULE;
 };
 

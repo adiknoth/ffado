@@ -128,4 +128,24 @@ std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequ
 
 #define AVC1394_SUBUNIT_ID_RESERVED 0x06
 
+enum ESubunitType {
+    eST_Monitor       = AVC1394_SUBUNIT_VIDEO_MONITOR,
+    eST_Audio         = AVC1394_SUBUNIT_AUDIO,
+    eST_Printer       = AVC1394_SUBUNIT_PRINTER,
+    eST_Disc          = AVC1394_SUBUNIT_DISC_RECORDER,
+    eST_VCR           = AVC1394_SUBUNIT_VCR,
+    eST_Tuner         = AVC1394_SUBUNIT_TUNER,
+    eST_CA            = AVC1394_SUBUNIT_CA,
+    eST_Camera        = AVC1394_SUBUNIT_VIDEO_CAMERA,
+    eST_Panel         = AVC1394_SUBUNIT_PANEL,
+    eST_BulltinBoard  = AVC1394_SUBUNIT_BULLETIN_BOARD,
+    eST_CameraStorage = AVC1394_SUBUNIT_CAMERA_STORAGE,
+    eST_Music         = AVC1394_SUBUNIT_MUSIC,
+    eST_VendorUnique  = AVC1394_SUBUNIT_VENDOR_UNIQUE,
+    eST_Reserved      = AVC1394_SUBUNIT_RESERVED,
+    eST_Extended      = AVC1394_SUBUNIT_EXTENDED,
+    eST_Unit          = AVC1394_SUBUNIT_UNIT,
+};
+
+
 #endif // AVDDEFINITIONS_H

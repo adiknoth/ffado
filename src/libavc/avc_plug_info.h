@@ -52,6 +52,8 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
+    virtual void clear();
+
     virtual const char* getCmdName() const
     { return "PlugInfoCmd"; }
 

@@ -37,7 +37,9 @@ public:
     virtual ~IOSSerialize() {}
 
     virtual bool write( byte_t value, const char* name = "" ) = 0;
+    virtual bool write( uint16_t value, const char* name = "" ) = 0;
     virtual bool write( quadlet_t value, const char* name = "" ) = 0;
+    virtual bool write( const char *values, size_t len, const char* name = "" ) = 0;
 };
 
 class IISDeserialize {
@@ -46,9 +48,13 @@ public:
     virtual ~IISDeserialize() {}
 
     virtual bool read( byte_t* value ) = 0;
+    virtual bool read( uint16_t* value ) = 0;
     virtual bool read( quadlet_t* value ) = 0;
     virtual bool read( char** value, size_t length ) = 0;
     virtual bool peek( byte_t* value ) = 0;
+    virtual bool peek( uint16_t* value, size_t offset )=0;
+    virtual bool skip( size_t length ) = 0;
+    virtual int getNrOfConsumedBytes()  const = 0;
 };
 
 // Specialized implementations of previously defined interfaces
@@ -62,7 +68,9 @@ public:
     virtual ~CoutSerializer() {}
 
     virtual bool write( byte_t value, const char* name = "" );
+    virtual bool write( uint16_t value, const char* name = "" );
     virtual bool write( quadlet_t value,  const char* name = "" );
+    virtual bool write( const char *values, size_t len, const char* name = "" );
 
 private:
     unsigned int m_cnt;
@@ -79,13 +87,15 @@ public:
     virtual ~StringSerializer() {}
 
     virtual bool write( byte_t value, const char* name = "" );
+    virtual bool write( uint16_t value, const char* name = "" );
     virtual bool write( quadlet_t value,  const char* name = "" );
+    virtual bool write( const char *values, size_t len, const char* name = "" );
     virtual std::string getString( ) { return m_string;};
 
 private:
     unsigned int m_cnt;
     std::string m_string;
-
+    DECLARE_DEBUG_MODULE;
 };
 
 class BufferSerialize: public IOSSerialize {
@@ -99,7 +109,9 @@ public:
     virtual ~BufferSerialize() {}
 
     virtual bool write( byte_t value, const char* name = "" );
+    virtual bool write( uint16_t value, const char* name = "" );
     virtual bool write( quadlet_t value,  const char* name = "" );
+    virtual bool write( const char *values, size_t len, const char* name = "" );
 
     int getNrOfProducesBytes() const
     { return m_curPos - m_buffer; }
@@ -111,6 +123,7 @@ private:
     unsigned char* m_buffer;
     unsigned char* m_curPos;
     size_t m_length;
+    DECLARE_DEBUG_MODULE;
 };
 
 class BufferDeserialize: public IISDeserialize {
@@ -124,9 +137,12 @@ public:
     virtual ~BufferDeserialize() {}
 
     virtual bool read( byte_t* value );
+    virtual bool read( uint16_t* value );
     virtual bool read( quadlet_t* value );
     virtual bool read( char** value, size_t length );
     virtual bool peek( byte_t* value );
+    virtual bool peek( uint16_t* value, size_t offset );
+    virtual bool skip( size_t length );
 
     int getNrOfConsumedBytes()  const
         { return m_curPos - m_buffer; }
@@ -138,6 +154,7 @@ private:
     unsigned char* m_buffer; // start of the buffer
     unsigned char* m_curPos; // current read pos
     size_t m_length;         // size of buffer
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif // SERIALIZE_H

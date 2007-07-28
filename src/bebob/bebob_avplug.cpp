@@ -40,7 +40,7 @@ IMPL_DEBUG_MODULE( AvPlugManager, AvPlugManager, DEBUG_LEVEL_NORMAL );
 AvPlug::AvPlug( Ieee1394Service& ieee1394Service,
                 ConfigRom& configRom,
                 AvPlugManager& plugManager,
-                AVCCommand::ESubunitType subunitType,
+                ESubunitType subunitType,
                 subunit_id_t subunitId,
                 function_block_type_t functionBlockType,
                 function_block_id_t functionBlockId,
@@ -105,7 +105,7 @@ AvPlug::AvPlug( const AvPlug& rhs )
 AvPlug::AvPlug()
     : m_p1394Service( 0 )
     , m_pConfigRom( 0 )
-    , m_subunitType( AVCCommand::eST_Reserved ) // a good value for unknown/undefined?
+    , m_subunitType( eST_Reserved ) // a good value for unknown/undefined?
     , m_subunitId( 0 )
     , m_functionBlockType( 0 )
     , m_functionBlockId( 0 )
@@ -952,7 +952,7 @@ AvPlug::setPlugAddrToPlugInfoCmd()
     ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
 
     switch( m_subunitType ) {
-    case AVCCommand::eST_Unit:
+    case eST_Unit:
         {
             UnitPlugAddress::EPlugType ePlugType =
                 UnitPlugAddress::ePT_Unknown;
@@ -977,8 +977,8 @@ AvPlug::setPlugAddrToPlugInfoCmd()
                              unitPlugAddress ) );
         }
         break;
-    case AVCCommand::eST_Music:
-    case AVCCommand::eST_Audio:
+    case eST_Music:
+    case eST_Audio:
         {
             switch( m_addressType ) {
             case eAPA_SubunitPlug:
@@ -1029,7 +1029,7 @@ AvPlug::setPlugAddrToStreamFormatCmd(
         *m_p1394Service,
         subFunction );
     switch( m_subunitType ) {
-    case AVCCommand::eST_Unit:
+    case eST_Unit:
     {
             UnitPlugAddress::EPlugType ePlugType =
                 UnitPlugAddress::ePT_Unknown;
@@ -1054,8 +1054,8 @@ AvPlug::setPlugAddrToStreamFormatCmd(
                          unitPlugAddress ) );
         }
         break;
-    case AVCCommand::eST_Music:
-    case AVCCommand::eST_Audio:
+    case eST_Music:
+    case eST_Audio:
     {
         switch( m_addressType ) {
         case eAPA_SubunitPlug:
@@ -1102,7 +1102,7 @@ AvPlug::setSrcPlugAddrToSignalCmd()
     SignalSourceCmd signalSourceCmd( *m_p1394Service );
 
     switch( m_subunitType ) {
-    case AVCCommand::eST_Unit:
+    case eST_Unit:
     {
         SignalUnitAddress signalUnitAddr;
         if ( getPlugAddressType() == eAPA_ExternalPlug ) {
@@ -1113,8 +1113,8 @@ AvPlug::setSrcPlugAddrToSignalCmd()
         signalSourceCmd.setSignalSource( signalUnitAddr );
     }
     break;
-    case AVCCommand::eST_Music:
-    case AVCCommand::eST_Audio:
+    case eST_Music:
+    case eST_Audio:
     {
         SignalSubunitAddress signalSubunitAddr;
         signalSubunitAddr.m_subunitType = m_subunitType;
@@ -1128,7 +1128,7 @@ AvPlug::setSrcPlugAddrToSignalCmd()
     }
 
     signalSourceCmd.setNodeId( m_pConfigRom->getNodeId() );
-    signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
+    signalSourceCmd.setSubunitType( eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 
     return signalSourceCmd;
@@ -1139,7 +1139,7 @@ AvPlug::setDestPlugAddrToSignalCmd(SignalSourceCmd& signalSourceCmd,
                                    AvPlug& plug)
 {
     switch( plug.m_subunitType ) {
-    case AVCCommand::eST_Unit:
+    case eST_Unit:
     {
         SignalUnitAddress signalUnitAddr;
         if ( plug.getPlugAddressType() == eAPA_ExternalPlug ) {
@@ -1150,8 +1150,8 @@ AvPlug::setDestPlugAddrToSignalCmd(SignalSourceCmd& signalSourceCmd,
         signalSourceCmd.setSignalDestination( signalUnitAddr );
     }
     break;
-    case AVCCommand::eST_Music:
-    case AVCCommand::eST_Audio:
+    case eST_Music:
+    case eST_Audio:
     {
         SignalSubunitAddress signalSubunitAddr;
         signalSubunitAddr.m_subunitType = plug.m_subunitType;
@@ -1317,7 +1317,7 @@ AvPlug::getPlugDefinedBySpecificData(
     }
 
     if ( pUnitPlugAddress ) {
-        subunitType = AVCCommand::eST_Unit;
+        subunitType = eST_Unit;
         switch ( pUnitPlugAddress->m_plugType ) {
         case UnitPlugSpecificDataPlugAddress::ePT_PCR:
             addressType = eAPA_PCR;
@@ -1407,8 +1407,8 @@ AvPlug::getPlugDefinedBySpecificData(
                      plugId );
     }
 
-    AVCCommand::ESubunitType enumSubunitType =
-        static_cast<AVCCommand::ESubunitType>( subunitType );
+    ESubunitType enumSubunitType =
+        static_cast<ESubunitType>( subunitType );
 
     return m_plugManager->getPlug(
         enumSubunitType,
@@ -2034,7 +2034,7 @@ AvPlugManager::showPlugs() const
 }
 
 AvPlug*
-AvPlugManager::getPlug( AVCCommand::ESubunitType subunitType,
+AvPlugManager::getPlug( ESubunitType subunitType,
                         subunit_id_t subunitId,
                         function_block_type_t functionBlockType,
                         function_block_id_t functionBlockId,
@@ -2090,7 +2090,7 @@ AvPlugManager::getPlug( int iGlobalId ) const
 }
 
 AvPlugVector
-AvPlugManager::getPlugsByType( AVCCommand::ESubunitType subunitType,
+AvPlugManager::getPlugsByType( ESubunitType subunitType,
                                subunit_id_t subunitId,
                                function_block_type_t functionBlockType,
                                function_block_id_t functionBlockId,

@@ -282,7 +282,7 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
         AvPlug* plug  = new AvPlug( *m_p1394Service,
                                     *m_pConfigRom,
                                     *m_pPlugManager,
-                                    AVCCommand::eST_Unit,
+                                    eST_Unit,
                                     0xff,
                                     0xff,
                                     0xff,
@@ -315,7 +315,7 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
         AvPlug* plug  = new AvPlug( *m_p1394Service,
                                     *m_pConfigRom,
                                     *m_pPlugManager,
-                                    AVCCommand::eST_Unit,
+                                    eST_Unit,
                                     0xff,
                                     0xff,
                                     0xff,
@@ -436,7 +436,7 @@ AvDevice::discoverSyncModes()
                                                     AvPlug::eAPT_Digital );
 
     AvPlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
-        AVCCommand::eST_Music,
+        eST_Music,
         0,
         0xff,
         0xff,
@@ -448,7 +448,7 @@ AvDevice::discoverSyncModes()
     }
 
     AvPlugVector syncMSUOutputPlugs = m_pPlugManager->getPlugsByType(
-        AVCCommand::eST_Music,
+        eST_Music,
         0,
         0xff,
         0xff,
@@ -578,7 +578,7 @@ AvDevice::enumerateSubUnits()
 
         AvDeviceSubunit* subunit = 0;
         switch( subunit_type ) {
-        case AVCCommand::eST_Audio:
+        case eST_Audio:
             subunit = new AvDeviceSubunitAudio( *this,
                                                 subunitId,
                                                 m_verboseLevel );
@@ -586,12 +586,26 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
                 return false;
             }
-
-            m_subunits.push_back( subunit );
-            audioSubunitFound=true;
-
+            if ( !subunit ) {
+                debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
+                return false;
+            }
+            
+            if ( !subunit->discover() ) {
+                debugError( "enumerateSubUnits: Could not discover "
+                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
+                            subunitId,
+                            subunit_type,
+                            subunitTypeToString( subunit_type ) );
+                delete subunit;
+                return false;
+            } else {
+                m_subunits.push_back( subunit );
+                audioSubunitFound=true;
+            }
+            
             break;
-        case AVCCommand::eST_Music:
+        case eST_Music:
             subunit = new AvDeviceSubunitMusic( *this,
                                                 subunitId,
                                                 m_verboseLevel );
@@ -599,9 +613,18 @@ AvDevice::enumerateSubUnits()
                 debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
                 return false;
             }
-
-            m_subunits.push_back( subunit );
-            musicSubunitFound=true;
+            if ( !subunit->discover() ) {
+                debugError( "enumerateSubUnits: Could not discover "
+                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
+                            subunitId,
+                            subunit_type,
+                            subunitTypeToString( subunit_type ) );
+                delete subunit;
+                return false;
+            } else {
+                m_subunits.push_back( subunit );
+                musicSubunitFound=true;
+            }
 
             break;
         default:
@@ -611,16 +634,6 @@ AvDevice::enumerateSubUnits()
                          subunitTypeToString( subunit_type ) );
             continue;
 
-        }
-
-        if ( !subunit->discover() ) {
-            debugError( "enumerateSubUnits: Could not discover "
-                        "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                        subunitId,
-                        subunit_type,
-                        subunitTypeToString( subunit_type ) );
-            delete subunit;
-            return false;
         }
 
     }

@@ -41,7 +41,7 @@ class AvDevice;
 class AvDeviceSubunit {
  public:
     AvDeviceSubunit( AvDevice& avDevice,
-             AVCCommand::ESubunitType type,
+             ESubunitType type,
              subunit_t id,
              int verboseLevel );
     virtual ~AvDeviceSubunit();
@@ -54,7 +54,7 @@ class AvDeviceSubunit {
 
     subunit_t getSubunitId()
     { return m_sbId; }
-    AVCCommand::ESubunitType getSubunitType()
+    ESubunitType getSubunitType()
     { return m_sbType; }
 
     AvPlugVector& getPlugs()
@@ -85,7 +85,7 @@ class AvDeviceSubunit {
 
  protected:
     AvDevice*                m_avDevice;
-    AVCCommand::ESubunitType m_sbType;
+    ESubunitType m_sbType;
     subunit_t                m_sbId;
     int                      m_verboseLevel;
 

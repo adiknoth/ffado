@@ -287,7 +287,7 @@ class ExtendedPlugInfoCmd: public AVCCommand
 {
 public:
     enum ESubFunction {
-    eSF_ExtendedPlugInfoCmd                  = AVC1394_PLUG_INFO_SUBFUNCTION_EXTENDED_PLUG_INFO_CMD,
+        eSF_ExtendedPlugInfoCmd                  = AVC1394_PLUG_INFO_SUBFUNCTION_EXTENDED_PLUG_INFO_CMD,
         eSF_NotUsed                              = AVC1394_PLUG_INFO_SUBFUNCTION_SERIAL_BUS_NOT_USED,
     };
 
@@ -301,6 +301,7 @@ public:
 
     bool setPlugAddress( const PlugAddress& plugAddress );
     bool setSubFunction( ESubFunction subFunction );
+    subfunction_t getSubFunction( ) {return m_subFunction;};
     bool setInfoType( const ExtendedPlugInfoInfoType& infoType );
     ExtendedPlugInfoInfoType* getInfoType()
     { return m_infoType; }

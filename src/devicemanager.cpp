@@ -133,41 +133,41 @@ DeviceManager::initialize( int port )
         return false;
     }
 
-    m_oscServer = new OSC::OscServer("17820");
-
-    if (!m_oscServer) {
-        debugFatal("failed to create osc server\n");
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    if (!m_oscServer->init()) {
-        debugFatal("failed to init osc server\n");
-        delete m_oscServer;
-        m_oscServer = NULL;
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    if (!m_oscServer->registerAtRootNode(this)) {
-        debugFatal("failed to register devicemanager at server\n");
-        delete m_oscServer;
-        m_oscServer = NULL;
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    if (!m_oscServer->start()) {
-        debugFatal("failed to start osc server\n");
-        delete m_oscServer;
-        m_oscServer = NULL;
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
+//     m_oscServer = new OSC::OscServer("17820");
+// 
+//     if (!m_oscServer) {
+//         debugFatal("failed to create osc server\n");
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
+// 
+//     if (!m_oscServer->init()) {
+//         debugFatal("failed to init osc server\n");
+//         delete m_oscServer;
+//         m_oscServer = NULL;
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
+// 
+//     if (!m_oscServer->registerAtRootNode(this)) {
+//         debugFatal("failed to register devicemanager at server\n");
+//         delete m_oscServer;
+//         m_oscServer = NULL;
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
+// 
+//     if (!m_oscServer->start()) {
+//         debugFatal("failed to start osc server\n");
+//         delete m_oscServer;
+//         m_oscServer = NULL;
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
 
     setVerboseLevel(getDebugLevel());
     return true;

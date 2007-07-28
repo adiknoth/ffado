@@ -80,7 +80,7 @@ public:
     AvPlug( Ieee1394Service& ieee1394Service,
         ConfigRom& configRom,
             AvPlugManager& plugManager,
-        AVCCommand::ESubunitType subunitType,
+        ESubunitType subunitType,
         subunit_id_t subunitId,
         function_block_type_t functionBlockType,
         function_block_type_t functionBlockId,
@@ -101,7 +101,7 @@ public:
         { return m_globalId; }
     plug_id_t getPlugId() const
         { return m_id; }
-    AVCCommand::ESubunitType getSubunitType() const
+    ESubunitType getSubunitType() const
         { return m_subunitType; }
     subunit_id_t getSubunitId() const
         { return m_subunitId; }
@@ -258,7 +258,7 @@ private:
 
     Ieee1394Service*             m_p1394Service;
     ConfigRom*                   m_pConfigRom;
-    AVCCommand::ESubunitType     m_subunitType;
+    ESubunitType     m_subunitType;
     subunit_id_t                 m_subunitId;
     function_block_type_t        m_functionBlockType;
     function_block_id_t          m_functionBlockId;
@@ -297,7 +297,7 @@ public:
 
     void showPlugs() const;
 
-    AvPlug* getPlug( AVCCommand::ESubunitType subunitType,
+    AvPlug* getPlug( ESubunitType subunitType,
                      subunit_id_t subunitId,
              function_block_type_t functionBlockType,
              function_block_id_t functionBlockId,
@@ -305,7 +305,7 @@ public:
                      AvPlug::EAvPlugDirection plugDirection,
                      plug_id_t plugId ) const;
     AvPlug* getPlug( int iGlobalId ) const;
-    AvPlugVector getPlugsByType( AVCCommand::ESubunitType subunitType,
+    AvPlugVector getPlugsByType( ESubunitType subunitType,
                  subunit_id_t subunitId,
                  function_block_type_t functionBlockType,
                  function_block_id_t functionBlockId,

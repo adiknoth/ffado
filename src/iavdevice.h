@@ -97,7 +97,7 @@ public:
      *       and history (e.g. busresets etc). This makes that
      *       these ID's are not fixed to a specific physical device.
      *       At some point, we will replaced this with a GUID based
-     *       approach, which is tied to a physiscal device and is
+     *       approach, which is tied to a physical device and is
      *       bus & time independant.
      *
      * @param id

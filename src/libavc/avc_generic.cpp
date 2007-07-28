@@ -119,7 +119,7 @@ AVCCommand::setSubunitId(subunit_id_t subunitId)
     return true;
 }
 
-AVCCommand::ESubunitType
+ESubunitType
 AVCCommand::getSubunitType()
 {
     return static_cast<ESubunitType>( ( m_subunit >> 3 ) );
@@ -149,18 +149,27 @@ void
 AVCCommand::showFcpFrame( const unsigned char* buf,
                           unsigned short frameSize ) const
 {
+    // use an intermediate buffer to avoid a load of very small print's that cause the 
+    // message ringbuffer to overflow
+    char msg[DEBUG_MAX_MESSAGE_LENGTH];
+    int chars_written=0;
     for ( int i = 0; i < frameSize; ++i ) {
         if ( ( i % 16 ) == 0 ) {
             if ( i > 0 ) {
-                debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "\n" );
+                debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n", msg);
+                chars_written=0;
             }
-            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "  %3d:\t", i );
+            chars_written+=snprintf(msg+chars_written,DEBUG_MAX_MESSAGE_LENGTH-chars_written,"  %3d:\t", i );;
         } else if ( ( i % 4 ) == 0 ) {
-            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, " " );
+            chars_written+=snprintf(msg+chars_written,DEBUG_MAX_MESSAGE_LENGTH-chars_written," ");
         }
-        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%02x ", buf[i] );
+        chars_written+=snprintf(msg+chars_written,DEBUG_MAX_MESSAGE_LENGTH-chars_written, "%02x ", buf[i] );
     }
-    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "\n" );
+    if (chars_written != 0) {
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n", msg );
+    } else {
+        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "\n" );
+    }
 }
 
 bool
@@ -170,7 +179,7 @@ AVCCommand::fire()
 
     BufferSerialize se( m_fcpFrame, sizeof( m_fcpFrame ) );
     if ( !serialize( se ) ) {
-        debugFatal(  "ExtendedPlugInfoCmd::fire: Could not serialize\n" );
+        debugFatal(  "fire: Could not serialize\n" );
         return false;
     }
 
@@ -183,9 +192,16 @@ AVCCommand::fire()
 
         StringSerializer se_dbg;
         serialize( se_dbg );
-
-        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
-                         se_dbg.getString().c_str());
+        
+        // output the debug message in smaller chunks to avoid problems
+        // with a max message size
+        unsigned int chars_to_write=se_dbg.getString().size();
+        unsigned int chars_written=0;
+        while (chars_written<chars_to_write) {
+            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
+                         se_dbg.getString().substr(chars_written, DEBUG_MAX_MESSAGE_LENGTH).c_str());
+            chars_written += DEBUG_MAX_MESSAGE_LENGTH-1;
+        }
     }
 
     unsigned int resp_len;
@@ -215,8 +231,16 @@ AVCCommand::fire()
             StringSerializer se_dbg;
             serialize( se_dbg );
 
-            debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
-                             se_dbg.getString().c_str());
+            // output the debug message in smaller chunks to avoid problems
+            // with a max message size
+            unsigned int chars_to_write=se_dbg.getString().size();
+            unsigned int chars_written=0;
+            while (chars_written<chars_to_write) {
+                debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
+                            se_dbg.getString().substr(chars_written, DEBUG_MAX_MESSAGE_LENGTH).c_str());
+                chars_written += DEBUG_MAX_MESSAGE_LENGTH-1;
+            }
+
         }
         break;
         default:
@@ -268,7 +292,7 @@ const char* subunitTypeStrings[] =
 const char*
 subunitTypeToString( subunit_type_t subunitType )
 {
-    if ( subunitType == AVCCommand::eST_Unit ) {
+    if ( subunitType == eST_Unit ) {
         return "Unit";
     }
     if ( subunitType > ( int ) ( sizeof( subunitTypeStrings )

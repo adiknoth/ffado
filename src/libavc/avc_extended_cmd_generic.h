@@ -141,7 +141,7 @@ public:
 class SubunitPlugSpecificDataPlugAddress : public PlugAddressData
 {
 public:
-    SubunitPlugSpecificDataPlugAddress( AVCCommand::ESubunitType subunitType,
+    SubunitPlugSpecificDataPlugAddress( ESubunitType subunitType,
                                         subunit_id_t subunitId,
                                         plug_id_t plugId );
     virtual ~SubunitPlugSpecificDataPlugAddress();
@@ -162,7 +162,7 @@ public:
 class FunctionBlockPlugSpecificDataPlugAddress : public PlugAddressData
 {
 public:
-    FunctionBlockPlugSpecificDataPlugAddress( AVCCommand::ESubunitType subunitType,
+    FunctionBlockPlugSpecificDataPlugAddress( ESubunitType subunitType,
                                               subunit_id_t subunitId,
                                               function_block_type_t functionBlockType,
                                               function_block_id_t functionBlockId,

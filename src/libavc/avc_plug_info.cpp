@@ -63,6 +63,19 @@ PlugInfoCmd::~PlugInfoCmd()
 {
 }
 
+void
+PlugInfoCmd::clear()
+{
+    m_serialBusIsochronousInputPlugs=0xff;
+    m_serialBusIsochronousOutputPlugs=0xff;
+    m_externalInputPlugs=0xff;
+    m_externalOutputPlugs=0xff;
+    m_serialBusAsynchronousInputPlugs=0xff;
+    m_serialBusAsynchronousOuputPlugs=0xff;
+    m_destinationPlugs=0xff;
+    m_sourcePlugs=0xff;
+}
+
 bool
 PlugInfoCmd::serialize( IOSSerialize& se )
 {

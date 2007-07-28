@@ -220,7 +220,7 @@ UnitPlugSpecificDataPlugAddress::clone() const
 ////////////////////////////////////////////////////////////
 
 SubunitPlugSpecificDataPlugAddress::SubunitPlugSpecificDataPlugAddress(
-    AVCCommand::ESubunitType subunitType,
+    ESubunitType subunitType,
     subunit_id_t subunitId,
     plug_id_t plugId )
     : m_subunitType( subunitType )
@@ -266,7 +266,7 @@ SubunitPlugSpecificDataPlugAddress::clone() const
 ////////////////////////////////////////////////////////////
 
 FunctionBlockPlugSpecificDataPlugAddress::FunctionBlockPlugSpecificDataPlugAddress(
-    AVCCommand::ESubunitType subunitType,
+    ESubunitType subunitType,
     subunit_id_t subunitId,
     function_block_type_t functionBlockType,
     function_block_id_t functionBlockId,
@@ -529,14 +529,14 @@ PlugAddressSpecificData::deserialize( IISDeserialize& de )
     case ePAM_Subunit:
         m_plugAddressData =
             new SubunitPlugSpecificDataPlugAddress(
-                AVCCommand::eST_Reserved,
+                eST_Reserved,
                 0xff,
                 0xff );
         break;
     case ePAM_FunctionBlock:
         m_plugAddressData =
             new FunctionBlockPlugSpecificDataPlugAddress(
-                AVCCommand::eST_Reserved,
+                eST_Reserved,
                 0xff,
                 0xff,
                 0xff,

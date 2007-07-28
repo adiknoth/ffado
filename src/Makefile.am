@@ -54,12 +54,14 @@ noinst_HEADERS = \
 	bebob/GenericMixer.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
+	genericavc/avc_avdevice.h \
 	libavc/avc_connect.h \
 	libavc/avc_definitions.h libavc/avc_extended_cmd_generic.h \
 	libavc/avc_extended_plug_info.h libavc/avc_extended_stream_format.h \
 	libavc/avc_extended_subunit_info.h libavc/avc_function_block.h libavc/avc_generic.h \
 	libavc/avc_plug_info.h libavc/avc_serialize.h libavc/avc_signal_source.h \
 	libavc/avc_subunit_info.h libavc/avc_unit_info.h \
+	libavc/avc_descriptor.h libavc/avc_descriptor_cmd.h libavc/avc_descriptor_music.h \
 	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
 	libosc/OscClient.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
@@ -84,6 +86,9 @@ libffado_la_SOURCES = \
 	    debugmodule/debugmodule.cpp \
 	    libavc/avc_connect.cpp \
 	    libavc/avc_definitions.cpp \
+	    libavc/avc_descriptor.cpp \
+	    libavc/avc_descriptor_cmd.cpp \
+	    libavc/avc_descriptor_music.cpp \
 	    libavc/avc_extended_cmd_generic.cpp \
 	    libavc/avc_extended_plug_info.cpp \
 	    libavc/avc_extended_stream_format.cpp \
@@ -139,8 +144,7 @@ bebob_src = \
 	    maudio/maudio_avdevice.cpp
 
 genericavc_src = \
-	    genericavc/avc_avdevice.cpp \
-	    genericavc/avc_avdevice.h
+	    genericavc/avc_avdevice.cpp
 
 motu_src = \
 	    motu/motu_avdevice.cpp \
