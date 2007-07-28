@@ -37,9 +37,6 @@
 
 #include <glibmm/ustring.h>
 
-#warning clean up the samplerate mess
-#include "ffadodevice.h"
-
 class Ieee1394Service;
 class ConfigRom;
 

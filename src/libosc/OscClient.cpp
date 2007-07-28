@@ -72,6 +72,7 @@ OscClient::generic_cb(const char* path, const char* types, lo_arg** argv, int ar
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Message on: %s\n", path);
 
+    return 0;
 }
 
 

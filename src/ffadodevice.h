@@ -28,8 +28,7 @@
 #include "libutil/OptionContainer.h"
 #include "libosc/OscNode.h"
 
-// class ConfigRom;
-#include "libieee1394/configrom.h"
+class ConfigRom;
 class Ieee1394Service;
 
 namespace Streaming {

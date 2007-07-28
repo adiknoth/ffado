@@ -27,9 +27,6 @@
 
 #include <netinet/in.h>
 
-#warning clean up the samplerate mess
-#include "ffadodevice.h"
-
 namespace AVC {
 
 ///////////////////////////////////////////////////////////
