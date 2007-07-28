@@ -52,7 +52,7 @@ static VendorModelEntry supportedDeviceList[] =
 MHAvDevice::MHAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    :  IAvDevice( configRom, ieee1394service, nodeId )
+    :  FFADODevice( configRom, ieee1394service, nodeId )
     , m_model( NULL )
 
 {

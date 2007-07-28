@@ -22,8 +22,8 @@
  * MA 02110-1301 USA
  */
 
-#ifndef IAVDEVICE_H
-#define IAVDEVICE_H
+#ifndef FFADODEVICE_H
+#define FFADODEVICE_H
 
 #include "libavc/avc_definitions.h"
 #include "libutil/OptionContainer.h"
@@ -42,16 +42,16 @@ namespace Streaming {
  for a specific device.
 
 */
-class IAvDevice
+class FFADODevice
     : public Util::OptionContainer,
       public OSC::OscNode
 {
 public:
-    IAvDevice( std::auto_ptr< ConfigRom >( configRom ),
+    FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId );
 
-    virtual ~IAvDevice() {};
+    virtual ~FFADODevice() {};
 
     /// Returns the ConfigRom object of the device node.
     ConfigRom& getConfigRom() const;

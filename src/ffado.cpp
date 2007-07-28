@@ -29,7 +29,7 @@
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "libavc/avc_generic.h"
 
@@ -132,7 +132,7 @@ ffado_get_device_node_id( ffado_handle_t ffado_handle, int device_nr )
 int
 ffado_set_samplerate( ffado_handle_t ffado_handle, int node_id, int samplerate )
 {
-    IAvDevice* avDevice = ffado_handle->m_deviceManager->getAvDevice( node_id );
+    FFADODevice* avDevice = ffado_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
         if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
             return ffado_handle->m_deviceManager->discover()? 0 : -1;

@@ -69,7 +69,7 @@ static VendorModelEntry supportedDeviceList[] =
 AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    : IAvDevice( configRom, ieee1394service, nodeId )
+    : FFADODevice( configRom, ieee1394service, nodeId )
     , m_pPlugManager( new AvPlugManager( DEBUG_LEVEL_NORMAL ) )
     , m_activeSyncInfo( 0 )
     , m_model ( NULL )
@@ -120,7 +120,7 @@ AvDevice::setVerboseLevel(int l)
 {
 //     m_pPlugManager->setVerboseLevel(l);
 
-    IAvDevice::setVerboseLevel(l);
+    FFADODevice::setVerboseLevel(l);
 }
 
 bool

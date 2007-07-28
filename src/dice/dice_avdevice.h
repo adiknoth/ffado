@@ -24,7 +24,7 @@
 #ifndef DICEDEVICE_H
 #define DICEDEVICE_H
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
@@ -51,7 +51,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class DiceAvDevice : public IAvDevice {
+class DiceAvDevice : public FFADODevice {
 private:
     class DiceNotifier;
 public:

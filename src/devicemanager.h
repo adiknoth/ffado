@@ -39,13 +39,13 @@
 #include <vector>
 
 class Ieee1394Service;
-class IAvDevice;
+class FFADODevice;
 namespace Streaming {
     class StreamProcessor;
 }
 
-typedef std::vector< IAvDevice* > IAvDeviceVector;
-typedef std::vector< IAvDevice* >::iterator IAvDeviceVectorIterator;
+typedef std::vector< FFADODevice* > FFADODeviceVector;
+typedef std::vector< FFADODevice* >::iterator FFADODeviceVectorIterator;
 
 class DeviceManager
     : public Util::OptionContainer,
@@ -64,8 +64,8 @@ public:
     int getNbDevices();
     int getDeviceNodeId( int deviceNr );
 
-    IAvDevice* getAvDevice( int nodeId );
-    IAvDevice* getAvDeviceByIndex( int idx );
+    FFADODevice* getAvDevice( int nodeId );
+    FFADODevice* getAvDeviceByIndex( int idx );
     unsigned int getAvDeviceCount();
 
     bool saveCache( Glib::ustring fileName );
@@ -74,13 +74,13 @@ public:
     Streaming::StreamProcessor *getSyncSource();
 
 protected:
-    IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
+    FFADODevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id );
-    IAvDevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
+    FFADODevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
 
 protected:
     Ieee1394Service* m_1394Service;
-    IAvDeviceVector  m_avDevices;
+    FFADODeviceVector  m_avDevices;
 
     OSC::OscServer*  m_oscServer;
 

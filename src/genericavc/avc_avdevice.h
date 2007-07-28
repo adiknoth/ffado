@@ -24,7 +24,7 @@
 #ifndef GENERICAVC_AVDEVICE_H
 #define GENERICAVC_AVDEVICE_H
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
@@ -42,7 +42,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class AvDevice : public IAvDevice {
+class AvDevice : public FFADODevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
           Ieee1394Service& ieee1394Service,

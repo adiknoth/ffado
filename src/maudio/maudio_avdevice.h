@@ -35,7 +35,7 @@
 #include "libstreaming/AmdtpPort.h"
 #include "libstreaming/AmdtpPortInfo.h"
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 class ConfigRom;
 class Ieee1394Service;

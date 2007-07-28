@@ -53,7 +53,7 @@ static VendorModelEntry supportedDeviceList[] =
 DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    : IAvDevice( configRom, ieee1394service, nodeId )
+    : FFADODevice( configRom, ieee1394service, nodeId )
     , m_model( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)

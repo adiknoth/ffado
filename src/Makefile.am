@@ -48,7 +48,7 @@ noinst_HEADERS = \
 	libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
 	libieee1394/IEC61883.h \
 	debugmodule/debugmodule.h \
-	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
+	devicemanager.h fbtypes.h ffadodevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h \
 	bebob/GenericMixer.h \
@@ -82,7 +82,7 @@ libffado_la_SOURCES = \
 	    devicemanager.cpp \
 	    ffado.cpp \
 	    ffado_streaming.cpp \
-	    iavdevice.cpp \
+	    ffadodevice.cpp \
 	    debugmodule/debugmodule.cpp \
 	    libavc/avc_connect.cpp \
 	    libavc/avc_definitions.cpp \

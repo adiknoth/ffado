@@ -35,7 +35,7 @@
 
 #include "libieee1394/ARMHandler.h"
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include <vector>
 
@@ -64,7 +64,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class BounceDevice : public IAvDevice {
+class BounceDevice : public FFADODevice {
 private:
     class BounceNotifier;
 public:

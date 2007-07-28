@@ -33,7 +33,7 @@
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include <signal.h>
 
@@ -281,7 +281,7 @@ main( int argc, char **argv )
         }
 
         if(arguments.node_id_set) {
-            IAvDevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
+            FFADODevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
             if ( avDevice ) {
                 if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
                     m_deviceManager->discover();
@@ -298,7 +298,7 @@ main( int argc, char **argv )
             for(i=0;i<devices_on_bus;i++) {
                 int node_id=m_deviceManager->getDeviceNodeId(i);
                 printf("  set samplerate for device = %d, node = %d\n", i, node_id);
-                IAvDevice* avDevice = m_deviceManager->getAvDevice( node_id );
+                FFADODevice* avDevice = m_deviceManager->getAvDevice( node_id );
                 if ( avDevice ) {
                     if ( !avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
                         fprintf( stderr, "Could not set samplerate\n" );

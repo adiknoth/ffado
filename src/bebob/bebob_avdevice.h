@@ -40,7 +40,7 @@
 
 #include "libutil/serialize.h"
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include <sstream>
 #include <vector>
@@ -58,7 +58,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class AvDevice : public IAvDevice {
+class AvDevice : public FFADODevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
               Ieee1394Service& ieee1394Service,

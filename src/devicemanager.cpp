@@ -25,7 +25,7 @@
 #include "fbtypes.h"
 
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -89,7 +89,7 @@ DeviceManager::~DeviceManager()
         delete m_oscServer;
     }
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -109,7 +109,7 @@ DeviceManager::setVerboseLevel(int l)
     if (m_oscServer) m_oscServer->setVerboseLevel(l);
     OscNode::setVerboseLevel(l);
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -187,7 +187,7 @@ DeviceManager::discover( )
 
     setVerboseLevel(getDebugLevel());
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -226,7 +226,7 @@ DeviceManager::discover( )
                 continue;
             }
 
-            IAvDevice* avDevice = getDriverForDevice( configRom,
+            FFADODevice* avDevice = getDriverForDevice( configRom,
                                                       nodeId );
             if ( avDevice ) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
@@ -290,7 +290,7 @@ DeviceManager::discover( )
             return false;
         }
 
-        IAvDevice* avDevice = getSlaveDriver( configRom );
+        FFADODevice* avDevice = getSlaveDriver( configRom );
         if ( avDevice ) {
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "discover: driver found for device %d\n",
@@ -319,7 +319,7 @@ DeviceManager::discover( )
 }
 
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id )
 {
@@ -382,7 +382,7 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     return 0;
 }
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 {
 
@@ -398,11 +398,11 @@ DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 bool
 DeviceManager::isValidNode(int node)
 {
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* avDevice = *it;
+        FFADODevice* avDevice = *it;
 
         if (avDevice->getConfigRom().getNodeId() == node) {
             return true;
@@ -425,7 +425,7 @@ DeviceManager::getDeviceNodeId( int deviceNr )
         return -1;
     }
 
-    IAvDevice* avDevice = m_avDevices.at( deviceNr );
+    FFADODevice* avDevice = m_avDevices.at( deviceNr );
 
     if ( !avDevice ) {
         debugError( "Could not get device at position (%d)\n",  deviceNr );
@@ -434,14 +434,14 @@ DeviceManager::getDeviceNodeId( int deviceNr )
     return avDevice->getConfigRom().getNodeId();
 }
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getAvDevice( int nodeId )
 {
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* avDevice = *it;
+        FFADODevice* avDevice = *it;
         if ( avDevice->getConfigRom().getNodeId() == nodeId ) {
             return avDevice;
         }
@@ -450,7 +450,7 @@ DeviceManager::getAvDevice( int nodeId )
     return 0;
 }
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getAvDeviceByIndex( int idx )
 {
     return m_avDevices.at(idx);
@@ -472,7 +472,7 @@ DeviceManager::getAvDeviceCount( )
  */
 Streaming::StreamProcessor *
 DeviceManager::getSyncSource() {
-    IAvDevice* device = getAvDeviceByIndex(0);
+    FFADODevice* device = getAvDeviceByIndex(0);
 
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {
@@ -500,11 +500,11 @@ DeviceManager::saveCache( Glib::ustring fileName )
     int i;
     i=0; // avoids unused warning
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* pAvDevice;
+        FFADODevice* pAvDevice;
         pAvDevice = *it; // avoids unused warning
 
         #ifdef ENABLE_BEBOB

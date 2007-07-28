@@ -22,7 +22,7 @@
  * MA 02110-1301 USA
  */
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -30,9 +30,9 @@
 #include <iostream>
 #include <sstream>
 
-IMPL_DEBUG_MODULE( IAvDevice, IAvDevice, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_VERBOSE );
 
-IAvDevice::IAvDevice( std::auto_ptr< ConfigRom >( configRom ),
+FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
     : OscNode()
@@ -53,13 +53,13 @@ IAvDevice::IAvDevice( std::auto_ptr< ConfigRom >( configRom ),
 
 
 ConfigRom&
-IAvDevice::getConfigRom() const
+FFADODevice::getConfigRom() const
 {
     return *m_pConfigRom;
 }
 
 bool
-IAvDevice::setId( unsigned int id)
+FFADODevice::setId( unsigned int id)
 {
     bool retval;
     // FIXME: decent ID system nescessary
@@ -76,7 +76,7 @@ IAvDevice::setId( unsigned int id)
 }
 
 void
-IAvDevice::setVerboseLevel(int l)
+FFADODevice::setVerboseLevel(int l)
 {
     m_verboseLevel=l;
     setDebugLevel(l);
@@ -85,11 +85,11 @@ IAvDevice::setVerboseLevel(int l)
 }
 
 bool
-IAvDevice::enableStreaming() {
+FFADODevice::enableStreaming() {
     return true;
 }
 
 bool
-IAvDevice::disableStreaming() {
+FFADODevice::disableStreaming() {
     return true;
 }
