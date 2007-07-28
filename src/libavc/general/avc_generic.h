@@ -24,10 +24,10 @@
 #ifndef AVCGENERIC_H
 #define AVCGENERIC_H
 
-#include "avc_definitions.h"
+#include "../avc_definitions.h"
 #include "debugmodule/debugmodule.h"
 
-#include "../fbtypes.h"
+#include "fbtypes.h"
 
 #include <libavc1394/avc1394.h>
 

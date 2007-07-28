@@ -28,11 +28,11 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libavc/avc_plug_info.h"
-#include "libavc/avc_extended_plug_info.h"
-#include "libavc/avc_subunit_info.h"
-#include "libavc/avc_extended_stream_format.h"
-#include "libavc/avc_serialize.h"
+#include "libavc/general/avc_plug_info.h"
+#include "libavc/general/avc_extended_plug_info.h"
+#include "libavc/general/avc_subunit_info.h"
+#include "libavc/streamformat/avc_extended_stream_format.h"
+#include "libavc/util/avc_serialize.h"
 #include "libavc/avc_definitions.h"
 
 #include "debugmodule/debugmodule.h"

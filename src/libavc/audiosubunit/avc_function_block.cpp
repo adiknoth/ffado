@@ -23,7 +23,7 @@
  */
 
 #include "avc_function_block.h"
-#include "avc_serialize.h"
+#include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 /////////////////////////////////

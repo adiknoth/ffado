@@ -22,7 +22,7 @@
  */
 
 #include "avc_extended_plug_info.h"
-#include "avc_serialize.h"
+#include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>

@@ -31,8 +31,6 @@
 #include "devicemanager.h"
 #include "ffadodevice.h"
 
-#include "libavc/avc_generic.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -141,6 +139,8 @@ ffado_set_samplerate( ffado_handle_t ffado_handle, int node_id, int samplerate )
     return -1;
 }
 
+#warning this should be cleaned up
+#include "libavc/general/avc_generic.h"
 void ffado_sleep_after_avc_command( int time )
 {
     AVCCommand::setSleepAfterAVCCommand( time );

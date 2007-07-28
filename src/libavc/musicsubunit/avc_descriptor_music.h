@@ -29,10 +29,10 @@
 #ifndef AVCDESCRIPTORMUSIC_H
 #define AVCDESCRIPTORMUSIC_H
 
-#include "avc_descriptor.h"
-#include "avc_definitions.h"
+#include "../descriptors/avc_descriptor.h"
+#include "../avc_definitions.h"
 
-#include "avc_generic.h"
+#include "../general/avc_generic.h"
 #include "debugmodule/debugmodule.h"
 
 #include <libavc1394/avc1394.h>

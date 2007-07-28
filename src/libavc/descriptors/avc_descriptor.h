@@ -35,9 +35,9 @@
 #ifndef AVCDESCRIPTOR_H
 #define AVCDESCRIPTOR_H
 
-#include "avc_definitions.h"
+#include "../avc_definitions.h"
 
-#include "avc_generic.h"
+#include "../general/avc_generic.h"
 #include "debugmodule/debugmodule.h"
 
 #include <libavc1394/avc1394.h>

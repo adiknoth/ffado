@@ -24,7 +24,7 @@
 
 #include "avc_descriptor_cmd.h"
 #include "avc_descriptor.h"
-#include "avc_serialize.h"
+#include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>

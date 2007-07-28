@@ -24,8 +24,8 @@
 #ifndef AVCEXTENDEDSTREAMFROMAT_H
 #define AVCEXTENDEDSTREAMFROMAT_H
 
-#include "avc_generic.h"
-#include "avc_extended_cmd_generic.h"
+#include "../general/avc_generic.h"
+#include "../general/avc_extended_cmd_generic.h"
 
 #include <libavc1394/avc1394.h>
 #include <iostream>

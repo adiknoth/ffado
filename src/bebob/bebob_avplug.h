@@ -24,12 +24,12 @@
 #ifndef BEBOB_AVPLUG_H
 #define BEBOB_AVPLUG_H
 
-#include "libavc/avc_signal_source.h"
-#include "libavc/avc_extended_stream_format.h"
-#include "libavc/avc_extended_plug_info.h"
-#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/ccm/avc_signal_source.h"
+#include "libavc/streamformat/avc_extended_stream_format.h"
+#include "libavc/general/avc_extended_plug_info.h"
+#include "libavc/general/avc_extended_cmd_generic.h"
 #include "libavc/avc_definitions.h"
-#include "libavc/avc_generic.h"
+#include "libavc/general/avc_generic.h"
 
 #include "libutil/serialize.h"
 

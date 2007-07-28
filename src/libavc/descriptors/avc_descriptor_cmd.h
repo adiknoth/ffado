@@ -24,7 +24,7 @@
 #ifndef AVCDESCRIPTORCMD_H
 #define AVCDESCRIPTORCMD_H
 
-#include "avc_generic.h"
+#include "../general/avc_generic.h"
 
 #include <libavc1394/avc1394.h>
 

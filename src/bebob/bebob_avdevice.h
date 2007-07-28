@@ -28,7 +28,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
-#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/general/avc_extended_cmd_generic.h"
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"

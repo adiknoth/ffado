@@ -24,8 +24,8 @@
 #ifndef AVCFUNCTIONBLOCK_H
 #define AVCFUNCTIONBLOCK_H
 
-#include "avc_extended_cmd_generic.h"
-#include "avc_generic.h"
+#include "../general/avc_extended_cmd_generic.h"
+#include "../general/avc_generic.h"
 
 #include <libavc1394/avc1394.h>
 #include <vector>
