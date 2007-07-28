@@ -43,11 +43,12 @@
 #include <libavc1394/avc1394.h>
 #include <string>
 
-class IOSSerialize;
-class IISDeserialize;
 class Ieee1394Service;
 
+namespace AVC {
 
+class IOSSerialize;
+class IISDeserialize;
 /**
  * The specifier used to indicate the target descriptor
  */
@@ -244,5 +245,7 @@ private:
 //     virtual ~AVCUnitIdentifierDescriptor() {}
 // 
 // };
+
+}
 
 #endif // AVCDESCRIPTOR_H

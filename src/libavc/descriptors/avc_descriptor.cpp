@@ -27,6 +27,8 @@
 #include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
+namespace AVC {
+
 AVCDescriptorSpecifier::AVCDescriptorSpecifier( enum EType type )
     : m_type ( type )
     , m_listid_size ( 0 )
@@ -538,4 +540,6 @@ AVCNameInfoBlock::deserialize( IISDeserialize& de )
     m_text.append(txt);
 
     return result;
+}
+
 }

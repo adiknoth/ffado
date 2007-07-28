@@ -42,6 +42,7 @@
 #include <assert.h>
 
 using namespace OSC;
+using namespace AVC;
 
 namespace BeBoB {
 

@@ -30,6 +30,8 @@
 
 using namespace std;
 
+namespace AVC {
+
 ConnectCmd::ConnectCmd(Ieee1394Service& ieee1394service)
     : AVCCommand( ieee1394service, AVC1394_CMD_CONNECT )
 {
@@ -51,4 +53,6 @@ ConnectCmd::deserialize( IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
     return true;
+}
+
 }

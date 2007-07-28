@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+namespace AVC {
+
+
 class ExtendedSubunitInfoPageData: public IBusData
 {
  public:
@@ -103,5 +106,7 @@ public:
     function_block_type_t m_fbType;
     ExtendedSubunitInfoPageDataVector m_infoPageDatas;
 };
+
+}
 
 #endif

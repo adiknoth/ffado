@@ -30,6 +30,8 @@
 #define NR_OF_PAGE_DATA 5
 #define SIZE_OF_PAGE_ENTRY 5
 
+namespace AVC {
+
 ExtendedSubunitInfoPageData::ExtendedSubunitInfoPageData()
     : IBusData()
     , m_functionBlockType( 0xff )
@@ -154,4 +156,6 @@ ExtendedSubunitInfoCmd::deserialize( IISDeserialize& de )
     }
 
     return status;
+}
+
 }

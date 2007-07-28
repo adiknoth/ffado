@@ -29,6 +29,8 @@
 #include <libavc1394/avc1394.h>
 
 
+namespace AVC {
+
 // No extended subunit queries supported
 
 class SubUnitInfoCmd: public AVCCommand
@@ -72,5 +74,6 @@ public:
 
 };
 
+}
 
 #endif // AVCSUBUNITINFO_H

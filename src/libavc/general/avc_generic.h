@@ -31,9 +31,12 @@
 
 #include <libavc1394/avc1394.h>
 
+class Ieee1394Service;
+
+namespace AVC {
+
 class IOSSerialize;
 class IISDeserialize;
-class Ieee1394Service;
 
 const int fcpFrameMaxLength = 512;
 typedef unsigned char fcp_frame_t[fcpFrameMaxLength];
@@ -133,5 +136,7 @@ protected:
 
 const char* subunitTypeToString( subunit_type_t subunitType );
 const char* responseToString( AVCCommand::EResponse eResponse );
+
+}
 
 #endif // AVCGENERIC_H

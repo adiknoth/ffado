@@ -29,6 +29,8 @@
 #include <libraw1394/raw1394.h> // byte_t and quadlet_t declaration
 #include <string>
 
+namespace AVC {
+
 // Interfaces
 
 class IOSSerialize {
@@ -157,5 +159,6 @@ private:
     DECLARE_DEBUG_MODULE;
 };
 
+}
 #endif // SERIALIZE_H
 

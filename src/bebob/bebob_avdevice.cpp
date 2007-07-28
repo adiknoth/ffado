@@ -40,6 +40,8 @@
 #include <iostream>
 #include <sstream>
 
+using namespace AVC;
+
 namespace BeBoB {
 
 static VendorModelEntry supportedDeviceList[] =

@@ -28,6 +28,10 @@
 
 #include <netinet/in.h>
 
+
+namespace AVC {
+
+
 IMPL_DEBUG_MODULE( CoutSerializer, CoutSerializer, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( StringSerializer, StringSerializer, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( BufferSerialize, BufferSerialize, DEBUG_LEVEL_NORMAL );
@@ -303,3 +307,4 @@ BufferDeserialize::isCurPosValid() const
     return true;
 }
 
+}

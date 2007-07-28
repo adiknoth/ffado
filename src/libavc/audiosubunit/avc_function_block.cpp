@@ -26,6 +26,10 @@
 #include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
+
+namespace AVC {
+
+
 /////////////////////////////////
 
 FunctionBlockFeatureVolume::FunctionBlockFeatureVolume()
@@ -700,4 +704,6 @@ FunctionBlockCmd*
 FunctionBlockCmd::clone() const
 {
     return new FunctionBlockCmd( *this );
+}
+
 }

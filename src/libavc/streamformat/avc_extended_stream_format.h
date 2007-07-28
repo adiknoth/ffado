@@ -31,6 +31,8 @@
 #include <iostream>
 #include <vector>
 
+namespace AVC {
+
 #define AVC1394_STREAM_FORMAT_SUPPORT            0x2F
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_INPUT  0x00
 #define AVC1394_STREAM_FORMAT_SUBFUNCTION_OUTPUT 0x01
@@ -285,5 +287,7 @@ protected:
     index_in_stream_format_t m_indexInStreamFormat;
     FormatInformation*       m_formatInformation;
 };
+
+}
 
 #endif // AVCEXTENDEDSTREAMFROMAT_H

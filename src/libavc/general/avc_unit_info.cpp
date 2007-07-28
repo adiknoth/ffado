@@ -30,6 +30,9 @@
 
 using namespace std;
 
+namespace AVC {
+
+
 UnitInfoCmd::UnitInfoCmd( Ieee1394Service& ieee1349service )
     : AVCCommand( ieee1349service, AVC1394_CMD_UNIT_INFO )
     , m_reserved( 0xff )
@@ -82,4 +85,6 @@ UnitInfoCmd::deserialize( IISDeserialize& de )
     m_company_id |= operand;
 
     return true;
+}
+
 }

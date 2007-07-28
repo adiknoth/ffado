@@ -32,6 +32,8 @@
 
 using namespace std;
 
+namespace AVC {
+
 OpenDescriptorCmd::OpenDescriptorCmd(Ieee1394Service& ieee1394service)
     : AVCCommand( ieee1394service, AVC1394_CMD_OPEN_DESCRIPTOR )
     , m_specifier( NULL )
@@ -230,5 +232,6 @@ ReadDescriptorCmd::getStatus()
         case 0x12: return eTooLarge;
         default: return eInvalid;
     }
-    
+}
+
 }

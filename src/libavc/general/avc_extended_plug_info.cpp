@@ -30,6 +30,8 @@
 
 using namespace std;
 
+namespace AVC {
+
 /////////////////////////////////////////
 /////////////////////////////////////////
 
@@ -853,4 +855,6 @@ ExtendedPlugInfoCmd::setInfoType( const ExtendedPlugInfoInfoType& infoType )
     delete m_infoType;
     m_infoType = infoType.clone();
     return true;
+}
+
 }

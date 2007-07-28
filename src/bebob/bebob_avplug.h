@@ -37,6 +37,9 @@
 
 #include <glibmm/ustring.h>
 
+#warning clean up the samplerate mess
+#include "ffadodevice.h"
+
 class Ieee1394Service;
 class ConfigRom;
 
@@ -80,13 +83,13 @@ public:
     AvPlug( Ieee1394Service& ieee1394Service,
         ConfigRom& configRom,
             AvPlugManager& plugManager,
-        ESubunitType subunitType,
-        subunit_id_t subunitId,
-        function_block_type_t functionBlockType,
-        function_block_type_t functionBlockId,
+        AVC::ESubunitType subunitType,
+        AVC::subunit_id_t subunitId,
+        AVC::function_block_type_t functionBlockType,
+        AVC::function_block_type_t functionBlockId,
         EAvPlugAddressType plugAddressType,
         EAvPlugDirection plugDirection,
-        plug_id_t plugId,
+        AVC::plug_id_t plugId,
         int verboseLevel );
     AvPlug( const AvPlug& rhs );
     virtual ~AvPlug();
@@ -99,17 +102,17 @@ public:
 
     int getGlobalId() const
         { return m_globalId; }
-    plug_id_t getPlugId() const
+    AVC::plug_id_t getPlugId() const
         { return m_id; }
-    ESubunitType getSubunitType() const
+    AVC::ESubunitType getSubunitType() const
         { return m_subunitType; }
-    subunit_id_t getSubunitId() const
+    AVC::subunit_id_t getSubunitId() const
         { return m_subunitId; }
     const char* getName() const
         { return m_name.c_str(); }
     EAvPlugDirection getPlugDirection() const
         { return m_direction; }
-    sampling_frequency_t getSamplingFrequency() const
+    AVC::sampling_frequency_t getSamplingFrequency() const
         { return m_samplingFrequency; }
     int getSampleRate() const; // 22050, 24000, 32000, ...
     int getNrOfChannels() const;
@@ -122,9 +125,9 @@ public:
     EAvPlugType getPlugType() const
         { return m_infoPlugType; }
 
-    function_block_type_t getFunctionBlockType() const
+    AVC::function_block_type_t getFunctionBlockType() const
         { return m_functionBlockType; }
-    function_block_id_t getFunctionBlockId() const
+    AVC::function_block_id_t getFunctionBlockId() const
         { return m_functionBlockId; }
 
     const AvPlugVector& getInputConnections() const
@@ -132,7 +135,7 @@ public:
     const AvPlugVector& getOutputConnections() const
         { return m_outputConnections; }
 
-    static PlugAddress::EPlugDirection convertPlugDirection(
+    static AVC::PlugAddress::EPlugDirection convertPlugDirection(
     EAvPlugDirection direction);
 
     void showPlug() const;
@@ -148,20 +151,20 @@ public:
 
  public:
     struct ChannelInfo {
-        stream_position_t          m_streamPosition;
-        stream_position_location_t m_location;
-    Glib::ustring              m_name;
+        AVC::stream_position_t          m_streamPosition;
+        AVC::stream_position_location_t m_location;
+        Glib::ustring                   m_name;
     };
     typedef std::vector<ChannelInfo> ChannelInfoVector;
 
     struct ClusterInfo {
-    int                      m_index;
-    port_type_t              m_portType;
-    Glib::ustring            m_name;
+        int                      m_index;
+        AVC::port_type_t         m_portType;
+        Glib::ustring            m_name;
 
-        nr_of_channels_t         m_nrOfChannels;
+        AVC::nr_of_channels_t    m_nrOfChannels;
         ChannelInfoVector        m_channelInfos;
-    stream_format_t          m_streamFormat;
+        AVC::stream_format_t     m_streamFormat;
     };
     typedef std::vector<ClusterInfo> ClusterInfoVector;
 
@@ -182,32 +185,32 @@ protected:
     bool discoverConnectionsInput();
     bool discoverConnectionsOutput();
 
-    ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
+    AVC::ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
 
-    ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
-    ExtendedStreamFormatCmd::ESubFunction subFunction);
+    AVC::ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
+            AVC::ExtendedStreamFormatCmd::ESubFunction subFunction);
 
-    SignalSourceCmd setSrcPlugAddrToSignalCmd();
+    AVC::SignalSourceCmd setSrcPlugAddrToSignalCmd();
 
     void setDestPlugAddrToSignalCmd(
-    SignalSourceCmd& signalSourceCmd, AvPlug& plug );
+            AVC::SignalSourceCmd& signalSourceCmd, AvPlug& plug );
 
     void debugOutputClusterInfos( int debugLevel );
 
-    bool copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
+    bool copyClusterInfo(AVC::ExtendedPlugInfoPlugChannelPositionSpecificData&
                          channelPositionData );
 
     bool addPlugConnection( AvPlugVector& connections, AvPlug& plug );
 
     bool discoverConnectionsFromSpecificData(
         EAvPlugDirection discoverDirection,
-        PlugAddressSpecificData* plugAddress,
+        AVC::PlugAddressSpecificData* plugAddress,
         AvPlugVector& connections );
 
     AvPlug* getPlugDefinedBySpecificData(
-        UnitPlugSpecificDataPlugAddress* pUnitPlugAddress,
-        SubunitPlugSpecificDataPlugAddress* pSubunitPlugAddress,
-        FunctionBlockPlugSpecificDataPlugAddress* pFunctionBlockPlugAddress );
+        AVC::UnitPlugSpecificDataPlugAddress* pUnitPlugAddress,
+        AVC::SubunitPlugSpecificDataPlugAddress* pSubunitPlugAddress,
+        AVC::FunctionBlockPlugSpecificDataPlugAddress* pFunctionBlockPlugAddress );
 
     EAvPlugDirection toggleDirection( EAvPlugDirection direction ) const;
 
@@ -247,29 +250,29 @@ private:
             , m_midiChannels( 0 )
             , m_index( 0xff )
             {}
-    sampling_frequency_t  m_samplingFrequency;
-    bool                  m_isSyncStream;
-    number_of_channels_t  m_audioChannels;
-    number_of_channels_t  m_midiChannels;
-    byte_t                m_index;
+    AVC::sampling_frequency_t  m_samplingFrequency;
+    bool                       m_isSyncStream;
+    AVC::number_of_channels_t  m_audioChannels;
+    AVC::number_of_channels_t  m_midiChannels;
+    byte_t                     m_index;
     };
     typedef std::vector<FormatInfo> FormatInfoVector;
 
 
     Ieee1394Service*             m_p1394Service;
     ConfigRom*                   m_pConfigRom;
-    ESubunitType     m_subunitType;
-    subunit_id_t                 m_subunitId;
-    function_block_type_t        m_functionBlockType;
-    function_block_id_t          m_functionBlockId;
+    AVC::ESubunitType     m_subunitType;
+    AVC::subunit_id_t                 m_subunitId;
+    AVC::function_block_type_t        m_functionBlockType;
+    AVC::function_block_id_t          m_functionBlockId;
     EAvPlugAddressType           m_addressType;
     EAvPlugDirection             m_direction;
-    plug_id_t                    m_id;
+    AVC::plug_id_t                    m_id;
     EAvPlugType                  m_infoPlugType;
-    nr_of_channels_t             m_nrOfChannels;
+    AVC::nr_of_channels_t             m_nrOfChannels;
     Glib::ustring                m_name;
     ClusterInfoVector            m_clusterInfos;
-    sampling_frequency_t         m_samplingFrequency;
+    AVC::sampling_frequency_t         m_samplingFrequency;
     FormatInfoVector             m_formatInfos;
     AvPlugVector                 m_inputConnections;
     AvPlugVector                 m_outputConnections;
@@ -297,18 +300,18 @@ public:
 
     void showPlugs() const;
 
-    AvPlug* getPlug( ESubunitType subunitType,
-                     subunit_id_t subunitId,
-             function_block_type_t functionBlockType,
-             function_block_id_t functionBlockId,
+    AvPlug* getPlug( AVC::ESubunitType subunitType,
+                     AVC::subunit_id_t subunitId,
+                     AVC::function_block_type_t functionBlockType,
+                     AVC::function_block_id_t functionBlockId,
                      AvPlug::EAvPlugAddressType plugAddressType,
                      AvPlug::EAvPlugDirection plugDirection,
-                     plug_id_t plugId ) const;
+                     AVC::plug_id_t plugId ) const;
     AvPlug* getPlug( int iGlobalId ) const;
-    AvPlugVector getPlugsByType( ESubunitType subunitType,
-                 subunit_id_t subunitId,
-                 function_block_type_t functionBlockType,
-                 function_block_id_t functionBlockId,
+    AvPlugVector getPlugsByType( AVC::ESubunitType subunitType,
+                 AVC::subunit_id_t subunitId,
+                 AVC::function_block_type_t functionBlockType,
+                 AVC::function_block_id_t functionBlockId,
                  AvPlug::EAvPlugAddressType plugAddressType,
                  AvPlug::EAvPlugDirection plugDirection,
                  AvPlug::EAvPlugType type) const;

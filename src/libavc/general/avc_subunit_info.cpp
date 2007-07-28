@@ -30,6 +30,9 @@
 
 using namespace std;
 
+namespace AVC {
+
+
 SubUnitInfoCmd::SubUnitInfoCmd( Ieee1394Service& ieee1349service )
     : AVCCommand( ieee1349service, AVC1394_CMD_SUBUNIT_INFO )
 {
@@ -94,4 +97,6 @@ SubUnitInfoCmd::deserialize( IISDeserialize& de )
     }
 
     return true;
+}
+
 }

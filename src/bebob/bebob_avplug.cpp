@@ -30,6 +30,8 @@
 
 #include <sstream>
 
+using namespace AVC;
+
 namespace BeBoB {
 
 int AvPlug::m_globalIdCounter = 0;

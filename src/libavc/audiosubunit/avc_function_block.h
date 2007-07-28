@@ -31,6 +31,9 @@
 #include <vector>
 using namespace std;
 
+namespace AVC {
+
+
 class FunctionBlockFeatureVolume: public IBusData
 {
 public:
@@ -271,5 +274,7 @@ public:
     FunctionBlockProcessing*    m_pFBProcessing;
     FunctionBlockCodec*         m_pFBCodec;
 };
+
+}
 
 #endif

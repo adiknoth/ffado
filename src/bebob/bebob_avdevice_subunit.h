@@ -41,8 +41,8 @@ class AvDevice;
 class AvDeviceSubunit {
  public:
     AvDeviceSubunit( AvDevice& avDevice,
-             ESubunitType type,
-             subunit_t id,
+             AVC::ESubunitType type,
+             AVC::subunit_t id,
              int verboseLevel );
     virtual ~AvDeviceSubunit();
 
@@ -52,14 +52,14 @@ class AvDeviceSubunit {
 
     bool addPlug( AvPlug& plug );
 
-    subunit_t getSubunitId()
+    AVC::subunit_t getSubunitId()
     { return m_sbId; }
-    ESubunitType getSubunitType()
+    AVC::ESubunitType getSubunitType()
     { return m_sbType; }
 
     AvPlugVector& getPlugs()
     { return m_plugs; }
-    AvPlug* getPlug(AvPlug::EAvPlugDirection direction, plug_id_t plugId);
+    AvPlug* getPlug(AvPlug::EAvPlugDirection direction, AVC::plug_id_t plugId);
 
 
     AvDevice& getAvDevice() const
@@ -75,7 +75,7 @@ class AvDeviceSubunit {
 
     bool discoverPlugs();
     bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
-                       plug_id_t plugMaxId );
+                       AVC::plug_id_t plugMaxId );
 
     virtual bool serializeChild( Glib::ustring basePath,
                                  Util::IOSerialize& ser ) const = 0;
@@ -85,8 +85,8 @@ class AvDeviceSubunit {
 
  protected:
     AvDevice*                m_avDevice;
-    ESubunitType m_sbType;
-    subunit_t                m_sbId;
+    AVC::ESubunitType m_sbType;
+    AVC::subunit_t                m_sbId;
     int                      m_verboseLevel;
 
     AvPlugVector             m_plugs;
@@ -101,7 +101,7 @@ typedef std::vector<AvDeviceSubunit*> AvDeviceSubunitVector;
 class AvDeviceSubunitAudio: public AvDeviceSubunit {
  public:
     AvDeviceSubunitAudio( AvDevice& avDevice,
-              subunit_t id,
+              AVC::subunit_t id,
               int verboseLevel );
     AvDeviceSubunitAudio();
     virtual ~AvDeviceSubunitAudio();
@@ -116,13 +116,13 @@ class AvDeviceSubunitAudio: public AvDeviceSubunit {
 protected:
     bool discoverFunctionBlocks();
     bool discoverFunctionBlocksDo(
-        ExtendedSubunitInfoCmd::EFunctionBlockType fbType );
+        AVC::ExtendedSubunitInfoCmd::EFunctionBlockType fbType );
     bool createFunctionBlock(
-        ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
-        ExtendedSubunitInfoPageData& data );
+        AVC::ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
+        AVC::ExtendedSubunitInfoPageData& data );
 
     FunctionBlock::ESpecialPurpose convertSpecialPurpose(
-        function_block_special_purpose_t specialPurpose );
+        AVC::function_block_special_purpose_t specialPurpose );
 
     virtual bool serializeChild( Glib::ustring basePath,
                                  Util::IOSerialize& ser ) const;
@@ -139,7 +139,7 @@ protected:
 class AvDeviceSubunitMusic: public AvDeviceSubunit {
  public:
     AvDeviceSubunitMusic( AvDevice& avDevice,
-              subunit_t id,
+              AVC::subunit_t id,
               int verboseLevel );
     AvDeviceSubunitMusic();
     virtual ~AvDeviceSubunitMusic();

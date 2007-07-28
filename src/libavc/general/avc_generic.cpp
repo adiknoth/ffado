@@ -31,6 +31,9 @@
 
 #define DEBUG_EXTRA_VERBOSE 5
 
+
+namespace AVC {
+
 IMPL_DEBUG_MODULE( AVCCommand, AVCCommand, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( IBusData, IBusData, DEBUG_LEVEL_VERBOSE );
 
@@ -330,4 +333,6 @@ responseToString( AVCCommand::EResponse eResponse )
         return "unknown";
     }
     return responseToStrings[eResponse];
+}
+
 }

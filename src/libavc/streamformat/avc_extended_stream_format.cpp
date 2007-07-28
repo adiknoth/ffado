@@ -27,6 +27,11 @@
 
 #include <netinet/in.h>
 
+#warning clean up the samplerate mess
+#include "ffadodevice.h"
+
+namespace AVC {
+
 ///////////////////////////////////////////////////////////
 std::ostream& operator<<( std::ostream& stream, StreamFormatInfo info )
 {
@@ -386,4 +391,6 @@ ExtendedStreamFormatCmd::setSubFunction( ESubFunction subFunction )
 {
     m_subFunction = subFunction;
     return true;
+}
+
 }

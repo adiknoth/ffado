@@ -27,6 +27,9 @@
 #include <libavc1394/avc1394.h>
 #include <ostream>
 
+
+namespace AVC {
+
 typedef byte_t ctype_t;
 typedef byte_t unit_t;
 typedef byte_t unit_type_t;
@@ -82,41 +85,6 @@ typedef byte_t status_selector_t;
 
 typedef quadlet_t company_id_t;
 
-/**
- * \brief the possible sampling frequencies
- */
-enum ESamplingFrequency {
-    eSF_22050Hz = 0x00,
-    eSF_24000Hz = 0x01,
-    eSF_32000Hz = 0x02,
-    eSF_44100Hz = 0x03,
-    eSF_48000Hz = 0x04,
-    eSF_88200Hz = 0x0A,
-    eSF_96000Hz = 0x05,
-    eSF_176400Hz = 0x06,
-    eSF_192000Hz = 0x07,
-    eSF_AnyLow   = 0x0B,
-    eSF_AnyMid   = 0x0C,
-    eSF_AnyHigh  = 0x0D,
-    eSF_None     = 0x0E,
-    eSF_DontCare = 0x0F,
-};
-
-/**
- * \brief Convert from ESamplingFrequency to an integer
- * @param freq
- * @return
- */
-int convertESamplingFrequency(ESamplingFrequency freq);
-/**
- * \brief Convert from integer to ESamplingFrequency
- * @param sampleRate
- * @return
- */
-ESamplingFrequency parseSampleRate( int sampleRate );
-
-std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
-
 #define AVC1394_SUBUNIT_AUDIO 1
 #define AVC1394_SUBUNIT_PRINTER 2
 #define AVC1394_SUBUNIT_CA 6
@@ -147,5 +115,6 @@ enum ESubunitType {
     eST_Unit          = AVC1394_SUBUNIT_UNIT,
 };
 
+}
 
 #endif // AVDDEFINITIONS_H

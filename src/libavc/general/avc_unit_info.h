@@ -28,6 +28,9 @@
 
 #include <libavc1394/avc1394.h>
 
+namespace AVC {
+
+
 class UnitInfoCmd: public AVCCommand
 {
 public:
@@ -67,5 +70,6 @@ public:
     company_id_t m_company_id;
 };
 
+}
 
 #endif // AVCUNITINFO_H

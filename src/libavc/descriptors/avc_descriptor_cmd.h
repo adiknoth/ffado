@@ -28,6 +28,9 @@
 
 #include <libavc1394/avc1394.h>
 
+namespace AVC {
+
+
 // defined in avc1394.h
 // #define AVC1394_CMD_OPEN_DESCRIPTOR         0x08
 // #define AVC1394_CMD_READ_DESCRIPTOR         0x09
@@ -117,5 +120,7 @@ public:
 private:
 
 };
+
+}
 
 #endif // AVCDESCRIPTORCMD_H

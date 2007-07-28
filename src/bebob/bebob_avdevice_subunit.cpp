@@ -33,6 +33,8 @@
 
 #include <sstream>
 
+using namespace AVC;
+
 IMPL_DEBUG_MODULE( BeBoB::AvDeviceSubunit, BeBoB::AvDeviceSubunit, DEBUG_LEVEL_VERBOSE );
 
 ////////////////////////////////////////////

@@ -143,5 +143,5 @@ ffado_set_samplerate( ffado_handle_t ffado_handle, int node_id, int samplerate )
 #include "libavc/general/avc_generic.h"
 void ffado_sleep_after_avc_command( int time )
 {
-    AVCCommand::setSleepAfterAVCCommand( time );
+    AVC::AVCCommand::setSleepAfterAVCCommand( time );
 }

@@ -25,16 +25,52 @@
 #ifndef FFADODEVICE_H
 #define FFADODEVICE_H
 
-#include "libavc/avc_definitions.h"
 #include "libutil/OptionContainer.h"
 #include "libosc/OscNode.h"
 
-class ConfigRom;
+// class ConfigRom;
+#include "libieee1394/configrom.h"
 class Ieee1394Service;
 
 namespace Streaming {
     class StreamProcessor;
 }
+
+/**
+ * \brief the possible sampling frequencies
+ */
+enum ESamplingFrequency {
+    eSF_22050Hz = 0x00,
+    eSF_24000Hz = 0x01,
+    eSF_32000Hz = 0x02,
+    eSF_44100Hz = 0x03,
+    eSF_48000Hz = 0x04,
+    eSF_88200Hz = 0x0A,
+    eSF_96000Hz = 0x05,
+    eSF_176400Hz = 0x06,
+    eSF_192000Hz = 0x07,
+    eSF_AnyLow   = 0x0B,
+    eSF_AnyMid   = 0x0C,
+    eSF_AnyHigh  = 0x0D,
+    eSF_None     = 0x0E,
+    eSF_DontCare = 0x0F,
+};
+
+/**
+ * \brief Convert from ESamplingFrequency to an integer
+ * @param freq
+ * @return
+ */
+int convertESamplingFrequency(ESamplingFrequency freq);
+/**
+ * \brief Convert from integer to ESamplingFrequency
+ * @param sampleRate
+ * @return
+ */
+ESamplingFrequency parseSampleRate( int sampleRate );
+
+std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
+
 /*!
 @brief Base class for device support
 

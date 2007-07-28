@@ -34,6 +34,8 @@
 
 #include <cstdio>
 
+using namespace AVC;
+
 namespace BeBoB {
     enum {
         AddrRegInfo    = 0xffffc8020000ULL,

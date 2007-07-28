@@ -26,6 +26,8 @@
 #include "bebob/bebob_avdevice.h"
 #include "libieee1394/configrom.h"
 
+using namespace AVC;
+
 IMPL_DEBUG_MODULE( BeBoB::FunctionBlock, BeBoB::FunctionBlock, DEBUG_LEVEL_NORMAL );
 
 BeBoB::FunctionBlock::FunctionBlock(

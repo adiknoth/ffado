@@ -34,6 +34,9 @@
 #define AVC1394_PLUG_INFO_SUBFUNCTION_SERIAL_BUS_NOT_USED                      0xFF
 
 
+namespace AVC {
+
+
 class PlugInfoCmd: public AVCCommand
 {
 public:
@@ -73,5 +76,6 @@ protected:
 
 };
 
+}
 
 #endif // AVCPLUGINFO_H

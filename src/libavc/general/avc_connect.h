@@ -27,6 +27,7 @@
 #include "avc_generic.h"
 
 #include <libavc1394/avc1394.h>
+namespace AVC {
 
 class ConnectCmd: public AVCCommand
 {
@@ -41,5 +42,6 @@ public:
     { return "ConnectCmd"; }
 };
 
+}
 
 #endif // AVCCONNECT_H

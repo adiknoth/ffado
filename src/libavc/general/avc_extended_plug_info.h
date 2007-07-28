@@ -32,6 +32,8 @@
 #include <string>
 #include <vector>
 
+namespace AVC {
+
 class ExtendedPlugInfoPlugTypeSpecificData : public IBusData
 {
 public:
@@ -315,5 +317,6 @@ protected:
     ExtendedPlugInfoInfoType* m_infoType;
 };
 
+}
 
 #endif

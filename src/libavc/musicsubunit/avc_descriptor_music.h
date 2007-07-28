@@ -38,9 +38,13 @@
 #include <libavc1394/avc1394.h>
 #include <vector>
 
+class Ieee1394Service;
+
+namespace AVC {
+
+
 class IOSSerialize;
 class IISDeserialize;
-class Ieee1394Service;
 
 /**
  * The info blocks
@@ -240,5 +244,7 @@ private:
     AVCMusicRoutingStatusInfoBlock m_routing_status_infoblock;
     
 };
+
+}
 
 #endif // AVCDESCRIPTORMUSIC_H

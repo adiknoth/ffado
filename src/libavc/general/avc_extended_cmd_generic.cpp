@@ -25,6 +25,8 @@
 #include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
+namespace AVC {
+
 UnitPlugAddress::UnitPlugAddress( EPlugType plugType,  plug_type_t plugId )
     : m_plugType( plugType )
     , m_plugId( plugId )
@@ -556,4 +558,4 @@ PlugAddressSpecificData::clone() const
     return new PlugAddressSpecificData( *this );
 }
 
-
+}

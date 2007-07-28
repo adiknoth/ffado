@@ -33,6 +33,9 @@
 
 // info block implementations
 
+namespace AVC {
+
+
 AVCMusicGeneralStatusInfoBlock::AVCMusicGeneralStatusInfoBlock( )
     : AVCInfoBlock( 0x8100 )
     , m_current_transmit_capability ( 0 )
@@ -637,3 +640,4 @@ AVCMusicStatusDescriptor::deserialize( IISDeserialize& de )
     return result;
 }
 
+}

@@ -29,6 +29,9 @@
 
 #include <libavc1394/avc1394.h>
 
+namespace AVC {
+
+
 class SignalAddress: public IBusData
 {
 public:
@@ -97,5 +100,6 @@ public:
     SignalAddress* m_signalDestination;
 };
 
+}
 
 #endif // AVCSIGNALSOURCE_H

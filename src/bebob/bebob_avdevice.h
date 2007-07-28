@@ -47,7 +47,6 @@
 
 class ConfigRom;
 class Ieee1394Service;
-class SubunitPlugSpecificDataPlugAddress;
 
 namespace BeBoB {
 
@@ -120,7 +119,7 @@ public:
     static AvDevice* deserialize( Glib::ustring basePath,
                                   Util::IODeserialize& deser,
                   Ieee1394Service& ieee1394Service );
-    AvDeviceSubunitAudio* getAudioSubunit( subunit_id_t subunitId )
+    AvDeviceSubunitAudio* getAudioSubunit( AVC::subunit_id_t subunitId )
         { return dynamic_cast<AvDeviceSubunitAudio*>(
                    getSubunit( AVC1394_SUBUNIT_AUDIO , subunitId ));};
 
@@ -130,17 +129,17 @@ protected:
 
     bool discoverPlugs();
     bool discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
-                           plug_id_t plugMaxId );
+                           AVC::plug_id_t plugMaxId );
     bool discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
-                                plug_id_t plugMaxId );
+                                AVC::plug_id_t plugMaxId );
     bool discoverPlugConnections();
     bool discoverSyncModes();
     bool discoverSubUnitsPlugConnections();
 
-    AvDeviceSubunit* getSubunit( subunit_type_t subunitType,
-                                 subunit_id_t subunitId ) const;
+    AvDeviceSubunit* getSubunit( AVC::subunit_type_t subunitType,
+                                 AVC::subunit_id_t subunitId ) const;
 
-    unsigned int getNrOfSubunits( subunit_type_t subunitType ) const;
+    unsigned int getNrOfSubunits( AVC::subunit_type_t subunitType ) const;
     AvPlugConnection* getPlugConnection( AvPlug& srcPlug ) const;
 
     AvPlug* getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection );

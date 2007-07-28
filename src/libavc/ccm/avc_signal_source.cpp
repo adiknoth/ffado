@@ -32,6 +32,9 @@ using namespace std;
 
 #define AVC1394_CMD_SIGNAL_SOURCE 0x1A
 
+namespace AVC {
+
+
 SignalUnitAddress::SignalUnitAddress()
     : m_plugId( ePI_Invalid )
 {
@@ -281,4 +284,6 @@ SignalAddress*
 SignalSourceCmd::getSignalDestination()
 {
     return m_signalDestination;
+}
+
 }

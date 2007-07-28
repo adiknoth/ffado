@@ -26,6 +26,8 @@
 
 #include "avc_generic.h"
 
+namespace AVC {
+
 ////////////////////////////////////////////////////////////
 
 class PlugAddressData : public IBusData {
@@ -285,5 +287,6 @@ public:
     PlugAddressData*    m_plugAddressData;
 };
 
+}
 
 #endif

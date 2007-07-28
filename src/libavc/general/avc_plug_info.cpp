@@ -30,6 +30,8 @@
 
 using namespace std;
 
+namespace AVC {
+
 PlugInfoCmd::PlugInfoCmd( Ieee1394Service& ieee1394service,
                           ESubFunction eSubFunction )
     : AVCCommand( ieee1394service, AVC1394_CMD_PLUG_INFO )
@@ -153,4 +155,6 @@ PlugInfoCmd::setSubFunction( ESubFunction subFunction )
 {
     m_subFunction = subFunction;
     return true;
+}
+
 }
