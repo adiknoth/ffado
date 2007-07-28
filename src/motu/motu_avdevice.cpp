@@ -170,7 +170,7 @@ MotuDevice::getSamplingFrequency( ) {
 }
 
 bool
-MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+MotuDevice::setSamplingFrequency( int samplingFrequency )
 {
 /*
  * Set the MOTU device's samplerate.
@@ -180,28 +180,28 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     int i, supported=true, cancel_adat=false;
 
     switch ( samplingFrequency ) {
-        case eSF_22050Hz:
+        case 22050:
             supported=false;
             break;
-        case eSF_24000Hz:
+        case 24000:
             supported=false;
             break;
-        case eSF_32000Hz:
+        case 32000:
             supported=false;
             break;
-        case eSF_44100Hz:
+        case 44100:
             new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_1X;
             break;
-        case eSF_48000Hz:
+        case 48000:
             new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_1X;
             break;
-        case eSF_88200Hz:
+        case 88200:
             new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_2X;
             break;
-        case eSF_96000Hz:
+        case 96000:
             new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_2X;
             break;
-        case eSF_176400Hz:
+        case 176400:
             // Currently only the Traveler supports 4x sample rates
             if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
                 new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
@@ -209,7 +209,7 @@ MotuDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
             } else
                 supported=false;
             break;
-        case eSF_192000Hz:
+        case 192000:
             // Currently only the Traveler supports 4x sample rates
             if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
                 new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_4X;

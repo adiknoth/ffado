@@ -56,7 +56,7 @@ public:
 
     void showDevice();
 
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    bool setSamplingFrequency( int samplingFrequency );
     int getSamplingFrequency( );
 
     int getStreamCount();

@@ -119,7 +119,7 @@ MHAvDevice::getSamplingFrequency( ) {
 }
 
 bool
-MHAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+MHAvDevice::setSamplingFrequency( int samplingFrequency )
 {
 
     return false;

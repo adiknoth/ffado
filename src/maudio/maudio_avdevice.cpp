@@ -111,7 +111,7 @@ AvDevice::discover()
 }
 
 bool
-AvDevice::setSamplingFrequency( ESamplingFrequency eSamplingFrequency )
+AvDevice::setSamplingFrequency( int eSamplingFrequency )
 {
     // not supported
     return false;

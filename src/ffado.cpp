@@ -132,7 +132,7 @@ ffado_set_samplerate( ffado_handle_t ffado_handle, int node_id, int samplerate )
 {
     FFADODevice* avDevice = ffado_handle->m_deviceManager->getAvDevice( node_id );
     if ( avDevice ) {
-        if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
+        if ( avDevice->setSamplingFrequency( samplerate ) ) {
             return ffado_handle->m_deviceManager->discover()? 0 : -1;
         }
     }

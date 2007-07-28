@@ -121,12 +121,12 @@ RmeDevice::getSamplingFrequency( ) {
 }
 
 bool
-RmeDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+RmeDevice::setSamplingFrequency( int samplingFrequency )
 {
 /*
  * Set the RME device's samplerate.
  */
-	if (samplingFrequency == eSF_48000Hz)
+	if (samplingFrequency == 48000)
 		return true;
 	return false;
 }

@@ -283,7 +283,7 @@ main( int argc, char **argv )
         if(arguments.node_id_set) {
             FFADODevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
             if ( avDevice ) {
-                if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
+                if ( avDevice->setSamplingFrequency( samplerate ) ) {
                     m_deviceManager->discover();
                 } else {
                     fprintf( stderr, "Could not set samplerate\n" );
@@ -300,7 +300,7 @@ main( int argc, char **argv )
                 printf("  set samplerate for device = %d, node = %d\n", i, node_id);
                 FFADODevice* avDevice = m_deviceManager->getAvDevice( node_id );
                 if ( avDevice ) {
-                    if ( !avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
+                    if ( !avDevice->setSamplingFrequency( samplerate ) ) {
                         fprintf( stderr, "Could not set samplerate\n" );
                     }
                 }

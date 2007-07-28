@@ -27,7 +27,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
-#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/general/avc_extended_cmd_generic.h"
 
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
@@ -76,7 +76,7 @@ public:
     static bool probe( ConfigRom& configRom );
     bool discover();
 
-    bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    bool setSamplingFrequency( int samplingFrequency );
     int getSamplingFrequency( );
 
     bool prepare();

@@ -748,8 +748,9 @@ AvDevice::getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection )
 }
 
 bool
-AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+AvDevice::setSamplingFrequency( int s )
 {
+    ESamplingFrequency samplingFrequency=parseSampleRate( s );
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");

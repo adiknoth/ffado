@@ -119,7 +119,7 @@ AvDevice::getSamplingFrequency( ) {
 }
 
 bool
-AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+AvDevice::setSamplingFrequency( int samplingFrequency )
 {
 
     return false;

@@ -103,7 +103,7 @@ public:
 
     virtual void showDevice();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
 
     virtual int getStreamCount();

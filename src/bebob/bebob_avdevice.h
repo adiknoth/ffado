@@ -69,7 +69,7 @@ public:
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
 
     virtual int getStreamCount();
@@ -156,7 +156,7 @@ protected:
 
     bool setSamplingFrequencyPlug( AvPlug& plug,
                                    AvPlug::EAvPlugDirection direction,
-                                   ESamplingFrequency samplingFrequency );
+                                   AVC::ESamplingFrequency samplingFrequency );
 
     void showAvPlugs( AvPlugVector& plugs ) const;
 
