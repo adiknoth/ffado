@@ -124,7 +124,8 @@ AmdtpSlaveTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *
         m_data_buffer->setBufferHeadTimestamp(cycle_timer);
     }
 
-    uint64_t ts_head, fc;
+    uint64_t ts_head;
+    int fc;
     if (!m_disabled && m_is_disabled) { // this means that we are trying to enable
         // check if we are on or past the enable point
         int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
@@ -135,7 +136,9 @@ AmdtpSlaveTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *
             debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %u\n", this, cycle);
 
             // initialize the buffer head & tail
-            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
+            ffado_timestamp_t ts_head_tmp;
+            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
+            ts_head=(uint64_t)ts_head_tmp;
 
             // the number of cycles the sync source lags (> 0)
             // or leads (< 0)
@@ -182,7 +185,9 @@ AmdtpSlaveTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *
     }
 
     // the base timestamp is the one of the next sample in the buffer
-    m_data_buffer->getBufferHeadTimestamp(&ts_head, &fc); // thread safe
+    ffado_timestamp_t ts_head_tmp;
+    m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
+    ts_head=(uint64_t)ts_head_tmp;
 
     // we send a packet some cycles in advance, to avoid the
     // following situation:
