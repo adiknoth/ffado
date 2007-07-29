@@ -50,11 +50,6 @@ class Subunit {
     virtual ~Subunit();
 
     virtual bool discover();
-    virtual bool discoverConnections()
-    {//FIXME:
-    #warning FIXME
-    };
-
     virtual const char* getName() = 0;
 
     subunit_t getSubunitId()
@@ -62,15 +57,15 @@ class Subunit {
     ESubunitType getSubunitType()
     { return m_sbType; }
 
+    Unit& getUnit() const
+        { return *m_unit; }
+
+
     bool addPlug( Plug& plug );
 
     PlugVector& getPlugs()
     { return m_plugs; }
     Plug* getPlug(Plug::EPlugDirection direction, plug_id_t plugId);
-
-
-    Unit& getUnit() const
-        { return *m_unit; }
 
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
@@ -80,10 +75,6 @@ class Subunit {
  protected:
     Subunit();
 
-//     bool discoverPlugs();
-//     bool discoverPlugs(Plug::EPlugDirection plugDirection,
-//                        plug_id_t plugMaxId );
-// 
     virtual bool serializeChild( Glib::ustring basePath,
                                  Util::IOSerialize& ser ) const = 0;
     virtual bool deserializeChild( Glib::ustring basePath,
@@ -95,7 +86,7 @@ class Subunit {
     ESubunitType    m_sbType;
     subunit_t       m_sbId;
 
-    PlugVector             m_plugs;
+    PlugVector      m_plugs;
 
     DECLARE_DEBUG_MODULE;
 };

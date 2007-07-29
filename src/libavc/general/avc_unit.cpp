@@ -45,16 +45,11 @@ namespace AVC {
 
 IMPL_DEBUG_MODULE( Unit, Unit, DEBUG_LEVEL_VERBOSE );
 
-Unit::Unit( std::auto_ptr< ConfigRom >( configRom ),
-                  Ieee1394Service& ieee1394service,
-                  int nodeId )
+Unit::Unit( )
     : m_pPlugManager( new PlugManager( ) )
     , m_activeSyncInfo( 0 )
-    , m_puConfigRom( configRom )
-    , m_pu1394Service( &ieee1394service )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created AVC::Unit (NodeID %d)\n",
-                 nodeId );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created AVC::Unit\n" );
 }
 
 Unit::~Unit()
@@ -106,7 +101,7 @@ Unit::discover()
 bool
 Unit::enumerateSubUnits()
 {
-    SubUnitInfoCmd subUnitInfoCmd( *m_pu1394Service );
+    SubUnitInfoCmd subUnitInfoCmd( get1394Service() );
     subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
 
     // NOTE: BeBoB has always exactly one audio and one music subunit. This
@@ -116,7 +111,7 @@ Unit::enumerateSubUnits()
     //        do that for now
 
     subUnitInfoCmd.m_page = 0;
-    subUnitInfoCmd.setNodeId( m_puConfigRom->getNodeId() );
+    subUnitInfoCmd.setNodeId( getConfigRom().getNodeId() );
     subUnitInfoCmd.setVerbose( getDebugLevel() );
     if ( !subUnitInfoCmd.fire() ) {
         debugError( "Subunit info command failed\n" );

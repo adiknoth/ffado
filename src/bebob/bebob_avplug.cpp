@@ -49,12 +49,25 @@ Plug::Plug( AVC::Unit* unit,
                  plugDirection,
                  plugId )
 {
-
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "nodeId = %d, subunitType = %d, "
+                 "subunitId = %d, functionBlockType = %d, "
+                 "functionBlockId = %d, addressType = %d, "
+                 "direction = %d, id = %d\n",
+                 unit->getConfigRom().getNodeId(),
+                 getSubunitType(),
+                 getSubunitId(),
+                 functionBlockType,
+                 functionBlockId,
+                 plugAddressType,
+                 plugDirection,
+                 plugId );
 }
 
 Plug::Plug( const Plug& rhs )
     : AVC::Plug( rhs )
 {
+
 }
 
 Plug::Plug()
@@ -599,6 +612,7 @@ Plug::discoverSupportedStreamFormats()
             }
 
             if ( formatInfoIsValid ) {
+                flushDebugOutput();
                 debugOutput( DEBUG_LEVEL_VERBOSE,
                              "[%s:%d] formatInfo[%d].m_samplingFrequency "
                              "= %d\n",
@@ -617,6 +631,7 @@ Plug::discoverSupportedStreamFormats()
                              getName(), m_id,
                              i, formatInfo.m_midiChannels );
                 m_formatInfos.push_back( formatInfo );
+                flushDebugOutput();
             }
         }
 

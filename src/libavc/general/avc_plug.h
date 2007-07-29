@@ -91,12 +91,9 @@ public:
 
     virtual bool discover() 
     {//FIXME:
-    #warning FIXME
-    };;
-    virtual bool discoverConnections() 
-    {//FIXME:
-    #warning FIXME
-    };;
+        #warning FIXME i want to be pure!!
+        return true;
+    };
 
     bool inquireConnnection( Plug& plug );
     bool setConnection( Plug& plug );
@@ -170,7 +167,9 @@ public:
 
     ClusterInfoVector& getClusterInfos()
         { return m_clusterInfos; }
-
+        
+    virtual void setVerboseLevel( int i ) 
+            {setDebugLevel(i);};
 protected:
     Plug();
 

@@ -53,8 +53,11 @@ public:
 
     virtual ~FFADODevice() {};
 
+    /// Returns the 1394 service of the FFADO device
+    virtual Ieee1394Service& get1394Service()
+        { return *m_p1394Service; };
     /// Returns the ConfigRom object of the device node.
-    ConfigRom& getConfigRom() const;
+    virtual ConfigRom& getConfigRom() const;
 
     /**
      * @brief This is called by the DeviceManager to discover & configure the device

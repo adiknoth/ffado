@@ -43,20 +43,57 @@ namespace BeBoB {
 
 /////////////////////////////
 
-class SubunitAudio: public AVC::SubunitAudio {
- public:
+class Subunit {
+public:
+    Subunit() {};
+    virtual ~Subunit() {};
+    virtual bool discover();
+    virtual bool discoverConnections();
+    
+    // required functions
+    // implemented by the derived class
+    virtual const char* getName() = 0;
+    virtual AVC::subunit_t getSubunitId() = 0;
+    virtual AVC::ESubunitType getSubunitType() = 0;
+    virtual AVC::Unit& getUnit() const = 0;
+    virtual AVC::Subunit& getSubunit() = 0;
+    virtual AVC::PlugVector& getPlugs() = 0;
+
+protected:
+    bool discoverPlugs();
+    bool discoverPlugs(Plug::EPlugDirection plugDirection,
+                       AVC::plug_id_t plugMaxId );
+private:
+    DECLARE_DEBUG_MODULE;
+};
+
+/////////////////////////////
+
+class SubunitAudio : public AVC::SubunitAudio
+                   , public BeBoB::Subunit
+{
+public:
     SubunitAudio( AVC::Unit& avDevice,
-              AVC::subunit_t id );
+                  AVC::subunit_t id );
     SubunitAudio();
     virtual ~SubunitAudio();
 
     virtual bool discover();
     virtual bool discoverConnections();
 
+    // required interface for BeBoB::Subunit
     virtual const char* getName();
+    virtual AVC::subunit_t getSubunitId() 
+        { return AVC::SubunitAudio::getSubunitId(); };
+    virtual AVC::ESubunitType getSubunitType()
+        { return AVC::SubunitAudio::getSubunitType(); };
+    virtual AVC::Unit& getUnit() const
+        { return AVC::SubunitAudio::getUnit(); };
+    virtual AVC::Subunit& getSubunit()
+        { return *this; };
+    virtual AVC::PlugVector& getPlugs()
+        { return AVC::SubunitAudio::getPlugs(); };
 
-    FunctionBlockVector getFunctionBlocks() { return m_functions; };
-    
 protected:
     bool discoverFunctionBlocks();
     bool discoverFunctionBlocksDo(
@@ -73,21 +110,36 @@ protected:
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
-
-protected:
-    FunctionBlockVector m_functions;
+private:
+    DECLARE_DEBUG_MODULE;
 };
 
 /////////////////////////////
 
-class SubunitMusic: public AVC::SubunitMusic {
+class SubunitMusic : public AVC::SubunitMusic
+                   , public BeBoB::Subunit
+{
  public:
     SubunitMusic( AVC::Unit& avDevice,
               AVC::subunit_t id );
     SubunitMusic();
     virtual ~SubunitMusic();
 
+    // required interface for BeBoB::Subunit
     virtual const char* getName();
+    virtual AVC::subunit_t getSubunitId() 
+        { return AVC::SubunitMusic::getSubunitId(); };
+    virtual AVC::ESubunitType getSubunitType()
+        { return AVC::SubunitMusic::getSubunitType(); };
+    virtual AVC::Unit& getUnit() const
+        { return AVC::SubunitMusic::getUnit(); };
+    virtual AVC::Subunit& getSubunit()
+        { return *this; };
+    virtual AVC::PlugVector& getPlugs()
+        { return AVC::SubunitMusic::getPlugs(); };
+
+    
+    virtual bool discover();
 
 protected:
     virtual bool serializeChild( Glib::ustring basePath,
@@ -95,6 +147,8 @@ protected:
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
+private:
+    DECLARE_DEBUG_MODULE;
 };
 
 }

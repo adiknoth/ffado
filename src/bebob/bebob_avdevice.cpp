@@ -74,7 +74,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
     : FFADODevice( configRom, ieee1394service, nodeId )
-    , AVC::Unit( configRom, ieee1394service, nodeId )
+    , AVC::Unit( )
     , m_model ( NULL )
     , m_Mixer ( NULL )
 {
@@ -91,31 +91,6 @@ AvDevice::~AvDevice()
         }
         delete m_Mixer;
     }
-
-    for ( SubunitVector::iterator it = m_subunits.begin();
-          it != m_subunits.end();
-          ++it )
-    {
-        delete *it;
-    }
-    for ( PlugConnectionVector::iterator it = m_plugConnections.begin();
-          it != m_plugConnections.end();
-          ++it )
-    {
-        delete *it;
-    }
-    for ( PlugVector::iterator it = m_pcrPlugs.begin();
-          it != m_pcrPlugs.end();
-          ++it )
-    {
-        delete *it;
-    }
-    for ( PlugVector::iterator it = m_externalPlugs.begin();
-          it != m_externalPlugs.end();
-          ++it )
-    {
-        delete *it;
-    }
 }
 
 void
@@ -124,6 +99,7 @@ AvDevice::setVerboseLevel(int l)
     m_pPlugManager->setVerboseLevel(l);
 
     FFADODevice::setVerboseLevel(l);
+    AVC::Unit::setVerboseLevel(l);
 }
 
 bool
@@ -142,7 +118,6 @@ AvDevice::probe( ConfigRom& configRom )
             return true;
         }
     }
-
     return false;
 }
 
@@ -190,6 +165,7 @@ AvDevice::discover()
 //         return false;
 //     }
 
+    // bebob specific discovery procedure
     if ( !discoverPlugs() ) {
         debugError( "Detecting plugs failed\n" );
         return false;
@@ -233,8 +209,97 @@ AvDevice::discover()
 }
 
 bool
+AvDevice::enumerateSubUnits()
+{
+    SubUnitInfoCmd subUnitInfoCmd( get1394Service() );
+    subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
+
+    // NOTE: BeBoB has always exactly one audio and one music subunit. This
+    // means is fits into the first page of the SubUnitInfo command.
+    // So there is no need to do more than needed
+
+    subUnitInfoCmd.m_page = 0;
+    subUnitInfoCmd.setNodeId( getConfigRom().getNodeId() );
+    subUnitInfoCmd.setVerbose( getDebugLevel() );
+    if ( !subUnitInfoCmd.fire() ) {
+        debugError( "Subunit info command failed\n" );
+        // shouldn't this be an error situation?
+        return false;
+    }
+
+    for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
+        subunit_type_t subunit_type
+            = subUnitInfoCmd.m_table[i].m_subunit_type;
+
+        unsigned int subunitId = getNrOfSubunits( subunit_type );
+
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "subunit_id = %2d, subunit_type = %2d (%s)\n",
+                     subunitId,
+                     subunit_type,
+                     subunitTypeToString( subunit_type ) );
+
+        AVC::Subunit* subunit = 0;
+        switch( subunit_type ) {
+        case eST_Audio:
+            subunit = new BeBoB::SubunitAudio( *this,
+                                               subunitId );
+            if ( !subunit ) {
+                debugFatal( "Could not allocate SubunitAudio\n" );
+                return false;
+            }
+            
+            if ( !subunit->discover() ) {
+                debugError( "enumerateSubUnits: Could not discover "
+                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
+                            subunitId,
+                            subunit_type,
+                            subunitTypeToString( subunit_type ) );
+                delete subunit;
+                return false;
+            } else {
+                m_subunits.push_back( subunit );
+            }
+            
+            break;
+        case eST_Music:
+            subunit = new BeBoB::SubunitMusic( *this,
+                                               subunitId );
+            if ( !subunit ) {
+                debugFatal( "Could not allocate SubunitMusic\n" );
+                return false;
+            }
+            if ( !subunit->discover() ) {
+                debugError( "enumerateSubUnits: Could not discover "
+                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
+                            subunitId,
+                            subunit_type,
+                            subunitTypeToString( subunit_type ) );
+                delete subunit;
+                return false;
+            } else {
+                m_subunits.push_back( subunit );
+            }
+
+            break;
+        default:
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                         "Unsupported subunit found, subunit_type = %d (%s)\n",
+                         subunit_type,
+                         subunitTypeToString( subunit_type ) );
+            continue;
+
+        }
+    }
+
+    return true;
+}
+
+bool
 AvDevice::discoverPlugs()
 {
+    debugOutput( DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
+
     //////////////////////////////////////////////
     // Get number of available isochronous input
     // and output plugs of unit
@@ -293,6 +358,7 @@ bool
 AvDevice::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
                             plug_id_t plugMaxId )
 {
+    debugOutput( DEBUG_LEVEL_NORMAL, "Discovering PCR plugs, direction %d...\n",plugDirection);
     for ( int plugId = 0;
           plugId < plugMaxId;
           ++plugId )
@@ -322,6 +388,7 @@ bool
 AvDevice::discoverPlugsExternal( Plug::EPlugDirection plugDirection,
                                  plug_id_t plugMaxId )
 {
+    debugOutput( DEBUG_LEVEL_NORMAL, "Discovering Externals plugs, direction %d...\n",plugDirection);
     for ( int plugId = 0;
           plugId < plugMaxId;
           ++plugId )
@@ -352,7 +419,11 @@ AvDevice::discoverPlugConnections()
           it != m_pcrPlugs.end();
           ++it )
     {
-        AVC::Plug* plug = *it;
+        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
+        if(!plug) {
+            debugError("BUG: not a bebob plug\n");
+            return false;
+        }
         if ( !plug->discoverConnections() ) {
             debugError( "Could not discover plug connections\n" );
             return false;
@@ -362,7 +433,11 @@ AvDevice::discoverPlugConnections()
           it != m_externalPlugs.end();
           ++it )
     {
-        AVC::Plug* plug = *it;
+        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
+        if(!plug) {
+            debugError("BUG: not a bebob plug\n");
+            return false;
+        }
         if ( !plug->discoverConnections() ) {
             debugError( "Could not discover plug connections\n" );
             return false;
@@ -375,17 +450,22 @@ AvDevice::discoverPlugConnections()
 bool
 AvDevice::discoverSubUnitsPlugConnections()
 {
-//     for ( SubunitVector::iterator it = m_subunits.begin();
-//           it != m_subunits.end();
-//           ++it )
-//     {
-//         Subunit* subunit = *it;
-//         if ( !subunit->discoverConnections() ) {
-//             debugError( "Subunit '%s'  plug connections failed\n",
-//                         subunit->getName() );
-//             return false;
-//         }
-//     }
+    for ( SubunitVector::iterator it = m_subunits.begin();
+          it != m_subunits.end();
+          ++it )
+    {
+        BeBoB::Subunit* subunit = dynamic_cast<BeBoB::Subunit*>(*it);
+        if (subunit==NULL) {
+            debugError("BUG: subunit is not a BeBoB::Subunit\n");
+            return false;
+        }
+
+        if ( !subunit->discoverConnections() ) {
+            debugError( "Subunit '%s'  plug connections failed\n",
+                        subunit->getName() );
+            return false;
+        }
+    }
     return true;
 }
 
@@ -737,6 +817,7 @@ AvDevice::showDevice()
         m_nodeId);
 
     m_pPlugManager->showPlugs();
+    flushDebugOutput();
 }
 
 bool

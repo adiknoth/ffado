@@ -35,9 +35,6 @@
 
 #include <sstream>
 
-#warning do we need this?
-#include "bebob/bebob_avplug.h"
-
 namespace AVC {
 
 IMPL_DEBUG_MODULE( Subunit, Subunit, DEBUG_LEVEL_VERBOSE );
@@ -72,7 +69,8 @@ bool
 Subunit::discover()
 {
     // There is nothing we can discover for a generic subunit
-    // Maybe its plugs, but there are multiple ways of doing that.
+    // Maybe the plugs, but there are multiple ways of doing that.
+    // subclasses should implement this
     return true;
 }
 
@@ -117,14 +115,17 @@ Subunit::serialize( Glib::ustring basePath,
 
 Subunit*
 Subunit::deserialize( Glib::ustring basePath,
-                                     Util::IODeserialize& deser,
-                                     Unit& unit )
+                      Util::IODeserialize& deser,
+                      Unit& unit )
 {
     bool result;
     ESubunitType sbType;
     result  = deser.read( basePath + "m_sbType", sbType );
 
     Subunit* pSubunit = 0;
+    
+    #warning FIXME: The derived class should be creating these
+    // FIXME: The derived class should be creating these, such that discover() can become pure virtual
     switch( sbType ) {
     case eST_Audio:
         pSubunit = new SubunitAudio;

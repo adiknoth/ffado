@@ -118,76 +118,8 @@ Plug::getSubunitType() const
 subunit_id_t 
 Plug::getSubunitId() const
 {
-    return (m_subunit==NULL?eST_Unit:m_subunit->getSubunitId());
+    return (m_subunit==NULL?0xFF:m_subunit->getSubunitId());
 }
-
-/*
-bool
-Plug::discover()
-{
-    if ( !discoverPlugType() ) {
-        debugError( "discover: Could not discover plug type (%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverName() ) {
-        debugError( "Could not discover name (%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverNoOfChannels() ) {
-        debugError( "Could not discover number of channels "
-                    "(%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverChannelPosition() ) {
-        debugError( "Could not discover channel positions "
-                    "(%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverChannelName() ) {
-        debugError( "Could not discover channel name "
-                    "(%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverClusterInfo() ) {
-        debugError( "Could not discover channel name "
-                    "(%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverStreamFormat() ) {
-        debugError( "Could not discover stream format "
-                    "(%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    if ( !discoverSupportedStreamFormats() ) {
-        debugError( "Could not discover supported stream formats "
-                    "(%d,%d,%d,%d,%d)\n",
-                    m_unit->getConfigRom().getNodeId(), m_subunitType, m_subunitId, m_direction, m_id );
-        return false;
-    }
-
-    return unit->getPlugManager().addPlug( *this );
-}
-
-bool
-Plug::discoverConnections()
-{
-    return discoverConnectionsInput() && discoverConnectionsOutput();
-}
-*/
 
 bool
 Plug::inquireConnnection( Plug& plug )
@@ -526,6 +458,7 @@ Plug::showPlug() const
                  getNrOfChannels() );
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tNumber of Streams  = %d\n",
                  getNrOfStreams() );
+    flushDebugOutput();
 }
 
 
@@ -947,6 +880,9 @@ Plug::deserialize( Glib::ustring basePath,
                      Unit& unit,
                      PlugManager& plugManager )
 {
+    #warning FIXME: The derived class should be creating these
+    // FIXME: The derived class should be creating these, such that discover() can become pure virtual
+
     Plug* pPlug = new Plug;
     if ( !pPlug ) {
         return 0;

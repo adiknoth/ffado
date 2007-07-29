@@ -48,20 +48,17 @@ namespace AVC {
 
 class Unit {
 public:
-    Unit( std::auto_ptr<ConfigRom>( configRom ),
-              Ieee1394Service& ieee1394Service,
-              int nodeId );
+    Unit( );
     virtual ~Unit();
 
     virtual void setVerboseLevel(int l);
     virtual void showDevice();
 
-    Ieee1394Service& get1394Service()
-        { return *m_pu1394Service; }
-    
+    // these have to be implemented by the parent class
+    /// Returns the 1394 service
+    virtual Ieee1394Service& get1394Service() = 0;
     /// Returns the ConfigRom
-    ConfigRom& getConfigRom() const 
-        {return *m_puConfigRom;};
+    virtual ConfigRom& getConfigRom() const = 0;
     
     /// Discovers the unit's internals
     bool discover();
@@ -149,9 +146,6 @@ protected:
     SyncInfo*                 m_activeSyncInfo;
 
 private:
-    std::auto_ptr<ConfigRom>( m_puConfigRom );
-    Ieee1394Service*          m_pu1394Service;
-    
     DECLARE_DEBUG_MODULE;
 
 };

@@ -59,16 +59,11 @@ SubunitAudio::~SubunitAudio()
 bool
 SubunitAudio::discover()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering Audio Subunit...\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering %s...\n", getName());
     
     if ( !Subunit::discover() ) {
         return false;
     }
-
-//     if ( !discoverBeBoB::FunctionBlocks() ) {
-//         debugError( "function block discovering failed\n" );
-//         return false;
-//     }
 
     return true;
 }
@@ -77,7 +72,7 @@ SubunitAudio::discover()
 const char*
 SubunitAudio::getName()
 {
-    return "AudioSubunit";
+    return "AVC::AudioSubunit";
 }
 
 // bool

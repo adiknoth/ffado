@@ -229,6 +229,7 @@ private:
     unsigned int mb_overruns;
     pthread_t mb_writer_thread;
     pthread_mutex_t mb_write_lock;
+    pthread_mutex_t mb_flush_lock;
     pthread_cond_t mb_ready_cond;
 
     static void *mb_thread_func(void *arg);

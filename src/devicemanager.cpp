@@ -227,7 +227,7 @@ DeviceManager::discover( )
             }
 
             FFADODevice* avDevice = getDriverForDevice( configRom,
-                                                      nodeId );
+                                                        nodeId );
             if ( avDevice ) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
                              "discover: driver found for device %d\n",
@@ -265,9 +265,14 @@ DeviceManager::discover( )
                 if (!addChildOscNode(avDevice)) {
                     debugWarning("failed to register AvDevice at OSC server\n");
                 }
+                
+                debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d done...\n", nodeId );
 
             }
         }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
+
         return true;
 
     } else { // slave mode
@@ -312,7 +317,11 @@ DeviceManager::discover( )
             }
 
             m_avDevices.push_back( avDevice );
+
+            debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d done...\n", nodeId );
         }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
 
         return true;
     }

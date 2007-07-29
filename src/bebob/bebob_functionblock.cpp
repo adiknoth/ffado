@@ -33,7 +33,7 @@ namespace BeBoB {
 IMPL_DEBUG_MODULE( FunctionBlock, FunctionBlock, DEBUG_LEVEL_NORMAL );
 
 FunctionBlock::FunctionBlock(
-    Subunit& subunit,
+    AVC::Subunit& subunit,
     function_block_type_t type,
     function_block_type_t subtype,
     function_block_id_t id,
@@ -145,7 +145,11 @@ FunctionBlock::discoverConnections()
           it != m_plugs.end();
           ++it )
     {
-        AVC::Plug* plug = *it;
+        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
+        if(!plug) {
+            debugError("BUG: not a bebob plug\n");
+            return false;
+        }
         if ( !plug->discoverConnections() ) {
             debugError( "Could not discover plug connections\n" );
             return false;

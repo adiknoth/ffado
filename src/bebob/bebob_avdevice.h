@@ -96,11 +96,13 @@ public:
 
     // redefinition to resolve ambiguity
     Ieee1394Service& get1394Service()
-        { return *m_p1394Service; }
+        { return FFADODevice::get1394Service(); };
     ConfigRom& getConfigRom() const 
-        {return FFADODevice::getConfigRom();};
-        
+        { return FFADODevice::getConfigRom(); };
+
 protected:
+
+    bool enumerateSubUnits();
 
     bool discoverPlugs();
     bool discoverPlugsPCR( AVC::Plug::EPlugDirection plugDirection,
