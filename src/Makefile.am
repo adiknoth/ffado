@@ -68,6 +68,9 @@ noinst_HEADERS = \
 	libavc/general/avc_generic.h \
 	libavc/general/avc_connect.h \
 	libavc/general/avc_extended_plug_info.h \
+	libavc/general/avc_unit.h \
+	libavc/general/avc_subunit.h \
+	libavc/general/avc_plug.h \
 	libavc/avc_definitions.h \
 	libavc/ccm/avc_signal_source.h \
 	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
@@ -106,6 +109,9 @@ libffado_la_SOURCES = \
 	libavc/general/avc_extended_cmd_generic.cpp \
 	libavc/general/avc_extended_plug_info.cpp \
 	libavc/general/avc_plug_info.cpp \
+	libavc/general/avc_unit.cpp \
+	libavc/general/avc_subunit.cpp \
+	libavc/general/avc_plug.cpp \
 	libavc/avc_definitions.cpp \
 	libavc/ccm/avc_signal_source.cpp \
 	libieee1394/ARMHandler.cpp \

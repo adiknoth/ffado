@@ -44,6 +44,8 @@ using namespace AVC;
 
 namespace BeBoB {
 
+IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
+
 static VendorModelEntry supportedDeviceList[] =
 {
     {0x00000f, 0x00010065, "Mackie", "Onyx Firewire"},
@@ -72,8 +74,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
     : FFADODevice( configRom, ieee1394service, nodeId )
-    , m_pPlugManager( new AvPlugManager( DEBUG_LEVEL_NORMAL ) )
-    , m_activeSyncInfo( 0 )
+    , AVC::Unit( configRom, ieee1394service, nodeId )
     , m_model ( NULL )
     , m_Mixer ( NULL )
 {
@@ -91,25 +92,25 @@ AvDevice::~AvDevice()
         delete m_Mixer;
     }
 
-    for ( AvDeviceSubunitVector::iterator it = m_subunits.begin();
+    for ( SubunitVector::iterator it = m_subunits.begin();
           it != m_subunits.end();
           ++it )
     {
         delete *it;
     }
-    for ( AvPlugConnectionVector::iterator it = m_plugConnections.begin();
+    for ( PlugConnectionVector::iterator it = m_plugConnections.begin();
           it != m_plugConnections.end();
           ++it )
     {
         delete *it;
     }
-    for ( AvPlugVector::iterator it = m_pcrPlugs.begin();
+    for ( PlugVector::iterator it = m_pcrPlugs.begin();
           it != m_pcrPlugs.end();
           ++it )
     {
         delete *it;
     }
-    for ( AvPlugVector::iterator it = m_externalPlugs.begin();
+    for ( PlugVector::iterator it = m_externalPlugs.begin();
           it != m_externalPlugs.end();
           ++it )
     {
@@ -120,7 +121,7 @@ AvDevice::~AvDevice()
 void
 AvDevice::setVerboseLevel(int l)
 {
-//     m_pPlugManager->setVerboseLevel(l);
+    m_pPlugManager->setVerboseLevel(l);
 
     FFADODevice::setVerboseLevel(l);
 }
@@ -169,10 +170,25 @@ AvDevice::discover()
                 m_model->vendor_name, m_model->model_name);
     } else return false;
 
-    if ( !enumerateSubUnits() ) {
-        debugError( "Could not enumarate sub units\n" );
+    if ( !Unit::discover() ) {
+        debugError( "Could not discover unit\n" );
         return false;
     }
+
+    if((getAudioSubunit( 0 ) == NULL)) {
+        debugError( "Unit doesn't have an Audio subunit.\n");
+        return false;
+    }
+    if((getMusicSubunit( 0 ) == NULL)) {
+        debugError( "Unit doesn't have a Music subunit.\n");
+        return false;
+    }
+
+// replaced by the previous Unit discovery
+//     if ( !enumerateSubUnits() ) {
+//         debugError( "Could not enumarate sub units\n" );
+//         return false;
+//     }
 
     if ( !discoverPlugs() ) {
         debugError( "Detecting plugs failed\n" );
@@ -242,28 +258,28 @@ AvDevice::discoverPlugs()
     debugOutput( DEBUG_LEVEL_NORMAL, "number of external output plugs = %d\n",
                  plugInfoCmd.m_externalOutputPlugs );
 
-    if ( !discoverPlugsPCR( AvPlug::eAPD_Input,
+    if ( !discoverPlugsPCR( Plug::eAPD_Input,
                             plugInfoCmd.m_serialBusIsochronousInputPlugs ) )
     {
         debugError( "pcr input plug discovering failed\n" );
         return false;
     }
 
-    if ( !discoverPlugsPCR( AvPlug::eAPD_Output,
+    if ( !discoverPlugsPCR( Plug::eAPD_Output,
                             plugInfoCmd.m_serialBusIsochronousOutputPlugs ) )
     {
         debugError( "pcr output plug discovering failed\n" );
         return false;
     }
 
-    if ( !discoverPlugsExternal( AvPlug::eAPD_Input,
+    if ( !discoverPlugsExternal( Plug::eAPD_Input,
                                  plugInfoCmd.m_externalInputPlugs ) )
     {
         debugError( "external input plug discovering failed\n" );
         return false;
     }
 
-    if ( !discoverPlugsExternal( AvPlug::eAPD_Output,
+    if ( !discoverPlugsExternal( Plug::eAPD_Output,
                                  plugInfoCmd.m_externalOutputPlugs ) )
     {
         debugError( "external output plug discovering failed\n" );
@@ -274,24 +290,20 @@ AvDevice::discoverPlugs()
 }
 
 bool
-AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
+AvDevice::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
                             plug_id_t plugMaxId )
 {
     for ( int plugId = 0;
           plugId < plugMaxId;
           ++plugId )
     {
-        AvPlug* plug  = new AvPlug( *m_p1394Service,
-                                    *m_pConfigRom,
-                                    *m_pPlugManager,
-                                    eST_Unit,
-                                    0xff,
-                                    0xff,
-                                    0xff,
-                                    AvPlug::eAPA_PCR,
-                                    plugDirection,
-                                    plugId,
-                                    m_verboseLevel );
+        AVC::Plug* plug  = new Plug( this,
+                                NULL,
+                                0xff,
+                                0xff,
+                                Plug::eAPA_PCR,
+                                plugDirection,
+                                plugId );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             delete plug;
@@ -307,24 +319,19 @@ AvDevice::discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
 }
 
 bool
-AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
+AvDevice::discoverPlugsExternal( Plug::EPlugDirection plugDirection,
                                  plug_id_t plugMaxId )
 {
     for ( int plugId = 0;
           plugId < plugMaxId;
           ++plugId )
     {
-        AvPlug* plug  = new AvPlug( *m_p1394Service,
-                                    *m_pConfigRom,
-                                    *m_pPlugManager,
-                                    eST_Unit,
-                                    0xff,
-                                    0xff,
-                                    0xff,
-                                    AvPlug::eAPA_ExternalPlug,
-                                    plugDirection,
-                                    plugId,
-                                    m_verboseLevel );
+        AVC::Plug* plug  = new Plug( this, NULL,
+                                0xff,
+                                0xff,
+                                Plug::eAPA_ExternalPlug,
+                                plugDirection,
+                                plugId );
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             return false;
@@ -341,21 +348,21 @@ AvDevice::discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
 bool
 AvDevice::discoverPlugConnections()
 {
-    for ( AvPlugVector::iterator it = m_pcrPlugs.begin();
+    for ( PlugVector::iterator it = m_pcrPlugs.begin();
           it != m_pcrPlugs.end();
           ++it )
     {
-        AvPlug* plug = *it;
+        AVC::Plug* plug = *it;
         if ( !plug->discoverConnections() ) {
             debugError( "Could not discover plug connections\n" );
             return false;
         }
     }
-    for ( AvPlugVector::iterator it = m_externalPlugs.begin();
+    for ( PlugVector::iterator it = m_externalPlugs.begin();
           it != m_externalPlugs.end();
           ++it )
     {
-        AvPlug* plug = *it;
+        AVC::Plug* plug = *it;
         if ( !plug->discoverConnections() ) {
             debugError( "Could not discover plug connections\n" );
             return false;
@@ -368,17 +375,17 @@ AvDevice::discoverPlugConnections()
 bool
 AvDevice::discoverSubUnitsPlugConnections()
 {
-    for ( AvDeviceSubunitVector::iterator it = m_subunits.begin();
-          it != m_subunits.end();
-          ++it )
-    {
-        AvDeviceSubunit* subunit = *it;
-        if ( !subunit->discoverConnections() ) {
-            debugError( "Subunit '%s'  plug connections failed\n",
-                        subunit->getName() );
-            return false;
-        }
-    }
+//     for ( SubunitVector::iterator it = m_subunits.begin();
+//           it != m_subunits.end();
+//           ++it )
+//     {
+//         Subunit* subunit = *it;
+//         if ( !subunit->discoverConnections() ) {
+//             debugError( "Subunit '%s'  plug connections failed\n",
+//                         subunit->getName() );
+//             return false;
+//         }
+//     }
     return true;
 }
 
@@ -403,78 +410,78 @@ AvDevice::discoverSyncModes()
     // Note PCR input means 1394bus-to-device where as
     // MSU input means subunit-to-device
 
-    AvPlugVector syncPCRInputPlugs = getPlugsByType( m_pcrPlugs,
-                                                     AvPlug::eAPD_Input,
-                                                     AvPlug::eAPT_Sync );
+    PlugVector syncPCRInputPlugs = getPlugsByType( m_pcrPlugs,
+                                                     Plug::eAPD_Input,
+                                                     Plug::eAPT_Sync );
     if ( !syncPCRInputPlugs.size() ) {
         debugWarning( "No PCR sync input plug found\n" );
     }
 
-    AvPlugVector syncPCROutputPlugs = getPlugsByType( m_pcrPlugs,
-                                                      AvPlug::eAPD_Output,
-                                                      AvPlug::eAPT_Sync );
+    PlugVector syncPCROutputPlugs = getPlugsByType( m_pcrPlugs,
+                                                      Plug::eAPD_Output,
+                                                      Plug::eAPT_Sync );
     if ( !syncPCROutputPlugs.size() ) {
         debugWarning( "No PCR sync output plug found\n" );
     }
 
-    AvPlugVector isoPCRInputPlugs = getPlugsByType( m_pcrPlugs,
-                                                    AvPlug::eAPD_Input,
-                                                    AvPlug::eAPT_IsoStream );
+    PlugVector isoPCRInputPlugs = getPlugsByType( m_pcrPlugs,
+                                                    Plug::eAPD_Input,
+                                                    Plug::eAPT_IsoStream );
     if ( !isoPCRInputPlugs.size() ) {
         debugWarning( "No PCR iso input plug found\n" );
 
     }
 
-    AvPlugVector isoPCROutputPlugs = getPlugsByType( m_pcrPlugs,
-                                                    AvPlug::eAPD_Output,
-                                                    AvPlug::eAPT_IsoStream );
+    PlugVector isoPCROutputPlugs = getPlugsByType( m_pcrPlugs,
+                                                    Plug::eAPD_Output,
+                                                    Plug::eAPT_IsoStream );
     if ( !isoPCROutputPlugs.size() ) {
         debugWarning( "No PCR iso output plug found\n" );
 
     }
 
-    AvPlugVector digitalPCRInputPlugs = getPlugsByType( m_externalPlugs,
-                                                    AvPlug::eAPD_Input,
-                                                    AvPlug::eAPT_Digital );
+    PlugVector digitalPCRInputPlugs = getPlugsByType( m_externalPlugs,
+                                                    Plug::eAPD_Input,
+                                                    Plug::eAPT_Digital );
 
-    AvPlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
+    PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
         eST_Music,
         0,
         0xff,
         0xff,
-        AvPlug::eAPA_SubunitPlug,
-        AvPlug::eAPD_Input,
-        AvPlug::eAPT_Sync );
+        Plug::eAPA_SubunitPlug,
+        Plug::eAPD_Input,
+        Plug::eAPT_Sync );
     if ( !syncMSUInputPlugs.size() ) {
         debugWarning( "No sync input plug for MSU subunit found\n" );
     }
 
-    AvPlugVector syncMSUOutputPlugs = m_pPlugManager->getPlugsByType(
+    PlugVector syncMSUOutputPlugs = m_pPlugManager->getPlugsByType(
         eST_Music,
         0,
         0xff,
         0xff,
-        AvPlug::eAPA_SubunitPlug,
-        AvPlug::eAPD_Output,
-        AvPlug::eAPT_Sync );
+        Plug::eAPA_SubunitPlug,
+        Plug::eAPD_Output,
+        Plug::eAPT_Sync );
     if ( !syncMSUOutputPlugs.size() ) {
         debugWarning( "No sync output plug for MSU subunit found\n" );
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Sync Input Plugs:\n" );
-    showAvPlugs( syncPCRInputPlugs );
+    showPlugs( syncPCRInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Sync Output Plugs:\n" );
-    showAvPlugs( syncPCROutputPlugs );
+    showPlugs( syncPCROutputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Input Plugs:\n" );
-    showAvPlugs( isoPCRInputPlugs );
+    showPlugs( isoPCRInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Output Plugs:\n" );
-    showAvPlugs( isoPCROutputPlugs );
+    showPlugs( isoPCROutputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "PCR digital Input Plugs:\n" );
-    showAvPlugs( digitalPCRInputPlugs );
+    showPlugs( digitalPCRInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Input Plugs:\n" );
-    showAvPlugs( syncMSUInputPlugs );
+    showPlugs( syncMSUInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Output Plugs:\n" );
-    showAvPlugs( syncMSUOutputPlugs );
+    showPlugs( syncMSUOutputPlugs );
 
     // Check all possible PCR input to MSU input connections
     // -> sync stream input
@@ -509,17 +516,17 @@ AvDevice::discoverSyncModes()
     // Currently active connection signal source cmd, command type
     // status, source unknown, destination MSU sync input plug
 
-    for ( AvPlugVector::const_iterator it = syncMSUInputPlugs.begin();
+    for ( PlugVector::const_iterator it = syncMSUInputPlugs.begin();
           it != syncMSUInputPlugs.end();
           ++it )
     {
-        AvPlug* msuPlug = *it;
-        for ( AvPlugVector::const_iterator jt =
+        AVC::Plug* msuPlug = *it;
+        for ( PlugVector::const_iterator jt =
                   msuPlug->getInputConnections().begin();
               jt != msuPlug->getInputConnections().end();
               ++jt )
         {
-            AvPlug* plug = *jt;
+            AVC::Plug* plug = *jt;
 
             for ( SyncInfoVector::iterator it = m_syncInfos.begin();
                   it != m_syncInfos.end();
@@ -544,210 +551,6 @@ AvDevice::discoverSyncModes()
 }
 
 bool
-AvDevice::enumerateSubUnits()
-{
-    bool musicSubunitFound=false;
-    bool audioSubunitFound=false;
-
-    SubUnitInfoCmd subUnitInfoCmd( *m_p1394Service );
-    //subUnitInfoCmd.setVerbose( 1 );
-    subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
-
-    // BeBoB has always exactly one audio and one music subunit. This
-    // means is fits into the first page of the SubUnitInfo command.
-    // So there is no need to do more than needed
-
-    subUnitInfoCmd.m_page = 0;
-    subUnitInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
-    subUnitInfoCmd.setVerbose( m_verboseLevel );
-    if ( !subUnitInfoCmd.fire() ) {
-        debugError( "Subunit info command failed\n" );
-        // shouldn't this be an error situation?
-        return false;
-    }
-
-    for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
-        subunit_type_t subunit_type
-            = subUnitInfoCmd.m_table[i].m_subunit_type;
-
-        unsigned int subunitId = getNrOfSubunits( subunit_type );
-
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                     subunitId,
-                     subunit_type,
-                     subunitTypeToString( subunit_type ) );
-
-        AvDeviceSubunit* subunit = 0;
-        switch( subunit_type ) {
-        case eST_Audio:
-            subunit = new AvDeviceSubunitAudio( *this,
-                                                subunitId,
-                                                m_verboseLevel );
-            if ( !subunit ) {
-                debugFatal( "Could not allocate AvDeviceSubunitAudio\n" );
-                return false;
-            }
-            if ( !subunit ) {
-                debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
-                return false;
-            }
-            
-            if ( !subunit->discover() ) {
-                debugError( "enumerateSubUnits: Could not discover "
-                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                            subunitId,
-                            subunit_type,
-                            subunitTypeToString( subunit_type ) );
-                delete subunit;
-                return false;
-            } else {
-                m_subunits.push_back( subunit );
-                audioSubunitFound=true;
-            }
-            
-            break;
-        case eST_Music:
-            subunit = new AvDeviceSubunitMusic( *this,
-                                                subunitId,
-                                                m_verboseLevel );
-            if ( !subunit ) {
-                debugFatal( "Could not allocate AvDeviceSubunitMusic\n" );
-                return false;
-            }
-            if ( !subunit->discover() ) {
-                debugError( "enumerateSubUnits: Could not discover "
-                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                            subunitId,
-                            subunit_type,
-                            subunitTypeToString( subunit_type ) );
-                delete subunit;
-                return false;
-            } else {
-                m_subunits.push_back( subunit );
-                musicSubunitFound=true;
-            }
-
-            break;
-        default:
-            debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Unsupported subunit found, subunit_type = %d (%s)\n",
-                         subunit_type,
-                         subunitTypeToString( subunit_type ) );
-            continue;
-
-        }
-
-    }
-
-    // a BeBoB always has an audio and a music subunit
-    return (musicSubunitFound && audioSubunitFound);
-}
-
-
-AvDeviceSubunit*
-AvDevice::getSubunit( subunit_type_t subunitType,
-                      subunit_id_t subunitId ) const
-{
-    for ( AvDeviceSubunitVector::const_iterator it = m_subunits.begin();
-          it != m_subunits.end();
-          ++it )
-    {
-        AvDeviceSubunit* subunit = *it;
-        if ( ( subunitType == subunit->getSubunitType() )
-             && ( subunitId == subunit->getSubunitId() ) )
-        {
-            return subunit;
-        }
-    }
-
-    return 0;
-}
-
-
-unsigned int
-AvDevice::getNrOfSubunits( subunit_type_t subunitType ) const
-{
-    unsigned int nrOfSubunits = 0;
-
-    for ( AvDeviceSubunitVector::const_iterator it = m_subunits.begin();
-          it != m_subunits.end();
-          ++it )
-    {
-        AvDeviceSubunit* subunit = *it;
-        if ( subunitType == subunit->getSubunitType() ) {
-            nrOfSubunits++;
-        }
-    }
-
-    return nrOfSubunits;
-}
-
-AvPlugConnection*
-AvDevice::getPlugConnection( AvPlug& srcPlug ) const
-{
-    for ( AvPlugConnectionVector::const_iterator it
-              = m_plugConnections.begin();
-          it != m_plugConnections.end();
-          ++it )
-    {
-        AvPlugConnection* plugConnection = *it;
-        if ( &( plugConnection->getSrcPlug() ) == &srcPlug ) {
-            return plugConnection;
-        }
-    }
-
-    return 0;
-}
-
-AvPlug*
-AvDevice::getPlugById( AvPlugVector& plugs,
-                       AvPlug::EAvPlugDirection plugDirection,
-                       int id )
-{
-    for ( AvPlugVector::iterator it = plugs.begin();
-          it != plugs.end();
-          ++it )
-    {
-        AvPlug* plug = *it;
-        if ( ( id == plug->getPlugId() )
-             && ( plugDirection == plug->getPlugDirection() ) )
-        {
-            return plug;
-        }
-    }
-
-    return 0;
-}
-
-AvPlugVector
-AvDevice::getPlugsByType( AvPlugVector& plugs,
-                          AvPlug::EAvPlugDirection plugDirection,
-                          AvPlug::EAvPlugType type)
-{
-    AvPlugVector plugVector;
-    for ( AvPlugVector::iterator it = plugs.begin();
-          it != plugs.end();
-          ++it )
-    {
-        AvPlug* plug = *it;
-        if ( ( type == plug->getPlugType() )
-             && ( plugDirection == plug->getPlugDirection() ) )
-        {
-            plugVector.push_back( plug );
-        }
-    }
-
-    return plugVector;
-}
-
-AvPlug*
-AvDevice::getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection )
-{
-    return 0;
-}
-
-bool
 AvDevice::setSamplingFrequency( int s )
 {
     ESamplingFrequency samplingFrequency=parseSampleRate( s );
@@ -765,28 +568,28 @@ AvDevice::setSamplingFrequency( int s )
         }
         return true;
     } else {
-        AvPlug* plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
+        AVC::Plug* plug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
             return false;
         }
 
         if ( !setSamplingFrequencyPlug( *plug,
-                                        AvPlug::eAPD_Input,
+                                        Plug::eAPD_Input,
                                         samplingFrequency ) )
         {
             debugError( "setSampleRate: Setting sample rate failed\n" );
             return false;
         }
 
-        plug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output,  0 );
+        plug = getPlugById( m_pcrPlugs, Plug::eAPD_Output,  0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
             return false;
         }
 
         if ( !setSamplingFrequencyPlug( *plug,
-                                        AvPlug::eAPD_Output,
+                                        Plug::eAPD_Output,
                                         samplingFrequency ) )
         {
             debugError( "setSampleRate: Setting sample rate failed\n" );
@@ -804,12 +607,12 @@ AvDevice::setSamplingFrequency( int s )
 
 int
 AvDevice::getSamplingFrequency( ) {
-    AvPlug* inputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
+    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
         return false;
     }
-    AvPlug* outputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output, 0 );
+    AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Output, 0 );
     if ( !outputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
         return false;
@@ -826,8 +629,8 @@ AvDevice::getSamplingFrequency( ) {
 
 
 bool
-AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
-                                    AvPlug::EAvPlugDirection direction,
+AvDevice::setSamplingFrequencyPlug( AVC::Plug& plug,
+                                    Plug::EPlugDirection direction,
                                     ESamplingFrequency samplingFrequency )
 {
 
@@ -839,7 +642,7 @@ AvDevice::setSamplingFrequencyPlug( AvPlug& plug,
 
     extStreamFormatCmd.setPlugAddress(
         PlugAddress(
-            AvPlug::convertPlugDirection(direction ),
+            Plug::convertPlugDirection(direction ),
             PlugAddress::ePAM_Unit,
             unitPlugAddress ) );
 
@@ -936,35 +739,21 @@ AvDevice::showDevice()
     m_pPlugManager->showPlugs();
 }
 
-void
-AvDevice::showAvPlugs( AvPlugVector& plugs ) const
-{
-    int i = 0;
-    for ( AvPlugVector::const_iterator it = plugs.begin();
-          it != plugs.end();
-          ++it, ++i )
-    {
-        AvPlug* plug = *it;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Plug %d\n", i );
-        plug->showPlug();
-    }
-}
-
 bool
-AvDevice::checkSyncConnectionsAndAddToList( AvPlugVector& plhs,
-                                            AvPlugVector& prhs,
+AvDevice::checkSyncConnectionsAndAddToList( PlugVector& plhs,
+                                            PlugVector& prhs,
                                             std::string syncDescription )
 {
-    for ( AvPlugVector::iterator plIt = plhs.begin();
+    for ( PlugVector::iterator plIt = plhs.begin();
           plIt != plhs.end();
           ++plIt )
     {
-        AvPlug* pl = *plIt;
-        for ( AvPlugVector::iterator prIt = prhs.begin();
+        AVC::Plug* pl = *plIt;
+        for ( PlugVector::iterator prIt = prhs.begin();
               prIt != prhs.end();
               ++prIt )
         {
-            AvPlug* pr = *prIt;
+            AVC::Plug* pr = *prIt;
             if ( pl->inquireConnnection( *pr ) ) {
                 m_syncInfos.push_back( SyncInfo( *pl, *pr, syncDescription ) );
                 debugOutput( DEBUG_LEVEL_NORMAL,
@@ -1023,12 +812,12 @@ AvDevice::prepare() {
     ///////////
     // get plugs
 
-    AvPlug* inputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
+    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
         return false;
     }
-    AvPlug* outputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Output, 0 );
+    AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Output, 0 );
     if ( !outputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
         return false;
@@ -1108,7 +897,7 @@ AvDevice::prepare() {
 
 bool
 AvDevice::addPlugToProcessor(
-    AvPlug& plug,
+    AVC::Plug& plug,
     Streaming::StreamProcessor *processor,
     Streaming::AmdtpAudioPort::E_Direction direction) {
 
@@ -1117,19 +906,19 @@ AvDevice::addPlugToProcessor(
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
     }
 
-    AvPlug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
-    for ( AvPlug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
+    Plug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
+    for ( Plug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
           it != clusterInfos.end();
           ++it )
     {
-        const AvPlug::ClusterInfo* clusterInfo = &( *it );
+        const Plug::ClusterInfo* clusterInfo = &( *it );
 
-        AvPlug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
-        for ( AvPlug::ChannelInfoVector::const_iterator it = channelInfos.begin();
+        Plug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
+        for ( Plug::ChannelInfoVector::const_iterator it = channelInfos.begin();
               it != channelInfos.end();
               ++it )
         {
-            const AvPlug::ChannelInfo* channelInfo = &( *it );
+            const Plug::ChannelInfo* channelInfo = &( *it );
             std::ostringstream portname;
 
             portname << id << "_" << channelInfo->m_name;
@@ -1354,7 +1143,7 @@ template <typename T> bool serializeVector( Glib::ustring path,
 
 template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
                                                            Util::IODeserialize& deser,
-                                                           AvDevice& avDevice,
+                                                           Unit& avDevice,
                                                            VT& vec )
 {
     int i = 0;
@@ -1377,94 +1166,14 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
 }
 
 bool
-AvDevice::serializeSyncInfoVector( Glib::ustring basePath,
-                                   Util::IOSerialize& ser,
-                                   const SyncInfoVector& vec )
-{
-    bool result = true;
-    int i = 0;
-
-    for ( SyncInfoVector::const_iterator it = vec.begin();
-          it != vec.end();
-          ++it )
-    {
-        const SyncInfo& info = *it;
-
-        std::ostringstream strstrm;
-        strstrm << basePath << i << "/";
-
-        result &= ser.write( strstrm.str() + "m_source", info.m_source->getGlobalId() );
-        result &= ser.write( strstrm.str() + "m_destination", info.m_destination->getGlobalId() );
-        result &= ser.write( strstrm.str() + "m_description", Glib::ustring( info.m_description ) );
-
-        i++;
-    }
-
-    return result;
-}
-
-bool
-AvDevice::deserializeSyncInfoVector( Glib::ustring basePath,
-                                     Util::IODeserialize& deser,
-                                     AvDevice& avDevice,
-                                     SyncInfoVector& vec )
-{
-    int i = 0;
-    bool bFinished = false;
-    do {
-        bool result;
-        std::ostringstream strstrm;
-        strstrm << basePath << i << "/";
-
-        plug_id_t sourceId;
-        plug_id_t destinationId;
-        Glib::ustring description;
-
-        result  = deser.read( strstrm.str() + "m_source", sourceId );
-        result &= deser.read( strstrm.str() + "m_destination", destinationId );
-        result &= deser.read( strstrm.str() + "m_description", description );
-
-        if ( result ) {
-            SyncInfo syncInfo;
-            syncInfo.m_source = avDevice.getPlugManager().getPlug( sourceId );
-            syncInfo.m_destination = avDevice.getPlugManager().getPlug( destinationId );
-            syncInfo.m_description = description;
-
-            vec.push_back( syncInfo );
-            i++;
-        } else {
-            bFinished = true;
-        }
-    } while ( !bFinished );
-
-    return true;
-}
-
-static bool
-deserializeAvPlugUpdateConnections( Glib::ustring path,
-                                    Util::IODeserialize& deser,
-                                    AvPlugVector& vec )
-{
-    bool result = true;
-    for ( AvPlugVector::iterator it = vec.begin();
-          it != vec.end();
-          ++it )
-    {
-        AvPlug* pPlug = *it;
-        result &= pPlug->deserializeUpdate( path, deser );
-    }
-    return result;
-}
-
-bool
 AvDevice::serialize( Glib::ustring basePath,
                      Util::IOSerialize& ser ) const
 {
 
     bool result;
     result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
-    result &= ser.write( basePath + "m_verboseLevel", m_verboseLevel );
-    result &= m_pPlugManager->serialize( basePath + "AvPlug", ser ); // serialize all av plugs
+    result &= ser.write( basePath + "m_verboseLevel", getDebugLevel() );
+    result &= m_pPlugManager->serialize( basePath + "Plug", ser ); // serialize all av plugs
     result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
     result &= serializeVector( basePath + "Subunit", ser, m_subunits );
     result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
@@ -1508,28 +1217,11 @@ AvDevice::deserialize( Glib::ustring basePath,
 
     if ( pDev ) {
         bool result;
-        result  = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
-
-        if (pDev->m_pPlugManager) delete pDev->m_pPlugManager;
-        pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, *pDev );
-        if ( !pDev->m_pPlugManager ) {
-            delete pDev;
-            return 0;
-        }
-        result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_pcrPlugs );
-        result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_externalPlugs );
-        result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, *pDev, pDev->m_plugConnections );
-        result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, *pDev, pDev->m_subunits );
-        result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, *pDev, pDev->m_syncInfos );
-
-        unsigned int i;
-        result &= deser.read( basePath + "m_activeSyncInfo", i );
-
-        if ( result ) {
-            if ( i < pDev->m_syncInfos.size() ) {
-                pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
-            }
-        }
+        int verboseLevel;
+        result  = deser.read( basePath + "m_verboseLevel", verboseLevel );
+        setDebugLevel( verboseLevel );
+        
+        result &= AVC::Unit::deserialize(basePath, pDev, deser, ieee1394Service);
 
         result &= deserializeOptions( basePath + "Options", deser, *pDev );
     }

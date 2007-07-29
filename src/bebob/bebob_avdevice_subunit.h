@@ -34,77 +34,19 @@
 
 #include <vector>
 
+#include "libavc/general/avc_subunit.h"
+#include "libavc/general/avc_plug.h"
+
 namespace BeBoB {
-
-class AvDevice;
-
-class AvDeviceSubunit {
- public:
-    AvDeviceSubunit( AvDevice& avDevice,
-             AVC::ESubunitType type,
-             AVC::subunit_t id,
-             int verboseLevel );
-    virtual ~AvDeviceSubunit();
-
-    virtual bool discover();
-    virtual bool discoverConnections();
-    virtual const char* getName() = 0;
-
-    bool addPlug( AvPlug& plug );
-
-    AVC::subunit_t getSubunitId()
-    { return m_sbId; }
-    AVC::ESubunitType getSubunitType()
-    { return m_sbType; }
-
-    AvPlugVector& getPlugs()
-    { return m_plugs; }
-    AvPlug* getPlug(AvPlug::EAvPlugDirection direction, AVC::plug_id_t plugId);
-
-
-    AvDevice& getAvDevice() const
-        { return *m_avDevice; }
-
-
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static AvDeviceSubunit* deserialize( Glib::ustring basePath,
-                     Util::IODeserialize& deser,
-                                         AvDevice& avDevice );
- protected:
-    AvDeviceSubunit();
-
-    bool discoverPlugs();
-    bool discoverPlugs(AvPlug::EAvPlugDirection plugDirection,
-                       AVC::plug_id_t plugMaxId );
-
-    virtual bool serializeChild( Glib::ustring basePath,
-                                 Util::IOSerialize& ser ) const = 0;
-    virtual bool deserializeChild( Glib::ustring basePath,
-                                   Util::IODeserialize& deser,
-                                   AvDevice& avDevice ) = 0;
-
- protected:
-    AvDevice*                m_avDevice;
-    AVC::ESubunitType m_sbType;
-    AVC::subunit_t                m_sbId;
-    int                      m_verboseLevel;
-
-    AvPlugVector             m_plugs;
-
-    DECLARE_DEBUG_MODULE;
-};
-
-typedef std::vector<AvDeviceSubunit*> AvDeviceSubunitVector;
 
 /////////////////////////////
 
-class AvDeviceSubunitAudio: public AvDeviceSubunit {
+class SubunitAudio: public AVC::SubunitAudio {
  public:
-    AvDeviceSubunitAudio( AvDevice& avDevice,
-              AVC::subunit_t id,
-              int verboseLevel );
-    AvDeviceSubunitAudio();
-    virtual ~AvDeviceSubunitAudio();
+    SubunitAudio( AVC::Unit& avDevice,
+              AVC::subunit_t id );
+    SubunitAudio();
+    virtual ~SubunitAudio();
 
     virtual bool discover();
     virtual bool discoverConnections();
@@ -128,7 +70,7 @@ protected:
                                  Util::IOSerialize& ser ) const;
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
-                                   AvDevice& avDevice );
+                                   AVC::Unit& unit );
 
 protected:
     FunctionBlockVector m_functions;
@@ -136,13 +78,12 @@ protected:
 
 /////////////////////////////
 
-class AvDeviceSubunitMusic: public AvDeviceSubunit {
+class SubunitMusic: public AVC::SubunitMusic {
  public:
-    AvDeviceSubunitMusic( AvDevice& avDevice,
-              AVC::subunit_t id,
-              int verboseLevel );
-    AvDeviceSubunitMusic();
-    virtual ~AvDeviceSubunitMusic();
+    SubunitMusic( AVC::Unit& avDevice,
+              AVC::subunit_t id );
+    SubunitMusic();
+    virtual ~SubunitMusic();
 
     virtual const char* getName();
 
@@ -151,7 +92,7 @@ protected:
                                  Util::IOSerialize& ser ) const;
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
-                                   AvDevice& avDevice );
+                                   AVC::Unit& unit );
 };
 
 }

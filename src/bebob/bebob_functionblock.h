@@ -27,11 +27,15 @@
 #include "bebob/bebob_avplug.h"
 
 #include "libavc/avc_definitions.h"
+// #include "libavc/general/avc_subunit.h"
+
 #include "debugmodule/debugmodule.h"
 
-namespace BeBoB {
+namespace AVC {
+    class Subunit;
+}
 
-class AvDeviceSubunit;
+namespace BeBoB {
 
 class FunctionBlock {
 public:
@@ -49,8 +53,8 @@ public:
         eSP_NoSpecialPurpose
     };
 
-    FunctionBlock( AvDeviceSubunit& subunit,
-           AVC::function_block_type_t type,
+    FunctionBlock( AVC::Subunit& subunit,
+                   AVC::function_block_type_t type,
                    AVC::function_block_type_t subtype,
                    AVC::function_block_id_t id,
                    ESpecialPurpose purpose,
@@ -73,14 +77,14 @@ public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static FunctionBlock* deserialize( Glib::ustring basePath,
                        Util::IODeserialize& deser,
-                       AvDevice& avDevice,
-                                       AvDeviceSubunit& subunit);
+                       AVC::Unit& unit,
+                       AVC::Subunit& subunit);
 protected:
-    bool discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
+    bool discoverPlugs( AVC::Plug::EPlugDirection plugDirection,
                         AVC::plug_id_t plugMaxId );
 
 protected:
-    AvDeviceSubunit*      m_subunit;
+    AVC::Subunit*      m_subunit;
     AVC::function_block_type_t m_type;
     AVC::function_block_type_t m_subtype;
     AVC::function_block_id_t   m_id;
@@ -88,7 +92,7 @@ protected:
     AVC::no_of_input_plugs_t   m_nrOfInputPlugs;
     AVC::no_of_output_plugs_t  m_nrOfOutputPlugs;
     int                   m_verbose;
-    AvPlugVector          m_plugs;
+    AVC::PlugVector          m_plugs;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -101,7 +105,7 @@ typedef std::vector<FunctionBlock*> FunctionBlockVector;
 class FunctionBlockSelector: public FunctionBlock
 {
 public:
-    FunctionBlockSelector(AvDeviceSubunit& subunit,
+    FunctionBlockSelector(AVC::Subunit& subunit,
                           AVC::function_block_id_t id,
                           ESpecialPurpose purpose,
                           AVC::no_of_input_plugs_t nrOfInputPlugs,
@@ -126,7 +130,7 @@ protected:
 class FunctionBlockFeature: public FunctionBlock
 {
 public:
-    FunctionBlockFeature(AvDeviceSubunit& subunit,
+    FunctionBlockFeature(AVC::Subunit& subunit,
                          AVC::function_block_id_t id,
                          ESpecialPurpose purpose,
                          AVC::no_of_input_plugs_t nrOfInputPlugs,
@@ -168,7 +172,7 @@ protected:
 class FunctionBlockEnhancedMixer: public FunctionBlock
 {
 public:
-    FunctionBlockEnhancedMixer( AvDeviceSubunit& subunit,
+    FunctionBlockEnhancedMixer( AVC::Subunit& subunit,
                                 AVC::function_block_id_t id,
                                 ESpecialPurpose purpose,
                                 AVC::no_of_input_plugs_t nrOfInputPlugs,
@@ -193,7 +197,7 @@ protected:
 class FunctionBlockProcessing: public FunctionBlock
 {
 public:
-    FunctionBlockProcessing( AvDeviceSubunit& subunit,
+    FunctionBlockProcessing( AVC::Subunit& subunit,
                              AVC::function_block_id_t id,
                              ESpecialPurpose purpose,
                              AVC::no_of_input_plugs_t nrOfInputPlugs,
@@ -218,7 +222,7 @@ protected:
 class FunctionBlockCodec: public FunctionBlock
 {
 public:
-    FunctionBlockCodec(AvDeviceSubunit& subunit,
+    FunctionBlockCodec(AVC::Subunit& subunit,
                        AVC::function_block_id_t id,
                        ESpecialPurpose purpose,
                        AVC::no_of_input_plugs_t nrOfInputPlugs,
