@@ -325,7 +325,7 @@ template <typename T> bool serializeVector( Glib::ustring path,
 
 template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
                                                            Util::IODeserialize& deser,
-                                                           Unit& avDevice,
+                                                           Unit& unit,
                                                            VT& vec )
 {
     int i = 0;
@@ -335,7 +335,7 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
         strstrm << path << i << "/";
         T* ptr = T::deserialize( strstrm.str(),
                                  deser,
-                                 avDevice );
+                                 unit );
         if ( ptr ) {
             vec.push_back( ptr );
             i++;
@@ -377,7 +377,7 @@ Unit::serializeSyncInfoVector( Glib::ustring basePath,
 bool
 Unit::deserializeSyncInfoVector( Glib::ustring basePath,
                                      Util::IODeserialize& deser,
-                                     Unit& avDevice,
+                                     Unit& unit,
                                      SyncInfoVector& vec )
 {
     int i = 0;
@@ -397,8 +397,8 @@ Unit::deserializeSyncInfoVector( Glib::ustring basePath,
 
         if ( result ) {
             SyncInfo syncInfo;
-            syncInfo.m_source = avDevice.getPlugManager().getPlug( sourceId );
-            syncInfo.m_destination = avDevice.getPlugManager().getPlug( destinationId );
+            syncInfo.m_source = unit.getPlugManager().getPlug( sourceId );
+            syncInfo.m_destination = unit.getPlugManager().getPlug( destinationId );
             syncInfo.m_description = description;
 
             vec.push_back( syncInfo );
@@ -438,7 +438,7 @@ Unit::serialize( Glib::ustring basePath,
     result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
     result &= serializeVector( basePath + "Subunit", ser, m_subunits );
     result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
-
+    
     int i = 0;
     for ( SyncInfoVector::const_iterator it = m_syncInfos.begin();
           it != m_syncInfos.end();
@@ -461,38 +461,34 @@ Unit::deserialize( Glib::ustring basePath,
                    Util::IODeserialize& deser,
                    Ieee1394Service& ieee1394Service )
 {
+    bool result;
+    
+    int verboseLevel;
+    result  = deser.read( basePath + "m_verboseLevel_unit", verboseLevel );
+    setDebugLevel( verboseLevel );
+    
+    if (pDev->m_pPlugManager) delete pDev->m_pPlugManager;
+    pDev->m_pPlugManager = PlugManager::deserialize( basePath + "Plug", deser, *pDev );
+    if ( !pDev->m_pPlugManager ) {
+        return false;
+    }
+    
+    result &= deserializePlugUpdateConnections( basePath + "Plug", deser, pDev->m_pcrPlugs );
+    result &= deserializePlugUpdateConnections( basePath + "Plug", deser, pDev->m_externalPlugs );
+    result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser, *pDev, pDev->m_plugConnections );
+    result &= deserializeVector<Subunit>( basePath + "Subunit",  deser, *pDev, pDev->m_subunits );
+    result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, *pDev, pDev->m_syncInfos );
 
-    if ( pDev ) {
-        bool result;
-        
-        int verboseLevel;
-        result  = deser.read( basePath + "m_verboseLevel_unit", verboseLevel );
-        setDebugLevel( verboseLevel );
-        
-        if (pDev->m_pPlugManager) delete pDev->m_pPlugManager;
-        pDev->m_pPlugManager = PlugManager::deserialize( basePath + "Plug", deser, *pDev );
-        if ( !pDev->m_pPlugManager ) {
-            delete pDev;
-            return 0;
+    unsigned int i;
+    result &= deser.read( basePath + "m_activeSyncInfo", i );
+
+    if ( result ) {
+        if ( i < pDev->m_syncInfos.size() ) {
+            pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
         }
-        result &= deserializePlugUpdateConnections( basePath + "Plug", deser, pDev->m_pcrPlugs );
-        result &= deserializePlugUpdateConnections( basePath + "Plug", deser, pDev->m_externalPlugs );
-        result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser, *pDev, pDev->m_plugConnections );
-        result &= deserializeVector<Subunit>( basePath + "Subunit",  deser, *pDev, pDev->m_subunits );
-        result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, *pDev, pDev->m_syncInfos );
-
-        unsigned int i;
-        result &= deser.read( basePath + "m_activeSyncInfo", i );
-
-        if ( result ) {
-            if ( i < pDev->m_syncInfos.size() ) {
-                pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
-            }
-        }
-
     }
 
-    return pDev;
+    return true;
 }
 
 } // end of namespace
