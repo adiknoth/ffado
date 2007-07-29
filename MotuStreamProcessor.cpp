@@ -55,33 +55,31 @@ uint32_t timestamp = CYCLE_TIMER_TO_TICKS(sph & 0x1ffffff);
 uint32_t now_cycles = CYCLE_TIMER_GET_CYCLES(ct_now);
 
 uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
-  // If the cycles have wrapped, correct ts_sec so it represents when timestamp
-  // was received.  The timestamps sent by the MOTU are always 1 or two cycles
-  // in advance of the cycle timer (reasons unknown at this stage).  In addition,
-  // iso buffering can delay the arrival of packets for quite a number of cycles
-  // (have seen a delay >12 cycles).
-  // Every so often we also see sph wrapping ahead of ct_now, so deal with that
-  // too.
-  if (CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000) {
-//debugOutput(DEBUG_LEVEL_VERBOSE, "now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
-    if (ts_sec)
-      ts_sec--;
-    else
-      ts_sec = 127;
-  } else
-  if (now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000) {
-//debugOutput(DEBUG_LEVEL_VERBOSE, "inverted wrap: now=%d, ct=%d\n", now_cycles, CYCLE_TIMER_GET_CYCLES(sph));
-    if (ts_sec == 127)
-      ts_sec = 0;
-    else
-      ts_sec++;
-  }
-  return timestamp + ts_sec*TICKS_PER_SECOND;
+    // If the cycles have wrapped, correct ts_sec so it represents when timestamp
+    // was received.  The timestamps sent by the MOTU are always 1 or two cycles
+    // in advance of the cycle timer (reasons unknown at this stage).  In addition,
+    // iso buffering can delay the arrival of packets for quite a number of cycles
+    // (have seen a delay >12 cycles).
+    // Every so often we also see sph wrapping ahead of ct_now, so deal with that
+    // too.
+    if (CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000) {
+        if (ts_sec)
+            ts_sec--;
+        else
+            ts_sec = 127;
+    } else
+    if (now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000) {
+        if (ts_sec == 127)
+            ts_sec = 0;
+        else
+            ts_sec++;
+    }
+    return timestamp + ts_sec*TICKS_PER_SECOND;
 }
 
 // Convert a full timestamp into an SPH timestamp as required by the MOTU
 static inline uint32_t fullTicksToSph(int64_t timestamp) {
-  return TICKS_TO_CYCLE_TIMER(timestamp) & 0x1ffffff;
+    return TICKS_TO_CYCLE_TIMER(timestamp) & 0x1ffffff;
 }
 
 /* transmit */
@@ -89,7 +87,7 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(int port, int framerate
         unsigned int event_size)
     : TransmitStreamProcessor(port, framerate), m_event_size(event_size),
     m_tx_dbc(0),
-    m_closedown_count(-1), m_streaming_active(0) {
+    m_startup_count(-1), m_closedown_count(-1), m_streaming_active(0) {
 }
 
 MotuTransmitStreamProcessor::~MotuTransmitStreamProcessor() {
@@ -190,18 +188,26 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             // ts_head however is for cycle CT-sync_lag_cycles, and lies
             // therefore sync_lag_cycles * TICKS_PER_CYCLE earlier than
             // T1.
-            ts_head = addTicks((int64_t)ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
+            ts_head = addTicks(ts_head, sync_lag_cycles * TICKS_PER_CYCLE);
 
 // These are just copied from AmdtpStreamProcessor.  At some point we should
 // verify that they make sense for the MOTU.
-            ts_head = substractTicks((int64_t)ts_head, TICKS_PER_CYCLE);
+            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
             // account for the number of cycles we are too late to enable
-            ts_head = addTicks((int64_t)ts_head, cycles_past_enable * TICKS_PER_CYCLE);
+            ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
             // account for one extra packet of frames
-            ts_head = substractTicks((int64_t)ts_head,
-              (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
-
+// For the MOTU this subtraction doesn't seem necessary, and in general just makes it take
+// longer to achieve stable sync.
+//            ts_head = substractTicks(ts_head,
+//             (uint32_t)((float)n_events * m_SyncSource->m_data_buffer->getRate())); 
+//            ts_head = substractTicks(ts_head,
+//              (uint32_t)(m_SyncSource->m_data_buffer->getRate())); 
             m_data_buffer->setBufferTailTimestamp(ts_head);
+
+            // Set up the startup count which keeps the output muted during
+            // sync stabilisation at startup.  For now we go for about 2 seconds of
+            // muting.  Note that this is a count of *packets*, not frames.
+            m_startup_count = 2*m_framerate/n_events;
 
             #ifdef DEBUG
             if ((unsigned int)m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()) {
@@ -211,13 +217,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
             debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10lld, LAG=%03d, FC=%4d\n",
                             ts_head, sync_lag_cycles, m_data_buffer->getFrameCounter());
         } else {
-static int foo=0;
-if (!foo) {
-  debugOutput(DEBUG_LEVEL_VERBOSE,
-    "will enable tx StreamProcessor %p at %u, now is %d\n",
-    this, m_cycle_to_enable_at, cycle);
-  foo=1;
-}
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "will enable StreamProcessor %p at %u, now is %d\n",
                         this, m_cycle_to_enable_at, cycle);
@@ -227,6 +226,7 @@ if (!foo) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"disabling StreamProcessor %p at %u\n",
                     this, cycle);
         m_is_disabled=true;
+        m_startup_count = -1;
     }
 
     // Do housekeeping expected for all packets sent to the MOTU, even
@@ -234,21 +234,13 @@ if (!foo) {
     *sy = 0x00;
     *tag = 1;      // All MOTU packets have a CIP-like header
 
-
     // the base timestamp is the one of the next sample in the buffer
     m_data_buffer->getBufferHeadTimestamp(&ts_tmp, &fc); // thread safe
     ts_head = (int64_t)ts_tmp;
     int64_t timestamp = ts_head;
 
 //debugOutput(DEBUG_LEVEL_VERBOSE,"tx cycle %d, base timestamp %lld\n",cycle, ts_head);
-#if 0
-if (cycle<10000) {
-  debugOutput(DEBUG_LEVEL_VERBOSE,"cycle %d at %3d:%04d:%04d, timestamp=%3d:%04d:%04d (%d)\n",
-    cycle,
-    CYCLE_TIMER_GET_SECS(ctr), CYCLE_TIMER_GET_CYCLES(ctr), CYCLE_TIMER_GET_OFFSET(ctr),
-    TICKS_TO_SECS((uint32_t)timestamp), TICKS_TO_CYCLES((uint32_t)timestamp),TICKS_TO_OFFSET((uint32_t)timestamp),(uint32_t)timestamp);
-}
-#endif
+
     // we send a packet some cycles in advance, to avoid the
     // following situation:
     // suppose we are only a few ticks away from
@@ -266,15 +258,15 @@ if (cycle<10000) {
     ticks_to_advance += (int64_t)cycle_diff * TICKS_PER_CYCLE;
 
     // determine the 'now' time in ticks
-    uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
+//    uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
 
-    // time until the packet is to be sent (if > 0: send packet)
-//debugOutput(DEBUG_LEVEL_VERBOSE,"pre: timestamp=%lld, cycle_timer=%lld, adv=%lld, cdiff=%d\n",
-// timestamp, cycle_timer,ticks_to_advance,cycle_diff);
-    int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
-//debugOutput(DEBUG_LEVEL_VERBOSE,"post\n");
-
-until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
+    // time until the packet is to be sent (if <= 0: send packet)
+    // For Amdtp this looked like
+    //   int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
+    // However, this didn't seem to work well with the MOTU's buffer structure.
+    // For now we'll revert to the "send trigger" we used earlier since this
+    // seems to work.
+    int32_t until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
 
     // Size of a single data frame in quadlets
     unsigned dbs = m_event_size / 4;
@@ -294,32 +286,36 @@ until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
         quadlet++;
         *length = 8;
 
-        #warning high-pitched sound protection removed!
-        // In the disabled state simply zero all data sent to the MOTU.  If
-        // a stream of empty packets are sent once iso streaming is enabled
-        // the MOTU tends to emit high-pitched audio (approx 10 kHz) for
-        // some reason.  This is not completely sufficient, however (zeroed
-        // packets must also be sent on iso closedown).
-
-        // FIXME: Currently we simply send empty packets to the MOTU when
-        // the stream is disabled so the "m_disabled == 0" code is never
-        // executed.  However, this may change in future so it's left in
-        // for the moment for reference.
-        // FIXME: Currently we don't read the buffer at all during closedown.
-        // We could (and silently junk the contents) if it turned out to be
-        // more helpful.
-
-//if (!m_is_disabled && m_running)
-//  return RAW1394_ISO_OK;
-//else
         return RAW1394_ISO_DEFER;
     }
 
     // add the transmit transfer delay to construct the playout time
     ffado_timestamp_t ts=addTicks(timestamp, TRANSMIT_TRANSFER_DELAY);
 
-    if (m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
+    // Only read frames from the tx buffer when we're not in the process of
+    // stopping.  When preparing for stop the buffer isn't necessarily being
+    // replinished so it's possible to cause a buffer underflow during
+    // shutdown if the buffer is read during this time.
+    if (m_closedown_count!=-1 || m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
 
+#if TESTTONE
+        // FIXME: remove this hacked in 1 kHz test signal to
+        // analog-1 when testing is complete.  Note that the tone is
+        // *never* added during closedown.
+        if (m_closedown_count<0) {
+            for (i=0; i<n_events; i++) {
+                static signed int a_cx = 0;
+                signed int val;
+                val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx/24576000.0)));
+                if ((a_cx+=512) >= 24576000) {
+                    a_cx -= 24576000;
+                }
+                *(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
+                *(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
+                *(data+8+i*m_event_size+18) = val & 0xff;
+            }
+        }
+#endif
         // Increment the dbc (data block count).  This is only done if the
         // packet will contain events - that is, we are due to send some
         // data.  Otherwise a pad packet is sent which contains the DBC of
@@ -341,55 +337,30 @@ until_next = (cycle >= TICKS_TO_CYCLES(timestamp))?-1:1;
 
         *length = n_events*m_event_size + 8;
 
-        // FIXME: if we choose to read the buffer even during closedown,
-        // here is where the data is silenced.
-        //   if (m_closedown_count >= 0)
-        //     memset(data+8, 0, read_size);
+        // Zero out data if we're in closedown or startup
+        if (m_closedown_count>=0 || m_startup_count>=0) {
+            memset(data+8,0,n_events*m_event_size);
+        }
+
+        // Account for this packet's frames during startup / closedown.  Note:
+        //  * m_startup_count: -1 = not in startup delay, >-1 = in startup delay.
+        //  * m_closedown_count: -1 = not in closedown mode, 0 = closedown
+        //    preparation now finished, >0 = closedown preparation in
+        //    progress.
         if (m_closedown_count > 0)
             m_closedown_count--;
+        if (m_startup_count >= 0)
+            m_startup_count--;
 
         // Set up each frames's SPH.  Note that the (int) typecast
         // appears to do rounding.
 
-float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
-//debugOutput(DEBUG_LEVEL_VERBOSE, "ticks per frame=%10.6f\n",ticks_per_frame);
+        float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
         for (i=0; i<n_events; i++, quadlet += dbs) {
 //FIXME: not sure which is best for the MOTU
 //            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
             int64_t ts_frame = addTicks(timestamp, (unsigned int)(i * ticks_per_frame));
             *quadlet = htonl(fullTicksToSph(ts_frame));
-#if 0
-if (i==0) {
-  debugOutput(DEBUG_LEVEL_VERBOSE,"  ts_frame=%8x (%3d:%04d:%04d)\n",ts_frame,
-    TICKS_TO_SECS(ts_frame), TICKS_TO_CYCLES(ts_frame), TICKS_TO_OFFSET(ts_frame));
-}
-#endif
-#if 0
-if (cycle<2) {
-  debugOutput(DEBUG_LEVEL_VERBOSE,"cycle %d: %d %d %d\n",
-    cycle,
-    TICKS_TO_SECS(ts_frame),
-    TICKS_TO_CYCLES(ts_frame),
-    TICKS_TO_OFFSET(ts_frame));
-}
-#endif
-#if TESTTONE
-            // FIXME: remove this hacked in 1 kHz test signal to
-            // analog-1 when testing is complete.  Note that the tone is
-            // *never* added during closedown.
-            if (m_closedown_count<0) {
-                static signed int a_cx = 0;
-                signed int val;
-                val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx/24576000.0)));
-                 if ((a_cx+=512) >= 24576000) {
-                    a_cx -= 24576000;
-                }
-                *(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
-                *(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
-                *(data+8+i*m_event_size+18) = val & 0xff;
-            }
-#endif
-
         }
 
         // Process all ports that should be handled on a per-packet base
@@ -413,9 +384,8 @@ if (cycle<2) {
         return RAW1394_ISO_AGAIN;
     } else { // there is no more data in the ringbuffer
 
-// FIXME: port to new timestamp type
-//        debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n",
-//                 now_cycles, cycle, TICKS_TO_CYCLES(ts));
+        debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n",
+                 now_cycles, cycle, TICKS_TO_CYCLES((int64_t)ts));
 
         // signal underrun
         m_xruns++;
@@ -1013,16 +983,6 @@ bool MotuReceiveStreamProcessor::init() {
     return true;
 }
 
-    // NOTE by PP: timestamp based sync fixes this automagically by
-    //             enforcing that the roundtrip latency is constant:
-    // Detect missed receive cycles
-    // FIXME: it would be nice to advance the rx buffer by the amount of
-    // frames missed.  However, since the MOTU transmits more frames per
-    // cycle than the average and "catches up" with periodic empty
-    // cycles it's not trivial to work out precisely how many frames
-    // were missed.  Ultimately I think we need to do so if sync is to
-    // be maintained across a transient receive failure.
-
 enum raw1394_iso_disposition
 MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
@@ -1032,8 +992,6 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // this is needed for the base class getLastCycle() to work.
     // this avoids a function call like StreamProcessor::updateLastCycle()
     m_last_cycle=cycle;
-
-//debugOutput(DEBUG_LEVEL_VERBOSE,"rx: enabled=%d, cycle=%d\n",!m_is_disabled,cycle);
 
     // check our enable status
     if (!m_disabled && m_is_disabled) {
@@ -1050,7 +1008,6 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // the previous timestamp is the one we need to start with
             // because we're going to update the buffer again this loop
             // using writeframes
-//            m_data_buffer->setBufferTailTimestamp(m_last_timestamp2);
             m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 
 debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n",
@@ -1058,13 +1015,6 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n
   m_data_buffer);
 
         } else {
-static int foo=0;
-if (!foo) {
-debugOutput(DEBUG_LEVEL_VERBOSE,
-  "will enable rx StreamProcessor %p at %u, now is %d\n",
-  this, m_cycle_to_enable_at, cycle);
-  foo=1;
-}
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "will enable StreamProcessor %p at %u, now is %d\n",
                     this, m_cycle_to_enable_at, cycle);
@@ -1101,29 +1051,11 @@ debugOutput(DEBUG_LEVEL_VERBOSE,
         //=> store the previous timestamp
         m_last_timestamp2=m_last_timestamp;
 
-        //=> convert the SYT to a full timestamp in ticks
-//        m_last_timestamp=sytRecvToFullTicks((uint32_t)ntohl(*(quadlet_t *)(data+8)),
-//                                        cycle, m_handler->getCycleTimer());
-//***
-// FIXME: it given that we later advance this to be the timestamp of the sample immediately following
-// this packet, it perhaps makes more sense to acquire the timestamp of the last frame in the packet.
-// Then it's just a matter of adding m_ticks_per_frame rather than frame_size times this.
-#if 0
-uint32_t first_sph = ntohl(*(quadlet_t *)(data+8));
-//uint32_t first_sph = ntohl(*(quadlet_t *)(data+8+(event_length*(n_events-1))));
-//        m_last_timestamp = ((first_sph & 0x1fff000)>>12)*3072 + (first_sph & 0xfff);
-//        m_last_timestamp = CYCLE_TIMER_TO_TICKS(first_sph & 0x1ffffff);
-m_last_timestamp = sphRecvToFullTicks(first_sph, m_handler->getCycleTimer());
-float frame_size=m_framerate<=48000?8:(m_framerate<=96000?16:32);
-uint64_t ts=addTicks(m_last_timestamp, (uint64_t)((frame_size-1) * m_ticks_per_frame));
-m_last_timestamp = ts;
-#endif
-
-#if 1
-uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
-m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
-#endif
-//debugOutput(DEBUG_LEVEL_VERBOSE,"ave ticks=%g\n",(m_last_timestamp-m_last_timestamp2)/8.0);
+        // Acquire the timestamp of the last frame in the packet just
+        // received.  Since every frame from the MOTU has its own timestamp
+        // we can just pick it straight from the packet.
+        uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
+        m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
                                                          
         // Signal that we're running
         if(!m_running && n_events && m_last_timestamp2 && m_last_timestamp) {
@@ -1139,33 +1071,12 @@ m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
             // estimate as to when a period might be ready. i.e. it will not
             // be ready earlier than this timestamp + period time
 
-            // the next (possible) sample is not this one, but lies
-            // SYT_INTERVAL * rate later
-            float frames_per_packet=m_framerate<=48000?8:(m_framerate<=96000?16:32);
-            uint64_t ts=addTicks(m_last_timestamp,
-                                 (uint64_t)(frames_per_packet * m_ticks_per_frame));
-//            uint64_t ts=addTicks(m_last_timestamp,
-//                                 (uint64_t)(m_ticks_per_frame));
-
-            // set the timestamp as if there will be a sample put into
-            // the buffer by the next packet.  This means we use the timestamp
-            // corresponding to the last frame which would have been added to the
-            // buffer this cycle if we weren't disabled.
-            //
-            // FIXME: in theory m_last_timestamp is already equal to the
-            // timestamp of the last frame/sample in this packet since
-            // that's what we used to set it in the first place.  However,
-            // if m_last_timestamp is used to set the buffer tail we get a
-            // series of "difference too large" warnings during the early
-            // stages after enabling.  These tend to indicate that the
-            // buffer timestamp is one packet out.  Using ts (which predicts
-            // the timestamp of the last frame of the *next* packet) seems
-            // to stop these warnings most of the time and allow for a
-            // smoother startup.
-            // On second thoughts, perhaps it doesn't help much after all.
-//            m_data_buffer->setBufferTailTimestamp(ts);
+            // Set the timestamp as if a sample was put into the buffer by
+            // this present packet.  This means we use the timestamp
+            // corresponding to the last frame which would have been added
+            // to the buffer this cycle if we weren't disabled - that is,
+            // m_last_timestamp.
             m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
-//debugOutput(DEBUG_LEVEL_VERBOSE,"%p, last ts=%lld, ts=%lld, lts2=%lld\n", m_data_buffer, m_last_timestamp, ts, m_last_timestamp2);
 
             return RAW1394_ISO_DEFER;
         }
