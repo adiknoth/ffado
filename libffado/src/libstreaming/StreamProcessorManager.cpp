@@ -779,7 +779,7 @@ bool StreamProcessorManager::waitForPeriod() {
     time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
 
     while(time_till_next_period > 0) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
 
         // wait for the period
         usleep(time_till_next_period);
