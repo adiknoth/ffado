@@ -39,6 +39,7 @@ AC_INIT(libffado, ffado_version, <ffado-devel@lists.sf.net>)
 #   change to C+1:0:0
 # - If the interface is the same as the previous version, change to C:R+1:A
 
+
 LT_VERSION=1:0:0
 AC_SUBST(LT_VERSION)
 
@@ -55,7 +56,6 @@ AC_CONFIG_SRCDIR([src/ffado.cpp])
 AC_CONFIG_HEADER([config.h])
 AC_GNU_SOURCE
 AC_LANG(C++)
-AC_PROG_CXX
 
 # Prefix handling
 AC_MSG_CHECKING(prefix)
