@@ -1,4 +1,5 @@
 /*
+ * Copyright (C)      2007 by Pieter Palmers
  * Copyright (C) 2005-2007 by Daniel Wagner
  *
  * This file is part of FFADO
@@ -24,11 +25,11 @@
 #ifndef AVC_SUBUNIT_H
 #define AVC_SUBUNIT_H
 
-#include "avc_plug.h"
-
 #include "debugmodule/debugmodule.h"
-#include "../general/avc_extended_subunit_info.h"
+
 #include "../avc_definitions.h"
+#include "../general/avc_plug.h"
+#include "../general/avc_extended_subunit_info.h"
 #include "../general/avc_generic.h"
 #include "../audiosubunit/avc_function_block.h"
 
@@ -40,8 +41,6 @@
 namespace AVC {
 
 class Unit;
-
-
 
 class Subunit {
  public:
@@ -55,14 +54,14 @@ class Subunit {
     {//FIXME:
     #warning FIXME
     };
-    
+
     virtual const char* getName() = 0;
 
     subunit_t getSubunitId()
     { return m_sbId; }
     ESubunitType getSubunitType()
     { return m_sbType; }
-    
+
     bool addPlug( Plug& plug );
 
     PlugVector& getPlugs()
@@ -102,62 +101,6 @@ class Subunit {
 };
 
 typedef std::vector<Subunit*> SubunitVector;
-
-// /////////////////////////////
-
-class SubunitAudio: public Subunit {
- public:
-    SubunitAudio( Unit& avDevice,
-                  subunit_t id );
-    SubunitAudio();
-    virtual ~SubunitAudio();
-
-    virtual bool discover();
-//     virtual bool discoverConnections();
-// 
-    virtual const char* getName();
-// 
-    BeBoB::FunctionBlockVector getFunctionBlocks() { return m_functions; };
-//     
-// protected:
-//     bool discoverFunctionBlocks();
-//     bool discoverFunctionBlocksDo(
-//         ExtendedSubunitInfoCmd::EFunctionBlockType fbType );
-//     bool createFunctionBlock(
-//         ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
-//         ExtendedSubunitInfoPageData& data );
-// 
-//     FunctionBlock::ESpecialPurpose convertSpecialPurpose(
-//         function_block_special_purpose_t specialPurpose );
-
-    virtual bool serializeChild( Glib::ustring basePath,
-                                 Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
-                                   Util::IODeserialize& deser,
-                                   Unit& avDevice );
-
-protected:
-     BeBoB::FunctionBlockVector m_functions;
-};
-
-// /////////////////////////////
-
-class SubunitMusic: public Subunit {
- public:
-    SubunitMusic( Unit& avDevice,
-              subunit_t id );
-    SubunitMusic();
-    virtual ~SubunitMusic();
-
-    virtual const char* getName();
-
-protected:
-    virtual bool serializeChild( Glib::ustring basePath,
-                                 Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
-                                   Util::IODeserialize& deser,
-                                   Unit& avDevice );
-};
 
 }
 

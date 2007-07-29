@@ -31,8 +31,10 @@
 
 #include "../avc_definitions.h"
 #include "../general/avc_extended_cmd_generic.h"
-#include "avc_subunit.h"
-#include "avc_plug.h"
+#include "../general/avc_subunit.h"
+#include "../general/avc_plug.h"
+#include "../musicsubunit/avc_musicsubunit.h"
+#include "../audiosubunit/avc_audiosubunit.h"
 
 #include "libutil/serialize.h"
 

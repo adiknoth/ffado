@@ -35,6 +35,8 @@
 #include <vector>
 
 #include "libavc/general/avc_subunit.h"
+#include "libavc/musicsubunit/avc_musicsubunit.h"
+#include "libavc/audiosubunit/avc_audiosubunit.h"
 #include "libavc/general/avc_plug.h"
 
 namespace BeBoB {

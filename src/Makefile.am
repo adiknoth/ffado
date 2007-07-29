@@ -58,6 +58,9 @@ noinst_HEADERS = \
 	libavc/streamformat/avc_extended_stream_format.h \
 	libavc/util/avc_serialize.h \
 	libavc/musicsubunit/avc_descriptor_music.h \
+	libavc/musicsubunit/avc_musicsubunit.h \
+	libavc/audiosubunit/avc_audiosubunit.h \
+	libavc/audiosubunit/avc_function_block.h \
 	libavc/descriptors/avc_descriptor_cmd.h \
 	libavc/descriptors/avc_descriptor.h \
 	libavc/general/avc_plug_info.h \
@@ -95,10 +98,12 @@ libffado_la_SOURCES = \
 	ffado_streaming.cpp \
 	ffadodevice.cpp \
 	debugmodule/debugmodule.cpp \
-	libavc/audiosubunit/avc_function_block.cpp \
 	libavc/streamformat/avc_extended_stream_format.cpp \
 	libavc/util/avc_serialize.cpp \
 	libavc/musicsubunit/avc_descriptor_music.cpp \
+	libavc/musicsubunit/avc_musicsubunit.cpp \
+	libavc/audiosubunit/avc_audiosubunit.cpp \
+	libavc/audiosubunit/avc_function_block.cpp \
 	libavc/descriptors/avc_descriptor_cmd.cpp \
 	libavc/descriptors/avc_descriptor.cpp \
 	libavc/general/avc_extended_subunit_info.cpp \
