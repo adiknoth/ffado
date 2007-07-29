@@ -209,7 +209,7 @@ bool TimestampedBuffer::setTickOffset(ffado_timestamp_t nticks) {
     // startup.
     pthread_mutex_lock(&m_framecounter_lock);
     m_buffer_tail_timestamp = m_buffer_tail_timestamp - m_tick_offset + nticks;
-    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((float)m_buffer_tail_timestamp + m_dll_e2);
+    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
     m_tick_offset=nticks;
     pthread_mutex_unlock(&m_framecounter_lock);
 
@@ -654,8 +654,8 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
 
     m_buffer_tail_timestamp = ts;
 
-    m_dll_e2=m_update_period * m_nominal_rate;
-    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((float)m_buffer_tail_timestamp + m_dll_e2);
+    m_dll_e2=m_update_period * (double)m_nominal_rate;
+    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
 
     pthread_mutex_unlock(&m_framecounter_lock);
 
@@ -701,8 +701,8 @@ void TimestampedBuffer::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp) 
 
     m_buffer_tail_timestamp = ts;
 
-    m_dll_e2=m_update_period * m_nominal_rate;
-    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((float)m_buffer_tail_timestamp + m_dll_e2);
+    m_dll_e2=m_update_period * (double)m_nominal_rate;
+    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
 
     pthread_mutex_unlock(&m_framecounter_lock);
 

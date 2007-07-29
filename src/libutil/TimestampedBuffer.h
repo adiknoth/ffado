@@ -185,7 +185,9 @@ private:
     pthread_mutex_t m_framecounter_lock;
 
     // tracking DLL variables
-    float m_dll_e2;
+// JMW: try double for this too
+//    float m_dll_e2;
+    double m_dll_e2;
     float m_dll_b;
     float m_dll_c;
 

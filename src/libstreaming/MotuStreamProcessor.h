@@ -84,6 +84,9 @@ protected:
     // Keep track of transmission data block count
     unsigned int m_tx_dbc;
 
+    // Used to zero output data during startup while sync is established
+    signed int m_startup_count;
+
     // Used to keep track of the close-down zeroing of output data
     signed int m_closedown_count;
     signed int m_streaming_active;
