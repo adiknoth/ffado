@@ -225,7 +225,6 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 	
 	dev->connections=calloc(dev->nb_connections_playback+dev->nb_connections_capture, sizeof(freebob_connection_t));
 	
-	
 	for (c=0;c<dev->nb_connections_capture;c++) {
 		memcpy(&dev->connections[c].spec, libfreebob_capture_connections->connections[c], sizeof(freebob_connection_spec_t));
 		dev->connections[c].spec.direction=FREEBOB_CAPTURE;
@@ -235,6 +234,31 @@ freebob_device_t *freebob_streaming_init (freebob_device_info_t *device_info, fr
 		dev->connections[c+dev->nb_connections_capture].spec.direction=FREEBOB_PLAYBACK;
 	}
 	
+	// In order to correct for bogus midi channel numbers
+	// we redefine the location parameter to the order the 
+	// channels appear in the specification
+	int midichannel=0;
+	for (c=0;c<dev->nb_connections_capture;c++) {
+		midichannel=0;
+		int s;
+		freebob_connection_t *connection= &(dev->connections[c]);
+		for (s=0;s<connection->spec.stream_info->nb_streams;s++) {
+			if(connection->spec.stream_info->streams[s]->format == IEC61883_STREAM_TYPE_MIDI) {
+				connection->spec.stream_info->streams[s]->location=midichannel++;
+			}
+		}
+	}
+	for (c=0;c<dev->nb_connections_playback;c++) {
+		midichannel=0;
+		int s;
+		freebob_connection_t *connection= &(dev->connections[c+dev->nb_connections_capture]);
+		for (s=0;s<connection->spec.stream_info->nb_streams;s++) {
+			if(connection->spec.stream_info->streams[s]->format == IEC61883_STREAM_TYPE_MIDI) {
+				connection->spec.stream_info->streams[s]->location=midichannel++;
+			}
+		}
+	}
+
 	/* Figure out a master connection.
 	 * Either it is given in the spec libfreebob
 	 * Or it is the first connection defined (capture connections first)

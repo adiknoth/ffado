@@ -196,6 +196,7 @@ int freebob_streaming_init_connection(freebob_device_t * dev, freebob_connection
 	}
 		
 	err=0;
+	int midi_channel=0;
 	for (s=0;s<connection->nb_streams;s++) {
 		err=freebob_streaming_init_stream(dev,&connection->streams[s],connection->spec.stream_info->streams[s]);
 		if(err) {
