@@ -119,8 +119,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
                   unsigned char *tag, unsigned char *sy,
                   int cycle, unsigned int dropped, unsigned int max_length) {
 
-// FIXME: the actual delays in the system need to be worked out so
-// we can get this thing synchronised.  For now this seems to work.
     int fc;
     int64_t ts_head;
     ffado_timestamp_t ts_tmp;
@@ -145,9 +143,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // the difference between the cycle this
     // packet is intended for and 'now'
     int cycle_diff = diffCycles(cycle, now_cycles);
-
-//debugOutput(DEBUG_LEVEL_VERBOSE,"tx: enabled=%d, cycle=%d, now_cycles=%d, diff=%d\n",
-//  !m_is_disabled,cycle, now_cycles, cycle_diff);
 
     // Signal that streaming is still active
     m_streaming_active = 1;
@@ -239,8 +234,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     ts_head = (int64_t)ts_tmp;
     int64_t timestamp = ts_head;
 
-//debugOutput(DEBUG_LEVEL_VERBOSE,"tx cycle %d, base timestamp %lld\n",cycle, ts_head);
-
     // we send a packet some cycles in advance, to avoid the
     // following situation:
     // suppose we are only a few ticks away from
@@ -257,11 +250,11 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // we would if it were to be sent immediately.
     ticks_to_advance += (int64_t)cycle_diff * TICKS_PER_CYCLE;
 
-    // determine the 'now' time in ticks
-//    uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
 
     // time until the packet is to be sent (if <= 0: send packet)
     // For Amdtp this looked like
+    //   // determine the 'now' time in ticks
+    //   uint64_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
     //   int32_t until_next=diffTicks(timestamp, cycle_timer + ticks_to_advance);
     // However, this didn't seem to work well with the MOTU's buffer structure.
     // For now we'll revert to the "send trigger" we used earlier since this
@@ -1010,10 +1003,6 @@ MotuReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // using writeframes
             m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
 
-debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n",
-  m_last_timestamp, m_last_timestamp2, m_last_timestamp-m_last_timestamp2,
-  m_data_buffer);
-
         } else {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "will enable StreamProcessor %p at %u, now is %d\n",
@@ -1082,7 +1071,6 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"On enable: last ts=%lld, ts2=%lld = %lld (%p)\n
         }
 
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "put packet...\n");
-//debugOutput(DEBUG_LEVEL_VERBOSE,"rx cycle=%d, last ts=%lld\n",cycle, m_last_timestamp);
 
         //=> process the packet
         // add the data payload to the ringbuffer
