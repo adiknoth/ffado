@@ -187,12 +187,16 @@ deserializeAvPlugVector( Glib::ustring basePath,
         std::ostringstream strstrm;
         strstrm << basePath << i;
 
-        result &= deser.read( strstrm.str(), plugId );
-        BeBoB::AvPlug* pPlug = avDevice.getPlugManager().getPlug( plugId );
+        if ( deser.isExisting( strstrm.str() ) ) {
+            result &= deser.read( strstrm.str(), plugId );
+            BeBoB::AvPlug* pPlug = avDevice.getPlugManager().getPlug( plugId );
 
-        if ( pPlug ) {
-            vec.push_back( pPlug );
-            i++;
+            if ( result && pPlug ) {
+                vec.push_back( pPlug );
+                i++;
+            } else {
+                bFinished = true;
+            }
         } else {
             bFinished = true;
         }

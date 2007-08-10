@@ -444,11 +444,15 @@ OptionContainer::deserializeOptions( Glib::ustring basePath,
         std::ostringstream strstrm;
         strstrm << basePath << "/" << "Option" << i;
 
-        Option pOption = Option::deserialize( strstrm.str() + "/",
-                                              deser );
-        if ( pOption.getType() != Option::EInvalid ) {
-            result &= container.addOption(pOption);
-            i++;
+        if ( deser.isExisting( strstrm.str() ) ) {
+            Option pOption = Option::deserialize( strstrm.str() + "/",
+                                                  deser );
+            if ( pOption.getType() != Option::EInvalid ) {
+                result &= container.addOption(pOption);
+                i++;
+            } else {
+                bFinished = true;
+            }
         } else {
             bFinished = true;
         }

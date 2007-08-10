@@ -69,7 +69,7 @@ public:
     unsigned int getAvDeviceCount();
 
     bool buildCache();
-    bool loadCache( Glib::ustring cachePath = "" );
+    IAvDevice* loadFromCache( const ConfigRom& configRom );
 
     Streaming::StreamProcessor *getSyncSource();
 

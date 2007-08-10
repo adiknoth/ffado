@@ -791,7 +791,8 @@ AvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
 }
 
 int
-AvDevice::getSamplingFrequency( ) {
+AvDevice::getSamplingFrequency( )
+{
     AvPlug* inputPlug = getPlugById( m_pcrPlugs, AvPlug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
@@ -813,16 +814,16 @@ AvDevice::getSamplingFrequency( ) {
 }
 
 int
-AvDevice::getConfigurationIdSampleRate()
+AvDevice::getConfigurationIdSampleRate( Ieee1394Service& ieee1394Service, int nodeId )
 {
-    ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
+    ExtendedStreamFormatCmd extStreamFormatCmd( ieee1394Service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     m_nodeId );
+                                     nodeId );
     extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
 
-    extStreamFormatCmd.setNodeId( m_nodeId );
+    extStreamFormatCmd.setNodeId( nodeId );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
     extStreamFormatCmd.setVerbose( true );
 
@@ -847,15 +848,17 @@ AvDevice::getConfigurationIdSampleRate()
 }
 
 int
-AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
+AvDevice::getConfigurationIdNumberOfChannel( Ieee1394Service& ieee1394Service,
+                                             int nodeId,
+                                             PlugAddress::EPlugDirection ePlugDirection )
 {
-    ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
+    ExtendedPlugInfoCmd extPlugInfoCmd( ieee1394Service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     m_nodeId );
+                                     nodeId );
     extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
                                                 PlugAddress::ePAM_Unit,
                                                 unitPlugAddress ) );
-    extPlugInfoCmd.setNodeId( m_nodeId );
+    extPlugInfoCmd.setNodeId( nodeId );
     extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     extPlugInfoCmd.setVerbose( true );
     ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
@@ -882,13 +885,14 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 }
 
 int
-AvDevice::getConfigurationIdSyncMode()
+AvDevice::getConfigurationIdSyncMode( Ieee1394Service& ieee1394Service,
+                                      int nodeId )
 {
-    SignalSourceCmd signalSourceCmd( *m_p1394Service );
+    SignalSourceCmd signalSourceCmd( ieee1394Service );
     SignalUnitAddress signalUnitAddr;
     signalUnitAddr.m_plugId = 0x01;
     signalSourceCmd.setSignalDestination( signalUnitAddr );
-    signalSourceCmd.setNodeId( m_nodeId );
+    signalSourceCmd.setNodeId( nodeId );
     signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 
@@ -918,14 +922,14 @@ AvDevice::getConfigurationIdSyncMode()
 }
 
 int
-AvDevice::getConfigurationId()
+AvDevice::getConfigurationId( Ieee1394Service& ieee1394Service, int nodeId )
 {
     // create a unique configuration id.
     int id = 0;
-    id = getConfigurationIdSampleRate();
-    id |= ( getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input )
-            + getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) ) << 8;
-    id |= getConfigurationIdSyncMode() << 16;
+    id = getConfigurationIdSampleRate( ieee1394Service, nodeId );
+    id |= ( getConfigurationIdNumberOfChannel( ieee1394Service, nodeId, PlugAddress::ePD_Input )
+            + getConfigurationIdNumberOfChannel( ieee1394Service, nodeId, PlugAddress::ePD_Output ) ) << 8;
+    id |= getConfigurationIdSyncMode( ieee1394Service, nodeId ) << 16;
 
     return id;
 }
@@ -1525,9 +1529,13 @@ AvDevice::deserializeSyncInfoVector( Glib::ustring basePath,
         plug_id_t destinationId;
         Glib::ustring description;
 
-        result  = deser.read( strstrm.str() + "m_source", sourceId );
-        result &= deser.read( strstrm.str() + "m_destination", destinationId );
-        result &= deser.read( strstrm.str() + "m_description", description );
+        if ( deser.isExisting( strstrm.str() + "m_source" ) ) {
+            result  = deser.read( strstrm.str() + "m_source", sourceId );
+            result &= deser.read( strstrm.str() + "m_destination", destinationId );
+            result &= deser.read( strstrm.str() + "m_description", description );
+        } else {
+            result = false;
+        }
 
         if ( result ) {
             SyncInfo syncInfo;
@@ -1599,7 +1607,6 @@ AvDevice::deserialize( Glib::ustring basePath,
                        Util::IODeserialize& deser,
                        Ieee1394Service& ieee1394Service )
 {
-
     ConfigRom *configRom =
         ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service );
 

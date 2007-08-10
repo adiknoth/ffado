@@ -48,7 +48,8 @@ deserialize( const char* pFileName )
         return false;
 
     devMgr.setVerboseLevel( 4 );
-    return devMgr.loadCache( pFileName );
+    //return devMgr.loadCache( pFileName );
+    return false;
 }
 
 int

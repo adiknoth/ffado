@@ -215,7 +215,7 @@ DeviceManager::discover( )
                 // the config rom is missing. So this might be just
                 // such this case and we can safely skip it. But it might
                 // be there is a real software problem on our side.
-                // This should be handled more carefuly.
+                // This should be handlede more carefuly.
                 debugOutput( DEBUG_LEVEL_NORMAL,
                              "Could not read config rom from device (node id %d). "
                              "Skip device discovering for this node\n",
@@ -223,19 +223,28 @@ DeviceManager::discover( )
                 continue;
             }
 
-            IAvDevice* avDevice = getDriverForDevice( configRom,
-                                                      nodeId );
+            bool isFromCache = false;
+            IAvDevice* avDevice = loadFromCache( *configRom );
+            if ( avDevice ) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
+                isFromCache = true;
+            } else {
+                avDevice = getDriverForDevice( configRom, nodeId );
+            }
+
             if ( avDevice ) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
-                             "discover: driver found for device %d\n",
+                             "driver found for device %d\n",
                              nodeId );
 
                 avDevice->setVerboseLevel( m_verboseLevel );
 
-                if ( !avDevice->discover() ) {
-                    debugError( "discover: could not discover device\n" );
-                    delete avDevice;
-                    continue;
+                if ( !isFromCache ) {
+                    if ( !avDevice->discover() ) {
+                        debugError( "could not discover device\n" );
+                        delete avDevice;
+                        continue;
+                    }
                 }
 
                 if ( !avDevice->setId( m_avDevices.size() ) ) {
@@ -255,6 +264,12 @@ DeviceManager::discover( )
 
                 if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
                     avDevice->showDevice();
+                }
+
+                if ( !isFromCache ) {
+                    if ( !saveCache( avDevice ) ) {
+                        debugWarning( "Could not create cached version of AVC model\n" );
+                    }
                 }
 
                 m_avDevices.push_back( avDevice );
@@ -290,13 +305,13 @@ DeviceManager::discover( )
         IAvDevice* avDevice = getSlaveDriver( configRom );
         if ( avDevice ) {
             debugOutput( DEBUG_LEVEL_NORMAL,
-                         "discover: driver found for device %d\n",
+                         "driver found for device %d\n",
                          nodeId );
 
             avDevice->setVerboseLevel( m_verboseLevel );
 
             if ( !avDevice->discover() ) {
-                debugError( "discover: could not discover device\n" );
+                debugError( "could not discover device\n" );
                 delete avDevice;
                 return false;
             }
@@ -541,7 +556,8 @@ DeviceManager::saveCache( IAvDevice* pAvDevice )
     }
 
     char* configId;
-    asprintf(&configId, "%08x", pBeBoBDevice->getConfigurationId() );
+    asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId( *m_1394Service,
+                                                                     pAvDevice->getNodeId() ) );
     if ( !configId ) {
         debugError( "Could not create id string\n" );
         return false;
@@ -551,49 +567,35 @@ DeviceManager::saveCache( IAvDevice* pAvDevice )
     debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
 
     Util::XMLSerialize ser( sFileName );
-    return pBeBoBDevice->serialize( "/", ser );
+    return pBeBoBDevice->serialize( "", ser );
 }
 
-bool
-DeviceManager::loadCache( Glib::ustring cachePath )
+IAvDevice*
+DeviceManager::loadFromCache( const ConfigRom& configRom )
 {
-    for ( fb_nodeid_t nodeId = 0;
-          nodeId < m_1394Service->getNodeCount();
-          ++nodeId )
-    {
-        ConfigRom* pConfigRom  =  new ConfigRom( *m_1394Service, nodeId );
-        if ( !pConfigRom->initialize() ) {
-            // \todo If a PHY on the bus is in power safe mode then
-            // the config rom is missing. So this might be just
-            // such this case and we can safely skip it. But it might
-            // be there is a real software problem on our side.
-            // This should be handled more carefuly.
-            debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Could not read config rom from device (node id %d). "
-                         "Skip device discovering for this node\n",
-                         nodeId );
-            delete pConfigRom;
-            continue;
-        }
+    Glib::ustring sDevicePath = getCachePath() + configRom.getGuidString();
+    char* configId;
+    asprintf(&configId, "%08x",
+    BeBoB::AvDevice::getConfigurationId(*m_1394Service,
+    configRom.getNodeId()) );
+    if ( !configId ) {
+        debugError( "could not create id string\n" );
+        return false;
+    }
+    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
+    free( configId );
+    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
 
-        Glib::ustring sFileName = getCachePath() + pConfigRom->getGuidString() + ".xml";
+    Util::XMLDeserialize deser( sFileName, m_verboseLevel );
 
-        if ( access( sFileName.c_str(),  R_OK ) == 0 ) {
-            debugOutput( DEBUG_LEVEL_NORMAL, "load from %s\n", sFileName.c_str() );
-            Util::XMLDeserialize deser( sFileName );
-
-            BeBoB::AvDevice* pBeBoBDevice = BeBoB::AvDevice::deserialize( "/", deser, *m_1394Service );
-            if ( pBeBoBDevice ) {
-                debugOutput( DEBUG_LEVEL_NORMAL, "loadCache: could create valid bebob driver from %s\n", sFileName.c_str() );
-                pBeBoBDevice->getConfigRom().setNodeId( pConfigRom->getNodeId() );
-                m_avDevices.push_back( pBeBoBDevice );
-            }
-        }
-
-        // throw away this config rom instance, the deserialize code has created it's own from
-        // the cache.
-        delete pConfigRom;
+    BeBoB::AvDevice* pBeBoBDevice = BeBoB::AvDevice::deserialize( "",
+                                                                  deser,
+                                                                  *m_1394Service );
+    if ( pBeBoBDevice ) {
+        debugOutput( DEBUG_LEVEL_NORMAL, "could create valid bebob driver from %s\n", sFileName.c_str() );
+        pBeBoBDevice->getConfigRom().setNodeId( configRom.getNodeId() );
     }
 
-    return true;
+    return pBeBoBDevice;
 }
+

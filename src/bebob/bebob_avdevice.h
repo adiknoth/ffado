@@ -68,11 +68,11 @@ public:
     void setVerboseLevel(int l);
 
     static bool probe( ConfigRom& configRom );
+    static int getConfigurationId( Ieee1394Service& ieee1394Service, int nodeId );
     virtual bool discover();
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
-    virtual int getConfigurationId( );
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
@@ -173,9 +173,12 @@ protected:
                                            Util::IODeserialize& deser,
                                            AvDevice& avDevice,
                                            SyncInfoVector& vec );
-    int getConfigurationIdSampleRate();
-    int getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection );
-    int getConfigurationIdSyncMode();
+    static int getConfigurationIdSampleRate( Ieee1394Service& ieee1394service, int nodeId );
+    static int getConfigurationIdNumberOfChannel( Ieee1394Service& ieee1394service, 
+						  int nodeId,
+						  PlugAddress::EPlugDirection ePlugDirection );
+    static int getConfigurationIdSyncMode( Ieee1394Service& ieee1394service,
+					   int nodeId );
 
 protected:
     AvPlugVector              m_pcrPlugs;
