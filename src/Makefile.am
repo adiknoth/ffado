@@ -191,8 +191,7 @@ bebob_sync_LDADD = $(top_builddir)/src/libffado.la
 # programs not intended for installation
 # generic
 noinst_PROGRAMS = test-dll test-debugmodule \
-	              test-unittests-util test-unittests-osc \
-	              test-ser
+	              test-unittests-util test-unittests-osc
 
 test_dll_SOURCES = libutil/test-dll.cpp
 test_dll_LDADD = $(top_builddir)/src/libffado.la
@@ -205,9 +204,6 @@ test_unittests_util_LDADD = $(top_builddir)/src/libffado.la
 
 test_unittests_osc_SOURCES = libosc/unittests.cpp
 test_unittests_osc_LDADD = $(top_builddir)/src/libffado.la
-
-test_ser_SOURCES = ser.cpp
-test_ser_LDADD = $(top_builddir)/src/libffado.la
 
 # build customisation
 
