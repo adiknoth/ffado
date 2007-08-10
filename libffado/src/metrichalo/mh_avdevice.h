@@ -52,13 +52,13 @@ public:
     virtual ~MHAvDevice();
 
     static bool probe( ConfigRom& configRom );
+    static int getConfigurationId();
     virtual bool discover();
 
     virtual void showDevice();
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
-    virtual int getConfigurationId();
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);

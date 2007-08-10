@@ -1712,6 +1712,10 @@ AvPlug::deserialize( Glib::ustring basePath,
                      AvDevice& avDevice,
                      AvPlugManager& plugManager )
 {
+    if ( !deser.isExisting( basePath + "m_subunitType" ) ) {
+        return 0;
+    }
+
     AvPlug* pPlug = new AvPlug;
     if ( !pPlug ) {
         return 0;
@@ -1980,7 +1984,7 @@ AvPlugManager::showPlugs() const
                 default:
                     strstrm << plug->getFunctionBlockType();
             }
-            
+
             if ( plug->getPlugDirection() == AvPlug::eAPD_Input ) {
                 printf( "\t\"(%d) %s\" -> \"(%s, ID %d)\"\n",
                         plug->getGlobalId(),
@@ -2212,6 +2216,10 @@ AvPlugConnection::deserialize( Glib::ustring basePath,
                                Util::IODeserialize& deser,
                                AvDevice& avDevice )
 {
+    if ( !deser.isExisting( basePath + "m_srcPlug" ) ) {
+        return 0;
+    }
+
     AvPlugConnection* pConnection = new AvPlugConnection;
     if ( !pConnection ) {
         return 0;

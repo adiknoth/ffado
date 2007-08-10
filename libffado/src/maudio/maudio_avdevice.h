@@ -58,13 +58,13 @@ public:
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
+    static int getConfigurationId( );
     virtual bool discover();
 
     virtual void showDevice();
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
     virtual int getSamplingFrequency( );
-    virtual int getConfigurationId( );
 
     virtual bool prepare();
 

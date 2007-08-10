@@ -210,6 +210,11 @@ BeBoB::AvDeviceSubunit::deserialize( Glib::ustring basePath,
 {
     bool result;
     AVCCommand::ESubunitType sbType;
+
+    if ( !deser.isExisting( basePath + "m_sbType" ) ) {
+        return 0;
+    }
+
     result  = deser.read( basePath + "m_sbType", sbType );
 
     AvDeviceSubunit* pSubunit = 0;
@@ -270,7 +275,7 @@ bool
 BeBoB::AvDeviceSubunitAudio::discover()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering Audio Subunit...\n");
-    
+
     if ( !AvDeviceSubunit::discover() ) {
         return false;
     }
@@ -346,7 +351,7 @@ BeBoB::AvDeviceSubunitAudio::discoverFunctionBlocks()
     // print a function block list
 #ifdef DEBUG
     if (getDebugLevel() >= DEBUG_LEVEL_NORMAL) {
-    
+
         for ( FunctionBlockVector::iterator it = m_functions.begin();
             it != m_functions.end();
             ++it )
