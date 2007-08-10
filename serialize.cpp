@@ -46,9 +46,13 @@ void tokenize(const string& str,
 
 /////////////////////////////////
 
+IMPL_DEBUG_MODULE( Util::XMLSerialize,   XMLSerialize,   DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( Util::XMLDeserialize, XMLDeserialize, DEBUG_LEVEL_NORMAL );
+
 Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
     : IOSerialize()
     , m_filepath( fileName )
+    , m_verboseLevel( 0 )
 {
     try {
         m_doc.create_root_node( "ffado_cache" );
@@ -57,6 +61,18 @@ Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
     }
 }
 
+
+Util::XMLSerialize::XMLSerialize( Glib::ustring fileName, int verboseLevel )
+    : IOSerialize()
+    , m_filepath( fileName )
+    , m_verboseLevel( verboseLevel )
+{
+    try {
+        m_doc.create_root_node( "ffado_cache" );
+    } catch ( const exception& ex ) {
+        cout << "Exception caught: " << ex.what();
+    }
+}
 
 Util::XMLSerialize::~XMLSerialize()
 {
@@ -73,10 +89,14 @@ Util::XMLSerialize::write( std::string strMemberName,
                            long long value )
 
 {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "write %s = %d\n",
+                 strMemberName.c_str(), value );
+
     vector<string> tokens;
     tokenize( strMemberName, tokens, "/" );
 
     if ( tokens.size() == 0 ) {
+        debugWarning( "token size is 0\n" );
         return false;
     }
 
@@ -97,10 +117,14 @@ bool
 Util::XMLSerialize::write( std::string strMemberName,
                            Glib::ustring str)
 {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "write %s = %s\n",
+                 strMemberName.c_str(), str.c_str() );
+
     vector<string> tokens;
     tokenize( strMemberName, tokens, "/" );
 
     if ( tokens.size() == 0 ) {
+        debugWarning( "token size is 0\n" );
         return false;
     }
 
@@ -159,6 +183,7 @@ Util::XMLSerialize::getNodePath( xmlpp::Node* pRootNode,
 Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName )
     : IODeserialize()
     , m_filepath( fileName )
+    , m_verboseLevel( 0 )
 {
     try {
         m_parser.set_substitute_entities(); //We just want the text to
@@ -170,6 +195,20 @@ Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName )
     }
 }
 
+Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName, int verboseLevel )
+    : IODeserialize()
+    , m_filepath( fileName )
+    , m_verboseLevel( verboseLevel )
+{
+    try {
+        m_parser.set_substitute_entities(); //We just want the text to
+                                            //be resolved/unescaped
+                                            //automatically.
+        m_parser.parse_file( m_filepath );
+    } catch ( const exception& ex ) {
+        cout << "Exception caught: " << ex.what();
+    }
+}
 
 Util::XMLDeserialize::~XMLDeserialize()
 {
@@ -180,11 +219,16 @@ Util::XMLDeserialize::read( std::string strMemberName,
                             long long& value )
 
 {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "lookup %s\n", strMemberName.c_str() );
+
     xmlpp::Document *pDoc=m_parser.get_document();
     if(!pDoc) {
+        debugWarning( "no document found\n" );
         return false;
     }
     xmlpp::Node* pNode = pDoc->get_root_node();
+
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "pNode = %s\n", pNode->get_name().c_str() );
 
     xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     for ( xmlpp::NodeSet::iterator it = nodeSet.begin();
@@ -197,11 +241,15 @@ Util::XMLDeserialize::read( std::string strMemberName,
             char* tail;
             value = strtoll( pElement->get_child_text()->get_content().c_str(),
                              &tail, 0 );
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "found %s = %d\n",
+                         strMemberName.c_str(), value );
             return true;
         }
+        debugWarning( "no such a node %s\n", strMemberName.c_str() );
         return false;
     }
 
+    debugWarning( "no such a node %s\n", strMemberName.c_str() );
     return false;
 }
 
@@ -209,8 +257,11 @@ bool
 Util::XMLDeserialize::read( std::string strMemberName,
                             Glib::ustring& str )
 {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "lookup %s\n", strMemberName.c_str() );
+
     xmlpp::Document *pDoc=m_parser.get_document();
     if(!pDoc) {
+        debugWarning( "no document found\n" );
         return false;
     }
     xmlpp::Node* pNode = pDoc->get_root_node();
@@ -221,13 +272,21 @@ Util::XMLDeserialize::read( std::string strMemberName,
           ++it )
     {
         const xmlpp::Element* pElement = dynamic_cast< const xmlpp::Element* >( *it );
-        if ( pElement && pElement->has_child_text() ) {
-            str = pElement->get_child_text()->get_content();
+        if ( pElement ) {
+            if ( pElement->has_child_text() ) {
+                str = pElement->get_child_text()->get_content();
+            } else {
+                str = "";
+            }
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "found %s = %s\n",
+                         strMemberName.c_str(), str.c_str() );
             return true;
         }
+        debugWarning( "no such a node %s\n", strMemberName.c_str() );
         return false;
     }
 
+    debugWarning( "no such a node %s\n", strMemberName.c_str() );
     return false;
 }
 

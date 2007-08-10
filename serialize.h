@@ -24,6 +24,8 @@
 #ifndef bebob_serialize_h
 #define bebob_serialize_h
 
+#include "debugmodule/debugmodule.h"
+
 #include <libxml++/libxml++.h>
 
 #include <iostream>
@@ -61,6 +63,7 @@ namespace Util {
     class XMLSerialize: public IOSerialize {
     public:
         XMLSerialize( Glib::ustring fileName );
+	XMLSerialize( Glib::ustring fileName, int verboseLevel );
         virtual ~XMLSerialize();
 
         virtual bool write( std::string strMemberName,
@@ -70,6 +73,9 @@ namespace Util {
     private:
         Glib::ustring    m_filepath;
         xmlpp::Document  m_doc;
+        int              m_verboseLevel;
+
+        DECLARE_DEBUG_MODULE;
 
         xmlpp::Node* getNodePath( xmlpp::Node* pRootNode,
                                   std::vector<std::string>& tokens );
@@ -78,6 +84,7 @@ namespace Util {
     class XMLDeserialize: public IODeserialize {
     public:
         XMLDeserialize( Glib::ustring fileName );
+	XMLDeserialize( Glib::ustring fileName, int verboseLevel );
         virtual ~XMLDeserialize();
 
         virtual bool read( std::string strMemberName,
@@ -90,6 +97,9 @@ namespace Util {
     private:
         Glib::ustring    m_filepath;
         xmlpp::DomParser m_parser;
+        int              m_verboseLevel;
+
+        DECLARE_DEBUG_MODULE;
     };
 
 
