@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 
 import os
+import sys
+sys.path.append( "./admin" )
+from pkgconfig import *
 
 opts = Options( "cache/options.cache" )
 
@@ -16,7 +19,7 @@ opts.AddOptions(
 	)
 
 ## Load the builders in config
-env = Environment( tools=['default','scanreplace','pyuic'], toolpath=['.'], ENV = { 'PATH' : os.environ['PATH'], 'PKG_CONFIG_PATH' : os.environ['PKG_CONFIG_PATH'] }, options=opts )
+env = Environment( tools=['default','scanreplace','pyuic'], toolpath=['admin'], ENV = { 'PATH' : os.environ['PATH'], 'PKG_CONFIG_PATH' : os.environ['PKG_CONFIG_PATH'] }, options=opts )
 
 Help( """
 For building ffado you can set different options as listed below. You have to
@@ -36,9 +39,6 @@ opts.Save( "cache/options.cache", env )
 #env['CXXFLAGS']+="-Wall -Werror -g -fpic"
 env['CFLAGS']+="-Wall -g -fpic"
 
-
-
-from pkgconfig import *
 
 if not env.GetOption('clean'):
 	conf = Configure( env, custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG }, conf_dir='cache', log_file='cache/config.log' )
