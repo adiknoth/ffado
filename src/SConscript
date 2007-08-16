@@ -1,0 +1,139 @@
+#! /usr/bin/env python
+
+Import( 'env' )
+
+env = env.Copy()
+
+env.AppendUnique( CPPPATH=["#/src"] )
+
+ffado_source = env.Split( '\
+	devicemanager.cpp \
+	ffado.cpp \
+	ffado_streaming.cpp \
+	iavdevice.cpp \
+	debugmodule/debugmodule.cpp \
+	libavc/avc_connect.cpp \
+	libavc/avc_definitions.cpp \
+	libavc/avc_extended_cmd_generic.cpp \
+	libavc/avc_extended_plug_info.cpp \
+	libavc/avc_extended_stream_format.cpp \
+	libavc/avc_extended_subunit_info.cpp \
+	libavc/avc_function_block.cpp \
+	libavc/avc_generic.cpp \
+	libavc/avc_plug_info.cpp \
+	libavc/avc_serialize.cpp \
+	libavc/avc_signal_source.cpp \
+	libavc/avc_subunit_info.cpp \
+	libavc/avc_unit_info.cpp \
+	libieee1394/ARMHandler.cpp \
+	libieee1394/configrom.cpp \
+	libieee1394/csr1212.c \
+	libieee1394/ieee1394service.cpp \
+	libieee1394/IEC61883.cpp \
+	libosc/OscArgument.cpp \
+	libosc/OscClient.cpp \
+	libosc/OscMessage.cpp \
+	libosc/OscNode.cpp \
+	libosc/OscResponse.cpp \
+	libosc/OscServer.cpp \
+	libstreaming/cip.c \
+	libstreaming/IsoHandler.cpp \
+	libstreaming/IsoHandlerManager.cpp \
+	libstreaming/IsoStream.cpp \
+	libstreaming/Port.cpp \
+	libstreaming/PortManager.cpp \
+	libstreaming/StreamProcessor.cpp \
+	libstreaming/StreamProcessorManager.cpp \
+	libutil/DelayLockedLoop.cpp \
+	libutil/PacketBuffer.cpp \
+	libutil/OptionContainer.cpp \
+	libutil/PosixThread.cpp \
+	libutil/ringbuffer.c \
+	libutil/serialize.cpp \
+	libutil/StreamStatistics.cpp \
+	libutil/SystemTimeSource.cpp \
+	libutil/Time.c \
+	libutil/TimeSource.cpp \
+	libutil/TimestampedBuffer.cpp \
+' )
+
+bebob_source = env.Split( '\
+	bebob/bebob_avdevice.cpp \
+	bebob/bebob_avdevice_subunit.cpp \
+	bebob/bebob_avplug.cpp \
+	bebob/bebob_dl_bcd.cpp \
+	bebob/bebob_dl_codes.cpp \
+	bebob/bebob_dl_mgr.cpp \
+	bebob/bebob_functionblock.cpp \
+	bebob/GenericMixer.cpp \
+	maudio/maudio_avdevice.cpp \
+' )
+
+motu_source = env.Split( '\
+	motu/motu_avdevice.cpp \
+	libstreaming/MotuPort.cpp \
+	libstreaming/MotuPortInfo.cpp \
+	libstreaming/MotuStreamProcessor.cpp \
+' )
+
+dice_source = env.Split( '\
+	dice/dice_avdevice.cpp \
+' )
+
+bounce_source = env.Split( '\
+	bounce/bounce_avdevice.cpp \
+	bounce/bounce_slave_avdevice.cpp \
+	libstreaming/AmdtpSlaveStreamProcessor.cpp \
+' )
+
+metric_halo_source = env.Split( '\
+	metrichalo/mh_avdevice.cpp \
+' )
+
+rme_source = env.Split( '\
+	rme/rme_avdevice.cpp \
+' )
+
+amdtp_source = env.Split( '\
+	libstreaming/AmdtpPort.cpp \
+	libstreaming/AmdtpPortInfo.cpp \
+	libstreaming/AmdtpStreamProcessor.cpp \
+' )
+
+source = ffado_source
+if env['ENABLE_BEBOB']:
+	source += bebob_source + amdtp_source
+if env['ENABLE_MOTU']:
+	source += motu_source
+if env['ENABLE_DICE']:
+	source += dice_source
+if env['ENABLE_METRIC_HALO']:
+	source += metric_halo_source
+if env['ENABLE_RME']:
+	source += rme_source
+if env['ENABLE_BOUNCE']:
+	source += bounce_source
+
+
+#source += dice_source + bounce_source + metric_halo_source + rme_source + amdtp_source
+
+env.SharedLibrary( target="ffado", source=source )
+
+#
+# For the debugging apps
+#
+env.AppendUnique( LIBPATH="#/src" )
+env.AppendUnique( LIBS="ffado" )
+
+apps = { \
+	"bridgeco-downloader": "bridgeco-downloader.cpp", \
+	"bebob-sync" : "bebob-sync.cpp", \
+	"test-debugmodule" : "debugmodule/test_debugmodule.cpp", \
+	"test-dll" : "libutil/test-dll.cpp", \
+	"test-unittests-util" : "libutil/unittests.cpp", \
+	"test-unittests-osc" : "libosc/unittests.cpp" \
+}
+
+for app in apps.keys():
+	env.Program( target=app, source = env.Split( apps[app] ) )
+

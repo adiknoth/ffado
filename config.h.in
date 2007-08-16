@@ -1,0 +1,26 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Name of package */
+#define PACKAGE "libffado"
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "<ffado-devel@lists.sf.net>"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "libffado"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "libffado 1.999.5"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "libffado"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "1.999.5"
+
+/* Define to 1 if SSE assembly is available. */
+#define USE_SSE 1
+
+/* Version number of package */
+#define VERSION "1.999.5"
+
