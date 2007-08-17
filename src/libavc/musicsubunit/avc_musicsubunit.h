@@ -31,6 +31,8 @@
 namespace AVC {
 
 class Unit;
+class Plug;
+class AVCMusicStatusDescriptor;
 
 // /////////////////////////////
 
@@ -40,15 +42,22 @@ class SubunitMusic: public Subunit {
                   subunit_t id );
     SubunitMusic();
     virtual ~SubunitMusic();
+    
+    virtual bool discover();
+    virtual bool initPlugFromDescriptor( Plug& plug );
 
+    virtual bool loadDescriptors();
+    
+    virtual void setVerboseLevel(int l);
     virtual const char* getName();
-
 protected:
     virtual bool serializeChild( Glib::ustring basePath,
                                  Util::IOSerialize& ser ) const;
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice );
+
+    class AVCMusicStatusDescriptor*  m_status_descriptor;
 };
 
 }

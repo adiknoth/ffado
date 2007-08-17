@@ -50,6 +50,7 @@ class Subunit {
     virtual ~Subunit();
 
     virtual bool discover();
+    virtual bool discoverConnections();
     virtual const char* getName() = 0;
 
     subunit_t getSubunitId()
@@ -59,19 +60,30 @@ class Subunit {
 
     Unit& getUnit() const
         { return *m_unit; }
+    Subunit& getSubunit()
+        { return *this; }
 
+    virtual Plug *createPlug( AVC::Unit* unit,
+                              AVC::Subunit* subunit,
+                              AVC::function_block_type_t functionBlockType,
+                              AVC::function_block_type_t functionBlockId,
+                              AVC::Plug::EPlugAddressType plugAddressType,
+                              AVC::Plug::EPlugDirection plugDirection,
+                              AVC::plug_id_t plugId );
 
     bool addPlug( Plug& plug );
+    virtual bool initPlugFromDescriptor( Plug& plug );
 
     PlugVector& getPlugs()
     { return m_plugs; }
     Plug* getPlug(Plug::EPlugDirection direction, plug_id_t plugId);
 
+    virtual void setVerboseLevel(int l) 
+        { setDebugLevel(l);};
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static Subunit* deserialize( Glib::ustring basePath,
-                     Util::IODeserialize& deser,
-                                         Unit& avDevice );
+                     Util::IODeserialize& deser, Unit& avDevice );
  protected:
     Subunit();
 
@@ -80,6 +92,9 @@ class Subunit {
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice ) = 0;
+    bool discoverPlugs();
+    bool discoverPlugs(Plug::EPlugDirection plugDirection,
+                       AVC::plug_id_t plugMaxId );
 
  protected:
     Unit*           m_unit;

@@ -44,15 +44,17 @@ ConnectCmd::~ConnectCmd()
 bool
 ConnectCmd::serialize( IOSSerialize& se )
 {
-    AVCCommand::serialize( se );
-    return true;
+    bool result=true;
+    result &= AVCCommand::serialize( se );
+    return result;
 }
 
 bool
 ConnectCmd::deserialize( IISDeserialize& de )
 {
-    AVCCommand::deserialize( de );
-    return true;
+    bool result=true;
+    result &= AVCCommand::deserialize( de );
+    return result;
 }
 
 }

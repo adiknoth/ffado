@@ -70,6 +70,7 @@ noinst_HEADERS = \
 	libavc/general/avc_unit_info.h \
 	libavc/general/avc_generic.h \
 	libavc/general/avc_connect.h \
+	libavc/general/avc_signal_format.h \
 	libavc/general/avc_extended_plug_info.h \
 	libavc/general/avc_unit.h \
 	libavc/general/avc_subunit.h \
@@ -111,6 +112,7 @@ libffado_la_SOURCES = \
 	libavc/general/avc_generic.cpp \
 	libavc/general/avc_subunit_info.cpp \
 	libavc/general/avc_connect.cpp \
+	libavc/general/avc_signal_format.cpp \
 	libavc/general/avc_extended_cmd_generic.cpp \
 	libavc/general/avc_extended_plug_info.cpp \
 	libavc/general/avc_plug_info.cpp \

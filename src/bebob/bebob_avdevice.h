@@ -87,8 +87,6 @@ public:
 
     virtual void showDevice();
 
-    bool setActiveSync( const SyncInfo& syncInfo );
-
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static AvDevice* deserialize( Glib::ustring basePath,
                                   Util::IODeserialize& deser,
@@ -99,19 +97,18 @@ public:
         { return FFADODevice::get1394Service(); };
     ConfigRom& getConfigRom() const 
         { return FFADODevice::getConfigRom(); };
-
+        
+    virtual AVC::Subunit* createSubunit(AVC::Unit& unit,
+                                        AVC::ESubunitType type,
+                                        AVC::subunit_t id );
+    virtual AVC::Plug *createPlug( AVC::Unit* unit,
+                                   AVC::Subunit* subunit,
+                                   AVC::function_block_type_t functionBlockType,
+                                   AVC::function_block_type_t functionBlockId,
+                                   AVC::Plug::EPlugAddressType plugAddressType,
+                                   AVC::Plug::EPlugDirection plugDirection,
+                                   AVC::plug_id_t plugId );
 protected:
-
-    bool enumerateSubUnits();
-
-    bool discoverPlugs();
-    bool discoverPlugsPCR( AVC::Plug::EPlugDirection plugDirection,
-                           AVC::plug_id_t plugMaxId );
-    bool discoverPlugsExternal( AVC::Plug::EPlugDirection plugDirection,
-                                AVC::plug_id_t plugMaxId );
-    bool discoverPlugConnections();
-    bool discoverSyncModes();
-    bool discoverSubUnitsPlugConnections();
 
     bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
                              Streaming::AmdtpAudioPort::E_Direction direction);
@@ -120,9 +117,7 @@ protected:
                                    AVC::Plug::EPlugDirection direction,
                                    AVC::ESamplingFrequency samplingFrequency );
 
-    bool checkSyncConnectionsAndAddToList( AVC::PlugVector& plhs,
-                                           AVC::PlugVector& prhs,
-                                           std::string syncDescription );
+
 
 protected:
     struct VendorModelEntry*  m_model;

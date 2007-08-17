@@ -21,8 +21,8 @@
  * MA 02110-1301 USA
  */
 
-#ifndef AVDDEFINITIONS_H
-#define AVDDEFINITIONS_H
+#ifndef AVCDEFINITIONS_H
+#define AVCDEFINITIONS_H
 
 #include <libavc1394/avc1394.h>
 #include <ostream>
@@ -115,6 +115,8 @@ enum ESubunitType {
     eST_Unit          = AVC1394_SUBUNIT_UNIT,
 };
 
+enum ESubunitType byteToSubunitType(byte_t s);
+
 /**
  * \brief the possible sampling frequencies
  */
@@ -150,6 +152,20 @@ ESamplingFrequency parseSampleRate( int sampleRate );
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
 
+/**
+ * \brief Convert from a FDF SFC field value to an integer sample rate
+ * @param fdf fdf sfc field value
+ * @return sample rate
+ */
+unsigned int fdfSfcToSampleRate(byte_t fdf);
+
+/**
+ * \brief Convert from an integer sample rate to a78 FDF SFC field value
+ * @param rate integer sample rate
+ * @return fdf sfc field value
+ */
+byte_t sampleRateToFdfSfc(unsigned int rate);
+
 }
 
-#endif // AVDDEFINITIONS_H
+#endif // AVCDEFINITIONS_H

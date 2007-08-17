@@ -33,10 +33,14 @@
 #include "../avc_definitions.h"
 
 #include "../general/avc_generic.h"
+#include "../general/avc_plug.h"
+
 #include "debugmodule/debugmodule.h"
 
 #include <libavc1394/avc1394.h>
+
 #include <vector>
+#include <string>
 
 class Ieee1394Service;
 
@@ -98,12 +102,16 @@ public:
         byte_t stream_position;
         byte_t stream_location;
     };
+    typedef std::vector<struct sSignalInfo> SignalInfoVector;
+    typedef std::vector<struct sSignalInfo>::iterator SignalInfoVectorIterator;
 
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
 
     virtual bool clear();
     
+    std::string getName();
+
     AVCMusicClusterInfoBlock( );
     virtual ~AVCMusicClusterInfoBlock();
     virtual const char* getInfoBlockName() const
@@ -112,7 +120,7 @@ public:
     byte_t      m_stream_format;
     byte_t      m_port_type;
     byte_t      m_nb_signals;
-    std::vector<struct sSignalInfo> m_SignalInfos;
+    SignalInfoVector m_SignalInfos;
 
     AVCRawTextInfoBlock m_RawTextInfoBlock;
     AVCNameInfoBlock    m_NameInfoBlock;
@@ -127,6 +135,16 @@ typedef std::vector<AVCMusicClusterInfoBlock *>::iterator AVCMusicClusterInfoBlo
 class AVCMusicSubunitPlugInfoBlock : public AVCInfoBlock
 {
 public:
+    enum AVCMusicSubunitPlugInfoBlockPlugType {
+        ePT_IsoStream   = 0x0,
+        ePT_AsyncStream = 0x1,
+        ePT_Midi        = 0x2,
+        ePT_Sync        = 0x3,
+        ePT_Analog      = 0x4,
+        ePT_Digital     = 0x5,
+
+        ePT_Unknown     = 0xff,
+    };
 
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
@@ -137,6 +155,8 @@ public:
         {return "AVCMusicSubunitPlugInfoBlock";};
         
     virtual bool clear();
+    
+    std::string getName();
     
     byte_t      m_subunit_plug_id;
     uint16_t    m_signal_format;
@@ -168,6 +188,8 @@ public:
     virtual ~AVCMusicPlugInfoBlock() {};
     virtual const char* getInfoBlockName() const
         {return "AVCMusicPlugInfoBlock";};
+
+    std::string getName();
 
     byte_t      m_music_plug_type;
     uint16_t    m_music_plug_id;
@@ -206,6 +228,9 @@ public:
     virtual const char* getInfoBlockName() const
         {return "AVCMusicRoutingStatusInfoBlock";};
 
+    AVCMusicSubunitPlugInfoBlock *getSubunitPlugInfoBlock(Plug::EPlugDirection, plug_id_t);
+    AVCMusicPlugInfoBlock *getMusicPlugInfoBlock(plug_id_t);
+    
     virtual bool clear();
 
     byte_t      m_nb_dest_plugs;
@@ -232,11 +257,15 @@ public:
     virtual bool serialize( IOSSerialize& se );
     virtual bool deserialize( IISDeserialize& de );
     
-    AVCMusicStatusDescriptor( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId );
+    AVCMusicStatusDescriptor( Unit* unit, Subunit* subunit );
     virtual ~AVCMusicStatusDescriptor() {}
     
     virtual const char* getDescriptorName() const
         {return "AVCMusicStatusDescriptor";};
+        
+    AVCMusicSubunitPlugInfoBlock *getSubunitPlugInfoBlock(Plug::EPlugDirection, plug_id_t);
+    AVCMusicPlugInfoBlock *getMusicPlugInfoBlock(plug_id_t);
+    
 private:
     // the child info blocks
     AVCMusicGeneralStatusInfoBlock m_general_status_infoblock;

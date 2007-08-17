@@ -47,6 +47,9 @@ class Ieee1394Service;
 
 namespace AVC {
 
+class Unit;
+class Subunit;
+
 class IOSSerialize;
 class IISDeserialize;
 /**
@@ -111,48 +114,39 @@ public:
     virtual bool deserialize( IISDeserialize& de );
 
     // note: in the end these have to be protected
-    AVCDescriptor( Ieee1394Service& ieee1394service );
-    AVCDescriptor( Ieee1394Service& ieee1394service,
-                   fb_nodeid_t nodeId, ESubunitType subunitType, subunit_id_t subunitId  );
-    AVCDescriptor( Ieee1394Service& ieee1394service,
-                   fb_nodeid_t nodeId, ESubunitType subunitType, subunit_id_t subunitId,
-                   AVCDescriptorSpecifier s );
+    AVCDescriptor( Unit* unit );
+    AVCDescriptor( Unit* unit, Subunit* subunit  );
+    AVCDescriptor( Unit* unit, Subunit* subunit, AVCDescriptorSpecifier s );
     virtual ~AVCDescriptor();
     
     virtual AVCDescriptor* clone() const;
     
     void setSpecifier(AVCDescriptorSpecifier s) {m_specifier=s;};
-    
-    bool setNodeId( fb_nodeid_t nodeId );
-    bool setSubunitType( ESubunitType subunitType );
-    bool setSubunitId( subunit_id_t subunitId );
 
-    ESubunitType getSubunitType();
-    subunit_id_t getSubunitId();
+    ESubunitType getSubunitType() const;
+    subunit_id_t getSubunitId() const;
 
-    bool setVerbose( int verboseLevel );
+    bool setVerboseLevel( int verboseLevel );
     int getVerboseLevel();
 
     virtual const char* getDescriptorName() const
         {return "AVCDescriptor";};
     
     bool load();
+    bool reload();
     
 protected:
 
-    Ieee1394Service* m_p1394Service;
-    fb_nodeid_t      m_nodeId;
-    ESubunitType     m_subunit_type;
-    subunit_id_t     m_subunit_id;
+    Unit*            m_unit;
+    Subunit*         m_subunit;
     
     AVCDescriptorSpecifier m_specifier;
     
-    byte_t        *m_data;
-    uint16_t    m_descriptor_length;
-
-private:
-
+    byte_t*          m_data;
+    uint16_t         m_descriptor_length;
     
+    bool             m_loaded;
+
 };
 
 /**

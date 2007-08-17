@@ -65,12 +65,126 @@ Subunit::~Subunit()
     }
 }
 
+Plug *
+Subunit::createPlug( AVC::Unit* unit,
+                     AVC::Subunit* subunit,
+                     AVC::function_block_type_t functionBlockType,
+                     AVC::function_block_type_t functionBlockId,
+                     AVC::Plug::EPlugAddressType plugAddressType,
+                     AVC::Plug::EPlugDirection plugDirection,
+                     AVC::plug_id_t plugId )
+{
+
+    return new Plug( unit,
+                     subunit,
+                     functionBlockType,
+                     functionBlockId,
+                     plugAddressType,
+                     plugDirection,
+                     plugId );
+}
+
 bool
 Subunit::discover()
 {
-    // There is nothing we can discover for a generic subunit
-    // Maybe the plugs, but there are multiple ways of doing that.
-    // subclasses should implement this
+    if ( !discoverPlugs() ) {
+        debugError( "plug discovery failed\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Subunit::discoverPlugs()
+{
+    PlugInfoCmd plugInfoCmd( getUnit().get1394Service(),
+                             PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
+    plugInfoCmd.setNodeId( getUnit().getConfigRom().getNodeId() );
+    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    plugInfoCmd.setSubunitType( getSubunitType() );
+    plugInfoCmd.setSubunitId( getSubunitId() );
+    plugInfoCmd.setVerbose( getDebugLevel() );
+
+    if ( !plugInfoCmd.fire() ) {
+        debugError( "plug info command failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of source plugs = %d\n",
+                 plugInfoCmd.m_sourcePlugs );
+    debugOutput( DEBUG_LEVEL_NORMAL, "number of destination output "
+                 "plugs = %d\n", plugInfoCmd.m_destinationPlugs );
+
+    if ( !discoverPlugs( Plug::eAPD_Input,
+                         plugInfoCmd.m_destinationPlugs ) )
+    {
+        debugError( "destination plug discovering failed\n" );
+        return false;
+    }
+
+    if ( !discoverPlugs(  Plug::eAPD_Output,
+                          plugInfoCmd.m_sourcePlugs ) )
+    {
+        debugError( "source plug discovering failed\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Subunit::discoverConnections()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering connections...\n");
+    
+    for ( PlugVector::iterator it = getPlugs().begin();
+          it != getPlugs().end();
+          ++it )
+    {
+        Plug* plug = *it;
+        if ( !plug->discoverConnections() ) {
+            debugError( "plug connection discovering failed ('%s')\n",
+                        plug->getName() );
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool
+Subunit::discoverPlugs(Plug::EPlugDirection plugDirection,
+                                      plug_id_t plugMaxId )
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
+    for ( int plugIdx = 0;
+          plugIdx < plugMaxId;
+          ++plugIdx )
+    {
+        Plug* plug = createPlug(  &getUnit(),
+                                &getSubunit(),
+                                0xff,
+                                0xff,
+                                Plug::eAPA_SubunitPlug,
+                                plugDirection,
+                                plugIdx );
+        if ( !plug ) {
+            debugError( "plug creation failed\n" );
+            return false;
+        }
+        
+        plug->setVerboseLevel(getDebugLevel());
+        
+        if ( !plug->discover() ) {
+            debugError( "plug discover failed\n" );
+            return false;
+        }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
+                     plug->getName() );
+        getPlugs().push_back( plug );
+    }
     return true;
 }
 
@@ -97,6 +211,13 @@ Subunit::getPlug(Plug::EPlugDirection direction, plug_id_t plugId)
         }
     }
     return 0;
+}
+
+bool
+Subunit::initPlugFromDescriptor( Plug& plug )
+{
+    debugError("plug loading from descriptor not implemented\n");
+    return false;
 }
 
 bool

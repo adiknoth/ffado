@@ -35,127 +35,11 @@
 
 using namespace AVC;
 
-IMPL_DEBUG_MODULE( BeBoB::Subunit, BeBoB::Subunit, DEBUG_LEVEL_VERBOSE );
-IMPL_DEBUG_MODULE( BeBoB::SubunitAudio, BeBoB::SubunitAudio, DEBUG_LEVEL_VERBOSE );
-IMPL_DEBUG_MODULE( BeBoB::SubunitMusic, BeBoB::SubunitMusic, DEBUG_LEVEL_VERBOSE );
-
-bool
-BeBoB::Subunit::discover()
-{
-    if ( !discoverPlugs() ) {
-        debugError( "plug discovering failed\n" );
-        return false;
-    }
-
-    return true;
-}
-
-bool
-BeBoB::Subunit::discoverPlugs()
-{
-    PlugInfoCmd plugInfoCmd( getUnit().get1394Service(),
-                             PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
-    plugInfoCmd.setNodeId( getUnit().getConfigRom().getNodeId() );
-    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    plugInfoCmd.setSubunitType( getSubunitType() );
-    plugInfoCmd.setSubunitId( getSubunitId() );
-    plugInfoCmd.setVerbose( getDebugLevel() );
-
-    if ( !plugInfoCmd.fire() ) {
-        debugError( "plug info command failed\n" );
-        return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of source plugs = %d\n",
-                 plugInfoCmd.m_sourcePlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of destination output "
-                 "plugs = %d\n", plugInfoCmd.m_destinationPlugs );
-
-    if ( !discoverPlugs( Plug::eAPD_Input,
-                         plugInfoCmd.m_destinationPlugs ) )
-    {
-        debugError( "destination plug discovering failed\n" );
-        return false;
-    }
-
-    if ( !discoverPlugs(  Plug::eAPD_Output,
-                          plugInfoCmd.m_sourcePlugs ) )
-    {
-        debugError( "source plug discovering failed\n" );
-        return false;
-    }
-
-    return true;
-}
-
-bool
-BeBoB::Subunit::discoverConnections()
-{
-    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering connections...\n");
-    
-    for ( PlugVector::iterator it = getPlugs().begin();
-          it != getPlugs().end();
-          ++it )
-    {
-        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
-        if(!plug) {
-            debugError("BUG: not a bebob plug\n");
-            return false;
-        }
-        if ( !plug->discoverConnections() ) {
-            debugError( "plug connection discovering failed ('%s')\n",
-                        plug->getName() );
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool
-BeBoB::Subunit::discoverPlugs(Plug::EPlugDirection plugDirection,
-                                      plug_id_t plugMaxId )
-{
-    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
-    for ( int plugIdx = 0;
-          plugIdx < plugMaxId;
-          ++plugIdx )
-    {
-        ESubunitType subunitType =
-            static_cast<ESubunitType>( getSubunitType() );
-        BeBoB::Plug* plug = new BeBoB::Plug( &getUnit(),
-                                             &getSubunit(),
-                                             0xff,
-                                             0xff,
-                                             Plug::eAPA_SubunitPlug,
-                                             plugDirection,
-                                             plugIdx );
-        if ( !plug ) {
-            debugError( "plug creation failed\n" );
-            return false;
-        }
-        
-        plug->setVerboseLevel(getDebugLevel());
-        
-        if ( !plug->discover() ) {
-            debugError( "plug discover failed\n" );
-            return false;
-        }
-
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
-                     plug->getName() );
-        getPlugs().push_back( plug );
-    }
-    return true;
-}
-
-
 //////////////////////////
 
 BeBoB::SubunitAudio::SubunitAudio( AVC::Unit& avDevice,
                                    subunit_t id )
     : AVC::SubunitAudio( avDevice, id )
-    , BeBoB::Subunit()
 {
 }
 
@@ -169,6 +53,25 @@ BeBoB::SubunitAudio::~SubunitAudio()
 
 }
 
+AVC::Plug *
+BeBoB::SubunitAudio::createPlug( AVC::Unit* unit,
+                     AVC::Subunit* subunit,
+                     AVC::function_block_type_t functionBlockType,
+                     AVC::function_block_type_t functionBlockId,
+                     AVC::Plug::EPlugAddressType plugAddressType,
+                     AVC::Plug::EPlugDirection plugDirection,
+                     AVC::plug_id_t plugId )
+{
+
+    return new BeBoB::Plug( unit,
+                     subunit,
+                     functionBlockType,
+                     functionBlockId,
+                     plugAddressType,
+                     plugDirection,
+                     plugId );
+}
+
 bool
 BeBoB::SubunitAudio::discover()
 {
@@ -176,11 +79,6 @@ BeBoB::SubunitAudio::discover()
     
     // discover the AV/C generic part
     if ( !AVC::SubunitAudio::discover() ) {
-        return false;
-    }
-    
-    // do BeBoB subunit specific discovery
-    if ( !BeBoB::Subunit::discover() ) {
         return false;
     }
 
@@ -197,7 +95,7 @@ bool
 BeBoB::SubunitAudio::discoverConnections()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering connections...\n");
-    if ( !BeBoB::Subunit::discoverConnections() ) {
+    if ( !Subunit::discoverConnections() ) {
         return false;
     }
 
@@ -487,18 +385,35 @@ BeBoB::SubunitAudio::deserializeChild( Glib::ustring basePath,
 BeBoB::SubunitMusic::SubunitMusic( AVC::Unit& avDevice,
                                    subunit_t id )
     : AVC::SubunitMusic( avDevice, id )
-    , BeBoB::Subunit()
 {
 }
 
 BeBoB::SubunitMusic::SubunitMusic()
     : AVC::SubunitMusic()
-    , BeBoB::Subunit()
 {
 }
 
 BeBoB::SubunitMusic::~SubunitMusic()
 {
+}
+
+AVC::Plug *
+BeBoB::SubunitMusic::createPlug( AVC::Unit* unit,
+                     AVC::Subunit* subunit,
+                     AVC::function_block_type_t functionBlockType,
+                     AVC::function_block_type_t functionBlockId,
+                     AVC::Plug::EPlugAddressType plugAddressType,
+                     AVC::Plug::EPlugDirection plugDirection,
+                     AVC::plug_id_t plugId )
+{
+
+    return new BeBoB::Plug( unit,
+                     subunit,
+                     functionBlockType,
+                     functionBlockId,
+                     plugAddressType,
+                     plugDirection,
+                     plugId );
 }
 
 bool
@@ -508,11 +423,6 @@ BeBoB::SubunitMusic::discover()
     
     // discover the AV/C generic part
     if ( !AVC::SubunitMusic::discover() ) {
-        return false;
-    }
-    
-    // do BeBoB subunit specific discovery
-    if ( !BeBoB::Subunit::discover() ) {
         return false;
     }
 

@@ -29,6 +29,9 @@
 #include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
+#include "../general/avc_subunit.h"
+#include "../general/avc_unit.h"
+
 #include <netinet/in.h>
 
 // info block implementations
@@ -198,9 +201,21 @@ AVCMusicClusterInfoBlock::deserialize( IISDeserialize& de )
             de.skip(bytes_left);
         }
     }
-        
+
     return result;
 }
+
+std::string 
+AVCMusicClusterInfoBlock::getName() {
+    if(m_RawTextInfoBlock.m_compound_length>0) {
+        return m_RawTextInfoBlock.m_text;
+    } else if (m_NameInfoBlock.m_compound_length>0) {
+        return m_NameInfoBlock.m_text;
+    } else {
+        return std::string("Unknown");
+    }
+}
+
 
 // ---------
 AVCMusicSubunitPlugInfoBlock::AVCMusicSubunitPlugInfoBlock( )
@@ -322,6 +337,18 @@ AVCMusicSubunitPlugInfoBlock::deserialize( IISDeserialize& de )
     return result;
 }
 
+std::string 
+AVCMusicSubunitPlugInfoBlock::getName() {
+    if(m_RawTextInfoBlock.m_compound_length>0) {
+        return m_RawTextInfoBlock.m_text;
+    } else if (m_NameInfoBlock.m_compound_length>0) {
+        return m_NameInfoBlock.m_text;
+    } else {
+        return std::string("Unknown");
+    }
+}
+
+
 // ---------
 AVCMusicPlugInfoBlock::AVCMusicPlugInfoBlock( )
     : AVCInfoBlock( 0x810B )
@@ -429,6 +456,18 @@ AVCMusicPlugInfoBlock::deserialize( IISDeserialize& de )
     
     return result;
 }
+
+std::string 
+AVCMusicPlugInfoBlock::getName() {
+    if(m_RawTextInfoBlock.m_compound_length>0) {
+        return m_RawTextInfoBlock.m_text;
+    } else if (m_NameInfoBlock.m_compound_length>0) {
+        return m_NameInfoBlock.m_text;
+    } else {
+        return std::string("Unknown");
+    }
+}
+
 
 // ---------
 AVCMusicRoutingStatusInfoBlock::AVCMusicRoutingStatusInfoBlock( )
@@ -567,10 +606,50 @@ AVCMusicRoutingStatusInfoBlock::deserialize( IISDeserialize& de )
     return result;
 }
 
+AVCMusicSubunitPlugInfoBlock *
+AVCMusicRoutingStatusInfoBlock::getSubunitPlugInfoBlock(Plug::EPlugDirection direction, plug_id_t id) {
+    if (direction == Plug::eAPD_Input) {
+        for ( AVCMusicSubunitPlugInfoBlockVectorIterator it = mDestPlugInfoBlocks.begin();
+        it != mDestPlugInfoBlocks.end();
+        ++it )
+        {
+            AVCMusicSubunitPlugInfoBlock *b=(*it);
+            if (b->m_subunit_plug_id == id) return b;
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no plug info found.\n");
+        return NULL;
+    } else if (direction == Plug::eAPD_Output) {
+        for ( AVCMusicSubunitPlugInfoBlockVectorIterator it = mSourcePlugInfoBlocks.begin();
+        it != mSourcePlugInfoBlocks.end();
+        ++it )
+        {
+            AVCMusicSubunitPlugInfoBlock *b=(*it);
+            if (b->m_subunit_plug_id == id) return b;
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no plug info found.\n");
+        return NULL;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Invalid direction.\n");
+        return NULL;
+    }
+}
+
+AVCMusicPlugInfoBlock *
+AVCMusicRoutingStatusInfoBlock::getMusicPlugInfoBlock(plug_id_t id) {
+    for ( AVCMusicPlugInfoBlockVectorIterator it = mMusicPlugInfoBlocks.begin();
+    it != mMusicPlugInfoBlocks.end();
+    ++it )
+    {
+        AVCMusicPlugInfoBlock *b=(*it);
+        if (b->m_music_plug_id == id) return b;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "no music plug info found.\n");
+    return NULL;
+}
 
 // ----------------------
-AVCMusicStatusDescriptor::AVCMusicStatusDescriptor( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
-    : AVCDescriptor(ieee1394service, nodeId, eST_Music, 0x00, AVCDescriptorSpecifier::eSubunit0x80)
+AVCMusicStatusDescriptor::AVCMusicStatusDescriptor( Unit* unit, Subunit* subunit )
+    : AVCDescriptor(unit, subunit, AVCDescriptorSpecifier::eSubunit0x80)
 {}
 
 bool
@@ -613,15 +692,15 @@ AVCMusicStatusDescriptor::deserialize( IISDeserialize& de )
         debugOutput(DEBUG_LEVEL_VERBOSE, "type=0x%04X, length=%u\n",block_type, block_length);
         
         switch (block_type) {
-            case 0x8100: 
+            case 0x8100:
                 m_general_status_infoblock.setVerbose(getVerboseLevel());
                 result &= m_general_status_infoblock.deserialize(de);
                 break;
-            case 0x8101: 
+            case 0x8101:
                 m_output_plug_status_infoblock.setVerbose(getVerboseLevel());
                 result &= m_output_plug_status_infoblock.deserialize(de);
                 break;
-        case 0x8108: 
+            case 0x8108:
                 m_routing_status_infoblock.setVerbose(getVerboseLevel());
                 result &= m_routing_status_infoblock.deserialize(de);
                 break;
@@ -630,7 +709,7 @@ AVCMusicStatusDescriptor::deserialize( IISDeserialize& de )
                 de.skip(block_length);
                 break;
         }
-        
+
         if(blocks_done++>max_blocks) {
             debugError("Too much info blocks in descriptor, probably a runaway parser\n");
             break;
@@ -638,6 +717,16 @@ AVCMusicStatusDescriptor::deserialize( IISDeserialize& de )
     }
     
     return result;
+}
+
+AVCMusicSubunitPlugInfoBlock *
+AVCMusicStatusDescriptor::getSubunitPlugInfoBlock(Plug::EPlugDirection direction, plug_id_t id) {
+    return m_routing_status_infoblock.getSubunitPlugInfoBlock(direction, id);
+}
+
+AVCMusicPlugInfoBlock *
+AVCMusicStatusDescriptor::getMusicPlugInfoBlock(plug_id_t id) {
+    return m_routing_status_infoblock.getMusicPlugInfoBlock(id);
 }
 
 }

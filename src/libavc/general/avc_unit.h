@@ -61,7 +61,7 @@ public:
     virtual ConfigRom& getConfigRom() const = 0;
     
     /// Discovers the unit's internals
-    bool discover();
+    virtual bool discover();
 
     PlugManager& getPlugManager()
         { return *m_pPlugManager; }
@@ -85,11 +85,12 @@ public:
     };
 
     typedef std::vector<SyncInfo> SyncInfoVector;
-    const SyncInfoVector& getSyncInfos() const
+    virtual const SyncInfoVector& getSyncInfos() const
         { return m_syncInfos; }
-    const SyncInfo* getActiveSyncInfo() const
+    virtual const SyncInfo* getActiveSyncInfo() const
         { return m_activeSyncInfo; }
-    virtual bool setActiveSync( const SyncInfo& syncInfo ) = 0;
+        
+    virtual bool setActiveSync( const SyncInfo& syncInfo );
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static bool deserialize( Glib::ustring basePath, Unit*,
@@ -103,14 +104,37 @@ public:
                    getSubunit( AVC1394_SUBUNIT_MUSIC , subunitId ));};
     Subunit* getSubunit( subunit_type_t subunitType,
                          subunit_id_t subunitId ) const;
+
+    virtual AVC::Subunit* createSubunit(Unit& unit,
+                                        ESubunitType type,
+                                        subunit_t id );
+    virtual AVC::Plug* createPlug( AVC::Unit* unit,
+                                   AVC::Subunit* subunit,
+                                   AVC::function_block_type_t functionBlockType,
+                                   AVC::function_block_type_t functionBlockId,
+                                   AVC::Plug::EPlugAddressType plugAddressType,
+                                   AVC::Plug::EPlugDirection plugDirection,
+                                   AVC::plug_id_t plugId );
+
 protected:
 
     virtual bool enumerateSubUnits();
-
+    virtual bool discoverPlugConnections();
+    virtual bool discoverSubUnitsPlugConnections();
+    virtual bool discoverPlugs();
+    virtual bool discoverPlugsPCR( AVC::Plug::EPlugDirection plugDirection,
+                           AVC::plug_id_t plugMaxId );
+    virtual bool discoverPlugsExternal( AVC::Plug::EPlugDirection plugDirection,
+                                AVC::plug_id_t plugMaxId );
+    virtual bool propagateClusterInfos();
+    virtual bool discoverSyncModes();
+    virtual bool checkSyncConnectionsAndAddToList( AVC::PlugVector& plhs,
+                                           AVC::PlugVector& prhs,
+                                           std::string syncDescription );
+    virtual Plug* getSyncPlug( int maxPlugId, Plug::EPlugDirection );
+    
     unsigned int getNrOfSubunits( subunit_type_t subunitType ) const;
     PlugConnection* getPlugConnection( Plug& srcPlug ) const;
-
-    Plug* getSyncPlug( int maxPlugId, Plug::EPlugDirection );
 
     Plug* getPlugById( PlugVector& plugs,
                          Plug::EPlugDirection plugDireciton,
@@ -125,9 +149,6 @@ protected:
 
     void showPlugs( PlugVector& plugs ) const;
 
-//     bool checkSyncConnectionsAndAddToList( PlugVector& plhs,
-//                                            PlugVector& prhs,
-//                                            std::string syncDescription );
 
     static bool serializeSyncInfoVector( Glib::ustring basePath,
                                          Util::IOSerialize& ser,

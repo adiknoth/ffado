@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2007 by Pieter Palmers
+ * Copyright (C) 2005-2007 by Daniel Wagner
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -27,7 +28,15 @@
 #include "ffadodevice.h"
 
 #include "debugmodule/debugmodule.h"
+
 #include "libavc/avc_definitions.h"
+#include "libavc/general/avc_unit.h"
+#include "libavc/general/avc_subunit.h"
+#include "libavc/general/avc_plug.h"
+
+#include "libstreaming/AmdtpStreamProcessor.h"
+#include "libstreaming/AmdtpPort.h"
+#include "libstreaming/AmdtpPortInfo.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -42,7 +51,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class AvDevice : public FFADODevice {
+class AvDevice : public FFADODevice, public AVC::Unit {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
           Ieee1394Service& ieee1394Service,
@@ -66,10 +75,28 @@ public:
 
     bool startStreamByIndex(int i);
     bool stopStreamByIndex(int i);
-
+    
+    // redefinition to resolve ambiguity
+    Ieee1394Service& get1394Service()
+        { return FFADODevice::get1394Service(); };
+    ConfigRom& getConfigRom() const 
+        { return FFADODevice::getConfigRom(); };
+        
 protected:
+    bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
+                             Streaming::AmdtpAudioPort::E_Direction direction);
+    bool setSamplingFrequencyPlug( AVC::Plug& plug,
+                                   AVC::Plug::EPlugDirection direction,
+                                   AVC::ESamplingFrequency samplingFrequency );
+    
     struct VendorModelEntry *m_model;
-
+    
+    // streaming stuff
+    typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
+    StreamProcessorVector m_receiveProcessors;
+    StreamProcessorVector m_transmitProcessors;
+    
+    DECLARE_DEBUG_MODULE;
 };
 
 }

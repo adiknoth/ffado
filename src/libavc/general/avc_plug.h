@@ -46,9 +46,13 @@ namespace AVC {
 class Unit;
 class Subunit;
 class PlugManager;
-class Plug;
 
+class Plug;
 typedef std::vector<Plug*> PlugVector;
+
+class PlugConnection;
+typedef std::vector<PlugConnection*> PlugConnectionVector;
+
 
 class Plug {
 public:
@@ -61,6 +65,7 @@ public:
         eAPA_FunctionBlockPlug,
         eAPA_Undefined,
     };
+    std::string plugAddressTypeToString(enum EPlugAddressType t);
 
     enum EPlugType {
         eAPT_IsoStream,
@@ -71,12 +76,14 @@ public:
         eAPT_Digital,
         eAPT_Unknown,
     };
+    std::string plugTypeToString(enum EPlugType t);
 
     enum EPlugDirection {
         eAPD_Input,
         eAPD_Output,
         eAPD_Unknown,
     };
+    std::string plugDirectionToString(enum EPlugDirection t);
 
     // \todo This constructors sucks. too many parameters. fix it.
     Plug( Unit* unit,
@@ -89,14 +96,10 @@ public:
     Plug( const Plug& rhs );
     virtual ~Plug();
 
-    virtual bool discover() 
-    {//FIXME:
-        #warning FIXME i want to be pure!!
-        return true;
-    };
-
     bool inquireConnnection( Plug& plug );
     bool setConnection( Plug& plug );
+
+    int getSignalSource();
 
     int getGlobalId() const
         { return m_globalId; }
@@ -107,29 +110,45 @@ public:
     
     const char* getName() const
         { return m_name.c_str(); }
+    bool setName(const char *n)
+        { m_name=n; return true;};
+    bool setName(std::string n)
+        { m_name=n; return true;};
     EPlugDirection getPlugDirection() const
         { return m_direction; }
+    bool setPlugDirection(EPlugDirection d)
+        { m_direction=d; return true; }
     sampling_frequency_t getSamplingFrequency() const
         { return m_samplingFrequency; }
     int getSampleRate() const; // 22050, 24000, 32000, ...
+    bool setSampleRate( int rate );
+    
     int getNrOfChannels() const;
+    bool setNrOfChannels(int i);
     int getNrOfStreams() const;
 
+    // FIXME: this is the same as getPlugDirection
     EPlugDirection getDirection() const
         { return m_direction; }
     EPlugAddressType getPlugAddressType() const
         { return m_addressType; }
     EPlugType getPlugType() const
         { return m_infoPlugType; }
+    bool setPlugType(EPlugType t)
+        { m_infoPlugType=t; return true; }
 
     function_block_type_t getFunctionBlockType() const
         { return m_functionBlockType; }
     function_block_id_t getFunctionBlockId() const
         { return m_functionBlockId; }
 
-    const PlugVector& getInputConnections() const
+//     const PlugVector& getInputConnections() const
+//         { return m_inputConnections; }
+//     const PlugVector& getOutputConnections() const
+//         { return m_outputConnections; }
+    PlugVector& getInputConnections()
         { return m_inputConnections; }
-    const PlugVector& getOutputConnections() const
+    PlugVector& getOutputConnections()
         { return m_outputConnections; }
 
     static PlugAddress::EPlugDirection convertPlugDirection(
@@ -170,6 +189,35 @@ public:
         
     virtual void setVerboseLevel( int i ) 
             {setDebugLevel(i);};
+    
+// the discovery interface
+// everything can be overloaded, or
+// can be left as is
+public:
+    virtual bool discover();
+    virtual bool discoverConnections();
+    virtual bool propagateFromConnectedPlug( );
+    
+protected:
+    virtual bool discoverPlugType();
+    virtual bool discoverName();
+    virtual bool discoverNoOfChannels();
+    virtual bool discoverChannelPosition();
+    virtual bool discoverChannelName();
+    virtual bool discoverClusterInfo();
+    virtual bool discoverStreamFormat();
+    virtual bool discoverSupportedStreamFormats();
+    virtual bool discoverConnectionsInput();
+    virtual bool discoverConnectionsOutput();
+    virtual bool initFromDescriptor();
+
+    bool propagateFromPlug( Plug *p );
+
+    ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
+
+    ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
+            ExtendedStreamFormatCmd::ESubFunction subFunction);
+
 protected:
     Plug();
 
@@ -279,6 +327,9 @@ public:
 
     void showPlugs() const;
 
+    int getPlugCount() 
+        { return m_plugs.size(); };
+
     Plug* getPlug( ESubunitType subunitType,
                    subunit_id_t subunitId,
                    function_block_type_t functionBlockType,
@@ -301,6 +352,9 @@ public:
                                         Unit& avDevice );
     void setVerboseLevel( int i ) 
             {setDebugLevel(i);};
+    PlugVector& getPlugs() {return m_plugs;};
+    bool tidyPlugConnections(PlugConnectionVector&);
+
 private:
 
     PlugVector   m_plugs;
@@ -329,7 +383,6 @@ private:
     Plug* m_destPlug;
 };
 
-typedef std::vector<PlugConnection*> PlugConnectionVector;
 typedef std::vector<PlugConnection> PlugConnectionOwnerVector;
 
 }

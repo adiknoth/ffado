@@ -93,6 +93,40 @@ AvDevice::~AvDevice()
     }
 }
 
+AVC::Subunit* 
+BeBoB::AvDevice::createSubunit(AVC::Unit& unit,
+                               AVC::ESubunitType type,
+                               AVC::subunit_t id ) 
+{
+    switch (type) {
+        case AVC::eST_Audio:
+            return new BeBoB::SubunitAudio(unit, id );
+        case AVC::eST_Music:
+            return new BeBoB::SubunitMusic(unit, id );
+        default:
+            return NULL;
+    }
+}
+
+AVC::Plug *
+BeBoB::AvDevice::createPlug( AVC::Unit* unit,
+                     AVC::Subunit* subunit,
+                     AVC::function_block_type_t functionBlockType,
+                     AVC::function_block_type_t functionBlockId,
+                     AVC::Plug::EPlugAddressType plugAddressType,
+                     AVC::Plug::EPlugDirection plugDirection,
+                     AVC::plug_id_t plugId )
+{
+
+    return new BeBoB::Plug( unit,
+                     subunit,
+                     functionBlockType,
+                     functionBlockId,
+                     plugAddressType,
+                     plugDirection,
+                     plugId );
+}
+
 void
 AvDevice::setVerboseLevel(int l)
 {
@@ -165,27 +199,6 @@ AvDevice::discover()
 //         return false;
 //     }
 
-    // bebob specific discovery procedure
-    if ( !discoverPlugs() ) {
-        debugError( "Detecting plugs failed\n" );
-        return false;
-    }
-
-    if ( !discoverPlugConnections() ) {
-        debugError( "Detecting plug connections failed\n" );
-        return false;
-    }
-
-    if ( !discoverSubUnitsPlugConnections() ) {
-        debugError( "Detecting plug connnection failed\n" );
-        return false;
-    }
-
-    if ( !discoverSyncModes() ) {
-        debugError( "Detecting sync modes failed\n" );
-        return false;
-    }
-
     // create a GenericMixer and add it as an OSC child node
     //  remove if already there
     if(m_Mixer != NULL) {
@@ -205,428 +218,6 @@ AvDevice::discover()
             debugWarning("failed to register mixer in OSC namespace\n");
         }
     }
-    return true;
-}
-
-bool
-AvDevice::enumerateSubUnits()
-{
-    SubUnitInfoCmd subUnitInfoCmd( get1394Service() );
-    subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
-
-    // NOTE: BeBoB has always exactly one audio and one music subunit. This
-    // means is fits into the first page of the SubUnitInfo command.
-    // So there is no need to do more than needed
-
-    subUnitInfoCmd.m_page = 0;
-    subUnitInfoCmd.setNodeId( getConfigRom().getNodeId() );
-    subUnitInfoCmd.setVerbose( getDebugLevel() );
-    if ( !subUnitInfoCmd.fire() ) {
-        debugError( "Subunit info command failed\n" );
-        // shouldn't this be an error situation?
-        return false;
-    }
-
-    for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
-        subunit_type_t subunit_type
-            = subUnitInfoCmd.m_table[i].m_subunit_type;
-
-        unsigned int subunitId = getNrOfSubunits( subunit_type );
-
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                     subunitId,
-                     subunit_type,
-                     subunitTypeToString( subunit_type ) );
-
-        AVC::Subunit* subunit = 0;
-        switch( subunit_type ) {
-        case eST_Audio:
-            subunit = new BeBoB::SubunitAudio( *this,
-                                               subunitId );
-            if ( !subunit ) {
-                debugFatal( "Could not allocate SubunitAudio\n" );
-                return false;
-            }
-            
-            if ( !subunit->discover() ) {
-                debugError( "enumerateSubUnits: Could not discover "
-                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                            subunitId,
-                            subunit_type,
-                            subunitTypeToString( subunit_type ) );
-                delete subunit;
-                return false;
-            } else {
-                m_subunits.push_back( subunit );
-            }
-            
-            break;
-        case eST_Music:
-            subunit = new BeBoB::SubunitMusic( *this,
-                                               subunitId );
-            if ( !subunit ) {
-                debugFatal( "Could not allocate SubunitMusic\n" );
-                return false;
-            }
-            if ( !subunit->discover() ) {
-                debugError( "enumerateSubUnits: Could not discover "
-                            "subunit_id = %2d, subunit_type = %2d (%s)\n",
-                            subunitId,
-                            subunit_type,
-                            subunitTypeToString( subunit_type ) );
-                delete subunit;
-                return false;
-            } else {
-                m_subunits.push_back( subunit );
-            }
-
-            break;
-        default:
-            debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Unsupported subunit found, subunit_type = %d (%s)\n",
-                         subunit_type,
-                         subunitTypeToString( subunit_type ) );
-            continue;
-
-        }
-    }
-
-    return true;
-}
-
-bool
-AvDevice::discoverPlugs()
-{
-    debugOutput( DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
-
-    //////////////////////////////////////////////
-    // Get number of available isochronous input
-    // and output plugs of unit
-
-    PlugInfoCmd plugInfoCmd( *m_p1394Service );
-    plugInfoCmd.setNodeId( m_pConfigRom->getNodeId() );
-    plugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    plugInfoCmd.setVerbose( m_verboseLevel );
-
-    if ( !plugInfoCmd.fire() ) {
-        debugError( "plug info command failed\n" );
-        return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of iso input plugs = %d\n",
-                 plugInfoCmd.m_serialBusIsochronousInputPlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of iso output plugs = %d\n",
-                 plugInfoCmd.m_serialBusIsochronousOutputPlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of external input plugs = %d\n",
-                 plugInfoCmd.m_externalInputPlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of external output plugs = %d\n",
-                 plugInfoCmd.m_externalOutputPlugs );
-
-    if ( !discoverPlugsPCR( Plug::eAPD_Input,
-                            plugInfoCmd.m_serialBusIsochronousInputPlugs ) )
-    {
-        debugError( "pcr input plug discovering failed\n" );
-        return false;
-    }
-
-    if ( !discoverPlugsPCR( Plug::eAPD_Output,
-                            plugInfoCmd.m_serialBusIsochronousOutputPlugs ) )
-    {
-        debugError( "pcr output plug discovering failed\n" );
-        return false;
-    }
-
-    if ( !discoverPlugsExternal( Plug::eAPD_Input,
-                                 plugInfoCmd.m_externalInputPlugs ) )
-    {
-        debugError( "external input plug discovering failed\n" );
-        return false;
-    }
-
-    if ( !discoverPlugsExternal( Plug::eAPD_Output,
-                                 plugInfoCmd.m_externalOutputPlugs ) )
-    {
-        debugError( "external output plug discovering failed\n" );
-        return false;
-    }
-
-    return true;
-}
-
-bool
-AvDevice::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
-                            plug_id_t plugMaxId )
-{
-    debugOutput( DEBUG_LEVEL_NORMAL, "Discovering PCR plugs, direction %d...\n",plugDirection);
-    for ( int plugId = 0;
-          plugId < plugMaxId;
-          ++plugId )
-    {
-        AVC::Plug* plug  = new Plug( this,
-                                NULL,
-                                0xff,
-                                0xff,
-                                Plug::eAPA_PCR,
-                                plugDirection,
-                                plugId );
-        if ( !plug || !plug->discover() ) {
-            debugError( "plug discovering failed\n" );
-            delete plug;
-            return false;
-        }
-
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
-                     plug->getName() );
-        m_pcrPlugs.push_back( plug );
-    }
-
-    return true;
-}
-
-bool
-AvDevice::discoverPlugsExternal( Plug::EPlugDirection plugDirection,
-                                 plug_id_t plugMaxId )
-{
-    debugOutput( DEBUG_LEVEL_NORMAL, "Discovering Externals plugs, direction %d...\n",plugDirection);
-    for ( int plugId = 0;
-          plugId < plugMaxId;
-          ++plugId )
-    {
-        AVC::Plug* plug  = new Plug( this, NULL,
-                                0xff,
-                                0xff,
-                                Plug::eAPA_ExternalPlug,
-                                plugDirection,
-                                plugId );
-        if ( !plug || !plug->discover() ) {
-            debugError( "plug discovering failed\n" );
-            return false;
-        }
-
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
-                     plug->getName() );
-        m_externalPlugs.push_back( plug );
-    }
-
-    return true;
-}
-
-bool
-AvDevice::discoverPlugConnections()
-{
-    for ( PlugVector::iterator it = m_pcrPlugs.begin();
-          it != m_pcrPlugs.end();
-          ++it )
-    {
-        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
-        if(!plug) {
-            debugError("BUG: not a bebob plug\n");
-            return false;
-        }
-        if ( !plug->discoverConnections() ) {
-            debugError( "Could not discover plug connections\n" );
-            return false;
-        }
-    }
-    for ( PlugVector::iterator it = m_externalPlugs.begin();
-          it != m_externalPlugs.end();
-          ++it )
-    {
-        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
-        if(!plug) {
-            debugError("BUG: not a bebob plug\n");
-            return false;
-        }
-        if ( !plug->discoverConnections() ) {
-            debugError( "Could not discover plug connections\n" );
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool
-AvDevice::discoverSubUnitsPlugConnections()
-{
-    for ( SubunitVector::iterator it = m_subunits.begin();
-          it != m_subunits.end();
-          ++it )
-    {
-        BeBoB::Subunit* subunit = dynamic_cast<BeBoB::Subunit*>(*it);
-        if (subunit==NULL) {
-            debugError("BUG: subunit is not a BeBoB::Subunit\n");
-            return false;
-        }
-
-        if ( !subunit->discoverConnections() ) {
-            debugError( "Subunit '%s'  plug connections failed\n",
-                        subunit->getName() );
-            return false;
-        }
-    }
-    return true;
-}
-
-bool
-AvDevice::discoverSyncModes()
-{
-    // Following possible sync plugs exists:
-    // - Music subunit sync output plug = internal sync (CSP)
-    // - Unit input plug 0 = SYT match
-    // - Unit input plut 1 = Sync stream
-    //
-    // If last sync mode is reported it is mostelikely not
-    // implemented *sic*
-    //
-    // Following sync sources are device specific:
-    // - All unit external input plugs which have a
-    //   sync information (WS, SPDIF, ...)
-
-    // First we have to find the sync input and output plug
-    // in the music subunit.
-
-    // Note PCR input means 1394bus-to-device where as
-    // MSU input means subunit-to-device
-
-    PlugVector syncPCRInputPlugs = getPlugsByType( m_pcrPlugs,
-                                                     Plug::eAPD_Input,
-                                                     Plug::eAPT_Sync );
-    if ( !syncPCRInputPlugs.size() ) {
-        debugWarning( "No PCR sync input plug found\n" );
-    }
-
-    PlugVector syncPCROutputPlugs = getPlugsByType( m_pcrPlugs,
-                                                      Plug::eAPD_Output,
-                                                      Plug::eAPT_Sync );
-    if ( !syncPCROutputPlugs.size() ) {
-        debugWarning( "No PCR sync output plug found\n" );
-    }
-
-    PlugVector isoPCRInputPlugs = getPlugsByType( m_pcrPlugs,
-                                                    Plug::eAPD_Input,
-                                                    Plug::eAPT_IsoStream );
-    if ( !isoPCRInputPlugs.size() ) {
-        debugWarning( "No PCR iso input plug found\n" );
-
-    }
-
-    PlugVector isoPCROutputPlugs = getPlugsByType( m_pcrPlugs,
-                                                    Plug::eAPD_Output,
-                                                    Plug::eAPT_IsoStream );
-    if ( !isoPCROutputPlugs.size() ) {
-        debugWarning( "No PCR iso output plug found\n" );
-
-    }
-
-    PlugVector digitalPCRInputPlugs = getPlugsByType( m_externalPlugs,
-                                                    Plug::eAPD_Input,
-                                                    Plug::eAPT_Digital );
-
-    PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
-        eST_Music,
-        0,
-        0xff,
-        0xff,
-        Plug::eAPA_SubunitPlug,
-        Plug::eAPD_Input,
-        Plug::eAPT_Sync );
-    if ( !syncMSUInputPlugs.size() ) {
-        debugWarning( "No sync input plug for MSU subunit found\n" );
-    }
-
-    PlugVector syncMSUOutputPlugs = m_pPlugManager->getPlugsByType(
-        eST_Music,
-        0,
-        0xff,
-        0xff,
-        Plug::eAPA_SubunitPlug,
-        Plug::eAPD_Output,
-        Plug::eAPT_Sync );
-    if ( !syncMSUOutputPlugs.size() ) {
-        debugWarning( "No sync output plug for MSU subunit found\n" );
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Sync Input Plugs:\n" );
-    showPlugs( syncPCRInputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Sync Output Plugs:\n" );
-    showPlugs( syncPCROutputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Input Plugs:\n" );
-    showPlugs( isoPCRInputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Output Plugs:\n" );
-    showPlugs( isoPCROutputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR digital Input Plugs:\n" );
-    showPlugs( digitalPCRInputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Input Plugs:\n" );
-    showPlugs( syncMSUInputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Output Plugs:\n" );
-    showPlugs( syncMSUOutputPlugs );
-
-    // Check all possible PCR input to MSU input connections
-    // -> sync stream input
-    checkSyncConnectionsAndAddToList( syncPCRInputPlugs,
-                                      syncMSUInputPlugs,
-                                      "Sync Stream Input" );
-
-    // Check all possible MSU output to PCR output connections
-    // -> sync stream output
-    checkSyncConnectionsAndAddToList( syncMSUOutputPlugs,
-                                      syncPCROutputPlugs,
-                                      "Sync Stream Output" );
-
-    // Check all PCR iso input to MSU input connections
-    // -> SYT match
-    checkSyncConnectionsAndAddToList( isoPCRInputPlugs,
-                                      syncMSUInputPlugs,
-                                      "Syt Match" );
-
-    // Check all MSU sync output to MSU input connections
-    // -> CSP
-    checkSyncConnectionsAndAddToList( syncMSUOutputPlugs,
-                                      syncMSUInputPlugs,
-                                      "Internal (CSP)" );
-
-    // Check all external PCR digital input to MSU input connections
-    // -> SPDIF/ADAT sync
-    checkSyncConnectionsAndAddToList( digitalPCRInputPlugs,
-                                      syncMSUInputPlugs,
-                                      "Digital Input Sync" );
-
-    // Currently active connection signal source cmd, command type
-    // status, source unknown, destination MSU sync input plug
-
-    for ( PlugVector::const_iterator it = syncMSUInputPlugs.begin();
-          it != syncMSUInputPlugs.end();
-          ++it )
-    {
-        AVC::Plug* msuPlug = *it;
-        for ( PlugVector::const_iterator jt =
-                  msuPlug->getInputConnections().begin();
-              jt != msuPlug->getInputConnections().end();
-              ++jt )
-        {
-            AVC::Plug* plug = *jt;
-
-            for ( SyncInfoVector::iterator it = m_syncInfos.begin();
-                  it != m_syncInfos.end();
-                  ++it )
-            {
-                SyncInfo* pSyncInfo = &*it;
-                if ( ( pSyncInfo->m_source == plug )
-                     && ( pSyncInfo->m_destination == msuPlug ) )
-                {
-                    m_activeSyncInfo = pSyncInfo;
-                    break;
-                }
-            }
-            debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Active Sync Connection: '%s' -> '%s'\n",
-                         plug->getName(),
-                         msuPlug->getName() );
-        }
-    }
-
     return true;
 }
 
@@ -820,37 +411,6 @@ AvDevice::showDevice()
     flushDebugOutput();
 }
 
-bool
-AvDevice::checkSyncConnectionsAndAddToList( PlugVector& plhs,
-                                            PlugVector& prhs,
-                                            std::string syncDescription )
-{
-    for ( PlugVector::iterator plIt = plhs.begin();
-          plIt != plhs.end();
-          ++plIt )
-    {
-        AVC::Plug* pl = *plIt;
-        for ( PlugVector::iterator prIt = prhs.begin();
-              prIt != prhs.end();
-              ++prIt )
-        {
-            AVC::Plug* pr = *prIt;
-            if ( pl->inquireConnnection( *pr ) ) {
-                m_syncInfos.push_back( SyncInfo( *pl, *pr, syncDescription ) );
-                debugOutput( DEBUG_LEVEL_NORMAL,
-                             "Sync connection '%s' -> '%s'\n",
-                             pl->getName(),
-                             pr->getName() );
-            }
-        }
-    }
-    return true;
-}
-
-bool AvDevice::setActiveSync(const SyncInfo& syncInfo)
-{
-    return syncInfo.m_source->setConnection( *syncInfo.m_destination );
-}
 
 bool
 AvDevice::lock() {
@@ -862,7 +422,7 @@ AvDevice::lock() {
     if (snoopMode) {
         // don't lock
     } else {
-
+//         return Unit::reserve(4);
     }
 
     return true;
@@ -878,7 +438,7 @@ AvDevice::unlock() {
     if (snoopMode) {
         // don't unlock
     } else {
-
+//         return Unit::reserve(0);
     }
     return true;
 }
@@ -1017,6 +577,7 @@ AvDevice::addPlugToProcessor(
                         // \todo: streaming backend expects indexing starting from 0
                         // but bebob reports it starting from 1. Decide where
                         // and how to handle this (pp: here)
+                        // note that the descriptor mechanism specifies indexing from 0
                         channelInfo->m_streamPosition - 1,
                         channelInfo->m_location - 1,
                         Streaming::AmdtpPortInfo::E_MBLA
@@ -1027,11 +588,13 @@ AvDevice::addPlugToProcessor(
                 p=new Streaming::AmdtpMidiPort(
                         portname.str(),
                         direction,
-                        // \todo: streaming backend expects indexing starting from 0
-                        // but bebob reports it starting from 1. Decide where
-                        // and how to handle this (pp: here)
-                        channelInfo->m_streamPosition - 1,
-                        channelInfo->m_location - 1,
+                        channelInfo->m_streamPosition,
+                        // Workaround for out-of-spec hardware
+                        // should be:
+                        // channelInfo->m_location-1,
+                        // but now we renumber the midi channels' location as they
+                        // are discovered
+                        processor->getPortCount(Streaming::Port::E_Midi),
                         Streaming::AmdtpPortInfo::E_Midi
                 );
 

@@ -73,15 +73,8 @@ protected:
     bool discoverChannelPosition();
     bool discoverChannelName();
     bool discoverClusterInfo();
-    bool discoverStreamFormat();
-    bool discoverSupportedStreamFormats();
     bool discoverConnectionsInput();
     bool discoverConnectionsOutput();
-
-    AVC::ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
-
-    AVC::ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
-            AVC::ExtendedStreamFormatCmd::ESubFunction subFunction);
 
 private:
 

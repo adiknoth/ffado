@@ -24,6 +24,8 @@
 
 #include "avc_plug.h"
 #include "avc_unit.h"
+#include "avc_signal_format.h"
+
 #include "libieee1394/configrom.h"
 
 #include "libieee1394/ieee1394service.h"
@@ -122,6 +124,424 @@ Plug::getSubunitId() const
 }
 
 bool
+Plug::discover()
+{
+
+    if ( !initFromDescriptor() ) {
+        debugError( "discover: Could not init plug from descriptor (%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+//         return false;
+    }
+
+    if ( !discoverPlugType() ) {
+        debugError( "discover: Could not discover plug type (%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+        return false;
+    }
+
+    if ( !discoverName() ) {
+        debugError( "Could not discover name (%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+        return false;
+    }
+
+    if ( !discoverNoOfChannels() ) {
+        debugError( "Could not discover number of channels "
+                    "(%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+        return false;
+    }
+
+    if ( !discoverChannelPosition() ) {
+        debugError( "Could not discover channel positions "
+                    "(%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+        return false;
+    }
+
+    if ( !discoverChannelName() ) {
+        debugError( "Could not discover channel name "
+                    "(%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+        return false;
+    }
+
+    if ( !discoverClusterInfo() ) {
+        debugError( "Could not discover channel name "
+                    "(%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+        return false;
+    }
+
+    if ( !discoverStreamFormat() ) {
+        debugError( "Could not discover stream format "
+                    "(%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+//         return false;
+    }
+
+    if ( !discoverSupportedStreamFormats() ) {
+        debugError( "Could not discover supported stream formats "
+                    "(%d,%d,%d,%d,%d)\n",
+                    m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
+//         return false;
+    }
+
+    return m_unit->getPlugManager().addPlug( *this );
+}
+
+bool
+Plug::initFromDescriptor()
+{
+    if(getSubunitType()==eST_Unit) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Not loading unit plug from descriptor.\n");
+        return true;
+    } else {
+        return m_subunit->initPlugFromDescriptor(*this);
+    }
+}
+
+bool
+Plug::discoverConnections()
+{
+    return discoverConnectionsInput() && discoverConnectionsOutput();
+}
+
+bool
+Plug::discoverPlugType()
+{
+
+    return true;
+}
+
+bool
+Plug::discoverName()
+{
+    // name already set
+    if (m_name != "") return true;
+    
+    m_name = plugAddressTypeToString(getPlugAddressType());
+    m_name += " ";
+    m_name += plugTypeToString(getPlugType());
+    m_name += " ";
+    m_name += plugDirectionToString(getPlugDirection());
+
+    return true;
+}
+
+bool
+Plug::discoverNoOfChannels()
+{
+
+    return true;
+}
+
+bool
+Plug::discoverChannelPosition()
+{
+
+    return true;
+}
+
+bool
+Plug::discoverChannelName()
+{
+    
+    return true;
+}
+
+bool
+Plug::discoverClusterInfo()
+{
+
+    return true;
+}
+
+bool
+Plug::discoverStreamFormat()
+{
+    ExtendedStreamFormatCmd extStreamFormatCmd =
+        setPlugAddrToStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+    extStreamFormatCmd.setVerbose( getDebugLevel() );
+
+    if ( !extStreamFormatCmd.fire() ) {
+        debugError( "stream format command failed\n" );
+        return false;
+    }
+
+    if ( ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NoStreamFormat )
+         || ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NotUsed ) )
+    {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "No stream format information available\n" );
+        return true;
+    }
+
+    if ( !extStreamFormatCmd.getFormatInformation() ) {
+        debugWarning( "No stream format information for plug found -> skip\n" );
+        return true;
+    }
+
+    if ( extStreamFormatCmd.getFormatInformation()->m_root
+           != FormatInformation::eFHR_AudioMusic  )
+    {
+        debugWarning( "Format hierarchy root is not Audio&Music -> skip\n" );
+        return true;
+    }
+
+    FormatInformation* formatInfo =
+        extStreamFormatCmd.getFormatInformation();
+    FormatInformationStreamsCompound* compoundStream
+        = dynamic_cast< FormatInformationStreamsCompound* > (
+            formatInfo->m_streams );
+    if ( compoundStream ) {
+        m_samplingFrequency =
+            compoundStream->m_samplingFrequency;
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "%s plug %d uses "
+                     "sampling frequency %d, nr of stream infos = %d\n",
+                     getName(),
+                     m_id,
+                     m_samplingFrequency,
+                     compoundStream->m_numberOfStreamFormatInfos );
+
+        for ( int i = 1;
+              i <= compoundStream->m_numberOfStreamFormatInfos;
+              ++i )
+        {
+            ClusterInfo* clusterInfo =
+                const_cast<ClusterInfo*>( getClusterInfoByIndex( i ) );
+
+            if ( !clusterInfo ) {
+                debugError( "No matching cluster "
+                            "info found for index %d\n",  i );
+                    return false;
+            }
+            StreamFormatInfo* streamFormatInfo =
+                compoundStream->m_streamFormatInfos[ i - 1 ];
+
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "number of channels = %d, stream format = %d\n",
+                         streamFormatInfo->m_numberOfChannels,
+                         streamFormatInfo->m_streamFormat );
+
+            int nrOfChannels = clusterInfo->m_nrOfChannels;
+            if ( streamFormatInfo->m_streamFormat ==
+                 FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
+            {
+                // 8 logical midi channels fit into 1 channel
+                nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
+            }
+            // sanity check
+            if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
+            {
+                debugWarning( "Number of channels "
+                              "mismatch: '%s' plug discovering reported "
+                              "%d channels for cluster '%s', while stream "
+                              "format reported %d\n",
+                              getName(),
+                              nrOfChannels,
+                              clusterInfo->m_name.c_str(),
+                              streamFormatInfo->m_numberOfChannels);
+            }
+            clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
+
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                         "%s plug %d cluster info %d ('%s'): "
+                         "stream format %d\n",
+                         getName(),
+                         m_id,
+                         i,
+                         clusterInfo->m_name.c_str(),
+                         clusterInfo->m_streamFormat );
+        }
+    }
+
+    FormatInformationStreamsSync* syncStream
+        = dynamic_cast< FormatInformationStreamsSync* > (
+            formatInfo->m_streams );
+    if ( syncStream ) {
+        m_samplingFrequency =
+            syncStream->m_samplingFrequency;
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "%s plug %d is sync stream with sampling frequency %d\n",
+                     getName(),
+                     m_id,
+                     m_samplingFrequency );
+    }
+
+
+    if ( !compoundStream && !syncStream )
+    {
+        debugError( "Unsupported stream format\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Plug::discoverSupportedStreamFormats()
+{
+    ExtendedStreamFormatCmd extStreamFormatCmd =
+        setPlugAddrToStreamFormatCmd(
+            ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList);
+    extStreamFormatCmd.setVerbose( getDebugLevel() );
+
+    int i = 0;
+    bool cmdSuccess = false;
+
+    do {
+        extStreamFormatCmd.setIndexInStreamFormat( i );
+        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+        cmdSuccess = extStreamFormatCmd.fire();
+        if ( cmdSuccess
+             && ( extStreamFormatCmd.getResponse()
+                  == AVCCommand::eR_Implemented ) )
+        {
+            FormatInfo formatInfo;
+            formatInfo.m_index = i;
+            bool formatInfoIsValid = true;
+
+            FormatInformationStreamsSync* syncStream
+                = dynamic_cast< FormatInformationStreamsSync* >
+                ( extStreamFormatCmd.getFormatInformation()->m_streams );
+            if ( syncStream ) {
+                formatInfo.m_samplingFrequency =
+                    syncStream->m_samplingFrequency;
+                formatInfo.m_isSyncStream = true ;
+            }
+
+            FormatInformationStreamsCompound* compoundStream
+                = dynamic_cast< FormatInformationStreamsCompound* >
+                ( extStreamFormatCmd.getFormatInformation()->m_streams );
+            if ( compoundStream ) {
+                formatInfo.m_samplingFrequency =
+                    compoundStream->m_samplingFrequency;
+                formatInfo.m_isSyncStream = false;
+                for ( int j = 0;
+                      j < compoundStream->m_numberOfStreamFormatInfos;
+                      ++j )
+                {
+                    switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
+                    case AVC1394_STREAM_FORMAT_AM824_IEC60968_3:
+                        formatInfo.m_audioChannels +=
+                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                        break;
+                    case AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW:
+                        formatInfo.m_audioChannels +=
+                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                        break;
+                    case AVC1394_STREAM_FORMAT_AM824_MIDI_CONFORMANT:
+                        formatInfo.m_midiChannels +=
+                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+                        break;
+                    default:
+                        formatInfoIsValid = false;
+                        debugWarning("unknown stream format (0x%02x) for channel "
+                                      "(%d)\n",
+                                     compoundStream->m_streamFormatInfos[j]->m_streamFormat,
+                                     j );
+                    }
+                }
+            }
+
+            if ( formatInfoIsValid ) {
+                flushDebugOutput();
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_samplingFrequency "
+                             "= %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_samplingFrequency );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_isSyncStream = %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_isSyncStream );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_audioChannels = %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_audioChannels );
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "[%s:%d] formatInfo[%d].m_midiChannels = %d\n",
+                             getName(), m_id,
+                             i, formatInfo.m_midiChannels );
+                m_formatInfos.push_back( formatInfo );
+                flushDebugOutput();
+            }
+        }
+
+        ++i;
+    } while ( cmdSuccess && ( extStreamFormatCmd.getResponse()
+                              == ExtendedStreamFormatCmd::eR_Implemented ) );
+
+    return true;
+}
+
+bool
+Plug::discoverConnectionsInput()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering incoming connections...\n");
+
+    int sourcePlugGlobalId=getSignalSource();
+    
+    if(sourcePlugGlobalId >= 0) {
+        Plug *p=m_unit->getPlugManager().getPlug(sourcePlugGlobalId);
+        if (p==NULL) {
+            debugError( "Plug with global id %d not found\n",sourcePlugGlobalId );
+            return false;
+        }
+        // connected to another plug
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Plug '%s' gets signal from '%s'...\n",
+            getName(), p->getName() );
+
+
+
+        if ( p ) {
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        "'(%d) %s' has a connection to '(%d) %s'\n",
+                        getGlobalId(),
+                        getName(),
+                        p->getGlobalId(),
+                        p->getName() );
+            addPlugConnection( m_inputConnections, *p );
+        } else {
+            debugError( "no corresponding plug found for '(%d) %s'\n",
+                        getGlobalId(),
+                        getName() );
+            return false;
+        }
+            
+    }
+
+    return true;
+}
+
+bool
+Plug::discoverConnectionsOutput()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering outgoing connections...\n");
+    
+//     int i=0;
+//     int nbPlugs=m_unit->getPlugManager().getPlugCount();
+//     debugOutput( DEBUG_LEVEL_VERBOSE, "checking %d plugs\n", nbPlugs);
+//     
+//     for (i=0;i<nbPlugs;i++) {
+//         Plug *p=m_unit->getPlugManager().getPlug(i);
+//         
+//         if(p==NULL) {
+//             debugError("could not get plug 0x%02X\n",i);
+//             continue;
+//         }
+//         
+//         if(p->getGlobalId()==getGlobalId()) continue; // skip yourself
+//         
+// 
+//     }
+
+    return true;
+}
+
+bool
 Plug::inquireConnnection( Plug& plug )
 {
     SignalSourceCmd signalSourceCmd = setSrcPlugAddrToSignalCmd();
@@ -145,6 +565,80 @@ Plug::inquireConnnection( Plug& plug )
                  "Connection not possible between '%s' and '%s'\n",
                  getName(),  plug.getName() );
     return false;
+}
+
+int
+Plug::getSignalSource()
+{
+    if((getPlugAddressType() == eAPA_PCR) ||
+       (getPlugAddressType() == eAPA_ExternalPlug)) {
+        if (getPlugDirection() != eAPD_Output) {
+            debugWarning("Signal Source command not valid for non-output unit plugs...\n");
+            return -1;
+        }
+    }
+    
+    if(getPlugAddressType() == eAPA_SubunitPlug) {
+        if (getPlugDirection() != eAPD_Input) {
+            debugWarning("Signal Source command not valid for non-input subunit plugs...\n");
+            return -1;
+        }
+    }
+    
+    SignalSourceCmd signalSourceCmd( m_unit->get1394Service() );
+    
+    signalSourceCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+    signalSourceCmd.setSubunitType( eST_Unit  );
+    signalSourceCmd.setSubunitId( 0xff );
+
+    SignalSubunitAddress signalSubunitAddr;
+    signalSubunitAddr.m_subunitType = 0xFF;
+    signalSubunitAddr.m_subunitId = 0xFF;
+    signalSubunitAddr.m_plugId = 0xFE;
+    signalSourceCmd.setSignalSource( signalSubunitAddr );
+    
+    setDestPlugAddrToSignalCmd( signalSourceCmd, *this );
+
+    signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
+    signalSourceCmd.setVerbose( getDebugLevel() );
+    signalSourceCmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+
+    if ( !signalSourceCmd.fire() ) {
+        debugError( "Could not get signal source for '%s'\n",
+                    getName() );
+        return -1;
+    }
+
+    if ( signalSourceCmd.getResponse() == AVCCommand::eR_Implemented ) {
+        SignalAddress* src=signalSourceCmd.getSignalSource();
+        Plug* p=NULL;
+        if(dynamic_cast<SignalUnitAddress *>(src)) {
+            SignalUnitAddress *usrc=dynamic_cast<SignalUnitAddress *>(src);
+            if (usrc->m_plugId & 0x80) {
+                p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF, 
+                        0xFF, 0xFF, eAPA_ExternalPlug, eAPD_Input, 
+                        usrc->m_plugId & 0x7F );
+            } else {
+                p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF, 
+                        0xFF, 0xFF, eAPA_PCR, eAPD_Input, 
+                        usrc->m_plugId & 0x7F );
+            }
+        } else if (dynamic_cast<SignalSubunitAddress *>(src)) {
+            SignalSubunitAddress *susrc=dynamic_cast<SignalSubunitAddress *>(src);
+            p=m_unit->getPlugManager().getPlug( byteToSubunitType(susrc->m_subunitType), 
+                    susrc->m_subunitId, 0xFF, 0xFF, eAPA_SubunitPlug, 
+                    eAPD_Output, susrc->m_plugId);
+        } else return -1;
+        
+        if (p==NULL) {
+            debugError("reported signal source plug not found\n");
+            return -1;
+        }
+        
+        return p->getGlobalId();
+    }
+
+    return -1;
 }
 
 bool
@@ -173,6 +667,54 @@ Plug::setConnection( Plug& plug )
     return false;
 }
 
+bool 
+Plug::propagateFromConnectedPlug( ) {
+
+    if (getDirection() == eAPD_Output) {
+        if (getInputConnections().size()==0) {
+            debugWarning("No input connections to propagate from, skipping.\n");
+            return true;
+        }
+        if (getInputConnections().size()>1) {
+            debugWarning("Too many input connections to propagate from, using first one.\n");
+        }
+        
+        Plug* p = *(getInputConnections().begin());
+        return propagateFromPlug( p );
+        
+    } else if (getDirection() == eAPD_Input) {
+        if (getOutputConnections().size()==0) {
+            debugWarning("No output connections to propagate from, skipping.\n");
+            return true;
+        }
+        if (getOutputConnections().size()>1) {
+            debugWarning("Too many output connections to propagate from, using first one.\n");
+        }
+        
+        Plug* p = *(getOutputConnections().begin());
+        return propagateFromPlug( p );
+        
+    } else {
+        debugWarning("plug with undefined direction\n");
+        return false;
+    }
+}
+
+bool 
+Plug::propagateFromPlug( Plug *p ) {
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "Propagating info from plug '%s' to plug '%s'\n",
+                 p->getName(), getName() );
+    
+    if (m_clusterInfos.size()==0) {
+        m_clusterInfos=p->m_clusterInfos;
+    }
+    
+    m_nrOfChannels=p->m_nrOfChannels;
+    
+    return true;
+}
+
 int
 Plug::getNrOfStreams() const
 {
@@ -193,10 +735,235 @@ Plug::getNrOfChannels() const
     return m_nrOfChannels;
 }
 
+bool
+Plug::setNrOfChannels(int i)
+{
+    m_nrOfChannels=i;
+    return true;
+}
+
 int
 Plug::getSampleRate() const
 {
+    if(getPlugAddressType()==eAPA_PCR) {
+        if(getPlugDirection()==eAPD_Input) {
+            InputPlugSignalFormatCmd cmd( m_unit->get1394Service() );
+            cmd.m_form=0xFF;
+            cmd.m_eoh=0xFF;
+            cmd.m_fmt=0xFF;
+            cmd.m_plug=getPlugId();
+            
+            cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+            cmd.setSubunitType( eST_Unit  );
+            cmd.setSubunitId( 0xff );
+            
+            cmd.setCommandType( AVCCommand::eCT_Status );
+
+            if ( !cmd.fire() ) {
+                debugError( "input plug signal format command failed\n" );
+                return 0;
+            }
+            
+            if (cmd.m_fmt != 0x10 ) {
+                debugWarning("Incorrect FMT response received: 0x%02X\n",cmd.m_fmt);
+            }
+            
+            return fdfSfcToSampleRate(cmd.m_fdf[0]);
+            
+        } else if (getPlugDirection()==eAPD_Output) {
+            OutputPlugSignalFormatCmd cmd( m_unit->get1394Service() );
+            cmd.m_form=0xFF;
+            cmd.m_eoh=0xFF;
+            cmd.m_fmt=0xFF;
+            cmd.m_plug=getPlugId();
+            
+            cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+            cmd.setSubunitType( eST_Unit  );
+            cmd.setSubunitId( 0xff );
+    
+            cmd.setCommandType( AVCCommand::eCT_Status );
+            
+            if ( !cmd.fire() ) {
+                debugError( "output plug signal format command failed\n" );
+                return 0;
+            }
+            
+            if (cmd.m_fmt != 0x10 ) {
+                debugWarning("Incorrect FMT response received: 0x%02X\n",cmd.m_fmt);
+            }
+            
+            return fdfSfcToSampleRate(cmd.m_fdf[0]);
+        
+        } else {
+            debugError("PCR plug with undefined direction.\n");
+            return 0;
+        }
+    }
+    
+    // fallback
     return convertESamplingFrequency( static_cast<ESamplingFrequency>( m_samplingFrequency ) );
+}
+
+bool
+Plug::setSampleRate( int rate )
+{
+    // apple style
+    if(getPlugAddressType()==eAPA_PCR) {
+        if(getPlugDirection()==eAPD_Input) {
+            InputPlugSignalFormatCmd cmd( m_unit->get1394Service() );
+            cmd.m_eoh=1;
+            cmd.m_form=0;
+            cmd.m_fmt=0x10;
+            cmd.m_plug=getPlugId();
+            cmd.m_fdf[0]=sampleRateToFdfSfc(rate);
+            cmd.m_fdf[1]=0xFF;
+            cmd.m_fdf[2]=0xFF;
+
+            cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+            cmd.setSubunitType( eST_Unit  );
+            cmd.setSubunitId( 0xff );
+            
+            cmd.setCommandType( AVCCommand::eCT_Control );
+
+            if ( !cmd.fire() ) {
+                debugError( "input plug signal format command failed\n" );
+                return false;
+            }
+
+            if ( cmd.getResponse() == AVCCommand::eR_Accepted )
+            {
+                return true;
+            }
+            debugWarning( "output plug signal format command not accepted\n" );
+
+        } else if (getPlugDirection()==eAPD_Output) {
+            OutputPlugSignalFormatCmd cmd( m_unit->get1394Service() );
+            cmd.m_eoh=1;
+            cmd.m_form=0;
+            cmd.m_fmt=0x10;
+            cmd.m_plug=getPlugId();
+            cmd.m_fdf[0]=sampleRateToFdfSfc(rate);
+            cmd.m_fdf[1]=0xFF;
+            cmd.m_fdf[2]=0xFF;
+            
+            cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+            cmd.setSubunitType( eST_Unit  );
+            cmd.setSubunitId( 0xff );
+    
+            cmd.setCommandType( AVCCommand::eCT_Control );
+            
+            if ( !cmd.fire() ) {
+                debugError( "output plug signal format command failed\n" );
+                return false;
+            }
+
+            if ( cmd.getResponse() == AVCCommand::eR_Accepted )
+            {
+                return true;
+            }
+            debugWarning( "output plug signal format command not accepted\n" );
+        } else {
+            debugError("PCR plug with undefined direction.\n");
+            return false;
+        }
+    }
+
+    // fallback: BeBoB style
+    ESamplingFrequency samplingFrequency = parseSampleRate(rate);
+    
+    ExtendedStreamFormatCmd extStreamFormatCmd(
+        m_unit->get1394Service(),
+        ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                     getPlugId() );
+
+    extStreamFormatCmd.setPlugAddress(
+        PlugAddress(
+            Plug::convertPlugDirection(getPlugDirection() ),
+            PlugAddress::ePAM_Unit,
+            unitPlugAddress ) );
+
+    extStreamFormatCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+    extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+
+    int i = 0;
+    bool cmdSuccess = false;
+    bool correctFormatFound = false;
+
+    do {
+        extStreamFormatCmd.setIndexInStreamFormat( i );
+        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+        extStreamFormatCmd.setVerbose( getDebugLevel() );
+
+        cmdSuccess = extStreamFormatCmd.fire();
+
+        if ( cmdSuccess
+             && ( extStreamFormatCmd.getResponse() ==
+                  AVCCommand::eR_Implemented ) )
+        {
+            ESamplingFrequency foundFreq = eSF_DontCare;
+
+            FormatInformation* formatInfo =
+                extStreamFormatCmd.getFormatInformation();
+            FormatInformationStreamsCompound* compoundStream
+                = dynamic_cast< FormatInformationStreamsCompound* > (
+                    formatInfo->m_streams );
+            if ( compoundStream ) {
+                foundFreq =
+                    static_cast< ESamplingFrequency >(
+                        compoundStream->m_samplingFrequency );
+            }
+
+            FormatInformationStreamsSync* syncStream
+                = dynamic_cast< FormatInformationStreamsSync* > (
+                    formatInfo->m_streams );
+            if ( syncStream ) {
+                foundFreq =
+                    static_cast< ESamplingFrequency >(
+                        syncStream->m_samplingFrequency );
+            }
+
+            if ( foundFreq == samplingFrequency )
+            {
+                correctFormatFound = true;
+                break;
+            }
+        }
+
+        ++i;
+    } while ( cmdSuccess
+              && ( extStreamFormatCmd.getResponse() ==
+                   ExtendedStreamFormatCmd::eR_Implemented ) );
+
+    if ( !cmdSuccess ) {
+        debugError( "setSampleRatePlug: Failed to retrieve format info\n" );
+        return false;
+    }
+
+    if ( !correctFormatFound ) {
+        debugError( "setSampleRatePlug: %s plug %d does not support "
+                    "sample rate %d\n",
+                    getName(),
+                    getPlugId(),
+                    convertESamplingFrequency( samplingFrequency ) );
+        return false;
+    }
+
+    extStreamFormatCmd.setSubFunction(
+        ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+    extStreamFormatCmd.setCommandType( AVCCommand::eCT_Control );
+    extStreamFormatCmd.setVerbose( getDebugLevel() );
+
+    if ( !extStreamFormatCmd.fire() ) {
+        debugError( "setSampleRate: Could not set sample rate %d "
+                    "to %s plug %d\n",
+                    convertESamplingFrequency( samplingFrequency ),
+                    getName(),
+                    getPlugId() );
+        return false;
+    }
+
+    return true;
 }
 
 bool
@@ -435,6 +1202,59 @@ Plug::convertPlugDirection( EPlugDirection direction )
     return dir;
 }
 
+std::string
+Plug::plugAddressTypeToString(enum EPlugAddressType t) {
+    switch (t) {
+        case eAPA_PCR:
+            return string("PCR");
+        case eAPA_ExternalPlug:
+            return string("External");
+        case eAPA_AsynchronousPlug:
+            return string("Async");
+        case eAPA_SubunitPlug:
+            return string("Subunit");
+        case eAPA_FunctionBlockPlug:
+            return string("Function Block");
+        default:
+        case eAPA_Undefined:
+            return string("Undefined");
+    }
+}
+
+std::string
+Plug::plugTypeToString(enum EPlugType t) {
+    switch (t) {
+        case eAPT_IsoStream:
+            return string("IsoStream");
+        case eAPT_AsyncStream:
+            return string("AsyncStream");
+        case eAPT_Midi:
+            return string("MIDI");
+        case eAPT_Sync:
+            return string("Sync");
+        case eAPT_Analog:
+            return string("Analog");
+        case eAPT_Digital:
+            return string("Digital");
+        default:
+        case eAPT_Unknown:
+            return string("Unknown");
+    }
+}
+
+std::string
+Plug::plugDirectionToString(enum EPlugDirection t) {
+    switch (t) {
+        case eAPD_Input:
+            return string("Input");
+        case eAPD_Output:
+            return string("Output");
+        default:
+        case eAPT_Unknown:
+            return string("Unknown");
+    }
+}
+
 void
 Plug::showPlug() const
 {
@@ -458,6 +1278,25 @@ Plug::showPlug() const
                  getNrOfChannels() );
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tNumber of Streams  = %d\n",
                  getNrOfStreams() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tIncoming connections from: ");
+    
+    for ( PlugVector::const_iterator it = m_inputConnections.begin();
+          it != m_inputConnections.end();
+          ++it )
+    {
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "%s, ", (*it)->getName());
+    }
+    debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tOutgoing connections to: ");
+    for ( PlugVector::const_iterator it = m_outputConnections.begin();
+          it != m_outputConnections.end();
+          ++it )
+    {
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, "%s, ", (*it)->getName());
+    }
+    debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
+
     flushDebugOutput();
 }
 
@@ -1039,10 +1878,69 @@ PlugManager::remPlug( Plug& plug )
 }
 
 // helper function
-static void addConnection( PlugConnectionOwnerVector& connections,
+static void addConnection( PlugConnectionVector& connections,
                            Plug& srcPlug,
                            Plug& destPlug )
 {
+    for ( PlugConnectionVector::iterator it = connections.begin();
+          it != connections.end();
+          ++it )
+    {
+        PlugConnection* con = *it;
+        if ( ( &( con->getSrcPlug() ) == &srcPlug )
+             && ( &( con->getDestPlug() ) == &destPlug ) )
+        {
+            return;
+        }
+    }
+    connections.push_back( new PlugConnection( srcPlug, destPlug ) );
+}
+
+bool
+PlugManager::tidyPlugConnections(PlugConnectionVector& connections)
+{
+    for ( PlugVector::const_iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        Plug* plug = *it;
+        for ( PlugVector::const_iterator it =
+                  plug->getInputConnections().begin();
+            it != plug->getInputConnections().end();
+            ++it )
+        {
+            addConnection( connections, *( *it ), *plug );
+        }
+        plug->getInputConnections().clear();
+        
+        for ( PlugVector::const_iterator it =
+                  plug->getOutputConnections().begin();
+            it != plug->getOutputConnections().end();
+            ++it )
+        {
+            addConnection( connections, *plug, *( *it ) );
+        }
+        plug->getOutputConnections().clear();
+    }
+    
+    for ( PlugConnectionVector::iterator it = connections.begin();
+          it != connections.end();
+          ++it )
+    {
+        PlugConnection * con = *it;
+        con->getSrcPlug().getOutputConnections().push_back(&( con->getDestPlug() ));
+        con->getDestPlug().getInputConnections().push_back(&( con->getSrcPlug() ));
+
+    }
+    
+    return true;
+}
+
+static void addConnectionOwner( PlugConnectionOwnerVector& connections,
+                           Plug& srcPlug,
+                           Plug& destPlug )
+{
+
     for ( PlugConnectionOwnerVector::iterator it = connections.begin();
           it != connections.end();
           ++it )
@@ -1056,6 +1954,7 @@ static void addConnection( PlugConnectionOwnerVector& connections,
     }
     connections.push_back( PlugConnection( srcPlug, destPlug ) );
 }
+
 
 void
 PlugManager::showPlugs() const
@@ -1103,14 +2002,14 @@ PlugManager::showPlugs() const
             it != plug->getInputConnections().end();
             ++it )
         {
-            addConnection( connections, *( *it ), *plug );
+            addConnectionOwner( connections, *( *it ), *plug );
         }
         for ( PlugVector::const_iterator it =
                   plug->getOutputConnections().begin();
             it != plug->getOutputConnections().end();
             ++it )
         {
-            addConnection( connections, *plug, *( *it ) );
+            addConnectionOwner( connections, *plug, *( *it ) );
         }
     }
 
@@ -1406,6 +2305,156 @@ PlugConnection::deserialize( Glib::ustring basePath,
     }
 
     return pConnection;
+}
+
+ExtendedPlugInfoCmd
+Plug::setPlugAddrToPlugInfoCmd()
+{
+    ExtendedPlugInfoCmd extPlugInfoCmd( m_unit->get1394Service() );
+
+    switch( getSubunitType() ) {
+    case eST_Unit:
+        {
+            UnitPlugAddress::EPlugType ePlugType =
+                UnitPlugAddress::ePT_Unknown;
+            switch ( m_addressType ) {
+                case eAPA_PCR:
+                    ePlugType = UnitPlugAddress::ePT_PCR;
+                    break;
+                case eAPA_ExternalPlug:
+                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
+                    break;
+                case eAPA_AsynchronousPlug:
+                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
+                    break;
+                default:
+                    ePlugType = UnitPlugAddress::ePT_Unknown;
+            }
+            UnitPlugAddress unitPlugAddress( ePlugType,
+                                             m_id );
+            extPlugInfoCmd.setPlugAddress(
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
+                             PlugAddress::ePAM_Unit,
+                             unitPlugAddress ) );
+        }
+        break;
+    case eST_Music:
+    case eST_Audio:
+        {
+            switch( m_addressType ) {
+            case eAPA_SubunitPlug:
+            {
+                SubunitPlugAddress subunitPlugAddress( m_id );
+                extPlugInfoCmd.setPlugAddress(
+                    PlugAddress(
+                        convertPlugDirection( getPlugDirection() ),
+                        PlugAddress::ePAM_Subunit,
+                        subunitPlugAddress ) );
+            }
+            break;
+            case eAPA_FunctionBlockPlug:
+            {
+                FunctionBlockPlugAddress functionBlockPlugAddress(
+                    m_functionBlockType,
+                    m_functionBlockId,
+                    m_id );
+                extPlugInfoCmd.setPlugAddress(
+                    PlugAddress(
+                        convertPlugDirection( getPlugDirection() ),
+                        PlugAddress::ePAM_FunctionBlock,
+                        functionBlockPlugAddress ) );
+            }
+            break;
+            default:
+                extPlugInfoCmd.setPlugAddress(PlugAddress());
+            }
+        }
+        break;
+    default:
+        debugError( "Unknown subunit type\n" );
+    }
+
+    extPlugInfoCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+    extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    extPlugInfoCmd.setSubunitId( getSubunitId() );
+    extPlugInfoCmd.setSubunitType( getSubunitType() );
+
+    return extPlugInfoCmd;
+}
+
+ExtendedStreamFormatCmd
+Plug::setPlugAddrToStreamFormatCmd(
+    ExtendedStreamFormatCmd::ESubFunction subFunction)
+{
+    ExtendedStreamFormatCmd extStreamFormatInfoCmd(
+        m_unit->get1394Service(),
+        subFunction );
+    switch( getSubunitType() ) {
+    case eST_Unit:
+    {
+            UnitPlugAddress::EPlugType ePlugType =
+                UnitPlugAddress::ePT_Unknown;
+            switch ( m_addressType ) {
+                case eAPA_PCR:
+                    ePlugType = UnitPlugAddress::ePT_PCR;
+                    break;
+                case eAPA_ExternalPlug:
+                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
+                    break;
+                case eAPA_AsynchronousPlug:
+                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
+                    break;
+                default:
+                    ePlugType = UnitPlugAddress::ePT_Unknown;
+            }
+        UnitPlugAddress unitPlugAddress( ePlugType,
+                                         m_id );
+        extStreamFormatInfoCmd.setPlugAddress(
+            PlugAddress( convertPlugDirection( getPlugDirection() ),
+                         PlugAddress::ePAM_Unit,
+                         unitPlugAddress ) );
+        }
+        break;
+    case eST_Music:
+    case eST_Audio:
+    {
+        switch( m_addressType ) {
+        case eAPA_SubunitPlug:
+        {
+            SubunitPlugAddress subunitPlugAddress( m_id );
+            extStreamFormatInfoCmd.setPlugAddress(
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
+                             PlugAddress::ePAM_Subunit,
+                             subunitPlugAddress ) );
+        }
+        break;
+        case eAPA_FunctionBlockPlug:
+        {
+            FunctionBlockPlugAddress functionBlockPlugAddress(
+                m_functionBlockType,
+                m_functionBlockId,
+                m_id );
+            extStreamFormatInfoCmd.setPlugAddress(
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
+                             PlugAddress::ePAM_FunctionBlock,
+                             functionBlockPlugAddress ) );
+        }
+        break;
+        default:
+            extStreamFormatInfoCmd.setPlugAddress(PlugAddress());
+        }
+    }
+    break;
+    default:
+        debugError( "Unknown subunit type\n" );
+    }
+
+    extStreamFormatInfoCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+    extStreamFormatInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    extStreamFormatInfoCmd.setSubunitId( getSubunitId() );
+    extStreamFormatInfoCmd.setSubunitType( getSubunitType() );
+
+    return extStreamFormatInfoCmd;
 }
 
 }

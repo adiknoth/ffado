@@ -422,225 +422,226 @@ Plug::discoverClusterInfo()
     return true;
 }
 
-bool
-Plug::discoverStreamFormat()
-{
-    ExtendedStreamFormatCmd extStreamFormatCmd =
-        setPlugAddrToStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
-    extStreamFormatCmd.setVerbose( getDebugLevel() );
-
-    if ( !extStreamFormatCmd.fire() ) {
-        debugError( "stream format command failed\n" );
-        return false;
-    }
-
-    if ( ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NoStreamFormat )
-         || ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NotUsed ) )
-    {
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "No stream format information available\n" );
-        return true;
-    }
-
-    if ( !extStreamFormatCmd.getFormatInformation() ) {
-        debugWarning( "No stream format information for plug found -> skip\n" );
-        return true;
-    }
-
-    if ( extStreamFormatCmd.getFormatInformation()->m_root
-           != FormatInformation::eFHR_AudioMusic  )
-    {
-        debugWarning( "Format hierarchy root is not Audio&Music -> skip\n" );
-        return true;
-    }
-
-    FormatInformation* formatInfo =
-        extStreamFormatCmd.getFormatInformation();
-    FormatInformationStreamsCompound* compoundStream
-        = dynamic_cast< FormatInformationStreamsCompound* > (
-            formatInfo->m_streams );
-    if ( compoundStream ) {
-        m_samplingFrequency =
-            compoundStream->m_samplingFrequency;
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "%s plug %d uses "
-                     "sampling frequency %d, nr of stream infos = %d\n",
-                     getName(),
-                     m_id,
-                     m_samplingFrequency,
-                     compoundStream->m_numberOfStreamFormatInfos );
-
-        for ( int i = 1;
-              i <= compoundStream->m_numberOfStreamFormatInfos;
-              ++i )
-        {
-            ClusterInfo* clusterInfo =
-                const_cast<ClusterInfo*>( getClusterInfoByIndex( i ) );
-
-            if ( !clusterInfo ) {
-                debugError( "No matching cluster "
-                            "info found for index %d\n",  i );
-                    return false;
-            }
-            StreamFormatInfo* streamFormatInfo =
-                compoundStream->m_streamFormatInfos[ i - 1 ];
-
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "number of channels = %d, stream format = %d\n",
-                         streamFormatInfo->m_numberOfChannels,
-                         streamFormatInfo->m_streamFormat );
-
-            int nrOfChannels = clusterInfo->m_nrOfChannels;
-            if ( streamFormatInfo->m_streamFormat ==
-                 FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
-            {
-                // 8 logical midi channels fit into 1 channel
-                nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
-            }
-            // sanity check
-            if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
-            {
-                debugWarning( "Number of channels "
-                              "mismatch: '%s' plug discovering reported "
-                              "%d channels for cluster '%s', while stream "
-                              "format reported %d\n",
-                              getName(),
-                              nrOfChannels,
-                              clusterInfo->m_name.c_str(),
-                              streamFormatInfo->m_numberOfChannels);
-            }
-            clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
-
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "%s plug %d cluster info %d ('%s'): "
-                         "stream format %d\n",
-                         getName(),
-                         m_id,
-                         i,
-                         clusterInfo->m_name.c_str(),
-                         clusterInfo->m_streamFormat );
-        }
-    }
-
-    FormatInformationStreamsSync* syncStream
-        = dynamic_cast< FormatInformationStreamsSync* > (
-            formatInfo->m_streams );
-    if ( syncStream ) {
-        m_samplingFrequency =
-            syncStream->m_samplingFrequency;
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "%s plug %d is sync stream with sampling frequency %d\n",
-                     getName(),
-                     m_id,
-                     m_samplingFrequency );
-    }
-
-
-    if ( !compoundStream && !syncStream )
-    {
-        debugError( "Unsupported stream format\n" );
-        return false;
-    }
-
-    return true;
-}
-
-bool
-Plug::discoverSupportedStreamFormats()
-{
-    ExtendedStreamFormatCmd extStreamFormatCmd =
-        setPlugAddrToStreamFormatCmd(
-            ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList);
-    extStreamFormatCmd.setVerbose( getDebugLevel() );
-
-    int i = 0;
-    bool cmdSuccess = false;
-
-    do {
-        extStreamFormatCmd.setIndexInStreamFormat( i );
-        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-        cmdSuccess = extStreamFormatCmd.fire();
-        if ( cmdSuccess
-             && ( extStreamFormatCmd.getResponse()
-                  == AVCCommand::eR_Implemented ) )
-        {
-            FormatInfo formatInfo;
-            formatInfo.m_index = i;
-            bool formatInfoIsValid = true;
-
-            FormatInformationStreamsSync* syncStream
-                = dynamic_cast< FormatInformationStreamsSync* >
-                ( extStreamFormatCmd.getFormatInformation()->m_streams );
-            if ( syncStream ) {
-                formatInfo.m_samplingFrequency =
-                    syncStream->m_samplingFrequency;
-                formatInfo.m_isSyncStream = true ;
-            }
-
-            FormatInformationStreamsCompound* compoundStream
-                = dynamic_cast< FormatInformationStreamsCompound* >
-                ( extStreamFormatCmd.getFormatInformation()->m_streams );
-            if ( compoundStream ) {
-                formatInfo.m_samplingFrequency =
-                    compoundStream->m_samplingFrequency;
-                formatInfo.m_isSyncStream = false;
-                for ( int j = 0;
-                      j < compoundStream->m_numberOfStreamFormatInfos;
-                      ++j )
-                {
-                    switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
-                    case AVC1394_STREAM_FORMAT_AM824_IEC60968_3:
-                        formatInfo.m_audioChannels +=
-                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
-                        break;
-                    case AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW:
-                        formatInfo.m_audioChannels +=
-                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
-                        break;
-                    case AVC1394_STREAM_FORMAT_AM824_MIDI_CONFORMANT:
-                        formatInfo.m_midiChannels +=
-                            compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
-                        break;
-                    default:
-                        formatInfoIsValid = false;
-                        debugWarning("unknown stream format (0x%02x) for channel "
-                                      "(%d)\n",
-                                     compoundStream->m_streamFormatInfos[j]->m_streamFormat,
-                                     j );
-                    }
-                }
-            }
-
-            if ( formatInfoIsValid ) {
-                flushDebugOutput();
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "[%s:%d] formatInfo[%d].m_samplingFrequency "
-                             "= %d\n",
-                             getName(), m_id,
-                             i, formatInfo.m_samplingFrequency );
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "[%s:%d] formatInfo[%d].m_isSyncStream = %d\n",
-                             getName(), m_id,
-                             i, formatInfo.m_isSyncStream );
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "[%s:%d] formatInfo[%d].m_audioChannels = %d\n",
-                             getName(), m_id,
-                             i, formatInfo.m_audioChannels );
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "[%s:%d] formatInfo[%d].m_midiChannels = %d\n",
-                             getName(), m_id,
-                             i, formatInfo.m_midiChannels );
-                m_formatInfos.push_back( formatInfo );
-                flushDebugOutput();
-            }
-        }
-
-        ++i;
-    } while ( cmdSuccess && ( extStreamFormatCmd.getResponse()
-                              == ExtendedStreamFormatCmd::eR_Implemented ) );
-
-    return true;
-}
+// NOTE: currently in the generic AV/C unit
+// bool
+// Plug::discoverStreamFormat()
+// {
+//     ExtendedStreamFormatCmd extStreamFormatCmd =
+//         setPlugAddrToStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+//     extStreamFormatCmd.setVerbose( getDebugLevel() );
+// 
+//     if ( !extStreamFormatCmd.fire() ) {
+//         debugError( "stream format command failed\n" );
+//         return false;
+//     }
+// 
+//     if ( ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NoStreamFormat )
+//          || ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NotUsed ) )
+//     {
+//         debugOutput( DEBUG_LEVEL_VERBOSE,
+//                      "No stream format information available\n" );
+//         return true;
+//     }
+// 
+//     if ( !extStreamFormatCmd.getFormatInformation() ) {
+//         debugWarning( "No stream format information for plug found -> skip\n" );
+//         return true;
+//     }
+// 
+//     if ( extStreamFormatCmd.getFormatInformation()->m_root
+//            != FormatInformation::eFHR_AudioMusic  )
+//     {
+//         debugWarning( "Format hierarchy root is not Audio&Music -> skip\n" );
+//         return true;
+//     }
+// 
+//     FormatInformation* formatInfo =
+//         extStreamFormatCmd.getFormatInformation();
+//     FormatInformationStreamsCompound* compoundStream
+//         = dynamic_cast< FormatInformationStreamsCompound* > (
+//             formatInfo->m_streams );
+//     if ( compoundStream ) {
+//         m_samplingFrequency =
+//             compoundStream->m_samplingFrequency;
+//         debugOutput( DEBUG_LEVEL_VERBOSE,
+//                      "%s plug %d uses "
+//                      "sampling frequency %d, nr of stream infos = %d\n",
+//                      getName(),
+//                      m_id,
+//                      m_samplingFrequency,
+//                      compoundStream->m_numberOfStreamFormatInfos );
+// 
+//         for ( int i = 1;
+//               i <= compoundStream->m_numberOfStreamFormatInfos;
+//               ++i )
+//         {
+//             ClusterInfo* clusterInfo =
+//                 const_cast<ClusterInfo*>( getClusterInfoByIndex( i ) );
+// 
+//             if ( !clusterInfo ) {
+//                 debugError( "No matching cluster "
+//                             "info found for index %d\n",  i );
+//                     return false;
+//             }
+//             StreamFormatInfo* streamFormatInfo =
+//                 compoundStream->m_streamFormatInfos[ i - 1 ];
+// 
+//             debugOutput( DEBUG_LEVEL_VERBOSE,
+//                          "number of channels = %d, stream format = %d\n",
+//                          streamFormatInfo->m_numberOfChannels,
+//                          streamFormatInfo->m_streamFormat );
+// 
+//             int nrOfChannels = clusterInfo->m_nrOfChannels;
+//             if ( streamFormatInfo->m_streamFormat ==
+//                  FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
+//             {
+//                 // 8 logical midi channels fit into 1 channel
+//                 nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
+//             }
+//             // sanity check
+//             if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
+//             {
+//                 debugWarning( "Number of channels "
+//                               "mismatch: '%s' plug discovering reported "
+//                               "%d channels for cluster '%s', while stream "
+//                               "format reported %d\n",
+//                               getName(),
+//                               nrOfChannels,
+//                               clusterInfo->m_name.c_str(),
+//                               streamFormatInfo->m_numberOfChannels);
+//             }
+//             clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
+// 
+//             debugOutput( DEBUG_LEVEL_VERBOSE,
+//                          "%s plug %d cluster info %d ('%s'): "
+//                          "stream format %d\n",
+//                          getName(),
+//                          m_id,
+//                          i,
+//                          clusterInfo->m_name.c_str(),
+//                          clusterInfo->m_streamFormat );
+//         }
+//     }
+// 
+//     FormatInformationStreamsSync* syncStream
+//         = dynamic_cast< FormatInformationStreamsSync* > (
+//             formatInfo->m_streams );
+//     if ( syncStream ) {
+//         m_samplingFrequency =
+//             syncStream->m_samplingFrequency;
+//         debugOutput( DEBUG_LEVEL_VERBOSE,
+//                      "%s plug %d is sync stream with sampling frequency %d\n",
+//                      getName(),
+//                      m_id,
+//                      m_samplingFrequency );
+//     }
+// 
+// 
+//     if ( !compoundStream && !syncStream )
+//     {
+//         debugError( "Unsupported stream format\n" );
+//         return false;
+//     }
+// 
+//     return true;
+// }
+// 
+// bool
+// Plug::discoverSupportedStreamFormats()
+// {
+//     ExtendedStreamFormatCmd extStreamFormatCmd =
+//         setPlugAddrToStreamFormatCmd(
+//             ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList);
+//     extStreamFormatCmd.setVerbose( getDebugLevel() );
+// 
+//     int i = 0;
+//     bool cmdSuccess = false;
+// 
+//     do {
+//         extStreamFormatCmd.setIndexInStreamFormat( i );
+//         extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+//         cmdSuccess = extStreamFormatCmd.fire();
+//         if ( cmdSuccess
+//              && ( extStreamFormatCmd.getResponse()
+//                   == AVCCommand::eR_Implemented ) )
+//         {
+//             FormatInfo formatInfo;
+//             formatInfo.m_index = i;
+//             bool formatInfoIsValid = true;
+// 
+//             FormatInformationStreamsSync* syncStream
+//                 = dynamic_cast< FormatInformationStreamsSync* >
+//                 ( extStreamFormatCmd.getFormatInformation()->m_streams );
+//             if ( syncStream ) {
+//                 formatInfo.m_samplingFrequency =
+//                     syncStream->m_samplingFrequency;
+//                 formatInfo.m_isSyncStream = true ;
+//             }
+// 
+//             FormatInformationStreamsCompound* compoundStream
+//                 = dynamic_cast< FormatInformationStreamsCompound* >
+//                 ( extStreamFormatCmd.getFormatInformation()->m_streams );
+//             if ( compoundStream ) {
+//                 formatInfo.m_samplingFrequency =
+//                     compoundStream->m_samplingFrequency;
+//                 formatInfo.m_isSyncStream = false;
+//                 for ( int j = 0;
+//                       j < compoundStream->m_numberOfStreamFormatInfos;
+//                       ++j )
+//                 {
+//                     switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
+//                     case AVC1394_STREAM_FORMAT_AM824_IEC60968_3:
+//                         formatInfo.m_audioChannels +=
+//                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+//                         break;
+//                     case AVC1394_STREAM_FORMAT_AM824_MULTI_BIT_LINEAR_AUDIO_RAW:
+//                         formatInfo.m_audioChannels +=
+//                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+//                         break;
+//                     case AVC1394_STREAM_FORMAT_AM824_MIDI_CONFORMANT:
+//                         formatInfo.m_midiChannels +=
+//                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
+//                         break;
+//                     default:
+//                         formatInfoIsValid = false;
+//                         debugWarning("unknown stream format (0x%02x) for channel "
+//                                       "(%d)\n",
+//                                      compoundStream->m_streamFormatInfos[j]->m_streamFormat,
+//                                      j );
+//                     }
+//                 }
+//             }
+// 
+//             if ( formatInfoIsValid ) {
+//                 flushDebugOutput();
+//                 debugOutput( DEBUG_LEVEL_VERBOSE,
+//                              "[%s:%d] formatInfo[%d].m_samplingFrequency "
+//                              "= %d\n",
+//                              getName(), m_id,
+//                              i, formatInfo.m_samplingFrequency );
+//                 debugOutput( DEBUG_LEVEL_VERBOSE,
+//                              "[%s:%d] formatInfo[%d].m_isSyncStream = %d\n",
+//                              getName(), m_id,
+//                              i, formatInfo.m_isSyncStream );
+//                 debugOutput( DEBUG_LEVEL_VERBOSE,
+//                              "[%s:%d] formatInfo[%d].m_audioChannels = %d\n",
+//                              getName(), m_id,
+//                              i, formatInfo.m_audioChannels );
+//                 debugOutput( DEBUG_LEVEL_VERBOSE,
+//                              "[%s:%d] formatInfo[%d].m_midiChannels = %d\n",
+//                              getName(), m_id,
+//                              i, formatInfo.m_midiChannels );
+//                 m_formatInfos.push_back( formatInfo );
+//                 flushDebugOutput();
+//             }
+//         }
+// 
+//         ++i;
+//     } while ( cmdSuccess && ( extStreamFormatCmd.getResponse()
+//                               == ExtendedStreamFormatCmd::eR_Implemented ) );
+// 
+//     return true;
+// }
 
 
 bool
@@ -757,156 +758,6 @@ Plug::discoverConnectionsOutput()
     }
 
     return true;
-}
-
-ExtendedPlugInfoCmd
-Plug::setPlugAddrToPlugInfoCmd()
-{
-    ExtendedPlugInfoCmd extPlugInfoCmd( m_unit->get1394Service() );
-
-    switch( getSubunitType() ) {
-    case eST_Unit:
-        {
-            UnitPlugAddress::EPlugType ePlugType =
-                UnitPlugAddress::ePT_Unknown;
-            switch ( m_addressType ) {
-                case eAPA_PCR:
-                    ePlugType = UnitPlugAddress::ePT_PCR;
-                    break;
-                case eAPA_ExternalPlug:
-                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
-                    break;
-                case eAPA_AsynchronousPlug:
-                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
-                    break;
-                default:
-                    ePlugType = UnitPlugAddress::ePT_Unknown;
-            }
-            UnitPlugAddress unitPlugAddress( ePlugType,
-                                             m_id );
-            extPlugInfoCmd.setPlugAddress(
-                PlugAddress( convertPlugDirection( getPlugDirection() ),
-                             PlugAddress::ePAM_Unit,
-                             unitPlugAddress ) );
-        }
-        break;
-    case eST_Music:
-    case eST_Audio:
-        {
-            switch( m_addressType ) {
-            case eAPA_SubunitPlug:
-            {
-                SubunitPlugAddress subunitPlugAddress( m_id );
-                extPlugInfoCmd.setPlugAddress(
-                    PlugAddress(
-                        convertPlugDirection( getPlugDirection() ),
-                        PlugAddress::ePAM_Subunit,
-                        subunitPlugAddress ) );
-            }
-            break;
-            case eAPA_FunctionBlockPlug:
-            {
-                FunctionBlockPlugAddress functionBlockPlugAddress(
-                    m_functionBlockType,
-                    m_functionBlockId,
-                    m_id );
-                extPlugInfoCmd.setPlugAddress(
-                    PlugAddress(
-                        convertPlugDirection( getPlugDirection() ),
-                        PlugAddress::ePAM_FunctionBlock,
-                        functionBlockPlugAddress ) );
-            }
-            break;
-            default:
-                extPlugInfoCmd.setPlugAddress(PlugAddress());
-            }
-        }
-        break;
-    default:
-        debugError( "Unknown subunit type\n" );
-    }
-
-    extPlugInfoCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
-    extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    extPlugInfoCmd.setSubunitId( getSubunitId() );
-    extPlugInfoCmd.setSubunitType( getSubunitType() );
-
-    return extPlugInfoCmd;
-}
-
-ExtendedStreamFormatCmd
-Plug::setPlugAddrToStreamFormatCmd(
-    ExtendedStreamFormatCmd::ESubFunction subFunction)
-{
-    ExtendedStreamFormatCmd extStreamFormatInfoCmd(
-        m_unit->get1394Service(),
-        subFunction );
-    switch( getSubunitType() ) {
-    case eST_Unit:
-    {
-            UnitPlugAddress::EPlugType ePlugType =
-                UnitPlugAddress::ePT_Unknown;
-            switch ( m_addressType ) {
-                case eAPA_PCR:
-                    ePlugType = UnitPlugAddress::ePT_PCR;
-                    break;
-                case eAPA_ExternalPlug:
-                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
-                    break;
-                case eAPA_AsynchronousPlug:
-                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
-                    break;
-                default:
-                    ePlugType = UnitPlugAddress::ePT_Unknown;
-            }
-        UnitPlugAddress unitPlugAddress( ePlugType,
-                                         m_id );
-        extStreamFormatInfoCmd.setPlugAddress(
-            PlugAddress( convertPlugDirection( getPlugDirection() ),
-                         PlugAddress::ePAM_Unit,
-                         unitPlugAddress ) );
-        }
-        break;
-    case eST_Music:
-    case eST_Audio:
-    {
-        switch( m_addressType ) {
-        case eAPA_SubunitPlug:
-        {
-            SubunitPlugAddress subunitPlugAddress( m_id );
-            extStreamFormatInfoCmd.setPlugAddress(
-                PlugAddress( convertPlugDirection( getPlugDirection() ),
-                             PlugAddress::ePAM_Subunit,
-                             subunitPlugAddress ) );
-        }
-        break;
-        case eAPA_FunctionBlockPlug:
-        {
-            FunctionBlockPlugAddress functionBlockPlugAddress(
-                m_functionBlockType,
-                m_functionBlockId,
-                m_id );
-            extStreamFormatInfoCmd.setPlugAddress(
-                PlugAddress( convertPlugDirection( getPlugDirection() ),
-                             PlugAddress::ePAM_FunctionBlock,
-                             functionBlockPlugAddress ) );
-        }
-        break;
-        default:
-            extStreamFormatInfoCmd.setPlugAddress(PlugAddress());
-        }
-    }
-    break;
-    default:
-        debugError( "Unknown subunit type\n" );
-    }
-
-    extStreamFormatInfoCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
-    extStreamFormatInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    extStreamFormatInfoCmd.setSubunitId( getSubunitId() );
-    extStreamFormatInfoCmd.setSubunitType( getSubunitType() );
-
-    return extStreamFormatInfoCmd;
 }
 
 }

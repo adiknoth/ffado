@@ -24,8 +24,12 @@
 #include "avc_descriptor.h"
 #include "avc_descriptor_cmd.h"
 
+#include "../general/avc_unit.h"
+#include "../general/avc_subunit.h"
+
 #include "../util/avc_serialize.h"
 #include "libieee1394/ieee1394service.h"
+#include "libieee1394/configrom.h"
 
 namespace AVC {
 
@@ -100,42 +104,37 @@ AVCDescriptorSpecifier::clone() const
 }
 
 //----------------------
-AVCDescriptor::AVCDescriptor( Ieee1394Service& ieee1394service )
+AVCDescriptor::AVCDescriptor( Unit* unit )
     : IBusData()
-    , m_p1394Service( &ieee1394service )
-    , m_nodeId( 0 )
-    , m_subunit_type( eST_Unit )
-    , m_subunit_id( 0x07 )
+    , m_unit( unit )
+    , m_subunit ( NULL )
     , m_specifier ( AVCDescriptorSpecifier::eInvalid )
     , m_data ( NULL )
     , m_descriptor_length(0)
+    , m_loaded ( false )
 {
 }
 
-AVCDescriptor::AVCDescriptor( Ieee1394Service& ieee1394service,
-                              fb_nodeid_t nodeId, ESubunitType subunitType, subunit_id_t subunitId )
+AVCDescriptor::AVCDescriptor( Unit* unit, Subunit* subunit )
     : IBusData()
-    , m_p1394Service( &ieee1394service )
-    , m_nodeId( nodeId )
-    , m_subunit_type( subunitType )
-    , m_subunit_id( subunitId )
+    , m_unit( unit )
+    , m_subunit ( subunit )
     , m_specifier ( AVCDescriptorSpecifier::eInvalid )
     , m_data ( NULL )
     , m_descriptor_length(0)
+    , m_loaded ( false )
 {
 }
 
-AVCDescriptor::AVCDescriptor( Ieee1394Service& ieee1394service,
-                              fb_nodeid_t nodeId, ESubunitType subunitType, subunit_id_t subunitId,
+AVCDescriptor::AVCDescriptor( Unit* unit, Subunit* subunit,
                               AVCDescriptorSpecifier s )
     : IBusData()
-    , m_p1394Service( &ieee1394service )
-    , m_nodeId( nodeId )
-    , m_subunit_type( subunitType )
-    , m_subunit_id( subunitId )
+    , m_unit( unit )
+    , m_subunit ( subunit )
     , m_specifier ( s )
     , m_data ( NULL )
     , m_descriptor_length(0)
+    , m_loaded ( false )
 {
 }
 
@@ -143,17 +142,29 @@ AVCDescriptor::~AVCDescriptor()
 {
     if (m_data != NULL) free(m_data);
 }
+bool
+AVCDescriptor::reload()
+{
+    m_loaded=false;
+    return load();
+}
 
 bool
 AVCDescriptor::load()
 {
     bool result;
-    OpenDescriptorCmd openDescCmd(*m_p1394Service);
+    
+    if (m_loaded) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Descriptor already loaded, not re-loading...\n" );
+        return true;
+    }
+    
+    OpenDescriptorCmd openDescCmd(m_unit->get1394Service());
 
     debugOutput(DEBUG_LEVEL_VERBOSE, " Open descriptor (%s)\n",getDescriptorName());
     openDescCmd.setMode( OpenDescriptorCmd::eRead );
     openDescCmd.m_specifier=&m_specifier;
-    openDescCmd.setNodeId( m_nodeId );
+    openDescCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
     openDescCmd.setCommandType( AVCCommand::eCT_Control );
     openDescCmd.setSubunitType( getSubunitType() );
     openDescCmd.setSubunitId( getSubunitId() );
@@ -167,9 +178,9 @@ AVCDescriptor::load()
     }
     
     debugOutput(DEBUG_LEVEL_VERBOSE, " Read status descriptor\n");
-    ReadDescriptorCmd readDescCmd(*m_p1394Service);
+    ReadDescriptorCmd readDescCmd(m_unit->get1394Service());
     readDescCmd.m_specifier=&m_specifier;
-    readDescCmd.setNodeId( m_nodeId );
+    readDescCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
     readDescCmd.setCommandType( AVCCommand::eCT_Control );
     readDescCmd.setSubunitType( getSubunitType() );
     readDescCmd.setSubunitId( getSubunitId() );
@@ -209,7 +220,7 @@ AVCDescriptor::load()
         // read the full descriptor
         readDescCmd.clear();
         readDescCmd.m_specifier=&m_specifier;
-        readDescCmd.setNodeId( m_nodeId );
+        readDescCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
         readDescCmd.setCommandType( AVCCommand::eCT_Control );
         readDescCmd.setSubunitType( getSubunitType() );
         readDescCmd.setSubunitId( getSubunitId() );
@@ -250,7 +261,7 @@ AVCDescriptor::load()
     openDescCmd.clear();
     openDescCmd.setMode( OpenDescriptorCmd::eClose );
     openDescCmd.m_specifier=&m_specifier;
-    openDescCmd.setNodeId( m_nodeId );
+    openDescCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
     openDescCmd.setCommandType( AVCCommand::eCT_Control );
     openDescCmd.setSubunitType( getSubunitType() );
     openDescCmd.setSubunitId( getSubunitId() );
@@ -288,6 +299,7 @@ AVCDescriptor::load()
         }
     }
 #endif
+    m_loaded=true;
     return true;
 }
 
@@ -308,41 +320,21 @@ AVCDescriptor::clone() const
 {
     return new AVCDescriptor( *this );
 }
-bool
-AVCDescriptor::setSubunitType(ESubunitType subunitType)
-{
-    m_subunit_type = subunitType;
-    return true;
-}
-
-bool
-AVCDescriptor::setNodeId( fb_nodeid_t nodeId )
-{
-    m_nodeId = nodeId;
-    return true;
-}
-
-bool
-AVCDescriptor::setSubunitId(subunit_id_t subunitId)
-{
-    m_subunit_id = subunitId & 0x7;
-    return true;
-}
 
 ESubunitType
-AVCDescriptor::getSubunitType()
+AVCDescriptor::getSubunitType() const
 {
-    return m_subunit_type;
+    return (m_subunit==NULL?eST_Unit:m_subunit->getSubunitType()); 
 }
 
-subunit_id_t
-AVCDescriptor::getSubunitId()
+subunit_id_t 
+AVCDescriptor::getSubunitId() const
 {
-    return m_subunit_id;
+    return (m_subunit==NULL?0xFF:m_subunit->getSubunitId());
 }
 
 bool
-AVCDescriptor::setVerbose( int verboseLevel )
+AVCDescriptor::setVerboseLevel( int verboseLevel )
 {
     setDebugLevel(verboseLevel);
     return true;
