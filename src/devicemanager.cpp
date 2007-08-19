@@ -537,6 +537,16 @@ DeviceManager::saveCache( IAvDevice* pAvDevice )
     if ( !pBeBoBDevice ) {
         return true;
     }
+    // FIXME: the above test doesn't have the desired effect - MOTU devices
+    // are still allowed to proceed.  Therefore for the moment include a
+    // further check.
+    // If the device isn't a BeBoB device we can't assume it will accept AVC
+    // commands (for example, trying to send AVC commands to a MOTU via
+    // libiec61883 gives an endless stream of "send oops" messages). 
+    // Therefore only proceed if the device is a known BeBoB device.
+    if (!BeBoB::AvDevice::probe(pAvDevice->getConfigRom())) {
+        return true;
+    }
 
     // the path looks like this:
     // PATH_TO_CACHE + GUID + CONFIGURATION_ID
@@ -575,6 +585,13 @@ DeviceManager::loadFromCache( const ConfigRom& configRom )
 {
     Glib::ustring sDevicePath = getCachePath() + configRom.getGuidString();
     char* configId;
+    // If the device isn't a BeBoB device we can't assume it will accept AVC
+    // commands (for example, trying to send AVC commands to a MOTU via
+    // libiec61883 gives an endless stream of "send oops" messages). 
+    // Therefore only proceed if the device is a known BeBoB device.
+    if (!BeBoB::AvDevice::probe((ConfigRom&)configRom)) {
+        return false;
+    }
     asprintf(&configId, "%08x",
     BeBoB::AvDevice::getConfigurationId(*m_1394Service,
     configRom.getNodeId()) );
