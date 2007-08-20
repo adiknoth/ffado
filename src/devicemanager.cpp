@@ -22,6 +22,8 @@
  * MA 02110-1301 USA
  */
 
+#include "config.h"
+
 #include "fbtypes.h"
 
 #include "devicemanager.h"
@@ -519,7 +521,7 @@ DeviceManager::getCachePath()
 {
     Glib::ustring cachePath;
     char* pCachePath;
-    if ( asprintf( &pCachePath, "%s/cache/libffado/",  CACHEDIR ) < 0 ) {
+    if ( asprintf( &pCachePath, "%s/libffado/",  CACHEDIR ) < 0 ) {
         debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
         cachePath == "/var/cache/libffado/";
     } else {

@@ -4,9 +4,9 @@ import os
 
 Import( 'env' )
 
-env = env.Copy()
+env.AppendUnique( CPPPATH=["#/", "#/src"] )
 
-env.AppendUnique( CPPPATH=["#/src"] )
+env1 = env.Copy()
 
 ffado_source = env.Split( '\
 	devicemanager.cpp \
@@ -116,22 +116,45 @@ if env['ENABLE_RME']:
 if env['ENABLE_BOUNCE']:
 	source += bounce_source
 
-ffadolib = env.SharedLibrary( "ffado", source )
+env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
+ffadolib = env1.SharedLibrary( "ffado", source )
 
-env.Alias( "install", env.InstallAs( os.path.join('$libdir','libffado.so.$LIBVERSION'), ffadolib ) )
-env.Ignore( ffadolib, os.path.join('$libdir','libffado.so') )
-#env.Ignore( os.path.join('$libdir','libffado.so'), ffadolib )
-#env.Ignore( os.path.join('$libdir','libffado.so.0'), "install" )
+#
+# All the following tries to emulate the versioning of installed libs as seen from libtool...
+#
+if False:
+	print "Trying to emulate libtools versioned install"
+	env1.Alias( "install", env1.InstallAs( os.path.join('$libdir','libffado.so.$LIBVERSION'), ffadolib ) )
+	env1.Ignore( ffadolib, os.path.join('$libdir','libffado.so') )
+	#env.Ignore( os.path.join('$libdir','libffado.so'), ffadolib )
+	#env.Ignore( os.path.join('$libdir','libffado.so.0'), "install" )
 
-env.Alias( "install", env.Command( target=env['libdir']+"/libffado.so", source=env['libdir']+"/libffado.so.$LIBVERSION", action="ln -s libffado.so.%s $libdir/libffado.so" % env['LIBVERSION'] ) )
-env.Alias( "install", env.Command( target="$libdir/libffado.so.%s" % str(env['LIBVERSION']).rsplit('.',1)[0], source=env['libdir']+"/libffado.so.$LIBVERSION", action="ln -s $SOURCE $TARGET" ) )
-env.Alias( "install", env.Command( target="$libdir/libffado.so.%s" % str(env['LIBVERSION']).rsplit('.',2)[0], source=env['libdir']+"/libffado.so.$LIBVERSION", action="ln -s $SOURCE $TARGET" ) )
+	env1.Alias( "install", env1.Command(
+		target="$libdir/libffado.so",
+		source=env1['libdir']+"/libffado.so.$LIBVERSION",
+		action="ln -s $SOURCE $TARGET"
+		) )
+	env1.Alias( "install", env1.Command(
+		target="$libdir/libffado.so.%s" % str(env1['LIBVERSION']).rsplit('.',1)[0],
+		source=env1['libdir']+"/libffado.so.$LIBVERSION",
+		action="ln -s $SOURCE $TARGET"
+		) )
+	env1.Alias( "install", env1.Command(
+		target="$libdir/libffado.so.%s" % str(env1['LIBVERSION']).rsplit('.',2)[0],
+		source=env1['libdir']+"/libffado.so.$LIBVERSION",
+		action="ln -s $SOURCE $TARGET"
+		) )
+else:
+	print "Doing simple install"
+	env1.Alias( "install", env1.Install( "$libdir", ffadolib ) )
+
 
 #
 # For the debugging apps
 #
-env.AppendUnique( LIBPATH="#/src" )
-env.AppendUnique( LIBS="ffado" )
+env2 = env.Copy()
+env2.AppendUnique( LIBPATH="#/src" )
+env2.AppendUnique( LIBS="ffado" )
 
 apps = { \
 	"bridgeco-downloader": "bridgeco-downloader.cpp", \
@@ -143,5 +166,5 @@ apps = { \
 }
 
 for app in apps.keys():
-	env.Program( target=app, source = env.Split( apps[app] ) )
+	env2.Program( target=app, source = env.Split( apps[app] ) )
 
