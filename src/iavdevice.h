@@ -57,6 +57,25 @@ public:
     ConfigRom& getConfigRom() const;
 
     /**
+     * @brief Called by DeviceManager to load device model from cache.
+     *
+     * This function is called before discover in order to speed up
+     * system initializing.
+     *
+     * @returns true if device was cached and successfully loaded from cache
+     */
+    virtual bool loadFromCache();
+
+    /**
+     * @brief Called by DeviceManager to allow device driver to save a cache version
+     * of the current configuration.
+     *
+     * @returns true if caching was successful. False doesn't mean an error just,
+     * the driver was unable to store the configuration
+     */
+    virtual bool saveCache();
+
+    /**
      * @brief This is called by the DeviceManager to discover & configure the device
      *
      * @return true if the device was discovered successfuly

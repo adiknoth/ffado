@@ -68,19 +68,12 @@ public:
     IAvDevice* getAvDeviceByIndex( int idx );
     unsigned int getAvDeviceCount();
 
-    bool buildCache();
-    IAvDevice* loadFromCache( const ConfigRom& configRom );
-
     Streaming::StreamProcessor *getSyncSource();
 
 protected:
     IAvDevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id );
     IAvDevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
-
-
-    Glib::ustring getCachePath();
-    bool saveCache( IAvDevice* pAvDevice );
 
 protected:
     Ieee1394Service* m_1394Service;

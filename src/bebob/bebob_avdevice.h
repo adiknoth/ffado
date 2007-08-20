@@ -30,6 +30,7 @@
 #include "libavc/avc_definitions.h"
 #include "libavc/avc_extended_cmd_generic.h"
 
+#include "bebob/bebob_configparser.h"
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/GenericMixer.h"
@@ -51,13 +52,6 @@ class SubunitPlugSpecificDataPlugAddress;
 
 namespace BeBoB {
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    char *vendor_name;
-    char *model_name;
-};
-
 class AvDevice : public IAvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
@@ -68,7 +62,8 @@ public:
     void setVerboseLevel(int l);
 
     static bool probe( ConfigRom& configRom );
-    static int getConfigurationId( Ieee1394Service& ieee1394Service, int nodeId );
+    virtual bool loadFromCache();
+    virtual bool saveCache();
     virtual bool discover();
 
     virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
@@ -117,10 +112,6 @@ public:
         { return m_activeSyncInfo; }
     bool setActiveSync( const SyncInfo& syncInfo );
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static AvDevice* deserialize( Glib::ustring basePath,
-                                  Util::IODeserialize& deser,
-                  Ieee1394Service& ieee1394Service );
     AvDeviceSubunitAudio* getAudioSubunit( subunit_id_t subunitId )
         { return dynamic_cast<AvDeviceSubunitAudio*>(
                    getSubunit( AVC1394_SUBUNIT_AUDIO , subunitId ));};
@@ -166,19 +157,22 @@ protected:
                                            AvPlugVector& prhs,
                                            std::string syncDescription );
 
-    static bool serializeSyncInfoVector( Glib::ustring basePath,
-                                         Util::IOSerialize& ser,
-                                         const SyncInfoVector& vec );
-    static bool deserializeSyncInfoVector( Glib::ustring basePath,
-                                           Util::IODeserialize& deser,
-                                           AvDevice& avDevice,
-                                           SyncInfoVector& vec );
-    static int getConfigurationIdSampleRate( Ieee1394Service& ieee1394service, int nodeId );
-    static int getConfigurationIdNumberOfChannel( Ieee1394Service& ieee1394service, 
-						  int nodeId,
-						  PlugAddress::EPlugDirection ePlugDirection );
-    static int getConfigurationIdSyncMode( Ieee1394Service& ieee1394service,
-					   int nodeId );
+
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    bool deserialize( Glib::ustring basePath,
+                      Util::IODeserialize& deser );
+    bool serializeSyncInfoVector( Glib::ustring basePath,
+                                  Util::IOSerialize& ser,
+                                  const SyncInfoVector& vec ) const;
+    bool deserializeSyncInfoVector( Glib::ustring basePath,
+                                    Util::IODeserialize& deser,
+                                    SyncInfoVector& vec );
+    int getConfigurationIdSampleRate();
+    int getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection );
+    int getConfigurationIdSyncMode();
+    int getConfigurationId();
+
+    Glib::ustring getCachePath();
 
 protected:
     AvPlugVector              m_pcrPlugs;
@@ -188,7 +182,7 @@ protected:
     AvPlugManager*            m_pPlugManager;
     SyncInfoVector            m_syncInfos;
     SyncInfo*                 m_activeSyncInfo;
-    struct VendorModelEntry*  m_model;
+    VendorModelEntry*         m_model;
     GenericMixer*             m_Mixer;
 
     // streaming stuff
