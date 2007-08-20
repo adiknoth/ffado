@@ -105,7 +105,7 @@ env.AppendUnique( CPPPATH=["#/"] )
 env['bindir'] = os.path.join( env['PREFIX'], "bin" )
 env['libdir'] = os.path.join( env['PREFIX'], "lib" )
 env['includedir'] = os.path.join( env['PREFIX'], "include" )
-env['cachedir'] = os.path.join( env['PREFIX'] + "var/cache/libffado" )
+env['cachedir'] = os.path.join( env['PREFIX'], "var/cache/libffado" )
 
 env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
