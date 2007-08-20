@@ -135,7 +135,7 @@ AvDevice::probe( ConfigRom& configRom )
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 
-    ConfigParser configParser( "/home/wagi/src/libffado/src/bebob/ffado_driver_bebob.txt" );
+    //ConfigParser configParser( "/home/wagi/src/libffado/src/bebob/ffado_driver_bebob.txt" );
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
