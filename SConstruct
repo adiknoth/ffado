@@ -42,8 +42,6 @@ Help( opts.GenerateHelpText( env ) )
 
 opts.Save( "cache/options.cache", env )
 
-env.Append( CCFLAGS = "-Wall -g -fpic" )
-
 if not env.GetOption('clean'):
 	conf = Configure( env, custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG }, conf_dir='cache', log_file='cache/config.log' )
 
@@ -71,7 +69,10 @@ install the needed packages (remember to also install the *-devel packages)
 
 
 if env['DEBUG']:
-	env.AppendUnique( CCFLAGS=["-DDEBUG"] )
+	print "Doing a debug build"
+	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
+	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
+
 
 if env['ENABLE_BEBOB']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
@@ -93,10 +94,6 @@ env.MergeFlags( ["!pkg-config --cflags --libs alsa"] )
 env.MergeFlags( ["!pkg-config --cflags --libs libxml++-2.6"] )
 env.MergeFlags( ["!pkg-config --cflags --libs liblo"] )
 
-#env.AppendUnique( CCFLAGS = "-Wall -Werror -g -fpic" )
-env.AppendUnique( CCFLAGS = env.Split("-Wall -g -fpic") )
-#env.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,soname -Wl,libffado.so.1") )
-
 
 #
 # Some includes in src/*/ are full path (src/*), that should be fixed?
@@ -105,6 +102,7 @@ env.AppendUnique( CPPPATH=["#/"] )
 env['bindir'] = os.path.join( env['PREFIX'], "bin" )
 env['libdir'] = os.path.join( env['PREFIX'], "lib" )
 env['includedir'] = os.path.join( env['PREFIX'], "include" )
+env['sharedir'] = os.path.join( env['PREFIX'], "share/libffado" )
 env['cachedir'] = os.path.join( env['PREFIX'], "var/cache/libffado" )
 
 env.Alias( "install", env['libdir'] )
@@ -122,12 +120,13 @@ env.ScanReplace( "config.h.in" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
-if not os.path.exists( env['cachedir'] ):
-	env.Alias( "install", os.makedirs( env["cachedir"] ) )
 
 env.SConscript( dirs=['src','libffado','tests','support'], exports="env" )
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
 	Default( 'src' )
+	#env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
+	env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
+
 

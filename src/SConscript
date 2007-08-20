@@ -70,6 +70,11 @@ bebob_source = env.Split( '\
 	bebob/GenericMixer.cpp \
 	maudio/maudio_avdevice.cpp \
 ' )
+bebob_pkgdata = env.Split( '\
+	maudio/refdesign.xml \
+	maudio/fw410.xml \
+	maudio/fwap.xml \
+' )
 
 motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
@@ -148,6 +153,11 @@ else:
 	print "Doing simple install"
 	env1.Alias( "install", env1.Install( "$libdir", ffadolib ) )
 
+#
+# Install the *_pkgdata to $sharedir
+#
+for data in bebob_pkgdata:
+	env1.Alias( "install", env1.Install( "$sharedir", data ) )
 
 #
 # For the debugging apps

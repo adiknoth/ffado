@@ -521,7 +521,7 @@ DeviceManager::getCachePath()
 {
     Glib::ustring cachePath;
     char* pCachePath;
-    if ( asprintf( &pCachePath, "%s/libffado/",  CACHEDIR ) < 0 ) {
+    if ( asprintf( &pCachePath, "%s/",  CACHEDIR ) < 0 ) {
         debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
         cachePath == "/var/cache/libffado/";
     } else {
