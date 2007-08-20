@@ -39,6 +39,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
+#include <sys/stat.h>
 
 namespace BeBoB {
 
@@ -132,6 +134,8 @@ AvDevice::probe( ConfigRom& configRom )
 {
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
+
+    ConfigParser configParser( "/home/wagi/src/libffado/src/bebob/ffado_driver_bebob.txt" );
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -814,16 +818,16 @@ AvDevice::getSamplingFrequency( )
 }
 
 int
-AvDevice::getConfigurationIdSampleRate( Ieee1394Service& ieee1394Service, int nodeId )
+AvDevice::getConfigurationIdSampleRate()
 {
-    ExtendedStreamFormatCmd extStreamFormatCmd( ieee1394Service );
+    ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     nodeId );
+                                     m_nodeId );
     extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
 
-    extStreamFormatCmd.setNodeId( nodeId );
+    extStreamFormatCmd.setNodeId( m_nodeId );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
     extStreamFormatCmd.setVerbose( true );
 
@@ -848,17 +852,15 @@ AvDevice::getConfigurationIdSampleRate( Ieee1394Service& ieee1394Service, int no
 }
 
 int
-AvDevice::getConfigurationIdNumberOfChannel( Ieee1394Service& ieee1394Service,
-                                             int nodeId,
-                                             PlugAddress::EPlugDirection ePlugDirection )
+AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
 {
-    ExtendedPlugInfoCmd extPlugInfoCmd( ieee1394Service );
+    ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     nodeId );
+                                     m_nodeId );
     extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
                                                 PlugAddress::ePAM_Unit,
                                                 unitPlugAddress ) );
-    extPlugInfoCmd.setNodeId( nodeId );
+    extPlugInfoCmd.setNodeId( m_nodeId );
     extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     extPlugInfoCmd.setVerbose( true );
     ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
@@ -885,14 +887,13 @@ AvDevice::getConfigurationIdNumberOfChannel( Ieee1394Service& ieee1394Service,
 }
 
 int
-AvDevice::getConfigurationIdSyncMode( Ieee1394Service& ieee1394Service,
-                                      int nodeId )
+AvDevice::getConfigurationIdSyncMode()
 {
-    SignalSourceCmd signalSourceCmd( ieee1394Service );
+    SignalSourceCmd signalSourceCmd( *m_p1394Service );
     SignalUnitAddress signalUnitAddr;
     signalUnitAddr.m_plugId = 0x01;
     signalSourceCmd.setSignalDestination( signalUnitAddr );
-    signalSourceCmd.setNodeId( nodeId );
+    signalSourceCmd.setNodeId( m_nodeId );
     signalSourceCmd.setSubunitType( AVCCommand::eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 
@@ -922,14 +923,14 @@ AvDevice::getConfigurationIdSyncMode( Ieee1394Service& ieee1394Service,
 }
 
 int
-AvDevice::getConfigurationId( Ieee1394Service& ieee1394Service, int nodeId )
+AvDevice::getConfigurationId()
 {
     // create a unique configuration id.
     int id = 0;
-    id = getConfigurationIdSampleRate( ieee1394Service, nodeId );
-    id |= ( getConfigurationIdNumberOfChannel( ieee1394Service, nodeId, PlugAddress::ePD_Input )
-            + getConfigurationIdNumberOfChannel( ieee1394Service, nodeId, PlugAddress::ePD_Output ) ) << 8;
-    id |= getConfigurationIdSyncMode( ieee1394Service, nodeId ) << 16;
+    id = getConfigurationIdSampleRate();
+    id |= ( getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input )
+            + getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) ) << 8;
+    id |= getConfigurationIdSyncMode() << 16;
 
     return id;
 }
@@ -1488,7 +1489,7 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
 bool
 AvDevice::serializeSyncInfoVector( Glib::ustring basePath,
                                    Util::IOSerialize& ser,
-                                   const SyncInfoVector& vec )
+                                   const SyncInfoVector& vec ) const
 {
     bool result = true;
     int i = 0;
@@ -1515,7 +1516,6 @@ AvDevice::serializeSyncInfoVector( Glib::ustring basePath,
 bool
 AvDevice::deserializeSyncInfoVector( Glib::ustring basePath,
                                      Util::IODeserialize& deser,
-                                     AvDevice& avDevice,
                                      SyncInfoVector& vec )
 {
     int i = 0;
@@ -1539,8 +1539,8 @@ AvDevice::deserializeSyncInfoVector( Glib::ustring basePath,
 
         if ( result ) {
             SyncInfo syncInfo;
-            syncInfo.m_source = avDevice.getPlugManager().getPlug( sourceId );
-            syncInfo.m_destination = avDevice.getPlugManager().getPlug( destinationId );
+            syncInfo.m_source = m_pPlugManager->getPlug( sourceId );
+            syncInfo.m_destination = m_pPlugManager->getPlug( destinationId );
             syncInfo.m_description = description;
 
             vec.push_back( syncInfo );
@@ -1597,56 +1597,118 @@ AvDevice::serialize( Glib::ustring basePath,
 
     result &= serializeOptions( basePath + "Options", ser );
 
-//     result &= ser.write( basePath + "m_id", id );
+    // result &= ser.write( basePath + "m_id", id );
 
     return result;
 }
 
-AvDevice*
+bool
 AvDevice::deserialize( Glib::ustring basePath,
-                       Util::IODeserialize& deser,
-                       Ieee1394Service& ieee1394Service )
+                       Util::IODeserialize& deser )
 {
-    ConfigRom *configRom =
-        ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service );
+    bool result;
+    result  = deser.read( basePath + "m_verboseLevel", m_verboseLevel );
 
-    if ( !configRom ) {
-        return NULL;
+    delete m_pPlugManager;
+    m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, *this );
+    if ( !m_pPlugManager ) {
+        return false;
+    }
+    result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, m_pcrPlugs );
+    result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, m_externalPlugs );
+    result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, *this, m_plugConnections );
+    result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, *this, m_subunits );
+    result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, m_syncInfos );
+
+    unsigned int i;
+    result &= deser.read( basePath + "m_activeSyncInfo", i );
+
+    if ( result ) {
+        if ( i < m_syncInfos.size() ) {
+            m_activeSyncInfo = &m_syncInfos[i];
+        }
     }
 
-    AvDevice* pDev = new AvDevice(
-        std::auto_ptr<ConfigRom>(configRom),
-        ieee1394Service, configRom->getNodeId());
+    result &= deserializeOptions( basePath + "Options", deser, *this );
 
-    if ( pDev ) {
-        bool result;
-        result  = deser.read( basePath + "m_verboseLevel", pDev->m_verboseLevel );
+    return result;
+}
 
-        if (pDev->m_pPlugManager) delete pDev->m_pPlugManager;
-        pDev->m_pPlugManager = AvPlugManager::deserialize( basePath + "AvPlug", deser, *pDev );
-        if ( !pDev->m_pPlugManager ) {
-            delete pDev;
-            return 0;
-        }
-        result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_pcrPlugs );
-        result &= deserializeAvPlugUpdateConnections( basePath + "AvPlug", deser, pDev->m_externalPlugs );
-        result &= deserializeVector<AvPlugConnection>( basePath + "PlugConnnection", deser, *pDev, pDev->m_plugConnections );
-        result &= deserializeVector<AvDeviceSubunit>( basePath + "Subunit",  deser, *pDev, pDev->m_subunits );
-        result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, *pDev, pDev->m_syncInfos );
 
-        unsigned int i;
-        result &= deser.read( basePath + "m_activeSyncInfo", i );
+Glib::ustring
+AvDevice::getCachePath()
+{
+    Glib::ustring cachePath;
+    char* pCachePath;
+    if ( asprintf( &pCachePath, "%s/cache/libffado/",  CACHEDIR ) < 0 ) {
+        debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
+        cachePath == "/var/cache/libffado/";
+    } else {
+        cachePath = pCachePath;
+        free( pCachePath );
+    }
+    return cachePath;
+}
 
-        if ( result ) {
-            if ( i < pDev->m_syncInfos.size() ) {
-                pDev->m_activeSyncInfo = &pDev->m_syncInfos[i];
-            }
-        }
+bool
+AvDevice::loadFromCache()
+{
+    Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
 
-        result &= deserializeOptions( basePath + "Options", deser, *pDev );
+    char* configId;
+    asprintf(&configId, "%08x", getConfigurationId() );
+    if ( !configId ) {
+        debugError( "could not create id string\n" );
+        return false;
     }
 
-    return pDev;
+    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
+    free( configId );
+    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
+
+    Util::XMLDeserialize deser( sFileName, m_verboseLevel );
+
+    bool result = deserialize( "", deser );
+    if ( result ) {
+        debugOutput( DEBUG_LEVEL_NORMAL, "could create valid bebob driver from %s\n",
+                     sFileName.c_str() );
+    }
+
+    return result;
+}
+
+bool
+AvDevice::saveCache()
+{
+    // the path looks like this:
+    // PATH_TO_CACHE + GUID + CONFIGURATION_ID
+
+    Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
+    struct stat buf;
+    if ( stat( sDevicePath.c_str(), &buf ) == 0 ) {
+        if ( !S_ISDIR( buf.st_mode ) ) {
+            debugError( "\"%s\" is not a directory\n",  sDevicePath.c_str() );
+            return false;
+        }
+    } else {
+        if (  mkdir( sDevicePath.c_str(), S_IRWXU | S_IRWXG ) != 0 ) {
+            debugError( "Could not create \"%s\" directory\n", sDevicePath.c_str() );
+            return false;
+        }
+    }
+
+    char* configId;
+    asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId() );
+    if ( !configId ) {
+        debugError( "Could not create id string\n" );
+        return false;
+    }
+    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
+    free( configId );
+    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
+
+    Util::XMLSerialize ser( sFileName );
+    return serialize( "", ser );
 }
 
 } // end of namespace

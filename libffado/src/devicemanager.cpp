@@ -62,8 +62,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <unistd.h>
-#include <sys/stat.h>
 
 using namespace std;
 
@@ -223,28 +221,23 @@ DeviceManager::discover( )
                 continue;
             }
 
-            bool isFromCache = false;
-            IAvDevice* avDevice = loadFromCache( *configRom );
-            if ( avDevice ) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
-                isFromCache = true;
-            } else {
-                avDevice = getDriverForDevice( configRom, nodeId );
-            }
-
+            IAvDevice*avDevice = getDriverForDevice( configRom, nodeId );
             if ( avDevice ) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
                              "driver found for device %d\n",
                              nodeId );
 
-                avDevice->setVerboseLevel( m_verboseLevel );
-
-                if ( !isFromCache ) {
-                    if ( !avDevice->discover() ) {
-                        debugError( "could not discover device\n" );
-                        delete avDevice;
-                        continue;
-                    }
+                bool isFromCache = false;
+                if ( avDevice->loadFromCache() ) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
+                    isFromCache = true;
+                } else if ( avDevice->discover() ) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "discovering successful\n" );
+                    avDevice->setVerboseLevel( m_verboseLevel );
+                } else {
+                    debugError( "could not discover device\n" );
+                    delete avDevice;
+                    continue;
                 }
 
                 if ( !avDevice->setId( m_avDevices.size() ) ) {
@@ -266,10 +259,8 @@ DeviceManager::discover( )
                     avDevice->showDevice();
                 }
 
-                if ( !isFromCache ) {
-                    if ( !saveCache( avDevice ) ) {
-                        debugWarning( "Could not create cached version of AVC model\n" );
-                    }
+                if ( !isFromCache && !avDevice->saveCache() ) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "No cached version of AVC model created\n" );
                 }
 
                 m_avDevices.push_back( avDevice );
@@ -498,121 +489,3 @@ DeviceManager::deinitialize()
 {
     return true;
 }
-
-bool
-DeviceManager::buildCache()
-{
-    bool result = true;
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
-          it != m_avDevices.end();
-          ++it )
-    {
-        IAvDevice* pAvDevice = *it;
-        result &= saveCache( pAvDevice );
-    }
-
-    return result;
-}
-
-Glib::ustring
-DeviceManager::getCachePath()
-{
-    Glib::ustring cachePath;
-    char* pCachePath;
-    if ( asprintf( &pCachePath, "%s/cache/libffado/",  CACHEDIR ) < 0 ) {
-        debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
-        cachePath == "/var/cache/libffado/";
-    } else {
-        cachePath = pCachePath;
-        free( pCachePath );
-    }
-    return cachePath;
-}
-
-bool
-DeviceManager::saveCache( IAvDevice* pAvDevice )
-{
-    // so far only BeBoB based devices needed a cache for speed up.
-    BeBoB::AvDevice* pBeBoBDevice = reinterpret_cast<BeBoB::AvDevice*>( pAvDevice );
-    if ( !pBeBoBDevice ) {
-        return true;
-    }
-    // FIXME: the above test doesn't have the desired effect - MOTU devices
-    // are still allowed to proceed.  Therefore for the moment include a
-    // further check.
-    // If the device isn't a BeBoB device we can't assume it will accept AVC
-    // commands (for example, trying to send AVC commands to a MOTU via
-    // libiec61883 gives an endless stream of "send oops" messages). 
-    // Therefore only proceed if the device is a known BeBoB device.
-    if (!BeBoB::AvDevice::probe(pAvDevice->getConfigRom())) {
-        return true;
-    }
-
-    // the path looks like this:
-    // PATH_TO_CACHE + GUID + CONFIGURATION_ID
-
-    Glib::ustring sDevicePath = getCachePath() + pAvDevice->getConfigRom().getGuidString();
-    struct stat buf;
-    if ( stat( sDevicePath.c_str(), &buf ) == 0 ) {
-        if ( !S_ISDIR( buf.st_mode ) ) {
-            debugError( "\"%s\" is not a directory\n",  sDevicePath.c_str() );
-            return false;
-        }
-    } else {
-        if (  mkdir( sDevicePath.c_str(), S_IRWXU | S_IRWXG ) != 0 ) {
-            debugError( "Could not create \"%s\" directory\n", sDevicePath.c_str() );
-            return false;
-        }
-    }
-
-    char* configId;
-    asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId( *m_1394Service,
-                                                                     pAvDevice->getNodeId() ) );
-    if ( !configId ) {
-        debugError( "Could not create id string\n" );
-        return false;
-    }
-    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
-    free( configId );
-    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
-
-    Util::XMLSerialize ser( sFileName );
-    return pBeBoBDevice->serialize( "", ser );
-}
-
-IAvDevice*
-DeviceManager::loadFromCache( const ConfigRom& configRom )
-{
-    Glib::ustring sDevicePath = getCachePath() + configRom.getGuidString();
-    char* configId;
-    // If the device isn't a BeBoB device we can't assume it will accept AVC
-    // commands (for example, trying to send AVC commands to a MOTU via
-    // libiec61883 gives an endless stream of "send oops" messages). 
-    // Therefore only proceed if the device is a known BeBoB device.
-    if (!BeBoB::AvDevice::probe((ConfigRom&)configRom)) {
-        return false;
-    }
-    asprintf(&configId, "%08x",
-    BeBoB::AvDevice::getConfigurationId(*m_1394Service,
-    configRom.getNodeId()) );
-    if ( !configId ) {
-        debugError( "could not create id string\n" );
-        return false;
-    }
-    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
-    free( configId );
-    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
-
-    Util::XMLDeserialize deser( sFileName, m_verboseLevel );
-
-    BeBoB::AvDevice* pBeBoBDevice = BeBoB::AvDevice::deserialize( "",
-                                                                  deser,
-                                                                  *m_1394Service );
-    if ( pBeBoBDevice ) {
-        debugOutput( DEBUG_LEVEL_NORMAL, "could create valid bebob driver from %s\n", sFileName.c_str() );
-        pBeBoBDevice->getConfigRom().setNodeId( configRom.getNodeId() );
-    }
-
-    return pBeBoBDevice;
-}
-
