@@ -5,6 +5,9 @@ import sys
 sys.path.append( "./admin" )
 from pkgconfig import *
 
+if not os.path.isdir( "cache" ):
+	os.mkdir( "cache" )
+
 opts = Options( "cache/options.cache" )
 
 opts.Add( BoolOption( "DEBUG", "Toggle debug-build.", True ) )
@@ -25,6 +28,9 @@ Help( """
 For building ffado you can set different options as listed below. You have to
 specify them only once, scons will save the last value you used and re-use
 that.
+To really undo your settings and return to the factory defaults, remove the
+"cache"-folder and the file ".sconsign.dblite" from this directory.
+For example with: "rm -Rf .sconsign.dblite cache"
 
 Currently it seems as if only the BEBOB and the MOTU drivers are
 kind-of-working, thats why only BEBOB is enabled by default.
@@ -36,8 +42,8 @@ Help( opts.GenerateHelpText( env ) )
 
 opts.Save( "cache/options.cache", env )
 
-#env['CXXFLAGS']+="-Wall -Werror -g -fpic"
-env['CFLAGS']+="-Wall -g -fpic"
+#env.Append( CCFLAGS = "-Wall -Werror -g -fpic" )
+env.Append( CCFLAGS = "-Wall -g -fpic" )
 
 
 if not env.GetOption('clean'):
@@ -96,14 +102,26 @@ env.MergeFlags( ["!pkg-config --cflags --libs liblo"] )
 # Some includes in src/*/ are full path (src/*), that should be fixed?
 env.AppendUnique( CPPPATH=["#/"] )
 
+env['bindir'] = env['PREFIX'] + "/bin"
+env['libdir'] = env['PREFIX'] + "/lib"
+env['includedir'] = env['PREFIX'] + "/include"
+
+env.Alias( "install", env['libdir'] )
+env.Alias( "install", env['includedir'] )
+
+env['PACKAGE'] = "libffado"
+env['VERSION'] = "1.999.5"
+env['LIBVERSION'] = "1.0.0"
 
 #
 # Start building
 #
 
 env.ScanReplace( "config.h.in" )
+pkgconfig = env.ScanReplace( "libffado.pc.in" )
+env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
-env.SConscript( dirs=['src','tests','support'], exports="env" )
+env.SConscript( dirs=['src','libffado','tests','support'], exports="env" )
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):

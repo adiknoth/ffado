@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+import os
+
 Import( 'env' )
 
 env = env.Copy()
@@ -114,10 +116,16 @@ if env['ENABLE_RME']:
 if env['ENABLE_BOUNCE']:
 	source += bounce_source
 
+ffadolib = env.SharedLibrary( "ffado", source )
 
-#source += dice_source + bounce_source + metric_halo_source + rme_source + amdtp_source
+env.Alias( "install", env.InstallAs( os.path.join('$libdir','libffado.so.$LIBVERSION'), ffadolib ) )
+env.Ignore( ffadolib, os.path.join('$libdir','libffado.so') )
+#env.Ignore( os.path.join('$libdir','libffado.so'), ffadolib )
+#env.Ignore( os.path.join('$libdir','libffado.so.0'), "install" )
 
-env.SharedLibrary( target="ffado", source=source )
+env.Alias( "install", env.Command( target=env['libdir']+"/libffado.so", source=env['libdir']+"/libffado.so.$LIBVERSION", action="ln -s libffado.so.%s $libdir/libffado.so" % env['LIBVERSION'] ) )
+env.Alias( "install", env.Command( target="$libdir/libffado.so.%s" % str(env['LIBVERSION']).rsplit('.',1)[0], source=env['libdir']+"/libffado.so.$LIBVERSION", action="ln -s $SOURCE $TARGET" ) )
+env.Alias( "install", env.Command( target="$libdir/libffado.so.%s" % str(env['LIBVERSION']).rsplit('.',2)[0], source=env['libdir']+"/libffado.so.$LIBVERSION", action="ln -s $SOURCE $TARGET" ) )
 
 #
 # For the debugging apps
