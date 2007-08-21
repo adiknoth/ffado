@@ -8,8 +8,6 @@ env.PrependUnique( CPPPATH=["#/src"] )
 env.PrependUnique( LIBPATH=["#/src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
-#env.AppendUnique( CCFLAGS=['-DENABLE_BEBOB'] )
-
 for app in env.Split( "teststreaming teststreaming2 teststreaming3 testmidistreaming1" ):
 	env.Program( target=app, source = [ app+".c", "debugtools.c" ] )
 
