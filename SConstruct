@@ -11,15 +11,23 @@ if not os.path.isdir( "cache" ):
 
 opts = Options( "cache/options.cache" )
 
-opts.Add( BoolOption( "DEBUG", "Toggle debug-build.", True ) )
 opts.AddOptions(
+	BoolOption( "DEBUG", """
+Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
+\"-O2\" to optimise.""", True ),
+	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", False ),
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
 	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),
 	BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE part.", False ),
-	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
+	BoolOption( "ENABLE_ALL", "Enable/Disable support for all devices.", False ),
+	BoolOption( "BUILD_TESTS", """
+Build the tests in their directory. As some contain quite some functionality,
+this is on by default.
+If you just want to use ffado with jack without the tools, you can disable this.
+""", True ),
 	)
 
 ## Load the builders in config
@@ -33,8 +41,8 @@ To really undo your settings and return to the factory defaults, remove the
 "cache"-folder and the file ".sconsign.dblite" from this directory.
 For example with: "rm -Rf .sconsign.dblite cache"
 
-Currently it seems as if only the BEBOB and the MOTU drivers are
-kind-of-working, thats why only BEBOB is enabled by default.
+Currently it seems as if only the BEBOB is kind-of-working, thats why only BEBOB
+is enabled by default.
 
 Note that this is a development version! Don't complain if its not working!
 See www.ffado.org for stable releases.
@@ -78,18 +86,17 @@ if env['DEBUG']:
 else:
 	env.AppendUnique( CCFLAGS=["-O2"] )
 
-
-if env['ENABLE_BEBOB']:
+if env['ENABLE_BEBOB'] or env['ENABLE_ALL']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
-if env['ENABLE_MOTU']:
+if env['ENABLE_MOTU'] or env['ENABLE_ALL']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
-if env['ENABLE_DICE']:
+if env['ENABLE_DICE'] or env['ENABLE_ALL']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_DICE"] )
-if env['ENABLE_METRIC_HALO']:
+if env['ENABLE_METRIC_HALO'] or env['ENABLE_ALL']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_METRIC_HALO"] )
-if env['ENABLE_RME']:
+if env['ENABLE_RME'] or env['ENABLE_ALL']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_RME"] )
-if env['ENABLE_BOUNCE']:
+if env['ENABLE_BOUNCE'] or env['ENABLE_ALL']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
 
 env.MergeFlags( ["!pkg-config --cflags --libs libraw1394"] )
@@ -131,6 +138,8 @@ env.SConscript( dirs=['src','libffado','tests','support'], exports="env" )
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
 	Default( 'src' )
+	if env['BUILD_TESTS']:
+		Default( 'tests' )
 	#env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
 	env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
 
