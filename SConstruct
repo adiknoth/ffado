@@ -7,6 +7,7 @@ from pkgconfig import *
 
 if not os.path.isdir( "cache" ):
 	os.mkdir( "cache" )
+	os.mkdir( "cache/objects" )
 
 opts = Options( "cache/options.cache" )
 
@@ -42,6 +43,8 @@ Help( opts.GenerateHelpText( env ) )
 
 opts.Save( "cache/options.cache", env )
 
+CacheDir( 'cache/objects' )
+
 if not env.GetOption('clean'):
 	conf = Configure( env, custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG }, conf_dir='cache', log_file='cache/config.log' )
 
@@ -72,6 +75,8 @@ if env['DEBUG']:
 	print "Doing a debug build"
 	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
 	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
+else:
+	env.AppendUnique( CCFLAGS=["-O2"] )
 
 
 if env['ENABLE_BEBOB']:
