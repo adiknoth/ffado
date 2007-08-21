@@ -178,3 +178,6 @@ apps = { \
 for app in apps.keys():
 	env2.Program( target=app, source = env.Split( apps[app] ) )
 
+env2.Alias( "install", env2.Install( "$bindir", "bebob-sync" ) )
+env2.Alias( "install", env2.Install( "$bindir", "bridgeco-downloader" ) )
+
