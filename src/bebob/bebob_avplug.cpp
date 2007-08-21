@@ -311,6 +311,51 @@ Plug::discoverChannelPosition()
 }
 
 bool
+Plug::copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
+                        channelPositionData )
+{
+    int index = 1;
+    for ( ExtendedPlugInfoPlugChannelPositionSpecificData::ClusterInfoVector::const_iterator it
+              = channelPositionData.m_clusterInfos.begin();
+          it != channelPositionData.m_clusterInfos.end();
+          ++it )
+    {
+        const ExtendedPlugInfoPlugChannelPositionSpecificData::ClusterInfo*
+            extPlugSpClusterInfo = &( *it );
+
+        ClusterInfo clusterInfo;
+        clusterInfo.m_nrOfChannels = extPlugSpClusterInfo->m_nrOfChannels;
+        clusterInfo.m_index = index;
+        index++;
+
+        for (  ExtendedPlugInfoPlugChannelPositionSpecificData::ChannelInfoVector::const_iterator cit
+                  = extPlugSpClusterInfo->m_channelInfos.begin();
+              cit != extPlugSpClusterInfo->m_channelInfos.end();
+              ++cit )
+        {
+            const ExtendedPlugInfoPlugChannelPositionSpecificData::ChannelInfo*
+                extPlugSpChannelInfo = &( *cit );
+
+            ChannelInfo channelInfo;
+            channelInfo.m_streamPosition =
+                extPlugSpChannelInfo->m_streamPosition-1;
+            // FIXME: this can only become a mess with the two meanings
+            //        of the location parameter. the audio style meaning
+            //        starts from 1, the midi style meaning from 0
+            //        lucky for us we recalculate this for the midi channels
+            //        and don't use this value.
+            channelInfo.m_location =
+                extPlugSpChannelInfo->m_location;
+
+            clusterInfo.m_channelInfos.push_back( channelInfo );
+        }
+        m_clusterInfos.push_back( clusterInfo );
+    }
+
+    return true;
+}
+
+bool
 Plug::discoverChannelName()
 {
     for ( ClusterInfoVector::iterator clit = m_clusterInfos.begin();
@@ -536,6 +581,81 @@ Plug::discoverConnectionsOutput()
     }
 
     return true;
+}
+
+ExtendedPlugInfoCmd
+Plug::setPlugAddrToPlugInfoCmd()
+{
+    ExtendedPlugInfoCmd extPlugInfoCmd( m_unit->get1394Service() );
+
+    switch( getSubunitType() ) {
+    case eST_Unit:
+        {
+            UnitPlugAddress::EPlugType ePlugType =
+                UnitPlugAddress::ePT_Unknown;
+            switch ( m_addressType ) {
+                case eAPA_PCR:
+                    ePlugType = UnitPlugAddress::ePT_PCR;
+                    break;
+                case eAPA_ExternalPlug:
+                    ePlugType = UnitPlugAddress::ePT_ExternalPlug;
+                    break;
+                case eAPA_AsynchronousPlug:
+                    ePlugType = UnitPlugAddress::ePT_AsynchronousPlug;
+                    break;
+                default:
+                    ePlugType = UnitPlugAddress::ePT_Unknown;
+            }
+            UnitPlugAddress unitPlugAddress( ePlugType,
+                                             m_id );
+            extPlugInfoCmd.setPlugAddress(
+                PlugAddress( convertPlugDirection( getPlugDirection() ),
+                             PlugAddress::ePAM_Unit,
+                             unitPlugAddress ) );
+        }
+        break;
+    case eST_Music:
+    case eST_Audio:
+        {
+            switch( m_addressType ) {
+            case eAPA_SubunitPlug:
+            {
+                SubunitPlugAddress subunitPlugAddress( m_id );
+                extPlugInfoCmd.setPlugAddress(
+                    PlugAddress(
+                        convertPlugDirection( getPlugDirection() ),
+                        PlugAddress::ePAM_Subunit,
+                        subunitPlugAddress ) );
+            }
+            break;
+            case eAPA_FunctionBlockPlug:
+            {
+                FunctionBlockPlugAddress functionBlockPlugAddress(
+                    m_functionBlockType,
+                    m_functionBlockId,
+                    m_id );
+                extPlugInfoCmd.setPlugAddress(
+                    PlugAddress(
+                        convertPlugDirection( getPlugDirection() ),
+                        PlugAddress::ePAM_FunctionBlock,
+                        functionBlockPlugAddress ) );
+            }
+            break;
+            default:
+                extPlugInfoCmd.setPlugAddress(PlugAddress());
+            }
+        }
+        break;
+    default:
+        debugError( "Unknown subunit type\n" );
+    }
+
+    extPlugInfoCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+    extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+    extPlugInfoCmd.setSubunitId( getSubunitId() );
+    extPlugInfoCmd.setSubunitType( getSubunitType() );
+
+    return extPlugInfoCmd;
 }
 
 }

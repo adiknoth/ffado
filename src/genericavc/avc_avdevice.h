@@ -59,35 +59,36 @@ public:
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
-    bool discover();
+    virtual bool discover();
+    
+    virtual void setVerboseLevel(int l);
+    virtual void showDevice();
 
-    void showDevice();
+    virtual bool setSamplingFrequency( int );
+    virtual int getSamplingFrequency( );
 
-    bool setSamplingFrequency( int );
-    int getSamplingFrequency( );
+    virtual int getStreamCount();
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
-    int getStreamCount();
-    Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual bool prepare();
+    virtual bool lock();
+    virtual bool unlock();
 
-    bool prepare();
-    bool lock();
-    bool unlock();
-
-    bool startStreamByIndex(int i);
-    bool stopStreamByIndex(int i);
+    virtual bool startStreamByIndex(int i);
+    virtual bool stopStreamByIndex(int i);
     
     // redefinition to resolve ambiguity
-    Ieee1394Service& get1394Service()
+    virtual Ieee1394Service& get1394Service()
         { return FFADODevice::get1394Service(); };
-    ConfigRom& getConfigRom() const 
+    virtual ConfigRom& getConfigRom() const 
         { return FFADODevice::getConfigRom(); };
         
 protected:
     virtual bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
                              Streaming::AmdtpAudioPort::E_Direction direction);
-    bool setSamplingFrequencyPlug( AVC::Plug& plug,
+/*    bool setSamplingFrequencyPlug( AVC::Plug& plug,
                                    AVC::Plug::EPlugDirection direction,
-                                   AVC::ESamplingFrequency samplingFrequency );
+                                   AVC::ESamplingFrequency samplingFrequency );*/
     
     struct VendorModelEntry *m_model;
     

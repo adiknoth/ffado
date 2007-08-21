@@ -124,8 +124,6 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
     // number of channels
     result &= plug.setNrOfChannels(info->m_nb_channels);
     
-    
-    
     int idx=1;
     for ( AVCMusicClusterInfoBlockVectorIterator it = info->m_Clusters.begin();
       it != info->m_Clusters.end();
@@ -162,6 +160,40 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
                 sinfo.m_name="unknown";
             } else {
                 sinfo.m_name=mplug->getName();
+            }
+            
+            if (plug.getDirection() == Plug::eAPD_Input) {
+                // it's an input plug to the subunit 
+                // so we have to check the source field of the music plug
+                if(s.stream_position != mplug->m_source_stream_position) {
+                    debugWarning("s.stream_position (= 0x%02X) != mplug->m_source_stream_position (= 0x%02X)\n",
+                        s.stream_position, mplug->m_source_stream_position);
+                    // use the one from the music plug
+                    sinfo.m_streamPosition= mplug->m_source_stream_position;
+                }
+                if(s.stream_location != mplug->m_source_stream_location) {
+                    debugWarning("s.stream_location (= 0x%02X) != mplug->m_source_stream_location (= 0x%02X)\n",
+                        s.stream_location, mplug->m_source_stream_location);
+                    // use the one from the music plug
+                    sinfo.m_location=mplug->m_source_stream_location;
+                }
+            } else if (plug.getDirection() == Plug::eAPD_Output) {
+                // it's an output plug from the subunit 
+                // so we have to check the destination field of the music plug
+                if(s.stream_position != mplug->m_dest_stream_position) {
+                    debugWarning("s.stream_position (= 0x%02X) != mplug->m_dest_stream_position (= 0x%02X)\n",
+                        s.stream_position, mplug->m_dest_stream_position);
+                    // use the one from the music plug
+                    sinfo.m_streamPosition=mplug->m_dest_stream_position;
+                }
+                if(s.stream_location != mplug->m_dest_stream_location) {
+                    debugWarning("s.stream_location (= 0x%02X) != mplug->m_dest_stream_location (= 0x%02X)\n",
+                        s.stream_location, mplug->m_dest_stream_location);
+                    // use the one from the music plug
+                    sinfo.m_location=mplug->m_dest_stream_location;
+                }
+            } else {
+                debugWarning("Invalid plug direction.\n");
             }
             
             debugOutput(DEBUG_LEVEL_VERBOSE, "Adding signal pos=%2d loc=%2d name=%s\n",

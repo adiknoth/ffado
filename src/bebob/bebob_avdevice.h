@@ -43,6 +43,8 @@
 
 #include "libutil/serialize.h"
 
+#include "genericavc/avc_avdevice.h"
+
 #include "ffadodevice.h"
 
 #include <sstream>
@@ -53,51 +55,16 @@ class Ieee1394Service;
 
 namespace BeBoB {
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    char *vendor_name;
-    char *model_name;
-};
-
-class AvDevice : public FFADODevice, public AVC::Unit {
+class AvDevice : public GenericAVC::AvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
               Ieee1394Service& ieee1394Service,
               int nodeId );
     virtual ~AvDevice();
 
-    void setVerboseLevel(int l);
-
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
 
-    virtual bool setSamplingFrequency( int );
-    virtual int getSamplingFrequency( );
-
-    virtual int getStreamCount();
-    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
-
-    virtual bool prepare();
-    bool lock();
-    bool unlock();
-
-    bool startStreamByIndex(int i);
-    bool stopStreamByIndex(int i);
-
-    virtual void showDevice();
-
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static AvDevice* deserialize( Glib::ustring basePath,
-                                  Util::IODeserialize& deser,
-                                  Ieee1394Service& ieee1394Service );
-
-    // redefinition to resolve ambiguity
-    Ieee1394Service& get1394Service()
-        { return FFADODevice::get1394Service(); };
-    ConfigRom& getConfigRom() const 
-        { return FFADODevice::getConfigRom(); };
-        
     virtual AVC::Subunit* createSubunit(AVC::Unit& unit,
                                         AVC::ESubunitType type,
                                         AVC::subunit_t id );
@@ -108,27 +75,19 @@ public:
                                    AVC::Plug::EPlugAddressType plugAddressType,
                                    AVC::Plug::EPlugDirection plugDirection,
                                    AVC::plug_id_t plugId );
-protected:
-
-    virtual bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
-                             Streaming::AmdtpAudioPort::E_Direction direction);
-
-    bool setSamplingFrequencyPlug( AVC::Plug& plug,
-                                   AVC::Plug::EPlugDirection direction,
-                                   AVC::ESamplingFrequency samplingFrequency );
-
-    virtual bool propagateClusterInfos() {return true;};
 
 protected:
-    struct VendorModelEntry*  m_model;
+    virtual bool propagatePlugInfo();
+
+public:
+    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    static AvDevice* deserialize( Glib::ustring basePath,
+                                  Util::IODeserialize& deser,
+                                  Ieee1394Service& ieee1394Service );
+
+protected:
     GenericMixer*             m_Mixer;
 
-    // streaming stuff
-    typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
-    StreamProcessorVector m_receiveProcessors;
-    StreamProcessorVector m_transmitProcessors;
-
-    DECLARE_DEBUG_MODULE;
 };
 
 }

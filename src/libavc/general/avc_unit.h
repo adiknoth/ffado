@@ -126,7 +126,7 @@ protected:
                            AVC::plug_id_t plugMaxId );
     virtual bool discoverPlugsExternal( AVC::Plug::EPlugDirection plugDirection,
                                 AVC::plug_id_t plugMaxId );
-    virtual bool propagateClusterInfos();
+    virtual bool propagatePlugInfo();
     virtual bool discoverSyncModes();
     virtual bool checkSyncConnectionsAndAddToList( AVC::PlugVector& plhs,
                                            AVC::PlugVector& prhs,

@@ -64,6 +64,7 @@ AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
                  nodeId );
+    addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
 AvDevice::~AvDevice()
@@ -133,6 +134,15 @@ AvDevice::discover()
     return true;
 }
 
+void
+AvDevice::setVerboseLevel(int l)
+{
+    m_pPlugManager->setVerboseLevel(l);
+
+    FFADODevice::setVerboseLevel(l);
+    AVC::Unit::setVerboseLevel(l);
+}
+
 int
 AvDevice::getSamplingFrequency( ) {
     AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
@@ -158,7 +168,6 @@ AvDevice::getSamplingFrequency( ) {
 bool
 AvDevice::setSamplingFrequency( int s )
 {
-    ESamplingFrequency samplingFrequency=parseSampleRate( s );
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -166,7 +175,7 @@ AvDevice::setSamplingFrequency( int s )
 
     if(snoopMode) {
         int current_sr=getSamplingFrequency();
-        if (current_sr != convertESamplingFrequency( samplingFrequency ) ) {
+        if (current_sr != s ) {
             debugError("In snoop mode it is impossible to set the sample rate.\n");
             debugError("Please start the client with the correct setting.\n");
             return false;
@@ -179,7 +188,7 @@ AvDevice::setSamplingFrequency( int s )
             return false;
         }
 
-        if ( !plug->setSampleRate( convertESamplingFrequency( samplingFrequency ) ) )
+        if ( !plug->setSampleRate( s ) )
         {
             debugError( "setSampleRate: Setting sample rate failed\n" );
             return false;
@@ -191,7 +200,7 @@ AvDevice::setSamplingFrequency( int s )
             return false;
         }
 
-        if ( !plug->setSampleRate( convertESamplingFrequency( samplingFrequency ) ) )
+        if ( !plug->setSampleRate( s ) )
         {
             debugError( "setSampleRate: Setting sample rate failed\n" );
             return false;
@@ -199,7 +208,7 @@ AvDevice::setSamplingFrequency( int s )
 
         debugOutput( DEBUG_LEVEL_VERBOSE,
                      "setSampleRate: Set sample rate to %d\n",
-                     convertESamplingFrequency( samplingFrequency ) );
+                     s );
         return true;
     }
     // not executable
@@ -347,8 +356,6 @@ AvDevice::addPlugToProcessor(
     AVC::Plug& plug,
     Streaming::StreamProcessor *processor,
     Streaming::AmdtpAudioPort::E_Direction direction) {
-        
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Adding plug %s to processor\n", plug.getName());
 
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
@@ -361,17 +368,13 @@ AvDevice::addPlugToProcessor(
           ++it )
     {
         const Plug::ClusterInfo* clusterInfo = &( *it );
-        
-        debugOutput(DEBUG_LEVEL_VERBOSE, " Adding cluster %s\n", clusterInfo->m_name.c_str());
 
         Plug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
         for ( Plug::ChannelInfoVector::const_iterator it = channelInfos.begin();
               it != channelInfos.end();
               ++it )
         {
-
             const Plug::ChannelInfo* channelInfo = &( *it );
-            
             std::ostringstream portname;
 
             portname << id << "_" << channelInfo->m_name;
@@ -395,15 +398,12 @@ AvDevice::addPlugToProcessor(
                 break;
 
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
-                // HACK: for audiofire2 only !!!
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel %s (pos=0x%02X, loc=0x%02X)\n",
-                    channelInfo->m_name.c_str(), (direction==Streaming::Port::E_Capture?4:6),
-                    processor->getPortCount(Streaming::Port::E_Midi));
+                    channelInfo->m_name.c_str(), channelInfo->m_streamPosition, processor->getPortCount(Streaming::Port::E_Midi));
                 p=new Streaming::AmdtpMidiPort(
                         portname.str(),
                         direction,
-                        (direction==Streaming::Port::E_Capture?4:6),
-//                         channelInfo->m_streamPosition,
+                        channelInfo->m_streamPosition,
                         // Workaround for out-of-spec hardware
                         // should be:
                         // channelInfo->m_location,
@@ -419,6 +419,17 @@ AvDevice::addPlugToProcessor(
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_TDIF:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MADI:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Digital:
+                debugOutput(DEBUG_LEVEL_VERBOSE, " Adding digital audio channel %s (pos=0x%02X, loc=0x%02X)\n",
+                    channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
+                p=new Streaming::AmdtpAudioPort(
+                        portname.str(),
+                        direction,
+                        channelInfo->m_streamPosition,
+                        channelInfo->m_location,
+                        Streaming::AmdtpPortInfo::E_MBLA
+                );
+                break;
+                
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
             default:
             // unsupported

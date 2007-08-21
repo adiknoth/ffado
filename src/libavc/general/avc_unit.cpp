@@ -155,8 +155,8 @@ Unit::discover()
         return false;
     }
 
-    if ( !propagateClusterInfos() ) {
-        debugError( "Failed to propagate cluster info's\n" );
+    if ( !propagatePlugInfo() ) {
+        debugError( "Failed to propagate plug info\n" );
         return false;
     }
 
@@ -457,7 +457,7 @@ Unit::discoverSubUnitsPlugConnections()
 }
 
 bool
-Unit::propagateClusterInfos()
+Unit::propagatePlugInfo()
 {
     debugOutput( DEBUG_LEVEL_NORMAL, "Propagating info to PCR plugs...\n");
     for ( PlugVector::iterator it = m_pcrPlugs.begin();

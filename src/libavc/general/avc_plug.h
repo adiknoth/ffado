@@ -27,8 +27,6 @@
 
 #include "../ccm/avc_signal_source.h"
 #include "../streamformat/avc_extended_stream_format.h"
-#include "avc_extended_plug_info.h"
-#include "avc_extended_cmd_generic.h"
 #include "../avc_definitions.h"
 #include "avc_generic.h"
 
@@ -213,8 +211,6 @@ protected:
 
     bool propagateFromPlug( Plug *p );
 
-    ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
-
     ExtendedStreamFormatCmd setPlugAddrToStreamFormatCmd(
             ExtendedStreamFormatCmd::ESubFunction subFunction);
 
@@ -227,9 +223,6 @@ protected:
             SignalSourceCmd& signalSourceCmd, Plug& plug );
 
     void debugOutputClusterInfos( int debugLevel );
-
-    bool copyClusterInfo(ExtendedPlugInfoPlugChannelPositionSpecificData&
-                         channelPositionData );
 
     bool addPlugConnection( PlugVector& connections, Plug& plug );
 

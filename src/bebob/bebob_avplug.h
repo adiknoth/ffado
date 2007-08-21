@@ -77,6 +77,10 @@ protected:
     bool discoverConnectionsOutput();
 
 private:
+    bool copyClusterInfo(AVC::ExtendedPlugInfoPlugChannelPositionSpecificData&
+                         channelPositionData );
+    AVC::ExtendedPlugInfoCmd setPlugAddrToPlugInfoCmd();
+
 
 };
 
