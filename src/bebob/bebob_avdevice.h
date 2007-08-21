@@ -110,14 +110,14 @@ public:
                                    AVC::plug_id_t plugId );
 protected:
 
-    bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
+    virtual bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
                              Streaming::AmdtpAudioPort::E_Direction direction);
 
     bool setSamplingFrequencyPlug( AVC::Plug& plug,
                                    AVC::Plug::EPlugDirection direction,
                                    AVC::ESamplingFrequency samplingFrequency );
 
-
+    virtual bool propagateClusterInfos() {return true;};
 
 protected:
     struct VendorModelEntry*  m_model;

@@ -571,6 +571,8 @@ AvDevice::addPlugToProcessor(
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Microphone:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
+                debugOutput(DEBUG_LEVEL_VERBOSE, " Adding audio channel %s (pos=0x%02X, loc=0x%02X)\n",
+                    channelInfo->m_name.c_str(), channelInfo->m_streamPosition-1, channelInfo->m_location-1);
                 p=new Streaming::AmdtpAudioPort(
                         portname.str(),
                         direction,
@@ -578,17 +580,19 @@ AvDevice::addPlugToProcessor(
                         // but bebob reports it starting from 1. Decide where
                         // and how to handle this (pp: here)
                         // note that the descriptor mechanism specifies indexing from 0
-                        channelInfo->m_streamPosition - 1,
+                        channelInfo->m_streamPosition-1,
                         channelInfo->m_location - 1,
                         Streaming::AmdtpPortInfo::E_MBLA
                 );
                 break;
 
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
+                debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel %s (pos=0x%02X, loc=0x%02X)\n",
+                    channelInfo->m_name.c_str(), channelInfo->m_streamPosition-1, processor->getPortCount(Streaming::Port::E_Midi));
                 p=new Streaming::AmdtpMidiPort(
                         portname.str(),
                         direction,
-                        channelInfo->m_streamPosition,
+                        channelInfo->m_streamPosition-1,
                         // Workaround for out-of-spec hardware
                         // should be:
                         // channelInfo->m_location-1,
