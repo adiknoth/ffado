@@ -81,17 +81,19 @@ int main(int argc, char *argv[])
 	dev_options.port=0;
 	dev_options.node_id=-1;
 	
-	dev_options.realtime=0;
+	dev_options.realtime=1;
 	dev_options.packetizer_priority=60;
-
+	
+	dev_options.directions=0;
+	
 	dev_options.verbose=5;
         
         dev_options.slave_mode=0;
         dev_options.snoop_mode=0;
-
+    
 	ffado_device_t *dev=ffado_streaming_init(&device_info, dev_options);
 	if (!dev) {
-		fprintf(stderr,"Could not init Ffado Streaming layer\n");
+		fprintf(stderr,"Could not init FFADO Streaming layer\n");
 		exit(-1);
 	}
 
@@ -170,7 +172,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-// 		ffado_streaming_transfer_buffers(dev);
+		ffado_streaming_transfer_buffers(dev);
 		ffado_streaming_transfer_capture_buffers(dev);
 		ffado_streaming_transfer_playback_buffers(dev);
 		

@@ -83,9 +83,11 @@ int main(int argc, char *argv[])
 	dev_options.port=0;
 	dev_options.node_id=-1;
 	
-	dev_options.realtime=1;
+	dev_options.realtime=0;
 	dev_options.packetizer_priority=60;
-
+	
+	dev_options.directions=0;
+	
 	dev_options.verbose=5;
         
         dev_options.slave_mode=0;

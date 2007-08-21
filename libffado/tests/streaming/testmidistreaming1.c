@@ -158,16 +158,18 @@ int main(int argc, char *argv[])
 
 	ffado_options_t dev_options;
 
-	dev_options.sample_rate=-1; // -1 = detect from discovery
+	dev_options.sample_rate=48000; // -1 = detect from discovery
 	dev_options.period_size=PERIOD_SIZE;
 
 	dev_options.nb_buffers=3;
 
-	dev_options.port=1;
+	dev_options.port=0;
 	dev_options.node_id=-1;
 	
 	dev_options.realtime=0;
 	dev_options.packetizer_priority=60;
+	
+	dev_options.directions=0;
 	
 	dev_options.verbose=5;
         
@@ -352,6 +354,7 @@ int main(int argc, char *argv[])
 	}	
 	
 	// start the streaming layer
+	ffado_streaming_prepare(dev);
 	start_flag = ffado_streaming_start(dev);
 
 	fprintf(stderr,"Entering receive loop (%d,%d)\n",nb_in_channels,nb_out_channels);
