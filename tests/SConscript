@@ -4,9 +4,9 @@ Import( 'env' )
 
 env = env.Copy()
 
-env.AppendUnique( CPPPATH=["#/src"] )
-env.AppendUnique( LIBPATH=["#/src"] )
-env.AppendUnique( LIBS=["ffado"] )
+env.PrependUnique( CPPPATH=["#/src"] )
+env.PrependUnique( LIBPATH=["#/src"] )
+env.PrependUnique( LIBS=["ffado"] )
 
 #env.AppendUnique( CCFLAGS=['-DENABLE_BEBOB'] )
 
