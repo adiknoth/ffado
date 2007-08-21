@@ -52,7 +52,7 @@ public:
                    int location,
                    enum E_Formats format)
     : AudioPort(name, direction),
-      AmdtpPortInfo(name, position, location, format)
+      AmdtpPortInfo(position, location, format)
     {};
 
     virtual ~AmdtpAudioPort() {};
@@ -79,7 +79,7 @@ public:
                    int location,
                    enum E_Formats format)
         : MidiPort(name, direction),
-          AmdtpPortInfo(name, position, location, format)
+          AmdtpPortInfo(position, location, format)
     {};
 
 
