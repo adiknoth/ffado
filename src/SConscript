@@ -121,7 +121,7 @@ if env['ENABLE_RME']:
 if env['ENABLE_BOUNCE']:
 	source += bounce_source
 
-env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
+#env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = env1.SharedLibrary( "ffado", source )
 
 #
