@@ -61,6 +61,7 @@ static VendorModelEntry supportedDeviceList[] =
 
     {0x000f1b, 0x00010064, "ESI", "Quatafire 610"},
 
+    {0x00130e, 0x00000000, "Focusrite", "Saffire (LE)"},
     {0x00130e, 0x00000003, "Focusrite", "Saffire Pro26IO"},
     {0x00130e, 0x00000006, "Focusrite", "Saffire Pro10IO"},
 
@@ -439,9 +440,21 @@ AvDevice::discoverSyncModes()
 
     }
 
-    AvPlugVector digitalPCRInputPlugs = getPlugsByType( m_externalPlugs,
+    AvPlugVector digitalExternalInputPlugs = getPlugsByType( m_externalPlugs,
                                                     AvPlug::eAPD_Input,
                                                     AvPlug::eAPT_Digital );
+    if ( !digitalExternalInputPlugs.size() ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "No external digital input plugs found\n" );
+
+    }
+    
+    AvPlugVector syncExternalInputPlugs = getPlugsByType( m_externalPlugs,
+                                                    AvPlug::eAPD_Input,
+                                                    AvPlug::eAPT_Sync );
+    if ( !syncExternalInputPlugs.size() ) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "No external sync input plugs found\n" );
+
+    }
 
     AvPlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
         AVCCommand::eST_Music,
@@ -475,8 +488,10 @@ AvDevice::discoverSyncModes()
     showAvPlugs( isoPCRInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "PCR Iso Output Plugs:\n" );
     showAvPlugs( isoPCROutputPlugs );
-    debugOutput( DEBUG_LEVEL_VERBOSE, "PCR digital Input Plugs:\n" );
-    showAvPlugs( digitalPCRInputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "External digital Input Plugs:\n" );
+    showAvPlugs( digitalExternalInputPlugs );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "External sync Input Plugs:\n" );
+    showAvPlugs( syncExternalInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Input Plugs:\n" );
     showAvPlugs( syncMSUInputPlugs );
     debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Output Plugs:\n" );
@@ -506,9 +521,15 @@ AvDevice::discoverSyncModes()
                                       syncMSUInputPlugs,
                                       "Internal (CSP)" );
 
-    // Check all external PCR digital input to MSU input connections
+    // Check all external digital input to MSU input connections
     // -> SPDIF/ADAT sync
-    checkSyncConnectionsAndAddToList( digitalPCRInputPlugs,
+    checkSyncConnectionsAndAddToList( digitalExternalInputPlugs,
+                                      syncMSUInputPlugs,
+                                      "Digital Input Sync" );
+
+    // Check all external sync input to MSU input connections
+    // -> SPDIF/ADAT sync
+    checkSyncConnectionsAndAddToList( syncExternalInputPlugs,
                                       syncMSUInputPlugs,
                                       "Digital Input Sync" );
 
@@ -1160,7 +1181,7 @@ AvDevice::prepare() {
         delete p;
         return false;
     }
-
+    
     if (!addPlugToProcessor(*outputPlug,p,
         Streaming::Port::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
@@ -1281,6 +1302,17 @@ AvDevice::addPlugToProcessor(
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_TDIF:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MADI:
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_Digital:
+                p=new Streaming::AmdtpAudioPort(
+                        portname.str(),
+                        direction,
+                        // \todo: streaming backend expects indexing starting from 0
+                        // but bebob reports it starting from 1. Decide where
+                        // and how to handle this (pp: here)
+                        channelInfo->m_streamPosition - 1,
+                        channelInfo->m_location - 1,
+                        Streaming::AmdtpPortInfo::E_MBLA
+                );
+                break;
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
             default:
             // unsupported
