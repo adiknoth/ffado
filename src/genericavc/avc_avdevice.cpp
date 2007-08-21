@@ -395,12 +395,13 @@ AvDevice::addPlugToProcessor(
                 break;
 
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
+                // HACK: for audiofire2 only !!!
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel %s (pos=0x%02X, loc=0x%02X)\n",
-                    channelInfo->m_name.c_str(), channelInfo->m_streamPosition, processor->getPortCount(Streaming::Port::E_Midi));
+                    channelInfo->m_name.c_str(), (direction==Streaming::Port::E_Capture?4:6),
+                    processor->getPortCount(Streaming::Port::E_Midi));
                 p=new Streaming::AmdtpMidiPort(
                         portname.str(),
                         direction,
-                        // HACK: for audiofire2 only !!!
                         (direction==Streaming::Port::E_Capture?4:6),
 //                         channelInfo->m_streamPosition,
                         // Workaround for out-of-spec hardware
