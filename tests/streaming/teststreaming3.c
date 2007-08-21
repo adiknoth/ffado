@@ -74,8 +74,10 @@ int main(int argc, char *argv[])
 	signal (SIGPIPE, sighandler);
 
 	ffado_device_info_t device_info;
+	memset(&device_info,0,sizeof(ffado_device_info_t));
 
 	ffado_options_t dev_options;
+	memset(&dev_options,0,sizeof(ffado_options_t));
 
 	dev_options.sample_rate=44100;
 	dev_options.period_size=PERIOD_SIZE;
@@ -88,11 +90,13 @@ int main(int argc, char *argv[])
 	dev_options.realtime=1;
 	dev_options.packetizer_priority=70;
 	
+	dev_options.directions=0;
+	
 	dev_options.verbose=5;
         
         dev_options.slave_mode=0;
         dev_options.snoop_mode=0;
-
+	
 	ffado_device_t *dev=ffado_streaming_init(&device_info, dev_options);
 	if (!dev) {
 		fprintf(stderr,"Could not init Ffado Streaming layer\n");
@@ -114,6 +118,7 @@ int main(int argc, char *argv[])
 				/* assign the audiobuffer to the stream */
 				ffado_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
 				ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_float);
+				ffado_streaming_playback_stream_onoff(dev, i, 1);
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
 			case ffado_stream_type_midi:
@@ -131,9 +136,11 @@ int main(int argc, char *argv[])
 					/* assign the audiobuffer to the stream */
 					ffado_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
 					ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_float);
+					ffado_streaming_playback_stream_onoff(dev, i, 1);
 				} else {
 					ffado_streaming_set_playback_stream_buffer(dev, i, (char *)nullbuffer);
-					ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_int24);	
+					ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_float);
+					ffado_streaming_playback_stream_onoff(dev, i, 1);
 				}
 				break;
 				// this is done with read/write routines because the nb of bytes can differ.
