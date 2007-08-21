@@ -86,17 +86,25 @@ if env['DEBUG']:
 else:
 	env.AppendUnique( CCFLAGS=["-O2"] )
 
-if env['ENABLE_BEBOB'] or env['ENABLE_ALL']:
+if env['ENABLE_ALL']:
+	env['ENABLE_BEBOB'] = True
+	env['ENABLE_MOTU'] = True
+	env['ENABLE_DICE'] = True
+	env['ENABLE_METRIC_HALO'] = True
+	env['ENABLE_RME'] = True
+	env['ENABLE_BOUNCE'] = True
+
+if env['ENABLE_BEBOB']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
-if env['ENABLE_MOTU'] or env['ENABLE_ALL']:
+if env['ENABLE_MOTU']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
-if env['ENABLE_DICE'] or env['ENABLE_ALL']:
+if env['ENABLE_DICE']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_DICE"] )
-if env['ENABLE_METRIC_HALO'] or env['ENABLE_ALL']:
+if env['ENABLE_METRIC_HALO']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_METRIC_HALO"] )
-if env['ENABLE_RME'] or env['ENABLE_ALL']:
+if env['ENABLE_RME']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_RME"] )
-if env['ENABLE_BOUNCE'] or env['ENABLE_ALL']:
+if env['ENABLE_BOUNCE']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
 
 env.MergeFlags( ["!pkg-config --cflags --libs libraw1394"] )
