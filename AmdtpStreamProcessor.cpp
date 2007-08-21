@@ -79,14 +79,24 @@ enum raw1394_iso_disposition
 AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                   unsigned char *tag, unsigned char *sy,
                   int cycle, unsigned int dropped, unsigned int max_length) {
-
+    
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
-    if (cycle<0) return RAW1394_ISO_OK;
-
-    m_last_cycle=cycle;
-
+    
+    if (cycle<0) {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Xmit handler for cycle %d, (running=%d, enabled=%d,%d)\n",
+            cycle, m_running, m_disabled, m_is_disabled);
+        
+        *tag = 0;
+        *sy = 0;
+        *length=0;
+        return RAW1394_ISO_OK;
+    
+    }
+    
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Xmit handler for cycle %d, (running=%d, enabled=%d,%d)\n",
         cycle, m_running, m_disabled, m_is_disabled);
+    
+    m_last_cycle=cycle;
 
 #ifdef DEBUG
     if(dropped>0) {

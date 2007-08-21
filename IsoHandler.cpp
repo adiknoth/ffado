@@ -568,7 +568,8 @@ bool IsoXmitHandler::prepare()
 
 bool IsoXmitHandler::start(int cycle)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d, %d prebuffers\n", 
+        cycle, m_prebuffers);
 
     if(!(IsoHandler::start(cycle))) {
         return false;
