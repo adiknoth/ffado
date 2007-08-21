@@ -83,7 +83,7 @@ public:
         { return FFADODevice::getConfigRom(); };
         
 protected:
-    bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
+    virtual bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
                              Streaming::AmdtpAudioPort::E_Direction direction);
     bool setSamplingFrequencyPlug( AVC::Plug& plug,
                                    AVC::Plug::EPlugDirection direction,
