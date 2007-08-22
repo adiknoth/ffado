@@ -27,11 +27,11 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libavc/avc_plug_info.h"
-#include "libavc/avc_extended_plug_info.h"
-#include "libavc/avc_subunit_info.h"
-#include "libavc/avc_extended_stream_format.h"
-#include "libavc/avc_serialize.h"
+#include "libavc/general/avc_plug_info.h"
+#include "libavc/general/avc_extended_plug_info.h"
+#include "libavc/general/avc_subunit_info.h"
+#include "libavc/streamformat/avc_extended_stream_format.h"
+#include "libavc/util/avc_serialize.h"
 #include "libavc/avc_definitions.h"
 
 #include "debugmodule/debugmodule.h"
@@ -54,7 +54,7 @@ static VendorModelEntry supportedDeviceList[] =
 BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
                             Ieee1394Service& ieee1394service,
                             int nodeId )
-    : IAvDevice( configRom, ieee1394service, nodeId )
+    : FFADODevice( configRom, ieee1394service, nodeId )
     , m_samplerate (44100)
     , m_model( NULL )
     , m_Notifier ( NULL )
@@ -131,17 +131,17 @@ int BounceDevice::getSamplingFrequency( ) {
     return m_samplerate;
 }
 
+bool BounceDevice::setSamplingFrequency( int s ) {
+    if (s) {
+        m_samplerate=s;
+        return true;
+    } else return false;
+}
+
 int BounceDevice::getConfigurationId( ) {
     return 0;
 }
 
-bool BounceDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency ) {
-    int retval=convertESamplingFrequency( samplingFrequency );
-    if (retval) {
-        m_samplerate=retval;
-        return true;
-    } else return false;
-}
 
 bool
 BounceDevice::lock() {

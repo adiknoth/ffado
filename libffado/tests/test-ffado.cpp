@@ -33,7 +33,7 @@
 #include "debugmodule/debugmodule.h"
 #include "fbtypes.h"
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include <signal.h>
 
@@ -192,6 +192,13 @@ parse_opt( int key, char* arg, struct argp_state* state )
 // Our argp parser.
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
+int exitfunction( int retval ) {
+    debugOutput( DEBUG_LEVEL_NORMAL, "Debug output flushed...\n" );
+    flushDebugOutput();
+    
+    return retval;
+}
+
 int
 main( int argc, char **argv )
 {
@@ -206,11 +213,13 @@ main( int argc, char **argv )
     arguments.args[0]     = "";
     arguments.args[1]     = "";
 
+    setDebugLevel(arguments.verbose);
+
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
         fprintf( stderr, "Could not parse command line\n" );
-        return -1;
+        return exitfunction(-1);
     }
 
     printf("verbose level = %d\n", arguments.verbose);
@@ -221,12 +230,15 @@ main( int argc, char **argv )
         DeviceManager *m_deviceManager = new DeviceManager();
         if ( !m_deviceManager ) {
             fprintf( stderr, "Could not allocate device manager\n" );
-            return -1;
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
         }
         if ( !m_deviceManager->initialize( arguments.port ) ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
-            return -1;
+            return exitfunction(-1);
         }
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
@@ -234,27 +246,30 @@ main( int argc, char **argv )
         if ( !m_deviceManager->discover() ) {
             fprintf( stderr, "Could not discover devices\n" );
             delete m_deviceManager;
-            return -1;
+            return exitfunction(-1);
         }
         delete m_deviceManager;
-        return 0;
+        return exitfunction(0);
     } else if ( strcmp( arguments.args[0], "SetSamplerate" ) == 0 ) {
         char* tail;
         int samplerate = strtol( arguments.args[1], &tail, 0 );
         if ( errno ) {
             fprintf( stderr,  "Could not parse samplerate argument\n" );
-            return -1;
+            return exitfunction(-1);
         }
 
         DeviceManager *m_deviceManager = new DeviceManager();
         if ( !m_deviceManager ) {
             fprintf( stderr, "Could not allocate device manager\n" );
-            return -1;
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
         }
         if ( !m_deviceManager->initialize( arguments.port ) ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
-            return -1;
+            return exitfunction(-1);
         }
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
@@ -262,13 +277,13 @@ main( int argc, char **argv )
         if ( !m_deviceManager->discover() ) {
             fprintf( stderr, "Could not discover devices\n" );
             delete m_deviceManager;
-            return -1;
+            return exitfunction(-1);
         }
 
         if(arguments.node_id_set) {
-            IAvDevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
+            FFADODevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
             if ( avDevice ) {
-                if ( avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
+                if ( avDevice->setSamplingFrequency( samplerate ) ) {
                     m_deviceManager->discover();
                 } else {
                     fprintf( stderr, "Could not set samplerate\n" );
@@ -283,16 +298,16 @@ main( int argc, char **argv )
             for(i=0;i<devices_on_bus;i++) {
                 int node_id=m_deviceManager->getDeviceNodeId(i);
                 printf("  set samplerate for device = %d, node = %d\n", i, node_id);
-                IAvDevice* avDevice = m_deviceManager->getAvDevice( node_id );
+                FFADODevice* avDevice = m_deviceManager->getAvDevice( node_id );
                 if ( avDevice ) {
-                    if ( !avDevice->setSamplingFrequency( parseSampleRate( samplerate ) ) ) {
+                    if ( !avDevice->setSamplingFrequency( samplerate ) ) {
                         fprintf( stderr, "Could not set samplerate\n" );
                     }
                 }
             }
         }
         delete m_deviceManager;
-        return 0;
+        return exitfunction(0);
     } else if ( strcmp( arguments.args[0], "ListOscSpace" ) == 0 ) {
         // list osc space by using OSC messages
         // a server is assumed to be present
@@ -313,12 +328,12 @@ main( int argc, char **argv )
         DeviceManager *m_deviceManager = new DeviceManager();
         if ( !m_deviceManager ) {
             fprintf( stderr, "Could not allocate device manager\n" );
-            return -1;
+            return exitfunction(-1);
         }
         if ( !m_deviceManager->initialize( arguments.port ) ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
-            return -1;
+            return exitfunction(-1);
         }
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
@@ -326,7 +341,7 @@ main( int argc, char **argv )
         if ( !m_deviceManager->discover() ) {
             fprintf( stderr, "Could not discover devices\n" );
             delete m_deviceManager;
-            return -1;
+            return exitfunction(-1);
         }
 
         printf("server started\n");
@@ -344,7 +359,7 @@ main( int argc, char **argv )
 
         printf("server stopped\n");
         delete m_deviceManager;
-        return 0;
+        return exitfunction(0);
 
     } else {
         printf( "unknown operation\n" );

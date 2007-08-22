@@ -25,7 +25,7 @@
 #include "fbtypes.h"
 
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -37,6 +37,10 @@
 #ifdef ENABLE_BEBOB
 #include "bebob/bebob_avdevice.h"
 #include "maudio/maudio_avdevice.h"
+#endif
+
+#ifdef ENABLE_GENERICAVC
+    #include "genericavc/avc_avdevice.h"
 #endif
 
 #ifdef ENABLE_BOUNCE
@@ -71,7 +75,6 @@ DeviceManager::DeviceManager()
     : OscNode("devicemanager")
     , m_1394Service( 0 )
     , m_oscServer( NULL )
-    , m_verboseLevel( DEBUG_LEVEL_NORMAL )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -84,7 +87,7 @@ DeviceManager::~DeviceManager()
         delete m_oscServer;
     }
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -97,14 +100,14 @@ DeviceManager::~DeviceManager()
 void
 DeviceManager::setVerboseLevel(int l)
 {
-    m_verboseLevel=l;
+    debugOutput( DEBUG_LEVEL_NORMAL, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
 
     if (m_1394Service) m_1394Service->setVerboseLevel(l);
     if (m_oscServer) m_oscServer->setVerboseLevel(l);
     OscNode::setVerboseLevel(l);
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -128,43 +131,43 @@ DeviceManager::initialize( int port )
         return false;
     }
 
-    m_oscServer = new OSC::OscServer("17820");
+//     m_oscServer = new OSC::OscServer("17820");
+// 
+//     if (!m_oscServer) {
+//         debugFatal("failed to create osc server\n");
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
+// 
+//     if (!m_oscServer->init()) {
+//         debugFatal("failed to init osc server\n");
+//         delete m_oscServer;
+//         m_oscServer = NULL;
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
+// 
+//     if (!m_oscServer->registerAtRootNode(this)) {
+//         debugFatal("failed to register devicemanager at server\n");
+//         delete m_oscServer;
+//         m_oscServer = NULL;
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
+// 
+//     if (!m_oscServer->start()) {
+//         debugFatal("failed to start osc server\n");
+//         delete m_oscServer;
+//         m_oscServer = NULL;
+//         delete m_1394Service;
+//         m_1394Service = 0;
+//         return false;
+//     }
 
-    if (!m_oscServer) {
-        debugFatal("failed to create osc server\n");
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    if (!m_oscServer->init()) {
-        debugFatal("failed to init osc server\n");
-        delete m_oscServer;
-        m_oscServer = NULL;
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    if (!m_oscServer->registerAtRootNode(this)) {
-        debugFatal("failed to register devicemanager at server\n");
-        delete m_oscServer;
-        m_oscServer = NULL;
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    if (!m_oscServer->start()) {
-        debugFatal("failed to start osc server\n");
-        delete m_oscServer;
-        m_oscServer = NULL;
-        delete m_1394Service;
-        m_1394Service = 0;
-        return false;
-    }
-
-    setVerboseLevel(m_verboseLevel);
+    setVerboseLevel(getDebugLevel());
     return true;
 }
 
@@ -180,9 +183,9 @@ DeviceManager::discover( )
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
 
-    setVerboseLevel(m_verboseLevel);
+    setVerboseLevel(getDebugLevel());
 
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
@@ -221,7 +224,9 @@ DeviceManager::discover( )
                 continue;
             }
 
-            IAvDevice*avDevice = getDriverForDevice( configRom, nodeId );
+            FFADODevice* avDevice = getDriverForDevice( configRom,
+                                                        nodeId );
+
             if ( avDevice ) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
                              "driver found for device %d\n",
@@ -233,7 +238,7 @@ DeviceManager::discover( )
                     isFromCache = true;
                 } else if ( avDevice->discover() ) {
                     debugOutput( DEBUG_LEVEL_VERBOSE, "discovering successful\n" );
-                    avDevice->setVerboseLevel( m_verboseLevel );
+                    avDevice->setVerboseLevel( getDebugLevel() );
                 } else {
                     debugError( "could not discover device\n" );
                     delete avDevice;
@@ -255,7 +260,7 @@ DeviceManager::discover( )
                     }
                 }
 
-                if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
+                if ( getDebugLevel() >= DEBUG_LEVEL_VERBOSE ) {
                     avDevice->showDevice();
                 }
 
@@ -268,9 +273,14 @@ DeviceManager::discover( )
                 if (!addChildOscNode(avDevice)) {
                     debugWarning("failed to register AvDevice at OSC server\n");
                 }
+                
+                debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d done...\n", nodeId );
 
             }
         }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
+
         return true;
 
     } else { // slave mode
@@ -293,13 +303,13 @@ DeviceManager::discover( )
             return false;
         }
 
-        IAvDevice* avDevice = getSlaveDriver( configRom );
+        FFADODevice* avDevice = getSlaveDriver( configRom );
         if ( avDevice ) {
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "driver found for device %d\n",
                          nodeId );
 
-            avDevice->setVerboseLevel( m_verboseLevel );
+            avDevice->setVerboseLevel( getDebugLevel() );
 
             if ( !avDevice->discover() ) {
                 debugError( "could not discover device\n" );
@@ -310,19 +320,23 @@ DeviceManager::discover( )
             if ( !avDevice->setId( m_avDevices.size() ) ) {
                 debugError( "setting Id failed\n" );
             }
-            if ( m_verboseLevel >= DEBUG_LEVEL_VERBOSE ) {
+            if ( getDebugLevel() >= DEBUG_LEVEL_VERBOSE ) {
                 avDevice->showDevice();
             }
 
             m_avDevices.push_back( avDevice );
+
+            debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d done...\n", nodeId );
         }
+
+        debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
 
         return true;
     }
 }
 
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id )
 {
@@ -330,6 +344,13 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
         return new BeBoB::AvDevice( configRom, *m_1394Service, id );
+    }
+#endif
+
+#ifdef ENABLE_GENERICAVC
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
+    if ( GenericAVC::AvDevice::probe( *configRom.get() ) ) {
+        return new GenericAVC::AvDevice( configRom, *m_1394Service, id );
     }
 #endif
 
@@ -378,7 +399,7 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     return 0;
 }
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 {
 
@@ -394,11 +415,11 @@ DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 bool
 DeviceManager::isValidNode(int node)
 {
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* avDevice = *it;
+        FFADODevice* avDevice = *it;
 
         if (avDevice->getConfigRom().getNodeId() == node) {
             return true;
@@ -421,7 +442,7 @@ DeviceManager::getDeviceNodeId( int deviceNr )
         return -1;
     }
 
-    IAvDevice* avDevice = m_avDevices.at( deviceNr );
+    FFADODevice* avDevice = m_avDevices.at( deviceNr );
 
     if ( !avDevice ) {
         debugError( "Could not get device at position (%d)\n",  deviceNr );
@@ -430,14 +451,14 @@ DeviceManager::getDeviceNodeId( int deviceNr )
     return avDevice->getConfigRom().getNodeId();
 }
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getAvDevice( int nodeId )
 {
-    for ( IAvDeviceVectorIterator it = m_avDevices.begin();
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        IAvDevice* avDevice = *it;
+        FFADODevice* avDevice = *it;
         if ( avDevice->getConfigRom().getNodeId() == nodeId ) {
             return avDevice;
         }
@@ -446,7 +467,7 @@ DeviceManager::getAvDevice( int nodeId )
     return 0;
 }
 
-IAvDevice*
+FFADODevice*
 DeviceManager::getAvDeviceByIndex( int idx )
 {
     return m_avDevices.at(idx);
@@ -468,7 +489,7 @@ DeviceManager::getAvDeviceCount( )
  */
 Streaming::StreamProcessor *
 DeviceManager::getSyncSource() {
-    IAvDevice* device = getAvDeviceByIndex(0);
+    FFADODevice* device = getAvDeviceByIndex(0);
 
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {

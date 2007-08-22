@@ -34,7 +34,6 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
     m_SignalType(E_PeriodSignalled),
     m_BufferType(E_PointerBuffer),
     m_disabled(true),
-    m_initialized(false),
     m_buffersize(0),
     m_eventsize(0),
     m_DataType(E_Int24),
@@ -48,8 +47,8 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
     m_slot_interval(0),
     m_rate_counter(0),
     m_rate_counter_minimum(0),
-    m_average_ratecontrol(false)
-
+    m_average_ratecontrol(false),
+    m_State(E_Created)
 {
 
 }
@@ -62,8 +61,8 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
  * @return true if successfull. false if not (all resources are freed).
  */
 bool Port::init() {
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -97,11 +96,10 @@ bool Port::init() {
             break;
     }
 
-    m_initialized=true;
-
     m_eventsize=getEventSize(); // this won't change, so cache it
-
-    return m_initialized;
+    
+    m_State = E_Initialized;
+    return true;
 }
 
 bool Port::reset() {
@@ -111,6 +109,19 @@ bool Port::reset() {
     return true;
 };
 
+void Port::show() {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Name          : %s\n", m_Name.c_str());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Signal Type   : %d\n", m_SignalType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Type   : %d\n", m_BufferType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Enabled?      : %d\n", m_disabled);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"State?        : %d\n", m_State);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Size   : %d\n", m_buffersize);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Event Size    : %d\n", m_eventsize);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Data Type     : %d\n", m_DataType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Port Type     : %d\n", m_PortType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Direction     : %d\n", m_Direction);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Rate Control? : %d\n", m_do_ratecontrol);
+}
 
 void Port::setVerboseLevel(int l) {
     setDebugLevel(l);
@@ -119,8 +130,8 @@ void Port::setVerboseLevel(int l) {
 bool Port::setName(std::string name) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting name to %s for port %s\n",name.c_str(),m_Name.c_str());
 
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -131,8 +142,8 @@ bool Port::setName(std::string name) {
 
 bool Port::setBufferSize(unsigned int newsize) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting buffersize to %d for port %s\n",newsize,m_Name.c_str());
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -156,8 +167,8 @@ unsigned int Port::getEventSize() {
 
 bool Port::setDataType(enum E_DataType d) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting datatype to %d for port %s\n",(int) d,m_Name.c_str());
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -189,8 +200,8 @@ bool Port::setDataType(enum E_DataType d) {
 
 bool Port::setSignalType(enum E_SignalType s) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting signaltype to %d for port %s\n",(int)s,m_Name.c_str());
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -222,8 +233,8 @@ bool Port::setSignalType(enum E_SignalType s) {
 
 bool Port::setBufferType(enum E_BufferType b) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting buffer type to %d for port %s\n",(int)b,m_Name.c_str());
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -256,13 +267,13 @@ bool Port::useExternalBuffer(bool b) {
 
     // If called on an initialised stream but the request isn't for a change silently
     // allow it (relied on by C API as used by jack backend driver)
-    if (m_initialized && m_use_external_buffer==b)
+    if (m_State==E_Initialized && m_use_external_buffer==b)
         return true;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting external buffer use to %d for port %s\n",(int)b,m_Name.c_str());
 
-    if (m_initialized) {
-        debugFatal("Port already initialized... (%s)\n",m_Name.c_str());
+    if (m_State != E_Created) {
+        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
 
@@ -283,7 +294,8 @@ void *Port::getBufferAddress() {
 
 /**
  * Set the external buffer address.
- * only call this when specifying an external buffer before init()
+ * only call this when you have specified that you will use
+ * an external buffer before doing the init()
  *
  * @param buff
  */
@@ -295,8 +307,20 @@ void Port::setExternalBufferAddress(void *buff) {
 
 // buffer handling api's for ringbuffers
 bool Port::writeEvent(void *event) {
-    assert(m_BufferType==E_RingBuffer);
+
+#ifdef DEBUG
+    if (m_State != E_Initialized) {
+        debugFatal("Port (%s) not in E_Initialized state: %d\n",m_Name.c_str(),m_State);
+        return false;
+    }
+    
+    if(m_BufferType!=E_RingBuffer) {
+        debugError("operation not allowed on non E_RingBuffer ports\n");
+        show();
+        return false;
+    }
     assert(m_ringbuffer);
+#endif
 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Writing event %08X with size %d to port %s\n",*((quadlet_t *)event),m_eventsize, m_Name.c_str());
 
@@ -304,17 +328,46 @@ bool Port::writeEvent(void *event) {
 }
 
 bool Port::readEvent(void *event) {
+
+#ifdef DEBUG
+    if (m_State != E_Initialized) {
+        debugFatal("Port (%s) not in E_Initialized state: %d\n",m_Name.c_str(),m_State);
+        return false;
+    }
+    
+    if(m_BufferType!=E_RingBuffer) {
+        debugError("operation not allowed on non E_RingBuffer ports\n");
+        show();
+        return false;
+    }
     assert(m_ringbuffer);
+#endif
 
+    
     unsigned int read=ffado_ringbuffer_read(m_ringbuffer, (char *)event, m_eventsize);
-
+    
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Reading event %X with size %d from port %s\n",*((quadlet_t *)event),m_eventsize,m_Name.c_str());
+
+
     return (read==m_eventsize);
 }
 
 int Port::writeEvents(void *event, unsigned int nevents) {
-    assert(m_BufferType==E_RingBuffer);
+
+#ifdef DEBUG
+    if (m_State != E_Initialized) {
+        debugFatal("Port (%s) not in E_Initialized state: %d\n",m_Name.c_str(),m_State);
+        return false;
+    }
+    
+    if(m_BufferType!=E_RingBuffer) {
+        debugError("operation not allowed on non E_RingBuffer ports\n");
+        show();
+        return false;
+    }
     assert(m_ringbuffer);
+#endif
+
 
     unsigned int bytes2write=m_eventsize*nevents;
 
@@ -337,7 +390,20 @@ int Port::writeEvents(void *event, unsigned int nevents) {
 }
 
 int Port::readEvents(void *event, unsigned int nevents) {
+
+#ifdef DEBUG
+    if (m_State != E_Initialized) {
+        debugFatal("Port (%s) not in E_Initialized state: %d\n",m_Name.c_str(),m_State);
+        return false;
+    }
+    if(m_BufferType!=E_RingBuffer) {
+        debugError("operation not allowed on non E_RingBuffer ports\n");
+        show();
+        return false;
+    }
     assert(m_ringbuffer);
+#endif
+
 
     unsigned int bytes2read=m_eventsize*nevents;
 

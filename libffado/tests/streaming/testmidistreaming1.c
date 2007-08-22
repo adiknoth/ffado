@@ -127,13 +127,19 @@ void decode_midi_byte (ffado_midi_port_t *port, int byte) {
 }
 
 int encode_midi_bytes(ffado_midi_port_t *port, unsigned char *byte_buff, int len) {
-	return 0;
+    static int cnt=0;
+    cnt++;
+    if (cnt>64) {
+        *byte_buff=0xFF;
+        return 1;
+    }
+    return 0;
 }
 
 int main(int argc, char *argv[])
 {
 
-	#define PERIOD_SIZE 512
+	#define PERIOD_SIZE 1024
 
 	int samplesread=0, sampleswritten=0;
 	int nb_in_channels=0, nb_out_channels=0;
@@ -386,13 +392,15 @@ int main(int argc, char *argv[])
 				samplesread=PERIOD_SIZE;
 				break;
 			case ffado_stream_type_midi:
-				samplesread=ffado_streaming_read(dev, i, audiobuffers_in[i], PERIOD_SIZE);
+				samplesread=ffado_streaming_read(dev, i, audiobuffers_in[i], 64);
 				quadlet_t *buff=(quadlet_t *)audiobuffers_in[i];
+				if (samplesread) printf("RECV (CH %02X): ", i);
 				for (s=0;s<samplesread;s++) {
 					quadlet_t *byte=(buff+s) ;
-//  					printf("%08X ",*byte);
+ 					printf("%08X ",*byte);
 					decode_midi_byte (midi_in_portmap[i], (*byte) & 0xFF);
 				}
+				if (samplesread) printf("\n");
 				if(samplesread>0) {
 	   				fprintf(fid_in[i], "---- Period read (%d samples) ----\n",samplesread);
 					hexDumpToFile(fid_in[i],(unsigned char*)audiobuffers_in[i],samplesread*sizeof(ffado_sample_t));
@@ -427,13 +435,14 @@ int main(int argc, char *argv[])
 				byte_buff=(unsigned char*)buff;
 				
 				sampleswritten=encode_midi_bytes(midi_out_portmap[i], byte_buff, max_midi_bytes_to_write);
-				
+				if (sampleswritten) printf("SEND (CH %02X): ", i);
 				for(b=0;b<sampleswritten;b++) {
 					ffado_sample_t tmp_event=*(byte_buff+b);
+ 					printf("%08X ",*(byte_buff+b));
 					ffado_streaming_write(dev, i, &tmp_event, 1);
 				}
-				
-				
+				if (sampleswritten) printf("\n");
+
 				fprintf(fid_out[i], "---- Period write (%d samples) ----\n",sampleswritten);
 				hexDumpToFile(fid_out[i],(unsigned char*)buff,sampleswritten*sizeof(ffado_sample_t));
 				break;

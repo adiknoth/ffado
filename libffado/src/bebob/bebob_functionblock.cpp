@@ -26,10 +26,14 @@
 #include "bebob/bebob_avdevice.h"
 #include "libieee1394/configrom.h"
 
-IMPL_DEBUG_MODULE( BeBoB::FunctionBlock, BeBoB::FunctionBlock, DEBUG_LEVEL_NORMAL );
+using namespace AVC;
 
-BeBoB::FunctionBlock::FunctionBlock(
-    AvDeviceSubunit& subunit,
+namespace BeBoB {
+
+IMPL_DEBUG_MODULE( FunctionBlock, FunctionBlock, DEBUG_LEVEL_NORMAL );
+
+FunctionBlock::FunctionBlock(
+    AVC::Subunit& subunit,
     function_block_type_t type,
     function_block_type_t subtype,
     function_block_id_t id,
@@ -49,7 +53,7 @@ BeBoB::FunctionBlock::FunctionBlock(
     setDebugLevel( verbose );
 }
 
-BeBoB::FunctionBlock::FunctionBlock( const FunctionBlock& rhs )
+FunctionBlock::FunctionBlock( const FunctionBlock& rhs )
     : m_subunit( rhs.m_subunit )
     , m_type( rhs.m_type )
     , m_subtype( rhs.m_subtype )
@@ -61,13 +65,13 @@ BeBoB::FunctionBlock::FunctionBlock( const FunctionBlock& rhs )
 {
 }
 
-BeBoB::FunctionBlock::FunctionBlock()
+FunctionBlock::FunctionBlock()
 {
 }
 
-BeBoB::FunctionBlock::~FunctionBlock()
+FunctionBlock::~FunctionBlock()
 {
-    for ( AvPlugVector::iterator it = m_plugs.begin();
+    for ( PlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();
           ++it )
     {
@@ -77,7 +81,7 @@ BeBoB::FunctionBlock::~FunctionBlock()
 }
 
 bool
-BeBoB::FunctionBlock::discover()
+FunctionBlock::discover()
 {
     debugOutput( DEBUG_LEVEL_NORMAL,
                  "discover function block %s (nr of input plugs = %d, "
@@ -86,13 +90,13 @@ BeBoB::FunctionBlock::discover()
                  m_nrOfInputPlugs,
                  m_nrOfOutputPlugs );
 
-    if ( !discoverPlugs( AvPlug::eAPD_Input, m_nrOfInputPlugs ) ) {
+    if ( !discoverPlugs( AVC::Plug::eAPD_Input, m_nrOfInputPlugs ) ) {
         debugError( "Could not discover input plug for '%s'\n",
                     getName() );
         return false;
     }
 
-    if ( !discoverPlugs( AvPlug::eAPD_Output, m_nrOfOutputPlugs ) ) {
+    if ( !discoverPlugs( AVC::Plug::eAPD_Output, m_nrOfOutputPlugs ) ) {
         debugError( "Could not discover output plugs for '%s'\n",
                     getName() );
         return false;
@@ -102,22 +106,18 @@ BeBoB::FunctionBlock::discover()
 }
 
 bool
-BeBoB::FunctionBlock::discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
+FunctionBlock::discoverPlugs( AVC::Plug::EPlugDirection plugDirection,
                                      plug_id_t plugMaxId )
 {
     for ( int plugId = 0; plugId < plugMaxId; ++plugId ) {
-        AvPlug* plug = new AvPlug(
-            m_subunit->getAvDevice().get1394Service(),
-            m_subunit->getAvDevice().getConfigRom(),
-            m_subunit->getAvDevice().getPlugManager(),
-            m_subunit->getSubunitType(),
-            m_subunit->getSubunitId(),
+        AVC::Plug* plug = new BeBoB::Plug(
+            &m_subunit->getUnit(),
+            m_subunit,
             m_type,
             m_id,
-            AvPlug::eAPA_FunctionBlockPlug,
+            AVC::Plug::eAPA_FunctionBlockPlug,
             plugDirection,
-            plugId,
-            m_verbose );
+            plugId);
 
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed for plug %d\n",
@@ -135,17 +135,21 @@ BeBoB::FunctionBlock::discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
 }
 
 bool
-BeBoB::FunctionBlock::discoverConnections()
+FunctionBlock::discoverConnections()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "discover connections function block %s\n",
                  getName() );
 
-    for ( AvPlugVector::iterator it = m_plugs.begin();
+    for ( PlugVector::iterator it = m_plugs.begin();
           it != m_plugs.end();
           ++it )
     {
-        AvPlug* plug = *it;
+        BeBoB::Plug* plug = dynamic_cast<BeBoB::Plug*>(*it);
+        if(!plug) {
+            debugError("BUG: not a bebob plug\n");
+            return false;
+        }
         if ( !plug->discoverConnections() ) {
             debugError( "Could not discover plug connections\n" );
             return false;
@@ -155,13 +159,13 @@ BeBoB::FunctionBlock::discoverConnections()
 }
 
 bool
-serializeAvPlugVector( Glib::ustring basePath,
+serializePlugVector( Glib::ustring basePath,
                        Util::IOSerialize& ser,
-                       const BeBoB::AvPlugVector& vec )
+                       const PlugVector& vec )
 {
     bool result = true;
     int i = 0;
-    for ( BeBoB::AvPlugVector::const_iterator it = vec.begin();
+    for ( PlugVector::const_iterator it = vec.begin();
           it != vec.end();
           ++it )
     {
@@ -174,10 +178,10 @@ serializeAvPlugVector( Glib::ustring basePath,
 }
 
 bool
-deserializeAvPlugVector( Glib::ustring basePath,
+deserializePlugVector( Glib::ustring basePath,
                          Util::IODeserialize& deser,
-                         BeBoB::AvDevice& avDevice,
-                         BeBoB::AvPlugVector& vec )
+                         AVC::Unit& unit,
+                         PlugVector& vec )
 {
     int i = 0;
     bool bFinished = false;
@@ -189,7 +193,7 @@ deserializeAvPlugVector( Glib::ustring basePath,
 
         if ( deser.isExisting( strstrm.str() ) ) {
             result &= deser.read( strstrm.str(), plugId );
-            BeBoB::AvPlug* pPlug = avDevice.getPlugManager().getPlug( plugId );
+            AVC::Plug* pPlug = unit.getPlugManager().getPlug( plugId );
 
             if ( result && pPlug ) {
                 vec.push_back( pPlug );
@@ -206,7 +210,7 @@ deserializeAvPlugVector( Glib::ustring basePath,
 }
 
 bool
-BeBoB::FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 {
     bool result;
 
@@ -217,16 +221,16 @@ BeBoB::FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser 
     result &= ser.write( basePath + "m_nrOfInputPlugs", m_nrOfInputPlugs );
     result &= ser.write( basePath + "m_nrOfOutputPlugs", m_nrOfOutputPlugs );
     result &= ser.write( basePath + "m_verbose", m_verbose );
-    result &= serializeAvPlugVector( basePath + "m_plugs", ser, m_plugs );
+    result &= serializePlugVector( basePath + "m_plugs", ser, m_plugs );
 
     return result;
 }
 
-BeBoB::FunctionBlock*
-BeBoB::FunctionBlock::deserialize( Glib::ustring basePath,
+FunctionBlock*
+FunctionBlock::deserialize( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
-                                   AvDevice& avDevice,
-                                   AvDeviceSubunit& subunit )
+                                   AVC::Unit& unit,
+                                   AVC::Subunit& subunit )
 {
     bool result;
     function_block_type_t type;
@@ -273,15 +277,15 @@ BeBoB::FunctionBlock::deserialize( Glib::ustring basePath,
     result &= deser.read( basePath + "m_nrOfInputPlugs", pFB->m_nrOfInputPlugs );
     result &= deser.read( basePath + "m_nrOfOutputPlugs", pFB->m_nrOfOutputPlugs );
     result &= deser.read( basePath + "m_verbose", pFB->m_verbose );
-    result &= deserializeAvPlugVector( basePath + "m_plugs", deser, avDevice, pFB->m_plugs );
+    result &= deserializePlugVector( basePath + "m_plugs", deser, unit, pFB->m_plugs );
 
     return 0;
 }
 
 ///////////////////////
 
-BeBoB::FunctionBlockSelector::FunctionBlockSelector(
-    AvDeviceSubunit& subunit,
+FunctionBlockSelector::FunctionBlockSelector(
+    AVC::Subunit& subunit,
     function_block_id_t id,
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
@@ -298,46 +302,46 @@ BeBoB::FunctionBlockSelector::FunctionBlockSelector(
 {
 }
 
-BeBoB::FunctionBlockSelector::FunctionBlockSelector(
+FunctionBlockSelector::FunctionBlockSelector(
     const FunctionBlockSelector& rhs )
     : FunctionBlock( rhs )
 {
 }
 
-BeBoB::FunctionBlockSelector::FunctionBlockSelector()
+FunctionBlockSelector::FunctionBlockSelector()
     : FunctionBlock()
 {
 }
 
-BeBoB::FunctionBlockSelector::~FunctionBlockSelector()
+FunctionBlockSelector::~FunctionBlockSelector()
 {
 }
 
 const char*
-BeBoB::FunctionBlockSelector::getName()
+FunctionBlockSelector::getName()
 {
     return "Selector";
 }
 
 bool
-BeBoB::FunctionBlockSelector::serializeChild( Glib::ustring basePath,
+FunctionBlockSelector::serializeChild( Glib::ustring basePath,
                                               Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-BeBoB::FunctionBlockSelector::deserializeChild( Glib::ustring basePath,
+FunctionBlockSelector::deserializeChild( Glib::ustring basePath,
                                                 Util::IODeserialize& deser,
-                                                AvDevice& avDevice )
+                                                AvDevice& unit )
 {
     return true;
 }
 
 ///////////////////////
 
-BeBoB::FunctionBlockFeature::FunctionBlockFeature(
-    AvDeviceSubunit& subunit,
+FunctionBlockFeature::FunctionBlockFeature(
+    AVC::Subunit& subunit,
     function_block_id_t id,
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
@@ -354,46 +358,46 @@ BeBoB::FunctionBlockFeature::FunctionBlockFeature(
 {
 }
 
-BeBoB::FunctionBlockFeature::FunctionBlockFeature(
+FunctionBlockFeature::FunctionBlockFeature(
     const FunctionBlockFeature& rhs )
     : FunctionBlock( rhs )
 {
 }
 
-BeBoB::FunctionBlockFeature::FunctionBlockFeature()
+FunctionBlockFeature::FunctionBlockFeature()
     : FunctionBlock()
 {
 }
 
-BeBoB::FunctionBlockFeature::~FunctionBlockFeature()
+FunctionBlockFeature::~FunctionBlockFeature()
 {
 }
 
 const char*
-BeBoB::FunctionBlockFeature::getName()
+FunctionBlockFeature::getName()
 {
     return "Feature";
 }
 
 bool
-BeBoB::FunctionBlockFeature::serializeChild( Glib::ustring basePath,
+FunctionBlockFeature::serializeChild( Glib::ustring basePath,
                                              Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-BeBoB::FunctionBlockFeature::deserializeChild( Glib::ustring basePath,
+FunctionBlockFeature::deserializeChild( Glib::ustring basePath,
                                                Util::IODeserialize& deser,
-                                               AvDevice& avDevice )
+                                               AvDevice& unit )
 {
     return true;
 }
 
 ///////////////////////
 
-BeBoB::FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer(
-    AvDeviceSubunit& subunit,
+FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer(
+    AVC::Subunit& subunit,
     function_block_id_t id,
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
@@ -410,46 +414,46 @@ BeBoB::FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer(
 {
 }
 
-BeBoB::FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer(
+FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer(
     const FunctionBlockEnhancedMixer& rhs )
     : FunctionBlock( rhs )
 {
 }
 
-BeBoB::FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer()
+FunctionBlockEnhancedMixer::FunctionBlockEnhancedMixer()
     : FunctionBlock()
 {
 }
 
-BeBoB::FunctionBlockEnhancedMixer::~FunctionBlockEnhancedMixer()
+FunctionBlockEnhancedMixer::~FunctionBlockEnhancedMixer()
 {
 }
 
 const char*
-BeBoB::FunctionBlockEnhancedMixer::getName()
+FunctionBlockEnhancedMixer::getName()
 {
     return "EnhancedMixer";
 }
 
 bool
-BeBoB::FunctionBlockEnhancedMixer::serializeChild( Glib::ustring basePath,
+FunctionBlockEnhancedMixer::serializeChild( Glib::ustring basePath,
                                                    Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-BeBoB::FunctionBlockEnhancedMixer::deserializeChild( Glib::ustring basePath,
+FunctionBlockEnhancedMixer::deserializeChild( Glib::ustring basePath,
                                                      Util::IODeserialize& deser,
-                                                     AvDevice& avDevice )
+                                                     AvDevice& unit )
 {
     return true;
 }
 
 ///////////////////////
 
-BeBoB::FunctionBlockProcessing::FunctionBlockProcessing(
-    AvDeviceSubunit& subunit,
+FunctionBlockProcessing::FunctionBlockProcessing(
+    AVC::Subunit& subunit,
     function_block_id_t id,
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
@@ -466,46 +470,46 @@ BeBoB::FunctionBlockProcessing::FunctionBlockProcessing(
 {
 }
 
-BeBoB::FunctionBlockProcessing::FunctionBlockProcessing(
+FunctionBlockProcessing::FunctionBlockProcessing(
     const FunctionBlockProcessing& rhs )
     : FunctionBlock( rhs )
 {
 }
 
-BeBoB::FunctionBlockProcessing::FunctionBlockProcessing()
+FunctionBlockProcessing::FunctionBlockProcessing()
     : FunctionBlock()
 {
 }
 
-BeBoB::FunctionBlockProcessing::~FunctionBlockProcessing()
+FunctionBlockProcessing::~FunctionBlockProcessing()
 {
 }
 
 const char*
-BeBoB::FunctionBlockProcessing::getName()
+FunctionBlockProcessing::getName()
 {
     return "Dummy Processing";
 }
 
 bool
-BeBoB::FunctionBlockProcessing::serializeChild( Glib::ustring basePath,
+FunctionBlockProcessing::serializeChild( Glib::ustring basePath,
                                                 Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-BeBoB::FunctionBlockProcessing::deserializeChild( Glib::ustring basePath,
+FunctionBlockProcessing::deserializeChild( Glib::ustring basePath,
                                                   Util::IODeserialize& deser,
-                                                  AvDevice& avDevice )
+                                                  AvDevice& unit )
 {
     return true;
 }
 
 ///////////////////////
 
-BeBoB::FunctionBlockCodec::FunctionBlockCodec(
-    AvDeviceSubunit& subunit,
+FunctionBlockCodec::FunctionBlockCodec(
+    AVC::Subunit& subunit,
     function_block_id_t id,
     ESpecialPurpose purpose,
     no_of_input_plugs_t nrOfInputPlugs,
@@ -522,37 +526,39 @@ BeBoB::FunctionBlockCodec::FunctionBlockCodec(
 {
 }
 
-BeBoB::FunctionBlockCodec::FunctionBlockCodec( const FunctionBlockCodec& rhs )
+FunctionBlockCodec::FunctionBlockCodec( const FunctionBlockCodec& rhs )
     : FunctionBlock( rhs )
 {
 }
 
-BeBoB::FunctionBlockCodec::FunctionBlockCodec()
+FunctionBlockCodec::FunctionBlockCodec()
     : FunctionBlock()
 {
 }
 
-BeBoB::FunctionBlockCodec::~FunctionBlockCodec()
+FunctionBlockCodec::~FunctionBlockCodec()
 {
 }
 
 const char*
-BeBoB::FunctionBlockCodec::getName()
+FunctionBlockCodec::getName()
 {
     return "Dummy Codec";
 }
 
 bool
-BeBoB::FunctionBlockCodec::serializeChild( Glib::ustring basePath,
+FunctionBlockCodec::serializeChild( Glib::ustring basePath,
                                            Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-BeBoB::FunctionBlockCodec::deserializeChild( Glib::ustring basePath,
+FunctionBlockCodec::deserializeChild( Glib::ustring basePath,
                                              Util::IODeserialize& deser,
-                                             AvDevice& avDevice )
+                                             AvDevice& unit )
 {
     return true;
+}
+
 }

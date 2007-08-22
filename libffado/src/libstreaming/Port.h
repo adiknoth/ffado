@@ -269,8 +269,9 @@ public:
     int writeEvents(void *event, unsigned int nevents); ///< write multiple events
     int readEvents(void *event, unsigned int nevents); ///< read multiple events
 
-     virtual void setVerboseLevel(int l);
-
+    virtual void setVerboseLevel(int l);
+    virtual void show();
+    
 protected:
     std::string m_Name; ///< Port name, [at construction]
 
@@ -278,7 +279,6 @@ protected:
     enum E_BufferType m_BufferType; ///< Buffer type, [at construction]
 
     bool m_disabled; ///< is the port disabled?, [anytime]
-    bool m_initialized; ///< is the port initialized? [after init()]
 
     unsigned int m_buffersize;
     unsigned int m_eventsize;
@@ -305,7 +305,18 @@ protected:
     void freeInternalRingBuffer();
 
     DECLARE_DEBUG_MODULE;
+    
+    // the state machine
+    protected:
+        enum EStates {
+            E_Created,
+            E_Initialized,
+            E_Prepared,
+            E_Running,
+            E_Error
+        };
 
+        enum EStates m_State;
 };
 
 /*!

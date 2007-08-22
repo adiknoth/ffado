@@ -29,6 +29,14 @@
 
 #include <iostream>
 
+#include <time.h>
+
+//#define DO_MESSAGE_BUFFER_PRINT
+
+#ifndef DO_MESSAGE_BUFFER_PRINT
+	#warning Printing debug info without ringbuffer, not RT-safe!
+#endif
+
 using namespace std;
 
 struct ColorEntry  {
@@ -110,8 +118,14 @@ DebugModule::print( debug_level_t level,
         f++; // move away from delimiter
         fname=f;
     }
-
-    DebugModuleManager::instance()->print( "%s (%s)[%4d] %s: ", getPreSequence( level ),
+    
+    // add a timing timestamp
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    uint32_t ts_usec=(uint32_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
+    
+    DebugModuleManager::instance()->print( "%010lu: %s (%s)[%4d] %s: ", 
+                 ts_usec, getPreSequence( level ),
                  fname,  line,  function );
     DebugModuleManager::instance()->va_print( format, arg );
     DebugModuleManager::instance()->print( "%s", getPostSequence( level ) );
@@ -194,6 +208,7 @@ DebugModuleManager::init()
         //         cout << "DebugModuleManager init..." << endl;
 
     pthread_mutex_init(&mb_write_lock, NULL);
+    pthread_mutex_init(&mb_flush_lock, NULL);
     pthread_cond_init(&mb_ready_cond, NULL);
 
      mb_overruns = 0;
@@ -283,19 +298,28 @@ DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
 }
 
 void
-DebugModuleManager::sync()
+DebugModuleManager::flush()
 {
-    mb_flush();
+//     mb_flush();
 }
 
 void
 DebugModuleManager::mb_flush()
 {
     /* called WITHOUT the mb_write_lock */
+    
+    /* the flush lock is to allow a flush from multiple threads 
+     * this allows a code section that outputs a lot of debug messages
+     * and that can be blocked to flush the buffer itself such that it 
+     * does not overflow.
+     */
+    DebugModuleManager *m=DebugModuleManager::instance();
+    pthread_mutex_lock(&m->mb_flush_lock);
     while (mb_outbuffer != mb_inbuffer) {
         fputs(mb_buffers[mb_outbuffer], stderr);
         mb_outbuffer = MB_NEXT(mb_outbuffer);
     }
+    pthread_mutex_unlock(&m->mb_flush_lock);
 }
 
 void *
@@ -345,6 +369,7 @@ DebugModuleManager::print(const char *fmt, ...)
         return;
     }
     
+#ifdef DO_MESSAGE_BUFFER_PRINT
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
@@ -357,14 +382,15 @@ DebugModuleManager::print(const char *fmt, ...)
             ntries--;
         }
     }
-    
     if (ntries==0) {  /* lock collision */
-//         atomic_add(&mb_overruns, 1);
+	//         atomic_add(&mb_overruns, 1);
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now
     }
+#else
+    fprintf(stderr,msg);
+#endif
 }
-
 
 void
 DebugModuleManager::va_print (const char *fmt, va_list ap)
@@ -385,7 +411,8 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
             msg);
         return;
     }
-
+    
+#ifdef DO_MESSAGE_BUFFER_PRINT
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
@@ -404,6 +431,9 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now
     }
+#else
+    fprintf(stderr,msg);
+#endif
 }
 
 //----------------------------------------

@@ -52,7 +52,7 @@ static VendorModelEntry supportedDeviceList[] =
 RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    : IAvDevice( configRom, ieee1394service, nodeId )
+    : FFADODevice( configRom, ieee1394service, nodeId )
     , m_model( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::RmeDevice (NodeID %d)\n",
@@ -127,12 +127,12 @@ RmeDevice::getConfigurationId()
 }
 
 bool
-RmeDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+RmeDevice::setSamplingFrequency( int samplingFrequency )
 {
 /*
  * Set the RME device's samplerate.
  */
-	if (samplingFrequency == eSF_48000Hz)
+	if (samplingFrequency == 48000)
 		return true;
 	return false;
 }

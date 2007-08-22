@@ -27,7 +27,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
-#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/general/avc_extended_cmd_generic.h"
 
 #include "bebob/bebob_avdevice.h"
 
@@ -35,7 +35,7 @@
 #include "libstreaming/AmdtpPort.h"
 #include "libstreaming/AmdtpPortInfo.h"
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -63,7 +63,7 @@ public:
 
     virtual void showDevice();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
 
     virtual bool prepare();

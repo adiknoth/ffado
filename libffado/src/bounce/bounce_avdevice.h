@@ -27,7 +27,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
-#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/general/avc_extended_cmd_generic.h"
 
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
@@ -35,7 +35,7 @@
 
 #include "libieee1394/ARMHandler.h"
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include <vector>
 
@@ -64,7 +64,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class BounceDevice : public IAvDevice {
+class BounceDevice : public FFADODevice {
 private:
     class BounceNotifier;
 public:
@@ -77,7 +77,7 @@ public:
     static int getConfigurationId( );
     virtual bool discover();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
 
     virtual bool prepare();

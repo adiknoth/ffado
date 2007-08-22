@@ -33,10 +33,13 @@
 
 typedef short debug_level_t;
 
+#define DEBUG_MAX_MESSAGE_LENGTH 256
+
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
 #define MB_BUFFERS    (1<<16)
+
 #define MB_NEXT(index) ((index+1) & (MB_BUFFERS-1))
-#define MB_BUFFERSIZE    256        /* message length limit */
+#define MB_BUFFERSIZE    DEBUG_MAX_MESSAGE_LENGTH        /* message length limit */
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -98,6 +101,7 @@ typedef short debug_level_t;
 #define getDebugLevel(  )                                     \
                 m_debugModule.getLevel( )
 
+#define flushDebugOutput()      DebugModuleManager::instance()->flush()
 
 #ifdef DEBUG
 
@@ -202,7 +206,7 @@ public:
 
     bool setMgrDebugLevel( std::string name, debug_level_t level );
 
-    void sync();
+    void flush();
 
 protected:
     bool registerModule( DebugModule& debugModule );
@@ -226,6 +230,7 @@ private:
     unsigned int mb_overruns;
     pthread_t mb_writer_thread;
     pthread_mutex_t mb_write_lock;
+    pthread_mutex_t mb_flush_lock;
     pthread_cond_t mb_ready_cond;
 
     static void *mb_thread_func(void *arg);

@@ -22,7 +22,7 @@
  */
 
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 #include "bebob/bebob_avdevice.h"
 
 #include <argp.h>
@@ -143,7 +143,7 @@ main( int argc, char** argv )
         return -1;
     }
 
-    IAvDevice* pAvDevice = pDeviceManager->getAvDevice( node_id );
+    FFADODevice* pAvDevice = pDeviceManager->getAvDevice( node_id );
     if ( !pAvDevice ) {
         printf( "No recognized device found with id %d\n", node_id );
         return 0;

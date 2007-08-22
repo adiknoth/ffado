@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
         dev_options.snoop_mode=0;
 	
 	ffado_device_t *dev=ffado_streaming_init(&device_info, dev_options);
+
 	if (!dev) {
 		fprintf(stderr,"Could not init Ffado Streaming layer\n");
 		exit(-1);

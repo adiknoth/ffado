@@ -47,6 +47,7 @@ public:
     PortManager();
     virtual ~PortManager();
 
+    virtual bool makeNameUnique(Port *port);
     virtual bool addPort(Port *port);
     virtual bool deletePort(Port *port);
     virtual void deleteAllPorts();

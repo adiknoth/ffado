@@ -28,9 +28,11 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
-#include "libavc/avc_extended_cmd_generic.h"
+#include "libavc/general/avc_extended_cmd_generic.h"
+#include "libavc/general/avc_unit.h"
+#include "libavc/general/avc_subunit.h"
+#include "libavc/general/avc_plug.h"
 
-#include "bebob/bebob_configparser.h"
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/GenericMixer.h"
@@ -41,154 +43,59 @@
 
 #include "libutil/serialize.h"
 
-#include "iavdevice.h"
+#include "genericavc/avc_avdevice.h"
+
+#include "ffadodevice.h"
 
 #include <sstream>
 #include <vector>
 
 class ConfigRom;
 class Ieee1394Service;
-class SubunitPlugSpecificDataPlugAddress;
 
 namespace BeBoB {
 
-class AvDevice : public IAvDevice {
+class AvDevice : public GenericAVC::AvDevice {
 public:
     AvDevice( std::auto_ptr<ConfigRom>( configRom ),
               Ieee1394Service& ieee1394Service,
               int nodeId );
     virtual ~AvDevice();
 
-    void setVerboseLevel(int l);
-
     static bool probe( ConfigRom& configRom );
     virtual bool loadFromCache();
     virtual bool saveCache();
     virtual bool discover();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
-    virtual int getSamplingFrequency( );
-
-    virtual int getStreamCount();
-    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
-
-    virtual bool prepare();
-    virtual bool lock();
-    virtual bool unlock();
-
-    virtual bool startStreamByIndex(int i);
-    virtual bool stopStreamByIndex(int i);
-
-    virtual void showDevice();
-
-    Ieee1394Service& get1394Service()
-        { return *m_p1394Service; }
-
-    AvPlugManager& getPlugManager()
-        { return *m_pPlugManager; }
-
-    struct SyncInfo {
-        SyncInfo( AvPlug& source,
-                  AvPlug& destination,
-                  std::string description )
-            : m_source( &source )
-            , m_destination( &destination )
-            , m_description( description )
-            {}
-        SyncInfo()
-            : m_source( 0 )
-            , m_destination( 0 )
-            , m_description( "" )
-            {}
-        AvPlug*     m_source;
-        AvPlug*     m_destination;
-        std::string m_description;
-    };
-
-    typedef std::vector<SyncInfo> SyncInfoVector;
-    const SyncInfoVector& getSyncInfos() const
-        { return m_syncInfos; }
-    const SyncInfo* getActiveSyncInfo() const
-        { return m_activeSyncInfo; }
-    bool setActiveSync( const SyncInfo& syncInfo );
-
-    AvDeviceSubunitAudio* getAudioSubunit( subunit_id_t subunitId )
-        { return dynamic_cast<AvDeviceSubunitAudio*>(
-                   getSubunit( AVC1394_SUBUNIT_AUDIO , subunitId ));};
+    virtual AVC::Subunit* createSubunit(AVC::Unit& unit,
+                                        AVC::ESubunitType type,
+                                        AVC::subunit_t id );
+    virtual AVC::Plug *createPlug( AVC::Unit* unit,
+                                   AVC::Subunit* subunit,
+                                   AVC::function_block_type_t functionBlockType,
+                                   AVC::function_block_type_t functionBlockId,
+                                   AVC::Plug::EPlugAddressType plugAddressType,
+                                   AVC::Plug::EPlugDirection plugDirection,
+                                   AVC::plug_id_t plugId );
 
 protected:
+    virtual bool propagatePlugInfo();
 
-    bool enumerateSubUnits();
-
-    bool discoverPlugs();
-    bool discoverPlugsPCR( AvPlug::EAvPlugDirection plugDirection,
-                           plug_id_t plugMaxId );
-    bool discoverPlugsExternal( AvPlug::EAvPlugDirection plugDirection,
-                                plug_id_t plugMaxId );
-    bool discoverPlugConnections();
-    bool discoverSyncModes();
-    bool discoverSubUnitsPlugConnections();
-
-    AvDeviceSubunit* getSubunit( subunit_type_t subunitType,
-                                 subunit_id_t subunitId ) const;
-
-    unsigned int getNrOfSubunits( subunit_type_t subunitType ) const;
-    AvPlugConnection* getPlugConnection( AvPlug& srcPlug ) const;
-
-    AvPlug* getSyncPlug( int maxPlugId, AvPlug::EAvPlugDirection );
-
-    AvPlug* getPlugById( AvPlugVector& plugs,
-                         AvPlug::EAvPlugDirection plugDireciton,
-                         int id );
-    AvPlugVector getPlugsByType( AvPlugVector& plugs,
-                 AvPlug::EAvPlugDirection plugDirection,
-                 AvPlug::EAvPlugType type);
-
-    bool addPlugToProcessor( AvPlug& plug, Streaming::StreamProcessor *processor,
-                             Streaming::AmdtpAudioPort::E_Direction direction);
-
-    bool setSamplingFrequencyPlug( AvPlug& plug,
-                                   AvPlug::EAvPlugDirection direction,
-                                   ESamplingFrequency samplingFrequency );
-
-    void showAvPlugs( AvPlugVector& plugs ) const;
-
-    bool checkSyncConnectionsAndAddToList( AvPlugVector& plhs,
-                                           AvPlugVector& prhs,
-                                           std::string syncDescription );
-
-
+public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    bool deserialize( Glib::ustring basePath,
-                      Util::IODeserialize& deser );
-    bool serializeSyncInfoVector( Glib::ustring basePath,
-                                  Util::IOSerialize& ser,
-                                  const SyncInfoVector& vec ) const;
-    bool deserializeSyncInfoVector( Glib::ustring basePath,
-                                    Util::IODeserialize& deser,
-                                    SyncInfoVector& vec );
+    static AvDevice* deserialize( Glib::ustring basePath,
+                                  Util::IODeserialize& deser,
+                                  Ieee1394Service& ieee1394Service );
     int getConfigurationIdSampleRate();
-    int getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection );
+    int getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
     int getConfigurationIdSyncMode();
     int getConfigurationId();
 
     Glib::ustring getCachePath();
 
 protected:
-    AvPlugVector              m_pcrPlugs;
-    AvPlugVector              m_externalPlugs;
-    AvPlugConnectionVector    m_plugConnections;
-    AvDeviceSubunitVector     m_subunits;
-    AvPlugManager*            m_pPlugManager;
-    SyncInfoVector            m_syncInfos;
-    SyncInfo*                 m_activeSyncInfo;
-    VendorModelEntry*         m_model;
     GenericMixer*             m_Mixer;
 
-    // streaming stuff
-    typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
-    StreamProcessorVector m_receiveProcessors;
-    StreamProcessorVector m_transmitProcessors;
 };
 
 }

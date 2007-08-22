@@ -22,7 +22,9 @@
  */
 
 #include "avc_definitions.h"
+#include <libiec61883/iec61883.h>
 
+namespace AVC {
 
 int
 convertESamplingFrequency(ESamplingFrequency freq)
@@ -150,3 +152,69 @@ std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequ
     }
     return stream << str;
 };
+
+enum ESubunitType byteToSubunitType(byte_t s) {
+    switch (s) {
+    case eST_Monitor:
+        return eST_Monitor;
+    case eST_Audio:
+        return eST_Audio;
+    case eST_Printer:
+        return eST_Printer;
+    case eST_Disc:
+        return eST_Disc;
+    case eST_VCR:
+        return eST_VCR;
+    case eST_Tuner:
+        return eST_Tuner;
+    case eST_CA:
+        return eST_CA;
+    case eST_Camera:
+        return eST_Camera;
+    case eST_Panel:
+        return eST_Panel;
+    case eST_BulltinBoard:
+        return eST_BulltinBoard;
+    case eST_CameraStorage:
+        return eST_CameraStorage;
+    case eST_Music:
+        return eST_Music;
+    case eST_VendorUnique:
+        return eST_VendorUnique;
+    case eST_Reserved:
+        return eST_Reserved;
+    case eST_Extended:
+        return eST_Extended;
+    default:
+    case eST_Unit:
+        return eST_Unit;
+    }
+}
+
+unsigned int fdfSfcToSampleRate(byte_t fdf) {
+    switch(fdf & 0x07) {
+        default:                       return 0;
+        case IEC61883_FDF_SFC_32KHZ:   return 32000;
+        case IEC61883_FDF_SFC_44K1HZ:  return 44100;
+        case IEC61883_FDF_SFC_48KHZ:   return 48000;
+        case IEC61883_FDF_SFC_88K2HZ:  return 88200;
+        case IEC61883_FDF_SFC_96KHZ:   return 96000;
+        case IEC61883_FDF_SFC_176K4HZ: return 176400;
+        case IEC61883_FDF_SFC_192KHZ:  return 192000;
+    }
+}
+
+byte_t sampleRateToFdfSfc(unsigned int rate) {
+    switch(rate) {
+        default:      return 0x07;
+        case 32000:   return IEC61883_FDF_SFC_32KHZ;
+        case 44100:   return IEC61883_FDF_SFC_44K1HZ;
+        case 48000:   return IEC61883_FDF_SFC_48KHZ;
+        case 88200:   return IEC61883_FDF_SFC_88K2HZ;
+        case 96000:   return IEC61883_FDF_SFC_96KHZ;
+        case 176400:  return IEC61883_FDF_SFC_176K4HZ;
+        case 192000:  return IEC61883_FDF_SFC_192KHZ;
+    }
+}
+
+}

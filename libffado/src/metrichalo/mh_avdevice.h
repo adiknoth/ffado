@@ -24,7 +24,7 @@
 #ifndef MHDEVICE_H
 #define MHDEVICE_H
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
@@ -44,7 +44,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class MHAvDevice : public IAvDevice {
+class MHAvDevice : public FFADODevice {
 public:
     MHAvDevice( std::auto_ptr<ConfigRom>( configRom ),
           Ieee1394Service& ieee1394Service,
@@ -57,7 +57,7 @@ public:
 
     virtual void showDevice();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
 
     virtual int getStreamCount();

@@ -27,7 +27,7 @@
 
 #include "../libffado/ffado.h"
 #include "devicemanager.h"
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "libstreaming/StreamProcessorManager.h"
 
@@ -138,7 +138,7 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
     // iterate over the found devices
     // add the stream processors of the devices to the managers
     for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
-        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        FFADODevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
         assert(device);
 
         debugOutput(DEBUG_LEVEL_VERBOSE, "Locking device (%p)\n", device);
@@ -153,12 +153,12 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
 
         // Set the device's sampling rate to that requested
         // FIXME: does this really belong here?  If so we need to handle errors.
-        if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+        if (!device->setSamplingFrequency(dev->options.sample_rate)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, " => Retry setting samplerate to %d for (%p)\n",
                         dev->options.sample_rate, device);
 
             // try again:
-            if (!device->setSamplingFrequency(parseSampleRate(dev->options.sample_rate))) {
+            if (!device->setSamplingFrequency(dev->options.sample_rate)) {
                 delete dev->processorManager;
                 delete dev->m_deviceManager;
                 delete dev;
@@ -210,7 +210,7 @@ void ffado_streaming_finish(ffado_device_t *dev) {
 
     // iterate over the found devices
     for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
-        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        FFADODevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
         assert(device);
 
         debugOutput(DEBUG_LEVEL_VERBOSE, "Unlocking device (%p)\n", device);
@@ -235,7 +235,7 @@ int ffado_streaming_start(ffado_device_t *dev) {
     // iterate over the found devices
     // add the stream processors of the devices to the managers
     for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
-        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        FFADODevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
         assert(device);
 
         int j=0;
@@ -271,7 +271,7 @@ int ffado_streaming_stop(ffado_device_t *dev) {
     // iterate over the found devices
     // add the stream processors of the devices to the managers
     for(i=0;i<dev->m_deviceManager->getAvDeviceCount();i++) {
-        IAvDevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
+        FFADODevice *device=dev->m_deviceManager->getAvDeviceByIndex(i);
         assert(device);
 
         if (!device->disableStreaming()) {
