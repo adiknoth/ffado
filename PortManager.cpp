@@ -25,6 +25,9 @@
 #include "Port.h"
 #include <assert.h>
 
+#include <iostream>
+#include <sstream>
+
 
 namespace Streaming {
 
@@ -56,6 +59,36 @@ PortManager::~PortManager() {
 //
 // }
 
+bool PortManager::makeNameUnique(Port *port)
+{
+    bool done=false;
+    int idx=0;
+    std::string portname_orig=port->getName();
+    
+    while(!done && idx<10000) {
+        bool is_unique=true;
+        
+        for ( PortVectorIterator it = m_Ports.begin();
+        it != m_Ports.end();
+        ++it )
+        {
+            is_unique &= !((*it)->getName() == port->getName());
+        }
+        
+        if (is_unique) {
+            done=true;
+        } else {
+            std::ostringstream portname;
+            portname << portname_orig << idx++;
+            
+            port->setName(portname.str());
+        }
+    }
+    
+    if(idx<10000) return true;
+    else return false;
+}
+
 /**
  *
  * @param port
@@ -65,10 +98,15 @@ bool PortManager::addPort(Port *port)
 {
     assert(port);
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s\n",port->getName().c_str());
-    m_Ports.push_back(port);
-
-    return true;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s, type: %d, dir: %d, dtype: %d\n",
+        port->getName().c_str(), port->getPortType(), port->getDirection(), port->getDataType());
+    
+    if (makeNameUnique(port)) {
+        m_Ports.push_back(port);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool PortManager::deletePort(Port *port)

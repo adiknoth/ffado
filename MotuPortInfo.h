@@ -59,24 +59,21 @@ public:
      * the position parameter is an example
      * the name parameter is mandatory
      *
-     * @param name Port name
      * @param position Start position of port's data in iso event
      * @param format Format of data in iso event
      * @param size Size in bits of port's data in iso event
      * @return
      */
-    MotuPortInfo(std::string name, int position, int size)
-      : m_name(name), m_position(position), m_size(size)
+    MotuPortInfo( int position, int size)
+      : m_position(position), m_size(size)
     {};
     virtual ~MotuPortInfo() {};
 
 
-    std::string getName() {return m_name;};
     int getPosition()     {return m_position;};
     int getSize()         {return m_size;};
 
 protected:
-    std::string m_name;
 
     int m_position;
     int m_size;

@@ -755,7 +755,7 @@ int AmdtpTransmitStreamProcessor::transmitSilenceBlock(char *data,
 bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc)
 {
     bool ok=true;
-    char byte;
+    quadlet_t byte;
 
     quadlet_t *target_event=NULL;
     unsigned int j;
@@ -787,20 +787,31 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned i
         // first prefill the buffer with NO_DATA's on all time muxed channels
 
         for(j = (dbc & 0x07)+mp->getLocation(); j < nevents; j += 8) {
-
+            
+            quadlet_t tmpval;
+            
             target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
-
+            
             if(mp->canRead()) { // we can send a byte
                 mp->readEvent(&byte);
-                *target_event=htonl(
+                byte &= 0xFF;
+                tmpval=htonl(
                     IEC61883_AM824_SET_LABEL((byte)<<16,
                                              IEC61883_AM824_LABEL_MIDI_1X));
+
+                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "MIDI port %s, pos=%d, loc=%d, dbc=%d, nevents=%d, dim=%d\n",
+                    mp->getName().c_str(), mp->getPosition(), mp->getLocation(), dbc, nevents, m_dimension);
+                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "base=%p, target=%p, value=%08X\n",
+                    data, target_event, tmpval);
+                    
             } else {
                 // can't send a byte, either because there is no byte,
                 // or because this would exceed the maximum rate
-                *target_event=htonl(
+                tmpval=htonl(
                     IEC61883_AM824_SET_LABEL(0,IEC61883_AM824_LABEL_MIDI_NO_DATA));
             }
+            
+            *target_event=tmpval;
         }
 
     }
