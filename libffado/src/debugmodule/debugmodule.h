@@ -33,7 +33,7 @@
 
 typedef short debug_level_t;
 
-#define DEBUG_MAX_MESSAGE_LENGTH 256
+#define DEBUG_MAX_MESSAGE_LENGTH 1024
 
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
 #define MB_BUFFERS    (1<<16)
