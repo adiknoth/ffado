@@ -51,7 +51,7 @@ noinst_HEADERS = \
 	devicemanager.h fbtypes.h ffadodevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h bebob/bebob_configparser.h \
-	bebob/GenericMixer.h \
+	bebob/GenericMixer.h bebob/vendorspecific/focusrite.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
 	genericavc/avc_avdevice.h \
@@ -75,6 +75,7 @@ noinst_HEADERS = \
 	libavc/general/avc_unit.h \
 	libavc/general/avc_subunit.h \
 	libavc/general/avc_plug.h \
+	libavc/general/avc_vendor_dependent_cmd.h \
 	libavc/avc_definitions.h \
 	libavc/ccm/avc_signal_source.h \
 	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
@@ -119,6 +120,7 @@ libffado_la_SOURCES = \
 	libavc/general/avc_unit.cpp \
 	libavc/general/avc_subunit.cpp \
 	libavc/general/avc_plug.cpp \
+	libavc/general/avc_vendor_dependent_cmd.cpp \
 	libavc/avc_definitions.cpp \
 	libavc/ccm/avc_signal_source.cpp \
 	libieee1394/ARMHandler.cpp \
@@ -163,6 +165,7 @@ bebob_src = \
 	    bebob/bebob_functionblock.cpp \
 	    bebob/bebob_configparser.cpp \
 	    bebob/GenericMixer.cpp \
+	    bebob/vendorspecific/focusrite.cpp \
 	    maudio/maudio_avdevice.cpp
 
 genericavc_src = \

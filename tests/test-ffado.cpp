@@ -35,6 +35,8 @@
 #include "devicemanager.h"
 #include "ffadodevice.h"
 
+#include "bebob/vendorspecific/focusrite.h"
+
 #include <signal.h>
 
 #include <argp.h>
@@ -87,9 +89,11 @@ const char *argp_program_bug_address = PACKAGE_BUGREPORT;
 // Program documentation.
 static char doc[] = "FFADO -- a driver for Firewire Audio devices (test application)\n\n"
                     "OPERATION: Discover\n"
-                    "           SetSamplerate\n"
+                    "           SetSamplerate samplerate\n"
                     "           ListOscSpace\n"
-                    "           OscServer\n";
+                    "           OscServer\n"
+                    "           FocusriteSetPhantom [0=ch1-4, 1=ch5-8] [1=on, 0=off]\n"
+                    ;
 
 // A description of the arguments we accept.
 static char args_doc[] = "OPERATION";
@@ -171,7 +175,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
         }
         break;
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 2) {
+        if (state->arg_num >= 3) {
             // Too many arguments.
             argp_usage( state );
         }
@@ -358,6 +362,120 @@ main( int argc, char **argv )
         signal (SIGINT, SIG_DFL);
 
         printf("server stopped\n");
+        delete m_deviceManager;
+        return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "FocusriteSetPhantom" ) == 0 ) {
+        char* tail;
+        int inputchannels = strtol( arguments.args[1], &tail, 0 );
+        if ( errno ) {
+            fprintf( stderr,  "Could not parse inputchannels argument\n" );
+            return exitfunction(-1);
+        }
+        int onoff = strtol( arguments.args[2], &tail, 0 );
+        if ( errno ) {
+            fprintf( stderr,  "Could not parse on/off argument\n" );
+            return exitfunction(-1);
+        }
+        
+        DeviceManager *m_deviceManager = new DeviceManager();
+        if ( !m_deviceManager ) {
+            fprintf( stderr, "Could not allocate device manager\n" );
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->initialize( arguments.port ) ) {
+            fprintf( stderr, "Could not initialize device manager\n" );
+            delete m_deviceManager;
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->discover() ) {
+            fprintf( stderr, "Could not discover devices\n" );
+            delete m_deviceManager;
+            return exitfunction(-1);
+        }
+
+        if(arguments.node_id_set) {
+            FFADODevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
+            if ( avDevice ) {
+                if ( avDevice->getConfigRom().getNodeVendorId() == 0x00130e ) {
+                    
+                    BeBoB::FocusriteVendorDependentCmd cmd( avDevice->get1394Service() );
+                    cmd.setCommandType( AVC::AVCCommand::eCT_Control );
+                    cmd.setNodeId( avDevice->getConfigRom().getNodeId() );
+                    cmd.setVerbose( arguments.verbose );
+                    
+//                         if (inputchannels) {
+//                             cmd.m_id=99;
+//                         } else {
+//                             cmd.m_id=98;
+//                         }
+//                         if (onoff) {
+//                             cmd.m_value=1;
+//                         } else {
+//                             cmd.m_value=0;
+//                         }
+                        cmd.m_id=inputchannels;
+                        cmd.m_value=onoff;
+                    
+                    if ( !cmd.fire() ) {
+                        debugError( "FocusriteVendorDependentCmd info command failed\n" );
+                        // shouldn't this be an error situation?
+                        return exitfunction(-1);
+                    }
+
+                } else {
+                    fprintf( stderr, "Not a Focusrite device: id=0x%06X ...\n", avDevice->getConfigRom().getNodeVendorId());
+                }
+            }
+        } else {
+            int i=0;
+
+            int devices_on_bus = m_deviceManager->getNbDevices();
+            printf("  port = %d, devices_on_bus = %d\n", arguments.port, devices_on_bus);
+
+            for(i=0;i<devices_on_bus;i++) {
+                int node_id=m_deviceManager->getDeviceNodeId(i);
+                printf("  set phantom power for device = %d, node = %d\n", i, node_id);
+                FFADODevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
+                if ( avDevice ) {
+                    if ( avDevice->getConfigRom().getNodeVendorId() == 0x00130e ) {
+                        
+                        BeBoB::FocusriteVendorDependentCmd cmd( avDevice->get1394Service() );
+                        cmd.setCommandType( AVC::AVCCommand::eCT_Control );
+                        cmd.setNodeId( avDevice->getConfigRom().getNodeId() );
+                        cmd.setVerbose( arguments.verbose );
+                        
+//                         if (inputchannels) {
+//                             cmd.m_id=99;
+//                         } else {
+//                             cmd.m_id=98;
+//                         }
+//                         if (onoff) {
+//                             cmd.m_value=1;
+//                         } else {
+//                             cmd.m_value=0;
+//                         }
+                        cmd.m_id=inputchannels;
+                        cmd.m_value=onoff;
+                        
+                        if ( !cmd.fire() ) {
+                            debugError( "FocusriteVendorDependentCmd info command failed\n" );
+                            // shouldn't this be an error situation?
+                            return exitfunction(-1);
+                        }
+    
+                    } else {
+                        fprintf( stderr, "Not a Focusrite device: id=0x%06X ...\n", avDevice->getConfigRom().getNodeVendorId());
+                    }
+                }
+
+            }
+        }
         delete m_deviceManager;
         return exitfunction(0);
 
