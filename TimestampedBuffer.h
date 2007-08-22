@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  *   FFADO Streaming API
  *   FFADO = Firewire (pro-)audio for linux
