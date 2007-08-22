@@ -281,7 +281,7 @@ FILE *of=fopen("foo.dat","w");
 	ffado_streaming_stop(dev);
 
 	ffado_streaming_finish(dev);
-fclose(of);
+	fclose(of);
 
 	for (i=0;i<nb_out_channels;i++) {
 		fclose(fid_out[i]);

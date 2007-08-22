@@ -51,7 +51,7 @@ public:
                    int position,
                    int size)
     : AudioPort(name, direction),
-      MotuPortInfo(name, position, size) // TODO: add more port information parameters here if nescessary
+      MotuPortInfo( position, size) // TODO: add more port information parameters here if nescessary
     {};
 
     virtual ~MotuAudioPort() {};
@@ -75,7 +75,7 @@ public:
                        enum E_Direction direction,
                    int position)
         : MidiPort(name, direction),
-          MotuPortInfo(name, position, 0)  // TODO: add more port information parameters here if nescessary
+          MotuPortInfo(position, 0)  // TODO: add more port information parameters here if nescessary
     {};
 
 
@@ -100,7 +100,7 @@ public:
                        enum E_Direction direction,
                    int position)
         : ControlPort(name, direction),
-          MotuPortInfo(name, position, 2) // TODO: add more port information parameters here if nescessary
+          MotuPortInfo(position, 2) // TODO: add more port information parameters here if nescessary
     {};
 
 

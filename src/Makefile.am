@@ -48,18 +48,35 @@ noinst_HEADERS = \
 	libieee1394/ieee1394service.h libieee1394/ARMHandler.h \
 	libieee1394/IEC61883.h \
 	debugmodule/debugmodule.h \
-	devicemanager.h fbtypes.h iavdevice.h threads.h bebob/bebob_avdevice.h \
+	devicemanager.h fbtypes.h ffadodevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
 	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h bebob/bebob_configparser.h \
 	bebob/GenericMixer.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
-	libavc/avc_connect.h \
-	libavc/avc_definitions.h libavc/avc_extended_cmd_generic.h \
-	libavc/avc_extended_plug_info.h libavc/avc_extended_stream_format.h \
-	libavc/avc_extended_subunit_info.h libavc/avc_function_block.h libavc/avc_generic.h \
-	libavc/avc_plug_info.h libavc/avc_serialize.h libavc/avc_signal_source.h \
-	libavc/avc_subunit_info.h libavc/avc_unit_info.h \
+	genericavc/avc_avdevice.h \
+	libavc/streamformat/avc_extended_stream_format.h \
+	libavc/util/avc_serialize.h \
+	libavc/musicsubunit/avc_descriptor_music.h \
+	libavc/musicsubunit/avc_musicsubunit.h \
+	libavc/audiosubunit/avc_audiosubunit.h \
+	libavc/audiosubunit/avc_function_block.h \
+	libavc/descriptors/avc_descriptor_cmd.h \
+	libavc/descriptors/avc_descriptor.h \
+	libavc/general/avc_plug_info.h \
+	libavc/general/avc_subunit_info.h \
+	libavc/general/avc_extended_cmd_generic.h \
+	libavc/general/avc_extended_subunit_info.h \
+	libavc/general/avc_unit_info.h \
+	libavc/general/avc_generic.h \
+	libavc/general/avc_connect.h \
+	libavc/general/avc_signal_format.h \
+	libavc/general/avc_extended_plug_info.h \
+	libavc/general/avc_unit.h \
+	libavc/general/avc_subunit.h \
+	libavc/general/avc_plug.h \
+	libavc/avc_definitions.h \
+	libavc/ccm/avc_signal_source.h \
 	libosc/OscArgument.h libosc/OscNode.h libosc/OscResponse.h libosc/OscServer.h libosc/OscMessage.h \
 	libosc/OscClient.h \
 	libstreaming/AmdtpPort.h libstreaming/AmdtpPortInfo.h libstreaming/AmdtpStreamProcessor.h \
@@ -77,54 +94,63 @@ noinst_HEADERS = \
 
 # common sources
 libffado_la_SOURCES = \
-	    devicemanager.cpp \
-	    ffado.cpp \
-	    ffado_streaming.cpp \
-	    iavdevice.cpp \
-	    debugmodule/debugmodule.cpp \
-	    libavc/avc_connect.cpp \
-	    libavc/avc_definitions.cpp \
-	    libavc/avc_extended_cmd_generic.cpp \
-	    libavc/avc_extended_plug_info.cpp \
-	    libavc/avc_extended_stream_format.cpp \
-	    libavc/avc_extended_subunit_info.cpp \
-	    libavc/avc_function_block.cpp \
-	    libavc/avc_generic.cpp \
-	    libavc/avc_plug_info.cpp \
-	    libavc/avc_serialize.cpp \
-	    libavc/avc_signal_source.cpp \
-	    libavc/avc_subunit_info.cpp \
-	    libavc/avc_unit_info.cpp \
-	    libieee1394/ARMHandler.cpp \
-	    libieee1394/configrom.cpp \
-	    libieee1394/csr1212.c \
-	    libieee1394/ieee1394service.cpp \
-	    libieee1394/IEC61883.cpp \
-	    libosc/OscArgument.cpp \
-	    libosc/OscClient.cpp \
-	    libosc/OscMessage.cpp \
-	    libosc/OscNode.cpp \
-	    libosc/OscResponse.cpp \
-	    libosc/OscServer.cpp \
-	    libstreaming/cip.c \
-	    libstreaming/IsoHandler.cpp \
-	    libstreaming/IsoHandlerManager.cpp \
-	    libstreaming/IsoStream.cpp \
-	    libstreaming/Port.cpp \
-	    libstreaming/PortManager.cpp \
-	    libstreaming/StreamProcessor.cpp \
-	    libstreaming/StreamProcessorManager.cpp \
-	    libutil/DelayLockedLoop.cpp \
-	    libutil/PacketBuffer.cpp \
-	    libutil/OptionContainer.cpp \
-	    libutil/PosixThread.cpp \
-	    libutil/ringbuffer.c \
-	    libutil/serialize.cpp \
-	    libutil/StreamStatistics.cpp \
-	    libutil/SystemTimeSource.cpp \
-	    libutil/Time.c \
-	    libutil/TimeSource.cpp \
-	    libutil/TimestampedBuffer.cpp
+	devicemanager.cpp \
+	ffado.cpp \
+	ffado_streaming.cpp \
+	ffadodevice.cpp \
+	debugmodule/debugmodule.cpp \
+	libavc/streamformat/avc_extended_stream_format.cpp \
+	libavc/util/avc_serialize.cpp \
+	libavc/musicsubunit/avc_descriptor_music.cpp \
+	libavc/musicsubunit/avc_musicsubunit.cpp \
+	libavc/audiosubunit/avc_audiosubunit.cpp \
+	libavc/audiosubunit/avc_function_block.cpp \
+	libavc/descriptors/avc_descriptor_cmd.cpp \
+	libavc/descriptors/avc_descriptor.cpp \
+	libavc/general/avc_extended_subunit_info.cpp \
+	libavc/general/avc_unit_info.cpp \
+	libavc/general/avc_generic.cpp \
+	libavc/general/avc_subunit_info.cpp \
+	libavc/general/avc_connect.cpp \
+	libavc/general/avc_signal_format.cpp \
+	libavc/general/avc_extended_cmd_generic.cpp \
+	libavc/general/avc_extended_plug_info.cpp \
+	libavc/general/avc_plug_info.cpp \
+	libavc/general/avc_unit.cpp \
+	libavc/general/avc_subunit.cpp \
+	libavc/general/avc_plug.cpp \
+	libavc/avc_definitions.cpp \
+	libavc/ccm/avc_signal_source.cpp \
+	libieee1394/ARMHandler.cpp \
+	libieee1394/configrom.cpp \
+	libieee1394/csr1212.c \
+	libieee1394/ieee1394service.cpp \
+	libieee1394/IEC61883.cpp \
+	libosc/OscArgument.cpp \
+	libosc/OscClient.cpp \
+	libosc/OscMessage.cpp \
+	libosc/OscNode.cpp \
+	libosc/OscResponse.cpp \
+	libosc/OscServer.cpp \
+	libstreaming/cip.c \
+	libstreaming/IsoHandler.cpp \
+	libstreaming/IsoHandlerManager.cpp \
+	libstreaming/IsoStream.cpp \
+	libstreaming/Port.cpp \
+	libstreaming/PortManager.cpp \
+	libstreaming/StreamProcessor.cpp \
+	libstreaming/StreamProcessorManager.cpp \
+	libutil/DelayLockedLoop.cpp \
+	libutil/PacketBuffer.cpp \
+	libutil/OptionContainer.cpp \
+	libutil/PosixThread.cpp \
+	libutil/ringbuffer.c \
+	libutil/serialize.cpp \
+	libutil/StreamStatistics.cpp \
+	libutil/SystemTimeSource.cpp \
+	libutil/Time.c \
+	libutil/TimeSource.cpp \
+	libutil/TimestampedBuffer.cpp
 
 # class specific sources
 bebob_src = \
@@ -138,6 +164,9 @@ bebob_src = \
 	    bebob/bebob_configparser.cpp \
 	    bebob/GenericMixer.cpp \
 	    maudio/maudio_avdevice.cpp
+
+genericavc_src = \
+	    genericavc/avc_avdevice.cpp
 
 motu_src = \
 	    motu/motu_avdevice.cpp \
@@ -213,6 +242,13 @@ libffado_la_SOURCES += $(bebob_src)
 bin_PROGRAMS += $(bebob_bin)
 noinst_PROGRAMS += $(bebob_noinst)
 nobase_dist_pkgdata_DATA += $(bebob_pkgdata)
+endif
+
+if BUILD_GENERICAVC
+libffado_la_SOURCES += $(genericavc_src)
+bin_PROGRAMS += $(genericavc_bin)
+noinst_PROGRAMS += $(genericavc_noinst)
+nobase_dist_pkgdata_DATA += $(genericavc_pkgdata)
 endif
 
 if BUILD_BOUNCE

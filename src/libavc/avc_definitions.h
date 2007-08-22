@@ -21,11 +21,14 @@
  * MA 02110-1301 USA
  */
 
-#ifndef AVDDEFINITIONS_H
-#define AVDDEFINITIONS_H
+#ifndef AVCDEFINITIONS_H
+#define AVCDEFINITIONS_H
 
 #include <libavc1394/avc1394.h>
 #include <ostream>
+
+
+namespace AVC {
 
 typedef byte_t ctype_t;
 typedef byte_t unit_t;
@@ -82,6 +85,38 @@ typedef byte_t status_selector_t;
 
 typedef quadlet_t company_id_t;
 
+#define AVC1394_SUBUNIT_AUDIO 1
+#define AVC1394_SUBUNIT_PRINTER 2
+#define AVC1394_SUBUNIT_CA 6
+#define AVC1394_SUBUNIT_PANEL 9
+#define AVC1394_SUBUNIT_BULLETIN_BOARD 0xA
+#define AVC1394_SUBUNIT_CAMERA_STORAGE 0xB
+#define AVC1394_SUBUNIT_MUSIC 0xC
+#define AVC1394_SUBUNIT_RESERVED 0x1D
+
+#define AVC1394_SUBUNIT_ID_RESERVED 0x06
+
+enum ESubunitType {
+    eST_Monitor       = AVC1394_SUBUNIT_VIDEO_MONITOR,
+    eST_Audio         = AVC1394_SUBUNIT_AUDIO,
+    eST_Printer       = AVC1394_SUBUNIT_PRINTER,
+    eST_Disc          = AVC1394_SUBUNIT_DISC_RECORDER,
+    eST_VCR           = AVC1394_SUBUNIT_VCR,
+    eST_Tuner         = AVC1394_SUBUNIT_TUNER,
+    eST_CA            = AVC1394_SUBUNIT_CA,
+    eST_Camera        = AVC1394_SUBUNIT_VIDEO_CAMERA,
+    eST_Panel         = AVC1394_SUBUNIT_PANEL,
+    eST_BulltinBoard  = AVC1394_SUBUNIT_BULLETIN_BOARD,
+    eST_CameraStorage = AVC1394_SUBUNIT_CAMERA_STORAGE,
+    eST_Music         = AVC1394_SUBUNIT_MUSIC,
+    eST_VendorUnique  = AVC1394_SUBUNIT_VENDOR_UNIQUE,
+    eST_Reserved      = AVC1394_SUBUNIT_RESERVED,
+    eST_Extended      = AVC1394_SUBUNIT_EXTENDED,
+    eST_Unit          = AVC1394_SUBUNIT_UNIT,
+};
+
+enum ESubunitType byteToSubunitType(byte_t s);
+
 /**
  * \brief the possible sampling frequencies
  */
@@ -117,15 +152,20 @@ ESamplingFrequency parseSampleRate( int sampleRate );
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency );
 
-#define AVC1394_SUBUNIT_AUDIO 1
-#define AVC1394_SUBUNIT_PRINTER 2
-#define AVC1394_SUBUNIT_CA 6
-#define AVC1394_SUBUNIT_PANEL 9
-#define AVC1394_SUBUNIT_BULLETIN_BOARD 0xA
-#define AVC1394_SUBUNIT_CAMERA_STORAGE 0xB
-#define AVC1394_SUBUNIT_MUSIC 0xC
-#define AVC1394_SUBUNIT_RESERVED 0x1D
+/**
+ * \brief Convert from a FDF SFC field value to an integer sample rate
+ * @param fdf fdf sfc field value
+ * @return sample rate
+ */
+unsigned int fdfSfcToSampleRate(byte_t fdf);
 
-#define AVC1394_SUBUNIT_ID_RESERVED 0x06
+/**
+ * \brief Convert from an integer sample rate to a78 FDF SFC field value
+ * @param rate integer sample rate
+ * @return fdf sfc field value
+ */
+byte_t sampleRateToFdfSfc(unsigned int rate);
 
-#endif // AVDDEFINITIONS_H
+}
+
+#endif // AVCDEFINITIONS_H

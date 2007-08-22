@@ -30,8 +30,8 @@
 #include "libosc/OscMessage.h"
 #include "libosc/OscResponse.h"
 
-#include "libavc/avc_function_block.h"
-#include "libavc/avc_serialize.h"
+#include "libavc/audiosubunit/avc_function_block.h"
+#include "libavc/util/avc_serialize.h"
 
 #include "libieee1394/ieee1394service.h"
 
@@ -42,6 +42,7 @@
 #include <assert.h>
 
 using namespace OSC;
+using namespace AVC;
 
 namespace BeBoB {
 

@@ -53,7 +53,7 @@ static VendorModelEntry supportedDeviceList[] =
 DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    : IAvDevice( configRom, ieee1394service, nodeId )
+    : FFADODevice( configRom, ieee1394service, nodeId )
     , m_model( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
@@ -142,7 +142,7 @@ DiceAvDevice::discover()
 
 int
 DiceAvDevice::getSamplingFrequency( ) {
-    ESamplingFrequency samplingFrequency;
+    int samplingFrequency;
 
     fb_quadlet_t clockreg;
     if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
@@ -153,21 +153,21 @@ DiceAvDevice::getSamplingFrequency( ) {
     clockreg = DICE_GET_RATE(clockreg);
 
     switch (clockreg) {
-        case DICE_RATE_32K:      samplingFrequency = eSF_32000Hz;  break;
-        case DICE_RATE_44K1:     samplingFrequency = eSF_44100Hz;  break;
-        case DICE_RATE_48K:      samplingFrequency = eSF_48000Hz;  break;
-        case DICE_RATE_88K2:     samplingFrequency = eSF_88200Hz;  break;
-        case DICE_RATE_96K:      samplingFrequency = eSF_96000Hz;  break;
-        case DICE_RATE_176K4:    samplingFrequency = eSF_176400Hz; break;
-        case DICE_RATE_192K:     samplingFrequency = eSF_192000Hz; break;
-        case DICE_RATE_ANY_LOW:  samplingFrequency = eSF_AnyLow;   break;
-        case DICE_RATE_ANY_MID:  samplingFrequency = eSF_AnyMid;   break;
-        case DICE_RATE_ANY_HIGH: samplingFrequency = eSF_AnyHigh;  break;
-        case DICE_RATE_NONE:     samplingFrequency = eSF_None;     break;
-        default:                 samplingFrequency = eSF_DontCare; break;
+        case DICE_RATE_32K:      samplingFrequency = 32000;  break;
+        case DICE_RATE_44K1:     samplingFrequency = 44100;  break;
+        case DICE_RATE_48K:      samplingFrequency = 48000;  break;
+        case DICE_RATE_88K2:     samplingFrequency = 88200;  break;
+        case DICE_RATE_96K:      samplingFrequency = 96000;  break;
+        case DICE_RATE_176K4:    samplingFrequency = 176400; break;
+        case DICE_RATE_192K:     samplingFrequency = 192000; break;
+        case DICE_RATE_ANY_LOW:  samplingFrequency = 0;   break;
+        case DICE_RATE_ANY_MID:  samplingFrequency = 0;   break;
+        case DICE_RATE_ANY_HIGH: samplingFrequency = 0;  break;
+        case DICE_RATE_NONE:     samplingFrequency = 0;     break;
+        default:                 samplingFrequency = 0; break;
     }
 
-    return convertESamplingFrequency(samplingFrequency);
+    return samplingFrequency;
 }
 
 int
@@ -177,57 +177,57 @@ DiceAvDevice::getConfigurationId()
 }
 
 bool
-DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
+DiceAvDevice::setSamplingFrequency( int samplingFrequency )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Setting sample rate: %d\n",
-        convertESamplingFrequency(samplingFrequency));
+        (samplingFrequency));
 
     bool supported=false;
     fb_quadlet_t select=0x0;
 
     switch ( samplingFrequency ) {
     default:
-    case eSF_22050Hz:
-    case eSF_24000Hz:
+    case 22050:
+    case 24000:
         supported=false;
         break;
-    case eSF_32000Hz:
+    case 32000:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_32K);
         select=DICE_RATE_32K;
         break;
-    case eSF_44100Hz:
+    case 44100:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_44K1);
         select=DICE_RATE_44K1;
         break;
-    case eSF_48000Hz:
+    case 48000:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_48K);
         select=DICE_RATE_48K;
         break;
-    case eSF_88200Hz:
+    case 88200:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_88K2);
         select=DICE_RATE_88K2;
         break;
-    case eSF_96000Hz:
+    case 96000:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_96K);
         select=DICE_RATE_96K;
         break;
-    case eSF_176400Hz:
+    case 176400:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_176K4);
         select=DICE_RATE_176K4;
         break;
-    case eSF_192000Hz:
+    case 192000:
         supported=maskedCheckNotZeroGlobalReg(
                     DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
                     DICE_CLOCKCAP_RATE_192K);
@@ -236,7 +236,7 @@ DiceAvDevice::setSamplingFrequency( ESamplingFrequency samplingFrequency )
     }
 
     if (!supported) {
-        debugWarning("Unsupported sample rate: %d\n", convertESamplingFrequency(samplingFrequency));
+        debugWarning("Unsupported sample rate: %d\n", (samplingFrequency));
         return false;
     }
 

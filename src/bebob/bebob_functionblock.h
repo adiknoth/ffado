@@ -27,11 +27,15 @@
 #include "bebob/bebob_avplug.h"
 
 #include "libavc/avc_definitions.h"
+// #include "libavc/general/avc_subunit.h"
+
 #include "debugmodule/debugmodule.h"
 
-namespace BeBoB {
+namespace AVC {
+    class Subunit;
+}
 
-class AvDeviceSubunit;
+namespace BeBoB {
 
 class FunctionBlock {
 public:
@@ -49,13 +53,13 @@ public:
         eSP_NoSpecialPurpose
     };
 
-    FunctionBlock( AvDeviceSubunit& subunit,
-           function_block_type_t type,
-                   function_block_type_t subtype,
-                   function_block_id_t id,
+    FunctionBlock( AVC::Subunit& subunit,
+                   AVC::function_block_type_t type,
+                   AVC::function_block_type_t subtype,
+                   AVC::function_block_id_t id,
                    ESpecialPurpose purpose,
-                   no_of_input_plugs_t nrOfInputPlugs,
-                   no_of_output_plugs_t nrOfOutputPlugs,
+                   AVC::no_of_input_plugs_t nrOfInputPlugs,
+                   AVC::no_of_output_plugs_t nrOfOutputPlugs,
                    int verbose );
     FunctionBlock( const FunctionBlock& rhs );
     FunctionBlock();
@@ -66,29 +70,29 @@ public:
 
     virtual const char* getName() = 0;
     
-    function_block_type_t getType() {return m_type;};
-    function_block_type_t getSubtype() {return m_subtype;};
-    function_block_id_t getId() {return m_id;};
+    AVC::function_block_type_t getType() {return m_type;};
+    AVC::function_block_type_t getSubtype() {return m_subtype;};
+    AVC::function_block_id_t getId() {return m_id;};
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static FunctionBlock* deserialize( Glib::ustring basePath,
                        Util::IODeserialize& deser,
-                       AvDevice& avDevice,
-                                       AvDeviceSubunit& subunit);
+                       AVC::Unit& unit,
+                       AVC::Subunit& subunit);
 protected:
-    bool discoverPlugs( AvPlug::EAvPlugDirection plugDirection,
-                        plug_id_t plugMaxId );
+    bool discoverPlugs( AVC::Plug::EPlugDirection plugDirection,
+                        AVC::plug_id_t plugMaxId );
 
 protected:
-    AvDeviceSubunit*      m_subunit;
-    function_block_type_t m_type;
-    function_block_type_t m_subtype;
-    function_block_id_t   m_id;
+    AVC::Subunit*      m_subunit;
+    AVC::function_block_type_t m_type;
+    AVC::function_block_type_t m_subtype;
+    AVC::function_block_id_t   m_id;
     ESpecialPurpose       m_purpose;
-    no_of_input_plugs_t   m_nrOfInputPlugs;
-    no_of_output_plugs_t  m_nrOfOutputPlugs;
+    AVC::no_of_input_plugs_t   m_nrOfInputPlugs;
+    AVC::no_of_output_plugs_t  m_nrOfOutputPlugs;
     int                   m_verbose;
-    AvPlugVector          m_plugs;
+    AVC::PlugVector          m_plugs;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -101,11 +105,11 @@ typedef std::vector<FunctionBlock*> FunctionBlockVector;
 class FunctionBlockSelector: public FunctionBlock
 {
 public:
-    FunctionBlockSelector(AvDeviceSubunit& subunit,
-                          function_block_id_t id,
+    FunctionBlockSelector(AVC::Subunit& subunit,
+                          AVC::function_block_id_t id,
                           ESpecialPurpose purpose,
-                          no_of_input_plugs_t nrOfInputPlugs,
-                          no_of_output_plugs_t nrOfOutputPlugs,
+                          AVC::no_of_input_plugs_t nrOfInputPlugs,
+                          AVC::no_of_output_plugs_t nrOfOutputPlugs,
                           int verbose);
     FunctionBlockSelector( const FunctionBlockSelector& rhs );
     FunctionBlockSelector();
@@ -126,11 +130,11 @@ protected:
 class FunctionBlockFeature: public FunctionBlock
 {
 public:
-    FunctionBlockFeature(AvDeviceSubunit& subunit,
-                         function_block_id_t id,
+    FunctionBlockFeature(AVC::Subunit& subunit,
+                         AVC::function_block_id_t id,
                          ESpecialPurpose purpose,
-                         no_of_input_plugs_t nrOfInputPlugs,
-                         no_of_output_plugs_t nrOfOutputPlugs,
+                         AVC::no_of_input_plugs_t nrOfInputPlugs,
+                         AVC::no_of_output_plugs_t nrOfOutputPlugs,
                          int verbose);
     FunctionBlockFeature( const FunctionBlockFeature& rhs );
     FunctionBlockFeature();
@@ -168,11 +172,11 @@ protected:
 class FunctionBlockEnhancedMixer: public FunctionBlock
 {
 public:
-    FunctionBlockEnhancedMixer( AvDeviceSubunit& subunit,
-                                function_block_id_t id,
+    FunctionBlockEnhancedMixer( AVC::Subunit& subunit,
+                                AVC::function_block_id_t id,
                                 ESpecialPurpose purpose,
-                                no_of_input_plugs_t nrOfInputPlugs,
-                                no_of_output_plugs_t nrOfOutputPlugs,
+                                AVC::no_of_input_plugs_t nrOfInputPlugs,
+                                AVC::no_of_output_plugs_t nrOfOutputPlugs,
                                 int verbose );
     FunctionBlockEnhancedMixer();
     FunctionBlockEnhancedMixer( const FunctionBlockEnhancedMixer& rhs );
@@ -193,11 +197,11 @@ protected:
 class FunctionBlockProcessing: public FunctionBlock
 {
 public:
-    FunctionBlockProcessing( AvDeviceSubunit& subunit,
-                             function_block_id_t id,
+    FunctionBlockProcessing( AVC::Subunit& subunit,
+                             AVC::function_block_id_t id,
                              ESpecialPurpose purpose,
-                             no_of_input_plugs_t nrOfInputPlugs,
-                             no_of_output_plugs_t nrOfOutputPlugs,
+                             AVC::no_of_input_plugs_t nrOfInputPlugs,
+                             AVC::no_of_output_plugs_t nrOfOutputPlugs,
                              int verbose );
     FunctionBlockProcessing( const FunctionBlockProcessing& rhs );
     FunctionBlockProcessing();
@@ -218,11 +222,11 @@ protected:
 class FunctionBlockCodec: public FunctionBlock
 {
 public:
-    FunctionBlockCodec(AvDeviceSubunit& subunit,
-                       function_block_id_t id,
+    FunctionBlockCodec(AVC::Subunit& subunit,
+                       AVC::function_block_id_t id,
                        ESpecialPurpose purpose,
-                       no_of_input_plugs_t nrOfInputPlugs,
-                       no_of_output_plugs_t nrOfOutputPlugs,
+                       AVC::no_of_input_plugs_t nrOfInputPlugs,
+                       AVC::no_of_output_plugs_t nrOfOutputPlugs,
                        int verbose);
     FunctionBlockCodec( const FunctionBlockCodec& rhs );
     FunctionBlockCodec();

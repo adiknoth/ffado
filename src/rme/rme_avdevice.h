@@ -25,7 +25,7 @@
 #ifndef RMEDEVICE_H
 #define RMEDEVICE_H
 
-#include "iavdevice.h"
+#include "ffadodevice.h"
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
@@ -45,7 +45,7 @@ struct VendorModelEntry {
     char *model_name;
 };
 
-class RmeDevice : public IAvDevice {
+class RmeDevice : public FFADODevice {
 public:
 
     RmeDevice( std::auto_ptr<ConfigRom>( configRom ),
@@ -59,7 +59,7 @@ public:
 
     virtual void showDevice();
 
-    virtual bool setSamplingFrequency( ESamplingFrequency samplingFrequency );
+    virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
 
     virtual int getStreamCount();

@@ -24,6 +24,8 @@
 #include "bebob/bebob_dl_codes.h"
 #include "bebob/bebob_dl_bcd.h"
 
+using namespace AVC;
+
 unsigned short BeBoB::CommandCodes::m_gCommandId = 0;
 
 BeBoB::CommandCodes::CommandCodes( fb_quadlet_t protocolVersion,
