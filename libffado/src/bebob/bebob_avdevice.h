@@ -47,8 +47,6 @@
 
 #include "ffadodevice.h"
 
-#include "vendorspecific/focusrite.h"
-
 #include <sstream>
 #include <vector>
 
