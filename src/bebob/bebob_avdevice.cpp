@@ -35,6 +35,9 @@
 #include "libavc/util/avc_serialize.h"
 #include "libavc/avc_definitions.h"
 
+#include "vendorspecific/focusrite.h"
+#include "vendorspecific/terratec.h"
+
 #include "debugmodule/debugmodule.h"
 
 #include <iostream>
