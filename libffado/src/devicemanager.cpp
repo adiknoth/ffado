@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (C) 2005-2007 by Daniel Wagner
  * Copyright (C) 2005-2007 by Pieter Palmers
  *

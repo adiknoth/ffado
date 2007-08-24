@@ -26,8 +26,7 @@
 #define GENERICAVC_AVDEVICE_H
 
 #include "ffadodevice.h"
-
-#include "debugmodule/debugmodule.h"
+#include "genericavc/avc_vendormodel.h"
 
 #include "libavc/avc_definitions.h"
 #include "libavc/general/avc_unit.h"
@@ -38,18 +37,12 @@
 #include "libstreaming/AmdtpPort.h"
 #include "libstreaming/AmdtpPortInfo.h"
 
+#include "debugmodule/debugmodule.h"
+
 class ConfigRom;
 class Ieee1394Service;
 
 namespace GenericAVC {
-
-// struct to define the supported devices
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    char *vendor_name;
-    char *model_name;
-};
 
 class AvDevice : public FFADODevice, public AVC::Unit {
 public:

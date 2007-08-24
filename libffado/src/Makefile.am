@@ -50,13 +50,13 @@ noinst_HEADERS = \
 	debugmodule/debugmodule.h \
 	devicemanager.h fbtypes.h ffadodevice.h threads.h bebob/bebob_avdevice.h \
 	bebob/bebob_avdevice_subunit.h bebob/bebob_avplug.h bebob/bebob_dl_bcd.h bebob/bebob_dl_codes.h \
-	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h bebob/bebob_configparser.h \
+	bebob/bebob_dl_mgr.h bebob/bebob_functionblock.h bounce/bounce_avdevice.h bounce/bounce_slave_avdevice.h \
 	bebob/GenericMixer.h \
 	bebob/vendorspecific/focusrite.h \
 	bebob/vendorspecific/terratec.h \
 	maudio/maudio_avdevice.h motu/motu_avdevice.h rme/rme_avdevice.h \
 	metrichalo/mh_avdevice.h dice/dice_avdevice.h \
-	genericavc/avc_avdevice.h \
+	genericavc/avc_avdevice.h genericavc/avc_vendormodel.h \
 	libavc/streamformat/avc_extended_stream_format.h \
 	libavc/util/avc_serialize.h \
 	libavc/musicsubunit/avc_descriptor_music.h \
@@ -165,14 +165,14 @@ bebob_src = \
 	    bebob/bebob_dl_codes.cpp \
 	    bebob/bebob_dl_mgr.cpp \
 	    bebob/bebob_functionblock.cpp \
-	    bebob/bebob_configparser.cpp \
 	    bebob/GenericMixer.cpp \
 	    bebob/vendorspecific/focusrite.cpp \
 	    bebob/vendorspecific/terratec.cpp \
 	    maudio/maudio_avdevice.cpp
 
 genericavc_src = \
-	    genericavc/avc_avdevice.cpp
+	    genericavc/avc_avdevice.cpp \
+	    genericavc/avc_vendormodel.cpp
 
 motu_src = \
 	    motu/motu_avdevice.cpp \

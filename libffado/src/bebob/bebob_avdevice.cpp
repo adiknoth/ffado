@@ -24,9 +24,13 @@
 #include "bebob/bebob_avdevice.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/GenericMixer.h"
+#include "bebob/vendorspecific/focusrite.h"
+#include "bebob/vendorspecific/terratec.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
+
+#include "genericavc/avc_vendormodel.h"
 
 #include "libavc/general/avc_plug_info.h"
 #include "libavc/general/avc_extended_plug_info.h"
@@ -34,9 +38,6 @@
 #include "libavc/streamformat/avc_extended_stream_format.h"
 #include "libavc/util/avc_serialize.h"
 #include "libavc/avc_definitions.h"
-
-#include "vendorspecific/focusrite.h"
-#include "vendorspecific/terratec.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -97,10 +98,10 @@ AvDevice::~AvDevice()
     }
 }
 
-AVC::Subunit* 
+AVC::Subunit*
 AvDevice::createSubunit(AVC::Unit& unit,
                                AVC::ESubunitType type,
-                               AVC::subunit_t id ) 
+                               AVC::subunit_t id )
 {
     switch (type) {
         case AVC::eST_Audio:
@@ -137,7 +138,7 @@ AvDevice::probe( ConfigRom& configRom )
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 
-    //ConfigParser configParser( "/home/wagi/src/libffado/src/bebob/ffado_driver_bebob.txt" );
+    //GenericAVC::VendorModel vendorModel( "/home/wagi/src/libffado/src/bebob/ffado_driver_bebob.txt" );
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( GenericAVC::VendorModelEntry ) );
@@ -204,7 +205,7 @@ AvDevice::discover()
         }
         delete m_Mixer;
     }
-    
+
     //  create the mixer & register it
     if(getAudioSubunit(0) == NULL) {
         debugWarning("Could not find audio subunit, mixer not available.\n");
@@ -427,26 +428,26 @@ AvDevice::deserialize( Glib::ustring basePath,
 
 //     ConfigRom *configRom =
 //         ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service );
-// 
+//
 //     if ( !configRom ) {
 //         return NULL;
 //     }
-// 
+//
 //     AvDevice* pDev = new AvDevice(
 //         std::auto_ptr<ConfigRom>(configRom),
 //         ieee1394Service, configRom->getNodeId());
-// 
+//
 //     if ( pDev ) {
 //         bool result;
 //         int verboseLevel;
 //         result  = deser.read( basePath + "m_verboseLevel", verboseLevel );
 //         setDebugLevel( verboseLevel );
-//         
+//
 //         result &= AVC::Unit::deserialize(basePath, pDev, deser, ieee1394Service);
-// 
+//
 //         result &= deserializeOptions( basePath + "Options", deser, *pDev );
 //     }
-// 
+//
 //     return pDev;
     return NULL;
 }
@@ -499,7 +500,7 @@ AvDevice::saveCache()
 {
 //     // the path looks like this:
 //     // PATH_TO_CACHE + GUID + CONFIGURATION_ID
-// 
+//
 //     Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
 //     struct stat buf;
 //     if ( stat( sDevicePath.c_str(), &buf ) == 0 ) {
@@ -513,7 +514,7 @@ AvDevice::saveCache()
 //             return false;
 //         }
 //     }
-// 
+//
 //     char* configId;
 //     asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId() );
 //     if ( !configId ) {
@@ -523,7 +524,7 @@ AvDevice::saveCache()
 //     Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
 //     free( configId );
 //     debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
-// 
+//
 //     Util::XMLSerialize ser( sFileName );
 //     return serialize( "", ser );
     return false;
