@@ -52,7 +52,7 @@ public:
     virtual ~Unit();
 
     virtual void setVerboseLevel(int l);
-    virtual void showDevice();
+    virtual void show();
 
     // these have to be implemented by the parent class
     /// Returns the 1394 service

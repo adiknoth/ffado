@@ -98,38 +98,55 @@ AvDevice::~AvDevice()
     }
 }
 
+void
+AvDevice::showDevice()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Device is a BeBoB device\n");
+    GenericAVC::AvDevice::showDevice();
+    flushDebugOutput();
+}
+
 AVC::Subunit*
 AvDevice::createSubunit(AVC::Unit& unit,
-                               AVC::ESubunitType type,
-                               AVC::subunit_t id )
+                        AVC::ESubunitType type,
+                        AVC::subunit_t id )
 {
+    AVC::Subunit* s=NULL;
     switch (type) {
-        case AVC::eST_Audio:
-            return new BeBoB::SubunitAudio(unit, id );
-        case AVC::eST_Music:
-            return new BeBoB::SubunitMusic(unit, id );
+        case eST_Audio:
+            s=new BeBoB::SubunitAudio(unit, id );
+            break;
+        case eST_Music:
+            s=new BeBoB::SubunitMusic(unit, id );
+            break;
         default:
-            return NULL;
+            s=NULL;
+            break;
     }
+    if(s) s->setVerboseLevel(getDebugLevel());
+    return s;
 }
+
 
 AVC::Plug *
 AvDevice::createPlug( AVC::Unit* unit,
-                     AVC::Subunit* subunit,
-                     AVC::function_block_type_t functionBlockType,
-                     AVC::function_block_type_t functionBlockId,
-                     AVC::Plug::EPlugAddressType plugAddressType,
-                     AVC::Plug::EPlugDirection plugDirection,
-                     AVC::plug_id_t plugId )
+                      AVC::Subunit* subunit,
+                      AVC::function_block_type_t functionBlockType,
+                      AVC::function_block_type_t functionBlockId,
+                      AVC::Plug::EPlugAddressType plugAddressType,
+                      AVC::Plug::EPlugDirection plugDirection,
+                      AVC::plug_id_t plugId )
 {
 
-    return new BeBoB::Plug( unit,
-                     subunit,
-                     functionBlockType,
-                     functionBlockId,
-                     plugAddressType,
-                     plugDirection,
-                     plugId );
+    Plug *p= new BeBoB::Plug( unit,
+                              subunit,
+                              functionBlockType,
+                              functionBlockId,
+                              plugAddressType,
+                              plugDirection,
+                              plugId );
+    if (p) p->setVerboseLevel(getDebugLevel());
+    return p;
 }
 
 bool

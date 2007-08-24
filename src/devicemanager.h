@@ -70,6 +70,8 @@ public:
 
     Streaming::StreamProcessor *getSyncSource();
 
+    void show();
+
 protected:
     FFADODevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id );

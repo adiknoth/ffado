@@ -53,6 +53,23 @@ public:
 
     virtual ~FFADODevice() {};
 
+    
+    /**
+     * @brief Compares the GUID of two FFADODevices
+     *
+     * This function compares the GUID of two FFADODevices and returns true
+     * if the GUID of @ref a is larger than the GUID of @ref b . This is intended
+     * to be used with the STL sort() algorithm.
+     * 
+     * Note that GUID's are converted to integers for this.
+     * 
+     * @param a pointer to first FFADODevice
+     * @param b pointer to second FFADODevice
+     * 
+     * @returns true if the GUID of @ref a is larger than the GUID of @ref b .
+     */
+    static bool compareGUID( FFADODevice *a, FFADODevice *b );
+
     /// Returns the 1394 service of the FFADO device
     virtual Ieee1394Service& get1394Service()
         { return *m_p1394Service; };
@@ -133,7 +150,7 @@ public:
      * This function prints out a (detailed) description of the
      * device detected, and its configuration.
      */
-    virtual void showDevice() = 0;
+    virtual void showDevice();
 
     /**
      * @brief Lock the device
@@ -273,7 +290,6 @@ public:
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
     Ieee1394Service*          m_p1394Service;
-    int                       m_verboseLevel;
     int                       m_nodeId;
 
     DECLARE_DEBUG_MODULE;

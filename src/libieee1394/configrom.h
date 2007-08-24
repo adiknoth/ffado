@@ -79,6 +79,22 @@ class ConfigRom
 
     bool updatedNodeId();
     bool setNodeId( fb_nodeid_t nodeId );
+    
+    /**
+     * @brief Compares the GUID of two ConfigRom's
+     *
+     * This function compares the GUID of two ConfigRom objects and returns true
+     * if the GUID of @ref a is larger than the GUID of @ref b . This is intended
+     * to be used with the STL sort() algorithm.
+     * 
+     * Note that GUID's are converted to integers for this.
+     * 
+     * @param a pointer to first ConfigRom
+     * @param b pointer to second ConfigRom
+     * 
+     * @returns true if the GUID of @ref a is larger than the GUID of @ref b .
+     */
+    static bool compareGUID(  const ConfigRom& a, const ConfigRom& b );
 
     void printConfigRom() const;
 

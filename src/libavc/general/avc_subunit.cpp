@@ -37,7 +37,7 @@
 
 namespace AVC {
 
-IMPL_DEBUG_MODULE( Subunit, Subunit, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Subunit, Subunit, DEBUG_LEVEL_NORMAL );
 
 ////////////////////////////////////////////
 
@@ -65,6 +65,14 @@ Subunit::~Subunit()
     }
 }
 
+void
+Subunit::setVerboseLevel(int l)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    setDebugLevel(l);
+}
+
+
 Plug *
 Subunit::createPlug( AVC::Unit* unit,
                      AVC::Subunit* subunit,
@@ -91,13 +99,14 @@ Subunit::discover()
         debugError( "plug discovery failed\n" );
         return false;
     }
-
     return true;
 }
 
 bool
 Subunit::discoverPlugs()
 {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
+    
     PlugInfoCmd plugInfoCmd( getUnit().get1394Service(),
                              PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
     plugInfoCmd.setNodeId( getUnit().getConfigRom().getNodeId() );
@@ -111,9 +120,9 @@ Subunit::discoverPlugs()
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of source plugs = %d\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of source plugs = %d\n",
                  plugInfoCmd.m_sourcePlugs );
-    debugOutput( DEBUG_LEVEL_NORMAL, "number of destination output "
+    debugOutput( DEBUG_LEVEL_VERBOSE, "number of destination output "
                  "plugs = %d\n", plugInfoCmd.m_destinationPlugs );
 
     if ( !discoverPlugs( Plug::eAPD_Input,
@@ -157,7 +166,7 @@ bool
 Subunit::discoverPlugs(Plug::EPlugDirection plugDirection,
                                       plug_id_t plugMaxId )
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Discovering plugs for direction %d...\n", plugDirection);
     for ( int plugIdx = 0;
           plugIdx < plugMaxId;
           ++plugIdx )
@@ -181,7 +190,7 @@ Subunit::discoverPlugs(Plug::EPlugDirection plugDirection,
             return false;
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "plug '%s' found\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "plug '%s' found\n",
                      plug->getName() );
         getPlugs().push_back( plug );
     }

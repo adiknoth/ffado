@@ -184,10 +184,9 @@ public:
 
     ClusterInfoVector& getClusterInfos()
         { return m_clusterInfos; }
-        
-    virtual void setVerboseLevel( int i ) 
-            {setDebugLevel(i);};
-    
+
+    virtual void setVerboseLevel( int i );
+
 // the discovery interface
 // everything can be overloaded, or
 // can be left as is

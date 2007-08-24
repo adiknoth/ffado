@@ -43,7 +43,7 @@
 
 namespace AVC {
 
-IMPL_DEBUG_MODULE( Unit, Unit, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Unit, Unit, DEBUG_LEVEL_NORMAL );
 
 Unit::Unit( )
     : m_pPlugManager( new PlugManager( ) )
@@ -83,21 +83,23 @@ Unit::~Unit()
 
 Plug *
 Unit::createPlug( Unit* unit,
-                     Subunit* subunit,
-                     function_block_type_t functionBlockType,
-                     function_block_type_t functionBlockId,
-                     Plug::EPlugAddressType plugAddressType,
-                     Plug::EPlugDirection plugDirection,
-                     plug_id_t plugId )
+                  Subunit* subunit,
+                  function_block_type_t functionBlockType,
+                  function_block_type_t functionBlockId,
+                  Plug::EPlugAddressType plugAddressType,
+                  Plug::EPlugDirection plugDirection,
+                  plug_id_t plugId )
 {
 
-    return new Plug( unit,
-                     subunit,
-                     functionBlockType,
-                     functionBlockId,
-                     plugAddressType,
-                     plugDirection,
-                     plugId );
+    Plug *p= new Plug( unit,
+                       subunit,
+                       functionBlockType,
+                       functionBlockId,
+                       plugAddressType,
+                       plugDirection,
+                       plugId );
+    if (p) p->setVerboseLevel(getDebugLevel());
+    return p;
 }
 
 Subunit* 
@@ -105,19 +107,34 @@ Unit::createSubunit(Unit& unit,
                     ESubunitType type,
                     subunit_t id ) 
 {
+    Subunit* s=NULL;
     switch (type) {
         case eST_Audio:
-            return new SubunitAudio(unit, id );
+            s=new SubunitAudio(unit, id );
+            break;
         case eST_Music:
-            return new SubunitMusic(unit, id );
+            s=new SubunitMusic(unit, id );
+            break;
         default:
-            return NULL;
+            s=NULL;
+            break;
     }
+    if(s) s->setVerboseLevel(getDebugLevel());
+    return s;
 }
 
 void
 Unit::setVerboseLevel(int l)
 {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    setDebugLevel(l);
+    for ( SubunitVector::const_iterator it = m_subunits.begin();
+          it != m_subunits.end();
+          ++it )
+    {
+        (*it)->setVerboseLevel(l);
+    }
+
     m_pPlugManager->setVerboseLevel(l);
 }
 
@@ -367,6 +384,9 @@ Unit::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
                                 Plug::eAPA_PCR,
                                 plugDirection,
                                 plugId );
+
+        if( plug ) plug->setVerboseLevel(getDebugLevel());
+
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             delete plug;
@@ -396,6 +416,9 @@ Unit::discoverPlugsExternal( Plug::EPlugDirection plugDirection,
                                 Plug::eAPA_ExternalPlug,
                                 plugDirection,
                                 plugId );
+
+        if( plug ) plug->setVerboseLevel(getDebugLevel());
+
         if ( !plug || !plug->discover() ) {
             debugError( "plug discovering failed\n" );
             return false;
@@ -766,7 +789,7 @@ bool Unit::setActiveSync(const SyncInfo& syncInfo)
 
 
 void
-Unit::showDevice()
+Unit::show()
 {
     m_pPlugManager->showPlugs();
 }

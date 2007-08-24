@@ -30,7 +30,9 @@
 #include <iostream>
 #include <sstream>
 
-IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_VERBOSE );
+#include <assert.h>
+
+IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 
 FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
@@ -38,7 +40,6 @@ FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
     : OscNode()
     , m_pConfigRom( configRom )
     , m_p1394Service( &ieee1394service )
-    , m_verboseLevel( DEBUG_LEVEL_NORMAL )
     , m_nodeId ( nodeId )
 {
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));
@@ -51,6 +52,11 @@ FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
     addChildOscNode(&c);
 }
 
+bool FFADODevice::compareGUID( FFADODevice *a, FFADODevice *b ) {
+    assert(a);
+    assert(b);
+    return ConfigRom::compareGUID(a->getConfigRom(), b->getConfigRom());
+}
 
 ConfigRom&
 FFADODevice::getConfigRom() const
@@ -79,7 +85,6 @@ FFADODevice::setId( unsigned int id)
     idstr << "dev" << id;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
 
-    
     retval=setOption("id",idstr.str());
     if (retval) {
         setOscBase(idstr.str());
@@ -90,11 +95,24 @@ FFADODevice::setId( unsigned int id)
 void
 FFADODevice::setVerboseLevel(int l)
 {
-    m_verboseLevel=l;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
-//     m_pConfigRom->setVerboseLevel(l);
-    m_p1394Service->setVerboseLevel(l);
 }
+
+void
+FFADODevice::showDevice()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Node...........: %d\n", getNodeId());
+    debugOutput(DEBUG_LEVEL_NORMAL, "GUID...........: %s\n", getConfigRom().getGuidString().c_str());
+    
+    std::string id=std::string("dev? [none]");
+    getOption("id", id);
+     
+    debugOutput(DEBUG_LEVEL_NORMAL, "Assigned ID....: %s\n", id.c_str());
+
+    flushDebugOutput();
+}
+
 
 bool
 FFADODevice::enableStreaming() {

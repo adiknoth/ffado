@@ -111,6 +111,13 @@ Plug::~Plug()
     m_unit->getPlugManager().remPlug( *this );
 }
 
+void
+Plug::setVerboseLevel(int l)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    setDebugLevel(l);
+}
+
 ESubunitType
 Plug::getSubunitType() const
 {
@@ -582,7 +589,6 @@ Plug::getSignalSource()
 
     signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
     signalSourceCmd.setVerbose( getDebugLevel() );
-    signalSourceCmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
 
     if ( !signalSourceCmd.fire() ) {
         debugError( "Could not get signal source for '%s'\n",
@@ -1902,6 +1908,8 @@ static void addConnectionOwner( PlugConnectionOwnerVector& connections,
 void
 PlugManager::showPlugs() const
 {
+    if(getDebugLevel() < DEBUG_LEVEL_INFO) return;
+
     // \todo The information provided here could be better arranged. For a start it is ok, but
     // there is room for improvement. Something for a lazy sunday afternoon (tip: maybe drink some
     // beer to get into the mood)
