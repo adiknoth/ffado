@@ -26,13 +26,33 @@
 #include <fstream>
 #include <istream>
 #include <iostream>
+#include <iterator>
+
+using namespace std;
+
+static void
+tokenize(const string& str,
+         vector<string>& tokens,
+         const string& delimiters = " ")
+{
+    // Skip delimiters at beginning.
+    string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    // Find first "non-delimiter".
+    string::size_type pos     = str.find_first_of(delimiters, lastPos);
+
+    while (string::npos != pos || string::npos != lastPos)
+    {
+        // Found a token, add it to the vector.
+        tokens.push_back(str.substr(lastPos, pos - lastPos));
+        // Skip delimiters.  Note the "not_of"
+        lastPos = str.find_first_not_of(delimiters, pos);
+        // Find next "non-delimiter"
+        pos = str.find_first_of(delimiters, lastPos);
+    }
+}
 
 GenericAVC::VendorModel::VendorModel( const char* filename )
 {
-    using namespace std;
-
-    cout << "XXX GenericAVC::VendorModel::VendorModel" << endl;
-
     ifstream in ( filename );
 
     if ( !in ) {
@@ -40,10 +60,30 @@ GenericAVC::VendorModel::VendorModel( const char* filename )
         return;
     }
 
+    cout << "vendorId\t\tmodelId\t\tvendorName\t\tmodelName" << endl;
     string line;
     while ( !getline( in,  line ).eof() ) {
+        string::size_type i = line.find_first_not_of( " \t\n\v" );
+        if ( i != string::npos && line[i] == '#' )
+            continue;
 
+        vector<string> tokens;
+        tokenize( line, tokens, "," );
 
+        for ( vector<string>::iterator it = tokens.begin();
+              it != tokens.end();
+              ++it )
+        {
+            string vendorId = *it++;
+            string modelId = *it++;
+            string vendorName = *it++;
+            string modelName= *it;
+            cout << vendorId << "\t" << modelId << "\t" <<vendorName << "\t" << modelName << endl;
+        }
+    }
+
+    if ( !in.eof() ) {
+        cout << "GenericAVC::VendorModel::VendorModel: error in parsing" << endl;
     }
 }
 
