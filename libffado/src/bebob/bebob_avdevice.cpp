@@ -21,6 +21,8 @@
  * MA 02110-1301 USA
  */
 
+#include "config.h"
+
 #include "bebob/bebob_avdevice.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/GenericMixer.h"

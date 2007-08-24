@@ -1,0 +1,10 @@
+#! /usr/bin/env python
+
+import os.path
+
+Import( 'env' )
+
+env = env.Copy()
+
+env.Alias( 'install', env.Install( os.path.join(env['includedir'],"libffado"), "ffado.h" ) )
+

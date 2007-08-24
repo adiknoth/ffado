@@ -1,0 +1,28 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Name of package */
+#define PACKAGE $PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "<ffado-devel@lists.sf.net>"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "$PACKAGE"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "$PACKAGE $VERSION"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "$PACKAGE"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION $VERSION
+
+/* Define to 1 if SSE assembly is available. */
+/*#define USE_SSE 1*/
+
+/* Version number of package */
+#define VERSION "$VERSION"
+
+#define CACHEDIR "$cachedir"
+

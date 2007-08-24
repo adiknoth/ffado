@@ -1,0 +1,14 @@
+#! /usr/bin/env python
+
+Import( 'env' )
+
+env = env.Copy()
+
+env.PrependUnique( CPPPATH=["#/src"] )
+env.PrependUnique( LIBPATH=["#/src"] )
+env.PrependUnique( LIBS=["ffado"] )
+
+for app in env.Split( "teststreaming teststreaming2 teststreaming3 testmidistreaming1" ):
+	env.Program( target=app, source = [ app+".c", "debugtools.c" ] )
+
+
