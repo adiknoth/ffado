@@ -28,7 +28,7 @@
 
 namespace OSC {
 
-IMPL_DEBUG_MODULE( OscNode, OscNode, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( OscNode, OscNode, DEBUG_LEVEL_NORMAL );
 
 OscNode::OscNode()
     : m_oscBase("")
@@ -62,6 +62,7 @@ OscNode::~OscNode() {
 
 void
 OscNode::setVerboseLevel(int l) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
     for ( OscNodeVectorIterator it = m_ChildNodes.begin();
       it != m_ChildNodes.end();

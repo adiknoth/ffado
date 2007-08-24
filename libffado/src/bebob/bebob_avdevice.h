@@ -78,6 +78,7 @@ public:
                                    AVC::Plug::EPlugDirection plugDirection,
                                    AVC::plug_id_t plugId );
 
+    virtual void showDevice();
 protected:
     virtual bool propagatePlugInfo();
 

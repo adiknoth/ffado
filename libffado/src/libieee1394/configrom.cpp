@@ -124,6 +124,11 @@ ConfigRom::operator == ( const ConfigRom& rhs )
 }
 
 bool
+ConfigRom::compareGUID( const ConfigRom& a, const ConfigRom& b ) {
+    return a.getGuid() > b.getGuid();
+}
+
+bool
 ConfigRom::initialize()
 {
      struct config_csr_info csr_info;

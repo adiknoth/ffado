@@ -67,6 +67,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <algorithm>
+
 using namespace std;
 
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
@@ -100,7 +102,7 @@ DeviceManager::~DeviceManager()
 void
 DeviceManager::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_NORMAL, "Setting verbose level to %d...\n", l );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
 
     if (m_1394Service) m_1394Service->setVerboseLevel(l);
@@ -112,6 +114,22 @@ DeviceManager::setVerboseLevel(int l)
           ++it )
     {
         (*it)->setVerboseLevel(l);
+    }
+}
+
+void
+DeviceManager::show() {
+    debugOutput(DEBUG_LEVEL_NORMAL, "===== Device Manager =====\n");
+    if (m_1394Service) debugOutput(DEBUG_LEVEL_NORMAL, "1394 port: %d\n", m_1394Service->getPort());
+
+    int i=0;
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+        it != m_avDevices.end();
+        ++it )
+    {
+        FFADODevice* avDevice = *it;
+        debugOutput(DEBUG_LEVEL_NORMAL, "--- Device %2d ---\n", i++);
+        avDevice->showDevice();
     }
 }
 
@@ -232,21 +250,17 @@ DeviceManager::discover( )
                              "driver found for device %d\n",
                              nodeId );
 
+                avDevice->setVerboseLevel( getDebugLevel() );
                 bool isFromCache = false;
                 if ( avDevice->loadFromCache() ) {
                     debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
                     isFromCache = true;
                 } else if ( avDevice->discover() ) {
                     debugOutput( DEBUG_LEVEL_VERBOSE, "discovering successful\n" );
-                    avDevice->setVerboseLevel( getDebugLevel() );
                 } else {
                     debugError( "could not discover device\n" );
                     delete avDevice;
                     continue;
-                }
-
-                if ( !avDevice->setId( m_avDevices.size() ) ) {
-                    debugError( "setting Id failed\n" );
                 }
 
                 if (snoopMode) {
@@ -258,10 +272,6 @@ DeviceManager::discover( )
                         delete avDevice;
                         continue;
                     }
-                }
-
-                if ( getDebugLevel() >= DEBUG_LEVEL_VERBOSE ) {
-                    avDevice->showDevice();
                 }
 
                 if ( !isFromCache && !avDevice->saveCache() ) {
@@ -279,8 +289,25 @@ DeviceManager::discover( )
             }
         }
 
-        debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
+        debugOutput( DEBUG_LEVEL_NORMAL, "Discovery finished...\n" );
 
+        // sort the m_avDevices vector on their GUID
+        // then assign reassign the id's to the devices
+        // the side effect of this is that for the same set of attached devices,
+        // a device id always corresponds to the same device
+        sort(m_avDevices.begin(), m_avDevices.end(), FFADODevice::compareGUID);
+        
+        int i=0;
+        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+            it != m_avDevices.end();
+            ++it )
+        {
+            if ( !(*it)->setId( i++ ) ) {
+                debugError( "setting Id failed\n" );
+            }
+        }
+
+        show();
         return true;
 
     } else { // slave mode

@@ -32,7 +32,7 @@
 
 namespace OSC {
 
-IMPL_DEBUG_MODULE( OscServer, OscServer, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( OscServer, OscServer, DEBUG_LEVEL_NORMAL );
 
 OscServer::OscServer(string port)
     : m_port(port)
@@ -49,6 +49,7 @@ OscServer::~OscServer() {
 
 void
 OscServer::setVerboseLevel(int l) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
     if (m_rootNode) m_rootNode->setVerboseLevel(l);
 }

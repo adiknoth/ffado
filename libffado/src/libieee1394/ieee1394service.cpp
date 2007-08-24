@@ -37,7 +37,7 @@
 #include <iostream>
 #include <iomanip>
 
-IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
     : m_handle( 0 ), m_resetHandle( 0 )
@@ -830,5 +830,6 @@ signed int Ieee1394Service::getAvailableBandwidth() {
 void
 Ieee1394Service::setVerboseLevel(int l)
 {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
 }

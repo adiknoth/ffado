@@ -47,7 +47,7 @@ using namespace AVC;
 
 namespace GenericAVC {
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
@@ -137,6 +137,8 @@ AvDevice::discover()
 void
 AvDevice::setVerboseLevel(int l)
 {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+
     m_pPlugManager->setVerboseLevel(l);
 
     FFADODevice::setVerboseLevel(l);
@@ -250,11 +252,12 @@ AvDevice::unlock() {
 void
 AvDevice::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE,
-        "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-        m_nodeId);
+    FFADODevice::showDevice();
+    
+    debugOutput(DEBUG_LEVEL_NORMAL,
+        "%s %s\n", m_model->vendor_name, m_model->model_name);
 
-    m_pPlugManager->showPlugs();
+    AVC::Unit::show();
     flushDebugOutput();
 }
 

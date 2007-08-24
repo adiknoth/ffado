@@ -78,8 +78,7 @@ class Subunit {
     { return m_plugs; }
     Plug* getPlug(Plug::EPlugDirection direction, plug_id_t plugId);
 
-    virtual void setVerboseLevel(int l) 
-        { setDebugLevel(l);};
+    virtual void setVerboseLevel(int l);
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static Subunit* deserialize( Glib::ustring basePath,
