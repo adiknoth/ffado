@@ -22,7 +22,7 @@ dbus_env = Environment( ENV = buildenv )
 
 CacheDir( 'cache/objects' )
 
-dbus_env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
+dbus_env.MergeFlags( env['DBUS1_FLAGS'] )
 
 # add the local version of libdbus++
 dbus_env.AppendUnique( CPPPATH=["#/external/dbus/include"] )
