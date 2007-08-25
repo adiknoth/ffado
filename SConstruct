@@ -19,6 +19,8 @@ if not os.path.isdir( "cache" ):
 
 opts = Options( "cache/"+build_base+"options.cache" )
 
+#
+# If this is just to display a help-text for the variable used via ARGUMENTS, then its wrong...
 opts.Add( "BUILDDIR", "Path to place the built files in", "")
 
 opts.AddOptions(
@@ -74,10 +76,10 @@ Help( opts.GenerateHelpText( env ) )
 # make sure the necessary dirs exist
 if not os.path.isdir( "cache/" + build_base ):
 	os.makedirs( "cache/" + build_base )
-if not os.path.isdir( "cache/" + build_base + 'objects' ):
-	os.makedirs( "cache/" + build_base + 'objects' )
+if not os.path.isdir( 'cache/objects' ):
+	os.makedirs( 'cache/objects' )
 
-CacheDir( 'cache/' + build_base + 'objects' )
+CacheDir( 'cache/objects' )
 
 opts.Save( 'cache/' + build_base + "options.cache", env )
 
@@ -141,13 +143,16 @@ if env['ENABLE_RME']:
 if env['ENABLE_BOUNCE']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
 
-env.MergeFlags( ["!pkg-config --cflags --libs libraw1394"] )
-env.MergeFlags( ["!pkg-config --cflags --libs libavc1394"] )
-env.MergeFlags( ["!pkg-config --cflags --libs libiec61883"] )
-env.MergeFlags( ["!pkg-config --cflags --libs alsa"] )
-env.MergeFlags( ["!pkg-config --cflags --libs libxml++-2.6"] )
-env.MergeFlags( ["!pkg-config --cflags --libs liblo"] )
-
+#
+# TODO: Most of these flags aren't needed for all the apps/libs compiled here.
+# The relevant MergeFlags-calls should be moved to the SConscript-files where
+# its needed...
+env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+env.MergeFlags( env['LIBAVC1394_FLAGS'] )
+env.MergeFlags( env['LIBIEC61883_FLAGS'] )
+env.MergeFlags( env['ALSA_FLAGS'] )
+env.MergeFlags( env['LIBXML26_FLAGS'] )
+env.MergeFlags( env['LIBLO_FLAGS'] )
 
 #
 # Some includes in src/*/ are full path (src/*), that should be fixed?
