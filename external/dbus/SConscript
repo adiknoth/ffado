@@ -7,7 +7,18 @@ import sys
 
 Import( 'env' )
 #dbus_env = env.Copy()
-dbus_env = Environment( ENV = { 'PATH' : os.environ['PATH'], 'PKG_CONFIG_PATH' : os.environ['PKG_CONFIG_PATH'] } )
+buildenv={}
+if os.environ.has_key('PATH'):
+	buildenv['PATH']=os.environ['PATH']
+else:
+	buildenv['PATH']=''
+
+if os.environ.has_key('PKG_CONFIG_PATH'):
+	buildenv['PKG_CONFIG_PATH']=os.environ['PKG_CONFIG_PATH']
+else:
+	buildenv['PKG_CONFIG_PATH']=''
+
+dbus_env = Environment( ENV = buildenv )
 
 CacheDir( 'cache/objects' )
 
