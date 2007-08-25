@@ -69,7 +69,10 @@ if not env.GetOption('clean'):
 	allpresent &= conf.CheckForPKG( 'alsa', "1.0.0" )
 	allpresent &= conf.CheckForPKG( 'libxml++-2.6', "2.13.0" )
 	allpresent &= conf.CheckForPKG( 'liblo', "0.22" )
-
+	allpresent &= conf.CheckForPKG( 'dbus-1', "1.0" )
+	allpresent &= conf.CheckHeader( "expat.h" )
+	allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
+	
 	if not allpresent:
 		print """
 (At least) One of the dependencies is missing. I can't go on without it, please
@@ -117,6 +120,12 @@ env.MergeFlags( ["!pkg-config --cflags --libs libiec61883"] )
 env.MergeFlags( ["!pkg-config --cflags --libs alsa"] )
 env.MergeFlags( ["!pkg-config --cflags --libs libxml++-2.6"] )
 env.MergeFlags( ["!pkg-config --cflags --libs liblo"] )
+env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
+
+# add the local version of libdbus++
+env.AppendUnique( CCFLAGS=["-I./external/dbus/include"] )
+env.AppendUnique( LIBPATH="#/external/dbus" )
+env.AppendUnique( LIBS="dbus-c++" )
 
 
 #
@@ -147,14 +156,13 @@ pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
 
-env.SConscript( dirs=['src','libffado','tests','support'], exports="env" )
+env.SConscript( dirs=['src','libffado','tests','support','external'], exports="env" )
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
+	Default( 'external' )
 	Default( 'src' )
 	if env['BUILD_TESTS']:
 		Default( 'tests' )
 	#env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
 	env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
-
-
