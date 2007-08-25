@@ -83,8 +83,21 @@ CacheDir( 'cache/objects' )
 
 opts.Save( 'cache/' + build_base + "options.cache", env )
 
+#
+# Check for apps...
+#
+def CheckForApp( context, app ):
+	context.Message( "Checking if '%s' executes... " % app )
+	ret = context.TryAction( app )[0]
+	context.Result( ret )
+	return ret
+
+
 if not env.GetOption('clean'):
-	conf = Configure( env, custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG }, conf_dir="cache/" + build_base, log_file="cache/" + build_base + 'config.log' )
+	conf = Configure( env,
+		custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG, 'CheckForApp' : CheckForApp },
+		conf_dir="cache/" + build_base,
+		log_file="cache/" + build_base + 'config.log' )
 
 	if not conf.CheckHeader( "stdio.h" ):
 		print "It seems as if stdio.h is missing. This probably means that your build environment is broken, please make sure you have a working c-compiler and libstdc installed and usable."
@@ -109,11 +122,17 @@ install the needed packages (remember to also install the *-devel packages)
 """
 		Exit( 1 )
 
+	#
+	# Checking wether "which pyuic" executes is clearly wrong. Nonetheless here
+	# on my system it seems to be the right thing, as checking for pyuic alone
+	# returns false. (Both pyuic and which are installed in the same dir.)
+	# - Strange :-/
+	env['HAVE_PYUIC'] = conf.CheckForApp( 'which pyuic' )
+
 	env = conf.Finish()
 
-
 if env['DEBUG']:
-	print "Doing a debug build"
+	print "Doing a DEBUG build"
 	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
 	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
 else:
