@@ -2,9 +2,21 @@
 # library
 #
 
-Import( 'env' )
+import os
+import sys
 
-dbus_env = env.Copy()
+Import( 'env' )
+#dbus_env = env.Copy()
+dbus_env = Environment( ENV = { 'PATH' : os.environ['PATH'], 'PKG_CONFIG_PATH' : os.environ['PKG_CONFIG_PATH'] } )
+
+CacheDir( 'cache/objects' )
+
+dbus_env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
+
+# add the local version of libdbus++
+dbus_env.AppendUnique( CCFLAGS=["-I./external/dbus/include"] )
+dbus_env.AppendUnique( LIBPATH="#/external/dbus" )
+dbus_env.AppendUnique( LIBS="dbus-c++" )
 
 sources = [
 	'src/connection.cpp',
