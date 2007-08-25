@@ -5,7 +5,7 @@ Import( 'env' )
 env = env.Copy()
 
 env.PrependUnique( CPPPATH=["#/src"] )
-env.PrependUnique( LIBPATH=["#/src"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
 #
@@ -16,6 +16,8 @@ for app in ["test-ffado", "test-fw410", "test-cycletimer", "test-timestampedbuff
 	env.Program( target=app, source = app+".cpp" )
 
 env.Program( target="test-sytmonitor", source = env.Split( "test-sytmonitor.cpp SytMonitor.cpp" ) )
+
+env.Program( target="test-dbus", source = env.Split( "test-dbus.cpp" ) )
 
 env.SConscript( dirs="streaming", exports="env" )
 

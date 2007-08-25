@@ -14,9 +14,10 @@ CacheDir( 'cache/objects' )
 dbus_env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
 
 # add the local version of libdbus++
-dbus_env.AppendUnique( CCFLAGS=["-I./external/dbus/include"] )
-dbus_env.AppendUnique( LIBPATH="#/external/dbus" )
-dbus_env.AppendUnique( LIBS="dbus-c++" )
+dbus_env.AppendUnique( CPPPATH=["#/external/dbus/include"] )
+dbus_env.AppendUnique( LIBPATH=[env['build_base']+"external/dbus"])
+dbus_env.AppendUnique( LIBS=["dbus-c++"] )
+dbus_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE"] )
 
 sources = [
 	'src/connection.cpp',
@@ -34,13 +35,11 @@ sources = [
 	'src/types.cpp'
 ]
 
-dbus_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE", "-I./external/dbus/include"] )
 if env['DEBUG']:
 	dbus_env.AppendUnique( CCFLAGS=["-DDEBUG","-g"] )
 
 dbus_env.PrependUnique( LIBS=["expat"] )
 libdbuspp=dbus_env.StaticLibrary('dbus-c++', sources)
-
 
 #
 # tools
@@ -56,8 +55,9 @@ xml2cpp_sources = [
 	'tools/xml.cpp','tools/xml2cpp.cpp'
 ]
 
-tools_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE", "-I./external/dbus/include"] )
-tools_env.PrependUnique( LIBPATH="#/external/dbus" )
+tools_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE"] )
+tools_env.AppendUnique( CPPPATH=["#/external/dbus/include"] )
+tools_env.PrependUnique( LIBPATH=env['build_base']+"external/dbus" )
 tools_env.PrependUnique( LIBS="dbus-c++" )
 
 dbusxx_introspect = tools_env.Program('dbusxx-introspect', introspect_sources)
