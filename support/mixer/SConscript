@@ -2,14 +2,11 @@
 
 Import( 'env' )
 
-env = env.Copy()
+if env['HAVE_PYUIC']:
 
-#env.AppendUnique( CPPPATH=["#/src"] )
-#env.AppendUnique( LIBPATH=["#/src"] )
-#env.AppendUnique( LIBS=["ffado"] )
+	env = env.Copy()
 
-for app in ["mixer_phase24.ui","mixer_phase88.ui"]:
-	#env.PyUIC( target=app.replace(".","")+".py", source=app )
-	env.Command( target=app.replace(".","")+".py", source=app, action="pyuic $SOURCE > $TARGET" )
+	for app in ["mixer_phase24.ui","mixer_phase88.ui"]:
+		env.Command( target=app.replace(".","")+".py", source=app, action="pyuic $SOURCE > $TARGET" )
 
 
