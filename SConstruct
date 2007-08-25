@@ -5,11 +5,21 @@ import sys
 sys.path.append( "./admin" )
 from pkgconfig import *
 
-if not os.path.isdir( "cache" ):
-	os.mkdir( "cache" )
-	os.mkdir( "cache/objects" )
+build_dir = ARGUMENTS.get('BUILDDIR', "")
+if build_dir:
+	build_base=build_dir+'/'
+	if not os.path.isdir( build_base ):
+		os.makedirs( build_base )
+	print "Building into: " + build_base
+else:
+	build_base=''
 
-opts = Options( "cache/options.cache" )
+if not os.path.isdir( "cache" ):
+	os.makedirs( "cache" )
+
+opts = Options( "cache/"+build_base+"options.cache" )
+
+opts.Add( "BUILDDIR", "Path to place the built files in", "")
 
 opts.AddOptions(
 	BoolOption( "DEBUG", """
@@ -50,12 +60,18 @@ See www.ffado.org for stable releases.
 """ )
 Help( opts.GenerateHelpText( env ) )
 
-opts.Save( "cache/options.cache", env )
+# make sure the necessary dirs exist
+if not os.path.isdir( "cache/" + build_base ):
+	os.makedirs( "cache/" + build_base )
+if not os.path.isdir( "cache/" + build_base + 'objects' ):
+	os.makedirs( "cache/" + build_base + 'objects' )
 
-CacheDir( 'cache/objects' )
+CacheDir( 'cache/' + build_base + 'objects' )
+
+opts.Save( 'cache/' + build_base + "options.cache", env )
 
 if not env.GetOption('clean'):
-	conf = Configure( env, custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG }, conf_dir='cache', log_file='cache/config.log' )
+	conf = Configure( env, custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG }, conf_dir="cache/" + build_base, log_file="cache/" + build_base + 'config.log' )
 
 	if not conf.CheckHeader( "stdio.h" ):
 		print "It seems as if stdio.h is missing. This probably means that your build environment is broken, please make sure you have a working c-compiler and libstdc installed and usable."
@@ -150,7 +166,15 @@ pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
 
-env.SConscript( dirs=['src','libffado','tests','support','external'], exports="env" )
+subdirs=['src','libffado','tests','support','external']
+if build_base:
+	env['build_base']="#/"+build_base
+	for subdir in subdirs:
+		env.SConscript( dirs=subdir, exports="env", build_dir=build_base+subdir )
+else:
+	env['build_base']="#/"
+	env.SConscript( dirs=subdirs, exports="env" )
+
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):

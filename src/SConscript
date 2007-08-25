@@ -187,7 +187,7 @@ for data in bebob_pkgdata:
 # For the debugging apps
 #
 env2 = env.Copy()
-env2.PrependUnique( LIBPATH="#/src" )
+env2.PrependUnique( LIBPATH=env['build_base']+"src" )
 env2.PrependUnique( LIBS="ffado" )
 
 apps = { \
