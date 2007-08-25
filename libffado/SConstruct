@@ -42,7 +42,18 @@ If you just want to use ffado with jack without the tools, you can disable this.
 	)
 
 ## Load the builders in config
-env = Environment( tools=['default','scanreplace','pyuic'], toolpath=['admin'], ENV = { 'PATH' : os.environ['PATH'], 'PKG_CONFIG_PATH' : os.environ['PKG_CONFIG_PATH'] }, options=opts )
+buildenv={}
+if os.environ.has_key('PATH'):
+	buildenv['PATH']=os.environ['PATH']
+else:
+	buildenv['PATH']=''
+
+if os.environ.has_key('PKG_CONFIG_PATH'):
+	buildenv['PKG_CONFIG_PATH']=os.environ['PKG_CONFIG_PATH']
+else:
+	buildenv['PKG_CONFIG_PATH']=''
+
+env = Environment( tools=['default','scanreplace','pyuic'], toolpath=['admin'], ENV = buildenv, options=opts )
 
 Help( """
 For building ffado you can set different options as listed below. You have to
