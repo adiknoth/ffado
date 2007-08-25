@@ -120,12 +120,6 @@ env.MergeFlags( ["!pkg-config --cflags --libs libiec61883"] )
 env.MergeFlags( ["!pkg-config --cflags --libs alsa"] )
 env.MergeFlags( ["!pkg-config --cflags --libs libxml++-2.6"] )
 env.MergeFlags( ["!pkg-config --cflags --libs liblo"] )
-env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
-
-# add the local version of libdbus++
-env.AppendUnique( CCFLAGS=["-I./external/dbus/include"] )
-env.AppendUnique( LIBPATH="#/external/dbus" )
-env.AppendUnique( LIBS="dbus-c++" )
 
 
 #
