@@ -29,7 +29,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 \"-O2\" to optimise.""", True ),
 	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
-	BoolOption( "ENABLE_GENERIC_AVC", "Enable/Disable the generic avc part (apple).", True ),
+	BoolOption( "ENABLE_GENERICAVC", "Enable/Disable the generic avc part (apple).", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", False ),
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
@@ -140,17 +140,20 @@ else:
 
 if env['ENABLE_ALL']:
 	env['ENABLE_BEBOB'] = True
-	env['ENABLE_GENERIC_AVC'] = True
+	env['ENABLE_GENERICAVC'] = True
 	env['ENABLE_MOTU'] = True
 	env['ENABLE_DICE'] = True
 	env['ENABLE_METRIC_HALO'] = True
 	env['ENABLE_RME'] = True
 	env['ENABLE_BOUNCE'] = True
 
+#
+# TODO: Probably this should be in the src/SConscript...
+#
 if env['ENABLE_BEBOB']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
-if env['ENABLE_GENERIC_AVC']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_GENERIC_AVC"] )
+if env['ENABLE_GENERICAVC']:
+	env.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
 if env['ENABLE_MOTU']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
 if env['ENABLE_DICE']:
