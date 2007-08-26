@@ -127,7 +127,7 @@ amdtp_source = env.Split( '\
 source = ffado_source
 if env['ENABLE_BEBOB']:
 	source += bebob_source
-if env['ENABLE_GENERIC_AVC']:
+if env['ENABLE_GENERICAVC']:
 	source += genericavc_source
 if env['ENABLE_MOTU']:
 	source += motu_source
@@ -140,7 +140,7 @@ if env['ENABLE_RME']:
 if env['ENABLE_BOUNCE']:
 	source += bounce_source
 
-if env['ENABLE_BEBOB'] or env['ENABLE_GENERIC_AVC'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE']:
+if env['ENABLE_BEBOB'] or env['ENABLE_GENERICAVC'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE']:
 	source += amdtp_source
 
 env1.MergeFlags( "-lrt" )
