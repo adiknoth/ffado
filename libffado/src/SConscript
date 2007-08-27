@@ -67,6 +67,8 @@ ffado_source = env.Split( '\
 	libutil/Time.c \
 	libutil/TimeSource.cpp \
 	libutil/TimestampedBuffer.cpp \
+	libcontrol/Element.cpp \
+	libcontrol/BasicElements.cpp \
 ' )
 
 bebob_source = env.Split( '\

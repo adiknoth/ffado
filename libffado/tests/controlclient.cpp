@@ -24,14 +24,16 @@
 
 #include "controlclient.h"
 
-namespace Control {
+namespace DBusControl {
 
-IMPL_DEBUG_MODULE( ControlClient, ControlClient, DEBUG_LEVEL_VERBOSE );
+// ---
 
-ControlClient::ControlClient( DBus::Connection& connection, const char* path, const char* name )
+IMPL_DEBUG_MODULE( ContignousClient, ContignousClient, DEBUG_LEVEL_VERBOSE );
+
+ContignousClient::ContignousClient( DBus::Connection& connection, const char* path, const char* name )
 : DBus::ObjectProxy(connection, path, name)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created ControlClient '%s' on '%s'\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created ContignousClient '%s' on '%s'\n",
                  name, path );
 }
 

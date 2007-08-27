@@ -31,30 +31,64 @@
 
 #include "controlserver-glue.h"
 
-static const char* SERVER_NAME = "org.ffado.Control.Test";
-static const char* SERVER_PATH = "/org/ffado/Control/Test";
+#include "libcontrol/BasicElements.h"
 
-namespace Control {
+namespace DBusControl {
 
-class Element {
-public:
-    Element() {};
-};
-
-class ControlServer
-: public org::ffado::Control::Test,
-  public DBus::IntrospectableAdaptor,
-  public DBus::ObjectAdaptor
+class Element
+: public org::ffado::Control::Element::Element
+, public DBus::IntrospectableAdaptor
+, public DBus::ObjectAdaptor
 {
 public:
 
-    ControlServer( DBus::Connection& connection );
-    
-    DBus::Int32 Echo( const DBus::Int32 & value );
-    std::map< DBus::String, DBus::String > Info();
+    Element( DBus::Connection& connection,
+             std::string p,
+             Control::Element &slave );
+
+    DBus::UInt64 getId( );
+    DBus::String getName( );
 
 private:
+    Control::Element &m_Slave;
+
+protected:
     DECLARE_DEBUG_MODULE;
+};
+typedef std::vector<Element *> ElementVector;
+typedef std::vector<Element *>::iterator ElementVectorIterator;
+typedef std::vector<Element *>::const_iterator ConstElementVectorIterator;
+
+class Container
+: public org::ffado::Control::Element::Container
+, public Element
+{
+public:
+    Container( DBus::Connection& connection,
+                  std::string p,
+                  Control::Container &slave );
+    virtual ~Container();
+    
+    Element *createHandler(Control::Element& e);
+private:
+    Control::Container &m_Slave;
+    ElementVector m_Children;
+};
+
+class Contignous
+: public org::ffado::Control::Element::Fader
+, public Element
+{
+public:
+    Contignous( DBus::Connection& connection,
+                  std::string p,
+                  Control::Contignous &slave );
+    
+    DBus::Double setValue( const DBus::Double & value );
+    DBus::Double getValue( );
+
+private:
+    Control::Contignous &m_Slave;
 };
 
 

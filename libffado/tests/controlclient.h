@@ -31,19 +31,20 @@
 
 #include "controlclient-glue.h"
 
-static const char* SERVER_NAME = "org.ffado.Control.Test";
-static const char* SERVER_PATH = "/org/ffado/Control/Test";
+static const char* SERVER_NAME = "org.ffado.Control";
+static const char* SERVER_PATH = "/org/ffado/Control/Test/Fader";
 
-namespace Control {
+namespace DBusControl {
 
-class ControlClient
-: public org::ffado::Control::Test,
+// simple fader element
+class ContignousClient
+: public org::ffado::Control::Element::Fader,
   public DBus::IntrospectableProxy,
   public DBus::ObjectProxy
 {
 public:
 
-    ControlClient( DBus::Connection& connection, const char* path, const char* name );
+    ContignousClient( DBus::Connection& connection, const char* path, const char* name );
 
 private:
     DECLARE_DEBUG_MODULE;
