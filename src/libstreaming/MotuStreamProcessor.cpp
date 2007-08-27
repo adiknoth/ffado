@@ -120,7 +120,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
                   int cycle, unsigned int dropped, unsigned int max_length) {
 
     int fc;
-    int64_t ts_head;
     ffado_timestamp_t ts_tmp;
     quadlet_t *quadlet = (quadlet_t *)data;
     signed int i;
@@ -169,7 +168,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
             // initialize the buffer head & tail
             m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_tmp, &fc); // thread safe
-            ts_head = (int64_t)ts_tmp;
+            int64_t ts_head = (int64_t)ts_tmp;
 
             // the number of cycles the sync source lags (> 0)
             // or leads (< 0)
@@ -231,8 +230,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
 
     // the base timestamp is the one of the next sample in the buffer
     m_data_buffer->getBufferHeadTimestamp(&ts_tmp, &fc); // thread safe
-    ts_head = (int64_t)ts_tmp;
-    int64_t timestamp = ts_head;
+    int64_t timestamp = (int64_t)ts_tmp;
 
     // we send a packet some cycles in advance, to avoid the
     // following situation:
@@ -249,7 +247,6 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // queue this packet cycle_diff * TICKS_PER_CYCLE earlier than
     // we would if it were to be sent immediately.
     ticks_to_advance += (int64_t)cycle_diff * TICKS_PER_CYCLE;
-
 
     // time until the packet is to be sent (if <= 0: send packet)
     // For Amdtp this looked like
@@ -290,22 +287,25 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
     // replinished so it's possible to cause a buffer underflow during
     // shutdown if the buffer is read during this time.
     if (m_closedown_count!=-1 || m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
+        float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
 
 #if TESTTONE
         // FIXME: remove this hacked in 1 kHz test signal to
         // analog-1 when testing is complete.  Note that the tone is
         // *never* added during closedown.
         if (m_closedown_count<0) {
-            for (i=0; i<n_events; i++) {
+            signed int int_tpf = (int)ticks_per_frame;
+            unsigned char *sample = data+8+16;
+            for (i=0; i<n_events; i++, sample+=m_event_size) {
                 static signed int a_cx = 0;
-                signed int val;
-                val = (int)(0x7fffff*sin(1000.0*2.0*M_PI*(a_cx/24576000.0)));
-                if ((a_cx+=512) >= 24576000) {
+                // Each sample is 3 bytes with MSB in lowest address (ie: 
+                // network byte order).  After byte order swap, the 24-bit
+                // MSB is in the second byte of val.
+                signed int val = htonl((int)(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx)));
+                memcpy(sample,((char *)&val)+1,3);
+                if ((a_cx+=int_tpf) >= 24576000) {
                     a_cx -= 24576000;
                 }
-                *(data+8+i*m_event_size+16) = (val >> 16) & 0xff;
-                *(data+8+i*m_event_size+17) = (val >> 8) & 0xff;
-                *(data+8+i*m_event_size+18) = val & 0xff;
             }
         }
 #endif
@@ -345,10 +345,7 @@ MotuTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length
         if (m_startup_count >= 0)
             m_startup_count--;
 
-        // Set up each frames's SPH.  Note that the (int) typecast
-        // appears to do rounding.
-
-        float ticks_per_frame = m_SyncSource->m_data_buffer->getRate();
+        // Set up each frames's SPH.
         for (i=0; i<n_events; i++, quadlet += dbs) {
 //FIXME: not sure which is best for the MOTU
 //            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
