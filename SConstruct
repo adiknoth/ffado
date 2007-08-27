@@ -153,6 +153,18 @@ if env['ENABLE_ALL']:
 	env['ENABLE_RME'] = True
 	env['ENABLE_BOUNCE'] = True
 
+if build_base:
+	env['build_base']="#/"+build_base
+else:
+	env['build_base']="#/"
+
+#
+# Create an environment for the externals-directory without all the fancy
+# ffado-defines. Probably the ffado-defines should be gathered in a distinct
+# ffadoenv...
+externalenv = env.Copy()
+Export( 'externalenv' )
+
 #
 # TODO: Probably this should be in the src/SConscript...
 #
@@ -218,16 +230,13 @@ env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 # build helper tools first
 subdirs=['external']
 if build_base:
-	env['build_base']="#/"+build_base
-	for subdir in subdirs:
-		env.SConscript( dirs=subdir, exports="env", build_dir=build_base+subdir )
+	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
-	env['build_base']="#/"
 	env.SConscript( dirs=subdirs, exports="env" )
 
 if not env.GetOption('clean'):
     Default( 'external' )
-    
+
 Import( 'dbusxx_xml2cpp_adaptor_builder' )
 env.Append(BUILDERS = {'XML2CPP_ADAPTOR' : dbusxx_xml2cpp_adaptor_builder})
 
@@ -237,11 +246,8 @@ env.Append(BUILDERS = {'XML2CPP_PROXY' : dbusxx_xml2cpp_proxy_builder})
 # now build our own stuff, which can use the tools defined above
 subdirs=['src','libffado','tests','support']
 if build_base:
-	env['build_base']="#/"+build_base
-	for subdir in subdirs:
-		env.SConscript( dirs=subdir, exports="env", build_dir=build_base+subdir )
+	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
-	env['build_base']="#/"
 	env.SConscript( dirs=subdirs, exports="env" )
 
 
