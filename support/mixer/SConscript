@@ -2,7 +2,7 @@
 
 Import( 'env' )
 
-if env['HAVE_PYUIC']:
+if env.has_key('HAVE_PYUIC') and env['HAVE_PYUIC']:
 
 	env = env.Copy()
 

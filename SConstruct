@@ -138,6 +138,12 @@ if env['DEBUG']:
 else:
 	env.AppendUnique( CCFLAGS=["-O2"] )
 
+# this is required to indicate that the DBUS version we use has support
+# for platform dependent threading init functions
+# this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
+# always true
+env.AppendUnique( CCFLAGS=["-DDBUS_HAS_THREADS_INIT_DEFAULT"] )
+
 if env['ENABLE_ALL']:
 	env['ENABLE_BEBOB'] = True
 	env['ENABLE_GENERICAVC'] = True
@@ -169,12 +175,18 @@ if env['ENABLE_BOUNCE']:
 # TODO: Most of these flags aren't needed for all the apps/libs compiled here.
 # The relevant MergeFlags-calls should be moved to the SConscript-files where
 # its needed...
-env.MergeFlags( env['LIBRAW1394_FLAGS'] )
-env.MergeFlags( env['LIBAVC1394_FLAGS'] )
-env.MergeFlags( env['LIBIEC61883_FLAGS'] )
-env.MergeFlags( env['ALSA_FLAGS'] )
-env.MergeFlags( env['LIBXML26_FLAGS'] )
-env.MergeFlags( env['LIBLO_FLAGS'] )
+if env.has_key('LIBRAW1394_FLAGS'):
+    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+if env.has_key('LIBAVC1394_FLAGS'):
+    env.MergeFlags( env['LIBAVC1394_FLAGS'] )
+if env.has_key('LIBIEC61883_FLAGS'):
+    env.MergeFlags( env['LIBIEC61883_FLAGS'] )
+if env.has_key('ALSA_FLAGS'):
+    env.MergeFlags( env['ALSA_FLAGS'] )
+if env.has_key('LIBXML26_FLAGS'):
+    env.MergeFlags( env['LIBXML26_FLAGS'] )
+if env.has_key('LIBLO_FLAGS'):
+    env.MergeFlags( env['LIBLO_FLAGS'] )
 
 #
 # Some includes in src/*/ are full path (src/*), that should be fixed?
@@ -203,8 +215,27 @@ env.ScanReplace( "config.h.in" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
+# build helper tools first
+subdirs=['external']
+if build_base:
+	env['build_base']="#/"+build_base
+	for subdir in subdirs:
+		env.SConscript( dirs=subdir, exports="env", build_dir=build_base+subdir )
+else:
+	env['build_base']="#/"
+	env.SConscript( dirs=subdirs, exports="env" )
 
-subdirs=['src','libffado','tests','support','external']
+if not env.GetOption('clean'):
+    Default( 'external' )
+    
+Import( 'dbusxx_xml2cpp_adaptor_builder' )
+env.Append(BUILDERS = {'XML2CPP_ADAPTOR' : dbusxx_xml2cpp_adaptor_builder})
+
+Import( 'dbusxx_xml2cpp_proxy_builder' )
+env.Append(BUILDERS = {'XML2CPP_PROXY' : dbusxx_xml2cpp_proxy_builder})
+
+# now build our own stuff, which can use the tools defined above
+subdirs=['src','libffado','tests','support']
 if build_base:
 	env['build_base']="#/"+build_base
 	for subdir in subdirs:
@@ -216,9 +247,8 @@ else:
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
-	Default( 'external' )
-	Default( 'src' )
-	if env['BUILD_TESTS']:
-		Default( 'tests' )
-	#env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
-	env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
+    Default( 'src' )
+    if env['BUILD_TESTS']:
+        Default( 'tests' )
+    #env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
+    env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
