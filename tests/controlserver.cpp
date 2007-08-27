@@ -23,35 +23,114 @@
  */
 
 #include "controlserver.h"
+#include "libcontrol/Element.h"
+#include "libcontrol/BasicElements.h"
 
-namespace Control {
+namespace DBusControl {
 
-IMPL_DEBUG_MODULE( ControlServer, ControlServer, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_VERBOSE );
 
-ControlServer::ControlServer( DBus::Connection& connection )
-: DBus::ObjectAdaptor(connection, SERVER_PATH)
+// --- Element
+Element::Element( DBus::Connection& connection, std::string p, Control::Element &slave)
+: DBus::ObjectAdaptor(connection, p)
+, m_Slave(slave)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created ControlServer on '%s'\n",
-                 SERVER_PATH );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Element on '%s'\n",
+                 path().c_str() );
 }
 
-DBus::Int32 ControlServer::Echo( const DBus::Int32& value )
+DBus::UInt64
+Element::getId( )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Echo(%d)\n", value );
-    return value;
+    return m_Slave.getId();
 }
 
-std::map< DBus::String, DBus::String > ControlServer::Info()
+DBus::String
+Element::getName( )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Info()\n" );
+    return DBus::String(m_Slave.getName());
+}
+
+// --- Container
+Container::Container( DBus::Connection& connection, std::string p, Control::Container &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Container on '%s'\n",
+                 path().c_str() );
+
+    // add children for the slave container
+    for ( Control::ConstElementVectorIterator it = slave.getElements().begin();
+      it != slave.getElements().end();
+      ++it )
+    {
+        Element *e=createHandler(*(*it));
+        if (e) {
+            m_Children.push_back(e);
+        } else {
+            debugWarning("Failed to create handler for Control::Element %s\n",
+                (*it)->getName().c_str());
+        }
+    }
+}
+
+Container::~Container() {
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        delete (*it);
+    }
+}
+
+/**
+ * \brief create a correct DBusControl counterpart for a given Control::Element
+ */
+Element *
+Container::createHandler(Control::Element& e) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Creating handler for '%s'\n",
+                 e.getName().c_str() );
+                 
+    if (dynamic_cast<Control::Container *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Container\n");
+        
+        return new Container(conn(), std::string(path()+"/"+e.getName()), 
+            *dynamic_cast<Control::Container *>(&e));
+    }
+    if (dynamic_cast<Control::Contignous *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Contignous\n");
+        
+        return new Contignous(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::Contignous *>(&e));
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
+    return new Element(conn(), std::string(path()+"/"+e.getName()), e);
+}
+
+// --- Contignous
+
+Contignous::Contignous( DBus::Connection& connection, std::string p, Control::Contignous &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Contignous on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::Double
+Contignous::setValue( const DBus::Double& value )
+{
+    m_Slave.setValue(value);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%lf) => %lf\n", value, m_Slave.getValue() );
     
-    std::map< DBus::String, DBus::String > info;
-
-    info["testset1"] = "set1";
-    info["testset2"] = "set2";
-
-    return info;
+    return m_Slave.getValue();
 }
 
+DBus::Double
+Contignous::getValue(  )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %lf\n", m_Slave.getValue() );
+    return m_Slave.getValue();
+}
 
 } // end of namespace Control

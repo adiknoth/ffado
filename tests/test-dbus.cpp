@@ -106,15 +106,15 @@ void* worker_thread( void* )
 {
     DBus::Connection conn = DBus::Connection::SessionBus();
 
-    Control::ControlClient client(conn, SERVER_PATH, SERVER_NAME);
+    DBusControl::ContignousClient client(conn, SERVER_PATH, SERVER_NAME);
 
     int i=0;
     while(spin)
     {
         try {
-            client.Echo(i++);
+            client.setValue(i++);
         } catch(...) {
-            cout << "error on Echo()\n";
+            cout << "error on setValue()\n";
         };
 //         try {
 //             std::map< DBus::String, DBus::String > info = client.Info();

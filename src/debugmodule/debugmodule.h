@@ -26,7 +26,7 @@
 #define DEBUGMODULE_H
 
 #include "../fbtypes.h"
-
+#include <assert.h>
 
 #include <vector>
 #include <iostream>

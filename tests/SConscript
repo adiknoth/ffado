@@ -14,6 +14,7 @@ env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
 # deactivate as they don't seem ported to the new api: test-extplugcmd, test-mixer, test-volume
 #
 #for app in ["test-ffado", "test-extplugcmd", "test-fw410", "test-volume", "test-mixer", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
+
 for app in ["test-ffado", "test-fw410", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
     env.Program( target=app, source = app+".cpp" )
 

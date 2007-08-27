@@ -114,11 +114,17 @@ Message IntrospectableAdaptor::Introspect( const CallMessage& call )
 
 	ObjectAdaptorPList::const_iterator oci;
 
+	debug_log("nb children: %d", children.size());
 	for(oci = children.begin(); oci != children.end(); ++oci) 
 	{
+	 
 		std::string name = (*oci)->path().substr(path.length()+1);
-		name.substr(name.find('/'));
-
+		
+		std::string::size_type loc = name.find('/');
+		if( loc != std::string::npos ) {
+			name.substr(loc);
+		}
+		
 		xml << "<node name=\"" << name << "\"/>";
 	}
 
