@@ -4,18 +4,26 @@ Import( 'env' )
 
 env = env.Copy()
 
-env.PrependUnique( CPPPATH=["#/src"] )
-env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
-env.PrependUnique( LIBS=["ffado"] )
+env.PrependUnique( CPPPATH=["#/src", "#/external/dbus/include"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"src", env['build_base']+"external/dbus"] )
+env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
+
+env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
 
 #
 # deactivate as they don't seem ported to the new api: test-extplugcmd, test-mixer, test-volume
 #
 #for app in ["test-ffado", "test-extplugcmd", "test-fw410", "test-volume", "test-mixer", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
-for app in ["test-ffado", "test-fw410", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump", "test-dbus"]:
-	env.Program( target=app, source = app+".cpp" )
+for app in ["test-ffado", "test-fw410", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
+    env.Program( target=app, source = app+".cpp" )
 
 env.Program( target="test-sytmonitor", source = env.Split( "test-sytmonitor.cpp SytMonitor.cpp" ) )
+
+env.XML2CPP_PROXY('controlclient-glue.h', 'controlstuff.xml')
+env.Program( target="test-dbus", source = env.Split( "test-dbus.cpp controlclient.cpp" ) )
+
+env.XML2CPP_ADAPTOR('controlserver-glue.h', 'controlstuff.xml')
+env.Program( target="test-dbus-server", source = env.Split( "test-dbus-server.cpp controlserver.cpp" ) )
 
 env.SConscript( dirs="streaming", exports="env" )
 

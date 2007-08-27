@@ -27,8 +27,7 @@
 #include <iostream>
 #include <signal.h>
 
-#include "controlclient.h"
-#include <dbus-c++/dbus.h>
+#include "controlserver.h"
 
 using namespace std;
 
@@ -37,9 +36,9 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "test-dbus 0.1";
+const char *argp_program_version = "test-dbus-server 0.1";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-static char doc[] = "test-dbus -- test client for the DBUS interface";
+static char doc[] = "test-dbus-server -- test server for the DBUS interface";
 static char args_doc[] = "";
 static struct argp_option options[] = {
     {"verbose",   'v', 0,           0,  "Produce verbose output" },
@@ -93,53 +92,24 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 //////////////////////////
 
 DBus::BusDispatcher dispatcher;
-static const int THREADS = 1;
-static bool spin = true;
 
 void leave( int sig )
 {
-    spin = false;
     dispatcher.leave();
 }
 
-void* worker_thread( void* )
-{
-    DBus::Connection conn = DBus::Connection::SessionBus();
+void start_server() {
 
-    Control::ControlClient client(conn, SERVER_PATH, SERVER_NAME);
-
-    int i=0;
-    while(spin)
-    {
-        try {
-            client.Echo(i++);
-        } catch(...) {
-            cout << "error on Echo()\n";
-        };
-//         try {
-//             std::map< DBus::String, DBus::String > info = client.Info();
-//             cout << info["testset1"] << " - " << info["testset2"] << std::endl;
-//         } catch(...) {
-//             cout << "error on Info()\n";
-//         };
-
-        cout << "* " << i << "*\n";
-        sleep(1);
-    }
-
-    return NULL;
-}
-
-void run_client_tests() {
+    // test DBUS stuff
     DBus::default_dispatcher = &dispatcher;
 
-    pthread_t thread;
+    DBus::Connection conn = DBus::Connection::SessionBus();
+    conn.request_name(SERVER_NAME);
 
-    pthread_create(&thread, NULL, worker_thread, NULL);
+    Control::ControlServer server(conn);
 
     dispatcher.enter();
 
-    pthread_join(thread, NULL);
 }
 
 int
@@ -149,7 +119,7 @@ main(int argc, char **argv)
     signal(SIGINT, leave);
     
     setDebugLevel(DEBUG_LEVEL_VERBOSE);
-    
+
     // arg parsing
     argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
@@ -161,11 +131,11 @@ main(int argc, char **argv)
         return -1;
     }
 
-    debugOutput(DEBUG_LEVEL_NORMAL, "DBUS test application\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "DBUS test server\n");
 
     DBus::_init_threading();
 
-    run_client_tests();
+    start_server();
 
     debugOutput(DEBUG_LEVEL_NORMAL, "bye...\n");
     
