@@ -5,29 +5,30 @@
 import os
 import sys
 
-Import( 'env' )
+#Import( 'env' )
+Import( 'externalenv' )
 #dbus_env = env.Copy()
-buildenv={}
-if os.environ.has_key('PATH'):
-	buildenv['PATH']=os.environ['PATH']
-else:
-	buildenv['PATH']=''
+#buildenv={}
+#if os.environ.has_key('PATH'):
+#	buildenv['PATH']=os.environ['PATH']
+#else:
+#	buildenv['PATH']=''
 
-if os.environ.has_key('PKG_CONFIG_PATH'):
-	buildenv['PKG_CONFIG_PATH']=os.environ['PKG_CONFIG_PATH']
-else:
-	buildenv['PKG_CONFIG_PATH']=''
+#if os.environ.has_key('PKG_CONFIG_PATH'):
+#	buildenv['PKG_CONFIG_PATH']=os.environ['PKG_CONFIG_PATH']
+#else:
+#	buildenv['PKG_CONFIG_PATH']=''
 
-dbus_env = Environment( ENV = buildenv )
+dbus_env = externalenv.Copy() #Environment( ENV = buildenv )
 
 #CacheDir( 'cache/objects' )
 
-if env.has_key('DBUS1_FLAGS'):
-    dbus_env.MergeFlags( env['DBUS1_FLAGS'] )
+if dbus_env.has_key('DBUS1_FLAGS'):
+    dbus_env.MergeFlags( dbus_env['DBUS1_FLAGS'] )
 
 # add the local version of libdbus++
 dbus_env.AppendUnique( CPPPATH=["#/external/dbus/include"] )
-dbus_env.AppendUnique( LIBPATH=[env['build_base']+"external/dbus"])
+dbus_env.AppendUnique( LIBPATH=[dbus_env['build_base']+"external/dbus"])
 dbus_env.AppendUnique( LIBS=["dbus-c++"] )
 dbus_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE"] )
 
@@ -53,7 +54,7 @@ sources = [
 	'src/types.cpp'
 ]
 
-if env.has_key('DEBUG') and env['DEBUG']:
+if dbus_env.has_key('DEBUG') and dbus_env['DEBUG']:
 	dbus_env.AppendUnique( CCFLAGS=["-DDEBUG","-g"] )
 
 dbus_env.PrependUnique( LIBS=["expat"] )
@@ -75,7 +76,7 @@ xml2cpp_sources = [
 
 tools_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE"] )
 tools_env.AppendUnique( CPPPATH=["#/external/dbus/include"] )
-tools_env.PrependUnique( LIBPATH=env['build_base']+"external/dbus" )
+tools_env.PrependUnique( LIBPATH=dbus_env['build_base']+"external/dbus" )
 tools_env.PrependUnique( LIBS="dbus-c++" )
 
 dbusxx_introspect = tools_env.Program('dbusxx-introspect', introspect_sources)
