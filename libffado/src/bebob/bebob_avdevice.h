@@ -35,7 +35,7 @@
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"
-#include "bebob/GenericMixer.h"
+#include "bebob/bebob_mixer.h"
 
 #include "libstreaming/AmdtpStreamProcessor.h"
 #include "libstreaming/AmdtpPort.h"
@@ -95,7 +95,7 @@ public:
     Glib::ustring getCachePath();
 
 protected:
-    GenericMixer*             m_Mixer;
+    Mixer*             m_Mixer;
 
 };
 
