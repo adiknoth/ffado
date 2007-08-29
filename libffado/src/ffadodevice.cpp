@@ -32,10 +32,10 @@
 
 #include <assert.h>
 
-IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_VERBOSE );
 
 FFADODevice::FFADODevice( Ieee1394Service& ieee1394Service,
-                    std::auto_ptr<ConfigRom>( configRom ))
+                          std::auto_ptr<ConfigRom>( configRom ))
     : Control::Container()
     , m_pConfigRom( configRom )
     , m_p1394Service( &ieee1394Service )
@@ -43,7 +43,7 @@ FFADODevice::FFADODevice( Ieee1394Service& ieee1394Service,
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 
     std::ostringstream nodestr;
-    nodestr << "node" << m_pConfigRom->getNodeId();
+    nodestr << "node" << getConfigRom().getNodeId();
     
 //     setOscBase(nodestr.str());
 //     ConfigRom& c = getConfigRom();

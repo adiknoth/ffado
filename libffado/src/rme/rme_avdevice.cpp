@@ -55,7 +55,7 @@ RmeDevice::RmeDevice( Ieee1394Service& ieee1394Service,
     , m_model( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::RmeDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
 }
 
 RmeDevice::~RmeDevice()

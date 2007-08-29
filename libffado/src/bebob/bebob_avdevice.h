@@ -27,6 +27,10 @@
 #include <stdint.h>
 
 #include "debugmodule/debugmodule.h"
+
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
+
 #include "libavc/avc_definitions.h"
 #include "libavc/general/avc_extended_cmd_generic.h"
 #include "libavc/general/avc_unit.h"
@@ -49,9 +53,6 @@
 
 #include <sstream>
 #include <vector>
-
-class ConfigRom;
-class Ieee1394Service;
 
 namespace BeBoB {
 

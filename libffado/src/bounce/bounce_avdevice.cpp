@@ -59,7 +59,7 @@ BounceDevice::BounceDevice( Ieee1394Service& ieee1394Service,
     , m_Notifier ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 

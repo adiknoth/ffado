@@ -35,7 +35,7 @@
 #include "devicemanager.h"
 #include "ffadodevice.h"
 
-#include "bebob/focusrite/focusrite.h"
+#include "bebob/focusrite/focusrite_cmd.h"
 
 #include <dbus-c++/dbus.h>
 #include "controlserver.h"

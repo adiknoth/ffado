@@ -27,8 +27,8 @@
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_mixer.h"
 
-#include "bebob/focusrite/focusrite.h"
-#include "bebob/terratec/terratec.h"
+#include "bebob/focusrite/focusrite_device.h"
+#include "bebob/terratec/terratec_device.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -53,32 +53,42 @@ using namespace AVC;
 
 namespace BeBoB {
 
+#define FW_VENDORID_TERRATEC  0x000aac
+#define FW_VENDORID_MACKIE    0x00000f
+#define FW_VENDORID_APOGEE    0x0003db
+#define FW_VENDORID_BRIDGECO  0x0007f5
+#define FW_VENDORID_PRESONUS  0x000a92
+#define FW_VENDORID_ESI       0x000f1b
+#define FW_VENDORID_FOCUSRITE 0x00130e
+#define FW_VENDORID_EDIROL    0x0040ab
+#define FW_VENDORID_MAUDIO    0x000d6c
+
 static GenericAVC::VendorModelEntry supportedDeviceList[] =
 {
-    {0x00000f, 0x00010065, "Mackie", "Onyx Firewire"},
+    {FW_VENDORID_MACKIE, 0x00010065, "Mackie", "Onyx Firewire"},
 
-    {0x0003db, 0x00010048, "Apogee Electronics", "Rosetta 200"},
+    {FW_VENDORID_APOGEE, 0x00010048, "Apogee Electronics", "Rosetta 200"},
 
-    {0x0007f5, 0x00010048, "BridgeCo", "RD Audio1"},
+    {FW_VENDORID_BRIDGECO, 0x00010048, "BridgeCo", "RD Audio1"},
 
-    {0x000a92, 0x00010000, "PreSonus", "FIREBOX"},
-    {0x000a92, 0x00010066, "PreSonus", "FirePOD"},
+    {FW_VENDORID_PRESONUS, 0x00010000, "PreSonus", "FIREBOX"},
+    {FW_VENDORID_PRESONUS, 0x00010066, "PreSonus", "FirePOD"},
 
-    {0x000aac, 0x00000003, "TerraTec Electronic GmbH", "Phase 88 FW"},
-    {0x000aac, 0x00000004, "TerraTec Electronic GmbH", "Phase X24 FW (model version 4)"},
-    {0x000aac, 0x00000007, "TerraTec Electronic GmbH", "Phase X24 FW (model version 7)"},
+    {FW_VENDORID_TERRATEC, 0x00000003, "TerraTec Electronic GmbH", "Phase 88 FW"},
+    {FW_VENDORID_TERRATEC, 0x00000004, "TerraTec Electronic GmbH", "Phase X24 FW (model version 4)"},
+    {FW_VENDORID_TERRATEC, 0x00000007, "TerraTec Electronic GmbH", "Phase X24 FW (model version 7)"},
 
-    {0x000f1b, 0x00010064, "ESI", "Quatafire 610"},
+    {FW_VENDORID_ESI, 0x00010064, "ESI", "Quatafire 610"},
 
-    {0x00130e, 0x00000000, "Focusrite", "Saffire (LE)"},
-    {0x00130e, 0x00000003, "Focusrite", "Saffire Pro26IO"},
-    {0x00130e, 0x00000006, "Focusrite", "Saffire Pro10IO"},
+    {FW_VENDORID_FOCUSRITE, 0x00000000, "Focusrite", "Saffire (LE)"},
+    {FW_VENDORID_FOCUSRITE, 0x00000003, "Focusrite", "Saffire Pro26IO"},
+    {FW_VENDORID_FOCUSRITE, 0x00000006, "Focusrite", "Saffire Pro10IO"},
 
-    {0x0040ab, 0x00010048, "EDIROL", "FA-101"},
-    {0x0040ab, 0x00010049, "EDIROL", "FA-66"},
+    {FW_VENDORID_EDIROL, 0x00010048, "EDIROL", "FA-101"},
+    {FW_VENDORID_EDIROL, 0x00010049, "EDIROL", "FA-66"},
 
-    {0x000d6c, 0x00010062, "M-Audio", "FW Solo"},
-    {0x000d6c, 0x00010081, "M-Audio", "NRV10"},
+    {FW_VENDORID_MAUDIO, 0x00010062, "M-Audio", "FW Solo"},
+    {FW_VENDORID_MAUDIO, 0x00010081, "M-Audio", "NRV10"},
 };
 
 AvDevice::AvDevice( Ieee1394Service& ieee1394service,
@@ -87,7 +97,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
     , m_Mixer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
 }
 
 AvDevice::~AvDevice()
@@ -95,57 +105,6 @@ AvDevice::~AvDevice()
     if(m_Mixer != NULL) {
         delete m_Mixer;
     }
-}
-
-void
-AvDevice::showDevice()
-{
-    debugOutput(DEBUG_LEVEL_NORMAL, "Device is a BeBoB device\n");
-    GenericAVC::AvDevice::showDevice();
-    flushDebugOutput();
-}
-
-AVC::Subunit*
-AvDevice::createSubunit(AVC::Unit& unit,
-                        AVC::ESubunitType type,
-                        AVC::subunit_t id )
-{
-    AVC::Subunit* s=NULL;
-    switch (type) {
-        case eST_Audio:
-            s=new BeBoB::SubunitAudio(unit, id );
-            break;
-        case eST_Music:
-            s=new BeBoB::SubunitMusic(unit, id );
-            break;
-        default:
-            s=NULL;
-            break;
-    }
-    if(s) s->setVerboseLevel(getDebugLevel());
-    return s;
-}
-
-
-AVC::Plug *
-AvDevice::createPlug( AVC::Unit* unit,
-                      AVC::Subunit* subunit,
-                      AVC::function_block_type_t functionBlockType,
-                      AVC::function_block_type_t functionBlockId,
-                      AVC::Plug::EPlugAddressType plugAddressType,
-                      AVC::Plug::EPlugDirection plugDirection,
-                      AVC::plug_id_t plugId )
-{
-
-    Plug *p= new BeBoB::Plug( unit,
-                              subunit,
-                              functionBlockType,
-                              functionBlockId,
-                              plugAddressType,
-                              plugDirection,
-                              plugId );
-    if (p) p->setVerboseLevel(getDebugLevel());
-    return p;
 }
 
 bool
@@ -173,7 +132,25 @@ FFADODevice *
 AvDevice::createDevice( Ieee1394Service& ieee1394Service,
                         std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice(ieee1394Service, configRom );
+    unsigned int vendorId = configRom->getNodeVendorId();
+    unsigned int modelId = configRom->getModelId();
+                    return new Focusrite::SaffireProDevice(ieee1394Service, configRom);
+    
+    switch (vendorId) {
+        case FW_VENDORID_TERRATEC:
+            return new Terratec::PhaseSeriesDevice(ieee1394Service, configRom);
+        case FW_VENDORID_FOCUSRITE:
+            switch(modelId) {
+                case 0x00000003:
+                case 0x00000006:
+                    return new Focusrite::SaffireProDevice(ieee1394Service, configRom);
+                default: // return a plain BeBoB device
+                    return new AvDevice(ieee1394Service, configRom);
+           }
+        default:
+            return new AvDevice(ieee1394Service, configRom);
+    }
+    return NULL;
 }
 
 bool
@@ -229,6 +206,57 @@ AvDevice::discover()
         m_Mixer = new Mixer(*this);
     }
     return true;
+}
+
+void
+AvDevice::showDevice()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Device is a BeBoB device\n");
+    GenericAVC::AvDevice::showDevice();
+    flushDebugOutput();
+}
+
+AVC::Subunit*
+AvDevice::createSubunit(AVC::Unit& unit,
+                        AVC::ESubunitType type,
+                        AVC::subunit_t id )
+{
+    AVC::Subunit* s=NULL;
+    switch (type) {
+        case eST_Audio:
+            s=new BeBoB::SubunitAudio(unit, id );
+            break;
+        case eST_Music:
+            s=new BeBoB::SubunitMusic(unit, id );
+            break;
+        default:
+            s=NULL;
+            break;
+    }
+    if(s) s->setVerboseLevel(getDebugLevel());
+    return s;
+}
+
+
+AVC::Plug *
+AvDevice::createPlug( AVC::Unit* unit,
+                      AVC::Subunit* subunit,
+                      AVC::function_block_type_t functionBlockType,
+                      AVC::function_block_type_t functionBlockId,
+                      AVC::Plug::EPlugAddressType plugAddressType,
+                      AVC::Plug::EPlugDirection plugDirection,
+                      AVC::plug_id_t plugId )
+{
+
+    Plug *p= new BeBoB::Plug( unit,
+                              subunit,
+                              functionBlockType,
+                              functionBlockId,
+                              plugAddressType,
+                              plugDirection,
+                              plugId );
+    if (p) p->setVerboseLevel(getDebugLevel());
+    return p;
 }
 
 bool
@@ -447,7 +475,7 @@ AvDevice::deserialize( Glib::ustring basePath,
 //
 //     AvDevice* pDev = new AvDevice(
 //         std::auto_ptr<ConfigRom>(configRom),
-//         ieee1394Service, configRom->getNodeId());
+//         ieee1394Service, getConfigRom().getNodeId());
 //
 //     if ( pDev ) {
 //         bool result;

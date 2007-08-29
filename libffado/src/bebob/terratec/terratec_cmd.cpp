@@ -21,7 +21,7 @@
  * MA 02110-1301 USA
  */
 
-#include "terratec.h"
+#include "terratec_cmd.h"
 
 #include <netinet/in.h>
 #include <iostream>

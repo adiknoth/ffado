@@ -62,7 +62,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
