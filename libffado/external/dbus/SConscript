@@ -5,11 +5,8 @@
 import os
 import sys
 
-#Import( 'env' )
-Import( 'externalenv' )
-#dbus_env = env.Copy()
-
-dbus_env = externalenv.Copy()
+Import( 'env' )
+dbus_env = env.Copy()
 
 if dbus_env.has_key('DBUS1_FLAGS'):
     dbus_env.MergeFlags( dbus_env['DBUS1_FLAGS'] )
@@ -19,12 +16,6 @@ dbus_env.AppendUnique( CPPPATH=["#/external/dbus/include"] )
 dbus_env.AppendUnique( LIBPATH=[dbus_env['build_base']+"external/dbus"])
 dbus_env.AppendUnique( LIBS=["dbus-c++"] )
 dbus_env.AppendUnique( CCFLAGS=["-DDBUS_API_SUBJECT_TO_CHANGE"] )
-
-# this is required to indicate that the DBUS version we use has support
-# for platform dependent threading init functions
-# this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
-# always true
-dbus_env.AppendUnique( CCFLAGS=["-DDBUS_HAS_THREADS_INIT_DEFAULT"] )
 
 sources = [
 	'src/connection.cpp',
@@ -52,7 +43,7 @@ libdbuspp=dbus_env.StaticLibrary('dbus-c++', sources)
 # tools
 #
 
-tools_env = dbus_env.Copy()
+tools_env = dbus_env
 
 introspect_sources = [
 	'tools/introspect.cpp',
