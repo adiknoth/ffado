@@ -53,34 +53,6 @@ using namespace AVC;
 
 namespace BeBoB {
 
-static GenericAVC::VendorModelEntry supportedDeviceList[] =
-{
-    {FW_VENDORID_MACKIE, 0x00010065, "Mackie", "Onyx Firewire"},
-
-    {FW_VENDORID_APOGEE, 0x00010048, "Apogee Electronics", "Rosetta 200"},
-
-    {FW_VENDORID_BRIDGECO, 0x00010048, "BridgeCo", "RD Audio1"},
-
-    {FW_VENDORID_PRESONUS, 0x00010000, "PreSonus", "FIREBOX"},
-    {FW_VENDORID_PRESONUS, 0x00010066, "PreSonus", "FirePOD"},
-
-    {FW_VENDORID_TERRATEC, 0x00000003, "TerraTec Electronic GmbH", "Phase 88 FW"},
-    {FW_VENDORID_TERRATEC, 0x00000004, "TerraTec Electronic GmbH", "Phase X24 FW (model version 4)"},
-    {FW_VENDORID_TERRATEC, 0x00000007, "TerraTec Electronic GmbH", "Phase X24 FW (model version 7)"},
-
-    {FW_VENDORID_ESI, 0x00010064, "ESI", "Quatafire 610"},
-
-    {FW_VENDORID_FOCUSRITE, 0x00000000, "Focusrite", "Saffire (LE)"},
-    {FW_VENDORID_FOCUSRITE, 0x00000003, "Focusrite", "Saffire Pro26IO"},
-    {FW_VENDORID_FOCUSRITE, 0x00000006, "Focusrite", "Saffire Pro10IO"},
-
-    {FW_VENDORID_EDIROL, 0x00010048, "EDIROL", "FA-101"},
-    {FW_VENDORID_EDIROL, 0x00010049, "EDIROL", "FA-66"},
-
-    {FW_VENDORID_MAUDIO, 0x00010062, "M-Audio", "FW Solo"},
-    {FW_VENDORID_MAUDIO, 0x00010081, "M-Audio", "NRV10"},
-};
-
 AvDevice::AvDevice( Ieee1394Service& ieee1394service,
                     std::auto_ptr< ConfigRom >( configRom ) )
     : GenericAVC::AvDevice( ieee1394service, configRom )
@@ -103,18 +75,12 @@ AvDevice::probe( ConfigRom& configRom )
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 
-    //GenericAVC::VendorModel vendorModel( "/home/wagi/src/libffado/src/bebob/ffado_driver_bebob.txt" );
-
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( GenericAVC::VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId ) )
-        {
-            return true;
-        }
+    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
+    if ( vendorModel.parse() ) {
+        vendorModel.printTable();
+        return vendorModel.find( vendorId, modelId );
     }
+
     return false;
 }
 
@@ -125,7 +91,7 @@ AvDevice::createDevice( Ieee1394Service& ieee1394Service,
     unsigned int vendorId = configRom->getNodeVendorId();
     unsigned int modelId = configRom->getModelId();
                     return new Focusrite::SaffireProDevice(ieee1394Service, configRom);
-    
+
     switch (vendorId) {
         case FW_VENDORID_TERRATEC:
             return new Terratec::PhaseSeriesDevice(ieee1394Service, configRom);
@@ -149,22 +115,15 @@ AvDevice::discover()
     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
     unsigned int modelId = m_pConfigRom->getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( GenericAVC::VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-            break;
-        }
+    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
+    if ( vendorModel.parse() ) {
+        m_model = vendorModel.find( vendorId, modelId );
     }
 
     if (m_model != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
+                     m_model->vendor_name.c_str(),
+                     m_model->model_name.c_str());
     } else return false;
 
     if ( !Unit::discover() ) {

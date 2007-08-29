@@ -90,6 +90,7 @@ bebob_pkgdata = env.Split( '\
 	maudio/refdesign.xml \
 	maudio/fw410.xml \
 	maudio/fwap.xml \
+	bebob/ffado_driver_bebob.txt \
 ' )
 
 genericavc_source =  env.Split( '\
@@ -97,9 +98,17 @@ genericavc_source =  env.Split( '\
 	genericavc/avc_vendormodel.cpp \
 ' )
 
+genericavc_pkgdata = env.Split( '\
+        genericavc/ffado_driver_genericavc.txt \
+' )	
+
 fireworks_source =  env.Split( '\
 	fireworks/fireworks_device.cpp \
 	fireworks/audiofire/audiofire_device.cpp \
+' )
+
+fireworks_pkgdata =  env.Split( '\
+        fireworks/ffado_driver_fireworks.txt \
 ' )
 
 motu_source = env.Split( '\
@@ -207,6 +216,12 @@ else:
 # Install the *_pkgdata to $sharedir
 #
 for data in bebob_pkgdata:
+	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
+
+for data in genericavc_pkgdata:
+	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
+
+for data in fireworks_pkgdata:
 	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
 
 #

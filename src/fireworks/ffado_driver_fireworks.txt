@@ -1,0 +1,1 @@
+0x001486, 0x00000af2, "Echo", "AudioFire2"
