@@ -48,6 +48,8 @@ public:
 
     DBus::UInt64 getId( );
     DBus::String getName( );
+    DBus::String getLabel( );
+    DBus::String getDescription( );
 
 private:
     Control::Element &m_Slave;
@@ -75,20 +77,36 @@ private:
     ElementVector m_Children;
 };
 
-class Contignous
-: public org::ffado::Control::Element::Fader
+class Continuous
+: public org::ffado::Control::Element::Continuous
 , public Element
 {
 public:
-    Contignous( DBus::Connection& connection,
+    Continuous( DBus::Connection& connection,
                   std::string p,
-                  Control::Contignous &slave );
+                  Control::Continuous &slave );
     
     DBus::Double setValue( const DBus::Double & value );
     DBus::Double getValue( );
 
 private:
-    Control::Contignous &m_Slave;
+    Control::Continuous &m_Slave;
+};
+
+class Discrete
+: public org::ffado::Control::Element::Discrete
+, public Element
+{
+public:
+    Discrete( DBus::Connection& connection,
+                  std::string p,
+                  Control::Discrete &slave );
+    
+    DBus::Int32 setValue( const DBus::Int32 & value );
+    DBus::Int32 getValue( );
+
+private:
+    Control::Discrete &m_Slave;
 };
 
 

@@ -35,7 +35,11 @@
 #include "devicemanager.h"
 #include "ffadodevice.h"
 
-#include "bebob/vendorspecific/focusrite.h"
+#include "bebob/focusrite/focusrite.h"
+
+#include <dbus-c++/dbus.h>
+#include "controlserver.h"
+#include "libcontrol/BasicElements.h"
 
 #include <signal.h>
 
@@ -75,11 +79,15 @@ int osc_data_response_handler(const char *path, const char *types, lo_arg **argv
 
 void osc_error_handler(int num, const char *msg, const char *path);
 
+// DBUS stuff
+DBus::BusDispatcher dispatcher;
+
 // signal handler
 int run=1;
 static void sighandler (int sig)
 {
     run = 0;
+    dispatcher.leave();
 }
 
 // global's
@@ -93,6 +101,7 @@ static char doc[] = "FFADO -- a driver for Firewire Audio devices (test applicat
                     "           ListOscSpace\n"
                     "           OscServer\n"
                     "           FocusriteSetPhantom [0=ch1-4, 1=ch5-8] [1=on, 0=off]\n"
+                    "           DBus\n"
                     ;
 
 // A description of the arguments we accept.
@@ -478,7 +487,51 @@ main( int argc, char **argv )
         }
         delete m_deviceManager;
         return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "DBus" ) == 0 ) {
+        DeviceManager *m_deviceManager = new DeviceManager();
+        if ( !m_deviceManager ) {
+            fprintf( stderr, "Could not allocate device manager\n" );
+            return exitfunction(-1);
+        }
+        if ( !m_deviceManager->initialize( arguments.port ) ) {
+            fprintf( stderr, "Could not initialize device manager\n" );
+            delete m_deviceManager;
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->discover() ) {
+            fprintf( stderr, "Could not discover devices\n" );
+            delete m_deviceManager;
+            return exitfunction(-1);
+        }
+       
+        signal (SIGINT, sighandler);
+        
+        DBus::_init_threading();
+    
+        // test DBUS stuff
+        DBus::default_dispatcher = &dispatcher;
+    
+        DBus::Connection conn = DBus::Connection::SessionBus();
+        conn.request_name("org.ffado.Control");
+        
+        DBusControl::Container *container
+            = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", *m_deviceManager);
+        
+        printf("DBUS test service running\n");
+        printf("press ctrl-c to stop it & continue\n");
+        
+        dispatcher.enter();
+    
+        delete container;
 
+        signal (SIGINT, SIG_DFL);
+
+        printf("server stopped\n");
+        delete m_deviceManager;
+        return exitfunction(0);
     } else {
         printf( "unknown operation\n" );
     }

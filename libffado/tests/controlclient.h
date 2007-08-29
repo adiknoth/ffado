@@ -37,14 +37,14 @@ static const char* SERVER_PATH = "/org/ffado/Control/Test/Fader";
 namespace DBusControl {
 
 // simple fader element
-class ContignousClient
-: public org::ffado::Control::Element::Fader,
+class ContinuousClient
+: public org::ffado::Control::Element::Continuous,
   public DBus::IntrospectableProxy,
   public DBus::ObjectProxy
 {
 public:
 
-    ContignousClient( DBus::Connection& connection, const char* path, const char* name );
+    ContinuousClient( DBus::Connection& connection, const char* path, const char* name );
 
 private:
     DECLARE_DEBUG_MODULE;

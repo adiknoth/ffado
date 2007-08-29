@@ -106,7 +106,7 @@ void* worker_thread( void* )
 {
     DBus::Connection conn = DBus::Connection::SessionBus();
 
-    DBusControl::ContignousClient client(conn, SERVER_PATH, SERVER_NAME);
+    DBusControl::ContinuousClient client(conn, SERVER_PATH, SERVER_NAME);
 
     int i=0;
     while(spin)

@@ -28,12 +28,12 @@ namespace DBusControl {
 
 // ---
 
-IMPL_DEBUG_MODULE( ContignousClient, ContignousClient, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( ContinuousClient, ContinuousClient, DEBUG_LEVEL_VERBOSE );
 
-ContignousClient::ContignousClient( DBus::Connection& connection, const char* path, const char* name )
+ContinuousClient::ContinuousClient( DBus::Connection& connection, const char* path, const char* name )
 : DBus::ObjectProxy(connection, path, name)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created ContignousClient '%s' on '%s'\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created ContinuousClient '%s' on '%s'\n",
                  name, path );
 }
 
