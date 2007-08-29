@@ -185,9 +185,8 @@ env['LIBVERSION'] = "1.0.0"
 # Start building
 #
 
-env.Command( "config.h.in", "config.h.in.scons", "cp $SOURCE $TARGET" )
-
 env.ScanReplace( "config.h.in" )
+
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
