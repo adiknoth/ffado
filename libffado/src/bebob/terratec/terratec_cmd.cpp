@@ -30,6 +30,7 @@ using namespace std;
 using namespace AVC;
 
 namespace BeBoB {
+namespace Terratec {
 
 TerratecVendorDependentCmd::TerratecVendorDependentCmd(Ieee1394Service& ieee1394service)
     : VendorDependentCmd( ieee1394service )
@@ -214,4 +215,5 @@ TerratecDeviceIdCmd::deserialize( IISDeserialize& de )
     return result;
 }
 
+}
 }

@@ -31,6 +31,7 @@
 #include <libavc1394/avc1394.h>
 
 namespace BeBoB {
+namespace Terratec {
 
 class TerratecVendorDependentCmd: public AVC::VendorDependentCmd
 {
@@ -138,6 +139,7 @@ public:
     byte_t m_deviceid;
 };
 
+}
 }
 
 #endif // TERRATECVENDORDEPENDENT_H

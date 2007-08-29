@@ -30,6 +30,7 @@ using namespace std;
 using namespace AVC;
 
 namespace BeBoB {
+namespace Focusrite {
 
 FocusriteVendorDependentCmd::FocusriteVendorDependentCmd(Ieee1394Service& ieee1394service)
     : VendorDependentCmd( ieee1394service )
@@ -75,3 +76,5 @@ FocusriteVendorDependentCmd::deserialize( IISDeserialize& de )
 }
 
 }
+}
+

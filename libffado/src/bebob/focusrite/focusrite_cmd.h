@@ -30,7 +30,19 @@
 
 #include <libavc1394/avc1394.h>
 
+#define FOCUSRITE_CMD_ID_SAMPLERATE 84
+#define FOCUSRITE_CMD_ID_PHANTOM14  98
+#define FOCUSRITE_CMD_ID_PHANTOM58  99
+
+#define FOCUSRITE_CMD_SAMPLERATE_44K1   1
+#define FOCUSRITE_CMD_SAMPLERATE_48K    2
+#define FOCUSRITE_CMD_SAMPLERATE_88K2   3
+#define FOCUSRITE_CMD_SAMPLERATE_96K    4
+#define FOCUSRITE_CMD_SAMPLERATE_176K4  5
+#define FOCUSRITE_CMD_SAMPLERATE_192K   6
+
 namespace BeBoB {
+namespace Focusrite {
 
 class FocusriteVendorDependentCmd: public AVC::VendorDependentCmd
 {
@@ -52,6 +64,7 @@ public:
     
 };
 
+}
 }
 
 #endif // FOCUSRITEVENDORDEPENDENT_H

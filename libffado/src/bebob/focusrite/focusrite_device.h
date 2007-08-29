@@ -28,8 +28,27 @@
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
 
+#include "libcontrol/BasicElements.h"
+
 namespace BeBoB {
 namespace Focusrite {
+
+class SaffireProDevice;
+
+class PhantomPowerControl
+    : public Control::Discrete
+{
+public:
+    PhantomPowerControl(SaffireProDevice& parent, int channel);
+    
+    virtual bool setValue(int v);
+    virtual int getValue();
+    
+private:
+    SaffireProDevice&       m_Parent;
+    unsigned int            m_channel;
+};
+
 
 class SaffireProDevice : public BeBoB::AvDevice {
 public:
@@ -38,7 +57,14 @@ public:
     virtual ~SaffireProDevice();
 
     virtual void showDevice();
+    virtual void setVerboseLevel(int l);
 
+    virtual bool setSamplingFrequency( int );
+    virtual int getSamplingFrequency( );
+
+private:
+    PhantomPowerControl * m_Phantom1;
+    PhantomPowerControl * m_Phantom2;
 };
 
 } // namespace Focusrite
