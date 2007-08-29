@@ -20,10 +20,10 @@ for app in ["test-fw410", "test-cycletimer", "test-timestampedbuffer", "test-iee
 
 env.Program( target="test-sytmonitor", source = env.Split( "test-sytmonitor.cpp SytMonitor.cpp" ) )
 
-env.XML2CPP_PROXY('controlclient-glue.h', 'control-interface.xml')
+env.Xml2Cpp_Proxy('controlclient-glue.h', 'control-interface.xml')
 env.Program( target="test-dbus", source = env.Split( "test-dbus.cpp controlclient.cpp" ) )
 
-env.XML2CPP_ADAPTOR('controlserver-glue.h', 'control-interface.xml')
+env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')
 env.Program( target="test-dbus-server", source = env.Split( "test-dbus-server.cpp controlserver.cpp" ) )
 env.Program( target="test-ffado", source = env.Split( "test-ffado.cpp controlserver.cpp" ) )
 

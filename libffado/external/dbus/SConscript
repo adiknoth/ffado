@@ -8,20 +8,8 @@ import sys
 #Import( 'env' )
 Import( 'externalenv' )
 #dbus_env = env.Copy()
-#buildenv={}
-#if os.environ.has_key('PATH'):
-#	buildenv['PATH']=os.environ['PATH']
-#else:
-#	buildenv['PATH']=''
 
-#if os.environ.has_key('PKG_CONFIG_PATH'):
-#	buildenv['PKG_CONFIG_PATH']=os.environ['PKG_CONFIG_PATH']
-#else:
-#	buildenv['PKG_CONFIG_PATH']=''
-
-dbus_env = externalenv.Copy() #Environment( ENV = buildenv )
-
-#CacheDir( 'cache/objects' )
+dbus_env = externalenv.Copy()
 
 if dbus_env.has_key('DBUS1_FLAGS'):
     dbus_env.MergeFlags( dbus_env['DBUS1_FLAGS'] )
@@ -82,21 +70,3 @@ tools_env.PrependUnique( LIBS="dbus-c++" )
 dbusxx_introspect = tools_env.Program('dbusxx-introspect', introspect_sources)
 dbusxx_xml2cpp = tools_env.Program('dbusxx-xml2cpp', xml2cpp_sources)
 
-#
-# xml translator
-#
-
-def dbusxx_xml2cpp_emitter(target, source, env):
-    dbus_env.Depends(target, dbusxx_xml2cpp)
-    return (target, source)
-
-dbusxx_xml2cpp_adaptor_builder = Builder(action = dbusxx_xml2cpp[0].abspath + ' $SOURCE --adaptor=$TARGET',
-    emitter = dbusxx_xml2cpp_emitter,
-    suffix = '.h', src_suffix = '.xml')
-
-dbusxx_xml2cpp_proxy_builder = Builder(action = dbusxx_xml2cpp[0].abspath + ' $SOURCE --proxy=$TARGET',
-    emitter = dbusxx_xml2cpp_emitter,
-    suffix = '.h', src_suffix = '.xml')
-
-Export('dbusxx_xml2cpp_adaptor_builder')
-Export('dbusxx_xml2cpp_proxy_builder')

@@ -55,7 +55,7 @@ if os.environ.has_key('PKG_CONFIG_PATH'):
 else:
 	buildenv['PKG_CONFIG_PATH']=''
 
-env = Environment( tools=['default','scanreplace','pyuic'], toolpath=['admin'], ENV = buildenv, options=opts )
+env = Environment( tools=['default','scanreplace','pyuic','dbus'], toolpath=['admin'], ENV = buildenv, options=opts )
 
 Help( """
 For building ffado you can set different options as listed below. You have to
@@ -231,24 +231,7 @@ env.ScanReplace( "config.h.in" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
-# build helper tools first
-subdirs=['external']
-if build_base:
-	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
-else:
-	env.SConscript( dirs=subdirs, exports="env" )
-
-if not env.GetOption('clean'):
-    Default( 'external' )
-
-Import( 'dbusxx_xml2cpp_adaptor_builder' )
-env.Append(BUILDERS = {'XML2CPP_ADAPTOR' : dbusxx_xml2cpp_adaptor_builder})
-
-Import( 'dbusxx_xml2cpp_proxy_builder' )
-env.Append(BUILDERS = {'XML2CPP_PROXY' : dbusxx_xml2cpp_proxy_builder})
-
-# now build our own stuff, which can use the tools defined above
-subdirs=['src','libffado','tests','support']
+subdirs=['external','src','libffado','tests','support']
 if build_base:
 	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
@@ -257,8 +240,10 @@ else:
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
+    Default( 'external' )
     Default( 'src' )
     if env['BUILD_TESTS']:
         Default( 'tests' )
+    # Cachedir has to be fixed...
     #env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
-    env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
+    #env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
