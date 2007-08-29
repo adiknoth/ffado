@@ -31,7 +31,7 @@ def CheckForPKG( context, name, version="" ):
 		ret = context.TryAction( "pkg-config --atleast-version=%s '%s'" % (version,name) )[0]
 
 	if ret:
-		context.env['%s_FLAGS' % name2.upper()] = "!pkg-config --cflags --libs %s" % name
+		context.env['%s_FLAGS' % name2.upper()] = context.env.ParseFlags("!pkg-config --cflags --libs %s" % name)
 
 	context.Result( ret )
 	return ret
