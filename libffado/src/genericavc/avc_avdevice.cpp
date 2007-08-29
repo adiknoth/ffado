@@ -34,6 +34,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "config.h"
+
 #include <string>
 #include <stdint.h>
 #include <assert.h>
@@ -49,11 +51,6 @@ namespace GenericAVC {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
 
-// to define the supported devices
-static VendorModelEntry supportedDeviceList[] =
-{
-
-};
 
 AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
                     std::auto_ptr<ConfigRom>( configRom ))
@@ -77,16 +74,10 @@ AvDevice::probe( ConfigRom& configRom )
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            return true;
-        }
+    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
+    if ( vendorModel.parse() ) {
+        vendorModel.printTable();
+        return vendorModel.find( vendorId, modelId );
     }
 
     return false;
@@ -238,9 +229,9 @@ void
 AvDevice::showDevice()
 {
     FFADODevice::showDevice();
-    
+
     debugOutput(DEBUG_LEVEL_NORMAL,
-        "%s %s\n", m_model->vendor_name, m_model->model_name);
+        "%s %s\n", m_model->vendor_name.c_str(), m_model->model_name.c_str());
 
     AVC::Unit::show();
     flushDebugOutput();
@@ -417,7 +408,7 @@ AvDevice::addPlugToProcessor(
                         Streaming::AmdtpPortInfo::E_MBLA
                 );
                 break;
-                
+
             case ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
             default:
             // unsupported

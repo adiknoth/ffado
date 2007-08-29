@@ -27,6 +27,9 @@
 #include <istream>
 #include <iostream>
 #include <iterator>
+#include <cerrno>
+#include <functional>
+#include <algorithm>
 
 using namespace std;
 
@@ -51,50 +54,156 @@ tokenize(const string& str,
     }
 }
 
-GenericAVC::VendorModel::VendorModel( const char* filename )
+//-------------------------------------------------
+
+GenericAVC::VendorModelEntry::VendorModelEntry()
+    : vendor_id( 0 )
+    , model_id( 0 )
 {
-    ifstream in ( filename );
+}
+
+GenericAVC::VendorModelEntry::VendorModelEntry( const VendorModelEntry& rhs )
+    : vendor_id( rhs.vendor_id )
+    , model_id( rhs.model_id )
+    , vendor_name( rhs.vendor_name )
+    , model_name( rhs.model_name )
+{
+}
+
+GenericAVC::VendorModelEntry&
+GenericAVC::VendorModelEntry::operator = ( const VendorModelEntry& rhs )
+{
+    // check for assignment to self
+    if ( this == &rhs ) return *this;
+
+    vendor_id   = rhs.vendor_id;
+    model_id    = rhs.model_id;
+    vendor_name = rhs.vendor_name;
+    model_name  = rhs.model_name;
+
+    return *this;
+}
+
+GenericAVC::VendorModelEntry::~VendorModelEntry()
+{
+}
+
+GenericAVC::VendorModel::VendorModel( const char* filename )
+    : m_filename( filename )
+{
+}
+
+GenericAVC::VendorModel::~VendorModel()
+{
+}
+
+
+bool
+GenericAVC::VendorModel::parse()
+{
+    ifstream in ( m_filename.c_str() );
 
     if ( !in ) {
-        perror( filename );
-        return;
+        perror( m_filename.c_str() );
+        return false;
     }
 
-    cout << "vendorId\t\tmodelId\t\tvendorName\t\tmodelName" << endl;
     string line;
     while ( !getline( in,  line ).eof() ) {
         string::size_type i = line.find_first_not_of( " \t\n\v" );
         if ( i != string::npos && line[i] == '#' )
+            // this line starts with a '#' -> comment
             continue;
 
         vector<string> tokens;
         tokenize( line, tokens, "," );
 
-        for ( vector<string>::iterator it = tokens.begin();
-              it != tokens.end();
-              ++it )
-        {
-            string vendorId = *it++;
-            string modelId = *it++;
-            string vendorName = *it++;
-            string modelName= *it;
-            cout << vendorId << "\t" << modelId << "\t" <<vendorName << "\t" << modelName << endl;
-        }
+        if ( tokens.size() < 4 )
+            // ignore this line, it has not all needed mandatory entries
+            continue;
+
+        VendorModelEntry vme;
+        vector<string>::const_iterator it = tokens.begin();
+        char* tail;
+
+        errno = 0;
+        vme.vendor_id   = strtol( it++->c_str(), &tail, 0 );
+        vme.model_id    = strtol( it++->c_str(), &tail, 0 );
+        vme.vendor_name = *it++;
+        vme.model_name  = *it++;
+
+        if ( errno )
+            // string -> int conversion failed
+            continue;
+
+        vector<string>::const_iterator end = tokens.end();
+        if ( it != end )
+            handleAdditionalEntries( vme, tokens, it, end );
+
+        m_vendorModelEntries.push_back( vme );
     }
 
     if ( !in.eof() ) {
-        cout << "GenericAVC::VendorModel::VendorModel: error in parsing" << endl;
+        cerr << "GenericAVC::VendorModel::VendorModel: error in parsing" << endl;
+        return false;
     }
+
+    return true;
 }
 
-GenericAVC::VendorModel::~VendorModel()
+bool
+GenericAVC::VendorModel::printTable() const
 {
-    for ( VendorModelEntryVector::iterator it = m_vendorModelEntries.begin();
+    // Some debug output
+    cout << "vendorId\t\tmodelId\t\tvendorName\t\t\t\tmodelName" << endl;
+    for ( VendorModelEntryVector::const_iterator it = m_vendorModelEntries.begin();
           it != m_vendorModelEntries.end();
           ++it )
     {
-        delete *it;
+        cout << it->vendor_id << "\t\t\t"
+             << it->model_id << "\t"
+             << it->vendor_name << "\t"
+             << it->model_name << endl;
     }
+    return true;
+}
+
+bool
+GenericAVC::VendorModel::handleAdditionalEntries(VendorModelEntry& vme,
+                                                 vector<string>& v,
+                                                 vector<string>::const_iterator& b,
+                                                 vector<string>::const_iterator& e )
+{
+    return true;
+}
+
+class is_same : public unary_function<GenericAVC::VendorModelEntry, bool> {
+public:
+    is_same( unsigned int vendor_id, unsigned model_id )
+        : m_vendor_id( vendor_id )
+        , m_model_id( model_id )
+    {}
+
+    bool operator () ( const GenericAVC::VendorModelEntry& vme ) const {
+        return vme.vendor_id == m_vendor_id && vme.model_id == m_model_id;
+    }
+
+private:
+    unsigned int m_vendor_id;
+    unsigned int m_model_id;
+};
+
+GenericAVC::VendorModelEntry*
+GenericAVC::VendorModel::find( unsigned int vendor_id, unsigned model_id )
+{
+    VendorModelEntryVector::iterator it =
+        find_if ( m_vendorModelEntries.begin(),
+                  m_vendorModelEntries.end(),
+                  is_same( vendor_id, model_id ) );
+    if ( it != m_vendorModelEntries.end() )
+        return &*it;
+
+    return 0;
 }
 
 const GenericAVC::VendorModelEntryVector&

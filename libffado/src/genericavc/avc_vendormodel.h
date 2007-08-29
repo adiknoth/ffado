@@ -24,27 +24,42 @@
 #ifndef GENERICAVC_VENDORMODEL_H
 #define GENERICAVC_VENDORMODEL_H
 
+#include <string>
 #include <vector>
 
 namespace GenericAVC {
 
 // struct to define the supported devices
 struct VendorModelEntry {
+    VendorModelEntry();
+    VendorModelEntry(const VendorModelEntry& rhs);
+    VendorModelEntry& operator = (const VendorModelEntry& rhs);
+    virtual ~VendorModelEntry();
+
     unsigned int vendor_id;
     unsigned int model_id;
-    char *vendor_name;
-    char *model_name;
+    std::string vendor_name;
+    std::string model_name;
 };
 
-typedef std::vector<VendorModelEntry*> VendorModelEntryVector;
+typedef std::vector<VendorModelEntry> VendorModelEntryVector;
 
 class VendorModel {
 public:
     VendorModel( const char* filename );
-    ~VendorModel();
+    virtual ~VendorModel();
+
+    virtual bool parse();
+    virtual bool printTable() const;
+    virtual bool handleAdditionalEntries(VendorModelEntry& vme,
+                                         std::vector<std::string>& v,
+                                         std::vector<std::string>::const_iterator& b,
+                                         std::vector<std::string>::const_iterator& e );
+    VendorModelEntry* find( unsigned int vendor_id,  unsigned model_id );
 
     const VendorModelEntryVector& getVendorModelEntries() const;
 private:
+    std::string m_filename;
     VendorModelEntryVector m_vendorModelEntries;
 };
 

@@ -28,14 +28,10 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
+#include "config.h"
+
 // FireWorks is the platform used and developed by ECHO AUDIO
 namespace FireWorks {
-
-// to define the supported devices
-static GenericAVC::VendorModelEntry supportedDeviceList[] =
-{
-    {FW_VENDORID_ECHO, 0x00000af2, "Echo", "AudioFire2"},
-};
 
 Device::Device( Ieee1394Service& ieee1394Service,
                             std::auto_ptr<ConfigRom>( configRom ))
@@ -63,16 +59,10 @@ Device::probe( ConfigRom& configRom )
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( GenericAVC::VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            return true;
-        }
+    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
+    if ( vendorModel.parse() ) {
+        vendorModel.printTable();
+        return vendorModel.find( vendorId, modelId );
     }
 
     return false;
@@ -84,23 +74,16 @@ Device::discover()
     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
     unsigned int modelId = m_pConfigRom->getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( GenericAVC::VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-        }
+    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
+    if ( vendorModel.parse() ) {
+        m_model = vendorModel.find( vendorId, modelId );
     }
 
     if (m_model == NULL) {
         return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-            m_model->vendor_name, m_model->model_name);
+            m_model->vendor_name.c_str(), m_model->model_name.c_str());
 
     if ( !GenericAVC::AvDevice::discover() ) {
         debugError( "Could not discover GenericAVC::AvDevice\n" );
@@ -116,7 +99,7 @@ Device::createDevice( Ieee1394Service& ieee1394Service,
 {
     unsigned int vendorId = configRom->getNodeVendorId();
     unsigned int modelId = configRom->getModelId();
-    
+
     switch(vendorId) {
         case FW_VENDORID_ECHO: return new ECHO::AudioFire(ieee1394Service, configRom );
         default: return new Device(ieee1394Service, configRom );
