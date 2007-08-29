@@ -329,56 +329,56 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
     if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
-        return new BeBoB::AvDevice( configRom, *m_1394Service, id );
+        return BeBoB::AvDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_GENERICAVC
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
     if ( GenericAVC::AvDevice::probe( *configRom.get() ) ) {
-        return new GenericAVC::AvDevice( configRom, *m_1394Service, id );
+        return GenericAVC::AvDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
     if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
-        return new MAudio::AvDevice( configRom, *m_1394Service, id );
+        return MAudio::AvDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_MOTU
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
     if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
-        return new Motu::MotuDevice( configRom, *m_1394Service, id );
+        return Motu::MotuDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_DICE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Dice...\n" );
     if ( Dice::DiceAvDevice::probe( *configRom.get() ) ) {
-        return new Dice::DiceAvDevice( configRom, *m_1394Service, id );
+        return Dice::DiceAvDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_METRIC_HALO
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Metric Halo...\n" );
     if ( MetricHalo::MHAvDevice::probe( *configRom.get() ) ) {
-        return new MetricHalo::MHAvDevice( configRom, *m_1394Service, id );
+        return MetricHalo::MHAvDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_RME
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying RME...\n" );
     if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
-        return new Rme::RmeDevice( configRom, *m_1394Service, id );
+        return Rme::RmeDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
 #ifdef ENABLE_BOUNCE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Bounce...\n" );
     if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
-        return new Bounce::BounceDevice( configRom, *m_1394Service, id );
+        return Bounce::BounceDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 
@@ -391,7 +391,7 @@ DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 
 #ifdef ENABLE_BOUNCE
     if ( Bounce::BounceSlaveDevice::probe( *configRom.get() ) ) {
-        return new Bounce::BounceSlaveDevice( configRom, *m_1394Service );
+        return Bounce::BounceSlaveDevice::createDevice( *m_1394Service, configRom );
     }
 #endif
 

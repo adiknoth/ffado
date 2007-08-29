@@ -34,28 +34,41 @@
 
 IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 
-FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId )
+FFADODevice::FFADODevice( Ieee1394Service& ieee1394Service,
+                    std::auto_ptr<ConfigRom>( configRom ))
     : Control::Container()
     , m_pConfigRom( configRom )
-    , m_p1394Service( &ieee1394service )
-    , m_nodeId ( nodeId )
+    , m_p1394Service( &ieee1394Service )
 {
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 
     std::ostringstream nodestr;
-    nodestr << "node" << nodeId;
+    nodestr << "node" << m_pConfigRom->getNodeId();
+    
 //     setOscBase(nodestr.str());
-    ConfigRom& c = getConfigRom();
-
+//     ConfigRom& c = getConfigRom();
 //     addChildOscNode(&c);
+}
+
+FFADODevice *
+FFADODevice::createDevice( Ieee1394Service& ,
+                           std::auto_ptr<ConfigRom>( x ))
+{
+    // re-implement this!!
+    assert(0);
+    return NULL;
 }
 
 std::string
 FFADODevice::getName()
 {
     return getConfigRom().getGuidString();
+}
+
+int
+FFADODevice::getNodeId()
+{
+    return getConfigRom().getNodeId();
 }
 
 bool FFADODevice::compareGUID( FFADODevice *a, FFADODevice *b ) {

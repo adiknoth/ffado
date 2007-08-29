@@ -81,14 +81,13 @@ static GenericAVC::VendorModelEntry supportedDeviceList[] =
     {0x000d6c, 0x00010081, "M-Audio", "NRV10"},
 };
 
-AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId )
-    : GenericAVC::AvDevice( configRom, ieee1394service, nodeId )
+AvDevice::AvDevice( Ieee1394Service& ieee1394service,
+                    std::auto_ptr< ConfigRom >( configRom ) )
+    : GenericAVC::AvDevice( ieee1394service, configRom )
     , m_Mixer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
 }
 
 AvDevice::~AvDevice()
@@ -170,6 +169,13 @@ AvDevice::probe( ConfigRom& configRom )
     return false;
 }
 
+FFADODevice *
+AvDevice::createDevice( Ieee1394Service& ieee1394Service,
+                        std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new AvDevice(ieee1394Service, configRom );
+}
+
 bool
 AvDevice::discover()
 {
@@ -239,12 +245,12 @@ AvDevice::getConfigurationIdSampleRate()
 {
     ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     m_nodeId );
+                                     getNodeId() );
     extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
 
-    extStreamFormatCmd.setNodeId( m_nodeId );
+    extStreamFormatCmd.setNodeId( getNodeId() );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
     extStreamFormatCmd.setVerbose( true );
 
@@ -273,11 +279,11 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 {
     ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     m_nodeId );
+                                     getNodeId() );
     extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
                                                 PlugAddress::ePAM_Unit,
                                                 unitPlugAddress ) );
-    extPlugInfoCmd.setNodeId( m_nodeId );
+    extPlugInfoCmd.setNodeId( getNodeId() );
     extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
     extPlugInfoCmd.setVerbose( true );
     ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
@@ -310,7 +316,7 @@ AvDevice::getConfigurationIdSyncMode()
     SignalUnitAddress signalUnitAddr;
     signalUnitAddr.m_plugId = 0x01;
     signalSourceCmd.setSignalDestination( signalUnitAddr );
-    signalSourceCmd.setNodeId( m_nodeId );
+    signalSourceCmd.setNodeId( getNodeId() );
     signalSourceCmd.setSubunitType( eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
 

@@ -44,11 +44,13 @@ class BounceSlaveDevice : public BounceDevice {
     class BounceSlaveNotifier;
 public:
 
-    BounceSlaveDevice( std::auto_ptr<ConfigRom>( configRom ),
-          Ieee1394Service& ieee1394Service );
+    BounceSlaveDevice( Ieee1394Service& ieee1394Service,
+                       std::auto_ptr<ConfigRom>( configRom ));
     virtual ~BounceSlaveDevice();
 
     static bool probe( ConfigRom& configRom );
+    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
+                                        std::auto_ptr<ConfigRom>( configRom ));
     bool discover();
     bool prepare();
     bool lock();

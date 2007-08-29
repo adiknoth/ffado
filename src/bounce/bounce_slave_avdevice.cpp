@@ -40,11 +40,9 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0B0001, 0x0B0001, 0x0B0001, "FFADO", "Bounce Slave"},
 };
 
-BounceSlaveDevice::BounceSlaveDevice( std::auto_ptr< ConfigRom >( configRom ),
-                            Ieee1394Service& ieee1394service )
-    : BounceDevice( configRom,
-                    ieee1394service,
-                    ieee1394service.getLocalNodeId() )
+BounceSlaveDevice::BounceSlaveDevice( Ieee1394Service& ieee1394Service,
+                                      std::auto_ptr<ConfigRom>( configRom ))
+    : BounceDevice( ieee1394Service, configRom )
 {
     addOption(Util::OptionContainer::Option("isoTimeoutSecs",(int64_t)120));
 }
@@ -58,6 +56,13 @@ BounceSlaveDevice::probe( ConfigRom& configRom )
 {
     // we are always capable of constructing a slave device
     return true;
+}
+
+FFADODevice *
+BounceSlaveDevice::createDevice( Ieee1394Service& ieee1394Service,
+                            std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new BounceSlaveDevice(ieee1394Service, configRom );
 }
 
 bool
@@ -103,7 +108,7 @@ bool BounceSlaveDevice::initMemSpace() {
         // be there is a real software problem on our side.
         // This should be handled more carefuly.
         debugError( "Could not reread config rom from device (node id %d).\n",
-                     m_nodeId );
+                     getNodeId() );
         return false;
     }
     return true;
@@ -118,7 +123,7 @@ bool BounceSlaveDevice::restoreMemSpace() {
 bool
 BounceSlaveDevice::lock() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n",
-        m_model->vendor_name, m_model->model_name, m_nodeId);
+        m_model->vendor_name, m_model->model_name, getNodeId());
 
     // get a notifier to handle device notifications
     nodeaddr_t notify_address;

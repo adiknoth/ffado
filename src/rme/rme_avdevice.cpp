@@ -49,14 +49,13 @@ static VendorModelEntry supportedDeviceList[] =
     {0x00000a35, 0x0001, "RME", "Fireface-800"},  // RME Fireface-800
 };
 
-RmeDevice::RmeDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId )
-    : FFADODevice( configRom, ieee1394service, nodeId )
+RmeDevice::RmeDevice( Ieee1394Service& ieee1394Service,
+                      std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( ieee1394Service, configRom )
     , m_model( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::RmeDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
 }
 
 RmeDevice::~RmeDevice()
@@ -83,6 +82,13 @@ RmeDevice::probe( ConfigRom& configRom )
     }
 
     return false;
+}
+
+FFADODevice *
+RmeDevice::createDevice( Ieee1394Service& ieee1394Service,
+                         std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new RmeDevice(ieee1394Service, configRom );
 }
 
 bool
@@ -155,7 +161,7 @@ RmeDevice::showDevice()
 {
 	debugOutput(DEBUG_LEVEL_VERBOSE,
 		"%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-		m_nodeId);
+		getNodeId());
 }
 
 bool

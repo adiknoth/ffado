@@ -47,9 +47,8 @@ class FFADODevice
       public Control::Container
 {
 public:
-    FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId );
+    FFADODevice( Ieee1394Service& ieee1394service,
+                 std::auto_ptr< ConfigRom >( configRom ) );
 
     virtual ~FFADODevice() {};
 
@@ -94,6 +93,23 @@ public:
      * the driver was unable to store the configuration
      */
     virtual bool saveCache();
+
+    /**
+     * @brief This is called by the DeviceManager to create an instance of the device
+     *
+     * This function enables the FFADODevice to return a subclass of itself should that
+     * be needed. If we don't do this we'd need to know about the subclasses in the 
+     * devicemanager, whilst now we don't.
+     * 
+     * The function should return an instance of either the class itself or a subclass
+     * of itself.
+     *
+     * This should be overridden in any subclass.
+     *
+     * @return a new instance of the AvDevice type, NULL when unsuccessful
+     */
+    static FFADODevice * createDevice( Ieee1394Service& ,
+                                        std::auto_ptr<ConfigRom>( x ));
 
     /**
      * @brief This is called by the DeviceManager to discover & configure the device
@@ -285,7 +301,7 @@ public:
      *
      * @return the node id
      */
-    int getNodeId() { return m_nodeId;};
+    int getNodeId();
 
     // the Control::Container functions
     virtual std::string getName();
@@ -296,7 +312,6 @@ public:
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
     Ieee1394Service*          m_p1394Service;
-    int                       m_nodeId;
 
     DECLARE_DEBUG_MODULE;
 };

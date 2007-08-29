@@ -48,12 +48,13 @@ struct VendorModelEntry {
 class RmeDevice : public FFADODevice {
 public:
 
-    RmeDevice( std::auto_ptr<ConfigRom>( configRom ),
-	      Ieee1394Service& ieee1394Service,
-		  int nodeId );
+    RmeDevice( Ieee1394Service& ieee1394Service,
+               std::auto_ptr<ConfigRom>( configRom ));
     virtual ~RmeDevice();
 
     static bool probe( ConfigRom& configRom );
+    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
+                                        std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );
     virtual bool discover();
 

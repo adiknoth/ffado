@@ -39,16 +39,13 @@
 
 namespace MAudio {
 
-AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int iNodeId )
-    : BeBoB::AvDevice( configRom,
-                    ieee1394service,
-                    iNodeId )
+AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
+                    std::auto_ptr<ConfigRom>( configRom ))
+    : BeBoB::AvDevice( ieee1394Service, configRom)
     , m_model ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
-                 iNodeId );
+                 configRom->getNodeId() );
 }
 
 AvDevice::~AvDevice()
@@ -81,6 +78,13 @@ AvDevice::probe( ConfigRom& configRom )
         }
     }
     return false;
+}
+
+FFADODevice *
+AvDevice::createDevice( Ieee1394Service& ieee1394Service,
+                        std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new AvDevice(ieee1394Service, configRom );
 }
 
 bool
