@@ -31,8 +31,9 @@
 #include "libieee1394/ieee1394service.h"
 
 #include "libutil/OptionContainer.h"
-#include "libosc/OscServer.h"
-#include "libosc/OscNode.h"
+// #include "libosc/OscServer.h"
+// #include "libosc/OscNode.h"
+#include "libcontrol/BasicElements.h"
 
 #include <glibmm/ustring.h>
 
@@ -49,7 +50,7 @@ typedef std::vector< FFADODevice* >::iterator FFADODeviceVectorIterator;
 
 class DeviceManager
     : public Util::OptionContainer,
-      public OSC::OscNode
+      public Control::Container
 {
 public:
     DeviceManager();
@@ -72,6 +73,12 @@ public:
 
     void show();
 
+    // the Control::Container functions
+    virtual std::string getName() 
+        {return "DeviceManager";};
+    virtual bool setName( std::string n )
+        { return false;};
+
 protected:
     FFADODevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id );
@@ -81,7 +88,7 @@ protected:
     Ieee1394Service* m_1394Service;
     FFADODeviceVector  m_avDevices;
 
-    OSC::OscServer*  m_oscServer;
+//     OSC::OscServer*  m_oscServer;
 
 // debug stuff
 public:

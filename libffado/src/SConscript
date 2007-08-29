@@ -79,9 +79,9 @@ bebob_source = env.Split( '\
 	bebob/bebob_dl_codes.cpp \
 	bebob/bebob_dl_mgr.cpp \
 	bebob/bebob_functionblock.cpp \
-	bebob/GenericMixer.cpp \
-	bebob/vendorspecific/focusrite.cpp \
-	bebob/vendorspecific/terratec.cpp \
+	bebob/bebob_mixer.cpp \
+	bebob/focusrite/focusrite.cpp \
+	bebob/terratec/terratec.cpp \
 	maudio/maudio_avdevice.cpp \
 ' )
 bebob_pkgdata = env.Split( '\

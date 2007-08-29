@@ -25,27 +25,27 @@
 
 namespace Control {
 
-Contignous::Contignous()
+Continuous::Continuous()
 : Element()
 , m_Value( 0.0 )
 {
 }
 
-Contignous::Contignous(std::string n)
+Continuous::Continuous(std::string n)
 : Element(n)
 , m_Value( 0.0 )
 {
 }
 
 void
-Contignous::show()
+Continuous::show()
 {
-    debugOutput( DEBUG_LEVEL_NORMAL, "Contignous Element %s, value=%lf\n",
+    debugOutput( DEBUG_LEVEL_NORMAL, "Continuous Element %s, value=%lf\n",
         getName().c_str(), m_Value);
 }
 
 bool
-Contignous::setValue(double v)
+Continuous::setValue(double v)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%lf)\n",
         getName().c_str(), v);
@@ -55,9 +55,49 @@ Contignous::setValue(double v)
 }
 
 double
-Contignous::getValue()
+Continuous::getValue()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%lf\n",
+        getName().c_str(), m_Value);
+    
+    return m_Value;
+}
+
+//// ---
+
+Discrete::Discrete()
+: Element()
+, m_Value( 0 )
+{
+}
+
+Discrete::Discrete(std::string n)
+: Element(n)
+, m_Value( 0 )
+{
+}
+
+void
+Discrete::show()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "Discrete Element %s, value=%d\n",
+        getName().c_str(), m_Value);
+}
+
+bool
+Discrete::setValue(int v)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%d)\n",
+        getName().c_str(), v);
+    
+    m_Value=v;
+    return true;
+}
+
+int
+Discrete::getValue()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%d\n",
         getName().c_str(), m_Value);
     
     return m_Value;

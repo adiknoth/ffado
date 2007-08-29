@@ -36,13 +36,13 @@ namespace Control {
 /*!
 @brief Base class for contignous control elements
 */
-class Contignous
+class Continuous
 : public Element
 {
 public:
-    Contignous();
-    Contignous(std::string n);
-    virtual ~Contignous() {};
+    Continuous();
+    Continuous(std::string n);
+    virtual ~Continuous() {};
     
     virtual bool setValue(double v);
     virtual double getValue();
@@ -51,6 +51,26 @@ public:
 
 private:
     double m_Value;
+};
+
+/*!
+@brief Base class for discrete control elements
+*/
+class Discrete
+: public Element
+{
+public:
+    Discrete();
+    Discrete(std::string n);
+    virtual ~Discrete() {};
+    
+    virtual bool setValue(int v);
+    virtual int getValue();
+
+    virtual void show();
+
+private:
+    int m_Value;
 };
 
 }; // namespace Control
