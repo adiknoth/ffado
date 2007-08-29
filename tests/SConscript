@@ -8,7 +8,9 @@ env.PrependUnique( CPPPATH=["#/src", "#/external/dbus/include"] )
 env.PrependUnique( LIBPATH=[env['build_base']+"src", env['build_base']+"external/dbus"] )
 env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
 
-env.MergeFlags( ["!pkg-config --cflags --libs dbus-1"] )
+env.MergeFlags( env["DBUS1_FLAGS"] )
+env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+env.MergeFlags( env['LIBXML26_FLAGS'] )
 
 #
 # deactivate as they don't seem ported to the new api: test-extplugcmd, test-mixer, test-volume

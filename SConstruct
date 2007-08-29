@@ -165,31 +165,7 @@ else:
 	env['build_base']="#/"
 
 #
-# Create an environment for the externals-directory without all the fancy
-# ffado-defines. Probably the ffado-defines should be gathered in a distinct
-# ffadoenv...
-externalenv = env.Copy()
-Export( 'externalenv' )
-
-#
-# TODO: Most of these flags aren't needed for all the apps/libs compiled here.
-# The relevant MergeFlags-calls should be moved to the SConscript-files where
-# its needed...
-if env.has_key('LIBRAW1394_FLAGS'):
-    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
-if env.has_key('LIBAVC1394_FLAGS'):
-    env.MergeFlags( env['LIBAVC1394_FLAGS'] )
-if env.has_key('LIBIEC61883_FLAGS'):
-    env.MergeFlags( env['LIBIEC61883_FLAGS'] )
-if env.has_key('ALSA_FLAGS'):
-    env.MergeFlags( env['ALSA_FLAGS'] )
-if env.has_key('LIBXML26_FLAGS'):
-    env.MergeFlags( env['LIBXML26_FLAGS'] )
-if env.has_key('LIBLO_FLAGS'):
-    env.MergeFlags( env['LIBLO_FLAGS'] )
-
-#
-# Some includes in src/*/ are full path (src/*), that should be fixed?
+# XXX: Some includes in src/*/ are full path (src/*), that should be fixed?
 env.AppendUnique( CPPPATH=["#/"] )
 
 env['bindir'] = os.path.join( env['PREFIX'], "bin" )
