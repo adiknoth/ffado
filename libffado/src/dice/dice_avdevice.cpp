@@ -47,7 +47,7 @@ namespace Dice {
 static VendorModelEntry supportedDeviceList[] =
 {
     // vendor id, model id, vendor name, model name
-    {0x00000166, 0x00000002, "TCAT", "DiceII EVM"},
+    {FW_VENDORID_TCAT, 0x00000002, "TCAT", "DiceII EVM"},
 };
 
 DiceAvDevice::DiceAvDevice( Ieee1394Service& ieee1394Service,

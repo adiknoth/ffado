@@ -97,6 +97,11 @@ genericavc_source =  env.Split( '\
 	genericavc/avc_vendormodel.cpp \
 ' )
 
+fireworks_source =  env.Split( '\
+	fireworks/fireworks_device.cpp \
+	fireworks/audiofire/audiofire_device.cpp \
+' )
+
 motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
 	libstreaming/MotuPort.cpp \
@@ -131,8 +136,8 @@ amdtp_source = env.Split( '\
 source = ffado_source
 if env['ENABLE_BEBOB']:
 	source += bebob_source
-if env['ENABLE_GENERICAVC']:
-	source += genericavc_source
+if env['ENABLE_FIREWORKS']:
+	source += fireworks_source
 if env['ENABLE_MOTU']:
 	source += motu_source
 if env['ENABLE_DICE']:
@@ -144,8 +149,9 @@ if env['ENABLE_RME']:
 if env['ENABLE_BOUNCE']:
 	source += bounce_source
 
-if env['ENABLE_BEBOB'] or env['ENABLE_GENERICAVC'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE']:
+if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
 	source += amdtp_source
+	source += genericavc_source
 
 env1.MergeFlags( "-lrt" )
 

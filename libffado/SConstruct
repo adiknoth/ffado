@@ -29,7 +29,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 \"-O2\" to optimise.""", True ),
 	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
-	BoolOption( "ENABLE_GENERICAVC", "Enable/Disable the generic avc part (apple).", True ),
+	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks avc part.", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", False ),
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
@@ -146,7 +146,7 @@ env.AppendUnique( CCFLAGS=["-DDBUS_HAS_THREADS_INIT_DEFAULT"] )
 
 if env['ENABLE_ALL']:
 	env['ENABLE_BEBOB'] = True
-	env['ENABLE_GENERICAVC'] = True
+	env['ENABLE_FIREWORKS'] = True
 	env['ENABLE_MOTU'] = True
 	env['ENABLE_DICE'] = True
 	env['ENABLE_METRIC_HALO'] = True
@@ -170,8 +170,8 @@ Export( 'externalenv' )
 #
 if env['ENABLE_BEBOB']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
-if env['ENABLE_GENERICAVC']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
+if env['ENABLE_FIREWORKS']:
+	env.AppendUnique( CCFLAGS=["-DENABLE_FIREWORKS"] )
 if env['ENABLE_MOTU']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
 if env['ENABLE_DICE']:
@@ -182,6 +182,10 @@ if env['ENABLE_RME']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_RME"] )
 if env['ENABLE_BOUNCE']:
 	env.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
+
+# the GenericAVC code is used by these devices
+if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
+	env.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
 
 #
 # TODO: Most of these flags aren't needed for all the apps/libs compiled here.

@@ -51,8 +51,8 @@ namespace Motu {
 static VendorModelEntry supportedDeviceList[] =
 {
 //  {vendor_id, model_id, unit_version, unit_specifier_id, model, vendor_name,model_name}
-    {0x000001f2, 0, 0x00000003, 0x000001f2, MOTUFW_MODEL_828mkII, "MOTU", "828MkII"},
-    {0x000001f2, 0, 0x00000009, 0x000001f2, MOTUFW_MODEL_TRAVELER, "MOTU", "Traveler"},
+    {FW_VENDORID_MOTU, 0, 0x00000003, 0x000001f2, MOTUFW_MODEL_828mkII, "MOTU", "828MkII"},
+    {FW_VENDORID_MOTU, 0, 0x00000009, 0x000001f2, MOTUFW_MODEL_TRAVELER, "MOTU", "Traveler"},
 };
 
 MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
