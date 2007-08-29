@@ -28,6 +28,8 @@
 #include "libutil/OptionContainer.h"
 #include "libcontrol/BasicElements.h"
 
+#include "libieee1394/vendor_model_ids.h"
+
 class ConfigRom;
 class Ieee1394Service;
 

@@ -48,7 +48,7 @@ namespace Bounce {
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x0B0001LU, 0x0B0001LU, 0x0B0001LU, "FFADO", "Bounce"},
+    {FW_VENDORID_FFADO, 0x0B0001LU, 0x0B0001LU, "FFADO", "Bounce"},
 };
 
 BounceDevice::BounceDevice( Ieee1394Service& ieee1394Service,

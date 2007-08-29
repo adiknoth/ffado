@@ -54,11 +54,11 @@ AvDevice::~AvDevice()
 
 static VendorModelEntry supportedDeviceList[] =
 {
-    //{0x0007f5, 0x00010048, "BridgeCo", "RD Audio1", "refdesign.xml"},
+    //{FW_VENDORID_BRIDGECO, 0x00010048, "BridgeCo", "RD Audio1", "refdesign.xml"},
 
-    {0x000d6c, 0x00010046, "M-Audio", "FW 410", "fw410.xml"},
-    {0x000d6c, 0x00010058, "M-Audio", "FW 410", "fw410.xml"},       // Version 5.10.0.5036
-    {0x000d6c, 0x00010060, "M-Audio", "FW Audiophile", "fwap.xml"},
+    {FW_VENDORID_MAUDIO, 0x00010046, "M-Audio", "FW 410", "fw410.xml"},
+    {FW_VENDORID_MAUDIO, 0x00010058, "M-Audio", "FW 410", "fw410.xml"},       // Version 5.10.0.5036
+    {FW_VENDORID_MAUDIO, 0x00010060, "M-Audio", "FW Audiophile", "fwap.xml"},
 };
 
 bool

@@ -46,7 +46,7 @@ namespace Rme {
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x00000a35, 0x0001, "RME", "Fireface-800"},  // RME Fireface-800
+    {FW_VENDORID_RME, 0x0001, "RME", "Fireface-800"},  // RME Fireface-800
 };
 
 RmeDevice::RmeDevice( Ieee1394Service& ieee1394Service,

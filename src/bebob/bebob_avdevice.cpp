@@ -53,16 +53,6 @@ using namespace AVC;
 
 namespace BeBoB {
 
-#define FW_VENDORID_TERRATEC  0x000aac
-#define FW_VENDORID_MACKIE    0x00000f
-#define FW_VENDORID_APOGEE    0x0003db
-#define FW_VENDORID_BRIDGECO  0x0007f5
-#define FW_VENDORID_PRESONUS  0x000a92
-#define FW_VENDORID_ESI       0x000f1b
-#define FW_VENDORID_FOCUSRITE 0x00130e
-#define FW_VENDORID_EDIROL    0x0040ab
-#define FW_VENDORID_MAUDIO    0x000d6c
-
 static GenericAVC::VendorModelEntry supportedDeviceList[] =
 {
     {FW_VENDORID_MACKIE, 0x00010065, "Mackie", "Onyx Firewire"},

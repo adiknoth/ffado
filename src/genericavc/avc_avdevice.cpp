@@ -52,7 +52,7 @@ IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {0x001486, 0x00000af2, "Echo", "AudioFire2"},
+
 };
 
 AvDevice::AvDevice( Ieee1394Service& ieee1394Service,

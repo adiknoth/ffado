@@ -37,7 +37,7 @@ namespace Bounce {
 static VendorModelEntry supportedDeviceList[] =
 {
   //{vendor_id, model_id, unit_specifier_id, vendor_name, model_name},
-    {0x0B0001, 0x0B0001, 0x0B0001, "FFADO", "Bounce Slave"},
+    {FW_VENDORID_FFADO, 0x0B0001, 0x0B0001, "FFADO", "Bounce Slave"},
 };
 
 BounceSlaveDevice::BounceSlaveDevice( Ieee1394Service& ieee1394Service,

@@ -43,6 +43,10 @@
     #include "genericavc/avc_avdevice.h"
 #endif
 
+#ifdef ENABLE_FIREWORKS
+    #include "fireworks/fireworks_device.h"
+#endif
+
 #ifdef ENABLE_BOUNCE
 #include "bounce/bounce_avdevice.h"
 #include "bounce/bounce_slave_avdevice.h"
@@ -321,7 +325,6 @@ DeviceManager::discover( )
     }
 }
 
-
 FFADODevice*
 DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
                                    int id )
@@ -337,6 +340,13 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
     if ( GenericAVC::AvDevice::probe( *configRom.get() ) ) {
         return GenericAVC::AvDevice::createDevice( *m_1394Service, configRom );
+    }
+#endif
+
+#ifdef ENABLE_FIREWORKS
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying ECHO Audio FireWorks...\n" );
+    if ( FireWorks::Device::probe( *configRom.get() ) ) {
+        return FireWorks::Device::createDevice( *m_1394Service, configRom );
     }
 #endif
 
