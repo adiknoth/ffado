@@ -6,7 +6,7 @@ Import( 'env' )
 
 env.AppendUnique( CPPPATH=["#/", "#/src"] )
 
-env1 = env.Copy()
+libenv = env.Copy()
 
 ffado_source = env.Split( '\
 	devicemanager.cpp \
@@ -135,68 +135,77 @@ amdtp_source = env.Split( '\
 
 source = ffado_source
 if env['ENABLE_BEBOB']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
 	source += bebob_source
 if env['ENABLE_FIREWORKS']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_FIREWORKS"] )
 	source += fireworks_source
 if env['ENABLE_MOTU']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
 	source += motu_source
 if env['ENABLE_DICE']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_DICE"] )
 	source += dice_source
 if env['ENABLE_METRIC_HALO']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_METRIC_HALO"] )
 	source += metric_halo_source
 if env['ENABLE_RME']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_RME"] )
 	source += rme_source
 if env['ENABLE_BOUNCE']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
 	source += bounce_source
 
-if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
+# The list of devices needing GENERICAVC is controlled in ../SConstruct
+if env['ENABLE_GENERICAVC']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
 	source += amdtp_source
 	source += genericavc_source
 
-env1.MergeFlags( "-lrt" )
+libenv.MergeFlags( "-lrt" )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
-ffadolib = env1.SharedLibrary( "ffado", source )
+ffadolib = libenv.SharedLibrary( "ffado", source )
 
 #
 # All the following tries to emulate the versioning of installed libs as seen from libtool...
 #
 if False:
 	print "Trying to emulate libtools versioned install"
-	env1.Alias( "install", env1.InstallAs( os.path.join('$libdir','libffado.so.$LIBVERSION'), ffadolib ) )
-	env1.Ignore( ffadolib, os.path.join('$libdir','libffado.so') )
+	libenv.Alias( "install", libenv.InstallAs( os.path.join('$libdir','libffado.so.$LIBVERSION'), ffadolib ) )
+	libenv.Ignore( ffadolib, os.path.join('$libdir','libffado.so') )
 	#env.Ignore( os.path.join('$libdir','libffado.so'), ffadolib )
 	#env.Ignore( os.path.join('$libdir','libffado.so.0'), "install" )
 
-	env1.Alias( "install", env1.Command(
+	libenv.Alias( "install", libenv.Command(
 		target="$libdir/libffado.so",
-		source=env1['libdir']+"/libffado.so.$LIBVERSION",
+		source=libenv['libdir']+"/libffado.so.$LIBVERSION",
 		action="ln -s $SOURCE $TARGET"
 		) )
-	env1.Alias( "install", env1.Command(
-		target="$libdir/libffado.so.%s" % str(env1['LIBVERSION']).rsplit('.',1)[0],
-		source=env1['libdir']+"/libffado.so.$LIBVERSION",
+	libenv.Alias( "install", libenv.Command(
+		target="$libdir/libffado.so.%s" % str(libenv['LIBVERSION']).rsplit('.',1)[0],
+		source=libenv['libdir']+"/libffado.so.$LIBVERSION",
 		action="ln -s $SOURCE $TARGET"
 		) )
-	env1.Alias( "install", env1.Command(
-		target="$libdir/libffado.so.%s" % str(env1['LIBVERSION']).rsplit('.',2)[0],
-		source=env1['libdir']+"/libffado.so.$LIBVERSION",
+	libenv.Alias( "install", libenv.Command(
+		target="$libdir/libffado.so.%s" % str(libenv['LIBVERSION']).rsplit('.',2)[0],
+		source=libenv['libdir']+"/libffado.so.$LIBVERSION",
 		action="ln -s $SOURCE $TARGET"
 		) )
 else:
 	print "Doing simple install"
-	env1.Alias( "install", env1.Install( "$libdir", ffadolib ) )
+	libenv.Alias( "install", libenv.Install( "$libdir", ffadolib ) )
 
 #
 # Install the *_pkgdata to $sharedir
 #
 for data in bebob_pkgdata:
-	env1.Alias( "install", env1.Install( "$sharedir", data ) )
+	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
 
 #
 # For the debugging apps
 #
-env2 = env.Copy()
+env2 = libenv.Copy()
 env2.PrependUnique( LIBPATH=env['build_base']+"src" )
 env2.PrependUnique( LIBS="ffado" )
 

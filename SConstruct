@@ -24,9 +24,9 @@ opts = Options( "cache/"+build_base+"options.cache" )
 opts.Add( "BUILDDIR", "Path to place the built files in", "")
 
 opts.AddOptions(
-	BoolOption( "DEBUG", """
+	BoolOption( "DEBUG", """\
 Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
-\"-O2\" to optimise.""", True ),
+  \"-O2\" to optimise.""", True ),
 	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks avc part.", True ),
@@ -35,11 +35,15 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
 	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),
 	BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE part.", False ),
+	BoolOption( "ENABLE_GENERICAVC", """\
+Enable/Disable the the generic avc part (mainly used by apple).
+  Note that disabling this option might be overwritten by other devices needing
+  this code.""", False ),
 	BoolOption( "ENABLE_ALL", "Enable/Disable support for all devices.", False ),
-	BoolOption( "BUILD_TESTS", """
+	BoolOption( "BUILD_TESTS", """\
 Build the tests in their directory. As some contain quite some functionality,
-this is on by default.
-If you just want to use ffado with jack without the tools, you can disable this.
+  this is on by default.
+  If you just want to use ffado with jack without the tools, you can disable this.\
 """, True ),
 	)
 
@@ -152,6 +156,9 @@ if env['ENABLE_ALL']:
 	env['ENABLE_RME'] = True
 	env['ENABLE_BOUNCE'] = True
 
+if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
+	env['ENABLE_GENERICAVC'] = True
+
 if build_base:
 	env['build_base']="#/"+build_base
 else:
@@ -163,28 +170,6 @@ else:
 # ffadoenv...
 externalenv = env.Copy()
 Export( 'externalenv' )
-
-#
-# TODO: Probably this should be in the src/SConscript...
-#
-if env['ENABLE_BEBOB']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
-if env['ENABLE_FIREWORKS']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_FIREWORKS"] )
-if env['ENABLE_MOTU']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
-if env['ENABLE_DICE']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_DICE"] )
-if env['ENABLE_METRIC_HALO']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_METRIC_HALO"] )
-if env['ENABLE_RME']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_RME"] )
-if env['ENABLE_BOUNCE']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
-
-# the GenericAVC code is used by these devices
-if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
-	env.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
 
 #
 # TODO: Most of these flags aren't needed for all the apps/libs compiled here.
