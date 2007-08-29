@@ -51,6 +51,18 @@ Element::getName( )
     return DBus::String(m_Slave.getName());
 }
 
+DBus::String
+Element::getLabel( )
+{
+    return DBus::String(m_Slave.getLabel());
+}
+
+DBus::String
+Element::getDescription( )
+{
+    return DBus::String(m_Slave.getDescription());
+}
+
 // --- Container
 Container::Container( DBus::Connection& connection, std::string p, Control::Container &slave)
 : Element(connection, p, slave)
@@ -97,28 +109,37 @@ Container::createHandler(Control::Element& e) {
         return new Container(conn(), std::string(path()+"/"+e.getName()), 
             *dynamic_cast<Control::Container *>(&e));
     }
-    if (dynamic_cast<Control::Contignous *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Contignous\n");
+    
+    if (dynamic_cast<Control::Continuous *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Continuous\n");
         
-        return new Contignous(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::Contignous *>(&e));
+        return new Continuous(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::Continuous *>(&e));
     }
+    
+    if (dynamic_cast<Control::Discrete *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Discrete\n");
+        
+        return new Discrete(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::Discrete *>(&e));
+    }
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
     return new Element(conn(), std::string(path()+"/"+e.getName()), e);
 }
 
-// --- Contignous
+// --- Continuous
 
-Contignous::Contignous( DBus::Connection& connection, std::string p, Control::Contignous &slave)
+Continuous::Continuous( DBus::Connection& connection, std::string p, Control::Continuous &slave)
 : Element(connection, p, slave)
 , m_Slave(slave)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Contignous on '%s'\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Continuous on '%s'\n",
                  path().c_str() );
 }
 
 DBus::Double
-Contignous::setValue( const DBus::Double& value )
+Continuous::setValue( const DBus::Double& value )
 {
     m_Slave.setValue(value);
     debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%lf) => %lf\n", value, m_Slave.getValue() );
@@ -127,9 +148,35 @@ Contignous::setValue( const DBus::Double& value )
 }
 
 DBus::Double
-Contignous::getValue(  )
+Continuous::getValue(  )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %lf\n", m_Slave.getValue() );
+    return m_Slave.getValue();
+}
+
+// --- Discrete
+
+Discrete::Discrete( DBus::Connection& connection, std::string p, Control::Discrete &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Discrete on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::Int32
+Discrete::setValue( const DBus::Int32& value )
+{
+    m_Slave.setValue(value);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%d) => %d\n", value, m_Slave.getValue() );
+    
+    return m_Slave.getValue();
+}
+
+DBus::Int32
+Discrete::getValue(  )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %d\n", m_Slave.getValue() );
     return m_Slave.getValue();
 }
 

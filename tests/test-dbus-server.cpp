@@ -108,9 +108,9 @@ void start_server() {
     DBus::Connection conn = DBus::Connection::SessionBus();
     conn.request_name(SERVER_NAME);
     
-    Control::Contignous c0("test0");
+    Control::Continuous c0("test0");
     c0.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    DBusControl::Contignous fader(conn, "/org/ffado/Control/Test/Fader", c0);
+    DBusControl::Continuous fader(conn, "/org/ffado/Control/Test/Fader", c0);
 
     Control::Container cont("container1");
     cont.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
@@ -120,23 +120,23 @@ void start_server() {
     
     cont.addElement(&cont1);
 
-    Control::Contignous c1("test1");
+    Control::Continuous c1("test1");
     c1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     cont.addElement(&c1);
     
-    Control::Contignous c2("test2");
+    Control::Continuous c2("test2");
     c2.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     cont.addElement(&c2);
     
-    Control::Contignous c3("test3");
+    Control::Continuous c3("test3");
     c3.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     cont.addElement(&c3);
 
-    Control::Contignous c4("test4");
+    Control::Continuous c4("test4");
     c4.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     cont1.addElement(&c4);
 
-    Control::Contignous c5("test5");
+    Control::Continuous c5("test5");
     c5.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     cont1.addElement(&c5);
 
