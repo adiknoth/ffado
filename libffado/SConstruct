@@ -88,8 +88,11 @@ opts.Save( 'cache/' + build_base + "options.cache", env )
 #
 def CheckForApp( context, app ):
 	context.Message( "Checking if '%s' executes... " % app )
-	ret = context.TryAction( app )[0]
-	context.Result( ret )
+	ret = context.env.WhereIs( app )
+	if ret != "":
+		context.Result( True )
+	else:
+		context.Result( False )
 	return ret
 
 
@@ -123,11 +126,7 @@ install the needed packages (remember to also install the *-devel packages)
 		Exit( 1 )
 
 	#
-	# Checking wether "which pyuic" executes is clearly wrong. Nonetheless here
-	# on my system it seems to be the right thing, as checking for pyuic alone
-	# returns false. (Both pyuic and which are installed in the same dir.)
-	# - Strange :-/
-	env['HAVE_PYUIC'] = conf.CheckForApp( 'which pyuic' )
+	env['PYUIC'] = conf.CheckForApp( 'pyuic' )
 
 	env = conf.Finish()
 

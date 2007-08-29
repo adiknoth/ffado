@@ -2,11 +2,6 @@
 
 Import( 'env' )
 
-if env.has_key('HAVE_PYUIC') and env['HAVE_PYUIC']:
-
-	env = env.Copy()
-
+if env.has_key('PYUIC'):
 	for app in ["mixer_phase24.ui","mixer_phase88.ui"]:
-		env.Command( target=app.replace(".","")+".py", source=app, action="pyuic $SOURCE > $TARGET" )
-
-
+		env.Command( target=app.replace(".","")+".py", source=app, action="$PYUIC $SOURCE > $TARGET" )
