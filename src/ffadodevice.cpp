@@ -37,7 +37,7 @@ IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
                     Ieee1394Service& ieee1394service,
                     int nodeId )
-    : OscNode()
+    : Control::Container()
     , m_pConfigRom( configRom )
     , m_p1394Service( &ieee1394service )
     , m_nodeId ( nodeId )
@@ -46,10 +46,16 @@ FFADODevice::FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
 
     std::ostringstream nodestr;
     nodestr << "node" << nodeId;
-    setOscBase(nodestr.str());
+//     setOscBase(nodestr.str());
     ConfigRom& c = getConfigRom();
 
-    addChildOscNode(&c);
+//     addChildOscNode(&c);
+}
+
+std::string
+FFADODevice::getName()
+{
+    return getConfigRom().getGuidString();
 }
 
 bool FFADODevice::compareGUID( FFADODevice *a, FFADODevice *b ) {
@@ -86,9 +92,9 @@ FFADODevice::setId( unsigned int id)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
 
     retval=setOption("id",idstr.str());
-    if (retval) {
+/*    if (retval) {
         setOscBase(idstr.str());
-    }
+    }*/
     return retval;
 }
 

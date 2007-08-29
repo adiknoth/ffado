@@ -47,6 +47,14 @@ public:
     virtual bool setName( std::string n )
         { m_Name=n; return true;};
 
+    virtual std::string getLabel() {return m_Label;};
+    virtual bool setLabel( std::string n )
+        { m_Label=n; return true;};
+
+    virtual std::string getDescription() {return m_Description;};
+    virtual bool setDescription( std::string n )
+        { m_Description=n; return true;};
+
     uint64_t getId()
         {return m_id;};
     
@@ -59,6 +67,9 @@ public:
 
 private:
     std::string m_Name;
+    std::string m_Label;
+    std::string m_Description;
+    
     uint64_t m_id;
 
 protected:
@@ -88,7 +99,7 @@ public:
     
     virtual bool addElement(Element *e);
     virtual bool deleteElement(Element *e);
-    virtual bool clear()
+    virtual bool clearElements()
         {m_Children.clear(); return true;};
 
     unsigned int countElements()

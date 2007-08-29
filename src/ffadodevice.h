@@ -26,7 +26,7 @@
 #define FFADODEVICE_H
 
 #include "libutil/OptionContainer.h"
-#include "libosc/OscNode.h"
+#include "libcontrol/BasicElements.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -44,7 +44,7 @@ namespace Streaming {
 */
 class FFADODevice
     : public Util::OptionContainer,
-      public OSC::OscNode
+      public Control::Container
 {
 public:
     FFADODevice( std::auto_ptr< ConfigRom >( configRom ),
@@ -286,6 +286,12 @@ public:
      * @return the node id
      */
     int getNodeId() { return m_nodeId;};
+
+    // the Control::Container functions
+    virtual std::string getName();
+    virtual bool setName( std::string n )
+        { return false; };
+
 
 protected:
     std::auto_ptr<ConfigRom>( m_pConfigRom );

@@ -74,9 +74,8 @@ using namespace std;
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
-    : OscNode("devicemanager")
+    : Control::Container("devicemanager")
     , m_1394Service( 0 )
-    , m_oscServer( NULL )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -84,11 +83,6 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
-    if (m_oscServer) {
-        m_oscServer->stop();
-        delete m_oscServer;
-    }
-
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -106,8 +100,7 @@ DeviceManager::setVerboseLevel(int l)
     setDebugLevel(l);
 
     if (m_1394Service) m_1394Service->setVerboseLevel(l);
-    if (m_oscServer) m_oscServer->setVerboseLevel(l);
-    OscNode::setVerboseLevel(l);
+    Control::Element::setVerboseLevel(l);
 
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
@@ -120,6 +113,8 @@ DeviceManager::setVerboseLevel(int l)
 void
 DeviceManager::show() {
     debugOutput(DEBUG_LEVEL_NORMAL, "===== Device Manager =====\n");
+    Control::Element::show();
+    
     if (m_1394Service) debugOutput(DEBUG_LEVEL_NORMAL, "1394 port: %d\n", m_1394Service->getPort());
 
     int i=0;
@@ -149,42 +144,6 @@ DeviceManager::initialize( int port )
         return false;
     }
 
-//     m_oscServer = new OSC::OscServer("17820");
-// 
-//     if (!m_oscServer) {
-//         debugFatal("failed to create osc server\n");
-//         delete m_1394Service;
-//         m_1394Service = 0;
-//         return false;
-//     }
-// 
-//     if (!m_oscServer->init()) {
-//         debugFatal("failed to init osc server\n");
-//         delete m_oscServer;
-//         m_oscServer = NULL;
-//         delete m_1394Service;
-//         m_1394Service = 0;
-//         return false;
-//     }
-// 
-//     if (!m_oscServer->registerAtRootNode(this)) {
-//         debugFatal("failed to register devicemanager at server\n");
-//         delete m_oscServer;
-//         m_oscServer = NULL;
-//         delete m_1394Service;
-//         m_1394Service = 0;
-//         return false;
-//     }
-// 
-//     if (!m_oscServer->start()) {
-//         debugFatal("failed to start osc server\n");
-//         delete m_oscServer;
-//         m_oscServer = NULL;
-//         delete m_1394Service;
-//         m_1394Service = 0;
-//         return false;
-//     }
-
     setVerboseLevel(getDebugLevel());
     return true;
 }
@@ -207,8 +166,8 @@ DeviceManager::discover( )
           it != m_avDevices.end();
           ++it )
     {
-        if (!removeChildOscNode(*it)) {
-            debugWarning("failed to unregister AvDevice from OSC server\n");
+        if (!deleteElement(*it)) {
+            debugWarning("failed to remove AvDevice from Control::Container\n");
         }
         delete *it;
     }
@@ -280,8 +239,8 @@ DeviceManager::discover( )
 
                 m_avDevices.push_back( avDevice );
 
-                if (!addChildOscNode(avDevice)) {
-                    debugWarning("failed to register AvDevice at OSC server\n");
+                if (!addElement(avDevice)) {
+                    debugWarning("failed to add AvDevice to Control::Container\n");
                 }
                 
                 debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d done...\n", nodeId );

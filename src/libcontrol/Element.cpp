@@ -37,12 +37,17 @@ IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_NORMAL );
 static uint64_t GlobalElementCounter=0;
 
 Element::Element()
-: m_id(GlobalElementCounter++)
+: m_Name ( "NoName" )
+, m_Label ( "No Label" )
+, m_Description ( "No Description" )
+, m_id(GlobalElementCounter++)
 {
 }
 
 Element::Element(std::string n)
 : m_Name( n )
+, m_Label ( "No Label" )
+, m_Description ( "No Description" )
 , m_id(GlobalElementCounter++)
 {
 }
