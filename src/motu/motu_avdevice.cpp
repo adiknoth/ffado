@@ -67,7 +67,7 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
 
 }
 

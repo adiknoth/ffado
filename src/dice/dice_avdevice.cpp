@@ -71,7 +71,7 @@ DiceAvDevice::DiceAvDevice( Ieee1394Service& ieee1394Service,
     , m_notifier (NULL)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::DiceAvDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
 
 }
 

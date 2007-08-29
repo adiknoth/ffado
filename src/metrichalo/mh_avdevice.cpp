@@ -56,7 +56,7 @@ MHAvDevice::MHAvDevice( Ieee1394Service& ieee1394Service,
 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::MHAvDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
 }
 
 MHAvDevice::~MHAvDevice()

@@ -21,7 +21,7 @@
  * MA 02110-1301 USA
  */
 
-#include "focusrite.h"
+#include "focusrite_cmd.h"
 
 #include <netinet/in.h>
 #include <iostream>

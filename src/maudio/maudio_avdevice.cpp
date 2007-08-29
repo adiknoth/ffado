@@ -45,7 +45,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
     , m_model ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
-                 configRom->getNodeId() );
+                 getConfigRom().getNodeId() );
 }
 
 AvDevice::~AvDevice()
