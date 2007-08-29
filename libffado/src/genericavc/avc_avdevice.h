@@ -46,13 +46,14 @@ namespace GenericAVC {
 
 class AvDevice : public FFADODevice, public AVC::Unit {
 public:
-    AvDevice( std::auto_ptr<ConfigRom>( configRom ),
-          Ieee1394Service& ieee1394Service,
-          int nodeId );
+    AvDevice( Ieee1394Service& ieee1394Service,
+              std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
+    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
+                                        std::auto_ptr<ConfigRom>( configRom ));
     
     virtual void setVerboseLevel(int l);
     virtual void showDevice();

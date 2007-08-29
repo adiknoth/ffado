@@ -55,15 +55,14 @@ static VendorModelEntry supportedDeviceList[] =
     {0x001486, 0x00000af2, "Echo", "AudioFire2"},
 };
 
-AvDevice::AvDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId )
-    :  FFADODevice( configRom, ieee1394service, nodeId )
+AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
+                    std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( ieee1394Service, configRom )
     , m_model( NULL )
 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
@@ -91,6 +90,13 @@ AvDevice::probe( ConfigRom& configRom )
     }
 
     return false;
+}
+
+FFADODevice *
+AvDevice::createDevice( Ieee1394Service& ieee1394Service,
+                        std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new AvDevice(ieee1394Service, configRom );
 }
 
 bool

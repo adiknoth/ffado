@@ -49,15 +49,14 @@ static VendorModelEntry supportedDeviceList[] =
     {0x00000000, 0x0000, "Metric Halo", "XXX"},
 };
 
-MHAvDevice::MHAvDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId )
-    :  FFADODevice( configRom, ieee1394service, nodeId )
+MHAvDevice::MHAvDevice( Ieee1394Service& ieee1394Service,
+                        std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( ieee1394Service, configRom )
     , m_model( NULL )
 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::MHAvDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
 }
 
 MHAvDevice::~MHAvDevice()
@@ -84,6 +83,13 @@ MHAvDevice::probe( ConfigRom& configRom )
     }
 
     return false;
+}
+
+FFADODevice *
+MHAvDevice::createDevice( Ieee1394Service& ieee1394Service,
+                          std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new MHAvDevice(ieee1394Service, configRom );
 }
 
 bool
@@ -148,7 +154,7 @@ MHAvDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-        m_nodeId);
+        getNodeId());
 }
 
 bool

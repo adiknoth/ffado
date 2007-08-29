@@ -52,15 +52,17 @@ struct VendorModelEntry {
 
 class AvDevice : public BeBoB::AvDevice {
 public:
-    AvDevice( std::auto_ptr<ConfigRom>( configRom ),
-          Ieee1394Service& ieee1394Service,
-              int nodeId );
+    AvDevice( Ieee1394Service& ieee1394Service,
+              std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
-    static int getConfigurationId( );
+    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
+                                        std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
+    static int getConfigurationId( );
+    
     virtual void showDevice();
 
     virtual bool setSamplingFrequency( int );

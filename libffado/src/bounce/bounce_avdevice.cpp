@@ -51,16 +51,15 @@ static VendorModelEntry supportedDeviceList[] =
     {0x0B0001LU, 0x0B0001LU, 0x0B0001LU, "FFADO", "Bounce"},
 };
 
-BounceDevice::BounceDevice( std::auto_ptr< ConfigRom >( configRom ),
-                            Ieee1394Service& ieee1394service,
-                            int nodeId )
-    : FFADODevice( configRom, ieee1394service, nodeId )
+BounceDevice::BounceDevice( Ieee1394Service& ieee1394Service,
+                            std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( ieee1394Service, configRom )
     , m_samplerate (44100)
     , m_model( NULL )
     , m_Notifier ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
@@ -96,11 +95,18 @@ BounceDevice::probe( ConfigRom& configRom )
     return false;
 }
 
+FFADODevice *
+BounceDevice::createDevice( Ieee1394Service& ieee1394Service,
+                            std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new BounceDevice(ieee1394Service, configRom );
+}
+
 bool
 BounceDevice::discover()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "discovering BounceDevice (NodeID %d)\n",
-                 m_nodeId );
+                 getNodeId() );
 
 //     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
     unsigned int modelId = m_pConfigRom->getModelId();
@@ -164,7 +170,7 @@ BounceDevice::showDevice()
     debugOutput(DEBUG_LEVEL_NORMAL, "Model             :  %s\n", m_pConfigRom->getModelName().c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "Vendor Name       :  %s\n", m_model->vendor_name);
     debugOutput(DEBUG_LEVEL_NORMAL, "Model Name        :  %s\n", m_model->model_name);
-    debugOutput(DEBUG_LEVEL_NORMAL, "Node              :  %d\n", m_nodeId);
+    debugOutput(DEBUG_LEVEL_NORMAL, "Node              :  %d\n", getNodeId());
     debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", m_pConfigRom->getGuid());
     debugOutput(DEBUG_LEVEL_NORMAL, "\n" );
 }
@@ -524,7 +530,7 @@ BounceDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     }
 
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
@@ -546,7 +552,7 @@ BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     }
 
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->write_quadlet( nodeId, addr, data ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
@@ -566,7 +572,7 @@ BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     }
 
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->read( nodeId, addr, length, data ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
@@ -586,7 +592,7 @@ BounceDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
     }
 
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->write( nodeId, addr, length, data ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);

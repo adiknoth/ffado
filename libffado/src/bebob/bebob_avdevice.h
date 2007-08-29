@@ -57,15 +57,17 @@ namespace BeBoB {
 
 class AvDevice : public GenericAVC::AvDevice {
 public:
-    AvDevice( std::auto_ptr<ConfigRom>( configRom ),
-              Ieee1394Service& ieee1394Service,
-              int nodeId );
+    AvDevice( Ieee1394Service& ieee1394Service,
+              std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
 
     static bool probe( ConfigRom& configRom );
     virtual bool loadFromCache();
     virtual bool saveCache();
     virtual bool discover();
+
+    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
+                                        std::auto_ptr<ConfigRom>( configRom ));
 
     virtual AVC::Subunit* createSubunit(AVC::Unit& unit,
                                         AVC::ESubunitType type,

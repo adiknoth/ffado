@@ -55,14 +55,16 @@ class DiceAvDevice : public FFADODevice {
 private:
     class DiceNotifier;
 public:
-    DiceAvDevice( std::auto_ptr<ConfigRom>( configRom ),
-                  Ieee1394Service& ieee1394Service,
-                  int nodeId);
+    DiceAvDevice( Ieee1394Service& ieee1394Service,
+                  std::auto_ptr<ConfigRom>( configRom ));
     ~DiceAvDevice();
 
     static bool probe( ConfigRom& configRom );
-    static int getConfigurationId( );
+    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
+                                        std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
+
+    static int getConfigurationId( );
 
     virtual void showDevice();
 

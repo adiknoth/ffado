@@ -50,10 +50,9 @@ static VendorModelEntry supportedDeviceList[] =
     {0x00000166, 0x00000002, "TCAT", "DiceII EVM"},
 };
 
-DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId )
-    : FFADODevice( configRom, ieee1394service, nodeId )
+DiceAvDevice::DiceAvDevice( Ieee1394Service& ieee1394Service,
+                            std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( ieee1394Service, configRom )
     , m_model( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
@@ -72,7 +71,7 @@ DiceAvDevice::DiceAvDevice( std::auto_ptr< ConfigRom >( configRom ),
     , m_notifier (NULL)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::DiceAvDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
 
 }
 
@@ -104,6 +103,13 @@ DiceAvDevice::probe( ConfigRom& configRom )
     }
 
     return false;
+}
+
+FFADODevice *
+DiceAvDevice::createDevice( Ieee1394Service& ieee1394Service,
+                            std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new DiceAvDevice(ieee1394Service, configRom );
 }
 
 bool
@@ -281,7 +287,7 @@ DiceAvDevice::showDevice()
 
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-        m_nodeId);
+        getNodeId());
 
     debugOutput(DEBUG_LEVEL_VERBOSE," DICE Parameter Space info:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Global  : offset=0x%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
@@ -665,7 +671,7 @@ DiceAvDevice::lock() {
     fb_octlet_t result;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n",
-        m_model->vendor_name, m_model->model_name, m_nodeId);
+        m_model->vendor_name, m_model->model_name, getNodeId());
 
     // get a notifier to handle device notifications
     nodeaddr_t notify_address;
@@ -709,7 +715,7 @@ DiceAvDevice::lock() {
     swap_value = swap_value << 48;
     swap_value |= m_notifier->getStart();
 
-    if (!m_p1394Service->lockCompareSwap64(  m_nodeId | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
+    if (!m_p1394Service->lockCompareSwap64(  getNodeId() | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
                                        swap_value, &result )) {
         debugWarning("Could not register ourselves as device owner\n");
     }
@@ -746,7 +752,7 @@ DiceAvDevice::unlock() {
     compare_value <<= 48;
     compare_value |= m_notifier->getStart();
 
-    if (!m_p1394Service->lockCompareSwap64(  m_nodeId | 0xFFC0, addr, compare_value,
+    if (!m_p1394Service->lockCompareSwap64(  getNodeId() | 0xFFC0, addr, compare_value,
                                        DICE_OWNER_NO_OWNER, &result )) {
         debugWarning("Could not unregister ourselves as device owner\n");
     }
@@ -1201,7 +1207,7 @@ DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     }
 
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
@@ -1226,7 +1232,7 @@ DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     }
 
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->write_quadlet( nodeId, addr, htonl(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
@@ -1246,7 +1252,7 @@ DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     }
 
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!m_p1394Service->read( nodeId, addr, length/4, data ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
@@ -1271,7 +1277,7 @@ DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
     }
 
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=m_nodeId | 0xFFC0;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     fb_quadlet_t data_out[length/4];
 

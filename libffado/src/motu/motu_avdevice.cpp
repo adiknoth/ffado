@@ -55,10 +55,9 @@ static VendorModelEntry supportedDeviceList[] =
     {0x000001f2, 0, 0x00000009, 0x000001f2, MOTUFW_MODEL_TRAVELER, "MOTU", "Traveler"},
 };
 
-MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
-                    Ieee1394Service& ieee1394service,
-                    int nodeId)
-    : FFADODevice( configRom, ieee1394service, nodeId )
+MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
+                        std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( ieee1394Service, configRom )
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
@@ -68,7 +67,7 @@ MotuDevice::MotuDevice( std::auto_ptr< ConfigRom >( configRom ),
 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
-                 nodeId );
+                 configRom->getNodeId() );
 
 }
 
@@ -108,6 +107,13 @@ MotuDevice::probe( ConfigRom& configRom )
     }
 
     return false;
+}
+
+FFADODevice *
+MotuDevice::createDevice( Ieee1394Service& ieee1394Service,
+                          std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new MotuDevice(ieee1394Service, configRom );
 }
 
 bool
@@ -315,7 +321,7 @@ MotuDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE,
         "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-        m_nodeId);
+        getNodeId());
 }
 
 bool
@@ -865,7 +871,7 @@ assert(m_p1394Service);
 
   quadlet = 0;
   // Note: 1394Service::read() expects a physical ID, not the node id
-  if (m_p1394Service->read(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
+  if (m_p1394Service->read(0xffc0 | getNodeId(), MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
     debugError("Error doing motu read from register 0x%06x\n",reg);
   }
 
@@ -881,7 +887,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
   data = htonl(data);
 
   // Note: 1394Service::write() expects a physical ID, not the node id
-  if (m_p1394Service->write(0xffc0 | m_nodeId, MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
+  if (m_p1394Service->write(0xffc0 | getNodeId(), MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
     err = 1;
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }
