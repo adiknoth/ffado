@@ -43,6 +43,7 @@ public:
     static bool probe( ConfigRom& configRom );
     static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
                                         std::auto_ptr<ConfigRom>( configRom ));
+    virtual bool discover();
 
     virtual void showDevice();
 

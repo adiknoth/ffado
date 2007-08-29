@@ -78,6 +78,38 @@ Device::probe( ConfigRom& configRom )
     return false;
 }
 
+bool
+Device::discover()
+{
+    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+    unsigned int modelId = m_pConfigRom->getModelId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( GenericAVC::VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].model_id == modelId )
+           )
+        {
+            m_model = &(supportedDeviceList[i]);
+        }
+    }
+
+    if (m_model == NULL) {
+        return false;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+            m_model->vendor_name, m_model->model_name);
+
+    if ( !GenericAVC::AvDevice::discover() ) {
+        debugError( "Could not discover GenericAVC::AvDevice\n" );
+        return false;
+    }
+
+    return true;
+}
+
 FFADODevice *
 Device::createDevice( Ieee1394Service& ieee1394Service,
                       std::auto_ptr<ConfigRom>( configRom ))

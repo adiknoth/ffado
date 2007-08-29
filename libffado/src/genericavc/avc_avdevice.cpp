@@ -47,7 +47,7 @@ using namespace AVC;
 
 namespace GenericAVC {
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
 
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
@@ -102,27 +102,6 @@ AvDevice::createDevice( Ieee1394Service& ieee1394Service,
 bool
 AvDevice::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
-
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-        }
-    }
-
-    if (m_model == NULL) {
-        return false;
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-            m_model->vendor_name, m_model->model_name);
-
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
         return false;
