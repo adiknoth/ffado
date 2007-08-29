@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<node name="/org/ffado/Control/">
+
+  <interface name="org.ffado.Control.Element.Element">
+      <method name="getId">
+          <arg type="t" name="id" direction="out"/>
+      </method>
+      <method name="getName">
+          <arg type="s" name="name" direction="out"/>
+      </method>
+      <method name="getLabel">
+          <arg type="s" name="label" direction="out"/>
+      </method>
+      <method name="getDescription">
+          <arg type="s" name="description" direction="out"/>
+      </method>
+  </interface>
+  
+  <interface name="org.ffado.Control.Element.Container">
+  </interface>
+  
+  <interface name="org.ffado.Control.Element.Continuous">
+      <method name="setValue">
+          <arg type="d" name="value" direction="in"/>
+          <arg type="d" name="value" direction="out"/>
+      </method>
+      <method name="getValue">
+          <arg type="d" name="value" direction="out"/>
+      </method>
+  </interface>
+
+  <interface name="org.ffado.Control.Element.Discrete">
+      <method name="setValue">
+          <arg type="i" name="value" direction="in"/>
+          <arg type="i" name="value" direction="out"/>
+      </method>
+      <method name="getValue">
+          <arg type="i" name="value" direction="out"/>
+      </method>
+  </interface>
+  
+</node>
