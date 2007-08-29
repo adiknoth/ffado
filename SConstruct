@@ -178,7 +178,7 @@ env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
 
 env['PACKAGE'] = "libffado"
-env['VERSION'] = "1.999.5"
+env['VERSION'] = "1.999.6"
 env['LIBVERSION'] = "1.0.0"
 
 #
