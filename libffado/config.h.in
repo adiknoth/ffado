@@ -1,4 +1,6 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
+/* config.h.in. */
+#ifndef CONFIG_H
+#define CONFIG_H
 
 /* Name of package */
 #define PACKAGE $PACKAGE
@@ -27,3 +29,5 @@
 #define CACHEDIR "$cachedir"
 
 #define SHAREDIR "$sharedir"
+
+#endif // CONFIG_H
