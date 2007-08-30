@@ -23,7 +23,7 @@ PROJECT_NAME           = LIBFFADO
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = @VERSION@
+PROJECT_NUMBER         = $VERSION
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -362,22 +362,9 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = @top_srcdir@/doc/ \
-                         @top_srcdir@/src/ \
-                         @top_srcdir@/src/debugmodule \
-                         @top_srcdir@/src/libavc \
-                         @top_srcdir@/src/libieee1394 \
-                         @top_srcdir@/src/libosc \
-                         @top_srcdir@/src/libstreaming \
-                         @top_srcdir@/src/libutil \
-                         @top_srcdir@/src/bebob \
-                         @top_srcdir@/src/bounce \
-                         @top_srcdir@/src/dice \
-                         @top_srcdir@/src/maudio \
-                         @top_srcdir@/src/metrichalo \
-                         @top_srcdir@/src/motu \
-                         @top_srcdir@/src/rme \
-                         @top_srcdir@/libffado/
+INPUT                  = $top_srcdir/src \
+                         $top_srcdir/doc \
+                         $top_srcdir/libffado
 
 
 # If the value of the INPUT tag contains directories, you can use the 
@@ -393,7 +380,7 @@ FILE_PATTERNS          = *.cpp *.h *.dox
 # should be searched for input files as well. Possible values are YES and NO. 
 # If left blank NO is used.
 
-RECURSIVE              = NO
+RECURSIVE              = YES
 
 # The EXCLUDE tag can be used to specify files and/or directories that should 
 # excluded from the INPUT source files. This way you can easily exclude a 
@@ -411,7 +398,7 @@ EXCLUDE_SYMLINKS       = NO
 # EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude 
 # certain files from those directories.
 
-EXCLUDE_PATTERNS       = 
+EXCLUDE_PATTERNS       = *.svn* *reference*
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or 
 # directories that contain example code fragments that are included (see 
