@@ -102,7 +102,7 @@ def CheckForApp( context, app ):
 
 if not env.GetOption('clean'):
 	conf = Configure( env,
-		custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG, 'CheckForApp' : CheckForApp },
+		custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG, 'GetPKGFlags' : GetPKGFlags, 'CheckForApp' : CheckForApp },
 		conf_dir="cache/" + build_base,
 		log_file="cache/" + build_base + 'config.log' )
 
@@ -111,17 +111,26 @@ if not env.GetOption('clean'):
 		Exit( 1 )
 
 	allpresent = 1;
-	allpresent &= conf.CheckForPKGConfig();
-	allpresent &= conf.CheckForPKG( 'libraw1394', "1.3.0" )
-	allpresent &= conf.CheckForPKG( 'libavc1394', "0.5.3" )
-	allpresent &= conf.CheckForPKG( 'libiec61883', "1.1.0" )
-	allpresent &= conf.CheckForPKG( 'alsa', "1.0.0" )
-	allpresent &= conf.CheckForPKG( 'libxml++-2.6', "2.13.0" )
-	allpresent &= conf.CheckForPKG( 'liblo', "0.22" )
-	allpresent &= conf.CheckForPKG( 'dbus-1', "1.0" )
 	allpresent &= conf.CheckHeader( "expat.h" )
 	allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
 	
+	allpresent &= conf.CheckForPKGConfig();
+
+	pkgs = {
+		'libraw1394' : '1.3.0',
+		'libavc1394' : '0.5.3',
+		'libiec61883' : '1.1.0',
+		'alsa' : '1.0.0',
+		'libxml++-2.6' : '2.13.0',
+		'liblo' : '0.22',
+		'dbus-1' : '1.0',
+		}
+	for pkg in pkgs:
+		name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
+		env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
+		if env['%s_FLAGS'%name2] == 0:
+			allpresent &= 0
+
 	if not allpresent:
 		print """
 (At least) One of the dependencies is missing. I can't go on without it, please
