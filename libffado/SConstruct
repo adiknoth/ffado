@@ -28,6 +28,10 @@ opts.AddOptions(
 Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
   \"-O2\" to optimise.""", True ),
 	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
+	PathOption( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin" ),
+	PathOption( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib" ),
+	PathOption( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include" ),
+	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado" ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks avc part.", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", False ),
@@ -177,10 +181,13 @@ else:
 # XXX: Some includes in src/*/ are full path (src/*), that should be fixed?
 env.AppendUnique( CPPPATH=["#/"] )
 
-env['bindir'] = os.path.join( env['PREFIX'], "bin" )
-env['libdir'] = os.path.join( env['PREFIX'], "lib" )
-env['includedir'] = os.path.join( env['PREFIX'], "include" )
-env['sharedir'] = os.path.join( env['PREFIX'], "share/libffado" )
+#
+# XXX: Maybe we can even drop these lower-case variables and only use the uppercase ones?
+#
+env['bindir'] = os.path.join( env['BINDIR'] )
+env['libdir'] = os.path.join( env['LIBDIR'] )
+env['includedir'] = os.path.join( env['INCLUDEDIR'] )
+env['sharedir'] = os.path.join( env['SHAREDIR'] )
 env['cachedir'] = os.path.join( env['PREFIX'], "var/cache/libffado" )
 
 env.Alias( "install", env['libdir'] )
