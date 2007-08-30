@@ -1,4 +1,4 @@
-FreeBoB version 1.999.0
+FFADO version 1.999.6
 =======================
 
 This project aims to provide a free driver implemenation for the BeBoB
@@ -8,7 +8,7 @@ boxes.
 Dependencies
 ------------
 
-To build libfreebob you need several libraries. For all libraries a
+To build libffado you need several libraries. For all libraries a
 version is provided which is a 'known good' version.  The first few
 libraries it seems it is not necessary that the version must
 match. The chances that it works also with an older versions are good:
@@ -45,19 +45,17 @@ $ export LD_LIBRARY_PATH=/usr/local/lib
 
 If you want to build the release version you can do following:
 
-$ ./configure
-$ make 
-$ make install
+$ scons
+$ scons install
 
 If you want some debug information (because something seems not
 to work correctly) you can try do following (not CVS checkout):
 
-$ ./configure --enable-debug
-$ make
-$ make install
+$ scons DEBUG=yes
+$ scons install
 
-NOTE: In order to build jackd with freebob support, you have 
-to install libfreebob before you build jackd.
+NOTE: In order to build jackd with ffado support, you have 
+to install libffado before you build jackd.
 
 
 Running jackd
@@ -83,7 +81,7 @@ arguments to jackd.
 
 Run 
 
-$ jackd -d freebob --help
+$ jackd -d firewire --help
 
 to see the backend options. You can easily figure out how to set them using
 the remarks given above (for qjackctl).
@@ -92,7 +90,7 @@ For the other aspects of jackd usage, consult the jackd documentation.
 
 Here is a sample session (without realtime support enabled):
 
-[wagi@halo ~]$ jackd -d freebob
+[wagi@halo ~]$ jackd -d firewire
 jackd 0.102.9
 Copyright 2001-2005 Paul Davis and others.
 jackd comes with ABSOLUTELY NO WARRANTY
@@ -113,7 +111,7 @@ In case of problems
 Under the tests directory there is a test program. You should first
 try to run this.
 
-If you don't have installed libfreebob then you can adapt your
+If you don't have installed libffado then you can adapt your
 LD_LIBRARY_PATH environment variable to
 
 $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../src/.libs
@@ -122,9 +120,9 @@ Then you can try running the program without having to install it.
 
 With the release version you see something like this:
 
-wagi@cruxam:~/src/libfreebob/tests$ ./test-freebob discover
+wagi@cruxam:~/src/libffado/tests$ ./test-ffado discover
 verbose level = 0
-Using freebob library version: libfreebob 0.9.0
+Using ffado library version: libffado 0.9.0
 
   port = 2, devices_on_bus = 1
   get info for device = 0, node = 1
