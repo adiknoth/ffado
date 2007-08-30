@@ -63,7 +63,9 @@ if os.environ.has_key('PKG_CONFIG_PATH'):
 else:
 	buildenv['PKG_CONFIG_PATH']=''
 
-env = Environment( tools=['default','scanreplace','pyuic','dbus'], toolpath=['admin'], ENV = buildenv, options=opts )
+
+env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen'], toolpath=['admin'], ENV = buildenv, options=opts )
+
 
 Help( """
 For building ffado you can set different options as listed below. You have to
@@ -194,6 +196,11 @@ env['VERSION'] = "1.999.6"
 env['LIBVERSION'] = "1.0.0"
 
 #
+# To have the top_srcdir as the doxygen-script is used from auto*
+#
+env['top_srcdir'] = env.Dir( "." ).abspath
+
+#
 # Start building
 #
 
@@ -202,7 +209,7 @@ env.ScanReplace( "config.h.in" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
 
-subdirs=['external','src','libffado','tests','support']
+subdirs=['external','src','libffado','tests','support','doc']
 if build_base:
 	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
