@@ -178,10 +178,6 @@ else:
 	env['build_base']="#/"
 
 #
-# XXX: Some includes in src/*/ are full path (src/*), that should be fixed?
-env.AppendUnique( CPPPATH=["#/"] )
-
-#
 # XXX: Maybe we can even drop these lower-case variables and only use the uppercase ones?
 #
 env['bindir'] = os.path.join( env['BINDIR'] )
