@@ -36,3 +36,28 @@ def CheckForPKG( context, name, version="" ):
 	context.Result( ret )
 	return ret
 
+#
+# Checks for the existance of the package and returns the packages flags.
+#
+# This should allow caching of the flags so that pkg-config is called only once.
+#
+def GetPKGFlags( context, name, version="" ):
+	import os
+
+	if version == "":
+		context.Message( "Checking for %s... \t" % name )
+		ret = context.TryAction( "pkg-config --exists '%s'" % name )[0]
+	else:
+		context.Message( "Checking for %s (%s or higher)... \t" % (name,version) )
+		ret = context.TryAction( "pkg-config --atleast-version=%s '%s'" % (version,name) )[0]
+
+	if not ret:
+		context.Result( ret )
+		return ret
+
+	out = os.popen2( "pkg-config --cflags --libs %s" % name )[1]
+	ret = out.read()
+
+	context.Result( True )
+	return ret
+
