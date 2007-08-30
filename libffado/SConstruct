@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.append( "./admin" )
 from pkgconfig import *
+from string import Template
 
 build_dir = ARGUMENTS.get('BUILDDIR', "")
 if build_dir:
@@ -182,10 +183,10 @@ else:
 #
 # XXX: Maybe we can even drop these lower-case variables and only use the uppercase ones?
 #
-env['bindir'] = os.path.join( env['BINDIR'] )
-env['libdir'] = os.path.join( env['LIBDIR'] )
-env['includedir'] = os.path.join( env['INCLUDEDIR'] )
-env['sharedir'] = os.path.join( env['SHAREDIR'] )
+env['bindir'] = Template( os.path.join( env['BINDIR'] ) ).safe_substitute( env )
+env['libdir'] = Template( os.path.join( env['LIBDIR'] ) ).safe_substitute( env )
+env['includedir'] = Template( os.path.join( env['INCLUDEDIR'] ) ).safe_substitute( env )
+env['sharedir'] = Template( os.path.join( env['SHAREDIR'] ) ).safe_substitute( env )
 env['cachedir'] = os.path.join( env['PREFIX'], "var/cache/libffado" )
 
 env.Alias( "install", env['libdir'] )
