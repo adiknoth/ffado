@@ -55,8 +55,6 @@ IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
 AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
                     std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( ieee1394Service, configRom )
-    , m_model( NULL )
-
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -77,7 +75,7 @@ AvDevice::probe( ConfigRom& configRom )
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
     if ( vendorModel.parse() ) {
         vendorModel.printTable();
-        return vendorModel.find( vendorId, modelId );
+        return vendorModel.isPresent( vendorId, modelId );
     }
 
     return false;
@@ -93,6 +91,24 @@ AvDevice::createDevice( Ieee1394Service& ieee1394Service,
 bool
 AvDevice::discover()
 {
+    // check if we already have a valid VendorModel entry
+    // e.g. because a subclass called this function
+    if (!GenericAVC::VendorModel::isValid(m_model)) {
+        unsigned int vendorId = m_pConfigRom->getNodeVendorId();
+        unsigned int modelId = m_pConfigRom->getModelId();
+    
+        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
+        if ( vendorModel.parse() ) {
+            m_model = vendorModel.find( vendorId, modelId );
+        }
+    
+        if (!GenericAVC::VendorModel::isValid(m_model)) {
+            return false;
+        }
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model.vendor_name.c_str(), m_model.model_name.c_str());
+    }
+
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
         return false;
@@ -231,7 +247,7 @@ AvDevice::showDevice()
     FFADODevice::showDevice();
 
     debugOutput(DEBUG_LEVEL_NORMAL,
-        "%s %s\n", m_model->vendor_name.c_str(), m_model->model_name.c_str());
+        "%s %s\n", m_model.vendor_name.c_str(), m_model.model_name.c_str());
 
     AVC::Unit::show();
     flushDebugOutput();

@@ -84,6 +84,19 @@ GenericAVC::VendorModelEntry::operator = ( const VendorModelEntry& rhs )
     return *this;
 }
 
+bool
+GenericAVC::VendorModelEntry::operator == ( const VendorModelEntry& rhs ) const
+{
+    bool equal=true;
+    
+    equal &= (vendor_id   == rhs.vendor_id);
+    equal &= (model_id    == rhs.model_id);
+    equal &= (vendor_name == rhs.vendor_name);
+    equal &= (model_name  == rhs.model_name);
+
+    return equal;
+}
+
 GenericAVC::VendorModelEntry::~VendorModelEntry()
 {
 }
@@ -193,7 +206,7 @@ private:
     unsigned int m_model_id;
 };
 
-GenericAVC::VendorModelEntry*
+GenericAVC::VendorModelEntry
 GenericAVC::VendorModel::find( unsigned int vendor_id, unsigned model_id )
 {
     VendorModelEntryVector::iterator it =
@@ -201,9 +214,30 @@ GenericAVC::VendorModel::find( unsigned int vendor_id, unsigned model_id )
                   m_vendorModelEntries.end(),
                   is_same( vendor_id, model_id ) );
     if ( it != m_vendorModelEntries.end() )
-        return &*it;
+        return *it;
+        
+    struct VendorModelEntry invalid;
+    return invalid;
+}
 
-    return 0;
+bool
+GenericAVC::VendorModel::isPresent( unsigned int vendor_id, unsigned model_id )
+{
+    VendorModelEntryVector::iterator it =
+        find_if ( m_vendorModelEntries.begin(),
+                  m_vendorModelEntries.end(),
+                  is_same( vendor_id, model_id ) );
+    if ( it != m_vendorModelEntries.end() )
+        return true;
+
+    return false;
+}
+
+bool
+GenericAVC::VendorModel::isValid( const GenericAVC::VendorModelEntry& vme )
+{
+    struct VendorModelEntry invalid;
+    return !(vme==invalid);
 }
 
 const GenericAVC::VendorModelEntryVector&

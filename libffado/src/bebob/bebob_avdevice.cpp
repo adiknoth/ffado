@@ -78,7 +78,7 @@ AvDevice::probe( ConfigRom& configRom )
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
     if ( vendorModel.parse() ) {
         vendorModel.printTable();
-        return vendorModel.find( vendorId, modelId );
+        return vendorModel.isPresent( vendorId, modelId );
     }
 
     return false;
@@ -120,10 +120,10 @@ AvDevice::discover()
         m_model = vendorModel.find( vendorId, modelId );
     }
 
-    if (m_model != NULL) {
+    if (GenericAVC::VendorModel::isValid(m_model)) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                     m_model->vendor_name.c_str(),
-                     m_model->model_name.c_str());
+                     m_model.vendor_name.c_str(),
+                     m_model.model_name.c_str());
     } else return false;
 
     if ( !Unit::discover() ) {

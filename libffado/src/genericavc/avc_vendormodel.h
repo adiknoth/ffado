@@ -34,6 +34,7 @@ struct VendorModelEntry {
     VendorModelEntry();
     VendorModelEntry(const VendorModelEntry& rhs);
     VendorModelEntry& operator = (const VendorModelEntry& rhs);
+    bool operator == (const VendorModelEntry& rhs) const;
     virtual ~VendorModelEntry();
 
     unsigned int vendor_id;
@@ -55,12 +56,15 @@ public:
                                          std::vector<std::string>& v,
                                          std::vector<std::string>::const_iterator& b,
                                          std::vector<std::string>::const_iterator& e );
-    VendorModelEntry* find( unsigned int vendor_id,  unsigned model_id );
+    VendorModelEntry find( unsigned int vendor_id,  unsigned model_id );
+    bool isPresent( unsigned int vendor_id,  unsigned model_id );
+    static bool isValid( const VendorModelEntry& vme );
 
     const VendorModelEntryVector& getVendorModelEntries() const;
 private:
     std::string m_filename;
     VendorModelEntryVector m_vendorModelEntries;
+
 };
 
 }

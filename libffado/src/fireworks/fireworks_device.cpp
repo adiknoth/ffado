@@ -62,7 +62,7 @@ Device::probe( ConfigRom& configRom )
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
     if ( vendorModel.parse() ) {
         vendorModel.printTable();
-        return vendorModel.find( vendorId, modelId );
+        return vendorModel.isPresent( vendorId, modelId );
     }
 
     return false;
@@ -74,16 +74,16 @@ Device::discover()
     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
     unsigned int modelId = m_pConfigRom->getModelId();
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
+    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
     if ( vendorModel.parse() ) {
         m_model = vendorModel.find( vendorId, modelId );
     }
 
-    if (m_model == NULL) {
+    if (!GenericAVC::VendorModel::isValid(m_model)) {
         return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-            m_model->vendor_name.c_str(), m_model->model_name.c_str());
+            m_model.vendor_name.c_str(), m_model.model_name.c_str());
 
     if ( !GenericAVC::AvDevice::discover() ) {
         debugError( "Could not discover GenericAVC::AvDevice\n" );
