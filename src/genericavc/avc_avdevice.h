@@ -84,7 +84,7 @@ protected:
                                    AVC::Plug::EPlugDirection direction,
                                    AVC::ESamplingFrequency samplingFrequency );*/
     
-    struct VendorModelEntry *m_model;
+    struct VendorModelEntry m_model;
     
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
