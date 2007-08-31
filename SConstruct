@@ -187,10 +187,11 @@ env['bindir'] = Template( os.path.join( env['BINDIR'] ) ).safe_substitute( env )
 env['libdir'] = Template( os.path.join( env['LIBDIR'] ) ).safe_substitute( env )
 env['includedir'] = Template( os.path.join( env['INCLUDEDIR'] ) ).safe_substitute( env )
 env['sharedir'] = Template( os.path.join( env['SHAREDIR'] ) ).safe_substitute( env )
-env['cachedir'] = os.path.join( env['PREFIX'], "var/cache/libffado" )
 
 env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
+env.Alias( "install", env['sharedir'] )
+env.Alias( "install", env['bindir'] )
 
 env['PACKAGE'] = "libffado"
 env['VERSION'] = "1.999.6"
@@ -208,7 +209,7 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 env.ScanReplace( "config.h.in" )
 
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
-env.Alias( "install", env.Install( env['libdir'] + '/pkgconfig', pkgconfig ) )
+env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
 subdirs=['external','src','libffado','tests','support','doc']
 if build_base:
@@ -223,6 +224,4 @@ if not env.GetOption('clean'):
     Default( 'src' )
     if env['BUILD_TESTS']:
         Default( 'tests' )
-    # Cachedir has to be fixed...
-    #env.Alias( "install", env["cachedir"], os.makedirs( env["cachedir"] ) )
-    #env.Alias( "install", env.Install( env["cachedir"], "" ) ) #os.makedirs( env["cachedir"] ) )
+
