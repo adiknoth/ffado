@@ -28,11 +28,11 @@ opts.AddOptions(
 	BoolOption( "DEBUG", """\
 Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
   \"-O2\" to optimise.""", True ),
-	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local" ),
-	PathOption( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin" ),
-	PathOption( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib" ),
-	PathOption( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include" ),
-	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado" ),
+	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathOption.PathAccept ),
+	PathOption( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin", PathOption.PathAccept ),
+	PathOption( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib", PathOption.PathAccept ),
+	PathOption( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include", PathOption.PathAccept ),
+	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathOption.PathAccept ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks avc part.", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", False ),
