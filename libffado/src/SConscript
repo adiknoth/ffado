@@ -143,12 +143,15 @@ amdtp_source = env.Split( '\
 ' )
 
 source = ffado_source
+pkgdata = []
 if env['ENABLE_BEBOB']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
 	source += bebob_source
+	pkgdata += bebob_pkgdata
 if env['ENABLE_FIREWORKS']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_FIREWORKS"] )
 	source += fireworks_source
+	pkgdata += fireworks_pkgdata
 if env['ENABLE_MOTU']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
 	source += motu_source
@@ -170,6 +173,7 @@ if env['ENABLE_GENERICAVC']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
 	source += amdtp_source
 	source += genericavc_source
+	pkgdata += genericavc_pkgdata
 
 if not env.GetOption( "clean" ):
 	libenv.MergeFlags( "-lrt" )
@@ -209,20 +213,14 @@ if False:
 		action="ln -s $SOURCE $TARGET"
 		) )
 else:
-	print "Doing simple install"
-	libenv.Alias( "install", libenv.Install( "$libdir", ffadolib ) )
+	#print "Doing simple install"
+	libenv.Install( "$libdir", ffadolib )
 
 #
-# Install the *_pkgdata to $sharedir
+# Install the pkgdata to $sharedir
 #
-for data in bebob_pkgdata:
-	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
-
-for data in genericavc_pkgdata:
-	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
-
-for data in fireworks_pkgdata:
-	libenv.Alias( "install", libenv.Install( "$sharedir", data ) )
+for data in pkgdata:
+	libenv.Install( "$sharedir", data )
 
 #
 # For the debugging apps
@@ -243,6 +241,5 @@ apps = { \
 for app in apps.keys():
 	env2.Program( target=app, source = env.Split( apps[app] ) )
 
-env2.Alias( "install", env2.Install( "$bindir", "bebob-sync" ) )
-env2.Alias( "install", env2.Install( "$bindir", "bridgeco-downloader" ) )
+env2.Install( "$bindir", ["bebob-sync","bridgeco-downloader"] )
 
