@@ -31,8 +31,6 @@
 
 #include <vector>
 
-#warning merge with bebob functionblock
-#include "bebob/bebob_functionblock.h"
 #include "../audiosubunit/avc_function_block.h"
 
 namespace AVC {
@@ -48,31 +46,16 @@ class SubunitAudio: public Subunit {
     virtual ~SubunitAudio();
 
     virtual bool discover();
-//     virtual bool discoverConnections();
-// 
-    virtual const char* getName();
-// 
-    BeBoB::FunctionBlockVector getFunctionBlocks() { return m_functions; };
-//     
-// protected:
-//     bool discoverFunctionBlocks();
-//     bool discoverFunctionBlocksDo(
-//         ExtendedSubunitInfoCmd::EFunctionBlockType fbType );
-//     bool createFunctionBlock(
-//         ExtendedSubunitInfoCmd::EFunctionBlockType fbType,
-//         ExtendedSubunitInfoPageData& data );
-// 
-//     FunctionBlock::ESpecialPurpose convertSpecialPurpose(
-//         function_block_special_purpose_t specialPurpose );
 
-    virtual bool serializeChild( Glib::ustring basePath,
-                                 Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
-                                   Util::IODeserialize& deser,
-                                   Unit& avDevice );
+    virtual const char* getName();
 
 protected:
-     BeBoB::FunctionBlockVector m_functions;
+    virtual bool serializeChild( Glib::ustring basePath,
+                                 Util::IOSerialize& ser ) const {return false;};
+    virtual bool deserializeChild( Glib::ustring basePath,
+                                   Util::IODeserialize& deser,
+                                   Unit& avDevice ) {return false;};
+
 };
 
 }

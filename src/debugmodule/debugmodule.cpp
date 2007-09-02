@@ -31,7 +31,7 @@
 
 #include <time.h>
 
-#define DO_MESSAGE_BUFFER_PRINT
+// #define DO_MESSAGE_BUFFER_PRINT
 
 #ifndef DO_MESSAGE_BUFFER_PRINT
 	#warning Printing debug info without ringbuffer, not RT-safe!
@@ -351,9 +351,12 @@ DebugModuleManager::print(const char *fmt, ...)
 {
     char msg[MB_BUFFERSIZE];
     va_list ap;
+
+#ifdef DO_MESSAGE_BUFFER_PRINT
     unsigned int ntries=5;
     struct timespec wait = {0,50000};
-    
+#endif
+
     /* format the message first, to reduce lock contention */
     va_start(ap, fmt);
     if (vsnprintf(msg, MB_BUFFERSIZE, fmt, ap) >= MB_BUFFERSIZE) {
@@ -396,8 +399,11 @@ void
 DebugModuleManager::va_print (const char *fmt, va_list ap)
 {
     char msg[MB_BUFFERSIZE];
+
+#ifdef DO_MESSAGE_BUFFER_PRINT
     unsigned int ntries=5;
     struct timespec wait = {0,50000};
+#endif
 
     /* format the message first, to reduce lock contention */
     if (vsnprintf(msg, MB_BUFFERSIZE, fmt, ap) >= MB_BUFFERSIZE) {

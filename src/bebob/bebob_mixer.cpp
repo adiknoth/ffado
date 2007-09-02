@@ -102,6 +102,9 @@ Mixer::clearElements() {
     {
         delete *it;
     }
+    m_Children.clear();
+    
+    return true;
 }
 
 bool
@@ -143,11 +146,14 @@ bool
 Mixer::addElementForAllFunctionBlocks() {
     debugOutput(DEBUG_LEVEL_NORMAL,"Adding elements for functionblocks...\n");
 
-    if(m_device.getAudioSubunit(0)==NULL) {
-        debugWarning("No audio subunit found\n");
+    BeBoB::SubunitAudio *asu =
+        dynamic_cast<BeBoB::SubunitAudio *>(m_device.getAudioSubunit(0));
+
+    if(asu == NULL) {
+        debugWarning("No BeBoB audio subunit found\n");
         return false;
     }
-    FunctionBlockVector functions=m_device.getAudioSubunit(0)->getFunctionBlocks();
+    FunctionBlockVector functions=asu->getFunctionBlocks();
 
     for ( FunctionBlockVector::iterator it = functions.begin();
           it != functions.end();
@@ -189,7 +195,7 @@ MixerFBFeatureVolume::MixerFBFeatureVolume(Mixer& parent, FunctionBlockFeature& 
 bool
 MixerFBFeatureVolume::setValue(double v)
 {
-    int volume=v;
+    int volume=(int)v;
     debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d channel %d to %d...\n",
         m_Slave.getId(), m_channel, volume);
 

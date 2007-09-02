@@ -50,7 +50,12 @@ BeBoB::SubunitAudio::SubunitAudio()
 
 BeBoB::SubunitAudio::~SubunitAudio()
 {
-
+    for ( FunctionBlockVector::iterator it = m_functions.begin();
+          it != m_functions.end();
+          ++it )
+    {
+        delete *it;
+    }
 }
 
 AVC::Plug *

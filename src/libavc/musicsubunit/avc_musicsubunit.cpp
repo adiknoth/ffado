@@ -22,8 +22,6 @@
  * MA 02110-1301 USA
  */
 
-#warning this header should go
-#include "bebob/bebob_avplug.h"
 #include "libieee1394/configrom.h"
 
 #include "../general/avc_subunit.h"
