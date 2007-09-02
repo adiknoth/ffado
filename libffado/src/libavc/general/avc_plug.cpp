@@ -26,6 +26,8 @@
 #include "avc_unit.h"
 #include "avc_signal_format.h"
 
+#include "avc_extended_plug_info.h"
+
 #include "libieee1394/configrom.h"
 
 #include "libieee1394/ieee1394service.h"

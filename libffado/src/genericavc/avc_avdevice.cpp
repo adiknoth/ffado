@@ -22,8 +22,6 @@
  * MA 02110-1301 USA
  */
 
-#warning Generic AV/C support is currently useless
-
 #include "genericavc/avc_avdevice.h"
 
 #include "libieee1394/configrom.h"
@@ -31,6 +29,7 @@
 
 #include "libavc/avc_definitions.h"
 #include "libavc/general/avc_plug_info.h"
+#include "libavc/general/avc_extended_plug_info.h"
 
 #include "debugmodule/debugmodule.h"
 

@@ -63,6 +63,7 @@ public:
                                    AVC::plug_id_t plugId );
 
     virtual const char* getName();
+    virtual FunctionBlockVector getFunctionBlocks() { return m_functions; };
 
 protected:
     bool discoverFunctionBlocks();
@@ -81,6 +82,8 @@ protected:
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
 
+protected:
+     FunctionBlockVector m_functions;
 };
 
 /////////////////////////////

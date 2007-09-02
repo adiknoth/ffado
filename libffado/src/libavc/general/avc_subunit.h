@@ -35,9 +35,6 @@
 
 #include <vector>
 
-#warning merge with bebob functionblock
-#include "bebob/bebob_functionblock.h"
-
 namespace AVC {
 
 class Unit;
