@@ -90,7 +90,6 @@ AvDevice::createDevice( Ieee1394Service& ieee1394Service,
 {
     unsigned int vendorId = configRom->getNodeVendorId();
     unsigned int modelId = configRom->getModelId();
-                    return new Focusrite::SaffireProDevice(ieee1394Service, configRom);
 
     switch (vendorId) {
         case FW_VENDORID_TERRATEC:
