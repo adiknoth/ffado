@@ -25,8 +25,6 @@
 #include "avc_audiosubunit.h"
 #include "../general/avc_subunit.h"
 
-#warning merge with bebob functionblock
-#include "bebob/bebob_functionblock.h"
 #include "../audiosubunit/avc_function_block.h"
 
 
