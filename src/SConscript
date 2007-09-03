@@ -230,16 +230,22 @@ env2.PrependUnique( LIBPATH=env['build_base']+"src" )
 env2.PrependUnique( LIBS="ffado" )
 
 apps = { \
-	"bridgeco-downloader": "bridgeco-downloader.cpp", \
-	"bebob-sync" : "bebob-sync.cpp", \
 	"test-debugmodule" : "debugmodule/test_debugmodule.cpp", \
 	"test-dll" : "libutil/test-dll.cpp", \
 	"test-unittests-util" : "libutil/unittests.cpp", \
 	"test-unittests-osc" : "libosc/unittests.cpp" \
 }
 
+installapps = []
+
+if env['ENABLE_BEBOB']:
+	apps["bebob-sync"] = "bebob-sync.cpp"
+	apps["bridgeco-downloader"] = "bridgeco-downloader.cpp"
+	installapps += [ "bebob-sync", "bridgeco-downloader" ]
+
+
 for app in apps.keys():
 	env2.Program( target=app, source = env.Split( apps[app] ) )
-
-env2.Install( "$bindir", ["bebob-sync","bridgeco-downloader"] )
+	if app.find( "test" ) == -1:
+		env2.Install( "$bindir", app )
 
