@@ -13,23 +13,30 @@ if not env.GetOption( "clean" ):
 	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
 	env.MergeFlags( env['LIBXML26_FLAGS'] )
 
-#
-# deactivate as they don't seem ported to the new api: test-extplugcmd, test-mixer, test-volume
-#
-#for app in ["test-ffado", "test-extplugcmd", "test-fw410", "test-volume", "test-mixer", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
-
-for app in ["test-fw410", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
-    env.Program( target=app, source = app+".cpp" )
-
-env.Program( target="test-sytmonitor", source = env.Split( "test-sytmonitor.cpp SytMonitor.cpp" ) )
-
 env.Xml2Cpp_Proxy('controlclient-glue.h', 'control-interface.xml')
-env.Program( target="test-dbus", source = env.Split( "test-dbus.cpp controlclient.cpp" ) )
-
 env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')
-env.Program( target="test-dbus-server", source = env.Split( "test-dbus-server.cpp controlserver.cpp" ) )
-env.Program( target="test-ffado", source = env.Split( "test-ffado.cpp controlserver.cpp" ) )
 
+#
+# deactivate as they don't seem ported to the new api: test-extplugcmd,
+# test-mixer, test-volume
+#
+apps = {
+	"test-ffado" : "test-ffado.cpp controlserver.cpp",
+	"test-fw410" : "test-fw410.cpp",
+	#"test-extplugcmd" : "test-extplugcmd.cpp",
+	#"test-volume" : "test-volume.cpp",
+	#"test-mixer" : "test-mixer.cpp",
+	"test-cycletimer" : "test-cycletimer.cpp",
+	"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
+	"test-ieee1394service" : "test-ieee1394service.cpp",
+	"test-streamdump" : "test-streamdump.cpp",
+	"test-sytmonitor" : "test-sytmonitor.cpp SytMonitor.cpp",
+	"test-dbus" : "test-dbus.cpp controlclient.cpp",
+	"test-dbus-server" : "test-dbus-server.cpp controlserver.cpp",
+}
+
+for app in apps.keys():
+	env.Program( target=app, source = env.Split( apps[app] ) )
 
 env.SConscript( dirs="streaming", exports="env" )
 
