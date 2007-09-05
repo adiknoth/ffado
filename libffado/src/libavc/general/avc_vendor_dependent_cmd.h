@@ -35,8 +35,8 @@ public:
     VendorDependentCmd(Ieee1394Service& ieee1394service);
     virtual ~VendorDependentCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "VendorDependentCmd"; }

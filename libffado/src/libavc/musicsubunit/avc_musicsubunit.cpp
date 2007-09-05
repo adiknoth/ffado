@@ -29,7 +29,7 @@
 
 #include "../general/avc_plug_info.h"
 #include "../streamformat/avc_extended_stream_format.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include "avc_musicsubunit.h"
 #include "avc_descriptor_music.h"

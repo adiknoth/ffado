@@ -29,7 +29,7 @@
 
 #include "libavc/general/avc_plug_info.h"
 #include "libavc/streamformat/avc_extended_stream_format.h"
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include <sstream>
 

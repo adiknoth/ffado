@@ -15,7 +15,6 @@ ffado_source = env.Split( '\
 	ffadodevice.cpp \
 	debugmodule/debugmodule.cpp \
 	libavc/streamformat/avc_extended_stream_format.cpp \
-	libavc/util/avc_serialize.cpp \
 	libavc/musicsubunit/avc_descriptor_music.cpp \
 	libavc/musicsubunit/avc_musicsubunit.cpp \
 	libavc/audiosubunit/avc_audiosubunit.cpp \
@@ -56,6 +55,7 @@ ffado_source = env.Split( '\
 	libstreaming/PortManager.cpp \
 	libstreaming/StreamProcessor.cpp \
 	libstreaming/StreamProcessorManager.cpp \
+	libutil/cmd_serialize.cpp \
 	libutil/DelayLockedLoop.cpp \
 	libutil/PacketBuffer.cpp \
 	libutil/OptionContainer.cpp \

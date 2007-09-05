@@ -21,15 +21,15 @@
  * MA 02110-1301 USA
  */
 
-#ifndef SERIALIZE_H
-#define SERIALIZE_H
+#ifndef UTIL_CMD_SERIALIZE_H
+#define UTIL_CMD_SERIALIZE_H
 
 #include "debugmodule/debugmodule.h"
 
 #include <libraw1394/raw1394.h> // byte_t and quadlet_t declaration
 #include <string>
 
-namespace AVC {
+namespace Util {
 
 // Interfaces
 
@@ -160,5 +160,5 @@ private:
 };
 
 }
-#endif // SERIALIZE_H
+#endif // UTIL_CMD_SERIALIZE_H
 

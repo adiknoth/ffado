@@ -21,7 +21,7 @@
  * MA 02110-1301 USA
  */
 
-#include "avc_serialize.h"
+#include "cmd_serialize.h"
 
 #include <iostream>
 #include <iomanip>
@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 
 
-namespace AVC {
+namespace Util {
 
 
 IMPL_DEBUG_MODULE( CoutSerializer, CoutSerializer, DEBUG_LEVEL_NORMAL );

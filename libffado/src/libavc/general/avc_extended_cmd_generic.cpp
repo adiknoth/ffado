@@ -22,7 +22,7 @@
  */
 
 #include "avc_extended_cmd_generic.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 namespace AVC {
@@ -39,7 +39,7 @@ UnitPlugAddress::~UnitPlugAddress()
 }
 
 bool
-UnitPlugAddress::serialize( IOSSerialize& se )
+UnitPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_plugType, "UnitPlugAddress plugType" );
     se.write( m_plugId, "UnitPlugAddress plugId" );
@@ -48,7 +48,7 @@ UnitPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-UnitPlugAddress::deserialize( IISDeserialize& de )
+UnitPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_plugType );
     de.read( &m_plugId );
@@ -76,7 +76,7 @@ SubunitPlugAddress::~SubunitPlugAddress()
 }
 
 bool
-SubunitPlugAddress::serialize( IOSSerialize& se )
+SubunitPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_plugId, "SubunitPlugAddress plugId" );
     se.write( m_reserved0, "SubunitPlugAddress reserved0" );
@@ -85,7 +85,7 @@ SubunitPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-SubunitPlugAddress::deserialize( IISDeserialize& de )
+SubunitPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_plugId );
     de.read( &m_reserved0 );
@@ -115,7 +115,7 @@ FunctionBlockPlugAddress::~FunctionBlockPlugAddress()
 }
 
 bool
-FunctionBlockPlugAddress::serialize( IOSSerialize& se )
+FunctionBlockPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_functionBlockType, "FunctionBlockPlugAddress functionBlockType" );
     se.write( m_functionBlockId, "FunctionBlockPlugAddress functionBlockId" );
@@ -124,7 +124,7 @@ FunctionBlockPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockPlugAddress::deserialize( IISDeserialize& de )
+FunctionBlockPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_functionBlockType );
     de.read( &m_functionBlockId );
@@ -152,7 +152,7 @@ UndefinedPlugAddress::~UndefinedPlugAddress()
 }
 
 bool
-UndefinedPlugAddress::serialize( IOSSerialize& se )
+UndefinedPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_reserved0, "UndefinedPlugAddress reserved0" );
     se.write( m_reserved1, "UndefinedPlugAddress reserved1" );
@@ -161,7 +161,7 @@ UndefinedPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-UndefinedPlugAddress::deserialize( IISDeserialize& de )
+UndefinedPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_reserved0 );
     de.read( &m_reserved1 );
@@ -192,7 +192,7 @@ UnitPlugSpecificDataPlugAddress::~UnitPlugSpecificDataPlugAddress()
 }
 
 bool
-UnitPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
+UnitPlugSpecificDataPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_plugType,  "UnitPlugSpecificDataPlugAddress plugType" );
     se.write( m_plugId,    "UnitPlugSpecificDataPlugAddress plugId" );
@@ -203,7 +203,7 @@ UnitPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-UnitPlugSpecificDataPlugAddress::deserialize( IISDeserialize& de )
+UnitPlugSpecificDataPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_plugType );
     de.read( &m_plugId );
@@ -238,7 +238,7 @@ SubunitPlugSpecificDataPlugAddress::~SubunitPlugSpecificDataPlugAddress()
 }
 
 bool
-SubunitPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
+SubunitPlugSpecificDataPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_subunitType,  "SubunitPlugSpecificDataPlugAddress subunitType" );
     se.write( m_subunitId,    "SubunitPlugSpecificDataPlugAddress subunitId" );
@@ -249,7 +249,7 @@ SubunitPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-SubunitPlugSpecificDataPlugAddress::deserialize( IISDeserialize& de )
+SubunitPlugSpecificDataPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_subunitType );
     de.read( &m_subunitId );
@@ -286,7 +286,7 @@ FunctionBlockPlugSpecificDataPlugAddress::~FunctionBlockPlugSpecificDataPlugAddr
 }
 
 bool
-FunctionBlockPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
+FunctionBlockPlugSpecificDataPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_subunitType,       "FunctionPlugSpecificDataBlockPlugAddress subunitType" );
     se.write( m_subunitId,         "FunctionPlugSpecificDataBlockPlugAddress subunitId" );
@@ -297,7 +297,7 @@ FunctionBlockPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockPlugSpecificDataPlugAddress::deserialize( IISDeserialize& de )
+FunctionBlockPlugSpecificDataPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_subunitType );
     de.read( &m_subunitId );
@@ -329,7 +329,7 @@ UndefinedPlugSpecificDataPlugAddress::~UndefinedPlugSpecificDataPlugAddress()
 }
 
 bool
-UndefinedPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
+UndefinedPlugSpecificDataPlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_reserved0, "UndefinedPlugAddress reserved0" );
     se.write( m_reserved1, "UndefinedPlugAddress reserved1" );
@@ -340,7 +340,7 @@ UndefinedPlugSpecificDataPlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-UndefinedPlugSpecificDataPlugAddress::deserialize( IISDeserialize& de )
+UndefinedPlugSpecificDataPlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_reserved0 );
     de.read( &m_reserved1 );
@@ -407,7 +407,7 @@ PlugAddress::~PlugAddress()
 }
 
 bool
-PlugAddress::serialize( IOSSerialize& se )
+PlugAddress::serialize( Util::IOSSerialize& se )
 {
     se.write( m_plugDirection, "PlugAddress plugDirection" );
     se.write( m_addressMode, "PlugAddress addressMode" );
@@ -415,7 +415,7 @@ PlugAddress::serialize( IOSSerialize& se )
 }
 
 bool
-PlugAddress::deserialize( IISDeserialize& de )
+PlugAddress::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_plugDirection );
     de.read( &m_addressMode );
@@ -505,7 +505,7 @@ PlugAddressSpecificData::~PlugAddressSpecificData()
 }
 
 bool
-PlugAddressSpecificData::serialize( IOSSerialize& se )
+PlugAddressSpecificData::serialize( Util::IOSSerialize& se )
 {
     se.write( m_plugDirection, "PlugAddressSpecificData plugDirection" );
     se.write( m_addressMode, "PlugAddressSpecificData addressMode" );
@@ -513,7 +513,7 @@ PlugAddressSpecificData::serialize( IOSSerialize& se )
 }
 
 bool
-PlugAddressSpecificData::deserialize( IISDeserialize& de )
+PlugAddressSpecificData::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_plugDirection );
     de.read( &m_addressMode );

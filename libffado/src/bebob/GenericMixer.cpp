@@ -31,7 +31,7 @@
 #include "libosc/OscResponse.h"
 
 #include "libavc/audiosubunit/avc_function_block.h"
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include "libieee1394/ieee1394service.h"
 
@@ -469,7 +469,7 @@ GenericMixer::getSelectorValue(int fb_id, int &value) {
     }
 
     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        CoutSerializer se;
+        Util::CoutSerializer se;
         fbCmd.serialize( se );
     }
     
@@ -499,7 +499,7 @@ GenericMixer::setSelectorValue(int fb_id, int value) {
     }
 
     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        CoutSerializer se;
+        Util::CoutSerializer se;
         fbCmd.serialize( se );
     }
 
@@ -715,7 +715,7 @@ GenericMixer::getFeatureVolumeValue(int fb_id, int channel, int &volume) {
     }
     
     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        CoutSerializer se;
+        Util::CoutSerializer se;
         fbCmd.serialize( se );
     }
 
@@ -747,7 +747,7 @@ GenericMixer::setFeatureVolumeValue(int fb_id, int channel,
     }
 
     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        CoutSerializer se;
+        Util::CoutSerializer se;
         fbCmd.serialize( se );
     }
 

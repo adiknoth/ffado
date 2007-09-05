@@ -22,7 +22,7 @@
  */
 
 #include "avc_extended_stream_format.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -52,7 +52,7 @@ StreamFormatInfo::StreamFormatInfo()
 }
 
 bool
-StreamFormatInfo::serialize( IOSSerialize& se )
+StreamFormatInfo::serialize( Util::IOSSerialize& se )
 {
     se.write( m_numberOfChannels, "StreamFormatInfo numberOfChannels" );
     se.write( m_streamFormat, "StreamFormatInfo streamFormat" );
@@ -60,7 +60,7 @@ StreamFormatInfo::serialize( IOSSerialize& se )
 }
 
 bool
-StreamFormatInfo::deserialize( IISDeserialize& de )
+StreamFormatInfo::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_numberOfChannels );
     de.read( &m_streamFormat );
@@ -85,7 +85,7 @@ FormatInformationStreamsSync::FormatInformationStreamsSync()
 }
 
 bool
-FormatInformationStreamsSync::serialize( IOSSerialize& se )
+FormatInformationStreamsSync::serialize( Util::IOSSerialize& se )
 {
     se.write( m_reserved0, "FormatInformationStreamsSync reserved" );
 
@@ -101,7 +101,7 @@ FormatInformationStreamsSync::serialize( IOSSerialize& se )
 }
 
 bool
-FormatInformationStreamsSync::deserialize( IISDeserialize& de )
+FormatInformationStreamsSync::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_reserved0 );
 
@@ -156,7 +156,7 @@ FormatInformationStreamsCompound::~FormatInformationStreamsCompound()
 }
 
 bool
-FormatInformationStreamsCompound::serialize( IOSSerialize& se )
+FormatInformationStreamsCompound::serialize( Util::IOSSerialize& se )
 {
     se.write( m_samplingFrequency, "FormatInformationStreamsCompound samplingFrequency" );
     se.write( m_rateControl, "FormatInformationStreamsCompound rateControl" );
@@ -171,7 +171,7 @@ FormatInformationStreamsCompound::serialize( IOSSerialize& se )
 }
 
 bool
-FormatInformationStreamsCompound::deserialize( IISDeserialize& de )
+FormatInformationStreamsCompound::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_samplingFrequency );
     de.read( &m_rateControl );
@@ -222,7 +222,7 @@ FormatInformation::~FormatInformation()
 }
 
 bool
-FormatInformation::serialize( IOSSerialize& se )
+FormatInformation::serialize( Util::IOSSerialize& se )
 {
     if ( m_root != eFHR_Invalid ) {
         se.write( m_root, "FormatInformation hierarchy root" );
@@ -240,7 +240,7 @@ FormatInformation::serialize( IOSSerialize& se )
 }
 
 bool
-FormatInformation::deserialize( IISDeserialize& de )
+FormatInformation::deserialize( Util::IISDeserialize& de )
 {
     bool result = false;
 
@@ -337,7 +337,7 @@ ExtendedStreamFormatCmd::setIndexInStreamFormat( const int index )
 }
 
 bool
-ExtendedStreamFormatCmd::serialize( IOSSerialize& se )
+ExtendedStreamFormatCmd::serialize( Util::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
     se.write( m_subFunction, "ExtendedStreamFormatCmd subFunction" );
@@ -351,7 +351,7 @@ ExtendedStreamFormatCmd::serialize( IOSSerialize& se )
 }
 
 bool
-ExtendedStreamFormatCmd::deserialize( IISDeserialize& de )
+ExtendedStreamFormatCmd::deserialize( Util::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
     de.read( &m_subFunction );

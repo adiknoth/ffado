@@ -26,7 +26,7 @@
 #include "../descriptors/avc_descriptor.h"
 #include "../descriptors/avc_descriptor_cmd.h"
 
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include "../general/avc_subunit.h"
@@ -47,7 +47,7 @@ AVCMusicGeneralStatusInfoBlock::AVCMusicGeneralStatusInfoBlock( )
 {}
 
 bool
-AVCMusicGeneralStatusInfoBlock::serialize( IOSSerialize& se )
+AVCMusicGeneralStatusInfoBlock::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -62,7 +62,7 @@ AVCMusicGeneralStatusInfoBlock::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicGeneralStatusInfoBlock::deserialize( IISDeserialize& de )
+AVCMusicGeneralStatusInfoBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -85,7 +85,7 @@ AVCMusicOutputPlugStatusInfoBlock::AVCMusicOutputPlugStatusInfoBlock( )
 {}
 
 bool
-AVCMusicOutputPlugStatusInfoBlock::serialize( IOSSerialize& se )
+AVCMusicOutputPlugStatusInfoBlock::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -95,7 +95,7 @@ AVCMusicOutputPlugStatusInfoBlock::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicOutputPlugStatusInfoBlock::deserialize( IISDeserialize& de )
+AVCMusicOutputPlugStatusInfoBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -127,7 +127,7 @@ AVCMusicClusterInfoBlock::clear( ) {
 }
 
 bool
-AVCMusicClusterInfoBlock::serialize( IOSSerialize& se )
+AVCMusicClusterInfoBlock::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -161,7 +161,7 @@ AVCMusicClusterInfoBlock::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicClusterInfoBlock::deserialize( IISDeserialize& de )
+AVCMusicClusterInfoBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -254,7 +254,7 @@ AVCMusicSubunitPlugInfoBlock::clear()
 }
 
 bool
-AVCMusicSubunitPlugInfoBlock::serialize( IOSSerialize& se )
+AVCMusicSubunitPlugInfoBlock::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -285,7 +285,7 @@ AVCMusicSubunitPlugInfoBlock::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicSubunitPlugInfoBlock::deserialize( IISDeserialize& de )
+AVCMusicSubunitPlugInfoBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -387,7 +387,7 @@ AVCMusicPlugInfoBlock::clear( ) {
 }
 
 bool
-AVCMusicPlugInfoBlock::serialize( IOSSerialize& se )
+AVCMusicPlugInfoBlock::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -417,7 +417,7 @@ AVCMusicPlugInfoBlock::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicPlugInfoBlock::deserialize( IISDeserialize& de )
+AVCMusicPlugInfoBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -518,7 +518,7 @@ AVCMusicRoutingStatusInfoBlock::clear()
 }
 
 bool
-AVCMusicRoutingStatusInfoBlock::serialize( IOSSerialize& se )
+AVCMusicRoutingStatusInfoBlock::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -559,7 +559,7 @@ AVCMusicRoutingStatusInfoBlock::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicRoutingStatusInfoBlock::deserialize( IISDeserialize& de )
+AVCMusicRoutingStatusInfoBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -653,7 +653,7 @@ AVCMusicStatusDescriptor::AVCMusicStatusDescriptor( Unit* unit, Subunit* subunit
 {}
 
 bool
-AVCMusicStatusDescriptor::serialize( IOSSerialize& se )
+AVCMusicStatusDescriptor::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     
@@ -673,7 +673,7 @@ AVCMusicStatusDescriptor::serialize( IOSSerialize& se )
 }
 
 bool
-AVCMusicStatusDescriptor::deserialize( IISDeserialize& de )
+AVCMusicStatusDescriptor::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     

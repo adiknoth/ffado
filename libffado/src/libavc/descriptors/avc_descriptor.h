@@ -50,8 +50,8 @@ namespace AVC {
 class Unit;
 class Subunit;
 
-class IOSSerialize;
-class IISDeserialize;
+class Util::IOSSerialize;
+class Util::IISDeserialize;
 /**
  * The specifier used to indicate the target descriptor
  */
@@ -79,8 +79,8 @@ public:
     AVCDescriptorSpecifier( enum EType type );
     virtual ~AVCDescriptorSpecifier() {};
     
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     
     virtual AVCDescriptorSpecifier* clone() const;
     
@@ -110,8 +110,8 @@ class AVCDescriptor : public IBusData
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     // note: in the end these have to be protected
     AVCDescriptor( Unit* unit );
@@ -156,10 +156,10 @@ class AVCInfoBlock : public IBusData
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
-    static bool peekBlockType( IISDeserialize& de, uint16_t * );
-    static bool peekBlockLength( IISDeserialize& de, uint16_t * );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
+    static bool peekBlockType( Util::IISDeserialize& de, uint16_t * );
+    static bool peekBlockLength( Util::IISDeserialize& de, uint16_t * );
 
     // note: in the end these have to be protected
     AVCInfoBlock( );
@@ -189,8 +189,8 @@ class AVCRawTextInfoBlock : public AVCInfoBlock
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual bool clear();
     
@@ -211,8 +211,8 @@ class AVCNameInfoBlock : public AVCInfoBlock
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual bool clear();
     

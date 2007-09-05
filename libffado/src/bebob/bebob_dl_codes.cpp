@@ -24,8 +24,6 @@
 #include "bebob/bebob_dl_codes.h"
 #include "bebob/bebob_dl_bcd.h"
 
-using namespace AVC;
-
 unsigned short BeBoB::CommandCodes::m_gCommandId = 0;
 
 BeBoB::CommandCodes::CommandCodes( fb_quadlet_t protocolVersion,
@@ -51,7 +49,7 @@ BeBoB::CommandCodes::~CommandCodes()
 }
 
 bool
-BeBoB::CommandCodes::serialize( IOSSerialize& se )
+BeBoB::CommandCodes::serialize( Util::IOSSerialize& se )
 {
     byte_t tmp;
 
@@ -67,7 +65,7 @@ BeBoB::CommandCodes::serialize( IOSSerialize& se )
 }
 
 bool
-BeBoB::CommandCodes::deserialize( IISDeserialize& de )
+BeBoB::CommandCodes::deserialize( Util::IISDeserialize& de )
 {
     bool result = de.read( &m_resp_protocolVersion );
     fb_byte_t tmp;
@@ -102,7 +100,7 @@ BeBoB::CommandCodesReset::~CommandCodesReset()
 }
 
 bool
-BeBoB::CommandCodesReset::serialize( IOSSerialize& se )
+BeBoB::CommandCodesReset::serialize( Util::IOSSerialize& se )
 {
     bool result = CommandCodes::serialize( se );
     result &= se.write( m_startMode, "CommandCodesReset: boot mode" );
@@ -111,7 +109,7 @@ BeBoB::CommandCodesReset::serialize( IOSSerialize& se )
 }
 
 bool
-BeBoB::CommandCodesReset::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesReset::deserialize( Util::IISDeserialize& de )
 {
     return CommandCodes::deserialize( de );
 }
@@ -131,7 +129,7 @@ BeBoB::CommandCodesProgramGUID::~CommandCodesProgramGUID()
 }
 
 bool
-BeBoB::CommandCodesProgramGUID::serialize( IOSSerialize& se )
+BeBoB::CommandCodesProgramGUID::serialize( Util::IOSSerialize& se )
 {
     bool result = CommandCodes::serialize( se );
     fb_quadlet_t tmp = m_guid >> 32;
@@ -143,7 +141,7 @@ BeBoB::CommandCodesProgramGUID::serialize( IOSSerialize& se )
 }
 
 bool
-BeBoB::CommandCodesProgramGUID::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesProgramGUID::deserialize( Util::IISDeserialize& de )
 {
     return CommandCodes::deserialize( de );
 }
@@ -170,7 +168,7 @@ BeBoB::CommandCodesDownloadStart::~CommandCodesDownloadStart()
 }
 
 bool
-BeBoB::CommandCodesDownloadStart::serialize( IOSSerialize& se )
+BeBoB::CommandCodesDownloadStart::serialize( Util::IOSSerialize& se )
 {
     bool result = CommandCodes::serialize( se );
 
@@ -193,7 +191,7 @@ BeBoB::CommandCodesDownloadStart::serialize( IOSSerialize& se )
 }
 
 bool
-BeBoB::CommandCodesDownloadStart::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesDownloadStart::deserialize( Util::IISDeserialize& de )
 {
     bool result = CommandCodes::deserialize( de );
     result &= de.read( reinterpret_cast<fb_quadlet_t*>( &m_resp_max_block_size ) );
@@ -222,7 +220,7 @@ BeBoB::CommandCodesDownloadBlock::~CommandCodesDownloadBlock()
 }
 
 bool
-BeBoB::CommandCodesDownloadBlock::serialize( IOSSerialize& se )
+BeBoB::CommandCodesDownloadBlock::serialize( Util::IOSSerialize& se )
 {
     bool result = CommandCodes::serialize( se );
     result &= se.write( m_seqNumber, "CommandCodesDownloadBlock: sequence number" );
@@ -232,7 +230,7 @@ BeBoB::CommandCodesDownloadBlock::serialize( IOSSerialize& se )
 }
 
 bool
-BeBoB::CommandCodesDownloadBlock::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesDownloadBlock::deserialize( Util::IISDeserialize& de )
 {
     bool result = CommandCodes::deserialize( de );
     result &= de.read( &m_resp_seqNumber );
@@ -254,13 +252,13 @@ BeBoB::CommandCodesDownloadEnd::~CommandCodesDownloadEnd()
 }
 
 bool
-BeBoB::CommandCodesDownloadEnd::serialize( IOSSerialize& se )
+BeBoB::CommandCodesDownloadEnd::serialize( Util::IOSSerialize& se )
 {
     return CommandCodes::serialize( se );
 }
 
 bool
-BeBoB::CommandCodesDownloadEnd::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesDownloadEnd::deserialize( Util::IISDeserialize& de )
 {
     bool result = CommandCodes::deserialize( de );
     result &= de.read( &m_resp_crc32 );
@@ -283,13 +281,13 @@ BeBoB::CommandCodesInitializePersParam::~CommandCodesInitializePersParam()
 }
 
 bool
-BeBoB::CommandCodesInitializePersParam::serialize( IOSSerialize& se )
+BeBoB::CommandCodesInitializePersParam::serialize( Util::IOSSerialize& se )
 {
     return CommandCodes::serialize( se );
 }
 
 bool
-BeBoB::CommandCodesInitializePersParam::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesInitializePersParam::deserialize( Util::IISDeserialize& de )
 {
     return CommandCodes::deserialize( de );
 }
@@ -307,13 +305,13 @@ BeBoB::CommandCodesInitializeConfigToFactorySetting::~CommandCodesInitializeConf
 }
 
 bool
-BeBoB::CommandCodesInitializeConfigToFactorySetting::serialize( IOSSerialize& se )
+BeBoB::CommandCodesInitializeConfigToFactorySetting::serialize( Util::IOSSerialize& se )
 {
     return CommandCodes::serialize( se );
 }
 
 bool
-BeBoB::CommandCodesInitializeConfigToFactorySetting::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesInitializeConfigToFactorySetting::deserialize( Util::IISDeserialize& de )
 {
     return CommandCodes::deserialize( de );
 }
@@ -332,7 +330,7 @@ BeBoB::CommandCodesGo::~CommandCodesGo()
 }
 
 bool
-BeBoB::CommandCodesGo::serialize( IOSSerialize& se )
+BeBoB::CommandCodesGo::serialize( Util::IOSSerialize& se )
 {
     bool result = CommandCodes::serialize( se );
     result &= se.write( m_startMode, "CommandCodesGo: start mode" );
@@ -341,7 +339,7 @@ BeBoB::CommandCodesGo::serialize( IOSSerialize& se )
 }
 
 bool
-BeBoB::CommandCodesGo::deserialize( IISDeserialize& de )
+BeBoB::CommandCodesGo::deserialize( Util::IISDeserialize& de )
 {
     bool result = CommandCodes::deserialize( de );
     result &= de.read( &m_resp_validCRC );

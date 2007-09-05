@@ -28,13 +28,11 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include <netinet/in.h>
 
 #include <cstdio>
-
-using namespace AVC;
 
 namespace BeBoB {
     enum {
@@ -553,7 +551,7 @@ BeBoB::BootloaderManager::writeRequest( CommandCodes& cmd )
     unsigned char buf[ ( ( cmd.getMaxSize()+3 )/4 ) * 4 ];
     memset( buf, 0, sizeof( buf ) );
 
-    BufferSerialize se( buf,  sizeof( buf ) );
+    Util::BufferSerialize se( buf,  sizeof( buf ) );
     if ( !cmd.serialize( se ) ) {
         debugError( "writeRequest: Could not serialize command code %d\n",
                     cmd.getCommandCode() );
@@ -588,7 +586,7 @@ BeBoB::BootloaderManager::readResponse( CommandCodes& writeRequestCmd )
         return false;
     }
 
-    BufferDeserialize de( raw, buf_length );
+    Util::BufferDeserialize de( raw, buf_length );
     if ( !writeRequestCmd.deserialize( de ) ) {
         debugError( "readResponse: deserialize failed\n" );
         return false;

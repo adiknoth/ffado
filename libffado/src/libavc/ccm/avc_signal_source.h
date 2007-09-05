@@ -47,8 +47,8 @@ class SignalUnitAddress: public SignalAddress
 public:
     SignalUnitAddress();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual SignalUnitAddress* clone() const;
 
     byte_t m_plugId;
@@ -59,8 +59,8 @@ class SignalSubunitAddress: public SignalAddress
 public:
     SignalSubunitAddress();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual SignalSubunitAddress* clone() const;
 
     byte_t m_subunitType;
@@ -74,8 +74,8 @@ public:
     SignalSourceCmd( Ieee1394Service& ieee1394service );
     virtual ~SignalSourceCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "SignalSourceCmd"; }

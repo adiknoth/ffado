@@ -22,7 +22,7 @@
  */
 
 #include "avc_connect.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -42,7 +42,7 @@ ConnectCmd::~ConnectCmd()
 }
 
 bool
-ConnectCmd::serialize( IOSSerialize& se )
+ConnectCmd::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -50,7 +50,7 @@ ConnectCmd::serialize( IOSSerialize& se )
 }
 
 bool
-ConnectCmd::deserialize( IISDeserialize& de )
+ConnectCmd::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );

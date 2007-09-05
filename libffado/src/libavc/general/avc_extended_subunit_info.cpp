@@ -22,7 +22,7 @@
  */
 
 #include "avc_extended_subunit_info.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -47,7 +47,7 @@ ExtendedSubunitInfoPageData::~ExtendedSubunitInfoPageData()
 }
 
 bool
-ExtendedSubunitInfoPageData::serialize( IOSSerialize& se )
+ExtendedSubunitInfoPageData::serialize( Util::IOSSerialize& se )
 {
     se.write( m_functionBlockType, "ExtendedSubunitInfoPageData: function block type" );
     se.write( m_functionBlockId, "ExtendedSubunitInfoPageData: function block id" );
@@ -59,7 +59,7 @@ ExtendedSubunitInfoPageData::serialize( IOSSerialize& se )
 }
 
 bool
-ExtendedSubunitInfoPageData::deserialize( IISDeserialize& de )
+ExtendedSubunitInfoPageData::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_functionBlockType );
     de.read( &m_functionBlockId );
@@ -110,7 +110,7 @@ ExtendedSubunitInfoCmd::~ExtendedSubunitInfoCmd()
 }
 
 bool
-ExtendedSubunitInfoCmd::serialize( IOSSerialize& se )
+ExtendedSubunitInfoCmd::serialize( Util::IOSSerialize& se )
 {
     bool status = false;
     status = AVCCommand::serialize( se );
@@ -134,7 +134,7 @@ ExtendedSubunitInfoCmd::serialize( IOSSerialize& se )
 }
 
 bool
-ExtendedSubunitInfoCmd::deserialize( IISDeserialize& de )
+ExtendedSubunitInfoCmd::deserialize( Util::IISDeserialize& de )
 {
     bool status = false;
     status = AVCCommand::deserialize( de );

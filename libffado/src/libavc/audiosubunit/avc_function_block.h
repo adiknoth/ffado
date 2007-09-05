@@ -41,8 +41,8 @@ public:
     FunctionBlockFeatureVolume( const FunctionBlockFeatureVolume& rhs );
     virtual ~FunctionBlockFeatureVolume();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockFeatureVolume* clone() const;
 
     control_data_length_t  m_controlDataLength;
@@ -58,8 +58,8 @@ public:
     FunctionBlockProcessingMixer( const FunctionBlockProcessingMixer& rhs );
     virtual ~FunctionBlockProcessingMixer();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockProcessingMixer* clone() const;
 
     control_selector_t m_controlSelector;
@@ -80,8 +80,8 @@ public:
         const FunctionBlockProcessingEnhancedMixer& rhs );
     virtual ~FunctionBlockProcessingEnhancedMixer();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockProcessingEnhancedMixer* clone() const;
 
     control_selector_t        m_controlSelector;
@@ -108,8 +108,8 @@ public:
     FunctionBlockSelector( const FunctionBlockSelector& rhs );
     virtual ~FunctionBlockSelector();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockSelector* clone() const;
 
     selector_length_t      m_selectorLength;
@@ -144,8 +144,8 @@ public:
     FunctionBlockFeature( const FunctionBlockFeature& rhs );
     virtual ~FunctionBlockFeature();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockFeature* clone() const;
 
     selector_length_t           m_selectorLength;
@@ -189,8 +189,8 @@ public:
     FunctionBlockProcessing( const FunctionBlockProcessing& rhs );
     virtual ~FunctionBlockProcessing();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockProcessing* clone() const;
 
     selector_length_t             m_selectorLength;
@@ -220,8 +220,8 @@ public:
     FunctionBlockCodec( const FunctionBlockCodec& rhs );
     virtual ~FunctionBlockCodec();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockCodec* clone() const;
 };
 
@@ -258,8 +258,8 @@ public:
     FunctionBlockCmd( const FunctionBlockCmd& rhs );
     virtual ~FunctionBlockCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual FunctionBlockCmd* clone() const;
 
     virtual const char* getCmdName() const

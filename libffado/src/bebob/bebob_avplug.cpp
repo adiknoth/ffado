@@ -26,7 +26,7 @@
 #include "libieee1394/configrom.h"
 
 #include "libieee1394/ieee1394service.h"
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include <sstream>
 

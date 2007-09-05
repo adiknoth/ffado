@@ -28,7 +28,7 @@
 
 #include "fbtypes.h"
 
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 namespace BeBoB {
     enum EBootloaderProtocolVersion {
@@ -68,8 +68,8 @@ namespace BeBoB {
                       fb_byte_t operandSizeResponseField );
     virtual ~CommandCodes();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
         virtual size_t getMaxSize();
 
@@ -126,8 +126,8 @@ namespace BeBoB {
         CommandCodesReset( fb_quadlet_t protocolVersion, EStartMode startMode );
         virtual ~CommandCodesReset();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
         EStartMode getStartMode() const
             { return static_cast<EStartMode>( m_startMode ); }
@@ -146,8 +146,8 @@ namespace BeBoB {
                            fb_octlet_t guid );
         virtual ~CommandCodesProgramGUID();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
         fb_octlet_t getGUID() const
             { return m_guid; }
@@ -176,8 +176,8 @@ namespace BeBoB {
                      EObject object );
         virtual ~CommandCodesDownloadStart();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
         bool setDate( fb_octlet_t date )
             { m_date = date; return true; }
@@ -217,8 +217,8 @@ namespace BeBoB {
         CommandCodesDownloadBlock( fb_quadlet_t protocolVersion );
         virtual ~CommandCodesDownloadBlock();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
     bool setSeqNumber( fb_quadlet_t seqNumber )
         { m_seqNumber = seqNumber; return true; }
@@ -246,8 +246,8 @@ namespace BeBoB {
         CommandCodesDownloadEnd( fb_quadlet_t protocolVersion );
         virtual ~CommandCodesDownloadEnd();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
         fb_quadlet_t getRespCrc32() const
             { return m_resp_crc32; }
@@ -267,8 +267,8 @@ namespace BeBoB {
         CommandCodesInitializePersParam( fb_quadlet_t protocolVersion );
         virtual ~CommandCodesInitializePersParam();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
     };
 
     /////////////////////////
@@ -279,8 +279,8 @@ namespace BeBoB {
             fb_quadlet_t protocolVersion );
         virtual ~CommandCodesInitializeConfigToFactorySetting();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
     };
 
     /////////////////////////
@@ -295,8 +295,8 @@ namespace BeBoB {
         CommandCodesGo( fb_quadlet_t protocolVersion, EStartMode startMode );
         virtual ~CommandCodesGo();
 
-        virtual bool serialize( AVC::IOSSerialize& se );
-        virtual bool deserialize( AVC::IISDeserialize& de );
+        virtual bool serialize( Util::IOSSerialize& se );
+        virtual bool deserialize( Util::IISDeserialize& de );
 
         EStartMode getStartMode() const
             { return static_cast<EStartMode>( m_startMode ); }

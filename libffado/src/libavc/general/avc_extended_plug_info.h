@@ -51,8 +51,8 @@ public:
     ExtendedPlugInfoPlugTypeSpecificData( EExtendedPlugInfoPlugType ePlugType =  eEPIPT_Unknown);
     virtual ~ExtendedPlugInfoPlugTypeSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugTypeSpecificData* clone() const;
 
     typedef byte_t plug_type_t;
@@ -70,8 +70,8 @@ public:
     ExtendedPlugInfoPlugNameSpecificData();
     virtual ~ExtendedPlugInfoPlugNameSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugNameSpecificData* clone() const;
 
     std::string m_name;
@@ -85,8 +85,8 @@ public:
     ExtendedPlugInfoPlugNumberOfChannelsSpecificData();
     virtual ~ExtendedPlugInfoPlugNumberOfChannelsSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugNumberOfChannelsSpecificData* clone() const;
 
     nr_of_channels_t m_nrOfChannels;
@@ -132,8 +132,8 @@ public:
     ExtendedPlugInfoPlugChannelPositionSpecificData();
     virtual ~ExtendedPlugInfoPlugChannelPositionSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugChannelPositionSpecificData* clone() const;
 
     typedef std::vector<ClusterInfo> ClusterInfoVector;
@@ -150,8 +150,8 @@ public:
     ExtendedPlugInfoPlugChannelNameSpecificData();
     virtual ~ExtendedPlugInfoPlugChannelNameSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugChannelNameSpecificData* clone() const;
 
     stream_position_t m_streamPosition;
@@ -168,8 +168,8 @@ public:
     ExtendedPlugInfoPlugInputSpecificData( const ExtendedPlugInfoPlugInputSpecificData& rhs );
     virtual ~ExtendedPlugInfoPlugInputSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugInputSpecificData* clone() const;
 
     PlugAddressSpecificData* m_plugAddress;
@@ -185,8 +185,8 @@ public:
     ExtendedPlugInfoPlugOutputSpecificData( const ExtendedPlugInfoPlugOutputSpecificData& rhs );
     virtual ~ExtendedPlugInfoPlugOutputSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoPlugOutputSpecificData* clone() const;
 
     number_of_output_plugs_t m_nrOfOutputPlugs;
@@ -218,8 +218,8 @@ public:
     ExtendedPlugInfoClusterInfoSpecificData();
     virtual ~ExtendedPlugInfoClusterInfoSpecificData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoClusterInfoSpecificData* clone() const;
 
     cluster_index_t m_clusterIndex;
@@ -261,8 +261,8 @@ public:
 
     bool initialize();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedPlugInfoInfoType* clone() const;
 
     info_type_t m_infoType;
@@ -298,8 +298,8 @@ public:
     ExtendedPlugInfoCmd( const ExtendedPlugInfoCmd& rhs );
     virtual ~ExtendedPlugInfoCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     bool setPlugAddress( const PlugAddress& plugAddress );
     bool setSubFunction( ESubFunction subFunction );
