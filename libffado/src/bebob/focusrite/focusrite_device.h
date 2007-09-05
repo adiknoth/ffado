@@ -35,18 +35,36 @@ namespace Focusrite {
 
 class SaffireProDevice;
 
-class PhantomPowerControl
+class BinaryControl
     : public Control::Discrete
 {
 public:
-    PhantomPowerControl(SaffireProDevice& parent, int channel);
+    BinaryControl(SaffireProDevice& parent, int id);
+    BinaryControl(SaffireProDevice& parent, int id,
+                  std::string name, std::string label, std::string descr);
     
     virtual bool setValue(int v);
     virtual int getValue();
     
 private:
     SaffireProDevice&       m_Parent;
-    unsigned int            m_channel;
+    unsigned int            m_cmd_id;
+};
+
+class VolumeControl
+    : public Control::Discrete
+{
+public:
+    VolumeControl(SaffireProDevice& parent, int id);
+    VolumeControl(SaffireProDevice& parent, int id,
+                  std::string name, std::string label, std::string descr);
+    
+    virtual bool setValue(int v);
+    virtual int getValue();
+    
+private:
+    SaffireProDevice&       m_Parent;
+    unsigned int            m_cmd_id;
 };
 
 
@@ -62,9 +80,25 @@ public:
     virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
 
+public:
+    bool setSpecificValue(uint32_t id, uint32_t v);
+    bool getSpecificValue(uint32_t id, uint32_t *v);
+
 private:
-    PhantomPowerControl * m_Phantom1;
-    PhantomPowerControl * m_Phantom2;
+    BinaryControl * m_Phantom1;
+    BinaryControl * m_Phantom2;
+    
+    BinaryControl * m_Insert1;
+    BinaryControl * m_Insert2;
+    BinaryControl * m_AC3pass;
+    BinaryControl * m_MidiTru;
+    
+    VolumeControl * m_Output12[4];
+    VolumeControl * m_Output34[6];
+    VolumeControl * m_Output56[6];
+    VolumeControl * m_Output78[6];
+    VolumeControl * m_Output910[6];
+    
 };
 
 } // namespace Focusrite
