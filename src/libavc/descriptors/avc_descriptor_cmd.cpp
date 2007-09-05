@@ -24,7 +24,7 @@
 
 #include "avc_descriptor_cmd.h"
 #include "avc_descriptor.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -58,7 +58,7 @@ OpenDescriptorCmd::clear()
 }
 
 bool
-OpenDescriptorCmd::serialize( IOSSerialize& se )
+OpenDescriptorCmd::serialize( Util::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
     
@@ -87,7 +87,7 @@ OpenDescriptorCmd::serialize( IOSSerialize& se )
 }
 
 bool
-OpenDescriptorCmd::deserialize( IISDeserialize& de )
+OpenDescriptorCmd::deserialize( Util::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
     
@@ -155,7 +155,7 @@ ReadDescriptorCmd::clear()
 }
 
 bool
-ReadDescriptorCmd::serialize( IOSSerialize& se )
+ReadDescriptorCmd::serialize( Util::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
     
@@ -183,7 +183,7 @@ ReadDescriptorCmd::serialize( IOSSerialize& se )
 }
 
 bool
-ReadDescriptorCmd::deserialize( IISDeserialize& de )
+ReadDescriptorCmd::deserialize( Util::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
     

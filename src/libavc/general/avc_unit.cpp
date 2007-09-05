@@ -33,7 +33,7 @@
 #include "../general/avc_extended_plug_info.h"
 #include "../general/avc_subunit_info.h"
 #include "../streamformat/avc_extended_stream_format.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "../avc_definitions.h"
 
 #include "debugmodule/debugmodule.h"

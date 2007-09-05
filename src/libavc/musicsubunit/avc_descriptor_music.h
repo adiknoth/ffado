@@ -47,8 +47,8 @@ class Ieee1394Service;
 namespace AVC {
 
 
-class IOSSerialize;
-class IISDeserialize;
+class Util::IOSSerialize;
+class Util::IISDeserialize;
 
 /**
  * The info blocks
@@ -57,8 +57,8 @@ class AVCMusicGeneralStatusInfoBlock : public AVCInfoBlock
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     AVCMusicGeneralStatusInfoBlock( );
     virtual ~AVCMusicGeneralStatusInfoBlock() {};
@@ -79,8 +79,8 @@ class AVCMusicOutputPlugStatusInfoBlock : public AVCInfoBlock
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     AVCMusicOutputPlugStatusInfoBlock( );
     virtual ~AVCMusicOutputPlugStatusInfoBlock() {};
@@ -105,8 +105,8 @@ public:
     typedef std::vector<struct sSignalInfo> SignalInfoVector;
     typedef std::vector<struct sSignalInfo>::iterator SignalInfoVectorIterator;
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual bool clear();
     
@@ -146,8 +146,8 @@ public:
         ePT_Unknown     = 0xff,
     };
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     AVCMusicSubunitPlugInfoBlock( );
     virtual ~AVCMusicSubunitPlugInfoBlock();
@@ -180,8 +180,8 @@ class AVCMusicPlugInfoBlock : public AVCInfoBlock
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual bool clear();
 
     AVCMusicPlugInfoBlock( );
@@ -220,8 +220,8 @@ class AVCMusicRoutingStatusInfoBlock : public AVCInfoBlock
 {
 public:
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     AVCMusicRoutingStatusInfoBlock( );
     virtual ~AVCMusicRoutingStatusInfoBlock();
@@ -254,8 +254,8 @@ class AVCMusicStatusDescriptor : public AVCDescriptor
 {
 
 public:
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     
     AVCMusicStatusDescriptor( Unit* unit, Subunit* subunit );
     virtual ~AVCMusicStatusDescriptor() {}

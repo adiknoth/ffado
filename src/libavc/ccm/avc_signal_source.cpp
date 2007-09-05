@@ -22,7 +22,7 @@
  */
 
 #include "avc_signal_source.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -41,7 +41,7 @@ SignalUnitAddress::SignalUnitAddress()
 }
 
 bool
-SignalUnitAddress::serialize( IOSSerialize& se )
+SignalUnitAddress::serialize( Util::IOSSerialize& se )
 {
     byte_t reserved = 0xff;
     se.write( reserved, "SignalUnitAddress" );
@@ -50,7 +50,7 @@ SignalUnitAddress::serialize( IOSSerialize& se )
 }
 
 bool
-SignalUnitAddress::deserialize( IISDeserialize& de )
+SignalUnitAddress::deserialize( Util::IISDeserialize& de )
 {
     byte_t operand;
     de.read( &operand );
@@ -74,7 +74,7 @@ SignalSubunitAddress::SignalSubunitAddress()
 }
 
 bool
-SignalSubunitAddress::serialize( IOSSerialize& se )
+SignalSubunitAddress::serialize( Util::IOSSerialize& se )
 {
     byte_t operand = ( m_subunitType << 3 ) | ( m_subunitId & 0x7 );
     se.write( operand,  "SignalSubunitAddress subunitType & subunitId" );
@@ -83,7 +83,7 @@ SignalSubunitAddress::serialize( IOSSerialize& se )
 }
 
 bool
-SignalSubunitAddress::deserialize( IISDeserialize& de )
+SignalSubunitAddress::deserialize( Util::IISDeserialize& de )
 {
     byte_t operand;
     de.read( &operand );
@@ -122,7 +122,7 @@ SignalSourceCmd::~SignalSourceCmd()
 }
 
 bool
-SignalSourceCmd::serialize( IOSSerialize& se )
+SignalSourceCmd::serialize( Util::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
 
@@ -175,7 +175,7 @@ SignalSourceCmd::serialize( IOSSerialize& se )
 }
 
 bool
-SignalSourceCmd::deserialize( IISDeserialize& de )
+SignalSourceCmd::deserialize( Util::IISDeserialize& de )
 {
     delete m_signalSource;
     m_signalSource = 0;

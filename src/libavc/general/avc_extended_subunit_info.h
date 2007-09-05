@@ -46,8 +46,8 @@ class ExtendedSubunitInfoPageData: public IBusData
     ExtendedSubunitInfoPageData();
     virtual ~ExtendedSubunitInfoPageData();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     virtual ExtendedSubunitInfoPageData* clone() const;
 
     function_block_type_t            m_functionBlockType;
@@ -96,8 +96,8 @@ public:
     ExtendedSubunitInfoCmd( const ExtendedSubunitInfoCmd& rhs );
     virtual ~ExtendedSubunitInfoCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "ExtendedSubunitInfoCmd"; }

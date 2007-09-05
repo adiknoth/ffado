@@ -25,7 +25,7 @@
 #define FOCUSRITEVENDORDEPENDENT_H
 
 #include "libavc/general/avc_generic.h"
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libavc/general/avc_vendor_dependent_cmd.h"
 
 #include <libavc1394/avc1394.h>
@@ -50,8 +50,8 @@ public:
     FocusriteVendorDependentCmd(Ieee1394Service& ieee1394service);
     virtual ~FocusriteVendorDependentCmd();
 
-    virtual bool serialize( AVC::IOSSerialize& se );
-    virtual bool deserialize( AVC::IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "FocusriteVendorDependentCmd"; }

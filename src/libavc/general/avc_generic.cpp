@@ -22,7 +22,7 @@
  */
 
 #include "avc_generic.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include "debugmodule/debugmodule.h"
@@ -52,9 +52,9 @@ AVCCommand::AVCCommand( Ieee1394Service& ieee1394service,
 }
 
 bool
-AVCCommand::serialize( IOSSerialize& se )
+AVCCommand::serialize( Util::IOSSerialize& se )
 {
-    // XXX \todo improve IOSSerialize::write interface
+    // XXX \todo improve Util::IOSSerialize::write interface
     char* buf;
     asprintf( &buf, "AVCCommand ctype ('%s')",
               responseToString( static_cast<AVCCommand::EResponse>( m_ctype ) ) );
@@ -71,7 +71,7 @@ AVCCommand::serialize( IOSSerialize& se )
 }
 
 bool
-AVCCommand::deserialize( IISDeserialize& de )
+AVCCommand::deserialize( Util::IISDeserialize& de )
 {
     de.read( &m_ctype );
     de.read( &m_subunit );
@@ -180,7 +180,7 @@ AVCCommand::fire()
 {
     memset( &m_fcpFrame,  0x0,  sizeof( m_fcpFrame ) );
 
-    BufferSerialize se( m_fcpFrame, sizeof( m_fcpFrame ) );
+    Util::BufferSerialize se( m_fcpFrame, sizeof( m_fcpFrame ) );
     if ( !serialize( se ) ) {
         debugFatal(  "fire: Could not serialize\n" );
         return false;
@@ -193,7 +193,7 @@ AVCCommand::fire()
         debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,  "  Request:\n");
         showFcpFrame( m_fcpFrame, fcpFrameSize );
 
-        StringSerializer se_dbg;
+        Util::StringSerializer se_dbg;
         serialize( se_dbg );
         
         // output the debug message in smaller chunks to avoid problems
@@ -225,13 +225,13 @@ AVCCommand::fire()
         case eR_Rejected:
         case eR_NotImplemented:
         {
-            BufferDeserialize de( buf, resp_len );
+            Util::BufferDeserialize de( buf, resp_len );
             result = deserialize( de );
 
             debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
             showFcpFrame( buf, de.getNrOfConsumedBytes() );
 
-            StringSerializer se_dbg;
+            Util::StringSerializer se_dbg;
             serialize( se_dbg );
 
             // output the debug message in smaller chunks to avoid problems
@@ -250,7 +250,7 @@ AVCCommand::fire()
             debugWarning( "unexpected response received (0x%x)\n", m_eResponse );
             debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
 
-            BufferDeserialize de( buf, resp_len );
+            Util::BufferDeserialize de( buf, resp_len );
             deserialize( de );
 
             showFcpFrame( buf, de.getNrOfConsumedBytes() );

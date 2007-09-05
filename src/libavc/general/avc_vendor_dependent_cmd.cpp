@@ -22,7 +22,7 @@
  */
 
 #include "avc_vendor_dependent_cmd.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -44,7 +44,7 @@ VendorDependentCmd::~VendorDependentCmd()
 }
 
 bool
-VendorDependentCmd::serialize( IOSSerialize& se )
+VendorDependentCmd::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -59,7 +59,7 @@ VendorDependentCmd::serialize( IOSSerialize& se )
 }
 
 bool
-VendorDependentCmd::deserialize( IISDeserialize& de )
+VendorDependentCmd::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );

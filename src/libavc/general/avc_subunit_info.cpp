@@ -22,7 +22,7 @@
  */
 
 #include "avc_subunit_info.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -58,7 +58,7 @@ SubUnitInfoCmd::~SubUnitInfoCmd()
 }
 
 bool
-SubUnitInfoCmd::serialize( IOSSerialize& se )
+SubUnitInfoCmd::serialize( Util::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
 
@@ -76,7 +76,7 @@ SubUnitInfoCmd::serialize( IOSSerialize& se )
 }
 
 bool
-SubUnitInfoCmd::deserialize( IISDeserialize& de )
+SubUnitInfoCmd::deserialize( Util::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
 

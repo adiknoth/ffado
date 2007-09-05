@@ -23,7 +23,7 @@
  */
 
 #include "avc_function_block.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 
@@ -50,7 +50,7 @@ FunctionBlockFeatureVolume::~FunctionBlockFeatureVolume()
 }
 
 bool
-FunctionBlockFeatureVolume::serialize( IOSSerialize& se )
+FunctionBlockFeatureVolume::serialize( Util::IOSSerialize& se )
 {
     bool bStatus;
     byte_t val;
@@ -64,7 +64,7 @@ FunctionBlockFeatureVolume::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockFeatureVolume::deserialize( IISDeserialize& de )
+FunctionBlockFeatureVolume::deserialize( Util::IISDeserialize& de )
 {
     bool bStatus;
     byte_t val;
@@ -101,7 +101,7 @@ FunctionBlockProcessingMixer::~FunctionBlockProcessingMixer()
 }
 
 bool
-FunctionBlockProcessingMixer::serialize( IOSSerialize& se )
+FunctionBlockProcessingMixer::serialize( Util::IOSSerialize& se )
 {
     bool bStatus;
     bStatus = se.write( m_controlSelector,    "FunctionBlockProcessingMixer controlSelector" );
@@ -110,7 +110,7 @@ FunctionBlockProcessingMixer::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockProcessingMixer::deserialize( IISDeserialize& de )
+FunctionBlockProcessingMixer::deserialize( Util::IISDeserialize& de )
 {
     bool bStatus;
     bStatus = de.read( &m_controlSelector );
@@ -145,7 +145,7 @@ FunctionBlockProcessingEnhancedMixer::~FunctionBlockProcessingEnhancedMixer()
 }
 
 bool
-FunctionBlockProcessingEnhancedMixer::serialize( IOSSerialize& se )
+FunctionBlockProcessingEnhancedMixer::serialize( Util::IOSSerialize& se )
 {
     int todo,done;
     bool bStatus;
@@ -205,7 +205,7 @@ FunctionBlockProcessingEnhancedMixer::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockProcessingEnhancedMixer::deserialize( IISDeserialize& de )
+FunctionBlockProcessingEnhancedMixer::deserialize( Util::IISDeserialize& de )
 {
     int todo;
     bool bStatus=true;
@@ -294,7 +294,7 @@ FunctionBlockSelector::~FunctionBlockSelector()
 }
 
 bool
-FunctionBlockSelector::serialize( IOSSerialize& se )
+FunctionBlockSelector::serialize( Util::IOSSerialize& se )
 {
     bool bStatus;
     bStatus  = se.write( m_selectorLength,    "FunctionBlockSelector selectorLength" );
@@ -305,7 +305,7 @@ FunctionBlockSelector::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockSelector::deserialize( IISDeserialize& de )
+FunctionBlockSelector::deserialize( Util::IISDeserialize& de )
 {
     bool bStatus;
     bStatus  = de.read( &m_selectorLength );
@@ -350,7 +350,7 @@ FunctionBlockFeature::~FunctionBlockFeature()
 }
 
 bool
-FunctionBlockFeature::serialize( IOSSerialize& se )
+FunctionBlockFeature::serialize( Util::IOSSerialize& se )
 {
     bool bStatus;
     bStatus  = se.write( m_selectorLength,     "FunctionBlockFeature selectorLength" );
@@ -367,7 +367,7 @@ FunctionBlockFeature::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockFeature::deserialize( IISDeserialize& de )
+FunctionBlockFeature::deserialize( Util::IISDeserialize& de )
 {
     bool bStatus;
     bStatus  = de.read( &m_selectorLength );
@@ -437,7 +437,7 @@ FunctionBlockProcessing::~FunctionBlockProcessing()
 }
 
 bool
-FunctionBlockProcessing::serialize( IOSSerialize& se )
+FunctionBlockProcessing::serialize( Util::IOSSerialize& se )
 {
     bool bStatus;
     bStatus  = se.write( m_selectorLength,     "FunctionBlockProcessing selectorLength" );
@@ -457,7 +457,7 @@ FunctionBlockProcessing::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockProcessing::deserialize( IISDeserialize& de )
+FunctionBlockProcessing::deserialize( Util::IISDeserialize& de )
 {
     // NOTE: apparently the fbCmd of the STATUS type,
     // with EnhancedMixer controlSelector returns with this
@@ -538,13 +538,13 @@ FunctionBlockCodec::~FunctionBlockCodec()
 }
 
 bool
-FunctionBlockCodec::serialize( IOSSerialize& se )
+FunctionBlockCodec::serialize( Util::IOSSerialize& se )
 {
     return false;
 }
 
 bool
-FunctionBlockCodec::deserialize( IISDeserialize& de )
+FunctionBlockCodec::deserialize( Util::IISDeserialize& de )
 {
     return false;
 }
@@ -614,7 +614,7 @@ FunctionBlockCmd::~FunctionBlockCmd()
 }
 
 bool
-FunctionBlockCmd::serialize( IOSSerialize& se )
+FunctionBlockCmd::serialize( Util::IOSSerialize& se )
 {
     bool bStatus;
     bStatus  = AVCCommand::serialize( se );
@@ -659,7 +659,7 @@ FunctionBlockCmd::serialize( IOSSerialize& se )
 }
 
 bool
-FunctionBlockCmd::deserialize( IISDeserialize& de )
+FunctionBlockCmd::deserialize( Util::IISDeserialize& de )
 {
     bool bStatus;
     bStatus  = AVCCommand::deserialize( de );

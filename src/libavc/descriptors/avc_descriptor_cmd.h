@@ -67,8 +67,8 @@ public:
     OpenDescriptorCmd(Ieee1394Service& );
     virtual ~OpenDescriptorCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual bool clear();
 
@@ -99,8 +99,8 @@ public:
     ReadDescriptorCmd(Ieee1394Service& ieee1394service);
     virtual ~ReadDescriptorCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
     
     virtual bool clear();
     

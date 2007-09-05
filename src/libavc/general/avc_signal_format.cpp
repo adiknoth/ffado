@@ -22,7 +22,7 @@
  */
 
 #include "avc_signal_format.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -49,7 +49,7 @@ OutputPlugSignalFormatCmd::~OutputPlugSignalFormatCmd()
 }
 
 bool
-OutputPlugSignalFormatCmd::serialize( IOSSerialize& se )
+OutputPlugSignalFormatCmd::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -70,7 +70,7 @@ OutputPlugSignalFormatCmd::serialize( IOSSerialize& se )
 }
 
 bool
-OutputPlugSignalFormatCmd::deserialize( IISDeserialize& de )
+OutputPlugSignalFormatCmd::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );
@@ -109,7 +109,7 @@ InputPlugSignalFormatCmd::~InputPlugSignalFormatCmd()
 }
 
 bool
-InputPlugSignalFormatCmd::serialize( IOSSerialize& se )
+InputPlugSignalFormatCmd::serialize( Util::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -130,7 +130,7 @@ InputPlugSignalFormatCmd::serialize( IOSSerialize& se )
 }
 
 bool
-InputPlugSignalFormatCmd::deserialize( IISDeserialize& de )
+InputPlugSignalFormatCmd::deserialize( Util::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );

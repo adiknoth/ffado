@@ -22,7 +22,7 @@
  */
 
 #include "avc_plug_info.h"
-#include "../util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
 #include <netinet/in.h>
@@ -79,7 +79,7 @@ PlugInfoCmd::clear()
 }
 
 bool
-PlugInfoCmd::serialize( IOSSerialize& se )
+PlugInfoCmd::serialize( Util::IOSSerialize& se )
 {
     byte_t reserved = 0xff;
 
@@ -115,7 +115,7 @@ PlugInfoCmd::serialize( IOSSerialize& se )
 }
 
 bool
-PlugInfoCmd::deserialize( IISDeserialize& de )
+PlugInfoCmd::deserialize( Util::IISDeserialize& de )
 {
     byte_t reserved;
 

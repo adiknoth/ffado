@@ -33,10 +33,12 @@
 
 class Ieee1394Service;
 
-namespace AVC {
+namespace Util {
+    class IOSSerialize;
+    class IISDeserialize;
+};
 
-class IOSSerialize;
-class IISDeserialize;
+namespace AVC {
 
 const int fcpFrameMaxLength = 512;
 typedef unsigned char fcp_frame_t[fcpFrameMaxLength];
@@ -52,8 +54,8 @@ public:
     IBusData() {}
     virtual ~IBusData() {}
 
-    virtual bool serialize( IOSSerialize& se ) = 0;
-    virtual bool deserialize( IISDeserialize& de ) = 0;
+    virtual bool serialize( Util::IOSSerialize& se ) = 0;
+    virtual bool deserialize( Util::IISDeserialize& de ) = 0;
 
     virtual IBusData* clone() const = 0;
 
@@ -84,8 +86,8 @@ public:
         eCT_Unknown         = 0xff,
     };
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual bool setCommandType( ECommandType commandType );
     virtual bool fire();

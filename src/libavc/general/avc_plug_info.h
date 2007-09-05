@@ -52,8 +52,8 @@ public:
     PlugInfoCmd( const PlugInfoCmd& rhs );
     virtual ~PlugInfoCmd();
 
-    virtual bool serialize( IOSSerialize& se );
-    virtual bool deserialize( IISDeserialize& de );
+    virtual bool serialize( Util::IOSSerialize& se );
+    virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual void clear();
 

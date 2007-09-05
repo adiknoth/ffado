@@ -27,7 +27,7 @@
 #include "bebob/bebob_avdevice_subunit.h"
 
 #include "libavc/audiosubunit/avc_function_block.h"
-#include "libavc/util/avc_serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include "libcontrol/BasicElements.h"
 
@@ -216,7 +216,7 @@ MixerFBFeatureVolume::setValue(double v)
     }
 
     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        CoutSerializer se;
+        Util::CoutSerializer se;
         fbCmd.serialize( se );
     }
     
@@ -250,7 +250,7 @@ MixerFBFeatureVolume::getValue()
     }
     
     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        CoutSerializer se;
+        Util::CoutSerializer se;
         fbCmd.serialize( se );
     }
 
