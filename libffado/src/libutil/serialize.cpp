@@ -25,26 +25,6 @@
 
 using namespace std;
 
-void tokenize(const string& str,
-              vector<string>& tokens,
-              const string& delimiters = " ")
-{
-    // Skip delimiters at beginning.
-    string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-    // Find first "non-delimiter".
-    string::size_type pos     = str.find_first_of(delimiters, lastPos);
-
-    while (string::npos != pos || string::npos != lastPos) {
-        // Found a token, add it to the vector.
-        tokens.push_back(str.substr(lastPos, pos - lastPos));
-        // Skip delimiters.  Note the "not_of"
-        lastPos = str.find_first_not_of(delimiters, pos);
-        // Find next "non-delimiter"
-        pos = str.find_first_of(delimiters, lastPos);
-    }
-}
-
-/////////////////////////////////
 
 IMPL_DEBUG_MODULE( Util::XMLSerialize,   XMLSerialize,   DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( Util::XMLDeserialize, XMLDeserialize, DEBUG_LEVEL_NORMAL );
@@ -300,4 +280,25 @@ Util::XMLDeserialize::isExisting( std::string strMemberName )
     xmlpp::Node* pNode = pDoc->get_root_node();
     xmlpp::NodeSet nodeSet = pNode->find( strMemberName );
     return nodeSet.size() > 0;
+}
+
+void
+tokenize(const string& str,
+         vector<string>& tokens,
+         const string& delimiters)
+{
+    // Skip delimiters at beginning.
+    string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    // Find first "non-delimiter".
+    string::size_type pos     = str.find_first_of(delimiters, lastPos);
+
+    while (string::npos != pos || string::npos != lastPos)
+    {
+        // Found a token, add it to the vector.
+        tokens.push_back(str.substr(lastPos, pos - lastPos));
+        // Skip delimiters.  Note the "not_of"
+        lastPos = str.find_first_not_of(delimiters, pos);
+        // Find next "non-delimiter"
+        pos = str.find_first_of(delimiters, lastPos);
+    }
 }

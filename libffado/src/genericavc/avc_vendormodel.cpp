@@ -22,6 +22,7 @@
  */
 
 #include "genericavc/avc_vendormodel.h"
+#include "libutil/serialize.h"
 
 #include <fstream>
 #include <istream>
@@ -32,29 +33,6 @@
 #include <algorithm>
 
 using namespace std;
-
-static void
-tokenize(const string& str,
-         vector<string>& tokens,
-         const string& delimiters = " ")
-{
-    // Skip delimiters at beginning.
-    string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-    // Find first "non-delimiter".
-    string::size_type pos     = str.find_first_of(delimiters, lastPos);
-
-    while (string::npos != pos || string::npos != lastPos)
-    {
-        // Found a token, add it to the vector.
-        tokens.push_back(str.substr(lastPos, pos - lastPos));
-        // Skip delimiters.  Note the "not_of"
-        lastPos = str.find_first_not_of(delimiters, pos);
-        // Find next "non-delimiter"
-        pos = str.find_first_of(delimiters, lastPos);
-    }
-}
-
-//-------------------------------------------------
 
 GenericAVC::VendorModelEntry::VendorModelEntry()
     : vendor_id( 0 )
@@ -88,7 +66,7 @@ bool
 GenericAVC::VendorModelEntry::operator == ( const VendorModelEntry& rhs ) const
 {
     bool equal=true;
-    
+
     equal &= (vendor_id   == rhs.vendor_id);
     equal &= (model_id    == rhs.model_id);
     equal &= (vendor_name == rhs.vendor_name);
@@ -215,7 +193,7 @@ GenericAVC::VendorModel::find( unsigned int vendor_id, unsigned model_id )
                   is_same( vendor_id, model_id ) );
     if ( it != m_vendorModelEntries.end() )
         return *it;
-        
+
     struct VendorModelEntry invalid;
     return invalid;
 }
