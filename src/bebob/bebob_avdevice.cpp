@@ -445,7 +445,7 @@ AvDevice::getCachePath()
 {
     Glib::ustring cachePath;
     char* pCachePath;
-    if ( asprintf( &pCachePath, "%s/cache/libffado/",  CACHEDIR ) < 0 ) {
+    if ( asprintf( &pCachePath, "%s/cache/",  CACHEDIR ) < 0 ) {
         debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
         cachePath == "/var/cache/libffado/";
     } else {
@@ -486,36 +486,54 @@ AvDevice::loadFromCache()
 bool
 AvDevice::saveCache()
 {
-//     // the path looks like this:
-//     // PATH_TO_CACHE + GUID + CONFIGURATION_ID
-//
-//     Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
-//     struct stat buf;
-//     if ( stat( sDevicePath.c_str(), &buf ) == 0 ) {
-//         if ( !S_ISDIR( buf.st_mode ) ) {
-//             debugError( "\"%s\" is not a directory\n",  sDevicePath.c_str() );
-//             return false;
-//         }
-//     } else {
-//         if (  mkdir( sDevicePath.c_str(), S_IRWXU | S_IRWXG ) != 0 ) {
-//             debugError( "Could not create \"%s\" directory\n", sDevicePath.c_str() );
-//             return false;
-//         }
-//     }
-//
-//     char* configId;
-//     asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId() );
-//     if ( !configId ) {
-//         debugError( "Could not create id string\n" );
-//         return false;
-//     }
-//     Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
-//     free( configId );
-//     debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
-//
-//     Util::XMLSerialize ser( sFileName );
-//     return serialize( "", ser );
-    return false;
+    // the path looks like this:
+    // PATH_TO_CACHE + GUID + CONFIGURATION_ID
+    string tmp_path = getCachePath() + m_pConfigRom->getGuidString();
+
+    // the following piece should do something like 'mkdir -p some/path/with/some/dirs/which/do/not/exist'
+    vector<string> tokens;
+    tokenize( tmp_path, tokens, "/" );
+    string path;
+    for ( vector<string>::const_iterator it = tokens.begin();
+          it != tokens.end();
+          ++it )
+    {
+        if ( path == "" ) {
+            if ( *it == "~" )
+                path = getenv( "HOME" );
+            else
+                path = *it;
+        } else {
+            path = path + "/" + *it;
+        }
+
+        struct stat buf;
+        if ( stat( path.c_str(), &buf ) == 0 ) {
+            if ( !S_ISDIR( buf.st_mode ) ) {
+                debugError( "\"%s\" is not a directory\n",  path.c_str() );
+                return false;
+            }
+        } else {
+            if (  mkdir( path.c_str(), S_IRWXU | S_IRWXG ) != 0 ) {
+                debugError( "Could not create \"%s\" directory\n", path.c_str() );
+                return false;
+            }
+        }
+    }
+
+    // come up with an unique file name for the current settings
+    char* configId;
+    asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId() );
+    if ( !configId ) {
+        debugError( "Could not create id string\n" );
+        return false;
+    }
+    string filename = path + "/" + configId + ".xml";
+    free( configId );
+    debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", filename.c_str() );
+
+    Util::XMLSerialize ser( filename );
+    return serialize( "", ser );
 }
 
 } // end of namespace
