@@ -34,6 +34,11 @@ SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
+    // the saffire pro doesn't seem to like it if the commands are too fast
+    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 200) {
+        AVC::AVCCommand::setSleepAfterAVCCommand( 200 );
+    }
+
     // create control objects for the saffire pro
     m_Phantom1 = new BinaryControl(*this, FOCUSRITE_CMD_ID_PHANTOM14,
                  "Phantom_1to4", "Phantom 1-4", "Switch Phantom Power on channels 1-4");
@@ -229,7 +234,7 @@ SaffireProDevice::setSpecificValue(uint32_t id, uint32_t v)
     cmd.setSubunitId( 0xff );
     
     cmd.setVerbose( getDebugLevel() );
-        cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+//         cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
     
     cmd.m_id=id;
     cmd.m_value=v;
@@ -253,7 +258,7 @@ SaffireProDevice::getSpecificValue(uint32_t id, uint32_t *v)
     cmd.setSubunitId( 0xff );
     
     cmd.setVerbose( getDebugLevel() );
-        cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+//         cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
     
     cmd.m_id=id;
     
@@ -268,18 +273,8 @@ SaffireProDevice::getSpecificValue(uint32_t id, uint32_t *v)
 }
 
 int
-SaffireProDevice::getSamplingFrequency( ) {
-    uint32_t sr;
-    
-    if ( !getSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, &sr ) ) {
-        debugError( "getSpecificValue failed\n" );
-        return 0;
-    }
-    
-    debugOutput( DEBUG_LEVEL_NORMAL,
-                     "getSampleRate: %d\n", sr );
-
-    switch(sr) {
+SaffireProDevice::convertDefToSr( uint32_t def ) {
+    switch(def) {
         case FOCUSRITE_CMD_SAMPLERATE_44K1:  return 44100;
         case FOCUSRITE_CMD_SAMPLERATE_48K:   return 48000;
         case FOCUSRITE_CMD_SAMPLERATE_88K2:  return 88200;
@@ -290,28 +285,59 @@ SaffireProDevice::getSamplingFrequency( ) {
     }
 }
 
+uint32_t
+SaffireProDevice::convertSrToDef( int sr ) {
+    switch(sr) {
+        case 44100:  return FOCUSRITE_CMD_SAMPLERATE_44K1;
+        case 48000:  return FOCUSRITE_CMD_SAMPLERATE_48K;
+        case 88200:  return FOCUSRITE_CMD_SAMPLERATE_88K2;
+        case 96000:  return FOCUSRITE_CMD_SAMPLERATE_96K;
+        case 176400: return FOCUSRITE_CMD_SAMPLERATE_176K4;
+        case 192000: return FOCUSRITE_CMD_SAMPLERATE_192K;
+        default:
+            debugWarning("Unsupported samplerate: %d\n", sr);
+            return 0;
+    }
+}
+
+int
+SaffireProDevice::getSamplingFrequency( ) {
+    uint32_t sr;
+    if ( !getSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, &sr ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    }
+    
+    debugOutput( DEBUG_LEVEL_NORMAL,
+                     "getSampleRate: %d\n", sr );
+
+    return convertDefToSr(sr);
+}
+
 bool
 SaffireProDevice::setSamplingFrequencyDo( int s )
 {
-    uint32_t value;
-    switch(s) {
-        case 44100:  value=FOCUSRITE_CMD_SAMPLERATE_44K1;break;
-        case 48000:  value=FOCUSRITE_CMD_SAMPLERATE_48K;break;
-        case 88200:  value=FOCUSRITE_CMD_SAMPLERATE_88K2;break;
-        case 96000:  value=FOCUSRITE_CMD_SAMPLERATE_96K;break;
-        case 176400: value=FOCUSRITE_CMD_SAMPLERATE_176K4;break;
-        case 192000: value=FOCUSRITE_CMD_SAMPLERATE_192K;break;
-        default:
-            debugWarning("Unsupported samplerate: %d\n", s);
-            return false;
-    }
-
-
+    uint32_t value=convertSrToDef(s);
     if ( !setSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, value) ) {
         debugError( "setSpecificValue failed\n" );
         return false;
     }
     return true;
+}
+
+// FIXME: this is not really documented, and is an assumtion
+int
+SaffireProDevice::getSamplingFrequencyMirror( ) {
+    uint32_t sr;
+    if ( !getSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE_MIRROR, &sr ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    }
+    
+    debugOutput( DEBUG_LEVEL_NORMAL,
+                     "getSampleRateMirror: %d\n", sr );
+
+    return convertDefToSr(sr);
 }
 
 bool
@@ -331,31 +357,42 @@ SaffireProDevice::setSamplingFrequency( int s )
         }
         return true;
     } else {
-
-        if(!setSamplingFrequencyDo( s )) {
-            debugWarning("setSamplingFrequencyDo failed\n");
-        }
-        
-        // wait for a while
-        usleep(100 * 1000);
-        int verify=getSamplingFrequency();
-        
-        debugOutput( DEBUG_LEVEL_NORMAL,
-                     "setSampleRate: requested samplerate %d, device now has %d\n", s, verify );
-                     
-        if (s != verify) {
-            debugWarning("setting samplerate failed. trying again...\n");
+        const int max_tries=2;
+        int ntries=max_tries+1;
+        while(--ntries) {
             if(!setSamplingFrequencyDo( s )) {
                 debugWarning("setSamplingFrequencyDo failed\n");
             }
             
-            // wait for a while
-            usleep(100 * 1000);
-            verify=getSamplingFrequency();
-            debugOutput( DEBUG_LEVEL_NORMAL,
-                        "setSampleRate (2): requested samplerate %d, device now has %d\n", s, verify );
-            return (s==verify);
+            int timeout=10; // multiples of 1s
+//             while(timeout--) {
+//                 // wait for a while
+//                 usleep(1000 * 1000);
+//                 
+//                 // we should figure out how long to wait before the device
+//                 // becomes available again
+//                 
+//                 // rediscover the device
+//                 if (discover()) break;
+// 
+//             }
+            
+            if(timeout) {
+                int verify=getSamplingFrequency();
+                
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                            "setSampleRate (try %d): requested samplerate %d, device now has %d\n", 
+                            max_tries-ntries, s, verify );
+                            
+                if (s == verify) break;
+            }
         }
+        
+        if (ntries==0) {
+            debugError("Setting samplerate failed...\n");
+            return false;
+        }
+
         return true;
     }
     // not executable

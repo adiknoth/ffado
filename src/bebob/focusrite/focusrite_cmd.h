@@ -31,6 +31,7 @@
 #include <libavc1394/avc1394.h>
 
 #define FOCUSRITE_CMD_ID_SAMPLERATE         84
+#define FOCUSRITE_CMD_ID_SAMPLERATE_MIRROR  115
 
 #define FOCUSRITE_CMD_ID_PHANTOM14          98
 #define FOCUSRITE_CMD_ID_PHANTOM58          99
