@@ -23,6 +23,8 @@ env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')
 apps = {
 	"test-ffado" : "test-ffado.cpp controlserver.cpp",
 	"test-fw410" : "test-fw410.cpp",
+	"test-avccmd" : "test-avccmd.cpp",
+	"test-focusrite" : "test-focusrite.cpp",
 	#"test-extplugcmd" : "test-extplugcmd.cpp",
 	#"test-volume" : "test-volume.cpp",
 	#"test-mixer" : "test-mixer.cpp",
