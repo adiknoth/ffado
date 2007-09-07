@@ -104,6 +104,9 @@ genericavc_pkgdata = env.Split( '\
 
 fireworks_source =  env.Split( '\
 	fireworks/fireworks_device.cpp \
+	fireworks/efc/efc_avc_cmd.cpp \
+	fireworks/efc/efc_cmd.cpp \
+	fireworks/efc/efc_cmds_hardware.cpp \
 	fireworks/audiofire/audiofire_device.cpp \
 ' )
 
