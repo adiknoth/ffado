@@ -22,7 +22,6 @@
  * MA 02111-1307 USA.
  */
 
-#include <libfreebob/freebob.h>
 #include <libraw1394/raw1394.h>
 #include <libiec61883/iec61883.h>
 #include "debugtools.h"
