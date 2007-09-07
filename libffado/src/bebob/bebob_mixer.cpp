@@ -119,18 +119,28 @@ Mixer::addElementForFunctionBlock(FunctionBlock& b) {
 
     Control::Element *e=NULL;
     
+    if (dynamic_cast<FunctionBlockSelector *>(&b) != NULL) {
+        FunctionBlockSelector *bf=dynamic_cast<FunctionBlockSelector *>(&b);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a SelectorFunctionBlock\n");
+        e=new MixerFBSelector(*this, *bf);
+        if (e) {
+            e->setVerboseLevel(getDebugLevel());
+            retval &= Control::Container::addElement(e);
+        } else {
+            debugError("Control element creation failed\n");
+            retval &= false;
+        }
+    }
     if (dynamic_cast<FunctionBlockFeature *>(&b) != NULL) {
         FunctionBlockFeature *bf=dynamic_cast<FunctionBlockFeature *>(&b);
         debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a FeatureFunctionBlock\n");
-        for (int ch=0;ch<3;ch++) { // FIXME: figure out the nb of channels
-            e=new MixerFBFeatureVolume(*this, *bf, ch);
-            if (e) {
-                e->setVerboseLevel(getDebugLevel());
-                retval &= Control::Container::addElement(e);
-            } else {
-                debugError("Control element creation failed\n");
-                retval &= false;
-            }
+        e=new MixerFBFeature(*this, *bf);
+        if (e) {
+            e->setVerboseLevel(getDebugLevel());
+            retval &= Control::Container::addElement(e);
+        } else {
+            debugError("Control element creation failed\n");
+            retval &= false;
         }
     }
     
@@ -172,32 +182,31 @@ Mixer::addElementForAllFunctionBlocks() {
 
 // --- element implementation classes
 
-MixerFBFeatureVolume::MixerFBFeatureVolume(Mixer& parent, FunctionBlockFeature& s, int channel)
+MixerFBFeature::MixerFBFeature(Mixer& parent, FunctionBlockFeature& s)
 : Control::Continuous()
 , m_Parent(parent) 
 , m_Slave(s)
-, m_channel ( channel )
 {
     std::ostringstream ostrm;
-    ostrm << s.getName() << "_" << (int)(s.getId()) << "_ch" << channel;
+    ostrm << s.getName() << "_" << (int)(s.getId());
     
     Control::Continuous::setName(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Label for " << s.getName() << " " << (int)(s.getId()) << " ch" << channel;
+    ostrm << "Label for " << s.getName() << " " << (int)(s.getId());
     setLabel(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Description for " << s.getName() << " " << (int)(s.getId()) << " Channel " << channel;
+    ostrm << "Description for " << s.getName() << " " << (int)(s.getId());
     setDescription(ostrm.str());
 }
 
 bool
-MixerFBFeatureVolume::setValue(double v)
+MixerFBFeature::setValue(double v)
 {
     int volume=(int)v;
-    debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d channel %d to %d...\n",
-        m_Slave.getId(), m_channel, volume);
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
+        m_Slave.getId(), volume);
 
     FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -206,7 +215,7 @@ MixerFBFeatureVolume::setValue(double v)
     fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Control );
-    fbCmd.m_pFBFeature->m_audioChannelNumber=m_channel;
+    fbCmd.m_pFBFeature->m_audioChannelNumber=0; // m_channel
     fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
     fbCmd.m_pFBFeature->m_pVolume->m_volume=volume;
 
@@ -228,10 +237,10 @@ MixerFBFeatureVolume::setValue(double v)
 }
 
 double
-MixerFBFeatureVolume::getValue()
+MixerFBFeature::getValue()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d channel %d...\n",
-        m_Slave.getId(), m_channel);
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
+        m_Slave.getId());
 
     FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -240,7 +249,7 @@ MixerFBFeatureVolume::getValue()
     fbCmd.setNodeId( m_Parent.getParent().getNodeId()  );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
-    fbCmd.m_pFBFeature->m_audioChannelNumber=m_channel;
+    fbCmd.m_pFBFeature->m_audioChannelNumber=0;
     fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume; // FIXME
     fbCmd.m_pFBFeature->m_pVolume->m_volume=0;
 
@@ -261,6 +270,91 @@ MixerFBFeatureVolume::getValue()
     int volume=(int)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
     
     return volume;
+}
+
+// --- element implementation classes
+
+MixerFBSelector::MixerFBSelector(Mixer& parent, FunctionBlockSelector& s)
+: Control::Discrete()
+, m_Parent(parent) 
+, m_Slave(s)
+{
+    std::ostringstream ostrm;
+    ostrm << s.getName() << "_" << (int)(s.getId());
+    
+    Control::Discrete::setName(ostrm.str());
+    
+    ostrm.str("");
+    ostrm << "Label for " << s.getName() << " " << (int)(s.getId());
+    setLabel(ostrm.str());
+    
+    ostrm.str("");
+    ostrm << "Description for " << s.getName() << " " << (int)(s.getId());
+    setDescription(ostrm.str());
+}
+
+bool
+MixerFBSelector::setValue(int v)
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set selector %d to %d...\n",
+        m_Slave.getId(), v);
+
+    FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
+                            FunctionBlockCmd::eFBT_Selector,
+                            m_Slave.getId(),
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Control );
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber=(v & 0xFF);
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return false;
+    }
+
+    if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+        Util::CoutSerializer se;
+        fbCmd.serialize( se );
+    }
+    
+    if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
+    }
+
+    return (fbCmd.getResponse() == AVCCommand::eR_Accepted);
+}
+
+int
+MixerFBSelector::getValue()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get selector %d...\n",
+        m_Slave.getId());
+
+    FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
+                            FunctionBlockCmd::eFBT_Selector,
+                            m_Slave.getId(),
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( m_Parent.getParent().getNodeId()  );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Status );
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber=0;
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return 0;
+    }
+    
+    if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+        Util::CoutSerializer se;
+        fbCmd.serialize( se );
+    }
+
+    if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
+    }
+    
+    return fbCmd.m_pFBSelector->m_inputFbPlugNumber;
 }
 
 } // end of namespace BeBoB
