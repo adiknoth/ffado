@@ -85,6 +85,8 @@ public:
     bool getSpecificValue(uint32_t id, uint32_t *v);
 
 private:
+    virtual bool setSamplingFrequencyDo( int );
+    
     BinaryControl * m_Phantom1;
     BinaryControl * m_Phantom2;
     

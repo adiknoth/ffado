@@ -229,7 +229,7 @@ SaffireProDevice::setSpecificValue(uint32_t id, uint32_t v)
     cmd.setSubunitId( 0xff );
     
     cmd.setVerbose( getDebugLevel() );
-//         cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+        cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
     
     cmd.m_id=id;
     cmd.m_value=v;
@@ -239,14 +239,7 @@ SaffireProDevice::setSpecificValue(uint32_t id, uint32_t v)
         return false;
     }
     
-    uint32_t verify;
-    if ( !getSpecificValue(id, &verify) ) {
-        debugError( "getSpecificValue command failed\n" );
-        return false;
-    }
-    
-    // check wether the command was successful.
-    return verify==v;
+    return true;
 }
 
 bool
@@ -260,7 +253,7 @@ SaffireProDevice::getSpecificValue(uint32_t id, uint32_t *v)
     cmd.setSubunitId( 0xff );
     
     cmd.setVerbose( getDebugLevel() );
-//         cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+        cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
     
     cmd.m_id=id;
     
@@ -298,6 +291,30 @@ SaffireProDevice::getSamplingFrequency( ) {
 }
 
 bool
+SaffireProDevice::setSamplingFrequencyDo( int s )
+{
+    uint32_t value;
+    switch(s) {
+        case 44100:  value=FOCUSRITE_CMD_SAMPLERATE_44K1;break;
+        case 48000:  value=FOCUSRITE_CMD_SAMPLERATE_48K;break;
+        case 88200:  value=FOCUSRITE_CMD_SAMPLERATE_88K2;break;
+        case 96000:  value=FOCUSRITE_CMD_SAMPLERATE_96K;break;
+        case 176400: value=FOCUSRITE_CMD_SAMPLERATE_176K4;break;
+        case 192000: value=FOCUSRITE_CMD_SAMPLERATE_192K;break;
+        default:
+            debugWarning("Unsupported samplerate: %d\n", s);
+            return false;
+    }
+
+
+    if ( !setSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, value) ) {
+        debugError( "setSpecificValue failed\n" );
+        return false;
+    }
+    return true;
+}
+
+bool
 SaffireProDevice::setSamplingFrequency( int s )
 {
     bool snoopMode=false;
@@ -315,27 +332,30 @@ SaffireProDevice::setSamplingFrequency( int s )
         return true;
     } else {
 
-        uint32_t value;
-        switch(s) {
-            case 44100:  value=FOCUSRITE_CMD_SAMPLERATE_44K1;break;
-            case 48000:  value=FOCUSRITE_CMD_SAMPLERATE_48K;break;
-            case 88200:  value=FOCUSRITE_CMD_SAMPLERATE_88K2;break;
-            case 96000:  value=FOCUSRITE_CMD_SAMPLERATE_96K;break;
-            case 176400: value=FOCUSRITE_CMD_SAMPLERATE_176K4;break;
-            case 192000: value=FOCUSRITE_CMD_SAMPLERATE_192K;break;
-            default:
-                debugWarning("Unsupported samplerate: %d\n", s);
-                return false;
+        if(!setSamplingFrequencyDo( s )) {
+            debugWarning("setSamplingFrequencyDo failed\n");
         }
-
-    
-        if ( !setSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, value) ) {
-            debugError( "setSpecificValue failed\n" );
-            return false;
-        }
-
+        
+        // wait for a while
+        usleep(100 * 1000);
+        int verify=getSamplingFrequency();
+        
         debugOutput( DEBUG_LEVEL_NORMAL,
-                     "setSampleRate: Set sample rate to %d\n", s );
+                     "setSampleRate: requested samplerate %d, device now has %d\n", s, verify );
+                     
+        if (s != verify) {
+            debugWarning("setting samplerate failed. trying again...\n");
+            if(!setSamplingFrequencyDo( s )) {
+                debugWarning("setSamplingFrequencyDo failed\n");
+            }
+            
+            // wait for a while
+            usleep(100 * 1000);
+            verify=getSamplingFrequency();
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                        "setSampleRate (2): requested samplerate %d, device now has %d\n", s, verify );
+            return (s==verify);
+        }
         return true;
     }
     // not executable
