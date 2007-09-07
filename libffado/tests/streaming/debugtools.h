@@ -24,7 +24,6 @@
 
 #ifndef DEBUG_TOOLS_H
 #define DEBUG_TOOLS_H
-#include <libfreebob/freebob.h>
 #include <libraw1394/raw1394.h>
 #include <libiec61883/iec61883.h>
 #include <stdio.h>
