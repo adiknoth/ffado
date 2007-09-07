@@ -95,6 +95,11 @@ FFADODevice::saveCache()
     return false;
 }
 
+enum FFADODevice::eSyncState
+FFADODevice::getSyncState( ) {
+    return eSS_Unknown;
+}
+
 bool
 FFADODevice::setId( unsigned int id)
 {

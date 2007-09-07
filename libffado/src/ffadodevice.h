@@ -133,6 +133,21 @@ public:
     virtual int getSamplingFrequency( ) = 0;
 
     /**
+     * @brief sync state enum
+     */
+    enum eSyncState {
+        eSS_Unknown=0,
+        eSS_Locked=1,
+        eSS_Unlocked=2,
+    };
+
+    /**
+     * @brief gets the devices current synchronization state
+     * @return the device's sync state
+     */
+    virtual enum eSyncState getSyncState( );
+
+    /**
      * @brief This is called by the device manager to give the device a unique ID.
      *
      * The purpose of this is to allow for unique port naming
