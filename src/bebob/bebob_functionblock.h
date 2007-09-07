@@ -72,6 +72,9 @@ public:
     AVC::function_block_type_t getType() {return m_type;};
     AVC::function_block_type_t getSubtype() {return m_subtype;};
     AVC::function_block_id_t getId() {return m_id;};
+    
+    AVC::no_of_input_plugs_t getNrOfInputPlugs() {return m_nrOfInputPlugs;};
+    AVC::no_of_output_plugs_t getNrOfOutputPlugs() {return m_nrOfOutputPlugs;};
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static FunctionBlock* deserialize( Glib::ustring basePath,

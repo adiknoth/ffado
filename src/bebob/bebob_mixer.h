@@ -35,6 +35,7 @@ namespace BeBoB {
 class AvDevice;
 class FunctionBlock;
 class FunctionBlockFeature;
+class FunctionBlockSelector;
 
 class Mixer 
     : public Control::Container
@@ -66,11 +67,11 @@ protected:
     DECLARE_DEBUG_MODULE;
 };
 
-class MixerFBFeatureVolume
+class MixerFBFeature
     : public Control::Continuous
 {
 public:
-    MixerFBFeatureVolume(Mixer& parent, FunctionBlockFeature&, int channel);
+    MixerFBFeature(Mixer& parent, FunctionBlockFeature&);
     
     virtual bool setValue(double v);
     virtual double getValue();
@@ -78,7 +79,20 @@ public:
 private:
     Mixer&                  m_Parent;
     FunctionBlockFeature&   m_Slave;
-    unsigned int            m_channel;
+};
+
+class MixerFBSelector
+    : public Control::Discrete
+{
+public:
+    MixerFBSelector(Mixer& parent, FunctionBlockSelector&);
+    
+    virtual bool setValue(int v);
+    virtual int getValue();
+    
+private:
+    Mixer&                  m_Parent;
+    FunctionBlockSelector&  m_Slave;
 };
 
 } // end of namespace BeBoB
