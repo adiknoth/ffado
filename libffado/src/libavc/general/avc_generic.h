@@ -108,6 +108,7 @@ public:
 
     // workaround
     static void setSleepAfterAVCCommand( int time );
+    static int getSleepAfterAVCCommand( ) {return m_time;};
 protected:
     void showFcpFrame( const unsigned char* buf,
                unsigned short frameSize ) const;

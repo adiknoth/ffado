@@ -471,6 +471,8 @@ AVCRawTextInfoBlock::deserialize( Util::IISDeserialize& de )
     m_text.clear();
     m_text.append(txt);
 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Read AVCRawTextInfoBlock: '%s'\n", m_text.c_str());
+
     return result;
 }
 
@@ -530,6 +532,8 @@ AVCNameInfoBlock::deserialize( Util::IISDeserialize& de )
     result &= de.read(&txt,text_length);
     m_text.clear();
     m_text.append(txt);
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Read AVCNameInfoBlock: '%s'\n", m_text.c_str());
 
     return result;
 }
