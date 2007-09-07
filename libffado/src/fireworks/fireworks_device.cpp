@@ -22,6 +22,9 @@
  */
 
 #include "fireworks_device.h"
+#include "efc/efc_avc_cmd.h"
+#include "efc/efc_cmd.h"
+#include "efc/efc_cmds_hardware.h"
 
 #include "audiofire/audiofire_device.h"
 
@@ -49,7 +52,48 @@ void
 Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a FireWorks::Device\n");
-    GenericAVC::AvDevice::showDevice();
+//     GenericAVC::AvDevice::showDevice();
+
+    EfcOverAVCCmd cmd( get1394Service() );
+    cmd.setCommandType( AVC::AVCCommand::eCT_Control );
+    cmd.setNodeId( getConfigRom().getNodeId() );
+    cmd.setSubunitType( AVC::eST_Unit  );
+    cmd.setSubunitId( 0xff );
+    
+    cmd.setVerbose( getDebugLevel() );
+    cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
+
+    EfcHardwareInfoCmd *efccmd=new EfcHardwareInfoCmd();
+    if (!efccmd) {
+        debugError("could not allocate efc cmd\n");
+        return;
+    }
+    cmd.m_cmd = efccmd;
+
+    if ( !cmd.fire() ) {
+        debugError( "EfcOverAVCCmd command failed\n" );
+    }
+
+    efccmd->showEfcCmd();
+    delete efccmd;
+    
+    // test the next command
+    cmd.setCommandType( AVC::AVCCommand::eCT_Control );
+    
+    EfcPolledValuesCmd *efccmd2=new EfcPolledValuesCmd();
+    if (!efccmd2) {
+        debugError("could not allocate efc cmd 2\n");
+        return;
+    }
+    cmd.m_cmd = efccmd2;
+
+    if ( !cmd.fire() ) {
+        debugError( "EfcOverAVCCmd command failed\n" );
+    }
+
+    efccmd2->showEfcCmd();
+    delete efccmd2;
+    
 }
 
 
@@ -98,6 +142,9 @@ Device::createDevice( Ieee1394Service& ieee1394Service,
                       std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
+
+//     return NULL;
+
     unsigned int modelId = configRom->getModelId();
 
     switch(vendorId) {
