@@ -86,7 +86,10 @@ public:
 
 private:
     virtual bool setSamplingFrequencyDo( int );
-    
+    virtual int getSamplingFrequencyMirror( );
+    int convertDefToSr( uint32_t def );
+    uint32_t convertSrToDef( int sr );
+
     BinaryControl * m_Phantom1;
     BinaryControl * m_Phantom2;
     
