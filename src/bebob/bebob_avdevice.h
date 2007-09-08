@@ -86,10 +86,9 @@ protected:
     virtual bool propagatePlugInfo();
 
 public:
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static AvDevice* deserialize( Glib::ustring basePath,
-                                  Util::IODeserialize& deser,
-                                  Ieee1394Service& ieee1394Service );
+    virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    virtual bool deserialize( Glib::ustring basePath, Util::IODeserialize& deser );
+
     int getConfigurationIdSampleRate();
     int getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
     int getConfigurationIdSyncMode();

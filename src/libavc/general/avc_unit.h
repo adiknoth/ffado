@@ -59,7 +59,7 @@ public:
     virtual Ieee1394Service& get1394Service() = 0;
     /// Returns the ConfigRom
     virtual ConfigRom& getConfigRom() const = 0;
-    
+
     /// Discovers the unit's internals
     virtual bool discover();
 
@@ -89,13 +89,12 @@ public:
         { return m_syncInfos; }
     virtual const SyncInfo* getActiveSyncInfo() const
         { return m_activeSyncInfo; }
-        
+
     virtual bool setActiveSync( const SyncInfo& syncInfo );
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    bool deserialize( Glib::ustring basePath,
-                                 Util::IODeserialize& deser,
-                                 Ieee1394Service& ieee1394Service );
+    virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    virtual bool deserialize( Glib::ustring basePath, Util::IODeserialize& deser );
+
     SubunitAudio* getAudioSubunit( subunit_id_t subunitId )
         { return dynamic_cast<SubunitAudio*>(
                    getSubunit( AVC1394_SUBUNIT_AUDIO , subunitId ));};
@@ -132,7 +131,7 @@ protected:
                                            AVC::PlugVector& prhs,
                                            std::string syncDescription );
     virtual Plug* getSyncPlug( int maxPlugId, Plug::EPlugDirection );
-    
+
     unsigned int getNrOfSubunits( subunit_type_t subunitType ) const;
     PlugConnection* getPlugConnection( Plug& srcPlug ) const;
 
@@ -151,11 +150,11 @@ protected:
 
 
     bool serializeSyncInfoVector( Glib::ustring basePath,
-                                         Util::IOSerialize& ser,
-                                         const SyncInfoVector& vec );
+                                  Util::IOSerialize& ser,
+                                  const SyncInfoVector& vec ) const;
     bool deserializeSyncInfoVector( Glib::ustring basePath,
-                                           Util::IODeserialize& deser,
-                                           SyncInfoVector& vec );
+                                    Util::IODeserialize& deser,
+                                    SyncInfoVector& vec );
 protected:
     SubunitVector             m_subunits;
     PlugVector                m_pcrPlugs;
