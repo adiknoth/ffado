@@ -102,10 +102,10 @@ Unit::createPlug( Unit* unit,
     return p;
 }
 
-Subunit* 
+Subunit*
 Unit::createSubunit(Unit& unit,
                     ESubunitType type,
-                    subunit_t id ) 
+                    subunit_t id )
 {
     Subunit* s=NULL;
     switch (type) {
@@ -221,9 +221,9 @@ Unit::enumerateSubUnits()
                 debugFatal( "Could not allocate SubunitAudio\n" );
                 return false;
             }
-            
+
             subunit->setVerboseLevel(getDebugLevel());
-            
+
             if ( !subunit->discover() ) {
                 debugError( "enumerateSubUnits: Could not discover "
                             "subunit_id = %2d, subunit_type = %2d (%s)\n",
@@ -235,7 +235,7 @@ Unit::enumerateSubUnits()
             } else {
                 m_subunits.push_back( subunit );
             }
-            
+
             break;
         case eST_Music:
             subunit = createSubunit( *this, eST_Music, subunitId );
@@ -243,9 +243,9 @@ Unit::enumerateSubUnits()
                 debugFatal( "Could not allocate SubunitMusic\n" );
                 return false;
             }
-            
+
             subunit->setVerboseLevel(getDebugLevel());
-            
+
             if ( !subunit->discover() ) {
                 debugError( "enumerateSubUnits: Could not discover "
                             "subunit_id = %2d, subunit_type = %2d (%s)\n",
@@ -632,7 +632,7 @@ Unit::discoverSyncModes()
         debugOutput( DEBUG_LEVEL_VERBOSE, "No external digital input plugs found\n" );
 
     }
-    
+
     PlugVector syncExternalInputPlugs = getPlugsByType( m_externalPlugs,
                                                     Plug::eAPD_Input,
                                                     Plug::eAPT_Sync );
@@ -808,9 +808,11 @@ Unit::showPlugs( PlugVector& plugs ) const
     }
 }
 
-template <typename T> bool serializeVector( Glib::ustring path,
-                                            Util::IOSerialize& ser,
-                                            const T& vec )
+template <typename T>
+bool
+serializeVector( Glib::ustring path,
+                 Util::IOSerialize& ser,
+                 const T& vec )
 {
     bool result = true; // if vec.size() == 0
     int i = 0;
@@ -823,10 +825,12 @@ template <typename T> bool serializeVector( Glib::ustring path,
     return result;
 }
 
-template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
-                                                           Util::IODeserialize& deser,
-                                                           Unit& unit,
-                                                           VT& vec )
+template <typename T, typename VT>
+bool
+deserializeVector( Glib::ustring path,
+                   Util::IODeserialize& deser,
+                   Unit& unit,
+                   VT& vec )
 {
     int i = 0;
     bool bFinished = false;
@@ -849,8 +853,8 @@ template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
 
 bool
 Unit::serializeSyncInfoVector( Glib::ustring basePath,
-                                   Util::IOSerialize& ser,
-                                   const SyncInfoVector& vec )
+                               Util::IOSerialize& ser,
+                               const SyncInfoVector& vec ) const
 {
     bool result = true;
     int i = 0;
@@ -876,8 +880,8 @@ Unit::serializeSyncInfoVector( Glib::ustring basePath,
 
 bool
 Unit::deserializeSyncInfoVector( Glib::ustring basePath,
-                                     Util::IODeserialize& deser,
-                                     SyncInfoVector& vec )
+                                 Util::IODeserialize& deser,
+                                 SyncInfoVector& vec )
 {
     int i = 0;
     bool bFinished = false;
@@ -932,17 +936,15 @@ deserializePlugUpdateConnections( Glib::ustring path,
 
 bool
 Unit::serialize( Glib::ustring basePath,
-                     Util::IOSerialize& ser ) const
+                 Util::IOSerialize& ser ) const
 {
-
     bool result;
     result  = ser.write( basePath + "m_verboseLevel_unit", getDebugLevel() );
-    result &= m_pPlugManager->serialize( basePath + "Plug", ser ); // serialize all av plugs
-    result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
     result &= serializeVector( basePath + "Subunit", ser, m_subunits );
-#warning this fails after the echoaudio merge
-//     result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
-    
+    result &= serializeVector( basePath + "plugConnections", ser, m_plugConnections );
+    result &= m_pPlugManager->serialize( basePath + "Plug", ser ); // serialize all av plugs
+    result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
+
     int i = 0;
     for ( SyncInfoVector::const_iterator it = m_syncInfos.begin();
           it != m_syncInfos.end();
@@ -961,27 +963,29 @@ Unit::serialize( Glib::ustring basePath,
 
 bool
 Unit::deserialize( Glib::ustring basePath,
-                   Util::IODeserialize& deser,
-                   Ieee1394Service& ieee1394Service )
+                   Util::IODeserialize& deser )
 {
     bool result;
-    
+
     int verboseLevel;
     result  = deser.read( basePath + "m_verboseLevel_unit", verboseLevel );
     setDebugLevel( verboseLevel );
-    
-    if (m_pPlugManager) delete m_pPlugManager;
+
+    result &= deserializeVector<Subunit>( basePath + "Subunit", deser, *this,  m_subunits );
+
+    if (m_pPlugManager)
+        delete m_pPlugManager;
+
     m_pPlugManager = PlugManager::deserialize( basePath + "Plug", deser, *this );
-    if ( !m_pPlugManager ) {
+
+    if ( !m_pPlugManager )
         return false;
-    }
-    
+
     result &= deserializePlugUpdateConnections( basePath + "Plug", deser, m_pcrPlugs );
     result &= deserializePlugUpdateConnections( basePath + "Plug", deser, m_externalPlugs );
     result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser, *this, m_plugConnections );
     result &= deserializeVector<Subunit>( basePath + "Subunit",  deser, *this, m_subunits );
     result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, m_syncInfos );
-
 
     unsigned int i;
     result &= deser.read( basePath + "m_activeSyncInfo", i );

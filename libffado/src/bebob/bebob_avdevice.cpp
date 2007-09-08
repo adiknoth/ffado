@@ -56,7 +56,7 @@ namespace BeBoB {
 AvDevice::AvDevice( Ieee1394Service& ieee1394service,
                     std::auto_ptr< ConfigRom >( configRom ) )
     : GenericAVC::AvDevice( ieee1394service, configRom )
-    , m_Mixer ( NULL )
+    , m_Mixer ( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -64,9 +64,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
 
 AvDevice::~AvDevice()
 {
-    if(m_Mixer != NULL) {
-        delete m_Mixer;
-    }
+    delete m_Mixer;
 }
 
 bool
@@ -77,7 +75,6 @@ AvDevice::probe( ConfigRom& configRom )
 
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
     if ( vendorModel.parse() ) {
-        vendorModel.printTable();
         return vendorModel.isPresent( vendorId, modelId );
     }
 
@@ -142,14 +139,12 @@ AvDevice::discover()
     // create a Mixer
     // this removes the mixer if it already exists
     // note: a mixer self-registers to it's parent
-    if(m_Mixer != NULL) {
-        delete m_Mixer;
-    }
+    delete m_Mixer;
 
-//      create the mixer & register it
+    // create the mixer & register it
     if(getAudioSubunit(0) == NULL) {
         debugWarning("Could not find audio subunit, mixer not available.\n");
-        m_Mixer = NULL;
+        m_Mixer = 0;
     } else {
         m_Mixer = new Mixer(*this);
     }
@@ -220,8 +215,7 @@ int
 AvDevice::getConfigurationIdSampleRate()
 {
     ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
-    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     getNodeId() );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
     extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                     PlugAddress::ePAM_Unit,
                                                     unitPlugAddress ) );
@@ -334,110 +328,22 @@ AvDevice::getConfigurationId()
     return id;
 }
 
-
-template <typename T> bool serializeVector( Glib::ustring path,
-                                            Util::IOSerialize& ser,
-                                            const T& vec )
-{
-    bool result = true; // if vec.size() == 0
-    int i = 0;
-    for ( typename T::const_iterator it = vec.begin(); it != vec.end(); ++it ) {
-        std::ostringstream strstrm;
-        strstrm << path << i;
-        result &= ( *it )->serialize( strstrm.str() + "/", ser );
-        i++;
-    }
-    return result;
-}
-
-template <typename T, typename VT> bool deserializeVector( Glib::ustring path,
-                                                           Util::IODeserialize& deser,
-                                                           Unit& avDevice,
-                                                           VT& vec )
-{
-    int i = 0;
-    bool bFinished = false;
-    do {
-        std::ostringstream strstrm;
-        strstrm << path << i << "/";
-        T* ptr = T::deserialize( strstrm.str(),
-                                 deser,
-                                 avDevice );
-        if ( ptr ) {
-            vec.push_back( ptr );
-            i++;
-        } else {
-            bFinished = true;
-        }
-    } while ( !bFinished );
-
-    return true;
-}
-
 bool
 AvDevice::serialize( Glib::ustring basePath,
                      Util::IOSerialize& ser ) const
 {
-
     bool result;
-    result  = m_pConfigRom->serialize( basePath + "m_pConfigRom/", ser );
-    result &= ser.write( basePath + "m_verboseLevel", getDebugLevel() );
-    result &= m_pPlugManager->serialize( basePath + "Plug", ser ); // serialize all av plugs
-    result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
-    result &= serializeVector( basePath + "Subunit", ser, m_subunits );
-    #warning broken at echoaudio merge
-    //result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
-
-    int i = 0;
-    for ( SyncInfoVector::const_iterator it = m_syncInfos.begin();
-          it != m_syncInfos.end();
-          ++it )
-    {
-        const SyncInfo& info = *it;
-        if ( m_activeSyncInfo == &info ) {
-            result &= ser.write( basePath + "m_activeSyncInfo",  i );
-            break;
-        }
-        i++;
-    }
-
-    result &= serializeOptions( basePath + "Options", ser );
-
-//     result &= ser.write( basePath + "m_id", id );
-
+    result  = GenericAVC::AvDevice::serialize( basePath, ser );
     return result;
 }
 
-AvDevice*
+bool
 AvDevice::deserialize( Glib::ustring basePath,
-                       Util::IODeserialize& deser,
-                       Ieee1394Service& ieee1394Service )
+                       Util::IODeserialize& deser )
 {
-
-//     ConfigRom *configRom =
-//         ConfigRom::deserialize( basePath + "m_pConfigRom/", deser, ieee1394Service );
-//
-//     if ( !configRom ) {
-//         return NULL;
-//     }
-//
-//     AvDevice* pDev = new AvDevice(
-//         std::auto_ptr<ConfigRom>(configRom),
-//         ieee1394Service, getConfigRom().getNodeId());
-//
-//     if ( pDev ) {
-//         bool result;
-//         int verboseLevel;
-//         result  = deser.read( basePath + "m_verboseLevel", verboseLevel );
-//         setDebugLevel( verboseLevel );
-//
-//         result &= AVC::Unit::deserialize(basePath, pDev, deser, ieee1394Service);
-//
-//         result &= deserializeOptions( basePath + "Options", deser, *pDev );
-//     }
-//
-//     return pDev;
-    return NULL;
+    bool result;
+    result  = GenericAVC::AvDevice::deserialize( basePath, deser );
+    return result;
 }
 
 Glib::ustring
@@ -445,7 +351,14 @@ AvDevice::getCachePath()
 {
     Glib::ustring cachePath;
     char* pCachePath;
-    if ( asprintf( &pCachePath, "%s/cache/",  CACHEDIR ) < 0 ) {
+
+    string path = CACHEDIR;
+    if ( path.size() && path[0] == '~' ) {
+        path.erase( 0, 1 ); // remove ~
+        path.insert( 0, getenv( "HOME" ) ); // prepend the home path
+    }
+
+    if ( asprintf( &pCachePath, "%s/cache/",  path.c_str() ) < 0 ) {
         debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
         cachePath == "/var/cache/libffado/";
     } else {
@@ -458,7 +371,10 @@ AvDevice::getCachePath()
 bool
 AvDevice::loadFromCache()
 {
-/*    Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
+    // XXX disable this part as long it is not correctly working
+    return false;
+
+    Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
 
     char* configId;
     asprintf(&configId, "%08x", getConfigurationId() );
@@ -471,7 +387,18 @@ AvDevice::loadFromCache()
     free( configId );
     debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
 
-    Util::XMLDeserialize deser( sFileName, m_verboseLevel );
+    struct stat buf;
+    if ( stat( sFileName.c_str(), &buf ) != 0 ) {
+        debugOutput( DEBUG_LEVEL_NORMAL,  "\"%s\" does not exist\n",  sFileName.c_str() );
+        return false;
+    } else {
+        if ( !S_ISREG( buf.st_mode ) ) {
+            debugOutput( DEBUG_LEVEL_NORMAL,  "\"%s\" is not a regular file\n",  sFileName.c_str() );
+            return false;
+        }
+    }
+
+    Util::XMLDeserialize deser( sFileName, getDebugLevel() );
 
     bool result = deserialize( "", deser );
     if ( result ) {
@@ -479,8 +406,7 @@ AvDevice::loadFromCache()
                      sFileName.c_str() );
     }
 
-    return result;*/
-    return false;
+    return result;
 }
 
 bool
@@ -490,7 +416,8 @@ AvDevice::saveCache()
     // PATH_TO_CACHE + GUID + CONFIGURATION_ID
     string tmp_path = getCachePath() + m_pConfigRom->getGuidString();
 
-    // the following piece should do something like 'mkdir -p some/path/with/some/dirs/which/do/not/exist'
+    // the following piece should do something like
+    // 'mkdir -p some/path/with/some/dirs/which/do/not/exist'
     vector<string> tokens;
     tokenize( tmp_path, tokens, "/" );
     string path;
@@ -498,14 +425,7 @@ AvDevice::saveCache()
           it != tokens.end();
           ++it )
     {
-        if ( path == "" ) {
-            if ( *it == "~" )
-                path = getenv( "HOME" );
-            else
-                path = *it;
-        } else {
-            path = path + "/" + *it;
-        }
+        path +=  "/" + *it;
 
         struct stat buf;
         if ( stat( path.c_str(), &buf ) == 0 ) {

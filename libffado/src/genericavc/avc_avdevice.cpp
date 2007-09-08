@@ -95,12 +95,12 @@ AvDevice::discover()
     if (!GenericAVC::VendorModel::isValid(m_model)) {
         unsigned int vendorId = m_pConfigRom->getNodeVendorId();
         unsigned int modelId = m_pConfigRom->getModelId();
-    
+
         GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
         if ( vendorModel.parse() ) {
             m_model = vendorModel.find( vendorId, modelId );
         }
-    
+
         if (!GenericAVC::VendorModel::isValid(m_model)) {
             return false;
         }
@@ -588,6 +588,23 @@ AvDevice::stopStreamByIndex(int i) {
 
     debugError("SP index %d out of range!\n",i);
     return false;
+}
+
+bool
+AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+{
+    bool result;
+    result  = AVC::Unit::serialize( basePath, ser );
+    result &= serializeOptions( basePath + "Options", ser );
+    return result;
+}
+
+bool
+AvDevice::deserialize( Glib::ustring basePath, Util::IODeserialize& deser )
+{
+    bool result;
+    result = AVC::Unit::deserialize( basePath, deser );
+    return result;
 }
 
 }

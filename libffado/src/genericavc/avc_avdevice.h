@@ -53,8 +53,11 @@ public:
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
     static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
-                                        std::auto_ptr<ConfigRom>( configRom ));
-    
+                                       std::auto_ptr<ConfigRom>( configRom ));
+
+    virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    virtual bool deserialize( Glib::ustring basePath, Util::IODeserialize& deser );
+
     virtual void setVerboseLevel(int l);
     virtual void showDevice();
 
@@ -70,27 +73,27 @@ public:
 
     virtual bool startStreamByIndex(int i);
     virtual bool stopStreamByIndex(int i);
-    
+
     // redefinition to resolve ambiguity
     virtual Ieee1394Service& get1394Service()
         { return FFADODevice::get1394Service(); };
-    virtual ConfigRom& getConfigRom() const 
+    virtual ConfigRom& getConfigRom() const
         { return FFADODevice::getConfigRom(); };
-        
+
 protected:
     virtual bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
                              Streaming::AmdtpAudioPort::E_Direction direction);
 /*    bool setSamplingFrequencyPlug( AVC::Plug& plug,
                                    AVC::Plug::EPlugDirection direction,
                                    AVC::ESamplingFrequency samplingFrequency );*/
-    
+
     struct VendorModelEntry m_model;
-    
+
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
     StreamProcessorVector m_receiveProcessors;
     StreamProcessorVector m_transmitProcessors;
-    
+
     DECLARE_DEBUG_MODULE;
 };
 
