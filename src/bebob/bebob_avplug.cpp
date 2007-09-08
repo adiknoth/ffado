@@ -381,7 +381,7 @@ Plug::discoverChannelName()
                 extPlugInfoCmd.getInfoType();
             if ( infoType ) {
                 infoType->m_plugChannelName->m_streamPosition =
-                    channelInfo->m_streamPosition;
+                    channelInfo->m_streamPosition + 1;
             }
             if ( !extPlugInfoCmd.fire() ) {
                 debugError( "channel name command failed\n" );
