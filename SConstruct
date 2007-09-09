@@ -113,10 +113,17 @@ if not env.GetOption('clean'):
 		conf_dir="cache/" + build_base,
 		log_file="cache/" + build_base + 'config.log' )
 
+	#
+	# Check if the environment can actually compile c-files by checking for a
+	# header shipped with gcc.
+	#
 	if not conf.CheckHeader( "stdio.h" ):
 		print "It seems as if stdio.h is missing. This probably means that your build environment is broken, please make sure you have a working c-compiler and libstdc installed and usable."
 		Exit( 1 )
 
+	#
+	# The following checks are for headers and libs and packages we need.
+	#
 	allpresent = 1;
 	allpresent &= conf.CheckHeader( "expat.h" )
 	allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
@@ -146,7 +153,10 @@ install the needed packages (remember to also install the *-devel packages)
 		Exit( 1 )
 
 	#
+	# Optional checks follow:
+	#
 	env['PYUIC'] = conf.CheckForApp( 'pyuic' )
+	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
 	env = conf.Finish()
 
