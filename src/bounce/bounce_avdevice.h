@@ -80,6 +80,10 @@ public:
 
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
+    
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
 
     virtual bool prepare();
     virtual bool lock();

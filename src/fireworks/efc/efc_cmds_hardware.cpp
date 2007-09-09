@@ -32,6 +32,8 @@ namespace FireWorks {
 
 EfcHardwareInfoCmd::EfcHardwareInfoCmd()
 : EfcCmd(EFC_CAT_HARDWARE_INFO, EFC_CMD_HW_HWINFO_GET_CAPS)
+, m_nb_out_groups( 0 )
+, m_nb_in_groups( 0 )
 {}
 
 bool
@@ -168,6 +170,8 @@ EfcHardwareInfoCmd::showEfcCmd()
 // --- polled info command
 EfcPolledValuesCmd::EfcPolledValuesCmd()
 : EfcCmd(EFC_CAT_HARDWARE_INFO, EFC_CMD_HW_GET_POLLED)
+, m_nb_output_meters ( 0 )
+, m_nb_input_meters ( 0 )
 {}
 
 bool
@@ -194,12 +198,12 @@ EfcPolledValuesCmd::deserialize( Util::IISDeserialize& de )
     EFC_DESERIALIZE_AND_SWAP(de, &m_status, result);
     
     EFC_DESERIALIZE_AND_SWAP(de, &m_detect_spdif, result);
-    EFC_DESERIALIZE_AND_SWAP(de, &m_detect_spdif, result);    
+    EFC_DESERIALIZE_AND_SWAP(de, &m_detect_adat, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_reserved3, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_reserved4, result);
 
     EFC_DESERIALIZE_AND_SWAP(de, &m_nb_output_meters, result);
-    EFC_DESERIALIZE_AND_SWAP(de, &m_nb_input_meters, result);    
+    EFC_DESERIALIZE_AND_SWAP(de, &m_nb_input_meters, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_reserved5, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_reserved6, result);
 

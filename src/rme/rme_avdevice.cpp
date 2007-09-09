@@ -143,6 +143,23 @@ RmeDevice::setSamplingFrequency( int samplingFrequency )
 	return false;
 }
 
+FFADODevice::ClockSourceVector
+RmeDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
+}
+
+bool
+RmeDevice::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+RmeDevice::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
 bool
 RmeDevice::lock() {
 

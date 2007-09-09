@@ -32,17 +32,6 @@ namespace FireWorks {
 #define HWINFO_MAX_CAPS_GROUPS      8
 #define POLLED_MAX_NB_METERS        100
 
-// Commands for the EFC_CAT_HARDWARE_INFO category
-#define EFC_CMD_HW_HWINFO_GET_CAPS      0
-#define EFC_CMD_HW_GET_POLLED           1
-#define EFC_CMD_HW_SET_EFR_ADDRESS      2
-#define EFC_CMD_HW_READ_SESSION_BLOCK   3
-#define EFC_CMD_HW_GET_DEBUG_INFO       4
-#define EFC_CMD_HW_SET_DEBUG_TRACKING   5
-#define EFC_CMD_HW_COUNT                6
-
-
-
 class EfcHardwareInfoCmd : public EfcCmd
 {
     typedef struct 

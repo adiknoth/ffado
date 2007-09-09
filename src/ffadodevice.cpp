@@ -147,3 +147,21 @@ bool
 FFADODevice::disableStreaming() {
     return true;
 }
+
+const char *
+FFADODevice::ClockSourceTypeToString(enum eClockSourceType t)
+{
+    switch(t) {
+        default:            return "Erratic type      ";
+        case eCT_Invalid:   return "Invalid           ";
+        case eCT_Internal:  return "Internal          ";
+        case eCT_1394Bus:   return "1394 Bus          ";
+        case eCT_SytMatch:  return "Compound Syt Match";
+        case eCT_SytStream: return "Sync Syt Match    ";
+        case eCT_WordClock: return "WordClock         ";
+        case eCT_SPDIF:     return "SPDIF             ";
+        case eCT_ADAT:      return "ADAT              ";
+        case eCT_TDIF:      return "TDIF              ";
+        case eCT_AES:       return "AES               ";
+    }
+}

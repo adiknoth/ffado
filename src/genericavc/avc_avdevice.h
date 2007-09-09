@@ -64,6 +64,10 @@ public:
     virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
 
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
@@ -95,6 +99,9 @@ protected:
     StreamProcessorVector m_transmitProcessors;
 
     DECLARE_DEBUG_MODULE;
+
+private:
+    ClockSource syncInfoToClockSource(const SyncInfo& si);
 };
 
 }

@@ -96,6 +96,7 @@ const char *argp_program_bug_address = PACKAGE_BUGREPORT;
 static char doc[] = "FFADO -- a driver for Firewire Audio devices (test application)\n\n"
                     "OPERATION: Discover\n"
                     "           SetSamplerate samplerate\n"
+                    "           SetClockSource [id]\n"
                     "           ListOscSpace\n"
                     "           OscServer\n"
                     "           DBus\n"
@@ -315,6 +316,70 @@ main( int argc, char **argv )
                     }
                 }
             }
+        }
+        delete m_deviceManager;
+        return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "SetClockSource" ) == 0 ) {
+        char* tail;
+        unsigned int targetid = (unsigned int)strtol( arguments.args[1], &tail, 0 );
+        if ( errno ) {
+            fprintf( stderr,  "Could not parse clock source argument\n" );
+            targetid=0xFFFF;
+        }
+        DeviceManager *m_deviceManager = new DeviceManager();
+        if ( !m_deviceManager ) {
+            fprintf( stderr, "Could not allocate device manager\n" );
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->initialize( arguments.port ) ) {
+            fprintf( stderr, "Could not initialize device manager\n" );
+            delete m_deviceManager;
+            return exitfunction(-1);
+        }
+        if ( arguments.verbose ) {
+            m_deviceManager->setVerboseLevel(arguments.verbose);
+        }
+        if ( !m_deviceManager->discover() ) {
+            fprintf( stderr, "Could not discover devices\n" );
+            delete m_deviceManager;
+            return exitfunction(-1);
+        }
+
+        if(arguments.node_id_set) {
+            FFADODevice* avDevice = m_deviceManager->getAvDevice( arguments.node_id );
+            if ( avDevice ) {
+                FFADODevice::ClockSource s;
+            
+                avDevice->setVerboseLevel(arguments.verbose);
+                FFADODevice::ClockSourceVector sources=avDevice->getSupportedClockSources();
+                for ( FFADODevice::ClockSourceVector::const_iterator it
+                        = sources.begin();
+                    it != sources.end();
+                    ++it )
+                {
+                    FFADODevice::ClockSource c=*it;
+                    printf( " Type: %s, Id: %d, Valid: %d, Active: %d, Description: %s\n",
+                        FFADODevice::ClockSourceTypeToString(c.type), c.id, c.valid, c.active, c.description.c_str());
+                    
+                    if (c.id==targetid) {
+                        s=*it;
+                    }
+                }
+                
+                if (s.type != FFADODevice::eCT_Invalid) {
+                    printf("  set clock source to %d\n", s.id);
+                    if ( ! avDevice->setActiveClockSource( s ) ) {
+                        fprintf( stderr, "Could not set clock source\n" );
+                    }
+                } else {
+                    printf("  no clock source with id %d found\n", targetid);
+                }
+            }
+        } else {
+            fprintf( stderr, "please specify a node\n" );
         }
         delete m_deviceManager;
         return exitfunction(0);

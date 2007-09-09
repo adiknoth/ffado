@@ -144,6 +144,23 @@ bool BounceDevice::setSamplingFrequency( int s ) {
     } else return false;
 }
 
+FFADODevice::ClockSourceVector
+BounceDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
+}
+
+bool
+BounceDevice::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+BounceDevice::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
 int BounceDevice::getConfigurationId( ) {
     return 0;
 }

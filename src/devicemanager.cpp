@@ -129,6 +129,19 @@ DeviceManager::show() {
         FFADODevice* avDevice = *it;
         debugOutput(DEBUG_LEVEL_NORMAL, "--- Device %2d ---\n", i++);
         avDevice->showDevice();
+
+        debugOutput(DEBUG_LEVEL_NORMAL, "Clock sync sources:\n");
+        FFADODevice::ClockSourceVector sources=avDevice->getSupportedClockSources();
+        for ( FFADODevice::ClockSourceVector::const_iterator it
+                = sources.begin();
+            it != sources.end();
+            ++it )
+        {
+            FFADODevice::ClockSource c=*it;
+            debugOutput(DEBUG_LEVEL_NORMAL, " Type: %s, Id: %d, Valid: %d, Active: %d, Description: %s\n",
+                FFADODevice::ClockSourceTypeToString(c.type), c.id, c.valid, c.active, c.description.c_str());
+        }
+
     }
 }
 

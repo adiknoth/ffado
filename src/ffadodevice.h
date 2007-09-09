@@ -30,6 +30,9 @@
 
 #include "libieee1394/vendor_model_ids.h"
 
+#include <vector>
+#include <string>
+
 class ConfigRom;
 class Ieee1394Service;
 
@@ -146,6 +149,84 @@ public:
      * @return the device's sync state
      */
     virtual enum eSyncState getSyncState( );
+
+    /**
+     * @brief clock source types
+     */
+    enum eClockSourceType {
+        eCT_Invalid,   ///> invalid entry (e.g. on error)
+        eCT_Internal,  ///> internal sync (unspecified)
+        eCT_1394Bus,   ///> Sync on the 1394 bus clock (e.g. CSP)
+        eCT_SytMatch,  ///> SYT match on incoming audio stream
+        eCT_SytStream, ///> SYT match on incoming sync stream
+        eCT_WordClock, ///> SYT on WordClock input
+        eCT_SPDIF,     ///> SYT on SPDIF input
+        eCT_ADAT,      ///> SYT on ADAT input
+        eCT_TDIF,      ///> SYT on TDIF input
+        eCT_AES,       ///> SYT on AES input
+    };
+
+    /**
+     * @brief convert the clock source type to a C string
+     * @return a C string describing the clock source type
+     */
+    static const char *ClockSourceTypeToString(enum eClockSourceType);
+
+    /**
+     * @brief Clock source identification struct
+     */
+    struct sClockSource {
+        sClockSource()
+            : type( eCT_Invalid )
+            , id( 0 )
+            , valid( false )
+            , active( false )
+            , description( "" )
+        {}
+        /// indicates the type of the clock source (e.g. eCT_ADAT)
+        enum eClockSourceType type;
+        /// indicated the id of the clock source (e.g. id=1 => clocksource is ADAT_1)
+        unsigned int id;
+        /// is the clock source valid at this moment?
+        bool valid;
+        /// is the clock source active at this moment?
+        bool active;
+        /// description of the clock struct (optional)
+        std::string description;
+    };
+    typedef struct sClockSource ClockSource;
+
+    typedef std::vector< ClockSource > ClockSourceVector;
+    typedef std::vector< ClockSource >::iterator ClockSourceVectorIterator;
+
+    /**
+     * @brief Get the clocksources supported by this device
+     *
+     * This function returns a vector of ClockSource structures that contains
+     * one entry for every clock source supported by the device.
+     *
+     * @returns a vector of ClockSource structures
+     */
+    virtual ClockSourceVector getSupportedClockSources() = 0;
+
+
+    /**
+     * @brief Sets the active clock source of this device
+     *
+     * This function sets the clock source of the device.
+     *
+     * @returns true upon success. false upon failure.
+     */
+    virtual bool setActiveClockSource(ClockSource) = 0;
+
+    /**
+     * @brief Returns the active clock source of this device
+     *
+     * This function returns the active clock source of the device.
+     *
+     * @returns the active ClockSource
+     */
+    virtual ClockSource getActiveClockSource() = 0;
 
     /**
      * @brief This is called by the device manager to give the device a unique ID.
