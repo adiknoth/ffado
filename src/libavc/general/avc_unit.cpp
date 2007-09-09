@@ -370,7 +370,7 @@ Unit::discoverPlugs()
 
 bool
 Unit::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
-                            plug_id_t plugMaxId )
+                        plug_id_t plugMaxId )
 {
     debugOutput( DEBUG_LEVEL_NORMAL, "Discovering PCR plugs, direction %d...\n",plugDirection);
     for ( int plugId = 0;
@@ -378,12 +378,12 @@ Unit::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
           ++plugId )
     {
         Plug* plug  = createPlug( this,
-                                NULL,
-                                0xff,
-                                0xff,
-                                Plug::eAPA_PCR,
-                                plugDirection,
-                                plugId );
+                                  NULL,
+                                  0xff,
+                                  0xff,
+                                  Plug::eAPA_PCR,
+                                  plugDirection,
+                                  plugId );
 
         if( plug ) plug->setVerboseLevel(getDebugLevel());
 
@@ -403,7 +403,7 @@ Unit::discoverPlugsPCR( Plug::EPlugDirection plugDirection,
 
 bool
 Unit::discoverPlugsExternal( Plug::EPlugDirection plugDirection,
-                                 plug_id_t plugMaxId )
+                             plug_id_t plugMaxId )
 {
     debugOutput( DEBUG_LEVEL_NORMAL, "Discovering External plugs, direction %d...\n",plugDirection);
     for ( int plugId = 0;
@@ -529,8 +529,8 @@ Unit::getPlugConnection( Plug& srcPlug ) const
 
 Plug*
 Unit::getPlugById( PlugVector& plugs,
-                       Plug::EPlugDirection plugDirection,
-                       int id )
+                   Plug::EPlugDirection plugDirection,
+                   int id )
 {
     for ( PlugVector::iterator it = plugs.begin();
           it != plugs.end();
@@ -549,8 +549,8 @@ Unit::getPlugById( PlugVector& plugs,
 
 PlugVector
 Unit::getPlugsByType( PlugVector& plugs,
-                          Plug::EPlugDirection plugDirection,
-                          Plug::EPlugType type)
+                      Plug::EPlugDirection plugDirection,
+                      Plug::EPlugType type)
 {
     PlugVector plugVector;
     for ( PlugVector::iterator it = plugs.begin();
@@ -596,46 +596,46 @@ Unit::discoverSyncModes()
     // MSU input means subunit-to-device
 
     PlugVector syncPCRInputPlugs = getPlugsByType( m_pcrPlugs,
-                                                     Plug::eAPD_Input,
-                                                     Plug::eAPT_Sync );
+                                                   Plug::eAPD_Input,
+                                                   Plug::eAPT_Sync );
     if ( !syncPCRInputPlugs.size() ) {
         debugWarning( "No PCR sync input plug found\n" );
     }
 
     PlugVector syncPCROutputPlugs = getPlugsByType( m_pcrPlugs,
-                                                      Plug::eAPD_Output,
-                                                      Plug::eAPT_Sync );
+                                                    Plug::eAPD_Output,
+                                                    Plug::eAPT_Sync );
     if ( !syncPCROutputPlugs.size() ) {
         debugWarning( "No PCR sync output plug found\n" );
     }
 
     PlugVector isoPCRInputPlugs = getPlugsByType( m_pcrPlugs,
-                                                    Plug::eAPD_Input,
-                                                    Plug::eAPT_IsoStream );
+                                                  Plug::eAPD_Input,
+                                                  Plug::eAPT_IsoStream );
     if ( !isoPCRInputPlugs.size() ) {
         debugWarning( "No PCR iso input plug found\n" );
 
     }
 
     PlugVector isoPCROutputPlugs = getPlugsByType( m_pcrPlugs,
-                                                    Plug::eAPD_Output,
-                                                    Plug::eAPT_IsoStream );
+                                                   Plug::eAPD_Output,
+                                                   Plug::eAPT_IsoStream );
     if ( !isoPCROutputPlugs.size() ) {
         debugWarning( "No PCR iso output plug found\n" );
 
     }
 
     PlugVector digitalExternalInputPlugs = getPlugsByType( m_externalPlugs,
-                                                    Plug::eAPD_Input,
-                                                    Plug::eAPT_Digital );
+                                                           Plug::eAPD_Input,
+                                                           Plug::eAPT_Digital );
     if ( !digitalExternalInputPlugs.size() ) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "No external digital input plugs found\n" );
 
     }
 
     PlugVector syncExternalInputPlugs = getPlugsByType( m_externalPlugs,
-                                                    Plug::eAPD_Input,
-                                                    Plug::eAPT_Sync );
+                                                        Plug::eAPD_Input,
+                                                        Plug::eAPT_Sync );
     if ( !syncExternalInputPlugs.size() ) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "No external sync input plugs found\n" );
 
@@ -757,8 +757,8 @@ Unit::discoverSyncModes()
 
 bool
 Unit::checkSyncConnectionsAndAddToList( PlugVector& plhs,
-                                            PlugVector& prhs,
-                                            std::string syncDescription )
+                                        PlugVector& prhs,
+                                        std::string syncDescription )
 {
     for ( PlugVector::iterator plIt = plhs.begin();
           plIt != plhs.end();
