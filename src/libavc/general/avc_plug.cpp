@@ -123,10 +123,10 @@ Plug::setVerboseLevel(int l)
 ESubunitType
 Plug::getSubunitType() const
 {
-    return (m_subunit==NULL?eST_Unit:m_subunit->getSubunitType()); 
+    return (m_subunit==NULL?eST_Unit:m_subunit->getSubunitType());
 }
 
-subunit_id_t 
+subunit_id_t
 Plug::getSubunitId() const
 {
     return (m_subunit==NULL?0xFF:m_subunit->getSubunitId());
@@ -228,7 +228,7 @@ Plug::discoverName()
 {
     // name already set
     if (m_name != "") return true;
-    
+
     m_name = plugAddressTypeToString(getPlugAddressType());
     m_name += " ";
     m_name += plugTypeToString(getPlugType());
@@ -255,7 +255,7 @@ Plug::discoverChannelPosition()
 bool
 Plug::discoverChannelName()
 {
-    
+
     return true;
 }
 
@@ -492,7 +492,7 @@ Plug::discoverConnectionsInput()
     debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering incoming connections...\n");
 
     int sourcePlugGlobalId=getSignalSource();
-    
+
     if(sourcePlugGlobalId >= 0) {
         Plug *p=m_unit->getPlugManager().getPlug(sourcePlugGlobalId);
         if (p==NULL) {
@@ -519,7 +519,7 @@ Plug::discoverConnectionsInput()
                         getName() );
             return false;
         }
-            
+
     }
 
     return true;
@@ -567,16 +567,16 @@ Plug::getSignalSource()
             return -1;
         }
     }
-    
+
     if(getPlugAddressType() == eAPA_SubunitPlug) {
         if (getPlugDirection() != eAPD_Input) {
             debugWarning("Signal Source command not valid for non-input subunit plugs...\n");
             return -1;
         }
     }
-    
+
     SignalSourceCmd signalSourceCmd( m_unit->get1394Service() );
-    
+
     signalSourceCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
     signalSourceCmd.setSubunitType( eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
@@ -586,7 +586,7 @@ Plug::getSignalSource()
     signalSubunitAddr.m_subunitId = 0xFF;
     signalSubunitAddr.m_plugId = 0xFE;
     signalSourceCmd.setSignalSource( signalSubunitAddr );
-    
+
     setDestPlugAddrToSignalCmd( signalSourceCmd, *this );
 
     signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
@@ -604,26 +604,26 @@ Plug::getSignalSource()
         if(dynamic_cast<SignalUnitAddress *>(src)) {
             SignalUnitAddress *usrc=dynamic_cast<SignalUnitAddress *>(src);
             if (usrc->m_plugId & 0x80) {
-                p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF, 
-                        0xFF, 0xFF, eAPA_ExternalPlug, eAPD_Input, 
+                p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF,
+                        0xFF, 0xFF, eAPA_ExternalPlug, eAPD_Input,
                         usrc->m_plugId & 0x7F );
             } else {
-                p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF, 
-                        0xFF, 0xFF, eAPA_PCR, eAPD_Input, 
+                p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF,
+                        0xFF, 0xFF, eAPA_PCR, eAPD_Input,
                         usrc->m_plugId & 0x7F );
             }
         } else if (dynamic_cast<SignalSubunitAddress *>(src)) {
             SignalSubunitAddress *susrc=dynamic_cast<SignalSubunitAddress *>(src);
-            p=m_unit->getPlugManager().getPlug( byteToSubunitType(susrc->m_subunitType), 
-                    susrc->m_subunitId, 0xFF, 0xFF, eAPA_SubunitPlug, 
+            p=m_unit->getPlugManager().getPlug( byteToSubunitType(susrc->m_subunitType),
+                    susrc->m_subunitId, 0xFF, 0xFF, eAPA_SubunitPlug,
                     eAPD_Output, susrc->m_plugId);
         } else return -1;
-        
+
         if (p==NULL) {
             debugError("reported signal source plug not found\n");
             return -1;
         }
-        
+
         return p->getGlobalId();
     }
 
@@ -656,7 +656,7 @@ Plug::setConnection( Plug& plug )
     return false;
 }
 
-bool 
+bool
 Plug::propagateFromConnectedPlug( ) {
 
     if (getDirection() == eAPD_Output) {
@@ -667,10 +667,10 @@ Plug::propagateFromConnectedPlug( ) {
         if (getInputConnections().size()>1) {
             debugWarning("Too many input connections to propagate from, using first one.\n");
         }
-        
+
         Plug* p = *(getInputConnections().begin());
         return propagateFromPlug( p );
-        
+
     } else if (getDirection() == eAPD_Input) {
         if (getOutputConnections().size()==0) {
             debugWarning("No output connections to propagate from, skipping.\n");
@@ -679,28 +679,28 @@ Plug::propagateFromConnectedPlug( ) {
         if (getOutputConnections().size()>1) {
             debugWarning("Too many output connections to propagate from, using first one.\n");
         }
-        
+
         Plug* p = *(getOutputConnections().begin());
         return propagateFromPlug( p );
-        
+
     } else {
         debugWarning("plug with undefined direction\n");
         return false;
     }
 }
 
-bool 
+bool
 Plug::propagateFromPlug( Plug *p ) {
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "Propagating info from plug '%s' to plug '%s'\n",
                  p->getName(), getName() );
-    
+
     if (m_clusterInfos.size()==0) {
         m_clusterInfos=p->m_clusterInfos;
     }
-    
+
     m_nrOfChannels=p->m_nrOfChannels;
-    
+
     return true;
 }
 
@@ -741,54 +741,54 @@ Plug::getSampleRate() const
             cmd.m_eoh=0xFF;
             cmd.m_fmt=0xFF;
             cmd.m_plug=getPlugId();
-            
+
             cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
             cmd.setSubunitType( eST_Unit  );
             cmd.setSubunitId( 0xff );
-            
+
             cmd.setCommandType( AVCCommand::eCT_Status );
 
             if ( !cmd.fire() ) {
                 debugError( "input plug signal format command failed\n" );
                 return 0;
             }
-            
+
             if (cmd.m_fmt != 0x10 ) {
                 debugWarning("Incorrect FMT response received: 0x%02X\n",cmd.m_fmt);
             }
-            
+
             return fdfSfcToSampleRate(cmd.m_fdf[0]);
-            
+
         } else if (getPlugDirection()==eAPD_Output) {
             OutputPlugSignalFormatCmd cmd( m_unit->get1394Service() );
             cmd.m_form=0xFF;
             cmd.m_eoh=0xFF;
             cmd.m_fmt=0xFF;
             cmd.m_plug=getPlugId();
-            
+
             cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
             cmd.setSubunitType( eST_Unit  );
             cmd.setSubunitId( 0xff );
-    
+
             cmd.setCommandType( AVCCommand::eCT_Status );
-            
+
             if ( !cmd.fire() ) {
                 debugError( "output plug signal format command failed\n" );
                 return 0;
             }
-            
+
             if (cmd.m_fmt != 0x10 ) {
                 debugWarning("Incorrect FMT response received: 0x%02X\n",cmd.m_fmt);
             }
-            
+
             return fdfSfcToSampleRate(cmd.m_fdf[0]);
-        
+
         } else {
             debugError("PCR plug with undefined direction.\n");
             return 0;
         }
     }
-    
+
     // fallback
     return convertESamplingFrequency( static_cast<ESamplingFrequency>( m_samplingFrequency ) );
 }
@@ -811,7 +811,7 @@ Plug::setSampleRate( int rate )
             cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
             cmd.setSubunitType( eST_Unit  );
             cmd.setSubunitId( 0xff );
-            
+
             cmd.setCommandType( AVCCommand::eCT_Control );
 
             if ( !cmd.fire() ) {
@@ -834,13 +834,13 @@ Plug::setSampleRate( int rate )
             cmd.m_fdf[0]=sampleRateToFdfSfc(rate);
             cmd.m_fdf[1]=0xFF;
             cmd.m_fdf[2]=0xFF;
-            
+
             cmd.setNodeId( m_unit->getConfigRom().getNodeId() );
             cmd.setSubunitType( eST_Unit  );
             cmd.setSubunitId( 0xff );
-    
+
             cmd.setCommandType( AVCCommand::eCT_Control );
-            
+
             if ( !cmd.fire() ) {
                 debugError( "output plug signal format command failed\n" );
                 return false;
@@ -859,7 +859,7 @@ Plug::setSampleRate( int rate )
 
     // fallback: BeBoB style
     ESamplingFrequency samplingFrequency = parseSampleRate(rate);
-    
+
     ExtendedStreamFormatCmd extStreamFormatCmd(
         m_unit->get1394Service(),
         ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
@@ -999,7 +999,7 @@ Plug::discoverConnectionsFromSpecificData(
 
 bool
 Plug::addPlugConnection( PlugVector& connections,
-                           Plug& plug )
+                         Plug& plug )
 
 {
     for ( PlugVector::iterator it = connections.begin();
@@ -1059,7 +1059,7 @@ Plug::setSrcPlugAddrToSignalCmd()
 
 void
 Plug::setDestPlugAddrToSignalCmd(SignalSourceCmd& signalSourceCmd,
-                                   Plug& plug)
+                                 Plug& plug)
 {
     switch( plug.getSubunitType() ) {
     case eST_Unit:
@@ -1227,7 +1227,7 @@ Plug::showPlug() const
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tNumber of Streams  = %d\n",
                  getNrOfStreams() );
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tIncoming connections from: ");
-    
+
     for ( PlugVector::const_iterator it = m_inputConnections.begin();
           it != m_inputConnections.end();
           ++it )
@@ -1259,8 +1259,8 @@ Plug::getPlugDefinedBySpecificData(
     subunit_id_t          subunitId         = 0xff;
     function_block_type_t functionBlockType = 0xff;
     function_block_id_t   functionBlockId   = 0xff;
-    EPlugAddressType    addressType       = eAPA_Undefined;
-    EPlugDirection      direction         = eAPD_Unknown;
+    EPlugAddressType      addressType       = eAPA_Undefined;
+    EPlugDirection        direction         = eAPD_Unknown;
     plug_id_t             plugId            = 0xff;
 
     if ( !pUnitPlugAddress
@@ -1395,8 +1395,8 @@ Plug::toggleDirection( EPlugDirection direction ) const
 
 bool
 Plug::serializeChannelInfos( Glib::ustring basePath,
-                               Util::IOSerialize& ser,
-                               const ClusterInfo& clusterInfo ) const
+                             Util::IOSerialize& ser,
+                             const ClusterInfo& clusterInfo ) const
 {
     bool result = true;
     int i = 0;
@@ -1418,8 +1418,8 @@ Plug::serializeChannelInfos( Glib::ustring basePath,
 
 bool
 Plug::deserializeChannelInfos( Glib::ustring basePath,
-                                 Util::IODeserialize& deser,
-                                 ClusterInfo& clusterInfo )
+                               Util::IODeserialize& deser,
+                               ClusterInfo& clusterInfo )
 {
     int i = 0;
     bool bFinished = false;
@@ -1454,7 +1454,7 @@ Plug::deserializeChannelInfos( Glib::ustring basePath,
 
 bool
 Plug::serializeClusterInfos( Glib::ustring basePath,
-                               Util::IOSerialize& ser ) const
+                             Util::IOSerialize& ser ) const
 {
     bool result = true;
     int i = 0;
@@ -1480,7 +1480,7 @@ Plug::serializeClusterInfos( Glib::ustring basePath,
 
 bool
 Plug::deserializeClusterInfos( Glib::ustring basePath,
-                                 Util::IODeserialize& deser )
+                               Util::IODeserialize& deser )
 {
     int i = 0;
     bool bFinished = false;
@@ -1518,7 +1518,7 @@ Plug::deserializeClusterInfos( Glib::ustring basePath,
 
 bool
 Plug::serializeFormatInfos( Glib::ustring basePath,
-                              Util::IOSerialize& ser ) const
+                            Util::IOSerialize& ser ) const
 {
     bool result = true;
     int i = 0;
@@ -1541,7 +1541,7 @@ Plug::serializeFormatInfos( Glib::ustring basePath,
 
 bool
 Plug::deserializeFormatInfos( Glib::ustring basePath,
-                                Util::IODeserialize& deser )
+                              Util::IODeserialize& deser )
 {
     int i = 0;
     bool bFinished = false;
@@ -1578,8 +1578,8 @@ Plug::deserializeFormatInfos( Glib::ustring basePath,
 
 bool
 Plug::serializePlugVector( Glib::ustring basePath,
-                               Util::IOSerialize& ser,
-                               const PlugVector& vec) const
+                           Util::IOSerialize& ser,
+                           const PlugVector& vec) const
 {
     bool result = true;
     int i = 0;
@@ -1599,8 +1599,8 @@ Plug::serializePlugVector( Glib::ustring basePath,
 
 bool
 Plug::deserializePlugVector( Glib::ustring basePath,
-                                 Util::IODeserialize& deser,
-                                 PlugVector& vec )
+                             Util::IODeserialize& deser,
+                             PlugVector& vec )
 {
     int i = 0;
     bool bFinished = false;
@@ -1663,9 +1663,9 @@ Plug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 
 Plug*
 Plug::deserialize( Glib::ustring basePath,
-                     Util::IODeserialize& deser,
-                     Unit& unit,
-                     PlugManager& plugManager )
+                   Util::IODeserialize& deser,
+                   Unit& unit,
+                   PlugManager& plugManager )
 {
     #warning FIXME: The derived class should be creating these
     // FIXME: The derived class should be creating these, such that discover() can become pure virtual
@@ -1679,15 +1679,15 @@ Plug::deserialize( Glib::ustring basePath,
     }
 
     pPlug->m_unit = &unit;
-    
+
     bool result=true;
-    
+
     ESubunitType subunitType;
     result  = deser.read( basePath + "m_subunitType", subunitType );
     subunit_t subunitId;
     result &= deser.read( basePath + "m_subunitId", subunitId );
     pPlug->m_subunit = unit.getSubunit( subunitType, subunitType );
-    
+
     result &= deser.read( basePath + "m_functionBlockType", pPlug->m_functionBlockType );
     result &= deser.read( basePath + "m_functionBlockId", pPlug->m_functionBlockId );
     result &= deser.read( basePath + "m_addressType", pPlug->m_addressType );
@@ -1863,7 +1863,7 @@ PlugManager::tidyPlugConnections(PlugConnectionVector& connections)
             addConnection( connections, *( *it ), *plug );
         }
         plug->getInputConnections().clear();
-        
+
         for ( PlugVector::const_iterator it =
                   plug->getOutputConnections().begin();
             it != plug->getOutputConnections().end();
@@ -1873,7 +1873,7 @@ PlugManager::tidyPlugConnections(PlugConnectionVector& connections)
         }
         plug->getOutputConnections().clear();
     }
-    
+
     for ( PlugConnectionVector::iterator it = connections.begin();
           it != connections.end();
           ++it )
@@ -1883,7 +1883,7 @@ PlugManager::tidyPlugConnections(PlugConnectionVector& connections)
         con->getDestPlug().getInputConnections().push_back(&( con->getSrcPlug() ));
 
     }
-    
+
     return true;
 }
 
@@ -2001,7 +2001,7 @@ PlugManager::showPlugs() const
                 default:
                     strstrm << plug->getFunctionBlockType();
             }
-            
+
             if ( plug->getPlugDirection() == Plug::eAPD_Input ) {
                 printf( "\t\"(%d) %s\" -> \"(%s, ID %d)\"\n",
                         plug->getGlobalId(),
@@ -2056,12 +2056,12 @@ PlugManager::showPlugs() const
 
 Plug*
 PlugManager::getPlug( ESubunitType subunitType,
-                        subunit_id_t subunitId,
-                        function_block_type_t functionBlockType,
-                        function_block_id_t functionBlockId,
-                        Plug::EPlugAddressType plugAddressType,
-                        Plug::EPlugDirection plugDirection,
-                        plug_id_t plugId ) const
+                      subunit_id_t subunitId,
+                      function_block_type_t functionBlockType,
+                      function_block_id_t functionBlockId,
+                      Plug::EPlugAddressType plugAddressType,
+                      Plug::EPlugDirection plugDirection,
+                      plug_id_t plugId ) const
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "SBT, SBID, FBT, FBID, AT, PD, ID = "
                  "(0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x)\n",
@@ -2112,12 +2112,12 @@ PlugManager::getPlug( int iGlobalId ) const
 
 PlugVector
 PlugManager::getPlugsByType( ESubunitType subunitType,
-                               subunit_id_t subunitId,
-                               function_block_type_t functionBlockType,
-                               function_block_id_t functionBlockId,
-                               Plug::EPlugAddressType plugAddressType,
-                               Plug::EPlugDirection plugDirection,
-                               Plug::EPlugType type) const
+                             subunit_id_t subunitId,
+                             function_block_type_t functionBlockType,
+                             function_block_id_t functionBlockId,
+                             Plug::EPlugAddressType plugAddressType,
+                             Plug::EPlugDirection plugDirection,
+                             Plug::EPlugType type) const
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "SBT, SBID, FBT, FBID, AT, PD, T = "
                  "(0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x)\n",
@@ -2172,8 +2172,8 @@ PlugManager::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 
 PlugManager*
 PlugManager::deserialize( Glib::ustring basePath,
-                            Util::IODeserialize& deser,
-                            Unit& unit )
+                          Util::IODeserialize& deser,
+                          Unit& unit )
 
 {
     PlugManager* pMgr = new PlugManager;
@@ -2190,9 +2190,9 @@ PlugManager::deserialize( Glib::ustring basePath,
         // unit still holds a null pointer for the plug manager
         // therefore we have to *this as additional argument
         Plug* pPlug = Plug::deserialize( strstrm.str() + "/",
-                                             deser,
-                                             unit,
-                                             *pMgr );
+                                         deser,
+                                         unit,
+                                         *pMgr );
         if ( pPlug ) {
             pMgr->m_plugs.push_back( pPlug );
             i++;

@@ -406,6 +406,12 @@ AvDevice::loadFromCache()
                      sFileName.c_str() );
     }
 
+    // XXX only for testing purpose here. Can be removed when loadFromCache works
+    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+    if ( !inputPlug ) {
+        debugError( "loadFromCache: Could not retrieve iso input plug 0\n" );
+    }
+
     return result;
 }
 

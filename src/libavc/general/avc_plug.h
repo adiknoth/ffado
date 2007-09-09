@@ -105,13 +105,13 @@ public:
         { return m_id; }
     ESubunitType getSubunitType() const;
     subunit_id_t getSubunitId() const;
-    
+
     const char* getName() const
         { return m_name.c_str(); }
     bool setName(const char *n)
-        { m_name=n; return true;};
+        { m_name=n; return true; }
     bool setName(std::string n)
-        { m_name=n; return true;};
+        { m_name=n; return true; }
     EPlugDirection getPlugDirection() const
         { return m_direction; }
     bool setPlugDirection(EPlugDirection d)
@@ -120,7 +120,7 @@ public:
         { return m_samplingFrequency; }
     int getSampleRate() const; // 22050, 24000, 32000, ...
     bool setSampleRate( int rate );
-    
+
     int getNrOfChannels() const;
     bool setNrOfChannels(int i);
     int getNrOfStreams() const;
@@ -156,9 +156,9 @@ public:
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static Plug* deserialize( Glib::ustring basePath,
-                                Util::IODeserialize& deser,
-                                Unit& avDevice,
-                                PlugManager& plugManager );
+                              Util::IODeserialize& deser,
+                              Unit& avDevice,
+                              PlugManager& plugManager );
 
     bool deserializeUpdate( Glib::ustring basePath,
                             Util::IODeserialize& deser );
@@ -194,7 +194,7 @@ public:
     virtual bool discover();
     virtual bool discoverConnections();
     virtual bool propagateFromConnectedPlug( );
-    
+
 protected:
     virtual bool discoverPlugType();
     virtual bool discoverName();
@@ -257,11 +257,11 @@ protected:
                                  Util::IODeserialize& deser );
 
     bool serializePlugVector( Glib::ustring basePath,
-                                Util::IOSerialize& ser,
-                                const PlugVector& vec) const;
+                              Util::IOSerialize& ser,
+                              const PlugVector& vec) const;
     bool deserializePlugVector( Glib::ustring basePath,
-                                  Util::IODeserialize& deser,
-                                  PlugVector& vec );
+                                Util::IODeserialize& deser,
+                                PlugVector& vec );
 
 protected:
     // Supported stream formats
@@ -319,7 +319,7 @@ public:
 
     void showPlugs() const;
 
-    int getPlugCount() 
+    int getPlugCount()
         { return m_plugs.size(); };
 
     Plug* getPlug( ESubunitType subunitType,
@@ -331,20 +331,21 @@ public:
                    plug_id_t plugId ) const;
     Plug* getPlug( int iGlobalId ) const;
     PlugVector getPlugsByType( ESubunitType subunitType,
-                 subunit_id_t subunitId,
-                 function_block_type_t functionBlockType,
-                 function_block_id_t functionBlockId,
-                 Plug::EPlugAddressType plugAddressType,
-                 Plug::EPlugDirection plugDirection,
-                 Plug::EPlugType type) const;
+			       subunit_id_t subunitId,
+			       function_block_type_t functionBlockType,
+			       function_block_id_t functionBlockId,
+			       Plug::EPlugAddressType plugAddressType,
+			       Plug::EPlugDirection plugDirection,
+			       Plug::EPlugType type) const;
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static  PlugManager* deserialize( Glib::ustring basePath,
-                                        Util::IODeserialize& deser,
-                                        Unit& avDevice );
-    void setVerboseLevel( int i ) 
-            {setDebugLevel(i);};
-    PlugVector& getPlugs() {return m_plugs;};
+				      Util::IODeserialize& deser,
+				      Unit& avDevice );
+    void setVerboseLevel( int i )
+	{ setDebugLevel(i); }
+    PlugVector& getPlugs()
+	{ return m_plugs; }
     bool tidyPlugConnections(PlugConnectionVector&);
 
 private:
@@ -365,8 +366,8 @@ public:
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static PlugConnection* deserialize( Glib::ustring basePath,
-                                          Util::IODeserialize& deser,
-                                          Unit& avDevice );
+					Util::IODeserialize& deser,
+					Unit& avDevice );
 private:
     PlugConnection();
 
