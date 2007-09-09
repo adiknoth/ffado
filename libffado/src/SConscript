@@ -107,6 +107,7 @@ fireworks_source =  env.Split( '\
 	fireworks/efc/efc_avc_cmd.cpp \
 	fireworks/efc/efc_cmd.cpp \
 	fireworks/efc/efc_cmds_hardware.cpp \
+	fireworks/efc/efc_cmds_hardware_ctrl.cpp \
 	fireworks/audiofire/audiofire_device.cpp \
 ' )
 

@@ -29,6 +29,11 @@
 
 #include "genericavc/avc_avdevice.h"
 
+#include "efc/efc_cmd.h"
+#include "efc/efc_cmds_hardware.h"
+
+#include <pthread.h>
+
 class ConfigRom;
 class Ieee1394Service;
 
@@ -46,6 +51,31 @@ public:
     virtual bool discover();
 
     virtual void showDevice();
+    
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
+// Echo specific stuff
+private:
+    bool doEfcOverAVC(EfcCmd& c);
+    
+    bool discoverUsingEFC();
+
+    FFADODevice::ClockSource clockIdToClockSource(uint32_t clockflag);
+    bool isClockValid(uint32_t id);
+    uint32_t getClock();
+    bool setClock(uint32_t);
+
+    uint32_t            m_efc_version;
+
+    EfcHardwareInfoCmd  m_HwInfo;
+
+    bool updatePolledValues();
+    pthread_mutex_t     m_polled_mutex;
+    EfcPolledValuesCmd  m_Polled;
+
+    bool                m_efc_discovery_done;
 
 };
 

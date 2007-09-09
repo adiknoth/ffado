@@ -209,6 +209,155 @@ AvDevice::setSamplingFrequency( int s )
 
 }
 
+FFADODevice::ClockSourceVector
+AvDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+
+    PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
+        eST_Music,
+        0,
+        0xff,
+        0xff,
+        Plug::eAPA_SubunitPlug,
+        Plug::eAPD_Input,
+        Plug::eAPT_Sync );
+    if ( !syncMSUInputPlugs.size() ) {
+        debugWarning( "No sync input plug for MSU subunit found\n" );
+        return r;
+    }
+
+    for ( SyncInfoVector::const_iterator it
+              = getSyncInfos().begin();
+          it != getSyncInfos().end();
+          ++it )
+    {
+        const SyncInfo si=*it;
+
+        // check if the destination is a MSU input plug
+        bool found=false;
+        for ( PlugVector::const_iterator it2 = syncMSUInputPlugs.begin();
+            it2 != syncMSUInputPlugs.end();
+            ++it2 )
+        {
+            AVC::Plug* msuPlug = *it2;
+            found |= (msuPlug == si.m_destination);
+        }
+
+        if (found) {
+            ClockSource s=syncInfoToClockSource(*it);
+            r.push_back(s);
+        }
+    }
+
+    return r;
+}
+
+bool
+AvDevice::setActiveClockSource(ClockSource s) {
+    Plug *src=m_pPlugManager->getPlug( s.id );
+    if (!src) {
+        debugError("Could not find plug with id %d\n", s.id);
+        return false;
+    }
+
+    for ( SyncInfoVector::const_iterator it
+              = getSyncInfos().begin();
+          it != getSyncInfos().end();
+          ++it )
+    {
+        const SyncInfo si=*it;
+
+        if (si.m_source==src) {
+            return setActiveSync(si);
+        }
+    }
+
+    return false;
+}
+
+FFADODevice::ClockSource
+AvDevice::getActiveClockSource() {
+    const SyncInfo* si=getActiveSyncInfo();
+    if ( !si ) {
+        debugError( "Could not retrieve active sync information\n" );
+        ClockSource s;
+        s.type=eCT_Invalid;
+        return s;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Active Sync mode:  %s\n", si->m_description.c_str() );
+
+    return syncInfoToClockSource(*si);
+}
+
+FFADODevice::ClockSource
+AvDevice::syncInfoToClockSource(const SyncInfo& si) {
+    ClockSource s;
+
+    // the description is easy
+    // it can be that we overwrite it later
+    s.description=si.m_description;
+
+    // FIXME: always valid at the moment
+    s.valid=true;
+
+    assert(si.m_source);
+    s.id=si.m_source->getGlobalId();
+
+    // now figure out what type this is
+    switch(si.m_source->getPlugType()) {
+        case Plug::eAPT_IsoStream:
+            s.type=eCT_SytMatch;
+            break;
+        case Plug::eAPT_Sync:
+            if(si.m_source->getPlugAddressType() == Plug::eAPA_PCR) {
+                s.type=eCT_SytStream; // this is logical
+            } else if(si.m_source->getPlugAddressType() == Plug::eAPA_SubunitPlug) {
+                s.type=eCT_Internal; // this assumes some stuff
+            } else if(si.m_source->getPlugAddressType() == Plug::eAPA_ExternalPlug) {
+                std::string plugname=si.m_source->getName();
+                s.description=plugname;
+                // this is basically due to Focusrites interpretation
+                if(plugname.find( "SPDIF", 0 ) != string::npos) {
+                    s.type=eCT_SPDIF; // this assumes the name will tell us
+                } else {
+                    s.type=eCT_WordClock; // this assumes a whole lot more
+                }
+            } else {
+                s.type=eCT_Invalid;
+            }
+            break;
+        case Plug::eAPT_Digital:
+            if(si.m_source->getPlugAddressType() == Plug::eAPA_ExternalPlug) {
+                std::string plugname=si.m_source->getName();
+                s.description=plugname;
+                // this is basically due to Focusrites interpretation
+                if(plugname.find( "ADAT", 0 ) != string::npos) {
+                    s.type=eCT_ADAT; // this assumes the name will tell us
+                } else if(plugname.find( "SPDIF", 0 ) != string::npos) {
+                    s.type=eCT_SPDIF; // this assumes the name will tell us
+                } else {
+                    s.type=eCT_WordClock; // this assumes a whole lot more
+                }
+            } else {
+                s.type=eCT_Invalid;
+            }
+            break;
+        default:
+            s.type=eCT_Invalid; break;
+    }
+
+    // is it active?
+    const SyncInfo* active=getActiveSyncInfo();
+    if (active) {
+        if ((active->m_source == si.m_source)
+           && (active->m_destination == si.m_destination))
+           s.active=true;
+        else s.active=false;
+    } else s.active=false;
+
+    return s;
+}
+
 bool
 AvDevice::lock() {
     bool snoopMode=false;

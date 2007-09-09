@@ -32,6 +32,7 @@ namespace FireWorks {
 namespace ECHO {
 
 class AudioFire : public FireWorks::Device {
+
 public:
     AudioFire( Ieee1394Service& ieee1394Service,
                std::auto_ptr<ConfigRom>( configRom ));

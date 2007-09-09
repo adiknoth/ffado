@@ -124,6 +124,24 @@ MHAvDevice::getSamplingFrequency( ) {
     return 0;
 }
 
+FFADODevice::ClockSourceVector
+MHAvDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
+}
+
+bool
+MHAvDevice::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+MHAvDevice::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
+
 int
 MHAvDevice::getConfigurationId( ) {
     return 0;

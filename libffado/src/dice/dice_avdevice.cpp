@@ -279,6 +279,23 @@ DiceAvDevice::setSamplingFrequency( int samplingFrequency )
     return true;
 }
 
+FFADODevice::ClockSourceVector
+DiceAvDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
+}
+
+bool
+DiceAvDevice::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+DiceAvDevice::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
 void
 DiceAvDevice::showDevice()
 {

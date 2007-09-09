@@ -44,6 +44,24 @@
 #define EFC_CAT_IO_CONFIG               9
 #define EFC_CAT_COUNT                   10
 
+// Commands for the EFC_CAT_HARDWARE_INFO category
+#define EFC_CMD_HW_HWINFO_GET_CAPS      0
+#define EFC_CMD_HW_GET_POLLED           1
+#define EFC_CMD_HW_SET_EFR_ADDRESS      2
+#define EFC_CMD_HW_READ_SESSION_BLOCK   3
+#define EFC_CMD_HW_GET_DEBUG_INFO       4
+#define EFC_CMD_HW_SET_DEBUG_TRACKING   5
+#define EFC_CMD_HW_COUNT                6
+
+// Commands for the EFC_CAT_HARDWARE_CONTROL category
+#define EFC_CMD_HWCTRL_SET_CLOCK        0
+#define EFC_CMD_HWCTRL_GET_CLOCK        1
+#define EFC_CMD_HWCTRL_BSX_HANDSHAKE    2
+#define EFC_CMD_HWCTRL_CHANGE_FLAGS     3
+#define EFC_CMD_HWCTRL_GET_FLAGS        4
+#define EFC_CMD_HWCTRL_IDENTIFY         5
+#define EFC_CMD_HWCTRL_RECONNECT_PHY    6
+
 // size of the header
 #define EFC_HEADER_LENGTH_QUADLETS      ((sizeof(uint32_t) + sizeof(struct EfcCmd::efc_header))/4)
 
@@ -52,6 +70,46 @@
     { __result__ &= __de__.read(__value__); \
       *(__value__)=ntohl(*(__value__)); } \
 
+
+// specifiers for the flags field
+#define EFC_CMD_HW_DYNADDR_SUPPORTED                1
+#define EFC_CMD_HW_MIRRORING_SUPPORTED              2
+#define EFC_CMD_HW_SPDIF_COAX_SUPPORTED             3
+#define EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED        4
+#define EFC_CMD_HW_HAS_DSP                          5
+#define EFC_CMD_HW_HAS_FPGA                         6
+#define EFC_CMD_HW_HAS_PHANTOM                      7
+
+#define EFC_CMD_HW_CHECK_FLAG(__val__,__flag__) \
+    (((__val__) & (1<<(__flag__))) != 0)
+#define EFC_CMD_HW_TO_FLAG(__val__) \
+    (1<<(__val__))
+
+// Clock sources
+#define EFC_CMD_HW_CLOCK_INTERNAL                   0
+#define EFC_CMD_HW_CLOCK_SYTMATCH                   1
+#define EFC_CMD_HW_CLOCK_WORDCLOCK                  2
+#define EFC_CMD_HW_CLOCK_SPDIF                      3
+#define EFC_CMD_HW_CLOCK_ADAT_1                     4
+#define EFC_CMD_HW_CLOCK_ADAT_2                     5
+#define EFC_CMD_HW_CLOCK_COUNT                      6
+
+#define EFC_CMD_HW_CLOCK_UNSPECIFIED       0xFFFFFFFF
+
+// MIDI flags
+#define EFC_CMD_HW_MIDI_IN_1                        8
+#define EFC_CMD_HW_MIDI_OUT_1                       9
+#define EFC_CMD_HW_MIDI_IN_2                       10
+#define EFC_CMD_HW_MIDI_OUT_2                      11
+
+// Channel types
+#define EFC_CMD_HW_CHANNEL_TYPE_ANALOG              0
+#define EFC_CMD_HW_CHANNEL_TYPE_SPDIF               1
+#define EFC_CMD_HW_CHANNEL_TYPE_ADAT                2
+#define EFC_CMD_HW_CHANNEL_TYPE_SPDIF_OR_ADAT       3
+#define EFC_CMD_HW_CHANNEL_TYPE_ANALOG_MIRRORING    4
+#define EFC_CMD_HW_CHANNEL_TYPE_HEADPHONES          5
+#define EFC_CMD_HW_CHANNEL_TYPE_I2S                 6
 
 namespace FireWorks {
 

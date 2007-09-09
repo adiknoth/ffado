@@ -303,6 +303,23 @@ MotuDevice::setSamplingFrequency( int samplingFrequency )
     return supported;
 }
 
+FFADODevice::ClockSourceVector
+MotuDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
+}
+
+bool
+MotuDevice::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+MotuDevice::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
 bool
 MotuDevice::lock() {
 

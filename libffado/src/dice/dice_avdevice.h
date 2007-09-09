@@ -71,6 +71,10 @@ public:
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
 
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
