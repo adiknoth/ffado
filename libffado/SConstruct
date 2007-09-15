@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 
 import os
-import sys
-sys.path.append( "./admin" )
-from pkgconfig import *
 from string import Template
 
 build_dir = ARGUMENTS.get('BUILDDIR', "")
@@ -65,7 +62,7 @@ else:
 	buildenv['PKG_CONFIG_PATH']=''
 
 
-env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen'], toolpath=['admin'], ENV = buildenv, options=opts )
+env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
 
 Help( """
@@ -106,12 +103,14 @@ def CheckForApp( context, app ):
 		context.Result( False )
 	return ret
 
+tests = { 'CheckForApp' : CheckForApp }
+tests.update( env['PKGCONFIG_TESTS'] )
 
 if not env.GetOption('clean'):
 	conf = Configure( env,
-		custom_tests={ 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG, 'GetPKGFlags' : GetPKGFlags, 'CheckForApp' : CheckForApp },
-		conf_dir="cache/" + build_base,
-		log_file="cache/" + build_base + 'config.log' )
+		custom_tests = tests,
+		conf_dir = "cache/" + build_base,
+		log_file = "cache/" + build_base + 'config.log' )
 
 	#
 	# Check if the environment can actually compile c-files by checking for a
