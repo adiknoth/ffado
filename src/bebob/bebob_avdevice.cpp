@@ -60,6 +60,13 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
+
+    // DM1500 based devices seem to upset the linux1394 stack when commands are
+    // sent too fast.
+    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 200) {
+        AVC::AVCCommand::setSleepAfterAVCCommand( 200 );
+    }
+
 }
 
 AvDevice::~AvDevice()
