@@ -9,7 +9,7 @@ env.PrependUnique( LIBPATH=["#/src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
 apps = "teststreaming teststreaming2 teststreaming3"
-if env['ALSA_SEQ_OUTPUT']:
+if env.GetOption('clean') or env['ALSA_SEQ_OUTPUT']:
 	apps += " testmidistreaming1"
 
 for app in env.Split( apps ):
