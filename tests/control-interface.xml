@@ -63,5 +63,39 @@
           <arg type="i" name="value" direction="out"/>
       </method>
   </interface>
-  
+
+  <interface name="org.ffado.Control.Element.MatrixMixer">
+      <method name="setValue">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="i" name="col" direction="in"/>
+          <arg type="d" name="value" direction="in"/>
+          <arg type="d" name="value" direction="out"/>
+      </method>
+      <method name="getValue">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="i" name="col" direction="in"/>
+          <arg type="d" name="value" direction="out"/>
+      </method>
+      <method name="canWrite">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="i" name="col" direction="in"/>
+          <arg type="i" name="value" direction="out"/>
+      </method>
+      <method name="getRowName">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="s" name="rowname" direction="out"/>
+      </method>
+      <method name="getColName">
+          <arg type="i" name="col" direction="in"/>
+          <arg type="s" name="colname" direction="out"/>
+      </method>
+      <method name="getRowCount">
+          <arg type="i" name="nbrows" direction="out"/>
+      </method>
+      <method name="getColCount">
+          <arg type="i" name="nbrows" direction="out"/>
+      </method>
+
+  </interface>
+
 </node>

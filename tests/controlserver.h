@@ -34,6 +34,10 @@
 #include "libcontrol/BasicElements.h"
 #include "libieee1394/configrom.h"
 
+namespace Control {
+    class MatrixMixer;
+};
+
 namespace DBusControl {
 
 class Element
@@ -135,6 +139,26 @@ private:
     ConfigRom &m_Slave;
 };
 
+class MatrixMixer
+: public org::ffado::Control::Element::MatrixMixer
+, public Element
+{
+public:
+    MatrixMixer(  DBus::Connection& connection,
+                  std::string p,
+                  Control::MatrixMixer &slave );
+
+    DBus::String getRowName( const DBus::Int32& );
+    DBus::String getColName( const DBus::Int32& );
+    DBus::Int32 canWrite( const DBus::Int32&, const DBus::Int32& );
+    DBus::Double setValue( const DBus::Int32&, const DBus::Int32&, const DBus::Double& );
+    DBus::Double getValue( const DBus::Int32&, const DBus::Int32& );
+    DBus::Int32 getRowCount( );
+    DBus::Int32 getColCount( );
+
+private:
+    Control::MatrixMixer &m_Slave;
+};
 
 }
 
