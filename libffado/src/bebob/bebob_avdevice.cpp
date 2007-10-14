@@ -27,7 +27,7 @@
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_mixer.h"
 
-#include "bebob/focusrite/focusrite_device.h"
+#include "bebob/focusrite/focusrite_saffirepro.h"
 #include "bebob/terratec/terratec_device.h"
 
 #include "libieee1394/configrom.h"

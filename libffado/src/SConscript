@@ -81,7 +81,7 @@ bebob_source = env.Split( '\
 	bebob/bebob_dl_mgr.cpp \
 	bebob/bebob_functionblock.cpp \
 	bebob/bebob_mixer.cpp \
-	bebob/focusrite/focusrite_device.cpp \
+	bebob/focusrite/focusrite_saffirepro.cpp \
 	bebob/focusrite/focusrite_cmd.cpp \
 	bebob/terratec/terratec_device.cpp \
 	bebob/terratec/terratec_cmd.cpp \
