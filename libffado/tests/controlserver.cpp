@@ -25,6 +25,7 @@
 #include "controlserver.h"
 #include "libcontrol/Element.h"
 #include "libcontrol/BasicElements.h"
+#include "libcontrol/MatrixMixer.h"
 
 namespace DBusControl {
 
@@ -145,6 +146,13 @@ Container::createHandler(Control::Element& e) {
             *dynamic_cast<ConfigRom *>(&e));
     }
     
+    if (dynamic_cast<Control::MatrixMixer *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::MatrixMixer\n");
+        
+        return new MatrixMixer(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::MatrixMixer *>(&e));
+    }
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
     return new Element(conn(), std::string(path()+"/"+e.getName()), e);
 }
@@ -246,6 +254,51 @@ DBus::Int32
 ConfigRomX::getModelId( )
 {
     return m_Slave.getModelId();
+}
+
+// --- MatrixMixer
+
+MatrixMixer::MatrixMixer( DBus::Connection& connection, std::string p, Control::MatrixMixer &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created MatrixMixer on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::String
+MatrixMixer::getRowName( const DBus::Int32& row) {
+    return m_Slave.getRowName(row);
+}
+
+DBus::String
+MatrixMixer::getColName( const DBus::Int32& col) {
+    return m_Slave.getColName(col);
+}
+
+DBus::Int32
+MatrixMixer::canWrite( const DBus::Int32& row, const DBus::Int32& col) {
+    return m_Slave.canWrite(row,col);
+}
+
+DBus::Double
+MatrixMixer::setValue( const DBus::Int32& row, const DBus::Int32& col, const DBus::Double& val ) {
+    return m_Slave.setValue(row,col,val);
+}
+
+DBus::Double
+MatrixMixer::getValue( const DBus::Int32& row, const DBus::Int32& col) {
+    return m_Slave.getValue(row,col);
+}
+
+DBus::Int32
+MatrixMixer::getRowCount( ) {
+    return m_Slave.getRowCount();
+}
+
+DBus::Int32
+MatrixMixer::getColCount( ) {
+    return m_Slave.getColCount();
 }
 
 } // end of namespace Control
