@@ -22,8 +22,8 @@
  * MA 02110-1301 USA
  */
 
-#ifndef BEBOB_FOCUSRITE_SAFFIRE_PRO_DEVICE_H
-#define BEBOB_FOCUSRITE_SAFFIRE_PRO_DEVICE_H
+#ifndef BEBOB_FOCUSRITE_SAFFIRE_DEVICE_H
+#define BEBOB_FOCUSRITE_SAFFIRE_DEVICE_H
 
 #include "debugmodule/debugmodule.h"
 #include "focusrite_generic.h"
@@ -31,36 +31,15 @@
 namespace BeBoB {
 namespace Focusrite {
 
-class SaffireProDevice : public FocusriteDevice {
+class SaffireDevice : public FocusriteDevice {
 public:
-    SaffireProDevice( Ieee1394Service& ieee1394Service,
+    SaffireDevice( Ieee1394Service& ieee1394Service,
               std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~SaffireProDevice();
+    virtual ~SaffireDevice();
 
     virtual void showDevice();
     virtual void setVerboseLevel(int l);
 
-    virtual bool setSamplingFrequency( int );
-    virtual int getSamplingFrequency( );
-
-private:
-    virtual bool setSamplingFrequencyDo( int );
-    virtual int getSamplingFrequencyMirror( );
-
-    BinaryControl * m_Phantom1;
-    BinaryControl * m_Phantom2;
-    
-    BinaryControl * m_Insert1;
-    BinaryControl * m_Insert2;
-    BinaryControl * m_AC3pass;
-    BinaryControl * m_MidiTru;
-    
-    VolumeControl * m_Output12[4];
-    VolumeControl * m_Output34[6];
-    VolumeControl * m_Output56[6];
-    VolumeControl * m_Output78[6];
-    VolumeControl * m_Output910[6];
-    
 };
 
 } // namespace Focusrite

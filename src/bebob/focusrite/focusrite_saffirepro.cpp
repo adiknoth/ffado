@@ -29,7 +29,7 @@ namespace Focusrite {
 
 SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
                             std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( ieee1394Service, configRom)
+    : FocusriteDevice( ieee1394Service, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -209,7 +209,7 @@ void
 SaffireProDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Focusrite::SaffireProDevice\n");
-    BeBoB::AvDevice::showDevice();
+    FocusriteDevice::showDevice();
 }
 
 void
@@ -220,84 +220,9 @@ SaffireProDevice::setVerboseLevel(int l)
     if (m_Phantom1) m_Phantom2->setVerboseLevel(l);
     if (m_Phantom2) m_Phantom2->setVerboseLevel(l);
 
-    BeBoB::AvDevice::setVerboseLevel(l);
-}
+    // FIXME: add the other elements here too
 
-bool
-SaffireProDevice::setSpecificValue(uint32_t id, uint32_t v)
-{
-    
-    FocusriteVendorDependentCmd cmd( get1394Service() );
-    cmd.setCommandType( AVC::AVCCommand::eCT_Control );
-    cmd.setNodeId( getConfigRom().getNodeId() );
-    cmd.setSubunitType( AVC::eST_Unit  );
-    cmd.setSubunitId( 0xff );
-    
-    cmd.setVerbose( getDebugLevel() );
-//         cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
-    
-    cmd.m_id=id;
-    cmd.m_value=v;
-    
-    if ( !cmd.fire() ) {
-        debugError( "FocusriteVendorDependentCmd info command failed\n" );
-        return false;
-    }
-    
-    return true;
-}
-
-bool
-SaffireProDevice::getSpecificValue(uint32_t id, uint32_t *v)
-{
-    
-    FocusriteVendorDependentCmd cmd( get1394Service() );
-    cmd.setCommandType( AVC::AVCCommand::eCT_Status );
-    cmd.setNodeId( getConfigRom().getNodeId() );
-    cmd.setSubunitType( AVC::eST_Unit  );
-    cmd.setSubunitId( 0xff );
-    
-    cmd.setVerbose( getDebugLevel() );
-//         cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
-    
-    cmd.m_id=id;
-    
-    if ( !cmd.fire() ) {
-        debugError( "FocusriteVendorDependentCmd info command failed\n" );
-        return false;
-    }
-    
-    *v=cmd.m_value;
-
-    return true;
-}
-
-int
-SaffireProDevice::convertDefToSr( uint32_t def ) {
-    switch(def) {
-        case FOCUSRITE_CMD_SAMPLERATE_44K1:  return 44100;
-        case FOCUSRITE_CMD_SAMPLERATE_48K:   return 48000;
-        case FOCUSRITE_CMD_SAMPLERATE_88K2:  return 88200;
-        case FOCUSRITE_CMD_SAMPLERATE_96K:   return 96000;
-        case FOCUSRITE_CMD_SAMPLERATE_176K4: return 176400;
-        case FOCUSRITE_CMD_SAMPLERATE_192K:  return 192000;
-        default: return 0;
-    }
-}
-
-uint32_t
-SaffireProDevice::convertSrToDef( int sr ) {
-    switch(sr) {
-        case 44100:  return FOCUSRITE_CMD_SAMPLERATE_44K1;
-        case 48000:  return FOCUSRITE_CMD_SAMPLERATE_48K;
-        case 88200:  return FOCUSRITE_CMD_SAMPLERATE_88K2;
-        case 96000:  return FOCUSRITE_CMD_SAMPLERATE_96K;
-        case 176400: return FOCUSRITE_CMD_SAMPLERATE_176K4;
-        case 192000: return FOCUSRITE_CMD_SAMPLERATE_192K;
-        default:
-            debugWarning("Unsupported samplerate: %d\n", sr);
-            return 0;
-    }
+    FocusriteDevice::setVerboseLevel(l);
 }
 
 int
@@ -398,89 +323,6 @@ SaffireProDevice::setSamplingFrequency( int s )
     // not executable
     return false;
 
-}
-
-// --- element implementation classes
-
-BinaryControl::BinaryControl(SaffireProDevice& parent, int id)
-: Control::Discrete()
-, m_Parent(parent)
-, m_cmd_id ( id )
-{}
-BinaryControl::BinaryControl(SaffireProDevice& parent, int id,
-                std::string name, std::string label, std::string descr)
-: Control::Discrete()
-, m_Parent(parent)
-, m_cmd_id ( id )
-{
-    setName(name);
-    setLabel(label);
-    setDescription(descr);
-}
-
-bool
-BinaryControl::setValue(int v)
-{
-    uint32_t val=0;
-    if (v) val=1;
-
-    if ( !m_Parent.setSpecificValue(m_cmd_id, val) ) {
-        debugError( "setSpecificValue failed\n" );
-        return false;
-    } else return true;
-}
-
-int
-BinaryControl::getValue()
-{
-    uint32_t val=0;
-
-    if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
-        debugError( "getSpecificValue failed\n" );
-        return 0;
-    } else return val;
-}
-
-// --- element implementation classes
-
-VolumeControl::VolumeControl(SaffireProDevice& parent, int id)
-: Control::Discrete()
-, m_Parent(parent)
-, m_cmd_id ( id )
-{}
-VolumeControl::VolumeControl(SaffireProDevice& parent, int id,
-                std::string name, std::string label, std::string descr)
-: Control::Discrete()
-, m_Parent(parent)
-, m_cmd_id ( id )
-{
-    setName(name);
-    setLabel(label);
-    setDescription(descr);
-}
-
-
-bool
-VolumeControl::setValue(int v)
-{
-    if (v>0x07FFF) v=0x07FFF;
-    else if (v<0) v=0;
-
-    if ( !m_Parent.setSpecificValue(m_cmd_id, v) ) {
-        debugError( "setSpecificValue failed\n" );
-        return false;
-    } else return true;
-}
-
-int
-VolumeControl::getValue()
-{
-    uint32_t val=0;
-
-    if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
-        debugError( "getSpecificValue failed\n" );
-        return 0;
-    } else return val;
 }
 
 } // Focusrite
