@@ -44,10 +44,10 @@ FFADODevice::FFADODevice( Ieee1394Service& ieee1394Service,
 
     std::ostringstream nodestr;
     nodestr << "node" << getConfigRom().getNodeId();
-    
-//     setOscBase(nodestr.str());
-//     ConfigRom& c = getConfigRom();
-//     addChildOscNode(&c);
+
+    if (!addElement(&getConfigRom())) {
+        debugWarning("failed to add ConfigRom to Control::Container\n");
+    }
 }
 
 FFADODevice *

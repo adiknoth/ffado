@@ -15,10 +15,35 @@
           <arg type="s" name="description" direction="out"/>
       </method>
   </interface>
-  
+
   <interface name="org.ffado.Control.Element.Container">
+      <method name="getNbElements">
+          <arg type="i" name="count" direction="out"/>
+      </method>
+      <method name="getElementName">
+          <arg type="i" name="id" direction="in"/>
+          <arg type="s" name="name" direction="out"/>
+      </method>
   </interface>
-  
+
+  <interface name="org.ffado.Control.Element.ConfigRomX">
+      <method name="getGUID">
+          <arg type="s" name="guid" direction="out"/>
+      </method>
+      <method name="getVendorName">
+          <arg type="s" name="vendorname" direction="out"/>
+      </method>
+      <method name="getModelName">
+          <arg type="s" name="modelname" direction="out"/>
+      </method>
+      <method name="getVendorId">
+          <arg type="i" name="vendorid" direction="out"/>
+      </method>
+      <method name="getModelId">
+          <arg type="i" name="modelid" direction="out"/>
+      </method>
+  </interface>
+
   <interface name="org.ffado.Control.Element.Continuous">
       <method name="setValue">
           <arg type="d" name="value" direction="in"/>

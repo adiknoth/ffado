@@ -60,7 +60,7 @@ struct config_csr_info {
 //-------------------------------------------------------------
 
 ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
-    : OscNode("ConfigRom")
+    : Control::Element("ConfigRom")
     , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
     , m_avcDevice( false )
@@ -87,7 +87,7 @@ ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
 }
 
 ConfigRom::ConfigRom()
-    : OscNode("ConfigRom")
+    : Control::Element("ConfigRom")
     , m_1394Service( 0 )
     , m_nodeId( -1 )
     , m_avcDevice( false )
@@ -594,57 +594,4 @@ ConfigRom::setNodeId( fb_nodeid_t nodeId )
 {
     m_nodeId = nodeId;
     return true;
-}
-
-OSC::OscResponse
-ConfigRom::processOscMessage(OSC::OscMessage *m) {
-    OSC::OscResponse r=OSC::OscResponse(OSC::OscResponse::eUnhandled);
-
-    unsigned int nbArgs=m->nbArguments();
-    if (nbArgs>=1) {
-        OSC::OscArgument arg0=m->getArgument(0);
-        if(arg0.isString()) { // commands
-            string cmd=arg0.getString();
-
-            debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) CMD? %s\n", this, cmd.c_str());
-            if(cmd == "params") {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "Listing node params...\n");
-                OSC::OscMessage& rm=r.getMessage();
-                rm.addArgument("GUID");
-                rm.addArgument("VendorName");
-                rm.addArgument("ModelName");
-                r.setType(OSC::OscResponse::eMessage);
-            }
-            if(cmd == "get") {
-                if(nbArgs != 2) {
-                    debugError("Erronous get command received, wrong nb of arguments\n");
-                    m->print();
-                } else {
-                    OSC::OscArgument arg1=m->getArgument(1);
-                    if(arg1.isString()) { // commands
-                        string target=arg1.getString();
-                        OSC::OscMessage& rm=r.getMessage();
-                        if(target == "GUID") {
-                            // FIXME: this will only return the lower 32 bits
-                            rm.addArgument((int64_t)getGuid());
-                        } else if(target == "VendorName") {
-                            rm.addArgument(getVendorName());
-                        } else if(target == "ModelName") {
-                            rm.addArgument(getModelName());
-                        } else {
-                            debugError("Erronous get command received, non-existant target\n");
-                            m->print();
-                        }
-                        r.setType(OSC::OscResponse::eMessage);
-                    } else {
-                        debugError("Erronous get command received, wrong argument type\n");
-                        m->print();
-                    }
-                }
-            }
-        }
-    }
-
-    return r;
-
 }

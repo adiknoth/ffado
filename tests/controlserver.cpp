@@ -95,6 +95,20 @@ Container::~Container() {
     }
 }
 
+DBus::Int32
+Container::getNbElements( ) {
+    return m_Slave.countElements();
+}
+
+DBus::String
+Container::getElementName( const DBus::Int32& i ) {
+    int nbElements=m_Slave.countElements();
+    if (i<nbElements) {
+        return m_Slave.getElements().at(i)->getName();
+    } else return "";
+}
+
+
 /**
  * \brief create a correct DBusControl counterpart for a given Control::Element
  */
@@ -124,6 +138,13 @@ Container::createHandler(Control::Element& e) {
             *dynamic_cast<Control::Discrete *>(&e));
     }
     
+    if (dynamic_cast<ConfigRom *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
+        
+        return new ConfigRomX(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<ConfigRom *>(&e));
+    }
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
     return new Element(conn(), std::string(path()+"/"+e.getName()), e);
 }
@@ -142,9 +163,13 @@ DBus::Double
 Continuous::setValue( const DBus::Double& value )
 {
     m_Slave.setValue(value);
+/*    
+    usleep(1000*500);
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%lf) => %lf\n", value, m_Slave.getValue() );
     
-    return m_Slave.getValue();
+    return m_Slave.getValue();*/
+    return value;
 }
 
 DBus::Double
@@ -168,9 +193,12 @@ DBus::Int32
 Discrete::setValue( const DBus::Int32& value )
 {
     m_Slave.setValue(value);
+    
+/*    usleep(1000*500);
     debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%d) => %d\n", value, m_Slave.getValue() );
     
-    return m_Slave.getValue();
+    return m_Slave.getValue();*/
+    return value;
 }
 
 DBus::Int32
@@ -178,6 +206,46 @@ Discrete::getValue(  )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %d\n", m_Slave.getValue() );
     return m_Slave.getValue();
+}
+
+// --- ConfigRom
+
+ConfigRomX::ConfigRomX( DBus::Connection& connection, std::string p, ConfigRom &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created ConfigRomX on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::String
+ConfigRomX::getGUID( )
+{
+    return m_Slave.getGuidString();
+}
+
+DBus::String
+ConfigRomX::getVendorName( )
+{
+    return m_Slave.getVendorName();
+}
+
+DBus::String
+ConfigRomX::getModelName( )
+{
+    return m_Slave.getModelName();
+}
+
+DBus::Int32
+ConfigRomX::getVendorId( )
+{
+    return m_Slave.getNodeVendorId();
+}
+
+DBus::Int32
+ConfigRomX::getModelId( )
+{
+    return m_Slave.getModelId();
 }
 
 } // end of namespace Control

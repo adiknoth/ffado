@@ -102,6 +102,9 @@ public:
     subunit_id_t getSubunitId();
 
     bool setVerbose( int verboseLevel );
+    bool setVerboseLevel( int verboseLevel )
+        { return setVerbose(verboseLevel);};
+
     int getVerboseLevel();
 
     virtual const char* getCmdName() const = 0;

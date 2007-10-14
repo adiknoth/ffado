@@ -10,89 +10,116 @@
 ** destructor.
 *****************************************************************************/
 
-
 void Phase88Control::switchFrontState( int )
 {
-    
-    if a0 == 0:
-        state=0
-    else :
-        state=1
-                        
-    print "switching front/back state to %d" % state
-
-    osc.Message("/devicemanager/dev0/GenericMixer/Selector/10", ["set", "value", state]).sendlocal(17820)                        
+    self.setSelector('frontback', a0)
 }
 
 void Phase88Control::switchOutAssign( int )
 {
-    print "switching out assign to %d" % a0
-    osc.Message("/devicemanager/dev0/GenericMixer/Selector/6", ["set", "value", a0]).sendlocal(17820)
+    self.setSelector('outassign', a0)
 }
 
 void Phase88Control::switchWaveInAssign( int )
 {
-    print "switching input assign to %d" % a0
-    osc.Message("/devicemanager/dev0/GenericMixer/Selector/7", ["set", "value", a0]).sendlocal(17820)
+    self.setSelector('inassign', a0)
 }
 
 void Phase88Control::switchSyncSource( int )
 {
-    print "switching sync source to %d" % a0
-    osc.Message("/devicemanager/dev0/GenericMixer/Selector/9", ["set", "value", a0]).sendlocal(17820)
+    self.setSelector('syncsource', a0)
 }
 
 void Phase88Control::switchExtSyncSource( int )
 {
-    print "switching external sync source to %d" % a0
-    osc.Message("/devicemanager/dev0/GenericMixer/Selector/8", ["set", "value", a0]).sendlocal(17820)
+    self.setSelector('externalsync', a0)
 }
 
 void Phase88Control::setVolume12( int )
 {
-    vol = -a0
-    print "setting volume for 1/2 to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/2", ["set", "volume", 0, vol]).sendlocal(17820)
+    self.setVolume('line12', a0)
 }
 
 void Phase88Control::setVolume34( int )
 {
-    vol = -a0
-    print "setting volume for 3/4 to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/3", ["set", "volume", 0, vol]).sendlocal(17820)
+    self.setVolume('line34', a0)
 }
 
 void Phase88Control::setVolume56( int )
 {
-    vol = -a0
-    print "setting volume for 5/6 to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/4", ["set", "volume", 0, vol]).sendlocal(17820)
+    self.setVolume('line56', a0)
 }
 
 void Phase88Control::setVolume78( int )
 {
-    vol = -a0
-    print "setting volume for 7/8 to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/5", ["set", "volume", 0, vol]).sendlocal(17820)
+    self.setVolume('line78', a0)
 }
 
 void Phase88Control::setVolumeSPDIF( int )
 {
-    vol = -a0
-    print "setting volume for S/PDIF to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/6", ["set", "volume", 0, vol]).sendlocal(17820)   
+    self.setVolume('spdif', a0)
 }
 
 void Phase88Control::setVolumeWavePlay( int )
 {
-    vol = -a0
-    print "setting volume for WavePlay to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/7", ["set", "volume", 0, vol]).sendlocal(17820)
+    self.setVolume('waveplay', a0)
 }
 
 void Phase88Control::setVolumeMaster( int )
 {
-    vol = -a0
-    print "setting master volume to %d" % vol
-    osc.Message("/devicemanager/dev0/GenericMixer/Feature/1", ["set", "volume", 0, vol]).sendlocal(17820)    
+    self.setVolume('master', a0)
+}
+
+void Phase88Control::setVolume( QString, int )
+{
+    name=a0
+    vol = -a1
+    
+    print "setting %s volume to %d" % (name, vol)
+    self.hw.setContignuous(self.VolumeControls[name][0], vol)
+}
+
+void Phase88Control::setSelector( QString, int )
+{
+    name=a0
+    state = a1
+    
+    print "setting %s state to %d" % (name, state)
+    self.hw.setDiscrete(self.SelectorControls[name][0], state)
+}
+
+void Phase88Control::init()
+{
+    print "Init Phase88 mixer window"
+
+    self.VolumeControls={
+        'master':    ['/Mixer/Feature_1', self.sldInputMaster], 
+        'line12' :   ['/Mixer/Feature_2', self.sldInput12],
+        'line34' :   ['/Mixer/Feature_3', self.sldInput34],
+        'line56' :   ['/Mixer/Feature_4', self.sldInput56],
+        'line78' :   ['/Mixer/Feature_5', self.sldInput78],
+        'spdif' :    ['/Mixer/Feature_6', self.sldInputSPDIF],
+        'waveplay' : ['/Mixer/Feature_7', self.sldInputWavePlay],
+        }
+
+    self.SelectorControls={
+        'outassign':    ['/Mixer/Selector_6', self.comboOutAssign], 
+        'inassign':     ['/Mixer/Selector_7', self.comboInAssign], 
+        'externalsync': ['/Mixer/Selector_8', self.comboExtSync], 
+        'syncsource':   ['/Mixer/Selector_9', self.comboSyncSource], 
+        'frontback':    ['/Mixer/Selector_10', self.comboFrontBack], 
+    }
+}
+
+void Phase88Control::initValues()
+{
+    for name, ctrl in self.VolumeControls.iteritems():
+        vol = self.hw.getContignuous(ctrl[0])
+        print "%s volume is %d" % (name , vol)
+        ctrl[1].setValue(-vol)
+
+    for name, ctrl in self.SelectorControls.iteritems():
+        state = self.hw.getDiscrete(ctrl[0])
+        print "%s state is %d" % (name , state)
+        ctrl[1].setCurrentItem(state)    
 }
