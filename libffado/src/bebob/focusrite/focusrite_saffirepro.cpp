@@ -64,101 +64,12 @@ SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
                 "MidiTru", "Midi Tru", "Enable Midi Tru");
     if (m_MidiTru) addElement(m_MidiTru);
 
-    // output mix controls
-    //  OUT12
-    m_Output12[0] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC1_TO_OUT1,
-                "PC1_OUT1", "PC1_OUT1", "Volume from PC Channel 1 to Output Channel 1");
-    if (m_Output12[0]) addElement(m_Output12[0]);
-    m_Output12[1] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC2_TO_OUT2,
-                "PC2_OUT2", "PC2_OUT2", "Volume from PC Channel 2 to Output Channel 2");
-    if (m_Output12[1]) addElement(m_Output12[1]);
-    m_Output12[2] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX1_TO_OUT1,
-                "MIX_OUT1", "MIX_OUT1", "Volume from Input Mix Left to Output Channel 1");
-    if (m_Output12[2]) addElement(m_Output12[2]);
-    m_Output12[3] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX2_TO_OUT2,
-                "MIX_OUT2", "MIX_OUT2", "Volume from Input Mix Right to Output Channel 2");
-    if (m_Output12[3]) addElement(m_Output12[3]);
-
-    //  OUT34
-    m_Output34[0] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC1_TO_OUT3,
-                "PC1_OUT3", "PC1_OUT3", "Volume from PC Channel 1 to Output Channel 3");
-    if (m_Output34[0]) addElement(m_Output34[0]);
-    m_Output34[1] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC2_TO_OUT4,
-                "PC2_OUT4", "PC2_OUT4", "Volume from PC Channel 2 to Output Channel 4");
-    if (m_Output34[1]) addElement(m_Output34[1]);
-    m_Output34[2] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC3_TO_OUT3,
-                "PC3_OUT3", "PC3_OUT3", "Volume from PC Channel 3 to Output Channel 3");
-    if (m_Output34[2]) addElement(m_Output34[2]);
-    m_Output34[3] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC4_TO_OUT4,
-                "PC4_OUT4", "PC4_OUT4", "Volume from PC Channel 4 to Output Channel 4");
-    if (m_Output34[3]) addElement(m_Output34[3]);
-    m_Output34[4] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX1_TO_OUT3,
-                "MIX_OUT3", "MIX_OUT3", "Volume from Input Mix Left to Output Channel 3");
-    if (m_Output34[4]) addElement(m_Output34[4]);
-    m_Output34[5] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX2_TO_OUT4,
-                "MIX_OUT4", "MIX_OUT4", "Volume from Input Mix Right to Output Channel 4");
-    if (m_Output34[5]) addElement(m_Output34[5]);
+    // matrix mix controls
+    m_InputMixer=new SaffireProMatrixMixer(*this, SaffireProMatrixMixer::eMMT_InputMix, "InputMix");
+    if (m_InputMixer) addElement(m_InputMixer);
     
-    //  OUT56
-    m_Output56[0] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC1_TO_OUT5,
-                "PC1_OUT5", "PC1_OUT5", "Volume from PC Channel 1 to Output Channel 5");
-    if (m_Output56[0]) addElement(m_Output56[0]);
-    m_Output56[1] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC2_TO_OUT6,
-                "PC2_OUT6", "PC2_OUT6", "Volume from PC Channel 2 to Output Channel 6");
-    if (m_Output56[1]) addElement(m_Output56[1]);
-    m_Output56[2] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC5_TO_OUT5,
-                "PC5_OUT5", "PC5_OUT5", "Volume from PC Channel 5 to Output Channel 5");
-    if (m_Output56[2]) addElement(m_Output56[2]);
-    m_Output56[3] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC6_TO_OUT6,
-                "PC6_OUT6", "PC6_OUT6", "Volume from PC Channel 6 to Output Channel 6");
-    if (m_Output56[3]) addElement(m_Output56[3]);
-    m_Output56[4] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX1_TO_OUT5,
-                "MIX_OUT5", "MIX_OUT5", "Volume from Input Mix Left to Output Channel 5");
-    if (m_Output56[4]) addElement(m_Output56[4]);
-    m_Output56[5] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX2_TO_OUT6,
-                "MIX_OUT6", "MIX_OUT6", "Volume from Input Mix Right to Output Channel 6");
-    if (m_Output56[5]) addElement(m_Output56[5]);
-
-    //  OUT78
-    m_Output78[0] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC1_TO_OUT7,
-                "PC1_OUT7", "PC1_OUT7", "Volume from PC Channel 1 to Output Channel 7");
-    if (m_Output78[0]) addElement(m_Output78[0]);
-    m_Output78[1] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC2_TO_OUT8,
-                "PC2_OUT8", "PC2_OUT8", "Volume from PC Channel 2 to Output Channel 8");
-    if (m_Output78[1]) addElement(m_Output78[1]);
-    m_Output78[2] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC7_TO_OUT7,
-                "PC7_OUT7", "PC7_OUT7", "Volume from PC Channel 7 to Output Channel 7");
-    if (m_Output78[2]) addElement(m_Output78[2]);
-    m_Output78[3] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC8_TO_OUT8,
-                "PC8_OUT8", "PC8_OUT8", "Volume from PC Channel 8 to Output Channel 8");
-    if (m_Output78[3]) addElement(m_Output78[3]);
-    m_Output78[4] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX1_TO_OUT7,
-                "MIX_OUT7", "MIX_OUT7", "Volume from Input Mix Left to Output Channel 7");
-    if (m_Output78[4]) addElement(m_Output78[4]);
-    m_Output78[5] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX2_TO_OUT8,
-                "MIX_OUT8", "MIX_OUT8", "Volume from Input Mix Right to Output Channel 8");
-    if (m_Output78[5]) addElement(m_Output78[5]);
-
-    //  OUT910
-    m_Output910[0] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC1_TO_OUT9,
-                "PC1_OUT9", "PC1_OUT9", "Volume from PC Channel 1 to Output Channel 9");
-    if (m_Output910[0]) addElement(m_Output910[0]);
-    m_Output910[1] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC2_TO_OUT10,
-                "PC2_OUT10", "PC2_OUT10", "Volume from PC Channel 2 to Output Channel 10");
-    if (m_Output910[1]) addElement(m_Output910[1]);
-    m_Output910[2] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC9_TO_OUT9,
-                "PC9_OUT9", "PC9_OUT9", "Volume from PC Channel 9 to Output Channel 9");
-    if (m_Output910[2]) addElement(m_Output910[2]);
-    m_Output910[3] = new VolumeControl(*this, FOCUSRITE_CMD_ID_PC10_TO_OUT10,
-                "PC10_OUT10", "PC10_OUT10", "Volume from PC Channel 10 to Output Channel 10");
-    if (m_Output910[3]) addElement(m_Output910[3]);
-    m_Output910[4] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX1_TO_OUT9,
-                "MIX_OUT9", "MIX_OUT9", "Volume from Input Mix Left to Output Channel 9");
-    if (m_Output910[4]) addElement(m_Output910[4]);
-    m_Output910[5] = new VolumeControl(*this, FOCUSRITE_CMD_ID_MIX2_TO_OUT10,
-                "MIX_OUT10", "MIX_OUT10", "Volume from Input Mix Right to Output Channel 10");
-    if (m_Output910[5]) addElement(m_Output910[5]);
-
+    m_OutputMixer=new SaffireProMatrixMixer(*this, SaffireProMatrixMixer::eMMT_OutputMix, "OutputMix");
+    if (m_OutputMixer) addElement(m_OutputMixer);
 }
 
 SaffireProDevice::~SaffireProDevice()
@@ -182,27 +93,11 @@ SaffireProDevice::~SaffireProDevice()
     deleteElement(m_MidiTru);
     if (m_MidiTru) delete m_MidiTru;
     
-    int i=0;
-    for (i=0;i<4;i++) {
-        deleteElement(m_Output12[i]);
-        if (m_Output12[i]) delete m_Output12[i];
-    }
-    for (i=0;i<6;i++) {
-        deleteElement(m_Output34[i]);
-        if (m_Output34[i]) delete m_Output34[i];
-    }
-    for (i=0;i<6;i++) {
-        deleteElement(m_Output56[i]);
-        if (m_Output56[i]) delete m_Output56[i];
-    }
-    for (i=0;i<6;i++) {
-        deleteElement(m_Output78[i]);
-        if (m_Output78[i]) delete m_Output78[i];
-    }
-    for (i=0;i<6;i++) {
-        deleteElement(m_Output910[i]);
-        if (m_Output910[i]) delete m_Output910[i];
-    }
+    deleteElement(m_InputMixer);
+    if (m_InputMixer) delete m_InputMixer;
+    
+    deleteElement(m_OutputMixer);
+    if (m_OutputMixer) delete m_OutputMixer;
 }
 
 void
@@ -323,6 +218,295 @@ SaffireProDevice::setSamplingFrequency( int s )
     // not executable
     return false;
 
+}
+
+
+// Saffire pro matrix mixer element
+
+SaffireProMatrixMixer::SaffireProMatrixMixer(SaffireProDevice& p, 
+                                             enum eMatrixMixerType type)
+: Control::MatrixMixer("MatrixMixer")
+, m_Parent(p)
+, m_type(type)
+{
+    init(type);
+}
+
+SaffireProMatrixMixer::SaffireProMatrixMixer(SaffireProDevice& p, 
+                                             enum eMatrixMixerType type, std::string n)
+: Control::MatrixMixer(n)
+, m_Parent(p)
+, m_type(type)
+{
+    init(type);
+}
+
+void SaffireProMatrixMixer::addSignalInfo(std::vector<struct sSignalInfo> &target,
+    std::string name, std::string label, std::string descr)
+{
+    struct sSignalInfo s;
+    s.name=name;
+    s.label=label;
+    s.description=descr;
+
+    target.push_back(s);
+}
+
+void SaffireProMatrixMixer::setCellInfo(int row, int col, int addr, bool valid)
+{
+    struct sCellInfo c;
+    c.row=row;
+    c.col=col;
+    c.valid=valid;
+    c.address=addr;
+
+    m_CellInfo[row][col]=c;
+}
+
+void SaffireProMatrixMixer::init(enum eMatrixMixerType type)
+{
+    if (type==eMMT_OutputMix) {
+        addSignalInfo(m_RowInfo, "PC1", "PC 1", "PC Channel 1");
+        addSignalInfo(m_RowInfo, "PC2", "PC 2", "PC Channel 2");
+        addSignalInfo(m_RowInfo, "PC3", "PC 3", "PC Channel 3");
+        addSignalInfo(m_RowInfo, "PC4", "PC 4", "PC Channel 4");
+        addSignalInfo(m_RowInfo, "PC5", "PC 5", "PC Channel 5");
+        addSignalInfo(m_RowInfo, "PC6", "PC 6", "PC Channel 6");
+        addSignalInfo(m_RowInfo, "PC7", "PC 7", "PC Channel 7");
+        addSignalInfo(m_RowInfo, "PC8", "PC 8", "PC Channel 8");
+        addSignalInfo(m_RowInfo, "PC9", "PC 9", "PC Channel 9");
+        addSignalInfo(m_RowInfo, "PC10", "PC 10", "PC Channel 10");
+        addSignalInfo(m_RowInfo, "IMIXL", "IMix L", "Input Mix Left");
+        addSignalInfo(m_RowInfo, "IMIXR", "IMix R", "Input Mix Right");
+        
+        addSignalInfo(m_ColInfo, "OUT1", "OUT 1", "Output Channel 1");
+        addSignalInfo(m_ColInfo, "OUT2", "OUT 2", "Output Channel 2");
+        addSignalInfo(m_ColInfo, "OUT3", "OUT 3", "Output Channel 3");
+        addSignalInfo(m_ColInfo, "OUT4", "OUT 4", "Output Channel 4");
+        addSignalInfo(m_ColInfo, "OUT5", "OUT 5", "Output Channel 5");
+        addSignalInfo(m_ColInfo, "OUT6", "OUT 6", "Output Channel 6");
+        addSignalInfo(m_ColInfo, "OUT7", "OUT 7", "Output Channel 7");
+        addSignalInfo(m_ColInfo, "OUT8", "OUT 8", "Output Channel 8");
+        addSignalInfo(m_ColInfo, "OUT9", "OUT 9", "Output Channel 9");
+        addSignalInfo(m_ColInfo, "OUT10", "OUT 10", "Output Channel 10");
+        
+        // init the cell matrix
+        #define FOCUSRITE_SAFFIRE_PRO_OUTMIX_NB_COLS 10
+        #define FOCUSRITE_SAFFIRE_PRO_OUTMIX_NB_ROWS 12
+        
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_PRO_OUTMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_PRO_OUTMIX_NB_ROWS, tmp_cols);
+        m_CellInfo = tmp_all;
+    
+        struct sCellInfo c;
+        c.row=-1;
+        c.col=-1;
+        c.valid=false;
+        c.address=0;
+        
+        for (int i=0;i<FOCUSRITE_SAFFIRE_PRO_OUTMIX_NB_ROWS;i++) {
+            for (int j=0;j<FOCUSRITE_SAFFIRE_PRO_OUTMIX_NB_COLS;j++) {
+                m_CellInfo[i][j]=c;
+            }
+        }
+    
+        // now set the cells that are valid
+        setCellInfo(0,0,FOCUSRITE_CMD_ID_PC1_TO_OUT1, true);
+        setCellInfo(1,1,FOCUSRITE_CMD_ID_PC2_TO_OUT2, true);
+        setCellInfo(10,0,FOCUSRITE_CMD_ID_MIX1_TO_OUT1, true);
+        setCellInfo(11,1,FOCUSRITE_CMD_ID_MIX2_TO_OUT2, true);
+        setCellInfo(0,2,FOCUSRITE_CMD_ID_PC1_TO_OUT3, true);
+        setCellInfo(1,3,FOCUSRITE_CMD_ID_PC2_TO_OUT4, true);
+        setCellInfo(2,2,FOCUSRITE_CMD_ID_PC3_TO_OUT3, true);
+        setCellInfo(3,3,FOCUSRITE_CMD_ID_PC4_TO_OUT4, true);
+        setCellInfo(10,2,FOCUSRITE_CMD_ID_MIX1_TO_OUT3, true);
+        setCellInfo(11,3,FOCUSRITE_CMD_ID_MIX2_TO_OUT4, true);
+        setCellInfo(0,4,FOCUSRITE_CMD_ID_PC1_TO_OUT5, true);
+        setCellInfo(1,5,FOCUSRITE_CMD_ID_PC2_TO_OUT6, true);
+        setCellInfo(4,4,FOCUSRITE_CMD_ID_PC5_TO_OUT5, true);
+        setCellInfo(5,5,FOCUSRITE_CMD_ID_PC6_TO_OUT6, true);
+        setCellInfo(10,4,FOCUSRITE_CMD_ID_MIX1_TO_OUT5, true);
+        setCellInfo(11,5,FOCUSRITE_CMD_ID_MIX2_TO_OUT6, true);
+        setCellInfo(0,6,FOCUSRITE_CMD_ID_PC1_TO_OUT7, true);
+        setCellInfo(1,7,FOCUSRITE_CMD_ID_PC2_TO_OUT8, true);
+        setCellInfo(6,6,FOCUSRITE_CMD_ID_PC7_TO_OUT7, true);
+        setCellInfo(7,7,FOCUSRITE_CMD_ID_PC8_TO_OUT8, true);
+        setCellInfo(10,6,FOCUSRITE_CMD_ID_MIX1_TO_OUT7, true);
+        setCellInfo(11,7,FOCUSRITE_CMD_ID_MIX2_TO_OUT8, true);
+        setCellInfo(0,8,FOCUSRITE_CMD_ID_PC1_TO_OUT9, true);
+        setCellInfo(1,9,FOCUSRITE_CMD_ID_PC2_TO_OUT10, true);
+        setCellInfo(8,8,FOCUSRITE_CMD_ID_PC9_TO_OUT9, true);
+        setCellInfo(9,9,FOCUSRITE_CMD_ID_PC10_TO_OUT10, true);
+        setCellInfo(10,8,FOCUSRITE_CMD_ID_MIX1_TO_OUT9, true);
+        setCellInfo(11,9,FOCUSRITE_CMD_ID_MIX2_TO_OUT10, true);
+
+    } else if (type==eMMT_InputMix) {
+        addSignalInfo(m_RowInfo, "AN1", "Analog 1", "Analog Input 1");
+        addSignalInfo(m_RowInfo, "AN2", "Analog 2", "Analog Input 2");
+        addSignalInfo(m_RowInfo, "AN3", "Analog 3", "Analog Input 3");
+        addSignalInfo(m_RowInfo, "AN4", "Analog 4", "Analog Input 4");
+        addSignalInfo(m_RowInfo, "AN5", "Analog 5", "Analog Input 5");
+        addSignalInfo(m_RowInfo, "AN6", "Analog 6", "Analog Input 6");
+        addSignalInfo(m_RowInfo, "AN7", "Analog 7", "Analog Input 7");
+        addSignalInfo(m_RowInfo, "AN8", "Analog 8", "Analog Input 8");
+        addSignalInfo(m_RowInfo, "SPDIFL", "SPDIF L", "SPDIF Left Input");
+        addSignalInfo(m_RowInfo, "SPDIFR", "SPDIF R", "SPDIF Right Input");
+        
+        addSignalInfo(m_RowInfo, "ADAT11", "ADAT1 1", "ADAT1 Channel 1");
+        addSignalInfo(m_RowInfo, "ADAT12", "ADAT1 2", "ADAT1 Channel 2");
+        addSignalInfo(m_RowInfo, "ADAT13", "ADAT1 3", "ADAT1 Channel 3");
+        addSignalInfo(m_RowInfo, "ADAT14", "ADAT1 4", "ADAT1 Channel 4");
+        addSignalInfo(m_RowInfo, "ADAT15", "ADAT1 5", "ADAT1 Channel 5");
+        addSignalInfo(m_RowInfo, "ADAT16", "ADAT1 6", "ADAT1 Channel 6");
+        addSignalInfo(m_RowInfo, "ADAT17", "ADAT1 7", "ADAT1 Channel 7");
+        addSignalInfo(m_RowInfo, "ADAT18", "ADAT1 8", "ADAT1 Channel 8");
+        
+        addSignalInfo(m_RowInfo, "ADAT21", "ADAT2 1", "ADAT2 Channel 1");
+        addSignalInfo(m_RowInfo, "ADAT22", "ADAT2 2", "ADAT2 Channel 2");
+        addSignalInfo(m_RowInfo, "ADAT23", "ADAT2 3", "ADAT2 Channel 3");
+        addSignalInfo(m_RowInfo, "ADAT24", "ADAT2 4", "ADAT2 Channel 4");
+        addSignalInfo(m_RowInfo, "ADAT25", "ADAT2 5", "ADAT2 Channel 5");
+        addSignalInfo(m_RowInfo, "ADAT26", "ADAT2 6", "ADAT2 Channel 6");
+        addSignalInfo(m_RowInfo, "ADAT27", "ADAT2 7", "ADAT2 Channel 7");
+        addSignalInfo(m_RowInfo, "ADAT28", "ADAT2 8", "ADAT2 Channel 8");
+        
+        addSignalInfo(m_ColInfo, "IMIXL", "IMix L", "Input Mix Left");
+        addSignalInfo(m_ColInfo, "IMIXR", "IMix R", "Input Mix Right");
+        
+        // init the cell matrix
+        #define FOCUSRITE_SAFFIRE_PRO_INMIX_NB_COLS 2
+        #define FOCUSRITE_SAFFIRE_PRO_INMIX_NB_ROWS 26
+        
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_PRO_INMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_PRO_INMIX_NB_ROWS,tmp_cols);
+        m_CellInfo = tmp_all;
+    
+        struct sCellInfo c;
+        c.row=-1;
+        c.col=-1;
+        c.valid=false;
+        c.address=0;
+        
+        for (int i=0;i<FOCUSRITE_SAFFIRE_PRO_INMIX_NB_ROWS;i++) {
+            for (int j=0;j<FOCUSRITE_SAFFIRE_PRO_INMIX_NB_COLS;j++) {
+                m_CellInfo[i][j]=c;
+            }
+        }
+    
+        // now set the cells that are valid
+        setCellInfo(0,0,FOCUSRITE_CMD_ID_AN1_TO_IMIXL, true);
+        setCellInfo(0,1,FOCUSRITE_CMD_ID_AN1_TO_IMIXR, true);
+        setCellInfo(1,0,FOCUSRITE_CMD_ID_AN2_TO_IMIXL, true);
+        setCellInfo(1,1,FOCUSRITE_CMD_ID_AN2_TO_IMIXR, true);
+        setCellInfo(2,0,FOCUSRITE_CMD_ID_AN3_TO_IMIXL, true);
+        setCellInfo(2,1,FOCUSRITE_CMD_ID_AN3_TO_IMIXR, true);
+        setCellInfo(3,0,FOCUSRITE_CMD_ID_AN4_TO_IMIXL, true);
+        setCellInfo(3,1,FOCUSRITE_CMD_ID_AN4_TO_IMIXR, true);
+        setCellInfo(4,0,FOCUSRITE_CMD_ID_AN5_TO_IMIXL, true);
+        setCellInfo(4,1,FOCUSRITE_CMD_ID_AN5_TO_IMIXR, true);
+        setCellInfo(5,0,FOCUSRITE_CMD_ID_AN6_TO_IMIXL, true);
+        setCellInfo(5,1,FOCUSRITE_CMD_ID_AN6_TO_IMIXR, true);
+        setCellInfo(6,0,FOCUSRITE_CMD_ID_AN7_TO_IMIXL, true);
+        setCellInfo(6,1,FOCUSRITE_CMD_ID_AN7_TO_IMIXR, true);
+        setCellInfo(7,0,FOCUSRITE_CMD_ID_AN8_TO_IMIXL, true);
+        setCellInfo(7,1,FOCUSRITE_CMD_ID_AN8_TO_IMIXR, true);
+        setCellInfo(8,0,FOCUSRITE_CMD_ID_SPDIFL_TO_IMIXL, true);
+        setCellInfo(8,1,FOCUSRITE_CMD_ID_SPDIFL_TO_IMIXR, true);
+        setCellInfo(9,0,FOCUSRITE_CMD_ID_SPDIFR_TO_IMIXL, true);
+        setCellInfo(9,1,FOCUSRITE_CMD_ID_SPDIFR_TO_IMIXR, true);
+
+        setCellInfo(10,0,FOCUSRITE_CMD_ID_ADAT11_TO_IMIXL, true);
+        setCellInfo(10,1,FOCUSRITE_CMD_ID_ADAT11_TO_IMIXR, true);
+        setCellInfo(11,0,FOCUSRITE_CMD_ID_ADAT12_TO_IMIXL, true);
+        setCellInfo(11,1,FOCUSRITE_CMD_ID_ADAT12_TO_IMIXR, true);
+        setCellInfo(12,0,FOCUSRITE_CMD_ID_ADAT13_TO_IMIXL, true);
+        setCellInfo(12,1,FOCUSRITE_CMD_ID_ADAT13_TO_IMIXR, true);
+        setCellInfo(13,0,FOCUSRITE_CMD_ID_ADAT14_TO_IMIXL, true);
+        setCellInfo(13,1,FOCUSRITE_CMD_ID_ADAT14_TO_IMIXR, true);
+        setCellInfo(14,0,FOCUSRITE_CMD_ID_ADAT15_TO_IMIXL, true);
+        setCellInfo(14,1,FOCUSRITE_CMD_ID_ADAT15_TO_IMIXR, true);
+        setCellInfo(15,0,FOCUSRITE_CMD_ID_ADAT16_TO_IMIXL, true);
+        setCellInfo(15,1,FOCUSRITE_CMD_ID_ADAT16_TO_IMIXR, true);
+        setCellInfo(16,0,FOCUSRITE_CMD_ID_ADAT17_TO_IMIXL, true);
+        setCellInfo(16,1,FOCUSRITE_CMD_ID_ADAT17_TO_IMIXR, true);
+        setCellInfo(17,0,FOCUSRITE_CMD_ID_ADAT18_TO_IMIXL, true);
+        setCellInfo(17,1,FOCUSRITE_CMD_ID_ADAT18_TO_IMIXR, true);
+
+        setCellInfo(18,0,FOCUSRITE_CMD_ID_ADAT21_TO_IMIXL, true);
+        setCellInfo(18,1,FOCUSRITE_CMD_ID_ADAT21_TO_IMIXR, true);
+        setCellInfo(19,0,FOCUSRITE_CMD_ID_ADAT22_TO_IMIXL, true);
+        setCellInfo(19,1,FOCUSRITE_CMD_ID_ADAT22_TO_IMIXR, true);
+        setCellInfo(20,0,FOCUSRITE_CMD_ID_ADAT23_TO_IMIXL, true);
+        setCellInfo(20,1,FOCUSRITE_CMD_ID_ADAT23_TO_IMIXR, true);
+        setCellInfo(21,0,FOCUSRITE_CMD_ID_ADAT24_TO_IMIXL, true);
+        setCellInfo(21,1,FOCUSRITE_CMD_ID_ADAT24_TO_IMIXR, true);
+        setCellInfo(22,0,FOCUSRITE_CMD_ID_ADAT25_TO_IMIXL, true);
+        setCellInfo(22,1,FOCUSRITE_CMD_ID_ADAT25_TO_IMIXR, true);
+        setCellInfo(23,0,FOCUSRITE_CMD_ID_ADAT26_TO_IMIXL, true);
+        setCellInfo(23,1,FOCUSRITE_CMD_ID_ADAT26_TO_IMIXR, true);
+        setCellInfo(24,0,FOCUSRITE_CMD_ID_ADAT27_TO_IMIXL, true);
+        setCellInfo(24,1,FOCUSRITE_CMD_ID_ADAT27_TO_IMIXR, true);
+        setCellInfo(25,0,FOCUSRITE_CMD_ID_ADAT28_TO_IMIXL, true);
+        setCellInfo(25,1,FOCUSRITE_CMD_ID_ADAT28_TO_IMIXR, true);
+
+    } else {
+        debugError("Invalid mixer type\n");
+    }
+}
+
+void SaffireProMatrixMixer::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Saffire Pro Matrix mixer type %d\n");
+}
+
+std::string SaffireProMatrixMixer::getRowName( const int row )
+{
+    return m_RowInfo.at(row).name;
+}
+
+std::string SaffireProMatrixMixer::getColName( const int col )
+{
+    return m_ColInfo.at(col).name;
+}
+
+int SaffireProMatrixMixer::canWrite( const int row, const int col )
+{
+    return m_CellInfo.at(row).at(col).valid;
+}
+
+double SaffireProMatrixMixer::setValue( const int row, const int col, const double val )
+{
+    uint32_t v=val;
+    struct sCellInfo c=m_CellInfo.at(row).at(col);
+    
+    if (v>0x07FFF) v=0x07FFF;
+    else if (v<0) v=0;
+
+    if ( !m_Parent.setSpecificValue(c.address, v) ) {
+        debugError( "setSpecificValue failed\n" );
+        return false;
+    } else return true;
+}
+
+double SaffireProMatrixMixer::getValue( const int row, const int col )
+{
+    struct sCellInfo c=m_CellInfo.at(row).at(col);
+    uint32_t val=0;
+
+    if ( !m_Parent.getSpecificValue(c.address, &val) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    } else return val;
+}
+
+int SaffireProMatrixMixer::getRowCount( )
+{
+    return m_RowInfo.size();
+}
+
+int SaffireProMatrixMixer::getColCount( )
+{
+    return m_ColInfo.size();
 }
 
 } // Focusrite
