@@ -32,6 +32,7 @@
 #include "controlserver-glue.h"
 
 #include "libcontrol/BasicElements.h"
+#include "libieee1394/configrom.h"
 
 namespace DBusControl {
 
@@ -72,6 +73,10 @@ public:
     virtual ~Container();
     
     Element *createHandler(Control::Element& e);
+
+    DBus::Int32 getNbElements( );
+    DBus::String getElementName( const DBus::Int32& );
+
 private:
     Control::Container &m_Slave;
     ElementVector m_Children;
@@ -107,6 +112,27 @@ public:
 
 private:
     Control::Discrete &m_Slave;
+};
+
+// FIXME: to change this to a normal ConfigRom class name we have to
+// put the 1394 config rom class into a separate namespace.
+class ConfigRomX
+: public org::ffado::Control::Element::ConfigRomX
+, public Element
+{
+public:
+    ConfigRomX( DBus::Connection& connection,
+                  std::string p,
+                  ConfigRom &slave );
+
+    DBus::String getGUID( );
+    DBus::String getVendorName( );
+    DBus::String getModelName( );
+    DBus::Int32 getVendorId( );
+    DBus::Int32 getModelId( );
+
+private:
+    ConfigRom &m_Slave;
 };
 
 

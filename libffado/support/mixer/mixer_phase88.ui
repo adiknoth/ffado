@@ -1,8 +1,8 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
 <class>Phase88Control</class>
 <comment>Python:
-Python:# Import the OSC module
-Python:import osc
+Python:# Import the DBUS module
+Python:import dbus
 </comment>
 <widget class="QDialog">
     <property name="name">
@@ -706,6 +706,10 @@ Python:import osc
     <slot>setVolumeSPDIF( int )</slot>
     <slot>setVolumeWavePlay( int )</slot>
     <slot>setVolumeMaster( int )</slot>
+    <slot>setVolume( QString, int )</slot>
+    <slot>init()</slot>
+    <slot>initValues()</slot>
+    <slot>setSelector(QString, int)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

@@ -218,16 +218,17 @@ MixerFBFeature::setValue(double v)
     fbCmd.m_pFBFeature->m_audioChannelNumber=0; // m_channel
     fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
     fbCmd.m_pFBFeature->m_pVolume->m_volume=volume;
+    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
 
     if ( !fbCmd.fire() ) {
         debugError( "cmd failed\n" );
         return false;
     }
 
-    if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        Util::CoutSerializer se;
-        fbCmd.serialize( se );
-    }
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
     
     if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
@@ -252,22 +253,23 @@ MixerFBFeature::getValue()
     fbCmd.m_pFBFeature->m_audioChannelNumber=0;
     fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume; // FIXME
     fbCmd.m_pFBFeature->m_pVolume->m_volume=0;
+    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
 
     if ( !fbCmd.fire() ) {
         debugError( "cmd failed\n" );
         return 0;
     }
     
-    if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        Util::CoutSerializer se;
-        fbCmd.serialize( se );
-    }
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
 
     if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
     }
     
-    int volume=(int)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
+    int16_t volume=(int16_t)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
     
     return volume;
 }
@@ -307,17 +309,18 @@ MixerFBSelector::setValue(int v)
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Control );
     fbCmd.m_pFBSelector->m_inputFbPlugNumber=(v & 0xFF);
+    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
 
     if ( !fbCmd.fire() ) {
         debugError( "cmd failed\n" );
         return false;
     }
 
-    if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        Util::CoutSerializer se;
-        fbCmd.serialize( se );
-    }
-    
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
+//     
     if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
     }
@@ -339,16 +342,17 @@ MixerFBSelector::getValue()
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
     fbCmd.m_pFBSelector->m_inputFbPlugNumber=0;
+    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
 
     if ( !fbCmd.fire() ) {
         debugError( "cmd failed\n" );
         return 0;
     }
     
-    if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-        Util::CoutSerializer se;
-        fbCmd.serialize( se );
-    }
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
 
     if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");

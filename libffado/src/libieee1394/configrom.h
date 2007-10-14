@@ -32,14 +32,14 @@
 #include "libutil/serialize.h"
 #include "debugmodule/debugmodule.h"
 
-#include "libosc/OscNode.h"
+#include "libcontrol/Element.h"
 
 #include <string>
 
 class Ieee1394Service;
 
 class ConfigRom
-    : public OSC::OscNode
+    : public Control::Element
 {
  public:
     ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId );
@@ -56,6 +56,7 @@ class ConfigRom
     const Glib::ustring getVendorName() const;
 
     const unsigned int getModelId() const;
+    // FIXME: isn't this the same as getNodeVendorId?
     const unsigned int getVendorId() const;
     const unsigned int getUnitSpecifierId() const;
     const unsigned int getUnitVersion() const;
@@ -134,9 +135,6 @@ class ConfigRom
     struct csr1212_keyval* m_vendorNameKv;
     struct csr1212_keyval* m_modelNameKv;
     struct csr1212_csr*    m_csr;
-
-protected: // OSC handling
-    OSC::OscResponse processOscMessage(OSC::OscMessage *m);
 
 private:
     ConfigRom( const ConfigRom& ); // do not allow copy ctor
