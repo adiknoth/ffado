@@ -1,12 +1,10 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>Phase88Control</class>
-<comment>Python:
-Python:# Import the DBUS module
-Python:import dbus
+<class>Phase88ControlUI</class>
+<comment>
 </comment>
 <widget class="QDialog">
     <property name="name">
-        <cstring>Phase88Control</cstring>
+        <cstring>Phase88ControlUI</cstring>
     </property>
     <property name="geometry">
         <rect>
@@ -620,73 +618,73 @@ Python:import dbus
     <connection>
         <sender>comboOutAssign</sender>
         <signal>activated(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>switchOutAssign(int)</slot>
     </connection>
     <connection>
         <sender>comboFrontBack</sender>
         <signal>activated(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>switchFrontState(int)</slot>
     </connection>
     <connection>
         <sender>comboInAssign</sender>
         <signal>activated(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>switchWaveInAssign(int)</slot>
     </connection>
     <connection>
         <sender>comboSyncSource</sender>
         <signal>activated(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>switchSyncSource(int)</slot>
     </connection>
     <connection>
         <sender>comboExtSync</sender>
         <signal>activated(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>switchExtSyncSource(int)</slot>
     </connection>
     <connection>
         <sender>sldInput12</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolume12(int)</slot>
     </connection>
     <connection>
         <sender>sldInput34</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolume34(int)</slot>
     </connection>
     <connection>
         <sender>sldInput56</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolume56(int)</slot>
     </connection>
     <connection>
         <sender>sldInput78</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolume78(int)</slot>
     </connection>
     <connection>
         <sender>sldInputMaster</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolumeMaster(int)</slot>
     </connection>
     <connection>
         <sender>sldInputSPDIF</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolumeSPDIF(int)</slot>
     </connection>
     <connection>
         <sender>sldInputWavePlay</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>Phase88Control</receiver>
+        <receiver>Phase88ControlUI</receiver>
         <slot>setVolumeWavePlay(int)</slot>
     </connection>
 </connections>
