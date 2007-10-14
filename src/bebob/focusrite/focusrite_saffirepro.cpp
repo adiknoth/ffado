@@ -21,7 +21,7 @@
  * MA 02110-1301 USA
  */
 
-#include "focusrite_device.h"
+#include "focusrite_saffirepro.h"
 #include "focusrite_cmd.h"
 
 namespace BeBoB {
