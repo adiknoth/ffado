@@ -2,11 +2,15 @@
 #
 
 from qt import *
-from mixer_phase88ui import *
+from mixer_phase88 import *
+from mixer_phase24 import *
 import sys
+import dbus
 
 SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
+    [(0x000aac, 0x00000004),'PhaseX24Control'],
+    [(0x000aac, 0x00000007),'PhaseX24Control'],
     ]
 
 class ControlInterface:
@@ -81,6 +85,7 @@ if __name__ == "__main__":
     devmgr=DeviceManagerInterface(server, basepath)
     nbDevices=devmgr.getNbDevices()
     
+    forms=[];
     for idx in range(nbDevices):
         path=devmgr.getDeviceName(idx)
         print "Found device %d: %s" % (idx, path)
@@ -96,10 +101,12 @@ if __name__ == "__main__":
         for dev in SupportedDevices:
             if dev[0]==thisdev:
                 print dev[1]
-                exec('f='+dev[1]+'()')
-                f.hw=ControlInterface(server, basepath+'/DeviceManager/'+path)
-                f.initValues()
-                f.show()
-    
-    app.setMainWidget(f)
+                exec('forms.append('+dev[1]+'())')
+                forms[idx].hw=ControlInterface(server, basepath+'/DeviceManager/'+path)
+                forms[idx].initValues()
+                forms[idx].show()
+                app.setMainWidget(forms[idx])
+
+    QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
+
     app.exec_loop()
