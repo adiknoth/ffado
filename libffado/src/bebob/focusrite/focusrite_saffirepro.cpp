@@ -40,27 +40,27 @@ SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
     }
 
     // create control objects for the saffire pro
-    m_Phantom1 = new BinaryControl(*this, FOCUSRITE_CMD_ID_PHANTOM14,
+    m_Phantom1 = new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM14,
                  "Phantom_1to4", "Phantom 1-4", "Switch Phantom Power on channels 1-4");
     if (m_Phantom1) addElement(m_Phantom1);
     
-    m_Phantom2 = new BinaryControl(*this, FOCUSRITE_CMD_ID_PHANTOM58,
+    m_Phantom2 = new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM58,
                  "Phantom_5to8", "Phantom 5-8", "Switch Phantom Power on channels 5-8");
     if (m_Phantom2) addElement(m_Phantom2);
     
-    m_Insert1 = new BinaryControl(*this, FOCUSRITE_CMD_ID_INSERT1,
+    m_Insert1 = new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT1,
                 "Insert1", "Insert 1", "Switch Insert on Channel 1");
     if (m_Insert1) addElement(m_Insert1);
     
-    m_Insert2 = new BinaryControl(*this, FOCUSRITE_CMD_ID_INSERT2,
+    m_Insert2 = new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT2,
                 "Insert2", "Insert 2", "Switch Insert on Channel 2");
     if (m_Insert2) addElement(m_Insert2);
     
-    m_AC3pass = new BinaryControl(*this, FOCUSRITE_CMD_ID_AC3_PASSTHROUGH,
+    m_AC3pass = new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_AC3_PASSTHROUGH,
                 "AC3pass", "AC3 Passtrough", "Enable AC3 Passthrough");
     if (m_AC3pass) addElement(m_AC3pass);
     
-    m_MidiTru = new BinaryControl(*this, FOCUSRITE_CMD_ID_MIDI_TRU,
+    m_MidiTru = new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_MIDI_TRU,
                 "MidiTru", "Midi Tru", "Enable Midi Tru");
     if (m_MidiTru) addElement(m_MidiTru);
 
@@ -114,6 +114,12 @@ SaffireProDevice::setVerboseLevel(int l)
 
     if (m_Phantom1) m_Phantom2->setVerboseLevel(l);
     if (m_Phantom2) m_Phantom2->setVerboseLevel(l);
+    if (m_Insert1) m_Insert1->setVerboseLevel(l);
+    if (m_Insert2) m_Insert2->setVerboseLevel(l);
+    if (m_MidiTru) m_MidiTru->setVerboseLevel(l);
+    if (m_AC3pass) m_AC3pass->setVerboseLevel(l);
+    if (m_InputMixer) m_InputMixer->setVerboseLevel(l);
+    if (m_OutputMixer) m_OutputMixer->setVerboseLevel(l);
 
     // FIXME: add the other elements here too
 
@@ -123,7 +129,7 @@ SaffireProDevice::setVerboseLevel(int l)
 int
 SaffireProDevice::getSamplingFrequency( ) {
     uint32_t sr;
-    if ( !getSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, &sr ) ) {
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE, &sr ) ) {
         debugError( "getSpecificValue failed\n" );
         return 0;
     }
@@ -138,7 +144,7 @@ bool
 SaffireProDevice::setSamplingFrequencyDo( int s )
 {
     uint32_t value=convertSrToDef(s);
-    if ( !setSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE, value) ) {
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE, value) ) {
         debugError( "setSpecificValue failed\n" );
         return false;
     }
@@ -149,7 +155,7 @@ SaffireProDevice::setSamplingFrequencyDo( int s )
 int
 SaffireProDevice::getSamplingFrequencyMirror( ) {
     uint32_t sr;
-    if ( !getSpecificValue(FOCUSRITE_CMD_ID_SAMPLERATE_MIRROR, &sr ) ) {
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE_MIRROR, &sr ) ) {
         debugError( "getSpecificValue failed\n" );
         return 0;
     }
@@ -311,34 +317,34 @@ void SaffireProMatrixMixer::init(enum eMatrixMixerType type)
         }
     
         // now set the cells that are valid
-        setCellInfo(0,0,FOCUSRITE_CMD_ID_PC1_TO_OUT1, true);
-        setCellInfo(1,1,FOCUSRITE_CMD_ID_PC2_TO_OUT2, true);
-        setCellInfo(10,0,FOCUSRITE_CMD_ID_MIX1_TO_OUT1, true);
-        setCellInfo(11,1,FOCUSRITE_CMD_ID_MIX2_TO_OUT2, true);
-        setCellInfo(0,2,FOCUSRITE_CMD_ID_PC1_TO_OUT3, true);
-        setCellInfo(1,3,FOCUSRITE_CMD_ID_PC2_TO_OUT4, true);
-        setCellInfo(2,2,FOCUSRITE_CMD_ID_PC3_TO_OUT3, true);
-        setCellInfo(3,3,FOCUSRITE_CMD_ID_PC4_TO_OUT4, true);
-        setCellInfo(10,2,FOCUSRITE_CMD_ID_MIX1_TO_OUT3, true);
-        setCellInfo(11,3,FOCUSRITE_CMD_ID_MIX2_TO_OUT4, true);
-        setCellInfo(0,4,FOCUSRITE_CMD_ID_PC1_TO_OUT5, true);
-        setCellInfo(1,5,FOCUSRITE_CMD_ID_PC2_TO_OUT6, true);
-        setCellInfo(4,4,FOCUSRITE_CMD_ID_PC5_TO_OUT5, true);
-        setCellInfo(5,5,FOCUSRITE_CMD_ID_PC6_TO_OUT6, true);
-        setCellInfo(10,4,FOCUSRITE_CMD_ID_MIX1_TO_OUT5, true);
-        setCellInfo(11,5,FOCUSRITE_CMD_ID_MIX2_TO_OUT6, true);
-        setCellInfo(0,6,FOCUSRITE_CMD_ID_PC1_TO_OUT7, true);
-        setCellInfo(1,7,FOCUSRITE_CMD_ID_PC2_TO_OUT8, true);
-        setCellInfo(6,6,FOCUSRITE_CMD_ID_PC7_TO_OUT7, true);
-        setCellInfo(7,7,FOCUSRITE_CMD_ID_PC8_TO_OUT8, true);
-        setCellInfo(10,6,FOCUSRITE_CMD_ID_MIX1_TO_OUT7, true);
-        setCellInfo(11,7,FOCUSRITE_CMD_ID_MIX2_TO_OUT8, true);
-        setCellInfo(0,8,FOCUSRITE_CMD_ID_PC1_TO_OUT9, true);
-        setCellInfo(1,9,FOCUSRITE_CMD_ID_PC2_TO_OUT10, true);
-        setCellInfo(8,8,FOCUSRITE_CMD_ID_PC9_TO_OUT9, true);
-        setCellInfo(9,9,FOCUSRITE_CMD_ID_PC10_TO_OUT10, true);
-        setCellInfo(10,8,FOCUSRITE_CMD_ID_MIX1_TO_OUT9, true);
-        setCellInfo(11,9,FOCUSRITE_CMD_ID_MIX2_TO_OUT10, true);
+        setCellInfo(0,0,FR_SAFFIREPRO_CMD_ID_PC1_TO_OUT1, true);
+        setCellInfo(1,1,FR_SAFFIREPRO_CMD_ID_PC2_TO_OUT2, true);
+        setCellInfo(10,0,FR_SAFFIREPRO_CMD_ID_MIX1_TO_OUT1, true);
+        setCellInfo(11,1,FR_SAFFIREPRO_CMD_ID_MIX2_TO_OUT2, true);
+        setCellInfo(0,2,FR_SAFFIREPRO_CMD_ID_PC1_TO_OUT3, true);
+        setCellInfo(1,3,FR_SAFFIREPRO_CMD_ID_PC2_TO_OUT4, true);
+        setCellInfo(2,2,FR_SAFFIREPRO_CMD_ID_PC3_TO_OUT3, true);
+        setCellInfo(3,3,FR_SAFFIREPRO_CMD_ID_PC4_TO_OUT4, true);
+        setCellInfo(10,2,FR_SAFFIREPRO_CMD_ID_MIX1_TO_OUT3, true);
+        setCellInfo(11,3,FR_SAFFIREPRO_CMD_ID_MIX2_TO_OUT4, true);
+        setCellInfo(0,4,FR_SAFFIREPRO_CMD_ID_PC1_TO_OUT5, true);
+        setCellInfo(1,5,FR_SAFFIREPRO_CMD_ID_PC2_TO_OUT6, true);
+        setCellInfo(4,4,FR_SAFFIREPRO_CMD_ID_PC5_TO_OUT5, true);
+        setCellInfo(5,5,FR_SAFFIREPRO_CMD_ID_PC6_TO_OUT6, true);
+        setCellInfo(10,4,FR_SAFFIREPRO_CMD_ID_MIX1_TO_OUT5, true);
+        setCellInfo(11,5,FR_SAFFIREPRO_CMD_ID_MIX2_TO_OUT6, true);
+        setCellInfo(0,6,FR_SAFFIREPRO_CMD_ID_PC1_TO_OUT7, true);
+        setCellInfo(1,7,FR_SAFFIREPRO_CMD_ID_PC2_TO_OUT8, true);
+        setCellInfo(6,6,FR_SAFFIREPRO_CMD_ID_PC7_TO_OUT7, true);
+        setCellInfo(7,7,FR_SAFFIREPRO_CMD_ID_PC8_TO_OUT8, true);
+        setCellInfo(10,6,FR_SAFFIREPRO_CMD_ID_MIX1_TO_OUT7, true);
+        setCellInfo(11,7,FR_SAFFIREPRO_CMD_ID_MIX2_TO_OUT8, true);
+        setCellInfo(0,8,FR_SAFFIREPRO_CMD_ID_PC1_TO_OUT9, true);
+        setCellInfo(1,9,FR_SAFFIREPRO_CMD_ID_PC2_TO_OUT10, true);
+        setCellInfo(8,8,FR_SAFFIREPRO_CMD_ID_PC9_TO_OUT9, true);
+        setCellInfo(9,9,FR_SAFFIREPRO_CMD_ID_PC10_TO_OUT10, true);
+        setCellInfo(10,8,FR_SAFFIREPRO_CMD_ID_MIX1_TO_OUT9, true);
+        setCellInfo(11,9,FR_SAFFIREPRO_CMD_ID_MIX2_TO_OUT10, true);
 
     } else if (type==eMMT_InputMix) {
         addSignalInfo(m_RowInfo, "AN1", "Analog 1", "Analog Input 1");
@@ -394,60 +400,60 @@ void SaffireProMatrixMixer::init(enum eMatrixMixerType type)
         }
     
         // now set the cells that are valid
-        setCellInfo(0,0,FOCUSRITE_CMD_ID_AN1_TO_IMIXL, true);
-        setCellInfo(0,1,FOCUSRITE_CMD_ID_AN1_TO_IMIXR, true);
-        setCellInfo(1,0,FOCUSRITE_CMD_ID_AN2_TO_IMIXL, true);
-        setCellInfo(1,1,FOCUSRITE_CMD_ID_AN2_TO_IMIXR, true);
-        setCellInfo(2,0,FOCUSRITE_CMD_ID_AN3_TO_IMIXL, true);
-        setCellInfo(2,1,FOCUSRITE_CMD_ID_AN3_TO_IMIXR, true);
-        setCellInfo(3,0,FOCUSRITE_CMD_ID_AN4_TO_IMIXL, true);
-        setCellInfo(3,1,FOCUSRITE_CMD_ID_AN4_TO_IMIXR, true);
-        setCellInfo(4,0,FOCUSRITE_CMD_ID_AN5_TO_IMIXL, true);
-        setCellInfo(4,1,FOCUSRITE_CMD_ID_AN5_TO_IMIXR, true);
-        setCellInfo(5,0,FOCUSRITE_CMD_ID_AN6_TO_IMIXL, true);
-        setCellInfo(5,1,FOCUSRITE_CMD_ID_AN6_TO_IMIXR, true);
-        setCellInfo(6,0,FOCUSRITE_CMD_ID_AN7_TO_IMIXL, true);
-        setCellInfo(6,1,FOCUSRITE_CMD_ID_AN7_TO_IMIXR, true);
-        setCellInfo(7,0,FOCUSRITE_CMD_ID_AN8_TO_IMIXL, true);
-        setCellInfo(7,1,FOCUSRITE_CMD_ID_AN8_TO_IMIXR, true);
-        setCellInfo(8,0,FOCUSRITE_CMD_ID_SPDIFL_TO_IMIXL, true);
-        setCellInfo(8,1,FOCUSRITE_CMD_ID_SPDIFL_TO_IMIXR, true);
-        setCellInfo(9,0,FOCUSRITE_CMD_ID_SPDIFR_TO_IMIXL, true);
-        setCellInfo(9,1,FOCUSRITE_CMD_ID_SPDIFR_TO_IMIXR, true);
+        setCellInfo(0,0,FR_SAFFIREPRO_CMD_ID_AN1_TO_IMIXL, true);
+        setCellInfo(0,1,FR_SAFFIREPRO_CMD_ID_AN1_TO_IMIXR, true);
+        setCellInfo(1,0,FR_SAFFIREPRO_CMD_ID_AN2_TO_IMIXL, true);
+        setCellInfo(1,1,FR_SAFFIREPRO_CMD_ID_AN2_TO_IMIXR, true);
+        setCellInfo(2,0,FR_SAFFIREPRO_CMD_ID_AN3_TO_IMIXL, true);
+        setCellInfo(2,1,FR_SAFFIREPRO_CMD_ID_AN3_TO_IMIXR, true);
+        setCellInfo(3,0,FR_SAFFIREPRO_CMD_ID_AN4_TO_IMIXL, true);
+        setCellInfo(3,1,FR_SAFFIREPRO_CMD_ID_AN4_TO_IMIXR, true);
+        setCellInfo(4,0,FR_SAFFIREPRO_CMD_ID_AN5_TO_IMIXL, true);
+        setCellInfo(4,1,FR_SAFFIREPRO_CMD_ID_AN5_TO_IMIXR, true);
+        setCellInfo(5,0,FR_SAFFIREPRO_CMD_ID_AN6_TO_IMIXL, true);
+        setCellInfo(5,1,FR_SAFFIREPRO_CMD_ID_AN6_TO_IMIXR, true);
+        setCellInfo(6,0,FR_SAFFIREPRO_CMD_ID_AN7_TO_IMIXL, true);
+        setCellInfo(6,1,FR_SAFFIREPRO_CMD_ID_AN7_TO_IMIXR, true);
+        setCellInfo(7,0,FR_SAFFIREPRO_CMD_ID_AN8_TO_IMIXL, true);
+        setCellInfo(7,1,FR_SAFFIREPRO_CMD_ID_AN8_TO_IMIXR, true);
+        setCellInfo(8,0,FR_SAFFIREPRO_CMD_ID_SPDIFL_TO_IMIXL, true);
+        setCellInfo(8,1,FR_SAFFIREPRO_CMD_ID_SPDIFL_TO_IMIXR, true);
+        setCellInfo(9,0,FR_SAFFIREPRO_CMD_ID_SPDIFR_TO_IMIXL, true);
+        setCellInfo(9,1,FR_SAFFIREPRO_CMD_ID_SPDIFR_TO_IMIXR, true);
 
-        setCellInfo(10,0,FOCUSRITE_CMD_ID_ADAT11_TO_IMIXL, true);
-        setCellInfo(10,1,FOCUSRITE_CMD_ID_ADAT11_TO_IMIXR, true);
-        setCellInfo(11,0,FOCUSRITE_CMD_ID_ADAT12_TO_IMIXL, true);
-        setCellInfo(11,1,FOCUSRITE_CMD_ID_ADAT12_TO_IMIXR, true);
-        setCellInfo(12,0,FOCUSRITE_CMD_ID_ADAT13_TO_IMIXL, true);
-        setCellInfo(12,1,FOCUSRITE_CMD_ID_ADAT13_TO_IMIXR, true);
-        setCellInfo(13,0,FOCUSRITE_CMD_ID_ADAT14_TO_IMIXL, true);
-        setCellInfo(13,1,FOCUSRITE_CMD_ID_ADAT14_TO_IMIXR, true);
-        setCellInfo(14,0,FOCUSRITE_CMD_ID_ADAT15_TO_IMIXL, true);
-        setCellInfo(14,1,FOCUSRITE_CMD_ID_ADAT15_TO_IMIXR, true);
-        setCellInfo(15,0,FOCUSRITE_CMD_ID_ADAT16_TO_IMIXL, true);
-        setCellInfo(15,1,FOCUSRITE_CMD_ID_ADAT16_TO_IMIXR, true);
-        setCellInfo(16,0,FOCUSRITE_CMD_ID_ADAT17_TO_IMIXL, true);
-        setCellInfo(16,1,FOCUSRITE_CMD_ID_ADAT17_TO_IMIXR, true);
-        setCellInfo(17,0,FOCUSRITE_CMD_ID_ADAT18_TO_IMIXL, true);
-        setCellInfo(17,1,FOCUSRITE_CMD_ID_ADAT18_TO_IMIXR, true);
+        setCellInfo(10,0,FR_SAFFIREPRO_CMD_ID_ADAT11_TO_IMIXL, true);
+        setCellInfo(10,1,FR_SAFFIREPRO_CMD_ID_ADAT11_TO_IMIXR, true);
+        setCellInfo(11,0,FR_SAFFIREPRO_CMD_ID_ADAT12_TO_IMIXL, true);
+        setCellInfo(11,1,FR_SAFFIREPRO_CMD_ID_ADAT12_TO_IMIXR, true);
+        setCellInfo(12,0,FR_SAFFIREPRO_CMD_ID_ADAT13_TO_IMIXL, true);
+        setCellInfo(12,1,FR_SAFFIREPRO_CMD_ID_ADAT13_TO_IMIXR, true);
+        setCellInfo(13,0,FR_SAFFIREPRO_CMD_ID_ADAT14_TO_IMIXL, true);
+        setCellInfo(13,1,FR_SAFFIREPRO_CMD_ID_ADAT14_TO_IMIXR, true);
+        setCellInfo(14,0,FR_SAFFIREPRO_CMD_ID_ADAT15_TO_IMIXL, true);
+        setCellInfo(14,1,FR_SAFFIREPRO_CMD_ID_ADAT15_TO_IMIXR, true);
+        setCellInfo(15,0,FR_SAFFIREPRO_CMD_ID_ADAT16_TO_IMIXL, true);
+        setCellInfo(15,1,FR_SAFFIREPRO_CMD_ID_ADAT16_TO_IMIXR, true);
+        setCellInfo(16,0,FR_SAFFIREPRO_CMD_ID_ADAT17_TO_IMIXL, true);
+        setCellInfo(16,1,FR_SAFFIREPRO_CMD_ID_ADAT17_TO_IMIXR, true);
+        setCellInfo(17,0,FR_SAFFIREPRO_CMD_ID_ADAT18_TO_IMIXL, true);
+        setCellInfo(17,1,FR_SAFFIREPRO_CMD_ID_ADAT18_TO_IMIXR, true);
 
-        setCellInfo(18,0,FOCUSRITE_CMD_ID_ADAT21_TO_IMIXL, true);
-        setCellInfo(18,1,FOCUSRITE_CMD_ID_ADAT21_TO_IMIXR, true);
-        setCellInfo(19,0,FOCUSRITE_CMD_ID_ADAT22_TO_IMIXL, true);
-        setCellInfo(19,1,FOCUSRITE_CMD_ID_ADAT22_TO_IMIXR, true);
-        setCellInfo(20,0,FOCUSRITE_CMD_ID_ADAT23_TO_IMIXL, true);
-        setCellInfo(20,1,FOCUSRITE_CMD_ID_ADAT23_TO_IMIXR, true);
-        setCellInfo(21,0,FOCUSRITE_CMD_ID_ADAT24_TO_IMIXL, true);
-        setCellInfo(21,1,FOCUSRITE_CMD_ID_ADAT24_TO_IMIXR, true);
-        setCellInfo(22,0,FOCUSRITE_CMD_ID_ADAT25_TO_IMIXL, true);
-        setCellInfo(22,1,FOCUSRITE_CMD_ID_ADAT25_TO_IMIXR, true);
-        setCellInfo(23,0,FOCUSRITE_CMD_ID_ADAT26_TO_IMIXL, true);
-        setCellInfo(23,1,FOCUSRITE_CMD_ID_ADAT26_TO_IMIXR, true);
-        setCellInfo(24,0,FOCUSRITE_CMD_ID_ADAT27_TO_IMIXL, true);
-        setCellInfo(24,1,FOCUSRITE_CMD_ID_ADAT27_TO_IMIXR, true);
-        setCellInfo(25,0,FOCUSRITE_CMD_ID_ADAT28_TO_IMIXL, true);
-        setCellInfo(25,1,FOCUSRITE_CMD_ID_ADAT28_TO_IMIXR, true);
+        setCellInfo(18,0,FR_SAFFIREPRO_CMD_ID_ADAT21_TO_IMIXL, true);
+        setCellInfo(18,1,FR_SAFFIREPRO_CMD_ID_ADAT21_TO_IMIXR, true);
+        setCellInfo(19,0,FR_SAFFIREPRO_CMD_ID_ADAT22_TO_IMIXL, true);
+        setCellInfo(19,1,FR_SAFFIREPRO_CMD_ID_ADAT22_TO_IMIXR, true);
+        setCellInfo(20,0,FR_SAFFIREPRO_CMD_ID_ADAT23_TO_IMIXL, true);
+        setCellInfo(20,1,FR_SAFFIREPRO_CMD_ID_ADAT23_TO_IMIXR, true);
+        setCellInfo(21,0,FR_SAFFIREPRO_CMD_ID_ADAT24_TO_IMIXL, true);
+        setCellInfo(21,1,FR_SAFFIREPRO_CMD_ID_ADAT24_TO_IMIXR, true);
+        setCellInfo(22,0,FR_SAFFIREPRO_CMD_ID_ADAT25_TO_IMIXL, true);
+        setCellInfo(22,1,FR_SAFFIREPRO_CMD_ID_ADAT25_TO_IMIXR, true);
+        setCellInfo(23,0,FR_SAFFIREPRO_CMD_ID_ADAT26_TO_IMIXL, true);
+        setCellInfo(23,1,FR_SAFFIREPRO_CMD_ID_ADAT26_TO_IMIXR, true);
+        setCellInfo(24,0,FR_SAFFIREPRO_CMD_ID_ADAT27_TO_IMIXL, true);
+        setCellInfo(24,1,FR_SAFFIREPRO_CMD_ID_ADAT27_TO_IMIXR, true);
+        setCellInfo(25,0,FR_SAFFIREPRO_CMD_ID_ADAT28_TO_IMIXL, true);
+        setCellInfo(25,1,FR_SAFFIREPRO_CMD_ID_ADAT28_TO_IMIXR, true);
 
     } else {
         debugError("Invalid mixer type\n");
@@ -461,23 +467,32 @@ void SaffireProMatrixMixer::show()
 
 std::string SaffireProMatrixMixer::getRowName( const int row )
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "name for row %d is %s\n", 
+                                     row, m_RowInfo.at(row).name.c_str());
     return m_RowInfo.at(row).name;
 }
 
 std::string SaffireProMatrixMixer::getColName( const int col )
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "name for col %d is %s\n", 
+                                     col, m_ColInfo.at(col).name.c_str());
     return m_ColInfo.at(col).name;
 }
 
 int SaffireProMatrixMixer::canWrite( const int row, const int col )
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "canWrite for row %d col %d is %d\n", 
+                                     row, col, m_CellInfo.at(row).at(col).valid);
     return m_CellInfo.at(row).at(col).valid;
 }
 
 double SaffireProMatrixMixer::setValue( const int row, const int col, const double val )
 {
-    uint32_t v=val;
+    int32_t v=val;
     struct sCellInfo c=m_CellInfo.at(row).at(col);
+    
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%ld)\n", 
+                                     c.address, row, col, val, v);
     
     if (v>0x07FFF) v=0x07FFF;
     else if (v<0) v=0;
@@ -496,7 +511,11 @@ double SaffireProMatrixMixer::getValue( const int row, const int col )
     if ( !m_Parent.getSpecificValue(c.address, &val) ) {
         debugError( "getSpecificValue failed\n" );
         return 0;
-    } else return val;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for id %d row %d col %d = %lf\n", 
+                                         c.address, row, col, val);
+        return val;
+    }
 }
 
 int SaffireProMatrixMixer::getRowCount( )
