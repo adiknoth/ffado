@@ -151,6 +151,8 @@ BinaryControl::setValue(int v)
 {
     uint32_t val=0;
     if (v) val=1;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d to %d\n", 
+                                     m_cmd_id, v);
 
     if ( !m_Parent.setSpecificValue(m_cmd_id, val) ) {
         debugError( "setSpecificValue failed\n" );
@@ -166,7 +168,11 @@ BinaryControl::getValue()
     if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
         debugError( "getSpecificValue failed\n" );
         return 0;
-    } else return val;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d = %d\n", 
+                                         m_cmd_id, val);
+        return val;
+    }
 }
 
 // --- element implementation classes
@@ -194,6 +200,9 @@ VolumeControl::setValue(int v)
     if (v>0x07FFF) v=0x07FFF;
     else if (v<0) v=0;
 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d to %d\n", 
+                                     m_cmd_id, v);
+
     if ( !m_Parent.setSpecificValue(m_cmd_id, v) ) {
         debugError( "setSpecificValue failed\n" );
         return false;
@@ -208,7 +217,11 @@ VolumeControl::getValue()
     if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
         debugError( "getSpecificValue failed\n" );
         return 0;
-    } else return val;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d = %d\n", 
+                                         m_cmd_id, val);
+        return val;
+    }
 }
 
 } // Focusrite

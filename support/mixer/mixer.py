@@ -4,6 +4,7 @@
 from qt import *
 from mixer_phase88 import *
 from mixer_phase24 import *
+from mixer_saffirepro import *
 import sys
 import dbus
 
@@ -11,6 +12,8 @@ SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
     [(0x000aac, 0x00000004),'PhaseX24Control'],
     [(0x000aac, 0x00000007),'PhaseX24Control'],
+    [(0x00130e, 0x00000003),'SaffireProMixer'],
+    [(0x00130e, 0x00000006),'SaffireProMixer'],
     ]
 
 class ControlInterface:
@@ -41,7 +44,19 @@ class ControlInterface:
         path = self.basepath + subpath
         dev = self.bus.get_object(self.servername, path)
         dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
-        return dev_cont.getValue()        
+        return dev_cont.getValue()
+
+    def setMatrixMixerValue(self, subpath, row, col, v):
+        path = self.basepath + subpath
+        dev = self.bus.get_object(self.servername, path)
+        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
+        dev_cont.setValue(row, col, v)
+
+    def getMatrixMixerValue(self, subpath, row, col):
+        path = self.basepath + subpath
+        dev = self.bus.get_object(self.servername, path)
+        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
+        return dev_cont.getValue(row, col)
 
 class DeviceManagerInterface:
     def __init__(self, servername, basepath):
