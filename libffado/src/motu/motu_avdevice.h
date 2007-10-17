@@ -69,6 +69,19 @@
 #define MOTUFW_REG_ROUTE_PORT_CONF      0x0c04
 #define MOTUFW_REG_CLKSRC_NAME0        0x0c60
 
+/* Port Active Flags (ports declaration) */
+#define MOTUFW_PA_RATE_1x        0x0001    /* 44k1 or 48k */
+#define MOTUFW_PA_RATE_2x        0x0002    /* 88k2 or 96k */
+#define MOTUFW_PA_RATE_4x        0x0004    /* 176k4 or 192k */
+#define MOTUFW_PA_RATE_ANY       (MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x|MOTUFW_PA_RATE_4x)
+#define MOTUFW_PA_RATE_MASK      0x0007
+#define MOTUFW_PA_OPTICAL_OFF    0x0010    /* Optical port off */
+#define MOTUFW_PA_OPTICAL_ADAT   0x0020    /* Optical port in ADAT mode */
+#define MOTUFW_PA_OPTICAL_SPDIF  0x0040    /* Optical port in SPDIF mode */
+#define MOTUFW_PA_OPTICAL_ON     (MOTUFW_PA_OPTICAL_ADAT|MOTUFW_PA_OPTICAL_SPDIF)
+#define MOTUFW_PA_OPTICAL_ANY    (MOTUFW_PA_OPTICAL_OFF|MOTUFW_PA_OPTICAL_ON)
+#define MOTUFW_PA_OPTICAL_MASK   0x0070
+
 class ConfigRom;
 class Ieee1394Service;
 
@@ -88,6 +101,19 @@ struct VendorModelEntry {
     enum EMotuModel model;
     char *vendor_name;
     char *model_name;
+};
+
+struct PortEntry {
+    char *port_name;
+    unsigned int port_dir;
+    unsigned int port_flags;
+    unsigned int port_offset;
+};
+
+struct DevicePortsEntry {
+    const PortEntry* PortsList;
+    int PortsListLength;
+    // Others features can be added here like MIDI port presence.
 };
 
 class MotuDevice : public FFADODevice {

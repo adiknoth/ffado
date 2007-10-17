@@ -55,6 +55,70 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x00000009, 0x000001f2, MOTUFW_MODEL_TRAVELER, "MOTU", "Traveler"},
 };
 
+// Ports declarations
+const PortEntry Ports_828MKII[] =
+{
+    {"Main-L", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 40},
+    {"Main-R", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 43},
+    {"Mix-L", MOTUFW_DIR_IN, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTUFW_DIR_IN, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 37},
+    {"Phones-L", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 13},
+    {"Mic1", MOTUFW_DIR_IN, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 40},
+    {"Mic2", MOTUFW_DIR_IN, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 49},
+    {"ADAT1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 63},
+    {"ADAT6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 66},
+    {"ADAT7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 69},
+    {"ADAT8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 72},
+};
+
+const PortEntry Ports_TRAVELER[] = 
+{
+    {"Mix-L", MOTUFW_DIR_IN, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTUFW_DIR_IN, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 37},
+    {"AES/EBU-L", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ANY, 40},
+    {"AES/EBU-R", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ANY, 49},
+    {"ADAT1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_2x|MOTUFW_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 63},
+    {"ADAT6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 66},
+    {"ADAT7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 69},
+    {"ADAT8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x|MOTUFW_PA_OPTICAL_ADAT, 72},
+};
+
+const DevicePortsEntry DevicesPorts[] = {
+    { Ports_828MKII, sizeof( Ports_828MKII ) },
+    { Ports_TRAVELER, sizeof( Ports_TRAVELER ) },
+};
+
 MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
                         std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( ieee1394Service, configRom )
@@ -683,7 +747,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
     return WriteRegister(MOTUFW_REG_OPTICAL_CTRL, opt_ctrl);
 }
 
-signed int MotuDevice::getEventSize(unsigned int dir) {
+signed int MotuDevice::getEventSize(unsigned int direction) {
 //
 // Return the size in bytes of a single event sent to (dir==MOTUFW_OUT) or
 // from (dir==MOTUFW_IN) the MOTU as part of an iso data packet.
@@ -693,45 +757,34 @@ signed int MotuDevice::getEventSize(unsigned int dir) {
 // as it stands this will not adapt to dynamic changes in sample rate - we'd
 // need a setFrameRate() for that.
 //
-// At the very least an event consists of the SPH (4 bytes), the control/MIDI
-// bytes (6 bytes) and 8 analog audio channels (each 3 bytes long).  Note that
-// all audio channels are sent using 3 bytes.
+// At the very least an event consists of the SPH (4 bytes) and the control/MIDI
+// bytes (6 bytes).
+// Note that all audio channels are sent using 3 bytes.
 signed int sample_rate = getSamplingFrequency();
-signed int optical_mode = getOpticalMode(dir);
-signed int size = 4+6+8*3;
+signed int optical_mode = getOpticalMode(direction);
+signed int size = 4+6;
 
-        // 2 channels of AES/EBU is present if a 1x or 2x sample rate is in
-        // use
-        if (sample_rate <= 96000)
-                size += 2*3;
+unsigned int i;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTUFW_DIR_IN:MOTUFW_DIR_OUT;
+unsigned int flags = (1 << ( optical_mode + 4 ));
 
-        // 2 channels of (coax) SPDIF is present for 1x or 2x sample rates so
-        // long as the optical mode is not TOSLINK.  If the optical mode is
-        // TOSLINK the coax SPDIF channels are replaced by optical TOSLINK
-        // channels.  Thus between these options we always have an addition
-        // 2 channels here for 1x or 2x sample rates regardless of the optical
-        // mode.
-        if (sample_rate <= 96000)
-                size += 2*3;
+    if ( sample_rate > 96000 )
+        flags |= MOTUFW_PA_RATE_4x;
+    else if ( sample_rate > 48000 )
+        flags |= MOTUFW_PA_RATE_2x;
+    else
+        flags |= MOTUFW_PA_RATE_1x;
 
-        // ADAT channels 1-4 are present for 1x or 2x sample rates so long
-        // as the optical mode is ADAT.
-        if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT)
-                size += 4*3;
+    for (i=0; i < ( DevicesPorts[m_motu_model].PortsListLength /sizeof( PortEntry ) ); i++) {
+        if (( DevicesPorts[m_motu_model].PortsList[i].port_dir & dir ) &&
+	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+            size += 3;
+        }
+    }
 
-        // ADAT channels 5-8 are present for 1x sample rates so long as the
-        // optical mode is ADAT.
-        if (sample_rate<=48000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT)
-                size += 4*3;
-
-    // When 1x or 2x sample rate is active there are an additional
-    // 2 channels sent in an event.  For capture it is a Mix1 return,
-    // while for playback it is a separate headphone mix.
-    if (sample_rate<=96000)
-        size += 2*3;
-
-        // Finally round size up to the next quadlet boundary
-        return ((size+3)/4)*4;
+    // Finally round size up to the next quadlet boundary
+    return ((size+3)/4)*4;
 }
 /* ======================================================================= */
 
@@ -777,10 +830,18 @@ bool MotuDevice::addDirPorts(
  * create all ports and just disable those which are not active.
  */
 const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
-const char *aux_str = direction==Streaming::Port::E_Capture?"Mix1":"Phones";
 Streaming::StreamProcessor *s_processor;
-unsigned int i, ofs;
+unsigned int i;
 char *buff;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTUFW_DIR_IN:MOTUFW_DIR_OUT;
+unsigned int flags = (1 << ( optical_mode + 4 ));
+
+    if ( sample_rate > 96000 )
+        flags |= MOTUFW_PA_RATE_4x;
+    else if ( sample_rate > 48000 )
+        flags |= MOTUFW_PA_RATE_2x;
+    else
+        flags |= MOTUFW_PA_RATE_1x;
 
     // retrieve the ID
     std::string id=std::string("dev?");
@@ -793,87 +854,18 @@ char *buff;
     } else {
         s_processor = m_transmitProcessor;
     }
-    // Offset into an event's data of the first audio data
-    ofs = 10;
 
-    // Add ports for the Mix1 return / Phones send which is present for
-    // 1x and 2x sampling rates.
-    if (sample_rate<=96000) {
-        for (i=0; i<2; i++, ofs+=3) {
-            asprintf(&buff,"%s_%s_%s-%c", id.c_str(), mode_str,
-              aux_str, i==0?'L':'R');
-            if (!addPort(s_processor, buff, direction, ofs, 0))
+    for (i=0; i < ( DevicesPorts[m_motu_model].PortsListLength /sizeof( PortEntry ) ); i++) {
+        if (( DevicesPorts[m_motu_model].PortsList[i].port_dir & dir ) &&
+	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
+              DevicesPorts[m_motu_model].PortsList[i].port_name);
+            if (!addPort(s_processor, buff, direction, DevicesPorts[m_motu_model].PortsList[i].port_offset, 0))
                 return false;
         }
     }
-
-    // Unconditionally add the 8 analog capture ports since they are
-    // always present no matter what the device configuration is.
-    for (i=0; i<8; i++, ofs+=3) {
-        asprintf(&buff,"%s_%s_Analog%d", id.c_str(), mode_str, i+1);
-        if (!addPort(s_processor, buff, direction, ofs, 0))
-            return false;
-    }
-
-    // AES/EBU ports are present for 1x and 2x sampling rates on the
-    // Traveler.  On earlier interfaces (for example, 828 MkII) this
-    // space was taken up with a separate "main out" send.
-    // FIXME: what is in this position of incoming data on an 828 MkII?
-    if (sample_rate <= 96000) {
-        for (i=0; i<2; i++, ofs+=3) {
-            if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
-                asprintf(&buff,"%s_%s_AES/EBU%d", id.c_str(), mode_str, i+1);
-            } else {
-                if (direction == Streaming::Port::E_Capture)
-                    asprintf(&buff,"%s_%s_Mic%d", id.c_str(), mode_str, i+1);
-                else
-                    asprintf(&buff,"%s_%s_MainOut-%c", id.c_str(), mode_str, i==0?'L':'R');
-            }
-            if (!addPort(s_processor, buff, direction, ofs, 0))
-                return false;
-        }
-    }
-
-    // SPDIF ports are present for 1x and 2x sampling rates so long
-    // as the optical mode is not TOSLINK.
-    if (sample_rate<=96000 && optical_mode!=MOTUFW_OPTICAL_MODE_TOSLINK) {
-        for (i=0; i<2; i++, ofs+=3) {
-            asprintf(&buff,"%s_%s_SPDIF%d", id.c_str(), mode_str, i+1);
-            if (!addPort(s_processor, buff, direction, ofs, 0))
-                return false;
-        }
-    }
-
-    // TOSLINK ports are present for 1x and 2x sampling rates so long
-    // as the optical mode is set to TOSLINK.
-    if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_TOSLINK) {
-        for (i=0; i<2; i++, ofs+=3) {
-            asprintf(&buff,"%s_%s_TOSLINK%d", id.c_str(), mode_str, i+1);
-            if (!addPort(s_processor, buff, direction, ofs, 0))
-                return false;
-        }
-    }
-
-    // ADAT ports 1-4 are present for 1x and 2x sampling rates so long
-    // as the optical mode is set to ADAT.
-    if (sample_rate<=96000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
-        for (i=0; i<4; i++, ofs+=3) {
-            asprintf(&buff,"%s_%s_ADAT%d", id.c_str(), mode_str, i+1);
-            if (!addPort(s_processor, buff, direction, ofs, 0))
-                return false;
-        }
-    }
-
-    // ADAT ports 5-8 are present for 1x sampling rates so long as the
-    // optical mode is set to ADAT.
-    if (sample_rate<=48000 && optical_mode==MOTUFW_OPTICAL_MODE_ADAT) {
-        for (i=4; i<8; i++, ofs+=3) {
-            asprintf(&buff,"%s_%s_ADAT%d", id.c_str(), mode_str, i+1);
-            if (!addPort(s_processor, buff, direction, ofs, 0))
-                return false;
-        }
-    }
-
+    
     return true;
 }
 /* ======================================================================== */
