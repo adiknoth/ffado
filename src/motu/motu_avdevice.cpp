@@ -176,11 +176,12 @@ const PortEntry Ports_8PRE[] =
     {"ADAT8", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 43},
 };
 
-const DevicePortsEntry DevicesPorts[] = {
-    { Ports_828MKII, sizeof( Ports_828MKII ) },
-    { Ports_TRAVELER, sizeof( Ports_TRAVELER ) },
-    { Ports_ULTRALITE, sizeof( Ports_ULTRALITE ) },
-    { Ports_8PRE, sizeof( Ports_8PRE ) },
+const DevicePropertyEntry DevicesProperty[] = {
+//  { Ports_map,       sizeof( Ports_map ),        MaxSR },
+    { Ports_828MKII,   sizeof( Ports_828MKII ),    96000 },
+    { Ports_TRAVELER,  sizeof( Ports_TRAVELER ),  192000 },
+    { Ports_ULTRALITE, sizeof( Ports_ULTRALITE ),  96000 },
+    { Ports_8PRE,      sizeof( Ports_8PRE ),       96000 },
 };
 
 MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
@@ -319,13 +320,12 @@ MotuDevice::setSamplingFrequency( int samplingFrequency )
     quadlet_t q, new_rate=0;
     int i, supported=true, cancel_adat=false;
 
+    if ( samplingFrequency > DevicesProperty[m_motu_model-1].MaxSampleRate )
+       return false; 
+
     switch ( samplingFrequency ) {
         case 22050:
-            supported=false;
-            break;
         case 24000:
-            supported=false;
-            break;
         case 32000:
             supported=false;
             break;
@@ -342,20 +342,12 @@ MotuDevice::setSamplingFrequency( int samplingFrequency )
             new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_2X;
             break;
         case 176400:
-            // Currently only the Traveler supports 4x sample rates
-            if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
-                new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
-                cancel_adat = true;
-            } else
-                supported=false;
+            new_rate = MOTUFW_RATE_BASE_44100 | MOTUFW_RATE_MULTIPLIER_4X;
+            cancel_adat = true;  // current ADAT protocol doesn't support sample rate > 96000
             break;
         case 192000:
-            // Currently only the Traveler supports 4x sample rates
-            if (m_motu_model == MOTUFW_MODEL_TRAVELER) {
-                new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
-                cancel_adat = true;
-            } else
-                supported=false;
+            new_rate = MOTUFW_RATE_BASE_48000 | MOTUFW_RATE_MULTIPLIER_4X;
+            cancel_adat = true;
             break;
         default:
             supported=false;
@@ -844,10 +836,10 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     else
         flags |= MOTUFW_PA_RATE_1x;
 
-    for (i=0; i < ( DevicesPorts[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
-        if (( DevicesPorts[m_motu_model-1].PortsList[i].port_dir & dir ) &&
-	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
-	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+    for (i=0; i < ( DevicesProperty[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
+        if (( DevicesProperty[m_motu_model-1].PortsList[i].port_dir & dir ) &&
+	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
             size += 3;
         }
     }
@@ -924,13 +916,13 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
         s_processor = m_transmitProcessor;
     }
 
-    for (i=0; i < ( DevicesPorts[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
-        if (( DevicesPorts[m_motu_model-1].PortsList[i].port_dir & dir ) &&
-	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
-	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+    for (i=0; i < ( DevicesProperty[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
+        if (( DevicesProperty[m_motu_model-1].PortsList[i].port_dir & dir ) &&
+	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
 	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
-              DevicesPorts[m_motu_model-1].PortsList[i].port_name);
-            if (!addPort(s_processor, buff, direction, DevicesPorts[m_motu_model-1].PortsList[i].port_offset, 0))
+              DevicesProperty[m_motu_model-1].PortsList[i].port_name);
+            if (!addPort(s_processor, buff, direction, DevicesProperty[m_motu_model-1].PortsList[i].port_offset, 0))
                 return false;
         }
     }

@@ -113,9 +113,10 @@ struct PortEntry {
     unsigned int port_offset;
 };
 
-struct DevicePortsEntry {
+struct DevicePropertyEntry {
     const PortEntry* PortsList;
     int PortsListLength;
+    int MaxSampleRate;
     // Others features can be added here like MIDI port presence.
 };
 
