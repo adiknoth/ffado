@@ -421,23 +421,28 @@ MotuDevice::prepare() {
     // Allocate bandwidth if not previously done.
     // FIXME: The bandwidth allocation calculation can probably be
     // refined somewhat since this is currently based on a rudimentary
-    // understanding of the iso protocol.
+    // understanding of the ieee1394 iso protocol.
     // Currently we assume the following.
     //   * Ack/iso gap = 0.05 us
     //   * DATA_PREFIX = 0.16 us
     //   * DATA_END    = 0.26 us
+
     // These numbers are the worst-case figures given in the ieee1394
-    // standard.  This gives approximately 0.5 us of overheads per
-    // packet - around 25 bandwidth allocation units (from the ieee1394
-    // standard 1 bandwidth allocation unit is 125/6144 us).  We further
-    // assume the MOTU is running at S400 (which it should be) so one
-    // allocation unit is equivalent to 1 transmitted byte; thus the
-    // bandwidth allocation required for the packets themselves is just
-    // the size of the packet.  We allocate based on the maximum packet
-    // size (1160 bytes at 192 kHz) so the sampling frequency can be
-    // changed dynamically if this ends up being useful in future.
-    // Therefore we get a *per stream* bandwidth figure of 25+1160.
-    m_bandwidth = 25 + 1160;
+    // standard.  This gives approximately 0.5 us of overheads per packet -
+    // around 25 bandwidth allocation units (from the ieee1394 standard 1
+    // bandwidth allocation unit is 125/6144 us).  We further assume the
+    // MOTU is running at S400 (which it should be) so one allocation unit
+    // is equivalent to 1 transmitted byte; thus the bandwidth allocation
+    // required for the packets themselves is just the size of the packet. 
+    // We used to allocate based on the maximum packet size (1160 bytes at
+    // 192 kHz for the traveler) but now do this based on the actual device
+    // state by utilising the result from getEventSize() and remembering
+    // that each packet has an 8 byte CIP header.  Note that m_bandwidth is
+    // a *per stream* bandwidth - it must be allocated for both the transmit
+    // and receive streams.
+    signed int max_event_size = event_size_out>event_size_in?event_size_out:event_size_in;
+    signed int n_events_per_packet = samp_freq<=48000?8:(samp_freq<=96000?16:32);
+    m_bandwidth = 25 + (n_events_per_packet*max_event_size);
 
     // Assign iso channels if not already done
     if (m_iso_recv_channel < 0)
