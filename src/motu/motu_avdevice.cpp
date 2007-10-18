@@ -100,8 +100,8 @@ const PortEntry Ports_TRAVELER[] =
     {"Analog6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 31},
     {"Analog7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 34},
     {"Analog8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 37},
-    {"AES/EBU-L", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 40},
-    {"AES/EBU-R", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 43},
+    {"AES/EBU1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 40},
+    {"AES/EBU2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 43},
     {"SPDIF1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_OFF|MOTUFW_PA_OPTICAL_ADAT, 46},
     {"SPDIF2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_OFF|MOTUFW_PA_OPTICAL_ADAT, 49},
     {"Toslink1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_TOSLINK, 46},
@@ -777,10 +777,10 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     else
         flags |= MOTUFW_PA_RATE_1x;
 
-    for (i=0; i < ( DevicesPorts[m_motu_model].PortsListLength /sizeof( PortEntry ) ); i++) {
-        if (( DevicesPorts[m_motu_model].PortsList[i].port_dir & dir ) &&
-	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
-	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+    for (i=0; i < ( DevicesPorts[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
+        if (( DevicesPorts[m_motu_model-1].PortsList[i].port_dir & dir ) &&
+	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
             size += 3;
         }
     }
@@ -857,13 +857,13 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
         s_processor = m_transmitProcessor;
     }
 
-    for (i=0; i < ( DevicesPorts[m_motu_model].PortsListLength /sizeof( PortEntry ) ); i++) {
-        if (( DevicesPorts[m_motu_model].PortsList[i].port_dir & dir ) &&
-	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
-	   ( DevicesPorts[m_motu_model].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+    for (i=0; i < ( DevicesPorts[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
+        if (( DevicesPorts[m_motu_model-1].PortsList[i].port_dir & dir ) &&
+	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesPorts[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
 	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
-              DevicesPorts[m_motu_model].PortsList[i].port_name);
-            if (!addPort(s_processor, buff, direction, DevicesPorts[m_motu_model].PortsList[i].port_offset, 0))
+              DevicesPorts[m_motu_model-1].PortsList[i].port_name);
+            if (!addPort(s_processor, buff, direction, DevicesPorts[m_motu_model-1].PortsList[i].port_offset, 0))
                 return false;
         }
     }
