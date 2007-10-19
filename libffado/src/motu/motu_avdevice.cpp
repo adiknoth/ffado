@@ -190,7 +190,8 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
-    , m_bandwidth ( -1 )
+    , m_rx_bandwidth ( -1 )
+    , m_tx_bandwidth ( -1 )
     , m_receiveProcessor ( 0 )
     , m_transmitProcessor ( 0 )
 
@@ -480,7 +481,6 @@ MotuDevice::prepare() {
     //   * Ack/iso gap = 0.05 us
     //   * DATA_PREFIX = 0.16 us
     //   * DATA_END    = 0.26 us
-
     // These numbers are the worst-case figures given in the ieee1394
     // standard.  This gives approximately 0.5 us of overheads per packet -
     // around 25 bandwidth allocation units (from the ieee1394 standard 1
@@ -491,19 +491,21 @@ MotuDevice::prepare() {
     // We used to allocate based on the maximum packet size (1160 bytes at
     // 192 kHz for the traveler) but now do this based on the actual device
     // state by utilising the result from getEventSize() and remembering
-    // that each packet has an 8 byte CIP header.  Note that m_bandwidth is
-    // a *per stream* bandwidth - it must be allocated for both the transmit
-    // and receive streams.
-    signed int max_event_size = event_size_out>event_size_in?event_size_out:event_size_in;
+    // that each packet has an 8 byte CIP header.  Note that bandwidth is
+    // allocated on a *per stream* basis - it must be allocated for both the
+    // transmit and receive streams.  While most MOTU modules are close to
+    // symmetric in terms of the number of in/out channels there are
+    // exceptions, so we deal with receive and transmit bandwidth separately.
     signed int n_events_per_packet = samp_freq<=48000?8:(samp_freq<=96000?16:32);
-    m_bandwidth = 25 + (n_events_per_packet*max_event_size);
+    m_rx_bandwidth = 25 + (n_events_per_packet*event_size_in);
+    m_tx_bandwidth = 25 + (n_events_per_packet*event_size_out);
 
     // Assign iso channels if not already done
     if (m_iso_recv_channel < 0)
-        m_iso_recv_channel = m_p1394Service->allocateIsoChannelGeneric(m_bandwidth);
+        m_iso_recv_channel = m_p1394Service->allocateIsoChannelGeneric(m_rx_bandwidth);
 
     if (m_iso_send_channel < 0)
-        m_iso_send_channel = m_p1394Service->allocateIsoChannelGeneric(m_bandwidth);
+        m_iso_send_channel = m_p1394Service->allocateIsoChannelGeneric(m_tx_bandwidth);
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
         m_iso_recv_channel, m_iso_send_channel);

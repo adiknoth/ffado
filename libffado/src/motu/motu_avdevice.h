@@ -163,7 +163,7 @@ protected:
     signed int       m_motu_model;
     struct VendorModelEntry * m_model;
     signed int m_iso_recv_channel, m_iso_send_channel;
-    signed int m_bandwidth;
+    signed int m_rx_bandwidth, m_tx_bandwidth;
 
     Streaming::MotuReceiveStreamProcessor *m_receiveProcessor;
     Streaming::MotuTransmitStreamProcessor *m_transmitProcessor;
