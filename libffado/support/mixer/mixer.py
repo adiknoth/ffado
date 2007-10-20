@@ -5,6 +5,7 @@ from qt import *
 from mixer_phase88 import *
 from mixer_phase24 import *
 from mixer_saffirepro import *
+from mixer_saffire import *
 import sys
 import dbus
 
@@ -14,6 +15,7 @@ SupportedDevices=[
     [(0x000aac, 0x00000007),'PhaseX24Control'],
     [(0x00130e, 0x00000003),'SaffireProMixer'],
     [(0x00130e, 0x00000006),'SaffireProMixer'],
+    [(0x00130e, 0x00000000),'SaffireMixer'],
     ]
 
 class ControlInterface:
@@ -122,6 +124,9 @@ if __name__ == "__main__":
                 forms[idx].show()
                 app.setMainWidget(forms[idx])
 
-    QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
+    if forms:
+        QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
-    app.exec_loop()
+        app.exec_loop()
+    else:
+        print "No supported device found..."

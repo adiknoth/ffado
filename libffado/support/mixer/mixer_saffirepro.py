@@ -353,6 +353,27 @@ class SaffireProMixer(SaffireProMixerUI):
                 'phantom58':  ['/Mixer/Phantom_5to8', self.chkPhantom58], 
                 'ac3pass':    ['/Mixer/AC3pass', self.chkAC3], 
                 'midithru':   ['/Mixer/MidiTru', self.chkMidiThru], 
+                # The following controls are available but have no GUI elements yet
+                #'out12mute':      ['/Mixer/Out12Mute', self.chkOut12Mute],
+                #'out12hwctrl':    ['/Mixer/Out12HwCtrl', self.chkOut12HwCtrl],
+                #'out12pad':       ['/Mixer/Out12Pad', self.chkOut12Pad],
+                #'out12dim':       ['/Mixer/Out12Dim', self.chkOut12Dim],
+                #'out34mute':      ['/Mixer/Out34Mute', self.chkOut34Mute],
+                #'out34hwctrl':    ['/Mixer/Out34HwCtrl', self.chkOut34HwCtrl],
+                #'out34pad':       ['/Mixer/Out34Pad', self.chkOut34Pad],
+                #'out34dim':       ['/Mixer/Out34Dim', self.chkOut34Dim],
+                #'out56mute':      ['/Mixer/Out56Mute', self.chkOut56Mute],
+                #'out56hwctrl':    ['/Mixer/Out56HwCtrl', self.chkOut56HwCtrl],
+                #'out56pad':       ['/Mixer/Out56Pad', self.chkOut56Pad],
+                #'out56dim':       ['/Mixer/Out56Dim', self.chkOut56Dim],
+                #'out78mute':      ['/Mixer/Out78Mute', self.chkOut78Mute],
+                #'out78hwctrl':    ['/Mixer/Out78HwCtrl', self.chkOut78HwCtrl],
+                #'out78pad':       ['/Mixer/Out78Pad', self.chkOut78Pad],
+                #'out78dim':       ['/Mixer/Out78Dim', self.chkOut78Dim],
+                #'out910mute':      ['/Mixer/Out910Mute', self.chkOut910Mute],
+                #'out910hwctrl':    ['/Mixer/Out910HwCtrl', self.chkOut910HwCtrl],
+                #'out910pad':       ['/Mixer/Out910Pad', self.chkOut910Pad],
+                #'out910dim':       ['/Mixer/Out910Dim', self.chkOut910Dim],
             }
 
     def initValues(self):

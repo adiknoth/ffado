@@ -29,7 +29,6 @@
 #include "focusrite_generic.h"
 
 #include "libcontrol/BasicElements.h"
-#include "libcontrol/MatrixMixer.h"
 
 #include <vector>
 #include <string>
@@ -160,7 +159,7 @@ namespace Focusrite {
 
 class SaffireProDevice;
 
-class SaffireProMatrixMixer : public Control::MatrixMixer
+class SaffireProMatrixMixer : public FocusriteMatrixMixer
 {
 public:
     enum eMatrixMixerType {
@@ -175,41 +174,9 @@ public:
 
     virtual void show();
 
-    virtual std::string getRowName( const int );
-    virtual std::string getColName( const int );
-    virtual int canWrite( const int, const int );
-    virtual double setValue( const int, const int, const double );
-    virtual double getValue( const int, const int );
-    virtual int getRowCount( );
-    virtual int getColCount( );
-
-private:
-    struct sSignalInfo {
-        std::string name;
-        std::string label;
-        std::string description;
-    };
-    struct sCellInfo {
-        int row;
-        int col;
-        // indicates whether a cell can be valid, this
-        // doesn't mean that it is writable. Just that it can be.
-        bool valid;
-        // the address to use when manipulating this cell
-        int address;
-    };
-    
-    void init(enum eMatrixMixerType type);
-    void addSignalInfo(std::vector<struct sSignalInfo> &target,
-                       std::string name, std::string label, std::string descr);
-    void setCellInfo(int row, int col, int addr, bool valid);
-
-    std::vector<struct sSignalInfo> m_RowInfo;
-    std::vector<struct sSignalInfo> m_ColInfo;
-    std::vector< std::vector<struct sCellInfo> > m_CellInfo;
-    
-    SaffireProDevice&       m_Parent;
-    enum eMatrixMixerType   m_type;
+protected:
+    void init();
+    enum eMatrixMixerType m_type;
 };
 
 

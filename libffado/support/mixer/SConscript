@@ -3,5 +3,5 @@
 Import( 'env' )
 
 if env.has_key('PYUIC'):
-	for app in ["mixer_phase24.ui","mixer_phase88.ui","mixer_saffirepro.ui"]:
+	for app in ["mixer_phase24.ui","mixer_phase88.ui","mixer_saffirepro.ui","mixer_saffire.ui"]:
 		env.Command( target=app.replace(".","")+".py", source=app, action="$PYUIC $SOURCE > $TARGET" )

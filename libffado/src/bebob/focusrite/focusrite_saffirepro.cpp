@@ -144,19 +144,19 @@ SaffireProDevice::buildMixer()
     // output level dim
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
                 "Out12Dim", "Out1/2 Dim", "Output 1/2 Level Dim"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
                 "Out34Dim", "Out3/4 Dim", "Output 3/4 Level Dim"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
                 "Out56Dim", "Out5/6 Dim", "Output 5/6 Level Dim"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
                 "Out78Dim", "Out7/8 Dim", "Output 7/8 Level Dim"));
 
     // indicators
@@ -356,47 +356,23 @@ SaffireProDevice::isStreaming() {
 
 SaffireProMatrixMixer::SaffireProMatrixMixer(SaffireProDevice& p, 
                                              enum eMatrixMixerType type)
-: Control::MatrixMixer("MatrixMixer")
-, m_Parent(p)
+: FocusriteMatrixMixer(p, "MatrixMixer")
 , m_type(type)
 {
-    init(type);
+    init();
 }
 
 SaffireProMatrixMixer::SaffireProMatrixMixer(SaffireProDevice& p, 
                                              enum eMatrixMixerType type, std::string n)
-: Control::MatrixMixer(n)
-, m_Parent(p)
+: FocusriteMatrixMixer(p, n)
 , m_type(type)
 {
-    init(type);
+    init();
 }
 
-void SaffireProMatrixMixer::addSignalInfo(std::vector<struct sSignalInfo> &target,
-    std::string name, std::string label, std::string descr)
+void SaffireProMatrixMixer::init()
 {
-    struct sSignalInfo s;
-    s.name=name;
-    s.label=label;
-    s.description=descr;
-
-    target.push_back(s);
-}
-
-void SaffireProMatrixMixer::setCellInfo(int row, int col, int addr, bool valid)
-{
-    struct sCellInfo c;
-    c.row=row;
-    c.col=col;
-    c.valid=valid;
-    c.address=addr;
-
-    m_CellInfo[row][col]=c;
-}
-
-void SaffireProMatrixMixer::init(enum eMatrixMixerType type)
-{
-    if (type==eMMT_OutputMix) {
+    if (m_type==eMMT_OutputMix) {
         addSignalInfo(m_RowInfo, "PC1", "PC 1", "PC Channel 1");
         addSignalInfo(m_RowInfo, "PC2", "PC 2", "PC Channel 2");
         addSignalInfo(m_RowInfo, "PC3", "PC 3", "PC Channel 3");
@@ -471,7 +447,7 @@ void SaffireProMatrixMixer::init(enum eMatrixMixerType type)
         setCellInfo(10,8,FR_SAFFIREPRO_CMD_ID_MIX1_TO_OUT9, true);
         setCellInfo(11,9,FR_SAFFIREPRO_CMD_ID_MIX2_TO_OUT10, true);
 
-    } else if (type==eMMT_InputMix) {
+    } else if (m_type==eMMT_InputMix) {
         addSignalInfo(m_RowInfo, "AN1", "Analog 1", "Analog Input 1");
         addSignalInfo(m_RowInfo, "AN2", "Analog 2", "Analog Input 2");
         addSignalInfo(m_RowInfo, "AN3", "Analog 3", "Analog Input 3");
@@ -588,69 +564,6 @@ void SaffireProMatrixMixer::init(enum eMatrixMixerType type)
 void SaffireProMatrixMixer::show()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Saffire Pro Matrix mixer type %d\n");
-}
-
-std::string SaffireProMatrixMixer::getRowName( const int row )
-{
-    debugOutput(DEBUG_LEVEL_VERBOSE, "name for row %d is %s\n", 
-                                     row, m_RowInfo.at(row).name.c_str());
-    return m_RowInfo.at(row).name;
-}
-
-std::string SaffireProMatrixMixer::getColName( const int col )
-{
-    debugOutput(DEBUG_LEVEL_VERBOSE, "name for col %d is %s\n", 
-                                     col, m_ColInfo.at(col).name.c_str());
-    return m_ColInfo.at(col).name;
-}
-
-int SaffireProMatrixMixer::canWrite( const int row, const int col )
-{
-    debugOutput(DEBUG_LEVEL_VERBOSE, "canWrite for row %d col %d is %d\n", 
-                                     row, col, m_CellInfo.at(row).at(col).valid);
-    return m_CellInfo.at(row).at(col).valid;
-}
-
-double SaffireProMatrixMixer::setValue( const int row, const int col, const double val )
-{
-    int32_t v=val;
-    struct sCellInfo c=m_CellInfo.at(row).at(col);
-    
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%ld)\n", 
-                                     c.address, row, col, val, v);
-    
-    if (v>0x07FFF) v=0x07FFF;
-    else if (v<0) v=0;
-
-    if ( !m_Parent.setSpecificValue(c.address, v) ) {
-        debugError( "setSpecificValue failed\n" );
-        return false;
-    } else return true;
-}
-
-double SaffireProMatrixMixer::getValue( const int row, const int col )
-{
-    struct sCellInfo c=m_CellInfo.at(row).at(col);
-    uint32_t val=0;
-
-    if ( !m_Parent.getSpecificValue(c.address, &val) ) {
-        debugError( "getSpecificValue failed\n" );
-        return 0;
-    } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for id %d row %d col %d = %lf\n", 
-                                         c.address, row, col, val);
-        return val;
-    }
-}
-
-int SaffireProMatrixMixer::getRowCount( )
-{
-    return m_RowInfo.size();
-}
-
-int SaffireProMatrixMixer::getColCount( )
-{
-    return m_ColInfo.size();
 }
 
 } // Focusrite
