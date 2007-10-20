@@ -50,6 +50,13 @@ FFADODevice::FFADODevice( Ieee1394Service& ieee1394Service,
     }
 }
 
+FFADODevice::~FFADODevice()
+{
+    if (!deleteElement(&getConfigRom())) {
+        debugWarning("failed to remove ConfigRom from Control::Container\n");
+    }
+}
+
 FFADODevice *
 FFADODevice::createDevice( Ieee1394Service& ,
                            std::auto_ptr<ConfigRom>( x ))

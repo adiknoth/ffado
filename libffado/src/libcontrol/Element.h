@@ -100,7 +100,8 @@ public:
     virtual bool addElement(Element *e);
     virtual bool deleteElement(Element *e);
     virtual bool clearElements()
-        {m_Children.clear(); return true;};
+        {return clearElements(false);};
+    virtual bool clearElements(bool delete_pointers);
 
     unsigned int countElements()
         {return m_Children.size();};
@@ -109,6 +110,8 @@ public:
         {return m_Children;};
 
     virtual void show();
+    virtual void setVerboseLevel(int l);
+
 protected:
     ElementVector m_Children;
 };

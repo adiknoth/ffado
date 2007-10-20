@@ -80,7 +80,10 @@ Container::Container(std::string n)
 bool
 Container::addElement(Element *e)
 {
-    assert(e);
+    if (e==NULL) {
+        debugWarning("Cannot add NULL element\n");
+        return false;
+    }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Adding Element %s to %s\n",
         e->getName().c_str(), getName().c_str());
@@ -122,6 +125,17 @@ Container::deleteElement(Element *e)
     return false; //not found
 }
 
+bool
+Container::clearElements(bool delete_pointers) 
+{
+    while(m_Children.size()) {
+        Element *e=m_Children[0];
+        deleteElement(e);
+        if (delete_pointers) delete e;
+    }
+    return true;
+}
+
 void
 Container::show()
 {
@@ -133,6 +147,18 @@ Container::show()
       ++it )
     {
         (*it)->show();
+    }
+}
+
+void
+Container::setVerboseLevel(int l)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        (*it)->setVerboseLevel(l);
     }
 }
 

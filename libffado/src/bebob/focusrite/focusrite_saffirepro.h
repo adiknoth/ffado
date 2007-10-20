@@ -28,6 +28,7 @@
 #include "debugmodule/debugmodule.h"
 #include "focusrite_generic.h"
 
+#include "libcontrol/BasicElements.h"
 #include "libcontrol/MatrixMixer.h"
 
 #include <vector>
@@ -36,6 +37,15 @@
 #define FR_SAFFIREPRO_CMD_ID_SAMPLERATE         84
 #define FR_SAFFIREPRO_CMD_ID_SAMPLERATE_MIRROR  115
 
+#define FOCUSRITE_CMD_SAMPLERATE_44K1   1
+#define FOCUSRITE_CMD_SAMPLERATE_48K    2
+#define FOCUSRITE_CMD_SAMPLERATE_88K2   3
+#define FOCUSRITE_CMD_SAMPLERATE_96K    4
+#define FOCUSRITE_CMD_SAMPLERATE_176K4  5
+#define FOCUSRITE_CMD_SAMPLERATE_192K   6
+
+#define FR_SAFFIREPRO_CMD_ID_STREAMING          90
+
 #define FR_SAFFIREPRO_CMD_ID_PHANTOM14          98
 #define FR_SAFFIREPRO_CMD_ID_PHANTOM58          99
 #define FR_SAFFIREPRO_CMD_ID_INSERT1            100
@@ -43,12 +53,19 @@
 #define FR_SAFFIREPRO_CMD_ID_AC3_PASSTHROUGH    103
 #define FR_SAFFIREPRO_CMD_ID_MIDI_TRU           104
 
-#define FOCUSRITE_CMD_SAMPLERATE_44K1   1
-#define FOCUSRITE_CMD_SAMPLERATE_48K    2
-#define FOCUSRITE_CMD_SAMPLERATE_88K2   3
-#define FOCUSRITE_CMD_SAMPLERATE_96K    4
-#define FOCUSRITE_CMD_SAMPLERATE_176K4  5
-#define FOCUSRITE_CMD_SAMPLERATE_192K   6
+#define FR_SAFFIREPRO_CMD_ID_DIM_INDICATOR      88
+#define FR_SAFFIREPRO_CMD_ID_MUTE_INDICATOR      88
+
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12      80
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34      81
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56      82
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78      83
+
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_MUTE      24
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_HWCTRL    26
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD       27
+#define FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM       28
+
 
 #define FR_SAFFIREPRO_CMD_ID_AN1_TO_IMIXL        0
 #define FR_SAFFIREPRO_CMD_ID_AN1_TO_IMIXR        1
@@ -209,26 +226,16 @@ public:
     virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
 
+    virtual bool buildMixer();
+    virtual bool destroyMixer();
+
 private:
     virtual bool setSamplingFrequencyDo( int );
     virtual int getSamplingFrequencyMirror( );
 
-    BinaryControl * m_Phantom1;
-    BinaryControl * m_Phantom2;
-    
-    BinaryControl * m_Insert1;
-    BinaryControl * m_Insert2;
-    BinaryControl * m_AC3pass;
-    BinaryControl * m_MidiTru;
-    
-    VolumeControl * m_Output12[4];
-    VolumeControl * m_Output34[6];
-    VolumeControl * m_Output56[6];
-    VolumeControl * m_Output78[6];
-    VolumeControl * m_Output910[6];
-    
-    SaffireProMatrixMixer * m_InputMixer;
-    SaffireProMatrixMixer * m_OutputMixer;
+    bool isStreaming();
+
+    Control::Container *m_MixerContainer;
 };
 
 } // namespace Focusrite

@@ -91,6 +91,9 @@ DeviceManager::~DeviceManager()
           it != m_avDevices.end();
           ++it )
     {
+        if (!deleteElement(*it)) {
+            debugWarning("failed to remove AvDevice from Control::Container\n");
+        }
         delete *it;
     }
 
