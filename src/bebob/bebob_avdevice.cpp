@@ -27,6 +27,7 @@
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_mixer.h"
 
+#include "bebob/focusrite/focusrite_saffire.h"
 #include "bebob/focusrite/focusrite_saffirepro.h"
 #include "bebob/terratec/terratec_device.h"
 
@@ -103,6 +104,8 @@ AvDevice::createDevice( Ieee1394Service& ieee1394Service,
                 case 0x00000003:
                 case 0x00000006:
                     return new Focusrite::SaffireProDevice(ieee1394Service, configRom);
+                case 0x00000000:
+                    return new Focusrite::SaffireDevice(ieee1394Service, configRom);
                 default: // return a plain BeBoB device
                     return new AvDevice(ieee1394Service, configRom);
            }

@@ -29,6 +29,7 @@
 #include "bebob/bebob_avdevice.h"
 
 #include "libcontrol/BasicElements.h"
+#include "libcontrol/MatrixMixer.h"
 
 namespace BeBoB {
 namespace Focusrite {
@@ -47,7 +48,7 @@ public:
     virtual int getValue();
     
 private:
-    FocusriteDevice&       m_Parent;
+    FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
     unsigned int            m_cmd_bit;
 };
@@ -64,10 +65,71 @@ public:
     virtual int getValue();
     
 private:
-    FocusriteDevice&       m_Parent;
+    FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
 };
 
+class VolumeControlLowRes
+    : public Control::Discrete
+{
+public:
+    VolumeControlLowRes(FocusriteDevice& parent, int id, int shift);
+    VolumeControlLowRes(FocusriteDevice& parent, int id, int shift,
+                  std::string name, std::string label, std::string descr);
+    
+    virtual bool setValue(int v);
+    virtual int getValue();
+    
+private:
+    FocusriteDevice&        m_Parent;
+    unsigned int            m_cmd_id;
+    unsigned int            m_bit_shift;
+};
+
+class FocusriteMatrixMixer : public Control::MatrixMixer
+{
+public:
+    FocusriteMatrixMixer(FocusriteDevice& parent);
+    FocusriteMatrixMixer(FocusriteDevice& parent, std::string n);
+    virtual ~FocusriteMatrixMixer() {};
+
+    virtual void show();
+
+    virtual std::string getRowName( const int );
+    virtual std::string getColName( const int );
+    virtual int canWrite( const int, const int );
+    virtual double setValue( const int, const int, const double );
+    virtual double getValue( const int, const int );
+    virtual int getRowCount( );
+    virtual int getColCount( );
+
+protected:
+    struct sSignalInfo {
+        std::string name;
+        std::string label;
+        std::string description;
+    };
+    struct sCellInfo {
+        int row;
+        int col;
+        // indicates whether a cell can be valid, this
+        // doesn't mean that it is writable. Just that it can be.
+        bool valid;
+        // the address to use when manipulating this cell
+        int address;
+    };
+    
+    virtual void init() = 0;
+    virtual void addSignalInfo(std::vector<struct sSignalInfo> &target,
+                       std::string name, std::string label, std::string descr);
+    virtual void setCellInfo(int row, int col, int addr, bool valid);
+
+    std::vector<struct sSignalInfo> m_RowInfo;
+    std::vector<struct sSignalInfo> m_ColInfo;
+    std::vector< std::vector<struct sCellInfo> > m_CellInfo;
+    
+    FocusriteDevice&        m_Parent;
+};
 
 class FocusriteDevice : public BeBoB::AvDevice {
 public:

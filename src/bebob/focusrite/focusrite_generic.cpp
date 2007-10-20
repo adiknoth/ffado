@@ -239,5 +239,174 @@ VolumeControl::getValue()
     }
 }
 
+// low resolution volume control
+VolumeControlLowRes::VolumeControlLowRes(FocusriteDevice& parent, int id, int shift)
+: Control::Discrete()
+, m_Parent(parent)
+, m_cmd_id ( id )
+, m_bit_shift( shift )
+{}
+VolumeControlLowRes::VolumeControlLowRes(FocusriteDevice& parent, int id, int shift,
+                std::string name, std::string label, std::string descr)
+: Control::Discrete()
+, m_Parent(parent)
+, m_cmd_id ( id )
+, m_bit_shift( shift )
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+
+bool
+VolumeControlLowRes::setValue(int v)
+{
+    uint32_t reg;
+    uint32_t old_reg;
+    
+    if (v>0xFF) v=0xFF;
+    else if (v<0) v=0;
+
+    if ( !m_Parent.getSpecificValue(m_cmd_id, &reg) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    }
+    
+    old_reg=reg;
+    reg &= ~(0xFF<<m_bit_shift);
+    reg |= (v<<m_bit_shift);
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d to %d, shift %d (reg: 0x%08X => 0x%08X)\n", 
+                                     m_cmd_id, v, m_bit_shift, old_reg, reg);
+
+    if ( !m_Parent.setSpecificValue(m_cmd_id, reg) ) {
+        debugError( "setSpecificValue failed\n" );
+        return false;
+    } else return true;
+}
+
+int
+VolumeControlLowRes::getValue()
+{
+    uint32_t val, reg;
+
+    if ( !m_Parent.getSpecificValue(m_cmd_id, &reg) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    } else {
+        val = (reg & 0xFF)>>m_bit_shift;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d: reg: 0x%08X, result=%d\n", 
+                                         m_cmd_id, reg, val);
+        return val;
+    }
+}
+
+
+// Saffire pro matrix mixer element
+
+FocusriteMatrixMixer::FocusriteMatrixMixer(FocusriteDevice& p)
+: Control::MatrixMixer("MatrixMixer")
+, m_Parent(p)
+{
+}
+
+FocusriteMatrixMixer::FocusriteMatrixMixer(FocusriteDevice& p,std::string n)
+: Control::MatrixMixer(n)
+, m_Parent(p)
+{
+}
+
+void FocusriteMatrixMixer::addSignalInfo(std::vector<struct sSignalInfo> &target,
+    std::string name, std::string label, std::string descr)
+{
+    struct sSignalInfo s;
+    s.name=name;
+    s.label=label;
+    s.description=descr;
+
+    target.push_back(s);
+}
+
+void FocusriteMatrixMixer::setCellInfo(int row, int col, int addr, bool valid)
+{
+    struct sCellInfo c;
+    c.row=row;
+    c.col=col;
+    c.valid=valid;
+    c.address=addr;
+
+    m_CellInfo[row][col]=c;
+}
+
+void FocusriteMatrixMixer::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "Focusrite Matrix mixer\n");
+}
+
+std::string FocusriteMatrixMixer::getRowName( const int row )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "name for row %d is %s\n", 
+                                     row, m_RowInfo.at(row).name.c_str());
+    return m_RowInfo.at(row).name;
+}
+
+std::string FocusriteMatrixMixer::getColName( const int col )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "name for col %d is %s\n", 
+                                     col, m_ColInfo.at(col).name.c_str());
+    return m_ColInfo.at(col).name;
+}
+
+int FocusriteMatrixMixer::canWrite( const int row, const int col )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "canWrite for row %d col %d is %d\n", 
+                                     row, col, m_CellInfo.at(row).at(col).valid);
+    return m_CellInfo.at(row).at(col).valid;
+}
+
+double FocusriteMatrixMixer::setValue( const int row, const int col, const double val )
+{
+    int32_t v=val;
+    struct sCellInfo c=m_CellInfo.at(row).at(col);
+    
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%ld)\n", 
+                                     c.address, row, col, val, v);
+    
+    if (v>0x07FFF) v=0x07FFF;
+    else if (v<0) v=0;
+
+    if ( !m_Parent.setSpecificValue(c.address, v) ) {
+        debugError( "setSpecificValue failed\n" );
+        return false;
+    } else return true;
+}
+
+double FocusriteMatrixMixer::getValue( const int row, const int col )
+{
+    struct sCellInfo c=m_CellInfo.at(row).at(col);
+    uint32_t val=0;
+
+    if ( !m_Parent.getSpecificValue(c.address, &val) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for id %d row %d col %d = %lu\n", 
+                                         c.address, row, col, val);
+        return val;
+    }
+}
+
+int FocusriteMatrixMixer::getRowCount( )
+{
+    return m_RowInfo.size();
+}
+
+int FocusriteMatrixMixer::getColCount( )
+{
+    return m_ColInfo.size();
+}
+
+
 } // Focusrite
 } // BeBoB
