@@ -71,7 +71,7 @@ AvDevice::AvDevice( Ieee1394Service& ieee1394service,
 
 AvDevice::~AvDevice()
 {
-    delete m_Mixer;
+    destroyMixer();
 }
 
 bool
@@ -143,6 +143,16 @@ AvDevice::discover()
         return false;
     }
 
+    if(!buildMixer()) {
+        debugWarning("Could not build mixer\n");
+    }
+    return true;
+}
+
+bool
+AvDevice::buildMixer()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a generic BeBoB mixer...\n");
     // create a Mixer
     // this removes the mixer if it already exists
     // note: a mixer self-registers to it's parent
@@ -151,10 +161,17 @@ AvDevice::discover()
     // create the mixer & register it
     if(getAudioSubunit(0) == NULL) {
         debugWarning("Could not find audio subunit, mixer not available.\n");
-        m_Mixer = 0;
+        m_Mixer = NULL;
     } else {
         m_Mixer = new Mixer(*this);
     }
+    return m_Mixer != NULL;
+}
+
+bool
+AvDevice::destroyMixer()
+{
+    delete m_Mixer;
     return true;
 }
 

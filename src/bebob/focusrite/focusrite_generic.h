@@ -39,8 +39,8 @@ class BinaryControl
     : public Control::Discrete
 {
 public:
-    BinaryControl(FocusriteDevice& parent, int id);
-    BinaryControl(FocusriteDevice& parent, int id,
+    BinaryControl(FocusriteDevice& parent, int id, int bit);
+    BinaryControl(FocusriteDevice& parent, int id, int bit,
                   std::string name, std::string label, std::string descr);
     
     virtual bool setValue(int v);
@@ -49,6 +49,7 @@ public:
 private:
     FocusriteDevice&       m_Parent;
     unsigned int            m_cmd_id;
+    unsigned int            m_cmd_bit;
 };
 
 class VolumeControl

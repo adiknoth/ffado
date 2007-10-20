@@ -165,20 +165,28 @@ main(int argc, char **argv)
     FocusriteVendorDependentCmd cmd( *m_1394Service );
         cmd.setVerbose( DEBUG_LEVEL_NORMAL );
     
-    for (int id=0; id<128;id++) {
-        cmd.setCommandType( AVC::AVCCommand::eCT_Status );
-        cmd.setNodeId( arguments.node  );
-        cmd.setSubunitType( AVC::eST_Unit  );
-        cmd.setSubunitId( 0xff );
-        cmd.m_id=id;
-        cmd.m_value=0;
-        
-        if ( !cmd.fire() ) {
-            debugError( "FocusriteVendorDependentCmd info command failed\n" );
-            // shouldn't this be an error situation?
-//             return false;
+    uint32_t old_vals[129];
+    
+    while(1) {
+        for (int id=0; id<128;id++) {
+            cmd.setCommandType( AVC::AVCCommand::eCT_Status );
+            cmd.setNodeId( arguments.node  );
+            cmd.setSubunitType( AVC::eST_Unit  );
+            cmd.setSubunitId( 0xff );
+            cmd.m_id=id;
+            cmd.m_value=0;
+    
+            if ( !cmd.fire() ) {
+                debugError( "FocusriteVendorDependentCmd info command failed\n" );
+                // shouldn't this be an error situation?
+    //             return false;
+            }
+            if (old_vals[id] != cmd.m_value) {
+                printf("%04d changed from %08X to %08X\n", cmd.m_id,  old_vals[id], cmd.m_value);
+                old_vals[id] = cmd.m_value;
+            }
         }
-        printf("%04d: %08X\n", cmd.m_id, cmd.m_value);
+        usleep(1000000);
     }
 
 

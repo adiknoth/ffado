@@ -130,16 +130,18 @@ FocusriteDevice::convertSrToDef( int sr ) {
 
 // --- element implementation classes
 
-BinaryControl::BinaryControl(FocusriteDevice& parent, int id)
+BinaryControl::BinaryControl(FocusriteDevice& parent, int id, int bit)
 : Control::Discrete()
 , m_Parent(parent)
 , m_cmd_id ( id )
+, m_cmd_bit ( bit )
 {}
-BinaryControl::BinaryControl(FocusriteDevice& parent, int id,
+BinaryControl::BinaryControl(FocusriteDevice& parent, int id, int bit,
                 std::string name, std::string label, std::string descr)
 : Control::Discrete()
 , m_Parent(parent)
 , m_cmd_id ( id )
+, m_cmd_bit ( bit )
 {
     setName(name);
     setLabel(label);
@@ -149,12 +151,24 @@ BinaryControl::BinaryControl(FocusriteDevice& parent, int id,
 bool
 BinaryControl::setValue(int v)
 {
-    uint32_t val=0;
-    if (v) val=1;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d to %d\n", 
-                                     m_cmd_id, v);
+    uint32_t reg;
+    uint32_t old_reg;
 
-    if ( !m_Parent.setSpecificValue(m_cmd_id, val) ) {
+    if ( !m_Parent.getSpecificValue(m_cmd_id, &reg) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    }
+    
+    old_reg=reg;
+    if (v) {
+        reg |= (1<<m_cmd_bit);
+    } else {
+        reg &= ~(1<<m_cmd_bit);
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d to %d (reg: 0x%08X => 0x%08X)\n", 
+                                     m_cmd_id, v, old_reg, reg);
+
+    if ( !m_Parent.setSpecificValue(m_cmd_id, reg) ) {
         debugError( "setSpecificValue failed\n" );
         return false;
     } else return true;
@@ -163,14 +177,15 @@ BinaryControl::setValue(int v)
 int
 BinaryControl::getValue()
 {
-    uint32_t val=0;
+    uint32_t reg;
 
-    if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
+    if ( !m_Parent.getSpecificValue(m_cmd_id, &reg) ) {
         debugError( "getSpecificValue failed\n" );
         return 0;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d = %d\n", 
-                                         m_cmd_id, val);
+        bool val= (reg & (1<<m_cmd_bit)) != 0;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d: reg: 0x%08X, result=%d\n", 
+                                         m_cmd_id, reg, val);
         return val;
     }
 }

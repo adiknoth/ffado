@@ -84,6 +84,9 @@ public:
     virtual void showDevice();
 protected:
     virtual bool propagatePlugInfo();
+    
+    virtual bool buildMixer();
+    virtual bool destroyMixer();
 
 public:
     virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;

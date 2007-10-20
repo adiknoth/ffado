@@ -55,7 +55,7 @@ public:
     FFADODevice( Ieee1394Service& ieee1394service,
                  std::auto_ptr< ConfigRom >( configRom ) );
 
-    virtual ~FFADODevice() {};
+    virtual ~FFADODevice();
 
     
     /**
