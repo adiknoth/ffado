@@ -62,6 +62,18 @@
 #define EFC_CMD_HWCTRL_IDENTIFY         5
 #define EFC_CMD_HWCTRL_RECONNECT_PHY    6
 
+// Commands for the EFC_CAT_*_MIX categories
+#define EFC_CMD_MIXER_SET_GAIN        0
+#define EFC_CMD_MIXER_GET_GAIN        1
+#define EFC_CMD_MIXER_SET_MUTE        2
+#define EFC_CMD_MIXER_GET_MUTE        3
+#define EFC_CMD_MIXER_SET_SOLO        4
+#define EFC_CMD_MIXER_GET_SOLO        5
+#define EFC_CMD_MIXER_SET_PAN         6
+#define EFC_CMD_MIXER_GET_PAN         7
+#define EFC_CMD_MIXER_SET_NOMINAL     8
+#define EFC_CMD_MIXER_GET_NOMINAL     9
+
 // size of the header
 #define EFC_HEADER_LENGTH_QUADLETS      ((sizeof(uint32_t) + sizeof(struct EfcCmd::efc_header))/4)
 
@@ -148,6 +160,7 @@ public:
 
 protected: // this HAS to be overloaded
     EfcCmd(uint32_t cat, uint32_t cmd);
+    EfcCmd();
 
 public:
     virtual ~EfcCmd();
@@ -162,7 +175,7 @@ public:
     uint32_t            m_length; // in quadlets, including length field and header.
     struct efc_header   m_header;
 
-private:
+protected:
     uint32_t            m_category_id;
     uint32_t            m_command_id;
 

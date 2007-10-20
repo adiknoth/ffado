@@ -44,6 +44,14 @@ EfcCmd::EfcCmd(uint32_t cat, uint32_t cmd)
     memset(&m_header,0,sizeof(m_header));
 }
 
+EfcCmd::EfcCmd()
+    : m_length ( 0 )
+    , m_category_id ( EFC_CAT_INVALID )
+    , m_command_id ( EFC_CMD_INVALID )
+{
+    memset(&m_header,0,sizeof(m_header));
+}
+
 EfcCmd::~EfcCmd()
 {
 }

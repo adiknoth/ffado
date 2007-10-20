@@ -38,6 +38,8 @@ apps = {
 
 if env['ENABLE_BEBOB']:
 	apps.update( { "test-focusrite" : "test-focusrite.cpp" } )
+if env['ENABLE_FIREWORKS']:
+	apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )
