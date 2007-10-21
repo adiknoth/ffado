@@ -63,74 +63,33 @@ const char *eMixerCommandToString(const enum eMixerCommand command) {
     }
 }
 
-EfcGenericMixerCmd::EfcGenericMixerCmd(enum eCmdType type, 
-                                       enum eMixerTarget target, 
+EfcGenericMixerCmd::EfcGenericMixerCmd(enum eMixerTarget target, 
                                        enum eMixerCommand command)
     : EfcCmd()
     , m_channel ( -1 )
     , m_value ( 0 )
-    , m_type ( type )
-    , m_target ( target )
-    , m_command ( command )
 {
-    switch (target) {
-        case eMT_PhysicalOutputMix:
-            m_category_id=EFC_CAT_PHYSICAL_OUTPUT_MIX;
-            break;
-        case eMT_PhysicalInputMix:
-            m_category_id=EFC_CAT_PHYSICAL_INPUT_MIX;
-            break;
-        case eMT_PlaybackMix:
-            m_category_id=EFC_CAT_PLAYBACK_MIX;
-            break;
-        case eMT_RecordMix:
-            m_category_id=EFC_CAT_RECORD_MIX;
-            break;
-        default:
-            debugError("Invalid mixer target: %d\n", target);
-    }
+    m_type=eCT_Get;
+    m_target=target;
+    m_command=command;
+    setTarget(target);
+    setCommand(command);
+    setType(eCT_Get);
+}
 
-    if (type == eCT_Get) {
-        switch (command) {
-            case eMC_Gain:
-                m_command_id=EFC_CMD_MIXER_GET_GAIN;
-                break;
-            case eMC_Solo:
-                m_command_id=EFC_CMD_MIXER_GET_SOLO;
-                break;
-            case eMC_Mute:
-                m_command_id=EFC_CMD_MIXER_GET_MUTE;
-                break;
-            case eMC_Pan:
-                m_command_id=EFC_CMD_MIXER_GET_PAN;
-                break;
-            case eMC_Nominal:
-                m_command_id=EFC_CMD_MIXER_GET_NOMINAL;
-                break;
-            default:
-                debugError("Invalid mixer get command: %d\n", command);
-        }
-    } else {
-        switch (command) {
-            case eMC_Gain:
-                m_command_id=EFC_CMD_MIXER_SET_GAIN;
-                break;
-            case eMC_Solo:
-                m_command_id=EFC_CMD_MIXER_SET_SOLO;
-                break;
-            case eMC_Mute:
-                m_command_id=EFC_CMD_MIXER_SET_MUTE;
-                break;
-            case eMC_Pan:
-                m_command_id=EFC_CMD_MIXER_SET_PAN;
-                break;
-            case eMC_Nominal:
-                m_command_id=EFC_CMD_MIXER_SET_NOMINAL;
-                break;
-            default:
-                debugError("Invalid mixer set command: %d\n", command);
-        }
-    }
+EfcGenericMixerCmd::EfcGenericMixerCmd(enum eMixerTarget target, 
+                                       enum eMixerCommand command,
+                                       int channel)
+    : EfcCmd()
+    , m_channel ( channel )
+    , m_value ( 0 )
+{
+    m_type=eCT_Get;
+    m_target=target;
+    m_command=command;
+    setTarget(target);
+    setCommand(command);
+    setType(eCT_Get);
 }
 
 bool
@@ -172,6 +131,131 @@ EfcGenericMixerCmd::deserialize( Util::IISDeserialize& de )
 
     return result;
 }
+
+bool
+EfcGenericMixerCmd::setType( enum eCmdType type )
+{
+    m_type=type;
+    if (type == eCT_Get) {
+        switch (m_command) {
+            case eMC_Gain:
+                m_command_id=EFC_CMD_MIXER_GET_GAIN;
+                break;
+            case eMC_Solo:
+                m_command_id=EFC_CMD_MIXER_GET_SOLO;
+                break;
+            case eMC_Mute:
+                m_command_id=EFC_CMD_MIXER_GET_MUTE;
+                break;
+            case eMC_Pan:
+                m_command_id=EFC_CMD_MIXER_GET_PAN;
+                break;
+            case eMC_Nominal:
+                m_command_id=EFC_CMD_MIXER_GET_NOMINAL;
+                break;
+            default:
+                debugError("Invalid mixer get command: %d\n", m_command);
+                return false;
+        }
+    } else {
+        switch (m_command) {
+            case eMC_Gain:
+                m_command_id=EFC_CMD_MIXER_SET_GAIN;
+                break;
+            case eMC_Solo:
+                m_command_id=EFC_CMD_MIXER_SET_SOLO;
+                break;
+            case eMC_Mute:
+                m_command_id=EFC_CMD_MIXER_SET_MUTE;
+                break;
+            case eMC_Pan:
+                m_command_id=EFC_CMD_MIXER_SET_PAN;
+                break;
+            case eMC_Nominal:
+                m_command_id=EFC_CMD_MIXER_SET_NOMINAL;
+                break;
+            default:
+                debugError("Invalid mixer set command: %d\n", m_command);
+                return false;
+        }
+    }
+    return true;
+}
+
+bool
+EfcGenericMixerCmd::setTarget( enum eMixerTarget target )
+{
+    m_target=target;
+    switch (target) {
+        case eMT_PhysicalOutputMix:
+            m_category_id=EFC_CAT_PHYSICAL_OUTPUT_MIX;
+            break;
+        case eMT_PhysicalInputMix:
+            m_category_id=EFC_CAT_PHYSICAL_INPUT_MIX;
+            break;
+        case eMT_PlaybackMix:
+            m_category_id=EFC_CAT_PLAYBACK_MIX;
+            break;
+        case eMT_RecordMix:
+            m_category_id=EFC_CAT_RECORD_MIX;
+            break;
+        default:
+            debugError("Invalid mixer target: %d\n", target);
+            return false;
+    }
+    return true;
+}
+
+bool
+EfcGenericMixerCmd::setCommand( enum eMixerCommand command )
+{
+    m_command=command;
+    if (m_type == eCT_Get) {
+        switch (command) {
+            case eMC_Gain:
+                m_command_id=EFC_CMD_MIXER_GET_GAIN;
+                break;
+            case eMC_Solo:
+                m_command_id=EFC_CMD_MIXER_GET_SOLO;
+                break;
+            case eMC_Mute:
+                m_command_id=EFC_CMD_MIXER_GET_MUTE;
+                break;
+            case eMC_Pan:
+                m_command_id=EFC_CMD_MIXER_GET_PAN;
+                break;
+            case eMC_Nominal:
+                m_command_id=EFC_CMD_MIXER_GET_NOMINAL;
+                break;
+            default:
+                debugError("Invalid mixer get command: %d\n", command);
+                return false;
+        }
+    } else {
+        switch (command) {
+            case eMC_Gain:
+                m_command_id=EFC_CMD_MIXER_SET_GAIN;
+                break;
+            case eMC_Solo:
+                m_command_id=EFC_CMD_MIXER_SET_SOLO;
+                break;
+            case eMC_Mute:
+                m_command_id=EFC_CMD_MIXER_SET_MUTE;
+                break;
+            case eMC_Pan:
+                m_command_id=EFC_CMD_MIXER_SET_PAN;
+                break;
+            case eMC_Nominal:
+                m_command_id=EFC_CMD_MIXER_SET_NOMINAL;
+                break;
+            default:
+                debugError("Invalid mixer set command: %d\n", command);
+                return false;
+        }
+    }
+    return true;
+}
+
 
 void
 EfcGenericMixerCmd::showEfcCmd()

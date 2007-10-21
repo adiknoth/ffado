@@ -45,6 +45,7 @@ SaffireDevice::~SaffireDevice()
 {
 
 }
+
 bool
 SaffireDevice::buildMixer()
 {

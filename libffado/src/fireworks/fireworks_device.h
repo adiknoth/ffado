@@ -52,13 +52,20 @@ public:
 
     virtual void showDevice();
     
+    virtual bool buildMixer();
+    virtual bool destroyMixer();
+
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
     virtual ClockSource getActiveClockSource();
 
+    const EfcHardwareInfoCmd getHwInfo()
+        {return m_HwInfo;};
+    
+    bool doEfcOverAVC(EfcCmd& c);
+
 // Echo specific stuff
 private:
-    bool doEfcOverAVC(EfcCmd& c);
     
     bool discoverUsingEFC();
 
@@ -76,6 +83,9 @@ private:
     EfcPolledValuesCmd  m_Polled;
 
     bool                m_efc_discovery_done;
+
+private:
+    Control::Container *m_MixerContainer;
 
 };
 

@@ -41,22 +41,32 @@ enum eMixerCommand {
     eMC_Pan,
     eMC_Nominal,
 };
+enum eCmdType {
+    eCT_Get,
+    eCT_Set,
+};
 
 class EfcGenericMixerCmd : public EfcCmd
 {
 public:
-    enum eCmdType {
-        eCT_Get,
-        eCT_Set,
-    };
-public:
-    EfcGenericMixerCmd(enum eCmdType, enum eMixerTarget, enum eMixerCommand);
+    EfcGenericMixerCmd(enum eMixerTarget, enum eMixerCommand);
+    EfcGenericMixerCmd(enum eMixerTarget, enum eMixerCommand, int channel);
     virtual ~EfcGenericMixerCmd() {};
 
     virtual bool serialize( Util::IOSSerialize& se );
     virtual bool deserialize( Util::IISDeserialize& de );
 
     virtual void showEfcCmd();
+    
+    bool setType( enum eCmdType type );
+    enum eCmdType getType() {return m_type;};
+    bool setTarget( enum eMixerTarget target );
+    enum eMixerTarget getTarget() {return m_target;};
+    bool setCommand( enum eMixerCommand cmd );
+    enum eMixerCommand getCommand() {return m_command;};
+    
+    virtual const char* getCmdName() const
+        { return "EfcGenericMixerCmd"; }
 
     int32_t     m_channel;
     uint32_t    m_value;
@@ -65,112 +75,6 @@ private:
     enum eCmdType       m_type;
     enum eMixerTarget   m_target;
     enum eMixerCommand  m_command;
-};
-
-// --- Specific implementations
-class EfcGetGainCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcGetGainCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Get, t, eMC_Gain) {};
-    virtual ~EfcGetGainCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcGetGainCmd"; }
-};
-class EfcSetGainCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcSetGainCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Set, t, eMC_Gain) {};
-    virtual ~EfcSetGainCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcSetGainCmd"; }
-};
-
-class EfcGetSoloCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcGetSoloCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Get, t, eMC_Solo) {};
-    virtual ~EfcGetSoloCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcGetSoloCmd"; }
-};
-class EfcSetSoloCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcSetSoloCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Set, t, eMC_Solo) {};
-    virtual ~EfcSetSoloCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcSetSoloCmd"; }
-};
-
-class EfcGetMuteCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcGetMuteCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Get, t, eMC_Mute) {};
-    virtual ~EfcGetMuteCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcGetMuteCmd"; }
-};
-class EfcSetMuteCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcSetMuteCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Set, t, eMC_Mute) {};
-    virtual ~EfcSetMuteCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcSetMuteCmd"; }
-};
-
-class EfcGetPanCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcGetPanCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Get, t, eMC_Pan) {};
-    virtual ~EfcGetPanCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcGetPanCmd"; }
-};
-class EfcSetPanCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcSetPanCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Set, t, eMC_Pan) {};
-    virtual ~EfcSetPanCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcSetPanCmd"; }
-};
-
-class EfcGetNominalCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcGetNominalCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Get, t, eMC_Nominal) {};
-    virtual ~EfcGetNominalCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcGetNominalCmd"; }
-};
-class EfcSetNominalCmd : public EfcGenericMixerCmd
-{
-public:
-    EfcSetNominalCmd(enum eMixerTarget t)
-    : EfcGenericMixerCmd(eCT_Set, t, eMC_Nominal) {};
-    virtual ~EfcSetNominalCmd() {};
-
-    virtual const char* getCmdName() const
-    { return "EfcSetNominalCmd"; }
 };
 
 } // namespace FireWorks
