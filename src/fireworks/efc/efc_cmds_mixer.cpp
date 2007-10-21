@@ -84,6 +84,11 @@ EfcGenericMixerCmd::serialize( Util::IOSSerialize& se )
         result &= se.write(htonl(m_channel), "Channel" );
         result &= se.write(htonl(m_value), "Value" );
     }
+
+    if(!result) {
+        debugWarning("Serialization failed\n");
+    }
+
     return result;
 }
 
@@ -94,8 +99,14 @@ EfcGenericMixerCmd::deserialize( Util::IISDeserialize& de )
 
     result &= EfcCmd::deserialize ( de );
 
-    EFC_DESERIALIZE_AND_SWAP(de, (quadlet_t *)&m_channel, result);
-    EFC_DESERIALIZE_AND_SWAP(de, &m_value, result);
+    if (m_type == eCT_Get) {
+        EFC_DESERIALIZE_AND_SWAP(de, (quadlet_t *)&m_channel, result);
+        EFC_DESERIALIZE_AND_SWAP(de, &m_value, result);
+    }
+
+    if(!result) {
+        debugWarning("Deserialization failed\n");
+    }
 
     return result;
 }

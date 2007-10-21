@@ -175,6 +175,11 @@ Device::doEfcOverAVC(EfcCmd &c) {
     }
 //     c.showEfcCmd();
 
+    if ( cmd.getResponse() != AVC::AVCCommand::eR_Accepted) {
+        debugError( "EfcOverAVCCmd not accepted\n" );
+        return false;
+    }
+
     if (   c.m_header.retval != EfcCmd::eERV_Ok
         && c.m_header.retval != EfcCmd::eERV_FlashBusy) {
         debugError( "EFC command failed\n" );

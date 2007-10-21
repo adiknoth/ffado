@@ -129,9 +129,15 @@ EfcGenericMonitorCmd::deserialize( Util::IISDeserialize& de )
 
     result &= EfcCmd::deserialize ( de );
 
-    EFC_DESERIALIZE_AND_SWAP(de, (quadlet_t *)&m_input, result);
-    EFC_DESERIALIZE_AND_SWAP(de, (quadlet_t *)&m_output, result);
-    EFC_DESERIALIZE_AND_SWAP(de, &m_value, result);
+    if (m_type == eCT_Get) {
+        EFC_DESERIALIZE_AND_SWAP(de, (quadlet_t *)&m_input, result);
+        EFC_DESERIALIZE_AND_SWAP(de, (quadlet_t *)&m_output, result);
+        EFC_DESERIALIZE_AND_SWAP(de, &m_value, result);
+    }
+
+    if(!result) {
+        debugWarning("Deserialization failed\n");
+    }
 
     return result;
 }

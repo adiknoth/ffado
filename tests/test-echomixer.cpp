@@ -222,7 +222,7 @@ main(int argc, char **argv)
 #define DO_PLAYBACK_MIX
 // #define DO_RECORD_MIX
 #define DO_PHYS_OUT_MIX
-// #define DO_PHYS_IN_MIX
+#define DO_PHYS_IN_MIX
 
 #ifdef DO_PLAYBACK_MIX
     cmd.setTarget(eMT_PlaybackMix);
