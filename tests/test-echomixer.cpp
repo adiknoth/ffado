@@ -590,7 +590,6 @@ main(int argc, char **argv)
     }
     printf("\n");
 
-
     delete m_1394Service;
 
     return 0;
