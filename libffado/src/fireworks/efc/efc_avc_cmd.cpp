@@ -59,6 +59,10 @@ EfcOverAVCCmd::serialize( Util::IOSSerialize& se )
 
     result &= m_cmd->serialize( se );
 
+    if(!result) {
+        debugWarning("Serialization failed\n");
+    }
+
     return result;
 }
 
@@ -76,6 +80,10 @@ EfcOverAVCCmd::deserialize( Util::IISDeserialize& de )
     result &= de.read(&m_dummy_2);
 
     result &= m_cmd->deserialize( de );
+    
+    if(!result) {
+        debugWarning("Deserialization failed\n");
+    }
     
     return result;
 }

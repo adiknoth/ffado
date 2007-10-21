@@ -152,7 +152,7 @@ class AudioFire2Mixer(AudioFire2MixerUI):
         print "set %s to %d" % (
                     self.VolumeControls[sender][0],
                     vol)
-        self.hw.setContinuous(self.VolumeControls[sender][0],
+        self.hw.setContignuous(self.VolumeControls[sender][0],
                               vol)
 
     def updateSelector(self,a0):
