@@ -31,38 +31,6 @@ using namespace std;
 
 namespace FireWorks {
 
-const char *eMixerTargetToString(const enum eMixerTarget target) {
-    switch (target) {
-        case eMT_PhysicalOutputMix:
-            return "eMT_PhysicalOutputMix";
-        case eMT_PhysicalInputMix:
-            return "eMT_PhysicalInputMix";
-        case eMT_PlaybackMix:
-            return "eMT_PlaybackMix";
-        case eMT_RecordMix:
-            return "eMT_RecordMix";
-        default:
-            return "invalid";
-    }
-}
-
-const char *eMixerCommandToString(const enum eMixerCommand command) {
-    switch (command) {
-        case eMC_Gain:
-            return "eMC_Gain";
-        case eMC_Solo:
-            return "eMC_Solo";
-        case eMC_Mute:
-            return "eMC_Mute";
-        case eMC_Pan:
-            return "eMC_Pan";
-        case eMC_Nominal:
-            return "eMC_Nominal";
-        default:
-            return "invalid";
-    }
-}
-
 EfcGenericMixerCmd::EfcGenericMixerCmd(enum eMixerTarget target, 
                                        enum eMixerCommand command)
     : EfcCmd()
