@@ -200,13 +200,7 @@ main(int argc, char **argv)
         return false;
     }
     m_HwInfo.showEfcCmd();
-    
-//     uint32_t            m_nb_1394_playback_channels;
-//     uint32_t            m_nb_1394_record_channels;
-// 
-//     uint32_t            m_nb_phys_audio_out;
-//     uint32_t            m_nb_phys_audio_in;
-    
+
     unsigned int ch=0;
     
     uint32_t pbk_vol[m_HwInfo.m_nb_1394_playback_channels][5];
@@ -219,181 +213,204 @@ main(int argc, char **argv)
     memset(out_vol, 0, sizeof(uint32_t) * 5 * m_HwInfo.m_nb_phys_audio_out);
     memset(in_vol, 0, sizeof(uint32_t) * 5 * m_HwInfo.m_nb_phys_audio_in);
     
+    enum eMixerTarget t=eMT_PlaybackMix;
+    enum eMixerCommand c = eMC_Gain;
+    enum eCmdType type = eCT_Get;
+    EfcGenericMixerCmd cmd(t,c);
+    cmd.setType(type);
+
+#define DO_PLAYBACK_MIX
+// #define DO_RECORD_MIX
+#define DO_PHYS_OUT_MIX
+// #define DO_PHYS_IN_MIX
+
+#ifdef DO_PLAYBACK_MIX
+    cmd.setTarget(eMT_PlaybackMix);
     for (ch=0;ch<m_HwInfo.m_nb_1394_playback_channels;ch++) {
-        enum eMixerTarget t=eMT_PlaybackMix;
+//     for (ch=0;ch<1;ch++) {
         {
-            EfcGetGainCmd getCmd(t);
-            getCmd.m_channel=ch;
-            if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+            cmd.setCommand(eMC_Gain);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
                 debugFatal("Cmd failed\n");
             }
-            pbk_vol[ch][0]=getCmd.m_value;
+            pbk_vol[ch][0]=cmd.m_value;
         }
 //         {
-//             EfcGetPanCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+//             cmd.setCommand(eMC_Solo);
+//             cmd.m_channel=ch;
+//             if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
 //                 debugFatal("Cmd failed\n");
 //             }
-//             pbk_vol[ch][1]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetSoloCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             pbk_vol[ch][2]=getCmd.m_value;
+//             pbk_vol[ch][1]=cmd.m_value;
 //         }
         {
-            EfcGetMuteCmd getCmd(t);
-            getCmd.m_channel=ch;
-            if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+            cmd.setCommand(eMC_Mute);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
                 debugFatal("Cmd failed\n");
             }
-            pbk_vol[ch][3]=getCmd.m_value;
+            pbk_vol[ch][2]=cmd.m_value;
         }
 //         {
-//             EfcGetNominalCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+//             cmd.setCommand(eMC_Pan);
+//             cmd.m_channel=ch;
+//             if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
 //                 debugFatal("Cmd failed\n");
 //             }
-//             pbk_vol[ch][4]=getCmd.m_value;
+//             pbk_vol[ch][3]=cmd.m_value;
+//         }
+//         {
+//             cmd.setCommand(eMC_Nominal);
+//             cmd.m_channel=ch;
+//             if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+//                 debugFatal("Cmd failed\n");
+//             }
+//             pbk_vol[ch][4]=cmd.m_value;
 //         }
     }
-    
-//     for (ch=0;ch<m_HwInfo.m_nb_1394_record_channels;ch++) {
-//         enum eMixerTarget t=eMT_RecordMix;
-//         {
-//             EfcGetGainCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             rec_vol[ch][0]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetPanCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             rec_vol[ch][1]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetSoloCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             rec_vol[ch][2]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetMuteCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             rec_vol[ch][3]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetNominalCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             rec_vol[ch][4]=getCmd.m_value;
-//         }
-//     }
+#endif
 
+#ifdef DO_RECORD_MIX
+    cmd.setTarget(eMT_RecordMix);
+    for (ch=0;ch<m_HwInfo.m_nb_1394_record_channels;ch++) {
+//     for (ch=0;ch<1;ch++) {
+        {
+            cmd.setCommand(eMC_Gain);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            rec_vol[ch][0]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Solo);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            rec_vol[ch][1]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Mute);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            rec_vol[ch][2]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Pan);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            rec_vol[ch][3]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Nominal);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            rec_vol[ch][4]=cmd.m_value;
+        }
+    }
+#endif
+
+#ifdef DO_PHYS_OUT_MIX
+    cmd.setTarget(eMT_PhysicalOutputMix);
     for (ch=0;ch<m_HwInfo.m_nb_phys_audio_out;ch++) {
-        enum eMixerTarget t=eMT_PhysicalOutputMix;
+//     for (ch=0;ch<1;ch++) {
         {
-            EfcGetGainCmd getCmd(t);
-            getCmd.m_channel=ch;
-            if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+            cmd.setCommand(eMC_Gain);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
                 debugFatal("Cmd failed\n");
             }
-            out_vol[ch][0]=getCmd.m_value;
+            out_vol[ch][0]=cmd.m_value;
         }
 //         {
-//             EfcGetPanCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+//             cmd.setCommand(eMC_Solo);
+//             cmd.m_channel=ch;
+//             if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
 //                 debugFatal("Cmd failed\n");
 //             }
-//             out_vol[ch][1]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetSoloCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             out_vol[ch][2]=getCmd.m_value;
+//             out_vol[ch][1]=cmd.m_value;
 //         }
         {
-            EfcGetMuteCmd getCmd(t);
-            getCmd.m_channel=ch;
-            if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+            cmd.setCommand(eMC_Mute);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
                 debugFatal("Cmd failed\n");
             }
-            out_vol[ch][3]=getCmd.m_value;
+            out_vol[ch][2]=cmd.m_value;
         }
+//         {
+//             cmd.setCommand(eMC_Pan);
+//             cmd.m_channel=ch;
+//             if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+//                 debugFatal("Cmd failed\n");
+//             }
+//             out_vol[ch][3]=cmd.m_value;
+//         }
         {
-            EfcGetNominalCmd getCmd(t);
-            getCmd.m_channel=ch;
-            if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
+            cmd.setCommand(eMC_Nominal);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
                 debugFatal("Cmd failed\n");
             }
-            out_vol[ch][4]=getCmd.m_value;
+            out_vol[ch][4]=cmd.m_value;
         }
     }
+#endif
 
-//     for (ch=0;ch<m_HwInfo.m_nb_phys_audio_in;ch++) {
-//         enum eMixerTarget t=eMT_PhysicalInputMix;
-//         {
-//             EfcGetGainCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             in_vol[ch][0]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetPanCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             in_vol[ch][1]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetSoloCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             in_vol[ch][2]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetMuteCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             in_vol[ch][3]=getCmd.m_value;
-//         }
-//         {
-//             EfcGetNominalCmd getCmd(t);
-//             getCmd.m_channel=ch;
-//             if (!doEfcOverAVC(*m_1394Service, arguments.node, getCmd)) {
-//                 debugFatal("Cmd failed\n");
-//             }
-//             in_vol[ch][4]=getCmd.m_value;
-//         }
-//     }
+#ifdef DO_PHYS_IN_MIX
+    cmd.setTarget(eMT_PhysicalInputMix);
+    for (ch=0;ch<m_HwInfo.m_nb_phys_audio_in;ch++) {
+//     for (ch=0;ch<1;ch++) {
+        {
+            cmd.setCommand(eMC_Gain);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            in_vol[ch][0]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Solo);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            in_vol[ch][1]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Mute);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            in_vol[ch][2]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Pan);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            in_vol[ch][3]=cmd.m_value;
+        }
+        {
+            cmd.setCommand(eMC_Nominal);
+            cmd.m_channel=ch;
+            if (!doEfcOverAVC(*m_1394Service, arguments.node, cmd)) {
+                debugFatal("Cmd failed\n");
+            }
+            in_vol[ch][4]=cmd.m_value;
+        }
+    }
+#endif
 
     uint32_t monitor_gain[m_HwInfo.m_nb_phys_audio_in][m_HwInfo.m_nb_phys_audio_out];
     for (unsigned int ch_in=0;ch_in<m_HwInfo.m_nb_phys_audio_in;ch_in++) {
@@ -456,16 +473,22 @@ main(int argc, char **argv)
     printf("Mixer state info\n");
     printf("================\n");
     printf("        %10s %10s %10s %10s %10s\n","GAIN","PAN","SOLO","MUTE","NOMINAL");
+#ifdef DO_PLAYBACK_MIX
     printf("Playback mixer state:\n");
     for (ch=0;ch<m_HwInfo.m_nb_1394_playback_channels;ch++) {
         printf(" ch %2d: ", ch);
         int j;
         for (j=0;j<5;j++) {
-            printf("%10u ", pbk_vol[ch][j]);
+            if (j==0 || j==2)
+                printf("%10u ", pbk_vol[ch][j]);
+            else
+                printf("%10s ", "*");
         }
         printf("\n");
     }
-    
+#endif
+
+#ifdef DO_RECORD_MIX
     printf("Record mixer state:\n");
     for (ch=0;ch<m_HwInfo.m_nb_1394_record_channels;ch++) {
         printf(" ch %2d: ", ch);
@@ -475,17 +498,24 @@ main(int argc, char **argv)
         }
         printf("\n");
     }    
+#endif
 
+#ifdef DO_PHYS_OUT_MIX
     printf("Output mixer state:\n");
     for (ch=0;ch<m_HwInfo.m_nb_phys_audio_out;ch++) {
         printf(" ch %2d: ", ch);
         int j;
         for (j=0;j<5;j++) {
-            printf("%10u ", out_vol[ch][j]);
+           if (j==0 || j==2 || j==4)
+                printf("%10u ", out_vol[ch][j]);
+            else
+                printf("%10s ", "*");
         }
         printf("\n");
     }
+#endif
     
+#ifdef DO_PHYS_IN_MIX
     printf("Input mixer state:\n");
     for (ch=0;ch<m_HwInfo.m_nb_phys_audio_in;ch++) {
         printf(" ch %2d: ", ch);
@@ -495,6 +525,7 @@ main(int argc, char **argv)
         }
         printf("\n");
     }
+#endif
     
     printf("\nMonitor state info\n");
     printf("==================\n");

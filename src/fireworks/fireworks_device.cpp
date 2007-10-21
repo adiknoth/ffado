@@ -34,6 +34,11 @@
 
 #include "config.h"
 
+#include "fireworks/fireworks_control.h"
+
+#include <sstream>
+using namespace std;
+
 // FireWorks is the platform used and developed by ECHO AUDIO
 namespace FireWorks {
 
@@ -41,6 +46,7 @@ Device::Device( Ieee1394Service& ieee1394Service,
                             std::auto_ptr<ConfigRom>( configRom ))
     : GenericAVC::AvDevice( ieee1394Service, configRom)
     , m_efc_discovery_done ( false )
+    , m_MixerContainer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created FireWorks::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -49,6 +55,7 @@ Device::Device( Ieee1394Service& ieee1394Service,
 
 Device::~Device()
 {
+    destroyMixer();
 }
 
 void
@@ -103,6 +110,10 @@ Device::discover()
         return false;
     }
 
+    if(!buildMixer()) {
+        debugWarning("Could not build mixer\n");
+    }
+
     return true;
 }
 
@@ -134,7 +145,7 @@ Device::createDevice( Ieee1394Service& ieee1394Service,
                       std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
-    unsigned int modelId = configRom->getModelId();
+//     unsigned int modelId = configRom->getModelId();
 
     switch(vendorId) {
         case FW_VENDORID_ECHO: return new ECHO::AudioFire(ieee1394Service, configRom );
@@ -173,6 +184,100 @@ Device::doEfcOverAVC(EfcCmd &c) {
 
     return true;
 }
+
+bool
+Device::buildMixer()
+{
+    bool result=true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a FireWorks mixer...\n");
+    
+    destroyMixer();
+    
+    // create the mixer object container
+    m_MixerContainer = new Control::Container("Mixer");
+
+    if (!m_MixerContainer) {
+        debugError("Could not create mixer container...\n");
+        return false;
+    }
+
+    // create control objects for the audiofire
+
+    // matrix mix controls
+    result &= m_MixerContainer->addElement(
+        new MonitorControl(*this, MonitorControl::eMC_Gain, "MonitorGain"));
+
+    result &= m_MixerContainer->addElement(
+        new MonitorControl(*this, MonitorControl::eMC_Mute, "MonitorMute"));
+
+    result &= m_MixerContainer->addElement(
+        new MonitorControl(*this, MonitorControl::eMC_Solo, "MonitorSolo"));
+
+    result &= m_MixerContainer->addElement(
+        new MonitorControl(*this, MonitorControl::eMC_Pan, "MonitorPan"));
+
+    // Playback mix controls
+    for (int ch=0;ch<m_HwInfo.m_nb_1394_playback_channels;ch++) {
+        std::ostringstream node_name;
+        node_name << "PC" << ch;
+        
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PlaybackMix, eMC_Mute, ch, 0, node_name.str()+"Mute"));
+        result &= m_MixerContainer->addElement(
+            new SimpleControl(*this, eMT_PlaybackMix, eMC_Gain, ch, node_name.str()+"Gain"));
+    }
+    
+    // Physical output mix controls
+    for (int ch=0;ch<m_HwInfo.m_nb_phys_audio_out;ch++) {
+        std::ostringstream node_name;
+        node_name << "OUT" << ch;
+        
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PhysicalOutputMix, eMC_Mute, ch, 0, node_name.str()+"Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PhysicalOutputMix, eMC_Nominal, ch, 1, node_name.str()+"Nominal"));
+        result &= m_MixerContainer->addElement(
+            new SimpleControl(*this, eMT_PhysicalOutputMix, eMC_Gain, ch, node_name.str()+"Gain"));
+    }
+    
+    if (!result) {
+        debugWarning("One or more control elements could not be created.");
+        // clean up those that couldn't be created
+        destroyMixer();
+        return false;
+    }
+
+    if (!addElement(m_MixerContainer)) {
+        debugWarning("Could not register mixer to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Device::destroyMixer()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "destroy mixer...\n");
+
+    if (m_MixerContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
+        return true;
+    }
+
+    if (!deleteElement(m_MixerContainer)) {
+        debugError("Mixer present but not registered to the avdevice\n");
+        return false;
+    }
+
+    // remove and delete (as in free) child control elements
+    m_MixerContainer->clearElements(true);
+    delete m_MixerContainer;
+    return true;
+}
+
 
 bool
 Device::updatePolledValues() {
