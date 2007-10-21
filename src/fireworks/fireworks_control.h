@@ -1,0 +1,150 @@
+/*
+ * Copyright (C) 2005-2007 by Daniel Wagner
+ * Copyright (C) 2005-2007 by Pieter Palmers
+ *
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
+ *
+ * FFADO is based upon FreeBoB.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software Foundation;
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
+ */
+
+#ifndef FIREWORKS_MATRIX_CONTROL_H
+#define FIREWORKS_MATRIX_CONTROL_H
+
+#include "debugmodule/debugmodule.h"
+
+#include "efc/efc_cmd.h"
+#include "efc/efc_cmds_hardware.h"
+#include "efc/efc_cmds_mixer.h"
+#include "efc/efc_cmds_monitor.h"
+#include "efc/efc_cmds_ioconfig.h"
+
+#include "libcontrol/BasicElements.h"
+#include "libcontrol/MatrixMixer.h"
+
+#include <pthread.h>
+
+class ConfigRom;
+class Ieee1394Service;
+
+namespace FireWorks {
+
+class MonitorControl : public Control::MatrixMixer
+{
+public:
+    enum eMonitorControl {
+        eMC_Gain,
+        eMC_Solo,
+        eMC_Mute,
+        eMC_Pan,
+    };
+
+public:
+    MonitorControl(FireWorks::Device& parent, enum eMonitorControl);
+    MonitorControl(FireWorks::Device& parent, enum eMonitorControl, std::string n);
+    virtual ~MonitorControl() {};
+
+    virtual void show();
+
+    virtual std::string getRowName( const int );
+    virtual std::string getColName( const int );
+    virtual int canWrite( const int, const int );
+    virtual double setValue( const int, const int, const double );
+    virtual double getValue( const int, const int );
+    virtual int getRowCount( );
+    virtual int getColCount( );
+
+protected:
+    enum eMonitorControl        m_control;
+    FireWorks::Device&          m_Parent;
+};
+
+
+class SimpleControl : public Control::Continuous
+{
+
+public:
+    SimpleControl(FireWorks::Device& parent,
+                  enum eMixerTarget, enum eMixerCommand,
+                  int channel);
+    SimpleControl(FireWorks::Device& parent,
+                  enum eMixerTarget, enum eMixerCommand,
+                  int channel, std::string n);
+    virtual ~SimpleControl();
+
+    virtual void show();
+
+    virtual bool setValue( const double );
+    virtual double getValue( );
+
+protected:
+    EfcGenericMixerCmd*         m_Slave;
+    FireWorks::Device&          m_Parent;
+};
+
+// for on-off type of controls
+
+class BinaryControl : public Control::Discrete
+{
+
+public:
+    BinaryControl(FireWorks::Device& parent,
+                  enum eMixerTarget, enum eMixerCommand,
+                  int channel, int bit);
+    BinaryControl(FireWorks::Device& parent,
+                  enum eMixerTarget, enum eMixerCommand,
+                  int channel, int bit, std::string n);
+    virtual ~BinaryControl();
+
+    virtual void show();
+
+    virtual bool setValue( const int );
+    virtual int getValue( );
+
+protected:
+    int                         m_bit;
+    EfcGenericMixerCmd*         m_Slave;
+    FireWorks::Device&          m_Parent;
+};
+
+// for on-off type of controls
+
+class IOConfigControl : public Control::Discrete
+{
+
+public:
+    IOConfigControl(FireWorks::Device& parent,
+                    enum eIOConfigRegister);
+    IOConfigControl(FireWorks::Device& parent,
+                    enum eIOConfigRegister,
+                    std::string n);
+    virtual ~IOConfigControl();
+
+    virtual void show();
+
+    virtual bool setValue( const int );
+    virtual int getValue( );
+
+protected:
+    int                         m_bit;
+    EfcGenericIOConfigCmd*      m_Slave;
+    FireWorks::Device&          m_Parent;
+};
+
+} // namespace FireWorks
+
+#endif
