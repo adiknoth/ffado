@@ -36,6 +36,54 @@ IMPL_DEBUG_MODULE( EfcCmd, EfcCmd, DEBUG_LEVEL_NORMAL );
 // static int to keep track of the sequence index
 uint32_t EfcCmd::m_seqnum = 1;
 
+// some generic string generation functions
+const char *eMixerTargetToString(const enum eMixerTarget target) {
+    switch (target) {
+        case eMT_PhysicalOutputMix:
+            return "PhysicalOutputMix";
+        case eMT_PhysicalInputMix:
+            return "PhysicalInputMix";
+        case eMT_PlaybackMix:
+            return "PlaybackMix";
+        case eMT_RecordMix:
+            return "RecordMix";
+        default:
+            return "invalid";
+    }
+}
+
+const char *eMixerCommandToString(const enum eMixerCommand command) {
+    switch (command) {
+        case eMC_Gain:
+            return "Gain";
+        case eMC_Solo:
+            return "Solo";
+        case eMC_Mute:
+            return "Mute";
+        case eMC_Pan:
+            return "Pan";
+        case eMC_Nominal:
+            return "Nominal";
+        default:
+            return "invalid";
+    }
+}
+
+const char *eIOConfigRegisterToString(const enum eIOConfigRegister reg) {
+    switch (reg) {
+        case eCR_Mirror:
+            return "Mirror";
+        case eCR_DigitalMode:
+            return "DigitalMode";
+        case eCR_Phantom:
+            return "Phantom";
+        default:
+            return "invalid";
+    }
+}
+
+// the real deal
+
 EfcCmd::EfcCmd(uint32_t cat, uint32_t cmd)
     : m_length ( 0 )
     , m_category_id ( cat )

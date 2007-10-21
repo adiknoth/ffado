@@ -74,6 +74,17 @@
 #define EFC_CMD_MIXER_SET_NOMINAL     8
 #define EFC_CMD_MIXER_GET_NOMINAL     9
 
+// Commands for the EFC_CAT_IO_CONFIG category
+#define EFC_CMD_IO_CONFIG_SET_MIRROR        0
+#define EFC_CMD_IO_CONFIG_GET_MIRROR        1
+#define EFC_CMD_IO_CONFIG_SET_DIGITAL_MODE  2
+#define EFC_CMD_IO_CONFIG_GET_DIGITAL_MODE  3
+#define EFC_CMD_IO_CONFIG_SET_PHANTOM       4
+#define EFC_CMD_IO_CONFIG_GET_PHANTOM       5
+#define EFC_CMD_IO_CONFIG_SET_ISOC_MAP      6
+#define EFC_CMD_IO_CONFIG_GET_ISOC_MAP      7
+
+
 // size of the header
 #define EFC_HEADER_LENGTH_QUADLETS      ((sizeof(uint32_t) + sizeof(struct EfcCmd::efc_header))/4)
 
@@ -124,6 +135,34 @@
 #define EFC_CMD_HW_CHANNEL_TYPE_I2S                 6
 
 namespace FireWorks {
+
+enum eMixerTarget {
+    eMT_PhysicalOutputMix,
+    eMT_PhysicalInputMix,
+    eMT_PlaybackMix,
+    eMT_RecordMix,
+};
+enum eMixerCommand {
+    eMC_Gain,
+    eMC_Solo,
+    eMC_Mute,
+    eMC_Pan,
+    eMC_Nominal,
+};
+enum eCmdType {
+    eCT_Get,
+    eCT_Set,
+};
+
+enum eIOConfigRegister {
+    eCR_Mirror,
+    eCR_DigitalMode,
+    eCR_Phantom,
+};
+
+const char *eMixerTargetToString(const enum eMixerTarget target);
+const char *eMixerCommandToString(const enum eMixerCommand command);
+const char *eIOConfigRegisterToString(const enum eIOConfigRegister reg);
 
 class EfcCmd
 {

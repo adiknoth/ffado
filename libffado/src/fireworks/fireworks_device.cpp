@@ -217,7 +217,7 @@ Device::buildMixer()
         new MonitorControl(*this, MonitorControl::eMC_Pan, "MonitorPan"));
 
     // Playback mix controls
-    for (int ch=0;ch<m_HwInfo.m_nb_1394_playback_channels;ch++) {
+    for (unsigned int ch=0;ch<m_HwInfo.m_nb_1394_playback_channels;ch++) {
         std::ostringstream node_name;
         node_name << "PC" << ch;
         
@@ -228,7 +228,7 @@ Device::buildMixer()
     }
     
     // Physical output mix controls
-    for (int ch=0;ch<m_HwInfo.m_nb_phys_audio_out;ch++) {
+    for (unsigned int ch=0;ch<m_HwInfo.m_nb_phys_audio_out;ch++) {
         std::ostringstream node_name;
         node_name << "OUT" << ch;
         
@@ -240,6 +240,16 @@ Device::buildMixer()
             new SimpleControl(*this, eMT_PhysicalOutputMix, eMC_Gain, ch, node_name.str()+"Gain"));
     }
     
+    // check for IO config controls and add them if necessary
+    if(m_HwInfo.hasMirroring()) {
+        result &= m_MixerContainer->addElement(
+            new IOConfigControl(*this, eCR_Mirror, "ChannelMirror"));
+    }
+    if(m_HwInfo.hasSoftwarePhantom()) {
+        result &= m_MixerContainer->addElement(
+            new IOConfigControl(*this, eCR_Phantom, "PhantomPower"));
+    }
+
     if (!result) {
         debugWarning("One or more control elements could not be created.");
         // clean up those that couldn't be created

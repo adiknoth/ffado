@@ -40,7 +40,6 @@ class EfcHardwareInfoCmd : public EfcCmd
         uint8_t count;
     } caps_phys_group;
 
-
 public:
     EfcHardwareInfoCmd();
     virtual ~EfcHardwareInfoCmd() {};
@@ -52,6 +51,21 @@ public:
     { return "EfcHardwareInfoCmd"; }
     
     virtual void showEfcCmd();
+    
+    bool hasSoftwarePhantom()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_PHANTOM);};
+    bool hasDSP()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_DSP);};
+    bool hasFPGA()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_FPGA);};
+    bool hasSpdifCoax()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_SPDIF_COAX_SUPPORTED);};
+    bool hasSpdifAESEBUXLR()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED);};
+    bool hasMirroring()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_MIRRORING_SUPPORTED);};
+    bool hasDynAddr()
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_DYNADDR_SUPPORTED);};
 
     uint32_t            m_flags;
     

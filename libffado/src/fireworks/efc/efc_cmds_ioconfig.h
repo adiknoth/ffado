@@ -21,19 +21,18 @@
  * MA 02110-1301 USA
  */
 
-#ifndef FIREWORKS_EFC_CMD_MIXER_H
-#define FIREWORKS_EFC_CMD_MIXER_H
+#ifndef FIREWORKS_EFC_CMD_IOCONFIG_H
+#define FIREWORKS_EFC_CMD_IOCONFIG_H
 
 #include "efc_cmd.h"
 
 namespace FireWorks {
 
-class EfcGenericMixerCmd : public EfcCmd
+class EfcGenericIOConfigCmd : public EfcCmd
 {
 public:
-    EfcGenericMixerCmd(enum eMixerTarget, enum eMixerCommand);
-    EfcGenericMixerCmd(enum eMixerTarget, enum eMixerCommand, int channel);
-    virtual ~EfcGenericMixerCmd() {};
+    EfcGenericIOConfigCmd(enum eIOConfigRegister r);
+    virtual ~EfcGenericIOConfigCmd() {};
 
     virtual bool serialize( Util::IOSSerialize& se );
     virtual bool deserialize( Util::IISDeserialize& de );
@@ -42,23 +41,19 @@ public:
     
     bool setType( enum eCmdType type );
     enum eCmdType getType() {return m_type;};
-    bool setTarget( enum eMixerTarget target );
-    enum eMixerTarget getTarget() {return m_target;};
-    bool setCommand( enum eMixerCommand cmd );
-    enum eMixerCommand getCommand() {return m_command;};
+    bool setRegister( enum eIOConfigRegister r );
+    enum eIOConfigRegister getRegister() {return m_reg;};
     
     virtual const char* getCmdName() const
-        { return "EfcGenericMixerCmd"; }
+        { return "EfcGenericIOConfigCmd"; }
 
-    int32_t     m_channel;
     uint32_t    m_value;
 
 private:
-    enum eCmdType       m_type;
-    enum eMixerTarget   m_target;
-    enum eMixerCommand  m_command;
+    enum eCmdType           m_type;
+    enum eIOConfigRegister  m_reg;
 };
 
 } // namespace FireWorks
 
-#endif // FIREWORKS_EFC_CMD_MIXER_H
+#endif // FIREWORKS_EFC_CMD_IOCONFIG_H
