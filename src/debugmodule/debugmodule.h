@@ -232,6 +232,9 @@ protected:
     void print(const char *fmt, ...);
     void va_print(const char *fmt, va_list);
 
+    void backlog_print(const char *fmt, ...);
+    void backlog_va_print(const char *fmt, va_list);
+
 private:
     DebugModuleManager();
 
@@ -254,7 +257,7 @@ private:
     // the backlog
     char bl_mb_buffers[BACKLOG_MB_BUFFERS][BACKLOG_MB_BUFFERSIZE];
     unsigned int bl_mb_inbuffer;
-    void bl_mb_flush();
+    pthread_mutex_t bl_mb_write_lock;
 
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;
