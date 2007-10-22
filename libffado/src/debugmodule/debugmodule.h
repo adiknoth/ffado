@@ -36,10 +36,16 @@ typedef short debug_level_t;
 #define DEBUG_MAX_MESSAGE_LENGTH 1024
 
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
-#define MB_BUFFERS    (1<<16)
+#define MB_BUFFERS          (1<<16)
 
-#define MB_NEXT(index) ((index+1) & (MB_BUFFERS-1))
-#define MB_BUFFERSIZE    DEBUG_MAX_MESSAGE_LENGTH        /* message length limit */
+#define MB_NEXT(index)      (((index)+1) & (MB_BUFFERS-1))
+
+#define MB_BUFFERSIZE       DEBUG_MAX_MESSAGE_LENGTH
+
+// the backlog is a similar buffer as the message buffer
+#define BACKLOG_MB_BUFFERS      (512)
+#define BACKLOG_MB_NEXT(index)  (((index)+1) & (BACKLOG_MB_BUFFERS-1))
+#define BACKLOG_MB_BUFFERSIZE   DEBUG_MAX_MESSAGE_LENGTH
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -102,6 +108,7 @@ typedef short debug_level_t;
                 m_debugModule.getLevel( )
 
 #define flushDebugOutput()      DebugModuleManager::instance()->flush()
+#define debugShowBackLog()      DebugModuleManager::instance()->showBackLog()
 
 #ifdef DEBUG
 
@@ -208,6 +215,14 @@ public:
 
     void flush();
 
+    // the backlog is a ringbuffer of all the messages
+    // that have been recorded using the debugPrint
+    // statements, regardless of the debug level.
+    // This is useful to obtain more debug info
+    // when something goes wrong without having too 
+    // much output in normal operation
+    void showBackLog();
+
 protected:
     bool registerModule( DebugModule& debugModule );
     bool unregisterModule( DebugModule& debugModule );
@@ -235,6 +250,11 @@ private:
 
     static void *mb_thread_func(void *arg);
     void mb_flush();
+
+    // the backlog
+    char bl_mb_buffers[BACKLOG_MB_BUFFERS][BACKLOG_MB_BUFFERSIZE];
+    unsigned int bl_mb_inbuffer;
+    void bl_mb_flush();
 
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;
