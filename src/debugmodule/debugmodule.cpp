@@ -31,7 +31,7 @@
 
 #include <time.h>
 
-// #define DO_MESSAGE_BUFFER_PRINT
+#define DO_MESSAGE_BUFFER_PRINT
 
 #ifndef DO_MESSAGE_BUFFER_PRINT
 	#warning Printing debug info without ringbuffer, not RT-safe!
@@ -159,7 +159,7 @@ DebugModuleManager::DebugModuleManager()
     , mb_inbuffer(0)
     , mb_outbuffer(0)
     , mb_overruns(0)
-
+    , bl_mb_inbuffer(0)
 {
 
 }
@@ -211,8 +211,8 @@ DebugModuleManager::init()
     pthread_mutex_init(&mb_flush_lock, NULL);
     pthread_cond_init(&mb_ready_cond, NULL);
 
-     mb_overruns = 0;
-     mb_initialized = 1;
+    mb_overruns = 0;
+    mb_initialized = 1;
 
     if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0)
          mb_initialized = 0;
@@ -300,7 +300,11 @@ DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
 void
 DebugModuleManager::flush()
 {
-//     mb_flush();
+#ifdef DO_MESSAGE_BUFFER_PRINT
+    mb_flush();
+#else
+    fflush(stderr);
+#endif
 }
 
 void
@@ -320,6 +324,25 @@ DebugModuleManager::mb_flush()
         mb_outbuffer = MB_NEXT(mb_outbuffer);
     }
     pthread_mutex_unlock(&m->mb_flush_lock);
+}
+
+void
+DebugModuleManager::showBackLog()
+{
+    DebugModuleManager *m=DebugModuleManager::instance();
+    fprintf(stderr, "=====================================================\n");
+    fprintf(stderr, "* BEGIN OF BACKLOG PRINT\n");
+    fprintf(stderr, "=====================================================\n");
+
+    for (unsigned int i=0; i<BACKLOG_MB_BUFFERS;i++) {
+        unsigned int idx=(i+bl_mb_inbuffer)%BACKLOG_MB_BUFFERS;
+        fputs(bl_mb_buffers[idx], stderr);
+    }
+    fprintf(stderr, "\n");
+    
+    fprintf(stderr, "=====================================================\n");
+    fprintf(stderr, "* END OF BACKLOG PRINT\n");
+    fprintf(stderr, "=====================================================\n");
 }
 
 void *
@@ -353,7 +376,7 @@ DebugModuleManager::print(const char *fmt, ...)
     va_list ap;
 
 #ifdef DO_MESSAGE_BUFFER_PRINT
-    unsigned int ntries=5;
+    unsigned int ntries;
     struct timespec wait = {0,50000};
 #endif
 
@@ -372,7 +395,12 @@ DebugModuleManager::print(const char *fmt, ...)
         return;
     }
     
+    // the backlog
+    strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, BACKLOG_MB_BUFFERSIZE);
+    bl_mb_inbuffer = BACKLOG_MB_NEXT(bl_mb_inbuffer);
+    
 #ifdef DO_MESSAGE_BUFFER_PRINT
+    ntries=5;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
@@ -401,7 +429,7 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
     char msg[MB_BUFFERSIZE];
 
 #ifdef DO_MESSAGE_BUFFER_PRINT
-    unsigned int ntries=5;
+    unsigned int ntries;
     struct timespec wait = {0,50000};
 #endif
 
@@ -418,7 +446,12 @@ DebugModuleManager::va_print (const char *fmt, va_list ap)
         return;
     }
     
+    // the backlog
+    strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, BACKLOG_MB_BUFFERSIZE);
+    bl_mb_inbuffer = BACKLOG_MB_NEXT(bl_mb_inbuffer);
+
 #ifdef DO_MESSAGE_BUFFER_PRINT
+    ntries=5;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
