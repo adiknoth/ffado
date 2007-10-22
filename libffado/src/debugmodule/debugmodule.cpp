@@ -83,16 +83,18 @@ DebugModule::printShort( debug_level_t level,
                          const char* format,
                          ... ) const
 {
+    va_list arg;
+
+    va_start( arg, format );
+    DebugModuleManager::instance()->backlog_va_print( format, arg );
+    va_end( arg );
+
     if ( level > m_level ) {
         return;
     }
 
-    va_list arg;
-
     va_start( arg, format );
-
     DebugModuleManager::instance()->va_print( format, arg );
-
     va_end( arg );
 }
 
@@ -104,10 +106,6 @@ DebugModule::print( debug_level_t level,
                     const char*   format,
                     ... ) const
 {
-    if ( level > m_level ) {
-        return;
-    }
-
     va_list arg;
     va_start( arg, format );
 
@@ -124,6 +122,19 @@ DebugModule::print( debug_level_t level,
     clock_gettime(CLOCK_MONOTONIC, &ts);
     uint32_t ts_usec=(uint32_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
     
+    va_start( arg, format );
+    DebugModuleManager::instance()->backlog_print( "%010lu: %s (%s)[%4d] %s: ", 
+                 ts_usec, getPreSequence( level ),
+                 fname,  line,  function );
+    DebugModuleManager::instance()->backlog_va_print( format, arg );
+    DebugModuleManager::instance()->backlog_print( "%s", getPostSequence( level ) );
+    va_end( arg );
+
+    if ( level > m_level ) {
+        return;
+    }
+
+    va_start( arg, format );
     DebugModuleManager::instance()->print( "%010lu: %s (%s)[%4d] %s: ", 
                  ts_usec, getPreSequence( level ),
                  fname,  line,  function );
@@ -213,6 +224,8 @@ DebugModuleManager::init()
 
     mb_overruns = 0;
     mb_initialized = 1;
+
+    pthread_mutex_init(&bl_mb_write_lock, NULL);
 
     if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0)
          mb_initialized = 0;
@@ -370,6 +383,38 @@ DebugModuleManager::mb_thread_func(void *arg)
 }
 
 void
+DebugModuleManager::backlog_print(const char *fmt, ...)
+{
+    char msg[MB_BUFFERSIZE];
+    va_list ap;
+
+    unsigned int ntries;
+    struct timespec wait = {0,50000};
+
+    /* format the message first */
+    va_start(ap, fmt);
+    if (vsnprintf(msg, MB_BUFFERSIZE, fmt, ap) >= MB_BUFFERSIZE) {
+        print("WARNING: message truncated!\n");
+    }
+    va_end(ap);
+
+    // the backlog
+    ntries=5;
+    while (ntries) { // try a few times
+        if (pthread_mutex_trylock(&bl_mb_write_lock) == 0) {
+            strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, BACKLOG_MB_BUFFERSIZE);
+            bl_mb_inbuffer = BACKLOG_MB_NEXT(bl_mb_inbuffer);
+            pthread_mutex_unlock(&bl_mb_write_lock);
+            break;
+        } else {
+            nanosleep(&wait, NULL);
+            ntries--;
+        }
+    }
+    // just bail out should it have failed
+}
+
+void
 DebugModuleManager::print(const char *fmt, ...)
 {
     char msg[MB_BUFFERSIZE];
@@ -421,6 +466,34 @@ DebugModuleManager::print(const char *fmt, ...)
 #else
     fprintf(stderr,msg);
 #endif
+}
+
+void
+DebugModuleManager::backlog_va_print (const char *fmt, va_list ap)
+{
+    char msg[MB_BUFFERSIZE];
+    unsigned int ntries;
+    struct timespec wait = {0,50000};
+
+    /* format the message first */
+    if (vsnprintf(msg, MB_BUFFERSIZE, fmt, ap) >= MB_BUFFERSIZE) {
+        print("WARNING: message truncated!\n");
+    }
+
+    // the backlog
+    ntries=5;
+    while (ntries) { // try a few times
+        if (pthread_mutex_trylock(&bl_mb_write_lock) == 0) {
+            strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, BACKLOG_MB_BUFFERSIZE);
+            bl_mb_inbuffer = BACKLOG_MB_NEXT(bl_mb_inbuffer);
+            pthread_mutex_unlock(&bl_mb_write_lock);
+            break;
+        } else {
+            nanosleep(&wait, NULL);
+            ntries--;
+        }
+    }
+    // just bail out should it have failed
 }
 
 void
