@@ -285,9 +285,10 @@ public:
     virtual bool destroyMixer();
 
 private:
-    virtual bool setSamplingFrequencyDo( int );
-    virtual bool setSamplingFrequencyDoNoReboot( int );
+    virtual bool setSamplingFrequencyDo( uint32_t );
+    virtual bool setSamplingFrequencyDoNoReboot( uint32_t );
 
+    void rebootDevice();
     bool isAudioOn();
     bool isExtClockLocked();
     uint32_t getCount32();
