@@ -157,6 +157,15 @@ public:
     bool remBusResetHandler( Functor* functor );
 
     /**
+     * @brief get the current generation
+     *
+     * @return the current generation
+     **/
+    unsigned int getGeneration() {
+        return raw1394_get_generation( m_handle );
+    }
+
+    /**
      * @brief register an AddressRangeMapping Handler
      * @param h pointer to the handler to register
      *
@@ -228,7 +237,6 @@ private:
     raw1394handle_t m_handle;
     raw1394handle_t m_resetHandle;
     int             m_port;
-    unsigned int    m_generation;
 
     pthread_t       m_thread;
     pthread_mutex_t m_mutex;
