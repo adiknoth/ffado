@@ -104,6 +104,11 @@ class ConfigRom
                    Util::IODeserialize& deser,
                    Ieee1394Service& ieee1394Service );
 
+    void setVerboseLevel(int level) {
+        setDebugLevel(level);
+        Element::setVerboseLevel(level);
+    }
+
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,
                                struct csr1212_keyval* ud_kv,

@@ -227,16 +227,17 @@ busRead( struct csr1212_csr* csr,
 {
     struct config_csr_info* csr_info = (struct config_csr_info*) private_data;
 
-    if ( !csr_info->service->read( csr_info->nodeId,
+    int nb_retries = 5;
+
+    while ( !csr_info->service->read( csr_info->nodeId,
                                    addr,
                                    (size_t)length/4,
-                                   ( quadlet_t* )buffer) )
-    {
-        //debugOutput( DEBUG_LEVEL_VERBOSE, "ConfigRom: Read failed\n");
-        return -1;
+                                   ( quadlet_t* )buffer) && nb_retries-- )
+    {// failed, retry
     }
 
-    return 0;
+    if (nb_retries) return 0; // success
+    else return -1; // failure
 }
 
 static int
@@ -441,7 +442,11 @@ ConfigRom::getUnitVersion() const
 bool
 ConfigRom::updatedNodeId()
 {
-    struct csr1212_csr* csr = 0;
+    debugOutput( DEBUG_LEVEL_VERBOSE, 
+                 "Checking for updated node id for device with GUID 0x%016llX...\n",
+                 getGuid());
+
+    struct csr1212_csr* csr = NULL;
     for ( fb_nodeid_t nodeId = 0;
           nodeId < m_1394Service->getNodeCount();
           ++nodeId )
@@ -449,36 +454,48 @@ ConfigRom::updatedNodeId()
         struct config_csr_info csr_info;
         csr_info.service = m_1394Service;
         csr_info.nodeId = 0xffc0 | nodeId;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Looking at node %d...\n", nodeId);
 
         csr = csr1212_create_csr( &configrom_csr1212_ops,
                                   5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
                                   &csr_info );
 
         if (!csr || csr1212_parse_csr( csr ) != CSR1212_SUCCESS) {
+            debugWarning( "Failed to get/parse CSR\n");
             if (csr) {
                 csr1212_destroy_csr(csr);
+                csr = NULL;
             }
             continue;
         }
-
 
         octlet_t guid =
             ((u_int64_t)CSR1212_BE32_TO_CPU(csr->bus_info_data[3]) << 32)
             | CSR1212_BE32_TO_CPU(csr->bus_info_data[4]);
 
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                        " Node has GUID 0x%016llX\n",
+                        guid);
+
         if ( guid == getGuid() ) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "GUID matches ours\n");
             if ( nodeId != getNodeId() ) {
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "Device with GUID 0x%08x%08x changed node id "
+                             "Device with GUID 0x%016llX changed node id "
                              "from %d to %d\n",
-                             ( unsigned int ) ( getGuid() >> 32 ),
-                             ( unsigned int ) ( getGuid() & 0xffffffff ),
+                             getGuid(),
                              getNodeId(),
                              nodeId );
                 m_nodeId = nodeId;
+            } else {
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                             "Device with GUID 0x%016llX kept node id %d\n",
+                             getGuid(),
+                             getNodeId());
             }
             if (csr) {
                 csr1212_destroy_csr(csr);
+                csr = NULL;
             }
             return true;
         }
@@ -502,9 +519,7 @@ ConfigRom::printConfigRom() const
     using namespace std;
     printf( "Config ROM\n" );
     printf( "\tCurrent Node Id:\t%d\n",       getNodeId() );
-    printf( "\tGUID:\t\t\t0x%08x%08x\n",
-            ( unsigned int )( getGuid() >> 32 ),
-            ( unsigned int ) ( getGuid() & 0xffffffff ) );
+    printf( "\tGUID:\t\t\t0x%016llX\n",       getGuid());
     printf( "\tVendor Name:\t\t%s\n",         getVendorName().c_str() );
     printf( "\tModel Name:\t\t%s\n",          getModelName().c_str() );
     printf( "\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );

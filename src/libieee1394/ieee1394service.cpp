@@ -360,6 +360,13 @@ bool
 Ieee1394Service::resetHandler( unsigned int generation )
 {
     m_generation = generation;
+    quadlet_t buf=0;
+
+    // do a simple read on ourself in order to update the internal structures
+    // this avoids failures after a bus reset
+    read_quadlet( getLocalNodeId() & 0xFFC0,
+                  CSR_REGISTER_BASE | CSR_CYCLE_TIME,
+                  &buf );
 
     for ( reset_handler_vec_t::iterator it = m_busResetHandlers.begin();
           it != m_busResetHandlers.end();
