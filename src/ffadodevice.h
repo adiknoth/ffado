@@ -401,6 +401,15 @@ public:
      */
     int getNodeId();
 
+    /**
+     * @brief handle a bus reset
+     *
+     * Called whenever a bus reset is detected. Handle everything
+     * that has to be done to cope with a bus reset.
+     *
+     */
+    void handleBusReset();
+
     // the Control::Container functions
     virtual std::string getName();
     virtual bool setName( std::string n )

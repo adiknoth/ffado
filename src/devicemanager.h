@@ -84,11 +84,12 @@ protected:
                                    int id );
     FFADODevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
 
-protected:
-    Ieee1394Service* m_1394Service;
-    FFADODeviceVector  m_avDevices;
+    void busresetHandler();
 
-//     OSC::OscServer*  m_oscServer;
+protected:
+    Ieee1394Service*   m_1394Service;
+    FFADODeviceVector  m_avDevices;
+    Functor*           m_busreset_functor;
 
 // debug stuff
 public:

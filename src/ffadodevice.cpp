@@ -124,10 +124,23 @@ FFADODevice::setId( unsigned int id)
 }
 
 void
+FFADODevice::handleBusReset()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Handle bus reset...\n");
+    
+    // update the config rom node id
+    sleep(1);
+    getConfigRom().setVerboseLevel(getDebugLevel());
+    getConfigRom().updatedNodeId();
+
+}
+
+void
 FFADODevice::setVerboseLevel(int l)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
+    getConfigRom().setVerboseLevel(l);
 }
 
 void
