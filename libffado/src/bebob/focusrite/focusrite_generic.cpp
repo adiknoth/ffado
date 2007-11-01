@@ -24,6 +24,8 @@
 #include "focusrite_saffirepro.h"
 #include "focusrite_cmd.h"
 
+#include <netinet/in.h>
+
 namespace BeBoB {
 namespace Focusrite {
 
@@ -33,7 +35,7 @@ FocusriteDevice::FocusriteDevice( Ieee1394Service& ieee1394Service,
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::FocusriteDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-
+    addOption(Util::OptionContainer::Option("useAvcForParameters", false));
 }
 
 void
@@ -54,6 +56,35 @@ FocusriteDevice::setVerboseLevel(int l)
 bool
 FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
 {
+    bool use_avc=false;
+    if(!getOption("useAvcForParameters", use_avc)) {
+        debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
+    }
+    if (use_avc) {
+        return setSpecificValueAvc(id, v);
+    } else {
+        return setSpecificValueARM(id, v);
+    }
+}
+
+bool
+FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
+{
+    bool use_avc=false;
+    if(!getOption("useAvcForParameters", use_avc)) {
+        debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
+    }
+    if (use_avc) {
+        return getSpecificValueAvc(id, v);
+    } else {
+        return getSpecificValueARM(id, v);
+    }
+}
+
+// The AV/C methods to set parameters
+bool
+FocusriteDevice::setSpecificValueAvc(uint32_t id, uint32_t v)
+{
     
     FocusriteVendorDependentCmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Control );
@@ -71,12 +102,11 @@ FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
         debugError( "FocusriteVendorDependentCmd info command failed\n" );
         return false;
     }
-    
     return true;
 }
 
 bool
-FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
+FocusriteDevice::getSpecificValueAvc(uint32_t id, uint32_t *v)
 {
     
     FocusriteVendorDependentCmd cmd( get1394Service() );
@@ -94,9 +124,47 @@ FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
         debugError( "FocusriteVendorDependentCmd info command failed\n" );
         return false;
     }
-    
-    *v=cmd.m_value;
 
+    *v=cmd.m_value;
+    return true;
+}
+
+// The ARM methods to set parameters
+bool
+FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
+{
+    fb_quadlet_t data=v;
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing parameter address space id 0x%08lX, data: 0x%08llX\n",
+        id, data);
+
+    fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+
+    if(!m_p1394Service->write_quadlet( nodeId, addr, htonl(data) ) ) {
+        debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
+        return false;
+    }
+    return true;
+}
+
+bool
+FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
+{
+    fb_quadlet_t result;
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading parameter address space id 0x%08lX\n", id);
+
+    fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+
+    if(!m_p1394Service->read_quadlet( nodeId, addr, &result ) ) {
+        debugError("Could not read from node 0x%04llX addr 0x%012llX\n", nodeId, addr);
+        return false;
+    }
+
+    result=ntohl(result);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08llX\n", result);
+
+    *v = result;
     return true;
 }
 
@@ -369,10 +437,10 @@ double FocusriteMatrixMixer::setValue( const int row, const int col, const doubl
 {
     int32_t v=val;
     struct sCellInfo c=m_CellInfo.at(row).at(col);
-    
+
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%ld)\n", 
                                      c.address, row, col, val, v);
-    
+
     if (v>0x07FFF) v=0x07FFF;
     else if (v<0) v=0;
 

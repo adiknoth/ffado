@@ -31,6 +31,8 @@
 #include "libcontrol/BasicElements.h"
 #include "libcontrol/MatrixMixer.h"
 
+#define FR_PARAM_SPACE_START 0x000100000000LL
+
 namespace BeBoB {
 namespace Focusrite {
 
@@ -147,6 +149,13 @@ public:
 protected:
     int convertDefToSr( uint32_t def );
     uint32_t convertSrToDef( int sr );
+
+private:
+    bool setSpecificValueAvc(uint32_t id, uint32_t v);
+    bool getSpecificValueAvc(uint32_t id, uint32_t *v);
+
+    bool setSpecificValueARM(uint32_t id, uint32_t v);
+    bool getSpecificValueARM(uint32_t id, uint32_t *v);
 };
 
 } // namespace Focusrite
