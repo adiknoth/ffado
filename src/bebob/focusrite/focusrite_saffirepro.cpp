@@ -35,7 +35,7 @@ SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
-    addOption(Util::OptionContainer::Option("rebootOnSamplerateChange", false));
+    addOption(Util::OptionContainer::Option("rebootOnSamplerateChange", true));
     // the saffire pro doesn't seem to like it if the commands are too fast
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
@@ -250,9 +250,8 @@ SaffireProDevice::getSamplingFrequency( ) {
 }
 
 bool
-SaffireProDevice::setSamplingFrequencyDo( int s )
+SaffireProDevice::setSamplingFrequencyDo( uint32_t value )
 {
-    uint32_t value=convertSrToDef(s);
     if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE, value) ) {
         debugError( "setSpecificValue failed\n" );
         return false;
@@ -261,9 +260,8 @@ SaffireProDevice::setSamplingFrequencyDo( int s )
 }
 
 bool
-SaffireProDevice::setSamplingFrequencyDoNoReboot( int s )
+SaffireProDevice::setSamplingFrequencyDoNoReboot( uint32_t value )
 {
-    uint32_t value=convertSrToDef(s);
     if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE_NOREBOOT, value) ) {
         debugError( "setSpecificValue failed\n" );
         return false;
@@ -285,69 +283,133 @@ SaffireProDevice::setSamplingFrequency( int s )
     }
 
     if(snoopMode) {
-        int current_sr=getSamplingFrequency();
-        if (current_sr != s ) {
+        if (s != getSamplingFrequency()) {
             debugError("In snoop mode it is impossible to set the sample rate.\n");
             debugError("Please start the client with the correct setting.\n");
             return false;
         }
         return true;
     } else {
-        const int max_tries=2;
-        int ntries=max_tries+1;
+        uint32_t value = convertSrToDef(s);
+        if ( value == 0 ) {
+            debugError("Unsupported samplerate: %u\n", s);
+            return false;
+        }
+    
+        if (s == getSamplingFrequency()) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "No need to change samplerate\n");
+            return true;
+        }
+
+        const int max_tries = 2;
+        int ntries = max_tries+1;
+        
+        unsigned int gen_before = get1394Service().getGeneration();
+        
         while(--ntries) {
             if (rebootOnSamplerateChange) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "setting samplerate with reboot\n");
-                if(!setSamplingFrequencyDo( s )) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Setting samplerate with reboot\n");
+                if(!setSamplingFrequencyDo( value )) {
                     debugWarning("setSamplingFrequencyDo failed\n");
                 }
+
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for device to finish rebooting...\n");
+
+                // the device needs quite some time to reboot
+                usleep(2 * 1000 * 1000);
+
+                int timeout = 5; // multiples of 1s
+                // wait for a busreset to occur
+                while ((gen_before == get1394Service().getGeneration())
+                       && --timeout)
+                {
+                    // wait for a while
+                    usleep(1000 * 1000);
+                }
+                if (!timeout) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "Device did not reset itself, forcing reboot...\n");
+                    rebootDevice();
+
+                    // the device needs quite some time to reboot
+                    usleep(2 * 1000 * 1000);
+
+                    // wait for the device to finish the reboot
+                    timeout = 10; // multiples of 1s
+                    while ((gen_before == get1394Service().getGeneration())
+                           && --timeout)
+                    {
+                        // wait for a while
+                        usleep(1000 * 1000);
+                    }
+                    if (!timeout) {
+                        debugError( "Device did not reset itself after forced reboot...\n");
+                        return false;
+                    }
+                }
+
+                // so we know the device is rebooting
+                // now wait until it stops generating busresets
+                timeout = 10;
+                unsigned int gen_current;
+                do {
+                    gen_current=get1394Service().getGeneration();
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "Waiting... (gen: %u)\n", gen_current);
+
+                    // wait for a while
+                    usleep(4 * 1000 * 1000);
+                } while (gen_current != get1394Service().getGeneration()
+                         && --timeout);
+
+                if (!timeout) {
+                    debugError( "Device did not recover from reboot...\n");
+                    return false;
+                }
+
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Device available (gen: %u => %u)...\n", 
+                    gen_before, get1394Service().getGeneration());
+
+                // wait some more
+                usleep(1 * 1000 * 1000);
+
+                // we have to rediscover the device
+                if (discover()) break;
             } else {
-                debugOutput( DEBUG_LEVEL_VERBOSE, "setting samplerate without reboot\n");
-                if(!setSamplingFrequencyDoNoReboot( s )) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Setting samplerate without reboot\n");
+                if(!setSamplingFrequencyDoNoReboot( value )) {
                     debugWarning("setSamplingFrequencyDoNoReboot failed\n");
                 }
             }
-            int timeout=10; // multiples of 1s
-            while(timeout--) {
-                // wait for a while
-                usleep(1000 * 1000);
-                
-                // we should figure out how long to wait before the device
-                // becomes available again
-                
-                // check device status
-//                 if (discover()) break;
-                debugOutput( DEBUG_LEVEL_VERBOSE, " Audio on: %d, Ext lock: %d, Count32: %08lX\n", 
-                    isAudioOn(), isExtClockLocked(), getCount32());
-                if (timeout==5) break;
-            }
-            
-            if(timeout) {
-                int verify=getSamplingFrequency();
-                
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                            "setSampleRate (try %d): requested samplerate %d, device now has %d\n", 
-                            max_tries-ntries, s, verify );
 
-                if (s == verify) {
-                    break;
-                }
+            int verify=getSamplingFrequency();
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        "setSampleRate (try %d): requested samplerate %d, device now has %d\n", 
+                        max_tries-ntries, s, verify );
+
+            if (s == verify) {
+                break;
             }
+            debugOutput( DEBUG_LEVEL_VERBOSE, "setSampleRate (try %d) failed. Try again...\n" );
         }
-        
+
         if (ntries==0) {
             debugError("Setting samplerate failed...\n");
             return false;
         }
 
-        // rediscover the device
-        //return discover();
-        
         return true;
     }
     // not executable
     return false;
 
+}
+
+void
+SaffireProDevice::rebootDevice() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "rebooting device...\n" );
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_REBOOT, 
+                           FR_SAFFIREPRO_CMD_REBOOT_CODE ) ) {
+        debugError( "setSpecificValue failed\n" );
+    }
 }
 
 bool

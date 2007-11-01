@@ -177,7 +177,9 @@ FocusriteDevice::convertDefToSr( uint32_t def ) {
         case FOCUSRITE_CMD_SAMPLERATE_96K:   return 96000;
         case FOCUSRITE_CMD_SAMPLERATE_176K4: return 176400;
         case FOCUSRITE_CMD_SAMPLERATE_192K:  return 192000;
-        default: return 0;
+        default:
+            debugWarning("Unsupported samplerate def: %08X\n", def);
+            return 0;
     }
 }
 
