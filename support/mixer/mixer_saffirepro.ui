@@ -9,7 +9,7 @@
             <x>0</x>
             <y>0</y>
             <width>861</width>
-            <height>653</height>
+            <height>720</height>
         </rect>
     </property>
     <property name="caption">
@@ -3333,7 +3333,7 @@
                 <x>10</x>
                 <y>330</y>
                 <width>420</width>
-                <height>310</height>
+                <height>380</height>
             </rect>
         </property>
         <property name="title">
@@ -3345,10 +3345,10 @@
             </property>
             <property name="geometry">
                 <rect>
-                    <x>20</x>
+                    <x>10</x>
                     <y>30</y>
                     <width>390</width>
-                    <height>270</height>
+                    <height>340</height>
                 </rect>
             </property>
             <widget class="QWidget">
@@ -3606,6 +3606,70 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkPad12</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>240</y>
+                            <width>110</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Monitor Pad</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkMute12</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>270</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Mute</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkDim12</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>240</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Level Dim</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkHwCtrl12</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>270</y>
+                            <width>190</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Front dial level control</string>
                     </property>
                 </widget>
             </widget>
@@ -3972,6 +4036,70 @@
                         <number>10000</number>
                     </property>
                 </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkPad34</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>240</y>
+                            <width>110</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Monitor Pad</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkMute34</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>270</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Mute</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkDim34</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>240</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Level Dim</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkHwCtrl34</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>270</y>
+                            <width>190</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Front dial level control</string>
+                    </property>
+                </widget>
             </widget>
             <widget class="QWidget">
                 <property name="name">
@@ -4336,6 +4464,70 @@
                         <set>AlignCenter</set>
                     </property>
                 </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkPad56</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>240</y>
+                            <width>110</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Monitor Pad</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkMute56</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>270</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Mute</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkDim56</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>240</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Level Dim</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkHwCtrl56</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>270</y>
+                            <width>190</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Front dial level control</string>
+                    </property>
+                </widget>
             </widget>
             <widget class="QWidget">
                 <property name="name">
@@ -4698,6 +4890,70 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkPad78</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>240</y>
+                            <width>110</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Monitor Pad</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkMute78</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>270</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Mute</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkDim78</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>240</y>
+                            <width>101</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Level Dim</string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chkHwCtrl78</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>170</x>
+                            <y>270</y>
+                            <width>190</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Front dial level control</string>
                     </property>
                 </widget>
             </widget>
@@ -5076,28 +5332,12 @@
                 <x>440</x>
                 <y>330</y>
                 <width>411</width>
-                <height>311</height>
+                <height>380</height>
             </rect>
         </property>
         <property name="title">
             <string>Device Control</string>
         </property>
-        <widget class="QCheckBox">
-            <property name="name">
-                <cstring>chkPhantom14</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>20</x>
-                    <y>30</y>
-                    <width>321</width>
-                    <height>31</height>
-                </rect>
-            </property>
-            <property name="text">
-                <string>Phantom Power on Input 1-4</string>
-            </property>
-        </widget>
         <widget class="QCheckBox">
             <property name="name">
                 <cstring>chkPhantom58</cstring>
@@ -5178,614 +5418,25 @@
                 <string>MIDI Thru</string>
             </property>
         </widget>
+        <widget class="QCheckBox">
+            <property name="name">
+                <cstring>chkPhantom14</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>30</y>
+                    <width>321</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Phantom Power on Input 1-4</string>
+            </property>
+        </widget>
     </widget>
 </widget>
-<connections>
-    <connection>
-        <sender>sldIMixADAT28R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT28R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT28L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT28L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT27R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT27R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT27L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT27L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT26R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT26R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT26L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT26L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT25R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT25R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT25L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT25L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT24R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT24R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT24L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT24L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT23R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT23R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT23L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT23L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT22R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT22R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT22L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT22L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT21R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT21R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT21L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT21L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT18R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT18R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT18L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT18L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT17R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT17R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT17L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT17L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT16R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT16R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT16L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT16L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT15R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT15R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT15L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT15L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT14R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT14R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT14L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT14L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT13R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT13R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT13L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT13L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT12R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT12R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT12L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT12L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT11R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT11R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixADAT11L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixADAT11L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog10R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog10R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog10L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog10L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog9R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog9R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog9L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog9L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog8R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog8R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog8L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog8L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog7R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog7R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog7L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog7L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog6R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog6R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog6L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog6L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog5R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog5R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog5L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog5L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog4R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog4R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog4L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog4L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog3R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog3R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog3L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog3L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog2R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog2R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog2L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog2L(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog1R</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog1R(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldIMixAnalog1L</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setIMixAnalog1L(int)</slot>
-    </connection>
-    <connection>
-        <sender>chkInsert2</sender>
-        <signal>stateChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setInsert2(int)</slot>
-    </connection>
-    <connection>
-        <sender>chkInsert1</sender>
-        <signal>stateChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setInsert1(int)</slot>
-    </connection>
-    <connection>
-        <sender>chkPhantom58</sender>
-        <signal>stateChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setPhantom58(int)</slot>
-    </connection>
-    <connection>
-        <sender>chkPhantom14</sender>
-        <signal>stateChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setPhantom14(int)</slot>
-    </connection>
-    <connection>
-        <sender>chkMidiThru</sender>
-        <signal>stateChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setMidiThru(int)</slot>
-    </connection>
-    <connection>
-        <sender>chkAC3</sender>
-        <signal>stateChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setAC3(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO1</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO1(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO2</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO2(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO3</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO3(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO4</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO4(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO5</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO5(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO6</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO6(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO7</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO7(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO8</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO8(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO9</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO9(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixIMixO10</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixIMixO10(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC1O1</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O1(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC2O2</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O2(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC1O3</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O3(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC2O4</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O4(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC1O5</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O5(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC2O6</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O6(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC1O7</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O7(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC2O8</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O8(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC1O9</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O9(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC2O10</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O10(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC3O3</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O3(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC4O4</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O4(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC5O5</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O5(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC6O6</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O6(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC7O7</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O7(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC8O8</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O8(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC9O9</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC1O9(int)</slot>
-    </connection>
-    <connection>
-        <sender>sldOMixPC10O10</sender>
-        <signal>valueChanged(int)</signal>
-        <receiver>SaffireProMixerUI</receiver>
-        <slot>setOMixPC2O10(int)</slot>
-    </connection>
-</connections>
 <slots>
-    <slot>setIMixAnalog1L(int)</slot>
-    <slot>setIMixAnalog1R(int)</slot>
-    <slot>setIMixAnalog2L(int)</slot>
-    <slot>setIMixAnalog2R(int)</slot>
-    <slot>setIMixAnalog3L(int)</slot>
-    <slot>setIMixAnalog3R(int)</slot>
-    <slot>setIMixAnalog4L(int)</slot>
-    <slot>setIMixAnalog4R(int)</slot>
-    <slot>setIMixAnalog5L(int)</slot>
-    <slot>setIMixAnalog5R(int)</slot>
-    <slot>setIMixAnalog6L(int)</slot>
-    <slot>setIMixAnalog6R(int)</slot>
-    <slot>setIMixAnalog7L(int)</slot>
-    <slot>setIMixAnalog7R(int)</slot>
-    <slot>setIMixAnalog8L(int)</slot>
-    <slot>setIMixAnalog8R(int)</slot>
-    <slot>setIMixAnalog9L(int)</slot>
-    <slot>setIMixAnalog9R(int)</slot>
-    <slot>setIMixAnalog10L(int)</slot>
-    <slot>setIMixAnalog10R(int)</slot>
-    <slot>setIMixADAT11L(int)</slot>
-    <slot>setIMixADAT11R(int)</slot>
-    <slot>setIMixADAT12L(int)</slot>
-    <slot>setIMixADAT12R(int)</slot>
-    <slot>setIMixADAT13L(int)</slot>
-    <slot>setIMixADAT13R(int)</slot>
-    <slot>setIMixADAT14L(int)</slot>
-    <slot>setIMixADAT14R(int)</slot>
-    <slot>setIMixADAT15L(int)</slot>
-    <slot>setIMixADAT15R(int)</slot>
-    <slot>setIMixADAT16L(int)</slot>
-    <slot>setIMixADAT16R(int)</slot>
-    <slot>setIMixADAT17L(int)</slot>
-    <slot>setIMixADAT17R(int)</slot>
-    <slot>setIMixADAT18L(int)</slot>
-    <slot>setIMixADAT18R(int)</slot>
-    <slot>setIMixADAT21L(int)</slot>
-    <slot>setIMixADAT21R(int)</slot>
-    <slot>setIMixADAT22L(int)</slot>
-    <slot>setIMixADAT22R(int)</slot>
-    <slot>setIMixADAT23L(int)</slot>
-    <slot>setIMixADAT23R(int)</slot>
-    <slot>setIMixADAT24L(int)</slot>
-    <slot>setIMixADAT24R(int)</slot>
-    <slot>setIMixADAT25L(int)</slot>
-    <slot>setIMixADAT25R(int)</slot>
-    <slot>setIMixADAT26L(int)</slot>
-    <slot>setIMixADAT26R(int)</slot>
-    <slot>setIMixADAT27L(int)</slot>
-    <slot>setIMixADAT27R(int)</slot>
-    <slot>setIMixADAT28L(int)</slot>
-    <slot>setIMixADAT28R(int)</slot>
-    <slot>setPhantom14(int)</slot>
-    <slot>setPhantom58(int)</slot>
-    <slot>setInsert1(int)</slot>
-    <slot>setInsert2(int)</slot>
-    <slot>setAC3(int)</slot>
-    <slot>setMidiThru(int)</slot>
-    <slot>setOMixADAT28R(int)</slot>
-    <slot>setOMixPC1O1(int)</slot>
-    <slot>setOMixPC2O2(int)</slot>
-    <slot>setOMixPC1O3(int)</slot>
-    <slot>setOMixPC2O4(int)</slot>
-    <slot>setOMixPC1O5(int)</slot>
-    <slot>setOMixPC2O6(int)</slot>
-    <slot>setOMixPC1O7(int)</slot>
-    <slot>setOMixPC2O8(int)</slot>
-    <slot>setOMixPC1O9(int)</slot>
-    <slot>setOMixPC2O10(int)</slot>
-    <slot>setOMixPC3O3(int)</slot>
-    <slot>setOMixPC4O4(int)</slot>
-    <slot>setOMixPC5O5(int)</slot>
-    <slot>setOMixPC6O6(int)</slot>
-    <slot>setOMixPC7O7(int)</slot>
-    <slot>setOMixPC8O8(int)</slot>
-    <slot>setOMixPC9O9(int)</slot>
-    <slot>setOMixPC10O10(int)</slot>
-    <slot>setOMixIMixO1(int)</slot>
-    <slot>setOMixIMixO2(int)</slot>
-    <slot>setOMixIMixO3(int)</slot>
-    <slot>setOMixIMixO4(int)</slot>
-    <slot>setOMixIMixO5(int)</slot>
-    <slot>setOMixIMixO6(int)</slot>
-    <slot>setOMixIMixO7(int)</slot>
-    <slot>setOMixIMixO8(int)</slot>
-    <slot>setOMixIMixO9(int)</slot>
-    <slot>setOMixIMixO10(int)</slot>
     <slot>init()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
