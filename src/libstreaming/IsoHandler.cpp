@@ -274,6 +274,11 @@ bool IsoHandler::stop()
 int IsoHandler::handleBusReset(unsigned int generation) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
 
+    // do a simple read on ourself in order to update the internal structures
+    // this avoids read failures after a bus reset
+    quadlet_t buf=0;
+    raw1394_read(m_handle, raw1394_get_local_id(m_handle),
+                 CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
 
     return 0;
 }
