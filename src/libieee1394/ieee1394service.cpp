@@ -359,7 +359,6 @@ Ieee1394Service::resetHandlerLowLevel( raw1394handle_t handle,
 bool
 Ieee1394Service::resetHandler( unsigned int generation )
 {
-    m_generation = generation;
     quadlet_t buf=0;
 
     // do a simple read on ourself in order to update the internal structures
