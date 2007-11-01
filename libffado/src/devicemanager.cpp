@@ -164,8 +164,28 @@ DeviceManager::initialize( int port )
         return false;
     }
 
+    // add the bus reset handler
+    m_busreset_functor = new MemberFunctor0< DeviceManager*,
+                void (DeviceManager::*)() >
+                ( this, &DeviceManager::busresetHandler, false );
+    m_1394Service->addBusResetHandler( m_busreset_functor );
+
     setVerboseLevel(getDebugLevel());
     return true;
+}
+
+void
+DeviceManager::busresetHandler()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Bus reset...\n" );
+
+    // propagate the bus reset to all avDevices
+    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+          it != m_avDevices.end();
+          ++it )
+    {
+        (*it)->handleBusReset();
+    }
 }
 
 bool
