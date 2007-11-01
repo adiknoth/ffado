@@ -737,10 +737,12 @@ DiceAvDevice::lock() {
     if (!m_p1394Service->lockCompareSwap64(  getNodeId() | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
                                        swap_value, &result )) {
         debugWarning("Could not register ourselves as device owner\n");
+        return false;
     }
 
     if (result != DICE_OWNER_NO_OWNER) {
         debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016llX\n", result);
+        return false;
     }
 
     return true;
@@ -774,6 +776,7 @@ DiceAvDevice::unlock() {
     if (!m_p1394Service->lockCompareSwap64(  getNodeId() | 0xFFC0, addr, compare_value,
                                        DICE_OWNER_NO_OWNER, &result )) {
         debugWarning("Could not unregister ourselves as device owner\n");
+        return false;
     }
 
     m_p1394Service->unregisterARMHandler(m_notifier);
