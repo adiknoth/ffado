@@ -116,6 +116,8 @@ public:
                                    AVC::plug_id_t plugId );
 
 protected:
+    /// cleans the internal data structures that are created by discovery
+    virtual bool clean();
 
     virtual bool enumerateSubUnits();
     virtual bool discoverPlugConnections();

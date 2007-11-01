@@ -55,30 +55,7 @@ Unit::Unit( )
 
 Unit::~Unit()
 {
-    for ( SubunitVector::iterator it = m_subunits.begin();
-          it != m_subunits.end();
-          ++it )
-    {
-        delete *it;
-    }
-    for ( PlugConnectionVector::iterator it = m_plugConnections.begin();
-          it != m_plugConnections.end();
-          ++it )
-    {
-        delete *it;
-    }
-    for ( PlugVector::iterator it = m_pcrPlugs.begin();
-          it != m_pcrPlugs.end();
-          ++it )
-    {
-        delete *it;
-    }
-    for ( PlugVector::iterator it = m_externalPlugs.begin();
-          it != m_externalPlugs.end();
-          ++it )
-    {
-        delete *it;
-    }
+    clean();
 }
 
 Plug *
@@ -138,9 +115,65 @@ Unit::setVerboseLevel(int l)
     m_pPlugManager->setVerboseLevel(l);
 }
 
+// prepare the device for a rediscovery
+bool
+Unit::clean()
+{
+    for ( SubunitVector::iterator it = m_subunits.begin();
+          it != m_subunits.end();
+          ++it )
+    {
+        delete *it;
+    }
+    m_subunits.clear();
+
+    for ( PlugVector::iterator it = m_pcrPlugs.begin();
+          it != m_pcrPlugs.end();
+          ++it )
+    {
+        delete *it;
+    }
+    m_pcrPlugs.clear();
+
+    for ( PlugVector::iterator it = m_externalPlugs.begin();
+          it != m_externalPlugs.end();
+          ++it )
+    {
+        delete *it;
+    }
+    m_externalPlugs.clear();
+
+    for ( PlugConnectionVector::iterator it = m_plugConnections.begin();
+          it != m_plugConnections.end();
+          ++it )
+    {
+        delete *it;
+    }
+    m_plugConnections.clear();
+
+    delete m_pPlugManager;
+    m_pPlugManager = new PlugManager();
+
+    if (m_pPlugManager == NULL) {
+        debugError("Could not create new plugmanager");
+        return false;
+    }
+
+    m_syncInfos.clear();
+
+    m_activeSyncInfo = NULL;
+
+    return true;
+}
+
 bool
 Unit::discover()
 {
+
+    if( !clean() ) {
+        debugError( "Could not clean unit data structures\n" );
+        return false;
+    }
 
     if ( !enumerateSubUnits() ) {
         debugError( "Could not enumarate sub units\n" );
