@@ -34,7 +34,8 @@ SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-    
+
+    addOption(Util::OptionContainer::Option("rebootOnSamplerateChange", false));
     // the saffire pro doesn't seem to like it if the commands are too fast
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
@@ -90,73 +91,73 @@ SaffireProDevice::buildMixer()
     // output mute controls
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_MUTE,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_BITFIELD_BIT_MUTE,
                 "Out12Mute", "Out1/2 Mute", "Output 1/2 Mute"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_MUTE,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_BITFIELD_BIT_MUTE,
                 "Out34Mute", "Out3/4 Mute", "Output 3/4 Mute"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_MUTE,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_BITFIELD_BIT_MUTE,
                 "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_MUTE,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_MUTE,
                 "Out78Mute", "Out7/8 Mute", "Output 7/8 Mute"));
 
     // output front panel hw volume control
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_HWCTRL,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_BITFIELD_BIT_HWCTRL,
                 "Out12HwCtrl", "Out1/2 HwCtrl", "Output 1/2 Front Panel Hardware volume control"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_HWCTRL,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_BITFIELD_BIT_HWCTRL,
                 "Out34HwCtrl", "Out3/4 HwCtrl", "Output 3/4 Front Panel Hardware volume control"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_HWCTRL,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_BITFIELD_BIT_HWCTRL,
                 "Out56HwCtrl", "Out5/6 HwCtrl", "Output 5/6 Front Panel Hardware volume control"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_HWCTRL,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_HWCTRL,
                 "Out78HwCtrl", "Out7/8 HwCtrl", "Output 7/8 Front Panel Hardware volume control"));
 
     // output active monitor padding
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_BITFIELD_BIT_PAD,
                 "Out12Pad", "Out1/2 Pad", "Output 1/2 Active Monitor Pad"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_BITFIELD_BIT_PAD,
                 "Out34Pad", "Out3/4 Pad", "Output 3/4 Active Monitor Pad"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_BITFIELD_BIT_PAD,
                 "Out56Pad", "Out5/6 Pad", "Output 5/6 Active Monitor Pad"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_PAD,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_PAD,
                 "Out78Pad", "Out7/8 Pad", "Output 7/8 Active Monitor Pad"));
 
     // output level dim
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out12Dim", "Out1/2 Dim", "Output 1/2 Level Dim"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out34Dim", "Out3/4 Dim", "Output 3/4 Level Dim"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out56Dim", "Out5/6 Dim", "Output 5/6 Level Dim"));
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
-                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_ID_BITFIELD_BIT_DIM,
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out78Dim", "Out7/8 Dim", "Output 7/8 Level Dim"));
 
     // indicators
@@ -218,7 +219,7 @@ SaffireProDevice::destroyMixer()
 void
 SaffireProDevice::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Focusrite::SaffireProDevice\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "This is a BeBoB::Focusrite::SaffireProDevice\n");
     FocusriteDevice::showDevice();
 }
 
@@ -242,7 +243,7 @@ SaffireProDevice::getSamplingFrequency( ) {
         return 0;
     }
     
-    debugOutput( DEBUG_LEVEL_NORMAL,
+    debugOutput( DEBUG_LEVEL_VERBOSE,
                      "getSampleRate: %d\n", sr );
 
     return convertDefToSr(sr);
@@ -259,19 +260,15 @@ SaffireProDevice::setSamplingFrequencyDo( int s )
     return true;
 }
 
-// FIXME: this is not really documented, and is an assumtion
-int
-SaffireProDevice::getSamplingFrequencyMirror( ) {
-    uint32_t sr;
-    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE_MIRROR, &sr ) ) {
-        debugError( "getSpecificValue failed\n" );
-        return 0;
+bool
+SaffireProDevice::setSamplingFrequencyDoNoReboot( int s )
+{
+    uint32_t value=convertSrToDef(s);
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SAMPLERATE_NOREBOOT, value) ) {
+        debugError( "setSpecificValue failed\n" );
+        return false;
     }
-    
-    debugOutput( DEBUG_LEVEL_NORMAL,
-                     "getSampleRateMirror: %d\n", sr );
-
-    return convertDefToSr(sr);
+    return true;
 }
 
 bool
@@ -280,6 +277,11 @@ SaffireProDevice::setSamplingFrequency( int s )
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    bool rebootOnSamplerateChange=false;
+    if(!getOption("rebootOnSamplerateChange", rebootOnSamplerateChange)) {
+        debugWarning("Could not retrieve rebootOnSamplerateChange parameter, defauling to false\n");
     }
 
     if(snoopMode) {
@@ -294,10 +296,17 @@ SaffireProDevice::setSamplingFrequency( int s )
         const int max_tries=2;
         int ntries=max_tries+1;
         while(--ntries) {
-            if(!setSamplingFrequencyDo( s )) {
-                debugWarning("setSamplingFrequencyDo failed\n");
+            if (rebootOnSamplerateChange) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "setting samplerate with reboot\n");
+                if(!setSamplingFrequencyDo( s )) {
+                    debugWarning("setSamplingFrequencyDo failed\n");
+                }
+            } else {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "setting samplerate without reboot\n");
+                if(!setSamplingFrequencyDoNoReboot( s )) {
+                    debugWarning("setSamplingFrequencyDoNoReboot failed\n");
+                }
             }
-            
             int timeout=10; // multiples of 1s
             while(timeout--) {
                 // wait for a while
@@ -308,13 +317,15 @@ SaffireProDevice::setSamplingFrequency( int s )
                 
                 // check device status
 //                 if (discover()) break;
+                debugOutput( DEBUG_LEVEL_VERBOSE, " Audio on: %d, Ext lock: %d, Count32: %08lX\n", 
+                    isAudioOn(), isExtClockLocked(), getCount32());
                 if (timeout==5) break;
             }
             
             if(timeout) {
                 int verify=getSamplingFrequency();
                 
-                debugOutput( DEBUG_LEVEL_NORMAL,
+                debugOutput( DEBUG_LEVEL_VERBOSE,
                             "setSampleRate (try %d): requested samplerate %d, device now has %d\n", 
                             max_tries-ntries, s, verify );
 
@@ -330,7 +341,8 @@ SaffireProDevice::setSamplingFrequency( int s )
         }
 
         // rediscover the device
-//         return discover();
+        //return discover();
+        
         return true;
     }
     // not executable
@@ -339,18 +351,43 @@ SaffireProDevice::setSamplingFrequency( int s )
 }
 
 bool
-SaffireProDevice::isStreaming() {
+SaffireProDevice::isAudioOn() {
     uint32_t ready;
-    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_STREAMING, &ready ) ) {
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_AUDIO_ON, &ready ) ) {
         debugError( "getSpecificValue failed\n" );
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL,
-                     "isDeviceReady: %d\n", ready!=0 );
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "isAudioOn: %d\n", ready!=0 );
     return ready != 0;
 }
 
+bool
+SaffireProDevice::isExtClockLocked() {
+    uint32_t ready;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_EXT_CLOCK_LOCK, &ready ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "isExtClockLocked: %d\n", ready!=0 );
+    return ready != 0;
+}
+
+uint32_t
+SaffireProDevice::getCount32() {
+    uint32_t v;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_PLAYBACK_COUNT, &v ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "getCount32: %08lX\n", v );
+    return v;
+}
 
 // Saffire pro matrix mixer element
 
