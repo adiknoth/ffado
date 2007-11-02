@@ -73,7 +73,6 @@ AvDevice::probe( ConfigRom& configRom )
 
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
     if ( vendorModel.parse() ) {
-        vendorModel.printTable();
         return vendorModel.isPresent( vendorId, modelId );
     }
 
