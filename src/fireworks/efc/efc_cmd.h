@@ -53,6 +53,14 @@
 #define EFC_CMD_HW_SET_DEBUG_TRACKING   5
 #define EFC_CMD_HW_COUNT                6
 
+// Commands for the EFC_CAT_FLASH category
+#define EFC_CMD_FLASH_ERASE             0
+#define EFC_CMD_FLASH_READ              1
+#define EFC_CMD_FLASH_WRITE             2
+#define EFC_CMD_FLASH_GET_STATUS        3
+#define EFC_CMD_FLASH_GET_SESSION_BASE  4
+#define EFC_CMD_FLASH_LOCK              5
+
 // Commands for the EFC_CAT_HARDWARE_CONTROL category
 #define EFC_CMD_HWCTRL_SET_CLOCK        0
 #define EFC_CMD_HWCTRL_GET_CLOCK        1
