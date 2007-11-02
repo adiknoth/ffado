@@ -164,8 +164,8 @@
 #define FR_SAFFIREPRO_CMD_ID_EXT_CLOCK_LOCK         89
 #define FR_SAFFIREPRO_CMD_ID_AUDIO_ON               90
 
-#define FR_SAFFIREPRO_CMD_ID_USE_HIGH_POWER_RAIL    91
-#define FR_SAFFIREPRO_CMD_ID_USING_HIGH_POWER_RAIL  92
+#define FR_SAFFIREPRO_CMD_ID_USE_HIGHVOLTAGE_RAIL   91
+#define FR_SAFFIREPRO_CMD_ID_USING_HIGHVOLTAGE_RAIL 92
 
 #define FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG            93
 #define FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL       0
@@ -247,6 +247,32 @@ namespace Focusrite {
 
 class SaffireProDevice;
 
+// swiss army knife control class to serve 
+// specific device control commands
+class SaffireProMultiControl
+    : public Control::Discrete
+{
+public:
+    enum eTriggerControlType {
+        eTCT_Reboot,
+        eTCT_FlashLed,
+        eTCT_UseHighVoltageRail,
+    };
+
+public:
+    SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType);
+    SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType,
+                  std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+
+private:
+    SaffireProDevice&          m_Parent;
+    enum eTriggerControlType  m_type;
+};
+
+
 class SaffireProMatrixMixer : public FocusriteMatrixMixer
 {
 public:
@@ -270,6 +296,10 @@ protected:
 
 class SaffireProDevice : public FocusriteDevice
 {
+
+// we want all outside control to be done by this class
+friend class SaffireProMultiControl;
+
 public:
     SaffireProDevice( Ieee1394Service& ieee1394Service,
               std::auto_ptr<ConfigRom>( configRom ));
@@ -284,16 +314,21 @@ public:
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
-private:
-    virtual bool setSamplingFrequencyDo( uint32_t );
-    virtual bool setSamplingFrequencyDoNoReboot( uint32_t );
-
+protected:
     void rebootDevice();
+    void flashLed();
     bool isAudioOn();
     bool isExtClockLocked();
     uint32_t getCount32();
 
+    void useHighVoltageRail(bool useIt);
+    bool usingHighVoltageRail();
+private:
+    virtual bool setSamplingFrequencyDo( uint32_t );
+    virtual bool setSamplingFrequencyDoNoReboot( uint32_t );
+
     Control::Container *m_MixerContainer;
+    Control::Container *m_ControlContainer;
 };
 
 } // namespace Focusrite

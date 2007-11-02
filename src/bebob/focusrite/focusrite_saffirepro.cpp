@@ -31,6 +31,7 @@ SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
                             std::auto_ptr<ConfigRom>( configRom ))
     : FocusriteDevice( ieee1394Service, configRom)
     , m_MixerContainer ( NULL )
+    , m_ControlContainer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -62,31 +63,6 @@ SaffireProDevice::buildMixer()
         debugError("Could not create mixer container...\n");
         return false;
     }
-
-    // create control objects for the saffire pro
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM14, 0,
-                 "Phantom_1to4", "Phantom 1-4", "Switch Phantom Power on channels 1-4"));
-    
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM58, 0,
-                 "Phantom_5to8", "Phantom 5-8", "Switch Phantom Power on channels 5-8"));
-    
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT1, 0,
-                "Insert1", "Insert 1", "Switch Insert on Channel 1"));
-    
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT2, 0,
-                "Insert2", "Insert 2", "Switch Insert on Channel 2"));
-    
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_AC3_PASSTHROUGH, 0,
-                "AC3pass", "AC3 Passtrough", "Enable AC3 Passthrough"));
-    
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_MIDI_TRU, 0,
-                "MidiTru", "Midi Tru", "Enable Midi Tru"));
 
     // output mute controls
     result &= m_MixerContainer->addElement(
@@ -160,6 +136,24 @@ SaffireProDevice::buildMixer()
                 FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out78Dim", "Out7/8 Dim", "Output 7/8 Level Dim"));
 
+    // output level controls
+    result &= m_MixerContainer->addElement(
+        new VolumeControlLowRes(*this, 
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT12, 0,
+                "Out12Level", "Out1/2 Level", "Output 1/2 Level"));
+    result &= m_MixerContainer->addElement(
+        new VolumeControlLowRes(*this, 
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT34, 0,
+                "Out34Level", "Out3/4 Level", "Output 3/4 Level"));
+    result &= m_MixerContainer->addElement(
+        new VolumeControlLowRes(*this, 
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT56, 0,
+                "Out56Level", "Out5/6 Level", "Output 5/6 Level"));
+    result &= m_MixerContainer->addElement(
+        new VolumeControlLowRes(*this, 
+                FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, 0,
+                "Out78Level", "Out7/8 Level", "Output 7/8 Level"));
+
     // indicators
     result &= m_MixerContainer->addElement(
         new BinaryControl(*this, 
@@ -179,18 +173,75 @@ SaffireProDevice::buildMixer()
         new SaffireProMatrixMixer(*this, SaffireProMatrixMixer::eMMT_OutputMix, "OutputMix"));
 
     if (!result) {
-        debugWarning("One or more control elements could not be created.");
+        debugWarning("One or more mixer control elements could not be created.");
         // clean up those that couldn't be created
         destroyMixer();
         return false;
     }
-
     if (!addElement(m_MixerContainer)) {
         debugWarning("Could not register mixer to device\n");
         // clean up
         destroyMixer();
         return false;
     }
+
+    // special controls
+    m_ControlContainer = new Control::Container("Control");
+    if (!m_ControlContainer) {
+        debugError("Could not create mixer container...\n");
+        return false;
+    }
+
+    // create control objects for the saffire pro
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM14, 0,
+                 "Phantom_1to4", "Phantom 1-4", "Switch Phantom Power on channels 1-4"));
+    
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM58, 0,
+                 "Phantom_5to8", "Phantom 5-8", "Switch Phantom Power on channels 5-8"));
+    
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT1, 0,
+                "Insert1", "Insert 1", "Switch Insert on Channel 1"));
+    
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT2, 0,
+                "Insert2", "Insert 2", "Switch Insert on Channel 2"));
+    
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_AC3_PASSTHROUGH, 0,
+                "AC3pass", "AC3 Passtrough", "Enable AC3 Passthrough"));
+    
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_MIDI_TRU, 0,
+                "MidiTru", "Midi Tru", "Enable Midi Tru"));
+    
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_Reboot,
+            "Reboot", "Reboot", "Reboot Device"));
+
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_FlashLed,
+            "FlashLed", "Flash Led", "Flash power led"));
+
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_UseHighVoltageRail,
+            "UseHighVoltageRail", "Use High Supply", "Prefer the high voltage power supply rail"));
+
+    if (!result) {
+        debugWarning("One or more device control elements could not be created.");
+        // clean up those that couldn't be created
+        destroyMixer();
+        return false;
+    }
+    if (!addElement(m_ControlContainer)) {
+        debugWarning("Could not register controls to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
 
     return true;
 }
@@ -213,6 +264,24 @@ SaffireProDevice::destroyMixer()
     // remove and delete (as in free) child control elements
     m_MixerContainer->clearElements(true);
     delete m_MixerContainer;
+    m_MixerContainer = NULL;
+
+    // remove control container
+    if (m_ControlContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no controls to destroy...\n");
+        return true;
+    }
+    
+    if (!deleteElement(m_ControlContainer)) {
+        debugError("Controls present but not registered to the avdevice\n");
+        return false;
+    }
+    
+    // remove and delete (as in free) child control elements
+    m_ControlContainer->clearElements(true);
+    delete m_ControlContainer;
+    m_ControlContainer = NULL;
+
     return true;
 }
 
@@ -412,6 +481,29 @@ SaffireProDevice::rebootDevice() {
     }
 }
 
+void
+SaffireProDevice::flashLed() {
+    int ledFlashDuration=2;
+    if(!getOption("ledFlashDuration", ledFlashDuration)) {
+        debugWarning("Could not retrieve ledFlashDuration parameter, defaulting to 2sec\n");
+    }
+    int ledFlashFrequency=10;
+    if(!getOption("ledFlashFrequency", ledFlashFrequency)) {
+        debugWarning("Could not retrieve ledFlashFrequency parameter, defaulting to 10Hz\n");
+    }
+
+    uint32_t reg=0;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "flashing led ...\n" );
+    
+    reg = FR_SAFFIREPRO_CMD_SET_FLASH_SECS(reg, ledFlashDuration);
+    reg = FR_SAFFIREPRO_CMD_SET_FLASH_FREQ(reg, ledFlashFrequency);
+    
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_FLASH_LED, 
+                           reg ) ) {
+        debugError( "setSpecificValue failed\n" );
+    }
+}
+
 bool
 SaffireProDevice::isAudioOn() {
     uint32_t ready;
@@ -450,6 +542,71 @@ SaffireProDevice::getCount32() {
                      "getCount32: %08lX\n", v );
     return v;
 }
+
+void
+SaffireProDevice::useHighVoltageRail(bool useIt) {
+    uint32_t reg=useIt;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s high voltage rail ...\n",
+        (useIt?"Using":"Not using") );
+
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_USE_HIGHVOLTAGE_RAIL, 
+                           reg ) ) {
+        debugError( "setSpecificValue failed\n" );
+    }
+}
+
+bool
+SaffireProDevice::usingHighVoltageRail() {
+    uint32_t retval;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_USING_HIGHVOLTAGE_RAIL, &retval ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "usingHighVoltageRail: %d\n", retval!=0 );
+    return retval != 0;
+}
+
+// swiss army knife control element
+SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType t)
+: Control::Discrete()
+, m_Parent(parent)
+, m_type ( t )
+{}
+SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType t,
+                std::string name, std::string label, std::string descr)
+: Control::Discrete()
+, m_Parent(parent)
+, m_type ( t )
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+bool
+SaffireProMultiControl::setValue(int v)
+{
+    switch (m_type) {
+        case eTCT_Reboot: m_Parent.rebootDevice(); return true;
+        case eTCT_FlashLed: m_Parent.flashLed(); return true;
+        case eTCT_UseHighVoltageRail: m_Parent.useHighVoltageRail(v); return true;
+    }
+    return false;
+}
+
+int
+SaffireProMultiControl::getValue()
+{
+    switch (m_type) {
+        case eTCT_Reboot: return 0;
+        case eTCT_FlashLed: return 0;
+        case eTCT_UseHighVoltageRail: return m_Parent.usingHighVoltageRail();
+    }
+    return -1;
+}
+
 
 // Saffire pro matrix mixer element
 
