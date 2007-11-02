@@ -40,6 +40,12 @@ class SaffireProMixer(SaffireProMixerUI):
                     state)
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
 
+    def triggerButton(self):
+        sender = self.sender()
+        print "trigger %s" % (
+                    self.TriggerButtonControls[sender][0])
+        self.hw.setDiscrete(self.TriggerButtonControls[sender][0], 1)
+
     def init(self):
             print "Init Saffire Pro mixer window"
 
@@ -131,13 +137,15 @@ class SaffireProMixer(SaffireProMixerUI):
 
 
             self.SelectorControls={
-                self.chkInsert1: ['/Mixer/Insert1'], 
-                self.chkInsert2: ['/Mixer/Insert2'], 
-                self.chkPhantom14: ['/Mixer/Phantom_1to4'], 
-                self.chkPhantom58: ['/Mixer/Phantom_5to8'], 
-                self.chkAC3: ['/Mixer/AC3pass'], 
-                self.chkMidiThru: ['/Mixer/MidiTru'], 
-                # The following controls are available but have no GUI elements yet
+                # control elements
+                self.chkInsert1: ['/Control/Insert1'], 
+                self.chkInsert2: ['/Control/Insert2'], 
+                self.chkPhantom14: ['/Control/Phantom_1to4'], 
+                self.chkPhantom58: ['/Control/Phantom_5to8'], 
+                self.chkAC3: ['/Control/AC3pass'], 
+                self.chkMidiThru: ['/Control/MidiTru'], 
+                self.chkHighVoltage: ['/Control/UseHighVoltageRail'], 
+                # Mixer switches
                 self.chkMute12: ['/Mixer/Out12Mute'],
                 self.chkHwCtrl12: ['/Mixer/Out12HwCtrl'],
                 self.chkPad12: ['/Mixer/Out12Pad'],
@@ -157,40 +165,58 @@ class SaffireProMixer(SaffireProMixerUI):
             }
 
             self.VolumeControlsLowRes={
-                    #self.sldOut12Level:      ['/Mixer/Out12Level'],
-                    #self.sldOut34Level:      ['/Mixer/Out34Level'],
-                    #self.sldOut56Level:      ['/Mixer/Out56Level'],
-                    #self.sldOut78Level:      ['/Mixer/Out78Level'],
-                    }
+                self.sldOut12Level:      ['/Mixer/Out12Level'],
+                self.sldOut34Level:      ['/Mixer/Out34Level'],
+                self.sldOut56Level:      ['/Mixer/Out56Level'],
+                self.sldOut78Level:      ['/Mixer/Out78Level'],
+            }
+
+            self.TriggerButtonControls={
+                self.btnReboot:      ['/Control/Reboot'],
+                self.btnIdentify:    ['/Control/FlashLed'],
+            }
+
+    def updateValues(self):
+        for ctrl, info in self.VolumeControls.iteritems():
+            vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
+                                                self.VolumeControls[ctrl][1],
+                                                self.VolumeControls[ctrl][2])
+
+            print "%s volume is %d" % (ctrl.name() , 0x7FFF-vol)
+            ctrl.setValue(0x7FFF-vol)
+
+        for ctrl, info in self.VolumeControlsLowRes.iteritems():
+            vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
+
+            print "%s volume is %d" % (ctrl.name() , vol)
+            ctrl.setValue(vol)
+
+        for ctrl, info in self.SelectorControls.iteritems():
+            state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
+            print "%s state is %d" % (ctrl.name() , state)
+            if state:
+                ctrl.setChecked(True)
+            else:
+                ctrl.setChecked(False)
+
+        for ctrl, info in self.TriggerButtonControls.iteritems():
+            pass
 
     def initValues(self):
-            for ctrl, info in self.VolumeControls.iteritems():
-                vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
-                                                  self.VolumeControls[ctrl][1],
-                                                  self.VolumeControls[ctrl][2])
+        self.updateValues()
+        for ctrl, info in self.VolumeControls.iteritems():
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateMatrixVolume)
 
-                print "%s volume is %d" % (ctrl.name() , 0x7FFF-vol)
-                ctrl.setValue(0x7FFF-vol)
+        for ctrl, info in self.VolumeControlsLowRes.iteritems():
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateLowResVolume)
 
-                # connect the UI element
-                QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateMatrixVolume)
+        for ctrl, info in self.SelectorControls.iteritems():
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
 
-            for ctrl, info in self.VolumeControlsLowRes.iteritems():
-                vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
+        for ctrl, info in self.TriggerButtonControls.iteritems():
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('clicked()'),self.triggerButton)
 
-                print "%s volume is %d" % (ctrl.name() , vol)
-                ctrl.setValue(vol)
-
-                # connect the UI element
-                QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateLowResVolume)
-
-            for ctrl, info in self.SelectorControls.iteritems():
-                state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
-                print "%s state is %d" % (ctrl.name() , state)
-                if state:
-                    ctrl.setChecked(True)
-                else:
-                    ctrl.setChecked(False)
-
-                # connect the UI element
-                QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)

@@ -25,42 +25,63 @@ class ControlInterface:
         self.basepath=basepath
         self.servername=servername
         self.bus=dbus.SessionBus()
-            
+
     def setContignuous(self, subpath, v):
-        path = self.basepath + subpath
-        dev = self.bus.get_object(self.servername, path)
-        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Continuous')
-        dev_cont.setValue(v)
-           
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Continuous')
+            dev_cont.setValue(v)
+        except:
+            print "Failed to set Continuous %s on server %s" % (path, self.servername)
+
     def getContignuous(self, subpath):
-        path = self.basepath + subpath
-        dev = self.bus.get_object(self.servername, path)
-        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Continuous')
-        return dev_cont.getValue()        
-    
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Continuous')
+            return dev_cont.getValue()
+        except:
+            print "Failed to get Continuous %s on server %s" % (path, self.servername)
+            return 0
+
     def setDiscrete(self, subpath, v):
-        path = self.basepath + subpath
-        dev = self.bus.get_object(self.servername, path)
-        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
-        dev_cont.setValue(v)
-           
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
+            dev_cont.setValue(v)
+        except:
+            print "Failed to set Discrete %s on server %s" % (path, self.servername)
+
     def getDiscrete(self, subpath):
-        path = self.basepath + subpath
-        dev = self.bus.get_object(self.servername, path)
-        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
-        return dev_cont.getValue()
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
+            return dev_cont.getValue()
+        except:
+            print "Failed to get Discrete %s on server %s" % (path, self.servername)
+            return 0
 
     def setMatrixMixerValue(self, subpath, row, col, v):
-        path = self.basepath + subpath
-        dev = self.bus.get_object(self.servername, path)
-        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
-        dev_cont.setValue(row, col, v)
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
+            dev_cont.setValue(row, col, v)
+        except:
+            print "Failed to set MatrixMixer %s on server %s" % (path, self.servername)
 
     def getMatrixMixerValue(self, subpath, row, col):
-        path = self.basepath + subpath
-        dev = self.bus.get_object(self.servername, path)
-        dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
-        return dev_cont.getValue(row, col)
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
+            return dev_cont.getValue(row, col)
+        except:
+            print "Failed to get MatrixMixer %s on server %s" % (path, self.servername)
+            return 0
 
 class DeviceManagerInterface:
     def __init__(self, servername, basepath):
@@ -101,7 +122,16 @@ if __name__ == "__main__":
     
     app = QApplication(sys.argv)
     
-    devmgr=DeviceManagerInterface(server, basepath)
+    try:
+        devmgr=DeviceManagerInterface(server, basepath)
+    except dbus.DBusException, ex:
+        print "\n"
+        print "==========================================================="
+        print "ERROR: Could not communicate with the FFADO DBus service..."
+        print "==========================================================="
+        print "\n"
+        sys.exit(-1)
+    
     nbDevices=devmgr.getNbDevices()
     
     forms=[];
