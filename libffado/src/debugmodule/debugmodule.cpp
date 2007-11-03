@@ -83,21 +83,36 @@ DebugModule::printShort( debug_level_t level,
                          const char* format,
                          ... ) const
 {
+    const char *warning = "WARNING: message truncated!\n";
+    const int warning_size = 32;
     va_list arg;
+    char msg[MB_BUFFERSIZE];
 
-    if (level <= BACKLOG_MIN_LEVEL) {
-        va_start( arg, format );
-        DebugModuleManager::instance()->backlog_va_print( format, arg );
-        va_end( arg );
-    }
-
-    if ( level > m_level ) {
-        return;
-    }
+    // format the message such that it remains together
+    int chars_written=0;
+    int retval=0;
 
     va_start( arg, format );
-    DebugModuleManager::instance()->va_print( format, arg );
+    retval = vsnprintf(msg+chars_written, MB_BUFFERSIZE, format, arg);
     va_end( arg );
+    if (retval >= 0) {  // ignore errors
+        chars_written += retval;
+    }
+
+    // output a warning if the message was truncated
+    if (chars_written == MB_BUFFERSIZE) {
+        snprintf(msg+MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
+    }
+
+    // print to backlog if necessary
+    if (level <= BACKLOG_MIN_LEVEL) {
+        DebugModuleManager::instance()->backlog_print( msg );
+    }
+
+    // print to stderr if necessary
+    if ( level <= m_level ) {
+        DebugModuleManager::instance()->print( msg );
+    }
 }
 
 void
@@ -108,8 +123,11 @@ DebugModule::print( debug_level_t level,
                     const char*   format,
                     ... ) const
 {
+    const char *warning = "WARNING: message truncated!\n";
+    const int warning_size = 32;
+
     va_list arg;
-    va_start( arg, format );
+    char msg[MB_BUFFERSIZE];
 
     // remove the path info from the filename
     const char *f = file;
@@ -122,29 +140,44 @@ DebugModule::print( debug_level_t level,
     // add a timing timestamp
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    uint32_t ts_usec=(uint32_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
+    long unsigned int ts_usec=(uint32_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 
-    if (level <= BACKLOG_MIN_LEVEL) {
-        va_start( arg, format );
-        DebugModuleManager::instance()->backlog_print( "%010lu: %s (%s)[%4d] %s: ", 
-                    ts_usec, getPreSequence( level ),
-                    fname,  line,  function );
-        DebugModuleManager::instance()->backlog_va_print( format, arg );
-        DebugModuleManager::instance()->backlog_print( "%s", getPostSequence( level ) );
-        va_end( arg );
-    }
-
-    if ( level > m_level ) {
-        return;
-    }
+    // format the message such that it remains together
+    int chars_written=0;
+    int retval=0;
+    retval = snprintf(msg, MB_BUFFERSIZE, "%010lu: %s (%s)[%4d] %s: ", 
+                      ts_usec, getPreSequence( level ),
+                      fname,  line,  function );
+    if (retval >= 0) chars_written += retval; // ignore errors
 
     va_start( arg, format );
-    DebugModuleManager::instance()->print( "%010lu: %s (%s)[%4d] %s: ", 
-                 ts_usec, getPreSequence( level ),
-                 fname,  line,  function );
-    DebugModuleManager::instance()->va_print( format, arg );
-    DebugModuleManager::instance()->print( "%s", getPostSequence( level ) );
+    retval = vsnprintf( msg + chars_written,
+                        MB_BUFFERSIZE - chars_written,
+                        format, arg);
     va_end( arg );
+    if (retval >= 0) chars_written += retval; // ignore errors
+
+    retval = snprintf( msg + chars_written,
+                       MB_BUFFERSIZE - chars_written,
+                       "%s", getPostSequence( level ) );
+    if (retval >= 0) chars_written += retval; // ignore errors
+
+    // output a warning if the message was truncated
+    if (chars_written == MB_BUFFERSIZE) {
+        snprintf(msg + MB_BUFFERSIZE - warning_size,
+                 warning_size,
+                 "%s", warning);
+    }
+
+    // print to backlog if necessary
+    if (level <= BACKLOG_MIN_LEVEL) {
+        DebugModuleManager::instance()->backlog_print( msg );
+    }
+
+    // print to stderr if necessary
+    if ( level <= m_level ) {
+        DebugModuleManager::instance()->print( msg );
+    }
 }
 
 const char*
@@ -391,30 +424,15 @@ DebugModuleManager::mb_thread_func(void *arg)
 }
 
 void
-DebugModuleManager::backlog_print(const char *fmt, ...)
+DebugModuleManager::backlog_print(const char *msg)
 {
-    const char *warning = "WARNING: message truncated!\n";
-    const int warning_size = 32;
-    char msg[MB_BUFFERSIZE];
-    va_list ap;
-
     unsigned int ntries;
     struct timespec wait = {0,50000};
-
-    /* format the message first */
-    va_start(ap, fmt);
-    if (vsnprintf(msg, BACKLOG_MB_BUFFERSIZE-warning_size, fmt, ap) 
-        >= (BACKLOG_MB_BUFFERSIZE-warning_size)) {
-        // output a warning if the message was truncated
-        snprintf(msg+BACKLOG_MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
-    }
-    va_end(ap);
-
     // the backlog
-    ntries=5;
+    ntries=1;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&bl_mb_write_lock) == 0) {
-            strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, BACKLOG_MB_BUFFERSIZE);
+            strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, MB_BUFFERSIZE);
             bl_mb_inbuffer = BACKLOG_MB_NEXT(bl_mb_inbuffer);
             pthread_mutex_unlock(&bl_mb_write_lock);
             break;
@@ -427,25 +445,12 @@ DebugModuleManager::backlog_print(const char *fmt, ...)
 }
 
 void
-DebugModuleManager::print(const char *fmt, ...)
+DebugModuleManager::print(const char *msg)
 {
-    const char *warning = "WARNING: message truncated!\n";
-    const int warning_size = 32;
-    char msg[MB_BUFFERSIZE];
-    va_list ap;
-
 #ifdef DO_MESSAGE_BUFFER_PRINT
     unsigned int ntries;
     struct timespec wait = {0,50000};
 #endif
-
-    /* format the message first, to reduce lock contention */
-    va_start(ap, fmt);
-    if (vsnprintf(msg, MB_BUFFERSIZE-warning_size, fmt, ap) >= MB_BUFFERSIZE-warning_size) {
-        // output a warning if the message was truncated
-        snprintf(msg+MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
-    }
-    va_end(ap);
 
     if (!mb_initialized) {
         /* Unable to print message with realtime safety.
@@ -456,7 +461,7 @@ DebugModuleManager::print(const char *fmt, ...)
     }
 
 #ifdef DO_MESSAGE_BUFFER_PRINT
-    ntries=5;
+    ntries=1;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
@@ -471,89 +476,6 @@ DebugModuleManager::print(const char *fmt, ...)
     }
     if (ntries==0) {  /* lock collision */
 	//         atomic_add(&mb_overruns, 1);
-        // FIXME: atomicity
-        mb_overruns++; // skip the atomicness for now
-    }
-#else
-    fprintf(stderr,msg);
-#endif
-}
-
-void
-DebugModuleManager::backlog_va_print (const char *fmt, va_list ap)
-{
-    const char *warning = "WARNING: message truncated!\n";
-    const int warning_size = 32;
-    char msg[MB_BUFFERSIZE];
-    unsigned int ntries;
-    struct timespec wait = {0,50000};
-
-    /* format the message first */
-    if (vsnprintf(msg, BACKLOG_MB_BUFFERSIZE-warning_size, fmt, ap) 
-        >= BACKLOG_MB_BUFFERSIZE-warning_size) {
-        // output a warning if the message was truncated
-        snprintf(msg+BACKLOG_MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
-    }
-
-    // the backlog
-    ntries=5;
-    while (ntries) { // try a few times
-        if (pthread_mutex_trylock(&bl_mb_write_lock) == 0) {
-            strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, BACKLOG_MB_BUFFERSIZE);
-            bl_mb_inbuffer = BACKLOG_MB_NEXT(bl_mb_inbuffer);
-            pthread_mutex_unlock(&bl_mb_write_lock);
-            break;
-        } else {
-            nanosleep(&wait, NULL);
-            ntries--;
-        }
-    }
-    // just bail out should it have failed
-}
-
-void
-DebugModuleManager::va_print (const char *fmt, va_list ap)
-{
-    const char *warning = "WARNING: message truncated!\n";
-    const int warning_size = 32;
-    char msg[MB_BUFFERSIZE];
-
-#ifdef DO_MESSAGE_BUFFER_PRINT
-    unsigned int ntries;
-    struct timespec wait = {0,50000};
-#endif
-
-    /* format the message first, to reduce lock contention */
-    if (vsnprintf(msg, MB_BUFFERSIZE-warning_size, fmt, ap) >= MB_BUFFERSIZE-warning_size) {
-        // output a warning if the message was truncated
-        snprintf(msg+MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
-    }
-
-    if (!mb_initialized) {
-        /* Unable to print message with realtime safety.
-         * Complain and print it anyway. */
-        fprintf(stderr, "ERROR: messagebuffer not initialized: %s",
-            msg);
-        return;
-    }
-
-#ifdef DO_MESSAGE_BUFFER_PRINT
-    ntries=5;
-    while (ntries) { // try a few times
-        if (pthread_mutex_trylock(&mb_write_lock) == 0) {
-            strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
-            mb_inbuffer = MB_NEXT(mb_inbuffer);
-            pthread_cond_signal(&mb_ready_cond);
-            pthread_mutex_unlock(&mb_write_lock);
-            break;
-        } else {
-            nanosleep(&wait, NULL);
-            ntries--;
-        }
-    }
-    
-    if (ntries==0) {  /* lock collision */
-//         atomic_add(&mb_overruns, 1);
         // FIXME: atomicity
         mb_overruns++; // skip the atomicness for now
     }

@@ -54,7 +54,6 @@ typedef short debug_level_t;
 // the backlog is a similar buffer as the message buffer
 #define BACKLOG_MB_BUFFERS      (256)
 #define BACKLOG_MB_NEXT(index)  (((index)+1) & (BACKLOG_MB_BUFFERS-1))
-#define BACKLOG_MB_BUFFERSIZE   DEBUG_MAX_MESSAGE_LENGTH
 #define BACKLOG_MIN_LEVEL       DEBUG_LEVEL_VERY_VERBOSE
 
 
@@ -236,11 +235,8 @@ protected:
 
     bool init();
 
-    void print(const char *fmt, ...);
-    void va_print(const char *fmt, va_list);
-
-    void backlog_print(const char *fmt, ...);
-    void backlog_va_print(const char *fmt, va_list);
+    void print(const char *msg);
+    void backlog_print(const char *msg);
 
 private:
     DebugModuleManager();
@@ -262,7 +258,7 @@ private:
     void mb_flush();
 
     // the backlog
-    char bl_mb_buffers[BACKLOG_MB_BUFFERS][BACKLOG_MB_BUFFERSIZE];
+    char bl_mb_buffers[BACKLOG_MB_BUFFERS][MB_BUFFERSIZE];
     unsigned int bl_mb_inbuffer;
     pthread_mutex_t bl_mb_write_lock;
 
