@@ -31,7 +31,7 @@
 
 #include <time.h>
 
-// #define DO_MESSAGE_BUFFER_PRINT
+#define DO_MESSAGE_BUFFER_PRINT
 
 #ifndef DO_MESSAGE_BUFFER_PRINT
 	#warning Printing debug info without ringbuffer, not RT-safe!
