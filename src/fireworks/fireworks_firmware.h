@@ -37,14 +37,17 @@ class Ieee1394Service;
 
 namespace FireWorks {
 
-#define ECHO_FIRMWARE_MAGIC_VALUES              {1651,1,0,0,0}
-#define ECHO_FIRMWARE_NB_MAGIC_VALUES           5
+#define ECHO_FIRMWARE_MAGIC                     "1651 1 0 0 0"
+#define ECHO_FIRMWARE_MAGIC_LENGTH_BYTES        14
 
-#define ECHO_FIRMWARE_HEADER_LENGTH_BYTES       256
-#define ECHO_FIRMWARE_HEADER_LENGTH_QUADLETS    (ECHO_FIRMWARE_HEADER_LENGTH_BYTES / 4)
+// the number of quadlets in the file
+#define ECHO_FIRMWARE_HEADER_LENGTH_QUADLETS    64
+// note that the dat files are not binary files but have the quadlets
+// as "0x0ABCDE12\n" lines
+#define ECHO_FIRMWARE_HEADER_LENGTH_BYTES       ( 12 * ECHO_FIRMWARE_HEADER_LENGTH_QUADLETS )
 
-#define ECHO_FIRMWARE_FILE_MAX_LENGTH_BYTES     (384*1024 + ECHO_FIRMWARE_HEADER_LENGTH_BYTES)
-#define ECHO_FIRMWARE_FILE_MAX_LENGTH_QUADLETS  (ECHO_FIRMWARE_HEADER_LENGTH_BYTES / 4)
+#define ECHO_FIRMWARE_FILE_MAX_LENGTH_QUADLETS  ((384 * 1024) / 4)
+#define ECHO_FIRMWARE_FILE_MAX_LENGTH_BYTES     (ECHO_FIRMWARE_FILE_MAX_LENGTH_QUADLETS * 12 + ECHO_FIRMWARE_HEADER_LENGTH_BYTES)
 
 class Firmware
 {
@@ -58,7 +61,7 @@ public:
         eDT_Invalid         = 0xFF,
     };
     static const char *eDatTypeToString(const enum eDatType target);
-
+    static const enum eDatType intToeDatType(int type);
 public:
     Firmware();
     virtual ~Firmware();
@@ -66,6 +69,8 @@ public:
     virtual bool loadFile(std::string filename);
 
     virtual void show();
+    virtual void setVerboseLevel(int l)
+        {setDebugLevel(l);};
 
 protected:
     // filename
@@ -81,6 +86,10 @@ protected:
     bool                m_append_crc; // true to append
     uint32_t            m_footprint_quads;
 
+    std::string         m_magic;
+    uint32_t            m_header[ECHO_FIRMWARE_HEADER_LENGTH_QUADLETS];
+    uint32_t            *m_data;
+
 private:
     DECLARE_DEBUG_MODULE;
 };
@@ -89,15 +98,15 @@ class FirmwareUtil
 {
 
 public:
-    FirmwareUtil(FireWorks::Device& parent,
-                 FireWorks::Firmware& f);
+    FirmwareUtil(FireWorks::Device& parent);
     virtual ~FirmwareUtil();
 
     virtual void show();
+    virtual void setVerboseLevel(int l)
+        {setDebugLevel(l);};
 
 protected:
     FireWorks::Device&          m_Parent;
-    FireWorks::Firmware&        m_Firmware;
 private:
     DECLARE_DEBUG_MODULE;
 };

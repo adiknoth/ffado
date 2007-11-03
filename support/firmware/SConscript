@@ -29,6 +29,9 @@ if env['ENABLE_BEBOB']:
     apps["bridgeco-downloader"] = "bridgeco-downloader.cpp"
     installapps += [ "bridgeco-downloader" ]
 
+if env['ENABLE_FIREWORKS']:
+    apps["fireworks-downloader"] = "fireworks-downloader.cpp"
+    installapps += [ "fireworks-downloader" ]
 
 for app in apps.keys():
     env.Program( target=app, source = env.Split( apps[app] ) )
