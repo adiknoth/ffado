@@ -85,9 +85,11 @@ DebugModule::printShort( debug_level_t level,
 {
     va_list arg;
 
-    va_start( arg, format );
-    DebugModuleManager::instance()->backlog_va_print( format, arg );
-    va_end( arg );
+    if (level <= BACKLOG_MIN_LEVEL) {
+        va_start( arg, format );
+        DebugModuleManager::instance()->backlog_va_print( format, arg );
+        va_end( arg );
+    }
 
     if ( level > m_level ) {
         return;
@@ -116,19 +118,21 @@ DebugModule::print( debug_level_t level,
         f++; // move away from delimiter
         fname=f;
     }
-    
+
     // add a timing timestamp
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     uint32_t ts_usec=(uint32_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
-    
-    va_start( arg, format );
-    DebugModuleManager::instance()->backlog_print( "%010lu: %s (%s)[%4d] %s: ", 
-                 ts_usec, getPreSequence( level ),
-                 fname,  line,  function );
-    DebugModuleManager::instance()->backlog_va_print( format, arg );
-    DebugModuleManager::instance()->backlog_print( "%s", getPostSequence( level ) );
-    va_end( arg );
+
+    if (level <= BACKLOG_MIN_LEVEL) {
+        va_start( arg, format );
+        DebugModuleManager::instance()->backlog_print( "%010lu: %s (%s)[%4d] %s: ", 
+                    ts_usec, getPreSequence( level ),
+                    fname,  line,  function );
+        DebugModuleManager::instance()->backlog_va_print( format, arg );
+        DebugModuleManager::instance()->backlog_print( "%s", getPostSequence( level ) );
+        va_end( arg );
+    }
 
     if ( level > m_level ) {
         return;
@@ -342,6 +346,10 @@ DebugModuleManager::mb_flush()
 void
 DebugModuleManager::showBackLog()
 {
+     DebugModuleManager *m=DebugModuleManager::instance();
+    // locking the flush lock ensures that the backlog is
+    // printed as one entity
+    pthread_mutex_lock(&m->mb_flush_lock);
     fprintf(stderr, "=====================================================\n");
     fprintf(stderr, "* BEGIN OF BACKLOG PRINT\n");
     fprintf(stderr, "=====================================================\n");
@@ -355,6 +363,7 @@ DebugModuleManager::showBackLog()
     fprintf(stderr, "=====================================================\n");
     fprintf(stderr, "* END OF BACKLOG PRINT\n");
     fprintf(stderr, "=====================================================\n");
+    pthread_mutex_unlock(&m->mb_flush_lock);
 }
 
 void *
