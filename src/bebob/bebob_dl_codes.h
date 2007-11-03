@@ -20,9 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301 USA
  */
-
-#ifdef ENABLE_BEBOB
-
 #ifndef BEBOB_DL_CODES_H
 #define BEBOB_DL_CODES_H
 
@@ -315,5 +312,3 @@ namespace BeBoB {
 
 };
 #endif
-
-#endif //#ifdef ENABLE_BEBOB

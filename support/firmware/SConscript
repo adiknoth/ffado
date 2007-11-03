@@ -1,0 +1,36 @@
+#! /usr/bin/env python
+
+Import( 'env' )
+
+env = env.Copy()
+
+#
+# For the debugging apps
+#
+env.PrependUnique( LIBPATH=env['build_base']+"src" )
+env.PrependUnique( LIBS="ffado" )
+env.AppendUnique( CPPPATH=["#/", "#/src"] )
+
+if not env.GetOption( "clean" ):
+    env.MergeFlags( "-lrt" )
+    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+    env.MergeFlags( env['LIBAVC1394_FLAGS'] )
+    env.MergeFlags( env['LIBIEC61883_FLAGS'] )
+    env.MergeFlags( env['ALSA_FLAGS'] )
+    env.MergeFlags( env['LIBXML26_FLAGS'] )
+    env.MergeFlags( env['LIBLO_FLAGS'] )
+
+apps = {
+}
+
+installapps = []
+
+if env['ENABLE_BEBOB']:
+    apps["bridgeco-downloader"] = "bridgeco-downloader.cpp"
+    installapps += [ "bridgeco-downloader" ]
+
+
+for app in apps.keys():
+    env.Program( target=app, source = env.Split( apps[app] ) )
+    if app.find( "test" ) == -1:
+        env.Install( "$bindir", app )

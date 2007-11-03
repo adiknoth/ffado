@@ -54,29 +54,29 @@ namespace BeBoB {
         bool downloadCnE( std::string filename );
         bool programGUID( octlet_t guid );
 
-    void busresetHandler();
+        void busresetHandler();
 
-    Ieee1394Service* get1394Serivce() const
-            { return m_ieee1394service; }
+        Ieee1394Service* get1394Serivce() const
+                { return m_ieee1394service; }
 
-    bool setForceOperations( bool enabled )
-            { m_forceEnabled = enabled; return true; }
+        bool setForceOperations( bool enabled )
+                { m_forceEnabled = enabled; return true; }
 
-    bool setStartBootloader( bool bStartBootloader )
-        { m_bStartBootloader = bStartBootloader; return true; }
-    protected:
-    enum EObjectType {
-        eOT_Application,
-        eOT_CnE
-    };
+        bool setStartBootloader( bool bStartBootloader )
+            { m_bStartBootloader = bStartBootloader; return true; }
+        protected:
+        enum EObjectType {
+            eOT_Application,
+            eOT_CnE
+        };
 
-    void waitForBusReset();
+        void waitForBusReset();
         bool writeRequest( CommandCodes& cmd );
-    bool readResponse( CommandCodes& writeRequestCmd );
-    bool downloadObject( BCD& bcd, EObjectType eObject );
+        bool readResponse( CommandCodes& writeRequestCmd );
+        bool downloadObject( BCD& bcd, EObjectType eObject );
 
         bool programGUIDCmd( octlet_t guid );
-    bool startBootloaderCmd();
+        bool startBootloaderCmd();
         bool startApplicationCmd();
         bool initializePersParamCmd();
         bool initializeConfigToFactorySettingCmd();
@@ -114,15 +114,15 @@ namespace BeBoB {
         bool               m_isAppRunning;
         info_register_t    m_cachedInfoRegs;
 
-    pthread_mutex_t m_mutex;
-    pthread_cond_t  m_cond;
+        pthread_mutex_t m_mutex;
+        pthread_cond_t  m_cond;
 
-    Functor*        m_functor;
+        Functor*        m_functor;
 
-        bool            m_forceEnabled;
-    bool            m_bStartBootloader;
+            bool            m_forceEnabled;
+        bool            m_bStartBootloader;
 
-    DECLARE_DEBUG_MODULE;
+        DECLARE_DEBUG_MODULE;
     };
 }
 

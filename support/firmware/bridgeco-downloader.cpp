@@ -21,8 +21,8 @@
  * MA 02111-1307 USA.
  */
 
-#include "bebob/bebob_dl_mgr.h"
-#include "bebob/bebob_dl_bcd.h"
+#include "src/bebob/bebob_dl_mgr.h"
+#include "src/bebob/bebob_dl_bcd.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
