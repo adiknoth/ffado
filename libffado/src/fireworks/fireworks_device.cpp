@@ -62,6 +62,13 @@ void
 Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a FireWorks::Device\n");
+    if ( !m_efc_discovery_done) {
+        if (!discoverUsingEFC()) {
+            debugError("EFC discovery failed\n");
+        }
+    }
+    m_HwInfo.showEfcCmd();
+    
     GenericAVC::AvDevice::showDevice();
 }
 
