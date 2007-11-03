@@ -33,7 +33,16 @@
 
 typedef short debug_level_t;
 
-#define DEBUG_MAX_MESSAGE_LENGTH 1024
+#define DEBUG_LEVEL_FATAL          0
+#define DEBUG_LEVEL_ERROR          1
+#define DEBUG_LEVEL_WARNING        2
+#define DEBUG_LEVEL_NORMAL         3
+#define DEBUG_LEVEL_INFO           4
+#define DEBUG_LEVEL_VERBOSE        5
+#define DEBUG_LEVEL_VERY_VERBOSE   6
+#define DEBUG_LEVEL_ULTRA_VERBOSE  7
+
+#define DEBUG_MAX_MESSAGE_LENGTH 512
 
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
 #define MB_BUFFERS          (1<<16)
@@ -43,9 +52,11 @@ typedef short debug_level_t;
 #define MB_BUFFERSIZE       DEBUG_MAX_MESSAGE_LENGTH
 
 // the backlog is a similar buffer as the message buffer
-#define BACKLOG_MB_BUFFERS      (512)
+#define BACKLOG_MB_BUFFERS      (256)
 #define BACKLOG_MB_NEXT(index)  (((index)+1) & (BACKLOG_MB_BUFFERS-1))
 #define BACKLOG_MB_BUFFERSIZE   DEBUG_MAX_MESSAGE_LENGTH
+#define BACKLOG_MIN_LEVEL       DEBUG_LEVEL_VERY_VERBOSE
+
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -159,13 +170,14 @@ void hexDumpQuadlets( quadlet_t *data_start, unsigned int length );
 class DebugModule {
 public:
     enum {
-        eDL_Fatal       = 0,
-        eDL_Error       = 1,
-        eDL_Warning     = 2,
-        eDL_Normal      = 3,
-        eDL_Info        = 4,
-        eDL_Verbose     = 5,
-        eDL_VeryVerbose = 6,
+        eDL_Fatal        = DEBUG_LEVEL_FATAL,
+        eDL_Error        = DEBUG_LEVEL_ERROR,
+        eDL_Warning      = DEBUG_LEVEL_WARNING,
+        eDL_Normal       = DEBUG_LEVEL_NORMAL,
+        eDL_Info         = DEBUG_LEVEL_INFO,
+        eDL_Verbose      = DEBUG_LEVEL_VERBOSE,
+        eDL_VeryVerbose  = DEBUG_LEVEL_VERY_VERBOSE,
+        eDL_UltraVerbose = DEBUG_LEVEL_ULTRA_VERBOSE,
     } EDebugLevel;
 
     DebugModule( std::string name, debug_level_t level );
@@ -197,11 +209,6 @@ private:
     std::string   m_name;
     debug_level_t m_level;
 };
-
-#define DEBUG_LEVEL_NORMAL          DebugModule::eDL_Normal
-#define DEBUG_LEVEL_INFO            DebugModule::eDL_Info
-#define DEBUG_LEVEL_VERBOSE         DebugModule::eDL_Verbose
-#define DEBUG_LEVEL_VERY_VERBOSE    DebugModule::eDL_VeryVerbose
 
 
 class DebugModuleManager {
