@@ -231,6 +231,7 @@ else:
 if not env.GetOption('clean'):
     Default( 'external' )
     Default( 'src' )
+    Default( 'support' )
     if env['BUILD_TESTS']:
         Default( 'tests' )
 

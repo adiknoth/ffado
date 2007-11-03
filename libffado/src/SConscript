@@ -108,10 +108,12 @@ genericavc_pkgdata = env.Split( '\
 fireworks_source =  env.Split( '\
 	fireworks/fireworks_device.cpp \
 	fireworks/fireworks_control.cpp \
+	fireworks/fireworks_firmware.cpp \
 	fireworks/efc/efc_avc_cmd.cpp \
 	fireworks/efc/efc_cmd.cpp \
 	fireworks/efc/efc_cmds_hardware.cpp \
 	fireworks/efc/efc_cmds_hardware_ctrl.cpp \
+	fireworks/efc/efc_cmds_flash.cpp \
 	fireworks/efc/efc_cmds_mixer.cpp \
 	fireworks/efc/efc_cmds_monitor.cpp \
 	fireworks/efc/efc_cmds_ioconfig.cpp \
@@ -248,12 +250,6 @@ apps = { \
 }
 
 installapps = []
-
-if env['ENABLE_BEBOB']:
-	apps["bebob-sync"] = "bebob-sync.cpp"
-	apps["bridgeco-downloader"] = "bridgeco-downloader.cpp"
-	installapps += [ "bebob-sync", "bridgeco-downloader" ]
-
 
 for app in apps.keys():
 	env2.Program( target=app, source = env.Split( apps[app] ) )
