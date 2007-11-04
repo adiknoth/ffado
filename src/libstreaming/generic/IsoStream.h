@@ -24,9 +24,11 @@
 #ifndef __FFADO_ISOSTREAM__
 #define __FFADO_ISOSTREAM__
 
+#include "../util/IsoHandler.h"
+
+#include "debugmodule/debugmodule.h"
+
 #include <libraw1394/raw1394.h>
-#include "../debugmodule/debugmodule.h"
-#include "IsoHandler.h"
 
 namespace Streaming
 {

@@ -27,7 +27,7 @@
  */
 
 #include "libutil/Atomic.h"
-#include "libstreaming/cycletimer.h"
+#include "libstreaming/util/cycletimer.h"
 
 #include "TimestampedBuffer.h"
 #include "assert.h"
@@ -44,6 +44,13 @@
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
+#define ENTER_CRITICAL_SECTION { \
+    pthread_mutex_lock(&m_framecounter_lock); \
+    }
+#define EXIT_CRITICAL_SECTION { \
+    pthread_mutex_unlock(&m_framecounter_lock); \
+    }
+
 namespace Util {
 
 IMPL_DEBUG_MODULE( TimestampedBuffer, TimestampedBuffer, DEBUG_LEVEL_VERBOSE );
@@ -52,6 +59,7 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
     : m_event_buffer(NULL), m_cluster_buffer(NULL),
       m_event_size(0), m_events_per_frame(0), m_buffer_size(0),
       m_bytes_per_frame(0), m_bytes_per_buffer(0),
+      m_enabled( false ), m_transparent ( true ),
       m_wrap_at(0xFFFFFFFFFFFFFFFFLLU),
       m_Client(c), m_framecounter(0),
       m_tick_offset(0.0),
@@ -121,9 +129,9 @@ bool TimestampedBuffer::setWrapValue(ffado_timestamp_t w) {
 float TimestampedBuffer::getRate() {
     ffado_timestamp_t diff;
     
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"getRate: %f/%f=%f\n",
         (float)(diff),
@@ -207,11 +215,11 @@ bool TimestampedBuffer::setTickOffset(ffado_timestamp_t nticks) {
     // JMW: I think we need to update the internal DLL state to take account
     // of the new offset.  Doing so certainly makes for a smoother MOTU
     // startup.
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     m_buffer_tail_timestamp = m_buffer_tail_timestamp - m_tick_offset + nticks;
     m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
     m_tick_offset=nticks;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 
     return true;
 }
@@ -224,7 +232,7 @@ bool TimestampedBuffer::setTickOffset(ffado_timestamp_t nticks) {
  * guaranteed to be consistent at all times due to threading issues.
  *
  * In order to get the number of frames in the buffer, use the
- * getFrameCounter, getBufferHeadTimestamp, getBufferTailTimestamp
+ * getBufferHeadTimestamp, getBufferTailTimestamp
  * functions
  *
  * @return the internal buffer fill in frames
@@ -347,9 +355,9 @@ bool TimestampedBuffer::writeDummyFrame() {
 //     incrementFrameCounter(nframes,ts);
     
     // increment without updating the DLL
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     m_framecounter++;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
     
     return true;
 }
@@ -369,18 +377,58 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, ffado_time
 
     unsigned int write_size=nframes*m_event_size*m_events_per_frame;
 
-    // add the data payload to the ringbuffer
-    if (ffado_ringbuffer_write(m_event_buffer,data,write_size) < write_size)
-    {
-//         debugWarning("writeFrames buffer overrun\n");
-        return false;
+    if (m_transparent) {
+//         // if the buffer is disabled, it's in a 'transparent' state, meaning
+//         // that if too much is put into the buffer, the oldest data is discarded
+//         signed int fc;
+//         ENTER_CRITICAL_SECTION;
+//         fc=m_framecounter;
+//         EXIT_CRITICAL_SECTION;
+//         
+//         signed int frames_to_ditch= nframes - (m_buffer_size - m_framecounter) + 1;
+//         if ( frames_to_ditch > 0 ) {
+//             debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "dropping %d frames\n", frames_to_ditch);
+//             dropFrames( frames_to_ditch );
+//         }
+//         // add the data payload to the ringbuffer
+//         if (ffado_ringbuffer_write(m_event_buffer,data,write_size) < write_size)
+//         {
+//             debugError("we should have freed up enough space for this\n");
+//             return false;
+//         }
+//         
+        // while disabled, we don't update the DLL, we just set the correct
+        // timestamp for the frames
+        setBufferTailTimestamp(ts);
+    } else {
+        // add the data payload to the ringbuffer
+        if (ffado_ringbuffer_write(m_event_buffer,data,write_size) < write_size)
+        {
+            return false;
+        }
+        incrementFrameCounter(nframes,ts);
     }
+    return true;
+}
 
-    incrementFrameCounter(nframes,ts);
+/**
+ * @brief Drop frames from the head of the buffer
+ *
+ * drops \ref nframes of frames from the head of internal buffer
+ *
+ * @param nframes number of frames to drop
+ * @return true if successful
+ */
+bool TimestampedBuffer::dropFrames(unsigned int nframes) {
+
+    unsigned int read_size=nframes*m_event_size*m_events_per_frame;
+
+    ffado_ringbuffer_read_advance(m_event_buffer, read_size);
+    decrementFrameCounter(nframes);
 
     return true;
-
 }
+
 /**
  * @brief Read frames from the buffer
  *
@@ -650,19 +698,19 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
     }
 #endif
 
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
 
     m_buffer_tail_timestamp = ts;
 
     m_dll_e2=m_update_period * (double)m_nominal_rate;
     m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
 
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Set buffer tail timestamp for (%p) to "
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "for (%p) to "
                                           TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", NTS="
                                           TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
-                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, m_nominal_rate);
+                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
 
 }
 
@@ -688,7 +736,7 @@ void TimestampedBuffer::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp) 
 
     ffado_timestamp_t ts=new_timestamp;
 
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
 
     // add the time
     ts += (ffado_timestamp_t)(m_nominal_rate * (float)m_framecounter);
@@ -704,11 +752,11 @@ void TimestampedBuffer::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp) 
     m_dll_e2=m_update_period * (double)m_nominal_rate;
     m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
 
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Set buffer head timestamp for (%p) to "TIMESTAMP_FORMAT_SPEC" => "
+    debugOutput(DEBUG_LEVEL_VERBOSE, "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "
                                           TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
-                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, m_nominal_rate);
+                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
 
 }
 
@@ -740,10 +788,10 @@ void TimestampedBuffer::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int
  * @param fc address to store the associated framecounter in
  */
 void TimestampedBuffer::getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc) {
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     *fc = m_framecounter;
     *ts = m_buffer_tail_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 }
 
 /**
@@ -763,12 +811,12 @@ ffado_timestamp_t TimestampedBuffer::getTimestampFromTail(int nframes)
     float rate;
     ffado_timestamp_t timestamp;
     
-    pthread_mutex_lock(&m_framecounter_lock);
-    
+    ENTER_CRITICAL_SECTION;
+
     diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
     timestamp=m_buffer_tail_timestamp;
     
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
     
     if (diff < 0) diff += m_wrap_at;
     rate=(float)diff / (float)m_update_period;
@@ -803,9 +851,9 @@ ffado_timestamp_t TimestampedBuffer::getTimestampFromHead(int nframes)
  * is thread safe.
  */
 void TimestampedBuffer::resetFrameCounter() {
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     m_framecounter = 0;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 }
 
 /**
@@ -814,9 +862,9 @@ void TimestampedBuffer::resetFrameCounter() {
  * @param nbframes number of frames to decrement
  */
 void TimestampedBuffer::decrementFrameCounter(int nbframes) {
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     m_framecounter -= nbframes;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 }
 
 /**
@@ -834,9 +882,9 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
     // add the offsets
     ffado_timestamp_t diff;
     
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 
     if (diff < 0) diff += m_wrap_at;
 
@@ -853,13 +901,9 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
         ts += m_wrap_at;
     }
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting buffer tail timestamp for (%p) to "
-                                          TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC"\n",
-                this, new_timestamp, ts);
-
 #ifdef DEBUG
     if (new_timestamp >= m_wrap_at) {
-        debugWarning("timestamp not wrapped: "TIMESTAMP_FORMAT_SPEC"\n",new_timestamp);
+        debugWarning("timestamp not wrapped: "TIMESTAMP_FORMAT_SPEC"\n", new_timestamp);
     }
     if ((ts >= m_wrap_at) || (ts < 0 )) {
         debugWarning("ts not wrapped correctly: "TIMESTAMP_FORMAT_SPEC"\n",ts);
@@ -867,24 +911,41 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
 #endif
 // FIXME: JMW: at some points during startup the timestamp doesn't change.
 // This still needs to be verified in more detail.  
-if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
-  pthread_mutex_lock(&m_framecounter_lock);
-  m_framecounter += nbframes;
-  pthread_mutex_unlock(&m_framecounter_lock);
-  return;
-}
+// if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
+//   ENTER_CRITICAL_SECTION;
+//   m_framecounter += nbframes;
+//   EXIT_CRITICAL_SECTION;
+//   return;
+// }
     
     // update the DLL
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     diff = ts-m_buffer_next_tail_timestamp;
-    pthread_mutex_unlock(&m_framecounter_lock);
+    EXIT_CRITICAL_SECTION;
 
-#ifdef DEBUG
-    if ((diff > ((ffado_timestamp_t)1000)) || (diff < ((ffado_timestamp_t)-1000))) {
-        debugWarning("(%p) difference rather large: "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
-            this, diff, ts, m_buffer_next_tail_timestamp);
+    // check whether the update is within the allowed bounds
+    const float max_deviation = (100.0/100.0); // maximal relative difference considered normal
+    ffado_timestamp_t expected_difference=m_update_period * getRate();
+    ffado_timestamp_t max_abs_diff = expected_difference * max_deviation;
+    
+    if (diff > max_abs_diff) {
+        debugWarning("(%p) difference rather large (+): diff="TIMESTAMP_FORMAT_SPEC", expected="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
+            this, diff, expected_difference, ts, m_buffer_next_tail_timestamp);
+//         debugShowBackLogLines(40);
+    
+        // we can limit the difference
+        // we can't discard it because that would prevent us from tracking the samplerate
+        diff = max_abs_diff;
+ 
+    } else if (diff < -max_abs_diff) {
+        debugWarning("(%p) difference rather large (-): diff="TIMESTAMP_FORMAT_SPEC", expected="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
+            this, diff, expected_difference, ts, m_buffer_next_tail_timestamp);
+//         debugShowBackLogLines(40);
+        
+        // we can limit the difference
+        // we can't discard it because that would prevent us from tracking the samplerate
+        diff = -max_abs_diff;
     }
-#endif
 
     // idea to implement it for nbframes values that differ from m_update_period:
     // diff = diff * nbframes/m_update_period
@@ -894,22 +955,22 @@ if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
                 this, diff);
 
     // the maximal difference we can allow (64secs)
-    const ffado_timestamp_t max=m_wrap_at/2;
+//     const ffado_timestamp_t max=m_wrap_at/2;
+// 
+//     if(diff > max) {
+//         diff -= m_wrap_at;
+//     } else if (diff < -max) {
+//         diff += m_wrap_at;
+//     }
 
-    if(diff > max) {
-        diff -= m_wrap_at;
-    } else if (diff < -max) {
-        diff += m_wrap_at;
-    }
-
-    float err=diff;
+    double err=diff;
 
     debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "diff2="TIMESTAMP_FORMAT_SPEC" err=%f\n",
                     diff, err);
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "B: FC=%10u, TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
                     m_framecounter, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
 
-    pthread_mutex_lock(&m_framecounter_lock);
+    ENTER_CRITICAL_SECTION;
     m_framecounter += nbframes;
 
     m_buffer_tail_timestamp=m_buffer_next_tail_timestamp;
@@ -918,12 +979,18 @@ if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
 //    m_buffer_next_tail_timestamp += (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
     
     m_dll_e2 += m_dll_c*err;
-    
-//     debugOutputShort(DEBUG_LEVEL_VERBOSE, "%p %llu %lld %llu %llu %e %e\n", this, new_timestamp, diff, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, 24576000.0/getRate());
+
+    EXIT_CRITICAL_SECTION;
+
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "tail for (%p) to "
+                                          TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", NTS="
+                                          TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
+                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "U: FC=%10u, TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
                     m_framecounter, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
 
+    ENTER_CRITICAL_SECTION;
     if (m_buffer_next_tail_timestamp >= m_wrap_at) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Unwrapping next tail timestamp: "TIMESTAMP_FORMAT_SPEC"",
                 m_buffer_next_tail_timestamp);
@@ -934,11 +1001,11 @@ if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
                 m_buffer_next_tail_timestamp);
 
     }
+    EXIT_CRITICAL_SECTION;
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "A: TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC", DLLe2=%f, RATE=%f\n",
                 m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, rate);
 
-    pthread_mutex_unlock(&m_framecounter_lock);
 
     if(m_buffer_tail_timestamp>=m_wrap_at) {
         debugError("Wrapping failed for m_buffer_tail_timestamp! "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_tail_timestamp);

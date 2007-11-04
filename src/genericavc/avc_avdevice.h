@@ -33,9 +33,9 @@
 #include "libavc/general/avc_subunit.h"
 #include "libavc/general/avc_plug.h"
 
-#include "libstreaming/AmdtpStreamProcessor.h"
-#include "libstreaming/AmdtpPort.h"
-#include "libstreaming/AmdtpPortInfo.h"
+#include "libstreaming/amdtp/AmdtpStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpPort.h"
+#include "libstreaming/amdtp/AmdtpPortInfo.h"
 
 #include "debugmodule/debugmodule.h"
 

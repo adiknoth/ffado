@@ -23,7 +23,6 @@
  */
 
 #include "SytMonitor.h"
-#include "src/libstreaming/IsoStream.h"
 
 #include <netinet/in.h>
 #include <assert.h>

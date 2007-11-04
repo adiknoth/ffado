@@ -24,16 +24,16 @@
 #ifndef __FFADO_STREAMPROCESSOR__
 #define __FFADO_STREAMPROCESSOR__
 
-#include "../debugmodule/debugmodule.h"
-
 #include "IsoStream.h"
 #include "PortManager.h"
-
-#include <pthread.h>
 
 #include "libutil/StreamStatistics.h"
 #include "libutil/TimestampedBuffer.h"
 #include "libutil/OptionContainer.h"
+
+#include "debugmodule/debugmodule.h"
+
+#include <pthread.h>
 
 namespace Streaming {
 

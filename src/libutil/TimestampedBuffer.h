@@ -91,9 +91,10 @@ public:
 
     TimestampedBuffer(TimestampedBufferClient *);
     virtual ~TimestampedBuffer();
-    
+
     bool writeDummyFrame();
-    
+    bool dropFrames(unsigned int nbframes);
+
     bool writeFrames(unsigned int nbframes, char *data, ffado_timestamp_t ts);
     bool readFrames(unsigned int nbframes, char *data);
 
@@ -103,6 +104,13 @@ public:
     bool init();
     bool prepare();
     bool reset();
+
+    bool isEnabled() {return m_enabled;};
+    void enable() {m_enabled=true;};
+    void disable() {m_enabled=false;};
+
+    bool isTransparent() {return m_transparent;};
+    void setTransparent(bool v) {m_transparent=v;};
 
     bool setEventSize(unsigned int s);
     bool setEventsPerFrame(unsigned int s);
@@ -159,6 +167,8 @@ protected:
     unsigned int m_buffer_size; // the number of frames in the buffer
     unsigned int m_bytes_per_frame;
     unsigned int m_bytes_per_buffer;
+    bool m_enabled; // you can get frames FIXME: rename!!
+    bool m_transparent; // the buffer should hold the frames put in it. if true, discards all frames
 
     ffado_timestamp_t m_wrap_at; // value to wrap at
 

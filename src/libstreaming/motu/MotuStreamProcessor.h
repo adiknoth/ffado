@@ -24,12 +24,13 @@
 
 #ifndef __FFADO_MOTUSTREAMPROCESSOR__
 #define __FFADO_MOTUSTREAMPROCESSOR__
+
+#include "../generic/StreamProcessor.h"
+
+#include "libutil/DelayLockedLoop.h"
+#include "debugmodule/debugmodule.h"
+
 #include <assert.h>
-
-#include "../debugmodule/debugmodule.h"
-#include "StreamProcessor.h"
-
-#include "../libutil/DelayLockedLoop.h"
 
 namespace Streaming {
 

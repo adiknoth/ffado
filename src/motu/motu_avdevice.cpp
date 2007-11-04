@@ -31,8 +31,8 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include "libstreaming/MotuStreamProcessor.h"
-#include "libstreaming/MotuPort.h"
+#include "libstreaming/motu/MotuStreamProcessor.h"
+#include "libstreaming/motu/MotuPort.h"
 
 #include "libutil/DelayLockedLoop.h"
 

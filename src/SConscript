@@ -47,14 +47,14 @@ ffado_source = env.Split( '\
 	libosc/OscNode.cpp \
 	libosc/OscResponse.cpp \
 	libosc/OscServer.cpp \
-	libstreaming/cip.c \
-	libstreaming/IsoHandler.cpp \
-	libstreaming/IsoHandlerManager.cpp \
-	libstreaming/IsoStream.cpp \
-	libstreaming/Port.cpp \
-	libstreaming/PortManager.cpp \
-	libstreaming/StreamProcessor.cpp \
 	libstreaming/StreamProcessorManager.cpp \
+	libstreaming/util/cip.c \
+	libstreaming/util/IsoHandler.cpp \
+	libstreaming/util/IsoHandlerManager.cpp \
+	libstreaming/generic/StreamProcessor.cpp \
+	libstreaming/generic/IsoStream.cpp \
+	libstreaming/generic/Port.cpp \
+	libstreaming/generic/PortManager.cpp \
 	libutil/cmd_serialize.cpp \
 	libutil/DelayLockedLoop.cpp \
 	libutil/PacketBuffer.cpp \
@@ -126,9 +126,9 @@ fireworks_pkgdata =  env.Split( '\
 
 motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
-	libstreaming/MotuPort.cpp \
-	libstreaming/MotuPortInfo.cpp \
-	libstreaming/MotuStreamProcessor.cpp \
+	libstreaming/motu/MotuPort.cpp \
+	libstreaming/motu/MotuPortInfo.cpp \
+	libstreaming/motu/MotuStreamProcessor.cpp \
 ' )
 
 dice_source = env.Split( '\
@@ -150,9 +150,9 @@ rme_source = env.Split( '\
 ' )
 
 amdtp_source = env.Split( '\
-	libstreaming/AmdtpPort.cpp \
-	libstreaming/AmdtpPortInfo.cpp \
-	libstreaming/AmdtpStreamProcessor.cpp \
+	libstreaming/amdtp/AmdtpPort.cpp \
+	libstreaming/amdtp/AmdtpPortInfo.cpp \
+	libstreaming/amdtp/AmdtpStreamProcessor.cpp \
 ' )
 
 source = ffado_source

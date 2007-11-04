@@ -22,12 +22,12 @@
  */
 
 #include "StreamProcessorManager.h"
-#include "StreamProcessor.h"
-#include "Port.h"
+#include "generic/StreamProcessor.h"
+#include "generic/Port.h"
+#include "util/cycletimer.h"
+
 #include <errno.h>
 #include <assert.h>
-
-#include "libstreaming/cycletimer.h"
 
 #define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 5
 

@@ -22,10 +22,9 @@
  */
 
 #include "AmdtpStreamProcessor.h"
-#include "Port.h"
 #include "AmdtpPort.h"
 
-#include "cycletimer.h"
+#include "../util/cycletimer.h"
 
 #include <netinet/in.h>
 #include <assert.h>

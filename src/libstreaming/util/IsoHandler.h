@@ -24,7 +24,7 @@
 #ifndef __FFADO_ISOHANDLER__
 #define __FFADO_ISOHANDLER__
 
-#include "../debugmodule/debugmodule.h"
+#include "debugmodule/debugmodule.h"
 
 #include <libraw1394/raw1394.h>
 

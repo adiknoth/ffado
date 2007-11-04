@@ -28,10 +28,10 @@
  * This class implements IEC61883-6 / AM824 / AMDTP based streaming
  */
 #include "AmdtpStreamProcessor.h"
+#include "../util/cip.h"
 
-#include "../debugmodule/debugmodule.h"
+#include "debugmodule/debugmodule.h"
 
-#include "cip.h"
 #include <libiec61883/iec61883.h>
 #include <pthread.h>
 

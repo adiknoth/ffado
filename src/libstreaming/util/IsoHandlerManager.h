@@ -24,8 +24,9 @@
 #ifndef __FFADO_ISOHANDLERMANAGER__
 #define __FFADO_ISOHANDLERMANAGER__
 
-#include "../debugmodule/debugmodule.h"
-#include "../libutil/Thread.h"
+#include "debugmodule/debugmodule.h"
+
+#include "libutil/Thread.h"
 
 #include <sys/poll.h>
 #include <errno.h>

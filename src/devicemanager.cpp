@@ -30,7 +30,7 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libstreaming/StreamProcessor.h"
+#include "libstreaming/generic/StreamProcessor.h"
 
 #include "debugmodule/debugmodule.h"
 

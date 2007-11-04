@@ -24,7 +24,7 @@
 #ifndef __FFADO_AMDTPPORTINFO__
 #define __FFADO_AMDTPPORTINFO__
 
-#include "../debugmodule/debugmodule.h"
+#include "debugmodule/debugmodule.h"
 #include <string>
 
 namespace Streaming {

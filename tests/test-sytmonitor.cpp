@@ -36,9 +36,9 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/cycletimer.h"
+#include "src/libstreaming/util/cycletimer.h"
 
-#include "src/libstreaming/IsoHandlerManager.h"
+#include "src/libstreaming/util/IsoHandlerManager.h"
 #include "SytMonitor.h"
 
 #include "src/libutil/PosixThread.h"

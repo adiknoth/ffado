@@ -26,8 +26,9 @@
 #ifndef __CYCLETIMER_H__
 #define __CYCLETIMER_H__
 
-#include <inttypes.h>
 #include "debugmodule/debugmodule.h"
+
+#include <inttypes.h>
 
 #define CSR_CYCLE_TIME            0x200
 #define CSR_REGISTER_BASE  0xfffff0000000ULL

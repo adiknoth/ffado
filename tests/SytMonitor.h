@@ -24,9 +24,9 @@
 
 #ifndef __FFADO_SYTMONITOR__
 #define __FFADO_SYTMONITOR__
-#include "src/libstreaming/IsoStream.h"
-#include "src/libstreaming/cip.h"
-#include "src/libstreaming/cycletimer.h"
+#include "src/libstreaming/generic/IsoStream.h"
+#include "src/libstreaming/util/cip.h"
+#include "src/libstreaming/util/cycletimer.h"
 #include "src/libutil/ringbuffer.h"
 
 using namespace Streaming;

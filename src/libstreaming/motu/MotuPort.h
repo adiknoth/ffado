@@ -29,9 +29,10 @@
  * This file implements the ports used in Motu devices
  */
 
-#include "../debugmodule/debugmodule.h"
-#include "Port.h"
 #include "MotuPortInfo.h"
+#include "../generic/Port.h"
+
+#include "debugmodule/debugmodule.h"
 
 namespace Streaming {
 

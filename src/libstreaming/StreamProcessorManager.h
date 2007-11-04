@@ -24,15 +24,16 @@
 #ifndef __FFADO_STREAMPROCESSORMANAGER__
 #define __FFADO_STREAMPROCESSORMANAGER__
 
+#include "generic/Port.h"
+#include "generic/StreamProcessor.h"
+#include "util/IsoHandlerManager.h"
+
 #include "debugmodule/debugmodule.h"
 #include "libutil/Thread.h"
 #include "libutil/OptionContainer.h"
-#include <semaphore.h>
-#include "Port.h"
-#include "StreamProcessor.h"
-#include "IsoHandlerManager.h"
 
 #include <vector>
+#include <semaphore.h>
 
 namespace Streaming {
 

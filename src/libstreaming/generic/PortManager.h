@@ -24,8 +24,9 @@
 #ifndef __FFADO_PORTMANAGER__
 #define __FFADO_PORTMANAGER__
 
-#include "../debugmodule/debugmodule.h"
 #include "Port.h"
+
+#include "debugmodule/debugmodule.h"
 
 #include <vector>
 

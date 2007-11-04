@@ -18,10 +18,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <libiec61883/iec61883.h>
 #include "cip.h"
 
 #include <netinet/in.h>
+#include <libiec61883/iec61883.h>
 
 
 /* Integer fractional math.  When we transmit a 44k1Hz signal we must

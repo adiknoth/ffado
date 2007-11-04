@@ -23,14 +23,12 @@
  */
 
 #include "MotuStreamProcessor.h"
-#include "Port.h"
 #include "MotuPort.h"
 
+#include "../util/cycletimer.h"
+
 #include <math.h>
-
 #include <netinet/in.h>
-
-#include "cycletimer.h"
 
 // in ticks
 #define TRANSMIT_TRANSFER_DELAY 6000U

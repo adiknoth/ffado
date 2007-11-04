@@ -21,11 +21,11 @@
  * MA 02110-1301 USA
  */
 
-#include "libutil/Atomic.h"
-
 #include "StreamProcessor.h"
-#include "StreamProcessorManager.h"
-#include "cycletimer.h"
+#include "../util/cycletimer.h"
+#include "../StreamProcessorManager.h"
+
+#include "libutil/Atomic.h"
 
 #include <assert.h>
 #include <math.h>

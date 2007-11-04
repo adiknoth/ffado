@@ -23,11 +23,11 @@
 
 #include "IsoHandlerManager.h"
 #include "IsoHandler.h"
-#include "IsoStream.h"
+#include "../generic/IsoStream.h"
+
+#include "libutil/PosixThread.h"
+
 #include <assert.h>
-
-#include "../libutil/PosixThread.h"
-
 
 #define MINIMUM_INTERRUPTS_PER_PERIOD  2U
 #define PACKETS_PER_INTERRUPT          4U

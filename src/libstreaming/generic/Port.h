@@ -24,11 +24,12 @@
 #ifndef __FFADO_PORT__
 #define __FFADO_PORT__
 
-#include <stdint.h>
-
-#include "../debugmodule/debugmodule.h"
-#include <string>
 #include "libutil/ringbuffer.h"
+
+#include "debugmodule/debugmodule.h"
+
+#include <string>
+#include <stdint.h>
 
 namespace Streaming {
 

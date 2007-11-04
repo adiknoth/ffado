@@ -25,7 +25,7 @@
 #ifndef __FFADO_MOTUPORTINFO__
 #define __FFADO_MOTUPORTINFO__
 
-#include "../debugmodule/debugmodule.h"
+#include "debugmodule/debugmodule.h"
 #include <string>
 
 namespace Streaming {

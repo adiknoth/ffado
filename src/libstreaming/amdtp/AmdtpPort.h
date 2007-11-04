@@ -28,8 +28,8 @@
  * This file implements the AMDTP ports as used in the BeBoB's
  */
 
-#include "../debugmodule/debugmodule.h"
-#include "Port.h"
+#include "debugmodule/debugmodule.h"
+#include "../generic/Port.h"
 #include "AmdtpPortInfo.h"
 
 namespace Streaming {

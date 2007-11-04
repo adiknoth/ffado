@@ -30,7 +30,7 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 
-#include "libstreaming/MotuStreamProcessor.h"
+#include "libstreaming/motu/MotuStreamProcessor.h"
 
 #define MOTUFW_BASE_ADDR                0xfffff0000000ULL
 

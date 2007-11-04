@@ -36,11 +36,11 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/cycletimer.h"
+#include "src/libstreaming/util/cycletimer.h"
 
-#include "src/libstreaming/IsoHandler.h"
-#include "src/libstreaming/IsoStream.h"
-#include "src/libstreaming/IsoHandlerManager.h"
+#include "src/libstreaming/util/IsoHandler.h"
+#include "src/libstreaming/generic/IsoStream.h"
+#include "src/libstreaming/util/IsoHandlerManager.h"
 #include "src/libutil/PosixThread.h"
 
 #define TEST_PORT_0

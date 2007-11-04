@@ -22,7 +22,7 @@
  * MA 02110-1301 USA
  */
 
-#include "libstreaming/AmdtpSlaveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpSlaveStreamProcessor.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"

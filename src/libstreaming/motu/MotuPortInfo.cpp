@@ -23,7 +23,6 @@
  */
 
 #include "MotuPortInfo.h"
-#include <assert.h>
 
 namespace Streaming {
 

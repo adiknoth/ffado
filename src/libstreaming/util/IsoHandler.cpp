@@ -22,8 +22,8 @@
  */
 
 #include "IsoHandler.h"
-#include "IsoStream.h"
 #include "cycletimer.h"
+#include "../generic/IsoStream.h"
 
 #include "libutil/TimeSource.h"
 #include "libutil/SystemTimeSource.h"

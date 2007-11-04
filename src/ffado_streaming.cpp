@@ -75,7 +75,7 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
             return 0;
     }
 
-    dev->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    dev->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_NORMAL);
     if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
             debugFatal( "Could not initialize device manager\n" );
             delete dev->m_deviceManager;
