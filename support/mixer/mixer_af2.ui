@@ -1,0 +1,2810 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>AudioFire2MixerUI</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>AudioFire2MixerUI</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>580</width>
+            <height>487</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>AudioFire2 Console</string>
+    </property>
+    <widget class="QTabWidget">
+        <property name="name">
+            <cstring>tabWidget4</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>560</width>
+                <height>470</height>
+            </rect>
+        </property>
+        <widget class="QWidget">
+            <property name="name">
+                <cstring>tab</cstring>
+            </property>
+            <attribute name="title">
+                <string>ANALOG OUT</string>
+            </attribute>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Out12Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Out12Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Out12Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn2Out12</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn1Out12</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>138</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>196</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_2_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>138</x>
+                        <y>10</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>S/PDIF</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn3Out12Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn4Out12Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn3Out12Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn4Out12Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn3Out12</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn4Out12</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_3_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_5</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_2_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>130</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>OUTPUT</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_2_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>130</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>OUTPUT</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnPC1Out12Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldPC2Out12</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnPC2Out12Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldPC1Out12</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_5_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Out1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_3_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Out2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut1Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut2Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldOut1</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldOut2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>10</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>ANALOG</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>68</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut1Pad</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pad</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut2Pad</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pad</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn1Out12Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn2Out12Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn3Out12Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn4Out12Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Out12Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+        </widget>
+        <widget class="QWidget">
+            <property name="name">
+                <cstring>tab</cstring>
+            </property>
+            <attribute name="title">
+                <string>HEADPHONES</string>
+            </attribute>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Out34Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Out34Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Out34Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Out34Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn2Out34</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn1Out34</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>138</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>196</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_2_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>138</x>
+                        <y>10</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>S/PDIF</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn3Out34Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn4Out34Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn3Out34Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn4Out34Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn3Out34</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn4Out34</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>10</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>ANALOG</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>68</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_3_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_5</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnPC3Out34Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldPC4Out34</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnPC4Out34Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldPC3Out34</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut3Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut4Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldOut3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldOut4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_2_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>130</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>HEADPHONES</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_2_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>130</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>HEADPHONES</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_5_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Out1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>HpOut_textLabel1_2_3_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Out2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn1Out34Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn2Out34Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn3Out34Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn4Out34Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+        </widget>
+        <widget class="QWidget">
+            <property name="name">
+                <cstring>TabPage</cstring>
+            </property>
+            <attribute name="title">
+                <string>S/PDIF OUT</string>
+            </attribute>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Out56Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Out56Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Out56Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Out56Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn2Out56</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn1Out56</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>138</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>110</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pan</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>196</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_2_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>138</x>
+                        <y>10</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>S/PDIF</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn3Out56Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn4Out56Solo</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>190</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Solo</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn3Out56Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn4Out56Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn3Out56</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldIn4Out56</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>10</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>ANALOG</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>68</x>
+                        <y>40</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_3_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_5</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut6Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_5_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Out1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_3_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>160</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Out2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_2_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>130</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>DIGITAL</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>DigOut_textLabel1_2_2_3_2</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>130</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>DIGITAL</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldPC5Out56</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldPC6Out56</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldOut5</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QSlider">
+                <property name="name">
+                    <cstring>sldOut6</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>488</x>
+                        <y>250</y>
+                        <width>50</width>
+                        <height>170</height>
+                    </rect>
+                </property>
+                <property name="minValue">
+                    <number>0</number>
+                </property>
+                <property name="maxValue">
+                    <number>16777216</number>
+                </property>
+                <property name="lineStep">
+                    <number>1048576</number>
+                </property>
+                <property name="pageStep">
+                    <number>262144</number>
+                </property>
+                <property name="orientation">
+                    <enum>Vertical</enum>
+                </property>
+                <property name="tickmarks">
+                    <enum>Both</enum>
+                </property>
+                <property name="tickInterval">
+                    <number>1048576</number>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnPC5Out56Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>290</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnPC6Out56Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>348</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnOut5Mute</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>430</x>
+                        <y>220</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Mute</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn1Out56Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>12</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn2Out56Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>70</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn3Out56Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>140</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+            <widget class="QDial">
+                <property name="name">
+                    <cstring>rotIn4Out56Pan</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>198</x>
+                        <y>130</y>
+                        <width>51</width>
+                        <height>50</height>
+                    </rect>
+                </property>
+                <property name="maxValue">
+                    <number>255</number>
+                </property>
+            </widget>
+        </widget>
+        <widget class="QWidget">
+            <property name="name">
+                <cstring>TabPage</cstring>
+            </property>
+            <attribute name="title">
+                <string>SETTINGS</string>
+            </attribute>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_2_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>20</x>
+                        <y>20</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>ANALOG</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_6</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>20</x>
+                        <y>50</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>1</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_3_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>78</x>
+                        <y>50</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>2</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn1Pad</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>22</x>
+                        <y>80</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pad</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton">
+                <property name="name">
+                    <cstring>btnIn2Pad</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>80</x>
+                        <y>80</y>
+                        <width>50</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>Pad</string>
+                </property>
+                <property name="toggleButton">
+                    <bool>true</bool>
+                </property>
+            </widget>
+        </widget>
+    </widget>
+</widget>
+<slots>
+    <slot>init()</slot>
+    <slot>updateMatrixButton(int)</slot>
+    <slot>updateMatrixVolume(int)</slot>
+    <slot>updateMatrixRotary(int)</slot>
+    <slot>updateVolume(int)</slot>
+    <slot>updateSelector(int)</slot>
+</slots>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

@@ -1,0 +1,7 @@
+- xml output is a bit wierd -> generate a more generic output
+- correct string encoding
+- position information of channel in stream: bebob indexes from 1 
+  but iec61883 expects it from 0. see todo in avdevice.cpp
+- check all std::cout and std:cerr if they couldn't be replaced with 
+  the DebugModule's methods. The idea is to have a more consistant
+  code.
