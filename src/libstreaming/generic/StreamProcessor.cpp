@@ -33,8 +33,6 @@
 namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
-IMPL_DEBUG_MODULE( ReceiveStreamProcessor, ReceiveStreamProcessor, DEBUG_LEVEL_VERBOSE );
-IMPL_DEBUG_MODULE( TransmitStreamProcessor, TransmitStreamProcessor, DEBUG_LEVEL_VERBOSE );
 
 StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate)
     : IsoStream(type, port)
@@ -83,9 +81,9 @@ void StreamProcessor::dumpInfo()
 
     m_data_buffer->dumpInfo();
 
-//     m_PeriodStat.dumpInfo();
-//     m_PacketStat.dumpInfo();
-//     m_WakeupStat.dumpInfo();
+    m_PeriodStat.dumpInfo();
+    m_PacketStat.dumpInfo();
+    m_WakeupStat.dumpInfo();
 
 }
 
@@ -297,21 +295,6 @@ void StreamProcessor::setVerboseLevel(int l) {
 
 }
 
-ReceiveStreamProcessor::ReceiveStreamProcessor(int port, int framerate)
-    : StreamProcessor(IsoStream::EST_Receive, port, framerate) {
-
-}
-
-ReceiveStreamProcessor::~ReceiveStreamProcessor() {
-
-}
-
-void ReceiveStreamProcessor::setVerboseLevel(int l) {
-    setDebugLevel(l);
-    StreamProcessor::setVerboseLevel(l);
-
-}
-
 uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {
     ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
 
@@ -331,21 +314,6 @@ uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {
 
 bool ReceiveStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
     return m_data_buffer->getFrameCounter() >= (int) nbframes;
-}
-
-TransmitStreamProcessor::TransmitStreamProcessor( int port, int framerate)
-    : StreamProcessor(IsoStream::EST_Transmit, port, framerate) {
-
-}
-
-TransmitStreamProcessor::~TransmitStreamProcessor() {
-
-}
-
-void TransmitStreamProcessor::setVerboseLevel(int l) {
-    setDebugLevel(l);
-    StreamProcessor::setVerboseLevel(l);
-
 }
 
 uint64_t TransmitStreamProcessor::getTimeAtPeriod() {

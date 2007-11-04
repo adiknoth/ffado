@@ -241,9 +241,9 @@ protected:
 class ReceiveStreamProcessor : public StreamProcessor {
 
 public:
-    ReceiveStreamProcessor(int port, int framerate);
-
-    virtual ~ReceiveStreamProcessor();
+    ReceiveStreamProcessor(int port, int framerate)
+        : StreamProcessor(IsoStream::EST_Receive, port, framerate) {};
+    virtual ~ReceiveStreamProcessor(){};
 
 
     virtual enum EProcessorType getType() {return E_Receive;};
@@ -259,16 +259,12 @@ public:
         virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped) = 0;
-     virtual void setVerboseLevel(int l);
 
     uint64_t getTimeAtPeriod();
     bool canClientTransferFrames(unsigned int nframes);
 
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
-
-    DECLARE_DEBUG_MODULE;
-
 };
 
 /*!
@@ -278,9 +274,9 @@ protected:
 class TransmitStreamProcessor : public StreamProcessor {
 
 public:
-    TransmitStreamProcessor(int port, int framerate);
-
-    virtual ~TransmitStreamProcessor();
+    TransmitStreamProcessor(int port, int framerate)
+        : StreamProcessor(IsoStream::EST_Transmit, port, framerate) {};
+    virtual ~TransmitStreamProcessor() {};
 
     virtual enum EProcessorType getType() {return E_Transmit;};
 
@@ -291,17 +287,11 @@ public:
         virtual bool getFrames(unsigned int nbframes, int64_t ts) {return false;};
         virtual bool getFramesDry(unsigned int nbframes, int64_t ts) {return false;};
 
-     virtual void setVerboseLevel(int l);
-
     uint64_t getTimeAtPeriod();
     bool canClientTransferFrames(unsigned int nframes);
 
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
-
-    DECLARE_DEBUG_MODULE;
-
-
 };
 
 }
