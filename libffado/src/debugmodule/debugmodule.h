@@ -51,11 +51,13 @@ typedef short debug_level_t;
 
 #define MB_BUFFERSIZE       DEBUG_MAX_MESSAGE_LENGTH
 
+// #define IMPLEMENT_BACKLOG
+#ifdef IMPLEMENT_BACKLOG
 // the backlog is a similar buffer as the message buffer
 #define BACKLOG_MB_BUFFERS      (256)
 #define BACKLOG_MB_NEXT(index)  (((index)+1) & (BACKLOG_MB_BUFFERS-1))
-#define BACKLOG_MIN_LEVEL       DEBUG_LEVEL_VERY_VERBOSE
-
+#define BACKLOG_MIN_LEVEL       DEBUG_LEVEL_VERBOSE
+#endif
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -118,7 +120,17 @@ typedef short debug_level_t;
                 m_debugModule.getLevel( )
 
 #define flushDebugOutput()      DebugModuleManager::instance()->flush()
-#define debugShowBackLog()      DebugModuleManager::instance()->showBackLog()
+
+#ifdef IMPLEMENT_BACKLOG
+
+#define debugShowBackLog()          DebugModuleManager::instance()->showBackLog()
+#define debugShowBackLogLines(x)    DebugModuleManager::instance()->showBackLog(x)
+
+#else
+#define debugShowBackLog()
+#define debugShowBackLogLines(x)
+
+#endif
 
 #ifdef DEBUG
 
@@ -228,6 +240,7 @@ public:
     // when something goes wrong without having too 
     // much output in normal operation
     void showBackLog();
+    void showBackLog(int nblines);
 
 protected:
     bool registerModule( DebugModule& debugModule );
@@ -257,10 +270,12 @@ private:
     static void *mb_thread_func(void *arg);
     void mb_flush();
 
+#ifdef IMPLEMENT_BACKLOG
     // the backlog
     char bl_mb_buffers[BACKLOG_MB_BUFFERS][MB_BUFFERSIZE];
     unsigned int bl_mb_inbuffer;
     pthread_mutex_t bl_mb_write_lock;
+#endif
 
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;

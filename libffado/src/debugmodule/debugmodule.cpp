@@ -83,6 +83,19 @@ DebugModule::printShort( debug_level_t level,
                          const char* format,
                          ... ) const
 {
+
+    // bypass for performance
+#ifdef IMPLEMENT_BACKLOG
+    if (level > BACKLOG_MIN_LEVEL 
+        && level > m_level) {
+        return;
+    }
+#else
+    if ( level >m_level ) {
+        return;
+    }
+#endif
+
     const char *warning = "WARNING: message truncated!\n";
     const int warning_size = 32;
     va_list arg;
@@ -104,10 +117,12 @@ DebugModule::printShort( debug_level_t level,
         snprintf(msg+MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
     }
 
+#ifdef IMPLEMENT_BACKLOG
     // print to backlog if necessary
     if (level <= BACKLOG_MIN_LEVEL) {
         DebugModuleManager::instance()->backlog_print( msg );
     }
+#endif
 
     // print to stderr if necessary
     if ( level <= m_level ) {
@@ -123,6 +138,18 @@ DebugModule::print( debug_level_t level,
                     const char*   format,
                     ... ) const
 {
+    // bypass for performance
+#ifdef IMPLEMENT_BACKLOG
+    if (level > BACKLOG_MIN_LEVEL 
+        && level > m_level) {
+        return;
+    }
+#else
+    if ( level >m_level ) {
+        return;
+    }
+#endif
+
     const char *warning = "WARNING: message truncated!\n";
     const int warning_size = 32;
 
@@ -169,10 +196,12 @@ DebugModule::print( debug_level_t level,
                  "%s", warning);
     }
 
+#ifdef IMPLEMENT_BACKLOG
     // print to backlog if necessary
     if (level <= BACKLOG_MIN_LEVEL) {
         DebugModuleManager::instance()->backlog_print( msg );
     }
+#endif
 
     // print to stderr if necessary
     if ( level <= m_level ) {
@@ -207,7 +236,9 @@ DebugModuleManager::DebugModuleManager()
     , mb_inbuffer(0)
     , mb_outbuffer(0)
     , mb_overruns(0)
+#ifdef IMPLEMENT_BACKLOG
     , bl_mb_inbuffer(0)
+#endif
 {
 
 }
@@ -244,6 +275,10 @@ DebugModuleManager::~DebugModuleManager()
     pthread_mutex_destroy(&mb_write_lock);
     pthread_cond_destroy(&mb_ready_cond);
 
+#ifdef IMPLEMENT_BACKLOG
+    pthread_mutex_destroy(&bl_mb_write_lock);
+#endif
+
 }
 
 bool
@@ -262,7 +297,9 @@ DebugModuleManager::init()
     mb_overruns = 0;
     mb_initialized = 1;
 
+#ifdef IMPLEMENT_BACKLOG
     pthread_mutex_init(&bl_mb_write_lock, NULL);
+#endif
 
     if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0)
          mb_initialized = 0;
@@ -376,6 +413,7 @@ DebugModuleManager::mb_flush()
     pthread_mutex_unlock(&m->mb_flush_lock);
 }
 
+#ifdef IMPLEMENT_BACKLOG
 void
 DebugModuleManager::showBackLog()
 {
@@ -398,6 +436,34 @@ DebugModuleManager::showBackLog()
     fprintf(stderr, "=====================================================\n");
     pthread_mutex_unlock(&m->mb_flush_lock);
 }
+
+void
+DebugModuleManager::showBackLog(int nblines)
+{
+     DebugModuleManager *m=DebugModuleManager::instance();
+    // locking the flush lock ensures that the backlog is
+    // printed as one entity
+    pthread_mutex_lock(&m->mb_flush_lock);
+    fprintf(stderr, "=====================================================\n");
+    fprintf(stderr, "* BEGIN OF BACKLOG PRINT\n");
+    fprintf(stderr, "=====================================================\n");
+
+    int lines_to_skip = BACKLOG_MB_BUFFERS - nblines;
+    if (lines_to_skip < 0) lines_to_skip = 0;
+    for (unsigned int i=0; i<BACKLOG_MB_BUFFERS;i++) {
+        if (lines_to_skip-- < 0) {
+            unsigned int idx=(i+bl_mb_inbuffer)%BACKLOG_MB_BUFFERS;
+            fputs(bl_mb_buffers[idx], stderr);
+        }
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "=====================================================\n");
+    fprintf(stderr, "* END OF BACKLOG PRINT\n");
+    fprintf(stderr, "=====================================================\n");
+    pthread_mutex_unlock(&m->mb_flush_lock);
+}
+#endif
 
 void *
 DebugModuleManager::mb_thread_func(void *arg)
@@ -423,6 +489,7 @@ DebugModuleManager::mb_thread_func(void *arg)
     return NULL;
 }
 
+#ifdef IMPLEMENT_BACKLOG
 void
 DebugModuleManager::backlog_print(const char *msg)
 {
@@ -443,6 +510,7 @@ DebugModuleManager::backlog_print(const char *msg)
     }
     // just bail out should it have failed
 }
+#endif
 
 void
 DebugModuleManager::print(const char *msg)
