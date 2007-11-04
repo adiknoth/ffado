@@ -85,6 +85,7 @@ bool IsoHandlerManager::init()
 bool IsoHandlerManager::Init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    pthread_mutex_init(&m_debug_lock, NULL);
 
     return true;
 }
@@ -106,10 +107,15 @@ bool IsoHandlerManager::Execute()
 {
 //     updateCycleTimers();
 
+    pthread_mutex_lock(&m_debug_lock);
+
     if(!iterate()) {
         debugFatal("Could not iterate the isoManager\n");
+        pthread_mutex_unlock(&m_debug_lock);
         return false;
     }
+
+    pthread_mutex_unlock(&m_debug_lock);
 
     return true;
 }

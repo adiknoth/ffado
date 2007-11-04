@@ -90,6 +90,8 @@ public:
 
     virtual bool putFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents from client
     virtual bool getFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents to the client
+    virtual bool putFramesDry(unsigned int nbframes, int64_t ts) = 0; ///< dry-process the buffer contents
+    virtual bool getFramesDry(unsigned int nbframes, int64_t ts) = 0; ///< dry-process the buffer contents
 
     virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
@@ -148,6 +150,17 @@ protected:
          *         false if it can't
          */
         virtual bool canClientTransferFrames(unsigned int nframes) = 0;
+
+        /**
+         * @brief drop nframes from the internal buffer
+         *
+         * this function drops nframes from the internal buffers, without any
+         * specification on what frames are dropped. Timestamps are not updated.
+         *
+         * @param nframes number of frames
+         * @return true if the operation was successful
+         */
+        virtual bool dropFrames(unsigned int nframes);
 
         /**
          * \brief return the time until the next period boundary should be signaled (in microseconds)
@@ -241,6 +254,7 @@ public:
                   int cycle, unsigned int dropped, unsigned int max_length)
                   {return RAW1394_ISO_STOP;};
         virtual bool putFrames(unsigned int nbframes, int64_t ts) {return false;};
+        virtual bool putFramesDry(unsigned int nbframes, int64_t ts) {return false;};
 
         virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
@@ -275,11 +289,8 @@ public:
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
         virtual bool getFrames(unsigned int nbframes, int64_t ts) {return false;};
+        virtual bool getFramesDry(unsigned int nbframes, int64_t ts) {return false;};
 
-    virtual enum raw1394_iso_disposition
-        getPacket(unsigned char *data, unsigned int *length,
-                  unsigned char *tag, unsigned char *sy,
-                  int cycle, unsigned int dropped, unsigned int max_length) = 0;
      virtual void setVerboseLevel(int l);
 
     uint64_t getTimeAtPeriod();

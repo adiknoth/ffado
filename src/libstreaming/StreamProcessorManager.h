@@ -86,12 +86,17 @@ public:
 
     bool transfer(); ///< transfer the buffer contents from/to client
     bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
+    
+    bool dryRun();
+    bool dryRun(enum StreamProcessor::EProcessorType);
 
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
     int getXrunCount() {return m_xruns;};
 
 private:
+    void resetXrunCounters();
+
     int m_delayed_usecs;
     // this stores the time at which the next transfer should occur
     // usually this is in the past, but it is needed as a timestamp

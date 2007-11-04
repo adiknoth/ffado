@@ -172,7 +172,7 @@ bool StreamProcessorManager::init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-    m_isoManager=new IsoHandlerManager(m_thread_realtime, m_thread_priority);
+    m_isoManager=new IsoHandlerManager(m_thread_realtime, m_thread_priority + 1);
 
     if(!m_isoManager) {
         debugFatal("Could not create IsoHandlerManager\n");
@@ -295,23 +295,8 @@ bool StreamProcessorManager::syncStartAll() {
             if(!(*it)->isRunning()) notRunning=true;
         }
 
-        // EXPERIMENT:
-        // the only stream that should be running is the sync
-        // source stream, as this is the one that defines
-        // when to signal buffers. Maybe we get an xrun at startup,
-        // but that should be handled.
-
-        // the problem is that otherwise a setup with a device
-        // that waits for decent input before sending output
-        // will not start up (e.g. the bounce device), because
-        // all streams are required to be running.
-
-        // other streams still have at least ENABLE_DELAY_CYCLES cycles
-        // to start up
-//         if(!m_SyncSource->isRunning()) notRunning=true;
-
         usleep(1000);
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Running check: %d\n",notRunning);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Running check: %d\n", notRunning);
     }
 
     if(!wait_cycles) { // timout has occurred
@@ -341,7 +326,7 @@ bool StreamProcessorManager::syncStartAll() {
 
     // we want to make sure that everything is running well,
     // so wait for a while
-    usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
+//     usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
 
@@ -372,20 +357,84 @@ bool StreamProcessorManager::syncStartAll() {
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
+        // get the receive SP's going at receiving data
+        (*it)->m_data_buffer->setTransparent(false);
         (*it)->reset();
     }
 
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
+        // make sure the SP retains it's prefilled data
+        (*it)->m_data_buffer->setTransparent(false);
         (*it)->reset();
     }
+    
+    dumpInfo();
+    // All buffers are prefilled and set-up, the only thing 
+    // that remains a mistery is the timestamp information.
+//     m_SyncSource->m_data_buffer->setTransparent(false);
+//     debugShowBackLog();
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for sync...\n");
+    // in order to obtain that, we wait for the first periods to be
+    // received.
+    int nb_sync_runs=10;
+    while(nb_sync_runs--) { // or while not sync-ed?
+        waitForPeriod();
 
+        // drop the frames for all receive SP's
+        dryRun(StreamProcessor::E_Receive);
+        
+        // we don't have to dryrun for the xmit SP's since they
+        // are not sending data yet.
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu...\n", m_time_of_transfer);
+    // FIXME: xruns can screw up the framecounter accounting. do something more sane here
+    resetXrunCounters();
+    // lock the isohandlermanager such that things freeze
+//     debugShowBackLog();
+
+    // we now should have decent sync info
+    // the buffers of the receive streams should be (approx) empty
+    // the buffers of the xmit streams should be full
+    
+    // note what should the timestamp of the first sample be?
+    
+    // at this point the buffer head timestamp of the transmit buffers can be
+    // set properly since we know the sync source's timestamp of the last
+    // buffer transfer. we also know the rate.
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, " propagate sync info...\n");
+    // FIXME: in the SPM it would be nice to have system time instead of
+    //        1394 time
+//     float rate=m_SyncSource->getTicksPerFrame();
+//     int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers*m_period))*rate);
+//     // the data at the front of the buffer is intended to be transmitted
+//     // nb_periods*period_size after the last received period
+//     int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+        // FIXME: encapsulate
+        (*it)->m_data_buffer->setBufferHeadTimestamp(m_time_of_transfer);
+        //(*it)->m_data_buffer->setNominalRate(rate); //CHECK!!!
+    }
+    
+    dumpInfo();
+    
+    // this is the place were we should be syncing the received streams too
+    // check how much they differ
+    
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors...\n");
 
     uint64_t now=m_SyncSource->getTimeNow(); // fixme: should be in usecs, not ticks
 
     // FIXME: this should not be in cycles, but in 'time'
+    // FIXME: remove the timestamp
     unsigned int enable_at=TICKS_TO_CYCLES(now)+ENABLE_DELAY_CYCLES;
     if (enable_at > 8000) enable_at -= 8000;
 
@@ -394,7 +443,43 @@ bool StreamProcessorManager::syncStartAll() {
         return false;
     }
 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Running dry for a while...\n");
+    // run some cycles 'dry' such that everything can stabilize
+    int nb_dryrun_cycles=10;
+    bool no_xrun;
+    while(nb_dryrun_cycles--) {
+        waitForPeriod();
+        no_xrun = dryRun(); // dry run both receive and xmit
+
+        if (no_xrun) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " This dry-run was not xrun free...\n" );
+            resetXrunCounters();
+            // FIXME: xruns can screw up the framecounter accounting. do something more sane here
+        }
+    }
+
+    // now we should clear the xrun flags
+    resetXrunCounters();
+
+    // and off we go
     return true;
+}
+
+void StreamProcessorManager::resetXrunCounters(){
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting xrun flags...\n");
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it )
+    {
+        (*it)->resetXrunCounter();
+    }
+
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) 
+    {
+        (*it)->resetXrunCounter();
+    }
 }
 
 bool StreamProcessorManager::start() {
@@ -491,6 +576,11 @@ bool StreamProcessorManager::stop() {
         usleep(1000);
     }
 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Disabling StreamProcessors...\n");
+        if (!disableStreamProcessors()) {
+        debugFatal("Could not disable StreamProcessors...\n");
+        return false;
+    }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handlers...\n");
     if(!m_isoManager->stopHandlers()) {
@@ -584,53 +674,53 @@ bool StreamProcessorManager::enableStreamProcessors(uint64_t time_to_enable_at) 
     }
 
     // now we wait for the SP's to get enabled
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to be enabled...\n");
-    // we have to wait until all streamprocessors indicate that they are running
-    // i.e. that there is actually some data stream flowing
-    int wait_cycles=ENABLE_TIMEOUT_MSEC; // two seconds
-    bool notEnabled=true;
-    while (notEnabled && wait_cycles) {
-        wait_cycles--;
-        notEnabled=false;
-
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-                it != m_ReceiveProcessors.end();
-                ++it ) {
-            if(!(*it)->isEnabled()) notEnabled=true;
-        }
-
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-                it != m_TransmitProcessors.end();
-                ++it ) {
-            if(!(*it)->isEnabled()) notEnabled=true;
-        }
-        usleep(1000); // one cycle
-    }
-
-    if(!wait_cycles) { // timout has occurred
-        debugFatal("One or more streams couldn't be enabled (timeout):\n");
-
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-                it != m_ReceiveProcessors.end();
-                ++it ) {
-            if(!(*it)->isEnabled()) {
-                    debugFatal(" receive stream %p not enabled\n",*it);
-            } else {
-                    debugFatal(" receive stream %p enabled\n",*it);
-            }
-        }
-
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-                it != m_TransmitProcessors.end();
-                ++it ) {
-            if(!(*it)->isEnabled()) {
-                    debugFatal(" transmit stream %p not enabled\n",*it);
-            } else {
-                    debugFatal(" transmit stream %p enabled\n",*it);
-            }
-        }
-        return false;
-    }
+//     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to be enabled...\n");
+//     // we have to wait until all streamprocessors indicate that they are running
+//     // i.e. that there is actually some data stream flowing
+//     int wait_cycles=ENABLE_TIMEOUT_MSEC; // two seconds
+//     bool notEnabled=true;
+//     while (notEnabled && wait_cycles) {
+//         wait_cycles--;
+//         notEnabled=false;
+// 
+//         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+//                 it != m_ReceiveProcessors.end();
+//                 ++it ) {
+//             if(!(*it)->isEnabled()) notEnabled=true;
+//         }
+// 
+//         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+//                 it != m_TransmitProcessors.end();
+//                 ++it ) {
+//             if(!(*it)->isEnabled()) notEnabled=true;
+//         }
+//         usleep(1000); // one cycle
+//     }
+// 
+//     if(!wait_cycles) { // timout has occurred
+//         debugFatal("One or more streams couldn't be enabled (timeout):\n");
+// 
+//         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+//                 it != m_ReceiveProcessors.end();
+//                 ++it ) {
+//             if(!(*it)->isEnabled()) {
+//                     debugFatal(" receive stream %p not enabled\n",*it);
+//             } else {
+//                     debugFatal(" receive stream %p enabled\n",*it);
+//             }
+//         }
+// 
+//         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+//                 it != m_TransmitProcessors.end();
+//                 ++it ) {
+//             if(!(*it)->isEnabled()) {
+//                     debugFatal(" transmit stream %p not enabled\n",*it);
+//             } else {
+//                     debugFatal(" transmit stream %p enabled\n",*it);
+//             }
+//         }
+//         return false;
+//     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " => all StreamProcessors enabled...\n");
 
@@ -660,12 +750,14 @@ bool StreamProcessorManager::disableStreamProcessors() {
             it != m_ReceiveProcessors.end();
             ++it ) {
         (*it)->disable();
+        (*it)->m_data_buffer->setTransparent(true);
     }
 
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
         (*it)->disable();
+        (*it)->m_data_buffer->setTransparent(true);
     }
 
     // now we wait for the SP's to get disabled
@@ -832,7 +924,7 @@ bool StreamProcessorManager::waitForPeriod() {
         xmt_bf = (*it)->getBufferFill();
     }
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n",
-        m_time_of_transfer,rcv_bf,xmt_bf,rcv_bf+xmt_bf);
+        m_time_of_transfer, rcv_bf, xmt_bf, rcv_bf+xmt_bf);
 
 #endif
 
@@ -924,7 +1016,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
         float rate=m_SyncSource->getTicksPerFrame();
         int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
         
-        int64_t receive_timestamp = substractTicks(m_time_of_transfer,one_frame_in_ticks);
+        int64_t receive_timestamp = substractTicks(m_time_of_transfer, one_frame_in_ticks);
         
         if(receive_timestamp<0) {
             debugWarning("receive ts < 0.0 : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
@@ -950,10 +1042,101 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
                 ++it ) {
+            // FIXME: in the SPM it would be nice to have system time instead of
+            //        1394 time
+            float rate=m_SyncSource->getTicksPerFrame();
+            int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers*m_period))*rate);
 
-            if(!(*it)->putFrames(m_period, (int64_t)m_time_of_transfer)) {
+            // the data we are putting into the buffer is intended to be transmitted
+            // one ringbuffer size after it has been received
+            int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
+            if(!(*it)->putFrames(m_period, transmit_timestamp)) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)\n",
-                        m_period, m_time_of_transfer, *it);
+                        m_period, transmit_timestamp, *it);
+                return false; // buffer overrun
+            }
+
+        }
+    }
+
+    return true;
+}
+
+/**
+ * @brief Dry run one period for both receive and transmit StreamProcessors
+ *
+ * Process one period of frames for all streamprocessors, without touching the
+ * client buffers. This only removes an incoming period from the ISO receive buffer and
+ * puts one period of silence into the transmit buffers.
+ *
+ * @return true if successful, false otherwise (indicates xrun).
+ */
+bool StreamProcessorManager::dryRun() {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
+    if (!dryRun(StreamProcessor::E_Receive)) return false;
+    if (!dryRun(StreamProcessor::E_Transmit)) return false;
+    return true;
+}
+
+/**
+ * @brief Dry run one period for either the receive or transmit StreamProcessors
+ *
+ * see dryRun()
+ *
+ * @param t The processor type to dryRun for (receive or transmit)
+ * @return true if successful, false otherwise (indicates xrun).
+ */
+
+bool StreamProcessorManager::dryRun(enum StreamProcessor::EProcessorType t) {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+
+    // a static cast could make sure that there is no performance
+    // penalty for the virtual functions (to be checked)
+    if (t==StreamProcessor::E_Receive) {
+        
+        // determine the time at which we want reception to start
+        float rate=m_SyncSource->getTicksPerFrame();
+        int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
+        
+        int64_t receive_timestamp = substractTicks(m_time_of_transfer, one_frame_in_ticks);
+        
+        if(receive_timestamp<0) {
+            debugWarning("receive ts < 0.0 : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
+             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
+        }
+        if(receive_timestamp>(128L*TICKS_PER_SECOND)) {
+            debugWarning("receive ts > 128L*TICKS_PER_SECOND : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
+             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
+        }
+        
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+
+            if(!(*it)->getFramesDry(m_period, receive_timestamp)) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)\n",
+                            m_period, m_time_of_transfer,*it);
+                    return false; // buffer underrun
+            }
+
+        }
+    } else {
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            // FIXME: in the SPM it would be nice to have system time instead of
+            //        1394 time
+            float rate=m_SyncSource->getTicksPerFrame();
+            int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers*m_period))*rate);
+
+            // the data we are putting into the buffer is intended to be transmitted
+            // one ringbuffer size after it has been received
+            int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
+            if(!(*it)->putFramesDry(m_period, transmit_timestamp)) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)\n",
+                        m_period, transmit_timestamp, *it);
                 return false; // buffer overrun
             }
 

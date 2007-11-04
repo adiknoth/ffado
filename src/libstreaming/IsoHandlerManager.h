@@ -101,6 +101,7 @@ class IsoHandlerManager : public Util::RunnableInterface
     public:
         bool Execute(); // note that this is called in we while(running) loop
         bool Init();
+        pthread_mutex_t m_debug_lock;
 
     // the state machine
     private:
@@ -147,7 +148,6 @@ class IsoHandlerManager : public Util::RunnableInterface
         bool m_realtime;
         unsigned int m_priority;
         Util::PosixThread *m_isoManagerThread;
-
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

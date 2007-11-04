@@ -210,12 +210,14 @@ bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
             diff,now_cycles,time_to_enable_at);
     }
 #endif
+    m_data_buffer->enable();
 
     m_disabled=false;
     return true;
 }
 
 bool StreamProcessor::disable()  {
+    m_data_buffer->disable();
     m_disabled=true;
     return true;
 }
@@ -260,7 +262,7 @@ int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
     // calculate the time until the next period
     int32_t until_next=diffTicks(time_at_period,cycle_timer);
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11lld\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11ld\n",
         time_at_period, cycle_timer, until_next
         );
 
@@ -273,6 +275,11 @@ int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
 
 uint64_t StreamProcessor::getTimeAtPeriodUsecs() {
     return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
+}
+
+bool StreamProcessor::dropFrames(unsigned int nbframes) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d)\n", nbframes);
+    return m_data_buffer->dropFrames(nbframes);
 }
 
 /**

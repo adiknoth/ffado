@@ -37,8 +37,8 @@
 
 namespace Streaming {
 
-IMPL_DEBUG_MODULE( AmdtpTransmitStreamProcessor, AmdtpTransmitStreamProcessor, DEBUG_LEVEL_NORMAL );
-IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( AmdtpTransmitStreamProcessor, AmdtpTransmitStreamProcessor, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEBUG_LEVEL_VERBOSE );
 
 
 /* transmit */
@@ -83,8 +83,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     
     if (cycle<0) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Xmit handler for cycle %d, (running=%d, enabled=%d,%d)\n",
-            cycle, m_running, m_disabled, m_is_disabled);
+        debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,"Xmit handler for cycle %d, (running=%d)\n",
+            cycle, m_running);
         
         *tag = 0;
         *sy = 0;
@@ -93,8 +93,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     
     }
     
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Xmit handler for cycle %d, (running=%d, enabled=%d,%d)\n",
-        cycle, m_running, m_disabled, m_is_disabled);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,"Xmit handler for cycle %d, (running=%d)\n",
+        cycle, m_running);
     
     m_last_cycle=cycle;
 
@@ -152,173 +152,143 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 
     uint64_t ts_head;
     signed int fc;
-    if (!m_disabled && m_is_disabled) { // this means that we are trying to enable
-        // check if we are on or past the enable point
-        int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
+    uint64_t presentation_time;
+    unsigned int presentation_cycle;
+    int cycles_until_presentation;
 
-        if (cycles_past_enable >= 0) {
-            m_is_disabled=false;
+    const int min_cycles_beforehand = 2;  // FIXME: should become a define
+    const int max_cycles_beforehand = 15; // FIXME: should become a define
 
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %u\n", this, cycle);
+    if( !m_running || !m_data_buffer->isEnabled() ) {
+        debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                    "Not running (%d) or buffer not enabled (enabled=%d)\n",
+                    m_running, m_data_buffer->isEnabled());
 
-            // initialize the buffer head & tail
-            ffado_timestamp_t ts_head_tmp;
-            m_SyncSource->m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
-            ts_head=(uint64_t)ts_head_tmp;
-            
-            // the number of cycles the sync source lags (> 0)
-            // or leads (< 0)
-            int sync_lag_cycles=diffCycles(cycle, m_SyncSource->getLastCycle());
-
-            // account for the cycle lag between sync SP and this SP
-            // the last update of the sync source's timestamps was sync_lag_cycles
-            // cycles before the cycle we are calculating the timestamp for.
-            // if we were to use one-frame buffers, you would expect the
-            // frame that is sent on cycle CT to have a timestamp T1.
-            // ts_head however is for cycle CT-sync_lag_cycles, and lies
-            // therefore sync_lag_cycles * TICKS_PER_CYCLE earlier than
-            // T1.
-            ts_head = addTicks(ts_head, (sync_lag_cycles) * TICKS_PER_CYCLE);
-
-            ts_head = substractTicks(ts_head, TICKS_PER_CYCLE);
-
-            // account for the number of cycles we are too late to enable
-            ts_head = addTicks(ts_head, cycles_past_enable * TICKS_PER_CYCLE);
-
-            // account for one extra packet of frames
-            ts_head = substractTicks(ts_head,
-                        (uint32_t)((float)m_syt_interval * m_SyncSource->m_data_buffer->getRate()));
-
-            m_data_buffer->setBufferHeadTimestamp(ts_head);
-
-            #ifdef DEBUG
-            if ((unsigned int)m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()) {
-                debugWarning("m_data_buffer->getFrameCounter() != m_data_buffer->getBufferSize()\n");
-            }
-            #endif
-            debugOutput(DEBUG_LEVEL_VERBOSE,"XMIT TS SET: TS=%10llu, LAG=%03d, FC=%4d\n",
-                            ts_head, sync_lag_cycles, m_data_buffer->getFrameCounter());
-        } else {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-                        "will enable StreamProcessor %p at %u, now is %d\n",
-                        this, m_cycle_to_enable_at, cycle);
-        }
-    } else if (m_disabled && !m_is_disabled) {
-        // trying to disable
-        debugOutput(DEBUG_LEVEL_VERBOSE,"disabling StreamProcessor %p at %u\n",
-                    this, cycle);
-        m_is_disabled=true;
+        // not running or not enabled
+        goto send_empty_packet;
     }
 
+try_block_of_frames:
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "Try for cycle %d\n", cycle);
+    // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
     ffado_timestamp_t ts_head_tmp;
     m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
     ts_head=(uint64_t)ts_head_tmp;
 
-    // we send a packet some cycles in advance, to avoid the
-    // following situation:
-    // suppose we are only a few ticks away from
-    // the moment to send this packet. therefore we decide
-    // not to send the packet, but send it in the next cycle.
-    // This means that the next time point will be 3072 ticks
-    // later, making that the timestamp will be expired when the
-    // packet is sent, unless TRANSFER_DELAY > 3072.
-    // this means that we need at least one cycle of extra buffering.
-    uint32_t ticks_to_advance = TICKS_PER_CYCLE * TRANSMIT_ADVANCE_CYCLES;
+    // first calculate the presentation time of the samples
+    presentation_time = addTicks(ts_head, TRANSMIT_TRANSFER_DELAY);
 
-    // if cycle lies cycle_diff cycles in the future, we should
-    // queue this packet cycle_diff * TICKS_PER_CYCLE earlier than
-    // we would if it were to be sent immediately.
-    ticks_to_advance += cycle_diff * TICKS_PER_CYCLE;
+    // calculate the cycle this block should be presented in
+    // (this is just a virtual calculation since at that time it should
+    //  already be in the device's buffer)
+    presentation_cycle = (unsigned int)(TICKS_TO_CYCLES( presentation_time ));
 
-    // determine the 'now' time in ticks
-    uint32_t cycle_timer=CYCLE_TIMER_TO_TICKS(ctr);
+    // we can check whether this cycle is within the 'window' we have
+    // to send this packet.
+    // first calculate the number of cycles left before presentation time
+    cycles_until_presentation = diffCycles( presentation_cycle, cycle );
 
-    cycle_timer = addTicks(cycle_timer, ticks_to_advance);
+    // two different options:
+    // 1) there are not enough frames for one packet 
+    //      => determine wether this is a problem, since we might still
+    //         have some time to send it
+    // 2) there are enough packets
+    //      => determine whether we have to send them in this packet
+    if (fc < (signed int)m_syt_interval) {
+        // not enough frames in the buffer,
+        debugOutput(DEBUG_LEVEL_VERBOSE, 
+                    "Insufficient frames: CY=%04u, PTC=%04u, CUP=%04d\n",
+                    cycle, presentation_cycle, cycles_until_presentation);
+        // we can still postpone the queueing of the packets
+        // if we are far enough ahead of the presentation time
+        if( cycles_until_presentation <= min_cycles_beforehand ) {
+            // we have an invalid timestamp or we are too late
+            // meaning that we in some sort of xrun state
+            // signal xrun situation ??HERE??
+            m_xruns++;
+        } else {
+            // there is still time left to send the packet
+        }
+        // in any case we send an empty packet on this cycle
+        goto send_empty_packet; // UGLY but effective
+    } else {
+        // there are enough frames, so check the time they are intended for
+        // all frames have a certain 'time window' in which they can be sent
+        // this corresponds to the range of the timestamp mechanism:
+        // we can send a packet 15 cycles in advance of the 'presentation time'
+        // in theory we can send the packet up till one cycle before the presentation time,
+        // however this is not very smart.
+        
+        // There are 3 options:
+        // 1) the frame block is too early
+        //      => send an empty packet
+        // 2) the frame block is within the window
+        //      => send it
+        // 3) the frame block is too late
+        //      => discard (and raise xrun?)
+        //         get next block of frames and repeat
+        
+        if (cycles_until_presentation <= min_cycles_beforehand) {
+            // we are too late
+            debugOutput(DEBUG_LEVEL_VERBOSE, 
+                        "Too late: CY=%04u, PTC=%04u, CUP=%04d, TSP=%011llu (%04u)\n",
+                        cycle,
+                        presentation_cycle, cycles_until_presentation,
+                        presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
+            // remove the samples
+            m_data_buffer->dropFrames(m_syt_interval);
+            
+            // signal some xrun situation ??HERE??
+            m_xruns++;
+            
+            // try a new block of frames
+            goto try_block_of_frames; // UGLY but effective
+        } else if (cycles_until_presentation >= max_cycles_beforehand) {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
+                        "Too early: CY=%04u, PTC=%04u, CUP=%04d, TSP=%011llu (%04u)\n",
+                        cycle,
+                        presentation_cycle, cycles_until_presentation,
+                        presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
+            // we are too early, send only an empty packet
+            goto send_empty_packet; // UGLY but effective
+        } else {
+            // send the packet
+            goto send_packet; // UGLY but effective
+        }
+    }
+    
+    debugError("Should never reach this code!\n");
+    return RAW1394_ISO_ERROR;
+    
+send_empty_packet:
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT NONE: CY=%04u, TSP=%011llu (%04u)\n",
+            cycle,
+            presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
 
-    // time until the packet is to be sent (if > 0: send packet)
-    int32_t until_next=diffTicks(ts_head, cycle_timer);
+    m_dbc += fillNoDataPacketHeader(packet, length);
+    return RAW1394_ISO_DEFER;
 
-    // if until_next < 0 we should send a filled packet
-    // otherwise we should send a NO-DATA packet
-    if((until_next<0) && (m_running)) {
-        // add the transmit transfer delay to construct the playout time (=SYT timestamp)
-        uint32_t ts_packet=addTicks(ts_head, TRANSMIT_TRANSFER_DELAY);
+send_packet:
+    if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8))) {
+        m_dbc += fillDataPacketHeader(packet, length, presentation_time);
 
-        // if we are disabled, send a silent packet
-        // and advance the buffer head timestamp
-        if(m_is_disabled) {
-
-//             transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
-//             m_dbc += fillDataPacketHeader(packet, length, ts_packet);
-//
-//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u TSH=%011llu TSP=%011lu\n",
-//                 cycle, ts_head, ts_packet);
-//
-//             // update the base timestamp
-//             uint32_t ts_step=(uint32_t)((float)(m_syt_interval)
-//                              *m_SyncSource->m_data_buffer->getRate());
-//
-//             // the next buffer head timestamp
-//             ts_head=addTicks(ts_head,ts_step);
-//             m_data_buffer->setBufferHeadTimestamp(ts_head);
-//
-            // no-data
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SYNC: CY=%04u NONE\n", cycle);
-            m_dbc += fillNoDataPacketHeader(packet, length);
-            // defer to make sure we get to be enabled asap
-            return RAW1394_ISO_DEFER;
-
-        } else { // enabled & packet due, read from the buffer
-            if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8))) {
-                m_dbc += fillDataPacketHeader(packet, length, ts_packet);
-
-                // process all ports that should be handled on a per-packet base
-                // this is MIDI for AMDTP (due to the need of DBC)
-                if (!encodePacketPorts((quadlet_t *)(data+8), m_syt_interval, packet->dbc)) {
-                    debugWarning("Problem encoding Packet Ports\n");
-                }
-
-                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: CY=%04u TSH=%011llu TSP=%011lu\n",
-                    cycle, ts_head, ts_packet);
-
-                return RAW1394_ISO_OK;
-
-            } else if (now_cycles<cycle) {
-                // we can still postpone the queueing of the packets
-                // because the ISO transmit packet buffer is not empty yet
-                return RAW1394_ISO_AGAIN;
-
-            } else { // there is no more data in the ringbuffer
-                // compose a silent packet, we should always
-                // send a valid packet
-                transmitSilenceBlock((char *)(data+8), m_syt_interval, 0);
-                m_dbc += fillDataPacketHeader(packet, length, ts_packet);
-
-                debugWarning("Transmit buffer underrun (now %d, queue %d, target %d)\n",
-                        now_cycles, cycle, TICKS_TO_CYCLES(ts_packet));
-                // signal underrun
-                m_xruns++;
-                // disable the processing, will be re-enabled when
-                // the xrun is handled
-                m_disabled=true;
-                m_is_disabled=true;
-
-                return RAW1394_ISO_DEFER;
-            }
+        // process all ports that should be handled on a per-packet base
+        // this is MIDI for AMDTP (due to the need of DBC)
+        if (!encodePacketPorts((quadlet_t *)(data+8), m_syt_interval, packet->dbc)) {
+            debugWarning("Problem encoding Packet Ports\n");
         }
 
-    } else { // no packet due, send no-data packet
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT NONE: CY=%04u TSH=%011llu\n",
-                cycle, ts_head);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: CY=%04u, TSH=%011llu (%04u), TSP=%011llu (%04u)\n",
+            cycle,
+            ts_head, (unsigned int)TICKS_TO_CYCLES(ts_head),
+            presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
 
-        m_dbc += fillNoDataPacketHeader(packet, length);
-        return RAW1394_ISO_DEFER;
+        return RAW1394_ISO_OK;
     }
-
-    // we shouldn't get here
+    // else:
+    debugError("This is impossible, since we checked the buffer size before!\n");
     return RAW1394_ISO_ERROR;
-
 }
 
 unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader(
@@ -383,11 +353,7 @@ bool AmdtpTransmitStreamProcessor::reset() {
     m_PacketStat.reset();
     m_WakeupStat.reset();
 
-    // we have to make sure that the buffer HEAD timestamp
-    // lies in the future for every possible buffer fill case.
-    int offset=(int)(m_ringbuffer_size_frames*getTicksPerFrame());
-
-    m_data_buffer->setTickOffset(offset);
+    m_data_buffer->setTickOffset(0);
 
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports
@@ -588,51 +554,10 @@ bool AmdtpTransmitStreamProcessor::prepareForStart() {
 }
 
 bool AmdtpTransmitStreamProcessor::prepareForStop() {
-    disable();
     return true;
 }
 
 bool AmdtpTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
-
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Preparing to enable...\n");
-
-    // for the transmit SP, we have to initialize the
-    // buffer timestamp to something sane, because this timestamp
-    // is used when it is SyncSource
-
-    // the time we initialize to will determine the time at which
-    // the first sample in the buffer will be sent, so we should
-    // make it at least 'time_to_enable_at'
-
-    uint64_t now=m_handler->getCycleTimer();
-    unsigned int now_secs=CYCLE_TIMER_GET_SECS(now);
-
-    // check if a wraparound on the secs will happen between
-    // now and the time we start
-    int until_enable=(int)time_to_enable_at - (int)CYCLE_TIMER_GET_CYCLES(now);
-
-    if(until_enable>4000) {
-        // wraparound on CYCLE_TIMER_GET_CYCLES(now)
-        // this means that we are late starting up,
-        // and that the start lies in the previous second
-        if (now_secs==0) now_secs=127;
-        else now_secs--;
-    } else if (until_enable<-4000) {
-        // wraparound on time_to_enable_at
-        // this means that we are early and that the start
-        // point lies in the next second
-        now_secs++;
-        if (now_secs>=128) now_secs=0;
-    }
-
-    uint64_t ts_head= now_secs*TICKS_PER_SECOND;
-    ts_head+=time_to_enable_at*TICKS_PER_CYCLE;
-
-    // we also add the nb of cycles we transmit in advance
-    ts_head=addTicks(ts_head, TRANSMIT_ADVANCE_CYCLES*TICKS_PER_CYCLE);
-
-    m_data_buffer->setBufferTailTimestamp(ts_head);
-
 
     if (!StreamProcessor::prepareForEnable(time_to_enable_at)) {
         debugError("StreamProcessor::prepareForEnable failed\n");
@@ -665,15 +590,35 @@ bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int nframes) {
 bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
     m_PeriodStat.mark(m_data_buffer->getBufferFill());
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "AmdtpTransmitStreamProcessor::putFrames(%d, %llu)\n", nbframes, ts);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "AmdtpTransmitStreamProcessor::putFrames(%d, %llu)\n", nbframes, ts);
 
     // transfer the data
     m_data_buffer->blockProcessWriteFrames(nbframes, ts);
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " New timestamp: %llu\n", ts);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, " New timestamp: %llu\n", ts);
 
-    return true;
+    return true; // FIXME: what about failure?
 }
+
+bool AmdtpTransmitStreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts) {
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "AmdtpTransmitStreamProcessor::putFramesDry(%d, %llu)\n", nbframes, ts);
+
+    bool retval;
+    char dummybuffer[sizeof(quadlet_t)*nbframes*m_dimension];
+
+    transmitSilenceBlock(dummybuffer, nbframes, 0);
+    // add the silence data to the ringbuffer
+    if(m_data_buffer->writeFrames(nbframes, dummybuffer, ts)) {
+        retval=true;
+    } else {
+        debugWarning("Could not write to event buffer\n");
+        retval=false;
+    }
+
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, " New timestamp: %llu\n", ts);
+    return retval;
+}
+
 /*
  * write received events to the stream ringbuffers.
  */
@@ -799,9 +744,9 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned i
                     IEC61883_AM824_SET_LABEL((byte)<<16,
                                              IEC61883_AM824_LABEL_MIDI_1X));
 
-                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "MIDI port %s, pos=%d, loc=%d, dbc=%d, nevents=%d, dim=%d\n",
+                debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "MIDI port %s, pos=%d, loc=%d, dbc=%d, nevents=%d, dim=%d\n",
                     mp->getName().c_str(), mp->getPosition(), mp->getLocation(), dbc, nevents, m_dimension);
-                debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "base=%p, target=%p, value=%08X\n",
+                debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "base=%p, target=%p, value=%08X\n",
                     data, target_event, tmpval);
                     
             } else {
@@ -936,10 +881,10 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         debugWarning("Dropped %d packets on cycle %d\n",dropped, cycle);
     }
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"ch%2u: CY=%4u, SYT=%08X (%4ucy + %04uticks) (running=%d, disabled=%d,%d)\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"ch%2u: CY=%4u, SYT=%08X (%4ucy + %04uticks) (running=%d)\n",
         channel, cycle,ntohs(packet->syt),
         CYCLE_TIMER_GET_CYCLES(ntohs(packet->syt)), CYCLE_TIMER_GET_OFFSET(ntohs(packet->syt)),
-        m_running,m_disabled,m_is_disabled);
+        m_running);
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
         "RCV: CH = %d, FDF = %X. SYT = %6d, DBS = %3d, DBC = %3d, FMT = %3d, LEN = %4d\n",
@@ -951,29 +896,6 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
         length);
 
 #endif
-    if (!m_disabled && m_is_disabled) { // this means that we are trying to enable
-        // check if we are on or past the enable point
-        int cycles_past_enable=diffCycles(cycle, m_cycle_to_enable_at);
-
-        if (cycles_past_enable >= 0) {
-            m_is_disabled=false;
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Enabling StreamProcessor %p at %d (SYT=%04X)\n",
-                this, cycle, ntohs(packet->syt));
-            // the previous timestamp is the one we need to start with
-            // because we're going to update the buffer again this loop
-            // using writeframes
-            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
-
-        } else {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-                "will enable StreamProcessor %p at %u, now is %d\n",
-                    this, m_cycle_to_enable_at, cycle);
-        }
-    } else if (m_disabled && !m_is_disabled) {
-        // trying to disable
-        debugOutput(DEBUG_LEVEL_VERBOSE,"disabling StreamProcessor %p at %u\n", this, cycle);
-        m_is_disabled=true;
-    }
 
     // check if this is a valid packet
     if((packet->syt != 0xFFFF)
@@ -1010,26 +932,6 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
             m_running=true;
         }
 
-        //=> don't process the stream samples when it is not enabled.
-        if(m_is_disabled) {
-
-            // we keep track of the timestamp here
-            // this makes sure that we will have a somewhat accurate
-            // estimate as to when a period might be ready. i.e. it will not
-            // be ready earlier than this timestamp + period time
-
-            // the next (possible) sample is not this one, but lies
-            // SYT_INTERVAL * rate later
-            uint64_t ts=addTicks(m_last_timestamp,
-                                 (uint64_t)((float)m_syt_interval * getTicksPerFrame()));
-
-            // set the timestamp as if there will be a sample put into
-            // the buffer by the next packet.
-            m_data_buffer->setBufferTailTimestamp(ts);
-
-            return RAW1394_ISO_DEFER;
-        }
-
         #ifdef DEBUG_OFF
         if((cycle % 1000) == 0) {
             uint32_t syt = (uint32_t)ntohs(packet->syt);
@@ -1064,15 +966,10 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
         } else {
 
-            debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n",
-                 cycle, m_data_buffer->getFrameCounter(), m_handler->getPacketCount());
+//             debugWarning("Receive buffer overrun (cycle %d, FC=%d, PC=%d)\n",
+//                  cycle, m_data_buffer->getFrameCounter(), m_handler->getPacketCount());
 
             m_xruns++;
-
-            // disable the processing, will be re-enabled when
-            // the xrun is handled
-            m_disabled=true;
-            m_is_disabled=true;
 
             retval=RAW1394_ISO_DEFER;
         }
@@ -1274,65 +1171,23 @@ bool AmdtpReceiveStreamProcessor::prepareForStop() {
 
 bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 
-    m_PeriodStat.mark(m_data_buffer->getBufferFill());
-    uint64_t ts_head;
-    signed int fc;
-    int32_t lag_ticks;
-    float lag_frames;
-
-    // in order to sync up multiple received streams, we should 
-    // use the ts parameter. It specifies the time of the block's 
-    // first sample.
-    
-    ffado_timestamp_t ts_head_tmp;
-    m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc);
-    ts_head=(uint64_t)ts_head_tmp;
-    lag_ticks=diffTicks(ts, ts_head);
-    float rate=m_data_buffer->getRate();
-    
-    assert(rate!=0.0);
-    
-    lag_frames=(((float)lag_ticks)/rate);
-    
-    if (lag_frames>=1.0) {
-        // the stream leads
-        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f)\n",this,lag_ticks,lag_frames,rate);
-        
-        if (lag_frames>=10.0) {
-            debugOutput( DEBUG_LEVEL_VERBOSE, "  %lld, %llu, %d\n", ts, ts_head, fc);
-        }
-        
-        // ditch the excess frames
-        char dummy[m_data_buffer->getBytesPerFrame()]; // one frame of garbage
-        int frames_to_ditch=(int)(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): ditching %d frames (@ ts=%lld)\n",this,frames_to_ditch,ts);
-        
-        while (frames_to_ditch--) {
-//             m_data_buffer->readFrames(1, dummy);
-        }
-        
-    } else if (lag_frames<=-1.0) {
-        // the stream leads
-        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f)\n",this,lag_ticks,lag_frames,rate);
-        
-        if (lag_frames<=-10.0) {
-            debugOutput( DEBUG_LEVEL_VERBOSE, "  %lld, %llu, %d\n", ts, ts_head, fc);
-        }
-        
-        // add some padding frames
-        int frames_to_add=(int)lag_frames;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "stream (%p): adding %d frames (@ ts=%lld)\n",this,-frames_to_add,ts);
-        
-        while (frames_to_add++) {
-//             m_data_buffer->writeDummyFrame();
-        }
-    }
-    
     // ask the buffer to process nbframes of frames
     // using it's registered client's processReadBlock(),
     // which should be ours
     m_data_buffer->blockProcessReadFrames(nbframes);
 
+    return true;
+}
+
+bool AmdtpReceiveStreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts) {
+    int frames_to_ditch=(int)(nbframes);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): dry run %d frames (@ ts=%lld)\n",
+                 this, frames_to_ditch, ts);
+    char dummy[m_data_buffer->getBytesPerFrame()]; // one frame of garbage
+
+    while (frames_to_ditch--) {
+        m_data_buffer->readFrames(1, dummy);
+    }
     return true;
 }
 

@@ -95,6 +95,7 @@ public:
     bool prepareForEnable(uint64_t time_to_enable_at);
 
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from the client
+    bool putFramesDry(unsigned int nbframes, int64_t ts);
 
     // We have 1 period of samples = m_period
     // this period takes m_period/m_framerate seconds of time
@@ -187,6 +188,7 @@ public:
     bool prepareForStart();
 
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
+    bool getFramesDry(unsigned int nbframes, int64_t ts);
 
     // We have 1 period of samples = m_period
     // this period takes m_period/m_framerate seconds of time

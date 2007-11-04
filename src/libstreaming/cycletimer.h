@@ -66,6 +66,8 @@
                                       )
 #define CYCLE_TIMER_WRAP_TICKS(x) ((x % TICKS_PER_SECOND))
 
+#define INVALID_TIMESTAMP_TICKS     0xFFFFFFFFFFFFFFFFULL
+
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 /**
@@ -246,8 +248,8 @@ static inline uint64_t substractTicks(uint64_t x, uint64_t y) {
 static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int rcv_cycle, uint64_t ctr_now) {
     uint64_t timestamp;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08X CY=%04X CTR=%08X\n",
-        syt_timestamp,rcv_cycle,ctr_now);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%04llX CY=%u CTR=%08llX\n",
+        syt_timestamp, rcv_cycle, ctr_now);
 
     // reconstruct the full cycle
     uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
@@ -308,7 +310,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08X SYT=%04X\n",
+            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif
@@ -332,7 +334,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
 static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int xmt_cycle, uint64_t ctr_now) {
     uint64_t timestamp;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08X CY=%04X CTR=%08X\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08llX CY=%04X CTR=%08llX\n",
         syt_timestamp,xmt_cycle,ctr_now);
 
     // reconstruct the full cycle
@@ -394,7 +396,7 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08X SYT=%04X\n",
+            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif
