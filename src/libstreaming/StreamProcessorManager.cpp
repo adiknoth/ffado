@@ -319,31 +319,25 @@ bool StreamProcessorManager::syncStartAll() {
         return false;
     }
 
-    // we want to make sure that everything is running well,
-    // so wait for a while
-//     usleep(USECS_PER_CYCLE * CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL);
-
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
 
+    // now find out how long we have to delay the wait operation such that
+    // the received frames will all be presented to the SP
     debugOutput( DEBUG_LEVEL_VERBOSE, "Finding minimal sync delay...\n");
-
     int max_of_min_delay=0;
     int min_delay=0;
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-        min_delay=(*it)->getMinimalSyncDelay();
+        min_delay=(*it)->getMaxFrameLatency();
         if(min_delay>max_of_min_delay) max_of_min_delay=min_delay;
     }
 
-    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-            it != m_TransmitProcessors.end();
-            ++it ) {
-        min_delay=(*it)->getMinimalSyncDelay();
-        if(min_delay>max_of_min_delay) max_of_min_delay=min_delay;
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  %d ticks\n", max_of_min_delay);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  %d ticks (%03us %04uc %04ut)...\n", 
+        max_of_min_delay,
+        (unsigned int)TICKS_TO_SECS(max_of_min_delay),
+        (unsigned int)TICKS_TO_CYCLES(max_of_min_delay),
+        (unsigned int)TICKS_TO_OFFSET(max_of_min_delay));
     m_SyncSource->setSyncDelay(max_of_min_delay);
 
 

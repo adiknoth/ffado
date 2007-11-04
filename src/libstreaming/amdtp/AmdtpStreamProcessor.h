@@ -108,8 +108,6 @@ public:
 
     unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);};
 
-    int getMinimalSyncDelay();
-
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
 
@@ -196,9 +194,6 @@ public:
     unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);};
 
     void dumpInfo();
-
-    int getMinimalSyncDelay();
-
 protected:
 
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);

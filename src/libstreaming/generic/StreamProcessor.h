@@ -213,10 +213,21 @@ protected:
         void setSyncDelay(int d) {m_sync_delay=d;};
 
         /**
-         * Returns the minimal sync delay a SP needs
-         * @return minimal sync delay
+         * @brief get the maximal frame latency
+         *
+         * The maximum frame latency is the maximum time that will elapse
+         * between the frame being received by the 1394 stack, and the moment this
+         * frame is presented to the StreamProcessor. 
+         *
+         * For transmit SP's this is the maximum time that a frame is requested by
+         * the handler ahead of the time the frame is intended to be transmitted.
+         *
+         * This is useful to figure out how longer than the actual reception time
+         * we have to wait before trying to read the frame from the SP.
+         *
+         * @return maximal frame latency
          */
-        virtual int getMinimalSyncDelay() = 0;
+        virtual int getMaxFrameLatency();
 
         bool setSyncSource(StreamProcessor *s);
         float getTicksPerFrame();

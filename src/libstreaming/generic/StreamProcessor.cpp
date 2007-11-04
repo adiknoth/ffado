@@ -178,6 +178,14 @@ uint64_t StreamProcessor::getTimeNow() {
 }
 
 
+int StreamProcessor::getMaxFrameLatency() {
+    if (getType() == E_Receive) {
+        return (int)(m_handler->getWakeupInterval() * TICKS_PER_CYCLE);
+    } else {
+        return (int)(m_handler->getWakeupInterval() * TICKS_PER_CYCLE);
+    }
+}
+
 bool StreamProcessor::isRunning() {
     return m_running;
 }

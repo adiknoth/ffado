@@ -385,10 +385,6 @@ unsigned int AmdtpTransmitStreamProcessor::fillNoDataPacketHeader(
     }
 }
 
-int AmdtpTransmitStreamProcessor::getMinimalSyncDelay() {
-    return 0;
-}
-
 bool AmdtpTransmitStreamProcessor::prefill() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prefill transmit buffers...\n");
@@ -1033,13 +1029,6 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     return retval;
-}
-
-// returns the delay between the actual (real) time of a timestamp as received,
-// and the timestamp that is passed on for the same event. This is to cope with
-// ISO buffering
-int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
-    return ((int)(m_handler->getWakeupInterval() * m_syt_interval * getTicksPerFrame()));
 }
 
 void AmdtpReceiveStreamProcessor::dumpInfo() {
