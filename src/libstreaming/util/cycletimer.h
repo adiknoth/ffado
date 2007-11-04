@@ -158,6 +158,33 @@ static inline int64_t wrapAtMinMaxTicks(int64_t x) {
 }
 
 /**
+ * @brief Computes a difference between cycles
+ *
+ * This function computes a difference between cycles
+ * such that it respects wrapping (at 8000 cycles).
+ *
+ * See diffTicks
+ *
+ * @param x First cycle value
+ * @param y Second cycle value
+ * @return the difference x-y, unwrapped
+ */
+static inline int diffCycles(unsigned int x, unsigned int y) {
+    int diff = x - y;
+
+    // the maximal difference we allow (64secs)
+    const int max=CYCLES_PER_SECOND/2;
+
+    if(diff > max) {
+        diff -= CYCLES_PER_SECOND;
+    } else if (diff < -max) {
+        diff += CYCLES_PER_SECOND;
+    }
+
+    return diff;
+}
+
+/**
  * @brief Computes a difference between timestamps
  *
  * This function computes a difference between timestamps
@@ -403,33 +430,6 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     #endif
 
     return timestamp;
-}
-
-/**
- * @brief Computes a difference between cycles
- *
- * This function computes a difference between cycles
- * such that it respects wrapping (at 8000 cycles).
- *
- * See diffTicks
- *
- * @param x First cycle value
- * @param y Second cycle value
- * @return the difference x-y, unwrapped
- */
-static inline int diffCycles(unsigned int x, unsigned int y) {
-    int diff = x - y;
-
-    // the maximal difference we allow (64secs)
-    const int max=CYCLES_PER_SECOND/2;
-
-    if(diff > max) {
-        diff -= CYCLES_PER_SECOND;
-    } else if (diff < -max) {
-        diff += CYCLES_PER_SECOND;
-    }
-
-    return diff;
 }
 
 #endif // __CYCLETIMER_H__

@@ -500,8 +500,10 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
         ffado_ringbuffer_get_write_vector(m_event_buffer, vec);
 
         if(vec[0].len==0) { // this indicates a full event buffer
-            debugError("Event buffer overrun in buffer %p\n",this);
-            break;
+            debugError("Event buffer overrun in buffer %p, fill: %u, bytes2write: %u \n",
+                       this, ffado_ringbuffer_read_space(m_event_buffer), bytes2write);
+            debugShowBackLog();
+            return false;
         }
 
         /* if we don't take care we will get stuck in an infinite loop

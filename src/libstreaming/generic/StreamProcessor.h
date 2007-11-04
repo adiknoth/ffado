@@ -110,6 +110,11 @@ public:
 public:
     Util::TimestampedBuffer *m_data_buffer;
 
+    StreamStatistics m_PacketStat;
+    StreamStatistics m_PeriodStat;
+
+    StreamStatistics m_WakeupStat;
+
 protected: // SPM related
     void setManager(StreamProcessorManager *manager) {m_manager=manager;};
     void clearManager() {m_manager=0;};
@@ -129,10 +134,6 @@ protected:
     bool m_is_disabled;
     unsigned int m_cycle_to_enable_at;
 
-    StreamStatistics m_PacketStat;
-    StreamStatistics m_PeriodStat;
-
-    StreamStatistics m_WakeupStat;
 
 
     DECLARE_DEBUG_MODULE;

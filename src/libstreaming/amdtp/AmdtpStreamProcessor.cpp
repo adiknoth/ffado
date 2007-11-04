@@ -30,27 +30,19 @@
 #include <assert.h>
 
 // in ticks
-#define TRANSMIT_TRANSFER_DELAY 9000U
-// the number of cycles to send a packet in advance of it's timestamp
-#define TRANSMIT_ADVANCE_CYCLES 4U
+// as per AMDTP2.1:
+// 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
+#define DEFAULT_TRANSFER_DELAY (11776U)
+
+#define TRANSMIT_TRANSFER_DELAY DEFAULT_TRANSFER_DELAY
 
 namespace Streaming {
-
-IMPL_DEBUG_MODULE( AmdtpTransmitStreamProcessor, AmdtpTransmitStreamProcessor, DEBUG_LEVEL_VERBOSE );
-IMPL_DEBUG_MODULE( AmdtpReceiveStreamProcessor, AmdtpReceiveStreamProcessor, DEBUG_LEVEL_VERBOSE );
-
 
 /* transmit */
 AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framerate, int dimension)
         : TransmitStreamProcessor(port, framerate), m_dimension(dimension)
         , m_last_timestamp(0), m_dbc(0), m_ringbuffer_size_frames(0)
-{
-
-}
-
-AmdtpTransmitStreamProcessor::~AmdtpTransmitStreamProcessor() {
-
-}
+{}
 
 /**
  * @return
@@ -65,36 +57,27 @@ bool AmdtpTransmitStreamProcessor::init() {
         debugFatal("Could not do base class init (%p)\n",this);
         return false;
     }
-
     return true;
-}
-
-void AmdtpTransmitStreamProcessor::setVerboseLevel(int l) {
-    setDebugLevel(l);
-    TransmitStreamProcessor::setVerboseLevel(l);
 }
 
 enum raw1394_iso_disposition
 AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                   unsigned char *tag, unsigned char *sy,
                   int cycle, unsigned int dropped, unsigned int max_length) {
-    
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
-    
+
     if (cycle<0) {
         debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,"Xmit handler for cycle %d, (running=%d)\n",
             cycle, m_running);
-        
         *tag = 0;
         *sy = 0;
         *length=0;
         return RAW1394_ISO_OK;
-    
     }
-    
+
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,"Xmit handler for cycle %d, (running=%d)\n",
         cycle, m_running);
-    
+
     m_last_cycle=cycle;
 
 #ifdef DEBUG
@@ -138,6 +121,9 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
         debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
             cycle, now_cycles);
     }
+
+    // keep track of the lag
+    m_PacketStat.mark(cycle_diff);
 #endif
 
     // as long as the cycle parameter is not in sync with
@@ -149,14 +135,30 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
             m_running=true;
     }
 
-    uint64_t ts_head;
     signed int fc;
     uint64_t presentation_time;
     unsigned int presentation_cycle;
     int cycles_until_presentation;
 
-    const int min_cycles_beforehand = 2;  // FIXME: should become a define
-    const int max_cycles_beforehand = 15; // FIXME: should become a define
+    uint64_t transmit_at_time;
+    unsigned int transmit_at_cycle;
+    int cycles_until_transmit;
+
+    // FIXME: should become a define
+    // the absolute minimum number of cycles we want to transmit
+    // a packet ahead of the presentation time. The nominal time
+    // the packet is transmitted ahead of the presentation time is
+    // given by TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
+    // are too late for that, this constant defines how late we can
+    // be.
+    const int min_cycles_before_presentation = 1;
+    // FIXME: should become a define
+    // the absolute maximum number of cycles we want to transmit
+    // a packet ahead of the ideal transmit time. The nominal time
+    // the packet is transmitted ahead of the presentation time is
+    // given by TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
+    // packets early if we want to. (not completely according to spec)
+    const int max_cycles_to_transmit_early = 1;
 
     if( !m_running || !m_data_buffer->isEnabled() ) {
         debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
@@ -173,20 +175,31 @@ try_block_of_frames:
     // the base timestamp is the one of the next sample in the buffer
     ffado_timestamp_t ts_head_tmp;
     m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc); // thread safe
-    ts_head=(uint64_t)ts_head_tmp;
 
-    // first calculate the presentation time of the samples
-    presentation_time = addTicks(ts_head, TRANSMIT_TRANSFER_DELAY);
+    // the timestamp gives us the time at which we want the sample block
+    // to be output by the device
+    presentation_time=(uint64_t)ts_head_tmp;
+
+    // now we calculate the time when we have to transmit the sample block
+    transmit_at_time = substractTicks(presentation_time, TRANSMIT_TRANSFER_DELAY);
 
     // calculate the cycle this block should be presented in
     // (this is just a virtual calculation since at that time it should
     //  already be in the device's buffer)
     presentation_cycle = (unsigned int)(TICKS_TO_CYCLES( presentation_time ));
 
+    // calculate the cycle this block should be transmitted in
+    transmit_at_cycle = (unsigned int)(TICKS_TO_CYCLES( transmit_at_time ));
+
     // we can check whether this cycle is within the 'window' we have
     // to send this packet.
     // first calculate the number of cycles left before presentation time
     cycles_until_presentation = diffCycles( presentation_cycle, cycle );
+
+    // we can check whether this cycle is within the 'window' we have
+    // to send this packet.
+    // first calculate the number of cycles left before presentation time
+    cycles_until_transmit = diffCycles( transmit_at_cycle, cycle );
 
     // two different options:
     // 1) there are not enough frames for one packet 
@@ -195,23 +208,36 @@ try_block_of_frames:
     // 2) there are enough packets
     //      => determine whether we have to send them in this packet
     if (fc < (signed int)m_syt_interval) {
+        m_PacketStat.signal(0);
         // not enough frames in the buffer,
         debugOutput(DEBUG_LEVEL_VERBOSE, 
-                    "Insufficient frames: CY=%04u, PTC=%04u, CUP=%04d\n",
-                    cycle, presentation_cycle, cycles_until_presentation);
+                    "Insufficient frames: N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
+                    fc, cycle, transmit_at_cycle, cycles_until_transmit);
         // we can still postpone the queueing of the packets
         // if we are far enough ahead of the presentation time
-        if( cycles_until_presentation <= min_cycles_beforehand ) {
-            // we have an invalid timestamp or we are too late
+        if( cycles_until_presentation <= min_cycles_before_presentation ) {
+            m_PacketStat.signal(1);
+            // we are too late
             // meaning that we in some sort of xrun state
             // signal xrun situation ??HERE??
             m_xruns++;
+            // we send an empty packet on this cycle
+            goto send_empty_packet; // UGLY but effective
         } else {
+            m_PacketStat.signal(2);
             // there is still time left to send the packet
+            // we want the system to give this packet another go
+//             goto try_packet_again; // UGLY but effective
+            // unfortunatly the try_again doesn't work very well,
+            // so we'll have to either usleep(one cycle) and goto try_block_of_frames
+            
+            // or just fill this with an empty packet
+            // if we have to do this too often, the presentation time will
+            // get too close and we're in trouble
+            goto send_empty_packet; // UGLY but effective
         }
-        // in any case we send an empty packet on this cycle
-        goto send_empty_packet; // UGLY but effective
     } else {
+        m_PacketStat.signal(3);
         // there are enough frames, so check the time they are intended for
         // all frames have a certain 'time window' in which they can be sent
         // this corresponds to the range of the timestamp mechanism:
@@ -228,38 +254,61 @@ try_block_of_frames:
         //      => discard (and raise xrun?)
         //         get next block of frames and repeat
         
-        if (cycles_until_presentation <= min_cycles_beforehand) {
+        if (cycles_until_transmit <= max_cycles_to_transmit_early) {
+            m_PacketStat.signal(4);
+            // it's time send the packet
+            goto send_packet; // UGLY but effective
+        } else if (cycles_until_transmit < 0) {
             // we are too late
             debugOutput(DEBUG_LEVEL_VERBOSE, 
-                        "Too late: CY=%04u, PTC=%04u, CUP=%04d, TSP=%011llu (%04u)\n",
+                        "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
                         cycle,
-                        presentation_cycle, cycles_until_presentation,
+                        transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
-            // remove the samples
-            m_data_buffer->dropFrames(m_syt_interval);
-            
-            // signal some xrun situation ??HERE??
-            m_xruns++;
-            
-            // try a new block of frames
-            goto try_block_of_frames; // UGLY but effective
-        } else if (cycles_until_presentation >= max_cycles_beforehand) {
+
+            // however, if we can send this sufficiently before the presentation
+            // time, it could be harmless.
+            // NOTE: dangerous since the device has no way of reporting that it didn't get
+            //       this packet on time.
+            if ( cycles_until_presentation <= min_cycles_before_presentation ) {
+                m_PacketStat.signal(5);
+                // we are not that late and can still try to transmit the packet
+                goto send_packet; // UGLY but effective
+            } else { // definitely too late
+                m_PacketStat.signal(6);
+                // remove the samples
+                m_data_buffer->dropFrames(m_syt_interval);
+                // signal some xrun situation ??HERE??
+                m_xruns++;
+                // try a new block of frames
+                goto try_block_of_frames; // UGLY but effective
+            }
+        } else {
+            m_PacketStat.signal(7);
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, 
-                        "Too early: CY=%04u, PTC=%04u, CUP=%04d, TSP=%011llu (%04u)\n",
+                        "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
                         cycle,
-                        presentation_cycle, cycles_until_presentation,
+                        transmit_at_cycle, cycles_until_transmit,
+                        transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
+            #ifdef DEBUG
+            if (cycles_until_transmit > max_cycles_to_transmit_early + 1) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, 
+                            "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                            cycle,
+                            transmit_at_cycle, cycles_until_transmit,
+                            transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
+                            presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
+            }
+            #endif
             // we are too early, send only an empty packet
             goto send_empty_packet; // UGLY but effective
-        } else {
-            // send the packet
-            goto send_packet; // UGLY but effective
         }
     }
-    
-    debugError("Should never reach this code!\n");
+
+    debugFatal("Should never reach this code!\n");
     return RAW1394_ISO_ERROR;
-    
+
 send_empty_packet:
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT NONE: CY=%04u, TSP=%011llu (%04u)\n",
             cycle,
@@ -278,15 +327,24 @@ send_packet:
             debugWarning("Problem encoding Packet Ports\n");
         }
 
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: CY=%04u, TSH=%011llu (%04u), TSP=%011llu (%04u)\n",
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: CY=%04u, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
             cycle,
-            ts_head, (unsigned int)TICKS_TO_CYCLES(ts_head),
+            transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
             presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
 
         return RAW1394_ISO_OK;
     }
+
+// the ISO AGAIN does not work very well...
+// try_packet_again:
+// 
+//     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT RETRY: CY=%04u, TSP=%011llu (%04u)\n",
+//             cycle,
+//             presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
+//     return RAW1394_ISO_AGAIN;
+
     // else:
-    debugError("This is impossible, since we checked the buffer size before!\n");
+    debugFatal("This is impossible, since we checked the buffer size before!\n");
     return RAW1394_ISO_ERROR;
 }
 
@@ -548,7 +606,6 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 }
 
 bool AmdtpTransmitStreamProcessor::prepareForStart() {
-
     return true;
 }
 
@@ -588,7 +645,6 @@ bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int nframes) {
 
 bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
     m_PeriodStat.mark(m_data_buffer->getBufferFill());
-
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "AmdtpTransmitStreamProcessor::putFrames(%d, %llu)\n", nbframes, ts);
 
     // transfer the data
@@ -600,6 +656,7 @@ bool AmdtpTransmitStreamProcessor::putFrames(unsigned int nbframes, int64_t ts) 
 }
 
 bool AmdtpTransmitStreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts) {
+    m_PeriodStat.mark(m_data_buffer->getBufferFill());
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "AmdtpTransmitStreamProcessor::putFramesDry(%d, %llu)\n", nbframes, ts);
 
     bool retval;
@@ -843,13 +900,8 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents(AmdtpAudioPort *
 /* --------------------- RECEIVE ----------------------- */
 
 AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int framerate, int dimension)
-    : ReceiveStreamProcessor(port, framerate), m_dimension(dimension), m_last_timestamp(0), m_last_timestamp2(0) {
-
-}
-
-AmdtpReceiveStreamProcessor::~AmdtpReceiveStreamProcessor() {
-
-}
+    : ReceiveStreamProcessor(port, framerate), m_dimension(dimension), m_last_timestamp(0), m_last_timestamp2(0) 
+{}
 
 bool AmdtpReceiveStreamProcessor::init() {
 
@@ -860,7 +912,6 @@ bool AmdtpReceiveStreamProcessor::init() {
         debugFatal("Could not do base class init (%d)\n",this);
         return false;
     }
-
     return true;
 }
 
@@ -881,7 +932,7 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"ch%2u: CY=%4u, SYT=%08X (%4ucy + %04uticks) (running=%d)\n",
-        channel, cycle,ntohs(packet->syt),
+        channel, cycle, ntohs(packet->syt),
         CYCLE_TIMER_GET_CYCLES(ntohs(packet->syt)), CYCLE_TIMER_GET_OFFSET(ntohs(packet->syt)),
         m_running);
 
@@ -933,8 +984,8 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
         #ifdef DEBUG_OFF
         if((cycle % 1000) == 0) {
-            uint32_t syt = (uint32_t)ntohs(packet->syt);
             uint32_t now=m_handler->getCycleTimer();
+            uint32_t syt = (uint32_t)ntohs(packet->syt);
             uint32_t now_ticks=CYCLE_TIMER_TO_TICKS(now);
 
             uint32_t test_ts=sytRecvToFullTicks(syt, cycle, now);
@@ -949,6 +1000,13 @@ AmdtpReceiveStreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 cycle, test_ts, TICKS_TO_SECS(test_ts), TICKS_TO_CYCLES(test_ts), TICKS_TO_OFFSET(test_ts)
                 );
         }
+        #endif
+
+        #ifdef DEBUG
+            // keep track of the lag
+            uint32_t now=m_handler->getCycleTimer();
+            int32_t diff = diffCycles( cycle,  ((int)CYCLE_TIMER_GET_CYCLES(now)) );
+            m_PacketStat.mark(diff);
         #endif
 
         //=> process the packet
@@ -986,11 +1044,6 @@ int AmdtpReceiveStreamProcessor::getMinimalSyncDelay() {
 
 void AmdtpReceiveStreamProcessor::dumpInfo() {
     StreamProcessor::dumpInfo();
-}
-
-void AmdtpReceiveStreamProcessor::setVerboseLevel(int l) {
-    setDebugLevel(l);
-    ReceiveStreamProcessor::setVerboseLevel(l);
 }
 
 bool AmdtpReceiveStreamProcessor::reset() {
@@ -1169,6 +1222,7 @@ bool AmdtpReceiveStreamProcessor::prepareForStop() {
 }
 
 bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
+    m_PeriodStat.mark(m_data_buffer->getBufferFill());
 
     // ask the buffer to process nbframes of frames
     // using it's registered client's processReadBlock(),
@@ -1179,6 +1233,7 @@ bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
 }
 
 bool AmdtpReceiveStreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts) {
+    m_PeriodStat.mark(m_data_buffer->getBufferFill());
     int frames_to_ditch=(int)(nbframes);
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): dry run %d frames (@ ts=%lld)\n",
                  this, frames_to_ditch, ts);

@@ -83,8 +83,7 @@ void StreamProcessor::dumpInfo()
 
     m_PeriodStat.dumpInfo();
     m_PacketStat.dumpInfo();
-    m_WakeupStat.dumpInfo();
-
+//     m_WakeupStat.dumpInfo();
 }
 
 bool StreamProcessor::init()
@@ -292,7 +291,6 @@ void StreamProcessor::setVerboseLevel(int l) {
     setDebugLevel(l);
     IsoStream::setVerboseLevel(l);
     PortManager::setVerboseLevel(l);
-
 }
 
 uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {
@@ -333,8 +331,12 @@ uint64_t TransmitStreamProcessor::getTimeAtPeriod() {
 }
 
 bool TransmitStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
+    bool can_transfer;
     // there has to be enough space to put the frames in
-    return m_data_buffer->getBufferSize() - m_data_buffer->getFrameCounter() > nbframes;
+    can_transfer = m_data_buffer->getBufferSize() - m_data_buffer->getFrameCounter() > nbframes;
+    // or the buffer is transparent
+    can_transfer |= m_data_buffer->isTransparent();
+    return can_transfer;
 }
 
 

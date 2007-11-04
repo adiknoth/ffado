@@ -29,7 +29,7 @@
 
 #include <assert.h>
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD  2U
+#define MINIMUM_INTERRUPTS_PER_PERIOD  4U
 #define PACKETS_PER_INTERRUPT          4U
 
 namespace Streaming
@@ -449,6 +449,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         // full, so we have to make sure that we have enough events in our
         // event buffers
 
+        // FIXME: latency spoiler
         // every irq_interval packets an interrupt will occur. that is when
         // buffers get transfered, meaning that we should have at least some
         // margin here

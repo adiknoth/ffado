@@ -78,8 +78,7 @@ public:
      *                  (midi-muxed is only one stream)
      */
     AmdtpTransmitStreamProcessor(int port, int framerate, int dimension);
-
-    virtual ~AmdtpTransmitStreamProcessor();
+    virtual ~AmdtpTransmitStreamProcessor() {};
 
     enum raw1394_iso_disposition
             getPacket(unsigned char *data, unsigned int *length,
@@ -110,8 +109,6 @@ public:
     unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);};
 
     int getMinimalSyncDelay();
-
-    void setVerboseLevel(int l);
 
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -149,9 +146,6 @@ protected:
     unsigned int m_dbc;
 
     unsigned int m_ringbuffer_size_frames;
-
-    DECLARE_DEBUG_MODULE;
-
 };
 /*!
 \brief The Base Class for an AMDTP receive stream processor
@@ -173,8 +167,7 @@ public:
      *                  (midi-muxed is only one stream)
      */
     AmdtpReceiveStreamProcessor(int port, int framerate, int dimension);
-
-    virtual ~AmdtpReceiveStreamProcessor();
+    virtual ~AmdtpReceiveStreamProcessor() {};
 
     enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
@@ -206,8 +199,6 @@ public:
 
     int getMinimalSyncDelay();
 
-    void setVerboseLevel(int l);
-
 protected:
 
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -223,9 +214,6 @@ protected:
     uint64_t m_last_timestamp; /// last timestamp (in ticks)
     uint64_t m_last_timestamp2; /// last timestamp (in ticks)
     uint64_t m_last_timestamp_at_period_ticks;
-
-    DECLARE_DEBUG_MODULE;
-
 };
 
 

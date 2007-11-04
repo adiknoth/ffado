@@ -427,9 +427,10 @@ DebugModuleManager::showBackLog()
 
     for (unsigned int i=0; i<BACKLOG_MB_BUFFERS;i++) {
         unsigned int idx=(i+bl_mb_inbuffer)%BACKLOG_MB_BUFFERS;
+        fputs("BL: ", stderr);
         fputs(bl_mb_buffers[idx], stderr);
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "BL: \n");
 
     fprintf(stderr, "=====================================================\n");
     fprintf(stderr, "* END OF BACKLOG PRINT\n");
@@ -453,10 +454,11 @@ DebugModuleManager::showBackLog(int nblines)
     for (unsigned int i=0; i<BACKLOG_MB_BUFFERS;i++) {
         if (lines_to_skip-- < 0) {
             unsigned int idx=(i+bl_mb_inbuffer)%BACKLOG_MB_BUFFERS;
+            fputs("BL: ", stderr);
             fputs(bl_mb_buffers[idx], stderr);
         }
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "BL: \n");
 
     fprintf(stderr, "=====================================================\n");
     fprintf(stderr, "* END OF BACKLOG PRINT\n");

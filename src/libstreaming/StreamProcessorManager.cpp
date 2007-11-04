@@ -40,7 +40,7 @@
 
 namespace Streaming {
 
-IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_VERBOSE );
 
 StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int nb_buffers)
     : m_is_slave( false )
@@ -390,7 +390,11 @@ bool StreamProcessorManager::syncStartAll() {
         // are not sending data yet.
     }
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu...\n", m_time_of_transfer);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu (%03us %04uc %04ut)...\n", 
+        m_time_of_transfer,
+        (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
+        (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),
+        (unsigned int)TICKS_TO_OFFSET(m_time_of_transfer));
     // FIXME: xruns can screw up the framecounter accounting. do something more sane here
     resetXrunCounters();
     // lock the isohandlermanager such that things freeze
@@ -449,9 +453,10 @@ bool StreamProcessorManager::syncStartAll() {
     bool no_xrun;
     while(nb_dryrun_cycles--) {
         waitForPeriod();
+        m_TransmitProcessors.at(0)->m_PacketStat.dumpInfo();
         no_xrun = dryRun(); // dry run both receive and xmit
 
-        if (no_xrun) {
+        if (!no_xrun) {
             debugOutput( DEBUG_LEVEL_VERBOSE, " This dry-run was not xrun free...\n" );
             resetXrunCounters();
             // FIXME: xruns can screw up the framecounter accounting. do something more sane here
@@ -825,6 +830,8 @@ bool StreamProcessorManager::handleXrun() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Handling Xrun ...\n");
 
+    dumpInfo();
+
     /*
      * Reset means:
      * 1) Disabling the SP's, so that they don't process any packets
@@ -891,6 +898,8 @@ bool StreamProcessorManager::waitForPeriod() {
             xrun_occurred |= (*it)->xrunOccurred();
         }
 
+        if(xrun_occurred) break;
+
         // check if we were waked up too soon
         time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
     }
@@ -940,14 +949,14 @@ bool StreamProcessorManager::waitForPeriod() {
         xrun_occurred |= (*it)->xrunOccurred();
 
         // if this is true, a xrun will occur
-        xrun_occurred |= !((*it)->canClientTransferFrames(m_period));
+        xrun_occurred |= !((*it)->canClientTransferFrames(m_period)) && (*it)->isEnabled();
 
 #ifdef DEBUG
         if ((*it)->xrunOccurred()) {
             debugWarning("Xrun on RECV SP %p due to ISO xrun\n",*it);
             (*it)->dumpInfo();
         }
-        if (!((*it)->canClientTransferFrames(m_period))) {
+        if (!((*it)->canClientTransferFrames(m_period)) && (*it)->isEnabled()) {
             debugWarning("Xrun on RECV SP %p due to buffer xrun\n",*it);
             (*it)->dumpInfo();
         }
@@ -961,13 +970,13 @@ bool StreamProcessorManager::waitForPeriod() {
         xrun_occurred |= (*it)->xrunOccurred();
 
         // if this is true, a xrun will occur
-        xrun_occurred |= !((*it)->canClientTransferFrames(m_period));
+        xrun_occurred |= !((*it)->canClientTransferFrames(m_period)) && (*it)->isEnabled();
 
 #ifdef DEBUG
         if ((*it)->xrunOccurred()) {
             debugWarning("Xrun on XMIT SP %p due to ISO xrun\n",*it);
         }
-        if (!((*it)->canClientTransferFrames(m_period))) {
+        if (!((*it)->canClientTransferFrames(m_period)) && (*it)->isEnabled()) {
             debugWarning("Xrun on XMIT SP %p due to buffer xrun\n",*it);
         }
 #endif
@@ -989,11 +998,10 @@ bool StreamProcessorManager::waitForPeriod() {
 bool StreamProcessorManager::transfer() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Transferring period...\n");
-
-    if (!transfer(StreamProcessor::E_Receive)) return false;
-    if (!transfer(StreamProcessor::E_Transmit)) return false;
-
-    return true;
+    bool retval=true;
+    retval &= dryRun(StreamProcessor::E_Receive);
+    retval &= dryRun(StreamProcessor::E_Transmit);
+    return retval;
 }
 
 /**
@@ -1007,11 +1015,10 @@ bool StreamProcessorManager::transfer() {
 
 bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-
+    bool retval = true;
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
     if (t==StreamProcessor::E_Receive) {
-        
         // determine the time at which we want reception to start
         float rate=m_SyncSource->getTicksPerFrame();
         int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
@@ -1034,9 +1041,8 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
             if(!(*it)->getFrames(m_period, receive_timestamp)) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)\n",
                             m_period, m_time_of_transfer,*it);
-                    return false; // buffer underrun
+                retval &= false; // buffer underrun
             }
-
         }
     } else {
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
@@ -1054,13 +1060,12 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
             if(!(*it)->putFrames(m_period, transmit_timestamp)) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)\n",
                         m_period, transmit_timestamp, *it);
-                return false; // buffer overrun
+                retval &= false; // buffer underrun
             }
 
         }
     }
-
-    return true;
+    return retval;
 }
 
 /**
@@ -1074,9 +1079,10 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
  */
 bool StreamProcessorManager::dryRun() {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
-    if (!dryRun(StreamProcessor::E_Receive)) return false;
-    if (!dryRun(StreamProcessor::E_Transmit)) return false;
-    return true;
+    bool retval=true;
+    retval &= dryRun(StreamProcessor::E_Receive);
+    retval &= dryRun(StreamProcessor::E_Transmit);
+    return retval;
 }
 
 /**
@@ -1089,12 +1095,11 @@ bool StreamProcessorManager::dryRun() {
  */
 
 bool StreamProcessorManager::dryRun(enum StreamProcessor::EProcessorType t) {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
-
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
+    bool retval = true;
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
     if (t==StreamProcessor::E_Receive) {
-        
         // determine the time at which we want reception to start
         float rate=m_SyncSource->getTicksPerFrame();
         int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
@@ -1117,7 +1122,7 @@ bool StreamProcessorManager::dryRun(enum StreamProcessor::EProcessorType t) {
             if(!(*it)->getFramesDry(m_period, receive_timestamp)) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)\n",
                             m_period, m_time_of_transfer,*it);
-                    return false; // buffer underrun
+                retval &= false; // buffer underrun
             }
 
         }
@@ -1137,13 +1142,12 @@ bool StreamProcessorManager::dryRun(enum StreamProcessor::EProcessorType t) {
             if(!(*it)->putFramesDry(m_period, transmit_timestamp)) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)\n",
                         m_period, transmit_timestamp, *it);
-                return false; // buffer overrun
+                retval &= false; // buffer underrun
             }
 
         }
     }
-
-    return true;
+    return retval;
 }
 
 void StreamProcessorManager::dumpInfo() {
