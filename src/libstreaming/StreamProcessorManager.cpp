@@ -29,14 +29,9 @@
 #include <errno.h>
 #include <assert.h>
 
-#define CYCLES_TO_SLEEP_AFTER_RUN_SIGNAL 5
-
 #define RUNNING_TIMEOUT_MSEC 4000
 #define PREPARE_TIMEOUT_MSEC 4000
 #define ENABLE_TIMEOUT_MSEC 4000
-
-//#define ENABLE_DELAY_CYCLES 100
-#define ENABLE_DELAY_CYCLES 1000
 
 namespace Streaming {
 
@@ -435,33 +430,40 @@ bool StreamProcessorManager::syncStartAll() {
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Enabling StreamProcessors...\n");
 
-    uint64_t now=m_SyncSource->getTimeNow(); // fixme: should be in usecs, not ticks
-
     // FIXME: this should not be in cycles, but in 'time'
     // FIXME: remove the timestamp
-    unsigned int enable_at=TICKS_TO_CYCLES(now)+ENABLE_DELAY_CYCLES;
-    if (enable_at > 8000) enable_at -= 8000;
-
-    if (!enableStreamProcessors(enable_at)) {
+    if (!enableStreamProcessors(0)) {
         debugFatal("Could not enable StreamProcessors...\n");
         return false;
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Running dry for a while...\n");
+    #define MAX_DRYRUN_CYCLES               20
+    #define MIN_SUCCESSFUL_DRYRUN_CYCLES    4
     // run some cycles 'dry' such that everything can stabilize
-    int nb_dryrun_cycles=10;
-    bool no_xrun;
-    while(nb_dryrun_cycles--) {
-        waitForPeriod();
-        m_TransmitProcessors.at(0)->m_PacketStat.dumpInfo();
-        no_xrun = dryRun(); // dry run both receive and xmit
+    int nb_dryrun_cycles_left = MAX_DRYRUN_CYCLES;
+    int nb_succesful_cycles = 0;
+    while(nb_dryrun_cycles_left > 0 &&
+          nb_succesful_cycles < MIN_SUCCESSFUL_DRYRUN_CYCLES ) {
 
-        if (!no_xrun) {
+        waitForPeriod();
+
+        if (dryRun()) {
+            nb_succesful_cycles++;
+        } else {
             debugOutput( DEBUG_LEVEL_VERBOSE, " This dry-run was not xrun free...\n" );
             resetXrunCounters();
+            nb_succesful_cycles = 0;
             // FIXME: xruns can screw up the framecounter accounting. do something more sane here
         }
+        nb_dryrun_cycles_left--;
     }
+
+    if(nb_dryrun_cycles_left == 0) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " max # dry-run cycles achieved without steady-state...\n" );
+        return false;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, " dry-run resulted in steady-state...\n" );
 
     // now we should clear the xrun flags
     resetXrunCounters();
