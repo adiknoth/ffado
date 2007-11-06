@@ -291,6 +291,7 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                 m_unit_version = kv->value.immediate;
                 if ( m_unit_specifier_id == 0x0000a02d ) // XXX
                 {
+                    m_avcDevice = true; // FIXME: disable this check for the moment
                     if ( kv->value.immediate == 0x14001 ) {
                         m_avcDevice = true;
                     }
