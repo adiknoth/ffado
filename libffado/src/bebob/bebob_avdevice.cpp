@@ -399,7 +399,7 @@ bool
 AvDevice::loadFromCache()
 {
     // XXX disable this part as long it is not correctly working
-    return false;
+    //return false;
 
     Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
 
