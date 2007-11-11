@@ -29,7 +29,8 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 
-#include "libstreaming/amdtp/AmdtpStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpReceiveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpTransmitStreamProcessor.h"
 #include "libstreaming/amdtp/AmdtpPort.h"
 #include "libieee1394/ARMHandler.h"
 

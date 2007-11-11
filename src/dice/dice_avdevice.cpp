@@ -27,8 +27,6 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libstreaming/amdtp/AmdtpStreamProcessor.h"
-
 #include "debugmodule/debugmodule.h"
 
 #include <string>
@@ -50,6 +48,7 @@ static VendorModelEntry supportedDeviceList[] =
 {
     // vendor id, model id, vendor name, model name
     {FW_VENDORID_TCAT, 0x00000002, "TCAT", "DiceII EVM"},
+    {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
 };
 
 DiceAvDevice::DiceAvDevice( Ieee1394Service& ieee1394Service,

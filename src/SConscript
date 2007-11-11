@@ -152,7 +152,8 @@ rme_source = env.Split( '\
 amdtp_source = env.Split( '\
 	libstreaming/amdtp/AmdtpPort.cpp \
 	libstreaming/amdtp/AmdtpPortInfo.cpp \
-	libstreaming/amdtp/AmdtpStreamProcessor.cpp \
+	libstreaming/amdtp/AmdtpReceiveStreamProcessor.cpp \
+	libstreaming/amdtp/AmdtpTransmitStreamProcessor.cpp \
 ' )
 
 source = ffado_source

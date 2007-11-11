@@ -299,6 +299,7 @@ void StreamProcessor::setVerboseLevel(int l) {
     setDebugLevel(l);
     IsoStream::setVerboseLevel(l);
     PortManager::setVerboseLevel(l);
+    m_data_buffer->setVerboseLevel(l);
 }
 
 uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {

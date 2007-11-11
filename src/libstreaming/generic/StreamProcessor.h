@@ -106,7 +106,6 @@ public:
     virtual bool prepareForStop() {return true;};
     virtual bool prepareForStart() {return true;};
 
-
 public:
     Util::TimestampedBuffer *m_data_buffer;
 
@@ -233,6 +232,7 @@ protected:
         float getTicksPerFrame();
 
         int getLastCycle() {return m_last_cycle;};
+        int getFrameRate() {return m_framerate;};
 
         int getBufferFill();
 

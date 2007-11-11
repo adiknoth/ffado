@@ -340,7 +340,9 @@ bool StreamProcessorManager::syncStartAll() {
         (unsigned int)TICKS_TO_OFFSET(max_of_min_delay));
     m_SyncSource->setSyncDelay(max_of_min_delay);
 
-
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for device to indicate clock sync lock...\n");
+    //sleep(2); // FIXME: be smarter here
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting StreamProcessors...\n");
     // now we reset the frame counters
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
@@ -364,20 +366,30 @@ bool StreamProcessorManager::syncStartAll() {
     // that remains a mistery is the timestamp information.
 //     m_SyncSource->m_data_buffer->setTransparent(false);
 //     debugShowBackLog();
+
+//     m_SyncSource->setVerboseLevel(DEBUG_LEVEL_ULTRA_VERBOSE);
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for sync...\n");
     // in order to obtain that, we wait for the first periods to be
     // received.
-    int nb_sync_runs=10;
+    int nb_sync_runs=20;
     while(nb_sync_runs--) { // or while not sync-ed?
         waitForPeriod();
-
         // drop the frames for all receive SP's
         dryRun(StreamProcessor::E_Receive);
         
         // we don't have to dryrun for the xmit SP's since they
         // are not sending data yet.
+        
+        // sync the xmit SP's buffer head timestamps
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            // FIXME: encapsulate
+            (*it)->m_data_buffer->setBufferHeadTimestamp(m_time_of_transfer);
+        }
     }
+//     m_SyncSource->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu (%03us %04uc %04ut)...\n", 
         m_time_of_transfer,
@@ -432,7 +444,7 @@ bool StreamProcessorManager::syncStartAll() {
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Running dry for a while...\n");
-    #define MAX_DRYRUN_CYCLES               20
+    #define MAX_DRYRUN_CYCLES               40
     #define MIN_SUCCESSFUL_DRYRUN_CYCLES    4
     // run some cycles 'dry' such that everything can stabilize
     int nb_dryrun_cycles_left = MAX_DRYRUN_CYCLES;
@@ -447,6 +459,16 @@ bool StreamProcessorManager::syncStartAll() {
         } else {
             debugOutput( DEBUG_LEVEL_VERBOSE, " This dry-run was not xrun free...\n" );
             resetXrunCounters();
+            // reset the transmit SP's such that there is no issue with accumulating buffers
+            // FIXME: what about receive SP's
+            for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                    it != m_TransmitProcessors.end();
+                    ++it ) {
+                // FIXME: encapsulate
+                (*it)->reset(); //CHECK!!!
+                (*it)->m_data_buffer->setBufferHeadTimestamp(m_time_of_transfer);
+            }
+            
             nb_succesful_cycles = 0;
             // FIXME: xruns can screw up the framecounter accounting. do something more sane here
         }
@@ -462,6 +484,55 @@ bool StreamProcessorManager::syncStartAll() {
     // now we should clear the xrun flags
     resetXrunCounters();
 
+/*    debugOutput( DEBUG_LEVEL_VERBOSE, "Aligning streams...\n");
+    // run some cycles 'dry' such that everything can stabilize
+    nb_dryrun_cycles_left = MAX_DRYRUN_CYCLES;
+    nb_succesful_cycles = 0;
+    while(nb_dryrun_cycles_left > 0 &&
+          nb_succesful_cycles < MIN_SUCCESSFUL_DRYRUN_CYCLES ) {
+
+        waitForPeriod();
+
+        // align the received streams
+        int64_t sp_lag;
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            uint64_t ts_sp=(*it)->getTimeAtPeriod();
+            uint64_t ts_sync=m_SyncSource->getTimeAtPeriod();
+
+            sp_lag = diffTicks(ts_sp, ts_sync);
+            debugOutput( DEBUG_LEVEL_VERBOSE, "  SP(%p) TS=%011llu - TS=%011llu = %04lld\n", 
+                (*it), ts_sp, ts_sync, sp_lag);
+            // sync the other receive SP's to the sync source
+//             if((*it) != m_SyncSource) {
+//                 if(!(*it)->m_data_buffer->syncCorrectLag(sp_lag)) {
+//                         debugOutput(DEBUG_LEVEL_VERBOSE,"could not syncCorrectLag(%11lld) for stream processor (%p)\n",
+//                                 sp_lag, *it);
+//                 }
+//             }
+        }
+
+
+        if (dryRun()) {
+            nb_succesful_cycles++;
+        } else {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " This dry-run was not xrun free...\n" );
+            resetXrunCounters();
+            nb_succesful_cycles = 0;
+            // FIXME: xruns can screw up the framecounter accounting. do something more sane here
+        }
+        nb_dryrun_cycles_left--;
+    }
+
+    if(nb_dryrun_cycles_left == 0) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " max # dry-run cycles achieved without aligned steady-state...\n" );
+        return false;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, " dry-run resulted in aligned steady-state...\n" );*/
+    
+    // now we should clear the xrun flags
+    resetXrunCounters();
     // and off we go
     return true;
 }
@@ -912,7 +983,7 @@ bool StreamProcessorManager::waitForPeriod() {
     // before we get to writing.
     // NOTE: before waitForPeriod() is called again, both the transmit
     //       and the receive processors should have done their transfer.
-    m_time_of_transfer=m_SyncSource->getTimeAtPeriod();
+    m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n",
         m_time_of_transfer);
 

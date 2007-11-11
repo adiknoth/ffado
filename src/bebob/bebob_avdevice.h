@@ -41,7 +41,8 @@
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_mixer.h"
 
-#include "libstreaming/amdtp/AmdtpStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpReceiveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpTransmitStreamProcessor.h"
 #include "libstreaming/amdtp/AmdtpPort.h"
 #include "libstreaming/amdtp/AmdtpPortInfo.h"
 

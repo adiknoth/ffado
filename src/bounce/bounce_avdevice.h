@@ -29,7 +29,8 @@
 #include "libavc/avc_definitions.h"
 #include "libavc/general/avc_extended_cmd_generic.h"
 
-#include "libstreaming/amdtp/AmdtpStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpReceiveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpTransmitStreamProcessor.h"
 #include "libstreaming/amdtp/AmdtpPort.h"
 #include "libstreaming/amdtp/AmdtpPortInfo.h"
 

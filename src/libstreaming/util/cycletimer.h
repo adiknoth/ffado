@@ -158,6 +158,34 @@ static inline int64_t wrapAtMinMaxTicks(int64_t x) {
 }
 
 /**
+ * @brief Computes the sum of two cycle values
+ *
+ * This function computes a sum between cycles
+ * such that it respects wrapping (at 8000 cycles).
+ *
+ * The passed arguments are assumed to be valid cycle numbers,
+ * i.e. they should be wrapped at 8000 cycles
+ *
+ * See addTicks
+ *
+ * @param x First cycle value
+ * @param y Second cycle value
+ * @return the sum x+y, wrapped
+ */
+static inline unsigned int addCycles(unsigned int x, unsigned int y) {
+    unsigned int sum = x + y;
+#ifdef DEBUG
+    if (x >= CYCLES_PER_SECOND || y >= CYCLES_PER_SECOND ) {
+        debugWarning("At least one argument not wrapped correctly: x=%u, y=%u\n",x,y);
+    }
+#endif
+
+    // since both x and y are < CYCLES_PER_SECOND this should be enough to unwrap
+    if (sum > CYCLES_PER_SECOND) sum -= CYCLES_PER_SECOND;
+    return sum;
+}
+
+/**
  * @brief Computes a difference between cycles
  *
  * This function computes a difference between cycles

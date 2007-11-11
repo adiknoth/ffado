@@ -27,7 +27,8 @@
 /**
  * This class implements IEC61883-6 / AM824 / AMDTP based streaming
  */
-#include "AmdtpStreamProcessor.h"
+#include "AmdtpReceiveStreamProcessor.h"
+#include "AmdtpTransmitStreamProcessor.h"
 #include "../util/cip.h"
 
 #include "debugmodule/debugmodule.h"
