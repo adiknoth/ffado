@@ -429,7 +429,6 @@ AvDevice::prepare() {
 
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              get1394Service().getPort(),
-                             samplerate,
                              outputPlug->getNrOfChannels());
 
     if(!p->init()) {
@@ -454,12 +453,10 @@ AvDevice::prepare() {
         // we are snooping, so this is receive too.
         p=new Streaming::AmdtpReceiveStreamProcessor(
                                   get1394Service().getPort(),
-                                  samplerate,
                                   inputPlug->getNrOfChannels());
     } else {
         p=new Streaming::AmdtpTransmitStreamProcessor(
                                 get1394Service().getPort(),
-                                samplerate,
                                 inputPlug->getNrOfChannels());
     }
 

@@ -85,7 +85,9 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
 
     // create a processor manager to manage the actual stream
     // processors
-    dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
+    dev->processorManager = new StreamProcessorManager( dev->options.period_size, 
+                                                        dev->options.sample_rate,
+                                                        dev->options.nb_buffers);
     if(!dev->processorManager) {
             debugFatal("Could not create StreamProcessorManager\n");
             delete dev->m_deviceManager;

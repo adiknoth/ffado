@@ -23,6 +23,7 @@
 
 #include "AmdtpTransmitStreamProcessor.h"
 #include "AmdtpPort.h"
+#include "../StreamProcessorManager.h"
 
 #include "../util/cycletimer.h"
 
@@ -39,8 +40,8 @@
 namespace Streaming {
 
 /* transmit */
-AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framerate, int dimension)
-        : StreamProcessor(ePT_Transmit, port, framerate)
+AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int dimension)
+        : StreamProcessor(ePT_Transmit, port)
         , m_dimension(dimension)
         , m_last_timestamp(0)
         , m_dbc(0)
@@ -445,7 +446,7 @@ bool AmdtpTransmitStreamProcessor::prepare() {
         return false;
     }
 
-    switch (m_framerate) {
+    switch (m_manager->getNominalRate()) {
     case 32000:
         m_syt_interval = 8;
         m_fdf = IEC61883_FDF_SFC_32KHZ;
@@ -481,23 +482,23 @@ bool AmdtpTransmitStreamProcessor::prepare() {
         &m_cip_status,
         IEC61883_FMT_AMDTP,
         m_fdf,
-        m_framerate,
+        m_manager->getNominalRate(),
         m_dimension,
         m_syt_interval);
 
     // prepare the framerate estimate
-    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
     m_ticks_per_frame=ticks_per_frame;
 
     // initialize internal buffer
-    m_ringbuffer_size_frames=m_nb_buffers * m_period;
+    m_ringbuffer_size_frames=m_manager->getNbBuffers() * m_manager->getPeriodSize();
 
     assert(m_data_buffer);
     m_data_buffer->setBufferSize(m_ringbuffer_size_frames * 2);
     m_data_buffer->setEventSize(sizeof(quadlet_t));
     m_data_buffer->setEventsPerFrame(m_dimension);
 
-    m_data_buffer->setUpdatePeriod(m_period);
+    m_data_buffer->setUpdatePeriod(m_manager->getPeriodSize());
     m_data_buffer->setNominalRate(ticks_per_frame);
 
     m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
@@ -512,8 +513,8 @@ bool AmdtpTransmitStreamProcessor::prepare() {
           ++it )
     {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
-        if(!(*it)->setBufferSize(m_period)) {
-            debugFatal("Could not set buffer size to %d\n",m_period);
+        if(!(*it)->setBufferSize(m_manager->getPeriodSize())) {
+            debugFatal("Could not set buffer size to %d\n",m_manager->getPeriodSize());
             return false;
         }
 
@@ -598,9 +599,9 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
     debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, FDF: %d, DBS: %d, SYT: %d\n",
-             m_framerate,m_fdf,m_dimension,m_syt_interval);
+             m_manager->getNominalRate(),m_fdf,m_dimension,m_syt_interval);
     debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
-             m_period,m_nb_buffers);
+             m_manager->getPeriodSize(), m_manager->getNbBuffers());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
              m_port,m_channel);
 
@@ -624,6 +625,12 @@ bool AmdtpTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) 
     }
 
     return true;
+}
+
+unsigned int
+AmdtpTransmitStreamProcessor::getPacketsPerPeriod() 
+{
+    return (m_manager->getPeriodSize())/m_syt_interval;
 }
 
 bool AmdtpTransmitStreamProcessor::transferSilence(unsigned int nframes) {

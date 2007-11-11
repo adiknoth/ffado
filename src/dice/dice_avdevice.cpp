@@ -446,8 +446,6 @@ DiceAvDevice::showDevice()
 // the size of the packet.
 bool
 DiceAvDevice::prepare() {
-    int samplerate=getSamplingFrequency();
-
     // prepare receive SP's
     for (unsigned int i=0;i<m_nb_tx;i++) {
         fb_quadlet_t nb_audio;
@@ -492,7 +490,6 @@ DiceAvDevice::prepare() {
         Streaming::AmdtpReceiveStreamProcessor *p;
         p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
-                             samplerate,
                              nb_channels);
 
         if(!p->init()) {
@@ -579,7 +576,6 @@ DiceAvDevice::prepare() {
         Streaming::AmdtpTransmitStreamProcessor *p;
         p=new Streaming::AmdtpTransmitStreamProcessor(
                              m_p1394Service->getPort(),
-                             samplerate,
                              nb_channels);
 
         if(!p->init()) {

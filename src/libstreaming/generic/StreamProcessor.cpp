@@ -34,14 +34,11 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
 
-StreamProcessor::StreamProcessor(enum eProcessorType type, int port, int framerate)
+StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
     : IsoStream((type==ePT_Receive ? IsoStream::eST_Receive : IsoStream::eST_Transmit), port)
     , m_processor_type ( type )
     , m_state( ePS_Created )
-    , m_nb_buffers(0)
-    , m_period(0)
-    , m_xruns(0)
-    , m_framerate(framerate)
+    , m_xruns( 0 )
     , m_manager(NULL)
     , m_running(false)
     , m_disabled(true)
@@ -84,7 +81,7 @@ void StreamProcessor::dumpInfo()
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
 
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_framerate);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_manager->getNominalRate());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
         24576000.0/getSyncSource().m_data_buffer->getRate(),
         24576000.0/m_data_buffer->getRate()
@@ -100,9 +97,7 @@ void StreamProcessor::dumpInfo()
 bool StreamProcessor::init()
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-
     m_data_buffer->init();
-
     return IsoStream::init();
 }
 
@@ -155,20 +150,12 @@ bool StreamProcessor::prepareForDisable() {
 bool StreamProcessor::prepare() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
-
-    // init the ports
-
     if(!m_manager) {
         debugFatal("Not attached to a manager!\n");
         return -1;
     }
 
-    m_nb_buffers=m_manager->getNbBuffers();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting m_nb_buffers  : %d\n", m_nb_buffers);
-
-    m_period=m_manager->getPeriodSize();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting m_period      : %d\n", m_period);
-
+    // init the ports
     // loop over the ports to reset them
     PortManager::preparePorts();
 
@@ -317,7 +304,7 @@ void StreamProcessor::setVerboseLevel(int l) {
 uint64_t
 StreamProcessor::getTimeAtPeriod() {
     if (getType() == ePT_Receive) {
-        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
+        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_manager->getPeriodSize());
     
         #ifdef DEBUG
         ffado_timestamp_t ts;
@@ -330,7 +317,7 @@ StreamProcessor::getTimeAtPeriod() {
         #endif
         return (uint64_t)next_period_boundary;
     } else {
-        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
+        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_manager->getNbBuffers()-1) * m_manager->getPeriodSize());
     
         #ifdef DEBUG
         ffado_timestamp_t ts;

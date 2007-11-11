@@ -76,7 +76,7 @@ public:
      * @param dimension number of substreams in the ISO stream
      *                  (midi-muxed is only one stream)
      */
-    AmdtpTransmitStreamProcessor(int port, int framerate, int dimension);
+    AmdtpTransmitStreamProcessor(int port, int dimension);
     virtual ~AmdtpTransmitStreamProcessor() {};
 
     enum raw1394_iso_disposition
@@ -103,7 +103,7 @@ public:
 
     // however, if we only count the number of used packets
     // it is m_period / m_syt_interval
-    unsigned int getPacketsPerPeriod() {return (m_period)/m_syt_interval;};
+    unsigned int getPacketsPerPeriod();
 
     unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);};
 

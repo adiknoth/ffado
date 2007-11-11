@@ -37,8 +37,7 @@
 
 namespace Streaming {
 
-class StreamProcessorManager;
-
+    class StreamProcessorManager;
 /*!
 \brief Class providing a generic interface for Stream Processors
 
@@ -88,7 +87,7 @@ private:
 
 // constructor/destructor
 public:
-    StreamProcessor(enum eProcessorType type, int port, int framerate);
+    StreamProcessor(enum eProcessorType type, int port);
     virtual ~StreamProcessor();
 
 // the receive/transmit functions
@@ -124,7 +123,7 @@ public:
         {debugWarning("call not allowed\n"); return false;};
 
 
-    // state stuff (TODO: cleanup)
+//--- state stuff (TODO: cleanup)
     bool xrunOccurred() { return (m_xruns>0); };
     bool isRunning(); ///< returns true if there is some stream data processed
     virtual bool prepareForEnable(uint64_t time_to_enable_at);
@@ -143,28 +142,20 @@ public:
 
     // move to private?
     void resetXrunCounter();
-
-
-public: // FIXME: should be private
-    Util::TimestampedBuffer *m_data_buffer;
-
-protected: // SPM related
-    void setManager(StreamProcessorManager *manager) {m_manager=manager;};
-    void clearManager() {m_manager=0;};
-
 protected:
-    unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
-    unsigned int m_period; ///< cached from manager->getPeriod(), the period size
-    unsigned int m_xruns;
-    unsigned int m_framerate;
-
-    StreamProcessorManager *m_manager;
-    
     bool m_running;
     bool m_disabled;
     bool m_is_disabled;
     unsigned int m_cycle_to_enable_at;
 
+//--- data buffering and accounting
+public: // FIXME: should be private
+    Util::TimestampedBuffer *m_data_buffer;
+
+protected:
+    unsigned int m_xruns;
+
+    StreamProcessorManager *m_manager;
 
     // frame counter & sync stuff
     public:
@@ -262,16 +253,17 @@ protected:
         float getTicksPerFrame();
 
         int getLastCycle() {return m_last_cycle;};
-        int getFrameRate() {return m_framerate;};
 
         int getBufferFill();
 
     protected:
-
         float m_ticks_per_frame;
-
         int m_last_cycle;
         int m_sync_delay;
+
+protected: // SPM related
+    void setManager(StreamProcessorManager *manager) {m_manager=manager;};
+    void clearManager() {m_manager=NULL;};
 
 public:
     // debug stuff

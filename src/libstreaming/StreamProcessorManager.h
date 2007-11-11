@@ -52,7 +52,7 @@ class StreamProcessorManager : public Util::OptionContainer {
 
 public:
 
-    StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
+    StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
 
     bool init(); ///< to be called immediately after the construction
@@ -94,6 +94,8 @@ public:
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
     int getXrunCount() {return m_xruns;};
+
+    unsigned int getNominalRate() {return m_nominal_framerate;};
 
 private:
     void resetXrunCounters();
@@ -138,6 +140,7 @@ protected:
 
     unsigned int m_nb_buffers;
     unsigned int m_period;
+    unsigned int m_nominal_framerate;
     unsigned int m_xruns;
 
     IsoHandlerManager *m_isoManager;

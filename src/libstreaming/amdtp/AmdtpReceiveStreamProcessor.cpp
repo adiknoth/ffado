@@ -23,6 +23,7 @@
 
 #include "AmdtpReceiveStreamProcessor.h"
 #include "AmdtpPort.h"
+#include "../StreamProcessorManager.h"
 
 #include "../util/cycletimer.h"
 
@@ -40,8 +41,8 @@ namespace Streaming {
 
 /* --------------------- RECEIVE ----------------------- */
 
-AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int framerate, int dimension)
-    : StreamProcessor(ePT_Receive , port, framerate)
+AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int dimension)
+    : StreamProcessor(ePT_Receive , port)
     , m_dimension(dimension)
     , m_last_timestamp(0)
     , m_last_timestamp2(0)
@@ -278,7 +279,7 @@ bool AmdtpReceiveStreamProcessor::prepare() {
         return false;
     }
 
-    switch (m_framerate) {
+    switch (m_manager->getNominalRate()) {
     case 32000:
         m_syt_interval = 8;
         break;
@@ -304,13 +305,13 @@ bool AmdtpReceiveStreamProcessor::prepare() {
     }
 
     // prepare the framerate estimate
-    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_framerate);
+    float ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
     m_ticks_per_frame=ticks_per_frame;
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n",ticks_per_frame);
 
     // initialize internal buffer
-    unsigned int ringbuffer_size_frames=m_nb_buffers * m_period;
+    unsigned int ringbuffer_size_frames=m_manager->getNbBuffers() * m_manager->getPeriodSize();
 
     assert(m_data_buffer);
     m_data_buffer->setBufferSize(ringbuffer_size_frames * 2);
@@ -333,8 +334,8 @@ bool AmdtpReceiveStreamProcessor::prepare() {
           ++it )
     {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
-        if(!(*it)->setBufferSize(m_period)) {
-            debugFatal("Could not set buffer size to %d\n",m_period);
+        if(!(*it)->setBufferSize(m_manager->getPeriodSize())) {
+            debugFatal("Could not set buffer size to %d\n",m_manager->getPeriodSize());
             return false;
         }
 
@@ -399,9 +400,9 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
     debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
-             m_framerate,m_dimension,m_syt_interval);
+             m_manager->getNominalRate(),m_dimension,m_syt_interval);
     debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
-             m_period,m_nb_buffers);
+             m_manager->getPeriodSize(), m_manager->getNbBuffers());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
              m_port,m_channel);
 
@@ -417,6 +418,12 @@ bool AmdtpReceiveStreamProcessor::prepareForStart() {
 bool AmdtpReceiveStreamProcessor::prepareForStop() {
     disable();
     return true;
+}
+
+unsigned int
+AmdtpReceiveStreamProcessor::getPacketsPerPeriod() 
+{
+    return (m_manager->getPeriodSize())/m_syt_interval;
 }
 
 bool AmdtpReceiveStreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {

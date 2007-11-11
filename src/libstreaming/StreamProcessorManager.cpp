@@ -37,11 +37,12 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_VERBOSE );
 
-StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int nb_buffers)
+StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int framerate, unsigned int nb_buffers)
     : m_is_slave( false )
     , m_SyncSource(NULL)
     , m_nb_buffers(nb_buffers)
     , m_period(period)
+    , m_nominal_framerate ( framerate )
     , m_xruns(0)
     , m_isoManager(0)
     , m_nbperiods(0)
