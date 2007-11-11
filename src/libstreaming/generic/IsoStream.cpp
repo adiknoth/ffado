@@ -71,7 +71,7 @@ void IsoStream::dumpInfo()
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Address        : %p\n",this);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Stream type    : %s\n",
-            (this->getType()==EST_Receive ? "Receive" : "Transmit"));
+            (this->getStreamType()==eST_Receive ? "Receive" : "Transmit"));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
             m_port, m_channel);
 

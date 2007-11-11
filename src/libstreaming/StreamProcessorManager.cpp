@@ -71,23 +71,19 @@ bool StreamProcessorManager::registerProcessor(StreamProcessor *processor)
     assert(processor);
     assert(m_isoManager);
 
-    if (processor->getType()==StreamProcessor::E_Receive) {
+    if (processor->getType() == StreamProcessor::ePT_Receive) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
 
         m_ReceiveProcessors.push_back(processor);
-
         processor->setManager(this);
-
         return true;
     }
 
-    if (processor->getType()==StreamProcessor::E_Transmit) {
+    if (processor->getType() == StreamProcessor::ePT_Transmit) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
 
         m_TransmitProcessors.push_back(processor);
-
         processor->setManager(this);
-
         return true;
     }
 
@@ -101,7 +97,7 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering processor (%p)\n",processor);
     assert(processor);
 
-    if (processor->getType()==StreamProcessor::E_Receive) {
+    if (processor->getType()==StreamProcessor::ePT_Receive) {
 
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
@@ -124,7 +120,7 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
         }
     }
 
-    if (processor->getType()==StreamProcessor::E_Transmit) {
+    if (processor->getType()==StreamProcessor::ePT_Transmit) {
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
@@ -159,15 +155,11 @@ bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
     return true;
 }
 
-StreamProcessor *StreamProcessorManager::getSyncSource() {
-    return m_SyncSource;
-}
-
 bool StreamProcessorManager::init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
 
-    m_isoManager=new IsoHandlerManager(m_thread_realtime, m_thread_priority + 1);
+    m_isoManager = new IsoHandlerManager(m_thread_realtime, m_thread_priority + 1);
 
     if(!m_isoManager) {
         debugFatal("Could not create IsoHandlerManager\n");
@@ -225,11 +217,6 @@ bool StreamProcessorManager::prepare() {
         it != m_ReceiveProcessors.end();
         ++it ) {
 
-        if(!(*it)->setSyncSource(m_SyncSource)) {
-            debugFatal(  " could not set sync source (%p)...\n",(*it));
-            return false;
-        }
-
         if(!(*it)->setOption("slaveMode", m_is_slave)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, " note: could not set slaveMode option for (%p)...\n",(*it));
         }
@@ -244,10 +231,6 @@ bool StreamProcessorManager::prepare() {
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
         it != m_TransmitProcessors.end();
         ++it ) {
-        if(!(*it)->setSyncSource(m_SyncSource)) {
-            debugFatal(  " could not set sync source (%p)...\n",(*it));
-            return false;
-        }
         if(!(*it)->setOption("slaveMode", m_is_slave)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, " note: could not set slaveMode option for (%p)...\n",(*it));
         }
@@ -376,7 +359,7 @@ bool StreamProcessorManager::syncStartAll() {
     while(nb_sync_runs--) { // or while not sync-ed?
         waitForPeriod();
         // drop the frames for all receive SP's
-        dryRun(StreamProcessor::E_Receive);
+        dryRun(StreamProcessor::ePT_Receive);
         
         // we don't have to dryrun for the xmit SP's since they
         // are not sending data yet.
@@ -1066,8 +1049,8 @@ bool StreamProcessorManager::transfer() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Transferring period...\n");
     bool retval=true;
-    retval &= dryRun(StreamProcessor::E_Receive);
-    retval &= dryRun(StreamProcessor::E_Transmit);
+    retval &= dryRun(StreamProcessor::ePT_Receive);
+    retval &= dryRun(StreamProcessor::ePT_Transmit);
     return retval;
 }
 
@@ -1080,12 +1063,12 @@ bool StreamProcessorManager::transfer() {
  * @return true if successful, false otherwise (indicates xrun).
  */
 
-bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
+bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
     bool retval = true;
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
-    if (t==StreamProcessor::E_Receive) {
+    if (t==StreamProcessor::ePT_Receive) {
         // determine the time at which we want reception to start
         float rate=m_SyncSource->getTicksPerFrame();
         int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
@@ -1147,8 +1130,8 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::EProcessorType t) {
 bool StreamProcessorManager::dryRun() {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
     bool retval=true;
-    retval &= dryRun(StreamProcessor::E_Receive);
-    retval &= dryRun(StreamProcessor::E_Transmit);
+    retval &= dryRun(StreamProcessor::ePT_Receive);
+    retval &= dryRun(StreamProcessor::ePT_Transmit);
     return retval;
 }
 
@@ -1161,12 +1144,12 @@ bool StreamProcessorManager::dryRun() {
  * @return true if successful, false otherwise (indicates xrun).
  */
 
-bool StreamProcessorManager::dryRun(enum StreamProcessor::EProcessorType t) {
+bool StreamProcessorManager::dryRun(enum StreamProcessor::eProcessorType t) {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
     bool retval = true;
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
-    if (t==StreamProcessor::E_Receive) {
+    if (t==StreamProcessor::ePT_Receive) {
         // determine the time at which we want reception to start
         float rate=m_SyncSource->getTicksPerFrame();
         int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);

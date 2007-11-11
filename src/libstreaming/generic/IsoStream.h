@@ -47,16 +47,16 @@ class IsoStream
 
     public:
 
-        enum EStreamType {
-                EST_Receive,
-                EST_Transmit
+        enum eStreamType {
+                eST_Receive,
+                eST_Transmit
         };
 
-        IsoStream(enum EStreamType type)
-                    : m_type(type), m_channel(-1), m_port(0), m_handler(0)
+        IsoStream(enum eStreamType type)
+            : m_channel(-1), m_port(0), m_handler(0), m_isostream_type(type)
         {};
-        IsoStream(enum EStreamType type, int port)
-                    : m_type(type), m_channel(-1), m_port(port), m_handler(0)
+        IsoStream(enum eStreamType type, int port)
+                    : m_channel(-1), m_port(port), m_handler(0), m_isostream_type(type)
         {};
         virtual ~IsoStream()
         {};
@@ -68,7 +68,7 @@ class IsoStream
 
         int getPort() {return m_port;};
 
-        enum EStreamType getType() { return m_type;};
+        enum eStreamType getStreamType() { return m_isostream_type;};
 
         virtual unsigned int getPacketsPerPeriod() {return 1;};
         virtual unsigned int getMaxPacketSize() {return 1024;}; //FIXME: arbitrary
@@ -92,15 +92,16 @@ class IsoStream
         virtual bool prepare();
 
     protected:
-
         void setHandler( IsoHandler * h) ;
         void clearHandler();
 
-        enum EStreamType m_type;
         int m_channel;
         int m_port;
 
         IsoHandler *m_handler;
+
+    private: // should be set in the constructor
+        enum eStreamType m_isostream_type;
 
         DECLARE_DEBUG_MODULE;
 

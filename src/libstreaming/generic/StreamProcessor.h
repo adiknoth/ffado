@@ -52,35 +52,81 @@ class StreamProcessor : public IsoStream,
                         public Util::TimestampedBufferClient,
                         public Util::OptionContainer {
 
-    friend class StreamProcessorManager;
+    friend class StreamProcessorManager; // FIXME: get rid of this
 
 public:
-    enum EProcessorType {
-            E_Receive,
-            E_Transmit
+    ///> the streamprocessor type
+    enum eProcessorType {
+        ePT_Receive,
+        ePT_Transmit
     };
+    ///> returns the type of the streamprocessor
+    virtual enum eProcessorType getType() { return m_processor_type; };
+private:
+    // this can only be set by the constructor
+    enum eProcessorType m_processor_type;
 
-    StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate);
+protected:
+    ///> the state the streamprocessor is in
+    enum eProcessorState {
+        ePS_Created,
+        ePS_Initialized,
+        ePS_WaitingForRunningStream,
+        ePS_DryRunning,
+        ePS_WaitingForEnabledStream,
+        ePS_StreamEnabled,
+        ePS_WaitingForDisabledStream,
+    };
+    
+    ///> set the SP state to a specific value
+    void setState(enum eProcessorState);
+    ///> get the SP state
+    enum eProcessorState getState() {return m_state;};
+private:
+    enum eProcessorState m_state;
+    const char *ePSToString(enum eProcessorState);
+
+// constructor/destructor
+public:
+    StreamProcessor(enum eProcessorType type, int port, int framerate);
     virtual ~StreamProcessor();
 
+// the receive/transmit functions
+public:
+    // the transmit interface accepts frames and provides packets
+    // implement these for a transmit SP
+    // leave default for a receive SP
     virtual enum raw1394_iso_disposition
-            putPacket(unsigned char *data, unsigned int length,
-                    unsigned char channel, unsigned char tag, unsigned char sy,
-                        unsigned int cycle, unsigned int dropped) = 0;
+    getPacket(unsigned char *data, unsigned int *length,
+                unsigned char *tag, unsigned char *sy,
+                int cycle, unsigned int dropped, unsigned int max_length)
+        {debugWarning("call not allowed\n"); return RAW1394_ISO_STOP;};
+    virtual bool putFrames(unsigned int nbframes, int64_t ts) 
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool putFramesDry(unsigned int nbframes, int64_t ts)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset)
+        {debugWarning("call not allowed\n"); return false;};
+
+    // the receive interface accepts packets and provides frames
+    // implement these for a receive SP
+    // leave default for a transmit SP
     virtual enum raw1394_iso_disposition
-            getPacket(unsigned char *data, unsigned int *length,
-                    unsigned char *tag, unsigned char *sy,
-                    int cycle, unsigned int dropped, unsigned int max_length) = 0;
+        putPacket(unsigned char *data, unsigned int length,
+                  unsigned char channel, unsigned char tag, unsigned char sy,
+                  unsigned int cycle, unsigned int dropped)
+        {debugWarning("call not allowed\n"); return RAW1394_ISO_STOP;};
+    virtual bool getFrames(unsigned int nbframes, int64_t ts)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool getFramesDry(unsigned int nbframes, int64_t ts)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)
+        {debugWarning("call not allowed\n"); return false;};
 
-    virtual enum EProcessorType getType() =0;
 
-    bool xrunOccurred() { return (m_xruns>0);};
-
-    // move to private?
-    void resetXrunCounter();
-
+    // state stuff (TODO: cleanup)
+    bool xrunOccurred() { return (m_xruns>0); };
     bool isRunning(); ///< returns true if there is some stream data processed
-
     virtual bool prepareForEnable(uint64_t time_to_enable_at);
     virtual bool prepareForDisable();
 
@@ -88,31 +134,19 @@ public:
     bool disable(); ///< disable the stream processing
     bool isEnabled() {return !m_is_disabled;};
 
-    virtual bool putFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents from client
-    virtual bool getFrames(unsigned int nbframes, int64_t ts) = 0; ///< transfer the buffer contents to the client
-    virtual bool putFramesDry(unsigned int nbframes, int64_t ts) = 0; ///< dry-process the buffer contents
-    virtual bool getFramesDry(unsigned int nbframes, int64_t ts) = 0; ///< dry-process the buffer contents
-
     virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
 
     virtual bool prepare(); ///< prepare the streams & buffers (e.g. prefill)
-
-    virtual void dumpInfo();
-
     virtual bool init();
-
-    virtual void setVerboseLevel(int l);
-
     virtual bool prepareForStop() {return true;};
     virtual bool prepareForStart() {return true;};
 
-public:
+    // move to private?
+    void resetXrunCounter();
+
+
+public: // FIXME: should be private
     Util::TimestampedBuffer *m_data_buffer;
-
-    StreamStatistics m_PacketStat;
-    StreamStatistics m_PeriodStat;
-
-    StreamStatistics m_WakeupStat;
 
 protected: // SPM related
     void setManager(StreamProcessorManager *manager) {m_manager=manager;};
@@ -121,21 +155,16 @@ protected: // SPM related
 protected:
     unsigned int m_nb_buffers; ///< cached from manager->getNbBuffers(), the number of periods to buffer
     unsigned int m_period; ///< cached from manager->getPeriod(), the period size
-
     unsigned int m_xruns;
-
     unsigned int m_framerate;
 
     StreamProcessorManager *m_manager;
-
+    
     bool m_running;
     bool m_disabled;
     bool m_is_disabled;
     unsigned int m_cycle_to_enable_at;
 
-
-
-    DECLARE_DEBUG_MODULE;
 
     // frame counter & sync stuff
     public:
@@ -149,7 +178,7 @@ protected:
          * @return true if the StreamProcessor can handle this amount of frames
          *         false if it can't
          */
-        virtual bool canClientTransferFrames(unsigned int nframes) = 0;
+        virtual bool canClientTransferFrames(unsigned int nframes);
 
         /**
          * @brief drop nframes from the internal buffer
@@ -194,7 +223,7 @@ protected:
          *
          * @return the time in internal units
          */
-        virtual uint64_t getTimeAtPeriod() = 0;
+        virtual uint64_t getTimeAtPeriod();
 
         uint64_t getTimeNow();
 
@@ -228,7 +257,8 @@ protected:
          */
         virtual int getMaxFrameLatency();
 
-        bool setSyncSource(StreamProcessor *s);
+        StreamProcessor& getSyncSource();
+
         float getTicksPerFrame();
 
         int getLastCycle() {return m_last_cycle;};
@@ -237,73 +267,21 @@ protected:
         int getBufferFill();
 
     protected:
-        StreamProcessor *m_SyncSource;
 
         float m_ticks_per_frame;
 
         int m_last_cycle;
         int m_sync_delay;
 
-};
-
-/*!
-\brief Class providing a generic interface for receive Stream Processors
-
-*/
-class ReceiveStreamProcessor : public StreamProcessor {
-
 public:
-    ReceiveStreamProcessor(int port, int framerate)
-        : StreamProcessor(IsoStream::EST_Receive, port, framerate) {};
-    virtual ~ReceiveStreamProcessor(){};
+    // debug stuff
+    virtual void dumpInfo();
+    virtual void setVerboseLevel(int l);
+    StreamStatistics m_PacketStat;
+    StreamStatistics m_PeriodStat;
+    StreamStatistics m_WakeupStat;
+    DECLARE_DEBUG_MODULE;
 
-
-    virtual enum EProcessorType getType() {return E_Receive;};
-
-    virtual enum raw1394_iso_disposition
-        getPacket(unsigned char *data, unsigned int *length,
-                  unsigned char *tag, unsigned char *sy,
-                  int cycle, unsigned int dropped, unsigned int max_length)
-                  {return RAW1394_ISO_STOP;};
-        virtual bool putFrames(unsigned int nbframes, int64_t ts) {return false;};
-        virtual bool putFramesDry(unsigned int nbframes, int64_t ts) {return false;};
-
-        virtual enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length,
-                  unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped) = 0;
-
-    uint64_t getTimeAtPeriod();
-    bool canClientTransferFrames(unsigned int nframes);
-
-protected:
-    bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
-};
-
-/*!
-\brief Class providing a generic interface for receive Stream Processors
-
-*/
-class TransmitStreamProcessor : public StreamProcessor {
-
-public:
-    TransmitStreamProcessor(int port, int framerate)
-        : StreamProcessor(IsoStream::EST_Transmit, port, framerate) {};
-    virtual ~TransmitStreamProcessor() {};
-
-    virtual enum EProcessorType getType() {return E_Transmit;};
-
-    virtual enum raw1394_iso_disposition
-        putPacket(unsigned char *data, unsigned int length,
-                  unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped) {return RAW1394_ISO_STOP;};
-        virtual bool getFrames(unsigned int nbframes, int64_t ts) {return false;};
-        virtual bool getFramesDry(unsigned int nbframes, int64_t ts) {return false;};
-
-    uint64_t getTimeAtPeriod();
-    bool canClientTransferFrames(unsigned int nframes);
-
-protected:
-    bool processReadBlock(char *data, unsigned int nevents, unsigned int offset) {return true;};
 };
 
 }

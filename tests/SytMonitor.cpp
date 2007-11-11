@@ -34,7 +34,7 @@ IMPL_DEBUG_MODULE( SytMonitor, SytMonitor, DEBUG_LEVEL_VERBOSE );
 /* --------------------- RECEIVE ----------------------- */
 
 SytMonitor::SytMonitor(int port)
-    : IsoStream(IsoStream::EST_Receive, port) {
+    : IsoStream(IsoStream::eST_Receive, port) {
     m_cinfo_buffer=ffado_ringbuffer_create(16384*sizeof(struct cycle_info));
 
 }

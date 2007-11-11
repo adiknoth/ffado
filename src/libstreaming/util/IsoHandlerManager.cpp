@@ -303,7 +303,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
     pruneHandlers();
 
     // allocate a handler for this stream
-    if (stream->getType()==IsoStream::EST_Receive) {
+    if (stream->getStreamType()==IsoStream::eST_Receive) {
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period=stream->getPacketsPerPeriod();
 
@@ -393,7 +393,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
     }
 
-    if (stream->getType()==IsoStream::EST_Transmit) {
+    if (stream->getStreamType()==IsoStream::eST_Transmit) {
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period=stream->getPacketsPerPeriod();
 

@@ -86,10 +86,10 @@ public:
     bool waitForPeriod(); ///< wait for the next period
 
     bool transfer(); ///< transfer the buffer contents from/to client
-    bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
+    bool transfer(enum StreamProcessor::eProcessorType); ///< transfer the buffer contents from/to client (single processor type)
     
     bool dryRun();
-    bool dryRun(enum StreamProcessor::EProcessorType);
+    bool dryRun(enum StreamProcessor::eProcessorType);
 
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
@@ -121,7 +121,8 @@ private:
 
 public:
     bool setSyncSource(StreamProcessor *s);
-    StreamProcessor * getSyncSource();
+    StreamProcessor& getSyncSource()
+        {return *m_SyncSource;};
 
 protected:
 

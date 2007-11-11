@@ -41,7 +41,7 @@ namespace Streaming {
 /* --------------------- RECEIVE ----------------------- */
 
 AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int framerate, int dimension)
-    : ReceiveStreamProcessor(port, framerate)
+    : StreamProcessor(ePT_Receive , port, framerate)
     , m_dimension(dimension)
     , m_last_timestamp(0)
     , m_last_timestamp2(0)
@@ -53,7 +53,7 @@ bool AmdtpReceiveStreamProcessor::init() {
     // call the parent init
     // this has to be done before allocating the buffers,
     // because this sets the buffersizes from the processormanager
-    if(!ReceiveStreamProcessor::init()) {
+    if(!StreamProcessor::init()) {
         debugFatal("Could not do base class init (%d)\n",this);
         return false;
     }
@@ -256,7 +256,7 @@ bool AmdtpReceiveStreamProcessor::reset() {
 
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports
-    if(!ReceiveStreamProcessor::reset()) {
+    if(!StreamProcessor::reset()) {
             debugFatal("Could not do base class reset\n");
             return false;
     }
@@ -273,7 +273,7 @@ bool AmdtpReceiveStreamProcessor::prepare() {
 
     // prepare all non-device specific stuff
     // i.e. the iso stream and the associated ports
-    if(!ReceiveStreamProcessor::prepare()) {
+    if(!StreamProcessor::prepare()) {
         debugFatal("Could not prepare base class\n");
         return false;
     }

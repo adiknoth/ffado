@@ -64,7 +64,7 @@ class AmdtpMidiPort;
 
 */
 class AmdtpReceiveStreamProcessor
-    : public ReceiveStreamProcessor
+    : public StreamProcessor
 {
 
 public:

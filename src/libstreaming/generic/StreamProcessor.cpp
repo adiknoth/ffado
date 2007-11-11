@@ -34,8 +34,10 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
 
-StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int framerate)
-    : IsoStream(type, port)
+StreamProcessor::StreamProcessor(enum eProcessorType type, int port, int framerate)
+    : IsoStream((type==ePT_Receive ? IsoStream::eST_Receive : IsoStream::eST_Transmit), port)
+    , m_processor_type ( type )
+    , m_state( ePS_Created )
     , m_nb_buffers(0)
     , m_period(0)
     , m_xruns(0)
@@ -45,7 +47,6 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
     , m_disabled(true)
     , m_is_disabled(true)
     , m_cycle_to_enable_at(0)
-    , m_SyncSource(NULL)
     , m_ticks_per_frame(0)
     , m_last_cycle(0)
     , m_sync_delay(0)
@@ -57,6 +58,16 @@ StreamProcessor::StreamProcessor(enum IsoStream::EStreamType type, int port, int
 
 StreamProcessor::~StreamProcessor() {
     if (m_data_buffer) delete m_data_buffer;
+}
+
+void
+StreamProcessor::setState(enum eProcessorState s) {
+    #ifdef DEBUG
+        // check the state transistion
+        debugOutput( DEBUG_LEVEL_VERBOSE, "State transition from %s to %s",
+            ePSToString(m_state), ePSToString(s) );
+    #endif
+    m_state = s;
 }
 
 void StreamProcessor::dumpInfo()
@@ -75,7 +86,7 @@ void StreamProcessor::dumpInfo()
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_framerate);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
-        24576000.0/m_SyncSource->m_data_buffer->getRate(),
+        24576000.0/getSyncSource().m_data_buffer->getRate(),
         24576000.0/m_data_buffer->getRate()
         );
 
@@ -168,6 +179,12 @@ bool StreamProcessor::prepare() {
 
 }
 
+StreamProcessor&
+StreamProcessor::getSyncSource()
+{
+    return m_manager->getSyncSource();
+};
+
 int StreamProcessor::getBufferFill() {
 //     return m_data_buffer->getFrameCounter();
     return m_data_buffer->getBufferFill();
@@ -179,7 +196,7 @@ uint64_t StreamProcessor::getTimeNow() {
 
 
 int StreamProcessor::getMaxFrameLatency() {
-    if (getType() == E_Receive) {
+    if (getType() == ePT_Receive) {
         return (int)(m_handler->getWakeupInterval() * TICKS_PER_CYCLE);
     } else {
         return (int)(m_handler->getWakeupInterval() * TICKS_PER_CYCLE);
@@ -227,11 +244,6 @@ bool StreamProcessor::disable()  {
     return true;
 }
 
-bool StreamProcessor::setSyncSource(StreamProcessor *s) {
-    m_SyncSource=s;
-    return true;
-}
-
 float
 StreamProcessor::getTicksPerFrame() {
     if (m_data_buffer) {
@@ -260,7 +272,7 @@ int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
     // period boundary is predicted based upon earlier samples, and therefore can
     // pass before these packets are processed. Adding this extra term makes that
     // the period boundary is signalled later
-    time_at_period = addTicks(time_at_period, m_SyncSource->getSyncDelay());
+    time_at_period = addTicks(time_at_period, getSyncSource().getSyncDelay());
 
     uint64_t cycle_timer=m_handler->getCycleTimerTicks();
 
@@ -302,51 +314,62 @@ void StreamProcessor::setVerboseLevel(int l) {
     m_data_buffer->setVerboseLevel(l);
 }
 
-uint64_t ReceiveStreamProcessor::getTimeAtPeriod() {
-    ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
-
-    #ifdef DEBUG
-    ffado_timestamp_t ts;
-    signed int fc;
+uint64_t
+StreamProcessor::getTimeAtPeriod() {
+    if (getType() == ePT_Receive) {
+        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_period);
     
-    m_data_buffer->getBufferTailTimestamp(&ts,&fc);
-
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD="TIMESTAMP_FORMAT_SPEC", LTS="TIMESTAMP_FORMAT_SPEC", FC=%5u, TPF=%f\n",
-        next_period_boundary, ts, fc, getTicksPerFrame()
-        );
-    #endif
-
-    return (uint64_t)next_period_boundary;
+        #ifdef DEBUG
+        ffado_timestamp_t ts;
+        signed int fc;
+        m_data_buffer->getBufferTailTimestamp(&ts,&fc);
+    
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD="TIMESTAMP_FORMAT_SPEC", LTS="TIMESTAMP_FORMAT_SPEC", FC=%5u, TPF=%f\n",
+            next_period_boundary, ts, fc, getTicksPerFrame()
+            );
+        #endif
+        return (uint64_t)next_period_boundary;
+    } else {
+        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
+    
+        #ifdef DEBUG
+        ffado_timestamp_t ts;
+        signed int fc;
+        m_data_buffer->getBufferTailTimestamp(&ts,&fc);
+    
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD="TIMESTAMP_FORMAT_SPEC", LTS="TIMESTAMP_FORMAT_SPEC", FC=%5u, TPF=%f\n",
+            next_period_boundary, ts, fc, getTicksPerFrame()
+            );
+        #endif
+        return (uint64_t)next_period_boundary;
+    }
 }
 
-bool ReceiveStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
-    return m_data_buffer->getFrameCounter() >= (int) nbframes;
+bool
+StreamProcessor::canClientTransferFrames(unsigned int nbframes) {
+    if (getType() == ePT_Receive) {
+        return m_data_buffer->getFrameCounter() >= (int) nbframes;
+    } else {
+        bool can_transfer;
+        // there has to be enough space to put the frames in
+        can_transfer = m_data_buffer->getBufferSize() - m_data_buffer->getFrameCounter() > nbframes;
+        // or the buffer is transparent
+        can_transfer |= m_data_buffer->isTransparent();
+        return can_transfer;
+    }
 }
 
-uint64_t TransmitStreamProcessor::getTimeAtPeriod() {
-    ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_nb_buffers-1) * m_period);
-
-    #ifdef DEBUG
-    ffado_timestamp_t ts;
-    signed int fc;
-    m_data_buffer->getBufferTailTimestamp(&ts,&fc);
-
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> NPD="TIMESTAMP_FORMAT_SPEC", LTS="TIMESTAMP_FORMAT_SPEC", FC=%5u, TPF=%f\n",
-        next_period_boundary, ts, fc, getTicksPerFrame()
-        );
-    #endif
-
-    return (uint64_t)next_period_boundary;
+const char *
+StreamProcessor::ePSToString(enum eProcessorState s) {
+    switch (s) {
+        case ePS_Created: return "ePS_Created";
+        case ePS_Initialized: return "ePS_Initialized";
+        case ePS_WaitingForRunningStream: return "ePS_WaitingForRunningStream";
+        case ePS_DryRunning: return "ePS_DryRunning";
+        case ePS_WaitingForEnabledStream: return "ePS_WaitingForEnabledStream";
+        case ePS_StreamEnabled: return "ePS_StreamEnabled";
+        case ePS_WaitingForDisabledStream: return "ePS_WaitingForDisabledStream";
+    }
 }
 
-bool TransmitStreamProcessor::canClientTransferFrames(unsigned int nbframes) {
-    bool can_transfer;
-    // there has to be enough space to put the frames in
-    can_transfer = m_data_buffer->getBufferSize() - m_data_buffer->getFrameCounter() > nbframes;
-    // or the buffer is transparent
-    can_transfer |= m_data_buffer->isTransparent();
-    return can_transfer;
-}
-
-
-}
+} // end of namespace

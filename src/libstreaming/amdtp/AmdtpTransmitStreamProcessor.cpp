@@ -40,8 +40,11 @@ namespace Streaming {
 
 /* transmit */
 AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framerate, int dimension)
-        : TransmitStreamProcessor(port, framerate), m_dimension(dimension)
-        , m_last_timestamp(0), m_dbc(0), m_ringbuffer_size_frames(0)
+        : StreamProcessor(ePT_Transmit, port, framerate)
+        , m_dimension(dimension)
+        , m_last_timestamp(0)
+        , m_dbc(0)
+        , m_ringbuffer_size_frames(0)
 {}
 
 /**
@@ -49,11 +52,11 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int framera
  */
 bool AmdtpTransmitStreamProcessor::init() {
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n", this);
     // call the parent init
     // this has to be done before allocating the buffers,
     // because this sets the buffersizes from the processormanager
-    if(!TransmitStreamProcessor::init()) {
+    if(!StreamProcessor::init()) {
         debugFatal("Could not do base class init (%p)\n",this);
         return false;
     }
@@ -414,7 +417,7 @@ bool AmdtpTransmitStreamProcessor::reset() {
 
     // reset all non-device specific stuff
     // i.e. the iso stream and the associated ports
-    if(!TransmitStreamProcessor::reset()) {
+    if(!StreamProcessor::reset()) {
         debugFatal("Could not do base class reset\n");
         return false;
     }
@@ -437,7 +440,7 @@ bool AmdtpTransmitStreamProcessor::prepare() {
 
     // prepare all non-device specific stuff
     // i.e. the iso stream and the associated ports
-    if(!TransmitStreamProcessor::prepare()) {
+    if(!StreamProcessor::prepare()) {
         debugFatal("Could not prepare base class\n");
         return false;
     }

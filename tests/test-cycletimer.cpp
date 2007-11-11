@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 
 #ifdef TEST_PORT_0
     // add a stream to the manager so that it has something to do
-    s=new IsoStream(IsoStream::EST_Receive, 0);
+    s=new IsoStream(IsoStream::eST_Receive, 0);
 
     if (!s) {
         debugOutput(DEBUG_LEVEL_NORMAL, "Could not create IsoStream\n");
