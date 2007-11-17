@@ -61,6 +61,11 @@ if os.environ.has_key('PKG_CONFIG_PATH'):
 else:
 	buildenv['PKG_CONFIG_PATH']=''
 
+if os.environ.has_key('LD_LIBRARY_PATH'):
+	buildenv['LD_LIBRARY_PATH']=os.environ['LD_LIBRARY_PATH']
+else:
+	buildenv['LD_LIBRARY_PATH']=''
+
 
 env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
