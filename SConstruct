@@ -96,19 +96,8 @@ CacheDir( 'cache/objects' )
 
 opts.Save( 'cache/' + build_base + "options.cache", env )
 
-#
-# Check for apps...
-#
-def CheckForApp( context, app ):
-	context.Message( "Checking if '%s' executes... " % app )
-	ret = context.env.WhereIs( app )
-	if ret != "":
-		context.Result( True )
-	else:
-		context.Result( False )
-	return ret
 
-tests = { 'CheckForApp' : CheckForApp }
+tests = {}
 tests.update( env['PKGCONFIG_TESTS'] )
 
 if not env.GetOption('clean'):
@@ -159,7 +148,6 @@ install the needed packages (remember to also install the *-devel packages)
 	#
 	# Optional checks follow:
 	#
-	env['PYUIC'] = conf.CheckForApp( 'pyuic' )
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
 	env = conf.Finish()
@@ -201,6 +189,8 @@ env['bindir'] = Template( os.path.join( env['BINDIR'] ) ).safe_substitute( env )
 env['libdir'] = Template( os.path.join( env['LIBDIR'] ) ).safe_substitute( env )
 env['includedir'] = Template( os.path.join( env['INCLUDEDIR'] ) ).safe_substitute( env )
 env['sharedir'] = Template( os.path.join( env['SHAREDIR'] ) ).safe_substitute( env )
+
+env.Command( target=env['sharedir'], source="", action=Mkdir( env['sharedir'] ) )
 
 env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
