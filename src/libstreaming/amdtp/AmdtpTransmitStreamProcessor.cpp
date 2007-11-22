@@ -48,22 +48,6 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(int port, int dimensi
         , m_ringbuffer_size_frames(0)
 {}
 
-/**
- * @return
- */
-bool AmdtpTransmitStreamProcessor::init() {
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing (%p)...\n", this);
-    // call the parent init
-    // this has to be done before allocating the buffers,
-    // because this sets the buffersizes from the processormanager
-    if(!StreamProcessor::init()) {
-        debugFatal("Could not do base class init (%p)\n",this);
-        return false;
-    }
-    return true;
-}
-
 enum raw1394_iso_disposition
 AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                   unsigned char *tag, unsigned char *sy,
@@ -72,7 +56,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 
     if (cycle<0) {
         debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,"Xmit handler for cycle %d, (running=%d)\n",
-            cycle, m_running);
+            cycle, isRunning());
         *tag = 0;
         *sy = 0;
         *length=0;
@@ -80,7 +64,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     }
 
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,"Xmit handler for cycle %d, (running=%d)\n",
-        cycle, m_running);
+        cycle, isRunning());
 
     if (addCycles(m_last_cycle, 1) != cycle) {
         debugWarning("(%p) Dropped %d packets on cycle %d\n", diffCycles(cycle,m_last_cycle)-1, cycle);
@@ -98,7 +82,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
 
     /* Our node ID can change after a bus reset, so it is best to fetch
      * our node ID for each packet. */
-    packet->sid = getNodeId() & 0x3f;
+    packet->sid = m_handler->getLocalNodeId() & 0x3f;
 
     packet->dbs = m_dimension;
     packet->fn = 0;
@@ -125,7 +109,7 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     int cycle_diff = diffCycles(cycle, now_cycles);
 
 #ifdef DEBUG
-    if(m_running && (cycle_diff < 0)) {
+    if(isRunning() && (cycle_diff < 0)) {
         debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
             cycle, now_cycles);
     }
@@ -138,9 +122,8 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // the current time, the stream is considered not
     // to be 'running'
     // NOTE: this works only at startup
-    if (!m_running && cycle_diff >= 0 && cycle >= 0) {
+    if (!isRunning() && cycle_diff >= 0 && cycle >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Xmit StreamProcessor %p started running at cycle %d\n",this, cycle);
-            m_running=true;
     }
 
     signed int fc;
@@ -168,10 +151,10 @@ AmdtpTransmitStreamProcessor::getPacket(unsigned char *data, unsigned int *lengt
     // packets early if we want to. (not completely according to spec)
     const int max_cycles_to_transmit_early = 5;
 
-    if( !m_running || !m_data_buffer->isEnabled() ) {
+    if( !isRunning() || !m_data_buffer->isEnabled() ) {
         debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
                     "Not running (%d) or buffer not enabled (enabled=%d)\n",
-                    m_running, m_data_buffer->isEnabled());
+                    isRunning(), m_data_buffer->isEnabled());
 
         // not running or not enabled
         goto send_empty_packet;
@@ -356,6 +339,19 @@ send_packet:
     return RAW1394_ISO_ERROR;
 }
 
+unsigned int
+AmdtpTransmitStreamProcessor::getEventsPerFrame()
+{
+    return m_dimension;
+}
+
+unsigned int
+AmdtpTransmitStreamProcessor::getUpdatePeriod()
+{
+    return m_syt_interval;
+}
+
+
 unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader(
         struct iec61883_packet *packet, unsigned int* length,
         uint32_t ts) {
@@ -416,12 +412,12 @@ bool AmdtpTransmitStreamProcessor::reset() {
 
     m_data_buffer->setTickOffset(0);
 
-    // reset all non-device specific stuff
-    // i.e. the iso stream and the associated ports
-    if(!StreamProcessor::reset()) {
-        debugFatal("Could not do base class reset\n");
-        return false;
-    }
+//     // reset all non-device specific stuff
+//     // i.e. the iso stream and the associated ports
+//     if(!StreamProcessor::reset()) {
+//         debugFatal("Could not do base class reset\n");
+//         return false;
+//     }
 
     // we should prefill the event buffer
     if (!prefill()) {
@@ -432,7 +428,7 @@ bool AmdtpTransmitStreamProcessor::reset() {
     return true;
 }
 
-bool AmdtpTransmitStreamProcessor::prepare() {
+bool AmdtpTransmitStreamProcessor::prepareChild() {
     m_PeriodStat.setName("XMT PERIOD");
     m_PacketStat.setName("XMT PACKET");
     m_WakeupStat.setName("XMT WAKEUP");
@@ -619,10 +615,10 @@ bool AmdtpTransmitStreamProcessor::prepareForStop() {
 
 bool AmdtpTransmitStreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
 
-    if (!StreamProcessor::prepareForEnable(time_to_enable_at)) {
-        debugError("StreamProcessor::prepareForEnable failed\n");
-        return false;
-    }
+//     if (!StreamProcessor::prepareForEnable(time_to_enable_at)) {
+//         debugError("StreamProcessor::prepareForEnable failed\n");
+//         return false;
+//     }
 
     return true;
 }

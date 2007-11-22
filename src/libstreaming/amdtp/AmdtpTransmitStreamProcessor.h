@@ -84,9 +84,12 @@ public:
                     unsigned char *tag, unsigned char *sy,
                     int cycle, unsigned int dropped, unsigned int max_length);
 
-    bool init();
+    virtual unsigned int getEventsPerFrame();
+    virtual unsigned int getEventSize() {return 4;};
+    virtual unsigned int getUpdatePeriod();
+
     bool reset();
-    bool prepare();
+    bool prepareChild();
 
     bool prepareForStop();
     bool prepareForStart();

@@ -49,7 +49,8 @@ namespace Streaming {
 class StreamProcessor : public IsoStream,
                         public PortManager,
                         public Util::TimestampedBufferClient,
-                        public Util::OptionContainer {
+                        public Util::OptionContainer
+{
 
     friend class StreamProcessorManager; // FIXME: get rid of this
 
@@ -64,17 +65,20 @@ public:
 private:
     // this can only be set by the constructor
     enum eProcessorType m_processor_type;
-
+    // pretty printing
+    const char *ePTToString(enum eProcessorType);
 protected:
     ///> the state the streamprocessor is in
     enum eProcessorState {
+        ePS_Invalid,
         ePS_Created,
-        ePS_Initialized,
-        ePS_WaitingForRunningStream,
+        // ePS_WaitingToStop, FIXME: this will be needed for the MOTU's
+        ePS_Stopped,
+        ePS_WaitingForStream,
         ePS_DryRunning,
-        ePS_WaitingForEnabledStream,
-        ePS_StreamEnabled,
-        ePS_WaitingForDisabledStream,
+        ePS_WaitingForStreamEnable,
+        ePS_Running,
+        ePS_WaitingForStreamDisable,
     };
     
     ///> set the SP state to a specific value
@@ -83,8 +87,42 @@ protected:
     enum eProcessorState getState() {return m_state;};
 private:
     enum eProcessorState m_state;
+    // state switching
+    enum eProcessorState m_next_state;
+    unsigned int m_cycle_to_switch_state;
+    bool updateState();
+    // pretty printing
     const char *ePSToString(enum eProcessorState);
 
+    bool doStop();
+    bool doWaitForRunningStream();
+    bool doDryRunning();
+    bool doWaitForStreamEnable();
+    bool doRunning();
+    bool doWaitForStreamDisable();
+
+    bool scheduleStateTransition(enum eProcessorState state, uint64_t time_instant);
+    bool scheduleAndWaitForStateTransition(enum eProcessorState state, 
+                                           uint64_t time_instant, 
+                                           enum eProcessorState wait_state);
+public:
+    bool isRunning()
+            {return m_state == ePS_Running;};
+    bool isDryRunning()
+            {return m_state == ePS_DryRunning;};
+
+//--- state stuff (TODO: cleanup)
+    bool startDryRunning(int64_t time_to_start_at);
+    bool startRunning(int64_t time_to_start_at);
+    bool stopDryRunning(int64_t time_to_stop_at);
+    bool stopRunning(int64_t time_to_stop_at);
+
+    // the main difference between init and prepare is that when prepare is called,
+    // the SP is registered to a manager (FIXME: can't it be called by the manager?)
+    bool init();
+    bool prepare();
+    ///> stop the SP from running or dryrunning
+    bool stop();
 // constructor/destructor
 public:
     StreamProcessor(enum eProcessorType type, int port);
@@ -108,45 +146,45 @@ public:
         {debugWarning("call not allowed\n"); return false;};
 
     // the receive interface accepts packets and provides frames
-    // implement these for a receive SP
-    // leave default for a transmit SP
-    virtual enum raw1394_iso_disposition
-        putPacket(unsigned char *data, unsigned int length,
+    
+    // the following two methods are to be implemented by subclasses
+    virtual bool processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped)
-        {debugWarning("call not allowed\n"); return RAW1394_ISO_STOP;};
-    virtual bool getFrames(unsigned int nbframes, int64_t ts)
         {debugWarning("call not allowed\n"); return false;};
-    virtual bool getFramesDry(unsigned int nbframes, int64_t ts)
+    virtual bool processPacketData(unsigned char *data, unsigned int length,
+                  unsigned char channel, unsigned char tag, unsigned char sy,
+                  unsigned int cycle, unsigned int dropped)
         {debugWarning("call not allowed\n"); return false;};
+
+    // this one is implemented by us
+    enum raw1394_iso_disposition
+        putPacket(unsigned char *data, unsigned int length,
+                  unsigned char channel, unsigned char tag, unsigned char sy,
+                  unsigned int cycle, unsigned int dropped);
+
+    bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
+protected:
+    // to be implemented by the children
     virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
+    virtual bool provideSilenceBlock(unsigned int nevents, unsigned int offset)
+        {debugWarning("call not allowed\n"); return false;};
 
-
-//--- state stuff (TODO: cleanup)
-    bool xrunOccurred() { return (m_xruns>0); };
-    bool isRunning(); ///< returns true if there is some stream data processed
-    virtual bool prepareForEnable(uint64_t time_to_enable_at);
-    virtual bool prepareForDisable();
-
-    bool enable(uint64_t time_to_enable_at); ///< enable the stream processing
-    bool disable(); ///< disable the stream processing
-    bool isEnabled() {return !m_is_disabled;};
-
-    virtual bool reset(); ///< reset the streams & buffers (e.g. after xrun)
-
-    virtual bool prepare(); ///< prepare the streams & buffers (e.g. prefill)
-    virtual bool init();
-    virtual bool prepareForStop() {return true;};
-    virtual bool prepareForStart() {return true;};
+private:
+    bool getFramesDry(unsigned int nbframes, int64_t ts);
+    bool getFramesWet(unsigned int nbframes, int64_t ts);
 
     // move to private?
-    void resetXrunCounter();
-protected:
-    bool m_running;
-    bool m_disabled;
-    bool m_is_disabled;
-    unsigned int m_cycle_to_enable_at;
+    bool xrunOccurred() { return (m_xruns>0); }; // FIXME: m_xruns not updated
+
+protected: // FIXME: move to private
+    uint64_t m_dropped; /// FIXME:debug
+    uint64_t m_last_dropped; /// FIXME:debug
+    int m_last_good_cycle; /// FIXME:debug
+    uint64_t m_last_timestamp; /// last timestamp (in ticks)
+    uint64_t m_last_timestamp2; /// last timestamp (in ticks)
+    uint64_t m_last_timestamp_at_period_ticks;
 
 //--- data buffering and accounting
 public: // FIXME: should be private
@@ -169,7 +207,7 @@ protected:
          * @return true if the StreamProcessor can handle this amount of frames
          *         false if it can't
          */
-        virtual bool canClientTransferFrames(unsigned int nframes);
+        bool canClientTransferFrames(unsigned int nframes);
 
         /**
          * @brief drop nframes from the internal buffer
@@ -180,7 +218,7 @@ protected:
          * @param nframes number of frames
          * @return true if the operation was successful
          */
-        virtual bool dropFrames(unsigned int nframes);
+        bool dropFrames(unsigned int nframes);
 
         /**
          * \brief return the time until the next period boundary should be signaled (in microseconds)
@@ -214,7 +252,7 @@ protected:
          *
          * @return the time in internal units
          */
-        virtual uint64_t getTimeAtPeriod();
+        uint64_t getTimeAtPeriod();
 
         uint64_t getTimeNow();
 
@@ -229,7 +267,7 @@ protected:
          * sets the sync delay
          * @param d sync delay
          */
-        void setSyncDelay(int d) {m_sync_delay=d;};
+        void setSyncDelay(int d) {m_sync_delay = d;};
 
         /**
          * @brief get the maximal frame latency
@@ -246,15 +284,43 @@ protected:
          *
          * @return maximal frame latency
          */
-        virtual int getMaxFrameLatency();
-
-        StreamProcessor& getSyncSource();
+        int getMaxFrameLatency();
 
         float getTicksPerFrame();
 
         int getLastCycle() {return m_last_cycle;};
 
         int getBufferFill();
+
+        // Child implementation interface
+        /**
+        * @brief prepare the child SP
+        * @return true if successful, false otherwise
+        * @pre the m_manager pointer points to a valid manager
+        * @post getEventsPerFrame() returns the correct value
+        * @post getEventSize() returns the correct value
+        * @post getUpdatePeriod() returns the correct value
+        * @post processPacketHeader(...) can be called
+        * @post processPacketData(...) can be called
+        */
+        virtual bool prepareChild() = 0;
+        /**
+         * @brief get the number of events contained in one frame
+         * @return the number of events contained in one frame
+         */
+        virtual unsigned int getEventsPerFrame() = 0;
+
+        /**
+         * @brief get the size of one frame in bytes
+         * @return the size of one frame in bytes
+         */
+        virtual unsigned int getEventSize() = 0;
+
+        /**
+         * @brief get the nominal number of frames between buffer updates
+         * @return the nominal number of frames between buffer updates
+         */
+        virtual unsigned int getUpdatePeriod() = 0;
 
     protected:
         float m_ticks_per_frame;

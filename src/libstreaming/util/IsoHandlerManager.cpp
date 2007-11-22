@@ -326,6 +326,10 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 
         unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
         if(irq_interval <= 0) irq_interval=1;
+        // FIXME: test
+        irq_interval=1;
+        #warning Using fixed irq_interval
+
 #else
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
         // block = PAGE_SIZE. Setting the max_packet_size enables control over the IRQ

@@ -38,149 +38,28 @@ StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
     : IsoStream((type==ePT_Receive ? IsoStream::eST_Receive : IsoStream::eST_Transmit), port)
     , m_processor_type ( type )
     , m_state( ePS_Created )
+    , m_next_state( ePS_Invalid )
+    , m_cycle_to_switch_state( 0 )
     , m_xruns( 0 )
-    , m_manager(NULL)
-    , m_running(false)
-    , m_disabled(true)
-    , m_is_disabled(true)
-    , m_cycle_to_enable_at(0)
-    , m_ticks_per_frame(0)
-    , m_last_cycle(0)
-    , m_sync_delay(0)
+    , m_manager( NULL )
+    , m_ticks_per_frame( 0 )
+    , m_last_cycle( 0 )
+    , m_sync_delay( 0 )
+    , m_last_timestamp(0)
+    , m_last_timestamp2(0)
+    , m_dropped(0)
 {
     // create the timestamped buffer and register ourselves as its client
     m_data_buffer=new Util::TimestampedBuffer(this);
-
 }
 
 StreamProcessor::~StreamProcessor() {
     if (m_data_buffer) delete m_data_buffer;
 }
 
-void
-StreamProcessor::setState(enum eProcessorState s) {
-    #ifdef DEBUG
-        // check the state transistion
-        debugOutput( DEBUG_LEVEL_VERBOSE, "State transition from %s to %s",
-            ePSToString(m_state), ePSToString(s) );
-    #endif
-    m_state = s;
-}
-
-void StreamProcessor::dumpInfo()
-{
-    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
-
-    IsoStream::dumpInfo();
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
-    if (m_handler)
-        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011u\n",m_handler->getCycleTimerTicks());
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %d\n", m_xruns);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Running               : %d\n", m_running);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Enabled               : %s\n", m_disabled ? "No" : "Yes");
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "   enable status        : %s\n", m_is_disabled ? "No" : "Yes");
-
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_manager->getNominalRate());
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
-        24576000.0/getSyncSource().m_data_buffer->getRate(),
-        24576000.0/m_data_buffer->getRate()
-        );
-
-    m_data_buffer->dumpInfo();
-
-    m_PeriodStat.dumpInfo();
-    m_PacketStat.dumpInfo();
-//     m_WakeupStat.dumpInfo();
-}
-
-bool StreamProcessor::init()
-{
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-    m_data_buffer->init();
-    return IsoStream::init();
-}
-
-/**
- * Resets the frame counter, the xrun counter, the ports and the iso stream.
- * @return true if reset succeeded
- */
-bool StreamProcessor::reset() {
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Resetting...\n");
-
-    // reset the event buffer, discard all content
-    if (!m_data_buffer->reset()) {
-        debugFatal("Could not reset data buffer\n");
-        return false;
-    }
-
-    resetXrunCounter();
-
-    // loop over the ports to reset them
-    if (!PortManager::resetPorts()) {
-        debugFatal("Could not reset ports\n");
-        return false;
-    }
-
-    // reset the iso stream
-    if (!IsoStream::reset()) {
-        debugFatal("Could not reset isostream\n");
-        return false;
-    }
-    return true;
-
-}
-
-bool StreamProcessor::prepareForEnable(uint64_t time_to_enable_at) {
-    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForEnable for (%p)\n",this);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011u\n",m_handler->getCycleTimerTicks());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Enable at             : %011u\n",time_to_enable_at);
-    m_data_buffer->dumpInfo();
-    return true;
-}
-
-bool StreamProcessor::prepareForDisable() {
-    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::prepareForDisable for (%p)\n",this);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011u\n",m_handler->getCycleTimerTicks());
-    m_data_buffer->dumpInfo();
-    return true;
-}
-
-bool StreamProcessor::prepare() {
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
-    if(!m_manager) {
-        debugFatal("Not attached to a manager!\n");
-        return -1;
-    }
-
-    // init the ports
-    // loop over the ports to reset them
-    PortManager::preparePorts();
-
-    // reset the iso stream
-    IsoStream::prepare();
-
-    return true;
-
-}
-
-StreamProcessor&
-StreamProcessor::getSyncSource()
-{
-    return m_manager->getSyncSource();
-};
-
-int StreamProcessor::getBufferFill() {
-//     return m_data_buffer->getFrameCounter();
-    return m_data_buffer->getBufferFill();
-}
-
 uint64_t StreamProcessor::getTimeNow() {
     return m_handler->getCycleTimerTicks();
 }
-
 
 int StreamProcessor::getMaxFrameLatency() {
     if (getType() == ePT_Receive) {
@@ -190,65 +69,23 @@ int StreamProcessor::getMaxFrameLatency() {
     }
 }
 
-bool StreamProcessor::isRunning() {
-    return m_running;
+/***********************************************
+ * Buffer management and manipulation          *
+ ***********************************************/
+int StreamProcessor::getBufferFill() {
+    return m_data_buffer->getBufferFill();
 }
 
-bool StreamProcessor::enable(uint64_t time_to_enable_at)  {
-    // FIXME: time_to_enable_at will be in 'time' not cycles
-    m_cycle_to_enable_at=time_to_enable_at;
-
-    if(!m_running) {
-            debugWarning("The StreamProcessor is not running yet, enable() might not be a good idea.\n");
-    }
-
-#ifdef DEBUG
-    uint64_t now_cycles=CYCLE_TIMER_GET_CYCLES(m_handler->getCycleTimer());
-    const int64_t max=(int64_t)(CYCLES_PER_SECOND/2);
-
-    int64_t diff=(int64_t)m_cycle_to_enable_at-(int64_t)now_cycles;
-
-    if (diff > max) {
-        diff-=TICKS_PER_SECOND;
-    } else if (diff < -max) {
-        diff+=TICKS_PER_SECOND;
-    }
-
-    if (diff<0) {
-        debugWarning("Request to enable streamprocessor %lld cycles ago (now=%llu, cy=%llu).\n",
-            diff,now_cycles,time_to_enable_at);
-    }
-#endif
-    m_data_buffer->enable();
-
-    m_disabled=false;
-    return true;
+bool
+StreamProcessor::dropFrames(unsigned int nbframes)
+{
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d)\n", nbframes);
+    return m_data_buffer->dropFrames(nbframes);
 }
 
-bool StreamProcessor::disable()  {
-    m_data_buffer->disable();
-    m_disabled=true;
-    return true;
-}
-
-float
-StreamProcessor::getTicksPerFrame() {
-    if (m_data_buffer) {
-        float rate=m_data_buffer->getRate();
-        if (fabsf(m_ticks_per_frame - rate)>(m_ticks_per_frame*0.1)) {
-            debugWarning("TimestampedBuffer rate (%10.5f) more that 10%% off nominal (%10.5f)\n",rate,m_ticks_per_frame);
-            return m_ticks_per_frame;
-        }
-//         return m_ticks_per_frame;
-        if (rate<0.0) debugError("rate < 0! (%f)\n",rate);
-        
-        return rate;
-    } else {
-        return 0.0;
-    }
-}
-
-int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
+int64_t
+StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
+{
     uint64_t time_at_period=getTimeAtPeriod();
 
     // we delay the period signal with the sync delay
@@ -259,7 +96,7 @@ int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
     // period boundary is predicted based upon earlier samples, and therefore can
     // pass before these packets are processed. Adding this extra term makes that
     // the period boundary is signalled later
-    time_at_period = addTicks(time_at_period, getSyncSource().getSyncDelay());
+    time_at_period = addTicks(time_at_period, m_manager->getSyncSource().getSyncDelay());
 
     uint64_t cycle_timer=m_handler->getCycleTimerTicks();
 
@@ -277,32 +114,15 @@ int64_t StreamProcessor::getTimeUntilNextPeriodSignalUsecs() {
     return (int64_t)(((float)until_next) / TICKS_PER_USEC);
 }
 
-uint64_t StreamProcessor::getTimeAtPeriodUsecs() {
+uint64_t
+StreamProcessor::getTimeAtPeriodUsecs()
+{
     return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
 }
 
-bool StreamProcessor::dropFrames(unsigned int nbframes) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d)\n", nbframes);
-    return m_data_buffer->dropFrames(nbframes);
-}
-
-/**
- * Resets the xrun counter, in a atomic way. This
- * is thread safe.
- */
-void StreamProcessor::resetXrunCounter() {
-    ZERO_ATOMIC((SInt32 *)&m_xruns);
-}
-
-void StreamProcessor::setVerboseLevel(int l) {
-    setDebugLevel(l);
-    IsoStream::setVerboseLevel(l);
-    PortManager::setVerboseLevel(l);
-    m_data_buffer->setVerboseLevel(l);
-}
-
 uint64_t
-StreamProcessor::getTimeAtPeriod() {
+StreamProcessor::getTimeAtPeriod() 
+{
     if (getType() == ePT_Receive) {
         ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_manager->getPeriodSize());
     
@@ -332,31 +152,848 @@ StreamProcessor::getTimeAtPeriod() {
     }
 }
 
+float
+StreamProcessor::getTicksPerFrame()
+{
+    assert(m_data_buffer != NULL);
+    return m_data_buffer->getRate();
+}
+
 bool
-StreamProcessor::canClientTransferFrames(unsigned int nbframes) {
+StreamProcessor::canClientTransferFrames(unsigned int nbframes)
+{
+    bool can_transfer;
+    unsigned int fc = m_data_buffer->getFrameCounter();
     if (getType() == ePT_Receive) {
-        return m_data_buffer->getFrameCounter() >= (int) nbframes;
+        can_transfer = fc >= (int) nbframes;
     } else {
-        bool can_transfer;
         // there has to be enough space to put the frames in
-        can_transfer = m_data_buffer->getBufferSize() - m_data_buffer->getFrameCounter() > nbframes;
+        can_transfer = m_data_buffer->getBufferSize() - fc > nbframes;
         // or the buffer is transparent
         can_transfer |= m_data_buffer->isTransparent();
-        return can_transfer;
+    }
+    
+    #ifdef DEBUG
+    if (!can_transfer) {
+        debugWarning("(%p, %s) cannot transfer since fc == %u, nbframes == %u\n", 
+            this, ePTToString(getType()), fc, nbframes);
+    }
+    #endif
+    
+    return can_transfer;
+}
+
+/***********************************************
+ * I/O API                                     *
+ ***********************************************/
+
+// Packet transfer API
+enum raw1394_iso_disposition
+StreamProcessor::putPacket(unsigned char *data, unsigned int length,
+                           unsigned char channel, unsigned char tag, unsigned char sy,
+                           unsigned int cycle, unsigned int dropped) {
+
+    int dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+    if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
+    else m_dropped += dropped_cycles;
+    if (dropped_cycles > 0) debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
+    m_last_cycle = cycle;
+
+    // bypass based upon state
+    if (m_state == ePS_Invalid) {
+        debugError("Should not have state %s\n", ePSToString(m_state) );
+        return RAW1394_ISO_ERROR;
+    }
+    if (m_state == ePS_Created) {
+        return RAW1394_ISO_DEFER;
+    }
+
+    // normal processing
+    enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
+
+    // store the previous timestamp
+    m_last_timestamp2 = m_last_timestamp;
+
+    // NOTE: synchronized switching is restricted to a 0.5 sec span (4000 cycles)
+    //       it happens on the first 'good' cycle for the wait condition
+    //       or on the first received cycle that is received afterwards (might be a problem)
+
+    // check whether we are waiting for a stream to be disabled
+    if(m_state == ePS_WaitingForStreamDisable) {
+        // we then check whether we have to switch on this cycle
+        if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning\n");
+            m_next_state = ePS_DryRunning;
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+        } else {
+            // not time to disable yet
+        }
+        // the received data can be discarded while waiting for the stream
+        // to be disabled
+        return RAW1394_ISO_OK;
+    }
+
+    // check whether we are waiting for a stream to be enabled
+    else if(m_state == ePS_WaitingForStreamEnable) {
+        // we then check whether we have to switch on this cycle
+        if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to Running\n");
+            m_next_state = ePS_Running;
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+        } else {
+            // not time to enable yet
+        }
+        // we are dryRunning hence data should be processed in any case
+    }
+
+    // check the packet header
+    if (processPacketHeader(data, length, channel, tag, sy, cycle, dropped_cycles)) {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "RECV: CY=%04u TS=%011llu\n",
+                cycle, m_last_timestamp);
+        // update some accounting
+        m_last_good_cycle = cycle;
+        m_last_dropped = dropped_cycles;
+
+        // check whether we are waiting for a stream to startup
+        // this requires that the packet is good
+        if(m_state == ePS_WaitingForStream) {
+            // since we have a packet with an OK header,
+            // we can indicate that the stream started up
+
+            // we then check whether we have to switch on this cycle
+            if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning due to good packet\n");
+                // hence go to the dryRunning state
+                m_next_state = ePS_DryRunning;
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    return RAW1394_ISO_ERROR;
+                }
+            } else {
+                // not time (yet) to switch state
+            }
+            // in both cases we don't want to process the data
+            return RAW1394_ISO_OK;
+        }
+
+        // check whether a state change has been requested
+        // note that only the wait state changes are synchronized with the cycles
+        else if(m_state != m_next_state) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
+                                             ePSToString(m_state), ePSToString(m_next_state));
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+        }
+
+        // handle dropped cycles
+        if(dropped_cycles) {
+            // they represent a discontinuity in the timestamps, and hence are
+            // to be dealt with
+            debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
+            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
+            // we don't want this sample to be written
+            return RAW1394_ISO_OK;
+        }
+
+        // for all states that reach this we are allowed to
+        // do protocol specific data reception
+        bool ok = processPacketData(data, length, channel, tag, sy, cycle, dropped_cycles);
+
+        // if an xrun occured, switch to the dryRunning state and
+        // allow for the xrun to be picked up
+        if (!ok) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning due to xrun\n");
+            m_next_state = ePS_DryRunning;
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+            return RAW1394_ISO_DEFER;
+        }
+    } else {
+        // apparently we don't have to do anything when the packets are not valid
+    }
+    return retval;
+}
+
+// Frame Transfer API
+bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.getFrames(%d, %11llu)", nbframes, ts);
+    assert( getType() == ePT_Receive );
+    if(isDryRunning()) return getFramesDry(nbframes, ts);
+    else return getFramesWet(nbframes, ts);
+}
+
+bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
+// FIXME: this should be done somewhere else
+#ifdef DEBUG
+    uint64_t ts_head;
+    signed int fc;
+    int32_t lag_ticks;
+    float lag_frames;
+
+    // in order to sync up multiple received streams, we should 
+    // use the ts parameter. It specifies the time of the block's 
+    // first sample.
+    
+    ffado_timestamp_t ts_head_tmp;
+    m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc);
+    ts_head=(uint64_t)ts_head_tmp;
+    lag_ticks=diffTicks(ts, ts_head);
+    float rate=m_data_buffer->getRate();
+    
+    assert(rate!=0.0);
+    
+    lag_frames=(((float)lag_ticks)/rate);
+    
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): drifts %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+                 this, lag_ticks, lag_frames,rate, ts, ts_head, fc);
+
+    if (lag_frames>=1.0) {
+        // the stream lags
+        debugWarning( "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+                      this, lag_ticks, lag_frames,rate, ts, ts_head, fc);
+    } else if (lag_frames<=-1.0) {
+        // the stream leads
+        debugWarning( "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+                      this, lag_ticks, lag_frames,rate, ts, ts_head, fc);
+    }
+#endif
+    // ask the buffer to process nbframes of frames
+    // using it's registered client's processReadBlock(),
+    // which should be ours
+    m_data_buffer->blockProcessReadFrames(nbframes);
+    return true;
+}
+
+bool StreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts) {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): dry run %d frames (@ ts=%lld)\n",
+                 this, nbframes, ts);
+
+    // dry run on this side means that we put silence in all enabled ports
+    // since there is do data put into the ringbuffer in the dry-running state
+    return provideSilenceBlock(nbframes, 0);
+}
+
+
+/***********************************************
+ * State related API                           *
+ ***********************************************/
+bool StreamProcessor::init()
+{
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "init...\n");
+
+    // initialization can be done without requesting it
+    // from the packet loop
+    m_next_state = ePS_Created;
+    return true;
+}
+
+bool StreamProcessor::prepare()
+{
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "prepare...\n");
+    if(!m_manager) {
+        debugFatal("Not attached to a manager!\n");
+        return false;
+    }
+
+    if (!prepareChild()) {
+        debugFatal("Could not prepare child\n");
+        return false;
+    }
+
+    // initialization can be done without requesting it
+    // from the packet loop
+    m_next_state = ePS_Stopped;
+    return updateState();
+}
+
+bool StreamProcessor::stop()
+{
+    uint64_t time_to_stop_at = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+    int cnt;
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stop...\n");
+    switch (m_state) {
+        case ePS_Stopped: return true;
+        case ePS_DryRunning:
+            return stopDryRunning(-1);
+        case ePS_Running:
+            return stopRunning(-1) && 
+                   stopDryRunning(-1);
+        default:
+            debugError("Bad state: %s\n", ePSToString(m_state));
+            return false;
     }
 }
 
+bool StreamProcessor::scheduleStateTransition(enum eProcessorState state, uint64_t time_instant)
+{
+    // first set the time, since in the packet loop we first check m_state == m_next_state before
+    // using the time
+    m_cycle_to_switch_state = TICKS_TO_CYCLES(time_instant);
+    m_next_state = state;
+    return true;
+}
+
+bool StreamProcessor::scheduleAndWaitForStateTransition(enum eProcessorState state, 
+                                                        uint64_t time_instant, 
+                                                        enum eProcessorState wait_state)
+{
+    int cnt=200; // 2 seconds, i.e. 2 cycles
+    if(!scheduleStateTransition(state, time_instant)) {
+        debugError("Could not schedule state transistion to %s\n", ePSToString(state));
+        return false;
+    }
+    while (m_state != wait_state && cnt) {
+        usleep(10000);
+        cnt++;
+    }
+    if(cnt==0) {
+        debugError("Timeout entering Stopped state\n");
+        return false;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " entered state %s\n", ePSToString(wait_state));
+    return true;
+}
+
+bool StreamProcessor::startDryRunning(int64_t t) {
+    uint64_t tx;
+    if (t < 0) {
+        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+    } else {
+        tx = t;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::startDryRunning for (%p)\n",this);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    if (m_state == ePS_Stopped) {
+        return scheduleAndWaitForStateTransition(ePS_WaitingForStream, tx, ePS_DryRunning);
+    } else if (m_state == ePS_Running) {
+        return scheduleAndWaitForStateTransition(ePS_WaitingForStreamDisable, tx, ePS_DryRunning);
+    } else {
+        debugError("Cannot switch to ePS_DryRunning from %s\n", ePSToString(m_state));
+        return false;
+    }
+}
+
+bool StreamProcessor::startRunning(int64_t t) {
+    uint64_t tx;
+    if (t < 0) {
+        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+    } else {
+        tx = t;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::startRunning for (%p)\n",this);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    return scheduleAndWaitForStateTransition(ePS_WaitingForStreamEnable, tx, ePS_Running);
+}
+
+bool StreamProcessor::stopDryRunning(int64_t t) {
+    uint64_t tx;
+    if (t < 0) {
+        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+    } else {
+        tx = t;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::stopDryRunning for (%p)\n",this);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    return scheduleAndWaitForStateTransition(ePS_Stopped, tx, ePS_Stopped);
+}
+
+bool StreamProcessor::stopRunning(int64_t t) {
+    uint64_t tx;
+    if (t < 0) {
+        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+    } else {
+        tx = t;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE," StreamProcessor::stopRunning for (%p)\n",this);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    return scheduleAndWaitForStateTransition(ePS_WaitingForStreamDisable, tx, ePS_DryRunning);
+}
+
+// internal state API
+
+/**
+ * @brief Enter the ePS_Stopped state
+ * @return true if successful, false if not
+ *
+ * @pre none
+ *
+ * @post the buffer and the isostream are ready for use.
+ * @post all dynamic structures have been allocated successfully
+ * @post the buffer is transparent and empty, and all parameters are set
+ *       to the correct initial/nominal values.
+ *
+ */
+bool
+StreamProcessor::doStop()
+{
+    float ticks_per_frame;
+    unsigned int ringbuffer_size_frames;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
+    bool result = true;
+
+    switch(m_state) {
+        case ePS_Created:
+            assert(m_data_buffer);
+            // object just created
+            result = m_data_buffer->init();
+            
+            // prepare the framerate estimate
+            ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
+            m_ticks_per_frame = ticks_per_frame;
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n", ticks_per_frame);
+        
+            // initialize internal buffer
+            ringbuffer_size_frames = m_manager->getNbBuffers() * m_manager->getPeriodSize();
+            result &= m_data_buffer->setBufferSize(ringbuffer_size_frames * 2);
+
+            result &= m_data_buffer->setEventSize( getEventSize() );
+            result &= m_data_buffer->setEventsPerFrame( getEventsPerFrame() );
+            result &= m_data_buffer->setUpdatePeriod( getUpdatePeriod() );
+
+            result &= m_data_buffer->setNominalRate(ticks_per_frame);
+            result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
+            result &= m_data_buffer->prepare(); // FIXME: the name
+
+            // set the parameters of ports we can:
+            // we want the audio ports to be period buffered,
+            // and the midi ports to be packet buffered
+            for ( PortVectorIterator it = m_Ports.begin();
+                it != m_Ports.end();
+                ++it )
+            {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
+                if(!(*it)->setBufferSize(m_manager->getPeriodSize())) {
+                    debugFatal("Could not set buffer size to %d\n",m_manager->getPeriodSize());
+                    return false;
+                }
+                switch ((*it)->getPortType()) {
+                    case Port::E_Audio:
+                        if(!(*it)->setSignalType(Port::E_PeriodSignalled)) {
+                            debugFatal("Could not set signal type to PeriodSignalling");
+                            return false;
+                        }
+                        // buffertype and datatype are dependant on the API
+                        debugWarning("---------------- ! Doing hardcoded dummy setup ! --------------\n");
+                        // buffertype and datatype are dependant on the API
+                        if(!(*it)->setBufferType(Port::E_PointerBuffer)) {
+                            debugFatal("Could not set buffer type");
+                            return false;
+                        }
+                        if(!(*it)->useExternalBuffer(true)) {
+                            debugFatal("Could not set external buffer usage");
+                            return false;
+                        }
+                        if(!(*it)->setDataType(Port::E_Float)) {
+                            debugFatal("Could not set data type");
+                            return false;
+                        }
+                        break;
+                    case Port::E_Midi:
+                        if(!(*it)->setSignalType(Port::E_PacketSignalled)) {
+                            debugFatal("Could not set signal type to PacketSignalling");
+                            return false;
+                        }
+                        // buffertype and datatype are dependant on the API
+                        // buffertype and datatype are dependant on the API
+                        debugWarning("---------------- ! Doing hardcoded test setup ! --------------\n");
+                        // buffertype and datatype are dependant on the API
+                        if(!(*it)->setBufferType(Port::E_RingBuffer)) {
+                            debugFatal("Could not set buffer type");
+                            return false;
+                        }
+                        if(!(*it)->setDataType(Port::E_MidiEvent)) {
+                            debugFatal("Could not set data type");
+                            return false;
+                        }
+                        break;
+                    default:
+                        debugWarning("Unsupported port type specified\n");
+                        break;
+                }
+            }
+            // the API specific settings of the ports should already be set,
+            // as this is called from the processorManager->prepare()
+            // so we can init the ports
+            result &= PortManager::initPorts();
+
+            break;
+        case ePS_DryRunning:
+            // what to do here?
+            break;
+        default:
+            debugError("Entry from invalid state: %s\n", ePSToString(m_state));
+            return false;
+    }
+
+    result &= m_data_buffer->reset(); // FIXME: don't like the reset() name
+
+    // make the buffer transparent
+    m_data_buffer->setTransparent(true);
+
+    // reset all ports
+    result &= PortManager::preparePorts();
+
+    m_state = ePS_Stopped;
+    return result;
+}
+
+/**
+ * @brief Enter the ePS_WaitingForStream state
+ * @return true if successful, false if not
+ *
+ * @pre all dynamic data structures are allocated successfully
+ *
+ * @post
+ *
+ */
+bool
+StreamProcessor::doWaitForRunningStream()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
+    switch(m_state) {
+        case ePS_Stopped:
+            // we have to start waiting for an incoming stream
+            // this basically means nothing, the state change will
+            // be picked up by the packet iterator
+            break;
+        default:
+            debugError("Entry from invalid state: %s\n", ePSToString(m_state));
+            return false;
+    }
+    m_state = ePS_WaitingForStream;
+    return true;
+}
+
+/**
+ * @brief Enter the ePS_DryRunning state
+ * @return true if successful, false if not
+ *
+ * @pre
+ *
+ * @post
+ *
+ */
+bool
+StreamProcessor::doDryRunning()
+{
+    bool result = true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
+    switch(m_state) {
+        case ePS_WaitingForStream:
+            // a running stream has been detected
+            debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started dry-running at cycle %d\n", this, m_last_cycle);
+            if (getType() == ePT_Receive) {
+                m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
+            } else {
+                // FIXME
+                debugError("Implement\n");
+            }
+            break;
+        case ePS_WaitingForStreamDisable:
+            result &= m_data_buffer->reset(); // FIXME: don't like the reset() name
+            m_data_buffer->setTransparent(true);
+            break;
+        default:
+            debugError("Entry from invalid state: %s\n", ePSToString(m_state));
+            return false;
+    }
+    m_state = ePS_DryRunning;
+    return result;
+}
+
+/**
+ * @brief Enter the ePS_WaitingForStreamEnable state
+ * @return true if successful, false if not
+ *
+ * @pre
+ *
+ * @post
+ *
+ */
+bool
+StreamProcessor::doWaitForStreamEnable()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
+    switch(m_state) {
+        case ePS_DryRunning:
+            // we have to start waiting for an incoming stream
+            // this basically means nothing, the state change will
+            // be picked up by the packet iterator
+            break;
+        default:
+            debugError("Entry from invalid state: %s\n", ePSToString(m_state));
+            return false;
+    }
+    m_state = ePS_WaitingForStreamEnable;
+    return true;
+}
+
+/**
+ * @brief Enter the ePS_Running state
+ * @return true if successful, false if not
+ *
+ * @pre
+ *
+ * @post
+ *
+ */
+bool
+StreamProcessor::doRunning()
+{
+    bool result = true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
+    switch(m_state) {
+        case ePS_WaitingForStreamEnable:
+            // a running stream has been detected
+            debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running at cycle %d\n", 
+                                             this, m_last_cycle);
+            if (getType() == ePT_Receive) {
+                m_data_buffer->setTransparent(false);
+            } else {
+                // FIXME
+                debugError("Implement\n");
+            }
+            break;
+        default:
+            debugError("Entry from invalid state: %s\n", ePSToString(m_state));
+            return false;
+    }
+    m_state = ePS_Running;
+    return result;
+}
+
+/**
+ * @brief Enter the ePS_WaitingForStreamDisable state
+ * @return true if successful, false if not
+ *
+ * @pre
+ *
+ * @post
+ *
+ */
+bool
+StreamProcessor::doWaitForStreamDisable()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
+    switch(m_state) {
+        case ePS_Running:
+            // the thread will do the transition
+            break;
+        default:
+            debugError("Entry from invalid state: %s\n", ePSToString(m_state));
+            return false;
+    }
+    m_state = ePS_WaitingForStreamDisable;
+    return true;
+}
+
+/**
+ * @brief Updates the state machine and calls the necessary transition functions
+ * @return true if successful, false if not
+ */
+bool StreamProcessor::updateState() {
+    bool result = false;
+    // copy the current state locally since it could change value,
+    // and that's something we don't want to happen inbetween tests
+    // if m_next_state changes during this routine, we know for sure
+    // that the previous state change was at least attempted correctly.
+    enum eProcessorState next_state = m_next_state;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Do state transition: %s => %s\n",
+        ePSToString(m_state), ePSToString(next_state));
+
+    if (m_state == next_state) {
+        debugWarning("ignoring identity state update from/to %s\n", ePSToString(m_state) );
+        return true;
+    }
+
+    // after creation, only initialization is allowed
+    if (m_state == ePS_Created) {
+        if(next_state != ePS_Stopped) {
+            goto updateState_exit_with_error;
+        }
+        // do init here 
+        result = doStop();
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // after initialization, only WaitingForRunningStream is allowed
+    if (m_state == ePS_Stopped) {
+        if(next_state != ePS_WaitingForStream) {
+            goto updateState_exit_with_error;
+        }
+        result = doWaitForRunningStream();
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // after WaitingForStream, only ePS_DryRunning is allowed
+    // this means that the stream started running
+    if (m_state == ePS_WaitingForStream) {
+        if(next_state != ePS_DryRunning) {
+            goto updateState_exit_with_error;
+        }
+        result = doDryRunning();
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // from ePS_DryRunning we can go to:
+    //   - ePS_Stopped if something went wrong during DryRunning
+    //   - ePS_WaitingForStreamEnable if there is a requested to enable
+    if (m_state == ePS_DryRunning) {
+        if((next_state != ePS_Stopped) &&
+           (next_state != ePS_WaitingForStreamEnable)) {
+            goto updateState_exit_with_error;
+        }
+        if (next_state == ePS_Stopped) {
+            result = doStop();
+        } else {
+            result = doWaitForStreamEnable();
+        }
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // from ePS_WaitingForStreamEnable we can go to:
+    //   - ePS_DryRunning if something went wrong while waiting
+    //   - ePS_Running if the stream enabled correctly
+    if (m_state == ePS_WaitingForStreamEnable) {
+        if((next_state != ePS_DryRunning) &&
+           (next_state != ePS_Running)) {
+            goto updateState_exit_with_error;
+        }
+        if (next_state == ePS_Stopped) {
+            result = doDryRunning();
+        } else {
+            result = doRunning();
+        }
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // from ePS_Running we can only start waiting for a disabled stream
+    if (m_state == ePS_Running) {
+        if(next_state != ePS_WaitingForStreamDisable) {
+            goto updateState_exit_with_error;
+        }
+        result = doWaitForStreamDisable();
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // from ePS_WaitingForStreamDisable we can go to DryRunning
+    if (m_state == ePS_WaitingForStreamDisable) {
+        if(next_state != ePS_DryRunning) {
+            goto updateState_exit_with_error;
+        }
+        result = doDryRunning();
+        if (result) return true;
+        else goto updateState_exit_change_failed;
+    }
+
+    // if we arrive here there is an error
+updateState_exit_with_error:
+    debugError("Invalid state transition: %s => %s\n",
+        ePSToString(m_state), ePSToString(next_state));
+    return false;
+updateState_exit_change_failed:
+    debugError("State transition failed: %s => %s\n",
+        ePSToString(m_state), ePSToString(next_state));
+    return false;
+}
+
+
+/**
+ * @brief convert a eProcessorState to a string
+ * @param s the state
+ * @return a char * describing the state
+ */
 const char *
 StreamProcessor::ePSToString(enum eProcessorState s) {
     switch (s) {
+        case ePS_Invalid: return "ePS_Invalid";
         case ePS_Created: return "ePS_Created";
-        case ePS_Initialized: return "ePS_Initialized";
-        case ePS_WaitingForRunningStream: return "ePS_WaitingForRunningStream";
+        case ePS_Stopped: return "ePS_Stopped";
+        case ePS_WaitingForStream: return "ePS_WaitingForStream";
         case ePS_DryRunning: return "ePS_DryRunning";
-        case ePS_WaitingForEnabledStream: return "ePS_WaitingForEnabledStream";
-        case ePS_StreamEnabled: return "ePS_StreamEnabled";
-        case ePS_WaitingForDisabledStream: return "ePS_WaitingForDisabledStream";
+        case ePS_WaitingForStreamEnable: return "ePS_WaitingForStreamEnable";
+        case ePS_Running: return "ePS_Running";
+        case ePS_WaitingForStreamDisable: return "ePS_WaitingForStreamDisable";
+        default: return "error: unknown state";
     }
+}
+
+/**
+ * @brief convert a eProcessorType to a string
+ * @param t the type
+ * @return a char * describing the state
+ */
+const char *
+StreamProcessor::ePTToString(enum eProcessorType t) {
+    switch (t) {
+        case ePT_Receive: return "Receive";
+        case ePT_Transmit: return "Transmit";
+        default: return "error: unknown type";
+    }
+}
+
+/***********************************************
+ * Debug                                       *
+ ***********************************************/
+void
+StreamProcessor::dumpInfo()
+{
+    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
+
+    IsoStream::dumpInfo();
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
+    if (m_handler)
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011u\n",m_handler->getCycleTimerTicks());
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %d\n", m_xruns);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", ePSToString(m_state));
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "   Next state           : %s\n", ePSToString(m_next_state));
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "    transition at       : %u\n", m_cycle_to_switch_state);
+    
+
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_manager->getNominalRate());
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
+        24576000.0/m_manager->getSyncSource().m_data_buffer->getRate(),
+        24576000.0/m_data_buffer->getRate()
+        );
+
+    m_data_buffer->dumpInfo();
+
+    m_PeriodStat.dumpInfo();
+    m_PacketStat.dumpInfo();
+//     m_WakeupStat.dumpInfo();
+}
+
+void
+StreamProcessor::setVerboseLevel(int l) {
+    setDebugLevel(l);
+    IsoStream::setVerboseLevel(l);
+    PortManager::setVerboseLevel(l);
+    m_data_buffer->setVerboseLevel(l);
 }
 
 } // end of namespace

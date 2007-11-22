@@ -110,24 +110,6 @@ bool Port::reset() {
     return true;
 };
 
-void Port::show() {
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Name          : %s\n", m_Name.c_str());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Signal Type   : %d\n", m_SignalType);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Type   : %d\n", m_BufferType);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Enabled?      : %d\n", m_disabled);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"State?        : %d\n", m_State);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Size   : %d\n", m_buffersize);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Event Size    : %d\n", m_eventsize);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Data Type     : %d\n", m_DataType);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Port Type     : %d\n", m_PortType);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Direction     : %d\n", m_Direction);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Rate Control? : %d\n", m_do_ratecontrol);
-}
-
-void Port::setVerboseLevel(int l) {
-    setDebugLevel(l);
-}
-
 bool Port::setName(std::string name) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting name to %s for port %s\n",name.c_str(),m_Name.c_str());
 
@@ -135,9 +117,7 @@ bool Port::setName(std::string name) {
         debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
-
     m_Name=name;
-
     return true;
 }
 
@@ -147,10 +127,8 @@ bool Port::setBufferSize(unsigned int newsize) {
         debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
-
     m_buffersize=newsize;
     return true;
-
 }
 
 unsigned int Port::getEventSize() {
@@ -221,15 +199,12 @@ bool Port::setSignalType(enum E_SignalType s) {
         default:
             break;
     }
-
     if(!type_is_ok) {
         debugFatal("Signalling type not supported by this type of port!\n");
         return false;
     }
-
     m_SignalType=s;
     return true;
-
 }
 
 bool Port::setBufferType(enum E_BufferType b) {
@@ -238,7 +213,6 @@ bool Port::setBufferType(enum E_BufferType b) {
         debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
-
     // do some sanity checks
     bool type_is_ok=false;
     switch (m_PortType) {
@@ -253,19 +227,15 @@ bool Port::setBufferType(enum E_BufferType b) {
         default:
             break;
     }
-
     if(!type_is_ok) {
         debugFatal("Buffer type not supported by this type of port!\n");
         return false;
     }
-
     m_BufferType=b;
     return true;
-
 }
 
 bool Port::useExternalBuffer(bool b) {
-
     // If called on an initialised stream but the request isn't for a change silently
     // allow it (relied on by C API as used by jack backend driver)
     if (m_State==E_Initialized && m_use_external_buffer==b)
@@ -277,7 +247,6 @@ bool Port::useExternalBuffer(bool b) {
         debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
-
     m_use_external_buffer=b;
     return true;
 }
@@ -585,6 +554,24 @@ void Port::freeInternalRingBuffer() {
         ffado_ringbuffer_free(m_ringbuffer);
         m_ringbuffer=0;
     }
+}
+
+void Port::show() {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Name          : %s\n", m_Name.c_str());
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Signal Type   : %d\n", m_SignalType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Type   : %d\n", m_BufferType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Enabled?      : %d\n", m_disabled);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"State?        : %d\n", m_State);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Size   : %d\n", m_buffersize);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Event Size    : %d\n", m_eventsize);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Data Type     : %d\n", m_DataType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Port Type     : %d\n", m_PortType);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Direction     : %d\n", m_Direction);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Rate Control? : %d\n", m_do_ratecontrol);
+}
+
+void Port::setVerboseLevel(int l) {
+    setDebugLevel(l);
 }
 
 }

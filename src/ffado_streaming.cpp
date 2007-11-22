@@ -339,7 +339,7 @@ int ffado_streaming_transfer_capture_buffers(ffado_device_t *dev) {
 }
 
 int ffado_streaming_transfer_playback_buffers(ffado_device_t *dev) {
-    return dev->processorManager->transfer(StreamProcessor::ePT_Receive);
+    return dev->processorManager->transfer(StreamProcessor::ePT_Transmit);
 }
 
 int ffado_streaming_transfer_buffers(ffado_device_t *dev) {

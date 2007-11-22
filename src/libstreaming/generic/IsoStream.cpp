@@ -54,51 +54,13 @@ IsoStream::getPacket(unsigned char *data, unsigned int *length,
     *tag = 1;
     *sy = 0;
 
-
     return RAW1394_ISO_OK;
-}
-
-int IsoStream::getNodeId() {
-    if (m_handler) {
-        return m_handler->getLocalNodeId();
-    }
-    return -1;
-}
-
-
-void IsoStream::dumpInfo()
-{
-
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Address        : %p\n",this);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Stream type    : %s\n",
-            (this->getStreamType()==eST_Receive ? "Receive" : "Transmit"));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
-            m_port, m_channel);
-
 }
 
 bool IsoStream::setChannel(int c) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "setting channel for (%p) to %d\n",this, c);
-
     m_channel=c;
     return true;
-}
-
-
-bool IsoStream::reset() {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    return true;
-}
-
-bool IsoStream::prepare() {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    return true;
-}
-
-bool IsoStream::init() {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    return true;
-
 }
 
 void IsoStream::setHandler(IsoHandler *h) {
@@ -108,10 +70,16 @@ void IsoStream::setHandler(IsoHandler *h) {
 
 void IsoStream::clearHandler() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "clearing handler of isostream %p\n", this);
-
     m_handler=0;
-
 }
 
+void IsoStream::dumpInfo()
+{
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Address        : %p\n",this);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Stream type    : %s\n",
+            (this->getStreamType()==eST_Receive ? "Receive" : "Transmit"));
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n",
+            m_port, m_channel);
+}
 
 }

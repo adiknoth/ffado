@@ -146,12 +146,13 @@ float TimestampedBuffer::getRate() {
     } else if (diff < -max) {
         diff += m_wrap_at;
     }
-    
+
     float rate=((float)diff)/((float) m_update_period);
+    if (rate<0.0) debugError("rate < 0! (%f)\n",rate);
     if (fabsf(m_nominal_rate - rate)>(m_nominal_rate*0.1)) {
         debugWarning("(%p) rate (%10.5f) more that 10%% off nominal (rate=%10.5f, diff="TIMESTAMP_FORMAT_SPEC", update_period=%d)\n",
                      this, rate,m_nominal_rate,diff, m_update_period);
-        //dumpInfo();
+
         return m_nominal_rate;
     } else {
         return rate;
@@ -378,27 +379,8 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, ffado_time
     unsigned int write_size=nframes*m_event_size*m_events_per_frame;
 
     if (m_transparent) {
-//         // if the buffer is disabled, it's in a 'transparent' state, meaning
-//         // that if too much is put into the buffer, the oldest data is discarded
-//         signed int fc;
-//         ENTER_CRITICAL_SECTION;
-//         fc=m_framecounter;
-//         EXIT_CRITICAL_SECTION;
-//         
-//         signed int frames_to_ditch= nframes - (m_buffer_size - m_framecounter) + 1;
-//         if ( frames_to_ditch > 0 ) {
-//             debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "dropping %d frames\n", frames_to_ditch);
-//             dropFrames( frames_to_ditch );
-//         }
-//         // add the data payload to the ringbuffer
-//         if (ffado_ringbuffer_write(m_event_buffer,data,write_size) < write_size)
-//         {
-//             debugError("we should have freed up enough space for this\n");
-//             return false;
-//         }
-//         
-        // while disabled, we don't update the DLL, we just set the correct
-        // timestamp for the frames
+        // while disabled, we don't update the DLL, nor do we write frames
+        // we just set the correct timestamp for the frames
         setBufferTailTimestamp(ts);
     } else {
         // add the data payload to the ringbuffer
@@ -445,17 +427,18 @@ bool TimestampedBuffer::readFrames(unsigned int nframes, char *data) {
 
     unsigned int read_size=nframes*m_event_size*m_events_per_frame;
 
-    // get the data payload to the ringbuffer
-    if ((ffado_ringbuffer_read(m_event_buffer,data,read_size)) < read_size)
-    {
-//         debugWarning("readFrames buffer underrun\n");
-        return false;
+    if (m_transparent) {
+        return true; // FIXME: the data still doesn't make sense!
+    } else {
+        // get the data payload to the ringbuffer
+        if ((ffado_ringbuffer_read(m_event_buffer,data,read_size)) < read_size)
+        {
+            debugWarning("readFrames buffer underrun\n");
+            return false;
+        }
+        decrementFrameCounter(nframes);
     }
-
-    decrementFrameCounter(nframes);
-
     return true;
-
 }
 
 /**
@@ -711,7 +694,7 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
 
     EXIT_CRITICAL_SECTION;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "for (%p) to "
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "for (%p) to "
                                           TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", NTS="
                                           TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
                 this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());

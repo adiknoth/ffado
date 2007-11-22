@@ -149,6 +149,7 @@ public:
 
     // dll stuff
     bool setNominalRate(float r);
+    float getNominalRate() {return m_nominal_rate;};
     float getRate();
 
     bool setUpdatePeriod(unsigned int t);

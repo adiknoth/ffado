@@ -71,27 +71,30 @@ public:
     /**
      * Create a AMDTP receive StreamProcessor
      * @param port 1394 port
-     * @param framerate frame rate
      * @param dimension number of substreams in the ISO stream
      *                  (midi-muxed is only one stream)
      */
     AmdtpReceiveStreamProcessor(int port, int dimension);
     virtual ~AmdtpReceiveStreamProcessor() {};
 
-    enum raw1394_iso_disposition putPacket(unsigned char *data, unsigned int length,
+    bool processPacketHeader(unsigned char *data, unsigned int length,
+                  unsigned char channel, unsigned char tag, unsigned char sy,
+                  unsigned int cycle, unsigned int dropped);
+    bool processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped);
 
+    virtual bool prepareChild();
 
-    bool init();
-    bool reset();
-    bool prepare();
-
-    bool prepareForStop();
-    bool prepareForStart();
-
-    bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
-    bool getFramesDry(unsigned int nbframes, int64_t ts);
+public:
+    virtual unsigned int getEventSize() 
+                    {return 4;};
+    virtual unsigned int getMaxPacketSize() 
+                    {return 4 * (2 + m_syt_interval * m_dimension);};
+    virtual unsigned int getEventsPerFrame() 
+                    { return m_dimension; };
+    virtual unsigned int getUpdatePeriod() 
+                    {return m_syt_interval;};
 
     // We have 1 period of samples = m_period
     // this period takes m_period/m_framerate seconds of time
@@ -100,31 +103,23 @@ public:
 
     // however, if we only count the number of used packets
     // it is m_period / m_syt_interval
-    unsigned int getPacketsPerPeriod();
+    virtual unsigned int getPacketsPerPeriod();
 
-    unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);};
-
-    void dumpInfo();
 protected:
 
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
+    bool provideSilenceBlock(unsigned int nevents, unsigned int offset);
 
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
 
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
-    void updatePreparedState();
+    int provideSilenceToPort(AmdtpAudioPort *p, unsigned int offset, unsigned int nevents);
 
     int m_dimension;
     unsigned int m_syt_interval;
 
-    uint64_t m_dropped; /// FIXME:debug
-    uint64_t m_last_dropped; /// FIXME:debug
     uint64_t m_last_syt; /// FIXME:debug
     uint64_t m_last_now; /// FIXME:debug
-    int m_last_good_cycle; /// FIXME:debug
-    uint64_t m_last_timestamp; /// last timestamp (in ticks)
-    uint64_t m_last_timestamp2; /// last timestamp (in ticks)
-    uint64_t m_last_timestamp_at_period_ticks;
 };
 
 

@@ -591,7 +591,8 @@ AvDevice::addPlugToProcessor(
 
 int
 AvDevice::getStreamCount() {
-    return m_receiveProcessors.size() + m_transmitProcessors.size();
+    //return m_receiveProcessors.size() + m_transmitProcessors.size();
+    return 1;
 }
 
 Streaming::StreamProcessor *

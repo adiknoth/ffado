@@ -436,10 +436,12 @@ bool IsoRecvHandler::prepare()
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso receive handler (%p)\n",this);
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n",m_buf_packets);
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Max Packet size : %d \n",m_max_packet_size);
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n",m_Client->getChannel());
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n",m_irq_interval);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Buffers         : %d \n", m_buf_packets);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Max Packet size : %d \n", m_max_packet_size);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Channel         : %d \n", m_Client->getChannel());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Irq interval    : %d \n", m_irq_interval);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Mode            : %s \n", 
+                               (m_irq_interval > 1)?"DMA_BUFFERFILL":"PACKET_PER_BUFFER");
 
     if(m_irq_interval > 1) {
         if(raw1394_iso_recv_init(m_handle,

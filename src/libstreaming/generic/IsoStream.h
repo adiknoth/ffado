@@ -73,8 +73,6 @@ class IsoStream
         virtual unsigned int getPacketsPerPeriod() {return 1;};
         virtual unsigned int getMaxPacketSize() {return 1024;}; //FIXME: arbitrary
 
-        virtual bool init();
-
         virtual enum raw1394_iso_disposition
                 putPacket(unsigned char *data, unsigned int length,
                         unsigned char channel, unsigned char tag, unsigned char sy,
@@ -85,11 +83,6 @@ class IsoStream
                         int cycle, unsigned int dropped, unsigned int max_length);
 
         void dumpInfo();
-
-        int getNodeId();
-
-        virtual bool reset();
-        virtual bool prepare();
 
     protected:
         void setHandler( IsoHandler * h) ;

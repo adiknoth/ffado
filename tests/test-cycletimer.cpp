@@ -295,12 +295,6 @@ int main(int argc, char *argv[])
     }
 
     s->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-    if (!s->init()) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "Could not init IsoStream\n");
-        goto finish;
-    }
-
     s->setChannel(0);
 
     if(!m_isoManager->registerStream(s)) {

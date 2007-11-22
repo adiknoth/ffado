@@ -250,9 +250,6 @@ bool PortManager::preparePorts() {
             break;
         }
     }
-
-
-
     return true;
 }
 

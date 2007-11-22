@@ -61,14 +61,12 @@ public:
     bool start();
     bool stop();
 
+    bool startDryRunning();
     bool syncStartAll();
 
     // this is the setup API
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
-
-    bool enableStreamProcessors(uint64_t time_to_enable_at); /// enable registered StreamProcessors
-    bool disableStreamProcessors(); /// disable registered StreamProcessors
 
     void setPeriodSize(unsigned int period);
     void setPeriodSize(unsigned int period, unsigned int nb_buffers);
@@ -98,7 +96,6 @@ public:
     unsigned int getNominalRate() {return m_nominal_framerate;};
 
 private:
-    void resetXrunCounters();
 
     int m_delayed_usecs;
     // this stores the time at which the next transfer should occur
