@@ -54,11 +54,6 @@ AmdtpReceiveStreamProcessor::getPacketsPerPeriod()
 }
 
 bool AmdtpReceiveStreamProcessor::prepareChild() {
-
-    m_PeriodStat.setName("RCV PERIOD");
-    m_PacketStat.setName("RCV PACKET");
-    m_WakeupStat.setName("RCV WAKEUP");
-
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
 
     switch (m_manager->getNominalRate()) {
@@ -152,8 +147,12 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     // frames, meaning that we might receive
     // this packet x*syt_interval*ticks_per_frame
     // later than expected (the real receive time)
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
-        m_last_timestamp, m_handler->getWakeupInterval(), m_syt_interval, getTicksPerFrame());
+    #ifdef DEBUG
+    if(isRunning()) {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
+            m_last_timestamp, m_handler->getWakeupInterval(), m_syt_interval, getTicksPerFrame());
+    }
+    #endif
 
     if(m_data_buffer->writeFrames(nevents, (char *)(data+8), m_last_timestamp)) {
         // process all ports that should be handled on a per-packet base

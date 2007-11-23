@@ -79,73 +79,55 @@ public:
     AmdtpTransmitStreamProcessor(int port, int dimension);
     virtual ~AmdtpTransmitStreamProcessor() {};
 
-    enum raw1394_iso_disposition
-            getPacket(unsigned char *data, unsigned int *length,
-                    unsigned char *tag, unsigned char *sy,
-                    int cycle, unsigned int dropped, unsigned int max_length);
+    bool generatePacketHeader(unsigned char *data, unsigned int *length,
+                              unsigned char *tag, unsigned char *sy,
+                              int cycle, unsigned int dropped, unsigned int max_length);
+    bool generatePacketData(unsigned char *data, unsigned int *length,
+                            unsigned char *tag, unsigned char *sy,
+                            int cycle, unsigned int dropped, unsigned int max_length);
+    bool generateSilentPacketHeader(unsigned char *data, unsigned int *length,
+                                    unsigned char *tag, unsigned char *sy,
+                                    int cycle, unsigned int dropped, unsigned int max_length);
+    bool generateSilentPacketData(unsigned char *data, unsigned int *length,
+                                  unsigned char *tag, unsigned char *sy,
+                                  int cycle, unsigned int dropped, unsigned int max_length);
+    virtual bool prepareChild();
 
-    virtual unsigned int getEventsPerFrame();
-    virtual unsigned int getEventSize() {return 4;};
-    virtual unsigned int getUpdatePeriod();
-
-    bool reset();
-    bool prepareChild();
-
-    bool prepareForStop();
-    bool prepareForStart();
-
-    bool prepareForEnable(uint64_t time_to_enable_at);
-
-    bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents from the client
-    bool putFramesDry(unsigned int nbframes, int64_t ts);
-
-    // We have 1 period of samples = m_period
-    // this period takes m_period/m_framerate seconds of time
-    // during this time, 8000 packets are sent
-//     unsigned int getPacketsPerPeriod() {return (m_period*8000)/m_framerate;};
-
-    // however, if we only count the number of used packets
-    // it is m_period / m_syt_interval
+public:
+    virtual unsigned int getEventSize()
+                    {return 4;};
+    virtual unsigned int getMaxPacketSize()
+                    {return 4 * (2 + m_syt_interval * m_dimension);};
+    virtual unsigned int getEventsPerFrame()
+                    { return m_dimension; };
+    virtual unsigned int getNominalFramesPerPacket()
+                    {return m_syt_interval;};
     unsigned int getPacketsPerPeriod();
-
-    unsigned int getMaxPacketSize() {return 4 * (2 + m_syt_interval * m_dimension);};
 
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
+    bool transmitSilenceBlock(char *data, unsigned int nevents, unsigned int offset);
 
-    struct iec61883_cip m_cip_status;
-
-    int m_dimension;
-    unsigned int m_syt_interval;
-
-    int m_fdf;
-
-    bool prefill();
-
+private:
     unsigned int fillNoDataPacketHeader(struct iec61883_packet *packet, unsigned int* length);
     unsigned int fillDataPacketHeader(struct iec61883_packet *packet, unsigned int* length, uint32_t ts);
-
-
-    bool transferSilence(unsigned int size);
 
     int transmitBlock(char *data, unsigned int nevents,
                         unsigned int offset);
 
-    bool encodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
+    bool encodePacketPorts(quadlet_t *data, unsigned int nevents,
+                           unsigned int dbc);
+
     int encodePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
                                 unsigned int offset, unsigned int nevents);
-
-    int transmitSilenceBlock(char *data, unsigned int nevents,
-                        unsigned int offset);
     int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
                                 unsigned int offset, unsigned int nevents);
-    void updatePreparedState();
 
-    unsigned long m_last_timestamp;
-
+    struct iec61883_cip m_cip_status;
+    int m_dimension;
+    unsigned int m_syt_interval;
+    int m_fdf;
     unsigned int m_dbc;
-
-    unsigned int m_ringbuffer_size_frames;
 };
 
 } // end of namespace Streaming

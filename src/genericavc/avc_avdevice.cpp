@@ -421,8 +421,6 @@ AvDevice::prepare() {
         return false;
     }
 
-    int samplerate=outputPlug->getSampleRate();
-
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing receive processor...\n");
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
@@ -591,8 +589,8 @@ AvDevice::addPlugToProcessor(
 
 int
 AvDevice::getStreamCount() {
-    //return m_receiveProcessors.size() + m_transmitProcessors.size();
-    return 1;
+    return m_receiveProcessors.size() + m_transmitProcessors.size();
+    //return 1;
 }
 
 Streaming::StreamProcessor *

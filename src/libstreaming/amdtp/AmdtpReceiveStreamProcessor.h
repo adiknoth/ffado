@@ -93,23 +93,15 @@ public:
                     {return 4 * (2 + m_syt_interval * m_dimension);};
     virtual unsigned int getEventsPerFrame() 
                     { return m_dimension; };
-    virtual unsigned int getUpdatePeriod() 
+    virtual unsigned int getNominalFramesPerPacket() 
                     {return m_syt_interval;};
-
-    // We have 1 period of samples = m_period
-    // this period takes m_period/m_framerate seconds of time
-    // during this time, 8000 packets are sent
-//     unsigned int getPacketsPerPeriod() {return (m_period*8000)/m_framerate;};
-
-    // however, if we only count the number of used packets
-    // it is m_period / m_syt_interval
     virtual unsigned int getPacketsPerPeriod();
 
 protected:
-
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
     bool provideSilenceBlock(unsigned int nevents, unsigned int offset);
 
+private:
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
 
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);

@@ -34,7 +34,7 @@
 #define DO_MESSAGE_BUFFER_PRINT
 
 #ifndef DO_MESSAGE_BUFFER_PRINT
-	#warning Printing debug info without ringbuffer, not RT-safe!
+    #warning Printing debug info without ringbuffer, not RT-safe!
 #endif
 
 using namespace std;

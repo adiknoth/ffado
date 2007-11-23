@@ -265,11 +265,10 @@ bool TimestampedBuffer::init() {
  *
  * @return true if successful
  */
-bool TimestampedBuffer::reset() {
+bool TimestampedBuffer::clearBuffer() {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Clearing buffer\n");
     ffado_ringbuffer_reset(m_event_buffer);
-
     resetFrameCounter();
-
     return true;
 }
 
@@ -396,6 +395,51 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, ffado_time
 }
 
 /**
+ * @brief Preload frames into the buffer
+ *
+ * Preload \ref nframes of frames from the buffer pointed to by \ref data to the
+ * internal ringbuffer. Does not care about transparency. Keeps the buffer head or tail
+ * timestamp constant.
+ *
+ * @note not thread safe
+ *
+ * @param nframes number of frames to copy
+ * @param data pointer to the frame buffer
+ * @param keep_head_ts if true, keep the head timestamp constant. If false, keep the
+ *                     tail timestamp constant.
+ * @return true if successful
+ */
+bool TimestampedBuffer::preloadFrames(unsigned int nframes, char *data, bool keep_head_ts) {
+    unsigned int write_size = nframes * m_event_size * m_events_per_frame;
+    // add the data payload to the ringbuffer
+    size_t written = ffado_ringbuffer_write(m_event_buffer, data, write_size);
+    if (written < write_size)
+    {
+        debugWarning("ringbuffer full, request: %u, actual: %u\n", write_size, written);
+        return false;
+    }
+    
+    // make sure the head timestamp remains identical
+    signed int fc;
+    ffado_timestamp_t ts;
+
+    if (keep_head_ts) {
+        getBufferHeadTimestamp(&ts, &fc);
+    } else {
+        getBufferTailTimestamp(&ts, &fc);
+    }
+    // update frame counter
+    m_framecounter += nframes;
+    if (keep_head_ts) {
+        setBufferHeadTimestamp(ts);
+    } else {
+        setBufferTailTimestamp(ts);
+    }
+
+    return true;
+}
+
+/**
  * @brief Drop frames from the head of the buffer
  *
  * drops \ref nframes of frames from the head of internal buffer
@@ -409,7 +453,6 @@ bool TimestampedBuffer::dropFrames(unsigned int nframes) {
 
     ffado_ringbuffer_read_advance(m_event_buffer, read_size);
     decrementFrameCounter(nframes);
-
     return true;
 }
 
@@ -721,7 +764,7 @@ void TimestampedBuffer::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp) 
     }
 #endif
 
-    ffado_timestamp_t ts=new_timestamp;
+    ffado_timestamp_t ts = new_timestamp;
 
     ENTER_CRITICAL_SECTION;
 
@@ -1044,7 +1087,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
     ffado_timestamp_t diff;
     
     ENTER_CRITICAL_SECTION;
-    diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    diff = m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
     EXIT_CRITICAL_SECTION;
 
     if (diff < 0) diff += m_wrap_at;
@@ -1053,7 +1096,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
     float rate=(float)diff / (float)m_update_period;
 #endif
 
-    ffado_timestamp_t ts=new_timestamp;
+    ffado_timestamp_t ts = new_timestamp;
     ts += m_tick_offset;
 
     if (ts >= m_wrap_at) {
@@ -1122,7 +1165,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p): diff="TIMESTAMP_FORMAT_SPEC" ",
                 this, diff);
 
-    double err=diff;
+    double err = diff;
 
     debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "diff2="TIMESTAMP_FORMAT_SPEC" err=%f\n",
                     diff, err);
@@ -1207,6 +1250,7 @@ void TimestampedBuffer::dumpInfo() {
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  TimestampedBuffer (%p) info:\n",this);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter         : %d\n", m_framecounter);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Events in buffer      : %d\n", getBufferFill());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer head timestamp : "TIMESTAMP_FORMAT_SPEC"\n",ts_head);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer tail timestamp : "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_tail_timestamp);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Next tail timestamp   : "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_next_tail_timestamp);

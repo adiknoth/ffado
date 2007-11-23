@@ -282,7 +282,7 @@ bool StreamProcessorManager::syncStartAll() {
     // time to a later time instant also causes the xmit buffer fill to be
     // lower on average.
     max_of_min_delay += FFADO_SIGNAL_DELAY_TICKS;
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  %d ticks (%03us %04uc %04ut)...\n", 
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d ticks (%03us %04uc %04ut)...\n", 
         max_of_min_delay,
         (unsigned int)TICKS_TO_SECS(max_of_min_delay),
         (unsigned int)TICKS_TO_CYCLES(max_of_min_delay),
@@ -294,82 +294,103 @@ bool StreamProcessorManager::syncStartAll() {
     //debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for device(s) to indicate clock sync lock...\n");
     //sleep(2); // FIXME: be smarter here
 
-    // wait for some sort of sync
+    // make sure that we are dry-running long enough for the
+    // DLL to have a decent sync (FIXME: does the DLL get updated when dry-running)?
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for sync...\n");
-    // in order to obtain that, we wait for the first periods to be received.
     int nb_sync_runs=20;
     int64_t time_till_next_period;
     while(nb_sync_runs--) { // or while not sync-ed?
+        // check if we were waked up too soon
         time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
-        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
         if(time_till_next_period > 0) {
             // wait for the period
             usleep(time_till_next_period);
         }
     }
 
-    // figure out where we are now
-    uint64_t time_of_transfer = m_SyncSource->getTimeAtPeriod();
-    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu (%03us %04uc %04ut)...\n", 
-        time_of_transfer,
-        (unsigned int)TICKS_TO_SECS(time_of_transfer),
-        (unsigned int)TICKS_TO_CYCLES(time_of_transfer),
-        (unsigned int)TICKS_TO_OFFSET(time_of_transfer));
-
-    // start wet-running in 200 cycles
-    // this is the timeframe in which the remaining code should be ready
-    time_of_transfer = addTicks(time_of_transfer, 200*TICKS_PER_CYCLE);
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  => start at TS=%011llu (%03us %04uc %04ut)...\n", 
-        time_of_transfer,
-        (unsigned int)TICKS_TO_SECS(time_of_transfer),
-        (unsigned int)TICKS_TO_CYCLES(time_of_transfer),
-        (unsigned int)TICKS_TO_OFFSET(time_of_transfer));
-    // we now should have decent sync info
-    // the buffers of the receive streams should be (approx) empty
-    // the buffers of the xmit streams should be full
-    
-    // at this point the buffer head timestamp of the transmit buffers can be
-    // set properly since we know the sync source's timestamp of the last
-    // buffer transfer. we also know the rate.
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, " propagate sync info...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Propagate sync info...\n");
     // FIXME: in the SPM it would be nice to have system time instead of
     //        1394 time
-//     float rate=m_SyncSource->getTicksPerFrame();
-//     int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers*m_period))*rate);
-//     // the data at the front of the buffer is intended to be transmitted
-//     // nb_periods*period_size after the last received period
-//     int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
 
-//     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-//             it != m_TransmitProcessors.end();
-//             ++it ) {
-//         // FIXME: encapsulate
-//         (*it)->m_data_buffer->setBufferHeadTimestamp(m_time_of_transfer);
-//         //(*it)->m_data_buffer->setNominalRate(rate); //CHECK!!!
-//     }
-    
-    dumpInfo();
+    // we now should have decent sync info on the sync source
+    // determine a point in time where the system should start
+    // figure out where we are now
+    uint64_t time_of_first_sample = m_SyncSource->getTimeAtPeriod();
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu (%03us %04uc %04ut)...\n", 
+        time_of_first_sample,
+        (unsigned int)TICKS_TO_SECS(time_of_first_sample),
+        (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
+        (unsigned int)TICKS_TO_OFFSET(time_of_first_sample));
+
+    #define CYCLES_FOR_STARTUP 200
+    // start wet-running in CYCLES_FOR_STARTUP cycles
+    // this is the time window we have to setup all SP's such that they 
+    // can start wet-running correctly.
+    time_of_first_sample = addTicks(time_of_first_sample,
+                                    CYCLES_FOR_STARTUP * TICKS_PER_CYCLE);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  => first sample at TS=%011llu (%03us %04uc %04ut)...\n", 
+        time_of_first_sample,
+        (unsigned int)TICKS_TO_SECS(time_of_first_sample),
+        (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
+        (unsigned int)TICKS_TO_OFFSET(time_of_first_sample));
+
+    // we should start wet-running the transmit SP's some cycles in advance
+    // such that we know it is wet-running when it should output its first sample
+    #define PRESTART_CYCLES_FOR_XMIT 20
+    uint64_t time_to_start_xmit = substractTicks(time_of_first_sample, 
+                                                 PRESTART_CYCLES_FOR_XMIT * TICKS_PER_CYCLE);
+
+    #define PRESTART_CYCLES_FOR_RECV 0
+    uint64_t time_to_start_recv = substractTicks(time_of_first_sample,
+                                                 PRESTART_CYCLES_FOR_RECV * TICKS_PER_CYCLE);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  => xmit starts at  TS=%011llu (%03us %04uc %04ut)...\n", 
+        time_to_start_xmit,
+        (unsigned int)TICKS_TO_SECS(time_to_start_xmit),
+        (unsigned int)TICKS_TO_CYCLES(time_to_start_xmit),
+        (unsigned int)TICKS_TO_OFFSET(time_to_start_xmit));
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  => recv starts at  TS=%011llu (%03us %04uc %04ut)...\n", 
+        time_to_start_recv,
+        (unsigned int)TICKS_TO_SECS(time_to_start_recv),
+        (unsigned int)TICKS_TO_CYCLES(time_to_start_recv),
+        (unsigned int)TICKS_TO_OFFSET(time_to_start_recv));
+
+    // at this point the buffer head timestamp of the transmit buffers can be set
+    // this is the presentation time of the first sample in the buffer
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+          it != m_TransmitProcessors.end();
+          ++it ) {
+        (*it)->setBufferHeadTimestamp(time_of_first_sample);
+    }
 
     // STEP X: switch SP's over to the running state
-    uint64_t time_to_start = addTicks(time_of_transfer,
-                                      m_SyncSource->getTicksPerFrame() * getPeriodSize());
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-            it != m_ReceiveProcessors.end();
-            ++it ) {
-        if(!(*it)->startRunning(time_to_start)) {
-            debugError("Could not put SP %p into the running state\n", *it);
+          it != m_ReceiveProcessors.end();
+          ++it ) {
+        if(!(*it)->scheduleStartRunning(time_to_start_recv)) {
+            debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_recv);
             return false;
         }
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-            it != m_TransmitProcessors.end();
-            ++it ) {
-        if(!(*it)->startRunning(time_to_start)) {
-            debugError("Could not put SP %p into the running state\n", *it);
+          it != m_TransmitProcessors.end();
+          ++it ) {
+        if(!(*it)->scheduleStartRunning(time_to_start_xmit)) {
+            debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_xmit);
             return false;
         }
+    }
+    // wait for the syncsource to start running.
+    // that will block the waitForPeriod call until everyone has started (theoretically)
+    int cnt = CYCLES_FOR_STARTUP * 2; // by then it should have started
+    while (!m_SyncSource->isRunning() && cnt) {
+        usleep(125);
+        cnt--;
+    }
+    if(cnt==0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SyncSource to get started\n");
+        return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
     return true;
@@ -576,7 +597,7 @@ bool StreamProcessorManager::waitForPeriod() {
 
     // this is to notify the client of the delay
     // that we introduced
-    m_delayed_usecs = time_till_next_period;
+    m_delayed_usecs = -time_till_next_period;
 
     // we save the 'ideal' time of the transfer at this point,
     // because we can have interleaved read - process - write
@@ -682,136 +703,45 @@ bool StreamProcessorManager::transfer() {
  */
 
 bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period for type (%d)...\n", t);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
+        t, m_time_of_transfer,
+        (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
+        (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),
+        (unsigned int)TICKS_TO_OFFSET(m_time_of_transfer));
+
     bool retval = true;
     // a static cast could make sure that there is no performance
     // penalty for the virtual functions (to be checked)
     if (t==StreamProcessor::ePT_Receive) {
-        // determine the time at which we want reception to start
-        float rate=m_SyncSource->getTicksPerFrame();
-        int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
-        
-        int64_t receive_timestamp = substractTicks(m_time_of_transfer, one_frame_in_ticks);
-        
-        if(receive_timestamp<0) {
-            debugWarning("receive ts < 0.0 : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
-             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
-        }
-        if(receive_timestamp>(128L*TICKS_PER_SECOND)) {
-            debugWarning("receive ts > 128L*TICKS_PER_SECOND : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
-             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
-        }
-        
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
                 it != m_ReceiveProcessors.end();
                 ++it ) {
-            if(!(*it)->getFrames(m_period, receive_timestamp)) {
+            if(!(*it)->getFrames(m_period, m_time_of_transfer)) {
                     debugWarning("could not getFrames(%u, %11llu) from stream processor (%p)\n",
                             m_period, m_time_of_transfer,*it);
                 retval &= false; // buffer underrun
             }
         }
     } else {
+        // FIXME: in the SPM it would be nice to have system time instead of
+        //        1394 time
+        float rate = m_SyncSource->getTicksPerFrame();
+        int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers * m_period)) * rate);
+
+        // the data we are putting into the buffer is intended to be transmitted
+        // one ringbuffer size after it has been received
+        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
                 ++it ) {
             // FIXME: in the SPM it would be nice to have system time instead of
             //        1394 time
-            float rate=m_SyncSource->getTicksPerFrame();
-            int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers*m_period))*rate);
-
-            // the data we are putting into the buffer is intended to be transmitted
-            // one ringbuffer size after it has been received
-            int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
-
             if(!(*it)->putFrames(m_period, transmit_timestamp)) {
                 debugWarning("could not putFrames(%u,%llu) to stream processor (%p)\n",
                         m_period, transmit_timestamp, *it);
                 retval &= false; // buffer underrun
             }
-
-        }
-    }
-    return retval;
-}
-
-/**
- * @brief Dry run one period for both receive and transmit StreamProcessors
- *
- * Process one period of frames for all streamprocessors, without touching the
- * client buffers. This only removes an incoming period from the ISO receive buffer and
- * puts one period of silence into the transmit buffers.
- *
- * @return true if successful, false otherwise (indicates xrun).
- */
-bool StreamProcessorManager::dryRun() {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
-    bool retval=true;
-    retval &= dryRun(StreamProcessor::ePT_Receive);
-    retval &= dryRun(StreamProcessor::ePT_Transmit);
-    return retval;
-}
-
-/**
- * @brief Dry run one period for either the receive or transmit StreamProcessors
- *
- * see dryRun()
- *
- * @param t The processor type to dryRun for (receive or transmit)
- * @return true if successful, false otherwise (indicates xrun).
- */
-
-bool StreamProcessorManager::dryRun(enum StreamProcessor::eProcessorType t) {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Dry-running period...\n");
-    bool retval = true;
-    // a static cast could make sure that there is no performance
-    // penalty for the virtual functions (to be checked)
-    if (t==StreamProcessor::ePT_Receive) {
-        // determine the time at which we want reception to start
-        float rate=m_SyncSource->getTicksPerFrame();
-        int64_t one_frame_in_ticks=(int64_t)(((float)m_period)*rate);
-        
-        int64_t receive_timestamp = substractTicks(m_time_of_transfer, one_frame_in_ticks);
-        
-        if(receive_timestamp<0) {
-            debugWarning("receive ts < 0.0 : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
-             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
-        }
-        if(receive_timestamp>(128L*TICKS_PER_SECOND)) {
-            debugWarning("receive ts > 128L*TICKS_PER_SECOND : %lld, m_time_of_transfer= %llu, one_frame_in_ticks=%lld\n",
-             receive_timestamp, m_time_of_transfer, one_frame_in_ticks);
-        }
-        
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-                it != m_ReceiveProcessors.end();
-                ++it ) {
-
-            if(!(*it)->getFramesDry(m_period, receive_timestamp)) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE,"could not getFrames(%u, %11llu) from stream processor (%p)\n",
-                            m_period, m_time_of_transfer,*it);
-                retval &= false; // buffer underrun
-            }
-
-        }
-    } else {
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-                it != m_TransmitProcessors.end();
-                ++it ) {
-            // FIXME: in the SPM it would be nice to have system time instead of
-            //        1394 time
-            float rate=m_SyncSource->getTicksPerFrame();
-            int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers*m_period))*rate);
-
-            // the data we are putting into the buffer is intended to be transmitted
-            // one ringbuffer size after it has been received
-            int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
-
-            if(!(*it)->putFramesDry(m_period, transmit_timestamp)) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "could not putFrames(%u,%llu) to stream processor (%p)\n",
-                        m_period, transmit_timestamp, *it);
-                retval &= false; // buffer underrun
-            }
-
         }
     }
     return retval;

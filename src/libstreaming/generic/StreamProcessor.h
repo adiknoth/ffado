@@ -80,7 +80,7 @@ protected:
         ePS_Running,
         ePS_WaitingForStreamDisable,
     };
-    
+
     ///> set the SP state to a specific value
     void setState(enum eProcessorState);
     ///> get the SP state
@@ -102,78 +102,109 @@ private:
     bool doWaitForStreamDisable();
 
     bool scheduleStateTransition(enum eProcessorState state, uint64_t time_instant);
-    bool scheduleAndWaitForStateTransition(enum eProcessorState state, 
-                                           uint64_t time_instant, 
-                                           enum eProcessorState wait_state);
-public:
+    bool waitForState(enum eProcessorState state, unsigned int timeout);
+
+public: //--- state stuff
     bool isRunning()
             {return m_state == ePS_Running;};
     bool isDryRunning()
             {return m_state == ePS_DryRunning;};
 
-//--- state stuff (TODO: cleanup)
+    // these schedule and wait for the state transition
     bool startDryRunning(int64_t time_to_start_at);
     bool startRunning(int64_t time_to_start_at);
     bool stopDryRunning(int64_t time_to_stop_at);
     bool stopRunning(int64_t time_to_stop_at);
 
+    // these only schedule the transition
+    bool scheduleStartDryRunning(int64_t time_to_start_at);
+    bool scheduleStartRunning(int64_t time_to_start_at);
+    bool scheduleStopDryRunning(int64_t time_to_stop_at);
+    bool scheduleStopRunning(int64_t time_to_stop_at);
+
     // the main difference between init and prepare is that when prepare is called,
     // the SP is registered to a manager (FIXME: can't it be called by the manager?)
     bool init();
     bool prepare();
+
     ///> stop the SP from running or dryrunning
     bool stop();
-// constructor/destructor
-public:
+
+public: // constructor/destructor
     StreamProcessor(enum eProcessorType type, int port);
     virtual ~StreamProcessor();
 
-// the receive/transmit functions
-public:
+public: // the public receive/transmit functions
     // the transmit interface accepts frames and provides packets
     // implement these for a transmit SP
     // leave default for a receive SP
-    virtual enum raw1394_iso_disposition
-    getPacket(unsigned char *data, unsigned int *length,
-                unsigned char *tag, unsigned char *sy,
-                int cycle, unsigned int dropped, unsigned int max_length)
-        {debugWarning("call not allowed\n"); return RAW1394_ISO_STOP;};
-    virtual bool putFrames(unsigned int nbframes, int64_t ts) 
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool putFramesDry(unsigned int nbframes, int64_t ts)
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset)
-        {debugWarning("call not allowed\n"); return false;};
 
     // the receive interface accepts packets and provides frames
-    
-    // the following two methods are to be implemented by subclasses
-    virtual bool processPacketHeader(unsigned char *data, unsigned int length,
-                  unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped)
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool processPacketData(unsigned char *data, unsigned int length,
-                  unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped)
-        {debugWarning("call not allowed\n"); return false;};
-
-    // this one is implemented by us
+    // these are implemented by the parent SP
     enum raw1394_iso_disposition
         putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped);
 
+    enum raw1394_iso_disposition
+    getPacket(unsigned char *data, unsigned int *length,
+                unsigned char *tag, unsigned char *sy,
+                int cycle, unsigned int dropped, unsigned int max_length);
+
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
-protected:
+    bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
+
+protected: // the helper receive/transmit functions
     // to be implemented by the children
+    // the following methods are to be implemented by receive SP subclasses
+    virtual bool processPacketHeader(unsigned char *data, unsigned int length,
+                                     unsigned char channel, unsigned char tag,
+                                     unsigned char sy, unsigned int cycle,
+                                     unsigned int dropped)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool processPacketData(unsigned char *data, unsigned int length,
+                                   unsigned char channel, unsigned char tag,
+                                   unsigned char sy, unsigned int cycle,
+                                   unsigned int dropped)
+        {debugWarning("call not allowed\n"); return false;};
     virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
     virtual bool provideSilenceBlock(unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
 
+    // the following methods are to be implemented by transmit SP subclasses
+    virtual bool generatePacketHeader(unsigned char *data, unsigned int *length,
+                                      unsigned char *tag, unsigned char *sy,
+                                      int cycle, unsigned int dropped,
+                                      unsigned int max_length)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool generatePacketData(unsigned char *data, unsigned int *length,
+                                    unsigned char *tag, unsigned char *sy,
+                                    int cycle, unsigned int dropped,
+                                    unsigned int max_length)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool generateSilentPacketHeader(unsigned char *data, unsigned int *length,
+                                            unsigned char *tag, unsigned char *sy,
+                                            int cycle, unsigned int dropped,
+                                            unsigned int max_length)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool generateSilentPacketData(unsigned char *data, unsigned int *length,
+                                          unsigned char *tag, unsigned char *sy,
+                                          int cycle, unsigned int dropped,
+                                          unsigned int max_length)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset)
+        {debugWarning("call not allowed\n"); return false;};
+    virtual bool transmitSilenceBlock(char *data, unsigned int nevents, unsigned int offset)
+        {debugWarning("call not allowed\n"); return false;};
+
 private:
     bool getFramesDry(unsigned int nbframes, int64_t ts);
     bool getFramesWet(unsigned int nbframes, int64_t ts);
+    bool putFramesDry(unsigned int nbframes, int64_t ts);
+    bool putFramesWet(unsigned int nbframes, int64_t ts);
+
+    bool transferSilence(unsigned int size);
 
     // move to private?
     bool xrunOccurred() { return (m_xruns>0); }; // FIXME: m_xruns not updated
@@ -187,7 +218,17 @@ protected: // FIXME: move to private
     uint64_t m_last_timestamp_at_period_ticks;
 
 //--- data buffering and accounting
-public: // FIXME: should be private
+public:
+    void getBufferHeadTimestamp ( ffado_timestamp_t *ts, signed int *fc )
+        {m_data_buffer->getBufferHeadTimestamp(ts, fc);};
+    void getBufferTailTimestamp ( ffado_timestamp_t *ts, signed int *fc )
+        {m_data_buffer->getBufferTailTimestamp(ts, fc);};
+
+    void setBufferTailTimestamp ( ffado_timestamp_t new_timestamp )
+        {m_data_buffer->setBufferTailTimestamp(new_timestamp);};
+    void setBufferHeadTimestamp ( ffado_timestamp_t new_timestamp )
+        {m_data_buffer->setBufferHeadTimestamp(new_timestamp);};
+protected:
     Util::TimestampedBuffer *m_data_buffer;
 
 protected:
@@ -254,7 +295,7 @@ protected:
          */
         uint64_t getTimeAtPeriod();
 
-        uint64_t getTimeNow();
+        uint64_t getTimeNow(); // FIXME: should disappear
 
 
         /**
@@ -317,10 +358,10 @@ protected:
         virtual unsigned int getEventSize() = 0;
 
         /**
-         * @brief get the nominal number of frames between buffer updates
-         * @return the nominal number of frames between buffer updates
+         * @brief get the nominal number of frames in a packet
+         * @return the nominal number of frames in a packet
          */
-        virtual unsigned int getUpdatePeriod() = 0;
+        virtual unsigned int getNominalFramesPerPacket() = 0;
 
     protected:
         float m_ticks_per_frame;
@@ -339,7 +380,6 @@ public:
     StreamStatistics m_PeriodStat;
     StreamStatistics m_WakeupStat;
     DECLARE_DEBUG_MODULE;
-
 };
 
 }
