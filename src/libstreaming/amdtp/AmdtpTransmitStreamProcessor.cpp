@@ -144,13 +144,14 @@ try_block_of_frames:
     if ( fc < ( signed int ) m_syt_interval )
     {
         // not enough frames in the buffer,
-        debugOutput ( DEBUG_LEVEL_VERBOSE,
-                    "Insufficient frames: N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
-                    fc, cycle, transmit_at_cycle, cycles_until_transmit );
+
         // we can still postpone the queueing of the packets
         // if we are far enough ahead of the presentation time
         if ( cycles_until_presentation <= min_cycles_before_presentation )
         {
+            debugOutput ( DEBUG_LEVEL_VERBOSE,
+                        "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
+                        fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // we are too late
             // meaning that we in some sort of xrun state
             // signal xrun situation ??HERE??
@@ -160,6 +161,9 @@ try_block_of_frames:
         }
         else
         {
+            debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
+                        "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
+                        fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // there is still time left to send the packet
             // we want the system to give this packet another go
     //             goto try_packet_again; // UGLY but effective

@@ -267,13 +267,13 @@ bool StreamProcessorManager::syncStartAll() {
     // now find out how long we have to delay the wait operation such that
     // the received frames will all be presented to the SP
     debugOutput( DEBUG_LEVEL_VERBOSE, "Finding minimal sync delay...\n");
-    int max_of_min_delay=0;
-    int min_delay=0;
+    int max_of_min_delay = 0;
+    int min_delay = 0;
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-        min_delay=(*it)->getMaxFrameLatency();
-        if(min_delay>max_of_min_delay) max_of_min_delay=min_delay;
+        min_delay = (*it)->getMaxFrameLatency();
+        if(min_delay > max_of_min_delay) max_of_min_delay = min_delay;
     }
 
     // add some processing margin. This only shifts the time
@@ -458,23 +458,86 @@ bool StreamProcessorManager::stop() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping...\n");
     assert(m_isoManager);
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for all StreamProcessors to prepare to stop...\n");
-    // Most stream processors can just stop without special treatment.  However, some
-    // (like the MOTU) need to do a few things before it's safe to turn off the iso
-    // handling.
+    debugOutput( DEBUG_LEVEL_VERBOSE, " scheduling stop for all SP's...\n");
+
+    // switch SP's over to the dry-running state
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
           ++it ) {
-        if(!(*it)->stop()) {
-            debugError("Could not stop SP %p", (*it));
+        if(!(*it)->scheduleStopRunning(-1)) {
+            debugError("%p->scheduleStopRunning(-1) failed\n", *it);
+            return false;
         }
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
           it != m_TransmitProcessors.end();
           ++it ) {
-        if(!(*it)->stop()) {
-            debugError("Could not stop SP %p", (*it));
+        if(!(*it)->scheduleStopRunning(-1)) {
+            debugError("%p->scheduleStopRunning(-1) failed\n", *it);
+            return false;
         }
+    }
+    // wait for the SP's to get into the dry-running state
+    int cnt = 200;
+    bool ready = false;
+    while (!ready && cnt) {
+        ready = true;
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            ready &= ((*it)->isDryRunning() || (*it)->isStopped());
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            ready &= ((*it)->isDryRunning() || (*it)->isStopped());
+        }
+        usleep(125);
+        cnt--;
+    }
+    if(cnt==0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to start dry-running\n");
+        return false;
+    }
+
+    // switch SP's over to the stopped state
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+          it != m_ReceiveProcessors.end();
+          ++it ) {
+        if(!(*it)->scheduleStopDryRunning(-1)) {
+            debugError("%p->scheduleStopDryRunning(-1) failed\n", *it);
+            return false;
+        }
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+          it != m_TransmitProcessors.end();
+          ++it ) {
+        if(!(*it)->scheduleStopDryRunning(-1)) {
+            debugError("%p->scheduleStopDryRunning(-1) failed\n", *it);
+            return false;
+        }
+    }
+    // wait for the SP's to get into the running state
+    cnt = 200;
+    ready = false;
+    while (!ready && cnt) {
+        ready = true;
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            ready &= (*it)->isStopped();
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            ready &= (*it)->isStopped();
+        }
+        usleep(125);
+        cnt--;
+    }
+    if(cnt==0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to stop\n");
+        return false;
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handlers...\n");
@@ -503,7 +566,6 @@ bool StreamProcessorManager::stop() {
             return false;
         }
     }
-
     return true;
 }
 

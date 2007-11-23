@@ -463,6 +463,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 goto send_empty_packet;
             }
             return RAW1394_ISO_OK;
+        } else { // pick up the possible xruns
+            
         }
     }
     // we are not running, so send an empty packet
@@ -511,24 +513,18 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
     // in order to sync up multiple received streams, we should 
     // use the ts parameter. It specifies the time of the block's 
     // last sample.
-    
-    // determine the time at which we want reception to start
     float srate = m_manager->getSyncSource().getTicksPerFrame();
     assert(srate != 0.0);
     int64_t this_block_length_in_ticks = (int64_t)(((float)nbframes) * srate);
-    
+
     ffado_timestamp_t ts_head_tmp;
     m_data_buffer->getBufferHeadTimestamp(&ts_head_tmp, &fc);
     ts_expected = addTicks((uint64_t)ts_head_tmp, this_block_length_in_ticks);
-    
+
     lag_ticks = diffTicks(ts, ts_expected);
-    
-    
     lag_frames = (((float)lag_ticks) / srate);
-    
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): drifts %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
                  this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
-
     if (lag_frames >= 1.0) {
         // the stream lags
         debugWarning( "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
@@ -610,22 +606,6 @@ bool StreamProcessor::prepare()
     return updateState();
 }
 
-bool StreamProcessor::stop()
-{
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stop...\n");
-    switch (m_state) {
-        case ePS_Stopped: return true;
-        case ePS_DryRunning:
-            return stopDryRunning(-1);
-        case ePS_Running:
-            return stopRunning(-1) && 
-                   stopDryRunning(-1);
-        default:
-            debugError("Bad state: %s\n", ePSToString(m_state));
-            return false;
-    }
-}
-
 bool
 StreamProcessor::scheduleStateTransition(enum eProcessorState state, uint64_t time_instant)
 {
@@ -660,8 +640,17 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    uint64_t now = m_handler->getCycleTimerTicks();
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+                          now,
+                          (unsigned int)TICKS_TO_SECS(now),
+                          (unsigned int)TICKS_TO_CYCLES(now),
+                          (unsigned int)TICKS_TO_OFFSET(now));
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%03us %04uc %04ut)\n",
+                          tx,
+                          (unsigned int)TICKS_TO_SECS(tx),
+                          (unsigned int)TICKS_TO_CYCLES(tx),
+                          (unsigned int)TICKS_TO_OFFSET(tx));
     if (m_state == ePS_Stopped) {
         return scheduleStateTransition(ePS_WaitingForStream, tx);
     } else if (m_state == ePS_Running) {
@@ -680,8 +669,17 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    uint64_t now = m_handler->getCycleTimerTicks();
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+                          now,
+                          (unsigned int)TICKS_TO_SECS(now),
+                          (unsigned int)TICKS_TO_CYCLES(now),
+                          (unsigned int)TICKS_TO_OFFSET(now));
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%03us %04uc %04ut)\n",
+                          tx,
+                          (unsigned int)TICKS_TO_SECS(tx),
+                          (unsigned int)TICKS_TO_CYCLES(tx),
+                          (unsigned int)TICKS_TO_OFFSET(tx));
     return scheduleStateTransition(ePS_WaitingForStreamEnable, tx);
 }
 
@@ -693,8 +691,17 @@ bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    uint64_t now = m_handler->getCycleTimerTicks();
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+                          now,
+                          (unsigned int)TICKS_TO_SECS(now),
+                          (unsigned int)TICKS_TO_CYCLES(now),
+                          (unsigned int)TICKS_TO_OFFSET(now));
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%03us %04uc %04ut)\n",
+                          tx,
+                          (unsigned int)TICKS_TO_SECS(tx),
+                          (unsigned int)TICKS_TO_CYCLES(tx),
+                          (unsigned int)TICKS_TO_OFFSET(tx));
     return scheduleStateTransition(ePS_Stopped, tx);
 }
 
@@ -706,8 +713,17 @@ bool StreamProcessor::scheduleStopRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011lu\n", m_handler->getCycleTimerTicks());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%u)\n", tx, TICKS_TO_CYCLES(tx));
+    uint64_t now = m_handler->getCycleTimerTicks();
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+                          now,
+                          (unsigned int)TICKS_TO_SECS(now),
+                          (unsigned int)TICKS_TO_CYCLES(now),
+                          (unsigned int)TICKS_TO_OFFSET(now));
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%03us %04uc %04ut)\n",
+                          tx,
+                          (unsigned int)TICKS_TO_SECS(tx),
+                          (unsigned int)TICKS_TO_CYCLES(tx),
+                          (unsigned int)TICKS_TO_OFFSET(tx));
     return scheduleStateTransition(ePS_WaitingForStreamDisable, tx);
 }
 

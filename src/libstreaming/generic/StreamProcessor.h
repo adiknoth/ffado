@@ -109,6 +109,8 @@ public: //--- state stuff
             {return m_state == ePS_Running;};
     bool isDryRunning()
             {return m_state == ePS_DryRunning;};
+    bool isStopped()
+            {return m_state == ePS_Stopped;};
 
     // these schedule and wait for the state transition
     bool startDryRunning(int64_t time_to_start_at);
@@ -126,9 +128,6 @@ public: //--- state stuff
     // the SP is registered to a manager (FIXME: can't it be called by the manager?)
     bool init();
     bool prepare();
-
-    ///> stop the SP from running or dryrunning
-    bool stop();
 
 public: // constructor/destructor
     StreamProcessor(enum eProcessorType type, int port);
