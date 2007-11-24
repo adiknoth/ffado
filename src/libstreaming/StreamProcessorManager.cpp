@@ -157,6 +157,8 @@ bool StreamProcessorManager::init()
         return false;
     }
     m_isoManager->setVerboseLevel(getDebugLevel());
+    m_isoManager->setTransmitBufferNbPeriods(getNbBuffers() - 1);
+
     if(!m_isoManager->init()) {
         debugFatal("Could not initialize IsoHandlerManager\n");
         return false;
@@ -242,17 +244,21 @@ bool StreamProcessorManager::startDryRunning() {
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-        if(!(*it)->startDryRunning(-1)) {
-            debugError("Could not put SP %p into the dry-running state\n", *it);
-            return false;
+        if (!(*it)->isDryRunning()) {
+            if(!(*it)->startDryRunning(-1)) {
+                debugError("Could not put SP %p into the dry-running state\n", *it);
+                return false;
+            }
         }
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-        if(!(*it)->startDryRunning(-1)) {
-            debugError("Could not put SP %p into the dry-running state\n", *it);
-            return false;
+        if (!(*it)->isDryRunning()) {
+            if(!(*it)->startDryRunning(-1)) {
+                debugError("Could not put SP %p into the dry-running state\n", *it);
+                return false;
+            }
         }
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams dry-running...\n");
@@ -620,7 +626,7 @@ bool StreamProcessorManager::handleXrun() {
  */
 bool StreamProcessorManager::waitForPeriod() {
     int time_till_next_period;
-    bool xrun_occurred=false;
+    bool xrun_occurred = false;
 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
 
@@ -648,18 +654,11 @@ bool StreamProcessorManager::waitForPeriod() {
             // a xrun has occurred on the Iso side
             xrun_occurred |= (*it)->xrunOccurred();
         }
-
         if(xrun_occurred) break;
 
         // check if we were waked up too soon
-        time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
+        time_till_next_period = m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
     }
-
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", time_till_next_period);
-
-    // this is to notify the client of the delay
-    // that we introduced
-    m_delayed_usecs = -time_till_next_period;
 
     // we save the 'ideal' time of the transfer at this point,
     // because we can have interleaved read - process - write
@@ -670,6 +669,49 @@ bool StreamProcessorManager::waitForPeriod() {
     m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n",
         m_time_of_transfer);
+
+    // normally we can transfer frames at this time, but in some cases this is not true
+    // e.g. when there are not enough frames in the receive buffer.
+    // however this doesn't have to be a problem, since we can wait some more until we
+    // have enough frames. There is only a problem once the ISO xmit doesn't have packets
+    // to transmit, or if the receive buffer overflows. These conditions are signaled by
+    // the iso threads
+    // check if xruns occurred on the Iso side.
+    // also check if xruns will occur should we transfer() now
+    #ifdef DEBUG
+    int waited = -1;
+    #endif
+    bool ready_for_transfer = false;
+    xrun_occurred = false;
+    while (!ready_for_transfer && !xrun_occurred) {
+        ready_for_transfer = true;
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            ready_for_transfer &= ((*it)->canClientTransferFrames(m_period));
+            xrun_occurred |= (*it)->xrunOccurred();
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            ready_for_transfer &= ((*it)->canClientTransferFrames(m_period));
+            xrun_occurred |= (*it)->xrunOccurred();
+        }
+        usleep(125); // MAGIC: one cycle sleep...
+        #ifdef DEBUG
+        waited++;
+        #endif
+    } // we are either ready or an xrun occurred
+
+    #ifdef DEBUG
+    if(waited > 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Waited %d x 125us due to SP not ready for transfer\n", waited);
+    }
+    #endif
+
+    // this is to notify the client of the delay that we introduced by waiting
+    m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", m_delayed_usecs);
 
 #ifdef DEBUG
     int rcv_bf=0, xmt_bf=0;
@@ -686,55 +728,34 @@ bool StreamProcessorManager::waitForPeriod() {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n",
         m_time_of_transfer, rcv_bf, xmt_bf, rcv_bf+xmt_bf);
 
-#endif
-
-    xrun_occurred=false;
-
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
-
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
           ++it ) {
-        // a xrun has occurred on the Iso side
-        xrun_occurred |= (*it)->xrunOccurred();
 
-        // if this is true, a xrun will occur
-        xrun_occurred |= !((*it)->canClientTransferFrames(m_period));
-
-#ifdef DEBUG
         if ((*it)->xrunOccurred()) {
-            debugWarning("Xrun on RECV SP %p due to ISO xrun\n",*it);
+            debugWarning("Xrun on RECV SP %p due to ISO side xrun\n",*it);
             (*it)->dumpInfo();
         }
         if (!((*it)->canClientTransferFrames(m_period))) {
-            debugWarning("Xrun on RECV SP %p due to buffer xrun\n",*it);
+            debugWarning("Xrun on RECV SP %p due to buffer side xrun\n",*it);
             (*it)->dumpInfo();
         }
-#endif
-
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
           it != m_TransmitProcessors.end();
           ++it ) {
-        // a xrun has occurred on the Iso side
-        xrun_occurred |= (*it)->xrunOccurred();
-
-        // if this is true, a xrun will occur
-        xrun_occurred |= !((*it)->canClientTransferFrames(m_period));
-
-#ifdef DEBUG
         if ((*it)->xrunOccurred()) {
-            debugWarning("Xrun on XMIT SP %p due to ISO xrun\n",*it);
+            debugWarning("Xrun on XMIT SP %p due to ISO side xrun\n",*it);
         }
         if (!((*it)->canClientTransferFrames(m_period))) {
-            debugWarning("Xrun on XMIT SP %p due to buffer xrun\n",*it);
+            debugWarning("Xrun on XMIT SP %p due to buffer side xrun\n",*it);
         }
-#endif
     }
+#endif
 
     m_nbperiods++;
-
     // now we can signal the client that we are (should be) ready
     return !xrun_occurred;
 }

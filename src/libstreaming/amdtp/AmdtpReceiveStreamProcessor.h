@@ -77,10 +77,10 @@ public:
     AmdtpReceiveStreamProcessor(int port, int dimension);
     virtual ~AmdtpReceiveStreamProcessor() {};
 
-    bool processPacketHeader(unsigned char *data, unsigned int length,
+    enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped);
-    bool processPacketData(unsigned char *data, unsigned int length,
+    enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped);
 

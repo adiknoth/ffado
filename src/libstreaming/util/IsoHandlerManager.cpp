@@ -40,7 +40,7 @@ IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 IsoHandlerManager::IsoHandlerManager() :
    m_State(E_Created),
    m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0),
-   m_realtime(false), m_priority(0)
+   m_realtime(false), m_priority(0), m_xmit_nb_periods( 1 )
 {
 
 }
@@ -48,7 +48,7 @@ IsoHandlerManager::IsoHandlerManager() :
 IsoHandlerManager::IsoHandlerManager(bool run_rt, unsigned int rt_prio) :
    m_State(E_Created),
    m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0),
-   m_realtime(run_rt), m_priority(rt_prio)
+   m_realtime(run_rt), m_priority(rt_prio), m_xmit_nb_periods( 1 )
 {
 
 }
@@ -399,7 +399,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
 
     if (stream->getStreamType()==IsoStream::eST_Transmit) {
         // setup the optimal parameters for the raw1394 ISO buffering
-        unsigned int packets_per_period=stream->getPacketsPerPeriod();
+        unsigned int packets_per_period = stream->getPacketsPerPeriod();
 
 #if 1
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
@@ -409,7 +409,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         //       for better latency.
         unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
         if (max_packet_size < stream->getMaxPacketSize()) {
-            max_packet_size=stream->getMaxPacketSize();
+            max_packet_size = stream->getMaxPacketSize();
         }
 
         // Ensure we don't request a packet size bigger than the
@@ -417,7 +417,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         if (max_packet_size > (unsigned int)getpagesize())
                     max_packet_size = getpagesize();
 
-         unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+         unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
          if(irq_interval <= 0) irq_interval=1;
 #else
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
@@ -426,21 +426,21 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         // when writing to the DMA buffer.
 
         // configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
-        unsigned int irq_interval=PACKETS_PER_INTERRUPT;
+        unsigned int irq_interval = PACKETS_PER_INTERRUPT;
 
         // unless the period size doesn't allow this
         if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
-            irq_interval=1;
+            irq_interval = 1;
         }
 
         // FIXME: test
-        irq_interval=1;
+        irq_interval = 1;
 #warning Using fixed irq_interval
 
-        unsigned int max_packet_size=getpagesize() / irq_interval;
+        unsigned int max_packet_size = getpagesize() / irq_interval;
 
         if (max_packet_size < stream->getMaxPacketSize()) {
-            max_packet_size=stream->getMaxPacketSize();
+            max_packet_size = stream->getMaxPacketSize();
         }
 
         // Ensure we don't request a packet size bigger than the
@@ -457,13 +457,10 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         // every irq_interval packets an interrupt will occur. that is when
         // buffers get transfered, meaning that we should have at least some
         // margin here
-        int buffers=irq_interval * 2;
+//         int buffers=irq_interval * 2;
 
-        // half a period. the xmit handler will take care of this
-//         int buffers=packets_per_period/4;
-
-        // NOTE: this is dangerous: what if there is not enough prefill?
-//         if (buffers<10) buffers=10;
+        // we should queue up as much as possible
+        int buffers = packets_per_period * m_xmit_nb_periods;
 
         // create the actual handler
         IsoXmitHandler *h = new IsoXmitHandler(stream->getPort(), buffers,

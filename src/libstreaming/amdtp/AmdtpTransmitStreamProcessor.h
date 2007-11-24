@@ -79,16 +79,16 @@ public:
     AmdtpTransmitStreamProcessor(int port, int dimension);
     virtual ~AmdtpTransmitStreamProcessor() {};
 
-    bool generatePacketHeader(unsigned char *data, unsigned int *length,
+    enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
                               unsigned char *tag, unsigned char *sy,
                               int cycle, unsigned int dropped, unsigned int max_length);
-    bool generatePacketData(unsigned char *data, unsigned int *length,
+    enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length,
                             unsigned char *tag, unsigned char *sy,
                             int cycle, unsigned int dropped, unsigned int max_length);
-    bool generateSilentPacketHeader(unsigned char *data, unsigned int *length,
+    enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
                                     unsigned char *tag, unsigned char *sy,
                                     int cycle, unsigned int dropped, unsigned int max_length);
-    bool generateSilentPacketData(unsigned char *data, unsigned int *length,
+    enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length,
                                   unsigned char *tag, unsigned char *sy,
                                   int cycle, unsigned int dropped, unsigned int max_length);
     virtual bool prepareChild();

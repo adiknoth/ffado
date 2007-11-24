@@ -42,7 +42,6 @@ namespace Util {
 
 namespace Streaming
 {
-
 class IsoHandler;
 class IsoStream;
 
@@ -77,6 +76,9 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
         int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
+
+        void setTransmitBufferNbPeriods(unsigned int t) {m_xmit_nb_periods = t;};
+        int getTransmitBufferNbPeriods() {return m_xmit_nb_periods;};
 
         void setVerboseLevel(int l); ///< set the verbose level
 
@@ -149,6 +151,9 @@ class IsoHandlerManager : public Util::RunnableInterface
         bool m_realtime;
         unsigned int m_priority;
         Util::PosixThread *m_isoManagerThread;
+
+        // the preferred number of periods to buffer on xmit
+        unsigned int m_xmit_nb_periods;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

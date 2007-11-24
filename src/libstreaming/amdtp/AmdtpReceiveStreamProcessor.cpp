@@ -96,27 +96,27 @@ bool AmdtpReceiveStreamProcessor::prepareChild() {
  * @param sy 
  * @param cycle 
  * @param dropped 
- * @return true if this is a valid packet, false if not
+ * @return 
  */
-bool
+enum StreamProcessor::eChildReturnValue
 AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped)
 {
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
-    bool retval = (packet->syt != 0xFFFF) &&
+    bool ok = (packet->syt != 0xFFFF) &&
                   (packet->fdf != 0xFF) &&
                   (packet->fmt == 0x10) &&
                   (packet->dbs > 0) &&
                   (length >= 2*sizeof(quadlet_t));
-    if(retval) {
+    if(ok) {
         uint64_t now = m_handler->getCycleTimer();
         //=> convert the SYT to a full timestamp in ticks
         m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
                                               cycle, now);
     }
-    return retval;
+    return (ok ? eCRV_OK : eCRV_Invalid );
 }
 
 /**
@@ -129,9 +129,9 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
  * @param sy 
  * @param cycle 
  * @param dropped 
- * @return true if successful, false if xrun
+ * @return 
  */
-bool
+enum StreamProcessor::eChildReturnValue
 AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped_cycles) {
@@ -157,12 +157,14 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     if(m_data_buffer->writeFrames(nevents, (char *)(data+8), m_last_timestamp)) {
         // process all ports that should be handled on a per-packet base
         // this is MIDI for AMDTP (due to the need of DBC)
-        if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
-            debugWarning("Problem decoding Packet Ports\n");
+        if(isRunning()) {
+            if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
+                debugWarning("Problem decoding Packet Ports\n");
+            }
         }
-        return true;
+        return eCRV_OK;
     } else {
-        return false;
+        return eCRV_XRun;
     }
 }
 

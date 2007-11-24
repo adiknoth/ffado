@@ -154,44 +154,52 @@ public: // the public receive/transmit functions
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
 
 protected: // the helper receive/transmit functions
+    enum eChildReturnValue {
+        eCRV_OK,
+        eCRV_Invalid,
+        eCRV_Packet,
+        eCRV_EmptyPacket,
+        eCRV_XRun,
+        eCRV_Again,
+    };
     // to be implemented by the children
     // the following methods are to be implemented by receive SP subclasses
-    virtual bool processPacketHeader(unsigned char *data, unsigned int length,
+    virtual enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
                                      unsigned char channel, unsigned char tag,
                                      unsigned char sy, unsigned int cycle,
                                      unsigned int dropped)
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool processPacketData(unsigned char *data, unsigned int length,
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
+    virtual enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length,
                                    unsigned char channel, unsigned char tag,
                                    unsigned char sy, unsigned int cycle,
                                    unsigned int dropped)
-        {debugWarning("call not allowed\n"); return false;};
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
     virtual bool provideSilenceBlock(unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
 
     // the following methods are to be implemented by transmit SP subclasses
-    virtual bool generatePacketHeader(unsigned char *data, unsigned int *length,
+    virtual enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
                                       unsigned char *tag, unsigned char *sy,
                                       int cycle, unsigned int dropped,
                                       unsigned int max_length)
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool generatePacketData(unsigned char *data, unsigned int *length,
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
+    virtual enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length,
                                     unsigned char *tag, unsigned char *sy,
                                     int cycle, unsigned int dropped,
                                     unsigned int max_length)
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool generateSilentPacketHeader(unsigned char *data, unsigned int *length,
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
+    virtual enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
                                             unsigned char *tag, unsigned char *sy,
                                             int cycle, unsigned int dropped,
                                             unsigned int max_length)
-        {debugWarning("call not allowed\n"); return false;};
-    virtual bool generateSilentPacketData(unsigned char *data, unsigned int *length,
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
+    virtual enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length,
                                           unsigned char *tag, unsigned char *sy,
                                           int cycle, unsigned int dropped,
                                           unsigned int max_length)
-        {debugWarning("call not allowed\n"); return false;};
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
     virtual bool transmitSilenceBlock(char *data, unsigned int nevents, unsigned int offset)
@@ -206,7 +214,7 @@ private:
     bool transferSilence(unsigned int size);
 
     // move to private?
-    bool xrunOccurred() { return (m_xruns>0); }; // FIXME: m_xruns not updated
+    bool xrunOccurred() { return m_in_xrun; };
 
 protected: // FIXME: move to private
     uint64_t m_dropped; /// FIXME:debug
@@ -231,8 +239,6 @@ protected:
     Util::TimestampedBuffer *m_data_buffer;
 
 protected:
-    unsigned int m_xruns;
-
     StreamProcessorManager *m_manager;
 
     // frame counter & sync stuff
@@ -366,6 +372,8 @@ protected:
         float m_ticks_per_frame;
         int m_last_cycle;
         int m_sync_delay;
+    private:
+        bool m_in_xrun;
 
 protected: // SPM related
     void setManager(StreamProcessorManager *manager) {m_manager=manager;};

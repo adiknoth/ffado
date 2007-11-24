@@ -40,11 +40,11 @@ StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
     , m_state( ePS_Created )
     , m_next_state( ePS_Invalid )
     , m_cycle_to_switch_state( 0 )
-    , m_xruns( 0 )
     , m_manager( NULL )
     , m_ticks_per_frame( 0 )
-    , m_last_cycle( 0 )
+    , m_last_cycle( -1 )
     , m_sync_delay( 0 )
+    , m_in_xrun( false )
     , m_last_timestamp(0)
     , m_last_timestamp2(0)
     , m_dropped(0)
@@ -165,7 +165,7 @@ StreamProcessor::canClientTransferFrames(unsigned int nbframes)
     bool can_transfer;
     unsigned int fc = m_data_buffer->getFrameCounter();
     if (getType() == ePT_Receive) {
-        can_transfer = fc >= (int) nbframes;
+        can_transfer = (fc >= nbframes);
     } else {
         // there has to be enough space to put the frames in
         can_transfer = m_data_buffer->getBufferSize() - fc > nbframes;
@@ -192,12 +192,16 @@ enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
                            unsigned int cycle, unsigned int dropped) {
-
-    int dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-    if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
-    else m_dropped += dropped_cycles;
-    if (dropped_cycles > 0) debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
-    m_last_cycle = cycle;
+    int dropped_cycles = 0;
+    if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
+        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+        if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
+        if (dropped_cycles > 0) {
+            debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
+            m_dropped += dropped_cycles;
+        }
+        m_last_cycle = cycle;
+    }
 
     // bypass based upon state
     if (m_state == ePS_Invalid) {
@@ -207,9 +211,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     if (m_state == ePS_Created) {
         return RAW1394_ISO_DEFER;
     }
-
-    // normal processing
-    enum raw1394_iso_disposition retval = RAW1394_ISO_OK;
 
     // store the previous timestamp
     m_last_timestamp2 = m_last_timestamp;
@@ -253,7 +254,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     // check the packet header
-    if (processPacketHeader(data, length, channel, tag, sy, cycle, dropped_cycles)) {
+    enum eChildReturnValue result = processPacketHeader(data, length, channel, tag, sy, cycle, dropped_cycles);
+    if (result == eCRV_OK) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "RECV: CY=%04u TS=%011llu\n",
                 cycle, m_last_timestamp);
         // update some accounting
@@ -300,19 +302,12 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // to be dealt with
             debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
             m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
-            // we don't want this sample to be written
-            return RAW1394_ISO_OK;
-        }
 
-        // for all states that reach this we are allowed to
-        // do protocol specific data reception
-        bool ok = processPacketData(data, length, channel, tag, sy, cycle, dropped_cycles);
-
-        // if an xrun occured, switch to the dryRunning state and
-        // allow for the xrun to be picked up
-        if (!ok) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning due to xrun\n");
-            m_next_state = ePS_DryRunning;
+            // this is an xrun situation
+            m_in_xrun = true;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
+            m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+            m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
@@ -320,10 +315,40 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             }
             return RAW1394_ISO_DEFER;
         }
-    } else {
+
+        // for all states that reach this we are allowed to
+        // do protocol specific data reception
+        enum eChildReturnValue result2 = processPacketData(data, length, channel, tag, sy, cycle, dropped_cycles);
+
+        // if an xrun occured, switch to the dryRunning state and
+        // allow for the xrun to be picked up
+        if (result2 == eCRV_XRun) {
+            m_in_xrun = true;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
+            m_cycle_to_switch_state = cycle+1; // switch in the next cycle
+            m_next_state = ePS_WaitingForStreamDisable;
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+            return RAW1394_ISO_DEFER;
+        } else if(result2 == eCRV_OK) {
+            // no problem here
+            return RAW1394_ISO_OK;
+        } else {
+            debugError("Invalid response\n");
+            return RAW1394_ISO_ERROR;
+        }
+    } else if(result == eCRV_Invalid) {
         // apparently we don't have to do anything when the packets are not valid
+        return RAW1394_ISO_OK;
+    } else {
+        debugError("Invalid response\n");
+        return RAW1394_ISO_ERROR;
     }
-    return retval;
+    debugError("reached the unreachable\n");
+    return RAW1394_ISO_ERROR;
 }
 
 enum raw1394_iso_disposition
@@ -337,11 +362,16 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         return RAW1394_ISO_OK;
     }
 
-    int dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-    if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
-    else m_dropped += dropped_cycles;
-    if (dropped_cycles > 0) debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
-    m_last_cycle = cycle;
+    int dropped_cycles = 0;
+    if (m_last_cycle != cycle && m_last_cycle != -1) {
+        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+        if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
+        if (dropped_cycles > 0) {
+            debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
+            m_dropped += dropped_cycles;
+        }
+        m_last_cycle = cycle;
+    }
 
     // bypass based upon state
     if (m_state == ePS_Invalid) {
@@ -430,7 +460,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
     else if(m_state == ePS_Running) {
         // check the packet header
-        if (generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length)) {
+        enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+        if (result == eCRV_Packet) {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT: CY=%04u TS=%011llu\n",
                     cycle, m_last_timestamp);
             // update some accounting
@@ -449,12 +480,14 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 }
             }
 
-            bool ok = generatePacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            enum eChildReturnValue result2 = generatePacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
             // if an xrun occured, switch to the dryRunning state and
             // allow for the xrun to be picked up
-            if (!ok) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning due to xrun\n");
-                m_next_state = ePS_DryRunning;
+            if (result2 == eCRV_XRun) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
+                m_in_xrun = true;
+                m_cycle_to_switch_state = cycle+1; // switch in the next cycle
+                m_next_state = ePS_WaitingForStreamDisable;
                 // execute the requested change
                 if (!updateState()) { // we are allowed to change the state directly
                     debugError("Could not update state!\n");
@@ -463,8 +496,44 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 goto send_empty_packet;
             }
             return RAW1394_ISO_OK;
-        } else { // pick up the possible xruns
-            
+        } else if (result == eCRV_XRun) { // pick up the possible xruns
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to header xrun\n");
+            m_in_xrun = true;
+            m_cycle_to_switch_state = cycle+1; // switch in the next cycle
+            m_next_state = ePS_WaitingForStreamDisable;
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+        } else if (result == eCRV_EmptyPacket) {
+            if(m_state != m_next_state) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
+                                                ePSToString(m_state), ePSToString(m_next_state));
+                // execute the requested change
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    return RAW1394_ISO_ERROR;
+                }
+            }
+            goto send_empty_packet;
+        } else if (result == eCRV_Again) {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", cycle);
+            if(m_state != m_next_state) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
+                                                ePSToString(m_state), ePSToString(m_next_state));
+                // execute the requested change
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    return RAW1394_ISO_ERROR;
+                }
+            }
+            // force some delay
+            usleep(125);
+            return RAW1394_ISO_AGAIN;
+        } else {
+            debugError("Invalid return value: %d\n", result);
+            return RAW1394_ISO_ERROR;
         }
     }
     // we are not running, so send an empty packet
@@ -967,8 +1036,7 @@ StreamProcessor::doDryRunning()
                 // update the DLL based upon the received packets
                 m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
             } else {
-                // FIXME
-                debugError("Implement\n");
+                // FIXME: PC=master mode will have to do something here I guess...
             }
             break;
         case ePS_WaitingForStreamDisable:
@@ -1057,7 +1125,7 @@ StreamProcessor::doRunning()
             // a running stream has been detected
             debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running at cycle %d\n", 
                                              this, m_last_cycle);
-            m_xruns = 0;
+            m_in_xrun = false;
             m_data_buffer->setTransparent(false);
             break;
         default:
@@ -1305,7 +1373,7 @@ StreamProcessor::dumpInfo()
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
     }
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %d\n", m_xruns);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %s\n", (m_in_xrun ? "True":"False"));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", ePSToString(m_state));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   Next state           : %s\n", ePSToString(m_next_state));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "    transition at       : %u\n", m_cycle_to_switch_state);

@@ -47,7 +47,7 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor ( int port, int dimen
         , m_dbc ( 0 )
 {}
 
-bool
+enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generatePacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
@@ -93,7 +93,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // the packet is transmitted ahead of the presentation time is
     // given by TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
     // packets early if we want to. (not completely according to spec)
-    const int max_cycles_to_transmit_early = 5;
+    const int max_cycles_to_transmit_early = 2;
 
 try_block_of_frames:
     debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "Try for cycle %d\n", cycle );
@@ -128,13 +128,14 @@ try_block_of_frames:
     // first calculate the number of cycles left before presentation time
     cycles_until_transmit = diffCycles ( transmit_at_cycle, cycle );
 
-    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                "Gen HDR: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                cycle,
-                transmit_at_cycle, cycles_until_transmit,
-                transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
-                presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
-
+    if (dropped) {
+        debugOutput ( DEBUG_LEVEL_VERBOSE,
+                    "Gen HDR: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                    cycle,
+                    transmit_at_cycle, cycles_until_transmit,
+                    transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
+                    presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
+    }
     // two different options:
     // 1) there are not enough frames for one packet
     //      => determine wether this is a problem, since we might still
@@ -153,11 +154,7 @@ try_block_of_frames:
                         "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
                         fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // we are too late
-            // meaning that we in some sort of xrun state
-            // signal xrun situation ??HERE??
-            m_xruns++;
-            // we send an empty packet on this cycle
-            return false;
+            return eCRV_XRun;
         }
         else
         {
@@ -165,15 +162,8 @@ try_block_of_frames:
                         "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
                         fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // there is still time left to send the packet
-            // we want the system to give this packet another go
-    //             goto try_packet_again; // UGLY but effective
-            // unfortunatly the try_again doesn't work very well,
-            // so we'll have to either usleep(one cycle) and goto try_block_of_frames
-
-            // or just fill this with an empty packet
-            // if we have to do this too often, the presentation time will
-            // get too close and we're in trouble
-            return false;
+            // we want the system to give this packet another go at a later time instant
+            return eCRV_Again;
         }
     }
     else
@@ -194,40 +184,35 @@ try_block_of_frames:
         //      => discard (and raise xrun?)
         //         get next block of frames and repeat
 
-        if ( cycles_until_transmit <= max_cycles_to_transmit_early )
-        {
-            // it's time send the packet
-            m_dbc += fillDataPacketHeader ( packet, length, m_last_timestamp );
-            return true;
-        }
-        else if ( cycles_until_transmit < 0 )
+        if(cycles_until_transmit < 0)
         {
             // we are too late
-            debugOutput ( DEBUG_LEVEL_VERBOSE,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
                         cycle,
                         transmit_at_cycle, cycles_until_transmit,
-                        presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
+                        presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
 
             // however, if we can send this sufficiently before the presentation
             // time, it could be harmless.
             // NOTE: dangerous since the device has no way of reporting that it didn't get
             //       this packet on time.
-            if ( cycles_until_presentation <= min_cycles_before_presentation )
+            if(cycles_until_presentation >= min_cycles_before_presentation)
             {
                 // we are not that late and can still try to transmit the packet
-                m_dbc += fillDataPacketHeader ( packet, length, m_last_timestamp );
-                return true;
+                m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
+                return eCRV_Packet;
             }
             else   // definitely too late
             {
-                // remove the samples
-                m_data_buffer->dropFrames ( m_syt_interval );
-                // signal some xrun situation ??HERE??
-                m_xruns++;
-                // try a new block of frames
-                goto try_block_of_frames; // UGLY but effective
+                return eCRV_XRun;
             }
+        }
+        else if(cycles_until_transmit <= max_cycles_to_transmit_early)
+        {
+            // it's time send the packet
+            m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
+            return eCRV_Packet;
         }
         else
         {
@@ -249,13 +234,13 @@ try_block_of_frames:
             }
 #endif
             // we are too early, send only an empty packet
-            return false;
+            return eCRV_EmptyPacket;
         }
     }
-    return true;
+    return eCRV_Invalid;
 }
 
-bool
+enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generatePacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
@@ -272,15 +257,13 @@ AmdtpTransmitStreamProcessor::generatePacketData (
         }
         debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: TSP=%011llu (%04u)\n",
                     cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
-        return true;
+        return eCRV_OK;
     }
-    else
-    {
-        return false;
-    }
+    else return eCRV_XRun;
+
 }
 
-bool
+enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
@@ -307,16 +290,16 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     *sy = 0;
 
     m_dbc += fillNoDataPacketHeader ( packet, length );
-    return true;
+    return eCRV_OK;
 }
 
-bool
+enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateSilentPacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
     int cycle, unsigned int dropped, unsigned int max_length )
 {
-    return true; // no need to do anything
+    return eCRV_OK; // no need to do anything
 }
 
 unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader (
