@@ -447,10 +447,9 @@ bool TimestampedBuffer::preloadFrames(unsigned int nframes, char *data, bool kee
  * @param nframes number of frames to drop
  * @return true if successful
  */
-bool TimestampedBuffer::dropFrames(unsigned int nframes) {
-
-    unsigned int read_size=nframes*m_event_size*m_events_per_frame;
-
+bool
+TimestampedBuffer::dropFrames(unsigned int nframes) {
+    unsigned int read_size = nframes * m_event_size * m_events_per_frame;
     ffado_ringbuffer_read_advance(m_event_buffer, read_size);
     decrementFrameCounter(nframes);
     return true;

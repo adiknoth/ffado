@@ -70,7 +70,7 @@ public:
 
     void setPeriodSize(unsigned int period);
     void setPeriodSize(unsigned int period, unsigned int nb_buffers);
-    int getPeriodSize() {return m_period;};
+    unsigned int getPeriodSize() {return m_period;};
 
     void setNbBuffers(unsigned int nb_buffers);
     int getNbBuffers() {return m_nb_buffers;};
@@ -80,11 +80,15 @@ public:
     Port* getPortByIndex(int idx, enum Port::E_Direction);
 
     // the client-side functions
+    bool waitForPeriod();
+    bool transfer();
+    bool transfer(enum StreamProcessor::eProcessorType);
+private:
+    bool transferSilence();
+    bool transferSilence(enum StreamProcessor::eProcessorType);
 
-    bool waitForPeriod(); ///< wait for the next period
-    bool transfer(); ///< transfer the buffer contents from/to client
-    bool transfer(enum StreamProcessor::eProcessorType); ///< transfer the buffer contents from/to client (single processor type)
-
+    bool alignReceivedStreams();
+public:
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
     int getXrunCount() {return m_xruns;};

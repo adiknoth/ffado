@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <assert.h>
+#include <math.h>
 
 #define RUNNING_TIMEOUT_MSEC 4000
 #define PREPARE_TIMEOUT_MSEC 4000
@@ -349,8 +350,8 @@ bool StreamProcessorManager::syncStartAll() {
     int nb_sync_runs=20;
     int64_t time_till_next_period;
     while(nb_sync_runs--) { // or while not sync-ed?
-        // check if we were waked up too soon
-        time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
+        // check if we were woken up too soon
+        time_till_next_period = m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
         if(time_till_next_period > 0) {
             // wait for the period
@@ -443,10 +444,81 @@ bool StreamProcessorManager::syncStartAll() {
     }
 
     // now align the received streams
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Aligning incoming streams...\n");
-    
-    
+    if(!alignReceivedStreams()) {
+        debugError("Could not align streams\n");
+        return false;
+    }
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
+    return true;
+}
+
+bool
+StreamProcessorManager::alignReceivedStreams()
+{
+    #define NB_PERIODS_FOR_ALIGN_AVERAGE 20
+    #define NB_ALIGN_TRIES 20
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Aligning received streams...\n");
+    unsigned int nb_sync_runs;
+    unsigned int nb_rcv_sp = m_ReceiveProcessors.size();
+    int64_t diff_between_streams[nb_rcv_sp];
+    int64_t diff;
+
+    unsigned int i;
+
+    bool aligned = false;
+    int cnt = NB_ALIGN_TRIES;
+    while (!aligned && cnt--) {
+        nb_sync_runs = NB_PERIODS_FOR_ALIGN_AVERAGE;
+        while(nb_sync_runs) {
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " check (%d)...\n", nb_sync_runs);
+            waitForPeriod();
+
+            i = 0;
+            for ( i = 0; i < nb_rcv_sp; i++) {
+                StreamProcessor *s = m_ReceiveProcessors.at(i);
+                diff = diffTicks(m_SyncSource->getTimeAtPeriod(), s->getTimeAtPeriod());
+                debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "  offset between SyncSP %p and SP %p is %lld ticks...\n", 
+                    m_SyncSource, s, diff);
+                if ( nb_sync_runs == NB_PERIODS_FOR_ALIGN_AVERAGE ) {
+                    diff_between_streams[i] = diff;
+                } else {
+                    diff_between_streams[i] += diff;
+                }
+            }
+            if(!transferSilence()) {
+                debugError("Could not transfer silence\n");
+                return false;
+            }
+            nb_sync_runs--;
+        }
+        // calculate the average offsets
+        debugOutput( DEBUG_LEVEL_VERBOSE, " Average offsets:\n");
+        int diff_between_streams_frames[nb_rcv_sp];
+        aligned = true;
+        for ( i = 0; i < nb_rcv_sp; i++) {
+            StreamProcessor *s = m_ReceiveProcessors.at(i);
+
+            diff_between_streams[i] /= NB_PERIODS_FOR_ALIGN_AVERAGE;
+            diff_between_streams_frames[i] = roundf(diff_between_streams[i] / s->getTicksPerFrame());
+            debugOutput( DEBUG_LEVEL_VERBOSE, "   avg offset between SyncSP %p and SP %p is %lld ticks, %d frames...\n", 
+                m_SyncSource, s, diff_between_streams[i], diff_between_streams_frames[i]);
+
+            aligned &= (diff_between_streams_frames[i] == 0);
+
+            // position the stream
+            if(!s->shiftStream(diff_between_streams_frames[i])) {
+                debugError("Could not shift SP %p %d frames\n", s, diff_between_streams_frames[i]);
+                return false;
+            }
+        }
+        if (!aligned) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Streams not aligned, doing new round...\n");
+        }
+    }
+    if (cnt == 0) {
+        debugError("Align failed\n");
+        return false;
+    }
     return true;
 }
 
@@ -816,7 +888,6 @@ bool StreamProcessorManager::waitForPeriod() {
  * @return true if successful, false otherwise (indicates xrun).
  */
 bool StreamProcessorManager::transfer() {
-
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
     bool retval=true;
     retval &= transfer(StreamProcessor::ePT_Receive);
@@ -832,7 +903,6 @@ bool StreamProcessorManager::transfer() {
  * @param t The processor type to tranfer for (receive or transmit)
  * @return true if successful, false otherwise (indicates xrun).
  */
-
 bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
@@ -870,6 +940,76 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
             //        1394 time
             if(!(*it)->putFrames(m_period, transmit_timestamp)) {
                 debugWarning("could not putFrames(%u,%llu) to stream processor (%p)\n",
+                        m_period, transmit_timestamp, *it);
+                retval &= false; // buffer underrun
+            }
+        }
+    }
+    return retval;
+}
+
+/**
+ * @brief Transfer one period of silence for both receive and transmit StreamProcessors
+ *
+ * Transfers one period of silence to the Iso side for transmit SP's
+ * or dump one period of frames for receive SP's
+ *
+ * @return true if successful, false otherwise (indicates xrun).
+ */
+bool StreamProcessorManager::transferSilence() {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring silent period...\n");
+    bool retval=true;
+    retval &= transferSilence(StreamProcessor::ePT_Receive);
+    retval &= transferSilence(StreamProcessor::ePT_Transmit);
+    return retval;
+}
+
+/**
+ * @brief Transfer one period of silence for either the receive or transmit StreamProcessors
+ *
+ * Transfers one period of silence to the Iso side for transmit SP's
+ * or dump one period of frames for receive SP's
+ *
+ * @param t The processor type to tranfer for (receive or transmit)
+ * @return true if successful, false otherwise (indicates xrun).
+ */
+bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorType t) {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transferSilence(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
+        t, m_time_of_transfer,
+        (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
+        (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),
+        (unsigned int)TICKS_TO_OFFSET(m_time_of_transfer));
+
+    bool retval = true;
+    // a static cast could make sure that there is no performance
+    // penalty for the virtual functions (to be checked)
+    if (t==StreamProcessor::ePT_Receive) {
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            if(!(*it)->dropFrames(m_period, m_time_of_transfer)) {
+                    debugWarning("could not dropFrames(%u, %11llu) from stream processor (%p)\n",
+                            m_period, m_time_of_transfer,*it);
+                retval &= false; // buffer underrun
+            }
+        }
+    } else {
+        // FIXME: in the SPM it would be nice to have system time instead of
+        //        1394 time
+        float rate = m_SyncSource->getTicksPerFrame();
+        int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers * m_period)) * rate);
+
+        // the data we are putting into the buffer is intended to be transmitted
+        // one ringbuffer size after it has been received
+        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            // FIXME: in the SPM it would be nice to have system time instead of
+            //        1394 time
+            if(!(*it)->putSilenceFrames(m_period, transmit_timestamp)) {
+                debugWarning("could not putSilenceFrames(%u,%llu) to stream processor (%p)\n",
                         m_period, transmit_timestamp, *it);
                 retval &= false; // buffer underrun
             }

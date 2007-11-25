@@ -153,6 +153,39 @@ public: // the public receive/transmit functions
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
 
+    /**
+     * @brief drop nframes from the internal buffer as if they were transferred to the client side
+     *
+     * Gets nframes of frames from the buffer as done by getFrames(), but does not transfer them
+     * to the client side. Instead they are discarded.
+     *
+     * @param nframes number of frames
+     * @return true if the operation was successful
+     */
+    bool dropFrames(unsigned int nframes, int64_t ts);
+
+    /**
+     * @brief put silence frames into the internal buffer
+     *
+     * Puts nframes of frames into the buffer as done by putFrames(), but does not transfer them
+     * from the client side. Instead, silent frames are used.
+     *
+     * @param nframes number of frames
+     * @return true if the operation was successful
+     */
+    bool putSilenceFrames(unsigned int nbframes, int64_t ts);
+    
+    /**
+     * @brief Shifts the stream with the specified number of frames
+     *
+     * Used to align several streams to each other. It comes down to
+     * making sure the head timestamp corresponds to the timestamp of
+     * one master stream
+     *
+     * @param nframes the number of frames to shift
+     * @return true if successful
+     */
+    bool shiftStream(int nframes);
 protected: // the helper receive/transmit functions
     enum eChildReturnValue {
         eCRV_OK,
@@ -237,7 +270,12 @@ public:
         {m_data_buffer->setBufferHeadTimestamp(new_timestamp);};
 protected:
     Util::TimestampedBuffer *m_data_buffer;
-
+    // the scratch buffer is temporary buffer space that can be
+    // used by any function. It's pre-allocated when the SP is created.
+    // the purpose is to avoid allocation of memory (or heap/stack) in
+    // an RT context
+    byte_t*         m_scratch_buffer;
+    size_t          m_scratch_buffer_size_bytes;
 protected:
     StreamProcessorManager *m_manager;
 
@@ -254,17 +292,6 @@ protected:
          *         false if it can't
          */
         bool canClientTransferFrames(unsigned int nframes);
-
-        /**
-         * @brief drop nframes from the internal buffer
-         *
-         * this function drops nframes from the internal buffers, without any
-         * specification on what frames are dropped. Timestamps are not updated.
-         *
-         * @param nframes number of frames
-         * @return true if the operation was successful
-         */
-        bool dropFrames(unsigned int nframes);
 
         /**
          * \brief return the time until the next period boundary should be signaled (in microseconds)

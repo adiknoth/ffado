@@ -40,6 +40,8 @@ StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
     , m_state( ePS_Created )
     , m_next_state( ePS_Invalid )
     , m_cycle_to_switch_state( 0 )
+    , m_scratch_buffer( NULL )
+    , m_scratch_buffer_size_bytes( 0 )
     , m_manager( NULL )
     , m_ticks_per_frame( 0 )
     , m_last_cycle( -1 )
@@ -50,11 +52,12 @@ StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
     , m_dropped(0)
 {
     // create the timestamped buffer and register ourselves as its client
-    m_data_buffer=new Util::TimestampedBuffer(this);
+    m_data_buffer = new Util::TimestampedBuffer(this);
 }
 
 StreamProcessor::~StreamProcessor() {
     if (m_data_buffer) delete m_data_buffer;
+    if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
 
 uint64_t StreamProcessor::getTimeNow() {
@@ -74,13 +77,6 @@ int StreamProcessor::getMaxFrameLatency() {
  ***********************************************/
 int StreamProcessor::getBufferFill() {
     return m_data_buffer->getBufferFill();
-}
-
-bool
-StreamProcessor::dropFrames(unsigned int nbframes)
-{
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d)\n", nbframes);
-    return m_data_buffer->dropFrames(nbframes);
 }
 
 int64_t
@@ -376,11 +372,11 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
         if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
         if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
+            debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d)\n", this, dropped_cycles, cycle, m_last_cycle, dropped);
             m_dropped += dropped_cycles;
         }
     }
-    if (cycle > 0) {
+    if (cycle >= 0) {
         m_last_cycle = cycle;
     }
 
@@ -622,16 +618,24 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
     return true;
 }
 
-bool StreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts) {
+bool StreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts)
+{
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): dry run %d frames (@ ts=%lld)\n",
                  this, nbframes, ts);
-
     // dry run on this side means that we put silence in all enabled ports
     // since there is do data put into the ringbuffer in the dry-running state
     return provideSilenceBlock(nbframes, 0);
 }
 
-bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
+bool
+StreamProcessor::dropFrames(unsigned int nbframes, int64_t ts)
+{
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d, %lld)\n", nbframes, ts);
+    return m_data_buffer->dropFrames(nbframes);
+}
+
+bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
+{
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.putFrames(%d, %11llu)", nbframes, ts);
     assert( getType() == ePT_Transmit );
     if(isDryRunning()) return putFramesDry(nbframes, ts);
@@ -639,7 +643,8 @@ bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts) {
 }
 
 bool
-StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts) {
+StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts)
+{
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "StreamProcessor::putFramesWet(%d, %llu)\n", nbframes, ts);
     // transfer the data
     m_data_buffer->blockProcessWriteFrames(nbframes, ts);
@@ -648,10 +653,51 @@ StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts) {
 }
 
 bool
-StreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts) {
+StreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts)
+{
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "StreamProcessor::putFramesDry(%d, %llu)\n", nbframes, ts);
     // do nothing
     return true;
+}
+
+bool
+StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
+{
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "StreamProcessor::putSilenceFrames(%d, %llu)\n", nbframes, ts);
+
+    size_t bytes_per_frame = getEventSize() * getEventsPerFrame();
+    unsigned int scratch_buffer_size_frames = m_scratch_buffer_size_bytes / bytes_per_frame;
+
+    if (nbframes > scratch_buffer_size_frames) {
+        debugError("nframes (%u) > scratch_buffer_size_frames (%u)\n",
+                   nbframes, scratch_buffer_size_frames);
+    }
+
+    assert(m_scratch_buffer);
+    if(!transmitSilenceBlock((char *)m_scratch_buffer, nbframes, 0)) {
+        debugError("Could not prepare silent block\n");
+        return false;
+    }
+    if(!m_data_buffer->writeFrames(nbframes, (char *)m_scratch_buffer, ts)) {
+        debugError("Could not write silent block\n");
+        return false;
+    }
+    return true;
+}
+
+bool
+StreamProcessor::shiftStream(int nbframes)
+{
+    if(nbframes == 0) return true;
+    if(nbframes > 0) {
+        return m_data_buffer->dropFrames(nbframes);
+    } else {
+        bool result = true;
+        while(nbframes--) {
+            result &= m_data_buffer->writeDummyFrame();
+        }
+        return result;
+    }
 }
 
 /***********************************************
@@ -669,9 +715,19 @@ bool StreamProcessor::init()
 
 bool StreamProcessor::prepare()
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "prepare...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare SP (%p)...\n", this);
     if(!m_manager) {
         debugFatal("Not attached to a manager!\n");
+        return false;
+    }
+
+    // make the scratch buffer one period of frames long
+    m_scratch_buffer_size_bytes = m_manager->getPeriodSize() * getEventsPerFrame() * getEventSize();
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Allocate scratch buffer of %d quadlets\n");
+    if(m_scratch_buffer) delete[] m_scratch_buffer;
+    m_scratch_buffer = new byte_t[m_scratch_buffer_size_bytes];
+    if(m_scratch_buffer == NULL) {
+        debugFatal("Could not allocate scratch buffer\n");
         return false;
     }
 

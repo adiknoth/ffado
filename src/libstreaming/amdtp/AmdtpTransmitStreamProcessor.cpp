@@ -437,27 +437,25 @@ bool AmdtpTransmitStreamProcessor::prepareChild()
 bool AmdtpTransmitStreamProcessor::processWriteBlock ( char *data,
         unsigned int nevents, unsigned int offset )
 {
-    bool no_problem=true;
+    bool no_problem = true;
 
     for ( PortVectorIterator it = m_PeriodPorts.begin();
-            it != m_PeriodPorts.end();
-            ++it )
+          it != m_PeriodPorts.end();
+          ++it )
     {
-
-        if ( ( *it )->isDisabled() ) {continue;};
+        if ( (*it)->isDisabled() ) { continue; };
 
         //FIXME: make this into a static_cast when not DEBUG?
-
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *> ( *it );
+        AmdtpPortInfo *pinfo = dynamic_cast<AmdtpPortInfo *> ( *it );
         assert ( pinfo ); // this should not fail!!
 
-        switch ( pinfo->getFormat() )
+        switch( pinfo->getFormat() )
         {
             case AmdtpPortInfo::E_MBLA:
-                if ( encodePortToMBLAEvents ( static_cast<AmdtpAudioPort *> ( *it ), ( quadlet_t * ) data, offset, nevents ) )
+                if( encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents) )
                 {
-                    debugWarning ( "Could not encode port %s to MBLA events", ( *it )->getName().c_str() );
-                    no_problem=false;
+                    debugWarning ( "Could not encode port %s to MBLA events", (*it)->getName().c_str() );
+                    no_problem = false;
                 }
                 break;
             case AmdtpPortInfo::E_SPDIF: // still unimplemented
@@ -469,25 +467,26 @@ bool AmdtpTransmitStreamProcessor::processWriteBlock ( char *data,
     return no_problem;
 }
 
-bool AmdtpTransmitStreamProcessor::transmitSilenceBlock ( char *data,
-        unsigned int nevents, unsigned int offset )
+bool
+AmdtpTransmitStreamProcessor::transmitSilenceBlock(
+    char *data, unsigned int nevents, unsigned int offset)
 {
-    bool problem = false;
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-            it != m_PeriodPorts.end();
-            ++it )
+    bool no_problem = true;
+    for(PortVectorIterator it = m_PeriodPorts.begin();
+        it != m_PeriodPorts.end();
+        ++it )
     {
         //FIXME: make this into a static_cast when not DEBUG?
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *> ( *it );
-        assert ( pinfo ); // this should not fail!!
+        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+        assert(pinfo); // this should not fail!!
 
-        switch ( pinfo->getFormat() )
+        switch( pinfo->getFormat() )
         {
             case AmdtpPortInfo::E_MBLA:
-                if ( encodeSilencePortToMBLAEvents ( static_cast<AmdtpAudioPort *> ( *it ), ( quadlet_t * ) data, offset, nevents ) )
+                if ( encodeSilencePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents) )
                 {
-                    debugWarning ( "Could not encode port %s to MBLA events", ( *it )->getName().c_str() );
-                    problem = true;
+                    debugWarning("Could not encode port %s to MBLA events", (*it)->getName().c_str());
+                    no_problem = false;
                 }
                 break;
             case AmdtpPortInfo::E_SPDIF: // still unimplemented
@@ -496,7 +495,7 @@ bool AmdtpTransmitStreamProcessor::transmitSilenceBlock ( char *data,
                 break;
         }
     }
-    return problem;
+    return no_problem;
 }
 
 /**
