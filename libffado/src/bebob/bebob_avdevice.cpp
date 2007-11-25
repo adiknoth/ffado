@@ -249,7 +249,7 @@ AvDevice::getConfigurationIdSampleRate()
 
     extStreamFormatCmd.setNodeId( getNodeId() );
     extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
-    extStreamFormatCmd.setVerbose( true );
+    extStreamFormatCmd.setVerbose( getDebugLevel() );
 
     if ( !extStreamFormatCmd.fire() ) {
         debugError( "Stream format command failed\n" );
@@ -282,7 +282,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
                                                 unitPlugAddress ) );
     extPlugInfoCmd.setNodeId( getNodeId() );
     extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
-    extPlugInfoCmd.setVerbose( true );
+    extPlugInfoCmd.setVerbose( getDebugLevel() );
     ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
         ExtendedPlugInfoInfoType::eIT_NoOfChannels );
     extendedPlugInfoInfoType.initialize();
@@ -316,6 +316,7 @@ AvDevice::getConfigurationIdSyncMode()
     signalSourceCmd.setNodeId( getNodeId() );
     signalSourceCmd.setSubunitType( eST_Unit  );
     signalSourceCmd.setSubunitId( 0xff );
+    signalSourceCmd.setVerbose( getDebugLevel() );
 
     signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
 
@@ -336,6 +337,15 @@ AvDevice::getConfigurationIdSyncMode()
         return ( pSyncPlugSubunitAddress->m_subunitType << 3
                  | pSyncPlugSubunitAddress->m_subunitId ) << 8
             | pSyncPlugSubunitAddress->m_plugId;
+    }
+
+    SignalUnitAddress* pSyncPlugUnitAddress
+      = dynamic_cast<SignalUnitAddress*>( pSyncPlugSignalAddress );
+    if ( pSyncPlugUnitAddress ) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Sync mode 0x%02x\n",
+                      0xff << 8 | pSyncPlugSubunitAddress->m_plugId );
+
+        return ( 0xff << 8 | pSyncPlugSubunitAddress->m_plugId );
     }
 
     debugError( "Could not retrieve sync mode\n" );
