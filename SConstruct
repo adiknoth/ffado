@@ -164,7 +164,7 @@ if env['DEBUG']:
 	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
 	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
 else:
-	env.AppendUnique( CCFLAGS=["-O2"] )
+	env.AppendUnique( CCFLAGS=["-O2","-DNDEBUG"] )
 
 # this is required to indicate that the DBUS version we use has support
 # for platform dependent threading init functions
