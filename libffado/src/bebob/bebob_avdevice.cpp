@@ -320,7 +320,7 @@ AvDevice::getConfigurationIdSyncMode()
     signalSourceCmd.setCommandType( AVCCommand::eCT_Status );
 
     if ( !signalSourceCmd.fire() ) {
-        debugError( "Number of channels command failed\n" );
+        debugError( "Signal source command failed\n" );
         return false;
     }
 
