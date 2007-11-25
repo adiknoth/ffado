@@ -447,8 +447,7 @@ DiceAvDevice::showDevice()
 bool
 DiceAvDevice::prepare() {
     // prepare receive SP's
-//     for (unsigned int i=0;i<m_nb_tx;i++) {
-    for (unsigned int i=0;i<1;i++) {
+    for (unsigned int i=0;i<m_nb_tx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
         unsigned int nb_channels=0;

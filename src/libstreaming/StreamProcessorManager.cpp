@@ -240,26 +240,69 @@ bool StreamProcessorManager::prepare() {
 }
 
 bool StreamProcessorManager::startDryRunning() {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for StreamProcessor streams to start dry-running...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Putting StreamProcessor streams into dry-running state...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Schedule start dry-running...\n");
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
         if (!(*it)->isDryRunning()) {
-            if(!(*it)->startDryRunning(-1)) {
+            if(!(*it)->scheduleStartDryRunning(-1)) {
                 debugError("Could not put SP %p into the dry-running state\n", *it);
                 return false;
             }
+        } else {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " SP %p already dry-running...\n", *it);
         }
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
         if (!(*it)->isDryRunning()) {
-            if(!(*it)->startDryRunning(-1)) {
+            if(!(*it)->scheduleStartDryRunning(-1)) {
                 debugError("Could not put SP %p into the dry-running state\n", *it);
                 return false;
             }
+        } else {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " SP %p already dry-running...\n", *it);
         }
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Waiting for all SP's to be dry-running...\n");
+    // wait for the syncsource to start running.
+    // that will block the waitForPeriod call until everyone has started (theoretically)
+    #define CYCLES_FOR_DRYRUN 40000
+    int cnt = CYCLES_FOR_DRYRUN; // by then it should have started
+    bool all_dry_running = false;
+    while (!all_dry_running && cnt) {
+        all_dry_running = true;
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            all_dry_running &= (*it)->isDryRunning();
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            all_dry_running &= (*it)->isDryRunning();
+        }
+
+        usleep(125);
+        cnt--;
+    }
+    if(cnt==0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to start dry-running\n");
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+                it != m_ReceiveProcessors.end();
+                ++it ) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " %s SP %p has state %s\n",
+                (*it)->getTypeString(), *it, (*it)->getStateString());
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                it != m_TransmitProcessors.end();
+                ++it ) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " %s SP %p has state %s\n",
+                (*it)->getTypeString(), *it, (*it)->getStateString());
+        }
+        return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams dry-running...\n");
     return true;
@@ -329,7 +372,7 @@ bool StreamProcessorManager::syncStartAll() {
         (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
         (unsigned int)TICKS_TO_OFFSET(time_of_first_sample));
 
-    #define CYCLES_FOR_STARTUP 200
+    #define CYCLES_FOR_STARTUP 2000
     // start wet-running in CYCLES_FOR_STARTUP cycles
     // this is the time window we have to setup all SP's such that they 
     // can start wet-running correctly.
@@ -398,6 +441,11 @@ bool StreamProcessorManager::syncStartAll() {
         debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SyncSource to get started\n");
         return false;
     }
+
+    // now align the received streams
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Aligning incoming streams...\n");
+    
+    
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
     return true;
 }

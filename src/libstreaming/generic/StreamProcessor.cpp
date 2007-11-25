@@ -192,6 +192,10 @@ enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
                            unsigned int cycle, unsigned int dropped) {
+    if(m_last_cycle == -1) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %u)\n", getTypeString(), this, cycle);
+    }
+
     int dropped_cycles = 0;
     if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
@@ -200,8 +204,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
             m_dropped += dropped_cycles;
         }
-        m_last_cycle = cycle;
     }
+    m_last_cycle = cycle;
 
     // bypass based upon state
     if (m_state == ePS_Invalid) {
@@ -302,18 +306,19 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // to be dealt with
             debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
             m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
-
-            // this is an xrun situation
-            m_in_xrun = true;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
-            m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
-            m_next_state = ePS_WaitingForStreamDisable;
-            // execute the requested change
-            if (!updateState()) { // we are allowed to change the state directly
-                debugError("Could not update state!\n");
-                return RAW1394_ISO_ERROR;
+            if (m_state == ePS_Running) {
+                // this is an xrun situation
+                m_in_xrun = true;
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
+                m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+                m_next_state = ePS_WaitingForStreamDisable;
+                // execute the requested change
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    return RAW1394_ISO_ERROR;
+                }
+                return RAW1394_ISO_DEFER;
             }
-            return RAW1394_ISO_DEFER;
         }
 
         // for all states that reach this we are allowed to
@@ -362,6 +367,10 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         return RAW1394_ISO_OK;
     }
 
+    if(m_last_cycle == -1) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
+    }
+
     int dropped_cycles = 0;
     if (m_last_cycle != cycle && m_last_cycle != -1) {
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
@@ -370,6 +379,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
             m_dropped += dropped_cycles;
         }
+    }
+    if (cycle > 0) {
         m_last_cycle = cycle;
     }
 
@@ -506,7 +517,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 debugError("Could not update state!\n");
                 return RAW1394_ISO_ERROR;
             }
-        } else if (result == eCRV_EmptyPacket) {
+        } else if ((result == eCRV_EmptyPacket) || (result == eCRV_Again)) {
             if(m_state != m_next_state) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
                                                 ePSToString(m_state), ePSToString(m_next_state));
@@ -517,20 +528,20 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 }
             }
             goto send_empty_packet;
-        } else if (result == eCRV_Again) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", cycle);
-            if(m_state != m_next_state) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
-                                                ePSToString(m_state), ePSToString(m_next_state));
-                // execute the requested change
-                if (!updateState()) { // we are allowed to change the state directly
-                    debugError("Could not update state!\n");
-                    return RAW1394_ISO_ERROR;
-                }
-            }
-            // force some delay
-            usleep(125);
-            return RAW1394_ISO_AGAIN;
+//         } else if (result == eCRV_Again) {
+//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", cycle);
+//             if(m_state != m_next_state) {
+//                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
+//                                                 ePSToString(m_state), ePSToString(m_next_state));
+//                 // execute the requested change
+//                 if (!updateState()) { // we are allowed to change the state directly
+//                     debugError("Could not update state!\n");
+//                     return RAW1394_ISO_ERROR;
+//                 }
+//             }
+//             // force some delay
+//             usleep(125);
+//             return RAW1394_ISO_AGAIN;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
@@ -1360,7 +1371,7 @@ StreamProcessor::ePTToString(enum eProcessorType t) {
 void
 StreamProcessor::dumpInfo()
 {
-    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor information\n");
+    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p information\n", this);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
 
     IsoStream::dumpInfo();

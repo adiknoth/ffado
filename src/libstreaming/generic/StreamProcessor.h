@@ -383,6 +383,10 @@ public:
     // debug stuff
     virtual void dumpInfo();
     virtual void setVerboseLevel(int l);
+    const char *getStateString()
+        {return ePSToString(getState());};
+    const char *getTypeString()
+        {return ePTToString(getType());};
     StreamStatistics m_PacketStat;
     StreamStatistics m_PeriodStat;
     StreamStatistics m_WakeupStat;

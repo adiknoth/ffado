@@ -47,7 +47,7 @@ IsoHandlerManager::IsoHandlerManager() :
 
 IsoHandlerManager::IsoHandlerManager(bool run_rt, unsigned int rt_prio) :
    m_State(E_Created),
-   m_poll_timeout(1), m_poll_fds(0), m_poll_nfds(0),
+   m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0),
    m_realtime(run_rt), m_priority(rt_prio), m_xmit_nb_periods( 1 )
 {
 
@@ -130,7 +130,7 @@ bool IsoHandlerManager::iterate()
 {
     int err;
     int i=0;
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "poll %d fd's, timeout = %dms...\n", m_poll_nfds, m_poll_timeout);
 
     err = poll (m_poll_fds, m_poll_nfds, m_poll_timeout);
 
@@ -142,6 +142,15 @@ bool IsoHandlerManager::iterate()
         return false;
     }
 
+//     #ifdef DEBUG
+//     for (i = 0; i < m_poll_nfds; i++) {
+//         IsoHandler *s = m_IsoHandlers.at(i);
+//         assert(s);
+//         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%d) handler %p: iterate? %d, revents: %08X\n", 
+//             i, s, (m_poll_fds[i].revents & (POLLIN) == 1), m_poll_fds[i].revents);
+//     }
+//     #endif
+
     for (i = 0; i < m_poll_nfds; i++) {
         if (m_poll_fds[i].revents & POLLERR) {
             debugWarning("error on fd for %d\n",i);
@@ -152,9 +161,8 @@ bool IsoHandlerManager::iterate()
         }
 
         if(m_poll_fds[i].revents & (POLLIN)) {
-            IsoHandler *s=m_IsoHandlers.at(i);
+            IsoHandler *s = m_IsoHandlers.at(i);
             assert(s);
-
             s->iterate();
         }
     }
@@ -305,7 +313,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
     // allocate a handler for this stream
     if (stream->getStreamType()==IsoStream::eST_Receive) {
         // setup the optimal parameters for the raw1394 ISO buffering
-        unsigned int packets_per_period=stream->getPacketsPerPeriod();
+        unsigned int packets_per_period = stream->getPacketsPerPeriod();
 
 #if 1
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
@@ -316,19 +324,22 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         //       per period for better latency.
         unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()) / packets_per_period;
         if (max_packet_size < stream->getMaxPacketSize()) {
-            max_packet_size=stream->getMaxPacketSize();
+            debugWarning("calculated max packet size (%u) < stream max packet size (%u)\n",
+                         max_packet_size ,(unsigned int)stream->getMaxPacketSize());
+            max_packet_size = stream->getMaxPacketSize();
         }
 
         // Ensure we don't request a packet size bigger than the
         // kernel-enforced maximum which is currently 1 page.
-        if (max_packet_size > (unsigned int)getpagesize())
-                    max_packet_size = getpagesize();
+        if (max_packet_size > (unsigned int)getpagesize()) {
+            debugWarning("max packet size (%u) > page size (%u)\n", max_packet_size ,(unsigned int)getpagesize());
+            max_packet_size = getpagesize();
+        }
 
-        unsigned int irq_interval=packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+        unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
         if(irq_interval <= 0) irq_interval=1;
         // FIXME: test
-        irq_interval=1;
-        #warning Using fixed irq_interval
+        //irq_interval=1;
 
 #else
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
