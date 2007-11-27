@@ -110,6 +110,12 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
     return (int64_t)(((float)until_next) / TICKS_PER_USEC);
 }
 
+void
+StreamProcessor::setSyncDelay(int d) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %d ticks\n", this, d);
+    m_sync_delay = d;
+}
+
 uint64_t
 StreamProcessor::getTimeAtPeriodUsecs()
 {
@@ -535,7 +541,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
 //                     return RAW1394_ISO_ERROR;
 //                 }
 //             }
-//             // force some delay
+            // force some delay
 //             usleep(125);
 //             return RAW1394_ISO_AGAIN;
         } else {
@@ -693,7 +699,7 @@ StreamProcessor::shiftStream(int nbframes)
         return m_data_buffer->dropFrames(nbframes);
     } else {
         bool result = true;
-        while(nbframes--) {
+        while(nbframes++) {
             result &= m_data_buffer->writeDummyFrame();
         }
         return result;
@@ -930,7 +936,7 @@ bool
 StreamProcessor::doStop()
 {
     float ticks_per_frame;
-    unsigned int ringbuffer_size_frames = m_manager->getNbBuffers() * m_manager->getPeriodSize();
+    unsigned int ringbuffer_size_frames = (m_manager->getNbBuffers() + 1) * m_manager->getPeriodSize();
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
     bool result = true;

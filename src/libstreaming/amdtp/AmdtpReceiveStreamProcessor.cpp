@@ -43,14 +43,23 @@ namespace Streaming {
 
 AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int dimension)
     : StreamProcessor(ePT_Receive , port)
-    , m_dimension(dimension)
+    , m_dimension( dimension )
 {}
 
+unsigned int
+AmdtpReceiveStreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
+{
+    unsigned int nominal_frames_per_second = m_manager->getNominalRate();
+    uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
+    uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
+    uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
+    return nominal_packets;
+}
 
 unsigned int
 AmdtpReceiveStreamProcessor::getPacketsPerPeriod()
 {
-    return (m_manager->getPeriodSize())/m_syt_interval;
+    return getNominalPacketsNeeded(m_manager->getPeriodSize());
 }
 
 bool AmdtpReceiveStreamProcessor::prepareChild() {

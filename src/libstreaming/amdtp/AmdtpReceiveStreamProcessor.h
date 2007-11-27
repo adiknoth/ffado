@@ -96,6 +96,7 @@ public:
     virtual unsigned int getNominalFramesPerPacket() 
                     {return m_syt_interval;};
     virtual unsigned int getPacketsPerPeriod();
+    virtual unsigned int getNominalPacketsNeeded(unsigned int nframes);
 
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);

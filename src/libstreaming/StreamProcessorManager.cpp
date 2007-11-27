@@ -39,7 +39,7 @@
 // more robust. It should be noted though that shifting the transfer
 // time to a later time instant also causes the xmit buffer fill to be
 // lower on average.
-#define FFADO_SIGNAL_DELAY_TICKS 3072
+#define FFADO_SIGNAL_DELAY_TICKS 3072*4
 
 namespace Streaming {
 
@@ -158,7 +158,10 @@ bool StreamProcessorManager::init()
         return false;
     }
     m_isoManager->setVerboseLevel(getDebugLevel());
-    m_isoManager->setTransmitBufferNbPeriods(getNbBuffers() - 1);
+    
+    // try to queue up 75% of the frames in the transmit buffer
+    unsigned int nb_frames = (getNbBuffers() - 1) * getPeriodSize() * 1000 / 2000;
+    m_isoManager->setTransmitBufferNbFrames(nb_frames);
 
     if(!m_isoManager->init()) {
         debugFatal("Could not initialize IsoHandlerManager\n");
@@ -505,7 +508,7 @@ StreamProcessorManager::alignReceivedStreams()
 
             aligned &= (diff_between_streams_frames[i] == 0);
 
-            // position the stream
+            // reposition the stream
             if(!s->shiftStream(diff_between_streams_frames[i])) {
                 debugError("Could not shift SP %p %d frames\n", s, diff_between_streams_frames[i]);
                 return false;
@@ -799,7 +802,7 @@ bool StreamProcessorManager::waitForPeriod() {
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
     #ifdef DEBUG
-    int waited = -1;
+    int waited = 0;
     #endif
     bool ready_for_transfer = false;
     xrun_occurred = false;
@@ -817,10 +820,17 @@ bool StreamProcessorManager::waitForPeriod() {
             ready_for_transfer &= ((*it)->canClientTransferFrames(m_period));
             xrun_occurred |= (*it)->xrunOccurred();
         }
-        usleep(125); // MAGIC: one cycle sleep...
-        #ifdef DEBUG
-        waited++;
-        #endif
+        if (!ready_for_transfer) {
+            usleep(125); // MAGIC: one cycle sleep...
+
+            // in order to avoid this in the future, we increase the sync delay of the sync source SP
+            int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;
+            m_SyncSource->setSyncDelay(d);
+
+            #ifdef DEBUG
+            waited++;
+            #endif
+        }
     } // we are either ready or an xrun occurred
 
     #ifdef DEBUG

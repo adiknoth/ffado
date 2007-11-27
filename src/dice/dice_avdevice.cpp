@@ -533,8 +533,7 @@ DiceAvDevice::prepare() {
     }
 
     // prepare transmit SP's
-//     for (unsigned int i=0;i<m_nb_rx;i++) {
-    for (unsigned int i=0;i<1;i++) {
+    for (unsigned int i=0;i<m_nb_rx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
         unsigned int nb_channels=0;

@@ -425,6 +425,10 @@ AvDevice::prepare() {
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
 
+    if ( outputPlug->getNrOfChannels() == 0 ) {
+        debugError("Receive plug has no channels\n");
+        return false;
+    }
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              get1394Service().getPort(),
                              outputPlug->getNrOfChannels());

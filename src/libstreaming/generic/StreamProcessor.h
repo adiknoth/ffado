@@ -340,7 +340,7 @@ protected:
          * sets the sync delay
          * @param d sync delay
          */
-        void setSyncDelay(int d) {m_sync_delay = d;};
+        void setSyncDelay(int d);
 
         /**
          * @brief get the maximal frame latency
@@ -394,6 +394,12 @@ protected:
          * @return the nominal number of frames in a packet
          */
         virtual unsigned int getNominalFramesPerPacket() = 0;
+
+        /**
+         * @brief get the nominal number of packets needed for a certain amount of frames
+         * @return the nominal number of packet necessary
+         */
+        virtual unsigned int getNominalPacketsNeeded(unsigned int nframes) = 0;
 
     protected:
         float m_ticks_per_frame;

@@ -72,13 +72,13 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         IsoHandlerManager();
         IsoHandlerManager(bool run_rt, unsigned int rt_prio);
-        virtual ~IsoHandlerManager();
+        virtual ~IsoHandlerManager() {};
 
         void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
         int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
 
-        void setTransmitBufferNbPeriods(unsigned int t) {m_xmit_nb_periods = t;};
-        int getTransmitBufferNbPeriods() {return m_xmit_nb_periods;};
+        void setTransmitBufferNbFrames(unsigned int t) {m_xmit_nb_frames = t;};
+        int getTransmitBufferNbFrames() {return m_xmit_nb_frames;};
 
         void setVerboseLevel(int l); ///< set the verbose level
 
@@ -152,8 +152,8 @@ class IsoHandlerManager : public Util::RunnableInterface
         unsigned int m_priority;
         Util::PosixThread *m_isoManagerThread;
 
-        // the preferred number of periods to buffer on xmit
-        unsigned int m_xmit_nb_periods;
+        // the preferred number of packets to buffer on xmit
+        unsigned int m_xmit_nb_frames;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

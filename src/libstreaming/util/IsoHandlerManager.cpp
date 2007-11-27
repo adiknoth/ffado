@@ -40,23 +40,14 @@ IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 IsoHandlerManager::IsoHandlerManager() :
    m_State(E_Created),
    m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0),
-   m_realtime(false), m_priority(0), m_xmit_nb_periods( 1 )
-{
-
-}
+   m_realtime(false), m_priority(0), m_xmit_nb_frames( 20 )
+{}
 
 IsoHandlerManager::IsoHandlerManager(bool run_rt, unsigned int rt_prio) :
    m_State(E_Created),
    m_poll_timeout(100), m_poll_fds(0), m_poll_nfds(0),
-   m_realtime(run_rt), m_priority(rt_prio), m_xmit_nb_periods( 1 )
-{
-
-}
-
-IsoHandlerManager::~IsoHandlerManager()
-{
-
-}
+   m_realtime(run_rt), m_priority(rt_prio), m_xmit_nb_frames( 20 )
+{}
 
 bool IsoHandlerManager::init()
 {
@@ -470,8 +461,8 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         // margin here
 //         int buffers=irq_interval * 2;
 
-        // we should queue up as much as possible
-        int buffers = packets_per_period * m_xmit_nb_periods;
+        // the SPM specifies how many packets to buffer
+        int buffers = stream->getNominalPacketsNeeded(m_xmit_nb_frames);
 
         // create the actual handler
         IsoXmitHandler *h = new IsoXmitHandler(stream->getPort(), buffers,

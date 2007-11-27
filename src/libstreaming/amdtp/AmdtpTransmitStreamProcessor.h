@@ -102,7 +102,8 @@ public:
                     { return m_dimension; };
     virtual unsigned int getNominalFramesPerPacket()
                     {return m_syt_interval;};
-    unsigned int getPacketsPerPeriod();
+    virtual unsigned int getPacketsPerPeriod();
+    virtual unsigned int getNominalPacketsNeeded(unsigned int nframes);
 
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);

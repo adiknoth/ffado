@@ -72,6 +72,7 @@ class IsoStream
 
         virtual unsigned int getPacketsPerPeriod() {return 1;};
         virtual unsigned int getMaxPacketSize() {return 1024;}; //FIXME: arbitrary
+        virtual unsigned int getNominalPacketsNeeded(unsigned int nframes) {return 1;}; //FIXME: arbitrary
 
         virtual enum raw1394_iso_disposition
                 putPacket(unsigned char *data, unsigned int length,
