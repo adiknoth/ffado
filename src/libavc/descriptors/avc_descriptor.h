@@ -136,6 +136,7 @@ public:
     bool reload();
     
 protected:
+    void printBufferBytes(unsigned int level, size_t length, byte_t* buffer) const;
 
     Unit*            m_unit;
     Subunit*         m_subunit;

@@ -178,7 +178,6 @@ ReadDescriptorCmd::serialize( Util::IOSSerialize& se )
         debugError("Unsupported type for this command: %02X\n", getCommandType());
         return false;
     }
-    return true;    
     return true;
 }
 
