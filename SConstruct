@@ -135,7 +135,6 @@ if not env.GetOption('clean'):
 		'libiec61883' : '1.1.0',
 		'alsa' : '1.0.0',
 		'libxml++-2.6' : '2.13.0',
-		'liblo' : '0.22',
 		'dbus-1' : '1.0',
 		}
 	for pkg in pkgs:
@@ -202,8 +201,17 @@ env.Alias( "install", env['includedir'] )
 env.Alias( "install", env['sharedir'] )
 env.Alias( "install", env['bindir'] )
 
+
+env['REVISION'] = os.popen('svnversion .').read()[:-1]
+# This may be as simple as '89' or as complex as '4123:4184M'.
+# We'll just use the last bit.
+env['REVISION'] = env['REVISION'].split(':')[-1]
+
+if env['REVISION'] == 'exported':
+	env['REVISION'] = ''
+
 env['PACKAGE'] = "libffado"
-env['VERSION'] = "1.999.6"
+env['VERSION'] = "1.999.7"
 env['LIBVERSION'] = "1.0.0"
 
 #
@@ -214,7 +222,6 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 #
 # Start building
 #
-
 env.ScanReplace( "config.h.in" )
 
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
@@ -226,6 +233,8 @@ if build_base:
 else:
 	env.SConscript( dirs=subdirs, exports="env" )
 
+if 'debian' in COMMAND_LINE_TARGETS:
+	env.SConscript("deb/SConscript", exports="env")
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):

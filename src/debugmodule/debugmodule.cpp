@@ -45,6 +45,7 @@ struct ColorEntry  {
 };
 
 ColorEntry colorTable[] = {
+    { "",           ""        },
     { "\033[31mFatal",   "\033[0m" },
     { "\033[31mError",   "\033[0m" },
     { "\033[31mWarning", "\033[0m" },
@@ -212,7 +213,7 @@ DebugModule::print( debug_level_t level,
 const char*
 DebugModule::getPreSequence( debug_level_t level ) const
 {
-    if ( ( level <= eDL_Normal ) && ( level >= eDL_Fatal ) ) {
+    if ( ( level <= eDL_Normal ) && ( level >= eDL_Message ) ) {
         return colorTable[level].preSequence;
     }
     return colorTable[eDL_Normal].preSequence;
@@ -221,7 +222,7 @@ DebugModule::getPreSequence( debug_level_t level ) const
 const char*
 DebugModule::getPostSequence( debug_level_t level ) const
 {
-    if ( ( level <= eDL_Normal ) && ( level >= eDL_Fatal ) ) {
+    if ( ( level <= eDL_Normal ) && ( level >= eDL_Message ) ) {
         return colorTable[level].postSequence;
     }
     return colorTable[eDL_Normal].postSequence;

@@ -41,12 +41,6 @@ ffado_source = env.Split( '\
 	libieee1394/csr1212.c \
 	libieee1394/ieee1394service.cpp \
 	libieee1394/IEC61883.cpp \
-	libosc/OscArgument.cpp \
-	libosc/OscClient.cpp \
-	libosc/OscMessage.cpp \
-	libosc/OscNode.cpp \
-	libosc/OscResponse.cpp \
-	libosc/OscServer.cpp \
 	libstreaming/StreamProcessorManager.cpp \
 	libstreaming/util/cip.c \
 	libstreaming/util/IsoHandler.cpp \
@@ -196,7 +190,6 @@ if not env.GetOption( "clean" ):
 	libenv.MergeFlags( env['LIBIEC61883_FLAGS'] )
 	libenv.MergeFlags( env['ALSA_FLAGS'] )
 	libenv.MergeFlags( env['LIBXML26_FLAGS'] )
-	libenv.MergeFlags( env['LIBLO_FLAGS'] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )
@@ -247,7 +240,6 @@ apps = { \
 	"test-debugmodule" : "debugmodule/test_debugmodule.cpp", \
 	"test-dll" : "libutil/test-dll.cpp", \
 	"test-unittests-util" : "libutil/unittests.cpp", \
-	"test-unittests-osc" : "libosc/unittests.cpp" \
 }
 
 installapps = []
