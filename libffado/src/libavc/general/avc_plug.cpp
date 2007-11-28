@@ -1245,6 +1245,26 @@ Plug::showPlug() const
     }
     debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "\tChannel info:\n");
+    for ( Plug::ClusterInfoVector::const_iterator it = m_clusterInfos.begin();
+          it != m_clusterInfos.end();
+          ++it )
+    {
+        const Plug::ClusterInfo* clusterInfo = &( *it );
+
+        debugOutput(DEBUG_LEVEL_VERBOSE, "         Cluster %s (idx=%2d, type=0x%02X, ch=%2d, format=0x%02X)\n",
+            clusterInfo->m_name.c_str(), clusterInfo->m_portType, clusterInfo->m_nrOfChannels, clusterInfo->m_streamFormat);
+        Plug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
+        for ( Plug::ChannelInfoVector::const_iterator it = channelInfos.begin();
+              it != channelInfos.end();
+              ++it )
+        {
+            const Plug::ChannelInfo* channelInfo = &( *it );
+            debugOutput(DEBUG_LEVEL_VERBOSE, "           Channel %s (pos=0x%02X, loc=0x%02X)\n",
+                channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
+        }
+    }
+
     flushDebugOutput();
 }
 
@@ -1411,6 +1431,7 @@ Plug::serializeChannelInfos( Glib::ustring basePath,
         result &= ser.write( strstrm.str() + "/m_streamPosition", info.m_streamPosition );
         result &= ser.write( strstrm.str() + "/m_location", info.m_location );
         result &= ser.write( strstrm.str() + "/m_name", info.m_name );
+        i++;
     }
 
     return result;
@@ -1472,7 +1493,7 @@ Plug::serializeClusterInfos( Glib::ustring basePath,
         result &= ser.write( strstrm.str() + "/m_nrOfChannels", info.m_nrOfChannels );
         result &= serializeChannelInfos( strstrm.str() + "/m_channelInfo", ser, info );
         result &= ser.write( strstrm.str() + "/m_streamFormat", info.m_streamFormat );
-
+        i++;
     }
 
     return result;
@@ -1535,6 +1556,7 @@ Plug::serializeFormatInfos( Glib::ustring basePath,
         result &= ser.write( strstrm.str() + "/m_audioChannels", info.m_audioChannels );
         result &= ser.write( strstrm.str() + "/m_midiChannels", info.m_midiChannels );
         result &= ser.write( strstrm.str() + "/m_index", info.m_index );
+        i++;
     }
     return result;
 }
