@@ -52,6 +52,7 @@ public:
     virtual bool read( byte_t* value ) = 0;
     virtual bool read( uint16_t* value ) = 0;
     virtual bool read( quadlet_t* value ) = 0;
+    // note that the value pointer is not valid outside deserialize()
     virtual bool read( char** value, size_t length ) = 0;
     virtual bool peek( byte_t* value ) = 0;
     virtual bool peek( uint16_t* value, size_t offset )=0;
@@ -141,6 +142,7 @@ public:
     virtual bool read( byte_t* value );
     virtual bool read( uint16_t* value );
     virtual bool read( quadlet_t* value );
+    // note that the value pointer is not valid outside deserialize()
     virtual bool read( char** value, size_t length );
     virtual bool peek( byte_t* value );
     virtual bool peek( uint16_t* value, size_t offset );

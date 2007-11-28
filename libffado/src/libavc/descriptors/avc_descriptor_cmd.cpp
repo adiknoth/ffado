@@ -141,7 +141,7 @@ ReadDescriptorCmd::ReadDescriptorCmd(Ieee1394Service& ieee1394service)
 
 ReadDescriptorCmd::~ReadDescriptorCmd()
 {
-
+    delete[] m_data;
 }
 
 bool
@@ -151,6 +151,8 @@ ReadDescriptorCmd::clear()
     m_reserved =  0x00;
     m_data_length = 0x0000;
     m_address = 0x0000;
+    delete[] m_data;
+    m_data = NULL;
     return true;
 }
 
@@ -185,29 +187,39 @@ bool
 ReadDescriptorCmd::deserialize( Util::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
-    
+
     if(m_specifier==NULL) {
         debugError("m_specifier==NULL");
         return false;
     }
-    
+
     m_specifier->deserialize( de );
-    
+
     switch (getCommandType()) {
     case eCT_Control:
         de.read( (byte_t *)&m_status );
         de.read( (byte_t *)&m_reserved );
         de.read( (uint16_t *)&m_data_length );
         de.read( (uint16_t *)&m_address );
-        
+
         if (getResponse()==eR_Accepted) {
             if (m_data_length>0) {
-                if (!de.read( (char **)&m_data, m_data_length )) {
-                    m_data=NULL;
+                // the pointer returned by de.read is not valid outside this function
+                // hence we copy the data to an internal buffer
+                m_data = new byte_t[m_data_length];
+                if(m_data == NULL) {
+                    debugError("Could not allocate memory for payload data");
+                    return false;
+                }
+                char * cmd_data = NULL;
+                if (!de.read( (char **)&cmd_data, m_data_length )) {
+                    delete[] m_data;
+                    m_data = NULL;
                     debugError("Could not read payload data");
                     return false;
                 }
-                
+                memcpy(m_data, cmd_data, m_data_length);
+
             } else {
                 debugWarning("Read descriptor command accepted but no payload data returned.\n");
                 m_data=NULL;

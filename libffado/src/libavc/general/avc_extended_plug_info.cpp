@@ -118,6 +118,8 @@ ExtendedPlugInfoPlugNameSpecificData::deserialize( Util::IISDeserialize& de )
     de.read( &length );
     m_name.clear();
     char* name;
+    // note that the pointer returned by de.read is not valid outside this function
+    // but since we assign it to m_name it's not a problem since the contents are copied
     de.read( &name, length );
     m_name = name;
 

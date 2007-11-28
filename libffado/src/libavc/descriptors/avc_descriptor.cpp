@@ -494,6 +494,8 @@ AVCRawTextInfoBlock::deserialize( Util::IISDeserialize& de )
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
 
+    // note that the pointer returned by de.read is not valid outside this function
+    // but since we add it to m_text it's not a problem
     char *txt;
     result &= de.read(&txt,m_compound_length-4);
     m_text.clear();
@@ -556,6 +558,8 @@ AVCNameInfoBlock::deserialize( Util::IISDeserialize& de )
     result &= de.read(&dummy16);
     result &= de.read(&text_length);
 
+    // note that the pointer returned by de.read is not valid outside this function
+    // but since we add it to m_text it's not a problem
     char *txt;
     result &= de.read(&txt,text_length);
     m_text.clear();
