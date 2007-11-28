@@ -36,6 +36,7 @@
 #include <pthread.h>
 
 #include <vector>
+#include <string>
 
 class ARMHandler;
 
@@ -46,8 +47,29 @@ public:
 
     bool initialize( int port );
 
+   /**
+    * @brief get number of ports (firewire adapters) in this machine
+    *
+    * @return the number of ports
+    */
+    static unsigned int detectNbPorts();
+
+   /**
+    * @brief get port (adapter) id
+    *
+    * @return get port (adapter) id
+    */
     int getPort()
-    { return m_port; }
+        { return m_port; }
+
+   /**
+    * @brief get port (adapter) name
+    *
+    * @return get port (adapter) name
+    */
+    std::string getPortName()
+        { return m_portName; };
+
    /**
     * @brief get number of nodes on the bus
     *
@@ -237,6 +259,7 @@ private:
     raw1394handle_t m_handle;
     raw1394handle_t m_resetHandle;
     int             m_port;
+    std::string     m_portName;
 
     pthread_t       m_thread;
     pthread_mutex_t m_mutex;
@@ -255,6 +278,7 @@ private:
 
 public:
     void setVerboseLevel(int l);
+    void show();
 private:
     DECLARE_DEBUG_MODULE;
 };

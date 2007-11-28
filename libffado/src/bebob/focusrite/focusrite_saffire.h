@@ -141,9 +141,8 @@ protected:
 
 class SaffireDevice : public FocusriteDevice {
 public:
-    SaffireDevice( Ieee1394Service& ieee1394Service,
-              std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~SaffireDevice();
+    SaffireDevice(std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~SaffireDevice() {};
 
     virtual void showDevice();
     virtual void setVerboseLevel(int l);

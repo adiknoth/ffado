@@ -29,9 +29,8 @@
 namespace FireWorks {
 namespace ECHO {
 
-AudioFire::AudioFire( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : FireWorks::Device( ieee1394Service, configRom)
+AudioFire::AudioFire(std::auto_ptr<ConfigRom>( configRom ))
+    : FireWorks::Device(configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created FireWorks::ECHO::AudioFire (NodeID %d)\n",
                  getConfigRom().getNodeId() );

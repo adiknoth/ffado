@@ -51,9 +51,8 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
 };
 
-DiceAvDevice::DiceAvDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( ieee1394Service, configRom )
+DiceAvDevice::DiceAvDevice( std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( configRom )
     , m_model( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
@@ -107,17 +106,16 @@ DiceAvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-DiceAvDevice::createDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
+DiceAvDevice::createDevice( std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new DiceAvDevice(ieee1394Service, configRom );
+    return new DiceAvDevice( configRom );
 }
 
 bool
 DiceAvDevice::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -489,7 +487,7 @@ DiceAvDevice::prepare() {
         // construct the streamprocessor
         Streaming::AmdtpReceiveStreamProcessor *p;
         p=new Streaming::AmdtpReceiveStreamProcessor(
-                             m_p1394Service->getPort(),
+                             get1394Service().getPort(),
                              nb_channels);
 
         if(!p->init()) {
@@ -575,7 +573,7 @@ DiceAvDevice::prepare() {
         // construct the streamprocessor
         Streaming::AmdtpTransmitStreamProcessor *p;
         p=new Streaming::AmdtpTransmitStreamProcessor(
-                             m_p1394Service->getPort(),
+                             get1394Service().getPort(),
                              nb_channels);
 
         if(!p->init()) {
@@ -689,7 +687,7 @@ DiceAvDevice::lock() {
 
     // get a notifier to handle device notifications
     nodeaddr_t notify_address;
-    notify_address = m_p1394Service->findFreeARMBlock(
+    notify_address = get1394Service().findFreeARMBlock(
                         DICE_NOTIFIER_BASE_ADDRESS,
                         DICE_NOTIFIER_BLOCK_LENGTH,
                         DICE_NOTIFIER_BLOCK_LENGTH);
@@ -706,7 +704,7 @@ DiceAvDevice::lock() {
         return false;
     }
 
-    if (!m_p1394Service->registerARMHandler(m_notifier)) {
+    if (!get1394Service().registerARMHandler(m_notifier)) {
         debugError("Could not register notifier\n");
         delete m_notifier;
         m_notifier=NULL;
@@ -725,11 +723,11 @@ DiceAvDevice::lock() {
         return false;
     }
 
-    fb_nodeaddr_t swap_value = ((0xFFC0) | m_p1394Service->getLocalNodeId());
+    fb_nodeaddr_t swap_value = ((0xFFC0) | get1394Service().getLocalNodeId());
     swap_value = swap_value << 48;
     swap_value |= m_notifier->getStart();
 
-    if (!m_p1394Service->lockCompareSwap64(  getNodeId() | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
+    if (!get1394Service().lockCompareSwap64(  getNodeId() | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
                                        swap_value, &result )) {
         debugWarning("Could not register ourselves as device owner\n");
         return false;
@@ -764,17 +762,17 @@ DiceAvDevice::unlock() {
         return false;
     }
 
-    fb_nodeaddr_t compare_value = ((0xFFC0) | m_p1394Service->getLocalNodeId());
+    fb_nodeaddr_t compare_value = ((0xFFC0) | get1394Service().getLocalNodeId());
     compare_value <<= 48;
     compare_value |= m_notifier->getStart();
 
-    if (!m_p1394Service->lockCompareSwap64(  getNodeId() | 0xFFC0, addr, compare_value,
+    if (!get1394Service().lockCompareSwap64(  getNodeId() | 0xFFC0, addr, compare_value,
                                        DICE_OWNER_NO_OWNER, &result )) {
         debugWarning("Could not unregister ourselves as device owner\n");
         return false;
     }
 
-    m_p1394Service->unregisterARMHandler(m_notifier);
+    get1394Service().unregisterARMHandler(m_notifier);
     delete m_notifier;
     m_notifier=NULL;
 
@@ -983,7 +981,7 @@ DiceAvDevice::stopStreamByIndex(int i) {
 int DiceAvDevice::allocateIsoChannel(unsigned int packet_size) {
     unsigned int bandwidth=8+packet_size;
 
-    int ch=m_p1394Service->allocateIsoChannelGeneric(bandwidth);
+    int ch=get1394Service().allocateIsoChannelGeneric(bandwidth);
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "allocated channel %d, bandwidth %d\n",
         ch, bandwidth);
@@ -993,7 +991,7 @@ int DiceAvDevice::allocateIsoChannel(unsigned int packet_size) {
 // deallocate ISO resources
 bool DiceAvDevice::deallocateIsoChannel(int channel) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "freeing channel %d\n",channel);
-    return m_p1394Service->freeIsoChannel(channel);
+    return get1394Service().freeIsoChannel(channel);
 }
 
 bool
@@ -1226,7 +1224,7 @@ DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
+    if(!get1394Service().read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -1251,7 +1249,7 @@ DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->write_quadlet( nodeId, addr, htonl(data) ) ) {
+    if(!get1394Service().write_quadlet( nodeId, addr, htonl(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -1271,7 +1269,7 @@ DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->read( nodeId, addr, length/4, data ) ) {
+    if(!get1394Service().read( nodeId, addr, length/4, data ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
     }
@@ -1302,7 +1300,7 @@ DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
         data_out[i]=ntohl(*(data+i));
     }
 
-    if(!m_p1394Service->write( nodeId, addr, length/4, data_out ) ) {
+    if(!get1394Service().write( nodeId, addr, length/4, data_out ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
     }

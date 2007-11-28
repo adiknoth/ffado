@@ -54,9 +54,8 @@ using namespace AVC;
 
 namespace BeBoB {
 
-AvDevice::AvDevice( Ieee1394Service& ieee1394service,
-                    std::auto_ptr< ConfigRom >( configRom ) )
-    : GenericAVC::AvDevice( ieee1394service, configRom )
+AvDevice::AvDevice(std::auto_ptr< ConfigRom >( configRom ) )
+    : GenericAVC::AvDevice( configRom )
     , m_Mixer ( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
@@ -90,27 +89,26 @@ AvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-AvDevice::createDevice( Ieee1394Service& ieee1394Service,
-                        std::auto_ptr<ConfigRom>( configRom ))
+AvDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
     unsigned int modelId = configRom->getModelId();
 
     switch (vendorId) {
         case FW_VENDORID_TERRATEC:
-            return new Terratec::PhaseSeriesDevice(ieee1394Service, configRom);
+            return new Terratec::PhaseSeriesDevice(configRom);
         case FW_VENDORID_FOCUSRITE:
             switch(modelId) {
                 case 0x00000003:
                 case 0x00000006:
-                    return new Focusrite::SaffireProDevice(ieee1394Service, configRom);
+                    return new Focusrite::SaffireProDevice(configRom);
                 case 0x00000000:
-                    return new Focusrite::SaffireDevice(ieee1394Service, configRom);
+                    return new Focusrite::SaffireDevice(configRom);
                 default: // return a plain BeBoB device
-                    return new AvDevice(ieee1394Service, configRom);
+                    return new AvDevice(configRom);
            }
         default:
-            return new AvDevice(ieee1394Service, configRom);
+            return new AvDevice(configRom);
     }
     return NULL;
 }
@@ -118,8 +116,8 @@ AvDevice::createDevice( Ieee1394Service& ieee1394Service,
 bool
 AvDevice::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
     if ( vendorModel.parse() ) {
@@ -241,7 +239,7 @@ AvDevice::propagatePlugInfo() {
 int
 AvDevice::getConfigurationIdSampleRate()
 {
-    ExtendedStreamFormatCmd extStreamFormatCmd( *m_p1394Service );
+    ExtendedStreamFormatCmd extStreamFormatCmd( get1394Service() );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
     extStreamFormatCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
                                                     PlugAddress::ePAM_Unit,
@@ -274,7 +272,7 @@ AvDevice::getConfigurationIdSampleRate()
 int
 AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
 {
-    ExtendedPlugInfoCmd extPlugInfoCmd( *m_p1394Service );
+    ExtendedPlugInfoCmd extPlugInfoCmd( get1394Service() );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
                                      getNodeId() );
     extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
@@ -309,7 +307,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 int
 AvDevice::getConfigurationIdSyncMode()
 {
-    SignalSourceCmd signalSourceCmd( *m_p1394Service );
+    SignalSourceCmd signalSourceCmd( get1394Service() );
     SignalUnitAddress signalUnitAddr;
     signalUnitAddr.m_plugId = 0x01;
     signalSourceCmd.setSignalDestination( signalUnitAddr );
@@ -408,7 +406,7 @@ AvDevice::getCachePath()
 bool
 AvDevice::loadFromCache()
 {
-    Glib::ustring sDevicePath = getCachePath() + m_pConfigRom->getGuidString();
+    Glib::ustring sDevicePath = getCachePath() + getConfigRom().getGuidString();
 
     char* configId;
     asprintf(&configId, "%08x", getConfigurationId() );
@@ -448,7 +446,7 @@ AvDevice::saveCache()
 {
     // the path looks like this:
     // PATH_TO_CACHE + GUID + CONFIGURATION_ID
-    string tmp_path = getCachePath() + m_pConfigRom->getGuidString();
+    string tmp_path = getCachePath() + getConfigRom().getGuidString();
 
     // the following piece should do something like
     // 'mkdir -p some/path/with/some/dirs/which/do/not/exist'

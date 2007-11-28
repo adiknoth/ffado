@@ -28,13 +28,12 @@
 
 #define FFADO_MAX_NAME_LEN 256
 
-#define FFADO_BOUNCE_SERVER_VENDORNAME  "FFADO Server"
-#define FFADO_BOUNCE_SERVER_MODELNAME   "ffado-server"
+#include <stdlib.h>
 
-#define FFADO_BOUNCE_SERVER_GETXMLDESCRIPTION_CMD
-#define AVC1394_SUBUNIT_TYPE_FFADO_BOUNCE_SERVER     0x0D
+#define FFADO_STREAMING_MAX_URL_LENGTH 2048
 
-#define FFADO_API_VERSION 2
+#define FFADO_IGNORE_CAPTURE         (1<<0)
+#define FFADO_IGNORE_PLAYBACK     (1<<1)
 
 enum ffado_direction {
     FFADO_CAPTURE  = 0,
@@ -46,21 +45,6 @@ typedef struct ffado_handle* ffado_handle_t;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-ffado_handle_t
-ffado_new_handle( int port );
-
-int
-ffado_destroy_handle( ffado_handle_t ffado_handle );
-
-int
-ffado_discover_devices( ffado_handle_t ffado_handle, int verbose_level );
-
-int ffado_node_is_valid_ffado_device(ffado_handle_t fb_handle, int node_id);
-int ffado_get_nb_devices_on_bus(ffado_handle_t fb_handle);
-
-int ffado_get_device_node_id(ffado_handle_t fb_handle, int device_nr);
-int ffado_set_samplerate(ffado_handle_t ffado_handle, int node_id, int samplerate);
 
 /* ABI stuff */
 const char*
@@ -74,31 +58,6 @@ ffado_get_api_version();
 /* workaround: wait usec after each AVC command.
    will disapear as soon bug is fixed */    
 void ffado_sleep_after_avc_command( int time );
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* FFADO_H */
-
-/* ffado_streaming.h
- *
- * Specification for the FFADO Streaming API
- *
- */
-#ifndef __FFADO_STREAMING_H__
-#define __FFADO_STREAMING_H__
-
-#include <stdlib.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define FFADO_STREAMING_MAX_URL_LENGTH 2048
-
-#define FFADO_IGNORE_CAPTURE         (1<<0)
-#define FFADO_IGNORE_PLAYBACK     (1<<1)
 
 
 /* The basic operation of the API is as follows:
@@ -136,15 +95,55 @@ typedef struct _ffado_device ffado_device_t;
  * The sample format used by the ffado streaming API
  */
 
-typedef unsigned int ffado_sample_t;
-
-
+typedef unsigned int ffado_sample_t; // FIXME
 typedef unsigned int ffado_nframes_t;
 
-
+#define FFADO_MAX_SPECSTRING_LENGTH 256
+#define FFADO_MAX_SPECSTRINGS       64
+/**
+ * This struct serves to define the devices that should be used by the library
+ * device_spec_strings is an array of pointers that should contain nb_device_spec_strings
+ * valid pointers to strings. 
+ * 
+ * The spec strings should be null terminated and can be no longer
+ * than FFADO_MAX_SPECSTRINGS.
+ *
+ * nb_device_spec_strings < FFADO_MAX_SPECSTRING_LENGTH
+ * nb_device_spec_strings >= 0
+ *
+ * If nb_device_spec_strings == 0, all busses are scanned for attached devices, and
+ * all found devices that are supported are combined into one large pseudo-device. The
+ * device order is defined by the GUID of the device. Devices with lower GUID's will
+ * be the first ones.
+ *
+ * If multiple device specifications are present, the device order is defined as follows:
+ *  - device(s) that correspond to a spec string with a lower index will be added before
+ *    devices from higher indexes.
+ *  - if a spec string results in multiple devices, they are sorted by GUID unless the
+ *    spec format dictates otherwise.
+ *
+ * The actual meaning of the device specification should be one of the following:
+ * - Format 1: "hw:x[,y[,z]]"
+ *     x = the firewire bus to use ('port' in raw1394 terminology)
+ *         (mandatory)
+ *     y = the node id the device currently has (bus resets might change that, but FFADO 
+ *         will track these changes and keep using the device specified on startup)
+ *         (optional)
+ *     z = the stream direction to use.
+ *           0 => capture (record) channels only
+ *           1 => playback channels only
+ *           other/unspecified => both playback and capture
+ *         (optional)
+ *
+ * - Format 2: the device alias as defined in the ffado config file (UNIMPLEMENTED)
+ */
 typedef struct ffado_device_info {
-    /* TODO: How is the device specification done? */
-//    ffado_device_info_location_type location_type;
+    unsigned int nb_device_spec_strings;
+    char **device_spec_strings;
+
+    /* add some extra space to allow for future API extention 
+       w/o breaking binary compatibility */
+    int32_t reserved[32];
 } ffado_device_info_t;
 
 /**
@@ -152,37 +151,33 @@ typedef struct ffado_device_info {
  */
 typedef struct ffado_options {
     /* driver related setup */
-    int sample_rate;         /* this is acutally dictated by the device
+    int32_t sample_rate;         /*
                              * you can specify a value here or -1 to autodetect
                               */
 
     /* buffer setup */
-    int period_size;     /* one period is the amount of frames that
+    int32_t period_size;     /* one period is the amount of frames that
                  * has to be sent or received in order for
                  * a period boundary to be signalled.
                  * (unit: frames)
                  */
-    int nb_buffers;    /* the size of the frame buffer (in periods) */
+    int32_t nb_buffers;    /* the size of the frame buffer (in periods) */
 
     /* packetizer thread options */
-    int realtime;
-    int packetizer_priority;
-    
-    /* libffado related setup */
-    int node_id;
-    int port;
-    
-    /* direction map */
-    int directions;
-    
+    int32_t realtime;
+    int32_t packetizer_priority;
+
     /* verbosity */
-    int verbose;
-    
+    int32_t verbose;
+
     /* slave mode */
-    int slave_mode;
-    
+    int32_t slave_mode;
     /* snoop mode */
-    int snoop_mode;
+    int32_t snoop_mode;
+
+    /* add some extra space to allow for future API extention 
+       w/o breaking binary compatibility */
+    int32_t reserved[24];
 
 } ffado_options_t;
 
@@ -196,10 +191,13 @@ typedef struct ffado_options {
  *
  * A ffado_midi type stream is a stream of midi bytes. The bytes are 8bit UINT,
  * aligned as the first 8LSB's of the 32bit UINT of the read/write buffer.
+ * 
+ * A ffado_control type stream is a stream that provides control information. The
+ * format of this control information is undefined, and the stream should be ignored.
  *
  */
 typedef enum {
-    ffado_stream_type_invalid                      =   -1,
+      ffado_stream_type_invalid                      =   -1,
       ffado_stream_type_unknown                      =   0,
       ffado_stream_type_audio                        =   1,
       ffado_stream_type_midi                         =   2,
@@ -212,13 +210,10 @@ typedef enum {
  * 
  */
 typedef enum {
-    ffado_buffer_type_per_stream          =   -1, // use this to use the per-stream read functions
-    ffado_buffer_type_int24           =   0,
-    ffado_buffer_type_float            =   1,
-    ffado_buffer_type_midi            =   2,
-//     ffado_buffer_type_uint32           =   2,
-//     ffado_buffer_type_double           =   3,
-//     ...
+    ffado_buffer_type_per_stream      = -1, // use this to use the per-stream read functions
+    ffado_buffer_type_int24           =  0,
+    ffado_buffer_type_float           =  1,
+    ffado_buffer_type_midi            =  2,
 } ffado_streaming_buffer_type;
 
 /**
@@ -236,7 +231,8 @@ typedef enum {
  * init operation failed.
  *
  */
-ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info,
+ffado_device_t *ffado_streaming_init(
+                     ffado_device_info_t device_info,
                      ffado_options_t options);
 
 /**
@@ -326,9 +322,7 @@ ffado_streaming_stream_type ffado_streaming_get_playback_stream_type(ffado_devic
  * and separately indicate if you want to use a user buffer or a managed buffer.
  *
  */
- 
- 
- 
+
 /**
  * Sets the decode buffer for the stream. This allows for zero-copy decoding.
  * The call to ffado_streaming_transfer_buffers will decode one period of the stream to

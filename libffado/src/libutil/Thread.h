@@ -87,6 +87,8 @@ class Thread
 
         virtual pthread_t GetThreadID() = 0;
 
+        virtual void setVerboseLevel(int l)
+            {setDebugLevel(l);};
     protected:
             DECLARE_DEBUG_MODULE;
 

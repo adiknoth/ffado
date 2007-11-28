@@ -39,9 +39,8 @@
 
 namespace MAudio {
 
-AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
-                    std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( ieee1394Service, configRom)
+AvDevice::AvDevice(std::auto_ptr<ConfigRom>( configRom ))
+    : BeBoB::AvDevice( configRom)
     , m_model ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
@@ -81,17 +80,16 @@ AvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-AvDevice::createDevice( Ieee1394Service& ieee1394Service,
-                        std::auto_ptr<ConfigRom>( configRom ))
+AvDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice(ieee1394Service, configRom );
+    return new AvDevice(configRom );
 }
 
 bool
 AvDevice::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );

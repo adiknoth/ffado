@@ -68,7 +68,7 @@ bool IsoHandlerManager::init()
     }
 
     // propagate the debug level
-//     m_isoManagerThread->setVerboseLevel(getDebugLevel());
+    m_isoManagerThread->setVerboseLevel(getDebugLevel());
 
     return true;
 }
@@ -703,6 +703,11 @@ bool IsoHandlerManager::reset() {
 
 void IsoHandlerManager::setVerboseLevel(int i) {
     setDebugLevel(i);
+
+    // propagate the debug level
+    if(m_isoManagerThread) {
+        m_isoManagerThread->setVerboseLevel(getDebugLevel());
+    }
 
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
           it != m_IsoHandlers.end();

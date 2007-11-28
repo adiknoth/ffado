@@ -165,7 +165,7 @@ main( int argc, char** argv )
         return -1;
     }
 
-    Device *dev = new Device( service, std::auto_ptr<ConfigRom>(configRom) );
+    Device *dev = new Device( std::auto_ptr<ConfigRom>(configRom) );
     if (dev == NULL) {
         debugError("Could not create FireWorks::Device\n");
         delete configRom;

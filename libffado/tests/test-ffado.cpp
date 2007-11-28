@@ -206,7 +206,7 @@ main( int argc, char **argv )
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
         }
-        if ( !m_deviceManager->initialize( arguments.port ) ) {
+        if ( !m_deviceManager->initialize() ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
             return exitfunction(-1);
@@ -237,7 +237,7 @@ main( int argc, char **argv )
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
         }
-        if ( !m_deviceManager->initialize( arguments.port ) ) {
+        if ( !m_deviceManager->initialize() ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
             return exitfunction(-1);
@@ -294,7 +294,7 @@ main( int argc, char **argv )
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
         }
-        if ( !m_deviceManager->initialize( arguments.port ) ) {
+        if ( !m_deviceManager->initialize() ) {
             fprintf( stderr, "Could not initialize device manager\n" );
             delete m_deviceManager;
             return exitfunction(-1);

@@ -185,9 +185,8 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_8PRE,      sizeof( Ports_8PRE ),       96000 },
 };
 
-MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
-                        std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( ieee1394Service, configRom )
+MotuDevice::MotuDevice( std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( configRom )
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
@@ -205,13 +204,11 @@ MotuDevice::MotuDevice( Ieee1394Service& ieee1394Service,
 MotuDevice::~MotuDevice()
 {
     // Free ieee1394 bus resources if they have been allocated
-    if (m_p1394Service != NULL) {
-        if (m_iso_recv_channel>=0 && !m_p1394Service->freeIsoChannel(m_iso_recv_channel)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
-        }
-        if (m_iso_send_channel>=0 && !m_p1394Service->freeIsoChannel(m_iso_send_channel)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
-        }
+    if (m_iso_recv_channel>=0 && !get1394Service().freeIsoChannel(m_iso_recv_channel)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
+    }
+    if (m_iso_send_channel>=0 && !get1394Service().freeIsoChannel(m_iso_send_channel)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
     }
 }
 
@@ -241,19 +238,18 @@ MotuDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-MotuDevice::createDevice( Ieee1394Service& ieee1394Service,
-                          std::auto_ptr<ConfigRom>( configRom ))
+MotuDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new MotuDevice(ieee1394Service, configRom );
+    return new MotuDevice(configRom);
 }
 
 bool
 MotuDevice::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-//     unsigned int modelId = m_pConfigRom->getModelId();
-    unsigned int unitVersion = m_pConfigRom->getUnitVersion();
-    unsigned int unitSpecifierId = m_pConfigRom->getUnitSpecifierId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+//     unsigned int modelId = getConfigRom().getModelId();
+    unsigned int unitVersion = getConfigRom().getUnitVersion();
+    unsigned int unitSpecifierId = getConfigRom().getUnitSpecifierId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
@@ -503,10 +499,10 @@ MotuDevice::prepare() {
 
     // Assign iso channels if not already done
     if (m_iso_recv_channel < 0)
-        m_iso_recv_channel = m_p1394Service->allocateIsoChannelGeneric(m_rx_bandwidth);
+        m_iso_recv_channel = get1394Service().allocateIsoChannelGeneric(m_rx_bandwidth);
 
     if (m_iso_send_channel < 0)
-        m_iso_send_channel = m_p1394Service->allocateIsoChannelGeneric(m_tx_bandwidth);
+        m_iso_send_channel = get1394Service().allocateIsoChannelGeneric(m_tx_bandwidth);
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
         m_iso_recv_channel, m_iso_send_channel);
@@ -514,16 +510,16 @@ MotuDevice::prepare() {
     if (m_iso_recv_channel<0 || m_iso_send_channel<0) {
         // be nice and deallocate
         if (m_iso_recv_channel >= 0)
-            m_p1394Service->freeIsoChannel(m_iso_recv_channel);
+            get1394Service().freeIsoChannel(m_iso_recv_channel);
         if (m_iso_send_channel >= 0)
-            m_p1394Service->freeIsoChannel(m_iso_send_channel);
+            get1394Service().freeIsoChannel(m_iso_send_channel);
 
         debugFatal("Could not allocate iso channels!\n");
         return false;
     }
 
     m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(
-        m_p1394Service->getPort(), event_size_in);
+        get1394Service().getPort(), event_size_in);
 
     // The first thing is to initialize the processor.  This creates the
     // data structures.
@@ -593,7 +589,7 @@ MotuDevice::prepare() {
 
     // Do the same for the transmit processor
     m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(
-        m_p1394Service->getPort(), event_size_out);
+        get1394Service().getPort(), event_size_out);
 
     m_transmitProcessor->setVerboseLevel(getDebugLevel());
 
@@ -939,12 +935,11 @@ unsigned int MotuDevice::ReadRegister(unsigned int reg) {
  * Attempts to read the requested register from the MOTU.
  */
 
-quadlet_t quadlet;
-assert(m_p1394Service);
+  quadlet_t quadlet;
 
   quadlet = 0;
   // Note: 1394Service::read() expects a physical ID, not the node id
-  if (m_p1394Service->read(0xffc0 | getNodeId(), MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
+  if (get1394Service().read(0xffc0 | getNodeId(), MOTUFW_BASE_ADDR+reg, 1, &quadlet) < 0) {
     debugError("Error doing motu read from register 0x%06x\n",reg);
   }
 
@@ -960,7 +955,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
   data = htonl(data);
 
   // Note: 1394Service::write() expects a physical ID, not the node id
-  if (m_p1394Service->write(0xffc0 | getNodeId(), MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
+  if (get1394Service().write(0xffc0 | getNodeId(), MOTUFW_BASE_ADDR+reg, 1, &data) < 0) {
     err = 1;
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }

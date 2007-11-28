@@ -32,13 +32,11 @@
 
 #include <assert.h>
 
-IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 
-FFADODevice::FFADODevice( Ieee1394Service& ieee1394Service,
-                          std::auto_ptr<ConfigRom>( configRom ))
+FFADODevice::FFADODevice( std::auto_ptr<ConfigRom>( configRom ))
     : Control::Container()
     , m_pConfigRom( configRom )
-    , m_p1394Service( &ieee1394Service )
 {
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 
@@ -58,8 +56,7 @@ FFADODevice::~FFADODevice()
 }
 
 FFADODevice *
-FFADODevice::createDevice( Ieee1394Service& ,
-                           std::auto_ptr<ConfigRom>( x ))
+FFADODevice::createDevice(std::auto_ptr<ConfigRom>( x ))
 {
     // re-implement this!!
     assert(0);
@@ -88,6 +85,12 @@ ConfigRom&
 FFADODevice::getConfigRom() const
 {
     return *m_pConfigRom;
+}
+
+Ieee1394Service&
+FFADODevice::get1394Service()
+{
+    return getConfigRom().get1394Service();
 }
 
 bool
@@ -143,12 +146,16 @@ FFADODevice::setVerboseLevel(int l)
 void
 FFADODevice::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Node...........: %d\n", getNodeId());
-    debugOutput(DEBUG_LEVEL_NORMAL, "GUID...........: %s\n", getConfigRom().getGuidString().c_str());
-    
+    Ieee1394Service& s = getConfigRom().get1394Service();
+    debugOutput(DEBUG_LEVEL_NORMAL, "Attached to port.......: %d (%s)\n",
+                                    s.getPort(), s.getPortName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Node...................: %d\n", getNodeId());
+    debugOutput(DEBUG_LEVEL_NORMAL, "GUID...................: %s\n",
+                                    getConfigRom().getGuidString().c_str());
+
     std::string id=std::string("dev? [none]");
     getOption("id", id);
-     
+
     debugOutput(DEBUG_LEVEL_NORMAL, "Assigned ID....: %s\n", id.c_str());
 
     flushDebugOutput();

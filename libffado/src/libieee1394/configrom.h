@@ -43,7 +43,9 @@ class ConfigRom
 {
  public:
     ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId );
-    virtual ~ConfigRom();
+    virtual ~ConfigRom() {};
+
+    Ieee1394Service& get1394Service();
 
     bool initialize();
 
@@ -97,13 +99,12 @@ class ConfigRom
      */
     static bool compareGUID(  const ConfigRom& a, const ConfigRom& b );
 
-    void printConfigRom() const;
-
     bool serialize( Glib::ustring path, Util::IOSerialize& ser );
     static ConfigRom* deserialize( Glib::ustring path,
                    Util::IODeserialize& deser,
                    Ieee1394Service& ieee1394Service );
 
+    void printConfigRom() const;
     void setVerboseLevel(int level) {
         setDebugLevel(level);
         Element::setVerboseLevel(level);
@@ -116,7 +117,7 @@ class ConfigRom
 
     void processRootDirectory( struct csr1212_csr* csr );
 
-    Ieee1394Service* m_1394Service;
+    Ieee1394Service& m_1394Service;
     fb_nodeid_t      m_nodeId;
     bool             m_avcDevice;
     fb_octlet_t      m_guid;
