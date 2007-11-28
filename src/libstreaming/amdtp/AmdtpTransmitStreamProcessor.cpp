@@ -344,22 +344,6 @@ unsigned int AmdtpTransmitStreamProcessor::fillNoDataPacketHeader (
     }
 }
 
-unsigned int
-AmdtpTransmitStreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
-{
-    unsigned int nominal_frames_per_second = m_manager->getNominalRate();
-    uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
-    uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
-    uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
-    return nominal_packets;
-}
-
-unsigned int
-AmdtpTransmitStreamProcessor::getPacketsPerPeriod()
-{
-    return getNominalPacketsNeeded(m_manager->getPeriodSize());
-}
-
 bool AmdtpTransmitStreamProcessor::prepareChild()
 {
     debugOutput ( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this );

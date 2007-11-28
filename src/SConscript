@@ -122,7 +122,8 @@ motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
 	libstreaming/motu/MotuPort.cpp \
 	libstreaming/motu/MotuPortInfo.cpp \
-	libstreaming/motu/MotuStreamProcessor.cpp \
+	libstreaming/motu/MotuReceiveStreamProcessor.cpp \
+	libstreaming/motu/MotuTransmitStreamProcessor.cpp \
 ' )
 
 dice_source = env.Split( '\

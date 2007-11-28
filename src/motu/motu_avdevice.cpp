@@ -31,7 +31,8 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include "libstreaming/motu/MotuStreamProcessor.h"
+#include "libstreaming/motu/MotuReceiveStreamProcessor.h"
+#include "libstreaming/motu/MotuTransmitStreamProcessor.h"
 #include "libstreaming/motu/MotuPort.h"
 
 #include "libutil/DelayLockedLoop.h"
@@ -522,7 +523,7 @@ MotuDevice::prepare() {
     }
 
     m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(
-        m_p1394Service->getPort(), samp_freq, event_size_in);
+        m_p1394Service->getPort(), event_size_in);
 
     // The first thing is to initialize the processor.  This creates the
     // data structures.
@@ -592,7 +593,7 @@ MotuDevice::prepare() {
 
     // Do the same for the transmit processor
     m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(
-        m_p1394Service->getPort(), getSamplingFrequency(), event_size_out);
+        m_p1394Service->getPort(), event_size_out);
 
     m_transmitProcessor->setVerboseLevel(getDebugLevel());
 

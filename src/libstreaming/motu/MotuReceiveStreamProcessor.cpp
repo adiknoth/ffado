@@ -21,83 +21,89 @@
  * MA 02110-1301 USA
  */
 
-#include "AmdtpReceiveStreamProcessor.h"
-#include "AmdtpPort.h"
+#include "MotuReceiveStreamProcessor.h"
+#include "MotuPort.h"
 #include "../StreamProcessorManager.h"
 
 #include "../util/cycletimer.h"
 
+#include <math.h>
 #include <netinet/in.h>
 #include <assert.h>
 
-// in ticks
-// as per AMDTP2.1:
-// 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
-#define DEFAULT_TRANSFER_DELAY (11776U)
-
-#define TRANSMIT_TRANSFER_DELAY DEFAULT_TRANSFER_DELAY
-
 namespace Streaming {
 
-/* --------------------- RECEIVE ----------------------- */
+// A macro to extract specific bits from a native endian quadlet
+#define get_bits(_d,_start,_len) (((_d)>>((_start)-(_len)+1)) & ((1<<(_len))-1))
 
-AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int dimension)
+// Convert an SPH timestamp as received from the MOTU to a full timestamp in ticks.
+static inline uint32_t sphRecvToFullTicks(uint32_t sph, uint32_t ct_now) {
+
+uint32_t timestamp = CYCLE_TIMER_TO_TICKS(sph & 0x1ffffff);
+uint32_t now_cycles = CYCLE_TIMER_GET_CYCLES(ct_now);
+
+uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
+    // If the cycles have wrapped, correct ts_sec so it represents when timestamp
+    // was received.  The timestamps sent by the MOTU are always 1 or two cycles
+    // in advance of the cycle timer (reasons unknown at this stage).  In addition,
+    // iso buffering can delay the arrival of packets for quite a number of cycles
+    // (have seen a delay >12 cycles).
+    // Every so often we also see sph wrapping ahead of ct_now, so deal with that
+    // too.
+    if (CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000) {
+        if (ts_sec)
+            ts_sec--;
+        else
+            ts_sec = 127;
+    } else
+    if (now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000) {
+        if (ts_sec == 127)
+            ts_sec = 0;
+        else
+            ts_sec++;
+    }
+    return timestamp + ts_sec*TICKS_PER_SECOND;
+}
+
+MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, unsigned int event_size)
     : StreamProcessor(ePT_Receive , port)
-    , m_dimension( dimension )
+    , m_event_size(event_size)
 {}
 
 unsigned int
-AmdtpReceiveStreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
-{
-    unsigned int nominal_frames_per_second = m_manager->getNominalRate();
-    uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
-    uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
-    uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
-    return nominal_packets;
+MotuReceiveStreamProcessor::getMaxPacketSize() {
+    int framerate = m_manager->getNominalRate();
+    return framerate<=48000?616:(framerate<=96000?1032:1160);
 }
 
 unsigned int
-AmdtpReceiveStreamProcessor::getPacketsPerPeriod()
-{
-    return getNominalPacketsNeeded(m_manager->getPeriodSize());
+MotuReceiveStreamProcessor::getNominalFramesPerPacket() {
+    int framerate = m_manager->getNominalRate();
+    return framerate<=48000?8:(framerate<=96000?16:32);
 }
 
-bool AmdtpReceiveStreamProcessor::prepareChild() {
+bool
+MotuReceiveStreamProcessor::prepareChild() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
 
-    switch (m_manager->getNominalRate()) {
-        case 32000:
-        case 44100:
-        case 48000:
-            m_syt_interval = 8;
-            break;
-        case 88200:
-        case 96000:
-            m_syt_interval = 16;
-            break;
-        case 176400:
-        case 192000:
-            m_syt_interval = 32;
-            break;
-        default:
-            debugError("Unsupported rate: %d\n", m_manager->getNominalRate());
-            return false;
-    }
+    // prepare the framerate estimate
+    // FIXME: not needed anymore?
+    //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
-             m_manager->getNominalRate(), m_dimension, m_syt_interval);
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d\n",
+             m_manager->getNominalRate());
     debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
              m_manager->getPeriodSize(), m_manager->getNbBuffers());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
-             m_port,m_channel);
+             m_port, m_channel);
 
     return true;
 }
 
 
 /**
- * Processes packet header to extract timestamps and so on
+ * Processes packet header to extract timestamps and check if the packet is valid
  * @param data 
  * @param length 
  * @param channel 
@@ -108,24 +114,40 @@ bool AmdtpReceiveStreamProcessor::prepareChild() {
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
-AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length,
+MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped)
 {
-    struct iec61883_packet *packet = (struct iec61883_packet *) data;
-    assert(packet);
-    bool ok = (packet->syt != 0xFFFF) &&
-                  (packet->fdf != 0xFF) &&
-                  (packet->fmt == 0x10) &&
-                  (packet->dbs > 0) &&
-                  (length >= 2*sizeof(quadlet_t));
-    if(ok) {
-        uint64_t now = m_handler->getCycleTimer();
-        //=> convert the SYT to a full timestamp in ticks
-        m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
-                                              cycle, now);
+    if (length > 8) {
+        // The iso data blocks from the MOTUs comprise a CIP-like
+        // header followed by a number of events (8 for 1x rates, 16
+        // for 2x rates, 32 for 4x rates).
+        quadlet_t *quadlet = (quadlet_t *)data;
+        unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
+        unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
+
+        // Don't even attempt to process a packet if it isn't what
+        // we expect from a MOTU.  Yes, an FDF value of 32 bears
+        // little relationship to the actual data (24 bit integer)
+        // sent by the MOTU - it's one of those areas where MOTU
+        // have taken a curious detour around the standards.
+        if (tag!=1 || fdf_size!=32) {
+            return eCRV_Invalid;
+        }
+
+        // put this after the check because event_length can become 0 on invalid packets
+        unsigned int event_length = (fdf_size * dbs) / 8;       // Event size in bytes
+        unsigned int n_events = (length-8) / event_length;
+
+        // Acquire the timestamp of the last frame in the packet just
+        // received.  Since every frame from the MOTU has its own timestamp
+        // we can just pick it straight from the packet.
+        uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
+        m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
+        return eCRV_OK;
+    } else {
+        return eCRV_Invalid;
     }
-    return (ok ? eCRV_OK : eCRV_Invalid );
 }
 
 /**
@@ -141,13 +163,17 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
-AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length,
+MotuReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
                   unsigned int cycle, unsigned int dropped_cycles) {
-    struct iec61883_packet *packet = (struct iec61883_packet *) data;
-    assert(packet);
+    quadlet_t* quadlet = (quadlet_t*) data;
 
-    unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
+    unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
+    unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
+    // this is only called for packets that return eCRV_OK on processPacketHeader
+    // so event_length won't become 0
+    unsigned int event_length = (fdf_size * dbs) / 8;       // Event size in bytes
+    unsigned int n_events = (length-8) / event_length;
 
     // we have to keep in mind that there are also
     // some packets buffered by the ISO layer,
@@ -158,16 +184,17 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     // later than expected (the real receive time)
     #ifdef DEBUG
     if(isRunning()) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
-            m_last_timestamp, m_handler->getWakeupInterval(), m_syt_interval, getTicksPerFrame());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, tpf=%f\n",
+            m_last_timestamp, m_handler->getWakeupInterval(), getTicksPerFrame());
     }
     #endif
 
-    if(m_data_buffer->writeFrames(nevents, (char *)(data+8), m_last_timestamp)) {
+    if(m_data_buffer->writeFrames(n_events, (char *)(data+8), m_last_timestamp)) {
+        int dbc = get_bits(ntohl(quadlet[0]), 8, 8);
         // process all ports that should be handled on a per-packet base
         // this is MIDI for AMDTP (due to the need of DBC)
         if(isRunning()) {
-            if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
+            if (!decodePacketPorts((quadlet_t *)(data+8), n_events, dbc)) {
                 debugWarning("Problem decoding Packet Ports\n");
             }
         }
@@ -181,75 +208,32 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
  * Encoding/Decoding API                       *
  ***********************************************/
 /**
- * @brief write received events to the stream ringbuffers.
+ * \brief write received events to the port ringbuffers.
  */
-bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
+bool MotuReceiveStreamProcessor::processReadBlock(char *data,
                        unsigned int nevents, unsigned int offset)
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p)->processReadBlock(%u, %u)\n",this,nevents,offset);
-
     bool no_problem=true;
-
     for ( PortVectorIterator it = m_PeriodPorts.begin();
           it != m_PeriodPorts.end();
-          ++it )
-    {
+          ++it ) {
         if((*it)->isDisabled()) {continue;};
 
         //FIXME: make this into a static_cast when not DEBUG?
+        Port *port=dynamic_cast<Port *>(*it);
 
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
+        switch(port->getPortType()) {
 
-        switch(pinfo->getFormat()) {
-        case AmdtpPortInfo::E_MBLA:
-            if(decodeMBLAEventsToPort(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not decode packet MBLA to port %s",(*it)->getName().c_str());
+        case Port::E_Audio:
+            if(decodeMotuEventsToPort(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+                debugWarning("Could not decode packet data to port %s",(*it)->getName().c_str());
                 no_problem=false;
             }
             break;
-        case AmdtpPortInfo::E_SPDIF: // still unimplemented
-            break;
-    /* for this processor, midi is a packet based port
-        case AmdtpPortInfo::E_Midi:
-            break;*/
-        default: // ignore
-            break;
-        }
-    }
-    return no_problem;
-}
+        // midi is a packet based port, don't process
+        //    case MotuPortInfo::E_Midi:
+        //        break;
 
-/**
- * @brief write silence events to the stream ringbuffers.
- */
-bool AmdtpReceiveStreamProcessor::provideSilenceBlock(unsigned int nevents, unsigned int offset)
-{
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p)->proviceSilenceBlock(%u, %u)\n", this, nevents, offset);
-
-    bool no_problem=true;
-
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        if((*it)->isDisabled()) {continue;};
-        //FIXME: make this into a static_cast when not DEBUG?
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
-
-        switch(pinfo->getFormat()) {
-        case AmdtpPortInfo::E_MBLA:
-            if(provideSilenceToPort(static_cast<AmdtpAudioPort *>(*it), offset, nevents)) {
-                debugWarning("Could not put silence into to port %s",(*it)->getName().c_str());
-                no_problem=false;
-            }
-            break;
-        case AmdtpPortInfo::E_SPDIF: // still unimplemented
-            break;
-    /* for this processor, midi is a packet based port
-        case AmdtpPortInfo::E_Midi:
-            break;*/
         default: // ignore
             break;
         }
@@ -265,64 +249,78 @@ bool AmdtpReceiveStreamProcessor::provideSilenceBlock(unsigned int nevents, unsi
  * @param dbc DataBlockCount value for this packet
  * @return true if all successfull
  */
-bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc)
-{
+bool MotuReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int nevents,
+        unsigned int dbc) {
     bool ok=true;
 
-    quadlet_t *target_event=NULL;
-    unsigned int j;
+    // Use char here since the source address won't necessarily be
+    // aligned; use of an unaligned quadlet_t may cause issues on
+    // certain architectures.  Besides, the source for MIDI data going
+    // directly to the MOTU isn't structured in quadlets anyway; it is a
+    // sequence of 3 unaligned bytes.
+    unsigned char *src = NULL;
 
     for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
+        it != m_PacketPorts.end();
+        ++it ) {
 
-#ifdef DEBUG
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
+        Port *port=dynamic_cast<Port *>(*it);
+        assert(port); // this should not fail!!
 
-        // the only packet type of events for AMDTP is MIDI in mbla
-        assert(pinfo->getFormat()==AmdtpPortInfo::E_Midi);
-#endif
-        AmdtpMidiPort *mp=static_cast<AmdtpMidiPort *>(*it);
+        // Currently the only packet type of events for MOTU
+        // is MIDI in mbla.  However in future control data
+        // might also be sent via "packet" events, so allow
+        // for this possible expansion.
 
-        // we decode this directly (no function call) due to the high frequency
-        /* idea:
-        spec says: current_midi_port=(dbc+j)%8;
-        => if we start at (dbc+stream->location-1)%8,
-        we'll start at the right event for the midi port.
-        => if we increment j with 8, we stay at the right event.
-        */
-        // FIXME: as we know in advance how big a packet is (syt_interval) we can
-        //        predict how much loops will be present here
-        for(j = (dbc & 0x07)+mp->getLocation(); j < nevents; j += 8) {
-            target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
-            quadlet_t sample_int=ntohl(*target_event);
-            // FIXME: this assumes that 2X and 3X speed isn't used,
-            // because only the 1X slot is put into the ringbuffer
-            if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-                sample_int=(sample_int >> 16) & 0x000000FF;
-                if(!mp->writeEvent(&sample_int)) {
-                    debugWarning("Packet port events lost\n");
-                    ok=false;
+        // FIXME: MIDI input is completely untested at present.
+        switch (port->getPortType()) {
+            case Port::E_Midi: {
+                MotuMidiPort *mp=static_cast<MotuMidiPort *>(*it);
+                signed int sample;
+                unsigned int j = 0;
+                // Get MIDI bytes if present anywhere in the
+                // packet.  MOTU MIDI data is sent using a
+                // 3-byte sequence starting at the port's
+                // position.  It's thought that there can never
+                // be more than one MIDI byte per packet, but
+                // for completeness we'll check the entire packet
+                // anyway.
+                src = (unsigned char *)data + mp->getPosition();
+                while (j < nevents) {
+                    if (*src==0x01 && *(src+1)==0x00) {
+                        sample = *(src+2);
+                        if (!mp->writeEvent(&sample)) {
+                            debugWarning("MIDI packet port events lost\n");
+                            ok = false;
+                        }
+                    }
+                    j++;
+                    src += m_event_size;
                 }
+                break;
             }
-        }
-
+            default:
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown packet-type port format %d\n",port->getPortType());
+                return ok;
+              }
     }
 
     return ok;
 }
 
-int
-AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
-                       AmdtpAudioPort *p, quadlet_t *data,
-                       unsigned int offset, unsigned int nevents)
+signed int MotuReceiveStreamProcessor::decodeMotuEventsToPort(MotuAudioPort *p,
+        quadlet_t *data, unsigned int offset, unsigned int nevents)
 {
     unsigned int j=0;
-    quadlet_t *target_event;
 
-    target_event=(quadlet_t *)(data + p->getPosition());
+    // Use char here since a port's source address won't necessarily be
+    // aligned; use of an unaligned quadlet_t may cause issues on
+    // certain architectures.  Besides, the source (data coming directly
+    // from the MOTU) isn't structured in quadlets anyway; it mainly
+    // consists of packed 24-bit integers.
+
+    unsigned char *src_data;
+    src_data = (unsigned char *)data + p->getPosition();
 
     switch(p->getDataType()) {
         default:
@@ -332,12 +330,23 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
                 assert(nevents + offset <= p->getBufferSize());
 
+                // Offset is in frames, but each port is only a single
+                // channel, so the number of frames is the same as the
+                // number of quadlets to offset (assuming the port buffer
+                // uses one quadlet per sample, which is the case currently).
                 buffer+=offset;
 
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+                for(j = 0; j < nevents; j += 1) { // Decode nsamples
+                    *buffer = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
+                    // Sign-extend highest bit of 24-bit int.
+                    // FIXME: this isn't strictly needed since E_Int24 is a 24-bit,
+                    // but doing so shouldn't break anything and makes the data
+                    // easier to deal with during debugging.
+                    if (*src_data & 0x80)
+                        *buffer |= 0xff000000;
+
                     buffer++;
-                    target_event+=m_dimension;
+                    src_data+=m_event_size;
                 }
             }
             break;
@@ -352,54 +361,20 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
                 for(j = 0; j < nevents; j += 1) { // decode max nsamples
 
-                    unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+                    unsigned int v = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
+
                     // sign-extend highest bit of 24-bit int
                     int tmp = (int)(v << 8) / 256;
 
                     *buffer = tmp * multiplier;
 
                     buffer++;
-                    target_event+=m_dimension;
+                    src_data+=m_event_size;
                 }
             }
             break;
     }
 
-    return 0;
-}
-
-int
-AmdtpReceiveStreamProcessor::provideSilenceToPort(
-                       AmdtpAudioPort *p, unsigned int offset, unsigned int nevents)
-{
-    unsigned int j=0;
-    switch(p->getDataType()) {
-        default:
-        case Port::E_Int24:
-            {
-                quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
-                assert(nevents + offset <= p->getBufferSize());
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *(buffer)=0;
-                    buffer++;
-                }
-            }
-            break;
-        case Port::E_Float:
-            {
-                float *buffer=(float *)(p->getBufferAddress());
-                assert(nevents + offset <= p->getBufferSize());
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *buffer = 0.0;
-                    buffer++;
-                }
-            }
-            break;
-    }
     return 0;
 }
 

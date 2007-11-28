@@ -30,13 +30,6 @@
 #include <netinet/in.h>
 #include <assert.h>
 
-// in ticks
-// as per AMDTP2.1:
-// 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
-#define DEFAULT_TRANSFER_DELAY (11776U)
-
-#define TRANSMIT_TRANSFER_DELAY DEFAULT_TRANSFER_DELAY
-
 namespace Streaming {
 
 /* --------------------- RECEIVE ----------------------- */
@@ -45,22 +38,6 @@ AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int dimension
     : StreamProcessor(ePT_Receive , port)
     , m_dimension( dimension )
 {}
-
-unsigned int
-AmdtpReceiveStreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
-{
-    unsigned int nominal_frames_per_second = m_manager->getNominalRate();
-    uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
-    uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
-    uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
-    return nominal_packets;
-}
-
-unsigned int
-AmdtpReceiveStreamProcessor::getPacketsPerPeriod()
-{
-    return getNominalPacketsNeeded(m_manager->getPeriodSize());
-}
 
 bool AmdtpReceiveStreamProcessor::prepareChild() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
@@ -221,43 +198,6 @@ bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
 }
 
 /**
- * @brief write silence events to the stream ringbuffers.
- */
-bool AmdtpReceiveStreamProcessor::provideSilenceBlock(unsigned int nevents, unsigned int offset)
-{
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p)->proviceSilenceBlock(%u, %u)\n", this, nevents, offset);
-
-    bool no_problem=true;
-
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
-          ++it )
-    {
-        if((*it)->isDisabled()) {continue;};
-        //FIXME: make this into a static_cast when not DEBUG?
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
-
-        switch(pinfo->getFormat()) {
-        case AmdtpPortInfo::E_MBLA:
-            if(provideSilenceToPort(static_cast<AmdtpAudioPort *>(*it), offset, nevents)) {
-                debugWarning("Could not put silence into to port %s",(*it)->getName().c_str());
-                no_problem=false;
-            }
-            break;
-        case AmdtpPortInfo::E_SPDIF: // still unimplemented
-            break;
-    /* for this processor, midi is a packet based port
-        case AmdtpPortInfo::E_Midi:
-            break;*/
-        default: // ignore
-            break;
-        }
-    }
-    return no_problem;
-}
-
-/**
  * @brief decode a packet for the packet-based ports
  *
  * @param data Packet data
@@ -367,40 +307,4 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
     return 0;
 }
-
-int
-AmdtpReceiveStreamProcessor::provideSilenceToPort(
-                       AmdtpAudioPort *p, unsigned int offset, unsigned int nevents)
-{
-    unsigned int j=0;
-    switch(p->getDataType()) {
-        default:
-        case Port::E_Int24:
-            {
-                quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
-                assert(nevents + offset <= p->getBufferSize());
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *(buffer)=0;
-                    buffer++;
-                }
-            }
-            break;
-        case Port::E_Float:
-            {
-                float *buffer=(float *)(p->getBufferAddress());
-                assert(nevents + offset <= p->getBufferSize());
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    *buffer = 0.0;
-                    buffer++;
-                }
-            }
-            break;
-    }
-    return 0;
-}
-
 } // end of namespace Streaming

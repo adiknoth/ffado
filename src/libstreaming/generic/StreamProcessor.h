@@ -209,8 +209,6 @@ protected: // the helper receive/transmit functions
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
-    virtual bool provideSilenceBlock(unsigned int nevents, unsigned int offset)
-        {debugWarning("call not allowed\n"); return false;};
 
     // the following methods are to be implemented by transmit SP subclasses
     virtual enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
@@ -237,6 +235,9 @@ protected: // the helper receive/transmit functions
         {debugWarning("call not allowed\n"); return false;};
     virtual bool transmitSilenceBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
+protected: // some generic helpers
+    int provideSilenceToPort(AudioPort *p, unsigned int offset, unsigned int nevents);
+    bool provideSilenceBlock(unsigned int nevents, unsigned int offset);
 
 private:
     bool getFramesDry(unsigned int nbframes, int64_t ts);
@@ -391,6 +392,12 @@ protected:
 
         /**
          * @brief get the nominal number of frames in a packet
+         *
+         * This is the amount of frames that is nominally present
+         * in one packet. It is recommended that in the receive handler
+         * you write this amount of frames when a valid packet has
+         * been received. (although this is not mandatory)
+         *
          * @return the nominal number of frames in a packet
          */
         virtual unsigned int getNominalFramesPerPacket() = 0;
@@ -399,7 +406,14 @@ protected:
          * @brief get the nominal number of packets needed for a certain amount of frames
          * @return the nominal number of packet necessary
          */
-        virtual unsigned int getNominalPacketsNeeded(unsigned int nframes) = 0;
+        virtual unsigned int getNominalPacketsNeeded(unsigned int nframes);
+
+        /**
+         * @brief returns the actual frame rate as calculated by the SP's DLL
+         * @return the actual frame rate as detected by the DLL
+         */
+        float getActualRate()
+            {return m_data_buffer->getRate();};
 
     protected:
         float m_ticks_per_frame;

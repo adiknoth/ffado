@@ -72,6 +72,16 @@ int StreamProcessor::getMaxFrameLatency() {
     }
 }
 
+unsigned int
+StreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
+{
+    unsigned int nominal_frames_per_second = m_manager->getNominalRate();
+    uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
+    uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
+    uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
+    return nominal_packets;
+}
+
 /***********************************************
  * Buffer management and manipulation          *
  ***********************************************/
@@ -704,6 +714,74 @@ StreamProcessor::shiftStream(int nbframes)
         }
         return result;
     }
+}
+
+/**
+ * @brief write silence events to the stream ringbuffers.
+ */
+bool StreamProcessor::provideSilenceBlock(unsigned int nevents, unsigned int offset)
+{
+    bool no_problem=true;
+    for ( PortVectorIterator it = m_PeriodPorts.begin();
+          it != m_PeriodPorts.end();
+          ++it ) {
+        if((*it)->isDisabled()) {continue;};
+
+        //FIXME: make this into a static_cast when not DEBUG?
+        Port *port=dynamic_cast<Port *>(*it);
+
+        switch(port->getPortType()) {
+
+        case Port::E_Audio:
+            if(provideSilenceToPort(static_cast<AudioPort *>(*it), offset, nevents)) {
+                debugWarning("Could not put silence into to port %s",(*it)->getName().c_str());
+                no_problem=false;
+            }
+            break;
+        // midi is a packet based port, don't process
+        //    case MotuPortInfo::E_Midi:
+        //        break;
+
+        default: // ignore
+            break;
+        }
+    }
+    return no_problem;
+}
+
+int
+StreamProcessor::provideSilenceToPort(
+                       AudioPort *p, unsigned int offset, unsigned int nevents)
+{
+    unsigned int j=0;
+    switch(p->getDataType()) {
+        default:
+        case Port::E_Int24:
+            {
+                quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+                assert(nevents + offset <= p->getBufferSize());
+                buffer+=offset;
+
+                for(j = 0; j < nevents; j += 1) { // decode max nsamples
+                    *(buffer)=0;
+                    buffer++;
+                }
+            }
+            break;
+        case Port::E_Float:
+            {
+                float *buffer=(float *)(p->getBufferAddress());
+                assert(nevents + offset <= p->getBufferSize());
+                buffer+=offset;
+
+                for(j = 0; j < nevents; j += 1) { // decode max nsamples
+                    *buffer = 0.0;
+                    buffer++;
+                }
+            }
+            break;
+    }
+    return 0;
 }
 
 /***********************************************

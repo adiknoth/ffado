@@ -95,24 +95,16 @@ public:
                     { return m_dimension; };
     virtual unsigned int getNominalFramesPerPacket() 
                     {return m_syt_interval;};
-    virtual unsigned int getPacketsPerPeriod();
-    virtual unsigned int getNominalPacketsNeeded(unsigned int nframes);
 
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
-    bool provideSilenceBlock(unsigned int nevents, unsigned int offset);
 
 private:
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
-
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
-    int provideSilenceToPort(AmdtpAudioPort *p, unsigned int offset, unsigned int nevents);
 
     int m_dimension;
     unsigned int m_syt_interval;
-
-    uint64_t m_last_syt; /// FIXME:debug
-    uint64_t m_last_now; /// FIXME:debug
 };
 
 
