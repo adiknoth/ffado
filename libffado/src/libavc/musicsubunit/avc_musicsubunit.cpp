@@ -62,14 +62,14 @@ bool
 SubunitMusic::discover()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering %s...\n", getName());
-    
+
     // discover the AV/C generic part
     if ( !Subunit::discover() ) {
         return false;
     }
-    
+
     // now we have the subunit plugs
-    
+
     return true;
 }
 
@@ -78,25 +78,25 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Loading info from descriptor for plug: \n");
     bool result=true;
-    
+
     // load the descriptor (if not already loaded)
     if (m_status_descriptor != NULL) {
         result &= m_status_descriptor->load();
     }
-    
+
     AVCMusicSubunitPlugInfoBlock *info;
     info = m_status_descriptor->getSubunitPlugInfoBlock(plug.getDirection(), plug.getPlugId());
-    
+
     if (info == NULL) {
         debugError("Could not find plug info block\n");
         return false;
     }
-    
+
     debugOutput(DEBUG_LEVEL_VERBOSE, "Found plug: %s\n",info->getName().c_str());
-    
+
     // plug name
     result &= plug.setName(info->getName());
-    
+
     // plug type
     switch (info->m_plug_type) {
         case AVCMusicSubunitPlugInfoBlock::ePT_IsoStream:
@@ -118,19 +118,19 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
             result &= plug.setPlugType(Plug::eAPT_Digital);
             break;
     }
-    
+
     // number of channels
     result &= plug.setNrOfChannels(info->m_nb_channels);
-    
+
     int idx=1;
     for ( AVCMusicClusterInfoBlockVectorIterator it = info->m_Clusters.begin();
-      it != info->m_Clusters.end();
-      ++it )
+          it != info->m_Clusters.end();
+          ++it )
     {
         struct Plug::ClusterInfo cinfo;
-        
+
         AVCMusicClusterInfoBlock *c=(*it);
-        
+
         cinfo.m_index=idx; //FIXME: is this correct?
         cinfo.m_portType=c->m_port_type;
         cinfo.m_nrOfChannels=c->m_nb_signals;
@@ -140,28 +140,28 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
         debugOutput(DEBUG_LEVEL_VERBOSE, "Adding cluster idx=%2d type=%02X nbch=%2d fmt=%02X name=%s\n",
             cinfo.m_index, cinfo.m_portType, cinfo.m_nrOfChannels, cinfo.m_streamFormat, cinfo.m_name.c_str());
 
-        for ( AVCMusicClusterInfoBlock::SignalInfoVectorIterator sig_it 
-              = c->m_SignalInfos.begin();
-            sig_it != c->m_SignalInfos.end();
-            ++sig_it )
+        for ( AVCMusicClusterInfoBlock::SignalInfoVectorIterator sig_it
+                  = c->m_SignalInfos.begin();
+              sig_it != c->m_SignalInfos.end();
+              ++sig_it )
         {
             struct AVCMusicClusterInfoBlock::sSignalInfo s=(*sig_it);
             struct Plug::ChannelInfo sinfo;
-            
+
             sinfo.m_streamPosition=s.stream_position;
             sinfo.m_location=s.stream_location;
-            
+
             AVCMusicPlugInfoBlock *mplug=m_status_descriptor->getMusicPlugInfoBlock(s.music_plug_id);
-            
+
             if (mplug==NULL) {
                 debugWarning("No music plug found for this signal\n");
                 sinfo.m_name="unknown";
             } else {
                 sinfo.m_name=mplug->getName();
             }
-            
+
             if (plug.getDirection() == Plug::eAPD_Input) {
-                // it's an input plug to the subunit 
+                // it's an input plug to the subunit
                 // so we have to check the source field of the music plug
                 if(s.stream_position != mplug->m_source_stream_position) {
                     debugWarning("s.stream_position (= 0x%02X) != mplug->m_source_stream_position (= 0x%02X)\n",
@@ -176,7 +176,7 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
                     sinfo.m_location=mplug->m_source_stream_location;
                 }
             } else if (plug.getDirection() == Plug::eAPD_Output) {
-                // it's an output plug from the subunit 
+                // it's an output plug from the subunit
                 // so we have to check the destination field of the music plug
                 if(s.stream_position != mplug->m_dest_stream_position) {
                     debugWarning("s.stream_position (= 0x%02X) != mplug->m_dest_stream_position (= 0x%02X)\n",
@@ -193,18 +193,18 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
             } else {
                 debugWarning("Invalid plug direction.\n");
             }
-            
+
             debugOutput(DEBUG_LEVEL_VERBOSE, "Adding signal pos=%2d loc=%2d name=%s\n",
                 sinfo.m_streamPosition, sinfo.m_location, mplug->getName().c_str());
-            
+
             cinfo.m_channelInfos.push_back(sinfo);
         }
 
         idx++;
         plug.getClusterInfos().push_back(cinfo);
     }
-    
-    
+
+
     return result;
 
 }
@@ -238,15 +238,15 @@ SubunitMusic::getName()
 
 bool
 SubunitMusic::serializeChild( Glib::ustring basePath,
-                                             Util::IOSerialize& ser ) const
+                              Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
 SubunitMusic::deserializeChild( Glib::ustring basePath,
-                                               Util::IODeserialize& deser,
-                                               Unit& unit )
+                                Util::IODeserialize& deser,
+                                Unit& unit )
 {
     return true;
 }

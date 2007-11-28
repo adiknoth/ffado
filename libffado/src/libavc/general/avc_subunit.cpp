@@ -106,7 +106,7 @@ bool
 Subunit::discoverPlugs()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering plugs...\n");
-    
+
     PlugInfoCmd plugInfoCmd( getUnit().get1394Service(),
                              PlugInfoCmd::eSF_SerialBusIsochronousAndExternalPlug );
     plugInfoCmd.setNodeId( getUnit().getConfigRom().getNodeId() );
@@ -146,7 +146,7 @@ bool
 Subunit::discoverConnections()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering connections...\n");
-    
+
     for ( PlugVector::iterator it = getPlugs().begin();
           it != getPlugs().end();
           ++it )
@@ -182,9 +182,9 @@ Subunit::discoverPlugs(Plug::EPlugDirection plugDirection,
             debugError( "plug creation failed\n" );
             return false;
         }
-        
+
         plug->setVerboseLevel(getDebugLevel());
-        
+
         if ( !plug->discover() ) {
             debugError( "plug discover failed\n" );
             return false;
@@ -231,13 +231,14 @@ Subunit::initPlugFromDescriptor( Plug& plug )
 
 bool
 Subunit::serialize( Glib::ustring basePath,
-                                   Util::IOSerialize& ser ) const
+                    Util::IOSerialize& ser ) const
 {
     bool result;
 
     result  = ser.write( basePath + "m_sbType", m_sbType );
     result &= ser.write( basePath + "m_sbId", m_sbId );
     result &= ser.write( basePath + "m_verboseLevel", getDebugLevel() );
+    result &= serializePlugVector( basePath + "m_plugs", ser, m_plugs );
     result &= serializeChild( basePath, ser );
 
     return result;
@@ -258,7 +259,7 @@ Subunit::deserialize( Glib::ustring basePath,
     result  = deser.read( basePath + "m_sbType", sbType );
 
     Subunit* pSubunit = 0;
-    
+
     #warning FIXME: The derived class should be creating these
     // FIXME: The derived class should be creating these, such that discover() can become pure virtual
     switch( sbType ) {
@@ -279,6 +280,8 @@ Subunit::deserialize( Glib::ustring basePath,
     pSubunit->m_unit = &unit;
     pSubunit->m_sbType = sbType;
     result &= deser.read( basePath + "m_sbId", pSubunit->m_sbId );
+    result &= deserializePlugVector( basePath + "m_plugs", deser,
+                                     unit.getPlugManager(), pSubunit->m_plugs );
     int verboseLevel;
     result &= deser.read( basePath + "m_verboseLevel", verboseLevel );
     setDebugLevel(verboseLevel);

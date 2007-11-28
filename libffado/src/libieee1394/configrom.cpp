@@ -63,7 +63,7 @@ ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
     : Control::Element("ConfigRom")
     , m_1394Service( &ieee1394service )
     , m_nodeId( nodeId )
-    , m_avcDevice( false )
+    , m_avcDevice( false ) // FIXME: this does not seem veryu
     , m_guid( 0 )
     , m_vendorName( "" )
     , m_modelName( "" )
@@ -90,7 +90,7 @@ ConfigRom::ConfigRom()
     : Control::Element("ConfigRom")
     , m_1394Service( 0 )
     , m_nodeId( -1 )
-    , m_avcDevice( false )
+    , m_avcDevice( false ) // FIXME: this does not seem veryu
     , m_guid( 0 )
     , m_vendorName( "" )
     , m_modelName( "" )
@@ -291,7 +291,8 @@ ConfigRom::processUnitDirectory( struct csr1212_csr* csr,
                 m_unit_version = kv->value.immediate;
                 if ( m_unit_specifier_id == 0x0000a02d ) // XXX
                 {
-                    if ( kv->value.immediate == 0x10001 ) {
+                    m_avcDevice = true; // FIXME: disable this check for the moment
+                    if ( kv->value.immediate == 0x14001 ) {
                         m_avcDevice = true;
                     }
                 }

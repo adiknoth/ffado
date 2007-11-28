@@ -159,57 +159,6 @@ FunctionBlock::discoverConnections()
 }
 
 bool
-serializePlugVector( Glib::ustring basePath,
-                       Util::IOSerialize& ser,
-                       const PlugVector& vec )
-{
-    bool result = true;
-    int i = 0;
-    for ( PlugVector::const_iterator it = vec.begin();
-          it != vec.end();
-          ++it )
-    {
-        std::ostringstream strstrm;
-        strstrm << basePath << i;
-        result &= ser.write( strstrm.str(), ( *it )->getGlobalId() );
-        i++;
-    }
-    return result;
-}
-
-bool
-deserializePlugVector( Glib::ustring basePath,
-                         Util::IODeserialize& deser,
-                         AVC::Unit& unit,
-                         PlugVector& vec )
-{
-    int i = 0;
-    bool bFinished = false;
-    bool result = true;
-    do {
-        plug_id_t plugId;
-        std::ostringstream strstrm;
-        strstrm << basePath << i;
-
-        if ( deser.isExisting( strstrm.str() ) ) {
-            result &= deser.read( strstrm.str(), plugId );
-            AVC::Plug* pPlug = unit.getPlugManager().getPlug( plugId );
-
-            if ( result && pPlug ) {
-                vec.push_back( pPlug );
-                i++;
-            } else {
-                bFinished = true;
-            }
-        } else {
-            bFinished = true;
-        }
-    } while ( !bFinished );
-
-    return result;
-}
-
-bool
 FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 {
     bool result;
@@ -228,9 +177,9 @@ FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 
 FunctionBlock*
 FunctionBlock::deserialize( Glib::ustring basePath,
-                                   Util::IODeserialize& deser,
-                                   AVC::Unit& unit,
-                                   AVC::Subunit& subunit )
+                            Util::IODeserialize& deser,
+                            AVC::Unit& unit,
+                            AVC::Subunit& subunit )
 {
     bool result;
     function_block_type_t type;
@@ -277,7 +226,8 @@ FunctionBlock::deserialize( Glib::ustring basePath,
     result &= deser.read( basePath + "m_nrOfInputPlugs", pFB->m_nrOfInputPlugs );
     result &= deser.read( basePath + "m_nrOfOutputPlugs", pFB->m_nrOfOutputPlugs );
     result &= deser.read( basePath + "m_verbose", pFB->m_verbose );
-    result &= deserializePlugVector( basePath + "m_plugs", deser, unit, pFB->m_plugs );
+    result &= deserializePlugVector( basePath + "m_plugs", deser,
+                                     unit.getPlugManager(), pFB->m_plugs );
 
     return 0;
 }

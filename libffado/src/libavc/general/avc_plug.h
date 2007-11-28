@@ -162,6 +162,7 @@ public:
 
     bool deserializeUpdate( Glib::ustring basePath,
                             Util::IODeserialize& deser );
+    bool deserializeUpdateSubunit();
 
  public:
     struct ChannelInfo {
@@ -256,13 +257,6 @@ protected:
     bool deserializeFormatInfos( Glib::ustring basePath,
                                  Util::IODeserialize& deser );
 
-    bool serializePlugVector( Glib::ustring basePath,
-                              Util::IOSerialize& ser,
-                              const PlugVector& vec) const;
-    bool deserializePlugVector( Glib::ustring basePath,
-                                Util::IODeserialize& deser,
-                                PlugVector& vec );
-
 protected:
     // Supported stream formats
     struct FormatInfo {
@@ -284,6 +278,8 @@ protected:
 
     Unit*                       m_unit;
     Subunit*                    m_subunit;
+    ESubunitType                m_subunitType;
+    subunit_t                   m_subunitId;
     function_block_type_t       m_functionBlockType;
     function_block_id_t         m_functionBlockId;
     EPlugAddressType            m_addressType;
@@ -348,6 +344,8 @@ public:
 	{ return m_plugs; }
     bool tidyPlugConnections(PlugConnectionVector&);
 
+    bool deserializeUpdate();
+
 private:
 
     PlugVector   m_plugs;
@@ -377,6 +375,16 @@ private:
 };
 
 typedef std::vector<PlugConnection> PlugConnectionOwnerVector;
+
+
+bool serializePlugVector( Glib::ustring basePath,
+                          Util::IOSerialize& ser,
+                          const PlugVector& vec);
+
+bool deserializePlugVector( Glib::ustring basePath,
+                            Util::IODeserialize& deser,
+                            const PlugManager& plugManager,
+                            PlugVector& vec );
 
 }
 
