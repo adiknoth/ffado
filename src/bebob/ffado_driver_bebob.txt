@@ -18,3 +18,4 @@
 0x000d6c,	0x00010081,	"M-Audio"			,"NRV10"
 0x000d6c,       0x00010060,     "M-Audio"                       ,"FW Audiophile"
 0x000d6c,       0x000100A1,     "M-Audio"                       ,"ProFire Lightbridge"
+0x000aac,       0x00000002,     "Acoustic Reality"              ,"eAR Master One"
