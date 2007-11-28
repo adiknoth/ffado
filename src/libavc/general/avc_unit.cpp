@@ -103,7 +103,6 @@ Unit::createSubunit(Unit& unit,
 void
 Unit::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
     for ( SubunitVector::const_iterator it = m_subunits.begin();
           it != m_subunits.end();
@@ -111,8 +110,8 @@ Unit::setVerboseLevel(int l)
     {
         (*it)->setVerboseLevel(l);
     }
-
     m_pPlugManager->setVerboseLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 // prepare the device for a rediscovery
@@ -972,8 +971,7 @@ Unit::serialize( Glib::ustring basePath,
                  Util::IOSerialize& ser ) const
 {
     bool result;
-    result  = ser.write( basePath + "m_verboseLevel_unit", getDebugLevel() );
-    result &= serializeVector( basePath + "Subunit", ser, m_subunits );
+    result =  serializeVector( basePath + "Subunit", ser, m_subunits );
     result &= serializePlugVector( basePath + "PcrPlug", ser, m_pcrPlugs );
     result &= serializePlugVector( basePath + "ExternalPlug",  ser, m_externalPlugs );
     result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
@@ -1000,11 +998,7 @@ bool
 Unit::deserialize( Glib::ustring basePath,
                    Util::IODeserialize& deser )
 {
-    bool result;
-
-    int verboseLevel;
-    result  = deser.read( basePath + "m_verboseLevel_unit", verboseLevel );
-    setDebugLevel( verboseLevel );
+    bool result = true;
 
     result &= deserializeVector<Subunit>( basePath + "Subunit", deser, *this, m_subunits );
 

@@ -166,6 +166,7 @@ AvDevice::buildMixer()
     } else {
         m_Mixer = new Mixer(*this);
     }
+    if (m_Mixer) m_Mixer->setVerboseLevel(getDebugLevel());
     return m_Mixer != NULL;
 }
 
@@ -182,6 +183,14 @@ AvDevice::showDevice()
     debugOutput(DEBUG_LEVEL_NORMAL, "Device is a BeBoB device\n");
     GenericAVC::AvDevice::showDevice();
     flushDebugOutput();
+}
+
+void
+AvDevice::setVerboseLevel(int l)
+{
+    if (m_Mixer) m_Mixer->setVerboseLevel( l );
+    GenericAVC::AvDevice::setVerboseLevel( l );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 AVC::Subunit*

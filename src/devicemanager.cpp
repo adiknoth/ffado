@@ -318,17 +318,19 @@ DeviceManager::discover( )
 
                 FFADODevice* avDevice = getDriverForDevice( configRom,
                                                             nodeId );
-    
+
                 if ( avDevice ) {
                     debugOutput( DEBUG_LEVEL_NORMAL,
                                 "driver found for device %d\n",
                                 nodeId );
-    
+
                     avDevice->setVerboseLevel( getDebugLevel() );
                     bool isFromCache = false;
                     if ( avDevice->loadFromCache() ) {
                         debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
                         isFromCache = true;
+                        // restore the debug level for everything that was loaded
+                        avDevice->setVerboseLevel( getDebugLevel() );
                     } else if ( avDevice->discover() ) {
                         debugOutput( DEBUG_LEVEL_VERBOSE, "discovering successful\n" );
                     } else {
@@ -336,11 +338,11 @@ DeviceManager::discover( )
                         delete avDevice;
                         continue;
                     }
-    
+
                     if (snoopMode) {
                         debugOutput( DEBUG_LEVEL_VERBOSE,
                                     "Enabling snoop mode on node %d...\n", nodeId );
-    
+
                         if(!avDevice->setOption("snoopMode", snoopMode)) {
                             debugWarning("Could not set snoop mode for device on node %d\n", nodeId);
                             delete avDevice;

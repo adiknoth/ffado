@@ -62,8 +62,8 @@ Element::show()
 void
 Element::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 //// --- Container --- ////
@@ -153,13 +153,14 @@ Container::show()
 void
 Container::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    setDebugLevel(l);
     for ( ElementVectorIterator it = m_Children.begin();
       it != m_Children.end();
       ++it )
     {
         (*it)->setVerboseLevel(l);
     }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 } // namespace Control

@@ -338,8 +338,7 @@ public:
     static  PlugManager* deserialize( Glib::ustring basePath,
 				      Util::IODeserialize& deser,
 				      Unit& avDevice );
-    void setVerboseLevel( int i )
-	{ setDebugLevel(i); }
+    void setVerboseLevel( int i );
     PlugVector& getPlugs()
 	{ return m_plugs; }
     bool tidyPlugConnections(PlugConnectionVector&);
