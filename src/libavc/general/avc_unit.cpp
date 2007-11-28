@@ -974,8 +974,8 @@ Unit::serialize( Glib::ustring basePath,
     bool result;
     result  = ser.write( basePath + "m_verboseLevel_unit", getDebugLevel() );
     result &= serializeVector( basePath + "Subunit", ser, m_subunits );
-    result &= serializeVector( basePath + "PcrPlug", ser, m_pcrPlugs );
-    result &= serializeVector( basePath + "ExternalPlug",  ser, m_externalPlugs );
+    result &= serializePlugVector( basePath + "PcrPlug", ser, m_pcrPlugs );
+    result &= serializePlugVector( basePath + "ExternalPlug",  ser, m_externalPlugs );
     result &= serializeVector( basePath + "PlugConnection", ser, m_plugConnections );
     result &= m_pPlugManager->serialize( basePath + "Plug", ser ); // serialize all av plugs
     result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
@@ -1006,7 +1006,7 @@ Unit::deserialize( Glib::ustring basePath,
     result  = deser.read( basePath + "m_verboseLevel_unit", verboseLevel );
     setDebugLevel( verboseLevel );
 
-    result &= deserializeVector<Subunit>( basePath + "Subunit", deser, *this,  m_subunits );
+    result &= deserializeVector<Subunit>( basePath + "Subunit", deser, *this, m_subunits );
 
     if (m_pPlugManager)
         delete m_pPlugManager;
@@ -1016,16 +1016,15 @@ Unit::deserialize( Glib::ustring basePath,
     if ( !m_pPlugManager )
         return false;
 
-    // XXX We have to deserialize the m_pcrPlugs and m_externPlugs members somehow.
-    // Of course the simple following simple approach wont work at the moment. Some
-    // more hacking needed :)
-    //result &= deserializeVector<Plug>( basePath + "PcrPlug", deser, *this, m_pcrPlugs );
-    //result &= deserializeVector<Plug>( basePath + "ExternalPlug", deser, *this, m_externalPlugs );
-    result &= deserializePlugUpdateConnections( basePath + "PcrPlug", deser, m_pcrPlugs );
-    result &= deserializePlugUpdateConnections( basePath + "ExternalPlug", deser, m_externalPlugs );
+    result &= deserializePlugVector( basePath + "PcrPlug", deser, getPlugManager(), m_pcrPlugs );
+    result &= deserializePlugVector( basePath + "ExternalPlug", deser, getPlugManager(), m_externalPlugs );
     result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser, *this, m_plugConnections );
     result &= deserializeVector<Subunit>( basePath + "Subunit",  deser, *this, m_subunits );
     result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, m_syncInfos );
+
+    result &= deserializePlugUpdateConnections( basePath + "PcrPlug", deser, m_pcrPlugs );
+    result &= deserializePlugUpdateConnections( basePath + "ExternalPlug", deser, m_externalPlugs );
+    m_pPlugManager->deserializeUpdate();
 
     unsigned int i;
     result &= deser.read( basePath + "m_activeSyncInfo", i );

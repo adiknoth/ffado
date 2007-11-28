@@ -51,10 +51,10 @@ class SubunitAudio: public Subunit {
 
 protected:
     virtual bool serializeChild( Glib::ustring basePath,
-                                 Util::IOSerialize& ser ) const {return false;};
+                                 Util::IOSerialize& ser ) const { return true; }
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
-                                   Unit& avDevice ) {return false;};
+                                   Unit& avDevice ) { return true; }
 
 };
 
