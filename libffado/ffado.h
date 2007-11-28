@@ -144,7 +144,6 @@ typedef unsigned int ffado_nframes_t;
 
 typedef struct ffado_device_info {
     /* TODO: How is the device specification done? */
-//    char xml_location[FFADO_STREAMING_MAX_URL_LENGTH]; // can be an osc url or an XML filename
 //    ffado_device_info_location_type location_type;
 } ffado_device_info_t;
 

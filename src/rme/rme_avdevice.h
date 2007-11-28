@@ -30,7 +30,7 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 
-// #include "libstreaming/RmeStreamProcessor.h"
+// #include "libstreaming/rme/RmeStreamProcessor.h"
 
 class ConfigRom;
 class Ieee1394Service;

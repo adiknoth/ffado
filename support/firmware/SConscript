@@ -18,7 +18,6 @@ if not env.GetOption( "clean" ):
     env.MergeFlags( env['LIBIEC61883_FLAGS'] )
     env.MergeFlags( env['ALSA_FLAGS'] )
     env.MergeFlags( env['LIBXML26_FLAGS'] )
-    env.MergeFlags( env['LIBLO_FLAGS'] )
 
 apps = {
 }
@@ -26,12 +25,12 @@ apps = {
 installapps = []
 
 if env['ENABLE_BEBOB']:
-    apps["bridgeco-downloader"] = "bridgeco-downloader.cpp"
-    installapps += [ "bridgeco-downloader" ]
+    apps["ffado-bridgeco-downloader"] = "bridgeco-downloader.cpp"
+    installapps += [ "ffado-bridgeco-downloader" ]
 
 if env['ENABLE_FIREWORKS']:
-    apps["fireworks-downloader"] = "fireworks-downloader.cpp"
-    installapps += [ "fireworks-downloader" ]
+    apps["ffado-fireworks-downloader"] = "fireworks-downloader.cpp"
+    installapps += [ "ffado-fireworks-downloader" ]
 
 for app in apps.keys():
     env.Program( target=app, source = env.Split( apps[app] ) )

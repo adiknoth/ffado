@@ -17,5 +17,5 @@ env = env.Copy()
 #env.Program( target="test-sytmonitor", source = env.Split( "test-sytmonitor.cpp SytMonitor.cpp" ) )
 #
 
-env.SConscript( dirs=["mixer","firmware"], exports="env" )
+env.SConscript( dirs=["mixer","firmware","dbus"], exports="env" )
 

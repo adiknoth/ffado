@@ -75,7 +75,7 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
             return 0;
     }
 
-    dev->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    dev->m_deviceManager->setVerboseLevel(DEBUG_LEVEL_NORMAL);
     if ( !dev->m_deviceManager->initialize( dev->options.port ) ) {
             debugFatal( "Could not initialize device manager\n" );
             delete dev->m_deviceManager;
@@ -85,7 +85,9 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
 
     // create a processor manager to manage the actual stream
     // processors
-    dev->processorManager = new StreamProcessorManager(dev->options.period_size,dev->options.nb_buffers);
+    dev->processorManager = new StreamProcessorManager( dev->options.period_size, 
+                                                        dev->options.sample_rate,
+                                                        dev->options.nb_buffers);
     if(!dev->processorManager) {
             debugFatal("Could not create StreamProcessorManager\n");
             delete dev->m_deviceManager;
@@ -169,13 +171,16 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t *device_info, ffado_op
 
         // prepare the device
         device->prepare();
-
         int j=0;
         for(j=0; j<device->getStreamCount();j++) {
             StreamProcessor *streamproc=device->getStreamProcessorByIndex(j);
             debugOutput(DEBUG_LEVEL_VERBOSE, "Registering stream processor %d of device %d with processormanager\n",j,i);
             if (!dev->processorManager->registerProcessor(streamproc)) {
-                debugWarning("Could not register stream processor (%p) with the Processor manager\n",streamproc);
+                delete dev->processorManager;
+                delete dev->m_deviceManager;
+                delete dev;
+                debugFatal("Could not register stream processor (%p) with the Processor manager\n", streamproc);
+                return 0;
             }
         }
     }
@@ -330,11 +335,11 @@ int ffado_streaming_wait(ffado_device_t *dev) {
 }
 
 int ffado_streaming_transfer_capture_buffers(ffado_device_t *dev) {
-    return dev->processorManager->transfer(StreamProcessor::E_Receive);
+    return dev->processorManager->transfer(StreamProcessor::ePT_Receive);
 }
 
 int ffado_streaming_transfer_playback_buffers(ffado_device_t *dev) {
-    return dev->processorManager->transfer(StreamProcessor::E_Transmit);
+    return dev->processorManager->transfer(StreamProcessor::ePT_Transmit);
 }
 
 int ffado_streaming_transfer_buffers(ffado_device_t *dev) {

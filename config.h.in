@@ -12,19 +12,16 @@
 #define PACKAGE_NAME "$PACKAGE"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "$PACKAGE $VERSION"
+#define PACKAGE_STRING "$PACKAGE $VERSION-$REVISION"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "$PACKAGE"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION $VERSION
+#define PACKAGE_VERSION "$VERSION-$REVISION"
 
 /* Define to 1 if SSE assembly is available. */
 /*#define USE_SSE 1*/
-
-/* Version number of package */
-#define VERSION "$VERSION"
 
 #define CACHEDIR "~/.ffado"
 

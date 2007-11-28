@@ -1,0 +1,39 @@
+#! /usr/bin/env python
+
+Import( 'env' )
+
+env = env.Copy()
+
+#
+# For the debugging apps
+#
+
+env.AppendUnique( CPPPATH=["#/", "#/src", "#/external/dbus/include"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"src", env['build_base']+"external/dbus"] )
+env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
+
+if not env.GetOption( "clean" ):
+    env.MergeFlags( env["DBUS1_FLAGS"] )
+    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+    env.MergeFlags( env['LIBXML26_FLAGS'] )
+
+env.Xml2Cpp_Proxy('controlclient-glue.h', 'control-interface.xml')
+env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')
+
+apps = {
+}
+
+installapps = []
+
+apps = {
+    "ffado-dbus-server":"ffado-dbus-server.cpp controlserver.cpp",
+    "test-dbus" : "test-dbus.cpp controlclient.cpp",
+    "test-dbus-server" : "test-dbus-server.cpp controlserver.cpp",
+}
+
+installapps += [ "ffado-dbus-server" ]
+
+for app in apps.keys():
+    env.Program( target=app, source = env.Split( apps[app] ) )
+    if app.find( "test" ) == -1:
+        env.Install( "$bindir", app )

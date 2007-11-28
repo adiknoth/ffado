@@ -145,7 +145,7 @@ AVCDescriptor::~AVCDescriptor()
 bool
 AVCDescriptor::reload()
 {
-    m_loaded=false;
+    m_loaded = false;
     return load();
 }
 
@@ -177,7 +177,7 @@ AVCDescriptor::load()
         return false;
     }
     
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Read status descriptor\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, " Read descriptor\n");
     ReadDescriptorCmd readDescCmd(m_unit->get1394Service());
     readDescCmd.m_specifier=&m_specifier;
     readDescCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
@@ -198,9 +198,16 @@ AVCDescriptor::load()
     size_t bytes_read=readDescCmd.m_data_length;
     if (bytes_read < 2) {
         debugOutput(DEBUG_LEVEL_VERBOSE, " Descriptor length field not present\n");
-        return false;        
+        return false;
     }
-    
+
+#ifdef DEBUG
+    if(getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Read result:\n");
+        printBufferBytes( DEBUG_LEVEL_VERY_VERBOSE, bytes_read, readDescCmd.m_data );
+    }
+#endif
+
     // obtain descriptor length
     m_descriptor_length=(readDescCmd.m_data[0]<<8) + (readDescCmd.m_data[1]);
     debugOutput(DEBUG_LEVEL_VERBOSE, " Descriptor length: %u\n", m_descriptor_length);
@@ -273,7 +280,12 @@ AVCDescriptor::load()
         debugOutput(DEBUG_LEVEL_VERBOSE, " Could not close descriptor\n");
         return false;
     }
-
+#ifdef DEBUG
+    if(getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Descriptor content:\n");
+        printBufferBytes( DEBUG_LEVEL_VERY_VERBOSE, m_descriptor_length, m_data );
+    }
+#endif
     debugOutput(DEBUG_LEVEL_VERBOSE, " Parse descriptor\n");
     // parse the descriptor
     Util::BufferDeserialize de( m_data, m_descriptor_length );
@@ -344,6 +356,22 @@ int
 AVCDescriptor::getVerboseLevel()
 {
     return getDebugLevel();
+}
+
+void
+AVCDescriptor::printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const
+{
+
+    for ( unsigned int i=0; i < length; ++i ) {
+        if ( ( i % 16 ) == 0 ) {
+            if ( i > 0 ) {
+                debugOutputShort(level,"\n");
+            }
+            debugOutputShort(level," %4d: ",i*16);
+        }
+        debugOutputShort(level,"%02X ",buffer[i]);
+    }
+    debugOutputShort(level,"\n");
 }
 
 // --- Info block

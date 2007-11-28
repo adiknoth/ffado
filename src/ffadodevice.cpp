@@ -117,9 +117,6 @@ FFADODevice::setId( unsigned int id)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
 
     retval=setOption("id",idstr.str());
-/*    if (retval) {
-        setOscBase(idstr.str());
-    }*/
     return retval;
 }
 

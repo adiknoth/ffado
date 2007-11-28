@@ -29,7 +29,7 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 
-// #include "libstreaming/MHStreamProcessor.h"
+// #include "libstreaming/mh/MHStreamProcessor.h"
 
 class ConfigRom;
 class Ieee1394Service;

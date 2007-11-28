@@ -4,24 +4,20 @@ Import( 'env' )
 
 env = env.Copy()
 
-env.PrependUnique( CPPPATH=["#/src", "#/external/dbus/include"] )
-env.PrependUnique( LIBPATH=[env['build_base']+"src", env['build_base']+"external/dbus"] )
-env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
+env.PrependUnique( CPPPATH=["#/src"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
+env.PrependUnique( LIBS=["ffado"] )
 
 if not env.GetOption( "clean" ):
-	env.MergeFlags( env["DBUS1_FLAGS"] )
 	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
 	env.MergeFlags( env['LIBXML26_FLAGS'] )
-
-env.Xml2Cpp_Proxy('controlclient-glue.h', 'control-interface.xml')
-env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')
 
 #
 # deactivate as they don't seem ported to the new api: test-extplugcmd,
 # test-mixer, test-volume
 #
 apps = {
-	"test-ffado" : "test-ffado.cpp controlserver.cpp",
+	"test-ffado" : "test-ffado.cpp",
 	"test-fw410" : "test-fw410.cpp",
 	"test-avccmd" : "test-avccmd.cpp",
 	#"test-extplugcmd" : "test-extplugcmd.cpp",
@@ -32,8 +28,6 @@ apps = {
 	"test-ieee1394service" : "test-ieee1394service.cpp",
 	"test-streamdump" : "test-streamdump.cpp",
 	"test-sytmonitor" : "test-sytmonitor.cpp SytMonitor.cpp",
-	"test-dbus" : "test-dbus.cpp controlclient.cpp",
-	"test-dbus-server" : "test-dbus-server.cpp controlserver.cpp",
 }
 
 if env['ENABLE_BEBOB']:

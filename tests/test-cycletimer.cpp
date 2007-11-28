@@ -36,11 +36,11 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/cycletimer.h"
+#include "src/libstreaming/util/cycletimer.h"
 
-#include "src/libstreaming/IsoHandler.h"
-#include "src/libstreaming/IsoStream.h"
-#include "src/libstreaming/IsoHandlerManager.h"
+#include "src/libstreaming/util/IsoHandler.h"
+#include "src/libstreaming/generic/IsoStream.h"
+#include "src/libstreaming/util/IsoHandlerManager.h"
 #include "src/libutil/PosixThread.h"
 
 #define TEST_PORT_0
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 
 #ifdef TEST_PORT_0
     // add a stream to the manager so that it has something to do
-    s=new IsoStream(IsoStream::EST_Receive, 0);
+    s=new IsoStream(IsoStream::eST_Receive, 0);
 
     if (!s) {
         debugOutput(DEBUG_LEVEL_NORMAL, "Could not create IsoStream\n");
@@ -295,12 +295,6 @@ int main(int argc, char *argv[])
     }
 
     s->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-    if (!s->init()) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "Could not init IsoStream\n");
-        goto finish;
-    }
-
     s->setChannel(0);
 
     if(!m_isoManager->registerStream(s)) {

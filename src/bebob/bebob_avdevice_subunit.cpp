@@ -81,7 +81,7 @@ bool
 BeBoB::SubunitAudio::discover()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering %s...\n", getName());
-
+    
     // discover the AV/C generic part
     if ( !AVC::SubunitAudio::discover() ) {
         return false;
@@ -159,7 +159,7 @@ BeBoB::SubunitAudio::discoverFunctionBlocks()
     // print a function block list
 #ifdef DEBUG
     if ((int)getDebugLevel() >= DEBUG_LEVEL_NORMAL) {
-
+    
         for ( FunctionBlockVector::iterator it = m_functions.begin();
             it != m_functions.end();
             ++it )
@@ -339,7 +339,7 @@ BeBoB::SubunitAudio::convertSpecialPurpose(
 
 bool
 BeBoB::SubunitAudio::serializeChild( Glib::ustring basePath,
-                                     Util::IOSerialize& ser ) const
+                                             Util::IOSerialize& ser ) const
 {
     bool result = true;
     int i = 0;
@@ -362,8 +362,8 @@ BeBoB::SubunitAudio::serializeChild( Glib::ustring basePath,
 
 bool
 BeBoB::SubunitAudio::deserializeChild( Glib::ustring basePath,
-                                       Util::IODeserialize& deser,
-                                       AVC::Unit& avDevice )
+                                               Util::IODeserialize& deser,
+                                               AVC::Unit& avDevice )
 {
     int i = 0;
     bool bFinished = false;
@@ -425,7 +425,7 @@ bool
 BeBoB::SubunitMusic::discover()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Discovering %s...\n", getName());
-
+    
     // discover the AV/C generic part
     if ( !AVC::SubunitMusic::discover() ) {
         return false;

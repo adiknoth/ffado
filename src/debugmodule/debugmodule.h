@@ -33,14 +33,15 @@
 
 typedef short debug_level_t;
 
-#define DEBUG_LEVEL_FATAL          0
-#define DEBUG_LEVEL_ERROR          1
-#define DEBUG_LEVEL_WARNING        2
-#define DEBUG_LEVEL_NORMAL         3
-#define DEBUG_LEVEL_INFO           4
-#define DEBUG_LEVEL_VERBOSE        5
-#define DEBUG_LEVEL_VERY_VERBOSE   6
-#define DEBUG_LEVEL_ULTRA_VERBOSE  7
+#define DEBUG_LEVEL_MESSAGE        0
+#define DEBUG_LEVEL_FATAL          1
+#define DEBUG_LEVEL_ERROR          2
+#define DEBUG_LEVEL_WARNING        3
+#define DEBUG_LEVEL_NORMAL         4
+#define DEBUG_LEVEL_INFO           5
+#define DEBUG_LEVEL_VERBOSE        6
+#define DEBUG_LEVEL_VERY_VERBOSE   7
+#define DEBUG_LEVEL_ULTRA_VERBOSE  8
 
 #define DEBUG_MAX_MESSAGE_LENGTH 512
 
@@ -91,6 +92,20 @@ typedef short debug_level_t;
                                      ##args )
 #define debugWarningShort( format, args... )                        \
                 m_debugModule.printShort( DebugModule::eDL_Warning, \
+                                     format,                        \
+                                     ##args )
+
+// these are for messages that are also displayed when not compiled
+// for debug
+#define printMessage( format, args... )                             \
+                m_debugModule.print( DebugModule::eDL_Message,      \
+                                     __FILE__,                      \
+                                     __FUNCTION__,                  \
+                                     __LINE__,                      \
+                                    format,                         \
+                                    ##args )
+#define printMessageShort( format, args... )                        \
+                m_debugModule.printShort( DebugModule::eDL_Message, \
                                      format,                        \
                                      ##args )
 
@@ -181,6 +196,7 @@ void hexDumpQuadlets( quadlet_t *data_start, unsigned int length );
 class DebugModule {
 public:
     enum {
+        eDL_Message      = DEBUG_LEVEL_MESSAGE,
         eDL_Fatal        = DEBUG_LEVEL_FATAL,
         eDL_Error        = DEBUG_LEVEL_ERROR,
         eDL_Warning      = DEBUG_LEVEL_WARNING,

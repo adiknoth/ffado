@@ -1575,6 +1575,66 @@ Plug::deserializeFormatInfos( Glib::ustring basePath,
     return result;
 }
 
+
+bool
+Plug::serializePlugVector( Glib::ustring basePath,
+                           Util::IOSerialize& ser,
+                           const PlugVector& vec) const
+{
+    bool result = true;
+    int i = 0;
+    for ( PlugVector::const_iterator it = vec.begin();
+          it != vec.end();
+          ++it )
+    {
+        const Plug* pPlug = *it;
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        result &= ser.write( strstrm.str() + "/global_id", pPlug->getGlobalId() );
+        i++;
+    }
+    return result;
+}
+
+bool
+Plug::deserializePlugVector( Glib::ustring basePath,
+                             Util::IODeserialize& deser,
+                             PlugVector& vec )
+{
+    int i = 0;
+    bool bFinished = false;
+    bool result = true;
+    do {
+        std::ostringstream strstrm;
+        strstrm << basePath << i;
+
+        // check for one element to exist. when one exist the other elements
+        // must also be there. otherwise just return (last) result.
+        if ( deser.isExisting( strstrm.str() + "/global_id" ) ) {
+            unsigned int iPlugId;
+            result &= deser.read( strstrm.str() + "/global_id", iPlugId );
+
+            if ( result ) {
+                Plug* pPlug = m_unit->getPlugManager().getPlug( iPlugId );
+                if ( pPlug ) {
+                    vec.push_back( pPlug );
+                } else {
+                    result = false;
+                    bFinished = true;
+                }
+                i++;
+            } else {
+                bFinished = true;
+            }
+        } else {
+            bFinished = true;
+        }
+    } while ( !bFinished );
+
+    return result;
+}
+
 bool
 Plug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 {
@@ -1622,8 +1682,12 @@ Plug::deserialize( Glib::ustring basePath,
 
     bool result=true;
 
-    result  = deser.read( basePath + "m_subunitType", pPlug->m_subunitType );
-    result &= deser.read( basePath + "m_subunitId", pPlug->m_subunitId );
+    ESubunitType subunitType;
+    result  = deser.read( basePath + "m_subunitType", subunitType );
+    subunit_t subunitId;
+    result &= deser.read( basePath + "m_subunitId", subunitId );
+    pPlug->m_subunit = unit.getSubunit( subunitType, subunitType );
+
     result &= deser.read( basePath + "m_functionBlockType", pPlug->m_functionBlockType );
     result &= deser.read( basePath + "m_functionBlockId", pPlug->m_functionBlockId );
     result &= deser.read( basePath + "m_addressType", pPlug->m_addressType );
@@ -1653,23 +1717,14 @@ Plug::deserialize( Glib::ustring basePath,
 
 bool
 Plug::deserializeUpdate( Glib::ustring basePath,
-                         Util::IODeserialize& deser )
+                           Util::IODeserialize& deser )
 {
     bool result;
 
-    result  = deserializePlugVector( basePath + "m_inputConnections", deser,
-                                     m_unit->getPlugManager(), m_inputConnections );
-    result &= deserializePlugVector( basePath + "m_outputConnections", deser,
-                                     m_unit->getPlugManager(), m_outputConnections );
+    result  = deserializePlugVector( basePath + "m_inputConnections", deser, m_inputConnections );
+    result &= deserializePlugVector( basePath + "m_outputConnections", deser, m_outputConnections );
 
     return result;
-}
-
-bool
-Plug::deserializeUpdateSubunit()
-{
-    m_subunit = m_unit->getSubunit( m_subunitType, m_subunitId );
-    return true;
 }
 
 /////////////////////////////////////////
@@ -2149,22 +2204,6 @@ PlugManager::deserialize( Glib::ustring basePath,
     return pMgr;
 }
 
-bool
-PlugManager::deserializeUpdate()
-{
-    bool result = true;
-
-    for ( PlugVector::const_iterator it = m_plugs.begin();
-          it !=  m_plugs.end();
-          ++it )
-    {
-        Plug* pPlug = *it;
-
-        result &= pPlug->deserializeUpdateSubunit();
-    }
-
-    return result;
-}
 
 ////////////////////////////////////
 
@@ -2297,66 +2336,6 @@ Plug::setPlugAddrToStreamFormatCmd(
     extStreamFormatInfoCmd.setSubunitType( getSubunitType() );
 
     return extStreamFormatInfoCmd;
-}
-
-bool
-serializePlugVector( Glib::ustring basePath,
-                     Util::IOSerialize& ser,
-                     const PlugVector& vec)
-{
-    bool result = true;
-    int i = 0;
-    for ( PlugVector::const_iterator it = vec.begin();
-          it != vec.end();
-          ++it )
-    {
-        const Plug* pPlug = *it;
-        std::ostringstream strstrm;
-        strstrm << basePath << i;
-
-        result &= ser.write( strstrm.str() + "/global_id", pPlug->getGlobalId() );
-        i++;
-    }
-    return result;
-}
-
-bool
-deserializePlugVector( Glib::ustring basePath,
-                       Util::IODeserialize& deser,
-                       const PlugManager& plugManager,
-                       PlugVector& vec )
-{
-    int i = 0;
-    bool bFinished = false;
-    bool result = true;
-    do {
-        std::ostringstream strstrm;
-        strstrm << basePath << i;
-
-        // check for one element to exist. when one exist the other elements
-        // must also be there. otherwise just return (last) result.
-        if ( deser.isExisting( strstrm.str() + "/global_id" ) ) {
-            unsigned int iPlugId;
-            result &= deser.read( strstrm.str() + "/global_id", iPlugId );
-
-            if ( result ) {
-                Plug* pPlug = plugManager.getPlug( iPlugId );
-                if ( pPlug ) {
-                    vec.push_back( pPlug );
-                } else {
-                    result = false;
-                    bFinished = true;
-                }
-                i++;
-            } else {
-                bFinished = true;
-            }
-        } else {
-            bFinished = true;
-        }
-    } while ( !bFinished );
-
-    return result;
 }
 
 }

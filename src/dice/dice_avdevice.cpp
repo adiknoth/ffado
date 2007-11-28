@@ -27,8 +27,6 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libstreaming/AmdtpStreamProcessor.h"
-
 #include "debugmodule/debugmodule.h"
 
 #include <string>
@@ -50,6 +48,7 @@ static VendorModelEntry supportedDeviceList[] =
 {
     // vendor id, model id, vendor name, model name
     {FW_VENDORID_TCAT, 0x00000002, "TCAT", "DiceII EVM"},
+    {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
 };
 
 DiceAvDevice::DiceAvDevice( Ieee1394Service& ieee1394Service,
@@ -447,8 +446,6 @@ DiceAvDevice::showDevice()
 // the size of the packet.
 bool
 DiceAvDevice::prepare() {
-    int samplerate=getSamplingFrequency();
-
     // prepare receive SP's
     for (unsigned int i=0;i<m_nb_tx;i++) {
         fb_quadlet_t nb_audio;
@@ -493,7 +490,6 @@ DiceAvDevice::prepare() {
         Streaming::AmdtpReceiveStreamProcessor *p;
         p=new Streaming::AmdtpReceiveStreamProcessor(
                              m_p1394Service->getPort(),
-                             samplerate,
                              nb_channels);
 
         if(!p->init()) {
@@ -580,7 +576,6 @@ DiceAvDevice::prepare() {
         Streaming::AmdtpTransmitStreamProcessor *p;
         p=new Streaming::AmdtpTransmitStreamProcessor(
                              m_p1394Service->getPort(),
-                             samplerate,
                              nb_channels);
 
         if(!p->init()) {

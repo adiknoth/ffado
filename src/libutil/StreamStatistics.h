@@ -26,13 +26,16 @@
 
 #include <string>
 
+#include "debugmodule/debugmodule.h"
+
+#define MAX_SIGNAL_VALUE 7
 namespace Streaming {
 
 class StreamStatistics {
 public:
     StreamStatistics();
 
-    ~StreamStatistics();
+    ~StreamStatistics() {};
 
     void setName(std::string n) {m_name=n;};
 
@@ -49,8 +52,15 @@ public:
     long m_max;
     long m_sum;
 
-private:
+    // some tools to do run statistics
+    // will keep a histogram of the number of times a certain value
+    // is added.
+    void signal(unsigned int val);
 
+    unsigned int m_signalled[MAX_SIGNAL_VALUE+1];
+
+private:
+    DECLARE_DEBUG_MODULE;
 };
 
 }

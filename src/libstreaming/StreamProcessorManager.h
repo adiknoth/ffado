@@ -24,15 +24,16 @@
 #ifndef __FFADO_STREAMPROCESSORMANAGER__
 #define __FFADO_STREAMPROCESSORMANAGER__
 
+#include "generic/Port.h"
+#include "generic/StreamProcessor.h"
+#include "util/IsoHandlerManager.h"
+
 #include "debugmodule/debugmodule.h"
 #include "libutil/Thread.h"
 #include "libutil/OptionContainer.h"
-#include <semaphore.h>
-#include "Port.h"
-#include "StreamProcessor.h"
-#include "IsoHandlerManager.h"
 
 #include <vector>
+#include <semaphore.h>
 
 namespace Streaming {
 
@@ -51,7 +52,7 @@ class StreamProcessorManager : public Util::OptionContainer {
 
 public:
 
-    StreamProcessorManager(unsigned int period, unsigned int nb_buffers);
+    StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
 
     bool init(); ///< to be called immediately after the construction
@@ -60,18 +61,16 @@ public:
     bool start();
     bool stop();
 
+    bool startDryRunning();
     bool syncStartAll();
 
     // this is the setup API
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
-    bool enableStreamProcessors(uint64_t time_to_enable_at); /// enable registered StreamProcessors
-    bool disableStreamProcessors(); /// disable registered StreamProcessors
-
     void setPeriodSize(unsigned int period);
     void setPeriodSize(unsigned int period, unsigned int nb_buffers);
-    int getPeriodSize() {return m_period;};
+    unsigned int getPeriodSize() {return m_period;};
 
     void setNbBuffers(unsigned int nb_buffers);
     int getNbBuffers() {return m_nb_buffers;};
@@ -81,15 +80,21 @@ public:
     Port* getPortByIndex(int idx, enum Port::E_Direction);
 
     // the client-side functions
+    bool waitForPeriod();
+    bool transfer();
+    bool transfer(enum StreamProcessor::eProcessorType);
+private:
+    bool transferSilence();
+    bool transferSilence(enum StreamProcessor::eProcessorType);
 
-    bool waitForPeriod(); ///< wait for the next period
-
-    bool transfer(); ///< transfer the buffer contents from/to client
-    bool transfer(enum StreamProcessor::EProcessorType); ///< transfer the buffer contents from/to client (single processor type)
-
+    bool alignReceivedStreams();
+public:
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
     int getXrunCount() {return m_xruns;};
+
+    unsigned int getNominalRate() {return m_nominal_framerate;};
+    uint64_t getTimeOfLastTransfer() { return m_time_of_transfer;};
 
 private:
     int m_delayed_usecs;
@@ -115,7 +120,8 @@ private:
 
 public:
     bool setSyncSource(StreamProcessor *s);
-    StreamProcessor * getSyncSource();
+    StreamProcessor& getSyncSource()
+        {return *m_SyncSource;};
 
 protected:
 
@@ -131,6 +137,7 @@ protected:
 
     unsigned int m_nb_buffers;
     unsigned int m_period;
+    unsigned int m_nominal_framerate;
     unsigned int m_xruns;
 
     IsoHandlerManager *m_isoManager;
