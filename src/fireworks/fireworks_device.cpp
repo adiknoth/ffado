@@ -42,9 +42,8 @@ using namespace std;
 // FireWorks is the platform used and developed by ECHO AUDIO
 namespace FireWorks {
 
-Device::Device( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : GenericAVC::AvDevice( ieee1394Service, configRom)
+Device::Device(std::auto_ptr<ConfigRom>( configRom ))
+    : GenericAVC::AvDevice(configRom)
     , m_efc_discovery_done ( false )
     , m_MixerContainer ( NULL )
 {
@@ -90,8 +89,8 @@ Device::probe( ConfigRom& configRom )
 bool
 Device::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
     GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
     if ( vendorModel.parse() ) {
@@ -127,6 +126,7 @@ bool
 Device::discoverUsingEFC()
 {
     m_efc_discovery_done = false;
+    m_HwInfo.setVerboseLevel(getDebugLevel());
 
     if (!doEfcOverAVC(m_HwInfo)) {
         debugError("Could not read hardware capabilities\n");
@@ -147,15 +147,14 @@ Device::discoverUsingEFC()
 }
 
 FFADODevice *
-Device::createDevice( Ieee1394Service& ieee1394Service,
-                      std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
 //     unsigned int modelId = configRom->getModelId();
 
     switch(vendorId) {
-        case FW_VENDORID_ECHO: return new ECHO::AudioFire(ieee1394Service, configRom );
-        default: return new Device(ieee1394Service, configRom );
+        case FW_VENDORID_ECHO: return new ECHO::AudioFire(configRom );
+        default: return new Device(configRom );
     }
 }
 
@@ -168,18 +167,13 @@ Device::doEfcOverAVC(EfcCmd &c) {
     cmd.setSubunitId( 0xff );
 
     cmd.setVerbose( getDebugLevel() );
-//     cmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
-
     cmd.m_cmd = &c;
-
-//     c.showEfcCmd();
 
     if ( !cmd.fire()) {
         debugError( "EfcOverAVCCmd command failed\n" );
         c.showEfcCmd();
         return false;
     }
-//     c.showEfcCmd();
 
     if ( cmd.getResponse() != AVC::AVCCommand::eR_Accepted) {
         debugError( "EfcOverAVCCmd not accepted\n" );

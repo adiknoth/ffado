@@ -36,6 +36,7 @@
 #include <glibmm/ustring.h>
 
 #include <vector>
+#include <string>
 
 class Ieee1394Service;
 class FFADODevice;
@@ -46,6 +47,12 @@ namespace Streaming {
 typedef std::vector< FFADODevice* > FFADODeviceVector;
 typedef std::vector< FFADODevice* >::iterator FFADODeviceVectorIterator;
 
+typedef std::vector< Ieee1394Service* > Ieee1394ServiceVector;
+typedef std::vector< Ieee1394Service* >::iterator Ieee1394ServiceVectorIterator;
+
+typedef std::vector< Functor* > FunctorVector;
+typedef std::vector< Functor* >::iterator FunctorVectorIterator;
+
 class DeviceManager
     : public Util::OptionContainer,
       public Control::Container
@@ -54,10 +61,13 @@ public:
     DeviceManager();
     ~DeviceManager();
 
-    bool initialize( int port );
+    bool initialize();
     bool deinitialize();
 
-    bool discover( );
+    bool addSpecString(char *);
+    bool isSpecStringValid(std::string s);
+
+    bool discover();
 
     bool isValidNode( int node );
     int getNbDevices();
@@ -79,15 +89,19 @@ public:
 
 protected:
     FFADODevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
-                                   int id );
+                                     int id );
     FFADODevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
 
     void busresetHandler();
 
 protected:
-    Ieee1394Service*   m_1394Service;
-    FFADODeviceVector  m_avDevices;
-    Functor*           m_busreset_functor;
+    // we have one service for each port
+    // found on the system. We don't allow dynamic addition of ports (yet)
+    Ieee1394ServiceVector   m_1394Services;
+    FFADODeviceVector       m_avDevices;
+    FunctorVector           m_busreset_functors;
+
+    std::vector<std::string>          m_SpecStrings;
 
 // debug stuff
 public:

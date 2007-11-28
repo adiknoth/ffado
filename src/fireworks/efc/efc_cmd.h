@@ -218,6 +218,7 @@ public:
     virtual const char* getCmdName() const = 0;
 
     virtual void showEfcCmd();
+    virtual void setVerboseLevel(int l);
 
     uint32_t            m_length; // in quadlets, including length field and header.
     struct efc_header   m_header;

@@ -41,13 +41,11 @@ namespace FireWorks {
 
 class Device : public GenericAVC::AvDevice {
 public:
-    Device( Ieee1394Service& ieee1394Service,
-              std::auto_ptr<ConfigRom>( configRom ));
+    Device(std::auto_ptr<ConfigRom>( configRom ));
     virtual ~Device();
     
     static bool probe( ConfigRom& configRom );
-    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
-                                        std::auto_ptr<ConfigRom>( configRom ));
+    static FFADODevice * createDevice( std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
     virtual void showDevice();

@@ -61,7 +61,7 @@ struct config_csr_info {
 
 ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
     : Control::Element("ConfigRom")
-    , m_1394Service( &ieee1394service )
+    , m_1394Service( ieee1394service )
     , m_nodeId( nodeId )
     , m_avcDevice( false ) // FIXME: this does not seem veryu
     , m_guid( 0 )
@@ -88,7 +88,7 @@ ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
 
 ConfigRom::ConfigRom()
     : Control::Element("ConfigRom")
-    , m_1394Service( 0 )
+    , m_1394Service( *(new Ieee1394Service()) )
     , m_nodeId( -1 )
     , m_avcDevice( false ) // FIXME: this does not seem veryu
     , m_guid( 0 )
@@ -113,8 +113,10 @@ ConfigRom::ConfigRom()
 {
 }
 
-ConfigRom::~ConfigRom()
+Ieee1394Service&
+ConfigRom::get1394Service()
 {
+    return m_1394Service;
 }
 
 bool
@@ -132,14 +134,14 @@ bool
 ConfigRom::initialize()
 {
      struct config_csr_info csr_info;
-     csr_info.service = m_1394Service;
+     csr_info.service = &m_1394Service;
      csr_info.nodeId = 0xffc0 | m_nodeId;
 
      m_csr = csr1212_create_csr( &configrom_csr1212_ops,
                                  5 * sizeof(fb_quadlet_t),   // XXX Why 5 ?!?
                                  &csr_info );
     if (!m_csr || csr1212_parse_csr( m_csr ) != CSR1212_SUCCESS) {
-        debugError( "Could not parse config rom of node %d on port %d\n", m_nodeId, m_1394Service->getPort() );
+        debugError( "Could not parse config rom of node %d on port %d\n", m_nodeId, m_1394Service.getPort() );
         if (m_csr) {
             csr1212_destroy_csr(m_csr);
             m_csr = 0;
@@ -450,11 +452,11 @@ ConfigRom::updatedNodeId()
 
     struct csr1212_csr* csr = NULL;
     for ( fb_nodeid_t nodeId = 0;
-          nodeId < m_1394Service->getNodeCount();
+          nodeId < m_1394Service.getNodeCount();
           ++nodeId )
     {
         struct config_csr_info csr_info;
-        csr_info.service = m_1394Service;
+        csr_info.service = &m_1394Service;
         csr_info.nodeId = 0xffc0 | nodeId;
         debugOutput( DEBUG_LEVEL_VERBOSE, "Looking at node %d...\n", nodeId);
 
@@ -576,7 +578,7 @@ ConfigRom::deserialize( Glib::ustring path, Util::IODeserialize& deser, Ieee1394
         return 0;
     }
 
-    pConfigRom->m_1394Service = &ieee1394Service;
+    pConfigRom->m_1394Service = ieee1394Service;
 
     bool result;
     result  = deser.read( path + "m_nodeId", pConfigRom->m_nodeId );

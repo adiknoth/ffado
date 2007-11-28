@@ -52,12 +52,10 @@ class FFADODevice
       public Control::Container
 {
 public:
-    FFADODevice( Ieee1394Service& ieee1394service,
-                 std::auto_ptr< ConfigRom >( configRom ) );
+    FFADODevice( std::auto_ptr< ConfigRom >( configRom ) );
 
     virtual ~FFADODevice();
 
-    
     /**
      * @brief Compares the GUID of two FFADODevices
      *
@@ -75,11 +73,10 @@ public:
     static bool compareGUID( FFADODevice *a, FFADODevice *b );
 
     /// Returns the 1394 service of the FFADO device
-    virtual Ieee1394Service& get1394Service()
-        { return *m_p1394Service; };
+    virtual Ieee1394Service& get1394Service();
     /// Returns the ConfigRom object of the device node.
     virtual ConfigRom& getConfigRom() const;
-    
+
     /**
      * @brief Called by DeviceManager to load device model from cache.
      *
@@ -113,8 +110,7 @@ public:
      *
      * @return a new instance of the AvDevice type, NULL when unsuccessful
      */
-    static FFADODevice * createDevice( Ieee1394Service& ,
-                                        std::auto_ptr<ConfigRom>( x ));
+    static FFADODevice * createDevice( std::auto_ptr<ConfigRom>( x ));
 
     /**
      * @brief This is called by the DeviceManager to discover & configure the device
@@ -416,10 +412,9 @@ public:
         { return false; };
 
 
-protected:
+private:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
-    Ieee1394Service*          m_p1394Service;
-
+protected:
     DECLARE_DEBUG_MODULE;
 };
 

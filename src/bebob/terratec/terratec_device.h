@@ -33,8 +33,7 @@ namespace Terratec {
 
 class PhaseSeriesDevice : public BeBoB::AvDevice {
 public:
-    PhaseSeriesDevice( Ieee1394Service& ieee1394Service,
-              std::auto_ptr<ConfigRom>( configRom ));
+    PhaseSeriesDevice( std::auto_ptr<ConfigRom>( configRom ));
     virtual ~PhaseSeriesDevice();
 
     virtual void showDevice();

@@ -27,11 +27,10 @@
 namespace BeBoB {
 namespace Focusrite {
 
-SaffireProDevice::SaffireProDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : FocusriteDevice( ieee1394Service, configRom)
-    , m_MixerContainer ( NULL )
-    , m_ControlContainer ( NULL )
+SaffireProDevice::SaffireProDevice(std::auto_ptr<ConfigRom>( configRom ))
+    : FocusriteDevice( configRom )
+    , m_MixerContainer( NULL )
+    , m_ControlContainer( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );

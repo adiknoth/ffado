@@ -27,9 +27,8 @@
 namespace BeBoB {
 namespace Focusrite {
 
-SaffireDevice::SaffireDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : FocusriteDevice( ieee1394Service, configRom)
+SaffireDevice::SaffireDevice( std::auto_ptr<ConfigRom>( configRom ))
+    : FocusriteDevice( configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -38,11 +37,6 @@ SaffireDevice::SaffireDevice( Ieee1394Service& ieee1394Service,
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
     }
-
-}
-
-SaffireDevice::~SaffireDevice()
-{
 
 }
 

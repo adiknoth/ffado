@@ -212,7 +212,7 @@ main( int argc, char **argv )
             debugError("Could not allocate device manager\n" );
             return exitfunction(-1);
         }
-        if ( !m_deviceManager->initialize( arguments.port ) ) {
+        if ( !m_deviceManager->initialize() ) {
             debugError("Could not initialize device manager\n" );
             delete m_deviceManager;
             return exitfunction(-1);

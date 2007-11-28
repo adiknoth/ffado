@@ -37,6 +37,8 @@
 #include <iostream>
 #include <iomanip>
 
+#define FFADO_MAX_FIREWIRE_PORTS 8
+
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
@@ -82,6 +84,25 @@ Ieee1394Service::~Ieee1394Service()
     }
 }
 
+unsigned int
+Ieee1394Service::detectNbPorts( )
+{
+    raw1394handle_t tmp_handle = raw1394_new_handle();
+    if ( tmp_handle == NULL ) {
+        debugError("Could not get libraw1394 handle.\n");
+        return 0;
+    }
+    struct raw1394_portinfo pinf[FFADO_MAX_FIREWIRE_PORTS];
+    int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, FFADO_MAX_FIREWIRE_PORTS);
+    raw1394_destroy_handle(tmp_handle);
+
+    if (nb_detected_ports < 0) {
+        debugError("Failed to detect number of ports\n");
+        return 0;
+    }
+    return nb_detected_ports;
+}
+
 bool
 Ieee1394Service::initialize( int port )
 {
@@ -112,6 +133,19 @@ Ieee1394Service::initialize( int port )
     }
 
     m_port = port;
+
+    // obtain port name
+    struct raw1394_portinfo pinf[FFADO_MAX_FIREWIRE_PORTS];
+    int nb_detected_ports = raw1394_get_port_info(m_handle, pinf, FFADO_MAX_FIREWIRE_PORTS);
+
+    if(nb_detected_ports && port < FFADO_MAX_FIREWIRE_PORTS) {
+        m_portName = pinf[port].name;
+    } else {
+        m_portName = "Unknown";
+    }
+    if (m_portName == "") {
+        m_portName = "Unknown";
+    }
 
     raw1394_set_userdata( m_handle, this );
     raw1394_set_userdata( m_resetHandle, this );
@@ -838,4 +872,11 @@ Ieee1394Service::setVerboseLevel(int l)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
+}
+
+void
+Ieee1394Service::show()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Port:  %d\n", getPort() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
 }

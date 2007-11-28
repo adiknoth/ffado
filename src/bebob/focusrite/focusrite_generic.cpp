@@ -29,9 +29,8 @@
 namespace BeBoB {
 namespace Focusrite {
 
-FocusriteDevice::FocusriteDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( ieee1394Service, configRom)
+FocusriteDevice::FocusriteDevice( std::auto_ptr<ConfigRom>( configRom ))
+    : BeBoB::AvDevice( configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::FocusriteDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -140,7 +139,7 @@ FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
     fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->write_quadlet( nodeId, addr, htonl(data) ) ) {
+    if(!get1394Service().write_quadlet( nodeId, addr, htonl(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -156,7 +155,7 @@ FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
     fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->read_quadlet( nodeId, addr, &result ) ) {
+    if(!get1394Service().read_quadlet( nodeId, addr, &result ) ) {
         debugError("Could not read from node 0x%04llX addr 0x%012llX\n", nodeId, addr);
         return false;
     }

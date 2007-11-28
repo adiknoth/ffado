@@ -176,4 +176,10 @@ EfcCmd::showEfcCmd()
     debugOutput(DEBUG_LEVEL_NORMAL, " Return Value    : 0x%08X\n", m_header.retval);
 }
 
+void
+EfcCmd::setVerboseLevel(int l)
+{
+    setDebugLevel(l);
+}
+
 } // namespace FireWorks

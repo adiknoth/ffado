@@ -135,8 +135,7 @@ protected:
 
 class FocusriteDevice : public BeBoB::AvDevice {
 public:
-    FocusriteDevice( Ieee1394Service& ieee1394Service,
-              std::auto_ptr<ConfigRom>( configRom ));
+    FocusriteDevice(std::auto_ptr<ConfigRom>( configRom ));
     virtual ~FocusriteDevice() {};
 
     virtual void showDevice();

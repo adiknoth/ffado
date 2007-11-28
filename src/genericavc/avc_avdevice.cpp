@@ -48,21 +48,14 @@ using namespace AVC;
 
 namespace GenericAVC {
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
-
-AvDevice::AvDevice( Ieee1394Service& ieee1394Service,
-                    std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( ieee1394Service, configRom )
+AvDevice::AvDevice(std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( configRom )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
-}
-
-AvDevice::~AvDevice()
-{
-
 }
 
 bool
@@ -80,10 +73,9 @@ AvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-AvDevice::createDevice( Ieee1394Service& ieee1394Service,
-                        std::auto_ptr<ConfigRom>( configRom ))
+AvDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice(ieee1394Service, configRom );
+    return new AvDevice(configRom );
 }
 
 bool
@@ -92,8 +84,8 @@ AvDevice::discover()
     // check if we already have a valid VendorModel entry
     // e.g. because a subclass called this function
     if (!GenericAVC::VendorModel::isValid(m_model)) {
-        unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-        unsigned int modelId = m_pConfigRom->getModelId();
+        unsigned int vendorId = getConfigRom().getNodeVendorId();
+        unsigned int modelId = getConfigRom().getModelId();
 
         GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
         if ( vendorModel.parse() ) {
@@ -127,12 +119,11 @@ AvDevice::discover()
 void
 AvDevice::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
-
+    setDebugLevel(l);
     m_pPlugManager->setVerboseLevel(l);
-
     FFADODevice::setVerboseLevel(l);
     AVC::Unit::setVerboseLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 int
@@ -627,7 +618,7 @@ AvDevice::startStreamByIndex(int i) {
             struct iec61883_oPCR opcr;
             if (iec61883_get_oPCRX(
                     get1394Service().getHandle(),
-                    m_pConfigRom->getNodeId() | 0xffc0,
+                    getConfigRom().getNodeId() | 0xffc0,
                     (quadlet_t *)&opcr,
                     n)) {
 
@@ -638,7 +629,7 @@ AvDevice::startStreamByIndex(int i) {
             iso_channel=opcr.channel;
         } else {
             iso_channel=get1394Service().allocateIsoChannelCMP(
-                m_pConfigRom->getNodeId() | 0xffc0, n,
+                getConfigRom().getNodeId() | 0xffc0, n,
                 get1394Service().getLocalNodeId()| 0xffc0, -1);
         }
         if (iso_channel<0) {
@@ -661,7 +652,7 @@ AvDevice::startStreamByIndex(int i) {
             struct iec61883_iPCR ipcr;
             if (iec61883_get_iPCRX(
                     get1394Service().getHandle(),
-                    m_pConfigRom->getNodeId() | 0xffc0,
+                    getConfigRom().getNodeId() | 0xffc0,
                     (quadlet_t *)&ipcr,
                     n)) {
 
@@ -674,7 +665,7 @@ AvDevice::startStreamByIndex(int i) {
         } else {
             iso_channel=get1394Service().allocateIsoChannelCMP(
                 get1394Service().getLocalNodeId()| 0xffc0, -1,
-                m_pConfigRom->getNodeId() | 0xffc0, n);
+                getConfigRom().getNodeId() | 0xffc0, n);
         }
 
         if (iso_channel<0) {
