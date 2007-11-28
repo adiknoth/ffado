@@ -235,8 +235,8 @@ AvDevice::getSupportedClockSources() {
         // check if the destination is a MSU input plug
         bool found=false;
         for ( PlugVector::const_iterator it2 = syncMSUInputPlugs.begin();
-              it2 != syncMSUInputPlugs.end();
-              ++it2 )
+            it2 != syncMSUInputPlugs.end();
+            ++it2 )
         {
             AVC::Plug* msuPlug = *it2;
             found |= (msuPlug == si.m_destination);
@@ -421,15 +421,16 @@ AvDevice::prepare() {
         return false;
     }
 
-    int samplerate=outputPlug->getSampleRate();
-
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing receive processor...\n");
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
 
+    if ( outputPlug->getNrOfChannels() == 0 ) {
+        debugError("Receive plug has no channels\n");
+        return false;
+    }
     p=new Streaming::AmdtpReceiveStreamProcessor(
                              get1394Service().getPort(),
-                             samplerate,
                              outputPlug->getNrOfChannels());
 
     if(!p->init()) {
@@ -454,12 +455,10 @@ AvDevice::prepare() {
         // we are snooping, so this is receive too.
         p=new Streaming::AmdtpReceiveStreamProcessor(
                                   get1394Service().getPort(),
-                                  samplerate,
                                   inputPlug->getNrOfChannels());
     } else {
         p=new Streaming::AmdtpTransmitStreamProcessor(
                                 get1394Service().getPort(),
-                                samplerate,
                                 inputPlug->getNrOfChannels());
     }
 
@@ -595,6 +594,7 @@ AvDevice::addPlugToProcessor(
 int
 AvDevice::getStreamCount() {
     return m_receiveProcessors.size() + m_transmitProcessors.size();
+    //return 1;
 }
 
 Streaming::StreamProcessor *

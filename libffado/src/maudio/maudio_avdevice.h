@@ -31,9 +31,10 @@
 
 #include "bebob/bebob_avdevice.h"
 
-#include "libstreaming/AmdtpStreamProcessor.h"
-#include "libstreaming/AmdtpPort.h"
-#include "libstreaming/AmdtpPortInfo.h"
+#include "libstreaming/amdtp/AmdtpReceiveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpTransmitStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpPort.h"
+#include "libstreaming/amdtp/AmdtpPortInfo.h"
 
 #include "ffadodevice.h"
 

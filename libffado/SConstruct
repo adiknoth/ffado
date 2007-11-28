@@ -61,11 +61,6 @@ if os.environ.has_key('PKG_CONFIG_PATH'):
 else:
 	buildenv['PKG_CONFIG_PATH']=''
 
-if os.environ.has_key('LD_LIBRARY_PATH'):
-	buildenv['LD_LIBRARY_PATH']=os.environ['LD_LIBRARY_PATH']
-else:
-	buildenv['LD_LIBRARY_PATH']=''
-
 
 env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
@@ -96,8 +91,19 @@ CacheDir( 'cache/objects' )
 
 opts.Save( 'cache/' + build_base + "options.cache", env )
 
+#
+# Check for apps...
+#
+def CheckForApp( context, app ):
+	context.Message( "Checking if '%s' executes... " % app )
+	ret = context.env.WhereIs( app )
+	if ret != "":
+		context.Result( True )
+	else:
+		context.Result( False )
+	return ret
 
-tests = {}
+tests = { 'CheckForApp' : CheckForApp }
 tests.update( env['PKGCONFIG_TESTS'] )
 
 if not env.GetOption('clean'):
@@ -129,7 +135,6 @@ if not env.GetOption('clean'):
 		'libiec61883' : '1.1.0',
 		'alsa' : '1.0.0',
 		'libxml++-2.6' : '2.13.0',
-		'liblo' : '0.22',
 		'dbus-1' : '1.0',
 		}
 	for pkg in pkgs:
@@ -148,6 +153,7 @@ install the needed packages (remember to also install the *-devel packages)
 	#
 	# Optional checks follow:
 	#
+	env['PYUIC'] = conf.CheckForApp( 'pyuic' )
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
 	env = conf.Finish()
@@ -157,7 +163,7 @@ if env['DEBUG']:
 	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
 	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
 else:
-	env.AppendUnique( CCFLAGS=["-O2"] )
+	env.AppendUnique( CCFLAGS=["-O2","-DNDEBUG"] )
 
 # this is required to indicate that the DBUS version we use has support
 # for platform dependent threading init functions
@@ -190,15 +196,22 @@ env['libdir'] = Template( os.path.join( env['LIBDIR'] ) ).safe_substitute( env )
 env['includedir'] = Template( os.path.join( env['INCLUDEDIR'] ) ).safe_substitute( env )
 env['sharedir'] = Template( os.path.join( env['SHAREDIR'] ) ).safe_substitute( env )
 
-env.Command( target=env['sharedir'], source="", action=Mkdir( env['sharedir'] ) )
-
 env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
 env.Alias( "install", env['sharedir'] )
 env.Alias( "install", env['bindir'] )
 
+
+env['REVISION'] = os.popen('svnversion .').read()[:-1]
+# This may be as simple as '89' or as complex as '4123:4184M'.
+# We'll just use the last bit.
+env['REVISION'] = env['REVISION'].split(':')[-1]
+
+if env['REVISION'] == 'exported':
+	env['REVISION'] = ''
+
 env['PACKAGE'] = "libffado"
-env['VERSION'] = "1.999.6"
+env['VERSION'] = "1.999.7"
 env['LIBVERSION'] = "1.0.0"
 
 #
@@ -209,7 +222,6 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 #
 # Start building
 #
-
 env.ScanReplace( "config.h.in" )
 
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
@@ -221,6 +233,8 @@ if build_base:
 else:
 	env.SConscript( dirs=subdirs, exports="env" )
 
+if 'debian' in COMMAND_LINE_TARGETS:
+	env.SConscript("deb/SConscript", exports="env")
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):

@@ -72,14 +72,14 @@ class Subunit {
     virtual bool initPlugFromDescriptor( Plug& plug );
 
     PlugVector& getPlugs()
-	{ return m_plugs; }
+    { return m_plugs; }
     Plug* getPlug(Plug::EPlugDirection direction, plug_id_t plugId);
 
     virtual void setVerboseLevel(int l);
 
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static Subunit* deserialize( Glib::ustring basePath,
-				 Util::IODeserialize& deser, Unit& avDevice );
+                     Util::IODeserialize& deser, Unit& avDevice );
  protected:
     Subunit();
 

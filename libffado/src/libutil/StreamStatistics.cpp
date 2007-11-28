@@ -25,6 +25,7 @@
 #include <stdio.h>
 
 namespace Streaming {
+IMPL_DEBUG_MODULE( StreamStatistics, StreamStatistics, DEBUG_LEVEL_VERBOSE );
 
 StreamStatistics::StreamStatistics()
     : m_name("")
@@ -34,12 +35,7 @@ StreamStatistics::StreamStatistics()
     , m_max(0)
     , m_sum(0)
 {
-
-}
-
-
-StreamStatistics::~StreamStatistics()
-{
+    reset();
 }
 
 void StreamStatistics::mark(int value) {
@@ -50,9 +46,22 @@ void StreamStatistics::mark(int value) {
     m_average=(1.0*m_sum)/(1.0*m_count);
 }
 
+void StreamStatistics::signal(unsigned int val) {
+    if (val <= MAX_SIGNAL_VALUE) {
+        m_signalled[val]++;
+    }
+}
+
 void StreamStatistics::dumpInfo() {
-     printf("--- Stats for %s: min=%ld avg=%f max=%ld cnt=%ld sum=%ld\n",m_name.c_str(),
-         m_min,m_average,m_max,m_count,m_sum);
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, 
+                      "--- Stats for %s: min=%ld avg=%f max=%ld cnt=%ld sum=%ld\n",
+                      m_name.c_str(), m_min, m_average, m_max, m_count, m_sum);
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, "    Signal stats\n");
+    for (unsigned int i=0;i <= MAX_SIGNAL_VALUE; i++) {
+        debugOutputShort(DEBUG_LEVEL_VERBOSE, 
+                         "     Stats for %3u: %8u\n",
+                         i, m_signalled[i]);
+    }
 }
 
 void StreamStatistics::reset() {
@@ -61,6 +70,10 @@ void StreamStatistics::reset() {
     m_min=0x7FFFFFFF;
     m_max=0;
     m_sum=0;
+
+    for (unsigned int i=0;i <= MAX_SIGNAL_VALUE; i++) {
+        m_signalled[i]=0;
+    }
 }
 
 }

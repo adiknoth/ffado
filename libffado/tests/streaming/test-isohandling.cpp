@@ -34,16 +34,15 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/IsoHandler.h"
-#include "src/libstreaming/IsoStream.h"
-#include "src/libstreaming/StreamProcessorManager.h"
-#include "src/libstreaming/AmdtpStreamProcessor.h"
-#include "src/libstreaming/IsoHandlerManager.h"
 #include "src/libutil/PosixThread.h"
-#include "src/libstreaming/AmdtpPort.h"
+
+#include "src/libstreaming/util/IsoHandler.h"
+#include "src/libstreaming/util/StreamProcessorManager.h"
+#include "src/libstreaming/util/IsoHandlerManager.h"
+#include "src/libstreaming/amdtp/AmdtpStreamProcessor.h"
+#include "src/libstreaming/amdtp/AmdtpPort.h"
 
 using namespace Streaming;
-
 
 int run;
 

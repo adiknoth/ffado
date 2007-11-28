@@ -41,20 +41,14 @@ ffado_source = env.Split( '\
 	libieee1394/csr1212.c \
 	libieee1394/ieee1394service.cpp \
 	libieee1394/IEC61883.cpp \
-	libosc/OscArgument.cpp \
-	libosc/OscClient.cpp \
-	libosc/OscMessage.cpp \
-	libosc/OscNode.cpp \
-	libosc/OscResponse.cpp \
-	libosc/OscServer.cpp \
-	libstreaming/cip.c \
-	libstreaming/IsoHandler.cpp \
-	libstreaming/IsoHandlerManager.cpp \
-	libstreaming/IsoStream.cpp \
-	libstreaming/Port.cpp \
-	libstreaming/PortManager.cpp \
-	libstreaming/StreamProcessor.cpp \
 	libstreaming/StreamProcessorManager.cpp \
+	libstreaming/util/cip.c \
+	libstreaming/util/IsoHandler.cpp \
+	libstreaming/util/IsoHandlerManager.cpp \
+	libstreaming/generic/StreamProcessor.cpp \
+	libstreaming/generic/IsoStream.cpp \
+	libstreaming/generic/Port.cpp \
+	libstreaming/generic/PortManager.cpp \
 	libutil/cmd_serialize.cpp \
 	libutil/DelayLockedLoop.cpp \
 	libutil/PacketBuffer.cpp \
@@ -126,9 +120,10 @@ fireworks_pkgdata =  env.Split( '\
 
 motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
-	libstreaming/MotuPort.cpp \
-	libstreaming/MotuPortInfo.cpp \
-	libstreaming/MotuStreamProcessor.cpp \
+	libstreaming/motu/MotuPort.cpp \
+	libstreaming/motu/MotuPortInfo.cpp \
+	libstreaming/motu/MotuReceiveStreamProcessor.cpp \
+	libstreaming/motu/MotuTransmitStreamProcessor.cpp \
 ' )
 
 dice_source = env.Split( '\
@@ -150,9 +145,10 @@ rme_source = env.Split( '\
 ' )
 
 amdtp_source = env.Split( '\
-	libstreaming/AmdtpPort.cpp \
-	libstreaming/AmdtpPortInfo.cpp \
-	libstreaming/AmdtpStreamProcessor.cpp \
+	libstreaming/amdtp/AmdtpPort.cpp \
+	libstreaming/amdtp/AmdtpPortInfo.cpp \
+	libstreaming/amdtp/AmdtpReceiveStreamProcessor.cpp \
+	libstreaming/amdtp/AmdtpTransmitStreamProcessor.cpp \
 ' )
 
 source = ffado_source
@@ -195,7 +191,6 @@ if not env.GetOption( "clean" ):
 	libenv.MergeFlags( env['LIBIEC61883_FLAGS'] )
 	libenv.MergeFlags( env['ALSA_FLAGS'] )
 	libenv.MergeFlags( env['LIBXML26_FLAGS'] )
-	libenv.MergeFlags( env['LIBLO_FLAGS'] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )
@@ -246,7 +241,6 @@ apps = { \
 	"test-debugmodule" : "debugmodule/test_debugmodule.cpp", \
 	"test-dll" : "libutil/test-dll.cpp", \
 	"test-unittests-util" : "libutil/unittests.cpp", \
-	"test-unittests-osc" : "libosc/unittests.cpp" \
 }
 
 installapps = []

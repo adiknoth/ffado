@@ -36,9 +36,9 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/cycletimer.h"
+#include "src/libstreaming/util/cycletimer.h"
 
-#include "src/libstreaming/IsoHandlerManager.h"
+#include "src/libstreaming/util/IsoHandlerManager.h"
 #include "SytMonitor.h"
 
 #include "src/libutil/PosixThread.h"
@@ -232,12 +232,6 @@ int main(int argc, char *argv[])
             }
 
             monitors[i]->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-
-            if (!monitors[i]->init()) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "Could not init SytMonitor %d\n", i);
-                goto finish;
-            }
-
             monitors[i]->setChannel(arguments.args[i].channel);
 
             if(!m_isoManager->registerStream(monitors[i])) {

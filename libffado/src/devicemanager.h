@@ -31,8 +31,6 @@
 #include "libieee1394/ieee1394service.h"
 
 #include "libutil/OptionContainer.h"
-// #include "libosc/OscServer.h"
-// #include "libosc/OscNode.h"
 #include "libcontrol/BasicElements.h"
 
 #include <glibmm/ustring.h>

@@ -36,173 +36,190 @@ typedef double ffado_timestamp_t;
 // typedef int64_t ffado_timestamp_t;
 // #define TIMESTAMP_FORMAT_SPEC "%012lld"
 
-namespace Util {
-
+namespace Util
+{
 
 class TimestampedBufferClient;
 
 /**
- * \brief Class implementing a frame buffer that is time-aware
- *
- * This class implements a buffer that is time-aware. Whenever new frames
- * are written to the buffer, the timestamp corresponding to the last frame
- * in the buffer is updated. This allows to calculate the timestamp of any
- * other frame in the buffer.
- *
- * The buffer is a frame buffer, having the following parameters defining
- * it's behaviour:
- * - buff_size: buffer size in frames (setBufferSize())
- * - events_per_frame: the number of events per frame (setEventsPerFrame())
- * - event_size: the storage size of the events (in bytes) (setEventSize())
- *
- * The total size of the buffer (in bytes) is at least
- * buff_size*events_per_frame*event_size.
- *
- * Timestamp tracking is done by requiring that a timestamp is specified every
- * time frames are added to the buffer. In combination with the buffer fill and
- * the frame rate (calculated internally), this allows to calculate the timestamp
- * of any frame in the buffer. In order to initialize the internal data structures,
- * the setNominalRate() and setUpdatePeriod() functions are provided.
- *
- * \note Currently the class only supports fixed size writes of size update_period.
- *       This can change in the future, implementation ideas are already in place.
- *
- * The TimestampedBuffer class is time unit agnostic. It can handle any time unit
- * as long as it fits in a 64 bit unsigned integer. The buffer supports wrapped
- * timestamps using (...).
- *
- * There are two methods of reading and writing to the buffer.
- *
- * The first method uses conventional readFrames() and writeFrames() functions.
- *
- * The second method makes use of the TimestampedBufferClient interface. When a
- * TimestampedBuffer is created, it is required that a TimestampedBufferClient is
- * registered. This client implements the processReadBlock and processWriteBlock
- * functions. These are block processing 'callbacks' that allow zero-copy processing
- * of the buffer contents. In order to initiate block processing, the
- * blockProcessWriteFrames and blockProcessReadFrames functions are provided by
- * TimestampedBuffer.
- *
- */
-class TimestampedBuffer {
+    * \brief Class implementing a frame buffer that is time-aware
+    *
+    * This class implements a buffer that is time-aware. Whenever new frames
+    * are written to the buffer, the timestamp corresponding to the last frame
+    * in the buffer is updated. This allows to calculate the timestamp of any
+    * other frame in the buffer.
+    *
+    * The buffer is a frame buffer, having the following parameters defining
+    * it's behaviour:
+    * - buff_size: buffer size in frames (setBufferSize())
+    * - events_per_frame: the number of events per frame (setEventsPerFrame())
+    * - event_size: the storage size of the events (in bytes) (setEventSize())
+    *
+    * The total size of the buffer (in bytes) is at least
+    * buff_size*events_per_frame*event_size.
+    *
+    * Timestamp tracking is done by requiring that a timestamp is specified every
+    * time frames are added to the buffer. In combination with the buffer fill and
+    * the frame rate (calculated internally), this allows to calculate the timestamp
+    * of any frame in the buffer. In order to initialize the internal data structures,
+    * the setNominalRate() and setUpdatePeriod() functions are provided.
+    *
+    * \note Currently the class only supports fixed size writes of size update_period.
+    *       This can change in the future, implementation ideas are already in place.
+    *
+    * The TimestampedBuffer class is time unit agnostic. It can handle any time unit
+    * as long as it fits in a 64 bit unsigned integer. The buffer supports wrapped
+    * timestamps using (...).
+    *
+    * There are two methods of reading and writing to the buffer.
+    *
+    * The first method uses conventional readFrames() and writeFrames() functions.
+    *
+    * The second method makes use of the TimestampedBufferClient interface. When a
+    * TimestampedBuffer is created, it is required that a TimestampedBufferClient is
+    * registered. This client implements the processReadBlock and processWriteBlock
+    * functions. These are block processing 'callbacks' that allow zero-copy processing
+    * of the buffer contents. In order to initiate block processing, the
+    * blockProcessWriteFrames and blockProcessReadFrames functions are provided by
+    * TimestampedBuffer.
+    *
+    */
+class TimestampedBuffer
+{
+    public:
+        TimestampedBuffer ( TimestampedBufferClient * );
+        virtual ~TimestampedBuffer();
 
-public:
+        bool writeDummyFrame();
+        bool dropFrames ( unsigned int nbframes );
 
+        bool writeFrames ( unsigned int nbframes, char *data, ffado_timestamp_t ts );
+        bool readFrames ( unsigned int nbframes, char *data );
 
-    TimestampedBuffer(TimestampedBufferClient *);
-    virtual ~TimestampedBuffer();
-    
-    bool writeDummyFrame();
-    
-    bool writeFrames(unsigned int nbframes, char *data, ffado_timestamp_t ts);
-    bool readFrames(unsigned int nbframes, char *data);
+        bool preloadFrames ( unsigned int nbframes, char *data, bool keep_head_ts );
 
-    bool blockProcessWriteFrames(unsigned int nbframes, ffado_timestamp_t ts);
-    bool blockProcessReadFrames(unsigned int nbframes);
+        bool blockProcessWriteFrames ( unsigned int nbframes, ffado_timestamp_t ts );
+        bool blockProcessReadFrames ( unsigned int nbframes );
 
-    bool init();
-    bool prepare();
-    bool reset();
+        bool init();
+        bool prepare();
+        bool clearBuffer();
 
-    bool setEventSize(unsigned int s);
-    bool setEventsPerFrame(unsigned int s);
-    bool setBufferSize(unsigned int s);
-    unsigned int getBufferSize() {return m_buffer_size;};
+        bool isEnabled() {return m_enabled;};
+        void enable() {m_enabled=true;};
+        void disable() {m_enabled=false;};
 
-    unsigned int getBytesPerFrame() {return m_bytes_per_frame;};
+        bool isTransparent() {return m_transparent;};
+        void setTransparent ( bool v ) {m_transparent=v;};
 
-    bool setWrapValue(ffado_timestamp_t w);
+        bool setEventSize ( unsigned int s );
+        bool setEventsPerFrame ( unsigned int s );
+        bool setBufferSize ( unsigned int s );
+        unsigned int getBufferSize() {return m_buffer_size;};
 
-    unsigned int getBufferFill();
+        unsigned int getBytesPerFrame() {return m_bytes_per_frame;};
 
-    // timestamp stuff
-    int getFrameCounter() {return m_framecounter;};
+        bool setWrapValue ( ffado_timestamp_t w );
 
-    void getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int *fc);
-    void getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc);
+        unsigned int getBufferFill();
 
-    void setBufferTailTimestamp(ffado_timestamp_t new_timestamp);
-    void setBufferHeadTimestamp(ffado_timestamp_t new_timestamp);
+        // timestamp stuff
+        int getFrameCounter() {return m_framecounter;};
 
-    ffado_timestamp_t getTimestampFromTail(int nframes);
-    ffado_timestamp_t getTimestampFromHead(int nframes);
+        void getBufferHeadTimestamp ( ffado_timestamp_t *ts, signed int *fc );
+        void getBufferTailTimestamp ( ffado_timestamp_t *ts, signed int *fc );
 
-    // buffer offset stuff
-    /// return the tick offset value
-    ffado_timestamp_t getTickOffset() {return m_tick_offset;};
+        void setBufferTailTimestamp ( ffado_timestamp_t new_timestamp );
+        void setBufferHeadTimestamp ( ffado_timestamp_t new_timestamp );
 
-    bool setFrameOffset(int nframes);
-    bool setTickOffset(ffado_timestamp_t);
+        // sync related, also drops or add frames when necessary
+        bool syncBufferHeadToTimestamp ( ffado_timestamp_t ts );
+        bool syncBufferTailToTimestamp ( ffado_timestamp_t ts );
+        bool syncCorrectLag ( int64_t ts );
 
-    // dll stuff
-    bool setNominalRate(float r);
-    float getRate();
+        ffado_timestamp_t getTimestampFromTail ( int nframes );
+        ffado_timestamp_t getTimestampFromHead ( int nframes );
 
-    bool setUpdatePeriod(unsigned int t);
+        // buffer offset stuff
+        /// return the tick offset value
+        ffado_timestamp_t getTickOffset() {return m_tick_offset;};
 
-    // misc stuff
-    void dumpInfo();
-    void setVerboseLevel(int l) {setDebugLevel(l);};
+        bool setFrameOffset ( int nframes );
+        bool setTickOffset ( ffado_timestamp_t );
 
-private:
-    void decrementFrameCounter(int nbframes);
-    void incrementFrameCounter(int nbframes, ffado_timestamp_t new_timestamp);
-    void resetFrameCounter();
+        // dll stuff
+        bool setNominalRate ( float r );
+        float getNominalRate() {return m_nominal_rate;};
+        float getRate();
 
-protected:
+        bool setUpdatePeriod ( unsigned int t );
 
-    ffado_ringbuffer_t * m_event_buffer;
-    char* m_cluster_buffer;
+        // misc stuff
+        void dumpInfo();
+        void setVerboseLevel ( int l ) {setDebugLevel ( l );};
 
-    unsigned int m_event_size; // the size of one event
-    unsigned int m_events_per_frame; // the number of events in a frame
-    unsigned int m_buffer_size; // the number of frames in the buffer
-    unsigned int m_bytes_per_frame;
-    unsigned int m_bytes_per_buffer;
+    private:
+        void decrementFrameCounter ( int nbframes );
+        void incrementFrameCounter ( int nbframes, ffado_timestamp_t new_timestamp );
+        void resetFrameCounter();
 
-    ffado_timestamp_t m_wrap_at; // value to wrap at
+    protected:
 
-    TimestampedBufferClient *m_Client;
+        ffado_ringbuffer_t * m_event_buffer;
+        char* m_cluster_buffer;
 
-    DECLARE_DEBUG_MODULE;
+        unsigned int m_event_size; // the size of one event
+        unsigned int m_events_per_frame; // the number of events in a frame
+        unsigned int m_buffer_size; // the number of frames in the buffer
+        unsigned int m_bytes_per_frame;
+        unsigned int m_bytes_per_buffer;
+        bool m_enabled; // you can get frames FIXME: rename!!
+        bool m_transparent; // the buffer should hold the frames put in it. if true, discards all frames
 
-private:
-    // the framecounter gives the number of frames in the buffer
-    signed int m_framecounter;
+        ffado_timestamp_t m_wrap_at; // value to wrap at
 
-    // the offset that define the timing of the buffer
-    ffado_timestamp_t m_tick_offset;
+        TimestampedBufferClient *m_Client;
 
-    // the buffer tail timestamp gives the timestamp of the last frame
-    // that was put into the buffer
-    ffado_timestamp_t   m_buffer_tail_timestamp;
-    ffado_timestamp_t   m_buffer_next_tail_timestamp;
+        DECLARE_DEBUG_MODULE;
 
-    // this mutex protects the access to the framecounter
-    // and the buffer head timestamp.
-    pthread_mutex_t m_framecounter_lock;
+    private:
+        // the framecounter gives the number of frames in the buffer
+        signed int m_framecounter;
 
-    // tracking DLL variables
+        // the offset that define the timing of the buffer
+        ffado_timestamp_t m_tick_offset;
+
+        // the buffer tail timestamp gives the timestamp of the last frame
+        // that was put into the buffer
+        ffado_timestamp_t   m_buffer_tail_timestamp;
+        ffado_timestamp_t   m_buffer_next_tail_timestamp;
+
+        // this mutex protects the access to the framecounter
+        // and the buffer head timestamp.
+        pthread_mutex_t m_framecounter_lock;
+
+        // tracking DLL variables
 // JMW: try double for this too
 //    float m_dll_e2;
-    double m_dll_e2;
-    float m_dll_b;
-    float m_dll_c;
+        double m_dll_e2;
+        float m_dll_b;
+        float m_dll_c;
 
-    float m_nominal_rate;
-    unsigned int m_update_period;
+        float m_nominal_rate;
+        unsigned int m_update_period;
 };
 
 /**
- * \brief Interface to be implemented by TimestampedBuffer clients
- */
-class TimestampedBufferClient {
+    * \brief Interface to be implemented by TimestampedBuffer clients
+    */
+class TimestampedBufferClient
+{
     public:
         TimestampedBufferClient() {};
         virtual ~TimestampedBufferClient() {};
 
-        virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)=0;
-        virtual bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset)=0;
+        virtual bool processReadBlock ( char *data, unsigned int nevents, unsigned int offset ) =0;
+        virtual bool processWriteBlock ( char *data, unsigned int nevents, unsigned int offset ) =0;
 
 };
 

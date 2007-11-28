@@ -34,7 +34,7 @@
 #define DO_MESSAGE_BUFFER_PRINT
 
 #ifndef DO_MESSAGE_BUFFER_PRINT
-	#warning Printing debug info without ringbuffer, not RT-safe!
+    #warning Printing debug info without ringbuffer, not RT-safe!
 #endif
 
 using namespace std;
@@ -45,6 +45,7 @@ struct ColorEntry  {
 };
 
 ColorEntry colorTable[] = {
+    { "",           ""        },
     { "\033[31mFatal",   "\033[0m" },
     { "\033[31mError",   "\033[0m" },
     { "\033[31mWarning", "\033[0m" },
@@ -212,7 +213,7 @@ DebugModule::print( debug_level_t level,
 const char*
 DebugModule::getPreSequence( debug_level_t level ) const
 {
-    if ( ( level <= eDL_Normal ) && ( level >= eDL_Fatal ) ) {
+    if ( ( level <= eDL_Normal ) && ( level >= eDL_Message ) ) {
         return colorTable[level].preSequence;
     }
     return colorTable[eDL_Normal].preSequence;
@@ -221,7 +222,7 @@ DebugModule::getPreSequence( debug_level_t level ) const
 const char*
 DebugModule::getPostSequence( debug_level_t level ) const
 {
-    if ( ( level <= eDL_Normal ) && ( level >= eDL_Fatal ) ) {
+    if ( ( level <= eDL_Normal ) && ( level >= eDL_Message ) ) {
         return colorTable[level].postSequence;
     }
     return colorTable[eDL_Normal].postSequence;
@@ -427,9 +428,10 @@ DebugModuleManager::showBackLog()
 
     for (unsigned int i=0; i<BACKLOG_MB_BUFFERS;i++) {
         unsigned int idx=(i+bl_mb_inbuffer)%BACKLOG_MB_BUFFERS;
+        fputs("BL: ", stderr);
         fputs(bl_mb_buffers[idx], stderr);
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "BL: \n");
 
     fprintf(stderr, "=====================================================\n");
     fprintf(stderr, "* END OF BACKLOG PRINT\n");
@@ -453,10 +455,11 @@ DebugModuleManager::showBackLog(int nblines)
     for (unsigned int i=0; i<BACKLOG_MB_BUFFERS;i++) {
         if (lines_to_skip-- < 0) {
             unsigned int idx=(i+bl_mb_inbuffer)%BACKLOG_MB_BUFFERS;
+            fputs("BL: ", stderr);
             fputs(bl_mb_buffers[idx], stderr);
         }
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "BL: \n");
 
     fprintf(stderr, "=====================================================\n");
     fprintf(stderr, "* END OF BACKLOG PRINT\n");
