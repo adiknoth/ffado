@@ -81,6 +81,7 @@ public:
                                    AVC::plug_id_t plugId );
 
     virtual void showDevice();
+    virtual void setVerboseLevel(int l);
 protected:
     virtual bool propagatePlugInfo();
     

@@ -68,8 +68,8 @@ Subunit::~Subunit()
 void
 Subunit::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 
@@ -237,7 +237,6 @@ Subunit::serialize( Glib::ustring basePath,
 
     result  = ser.write( basePath + "m_sbType", m_sbType );
     result &= ser.write( basePath + "m_sbId", m_sbId );
-    result &= ser.write( basePath + "m_verboseLevel", getDebugLevel() );
     result &= serializePlugVector( basePath + "m_plugs", ser, m_plugs );
     result &= serializeChild( basePath, ser );
 
@@ -282,9 +281,6 @@ Subunit::deserialize( Glib::ustring basePath,
     result &= deser.read( basePath + "m_sbId", pSubunit->m_sbId );
     result &= deserializePlugVector( basePath + "m_plugs", deser,
                                      unit.getPlugManager(), pSubunit->m_plugs );
-    int verboseLevel;
-    result &= deser.read( basePath + "m_verboseLevel", verboseLevel );
-    setDebugLevel(verboseLevel);
     result &= pSubunit->deserializeChild( basePath, deser, unit );
 
     if ( !result ) {

@@ -169,7 +169,6 @@ FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
     result &= ser.write( basePath + "m_purpose", m_purpose );
     result &= ser.write( basePath + "m_nrOfInputPlugs", m_nrOfInputPlugs );
     result &= ser.write( basePath + "m_nrOfOutputPlugs", m_nrOfOutputPlugs );
-    result &= ser.write( basePath + "m_verbose", m_verbose );
     result &= serializePlugVector( basePath + "m_plugs", ser, m_plugs );
 
     return result;
@@ -225,7 +224,6 @@ FunctionBlock::deserialize( Glib::ustring basePath,
     result &= deser.read( basePath + "m_purpose", pFB->m_purpose );
     result &= deser.read( basePath + "m_nrOfInputPlugs", pFB->m_nrOfInputPlugs );
     result &= deser.read( basePath + "m_nrOfOutputPlugs", pFB->m_nrOfOutputPlugs );
-    result &= deser.read( basePath + "m_verbose", pFB->m_verbose );
     result &= deserializePlugVector( basePath + "m_plugs", deser,
                                      unit.getPlugManager(), pFB->m_plugs );
 

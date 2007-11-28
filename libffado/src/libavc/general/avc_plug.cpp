@@ -116,8 +116,8 @@ Plug::~Plug()
 void
 Plug::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 ESubunitType
@@ -1594,7 +1594,6 @@ Plug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
     result &= serializeFormatInfos( basePath + "m_formatInfo", ser );
     result &= serializePlugVector( basePath + "m_inputConnections", ser, m_inputConnections );
     result &= serializePlugVector( basePath + "m_outputConnections", ser, m_outputConnections );
-    result &= ser.write( basePath + "m_verbose_level", getDebugLevel());
     result &= ser.write( basePath + "m_globalId", m_globalId);
     result &= ser.write( basePath + "m_globalIdCounter", m_globalIdCounter );
 
@@ -1637,9 +1636,6 @@ Plug::deserialize( Glib::ustring basePath,
     result &= pPlug->deserializeFormatInfos( basePath + "m_formatInfos", deser );
     // input and output connections can't be processed here because not all plugs might
     // deserialized at this point. so we do that in deserializeUpdate.
-    int level;
-    result &= deser.read( basePath + "m_verbose_level", level );
-    setDebugLevel(level);
     result &= deser.read( basePath + "m_globalId", pPlug->m_globalId );
     result &= deser.read( basePath + "m_globalIdCounter", pPlug->m_globalIdCounter );
 
@@ -1750,10 +1746,25 @@ PlugManager::~PlugManager()
 {
 }
 
+void
+PlugManager::setVerboseLevel( int l )
+{
+    setDebugLevel(l);
+    for ( PlugVector::iterator it = m_plugs.begin();
+          it !=  m_plugs.end();
+          ++it )
+    {
+        (*it)->setVerboseLevel(l);
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+}
+
 bool
 PlugManager::addPlug( Plug& plug )
 {
     m_plugs.push_back( &plug );
+    // inherit debug level
+    plug.setVerboseLevel(getDebugLevel());
     return true;
 }
 
