@@ -24,6 +24,7 @@
 
 #include "ieee1394service.h"
 #include "ARMHandler.h"
+#include "cycletimer.h"
 
 #include <libavc1394/avc1394.h>
 #include <libraw1394/csr.h>
@@ -42,7 +43,7 @@
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
-    : m_handle( 0 ), m_resetHandle( 0 )
+    : m_handle( 0 ), m_resetHandle( 0 ), m_rtHandle( 0 )
     , m_port( -1 )
     , m_threadRunning( false )
 {
@@ -62,7 +63,6 @@ Ieee1394Service::Ieee1394Service()
 Ieee1394Service::~Ieee1394Service()
 {
     stopRHThread();
-
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
           ++it )
@@ -81,6 +81,9 @@ Ieee1394Service::~Ieee1394Service()
 
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
+    }
+    if ( m_rtHandle ) {
+        raw1394_destroy_handle( m_rtHandle );
     }
 }
 
@@ -121,7 +124,19 @@ Ieee1394Service::initialize( int port )
     }
 
     m_resetHandle = raw1394_new_handle_on_port( port );
-    if ( !m_handle ) {
+    if ( !m_resetHandle ) {
+        if ( !errno ) {
+            debugFatal("libraw1394 not compatible\n");
+        } else {
+            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s",
+                strerror(errno) );
+            debugFatal("Is ieee1394 and raw1394 driver loaded?\n");
+        }
+        return false;
+    }
+    
+    m_rtHandle = raw1394_new_handle_on_port( port );
+    if ( !m_rtHandle ) {
         if ( !errno ) {
             debugFatal("libraw1394 not compatible\n");
         } else {
@@ -168,6 +183,50 @@ Ieee1394Service::getNodeCount()
 
 nodeid_t Ieee1394Service::getLocalNodeId() {
     return raw1394_get_local_id(m_handle) & 0x3F;
+}
+
+/**
+ * Returns the current value of the cycle timer (in ticks)
+ *
+ * @return the current value of the cycle timer (in ticks)
+ */
+
+unsigned int
+Ieee1394Service::getCycleTimerTicks() {
+    // the new api should be realtime safe.
+    // it might cause a reschedule when turning preemption,
+    // back on but that won't hurt us if we have sufficient
+    // priority
+    int err;
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    err=raw1394_read_cycle_timer(m_rtHandle, &cycle_timer, &local_time);
+    if(err) {
+        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
+    }
+    return CYCLE_TIMER_TO_TICKS(cycle_timer);
+}
+
+/**
+ * Returns the current value of the cycle timer (as is)
+ *
+ * @return the current value of the cycle timer (as is)
+ */
+
+unsigned int
+Ieee1394Service::getCycleTimer() {
+    // the new api should be realtime safe.
+    // it might cause a reschedule when turning preemption,
+    // back on but that won't hurt us if we have sufficient
+    // priority
+    int err;
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    err=raw1394_read_cycle_timer(m_rtHandle, &cycle_timer, &local_time);
+    if(err) {
+        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
+    }
+    return cycle_timer;
 }
 
 bool

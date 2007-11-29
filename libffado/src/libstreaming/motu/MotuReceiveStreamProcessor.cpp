@@ -26,7 +26,7 @@
 #include "MotuPort.h"
 #include "../StreamProcessorManager.h"
 
-#include "../util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 
 #include <math.h>
 #include <netinet/in.h>
@@ -66,9 +66,9 @@ uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
     return timestamp + ts_sec*TICKS_PER_SECOND;
 }
 
-MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(int port, unsigned int event_size)
-    : StreamProcessor(ePT_Receive , port)
-    , m_event_size(event_size)
+MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(FFADODevice &parent, unsigned int event_size)
+    : StreamProcessor(parent, ePT_Receive)
+    , m_event_size( event_size )
 {}
 
 unsigned int
@@ -136,7 +136,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // received.  Since every frame from the MOTU has its own timestamp
         // we can just pick it straight from the packet.
         uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
-        m_last_timestamp = sphRecvToFullTicks(last_sph, m_handler->getCycleTimer());
+        m_last_timestamp = sphRecvToFullTicks(last_sph, m_parent.get1394Service().getCycleTimer());
         return eCRV_OK;
     } else {
         return eCRV_Invalid;

@@ -518,8 +518,7 @@ MotuDevice::prepare() {
         return false;
     }
 
-    m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(
-        get1394Service().getPort(), event_size_in);
+    m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(*this, event_size_in);
 
     // The first thing is to initialize the processor.  This creates the
     // data structures.
@@ -588,8 +587,7 @@ MotuDevice::prepare() {
 //    }
 
     // Do the same for the transmit processor
-    m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(
-        get1394Service().getPort(), event_size_out);
+    m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(*this, event_size_out);
 
     m_transmitProcessor->setVerboseLevel(getDebugLevel());
 

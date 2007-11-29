@@ -417,8 +417,7 @@ AvDevice::prepare() {
         debugError("Receive plug has no channels\n");
         return false;
     }
-    p=new Streaming::AmdtpReceiveStreamProcessor(
-                             get1394Service().getPort(),
+    p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                              outputPlug->getNrOfChannels());
 
     if(!p->init()) {
@@ -441,12 +440,10 @@ AvDevice::prepare() {
             (snoopMode?" in snoop mode":""));
     if (snoopMode) {
         // we are snooping, so this is receive too.
-        p=new Streaming::AmdtpReceiveStreamProcessor(
-                                  get1394Service().getPort(),
+        p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                                   inputPlug->getNrOfChannels());
     } else {
-        p=new Streaming::AmdtpTransmitStreamProcessor(
-                                get1394Service().getPort(),
+        p=new Streaming::AmdtpTransmitStreamProcessor(*this,
                                 inputPlug->getNrOfChannels());
     }
 

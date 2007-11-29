@@ -24,7 +24,7 @@
 #include "StreamProcessorManager.h"
 #include "generic/StreamProcessor.h"
 #include "generic/Port.h"
-#include "util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 
 #include <errno.h>
 #include <assert.h>

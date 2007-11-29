@@ -25,7 +25,7 @@
 #include "AmdtpPort.h"
 #include "../StreamProcessorManager.h"
 
-#include "../util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 
 #include <netinet/in.h>
 #include <assert.h>
@@ -41,10 +41,10 @@ namespace Streaming
 {
 
 /* transmit */
-AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor ( int port, int dimension )
-        : StreamProcessor ( ePT_Transmit, port )
-        , m_dimension ( dimension )
-        , m_dbc ( 0 )
+AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(FFADODevice &parent, int dimension)
+        : StreamProcessor(parent, ePT_Transmit)
+        , m_dimension( dimension )
+        , m_dbc( 0 )
 {}
 
 enum StreamProcessor::eChildReturnValue

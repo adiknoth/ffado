@@ -26,7 +26,7 @@
 #include "MotuPort.h"
 #include "../StreamProcessorManager.h"
 
-#include "../util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 
 #include <netinet/in.h>
 #include <assert.h>
@@ -50,10 +50,10 @@ static inline uint32_t fullTicksToSph(int64_t timestamp) {
 }
 
 /* transmit */
-MotuTransmitStreamProcessor::MotuTransmitStreamProcessor ( int port, unsigned int event_size )
-        : StreamProcessor ( ePT_Transmit, port )
-        , m_event_size ( event_size )
-        , m_tx_dbc ( 0 )
+MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size )
+        : StreamProcessor(parent, ePT_Transmit )
+        , m_event_size( event_size )
+        , m_tx_dbc( 0 )
 {}
 
 

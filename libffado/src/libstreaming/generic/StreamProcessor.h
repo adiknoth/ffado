@@ -24,6 +24,9 @@
 #ifndef __FFADO_STREAMPROCESSOR__
 #define __FFADO_STREAMPROCESSOR__
 
+#include "ffadodevice.h"
+#include "libieee1394/ieee1394service.h"
+
 #include "PortManager.h"
 #include "../util/IsoHandler.h"
 
@@ -129,8 +132,10 @@ public: //--- state stuff
     bool prepare();
 
 public: // constructor/destructor
-    StreamProcessor(enum eProcessorType type, int port);
+    StreamProcessor(FFADODevice &parent, enum eProcessorType type);
     virtual ~StreamProcessor();
+protected:
+    FFADODevice&    m_parent;
 
 public: // the public receive/transmit functions
     // the transmit interface accepts frames and provides packets
@@ -254,16 +259,14 @@ public:
     int getChannel() {return m_channel;};
     bool setChannel(int c)
         {m_channel = c; return true;};
-    int getPort() {return m_port;};
+    int getPort() {return m_parent.get1394Service().getPort();};
     virtual unsigned int getPacketsPerPeriod();
     virtual unsigned int getMaxPacketSize() = 0;
     // do we need the handler?
     void setHandler( IsoHandler * h) {m_handler = h;};
     void clearHandler() {m_handler = NULL;};
-
 private:
     int m_channel;
-    int m_port;
 protected:
     IsoHandler *m_handler; // needed for local id and cycle counter
 

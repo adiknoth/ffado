@@ -74,7 +74,7 @@ public:
      * @param dimension number of substreams in the ISO stream
      *                  (midi-muxed is only one stream)
      */
-    AmdtpReceiveStreamProcessor(int port, int dimension);
+    AmdtpReceiveStreamProcessor(FFADODevice &parent, int dimension);
     virtual ~AmdtpReceiveStreamProcessor() {};
 
     enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,

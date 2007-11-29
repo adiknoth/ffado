@@ -22,7 +22,7 @@
  */
 
 #include "StreamProcessor.h"
-#include "../util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 #include "../StreamProcessorManager.h"
 
 #include "libutil/Atomic.h"
@@ -34,10 +34,10 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
 
-StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
-    : m_processor_type ( type )
+StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
+    : m_parent( parent )
+    , m_processor_type ( type )
     , m_channel( -1 )
-    , m_port( port )
     , m_handler( NULL )
     , m_state( ePS_Created )
     , m_next_state( ePS_Invalid )
@@ -63,7 +63,7 @@ StreamProcessor::~StreamProcessor() {
 }
 
 uint64_t StreamProcessor::getTimeNow() {
-    return m_handler->getCycleTimerTicks();
+    return m_parent.get1394Service().getCycleTimerTicks();
 }
 
 int StreamProcessor::getMaxFrameLatency() {
@@ -113,7 +113,7 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
     // the period boundary is signalled later
     time_at_period = addTicks(time_at_period, m_manager->getSyncSource().getSyncDelay());
 
-    uint64_t cycle_timer=m_handler->getCycleTimerTicks();
+    uint64_t cycle_timer=m_parent.get1394Service().getCycleTimerTicks();
 
     // calculate the time until the next period
     int32_t until_next=diffTicks(time_at_period,cycle_timer);
@@ -422,7 +422,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // because packets are queued in advance. This means that
     // we the packet we are constructing will be sent out
     // on 'cycle', not 'now'.
-    unsigned int ctr = m_handler->getCycleTimer();
+    unsigned int ctr = m_parent.get1394Service().getCycleTimer();
     int now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
 
     // the difference between the cycle this
@@ -835,7 +835,7 @@ bool StreamProcessor::prepare()
     debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
              m_manager->getPeriodSize(), m_manager->getNbBuffers());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
-             m_port,m_channel);
+             getPort(), m_channel);
 
     // initialization can be done without requesting it
     // from the packet loop
@@ -872,12 +872,12 @@ StreamProcessor::waitForState(enum eProcessorState state, unsigned int timeout_m
 bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_handler->getCycleTimerTicks();
+    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -901,12 +901,12 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
 bool StreamProcessor::scheduleStartRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_handler->getCycleTimerTicks();
+    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -923,12 +923,12 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
 bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_handler->getCycleTimerTicks();
+    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -945,12 +945,12 @@ bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
 bool StreamProcessor::scheduleStopRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_handler->getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_handler->getCycleTimerTicks();
+    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -1529,10 +1529,10 @@ void
 StreamProcessor::dumpInfo()
 {
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p information\n", this);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_port, m_channel);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", getPort(), m_channel);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
     if (m_handler) {
-        uint64_t now = m_handler->getCycleTimerTicks();
+        uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
