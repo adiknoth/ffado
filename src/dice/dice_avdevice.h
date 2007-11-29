@@ -132,6 +132,10 @@ private: // helper functions
     diceNameVector getClockSourceNameString();
     std::string getDeviceNickName();
 
+    enum eClockSourceType  clockIdToType(unsigned int id);
+    bool isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg);
+    bool isClockSourceIdSlipping(unsigned int id, quadlet_t ext_status_reg);
+
 private: // register I/O routines
     bool initIoFunctions();
     // quadlet read/write routines

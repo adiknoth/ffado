@@ -384,9 +384,6 @@ AvDevice::showDevice()
 {
     FFADODevice::showDevice();
 
-    debugOutput(DEBUG_LEVEL_NORMAL,
-        "%s %s\n", m_model.vendor_name.c_str(), m_model.model_name.c_str());
-
     AVC::Unit::show();
     flushDebugOutput();
 }

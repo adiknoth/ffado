@@ -184,6 +184,7 @@
 #define DICE_CLOCKSOURCE_ARX3           0x0A
 #define DICE_CLOCKSOURCE_ARX4           0x0B
 #define DICE_CLOCKSOURCE_INTERNAL       0x0C
+#define DICE_CLOCKSOURCE_COUNT (DICE_CLOCKSOURCE_INTERNAL+1)
 
 #define DICE_CLOCKSOURCE_MASK           0x0000FFFFLU
 #define DICE_GET_CLOCKSOURCE(reg)       (((reg) & DICE_CLOCKSOURCE_MASK))
@@ -222,6 +223,7 @@
 #define DICE_EXT_STATUS_AES1_LOCKED         (1UL << 1)
 #define DICE_EXT_STATUS_AES2_LOCKED         (1UL << 2)
 #define DICE_EXT_STATUS_AES3_LOCKED         (1UL << 3)
+#define DICE_EXT_STATUS_AES_ANY_LOCKED      (    0x0F)
 #define DICE_EXT_STATUS_ADAT_LOCKED         (1UL << 4)
 #define DICE_EXT_STATUS_TDIF_LOCKED         (1UL << 5)
 #define DICE_EXT_STATUS_ARX1_LOCKED         (1UL << 6)
@@ -230,7 +232,7 @@
 #define DICE_EXT_STATUS_ARX4_LOCKED         (1UL << 9)
 
 // FIXME: this one is missing in dicedriverExtStatus.h
-#define DICE_EXT_STATUS_WORDCLOCK_LOCKED    (1UL << 10)
+#define DICE_EXT_STATUS_WC_LOCKED          (1UL << 10)
 
 #define DICE_EXT_STATUS_AES0_SLIP           (1UL << 16)
 #define DICE_EXT_STATUS_AES1_SLIP           (1UL << 17)
@@ -242,6 +244,9 @@
 #define DICE_EXT_STATUS_ARX2_SLIP           (1UL << 23)
 #define DICE_EXT_STATUS_ARX3_SLIP           (1UL << 24)
 #define DICE_EXT_STATUS_ARX4_SLIP           (1UL << 25)
+
+// FIXME: does this even exist?
+#define DICE_EXT_STATUS_WC_SLIP             (1UL << 26)
 
 //   SAMPLE_RATE register
 // nothing here
