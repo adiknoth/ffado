@@ -558,7 +558,7 @@ bool StreamProcessorManager::start() {
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Starting IsoHandlers...\n");
-    if (!m_isoManager->startHandlers(-1)) {
+    if (!m_isoManager->startHandlers(0)) {
         debugFatal("Could not start handlers...\n");
         return false;
     }
