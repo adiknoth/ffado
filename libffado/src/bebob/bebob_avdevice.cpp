@@ -447,6 +447,10 @@ AvDevice::loadFromCache()
                      sFileName.c_str() );
     }
 
+    if(result) {
+        buildMixer();
+    }
+
     return result;
 }
 
