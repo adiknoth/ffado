@@ -84,7 +84,7 @@ public:
     virtual void setVerboseLevel(int l);
 protected:
     virtual bool propagatePlugInfo();
-    
+
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
