@@ -23,7 +23,7 @@
 
 #include "IsoHandler.h"
 #include "cycletimer.h"
-#include "../generic/IsoStream.h"
+#include "../generic/StreamProcessor.h"
 
 #include "libutil/TimeSource.h"
 #include "libutil/SystemTimeSource.h"
@@ -344,7 +344,7 @@ void IsoHandler::setVerboseLevel(int l)
     setDebugLevel(l);
 }
 
-bool IsoHandler::registerStream(IsoStream *stream)
+bool IsoHandler::registerStream(StreamProcessor *stream)
 {
     assert(stream);
     debugOutput( DEBUG_LEVEL_VERBOSE, "registering stream (%p)\n", stream);
@@ -353,16 +353,12 @@ bool IsoHandler::registerStream(IsoStream *stream)
             debugFatal( "Generic IsoHandlers can have only one client\n");
             return false;
     }
-
     m_Client=stream;
-
     m_Client->setHandler(this);
-
     return true;
-
 }
 
-bool IsoHandler::unregisterStream(IsoStream *stream)
+bool IsoHandler::unregisterStream(StreamProcessor *stream)
 {
     assert(stream);
     debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering stream (%p)\n", stream);
@@ -683,7 +679,7 @@ enum raw1394_iso_disposition IsoRecvHandler::putPacket(unsigned char *data, unsi
     return RAW1394_ISO_OK;
 }
 
-// an recv handler can have multiple destination IsoStreams
+// an recv handler can have multiple destination StreamProcessors
 // NOTE: this implementation even allows for already registered
 // streams to be registered again.
 int IsoRecvHandler::registerStream(IsoRecvStream *stream)

@@ -33,12 +33,12 @@ enum raw1394_iso_disposition ;
 namespace Streaming
 {
 
-class IsoStream;
+class StreamProcessor;
 /*!
 \brief The Base Class for ISO Handlers
 
  These classes perform the actual ISO communication through libraw1394.
- They are different from IsoStreams because one handler can provide multiple
+ They are different from StreamProcessors because one handler can provide multiple
  streams with packets in case of ISO multichannel receive.
 
 */
@@ -87,10 +87,10 @@ class IsoHandler
         void dumpInfo();
 
         bool inUse() {return (m_Client != 0) ;};
-        virtual bool isStreamRegistered(IsoStream *s) {return (m_Client == s);};
+        virtual bool isStreamRegistered(StreamProcessor *s) {return (m_Client == s);};
 
-        virtual bool registerStream(IsoStream *);
-        virtual bool unregisterStream(IsoStream *);
+        virtual bool registerStream(StreamProcessor *);
+        virtual bool unregisterStream(StreamProcessor *);
 
         int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
         int getPort() {return m_port;};
@@ -111,7 +111,7 @@ class IsoHandler
         int m_packetcount;
         int m_dropped;
 
-        IsoStream *m_Client;
+        StreamProcessor *m_Client;
 
         virtual int handleBusReset(unsigned int generation);
 

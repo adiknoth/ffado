@@ -35,8 +35,10 @@ namespace Streaming {
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
 
 StreamProcessor::StreamProcessor(enum eProcessorType type, int port)
-    : IsoStream((type==ePT_Receive ? IsoStream::eST_Receive : IsoStream::eST_Transmit), port)
-    , m_processor_type ( type )
+    : m_processor_type ( type )
+    , m_channel( -1 )
+    , m_port( port )
+    , m_handler( NULL )
     , m_state( ePS_Created )
     , m_next_state( ePS_Invalid )
     , m_cycle_to_switch_state( 0 )
@@ -81,6 +83,13 @@ StreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
     uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
     return nominal_packets;
 }
+
+unsigned int
+StreamProcessor::getPacketsPerPeriod()
+{
+    return getNominalPacketsNeeded(m_manager->getPeriodSize());
+}
+
 
 /***********************************************
  * Buffer management and manipulation          *
@@ -820,6 +829,14 @@ bool StreamProcessor::prepare()
         return false;
     }
 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d\n",
+             m_manager->getNominalRate());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
+             m_manager->getPeriodSize(), m_manager->getNbBuffers());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
+             m_port,m_channel);
+
     // initialization can be done without requesting it
     // from the packet loop
     m_next_state = ePS_Stopped;
@@ -1512,9 +1529,7 @@ void
 StreamProcessor::dumpInfo()
 {
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p information\n", this);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Iso stream info:\n");
-
-    IsoStream::dumpInfo();
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_port, m_channel);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
     if (m_handler) {
         uint64_t now = m_handler->getCycleTimerTicks();
@@ -1541,7 +1556,6 @@ StreamProcessor::dumpInfo()
 void
 StreamProcessor::setVerboseLevel(int l) {
     setDebugLevel(l);
-    IsoStream::setVerboseLevel(l);
     PortManager::setVerboseLevel(l);
     m_data_buffer->setVerboseLevel(l);
 }

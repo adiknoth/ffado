@@ -24,8 +24,8 @@
 #ifndef __FFADO_STREAMPROCESSOR__
 #define __FFADO_STREAMPROCESSOR__
 
-#include "IsoStream.h"
 #include "PortManager.h"
+#include "../util/IsoHandler.h"
 
 #include "libutil/StreamStatistics.h"
 #include "libutil/TimestampedBuffer.h"
@@ -46,8 +46,7 @@ namespace Streaming {
  functions should be overloaded.
 
 */
-class StreamProcessor : public IsoStream,
-                        public PortManager,
+class StreamProcessor : public PortManager,
                         public Util::TimestampedBufferClient,
                         public Util::OptionContainer
 {
@@ -249,6 +248,24 @@ private:
 
     // move to private?
     bool xrunOccurred() { return m_in_xrun; };
+
+// the ISO interface (can we get rid of this?)
+public:
+    int getChannel() {return m_channel;};
+    bool setChannel(int c)
+        {m_channel = c; return true;};
+    int getPort() {return m_port;};
+    virtual unsigned int getPacketsPerPeriod();
+    virtual unsigned int getMaxPacketSize() = 0;
+    // do we need the handler?
+    void setHandler( IsoHandler * h) {m_handler = h;};
+    void clearHandler() {m_handler = NULL;};
+
+private:
+    int m_channel;
+    int m_port;
+protected:
+    IsoHandler *m_handler; // needed for local id and cycle counter
 
 protected: // FIXME: move to private
     uint64_t m_dropped; /// FIXME:debug

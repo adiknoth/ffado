@@ -23,7 +23,7 @@
 
 #include "IsoHandlerManager.h"
 #include "IsoHandler.h"
-#include "../generic/IsoStream.h"
+#include "../generic/StreamProcessor.h"
 
 #include "libutil/PosixThread.h"
 
@@ -228,7 +228,7 @@ bool IsoHandlerManager::rebuildFdMap() {
     return true;
 }
 
-void IsoHandlerManager::disablePolling(IsoStream *stream) {
+void IsoHandlerManager::disablePolling(StreamProcessor *stream) {
     int i=0;
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable polling on stream %p\n",stream);
@@ -247,7 +247,7 @@ void IsoHandlerManager::disablePolling(IsoStream *stream) {
     }
 }
 
-void IsoHandlerManager::enablePolling(IsoStream *stream) {
+void IsoHandlerManager::enablePolling(StreamProcessor *stream) {
     int i=0;
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable polling on stream %p\n",stream);
@@ -268,10 +268,10 @@ void IsoHandlerManager::enablePolling(IsoStream *stream) {
 
 
 /**
- * Registers an IsoStream with the IsoHandlerManager.
+ * Registers an StreamProcessor with the IsoHandlerManager.
  *
  * If nescessary, an IsoHandler is created to handle this stream.
- * Once an IsoStream is registered to the handler, it will be included
+ * Once an StreamProcessor is registered to the handler, it will be included
  * in the ISO streaming cycle (i.e. receive/transmit of it will occur).
  *
  * @param stream the stream to register
@@ -281,7 +281,7 @@ void IsoHandlerManager::enablePolling(IsoStream *stream) {
  *        between streams and handlers, this is not ok for
  *        multichannel receive
  */
-bool IsoHandlerManager::registerStream(IsoStream *stream)
+bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Registering stream %p\n",stream);
     assert(stream);
@@ -302,7 +302,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
     pruneHandlers();
 
     // allocate a handler for this stream
-    if (stream->getStreamType()==IsoStream::eST_Receive) {
+    if (stream->getType()==StreamProcessor::ePT_Receive) {
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
 
@@ -314,6 +314,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         // NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD hardware interrupts
         //       per period for better latency.
         unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()) / packets_per_period;
+
         if (max_packet_size < stream->getMaxPacketSize()) {
             debugWarning("calculated max packet size (%u) < stream max packet size (%u)\n",
                          max_packet_size ,(unsigned int)stream->getMaxPacketSize());
@@ -399,7 +400,7 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
     }
 
-    if (stream->getStreamType()==IsoStream::eST_Transmit) {
+    if (stream->getType()==StreamProcessor::ePT_Transmit) {
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
 
@@ -497,14 +498,14 @@ bool IsoHandlerManager::registerStream(IsoStream *stream)
         debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n",stream,h);
     }
 
-    m_IsoStreams.push_back(stream);
+    m_StreamProcessors.push_back(stream);
     debugOutput( DEBUG_LEVEL_VERBOSE, " %d streams, %d handlers registered\n",
-                                      m_IsoStreams.size(), m_IsoHandlers.size());
+                                      m_StreamProcessors.size(), m_IsoHandlers.size());
 
     return true;
 }
 
-bool IsoHandlerManager::unregisterStream(IsoStream *stream)
+bool IsoHandlerManager::unregisterStream(StreamProcessor *stream)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering stream %p\n",stream);
     assert(stream);
@@ -528,12 +529,12 @@ bool IsoHandlerManager::unregisterStream(IsoStream *stream)
     pruneHandlers();
 
     // remove the stream from the registered streams list
-    for ( IsoStreamVectorIterator it = m_IsoStreams.begin();
-      it != m_IsoStreams.end();
+    for ( StreamProcessorVectorIterator it = m_StreamProcessors.begin();
+      it != m_StreamProcessors.end();
       ++it )
     {
         if ( *it == stream ) {
-            m_IsoStreams.erase(it);
+            m_StreamProcessors.erase(it);
 
             debugOutput( DEBUG_LEVEL_VERBOSE, " deleted stream (%p) from list...\n", *it);
             return true;

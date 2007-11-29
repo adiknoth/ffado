@@ -44,11 +44,9 @@ apps = {
 	#"test-extplugcmd" : "test-extplugcmd.cpp",
 	#"test-volume" : "test-volume.cpp",
 	#"test-mixer" : "test-mixer.cpp",
-	"test-cycletimer" : "test-cycletimer.cpp",
 	"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
 	"test-ieee1394service" : "test-ieee1394service.cpp",
 	"test-streamdump" : "test-streamdump.cpp",
-	"test-sytmonitor" : "test-sytmonitor.cpp SytMonitor.cpp",
 }
 
 if env['ENABLE_BEBOB']:

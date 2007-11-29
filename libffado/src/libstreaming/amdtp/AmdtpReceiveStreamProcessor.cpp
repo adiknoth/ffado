@@ -60,15 +60,6 @@ bool AmdtpReceiveStreamProcessor::prepareChild() {
             debugError("Unsupported rate: %d\n", m_manager->getNominalRate());
             return false;
     }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d, DBS: %d, SYT: %d\n",
-             m_manager->getNominalRate(), m_dimension, m_syt_interval);
-    debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
-             m_manager->getPeriodSize(), m_manager->getNbBuffers());
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
-             m_port,m_channel);
-
     return true;
 }
 
@@ -135,8 +126,8 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     // later than expected (the real receive time)
     #ifdef DEBUG
     if(isRunning()) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, syt_interval=%d, tpf=%f\n",
-            m_last_timestamp, m_handler->getWakeupInterval(), m_syt_interval, getTicksPerFrame());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | syt_interval=%d, tpf=%f\n",
+            m_last_timestamp, m_syt_interval, getTicksPerFrame());
     }
     #endif
 
