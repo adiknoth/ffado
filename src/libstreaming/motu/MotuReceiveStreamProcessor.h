@@ -55,7 +55,7 @@ public:
      * @param dimension number of substreams in the ISO stream
      *                  (midi-muxed is only one stream)
      */
-    MotuReceiveStreamProcessor(int port, unsigned int event_size);
+    MotuReceiveStreamProcessor(FFADODevice &parent, unsigned int event_size);
     virtual ~MotuReceiveStreamProcessor() {};
 
     enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,

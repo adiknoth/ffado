@@ -54,7 +54,7 @@ public:
     /**
      * Create a MOTU transmit StreamProcessor
      */
-    MotuTransmitStreamProcessor(int port, unsigned int event_size);
+    MotuTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size);
     virtual ~MotuTransmitStreamProcessor() {};
 
     enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,

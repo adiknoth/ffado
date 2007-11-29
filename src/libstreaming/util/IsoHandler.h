@@ -95,11 +95,6 @@ class IsoHandler
         int getLocalNodeId() {return raw1394_get_local_id( m_handle );};
         int getPort() {return m_port;};
 
-        /// get the most recent cycle timer value (in ticks)
-        unsigned int getCycleTimerTicks();
-        /// get the most recent cycle timer value (as is)
-        unsigned int getCycleTimer();
-
     protected:
         raw1394handle_t m_handle;
         raw1394handle_t m_handle_util;

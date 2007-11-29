@@ -22,7 +22,6 @@
  */
 
 #include "IsoHandler.h"
-#include "cycletimer.h"
 #include "../generic/StreamProcessor.h"
 
 #include "libutil/TimeSource.h"
@@ -36,14 +35,6 @@
 
 #include <iostream>
 using namespace std;
-
-#define CC_SLEEP_TIME_AFTER_UPDATE    1000
-#define CC_SLEEP_TIME_AFTER_FAILURE     10
-#define CC_DLL_COEFF     ((0.001)*((float)(CC_SLEEP_TIME_AFTER_UPDATE/1000.0)))
-
-#define CC_MAX_RATE_ERROR           (2.0/100.0)
-#define CC_INIT_MAX_TRIES 10
-
 
 namespace Streaming
 {
@@ -274,60 +265,18 @@ bool IsoHandler::stop()
 int IsoHandler::handleBusReset(unsigned int generation) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
 
+    #define CSR_CYCLE_TIME            0x200
+    #define CSR_REGISTER_BASE  0xfffff0000000ULL
     // do a simple read on ourself in order to update the internal structures
     // this avoids read failures after a bus reset
     quadlet_t buf=0;
     raw1394_read(m_handle, raw1394_get_local_id(m_handle),
                  CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
-
     return 0;
-}
-
-/**
- * Returns the current value of the cycle timer (in ticks)
- *
- * @return the current value of the cycle timer (in ticks)
- */
-
-unsigned int IsoHandler::getCycleTimerTicks() {
-    // the new api should be realtime safe.
-    // it might cause a reschedule when turning preemption,
-    // back on but that won't hurt us if we have sufficient
-    // priority
-    int err;
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    err=raw1394_read_cycle_timer(m_handle_util, &cycle_timer, &local_time);
-    if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-    }
-    return CYCLE_TIMER_TO_TICKS(cycle_timer);
-}
-
-/**
- * Returns the current value of the cycle timer (as is)
- *
- * @return the current value of the cycle timer (as is)
- */
-
-unsigned int IsoHandler::getCycleTimer() {
-    // the new api should be realtime safe.
-    // it might cause a reschedule when turning preemption,
-    // back on but that won't hurt us if we have sufficient
-    // priority
-    int err;
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    err=raw1394_read_cycle_timer(m_handle_util, &cycle_timer, &local_time);
-    if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-    }
-    return cycle_timer;
 }
 
 void IsoHandler::dumpInfo()
 {
-
     int channel=-1;
     if (m_Client) channel=m_Client->getChannel();
 

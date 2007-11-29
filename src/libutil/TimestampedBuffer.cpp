@@ -22,7 +22,7 @@
  */
 
 #include "libutil/Atomic.h"
-#include "libstreaming/util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 
 #include "TimestampedBuffer.h"
 #include "assert.h"

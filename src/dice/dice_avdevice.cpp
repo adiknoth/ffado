@@ -673,8 +673,7 @@ DiceAvDevice::prepare() {
 
         // construct the streamprocessor
         Streaming::AmdtpReceiveStreamProcessor *p;
-        p=new Streaming::AmdtpReceiveStreamProcessor(
-                             get1394Service().getPort(),
+        p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                              nb_channels);
 
         if(!p->init()) {
@@ -759,8 +758,7 @@ DiceAvDevice::prepare() {
 
         // construct the streamprocessor
         Streaming::AmdtpTransmitStreamProcessor *p;
-        p=new Streaming::AmdtpTransmitStreamProcessor(
-                             get1394Service().getPort(),
+        p=new Streaming::AmdtpTransmitStreamProcessor(*this,
                              nb_channels);
 
         if(!p->init()) {

@@ -36,7 +36,7 @@
 
 #include <netinet/in.h>
 
-#include "src/libstreaming/util/cycletimer.h"
+#include "src/libieee1394/cycletimer.h"
 
 #include "src/libutil/TimestampedBuffer.h"
 

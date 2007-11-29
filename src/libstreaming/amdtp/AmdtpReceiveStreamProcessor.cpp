@@ -25,7 +25,7 @@
 #include "AmdtpPort.h"
 #include "../StreamProcessorManager.h"
 
-#include "../util/cycletimer.h"
+#include "libieee1394/cycletimer.h"
 
 #include <netinet/in.h>
 #include <assert.h>
@@ -34,8 +34,8 @@ namespace Streaming {
 
 /* --------------------- RECEIVE ----------------------- */
 
-AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(int port, int dimension)
-    : StreamProcessor(ePT_Receive , port)
+AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(FFADODevice &parent, int dimension)
+    : StreamProcessor(parent, ePT_Receive)
     , m_dimension( dimension )
 {}
 
@@ -88,7 +88,7 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
                   (packet->dbs > 0) &&
                   (length >= 2*sizeof(quadlet_t));
     if(ok) {
-        uint64_t now = m_handler->getCycleTimer();
+        uint64_t now = m_parent.get1394Service().getCycleTimer();
         //=> convert the SYT to a full timestamp in ticks
         m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
                                               cycle, now);

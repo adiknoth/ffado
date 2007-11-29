@@ -92,6 +92,12 @@ public:
     */
     nodeid_t getLocalNodeId();
 
+    /// get the most recent cycle timer value (in ticks)
+    unsigned int getCycleTimerTicks();
+    /// get the most recent cycle timer value (as is)
+    unsigned int getCycleTimer();
+
+
    /**
     * @brief send async read request to a node and wait for response.
     *
@@ -258,6 +264,7 @@ private:
 
     raw1394handle_t m_handle;
     raw1394handle_t m_resetHandle;
+    raw1394handle_t m_rtHandle; // a handle for operations from the rt thread
     int             m_port;
     std::string     m_portName;
 
