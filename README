@@ -1,5 +1,5 @@
-FFADO version 1.999.6
-=======================
+FFADO version 1.999.7
+=====================
 
 This project aims to provide a free driver implemenation for the BeBoB
 platform.  The BeBoB is used in many available IEEE 1394 based break-out 
@@ -21,12 +21,11 @@ These libraries here should be at least the version listed:
 libraw1394  (>= 1.3.0),  http://www.linux1394.org
 libiec61883 (>= 1.1.0),  http://www.linux1394.org
 libavc1394  (>= 0.5.3),  http://sourceforge.net/projects/libavc1394
-liblo       (>= 0.22),   http://liblo.sourceforge.net or http://plugin.org.uk/liblo/
 dbus-1      (>= 1.0),    http://dbus.freedesktop.org
 
 Currently only the jackd audio server is supported.
 
-jackd (>= 0.102.5), http://jackaudio.org
+jackd (>= 0.107.6), http://jackaudio.org
 
 Optionally, but recommended is that you install qjackctl:
 
@@ -50,7 +49,7 @@ $ scons
 $ scons install
 
 If you want some debug information (because something seems not
-to work correctly) you can try do following (not CVS checkout):
+to work correctly) you can try to do following:
 
 $ scons DEBUG=yes
 $ scons install
@@ -59,6 +58,10 @@ NOTE: In order to build jackd with ffado support, you have
 to install libffado before you build jackd. The backend to use in jackd is
 firewire.
 
+DISTRIBUTION PACKAGERS NOTE: Please do not enable support for devices
+if it is not on by default. If device support for a specific device
+is not turned on by default by the developers, it means that it is not
+ready yet. Most of the time it is placeholder code for future devices.
 
 Running jackd
 -------------
@@ -197,6 +200,6 @@ Number of connections:  1
 If you don't get this, check if you have multiple host controllers, and 
 use the -p parameter to specify them. If you get any error messages, the 
 best way to help us figure out what the problem might be is to build the 
-debug version (./configure --enable-debug). You can then rerun the test
+debug version (scons ENABLE_DEBUG=1). You can then rerun the test
 application and send us its output.
 
