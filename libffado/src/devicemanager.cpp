@@ -161,8 +161,8 @@ DeviceManager::show() {
             ++it )
         {
             FFADODevice::ClockSource c=*it;
-            debugOutput(DEBUG_LEVEL_NORMAL, " Type: %s, Id: %d, Valid: %d, Active: %d, Description: %s\n",
-                FFADODevice::ClockSourceTypeToString(c.type), c.id, c.valid, c.active, c.description.c_str());
+            debugOutput(DEBUG_LEVEL_NORMAL, " Type: %s, Id: %2d, Valid: %1d, Active: %1d, Locked %1d, Slipping: %1d, Description: %s\n",
+                FFADODevice::ClockSourceTypeToString(c.type), c.id, c.valid, c.active, c.locked, c.slipping, c.description.c_str());
         }
     }
 }

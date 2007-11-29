@@ -67,7 +67,6 @@ Device::showDevice()
         }
     }
     m_HwInfo.showEfcCmd();
-    
     GenericAVC::AvDevice::showDevice();
 }
 
@@ -82,7 +81,6 @@ Device::probe( ConfigRom& configRom )
     if ( vendorModel.parse() ) {
         return vendorModel.isPresent( vendorId, modelId );
     }
-
     return false;
 }
 
@@ -352,7 +350,6 @@ Device::getSupportedClockSources() {
         s.active=(active_clock == EFC_CMD_HW_CLOCK_ADAT_2);
         if (s.type != eCT_Invalid) r.push_back(s);
     }
-
     return r;
 }
 

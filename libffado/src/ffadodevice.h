@@ -177,16 +177,22 @@ public:
             , id( 0 )
             , valid( false )
             , active( false )
+            , locked( true )
+            , slipping( false )
             , description( "" )
         {}
         /// indicates the type of the clock source (e.g. eCT_ADAT)
         enum eClockSourceType type;
         /// indicated the id of the clock source (e.g. id=1 => clocksource is ADAT_1)
         unsigned int id;
-        /// is the clock source valid at this moment?
+        /// is the clock source valid (i.e. can be selected) at this moment?
         bool valid;
         /// is the clock source active at this moment?
         bool active;
+        /// is the clock source locked?
+        bool locked;
+        /// is the clock source slipping?
+        bool slipping;
         /// description of the clock struct (optional)
         std::string description;
     };

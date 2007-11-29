@@ -150,6 +150,10 @@ FFADODevice::showDevice()
     debugOutput(DEBUG_LEVEL_NORMAL, "Attached to port.......: %d (%s)\n",
                                     s.getPort(), s.getPortName().c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "Node...................: %d\n", getNodeId());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor name............: %s\n",
+                                    getConfigRom().getVendorName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Model name.............: %s\n",
+                                    getConfigRom().getModelName().c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "GUID...................: %s\n",
                                     getConfigRom().getGuidString().c_str());
 

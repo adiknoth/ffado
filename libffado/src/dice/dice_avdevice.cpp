@@ -281,17 +281,204 @@ DiceAvDevice::setSamplingFrequency( int samplingFrequency )
 FFADODevice::ClockSourceVector
 DiceAvDevice::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
+
+    quadlet_t clock_caps;
+    readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &clock_caps);
+    uint16_t clocks_supported = (clock_caps >> 16) & 0xFFFF;
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock caps: 0x%08X, supported=0x%04X\n",
+                                    clock_caps, clocks_supported);
+
+    quadlet_t clock_select;
+    readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clock_select);
+    byte_t clock_selected = (clock_select) & 0xFF;
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock select: 0x%08X, selected=0x%04X\n",
+                                    clock_select, clock_selected);
+    quadlet_t extended_status;
+    readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &extended_status);
+    uint16_t clock_status = (extended_status) & 0xFFFF;
+    uint16_t clock_slipping = (extended_status >> 16) & 0xFFFF;
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08X, status=0x%04X, slip=0x%04X\n",
+                                    extended_status, clock_status, clock_slipping);
+
+    diceNameVector names = getClockSourceNameString();
+    if( names.size() < DICE_CLOCKSOURCE_COUNT) {
+        debugError("Not enough clock source names on device\n");
+        return r;
+    }
+    for (unsigned int i=0; i < DICE_CLOCKSOURCE_COUNT; i++) {
+        bool supported = (((clocks_supported >> i) & 0x01) == 1);
+        if (supported) {
+            ClockSource s;
+            s.type = clockIdToType(i);
+            s.id = i;
+            s.valid = true;
+            s.locked = isClockSourceIdLocked(i, extended_status);
+            s.slipping = isClockSourceIdSlipping(i, extended_status);
+            s.active = (clock_selected == i);
+            s.description = names.at(i);
+            r.push_back(s);
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Clock source id %d not supported by device\n", i);
+        }
+    }
     return r;
 }
 
 bool
+DiceAvDevice::isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg) {
+    switch (id) {
+        default: return true;
+        case  DICE_CLOCKSOURCE_AES1:
+                return ext_status_reg & DICE_EXT_STATUS_AES0_LOCKED;
+        case  DICE_CLOCKSOURCE_AES2:
+                return ext_status_reg & DICE_EXT_STATUS_AES1_LOCKED;
+        case  DICE_CLOCKSOURCE_AES3:
+                return ext_status_reg & DICE_EXT_STATUS_AES2_LOCKED;
+        case  DICE_CLOCKSOURCE_AES4:
+                return ext_status_reg & DICE_EXT_STATUS_AES3_LOCKED;
+        case  DICE_CLOCKSOURCE_AES_ANY:
+                return ext_status_reg & DICE_EXT_STATUS_AES_ANY_LOCKED;
+        case  DICE_CLOCKSOURCE_ADAT:
+                return ext_status_reg & DICE_EXT_STATUS_ADAT_LOCKED;
+        case  DICE_CLOCKSOURCE_TDIF:
+                return ext_status_reg & DICE_EXT_STATUS_TDIF_LOCKED;
+        case  DICE_CLOCKSOURCE_ARX1:
+                return ext_status_reg & DICE_EXT_STATUS_ARX1_LOCKED;
+        case  DICE_CLOCKSOURCE_ARX2:
+                return ext_status_reg & DICE_EXT_STATUS_ARX2_LOCKED;
+        case  DICE_CLOCKSOURCE_ARX3:
+                return ext_status_reg & DICE_EXT_STATUS_ARX3_LOCKED;
+        case  DICE_CLOCKSOURCE_ARX4:
+                return ext_status_reg & DICE_EXT_STATUS_ARX4_LOCKED;
+        case  DICE_CLOCKSOURCE_WC:
+                return ext_status_reg & DICE_EXT_STATUS_WC_LOCKED;
+    }
+}
+bool
+DiceAvDevice::isClockSourceIdSlipping(unsigned int id, quadlet_t ext_status_reg) {
+    switch (id) {
+        default: return false;
+        case  DICE_CLOCKSOURCE_AES1:
+                return ext_status_reg & DICE_EXT_STATUS_AES0_SLIP;
+        case  DICE_CLOCKSOURCE_AES2:
+                return ext_status_reg & DICE_EXT_STATUS_AES1_SLIP;
+        case  DICE_CLOCKSOURCE_AES3:
+                return ext_status_reg & DICE_EXT_STATUS_AES2_SLIP;
+        case  DICE_CLOCKSOURCE_AES4:
+                return ext_status_reg & DICE_EXT_STATUS_AES3_SLIP;
+        case  DICE_CLOCKSOURCE_AES_ANY:
+                return false;
+        case  DICE_CLOCKSOURCE_ADAT:
+                return ext_status_reg & DICE_EXT_STATUS_ADAT_SLIP;
+        case  DICE_CLOCKSOURCE_TDIF:
+                return ext_status_reg & DICE_EXT_STATUS_TDIF_SLIP;
+        case  DICE_CLOCKSOURCE_ARX1:
+                return ext_status_reg & DICE_EXT_STATUS_ARX1_SLIP;
+        case  DICE_CLOCKSOURCE_ARX2:
+                return ext_status_reg & DICE_EXT_STATUS_ARX2_SLIP;
+        case  DICE_CLOCKSOURCE_ARX3:
+                return ext_status_reg & DICE_EXT_STATUS_ARX3_SLIP;
+        case  DICE_CLOCKSOURCE_ARX4:
+                return ext_status_reg & DICE_EXT_STATUS_ARX4_SLIP;
+        case  DICE_CLOCKSOURCE_WC: // FIXME: not in driver spec, so non-existant
+                return ext_status_reg & DICE_EXT_STATUS_WC_SLIP;
+    }
+}
+
+enum FFADODevice::eClockSourceType
+DiceAvDevice::clockIdToType(unsigned int id) {
+    switch (id) {
+        default: return eCT_Invalid;
+        case  DICE_CLOCKSOURCE_AES1:
+        case  DICE_CLOCKSOURCE_AES2:
+        case  DICE_CLOCKSOURCE_AES3:
+        case  DICE_CLOCKSOURCE_AES4:
+        case  DICE_CLOCKSOURCE_AES_ANY:
+                return eCT_AES;
+        case  DICE_CLOCKSOURCE_ADAT:
+                return eCT_ADAT;
+        case  DICE_CLOCKSOURCE_TDIF:
+                return eCT_TDIF;
+        case  DICE_CLOCKSOURCE_ARX1:
+        case  DICE_CLOCKSOURCE_ARX2:
+        case  DICE_CLOCKSOURCE_ARX3:
+        case  DICE_CLOCKSOURCE_ARX4:
+                return eCT_SytMatch;
+        case  DICE_CLOCKSOURCE_WC:
+                return eCT_WordClock;
+        case DICE_CLOCKSOURCE_INTERNAL:
+                return eCT_Internal;
+    }
+}
+
+bool
 DiceAvDevice::setActiveClockSource(ClockSource s) {
-    return false;
+    fb_quadlet_t clockreg;
+    if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
+        debugError("Could not read CLOCK_SELECT register\n");
+        return false;
+    }
+
+    clockreg = DICE_SET_CLOCKSOURCE(clockreg, s.id);
+
+    if (!writeGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, clockreg)) {
+        debugError("Could not write CLOCK_SELECT register\n");
+        return false;
+    }
+
+    // check if the write succeeded
+    fb_quadlet_t clockreg_verify;
+    if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg_verify)) {
+        debugError("Could not read CLOCK_SELECT register\n");
+        return false;
+    }
+
+    if(clockreg != clockreg_verify) {
+        debugError("CLOCK_SELECT register write failed\n");
+        return false;
+    }
+
+    return DICE_GET_CLOCKSOURCE(clockreg_verify) == s.id;
 }
 
 FFADODevice::ClockSource
 DiceAvDevice::getActiveClockSource() {
     ClockSource s;
+    quadlet_t clock_caps;
+    readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &clock_caps);
+    uint16_t clocks_supported = (clock_caps >> 16) & 0xFFFF;
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock caps: 0x%08X, supported=0x%04X\n",
+                                    clock_caps, clocks_supported);
+
+    quadlet_t clock_select;
+    readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clock_select);
+    byte_t id = (clock_select) & 0xFF;
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock select: 0x%08X, selected=0x%04X\n",
+                                    clock_select, id);
+    quadlet_t extended_status;
+    readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &extended_status);
+    uint16_t clock_status = (extended_status) & 0xFFFF;
+    uint16_t clock_slipping = (extended_status >> 16) & 0xFFFF;
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08X, status=0x%04X, slip=0x%04X\n",
+                                    extended_status, clock_status, clock_slipping);
+
+    diceNameVector names = getClockSourceNameString();
+    if( names.size() < DICE_CLOCKSOURCE_COUNT) {
+        debugError("Not enough clock source names on device\n");
+        return s;
+    }
+    bool supported = (((clocks_supported >> id) & 0x01) == 1);
+    if (supported) {
+        s.type = clockIdToType(id);
+        s.id = id;
+        s.valid = true;
+        s.locked = isClockSourceIdLocked(id, extended_status);
+        s.slipping = isClockSourceIdSlipping(id, extended_status);
+        s.active = true;
+        s.description = names.at(id);
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Clock source id %2d not supported by device\n", id);
+    }
     return s;
 }
 
@@ -301,9 +488,8 @@ DiceAvDevice::showDevice()
     fb_quadlet_t tmp_quadlet;
     fb_octlet_t tmp_octlet;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE,
-        "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-        getNodeId());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Device is a DICE device\n");
+    FFADODevice::showDevice();
 
     debugOutput(DEBUG_LEVEL_VERBOSE," DICE Parameter Space info:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Global  : offset=0x%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
@@ -323,28 +509,28 @@ DiceAvDevice::showDevice()
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08X\n",tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Nick name        : %s\n",getDeviceNickName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Nick name        : %s\n",getDeviceNickName().c_str());
 
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock Select     : 0x%02X 0x%02X\n",
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Clock Select     : 0x%02X 0x%02X\n",
         (tmp_quadlet>>8) & 0xFF, tmp_quadlet & 0xFF);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Enable           : %s\n",
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Enable           : %s\n",
         (tmp_quadlet&0x1?"true":"false"));
 
     readGlobalReg(DICE_REGISTER_GLOBAL_STATUS, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock Status     : %s 0x%02X\n",
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Clock Status     : %s 0x%02X\n",
         (tmp_quadlet&0x1?"locked":"not locked"), (tmp_quadlet>>8) & 0xFF);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Extended Status  : 0x%08X\n",tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_SAMPLE_RATE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_VERSION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
         tmp_quadlet,
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_A(tmp_quadlet),
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_B(tmp_quadlet),
@@ -353,7 +539,7 @@ DiceAvDevice::showDevice()
         );
 
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08X\n",tmp_quadlet & 0x1FFF007F);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08X\n",tmp_quadlet);
 
     diceNameVector names=getClockSourceNameString();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock sources    :\n");
@@ -424,6 +610,7 @@ DiceAvDevice::showDevice()
             debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
         }
     }
+    flushDebugOutput();
 }
 
 // NOTE on bandwidth calculation
