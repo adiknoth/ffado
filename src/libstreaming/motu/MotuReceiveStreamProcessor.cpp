@@ -91,14 +91,6 @@ MotuReceiveStreamProcessor::prepareChild() {
     // FIXME: not needed anymore?
     //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d\n",
-             m_manager->getNominalRate());
-    debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
-             m_manager->getPeriodSize(), m_manager->getNbBuffers());
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
-             m_port, m_channel);
-
     return true;
 }
 

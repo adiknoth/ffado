@@ -43,23 +43,23 @@ namespace Util {
 namespace Streaming
 {
 class IsoHandler;
-class IsoStream;
+class StreamProcessor;
 
 typedef std::vector<IsoHandler *> IsoHandlerVector;
 typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
 
-typedef std::vector<IsoStream *> IsoStreamVector;
-typedef std::vector<IsoStream *>::iterator IsoStreamVectorIterator;
+typedef std::vector<StreamProcessor *> StreamProcessorVector;
+typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 
 
 /*!
 \brief The ISO Handler management class
 
  This class manages the use of ISO handlers by ISO streams.
- You can register an IsoStream with an IsoHandlerManager. This
+ You can register an StreamProcessor with an IsoHandlerManager. This
  manager will assign an IsoHandler to the stream. If nescessary
  the manager allocates a new handler. If there is already a handler
- that can handle the IsoStream (e.g. in case of multichannel receive),
+ that can handle the StreamProcessor (e.g. in case of multichannel receive),
  it can be assigned.
 
 */
@@ -84,8 +84,8 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         void dumpInfo(); ///< print some information about the manager to stdout/stderr
 
-        bool registerStream(IsoStream *); ///< register an iso stream with the manager
-        bool unregisterStream(IsoStream *); ///< unregister an iso stream from the manager
+        bool registerStream(StreamProcessor *); ///< register an iso stream with the manager
+        bool unregisterStream(StreamProcessor *); ///< unregister an iso stream from the manager
 
         bool startHandlers(); ///< start the managed ISO handlers
         bool startHandlers(int cycle); ///< start the managed ISO handlers
@@ -97,8 +97,8 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         bool init();
 
-        void disablePolling(IsoStream *); ///< disables polling on a stream
-        void enablePolling(IsoStream *); ///< enables polling on a stream
+        void disablePolling(StreamProcessor *); ///< disables polling on a stream
+        void enablePolling(StreamProcessor *); ///< enables polling on a stream
 
     // RunnableInterface interface
     public:
@@ -138,7 +138,7 @@ class IsoHandlerManager : public Util::RunnableInterface
         void pruneHandlers();
 
         // the collection of streams
-        IsoStreamVector m_IsoStreams;
+        StreamProcessorVector m_StreamProcessors;
 
         // poll stuff
         int m_poll_timeout;
