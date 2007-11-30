@@ -38,6 +38,13 @@
 
 #define TRANSMIT_TRANSFER_DELAY DEFAULT_TRANSFER_DELAY
 
+// Set to 1 to enable the generation of a 1 kHz test tone in analog output 1
+#define TESTTONE 1
+
+#if TESTTONE
+#include <math.h>
+#endif
+
 namespace Streaming
 {
 
@@ -282,7 +289,7 @@ MotuTransmitStreamProcessor::generatePacketData (
 #if TESTTONE
         // FIXME: remove this hacked in 1 kHz test signal to
         // analog-1 when testing is complete.
-        signed int int_tpf = (int)ticks_per_frame;
+        signed int i, int_tpf = (int)ticks_per_frame;
         unsigned char *sample = data+8+16;
         for (i=0; i<n_events; i++, sample+=m_event_size) {
             static signed int a_cx = 0;
