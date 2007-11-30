@@ -35,13 +35,16 @@ namespace Streaming {
 IMPL_DEBUG_MODULE( StreamProcessor, StreamProcessor, DEBUG_LEVEL_VERBOSE );
 
 StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
-    : m_parent( parent )
-    , m_processor_type ( type )
-    , m_channel( -1 )
-    , m_handler( NULL )
+    : m_processor_type ( type )
     , m_state( ePS_Created )
     , m_next_state( ePS_Invalid )
     , m_cycle_to_switch_state( 0 )
+    , m_parent( parent )
+    , m_channel( -1 )
+    , m_handler( NULL )
+    , m_dropped(0)
+    , m_last_timestamp(0)
+    , m_last_timestamp2(0)
     , m_scratch_buffer( NULL )
     , m_scratch_buffer_size_bytes( 0 )
     , m_manager( NULL )
@@ -49,9 +52,6 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_last_cycle( -1 )
     , m_sync_delay( 0 )
     , m_in_xrun( false )
-    , m_last_timestamp(0)
-    , m_last_timestamp2(0)
-    , m_dropped(0)
 {
     // create the timestamped buffer and register ourselves as its client
     m_data_buffer = new Util::TimestampedBuffer(this);
@@ -1469,7 +1469,7 @@ StreamProcessor::transferSilence(unsigned int nframes)
     ffado_timestamp_t ts_tail_tmp;
 
     // prepare a buffer of silence
-    char *dummybuffer = (char *)calloc(sizeof(quadlet_t), nframes * getEventsPerFrame());
+    char *dummybuffer = (char *)calloc(getEventSize(), nframes * getEventsPerFrame());
     transmitSilenceBlock(dummybuffer, nframes, 0);
 
     m_data_buffer->getBufferTailTimestamp(&ts_tail_tmp, &fc);
