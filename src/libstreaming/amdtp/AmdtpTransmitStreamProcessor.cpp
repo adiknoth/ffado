@@ -24,7 +24,10 @@
 #include "AmdtpTransmitStreamProcessor.h"
 #include "AmdtpPort.h"
 #include "../StreamProcessorManager.h"
+#include "devicemanager.h"
 
+#include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
 #include <netinet/in.h>
@@ -56,7 +59,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     /* Our node ID can change after a bus reset, so it is best to fetch
     * our node ID for each packet. */
-    packet->sid = m_handler->getLocalNodeId() & 0x3f;
+    packet->sid = m_Parent.get1394Service().getLocalNodeId() & 0x3f;
 
     packet->dbs = m_dimension;
     packet->fn = 0;
@@ -275,7 +278,7 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
 
     /* Our node ID can change after a bus reset, so it is best to fetch
     * our node ID for each packet. */
-    packet->sid = m_handler->getLocalNodeId() & 0x3f;
+    packet->sid = m_Parent.get1394Service().getLocalNodeId() & 0x3f;
 
     packet->dbs = m_dimension;
     packet->fn = 0;
@@ -344,47 +347,51 @@ unsigned int AmdtpTransmitStreamProcessor::fillNoDataPacketHeader (
     }
 }
 
+unsigned int
+AmdtpTransmitStreamProcessor::getSytInterval() {
+    switch (m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate()) {
+        case 32000:
+        case 44100:
+        case 48000:
+            return 8;
+        case 88200:
+        case 96000:
+            return 16;
+        case 176400:
+        case 192000:
+            return 32;
+        default:
+            debugError("Unsupported rate: %d\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+            return 0;
+    }
+}
+unsigned int
+AmdtpTransmitStreamProcessor::getFDF() {
+    switch (m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate()) {
+        case 32000: return IEC61883_FDF_SFC_32KHZ;
+        case 44100: return IEC61883_FDF_SFC_44K1HZ;
+        case 48000: return IEC61883_FDF_SFC_48KHZ;
+        case 88200: return IEC61883_FDF_SFC_88K2HZ;
+        case 96000: return IEC61883_FDF_SFC_96KHZ;
+        case 176400: return IEC61883_FDF_SFC_176K4HZ;
+        case 192000: return IEC61883_FDF_SFC_192KHZ;
+        default:
+            debugError("Unsupported rate: %d\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+            return 0;
+    }
+}
+
 bool AmdtpTransmitStreamProcessor::prepareChild()
 {
     debugOutput ( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this );
-    switch ( m_manager->getNominalRate() )
-    {
-        case 32000:
-            m_syt_interval = 8;
-            m_fdf = IEC61883_FDF_SFC_32KHZ;
-            break;
-        case 44100:
-            m_syt_interval = 8;
-            m_fdf = IEC61883_FDF_SFC_44K1HZ;
-            break;
-        default:
-        case 48000:
-            m_syt_interval = 8;
-            m_fdf = IEC61883_FDF_SFC_48KHZ;
-            break;
-        case 88200:
-            m_syt_interval = 16;
-            m_fdf = IEC61883_FDF_SFC_88K2HZ;
-            break;
-        case 96000:
-            m_syt_interval = 16;
-            m_fdf = IEC61883_FDF_SFC_96KHZ;
-            break;
-        case 176400:
-            m_syt_interval = 32;
-            m_fdf = IEC61883_FDF_SFC_176K4HZ;
-            break;
-        case 192000:
-            m_syt_interval = 32;
-            m_fdf = IEC61883_FDF_SFC_192KHZ;
-            break;
-    }
+    m_syt_interval = getSytInterval();
+    m_fdf = getFDF();
 
     iec61883_cip_init (
         &m_cip_status,
         IEC61883_FMT_AMDTP,
         m_fdf,
-        m_manager->getNominalRate(),
+        m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate(),
         m_dimension,
         m_syt_interval );
 

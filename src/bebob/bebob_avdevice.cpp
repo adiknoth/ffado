@@ -54,8 +54,8 @@ using namespace AVC;
 
 namespace BeBoB {
 
-AvDevice::AvDevice(std::auto_ptr< ConfigRom >( configRom ) )
-    : GenericAVC::AvDevice( configRom )
+AvDevice::AvDevice( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
+    : GenericAVC::AvDevice( d, configRom )
     , m_Mixer ( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
@@ -89,26 +89,26 @@ AvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-AvDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
+AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
     unsigned int modelId = configRom->getModelId();
 
     switch (vendorId) {
         case FW_VENDORID_TERRATEC:
-            return new Terratec::PhaseSeriesDevice(configRom);
+            return new Terratec::PhaseSeriesDevice(d, configRom);
         case FW_VENDORID_FOCUSRITE:
             switch(modelId) {
                 case 0x00000003:
                 case 0x00000006:
-                    return new Focusrite::SaffireProDevice(configRom);
+                    return new Focusrite::SaffireProDevice(d, configRom);
                 case 0x00000000:
-                    return new Focusrite::SaffireDevice(configRom);
+                    return new Focusrite::SaffireDevice(d, configRom);
                 default: // return a plain BeBoB device
-                    return new AvDevice(configRom);
+                    return new AvDevice(d, configRom);
            }
         default:
-            return new AvDevice(configRom);
+            return new AvDevice(d, configRom);
     }
     return NULL;
 }

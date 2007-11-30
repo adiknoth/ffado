@@ -124,11 +124,11 @@ struct DevicePropertyEntry {
 class MotuDevice : public FFADODevice {
 public:
 
-    MotuDevice(std::auto_ptr<ConfigRom>( configRom ));
+    MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );
     virtual ~MotuDevice();
 
     static bool probe( ConfigRom& configRom );
-    static FFADODevice * createDevice(std::auto_ptr<ConfigRom>( configRom ));
+    static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );
     virtual bool discover();
 

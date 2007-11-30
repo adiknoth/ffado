@@ -33,46 +33,49 @@
 
 #include <vector>
 
+#define FFADO_MAX_ISO_HANDLERS_PER_PORT 16
+
 #define USLEEP_AFTER_UPDATE_FAILURE 10
 #define USLEEP_AFTER_UPDATE 100
 #define MAX_UPDATE_TRIES 10
+class Ieee1394Service;
 namespace Util {
     class PosixThread;
 }
 
-namespace Streaming
-{
 class IsoHandler;
-class StreamProcessor;
+namespace Streaming {
+    class StreamProcessor;
+    class StreamProcessorManager;
+    typedef std::vector<StreamProcessor *> StreamProcessorVector;
+    typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
+}
 
 typedef std::vector<IsoHandler *> IsoHandlerVector;
 typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
-
-typedef std::vector<StreamProcessor *> StreamProcessorVector;
-typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
-
 
 /*!
 \brief The ISO Handler management class
 
  This class manages the use of ISO handlers by ISO streams.
- You can register an StreamProcessor with an IsoHandlerManager. This
+ You can register an Streaming::StreamProcessor with an IsoHandlerManager. This
  manager will assign an IsoHandler to the stream. If nescessary
  the manager allocates a new handler. If there is already a handler
- that can handle the StreamProcessor (e.g. in case of multichannel receive),
+ that can handle the Streaming::StreamProcessor (e.g. in case of multichannel receive),
  it can be assigned.
 
 */
-
 class IsoHandlerManager : public Util::RunnableInterface
 {
-    friend class StreamProcessorManager;
+    friend class Streaming::StreamProcessorManager;
 
     public:
 
-        IsoHandlerManager();
-        IsoHandlerManager(bool run_rt, unsigned int rt_prio);
-        virtual ~IsoHandlerManager() {};
+        IsoHandlerManager(Ieee1394Service& service);
+        IsoHandlerManager(Ieee1394Service& service, bool run_rt, unsigned int rt_prio);
+        virtual ~IsoHandlerManager();
+
+        bool setThreadParameters(bool rt, int priority);
 
         void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
         int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
@@ -84,44 +87,62 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         void dumpInfo(); ///< print some information about the manager to stdout/stderr
 
-        bool registerStream(StreamProcessor *); ///< register an iso stream with the manager
-        bool unregisterStream(StreamProcessor *); ///< unregister an iso stream from the manager
+        bool registerStream(Streaming::StreamProcessor *); ///< register an iso stream with the manager
+        bool unregisterStream(Streaming::StreamProcessor *); ///< unregister an iso stream from the manager
 
         bool startHandlers(); ///< start the managed ISO handlers
         bool startHandlers(int cycle); ///< start the managed ISO handlers
         bool stopHandlers(); ///< stop the managed ISO handlers
 
         bool reset(); ///< reset the ISO manager and all streams
-
-        bool prepare(); ///< prepare the ISO manager and all streams
-
         bool init();
 
-        void disablePolling(StreamProcessor *); ///< disables polling on a stream
-        void enablePolling(StreamProcessor *); ///< enables polling on a stream
+        bool disable(IsoHandler *); ///< disables a handler
+        bool enable(IsoHandler *); ///< enables a handler
+        ///> disables the handler attached to the stream
+        bool stopHandlerForStream(Streaming::StreamProcessor *);
+        ///> starts the handler attached to the specific stream
+        bool startHandlerForStream(Streaming::StreamProcessor *);
+        ///> starts the handler attached to the specific stream on a specific cycle
+        bool startHandlerForStream(Streaming::StreamProcessor *, int cycle); 
 
+        /**
+         * returns the latency of a wake-up for this stream.
+         * The latency is the time it takes for a packet is delivered to the
+         * stream after it has been received (was on the wire).
+         * expressed in cycles
+         */
+        int getPacketLatencyForStream(Streaming::StreamProcessor *);
+
+        void flushHandlerForStream(Streaming::StreamProcessor *stream);
+
+        Ieee1394Service& get1394Service() {return m_service;};
     // RunnableInterface interface
     public:
         bool Execute(); // note that this is called in we while(running) loop
         bool Init();
-        pthread_mutex_t m_debug_lock;
+        
+        // protects the operations on the lists 
+        // (FIXME: should be changed into a lock-free approach)
+        pthread_mutex_t m_list_lock;
 
     // the state machine
     private:
-        enum EHandlerStates {
+        enum eHandlerStates {
             E_Created,
             E_Prepared,
             E_Running,
             E_Error
         };
 
-        enum EHandlerStates m_State;
-
+        enum eHandlerStates m_State;
+        const char *eHSToString(enum eHandlerStates);
     private:
         /// iterate all child handlers
         bool iterate();
 
     private:
+        Ieee1394Service&  m_service;
         // note: there is a disctinction between streams and handlers
         // because one handler can serve multiple streams (in case of
         // multichannel receive)
@@ -138,14 +159,20 @@ class IsoHandlerManager : public Util::RunnableInterface
         void pruneHandlers();
 
         // the collection of streams
-        StreamProcessorVector m_StreamProcessors;
+        Streaming::StreamProcessorVector m_StreamProcessors;
 
         // poll stuff
         int m_poll_timeout;
-        struct pollfd *m_poll_fds;
-        int m_poll_nfds;
+        // FD map sync requested
+        int32_t m_request_fdmap_update;
+        void updateShadowVars();
 
-        bool rebuildFdMap();
+        // shadow variables
+        struct pollfd m_poll_fds_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
+        IsoHandler *m_IsoHandler_map_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
+        unsigned int m_poll_nfds_shadow;
+
+        void requestShadowUpdate();
 
         // threading
         bool m_realtime;
@@ -159,8 +186,6 @@ class IsoHandlerManager : public Util::RunnableInterface
         DECLARE_DEBUG_MODULE;
 
 };
-
-}
 
 #endif /* __FFADO_ISOHANDLERMANAGER__  */
 

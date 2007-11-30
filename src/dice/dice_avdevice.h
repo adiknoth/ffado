@@ -56,11 +56,11 @@ class DiceAvDevice : public FFADODevice {
 private:
     class DiceNotifier;
 public:
-    DiceAvDevice( std::auto_ptr<ConfigRom>( configRom ));
+    DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     ~DiceAvDevice();
 
     static bool probe( ConfigRom& configRom );
-    static FFADODevice * createDevice( std::auto_ptr<ConfigRom>( configRom ));
+    static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
     static int getConfigurationId( );

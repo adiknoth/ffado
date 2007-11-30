@@ -34,8 +34,9 @@
 
 IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 
-FFADODevice::FFADODevice( std::auto_ptr<ConfigRom>( configRom ))
+FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) )
     : Control::Container()
+    , m_pDeviceManager( d )
     , m_pConfigRom( configRom )
 {
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));

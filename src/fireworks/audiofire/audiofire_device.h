@@ -34,7 +34,7 @@ namespace ECHO {
 class AudioFire : public FireWorks::Device {
 
 public:
-    AudioFire(std::auto_ptr<ConfigRom>( configRom ));
+    AudioFire( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AudioFire();
 
     virtual void showDevice();

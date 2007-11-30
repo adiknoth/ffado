@@ -25,7 +25,10 @@
 #include "MotuReceiveStreamProcessor.h"
 #include "MotuPort.h"
 #include "../StreamProcessorManager.h"
+#include "devicemanager.h"
 
+#include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
 #include <math.h>
@@ -73,13 +76,13 @@ MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(FFADODevice &parent, unsi
 
 unsigned int
 MotuReceiveStreamProcessor::getMaxPacketSize() {
-    int framerate = m_manager->getNominalRate();
+    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?616:(framerate<=96000?1032:1160);
 }
 
 unsigned int
 MotuReceiveStreamProcessor::getNominalFramesPerPacket() {
-    int framerate = m_manager->getNominalRate();
+    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?8:(framerate<=96000?16:32);
 }
 
@@ -89,7 +92,7 @@ MotuReceiveStreamProcessor::prepareChild() {
 
     // prepare the framerate estimate
     // FIXME: not needed anymore?
-    //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
+    //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 
     return true;
 }
@@ -136,7 +139,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // received.  Since every frame from the MOTU has its own timestamp
         // we can just pick it straight from the packet.
         uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
-        m_last_timestamp = sphRecvToFullTicks(last_sph, m_parent.get1394Service().getCycleTimer());
+        m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
         return eCRV_OK;
     } else {
         return eCRV_Invalid;
@@ -177,8 +180,8 @@ MotuReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int 
     // later than expected (the real receive time)
     #ifdef DEBUG
     if(isRunning()) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | buff=%d, tpf=%f\n",
-            m_last_timestamp, m_handler->getWakeupInterval(), getTicksPerFrame());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | tpf=%f\n",
+            m_last_timestamp, getTicksPerFrame());
     }
     #endif
 

@@ -26,7 +26,6 @@
 
 #include "generic/Port.h"
 #include "generic/StreamProcessor.h"
-#include "util/IsoHandlerManager.h"
 
 #include "debugmodule/debugmodule.h"
 #include "libutil/Thread.h"
@@ -38,7 +37,6 @@
 namespace Streaming {
 
 class StreamProcessor;
-class IsoHandlerManager;
 
 typedef std::vector<StreamProcessor *> StreamProcessorVector;
 typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
@@ -52,10 +50,10 @@ class StreamProcessorManager : public Util::OptionContainer {
 
 public:
 
+    StreamProcessorManager();
     StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
 
-    bool init(); ///< to be called immediately after the construction
     bool prepare(); ///< to be called after the processors are registered
 
     bool start();
@@ -68,12 +66,15 @@ public:
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
-    void setPeriodSize(unsigned int period);
-    void setPeriodSize(unsigned int period, unsigned int nb_buffers);
-    unsigned int getPeriodSize() {return m_period;};
+    void setPeriodSize(unsigned int period)
+            {m_period = period;};
+    unsigned int getPeriodSize()
+            {return m_period;};
 
-    void setNbBuffers(unsigned int nb_buffers);
-    int getNbBuffers() {return m_nb_buffers;};
+    void setNbBuffers(unsigned int nb_buffers)
+            {m_nb_buffers = nb_buffers;};
+    int getNbBuffers() 
+            {return m_nb_buffers;};
 
     int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
     int getPortCount(enum Port::E_Direction);
@@ -93,6 +94,7 @@ public:
     bool xrunOccurred();
     int getXrunCount() {return m_xruns;};
 
+    void setNominalRate(unsigned int r) {m_nominal_framerate = r;};
     unsigned int getNominalRate() {return m_nominal_framerate;};
     uint64_t getTimeOfLastTransfer() { return m_time_of_transfer;};
 
@@ -127,7 +129,6 @@ protected:
 
     // thread sync primitives
     bool m_xrun_happened;
-
     bool m_thread_realtime;
     int m_thread_priority;
 
@@ -139,8 +140,6 @@ protected:
     unsigned int m_period;
     unsigned int m_nominal_framerate;
     unsigned int m_xruns;
-
-    IsoHandlerManager *m_isoManager;
 
     unsigned int m_nbperiods;
 

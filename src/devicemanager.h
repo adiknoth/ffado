@@ -30,6 +30,8 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
+#include "libstreaming/StreamProcessorManager.h"
+
 #include "libutil/OptionContainer.h"
 #include "libcontrol/BasicElements.h"
 
@@ -61,6 +63,8 @@ public:
     DeviceManager();
     ~DeviceManager();
 
+    bool setThreadParameters(bool rt, int priority);
+
     bool initialize();
     bool deinitialize();
 
@@ -68,6 +72,14 @@ public:
     bool isSpecStringValid(std::string s);
 
     bool discover();
+    bool initStreaming();
+    bool prepareStreaming();
+    bool finishStreaming();
+    bool startStreaming();
+    bool stopStreaming();
+    bool resetStreaming();
+    bool waitForPeriod();
+    bool setStreamingParams(unsigned int period, unsigned int rate, unsigned int nb_buffers);
 
     bool isValidNode( int node );
     int getNbDevices();
@@ -79,7 +91,8 @@ public:
 
     Streaming::StreamProcessor *getSyncSource();
 
-    void show();
+    void showDeviceInfo();
+    void showStreamingInfo();
 
     // the Control::Container functions
     virtual std::string getName() 
@@ -101,7 +114,16 @@ protected:
     FFADODeviceVector       m_avDevices;
     FunctorVector           m_busreset_functors;
 
+public: // FIXME: this should be better
+    Streaming::StreamProcessorManager&  getStreamProcessorManager() 
+        {return m_processorManager;};
+private:
+    Streaming::StreamProcessorManager  m_processorManager;
+protected:
     std::vector<std::string>          m_SpecStrings;
+
+    bool m_thread_realtime;
+    int m_thread_priority;
 
 // debug stuff
 public:

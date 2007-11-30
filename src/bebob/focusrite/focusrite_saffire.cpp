@@ -27,8 +27,8 @@
 namespace BeBoB {
 namespace Focusrite {
 
-SaffireDevice::SaffireDevice( std::auto_ptr<ConfigRom>( configRom ))
-    : FocusriteDevice( configRom)
+SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : FocusriteDevice( d, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );

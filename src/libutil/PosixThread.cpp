@@ -73,7 +73,7 @@ void* PosixThread::ThreadHandler(void* arg)
         return 0;
     }
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: start\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: start %p\n", obj);
 
     // If Init succeed start the thread loop
     bool res = true;
@@ -82,7 +82,7 @@ void* PosixThread::ThreadHandler(void* arg)
         //pthread_testcancel();
     }
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: exit\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: exit %p\n", obj);
     return 0;
 }
 
@@ -93,7 +93,7 @@ int PosixThread::Start()
 
     if (fRealTime) {
 
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Create RT thread with priority %d\n", fPriority);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Create RT thread %p with priority %d\n", this, fPriority);
 
         /* Get the client thread to run as an RT-FIFO
            scheduled thread of appropriate priority.
@@ -137,7 +137,7 @@ int PosixThread::Start()
 
         return 0;
     } else {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Create non RT thread\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Create non RT thread %p\n", this);
 
         if ((res = pthread_create(&fThread, 0, ThreadHandler, this))) {
             debugError("Cannot set create thread %d %s", res, strerror(errno));
@@ -151,10 +151,11 @@ int PosixThread::Start()
 int PosixThread::Kill()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Kill\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Kill %p\n", this);
         void* status;
         pthread_cancel(fThread);
         pthread_join(fThread, &status);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Killed %p\n", this);
         return 0;
     } else {
         return -1;
@@ -164,10 +165,11 @@ int PosixThread::Kill()
 int PosixThread::Stop()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop %p\n", this);
         void* status;
         fRunning = false; // Request for the thread to stop
         pthread_join(fThread, &status);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stopped %p\n", this);
         return 0;
     } else {
         return -1;

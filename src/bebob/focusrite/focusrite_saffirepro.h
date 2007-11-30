@@ -301,7 +301,7 @@ class SaffireProDevice : public FocusriteDevice
 friend class SaffireProMultiControl;
 
 public:
-    SaffireProDevice(std::auto_ptr<ConfigRom>( configRom ));
+    SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~SaffireProDevice();
 
     virtual void showDevice();

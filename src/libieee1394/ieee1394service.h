@@ -39,6 +39,7 @@
 #include <string>
 
 class ARMHandler;
+class IsoHandlerManager;
 
 class Ieee1394Service : public IEC61883 {
 public:
@@ -46,7 +47,7 @@ public:
     ~Ieee1394Service();
 
     bool initialize( int port );
-
+    bool setThreadParameters(bool rt, int priority);
    /**
     * @brief get number of ports (firewire adapters) in this machine
     *
@@ -219,6 +220,7 @@ public:
                                      nodeid_t recv_node, int recv_plug);
     bool freeIsoChannel(signed int channel);
 
+    IsoHandlerManager& getIsoHandlerManager() {return *m_isoManager;};
 private:
     enum EAllocType {
         AllocFree = 0, // not allocated (by us)
@@ -271,6 +273,8 @@ private:
     pthread_t       m_thread;
     pthread_mutex_t m_mutex;
     bool            m_threadRunning;
+
+    IsoHandlerManager*      m_isoManager;
 
     typedef std::vector< Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;

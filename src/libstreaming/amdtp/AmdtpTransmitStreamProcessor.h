@@ -97,11 +97,11 @@ public:
     virtual unsigned int getEventSize()
                     {return 4;};
     virtual unsigned int getMaxPacketSize()
-                    {return 4 * (2 + m_syt_interval * m_dimension);};
+                    {return 4 * (2 + getSytInterval() * m_dimension);};
     virtual unsigned int getEventsPerFrame()
                     { return m_dimension; };
     virtual unsigned int getNominalFramesPerPacket()
-                    {return m_syt_interval;};
+                    {return getSytInterval();};
 
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -121,6 +121,9 @@ private:
                                 unsigned int offset, unsigned int nevents);
     int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
                                 unsigned int offset, unsigned int nevents);
+
+    unsigned int getFDF();
+    unsigned int getSytInterval();
 
     struct iec61883_cip m_cip_status;
     int m_dimension;

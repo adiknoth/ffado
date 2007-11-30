@@ -39,8 +39,8 @@
 
 namespace MAudio {
 
-AvDevice::AvDevice(std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( configRom)
+AvDevice::AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : BeBoB::AvDevice( d, configRom)
     , m_model ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
@@ -80,9 +80,9 @@ AvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-AvDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
+AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice(configRom );
+    return new AvDevice( d, configRom );
 }
 
 bool
