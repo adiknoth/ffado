@@ -45,6 +45,19 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_VERBOSE );
 
+StreamProcessorManager::StreamProcessorManager()
+    : m_is_slave( false )
+    , m_SyncSource(NULL)
+    , m_nb_buffers( 0 )
+    , m_period( 0 )
+    , m_nominal_framerate ( 0 )
+    , m_xruns(0)
+    , m_xrun_happened( false )
+    , m_nbperiods(0)
+{
+    addOption(Util::OptionContainer::Option("slaveMode",false));
+}
+
 StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int framerate, unsigned int nb_buffers)
     : m_is_slave( false )
     , m_SyncSource(NULL)
@@ -52,14 +65,13 @@ StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int
     , m_period(period)
     , m_nominal_framerate ( framerate )
     , m_xruns(0)
-    , m_isoManager(0)
+    , m_xrun_happened( false )
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
 }
 
 StreamProcessorManager::~StreamProcessorManager() {
-    if (m_isoManager) delete m_isoManager;
 }
 
 /**
@@ -77,21 +89,15 @@ bool StreamProcessorManager::registerProcessor(StreamProcessor *processor)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Registering processor (%p)\n",processor);
     assert(processor);
-    assert(m_isoManager);
-
     if (processor->getType() == StreamProcessor::ePT_Receive) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
-
         m_ReceiveProcessors.push_back(processor);
-        processor->setManager(this);
         return true;
     }
 
     if (processor->getType() == StreamProcessor::ePT_Transmit) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
-
         m_TransmitProcessors.push_back(processor);
-        processor->setManager(this);
         return true;
     }
 
@@ -112,11 +118,6 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
         {
             if ( *it == processor ) {
                 m_ReceiveProcessors.erase(it);
-                processor->clearManager();
-                if(!m_isoManager->unregisterStream(processor)) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister receive stream processor from the Iso manager\n");
-                    return false;
-                }
                 return true;
             }
         }
@@ -129,11 +130,6 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
         {
             if ( *it == processor ) {
                 m_TransmitProcessors.erase(it);
-                processor->clearManager();
-                if(!m_isoManager->unregisterStream(processor)) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister transmit stream processor from the Iso manager\n");
-                    return false;
-                }
                 return true;
             }
         }
@@ -146,29 +142,6 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting sync source to (%p)\n", s);
     m_SyncSource=s;
-    return true;
-}
-
-bool StreamProcessorManager::init()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    m_isoManager = new IsoHandlerManager(m_thread_realtime, m_thread_priority + 1);
-    if(!m_isoManager) {
-        debugFatal("Could not create IsoHandlerManager\n");
-        return false;
-    }
-    m_isoManager->setVerboseLevel(getDebugLevel());
-    
-    // try to queue up 75% of the frames in the transmit buffer
-    unsigned int nb_frames = (getNbBuffers() - 1) * getPeriodSize() * 1000 / 2000;
-    m_isoManager->setTransmitBufferNbFrames(nb_frames);
-
-    if(!m_isoManager->init()) {
-        debugFatal("Could not initialize IsoHandlerManager\n");
-        return false;
-    }
-
-    m_xrun_happened=false;
     return true;
 }
 
@@ -527,41 +500,6 @@ StreamProcessorManager::alignReceivedStreams()
 
 bool StreamProcessorManager::start() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Starting Processors...\n");
-    assert(m_isoManager);
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Creating handlers for the StreamProcessors...\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
-    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-          it != m_ReceiveProcessors.end();
-          ++it )
-    {
-        if (!m_isoManager->registerStream(*it)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register receive stream processor (%p) with the Iso manager\n",*it);
-            return false;
-        }
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Transmit processors...\n");
-    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-          it != m_TransmitProcessors.end();
-          ++it )
-    {
-        if (!m_isoManager->registerStream(*it)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register transmit stream processor (%p) with the Iso manager\n",*it);
-            return false;
-        }
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing IsoHandlerManager...\n");
-    if (!m_isoManager->prepare()) {
-        debugFatal("Could not prepare isoManager\n");
-        return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Starting IsoHandlers...\n");
-    if (!m_isoManager->startHandlers(0)) {
-        debugFatal("Could not start handlers...\n");
-        return false;
-    }
 
     // put all SP's into dry-running state
     if (!startDryRunning()) {
@@ -574,21 +512,13 @@ bool StreamProcessorManager::start() {
         debugFatal("Could not syncStartAll...\n");
         return false;
     }
-
-    // dump the iso stream information when in verbose mode
-    if(getDebugLevel()>=DEBUG_LEVEL_VERBOSE) {
-        m_isoManager->dumpInfo();
-    }
-
     return true;
 }
 
 bool StreamProcessorManager::stop() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping...\n");
-    assert(m_isoManager);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " scheduling stop for all SP's...\n");
-
     // switch SP's over to the dry-running state
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
@@ -667,33 +597,6 @@ bool StreamProcessorManager::stop() {
     if(cnt==0) {
         debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to stop\n");
         return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handlers...\n");
-    if(!m_isoManager->stopHandlers()) {
-       debugFatal("Could not stop ISO handlers\n");
-       return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering processors from handlers...\n");
-    // now unregister all streams from iso manager
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
-    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-          it != m_ReceiveProcessors.end();
-          ++it ) {
-        if (!m_isoManager->unregisterStream(*it)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister receive stream processor (%p) from the Iso manager\n",*it);
-            return false;
-        }
-    }
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Transmit processors...\n");
-    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-          it != m_TransmitProcessors.end();
-          ++it ) {
-        if (!m_isoManager->unregisterStream(*it)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister transmit stream processor (%p) from the Iso manager\n",*it);
-            return false;
-        }
     }
     return true;
 }
@@ -805,27 +708,35 @@ bool StreamProcessorManager::waitForPeriod() {
     int waited = 0;
     #endif
     bool ready_for_transfer = false;
+    bool ready;
     xrun_occurred = false;
     while (!ready_for_transfer && !xrun_occurred) {
         ready_for_transfer = true;
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-            ready_for_transfer &= ((*it)->canClientTransferFrames(m_period));
+            ready = ((*it)->canClientTransferFrames(m_period));
+            ready_for_transfer &= ready;
+            if (!ready) (*it)->flush();
             xrun_occurred |= (*it)->xrunOccurred();
         }
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-            ready_for_transfer &= ((*it)->canClientTransferFrames(m_period));
+            ready = ((*it)->canClientTransferFrames(m_period));
+            ready_for_transfer &= ready;
+            if (!ready) (*it)->flush();
             xrun_occurred |= (*it)->xrunOccurred();
         }
         if (!ready_for_transfer) {
+            
             usleep(125); // MAGIC: one cycle sleep...
 
+            #if 0
             // in order to avoid this in the future, we increase the sync delay of the sync source SP
             int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;
             m_SyncSource->setSyncDelay(d);
+            #endif
 
             #ifdef DEBUG
             waited++;
@@ -1047,16 +958,12 @@ void StreamProcessorManager::dumpInfo() {
         (*it)->dumpInfo();
     }
 
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "Iso handler info:\n");
-    m_isoManager->dumpInfo();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "----------------------------------------------------\n");
 
 }
 
 void StreamProcessorManager::setVerboseLevel(int l) {
     setDebugLevel(l);
-
-    if (m_isoManager) m_isoManager->setVerboseLevel(l);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();

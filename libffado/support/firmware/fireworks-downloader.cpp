@@ -30,6 +30,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "devicemanager.h"
+
 #include <argp.h>
 #include <iostream>
 
@@ -164,8 +166,9 @@ main( int argc, char** argv )
         delete configRom;
         return -1;
     }
-
-    Device *dev = new Device( std::auto_ptr<ConfigRom>(configRom) );
+    
+    DeviceManager d = DeviceManager();
+    Device *dev = new Device(d, std::auto_ptr<ConfigRom>(configRom) );
     if (dev == NULL) {
         debugError("Could not create FireWorks::Device\n");
         delete configRom;

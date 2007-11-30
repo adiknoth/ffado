@@ -185,8 +185,8 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_8PRE,      sizeof( Ports_8PRE ),       96000 },
 };
 
-MotuDevice::MotuDevice( std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( configRom )
+MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( d, configRom )
     , m_motu_model( MOTUFW_MODEL_NONE )
     , m_iso_recv_channel ( -1 )
     , m_iso_send_channel ( -1 )
@@ -238,9 +238,9 @@ MotuDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-MotuDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
+MotuDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new MotuDevice(configRom);
+    return new MotuDevice(d, configRom);
 }
 
 bool

@@ -26,8 +26,8 @@
 namespace BeBoB {
 namespace Terratec {
 
-PhaseSeriesDevice::PhaseSeriesDevice(std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( configRom)
+PhaseSeriesDevice::PhaseSeriesDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : BeBoB::AvDevice( d, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Terratec::PhaseSeriesDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );

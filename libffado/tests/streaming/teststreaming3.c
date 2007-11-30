@@ -51,7 +51,7 @@ static void sighandler (int sig)
 int main(int argc, char *argv[])
 {
 
-	#define PERIOD_SIZE 256
+	#define PERIOD_SIZE 1024
 
 	int samplesread=0;
 // 	int sampleswritten=0;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 	dev_options.realtime=1;
 	dev_options.packetizer_priority=70;
 	
-	dev_options.verbose=5;
+	dev_options.verbose = 6;
         
         dev_options.slave_mode=0;
         dev_options.snoop_mode=0;

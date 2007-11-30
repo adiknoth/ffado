@@ -51,8 +51,8 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
 };
 
-DiceAvDevice::DiceAvDevice( std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( configRom )
+DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( d, configRom )
     , m_model( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
@@ -106,9 +106,9 @@ DiceAvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-DiceAvDevice::createDevice( std::auto_ptr<ConfigRom>( configRom ))
+DiceAvDevice::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new DiceAvDevice( configRom );
+    return new DiceAvDevice( d, configRom );
 }
 
 bool

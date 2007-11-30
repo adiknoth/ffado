@@ -33,11 +33,13 @@
 #include <vector>
 #include <string>
 
+class DeviceManager;
 class ConfigRom;
 class Ieee1394Service;
 
 namespace Streaming {
     class StreamProcessor;
+    class StreamProcessorManager;
 }
 
 /*!
@@ -52,7 +54,7 @@ class FFADODevice
       public Control::Container
 {
 public:
-    FFADODevice( std::auto_ptr< ConfigRom >( configRom ) );
+    FFADODevice( DeviceManager&, std::auto_ptr< ConfigRom >( configRom ) );
 
     virtual ~FFADODevice();
 
@@ -417,9 +419,11 @@ public:
     virtual bool setName( std::string n )
         { return false; };
 
-
+    DeviceManager& getDeviceManager()
+        {return m_pDeviceManager;};
 private:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
+    DeviceManager& m_pDeviceManager;
 protected:
     DECLARE_DEBUG_MODULE;
 };

@@ -25,6 +25,7 @@
 #include "ieee1394service.h"
 #include "ARMHandler.h"
 #include "cycletimer.h"
+#include "IsoHandlerManager.h"
 
 #include <libavc1394/avc1394.h>
 #include <libraw1394/csr.h>
@@ -38,7 +39,7 @@
 #include <iostream>
 #include <iomanip>
 
-#define FFADO_MAX_FIREWIRE_PORTS 8
+#define FFADO_MAX_FIREWIRE_PORTS 16
 
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
@@ -46,6 +47,7 @@ Ieee1394Service::Ieee1394Service()
     : m_handle( 0 ), m_resetHandle( 0 ), m_rtHandle( 0 )
     , m_port( -1 )
     , m_threadRunning( false )
+    , m_isoManager( new IsoHandlerManager( *this ) )
 {
     pthread_mutex_init( &m_mutex, 0 );
 
@@ -62,6 +64,7 @@ Ieee1394Service::Ieee1394Service()
 
 Ieee1394Service::~Ieee1394Service()
 {
+    delete m_isoManager;
     stopRHThread();
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
@@ -78,7 +81,6 @@ Ieee1394Service::~Ieee1394Service()
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
     }
-
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
     }
@@ -147,11 +149,34 @@ Ieee1394Service::initialize( int port )
         return false;
     }
 
+    // test the cycle timer read function
+    int err;
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    err=raw1394_read_cycle_timer(m_handle, &cycle_timer, &local_time);
+    if(err) {
+        debugError("raw1394_read_cycle_timer failed.\n");
+        debugError(" Error: %s\n", strerror(err));
+        debugError(" Your system doesn't seem to support the raw1394_read_cycle_timer call\n");
+        return false;
+    }
+
     m_port = port;
 
     // obtain port name
+    raw1394handle_t tmp_handle = raw1394_new_handle();
+    if ( tmp_handle == NULL ) {
+        debugError("Could not get temporaty libraw1394 handle.\n");
+        return false;
+    }
     struct raw1394_portinfo pinf[FFADO_MAX_FIREWIRE_PORTS];
-    int nb_detected_ports = raw1394_get_port_info(m_handle, pinf, FFADO_MAX_FIREWIRE_PORTS);
+    int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, FFADO_MAX_FIREWIRE_PORTS);
+    raw1394_destroy_handle(tmp_handle);
+
+    if (nb_detected_ports < 0) {
+        debugError("Failed to detect number of ports\n");
+        return false;
+    }
 
     if(nb_detected_ports && port < FFADO_MAX_FIREWIRE_PORTS) {
         m_portName = pinf[port].name;
@@ -164,15 +189,34 @@ Ieee1394Service::initialize( int port )
 
     raw1394_set_userdata( m_handle, this );
     raw1394_set_userdata( m_resetHandle, this );
+    raw1394_set_userdata( m_rtHandle, this );
     raw1394_set_bus_reset_handler( m_resetHandle,
                                    this->resetHandlerLowLevel );
 
     m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
                                    this->armHandlerLowLevel );
 
-    startRHThread();
+    if(!m_isoManager) {
+        debugFatal("No IsoHandlerManager available, bad!\n");
+        return false;
+    }
+    m_isoManager->setVerboseLevel(getDebugLevel());
+    if(!m_isoManager->init()) {
+        debugFatal("Could not initialize IsoHandlerManager\n");
+        return false;
+    }
 
+    startRHThread();
     return true;
+}
+
+bool
+Ieee1394Service::setThreadParameters(bool rt, int priority) {
+    if (m_isoManager) {
+        return m_isoManager->setThreadParameters(rt, priority);
+    } else {
+        return true;
+    }
 }
 
 int
@@ -929,8 +973,9 @@ signed int Ieee1394Service::getAvailableBandwidth() {
 void
 Ieee1394Service::setVerboseLevel(int l)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    if (m_isoManager) m_isoManager->setVerboseLevel(l);
     setDebugLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 void
@@ -938,4 +983,6 @@ Ieee1394Service::show()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Port:  %d\n", getPort() );
     debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "Iso handler info:\n");
+    if (m_isoManager) m_isoManager->dumpInfo();
 }

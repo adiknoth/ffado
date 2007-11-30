@@ -62,8 +62,9 @@ Port::Port(std::string name, enum E_PortType porttype, enum E_Direction directio
  * @return true if successfull. false if not (all resources are freed).
  */
 bool Port::init() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Initialize port %s\n", m_Name.c_str());
     if (m_State != E_Created) {
-        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
+        debugFatal("Port (%s) not in E_Created state: %d\n", m_Name.c_str(), m_State);
         return false;
     }
 

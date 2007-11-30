@@ -25,7 +25,10 @@
 #include "MotuTransmitStreamProcessor.h"
 #include "MotuPort.h"
 #include "../StreamProcessorManager.h"
+#include "devicemanager.h"
 
+#include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
 #include <netinet/in.h>
@@ -66,13 +69,13 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, un
 
 unsigned int
 MotuTransmitStreamProcessor::getMaxPacketSize() {
-    int framerate = m_manager->getNominalRate();
+    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?616:(framerate<=96000?1032:1160);
 }
 
 unsigned int
 MotuTransmitStreamProcessor::getNominalFramesPerPacket() {
-    int framerate = m_manager->getNominalRate();
+    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?8:(framerate<=96000?16:32);
 }
 
@@ -284,7 +287,7 @@ MotuTransmitStreamProcessor::generatePacketData (
     signed n_events = getNominalFramesPerPacket();
 
     if (m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
-        float ticks_per_frame = m_manager->getSyncSource().getActualRate();
+        float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getActualRate();
 
 #if TESTTONE
         // FIXME: remove this hacked in 1 kHz test signal to
@@ -377,7 +380,7 @@ unsigned int MotuTransmitStreamProcessor::fillDataPacketHeader (
     // packet the dbs field is still set as if there were data blocks
     // present.  For data-less packets the dbc is the same as the previously
     // transmitted block.
-    *quadlet = htonl(0x00000400 | ((m_handler->getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
+    *quadlet = htonl(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
     quadlet++;
     *quadlet = htonl(0x8222ffff);
     quadlet++;
@@ -394,7 +397,7 @@ unsigned int MotuTransmitStreamProcessor::fillNoDataPacketHeader (
     // packet the dbs field is still set as if there were data blocks
     // present.  For data-less packets the dbc is the same as the previously
     // transmitted block.
-    *quadlet = htonl(0x00000400 | ((m_handler->getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
+    *quadlet = htonl(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
     quadlet++;
     *quadlet = htonl(0x8222ffff);
     quadlet++;

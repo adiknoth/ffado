@@ -24,7 +24,10 @@
 #include "AmdtpReceiveStreamProcessor.h"
 #include "AmdtpPort.h"
 #include "../StreamProcessorManager.h"
+#include "devicemanager.h"
 
+#include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
 #include <netinet/in.h>
@@ -39,27 +42,28 @@ AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(FFADODevice &parent, in
     , m_dimension( dimension )
 {}
 
-bool AmdtpReceiveStreamProcessor::prepareChild() {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
-
-    switch (m_manager->getNominalRate()) {
+unsigned int
+AmdtpReceiveStreamProcessor::getSytInterval() {
+    switch (m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate()) {
         case 32000:
         case 44100:
         case 48000:
-            m_syt_interval = 8;
-            break;
+            return 8;
         case 88200:
         case 96000:
-            m_syt_interval = 16;
-            break;
+            return 16;
         case 176400:
         case 192000:
-            m_syt_interval = 32;
-            break;
+            return 32;
         default:
-            debugError("Unsupported rate: %d\n", m_manager->getNominalRate());
-            return false;
+            debugError("Unsupported rate: %d\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+            return 0;
     }
+}
+
+bool AmdtpReceiveStreamProcessor::prepareChild() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
+    m_syt_interval = getSytInterval();
     return true;
 }
 
@@ -88,7 +92,7 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
                   (packet->dbs > 0) &&
                   (length >= 2*sizeof(quadlet_t));
     if(ok) {
-        uint64_t now = m_parent.get1394Service().getCycleTimer();
+        uint64_t now = m_Parent.get1394Service().getCycleTimer();
         //=> convert the SYT to a full timestamp in ticks
         m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
                                               cycle, now);

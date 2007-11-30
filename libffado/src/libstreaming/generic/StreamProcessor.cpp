@@ -22,8 +22,13 @@
  */
 
 #include "StreamProcessor.h"
-#include "libieee1394/cycletimer.h"
 #include "../StreamProcessorManager.h"
+
+#include "devicemanager.h"
+
+#include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
+#include "libieee1394/cycletimer.h"
 
 #include "libutil/Atomic.h"
 
@@ -39,15 +44,13 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_state( ePS_Created )
     , m_next_state( ePS_Invalid )
     , m_cycle_to_switch_state( 0 )
-    , m_parent( parent )
+    , m_Parent( parent )
     , m_channel( -1 )
-    , m_handler( NULL )
     , m_dropped(0)
     , m_last_timestamp(0)
     , m_last_timestamp2(0)
     , m_scratch_buffer( NULL )
     , m_scratch_buffer_size_bytes( 0 )
-    , m_manager( NULL )
     , m_ticks_per_frame( 0 )
     , m_last_cycle( -1 )
     , m_sync_delay( 0 )
@@ -58,26 +61,32 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
 }
 
 StreamProcessor::~StreamProcessor() {
+    m_Parent.getDeviceManager().getStreamProcessorManager().unregisterProcessor(this);
+    if(!m_Parent.get1394Service().getIsoHandlerManager().unregisterStream(this)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister stream processor with the Iso manager\n");
+    }
+
     if (m_data_buffer) delete m_data_buffer;
     if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
 
 uint64_t StreamProcessor::getTimeNow() {
-    return m_parent.get1394Service().getCycleTimerTicks();
+    return m_Parent.get1394Service().getCycleTimerTicks();
 }
 
 int StreamProcessor::getMaxFrameLatency() {
     if (getType() == ePT_Receive) {
-        return (int)(m_handler->getWakeupInterval() * TICKS_PER_CYCLE);
+        return (int)(m_Parent.get1394Service().getIsoHandlerManager().getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
     } else {
-        return (int)(m_handler->getWakeupInterval() * TICKS_PER_CYCLE);
+        return (int)(m_Parent.get1394Service().getIsoHandlerManager().getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
     }
 }
 
 unsigned int
 StreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
 {
-    unsigned int nominal_frames_per_second = m_manager->getNominalRate();
+    unsigned int nominal_frames_per_second 
+                    = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
     uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
     uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
@@ -87,13 +96,17 @@ StreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
 unsigned int
 StreamProcessor::getPacketsPerPeriod()
 {
-    return getNominalPacketsNeeded(m_manager->getPeriodSize());
+    return getNominalPacketsNeeded(m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize());
 }
 
 
 /***********************************************
  * Buffer management and manipulation          *
  ***********************************************/
+void StreamProcessor::flush() {
+    m_Parent.get1394Service().getIsoHandlerManager().flushHandlerForStream(this);
+}
+
 int StreamProcessor::getBufferFill() {
     return m_data_buffer->getBufferFill();
 }
@@ -111,9 +124,9 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
     // period boundary is predicted based upon earlier samples, and therefore can
     // pass before these packets are processed. Adding this extra term makes that
     // the period boundary is signalled later
-    time_at_period = addTicks(time_at_period, m_manager->getSyncSource().getSyncDelay());
+    time_at_period = addTicks(time_at_period, m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getSyncDelay());
 
-    uint64_t cycle_timer=m_parent.get1394Service().getCycleTimerTicks();
+    uint64_t cycle_timer=m_Parent.get1394Service().getCycleTimerTicks();
 
     // calculate the time until the next period
     int32_t until_next=diffTicks(time_at_period,cycle_timer);
@@ -145,7 +158,7 @@ uint64_t
 StreamProcessor::getTimeAtPeriod() 
 {
     if (getType() == ePT_Receive) {
-        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_manager->getPeriodSize());
+        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize());
     
         #ifdef DEBUG
         ffado_timestamp_t ts;
@@ -158,7 +171,7 @@ StreamProcessor::getTimeAtPeriod()
         #endif
         return (uint64_t)next_period_boundary;
     } else {
-        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_manager->getNbBuffers()-1) * m_manager->getPeriodSize());
+        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_Parent.getDeviceManager().getStreamProcessorManager().getNbBuffers()-1) * m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize());
     
         #ifdef DEBUG
         ffado_timestamp_t ts;
@@ -422,7 +435,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // because packets are queued in advance. This means that
     // we the packet we are constructing will be sent out
     // on 'cycle', not 'now'.
-    unsigned int ctr = m_parent.get1394Service().getCycleTimer();
+    unsigned int ctr = m_Parent.get1394Service().getCycleTimer();
     int now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
 
     // the difference between the cycle this
@@ -614,7 +627,7 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
     // in order to sync up multiple received streams, we should 
     // use the ts parameter. It specifies the time of the block's 
     // last sample.
-    float srate = m_manager->getSyncSource().getTicksPerFrame();
+    float srate = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
     assert(srate != 0.0);
     int64_t this_block_length_in_ticks = (int64_t)(((float)nbframes) * srate);
 
@@ -800,6 +813,15 @@ bool StreamProcessor::init()
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "init...\n");
 
+    if(!m_Parent.get1394Service().getIsoHandlerManager().registerStream(this)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register stream processor with the Iso manager\n");
+        return false;
+    }
+    if(!m_Parent.getDeviceManager().getStreamProcessorManager().registerProcessor(this)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register stream processor with the SP manager\n");
+        return false;
+    }
+
     // initialization can be done without requesting it
     // from the packet loop
     m_next_state = ePS_Created;
@@ -809,13 +831,9 @@ bool StreamProcessor::init()
 bool StreamProcessor::prepare()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare SP (%p)...\n", this);
-    if(!m_manager) {
-        debugFatal("Not attached to a manager!\n");
-        return false;
-    }
 
     // make the scratch buffer one period of frames long
-    m_scratch_buffer_size_bytes = m_manager->getPeriodSize() * getEventsPerFrame() * getEventSize();
+    m_scratch_buffer_size_bytes = m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize() * getEventsPerFrame() * getEventSize();
     debugOutput( DEBUG_LEVEL_VERBOSE, " Allocate scratch buffer of %d quadlets\n");
     if(m_scratch_buffer) delete[] m_scratch_buffer;
     m_scratch_buffer = new byte_t[m_scratch_buffer_size_bytes];
@@ -831,11 +849,11 @@ bool StreamProcessor::prepare()
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
     debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d\n",
-             m_manager->getNominalRate());
+             m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
     debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
-             m_manager->getPeriodSize(), m_manager->getNbBuffers());
+             m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize(), m_Parent.getDeviceManager().getStreamProcessorManager().getNbBuffers());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
-             getPort(), m_channel);
+             m_Parent.get1394Service().getPort(), m_channel);
 
     // initialization can be done without requesting it
     // from the packet loop
@@ -872,12 +890,14 @@ StreamProcessor::waitForState(enum eProcessorState state, unsigned int timeout_m
 bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_Parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
+    uint64_t start_handler_ticks = substractTicks(tx, 100 * TICKS_PER_CYCLE);
+
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
+    uint64_t now = m_Parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -889,6 +909,11 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
                           (unsigned int)TICKS_TO_CYCLES(tx),
                           (unsigned int)TICKS_TO_OFFSET(tx));
     if (m_state == ePS_Stopped) {
+        if(!m_Parent.get1394Service().getIsoHandlerManager().startHandlerForStream(
+                                        this, TICKS_TO_CYCLES(start_handler_ticks))) {
+            debugError("Could not start handler for SP %p\n", this);
+            return false;
+        }
         return scheduleStateTransition(ePS_WaitingForStream, tx);
     } else if (m_state == ePS_Running) {
         return scheduleStateTransition(ePS_WaitingForStreamDisable, tx);
@@ -901,12 +926,12 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
 bool StreamProcessor::scheduleStartRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_Parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
+    uint64_t now = m_Parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -923,12 +948,12 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
 bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_Parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
+    uint64_t now = m_Parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -939,18 +964,19 @@ bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
                           (unsigned int)TICKS_TO_OFFSET(tx));
+
     return scheduleStateTransition(ePS_Stopped, tx);
 }
 
 bool StreamProcessor::scheduleStopRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_Parent.get1394Service().getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
-    uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
+    uint64_t now = m_Parent.get1394Service().getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
@@ -1031,7 +1057,7 @@ bool
 StreamProcessor::doStop()
 {
     float ticks_per_frame;
-    unsigned int ringbuffer_size_frames = (m_manager->getNbBuffers() + 1) * m_manager->getPeriodSize();
+    unsigned int ringbuffer_size_frames = (m_Parent.getDeviceManager().getStreamProcessorManager().getNbBuffers() + 1) * m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize();
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
     bool result = true;
@@ -1043,7 +1069,7 @@ StreamProcessor::doStop()
             result = m_data_buffer->init();
 
             // prepare the framerate estimate
-            ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_manager->getNominalRate());
+            ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
             m_ticks_per_frame = ticks_per_frame;
             debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n", ticks_per_frame);
 
@@ -1055,7 +1081,7 @@ StreamProcessor::doStop()
             if(getType() == ePT_Receive) {
                 result &= m_data_buffer->setUpdatePeriod( getNominalFramesPerPacket() );
             } else {
-                result &= m_data_buffer->setUpdatePeriod( m_manager->getPeriodSize() );
+                result &= m_data_buffer->setUpdatePeriod( m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize() );
             }
             result &= m_data_buffer->setNominalRate(ticks_per_frame);
             result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
@@ -1069,8 +1095,8 @@ StreamProcessor::doStop()
                 ++it )
             {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
-                if(!(*it)->setBufferSize(m_manager->getPeriodSize())) {
-                    debugFatal("Could not set buffer size to %d\n",m_manager->getPeriodSize());
+                if(!(*it)->setBufferSize(m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize())) {
+                    debugFatal("Could not set buffer size to %d\n",m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize());
                     return false;
                 }
                 switch ((*it)->getPortType()) {
@@ -1124,7 +1150,10 @@ StreamProcessor::doStop()
 
             break;
         case ePS_DryRunning:
-            // what to do here?
+            if(!m_Parent.get1394Service().getIsoHandlerManager().stopHandlerForStream(this)) {
+                debugError("Could not stop handler for SP %p\n", this);
+                return false;
+            }
             break;
         default:
             debugError("Entry from invalid state: %s\n", ePSToString(m_state));
@@ -1250,7 +1279,7 @@ StreamProcessor::doWaitForStreamEnable()
                 return false;
             }
             if (getType() == ePT_Transmit) {
-                ringbuffer_size_frames = m_manager->getNbBuffers() * m_manager->getPeriodSize();
+                ringbuffer_size_frames = m_Parent.getDeviceManager().getStreamProcessorManager().getNbBuffers() * m_Parent.getDeviceManager().getStreamProcessorManager().getPeriodSize();
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames\n", this, ringbuffer_size_frames);
                 // prefill the buffer
                 if(!transferSilence(ringbuffer_size_frames)) {
@@ -1529,24 +1558,22 @@ void
 StreamProcessor::dumpInfo()
 {
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p information\n", this);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", getPort(), m_channel);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_Parent.get1394Service().getPort(), m_channel);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
-    if (m_handler) {
-        uint64_t now = m_parent.get1394Service().getCycleTimerTicks();
-        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
-                          now,
-                          (unsigned int)TICKS_TO_SECS(now),
-                          (unsigned int)TICKS_TO_CYCLES(now),
-                          (unsigned int)TICKS_TO_OFFSET(now));
-    }
+    uint64_t now = m_Parent.get1394Service().getCycleTimerTicks();
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
+                        now,
+                        (unsigned int)TICKS_TO_SECS(now),
+                        (unsigned int)TICKS_TO_CYCLES(now),
+                        (unsigned int)TICKS_TO_OFFSET(now));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %s\n", (m_in_xrun ? "True":"False"));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", ePSToString(m_state));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   Next state           : %s\n", ePSToString(m_next_state));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "    transition at       : %u\n", m_cycle_to_switch_state);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer                : %p\n", m_data_buffer);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_manager->getNominalRate());
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
-        24576000.0/m_manager->getSyncSource().m_data_buffer->getRate(),
+        24576000.0/m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().m_data_buffer->getRate(),
         24576000.0/m_data_buffer->getRate()
         );
 

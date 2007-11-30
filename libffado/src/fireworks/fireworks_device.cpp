@@ -42,8 +42,8 @@ using namespace std;
 // FireWorks is the platform used and developed by ECHO AUDIO
 namespace FireWorks {
 
-Device::Device(std::auto_ptr<ConfigRom>( configRom ))
-    : GenericAVC::AvDevice(configRom)
+Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : GenericAVC::AvDevice( d, configRom)
     , m_efc_discovery_done ( false )
     , m_MixerContainer ( NULL )
 {
@@ -145,14 +145,14 @@ Device::discoverUsingEFC()
 }
 
 FFADODevice *
-Device::createDevice(std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
 //     unsigned int modelId = configRom->getModelId();
 
     switch(vendorId) {
-        case FW_VENDORID_ECHO: return new ECHO::AudioFire(configRom );
-        default: return new Device(configRom );
+        case FW_VENDORID_ECHO: return new ECHO::AudioFire(d, configRom );
+        default: return new Device(d, configRom );
     }
 }
 

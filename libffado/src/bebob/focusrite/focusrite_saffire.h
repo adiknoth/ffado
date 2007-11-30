@@ -141,7 +141,7 @@ protected:
 
 class SaffireDevice : public FocusriteDevice {
 public:
-    SaffireDevice(std::auto_ptr<ConfigRom>( configRom ));
+    SaffireDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~SaffireDevice() {};
 
     virtual void showDevice();

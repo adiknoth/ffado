@@ -50,8 +50,8 @@ namespace GenericAVC {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
 
-AvDevice::AvDevice(std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( configRom )
+AvDevice::AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( d, configRom )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -73,9 +73,9 @@ AvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-AvDevice::createDevice(std::auto_ptr<ConfigRom>( configRom ))
+AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice(configRom );
+    return new AvDevice(d, configRom );
 }
 
 bool
@@ -417,7 +417,7 @@ AvDevice::prepare() {
         debugError("Receive plug has no channels\n");
         return false;
     }
-    p=new Streaming::AmdtpReceiveStreamProcessor(*this,
+    p = new Streaming::AmdtpReceiveStreamProcessor(*this,
                              outputPlug->getNrOfChannels());
 
     if(!p->init()) {

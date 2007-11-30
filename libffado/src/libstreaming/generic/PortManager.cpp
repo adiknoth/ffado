@@ -101,7 +101,9 @@ bool PortManager::addPort(Port *port)
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s, type: %d, dir: %d, dtype: %d\n",
         port->getName().c_str(), port->getPortType(), port->getDirection(), port->getDataType());
-    
+
+    port->setVerboseLevel(getDebugLevel());
+
     if (makeNameUnique(port)) {
         m_Ports.push_back(port);
         return true;
@@ -177,16 +179,13 @@ Port * PortManager::getPortAtIdx(unsigned int index) {
 }
 
 void PortManager::setVerboseLevel(int i) {
-
     setDebugLevel(i);
-
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
       ++it )
     {
         (*it)->setVerboseLevel(i);
     }
-
 }
 
 

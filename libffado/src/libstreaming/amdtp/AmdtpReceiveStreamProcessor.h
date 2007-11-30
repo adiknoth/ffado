@@ -90,11 +90,11 @@ public:
     virtual unsigned int getEventSize() 
                     {return 4;};
     virtual unsigned int getMaxPacketSize() 
-                    {return 4 * (2 + m_syt_interval * m_dimension);};
+                    {return 4 * (2 + getSytInterval() * m_dimension);};
     virtual unsigned int getEventsPerFrame() 
                     { return m_dimension; };
     virtual unsigned int getNominalFramesPerPacket() 
-                    {return m_syt_interval;};
+                    {return getSytInterval();};
 
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -102,6 +102,8 @@ protected:
 private:
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
+
+    unsigned int getSytInterval();
 
     int m_dimension;
     unsigned int m_syt_interval;
