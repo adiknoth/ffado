@@ -20,6 +20,9 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "$VERSION-$REVISION"
 
+/* Define to the version of the cace. */
+#define CACHE_VERSION "$VERSION-$REVISION"
+
 /* Define to the api version */
 #define FFADO_API_VERSION $FFADO_API_VERSION
 

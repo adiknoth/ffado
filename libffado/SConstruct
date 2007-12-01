@@ -226,10 +226,10 @@ env['REVISION'] = env['REVISION'].split(':')[-1]
 if env['REVISION'] == 'exported':
 	env['REVISION'] = ''
 
-env['FFADO_API_VERSION']="4"
+env['FFADO_API_VERSION']="5"
 
 env['PACKAGE'] = "libffado"
-env['VERSION'] = "1.999.7"
+env['VERSION'] = "1.999.8"
 env['LIBVERSION'] = "1.0.0"
 
 #
@@ -241,6 +241,9 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 # Start building
 #
 env.ScanReplace( "config.h.in" )
+# ensure that the config.h is updated with the version
+NoCache("config.h")
+AlwaysBuild("config.h")
 
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )

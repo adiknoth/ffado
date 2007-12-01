@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include "config.h" // FOR CACHE_VERSION
 
 #include "serialize.h"
 
@@ -32,23 +33,26 @@ IMPL_DEBUG_MODULE( Util::XMLDeserialize, XMLDeserialize, DEBUG_LEVEL_NORMAL );
 Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
     : IOSerialize()
     , m_filepath( fileName )
-    , m_verboseLevel( 0 )
+    , m_verboseLevel( DEBUG_LEVEL_NORMAL )
 {
+    setDebugLevel( DEBUG_LEVEL_NORMAL );
     try {
         m_doc.create_root_node( "ffado_cache" );
+        writeVersion();
     } catch ( const exception& ex ) {
         cout << "Exception caught: " << ex.what();
     }
 }
-
 
 Util::XMLSerialize::XMLSerialize( Glib::ustring fileName, int verboseLevel )
     : IOSerialize()
     , m_filepath( fileName )
     , m_verboseLevel( verboseLevel )
 {
+    setDebugLevel(verboseLevel);
     try {
         m_doc.create_root_node( "ffado_cache" );
+        writeVersion();
     } catch ( const exception& ex ) {
         cout << "Exception caught: " << ex.what();
     }
@@ -62,6 +66,17 @@ Util::XMLSerialize::~XMLSerialize()
         cout << "Exception caugth: " << ex.what();
     }
 
+}
+
+void
+Util::XMLSerialize::writeVersion()
+{
+    xmlpp::Node* pNode = m_doc.get_root_node();
+    xmlpp::Element* pElem = pNode->add_child( "CacheVersion" );
+    char* valstr;
+    asprintf( &valstr, "%s", CACHE_VERSION );
+    pElem->set_child_text( valstr );
+    free( valstr );
 }
 
 bool
@@ -163,8 +178,9 @@ Util::XMLSerialize::getNodePath( xmlpp::Node* pRootNode,
 Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName )
     : IODeserialize()
     , m_filepath( fileName )
-    , m_verboseLevel( 0 )
+    , m_verboseLevel( DEBUG_LEVEL_NORMAL )
 {
+    setDebugLevel(DEBUG_LEVEL_NORMAL);
     try {
         m_parser.set_substitute_entities(); //We just want the text to
                                             //be resolved/unescaped
@@ -180,6 +196,7 @@ Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName, int verboseLevel )
     , m_filepath( fileName )
     , m_verboseLevel( verboseLevel )
 {
+    setDebugLevel(verboseLevel);
     try {
         m_parser.set_substitute_entities(); //We just want the text to
                                             //be resolved/unescaped
@@ -192,6 +209,29 @@ Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName, int verboseLevel )
 
 Util::XMLDeserialize::~XMLDeserialize()
 {
+}
+
+bool
+Util::XMLDeserialize::isValid()
+{
+    return checkVersion();
+}
+
+bool
+Util::XMLDeserialize::checkVersion()
+{
+    Glib::ustring savedVersion;
+    if (read( "CacheVersion", savedVersion )) {
+        Glib::ustring expectedVersion = CACHE_VERSION;
+        debugOutput( DEBUG_LEVEL_NORMAL, "Cache version: %s, expected: %s.\n", savedVersion.c_str(), expectedVersion.c_str() );
+        if (expectedVersion == savedVersion) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Cache version OK.\n" );
+            return true;
+        } else {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Cache version not OK.\n" );
+            return false;
+        }
+    } else return false;
 }
 
 bool

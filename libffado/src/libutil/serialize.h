@@ -71,6 +71,8 @@ namespace Util {
         virtual bool write( std::string strMemberName,
                             Glib::ustring str);
     private:
+        void writeVersion();
+
         Glib::ustring    m_filepath;
         xmlpp::Document  m_doc;
         int              m_verboseLevel;
@@ -93,7 +95,8 @@ namespace Util {
                            Glib::ustring& str );
 
         virtual bool isExisting( std::string strMemberName );
-
+        bool isValid();
+        bool checkVersion();
     private:
         Glib::ustring    m_filepath;
         xmlpp::DomParser m_parser;
