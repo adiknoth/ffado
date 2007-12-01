@@ -441,6 +441,12 @@ AvDevice::loadFromCache()
 
     Util::XMLDeserialize deser( sFileName, getDebugLevel() );
 
+    if (!deser.isValid()) {
+        debugOutput( DEBUG_LEVEL_NORMAL, "cache not valid: %s\n",
+                     sFileName.c_str() );
+        return false;
+    }
+
     bool result = deserialize( "", deser );
     if ( result ) {
         debugOutput( DEBUG_LEVEL_NORMAL, "could create valid bebob driver from %s\n",

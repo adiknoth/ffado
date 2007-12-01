@@ -170,6 +170,15 @@ amdtp_source = env.Split( '\
 	libstreaming/amdtp/AmdtpTransmitStreamProcessor.cpp \
 ' )
 
+# Explicitly make these files dependent on config.h
+# to make sure they contain the most recent version
+# #define's
+version_dependent_files = [
+    "ffado.os", # external API versioning
+    "libutil/serialize.os", # cache versioning
+    ]
+
+
 source = ffado_source
 pkgdata = []
 if env['ENABLE_BEBOB']:
@@ -213,6 +222,15 @@ if not env.GetOption( "clean" ):
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )
+
+for file in version_dependent_files:
+    Depends(file, '#/config.h')
+    NoCache(file)
+    AlwaysBuild(file)
+
+# FIXME: there has to be a better way
+AlwaysBuild(ffadolib)
+NoCache(ffadolib)
 
 #
 # All the following tries to emulate the versioning of installed libs as seen from libtool...
