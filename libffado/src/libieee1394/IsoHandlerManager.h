@@ -72,16 +72,13 @@ class IsoHandlerManager : public Util::RunnableInterface
     public:
 
         IsoHandlerManager(Ieee1394Service& service);
-        IsoHandlerManager(Ieee1394Service& service, bool run_rt, unsigned int rt_prio);
+        IsoHandlerManager(Ieee1394Service& service, bool run_rt, int rt_prio);
         virtual ~IsoHandlerManager();
 
         bool setThreadParameters(bool rt, int priority);
 
         void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
         int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
-
-        void setTransmitBufferNbFrames(unsigned int t) {m_xmit_nb_frames = t;};
-        int getTransmitBufferNbFrames() {return m_xmit_nb_frames;};
 
         void setVerboseLevel(int l); ///< set the verbose level
 
@@ -176,11 +173,8 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         // threading
         bool m_realtime;
-        unsigned int m_priority;
+        int m_priority;
         Util::PosixThread *m_isoManagerThread;
-
-        // the preferred number of packets to buffer on xmit
-        unsigned int m_xmit_nb_frames;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

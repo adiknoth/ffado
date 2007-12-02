@@ -37,6 +37,7 @@
 
 #include "src/threads.h"
 
+#include "src/libieee1394/cycletimer.h"
 #include "src/libieee1394/configrom.h"
 #include "src/libieee1394/ieee1394service.h"
 #include "src/libieee1394/ARMHandler.h"
@@ -64,15 +65,20 @@ public:
 
 int main(int argc, char *argv[])
 {
+    setDebugLevel(DEBUG_LEVEL_VERBOSE);
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
+
+    const int PORT_TO_USE = 0;
 
     printf("FFADO Ieee1394Service test application\n");
 
     Ieee1394Service *m_service=NULL;
 
     m_service=new Ieee1394Service();
-    m_service->initialize(2);
+    m_service->setVerboseLevel(DEBUG_LEVEL_VERBOSE );
+    m_service->initialize(PORT_TO_USE);
+    m_service->setThreadParameters(true, 20);
 
     MyFunctor *test_busreset=new MyFunctor();
 
@@ -108,10 +114,58 @@ int main(int argc, char *argv[])
         printf("  failed\n");
     }
 
+    raw1394handle_t m_handle = raw1394_new_handle_on_port( PORT_TO_USE );
+    if ( !m_handle ) {
+        if ( !errno ) {
+            debugFatal("libraw1394 not compatible\n");
+        } else {
+            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s\n",
+                strerror(errno) );
+            debugFatal("Is ieee1394 and raw1394 driver loaded?\n");
+        }
+        exit(-1);
+    }
+
     while(run) {
         fflush(stderr);
         fflush(stdout);
-        sleep(1);
+        usleep(900*1000);
+
+        uint32_t cycle_timer;
+        uint64_t local_time;
+        // read the CTR 'raw' from a handle
+        // and read it from the 1394 service, which uses a DLL
+        int err = raw1394_read_cycle_timer(m_handle, &cycle_timer, &local_time);
+        uint64_t ctr = CYCLE_TIMER_TO_TICKS( cycle_timer );
+        uint64_t ctr_dll = m_service->getCycleTimerTicks();
+
+        if(err) {
+            debugError("CTR read error\n");
+        }
+        debugOutput ( DEBUG_LEVEL_VERBOSE,
+                    "Cycle timer: %011llu (%03us %04ucy %04uticks)\n",
+                    ctr, (unsigned int)TICKS_TO_SECS( ctr ),
+                    (unsigned int)TICKS_TO_CYCLES( ctr ), (unsigned int)TICKS_TO_OFFSET( ctr ) );
+        debugOutput ( DEBUG_LEVEL_VERBOSE,
+                    "   from DLL: %011llu (%03us %04ucy %04uticks)\n",
+                    ctr_dll, (unsigned int)TICKS_TO_SECS( ctr_dll ),
+                    (unsigned int)TICKS_TO_CYCLES( ctr_dll ), (unsigned int)TICKS_TO_OFFSET( ctr_dll ) );
+        int64_t diff = diffTicks(ctr, ctr_dll);
+        uint64_t abs_diff;
+        if (diff < 0) {
+            abs_diff = -diff;
+        } else {
+            abs_diff = diff;
+        }
+        debugOutput ( DEBUG_LEVEL_VERBOSE,
+                    "      diff: %s%011llu (%03us %04ucy %04uticks)\n",
+                    ((int64_t)abs_diff==diff?" ":"-"), abs_diff, (unsigned int)TICKS_TO_SECS( abs_diff ),
+                    (unsigned int)TICKS_TO_CYCLES( abs_diff ), (unsigned int)TICKS_TO_OFFSET( abs_diff ) );
+        if (abs_diff > 1000) {
+            debugWarning("Alert, large diff: %lld\n", diff);
+        }
+        debugOutput ( DEBUG_LEVEL_VERBOSE,
+                    " wait...\n");
     }
 
     delete m_service;
