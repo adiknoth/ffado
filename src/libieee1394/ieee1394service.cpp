@@ -26,10 +26,13 @@
 #include "ARMHandler.h"
 #include "cycletimer.h"
 #include "IsoHandlerManager.h"
+#include "CycleTimerHelper.h"
 
 #include <libavc1394/avc1394.h>
 #include <libraw1394/csr.h>
 #include <libiec61883/iec61883.h>
+
+#include "libutil/SystemTimeSource.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -41,13 +44,45 @@
 
 #define FFADO_MAX_FIREWIRE_PORTS 16
 
+#define ISOMANAGER_PRIO_INCREASE         5
+#define CYCLETIMER_HELPER_PRIO_INCREASE  6
+
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
-    : m_handle( 0 ), m_resetHandle( 0 ), m_rtHandle( 0 )
+    : m_handle( 0 ), m_resetHandle( 0 ), m_util_handle( 0 )
     , m_port( -1 )
     , m_threadRunning( false )
-    , m_isoManager( new IsoHandlerManager( *this ) )
+    , m_realtime ( false )
+    , m_base_priority ( 0 )
+    , m_pIsoManager( new IsoHandlerManager( *this ) )
+    , m_pCTRHelper ( new CycleTimerHelper( *this, 1000 ) )
+    , m_have_new_ctr_read ( false )
+    , m_pTimeSource ( new Util::SystemTimeSource() )
+{
+    pthread_mutex_init( &m_mutex, 0 );
+
+    for (unsigned int i=0; i<64; i++) {
+        m_channels[i].channel=-1;
+        m_channels[i].bandwidth=-1;
+        m_channels[i].alloctype=AllocFree;
+        m_channels[i].xmit_node=0xFFFF;
+        m_channels[i].xmit_plug=-1;
+        m_channels[i].recv_node=0xFFFF;
+        m_channels[i].recv_plug=-1;
+    }
+}
+
+Ieee1394Service::Ieee1394Service(bool rt, int prio)
+    : m_handle( 0 ), m_resetHandle( 0 ), m_util_handle( 0 )
+    , m_port( -1 )
+    , m_threadRunning( false )
+    , m_realtime ( rt )
+    , m_base_priority ( prio )
+    , m_pIsoManager( new IsoHandlerManager( *this, rt, prio + ISOMANAGER_PRIO_INCREASE ) )
+    , m_pCTRHelper ( new CycleTimerHelper( *this, 1000, rt, prio + CYCLETIMER_HELPER_PRIO_INCREASE ) )
+    , m_have_new_ctr_read ( false )
+    , m_pTimeSource ( new Util::SystemTimeSource() )
 {
     pthread_mutex_init( &m_mutex, 0 );
 
@@ -64,7 +99,9 @@ Ieee1394Service::Ieee1394Service()
 
 Ieee1394Service::~Ieee1394Service()
 {
-    delete m_isoManager;
+    delete m_pCTRHelper;
+    delete m_pIsoManager;
+    delete m_pTimeSource;
     stopRHThread();
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
@@ -84,8 +121,8 @@ Ieee1394Service::~Ieee1394Service()
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
     }
-    if ( m_rtHandle ) {
-        raw1394_destroy_handle( m_rtHandle );
+    if ( m_util_handle ) {
+        raw1394_destroy_handle( m_util_handle );
     }
 }
 
@@ -136,9 +173,9 @@ Ieee1394Service::initialize( int port )
         }
         return false;
     }
-    
-    m_rtHandle = raw1394_new_handle_on_port( port );
-    if ( !m_rtHandle ) {
+
+    m_util_handle = raw1394_new_handle_on_port( port );
+    if ( !m_util_handle ) {
         if ( !errno ) {
             debugFatal("libraw1394 not compatible\n");
         } else {
@@ -155,10 +192,18 @@ Ieee1394Service::initialize( int port )
     uint64_t local_time;
     err=raw1394_read_cycle_timer(m_handle, &cycle_timer, &local_time);
     if(err) {
-        debugError("raw1394_read_cycle_timer failed.\n");
-        debugError(" Error: %s\n", strerror(err));
-        debugError(" Your system doesn't seem to support the raw1394_read_cycle_timer call\n");
-        return false;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "raw1394_read_cycle_timer failed.\n");
+        debugOutput(DEBUG_LEVEL_VERBOSE, " Error descr: %s\n", strerror(err));
+        debugWarning("==================================================================\n");
+        debugWarning(" This system doesn't support the raw1394_read_cycle_timer call.   \n");
+        debugWarning(" Fallback to indirect CTR read method.                            \n");
+        debugWarning(" FFADO should work, but achieving low-latency might be a problem. \n");
+        debugWarning(" Upgrade the kernel to version 2.6.21 or higher to solve this.    \n");
+        debugWarning("==================================================================\n");
+        m_have_new_ctr_read = false;
+    } else {
+        debugOutput(DEBUG_LEVEL_NORMAL, "This system supports the raw1394_read_cycle_timer call, using it.\n");
+        m_have_new_ctr_read = true;
     }
 
     m_port = port;
@@ -189,31 +234,55 @@ Ieee1394Service::initialize( int port )
 
     raw1394_set_userdata( m_handle, this );
     raw1394_set_userdata( m_resetHandle, this );
-    raw1394_set_userdata( m_rtHandle, this );
+    raw1394_set_userdata( m_util_handle, this );
     raw1394_set_bus_reset_handler( m_resetHandle,
                                    this->resetHandlerLowLevel );
 
     m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
                                    this->armHandlerLowLevel );
 
-    if(!m_isoManager) {
+    if(!m_pCTRHelper) {
+        debugFatal("No CycleTimerHelper available, bad!\n");
+        return false;
+    }
+    m_pCTRHelper->setVerboseLevel(getDebugLevel());
+    if(!m_pCTRHelper->Start()) {
+        debugFatal("Could not start CycleTimerHelper\n");
+        return false;
+    }
+
+    if(!m_pIsoManager) {
         debugFatal("No IsoHandlerManager available, bad!\n");
         return false;
     }
-    m_isoManager->setVerboseLevel(getDebugLevel());
-    if(!m_isoManager->init()) {
+    m_pIsoManager->setVerboseLevel(getDebugLevel());
+    if(!m_pIsoManager->init()) {
         debugFatal("Could not initialize IsoHandlerManager\n");
         return false;
     }
 
     startRHThread();
+
+    // make sure that the thread parameters of all our helper threads are OK
+    if(!setThreadParameters(m_realtime, m_base_priority)) {
+        debugFatal("Could not set thread parameters\n");
+        return false;
+    }
     return true;
 }
 
 bool
 Ieee1394Service::setThreadParameters(bool rt, int priority) {
-    if (m_isoManager) {
-        return m_isoManager->setThreadParameters(rt, priority);
+    if (priority > 98) priority = 98;
+    m_base_priority = priority;
+    m_realtime = rt;
+    if (m_pIsoManager) {
+        return m_pIsoManager->setThreadParameters(rt, priority + ISOMANAGER_PRIO_INCREASE);
+    } else {
+        return true;
+    }
+    if (m_pCTRHelper) {
+        return m_pCTRHelper->setThreadParameters(rt, priority + CYCLETIMER_HELPER_PRIO_INCREASE);
     } else {
         return true;
     }
@@ -235,20 +304,9 @@ nodeid_t Ieee1394Service::getLocalNodeId() {
  * @return the current value of the cycle timer (in ticks)
  */
 
-unsigned int
+uint32_t
 Ieee1394Service::getCycleTimerTicks() {
-    // the new api should be realtime safe.
-    // it might cause a reschedule when turning preemption,
-    // back on but that won't hurt us if we have sufficient
-    // priority
-    int err;
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    err=raw1394_read_cycle_timer(m_rtHandle, &cycle_timer, &local_time);
-    if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-    }
-    return CYCLE_TIMER_TO_TICKS(cycle_timer);
+    return m_pCTRHelper->getCycleTimerTicks();
 }
 
 /**
@@ -257,7 +315,7 @@ Ieee1394Service::getCycleTimerTicks() {
  * @return the current value of the cycle timer (as is)
  */
 
-unsigned int
+uint32_t
 Ieee1394Service::getCycleTimer() {
     // the new api should be realtime safe.
     // it might cause a reschedule when turning preemption,
@@ -266,11 +324,45 @@ Ieee1394Service::getCycleTimer() {
     int err;
     uint32_t cycle_timer;
     uint64_t local_time;
-    err=raw1394_read_cycle_timer(m_rtHandle, &cycle_timer, &local_time);
+    err=raw1394_read_cycle_timer(m_util_handle, &cycle_timer, &local_time);
     if(err) {
         debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
     }
     return cycle_timer;
+}
+
+bool
+Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
+{
+    if(m_have_new_ctr_read) {
+        int err;
+        err = raw1394_read_cycle_timer(m_util_handle, cycle_timer, local_time);
+        if(err) {
+            debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
+            return false;
+        }
+        return true;
+    } else {
+        // do a normal read of the CTR register
+        // the disadvantage is that local_time and cycle time are not
+        // read at the same time instant (scheduling issues)
+        *local_time = getCurrentTimeAsUsecs();
+        if ( raw1394_read( m_util_handle,
+                getLocalNodeId() | 0xFFC0,
+                CSR_REGISTER_BASE | CSR_CYCLE_TIME,
+                sizeof(uint32_t), cycle_timer ) == 0 ) {
+            *cycle_timer = ntohl(*cycle_timer);
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+uint64_t
+Ieee1394Service::getCurrentTimeAsUsecs() {
+    assert(m_pTimeSource);
+    return m_pTimeSource->getCurrentTimeAsUsecs();
 }
 
 bool
@@ -500,7 +592,7 @@ Ieee1394Service::resetHandler( unsigned int generation )
 
     // do a simple read on ourself in order to update the internal structures
     // this avoids failures after a bus reset
-    read_quadlet( getLocalNodeId() & 0xFFC0,
+    read_quadlet( getLocalNodeId() | 0xFFC0,
                   CSR_REGISTER_BASE | CSR_CYCLE_TIME,
                   &buf );
 
@@ -973,7 +1065,8 @@ signed int Ieee1394Service::getAvailableBandwidth() {
 void
 Ieee1394Service::setVerboseLevel(int l)
 {
-    if (m_isoManager) m_isoManager->setVerboseLevel(l);
+    if (m_pIsoManager) m_pIsoManager->setVerboseLevel(l);
+    if (m_pCTRHelper) m_pCTRHelper->setVerboseLevel(l);
     setDebugLevel(l);
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
@@ -984,5 +1077,5 @@ Ieee1394Service::show()
     debugOutput( DEBUG_LEVEL_VERBOSE, "Port:  %d\n", getPort() );
     debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Iso handler info:\n");
-    if (m_isoManager) m_isoManager->dumpInfo();
+    if (m_pIsoManager) m_pIsoManager->dumpInfo();
 }

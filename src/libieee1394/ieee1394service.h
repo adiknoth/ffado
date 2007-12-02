@@ -40,10 +40,16 @@
 
 class ARMHandler;
 class IsoHandlerManager;
+class CycleTimerHelper;
+
+namespace Util {
+    class TimeSource;
+}
 
 class Ieee1394Service : public IEC61883 {
 public:
     Ieee1394Service();
+    Ieee1394Service(bool rt, int prio);
     ~Ieee1394Service();
 
     bool initialize( int port );
@@ -93,24 +99,48 @@ public:
     */
     nodeid_t getLocalNodeId();
 
-    /// get the most recent cycle timer value (in ticks)
-    unsigned int getCycleTimerTicks();
-    /// get the most recent cycle timer value (as is)
-    unsigned int getCycleTimer();
+    /**
+     * @brief get the most recent cycle timer value (in ticks)
+     *
+     * @note Uses the most appropriate method for getting the cycle timer
+     *       which is not necessarily a direct read (could be DLL)
+     */
+    uint32_t getCycleTimerTicks();
 
+    /**
+     * @brief get the most recent cycle timer value (in CTR format)
+     *
+     * @note Uses the most appropriate method for getting the cycle timer
+     *       which is not necessarily a direct read (could be DLL)
+     */
+    uint32_t getCycleTimer();
 
-   /**
-    * @brief send async read request to a node and wait for response.
-    *
-    * This does the complete transaction and will return when it's finished.
-    *
-    * @param node target node (\todo needs 0xffc0 stuff)
-    * @param addr address to read from
-    * @param length amount of data to read in quadlets
-    * @param buffer pointer to buffer where data will be saved
+    /**
+     * @brief read the cycle timer value from the controller (in CTR format)
+     *
+     * @note Uses a direct method to read the value from the controller
+     * @return true if successful
+     */
+    bool readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time);
 
-    * @return true on success or false on failure (sets errno)
-    */
+    /**
+     * @brief provide the current system time
+     * @return 
+     */
+    uint64_t getCurrentTimeAsUsecs();
+
+    /**
+     * @brief send async read request to a node and wait for response.
+     *
+     * This does the complete transaction and will return when it's finished.
+     *
+     * @param node target node (\todo needs 0xffc0 stuff)
+     * @param addr address to read from
+     * @param length amount of data to read in quadlets
+     * @param buffer pointer to buffer where data will be saved
+     *
+     * @return true on success or false on failure (sets errno)
+     */
     bool read( fb_nodeid_t nodeId,
            fb_nodeaddr_t addr,
            size_t length,
@@ -220,7 +250,7 @@ public:
                                      nodeid_t recv_node, int recv_plug);
     bool freeIsoChannel(signed int channel);
 
-    IsoHandlerManager& getIsoHandlerManager() {return *m_isoManager;};
+    IsoHandlerManager& getIsoHandlerManager() {return *m_pIsoManager;};
 private:
     enum EAllocType {
         AllocFree = 0, // not allocated (by us)
@@ -266,7 +296,7 @@ private:
 
     raw1394handle_t m_handle;
     raw1394handle_t m_resetHandle;
-    raw1394handle_t m_rtHandle; // a handle for operations from the rt thread
+    raw1394handle_t m_util_handle; // a handle for operations from the rt thread
     int             m_port;
     std::string     m_portName;
 
@@ -274,7 +304,15 @@ private:
     pthread_mutex_t m_mutex;
     bool            m_threadRunning;
 
-    IsoHandlerManager*      m_isoManager;
+    bool            m_realtime;
+    int             m_base_priority;
+
+    IsoHandlerManager*      m_pIsoManager;
+    CycleTimerHelper*       m_pCTRHelper;
+    bool                    m_have_new_ctr_read;
+
+    // the time source
+    Util::TimeSource*   m_pTimeSource;
 
     typedef std::vector< Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;

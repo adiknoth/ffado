@@ -59,6 +59,7 @@ ffado_source = env.Split( '\
 	libieee1394/ARMHandler.cpp \
 	libieee1394/configrom.cpp \
 	libieee1394/csr1212.c \
+	libieee1394/CycleTimerHelper.cpp \
 	libieee1394/ieee1394service.cpp \
 	libieee1394/IEC61883.cpp \
 	libieee1394/IsoHandler.cpp \

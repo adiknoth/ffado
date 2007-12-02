@@ -34,8 +34,6 @@
 #define MINIMUM_INTERRUPTS_PER_PERIOD  4U
 #define PACKETS_PER_INTERRUPT          4U
 
-#define FFADO_ISOHANDLERMANAGER_PRIORITY_INCREASE 7
-
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
 using namespace Streaming;
@@ -44,14 +42,14 @@ IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service)
    : m_State(E_Created)
    , m_service( service )
    , m_poll_timeout(100), m_poll_nfds_shadow(0)
-   , m_realtime(false), m_priority(0), m_xmit_nb_frames( 20 )
+   , m_realtime(false), m_priority(0), m_isoManagerThread ( NULL )
 {}
 
-IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, unsigned int rt_prio)
+IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, int rt_prio)
    : m_State(E_Created)
    , m_service( service )
    , m_poll_timeout(100), m_poll_nfds_shadow(0)
-   , m_realtime(run_rt), m_priority(rt_prio), m_xmit_nb_frames( 20 )
+   , m_realtime(run_rt), m_priority(rt_prio), m_isoManagerThread ( NULL )
 {}
 
 IsoHandlerManager::~IsoHandlerManager()
@@ -61,17 +59,17 @@ IsoHandlerManager::~IsoHandlerManager()
 
 bool
 IsoHandlerManager::setThreadParameters(bool rt, int priority) {
+    if (priority > 98) priority = 98; // cap the priority
+    m_realtime = rt;
+    m_priority = priority;
+
     if (m_isoManagerThread) {
         if (rt) {
-            unsigned int prio = priority + FFADO_ISOHANDLERMANAGER_PRIORITY_INCREASE;
-            if (prio > 98) prio = 98;
-            m_isoManagerThread->AcquireRealTime(prio);
+            m_isoManagerThread->AcquireRealTime(m_priority);
         } else {
             m_isoManagerThread->DropRealTime();
         }
     }
-    m_realtime = rt;
-    m_priority = priority;
     return true;
 }
 
@@ -86,13 +84,10 @@ bool IsoHandlerManager::init()
 
     // the tread that performs the actual packet transfer
     // needs high priority
-    unsigned int prio = m_priority + FFADO_ISOHANDLERMANAGER_PRIORITY_INCREASE;
-    debugOutput( DEBUG_LEVEL_VERBOSE, " thread should have prio %d, base is %d...\n", prio, m_priority);
-
-    if (prio > 98) prio = 98;
+    if (m_priority > 98) m_priority = 98;
     m_isoManagerThread = new Util::PosixThread(
         this,
-        m_realtime, prio,
+        m_realtime, m_priority,
         PTHREAD_CANCEL_DEFERRED);
 
     if(!m_isoManagerThread) {
@@ -182,7 +177,7 @@ IsoHandlerManager::updateShadowVars()
 bool IsoHandlerManager::iterate()
 {
     int err;
-    int i;
+    unsigned int i;
 
     // update the shadow variables if requested
     if(m_request_fdmap_update) {
@@ -268,7 +263,6 @@ bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
 void
 IsoHandlerManager::requestShadowUpdate() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
-    int i;
 
     if (m_isoManagerThread == NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "No thread running, so no shadow variables needed.\n");
@@ -755,7 +749,6 @@ bool IsoHandlerManager::reset() {
     // if not in an error condition, reset means stop the handlers
     return stopHandlers();
 }
-
 
 void IsoHandlerManager::setVerboseLevel(int i) {
     setDebugLevel(i);
