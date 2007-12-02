@@ -161,12 +161,27 @@ try_block_of_frames:
         }
         else
         {
-            debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
+            debugOutput ( DEBUG_LEVEL_VERBOSE,
                         "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
                         fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // there is still time left to send the packet
             // we want the system to give this packet another go at a later time instant
-            return eCRV_Again;
+            return eCRV_Again; // note that the raw1394 again system doesn't work as expected
+
+            // we could wait here for a certain time before trying again. However, this
+            // is not going to work since we then block the iterator thread, hence also 
+            // the receiving code, meaning that we are not processing received packets,
+            // and hence there is no progression in the number of frames available.
+
+            // for example:
+            // usleep(125); // one cycle
+            // goto try_block_of_frames;
+
+            // or more advanced, calculate how many cycles we are ahead of 'now' and
+            // base the sleep on that.
+
+            // note that this requires that there is one thread for each IsoHandler,
+            // otherwise we're in the deadlock described above.
         }
     }
     else
@@ -204,7 +219,7 @@ try_block_of_frames:
             {
                 // we are not that late and can still try to transmit the packet
                 m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
-                return eCRV_Packet;
+                return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
             }
             else   // definitely too late
             {
@@ -215,7 +230,7 @@ try_block_of_frames:
         {
             // it's time send the packet
             m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
-            return eCRV_Packet;
+            return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
         }
         else
         {

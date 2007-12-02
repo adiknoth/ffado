@@ -308,7 +308,7 @@ MotuTransmitStreamProcessor::generatePacketData (
 #endif
 
         // Set up each frames's SPH.
-        for (unsigned int i=0; i<n_events; i++, quadlet += dbs) {
+        for (unsigned int i=0; i < n_events; i++, quadlet += dbs) {
 //FIXME: not sure which is best for the MOTU
 //            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)(i * ticks_per_frame));

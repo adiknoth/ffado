@@ -39,7 +39,7 @@
 // more robust. It should be noted though that shifting the transfer
 // time to a later time instant also causes the xmit buffer fill to be
 // lower on average.
-#define FFADO_SIGNAL_DELAY_TICKS 3072*4
+#define FFADO_SIGNAL_DELAY_TICKS (3072*1)
 
 namespace Streaming {
 

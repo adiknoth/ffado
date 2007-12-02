@@ -25,6 +25,7 @@
 #include "ieee1394service.h" 
 
 #include "libstreaming/generic/StreamProcessor.h"
+#include "libutil/PosixThread.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -83,6 +84,10 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager)
    , m_packetcount(0)
    , m_dropped(0)
    , m_Client(0)
+   , m_poll_timeout( 100 )
+   , m_realtime ( false )
+   , m_priority ( 0 )
+   , m_Thread ( NULL )
    , m_State(E_Created)
 {
 }
@@ -96,12 +101,19 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, unsigned int buf_packets, uns
    , m_packetcount(0)
    , m_dropped(0)
    , m_Client(0)
+   , m_poll_timeout( 100 )
+   , m_realtime ( false )
+   , m_priority ( 0 )
+   , m_Thread ( NULL )
    , m_State(E_Created)
 {
 }
 
 IsoHandler::~IsoHandler() {
-
+    if (m_Thread) {
+        m_Thread->Stop();
+        delete m_Thread;
+    }
 // Don't call until libraw1394's raw1394_new_handle() function has been
 // fixed to correctly initialise the iso_packet_infos field.  Bug is
 // confirmed present in libraw1394 1.2.1.  In any case,
@@ -115,20 +127,83 @@ IsoHandler::~IsoHandler() {
     }
 }
 
-bool IsoHandler::iterate() {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "IsoHandler (%p) iterate...\n",this);
+bool
+IsoHandler::Init() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%p: Init thread...\n", this);
+    m_poll_fd.fd = getFileDescriptor();
+    m_poll_fd.revents = 0;
+    if (isEnabled()) {
+        m_poll_fd.events = POLLIN;
+    } else {
+        m_poll_fd.events = 0;
+    }
+    return true;
+}
 
-    if(m_handle) {
-        if(raw1394_loop_iterate(m_handle)) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                 "IsoHandler (%p): Failed to iterate handler: %s\n",
-                 this,strerror(errno));
-            return false;
-        } else {
+bool
+IsoHandler::Execute() {
+    int err;
+
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
+    // bypass if not running
+    if (m_State != E_Running) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "%p: not polling since not running...\n", this);
+        usleep(m_poll_timeout * 1000);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "%p: done sleeping...\n", this);
+        return true;
+    }
+
+    err = poll(&m_poll_fd, 1, m_poll_timeout);
+    if (err == -1) {
+        if (errno == EINTR) {
             return true;
         }
-    } else {
+        debugFatal("%p, poll error: %s\n", this, strerror (errno));
         return false;
+    }
+
+    if (m_poll_fd.revents & POLLERR) {
+        debugWarning("error on fd for %p\n", this);
+    }
+
+    if (m_poll_fd.revents & POLLHUP) {
+        debugWarning("hangup on fd for %p\n",this);
+    }
+
+    if(m_poll_fd.revents & (POLLIN)) {
+        iterate();
+    }
+
+    return true;
+}
+
+bool
+IsoHandler::setThreadParameters(bool rt, int priority) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) (rt=%d, prio=%d)...\n", this, rt, priority);
+    if (priority > 98) priority = 98; // cap the priority
+    m_realtime = rt;
+    m_priority = priority;
+
+    if (m_Thread) {
+        if (m_realtime) {
+            m_Thread->AcquireRealTime(m_priority);
+        } else {
+            m_Thread->DropRealTime();
+        }
+    }
+    return true;
+}
+
+bool
+IsoHandler::iterate() {
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "IsoHandler (%p) iterate...\n",this);
+    if(raw1394_loop_iterate(m_handle)) {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "IsoHandler (%p): Failed to iterate handler: %s\n",
+                     this,strerror(errno));
+        return false;
+    } else {
+        return true;
     }
 }
 
@@ -165,6 +240,19 @@ IsoHandler::init()
         raw1394_set_bus_reset_handler(m_handle, busreset_handler);
     }
 
+    // create a thread to iterate ourselves
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
+    m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
+                                     PTHREAD_CANCEL_DEFERRED);
+    if(!m_Thread) {
+        debugFatal("No thread\n");
+        return false;
+    }
+    if (m_Thread->Start() != 0) {
+        debugFatal("Could not start update thread\n");
+        return false;
+    }
+
     // update the internal state
     m_State=E_Initialized;
     return true;
@@ -189,6 +277,7 @@ bool IsoHandler::prepare()
 bool IsoHandler::enable(int cycle)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    m_poll_fd.events = POLLIN;
     m_State = E_Running;
     return true;
 }
@@ -203,6 +292,8 @@ bool IsoHandler::disable()
         debugError("Incorrect state, expected E_Running, got %d\n",(int)m_State);
         return false;
     }
+
+    m_poll_fd.events = 0;
 
     // this is put here to try and avoid the
     // Runaway context problem
@@ -250,6 +341,7 @@ void IsoHandler::dumpInfo()
 void IsoHandler::setVerboseLevel(int l)
 {
     setDebugLevel(l);
+    if(m_Thread) m_Thread->setVerboseLevel(l);
 }
 
 bool IsoHandler::registerStream(StreamProcessor *stream)

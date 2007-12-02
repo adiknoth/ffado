@@ -229,7 +229,7 @@ if env['REVISION'] == 'exported':
 env['FFADO_API_VERSION']="5"
 
 env['PACKAGE'] = "libffado"
-env['VERSION'] = "1.999.8"
+env['VERSION'] = "1.999.9"
 env['LIBVERSION'] = "1.0.0"
 
 #
