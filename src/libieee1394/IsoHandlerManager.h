@@ -26,8 +26,6 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include "libutil/Thread.h"
-
 #include <sys/poll.h>
 #include <errno.h>
 
@@ -39,9 +37,6 @@
 #define USLEEP_AFTER_UPDATE 100
 #define MAX_UPDATE_TRIES 10
 class Ieee1394Service;
-namespace Util {
-    class PosixThread;
-}
 
 class IsoHandler;
 namespace Streaming {
@@ -65,7 +60,7 @@ typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
  it can be assigned.
 
 */
-class IsoHandlerManager : public Util::RunnableInterface
+class IsoHandlerManager
 {
     friend class Streaming::StreamProcessorManager;
 
@@ -76,9 +71,6 @@ class IsoHandlerManager : public Util::RunnableInterface
         virtual ~IsoHandlerManager();
 
         bool setThreadParameters(bool rt, int priority);
-
-        void setPollTimeout(int t) {m_poll_timeout=t;}; ///< set the timeout used for poll()
-        int getPollTimeout() {return m_poll_timeout;};  ///< get the timeout used for poll()
 
         void setVerboseLevel(int l); ///< set the verbose level
 
@@ -114,14 +106,6 @@ class IsoHandlerManager : public Util::RunnableInterface
         void flushHandlerForStream(Streaming::StreamProcessor *stream);
 
         Ieee1394Service& get1394Service() {return m_service;};
-    // RunnableInterface interface
-    public:
-        bool Execute(); // note that this is called in we while(running) loop
-        bool Init();
-        
-        // protects the operations on the lists 
-        // (FIXME: should be changed into a lock-free approach)
-        pthread_mutex_t m_list_lock;
 
     // the state machine
     private:
@@ -134,9 +118,6 @@ class IsoHandlerManager : public Util::RunnableInterface
 
         enum eHandlerStates m_State;
         const char *eHSToString(enum eHandlerStates);
-    private:
-        /// iterate all child handlers
-        bool iterate();
 
     private:
         Ieee1394Service&  m_service;
@@ -158,23 +139,9 @@ class IsoHandlerManager : public Util::RunnableInterface
         // the collection of streams
         Streaming::StreamProcessorVector m_StreamProcessors;
 
-        // poll stuff
-        int m_poll_timeout;
-        // FD map sync requested
-        int32_t m_request_fdmap_update;
-        void updateShadowVars();
-
-        // shadow variables
-        struct pollfd m_poll_fds_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
-        IsoHandler *m_IsoHandler_map_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
-        unsigned int m_poll_nfds_shadow;
-
-        void requestShadowUpdate();
-
-        // threading
+        // thread params for the handler threads
         bool m_realtime;
         int m_priority;
-        Util::PosixThread *m_isoManagerThread;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

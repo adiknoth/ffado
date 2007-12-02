@@ -27,7 +27,9 @@
 #include "debugmodule/debugmodule.h"
 #include "IsoHandlerManager.h"
 
-enum raw1394_iso_disposition ;
+#include "libutil/Thread.h"
+
+enum raw1394_iso_disposition;
 
 namespace Streaming {
     class StreamProcessor;
@@ -42,7 +44,7 @@ namespace Streaming {
 
 */
 
-class IsoHandler
+class IsoHandler : public Util::RunnableInterface
 {
 public:
     enum EHandlerType {
@@ -51,8 +53,13 @@ public:
     };
     IsoHandler(IsoHandlerManager& manager);
     IsoHandler(IsoHandlerManager& manager, unsigned int buf_packets, unsigned int max_packet_size, int irq);
-
     virtual ~IsoHandler();
+
+    // runnable interface
+    virtual bool Init();
+    virtual bool Execute();
+    int getFileDescriptor() { return raw1394_get_fd(m_handle);};
+    bool setThreadParameters(bool rt, int priority);
 
     virtual bool init();
     virtual bool prepare();
@@ -82,8 +89,6 @@ public:
 
     virtual enum EHandlerType getType() = 0;
 
-    int getFileDescriptor() { return raw1394_get_fd(m_handle);};
-
     virtual void dumpInfo();
 
     bool inUse() {return (m_Client != 0) ;};
@@ -107,6 +112,13 @@ public:
         DECLARE_DEBUG_MODULE;
     private:
         static int busreset_handler(raw1394handle_t handle, unsigned int generation);
+
+        struct pollfd   m_poll_fd;
+        int             m_poll_timeout;
+        // threading
+        bool            m_realtime;
+        int             m_priority;
+        Util::Thread *  m_Thread;
 
     // the state machine
     protected:

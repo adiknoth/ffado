@@ -1011,15 +1011,15 @@ ffado_timestamp_t TimestampedBuffer::getTimestampFromTail(int nframes)
     
     ENTER_CRITICAL_SECTION;
 
-    diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    timestamp=m_buffer_tail_timestamp;
+    diff = m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
+    timestamp = m_buffer_tail_timestamp;
     
     EXIT_CRITICAL_SECTION;
     
     if (diff < 0) diff += m_wrap_at;
-    rate=(float)diff / (float)m_update_period;
+    rate = (float)diff / (float)m_update_period;
 
-    timestamp-=(ffado_timestamp_t)((nframes) * rate);
+    timestamp -= (ffado_timestamp_t)((nframes) * rate);
 
     if(timestamp >= m_wrap_at) {
         timestamp -= m_wrap_at;

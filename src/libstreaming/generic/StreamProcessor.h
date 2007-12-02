@@ -201,6 +201,7 @@ protected: // the helper receive/transmit functions
         eCRV_EmptyPacket,
         eCRV_XRun,
         eCRV_Again,
+        eCRV_Defer,
     };
     // to be implemented by the children
     // the following methods are to be implemented by receive SP subclasses

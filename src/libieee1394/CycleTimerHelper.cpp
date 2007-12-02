@@ -85,9 +85,6 @@ CycleTimerHelper::Start()
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
-        debugFatal("Could not create update thread\n");
-    }
-    if(!m_Thread) {
         debugFatal("No thread\n");
         return false;
     }
@@ -141,14 +138,14 @@ CycleTimerHelper::getNominalRate()
 bool
 CycleTimerHelper::Execute()
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
+    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "Execute %p...\n", this);
     uint32_t cycle_timer;
     uint64_t local_time;
     if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
         debugError("Could not read cycle timer register\n");
         return false;
     }
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                     cycle_timer, local_time);
 
     double usecs_late;
@@ -168,7 +165,7 @@ CycleTimerHelper::Execute()
     } else {
 
         double diff = m_next_time_usecs - m_current_time_usecs;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: local: %11llu current: %f next: %f, diff: %f\n",
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " usecs: local: %11llu current: %f next: %f, diff: %f\n",
                     local_time, m_current_time_usecs, m_next_time_usecs, diff);
 
         uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
@@ -177,7 +174,7 @@ CycleTimerHelper::Execute()
         // we update the x-axis values
         m_current_time_usecs = m_next_time_usecs;
         m_next_time_usecs = (local_time - usecs_late) + m_usecs_per_update;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
                     m_current_time_usecs, m_next_time_usecs, usecs_late);
 
         // and the y-axis values
@@ -186,10 +183,10 @@ CycleTimerHelper::Execute()
         m_next_time_ticks = addTicks((uint64_t)m_current_time_ticks,
                                      (uint64_t)((DLL_COEFF_B * diff_ticks) + m_dll_e2));
         m_dll_e2 += DLL_COEFF_C * diff_ticks;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
                     m_current_time_ticks, m_next_time_ticks, diff_ticks);
 
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
                     local_time, m_dll_e2, getRate());
     }
 
@@ -208,7 +205,7 @@ CycleTimerHelper::Execute()
     time_to_sleep -= (int64_t)m_avg_wakeup_delay;
     //int64_t time_to_sleep = m_usecs_per_update;
     if (time_to_sleep > 0) {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " sleeping %lld usecs (avg delay: %f)\n", time_to_sleep, m_avg_wakeup_delay);
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " sleeping %lld usecs (avg delay: %f)\n", time_to_sleep, m_avg_wakeup_delay);
         usleep(time_to_sleep);
     }
     return true;
@@ -240,7 +237,9 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
     } else {
-        debugWarning("y_step_in_ticks_int <= 0: %lld\n", y_step_in_ticks_int);
+        // this can happen if the update thread was woken up earlier than it should have been
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f\n", 
+                     y_step_in_ticks_int, time_diff, my_vars.rate);
         retval = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
     }
 

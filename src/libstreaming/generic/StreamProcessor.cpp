@@ -235,7 +235,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
         if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
         if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u\n", this, dropped_cycles, cycle);
+            debugWarning("(%p) dropped %d packets on cycle %u, 'dropped'=%u, cycle=%d, m_last_cycle=%d\n",
+                this, dropped_cycles, cycle, dropped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
         }
     }
@@ -443,7 +444,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     int cycle_diff = diffCycles(cycle, now_cycles);
 
     #ifdef DEBUG
-    if(cycle_diff < 0) {
+    if(cycle_diff < 0 && (m_state == ePS_Running || m_state == ePS_DryRunning)) {
         debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
             cycle, now_cycles);
     }
@@ -540,7 +541,12 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 }
                 goto send_empty_packet;
             }
-            return RAW1394_ISO_OK;
+            // skip queueing packets if we detect that there are not enough frames
+            // available
+            if(result2 == eCRV_Defer)
+                return RAW1394_ISO_DEFER;
+            else
+                return RAW1394_ISO_OK;
         } else if (result == eCRV_XRun) { // pick up the possible xruns
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to header xrun\n");
             m_in_xrun = true;
@@ -562,20 +568,20 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 }
             }
             goto send_empty_packet;
-//         } else if (result == eCRV_Again) {
-//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", cycle);
-//             if(m_state != m_next_state) {
-//                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
-//                                                 ePSToString(m_state), ePSToString(m_next_state));
-//                 // execute the requested change
-//                 if (!updateState()) { // we are allowed to change the state directly
-//                     debugError("Could not update state!\n");
-//                     return RAW1394_ISO_ERROR;
-//                 }
-//             }
-            // force some delay
-//             usleep(125);
-//             return RAW1394_ISO_AGAIN;
+        } else if (result == eCRV_Again) {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", cycle);
+            if(m_state != m_next_state) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
+                                                ePSToString(m_state), ePSToString(m_next_state));
+                // execute the requested change
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    return RAW1394_ISO_ERROR;
+                }
+            }
+            //force some delay
+            usleep(125);
+            return RAW1394_ISO_AGAIN;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
