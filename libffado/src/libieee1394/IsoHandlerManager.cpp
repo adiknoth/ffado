@@ -55,6 +55,7 @@ IsoHandlerManager::~IsoHandlerManager()
 
 bool
 IsoHandlerManager::setThreadParameters(bool rt, int priority) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
     if (priority > 98) priority = 98; // cap the priority
     m_realtime = rt;
     m_priority = priority;
@@ -251,8 +252,8 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         //max_packet_size = getpagesize(); // HACK
         //irq_interval=2; // HACK
         // create the actual handler
-        h = new IsoRecvHandler(*this, buffers,
-                                               max_packet_size, irq_interval);
+        h = new IsoHandler(*this, IsoHandler::eHT_Receive,
+                           buffers, max_packet_size, irq_interval);
         if(!h) {
             debugFatal("Could not create IsoRecvHandler\n");
             return false;
@@ -298,8 +299,8 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         int buffers = stream->getNbPacketsIsoXmitBuffer();
 
         // create the actual handler
-        h = new IsoXmitHandler(*this, buffers,
-                                               max_packet_size, irq_interval);
+        h = new IsoHandler(*this, IsoHandler::eHT_Transmit,
+                           buffers, max_packet_size, irq_interval);
 
         debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoXmitHandler\n");
 

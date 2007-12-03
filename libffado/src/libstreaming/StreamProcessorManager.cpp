@@ -51,8 +51,8 @@ StreamProcessorManager::StreamProcessorManager()
     , m_nb_buffers( 0 )
     , m_period( 0 )
     , m_nominal_framerate ( 0 )
-    , m_xruns(0)
     , m_xrun_happened( false )
+    , m_xruns(0)
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
@@ -475,7 +475,7 @@ StreamProcessorManager::alignReceivedStreams()
             StreamProcessor *s = m_ReceiveProcessors.at(i);
 
             diff_between_streams[i] /= NB_PERIODS_FOR_ALIGN_AVERAGE;
-            diff_between_streams_frames[i] = roundf(diff_between_streams[i] / s->getTicksPerFrame());
+            diff_between_streams_frames[i] = (int)roundf(diff_between_streams[i] / s->getTicksPerFrame());
             debugOutput( DEBUG_LEVEL_VERBOSE, "   avg offset between SyncSP %p and SP %p is %lld ticks, %d frames...\n", 
                 m_SyncSource, s, diff_between_streams[i], diff_between_streams_frames[i]);
 

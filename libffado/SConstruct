@@ -175,7 +175,7 @@ install the needed packages (remember to also install the *-devel packages)
 if env['DEBUG']:
 	print "Doing a DEBUG build"
 	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
-	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
+	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] ) # HACK!!
 else:
 	env.AppendUnique( CCFLAGS=["-O2","-DNDEBUG"] )
 

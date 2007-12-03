@@ -212,8 +212,6 @@ int
 iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *ptz,
 		struct iec61883_packet *packet)
 {
-  int nevents;
-
   packet->eoh0 = 0;
 
   /* Our node ID can change after a bus reset, so it is best to fetch
@@ -234,5 +232,5 @@ iec61883_cip_fill_header_nodata(int node_id, struct iec61883_cip *ptz,
 
   ptz->dbc += ptz->syt_interval;
 
-  return nevents;
+  return 0;
 }

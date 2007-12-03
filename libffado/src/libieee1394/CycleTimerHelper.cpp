@@ -105,7 +105,7 @@ CycleTimerHelper::Init()
 
 bool
 CycleTimerHelper::setThreadParameters(bool rt, int priority) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) (rt=%d, prio=%d)...\n", this, rt, priority);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
     if (priority > 98) priority = 98; // cap the priority
     m_realtime = rt;
     m_priority = priority;
@@ -134,6 +134,35 @@ CycleTimerHelper::getNominalRate()
     float rate = ((double)TICKS_PER_SECOND) / 1000000.0;
     return rate;
 }
+
+//#define OLD_STYLE
+#ifdef OLD_STYLE
+
+bool
+CycleTimerHelper::Execute()
+{
+    usleep(m_usecs_per_update);
+    return true;
+}
+uint32_t
+CycleTimerHelper::getCycleTimerTicks()
+{
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
+        debugError("Could not read cycle timer register\n");
+        return false;
+    }
+    return CYCLE_TIMER_TO_TICKS(cycle_timer);
+}
+
+uint32_t
+CycleTimerHelper::getCycleTimerTicks(uint64_t now)
+{
+    return getCycleTimerTicks();
+}
+
+#else
 
 bool
 CycleTimerHelper::Execute()
@@ -245,6 +274,7 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 
     return retval;
 }
+#endif
 
 uint32_t
 CycleTimerHelper::getCycleTimer()
