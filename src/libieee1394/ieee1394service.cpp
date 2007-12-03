@@ -44,7 +44,7 @@
 
 #define FFADO_MAX_FIREWIRE_PORTS 16
 
-#define ISOMANAGER_PRIO_INCREASE         10
+#define ISOMANAGER_PRIO_INCREASE         11
 #define CYCLETIMER_HELPER_PRIO_INCREASE  10
 
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
@@ -273,19 +273,21 @@ Ieee1394Service::initialize( int port )
 
 bool
 Ieee1394Service::setThreadParameters(bool rt, int priority) {
+    bool result = true;
     if (priority > 98) priority = 98;
     m_base_priority = priority;
     m_realtime = rt;
     if (m_pIsoManager) {
-        return m_pIsoManager->setThreadParameters(rt, priority + ISOMANAGER_PRIO_INCREASE);
-    } else {
-        return true;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Switching IsoManager to (rt=%d, prio=%d)\n",
+                                         rt, priority + ISOMANAGER_PRIO_INCREASE);
+        result &= m_pIsoManager->setThreadParameters(rt, priority + ISOMANAGER_PRIO_INCREASE);
     }
     if (m_pCTRHelper) {
-        return m_pCTRHelper->setThreadParameters(rt, priority + CYCLETIMER_HELPER_PRIO_INCREASE);
-    } else {
-        return true;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Switching CycleTimerHelper to (rt=%d, prio=%d)\n", 
+                                         rt, priority + CYCLETIMER_HELPER_PRIO_INCREASE);
+        result &= m_pCTRHelper->setThreadParameters(rt, priority + CYCLETIMER_HELPER_PRIO_INCREASE);
     }
+    return result;
 }
 
 int
@@ -314,21 +316,9 @@ Ieee1394Service::getCycleTimerTicks() {
  *
  * @return the current value of the cycle timer (as is)
  */
-
 uint32_t
 Ieee1394Service::getCycleTimer() {
-    // the new api should be realtime safe.
-    // it might cause a reschedule when turning preemption,
-    // back on but that won't hurt us if we have sufficient
-    // priority
-    int err;
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    err=raw1394_read_cycle_timer(m_util_handle, &cycle_timer, &local_time);
-    if(err) {
-        debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
-    }
-    return cycle_timer;
+    return m_pCTRHelper->getCycleTimer();
 }
 
 bool

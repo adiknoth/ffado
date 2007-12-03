@@ -48,30 +48,56 @@ class IsoHandler : public Util::RunnableInterface
 {
 public:
     enum EHandlerType {
-            EHT_Receive,
-            EHT_Transmit
+            eHT_Receive,
+            eHT_Transmit
     };
-    IsoHandler(IsoHandlerManager& manager);
-    IsoHandler(IsoHandlerManager& manager, unsigned int buf_packets, unsigned int max_packet_size, int irq);
-    virtual ~IsoHandler();
+    IsoHandler(IsoHandlerManager& manager, enum EHandlerType t);
+    IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
+               unsigned int buf_packets, unsigned int max_packet_size, int irq);
+    IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
+               unsigned int buf_packets, unsigned int max_packet_size, int irq, enum raw1394_iso_speed speed);
+    ~IsoHandler();
 
+private: // the ISO callback interface
+    static enum raw1394_iso_disposition
+    iso_receive_handler(raw1394handle_t handle, unsigned char *data,
+                        unsigned int length, unsigned char channel,
+                        unsigned char tag, unsigned char sy, unsigned int cycle,
+                        unsigned int dropped);
+
+    enum raw1394_iso_disposition
+            putPacket(unsigned char *data, unsigned int length,
+                        unsigned char channel, unsigned char tag, unsigned char sy,
+                        unsigned int cycle, unsigned int dropped);
+
+    static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
+                    unsigned char *data, unsigned int *length,
+                    unsigned char *tag, unsigned char *sy,
+                    int cycle, unsigned int dropped);
+    enum raw1394_iso_disposition
+            getPacket(unsigned char *data, unsigned int *length,
+                    unsigned char *tag, unsigned char *sy,
+                    int cycle, unsigned int dropped);
+
+public:
     // runnable interface
-    virtual bool Init();
-    virtual bool Execute();
+    bool Init();
+    bool Execute();
     int getFileDescriptor() { return raw1394_get_fd(m_handle);};
     bool setThreadParameters(bool rt, int priority);
 
-    virtual bool init();
-    virtual bool prepare();
+    bool init();
+    bool prepare();
 
     bool iterate();
     void setVerboseLevel(int l);
 
-    virtual bool enable() {return enable(-1);};
-    virtual bool enable(int cycle);
-    virtual bool disable();
+    bool enable() {return enable(-1);};
+    bool enable(int cycle);
+    bool disable();
 
-    virtual void flush() = 0;
+    void flush();
+    enum EHandlerType getType() {return m_type;};
 
     bool isEnabled()
         {return m_State == E_Running;};
@@ -87,123 +113,53 @@ public:
     int getDroppedCount() {return m_dropped;};
     void resetDroppedCount() {m_dropped=0;};
 
-    virtual enum EHandlerType getType() = 0;
+    unsigned int getPreBuffers() {return m_prebuffers;};
+    void setPreBuffers(unsigned int n) {m_prebuffers=n;};
 
-    virtual void dumpInfo();
+    void dumpInfo();
 
     bool inUse() {return (m_Client != 0) ;};
-    virtual bool isStreamRegistered(Streaming::StreamProcessor *s) {return (m_Client == s);};
+    bool isStreamRegistered(Streaming::StreamProcessor *s) {return (m_Client == s);};
 
-    virtual bool registerStream(Streaming::StreamProcessor *);
-    virtual bool unregisterStream(Streaming::StreamProcessor *);
+    bool registerStream(Streaming::StreamProcessor *);
+    bool unregisterStream(Streaming::StreamProcessor *);
 
-    protected:
-        IsoHandlerManager& m_manager;
-        raw1394handle_t m_handle;
-        unsigned int    m_buf_packets;
-        unsigned int    m_max_packet_size;
-        int             m_irq_interval;
+private:
+    IsoHandlerManager& m_manager;
+    enum EHandlerType m_type;
+    raw1394handle_t m_handle;
+    unsigned int    m_buf_packets;
+    unsigned int    m_max_packet_size;
+    int             m_irq_interval;
 
-        int m_packetcount;
-        int m_dropped;
-        Streaming::StreamProcessor *m_Client;
+    int m_packetcount;
+    int m_dropped;
+    Streaming::StreamProcessor *m_Client;
 
-        virtual int handleBusReset(unsigned int generation);
-        DECLARE_DEBUG_MODULE;
-    private:
-        static int busreset_handler(raw1394handle_t handle, unsigned int generation);
+    int handleBusReset(unsigned int generation);
 
-        struct pollfd   m_poll_fd;
-        int             m_poll_timeout;
-        // threading
-        bool            m_realtime;
-        int             m_priority;
-        Util::Thread *  m_Thread;
+    static int busreset_handler(raw1394handle_t handle, unsigned int generation);
+
+    struct pollfd   m_poll_fd;
+    int             m_poll_timeout;
+    // threading
+    bool            m_realtime;
+    int             m_priority;
+    Util::Thread *  m_Thread;
+
+    enum raw1394_iso_speed m_speed;
+    unsigned int m_prebuffers;
 
     // the state machine
-    protected:
-        enum EHandlerStates {
-            E_Created,
-            E_Initialized,
-            E_Prepared,
-            E_Running,
-            E_Error
-        };
-        enum EHandlerStates m_State;
-};
-
-/*!
-\brief ISO receive handler class (not multichannel)
-*/
-
-class IsoRecvHandler : public IsoHandler
-{
-
-    public:
-        IsoRecvHandler(IsoHandlerManager& manager);
-        IsoRecvHandler(IsoHandlerManager& manager, unsigned int buf_packets, unsigned int max_packet_size, int irq);
-        virtual ~IsoRecvHandler();
-
-        bool init();
-        enum EHandlerType getType() { return EHT_Receive;};
-        bool enable(int cycle);
-        virtual bool prepare();
-        virtual void flush();
-
-    protected:
-        int handleBusReset(unsigned int generation);
-    private:
-        static enum raw1394_iso_disposition
-        iso_receive_handler(raw1394handle_t handle, unsigned char *data,
-                            unsigned int length, unsigned char channel,
-                            unsigned char tag, unsigned char sy, unsigned int cycle,
-                            unsigned int dropped);
-
-        enum raw1394_iso_disposition
-                putPacket(unsigned char *data, unsigned int length,
-                          unsigned char channel, unsigned char tag, unsigned char sy,
-                          unsigned int cycle, unsigned int dropped);
-};
-
-/*!
-\brief ISO transmit handler class
-*/
-
-class IsoXmitHandler  : public IsoHandler
-{
-    public:
-        IsoXmitHandler(IsoHandlerManager& manager);
-        IsoXmitHandler(IsoHandlerManager& manager, unsigned int buf_packets,
-                        unsigned int max_packet_size, int irq);
-        IsoXmitHandler(IsoHandlerManager& manager, unsigned int buf_packets,
-                        unsigned int max_packet_size, int irq,
-                        enum raw1394_iso_speed speed);
-        virtual ~IsoXmitHandler();
-
-        bool init();
-        enum EHandlerType getType() { return EHT_Transmit;};
-        unsigned int getPreBuffers() {return m_prebuffers;};
-        void setPreBuffers(unsigned int n) {m_prebuffers=n;};
-        virtual bool enable(int cycle);
-        virtual bool prepare();
-        virtual void flush() {};
-
-        void dumpInfo();
-    protected:
-        int handleBusReset(unsigned int generation);
-
-    private:
-        static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
-                        unsigned char *data, unsigned int *length,
-                        unsigned char *tag, unsigned char *sy,
-                        int cycle, unsigned int dropped);
-        enum raw1394_iso_disposition
-                getPacket(unsigned char *data, unsigned int *length,
-                        unsigned char *tag, unsigned char *sy,
-                        int cycle, unsigned int dropped);
-
-        enum raw1394_iso_speed m_speed;
-        unsigned int m_prebuffers;
+    enum EHandlerStates {
+        E_Created,
+        E_Initialized,
+        E_Prepared,
+        E_Running,
+        E_Error
+    };
+    enum EHandlerStates m_State;
+    DECLARE_DEBUG_MODULE;
 };
 
 #endif /* __FFADO_ISOHANDLER__  */
