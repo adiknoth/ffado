@@ -68,6 +68,7 @@ Build the tests in their directory. As some contain quite some functionality,
   this is on by default.
   If you just want to use ffado with jack without the tools, you can disable this.\
 """, True ),
+    BoolOption( "BUILD_STATIC_TOOLS", "Build a statically linked version of the FFADO tools.", False ),
 	)
 
 ## Load the builders in config
@@ -196,6 +197,11 @@ if env['ENABLE_ALL']:
 
 if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
 	env['ENABLE_GENERICAVC'] = True
+
+env['BUILD_STATIC_LIB'] = False
+if env['BUILD_STATIC_TOOLS']:
+    print "Building static versions of the tools..."
+    env['BUILD_STATIC_LIB'] = True
 
 if build_base:
 	env['build_base']="#/"+build_base

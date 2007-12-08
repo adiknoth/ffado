@@ -224,6 +224,9 @@ if not env.GetOption( "clean" ):
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )
 
+if libenv['BUILD_STATIC_LIB']:
+    ffadolib_static = libenv.StaticLibrary( "ffado", source )
+
 for file in version_dependent_files:
     Depends(file, '#/config.h')
     NoCache(file)
