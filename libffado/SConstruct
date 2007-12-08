@@ -22,6 +22,7 @@
 #
 
 import os
+import re
 from string import Template
 
 build_dir = ARGUMENTS.get('BUILDDIR', "")
@@ -69,6 +70,9 @@ Build the tests in their directory. As some contain quite some functionality,
   If you just want to use ffado with jack without the tools, you can disable this.\
 """, True ),
     BoolOption( "BUILD_STATIC_TOOLS", "Build a statically linked version of the FFADO tools.", False ),
+    EnumOption('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'none' ), ignorecase=2),
+    BoolOption( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
+
 	)
 
 ## Load the builders in config
@@ -222,6 +226,67 @@ env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
 env.Alias( "install", env['sharedir'] )
 env.Alias( "install", env['bindir'] )
+
+#
+# shamelessly copied from the Ardour scons file
+#
+
+opt_flags = []
+env['USE_SSE'] = 0
+
+# guess at the platform, used to define compiler flags
+
+config_guess = os.popen("admin/config.guess").read()[:-1]
+
+config_cpu = 0
+config_arch = 1
+config_kernel = 2
+config_os = 3
+config = config_guess.split ("-")
+
+print "system triple: " + config_guess
+
+# Autodetect
+if env['DIST_TARGET'] == 'auto':
+    if re.search ("x86_64", config[config_cpu]) != None:
+        env['DIST_TARGET'] = 'x86_64'
+    elif re.search("i[0-5]86", config[config_cpu]) != None:
+        env['DIST_TARGET'] = 'i386'
+    else:
+        env['DIST_TARGET'] = 'i686'
+    print "Detected DIST_TARGET = " + env['DIST_TARGET']
+
+if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64", config[config_cpu]) != None)):
+    
+    build_host_supports_sse = 0
+
+    if config[config_kernel] == 'linux' :
+        
+        if env['DIST_TARGET'] != 'i386':
+            
+            flag_line = os.popen ("cat /proc/cpuinfo | grep '^flags'").read()[:-1]
+            x86_flags = flag_line.split (": ")[1:][0].split ()
+            
+            if "mmx" in x86_flags:
+                opt_flags.append ("-mmmx")
+            if "sse" in x86_flags:
+                build_host_supports_sse = 1
+            if "3dnow" in x86_flags:
+                opt_flags.append ("-m3dnow")
+            
+            if config[config_cpu] == "i586":
+                opt_flags.append ("-march=i586")
+            elif config[config_cpu] == "i686":
+                opt_flags.append ("-march=i686")
+    
+    if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) and build_host_supports_sse:
+        opt_flags.extend (["-msse", "-mfpmath=sse"])
+        env['USE_SSE'] = 1
+
+# end of processor-specific section
+if env['ENABLE_OPTIMIZATIONS']:
+	env.AppendUnique( CCFLAGS=opt_flags )
+	print "Doing an optimized build..."
 
 
 env['REVISION'] = os.popen('svnversion .').read()[:-1]

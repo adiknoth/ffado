@@ -27,7 +27,7 @@
 #define FFADO_API_VERSION $FFADO_API_VERSION
 
 /* Define to 1 if SSE assembly is available. */
-/*#define USE_SSE 1*/
+#define USE_SSE $USE_SSE
 
 #define CACHEDIR "~/.ffado"
 
