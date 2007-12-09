@@ -350,9 +350,9 @@ AvDevice::getConfigurationIdSyncMode()
       = dynamic_cast<SignalUnitAddress*>( pSyncPlugSignalAddress );
     if ( pSyncPlugUnitAddress ) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Sync mode 0x%02x\n",
-                      0xff << 8 | pSyncPlugSubunitAddress->m_plugId );
+                      0xff << 8 | pSyncPlugUnitAddress->m_plugId );
 
-        return ( 0xff << 8 | pSyncPlugSubunitAddress->m_plugId );
+        return ( 0xff << 8 | pSyncPlugUnitAddress->m_plugId );
     }
 
     debugError( "Could not retrieve sync mode\n" );
