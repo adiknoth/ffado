@@ -144,7 +144,7 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
 
 void
 StreamProcessor::setSyncDelay(int d) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %d ticks\n", this, d);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Setting SP %p SyncDelay to %d ticks\n", this, d);
     m_sync_delay = d;
 }
 
@@ -233,11 +233,15 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     int dropped_cycles = 0;
     if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-        if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
+        if (dropped_cycles < 0) {
+            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d\n", 
+                         this, dropped_cycles, cycle, m_last_cycle, dropped);
+        }
         if (dropped_cycles > 0) {
             debugWarning("(%p) dropped %d packets on cycle %u, 'dropped'=%u, cycle=%d, m_last_cycle=%d\n",
                 this, dropped_cycles, cycle, dropped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
+            m_in_xrun = true;
         }
     }
     m_last_cycle = cycle;
@@ -409,7 +413,10 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     int dropped_cycles = 0;
     if (m_last_cycle != cycle && m_last_cycle != -1) {
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-        if (dropped_cycles < 0) debugWarning("(%p) dropped < 1 (%d)\n", this, dropped_cycles);
+        if (dropped_cycles < 0) { 
+            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d\n", 
+                         this, dropped_cycles, cycle, m_last_cycle, dropped);
+        }
         if (dropped_cycles > 0) {
             debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d)\n", this, dropped_cycles, cycle, m_last_cycle, dropped);
             m_dropped += dropped_cycles;
@@ -507,7 +514,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     else if(m_state == ePS_Running) {
         // check the packet header
         enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-        if (result == eCRV_Packet) {
+        if (result == eCRV_Packet || result == eCRV_Defer) {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT: CY=%04u TS=%011llu\n",
                     cycle, m_last_timestamp);
             // update some accounting
@@ -543,7 +550,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
             // skip queueing packets if we detect that there are not enough frames
             // available
-            if(result2 == eCRV_Defer)
+            if(result2 == eCRV_Defer || result == eCRV_Defer)
                 return RAW1394_ISO_DEFER;
             else
                 return RAW1394_ISO_OK;

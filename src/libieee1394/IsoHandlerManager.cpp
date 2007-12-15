@@ -28,9 +28,11 @@
 
 #include "libutil/Atomic.h"
 
+#include "libutil/PosixThread.h"
+
 #include <assert.h>
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD  8U
+#define MINIMUM_INTERRUPTS_PER_PERIOD  4U
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
@@ -40,17 +42,23 @@ IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service)
    : m_State(E_Created)
    , m_service( service )
    , m_realtime(false), m_priority(0)
+   , m_Thread ( NULL )
 {}
 
 IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, int rt_prio)
    : m_State(E_Created)
    , m_service( service )
    , m_realtime(run_rt), m_priority(rt_prio)
+   , m_Thread ( NULL )
 {}
 
 IsoHandlerManager::~IsoHandlerManager()
 {
     stopHandlers();
+    if (m_Thread) {
+        m_Thread->Stop();
+        delete m_Thread;
+    }
 }
 
 bool
@@ -66,7 +74,125 @@ IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     {
         result &= (*it)->setThreadParameters(m_realtime, m_priority);
     }
+
+    if (m_Thread) {
+        if (m_realtime) {
+            m_Thread->AcquireRealTime(m_priority);
+        } else {
+            m_Thread->DropRealTime();
+        }
+    }
+
     return result;
+}
+
+/**
+ * Update the shadow variables. Should only be called from
+ * the iso handler iteration thread
+ */
+void
+IsoHandlerManager::updateShadowVars()
+{
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "updating shadow vars...\n");
+    unsigned int i;
+    m_poll_nfds_shadow = m_IsoHandlers.size();
+    if(m_poll_nfds_shadow > FFADO_MAX_ISO_HANDLERS_PER_PORT) {
+        debugWarning("Too much ISO Handlers in manager...\n");
+        m_poll_nfds_shadow = FFADO_MAX_ISO_HANDLERS_PER_PORT;
+    }
+    for (i = 0; i < m_poll_nfds_shadow; i++) {
+        IsoHandler *h = m_IsoHandlers.at(i);
+        assert(h);
+        m_IsoHandler_map_shadow[i] = h;
+
+        m_poll_fds_shadow[i].fd = h->getFileDescriptor();
+        m_poll_fds_shadow[i].revents = 0;
+        if (h->isEnabled()) {
+            m_poll_fds_shadow[i].events = POLLIN;
+        } else {
+            m_poll_fds_shadow[i].events = 0;
+        }
+    }
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " updated shadow vars...\n");
+}
+
+bool
+IsoHandlerManager::Init() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%p: Init thread...\n", this);
+    bool result = true;
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+        it != m_IsoHandlers.end();
+        ++it )
+    {
+        result &= (*it)->Init();
+    }
+    return result;
+}
+
+bool
+IsoHandlerManager::Execute() {
+    int err;
+    unsigned int i;
+
+    unsigned int m_poll_timeout = 100;
+
+    // update the shadow variables if requested
+   // if(m_request_fdmap_update) {
+        updateShadowVars();
+    //    ZERO_ATOMIC((SInt32*)&m_request_fdmap_update);
+    //}
+
+    // bypass if no handlers are registered
+    if (m_poll_nfds_shadow == 0) {
+        usleep(m_poll_timeout * 1000);
+        return true;
+    }
+
+    // Use a shadow map of the fd's such that the poll call is not in a critical section
+    uint64_t poll_enter = m_service.getCurrentTimeAsUsecs();
+    err = poll (m_poll_fds_shadow, m_poll_nfds_shadow, m_poll_timeout);
+    uint64_t poll_exit = m_service.getCurrentTimeAsUsecs();
+
+    if (err == -1) {
+        if (errno == EINTR) {
+            return true;
+        }
+        debugFatal("poll error: %s\n", strerror (errno));
+        return false;
+    }
+
+    int nb_rcv = 0;
+    int nb_xmit = 0;
+    uint64_t iter_enter = m_service.getCurrentTimeAsUsecs();
+    for (i = 0; i < m_poll_nfds_shadow; i++) {
+        if(m_poll_fds_shadow[i].revents) {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "received events: %08X for (%p)\n",
+                m_poll_fds_shadow[i].revents, m_IsoHandler_map_shadow[i]);
+        }
+        if (m_poll_fds_shadow[i].revents & POLLERR) {
+            debugWarning("error on fd for %d\n",i);
+        }
+
+        if (m_poll_fds_shadow[i].revents & POLLHUP) {
+            debugWarning("hangup on fd for %d\n",i);
+        }
+
+        if(m_poll_fds_shadow[i].revents & (POLLIN)) {
+            m_IsoHandler_map_shadow[i]->iterate();
+            if (m_IsoHandler_map_shadow[i]->getType() == IsoHandler::eHT_Receive) {
+                nb_rcv++;
+            } else {
+                nb_xmit++;
+            }
+        }
+    }
+    uint64_t iter_exit = m_service.getCurrentTimeAsUsecs();
+    
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
+                poll_exit-poll_enter, iter_exit-iter_enter,
+                nb_rcv, nb_xmit);
+
+    return true;
 }
 
 bool IsoHandlerManager::init()
@@ -77,6 +203,21 @@ bool IsoHandlerManager::init()
         debugError("Manager already initialized...\n");
         return false;
     }
+
+#ifndef THREAD_PER_ISOHANDLER
+    // create a thread to iterate our handlers
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
+    m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
+                                     PTHREAD_CANCEL_DEFERRED);
+    if(!m_Thread) {
+        debugFatal("No thread\n");
+        return false;
+    }
+    if (m_Thread->Start() != 0) {
+        debugFatal("Could not start update thread\n");
+        return false;
+    }
+#endif
 
     m_State=E_Running;
     return true;
@@ -196,7 +337,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
         // NOTE: try and use MINIMUM_INTERRUPTS_PER_PERIOD hardware interrupts
         //       per period for better latency.
-        unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()) / packets_per_period;
+        unsigned int max_packet_size=(MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize()/2) / packets_per_period;
 
         if (max_packet_size < stream->getMaxPacketSize()) {
             debugWarning("calculated max packet size (%u) < stream max packet size (%u)\n",
@@ -206,9 +347,9 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
         // Ensure we don't request a packet size bigger than the
         // kernel-enforced maximum which is currently 1 page.
-        if (max_packet_size > (unsigned int)getpagesize()) {
-            debugWarning("max packet size (%u) > page size (%u)\n", max_packet_size ,(unsigned int)getpagesize());
-            max_packet_size = getpagesize();
+        if (max_packet_size > (unsigned int)getpagesize()/2) {
+            debugError("max packet size (%u) > page size (%u)\n", max_packet_size, (unsigned int)getpagesize()/2);
+            return false;
         }
 
         unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
@@ -223,27 +364,15 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         // when writing to the DMA buffer.
 
         // configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
-        unsigned int irq_interval=PACKETS_PER_INTERRUPT;
+        unsigned int irq_interval = packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval = 1;
 
-        // unless the period size doesn't allow this
-        if ((packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD) < irq_interval) {
-            irq_interval=1;
-        }
-
-        // FIXME: test
-        irq_interval=1;
-#warning Using fixed irq_interval
-
-        unsigned int max_packet_size=getpagesize() / irq_interval;
+        unsigned int max_packet_size = getpagesize()/2;
 
         if (max_packet_size < stream->getMaxPacketSize()) {
-            max_packet_size=stream->getMaxPacketSize();
+            debugError("Stream max packet size too large: %d\n", stream->getMaxPacketSize());
+            return false;
         }
-
-        // Ensure we don't request a packet size bigger than the
-        // kernel-enforced maximum which is currently 1 page.
-        if (max_packet_size > (unsigned int)getpagesize())
-                    max_packet_size = getpagesize();
 
 #endif
         /* the receive buffer size doesn't matter for the latency,
@@ -254,16 +383,19 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         // create the actual handler
         h = new IsoHandler(*this, IsoHandler::eHT_Receive,
                            buffers, max_packet_size, irq_interval);
+
+        debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoRecvHandler\n");
+
         if(!h) {
             debugFatal("Could not create IsoRecvHandler\n");
             return false;
         }
-        debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoRecvHandler\n");
 
     } else if (stream->getType()==StreamProcessor::ePT_Transmit) {
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
 
+#if 0
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
         // block = PAGE_SIZE. Setting the max_packet_size makes sure that the HW irq
         // occurs at a period boundary (optimal CPU use)
@@ -294,15 +426,29 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         //irq_interval=2;
         //int buffers=30;
         //max_packet_size = getpagesize(); // HACK
+#else
+        // configure it such that we have an irq for every PACKETS_PER_INTERRUPT packets
+        unsigned int irq_interval = packets_per_period/MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval = 1;
 
+        unsigned int max_packet_size=MINIMUM_INTERRUPTS_PER_PERIOD * getpagesize() / packets_per_period;
+        if (max_packet_size < stream->getMaxPacketSize()) {
+            max_packet_size = stream->getMaxPacketSize();
+        }
+
+        if (max_packet_size < stream->getMaxPacketSize()) {
+            debugError("Max packet size too large! (%d)\n", stream->getMaxPacketSize());
+        }
+
+#endif
         // the SP specifies how many packets to buffer
         int buffers = stream->getNbPacketsIsoXmitBuffer();
+
+        debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoXmitHandler\n");
 
         // create the actual handler
         h = new IsoHandler(*this, IsoHandler::eHT_Transmit,
                            buffers, max_packet_size, irq_interval);
-
-        debugOutput( DEBUG_LEVEL_VERBOSE, " registering IsoXmitHandler\n");
 
         if(!h) {
             debugFatal("Could not create IsoXmitHandler\n");

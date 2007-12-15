@@ -21,6 +21,8 @@
  *
  */
 
+//#define PER_HANDLER_THREAD
+
 #include "IsoHandler.h"
 #include "ieee1394service.h" 
 
@@ -180,7 +182,9 @@ IsoHandler::Execute() {
         return true;
     }
 
+    uint64_t poll_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
     err = poll(&m_poll_fd, 1, m_poll_timeout);
+    uint64_t poll_exit = m_manager.get1394Service().getCurrentTimeAsUsecs();
     if (err == -1) {
         if (errno == EINTR) {
             return true;
@@ -188,13 +192,17 @@ IsoHandler::Execute() {
         debugFatal("%p, poll error: %s\n", this, strerror (errno));
         return false;
     }
+    uint64_t iter_enter=0;
+    uint64_t iter_exit=0;
     if(m_poll_fd.revents & (POLLIN)) {
-        if(raw1394_loop_iterate(m_handle)) {
+        iter_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
+        if(!iterate()) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
-                        "IsoHandler (%p): Failed to iterate handler: %s\n",
-                        this,strerror(errno));
+                        "IsoHandler (%p): Failed to iterate handler\n",
+                        this);
             return false;
         }
+        iter_exit = m_manager.get1394Service().getCurrentTimeAsUsecs();
     } else {
         if (m_poll_fd.revents & POLLERR) {
             debugWarning("error on fd for %p\n", this);
@@ -202,6 +210,20 @@ IsoHandler::Execute() {
         if (m_poll_fd.revents & POLLHUP) {
             debugWarning("hangup on fd for %p\n",this);
         }
+    }
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%c %p) poll took %lldus, iterate took %lldus\n", 
+                (this->getType()==eHT_Receive?'R':'X'), this, 
+                poll_exit-poll_enter, iter_exit-iter_enter);
+    return true;
+}
+
+bool
+IsoHandler::iterate() {
+    if(raw1394_loop_iterate(m_handle)) {
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                    "IsoHandler (%p): Failed to iterate handler: %s\n",
+                    this,strerror(errno));
+        return false;
     }
     return true;
 }
@@ -256,6 +278,7 @@ IsoHandler::init()
         raw1394_set_bus_reset_handler(m_handle, busreset_handler);
     }
 
+#ifdef THREAD_PER_ISOHANDLER
     // create a thread to iterate ourselves
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
@@ -268,6 +291,7 @@ IsoHandler::init()
         debugFatal("Could not start update thread\n");
         return false;
     }
+#endif
 
     // update the internal state
     m_State=E_Initialized;
