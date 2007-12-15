@@ -732,17 +732,22 @@ bool StreamProcessorManager::waitForPeriod() {
             
             usleep(125); // MAGIC: one cycle sleep...
 
-            #if 0
             // in order to avoid this in the future, we increase the sync delay of the sync source SP
             int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;
             m_SyncSource->setSyncDelay(d);
-            #endif
 
             #ifdef DEBUG
             waited++;
             #endif
         }
     } // we are either ready or an xrun occurred
+
+    // in order to avoid a runaway value of the sync delay, we gradually decrease
+    // it. It will be increased by a 'too early' event (cfr some lines higher)
+    // hence we'll be at a good point on average.
+    int d = m_SyncSource->getSyncDelay() - 1;
+    if (d >= 0) m_SyncSource->setSyncDelay(d);
+
 
     #ifdef DEBUG
     if(waited > 0) {

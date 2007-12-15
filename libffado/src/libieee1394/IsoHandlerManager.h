@@ -26,10 +26,14 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "libutil/Thread.h"
+
 #include <sys/poll.h>
 #include <errno.h>
 
 #include <vector>
+
+#define THREAD_PER_ISOHANDLER
 
 #define FFADO_MAX_ISO_HANDLERS_PER_PORT 16
 
@@ -60,9 +64,18 @@ typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
  it can be assigned.
 
 */
-class IsoHandlerManager
+class IsoHandlerManager : public Util::RunnableInterface
 {
     friend class Streaming::StreamProcessorManager;
+    public:
+        bool Init();
+        bool Execute();
+        void updateShadowVars();
+    private:
+        // shadow variables
+        struct pollfd m_poll_fds_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
+        IsoHandler *m_IsoHandler_map_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
+        unsigned int m_poll_nfds_shadow;
 
     public:
 
@@ -142,6 +155,7 @@ class IsoHandlerManager
         // thread params for the handler threads
         bool m_realtime;
         int m_priority;
+        Util::Thread *  m_Thread;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

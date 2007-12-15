@@ -83,13 +83,14 @@ public:
     // runnable interface
     bool Init();
     bool Execute();
+    bool iterate();
+
     int getFileDescriptor() { return raw1394_get_fd(m_handle);};
     bool setThreadParameters(bool rt, int priority);
 
     bool init();
     bool prepare();
 
-    bool iterate();
     void setVerboseLevel(int l);
 
     bool enable() {return enable(-1);};
