@@ -21,18 +21,29 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import imp
+
 def pyuic_action( target, source, env ):
-	print "'"+str( target[0] )+"'"
-	print "'"+str( source[0] )+"'"
-	print env.Command( str( target[0] ), str( source[0] ), action = "pyuic $SOURCE > $TARGET" )
+	env.Execute( "pyuic " + str( source[0] ) + " > " + str( target[0] ) )
 	return 0
 
 def pyuic_string( target, source, env ):
 	return "building '%s' from '%s'" % ( str(target[0]), str( source[0] ) )
 
+def PyQtCheck( context ):
+	context.Message( "Checking for pyuic (by checking for the python module pyqtconfig) " )
+	ret = True
+	try:
+		imp.find_module( "pyqtconfig" )
+	except ImportError:
+		ret = False
+	context.Result( ret )
+	return ret
+
 def generate( env, **kw ):
-	action = env.Action( pyuic_action, pyuic_string )
-	env['BUILDERS']['PyUIC'] = env.Builder( action=action, src_suffix=".ui", single_source=True )
+	env['BUILDERS']['PyUIC'] = env.Builder( action=pyuic_action, src_suffix=".ui", single_source=True )
+	env['PYUIC_TESTS'] = { "PyQtCheck" : PyQtCheck }
+
 
 def exists( env ):
 	return 1

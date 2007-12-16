@@ -1,3 +1,4 @@
+#! /usr/bin/python
 #
 # Copyright (C) 2007 Arnold Krille
 # Copyright (C) 2007 Pieter Palmers
@@ -54,7 +55,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathOption.PathAccept ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks avc part.", True ),
-	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", False ),
+	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", True ),
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
 	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),
@@ -104,9 +105,6 @@ To really undo your settings and return to the factory defaults, remove the
 "cache"-folder and the file ".sconsign.dblite" from this directory.
 For example with: "rm -Rf .sconsign.dblite cache"
 
-Currently it seems as if only the BEBOB is kind-of-working, thats why only BEBOB
-is enabled by default.
-
 Note that this is a development version! Don't complain if its not working!
 See www.ffado.org for stable releases.
 """ )
@@ -122,9 +120,15 @@ CacheDir( 'cache/objects' )
 
 opts.Save( 'cache/' + build_base + "options.cache", env )
 
+def ConfigGuess( context ):
+	context.Message( "Trying to find the system triple: " )
+	ret = os.popen( "admin/config.guess" ).read()[:-1]
+	context.Result( ret )
+	return ret
 
-tests = {}
+tests = { "ConfigGuess" : ConfigGuess }
 tests.update( env['PKGCONFIG_TESTS'] )
+tests.update( env['PYUIC_TESTS'] )
 
 if not env.GetOption('clean'):
 	conf = Configure( env,
@@ -174,6 +178,11 @@ install the needed packages (remember to also install the *-devel packages)
 	# Optional checks follow:
 	#
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
+
+	config_guess = conf.ConfigGuess()
+
+	if conf.PyQtCheck():
+		env['PYUIC'] = True
 
 	env = conf.Finish()
 
@@ -236,15 +245,11 @@ env['USE_SSE'] = 0
 
 # guess at the platform, used to define compiler flags
 
-config_guess = os.popen("admin/config.guess").read()[:-1]
-
 config_cpu = 0
 config_arch = 1
 config_kernel = 2
 config_os = 3
 config = config_guess.split ("-")
-
-print "system triple: " + config_guess
 
 # Autodetect
 if env['DIST_TARGET'] == 'auto':
