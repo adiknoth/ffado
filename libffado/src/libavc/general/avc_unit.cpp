@@ -950,22 +950,6 @@ Unit::deserializeSyncInfoVector( Glib::ustring basePath,
     return true;
 }
 
-static bool
-deserializePlugUpdateConnections( Glib::ustring path,
-                                  Util::IODeserialize& deser,
-                                  PlugVector& vec )
-{
-    bool result = true;
-    for ( PlugVector::iterator it = vec.begin();
-          it != vec.end();
-          ++it )
-    {
-        Plug* pPlug = *it;
-        result &= pPlug->deserializeUpdate( path, deser );
-    }
-    return result;
-}
-
 bool
 Unit::serialize( Glib::ustring basePath,
                  Util::IOSerialize& ser ) const
@@ -1005,20 +989,26 @@ Unit::deserialize( Glib::ustring basePath,
     if (m_pPlugManager)
         delete m_pPlugManager;
 
+    // load all plugs
     m_pPlugManager = PlugManager::deserialize( basePath + "Plug", deser, *this );
 
     if ( !m_pPlugManager )
         return false;
 
-    result &= deserializePlugVector( basePath + "PcrPlug", deser, getPlugManager(), m_pcrPlugs );
-    result &= deserializePlugVector( basePath + "ExternalPlug", deser, getPlugManager(), m_externalPlugs );
-    result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser, *this, m_plugConnections );
+    // load path /PcrPlug0/global_id
+    result &= deserializePlugVector( basePath + "PcrPlug", deser,
+                                     getPlugManager(), m_pcrPlugs );
+    // load path /ExternalPlug0/global_id
+    result &= deserializePlugVector( basePath + "ExternalPlug", deser,
+                                     getPlugManager(), m_externalPlugs );
+    result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser,
+                                                 *this, m_plugConnections );
     result &= deserializeVector<Subunit>( basePath + "Subunit",  deser, *this, m_subunits );
     result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, m_syncInfos );
 
-    result &= deserializePlugUpdateConnections( basePath + "PcrPlug", deser, m_pcrPlugs );
-    result &= deserializePlugUpdateConnections( basePath + "ExternalPlug", deser, m_externalPlugs );
-    m_pPlugManager->deserializeUpdate();
+    // update connectsion between plugs (plug.m_inputConnections
+    // and plug.m_outputConnnections list)
+    m_pPlugManager->deserializeUpdate( basePath, deser );
 
     unsigned int i;
     result &= deser.read( basePath + "m_activeSyncInfo", i );

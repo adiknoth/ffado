@@ -1670,16 +1670,15 @@ Plug::deserialize( Glib::ustring basePath,
 }
 
 bool
-Plug::deserializeUpdate( Glib::ustring basePath,
-                         Util::IODeserialize& deser )
+Plug::deserializeConnections( Glib::ustring basePath,
+                              Util::IODeserialize& deser )
 {
     bool result;
 
-    result  = deserializePlugVector( basePath + "m_inputConnections", deser,
+    result  = deserializePlugVector( basePath + "/m_inputConnections", deser,
                                      m_unit->getPlugManager(), m_inputConnections );
-    result &= deserializePlugVector( basePath + "m_outputConnections", deser,
+    result &= deserializePlugVector( basePath + "/m_outputConnections", deser,
                                      m_unit->getPlugManager(), m_outputConnections );
-
     return result;
 }
 
@@ -2183,7 +2182,8 @@ PlugManager::deserialize( Glib::ustring basePath,
 }
 
 bool
-PlugManager::deserializeUpdate()
+PlugManager::deserializeUpdate( Glib::ustring basePath,
+                                Util::IODeserialize& deser)
 {
     bool result = true;
 
@@ -2191,8 +2191,13 @@ PlugManager::deserializeUpdate()
           it !=  m_plugs.end();
           ++it )
     {
+
         Plug* pPlug = *it;
 
+        std::ostringstream strstrm;
+        strstrm << basePath << "Plug" << pPlug->getGlobalId();
+
+        result &= pPlug->deserializeConnections( strstrm.str(), deser );
         result &= pPlug->deserializeUpdateSubunit();
     }
 
