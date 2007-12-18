@@ -159,9 +159,8 @@ public:
                               Util::IODeserialize& deser,
                               Unit& avDevice,
                               PlugManager& plugManager );
-
-    bool deserializeUpdate( Glib::ustring basePath,
-                            Util::IODeserialize& deser );
+    bool deserializeConnections( Glib::ustring basePath, 
+                                 Util::IODeserialize& deser );
     bool deserializeUpdateSubunit();
 
  public:
@@ -343,7 +342,8 @@ public:
 	{ return m_plugs; }
     bool tidyPlugConnections(PlugConnectionVector&);
 
-    bool deserializeUpdate();
+    bool deserializeUpdate( Glib::ustring basePath,  
+                            Util::IODeserialize& deser );
 
 private:
 
