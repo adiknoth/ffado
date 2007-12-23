@@ -130,12 +130,12 @@ tests = { "ConfigGuess" : ConfigGuess }
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
 
-if not env.GetOption('clean'):
-	conf = Configure( env,
-		custom_tests = tests,
-		conf_dir = "cache/" + build_base,
-		log_file = "cache/" + build_base + 'config.log' )
+conf = Configure( env,
+	custom_tests = tests,
+	conf_dir = "cache/" + build_base,
+	log_file = "cache/" + build_base + 'config.log' )
 
+if not env.GetOption('clean'):
 	#
 	# Check if the environment can actually compile c-files by checking for a
 	# header shipped with gcc.
@@ -179,12 +179,12 @@ install the needed packages (remember to also install the *-devel packages)
 	#
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
-	config_guess = conf.ConfigGuess()
+if conf.PyQtCheck():
+	env['PYUIC'] = True
 
-	if conf.PyQtCheck():
-		env['PYUIC'] = True
+config_guess = conf.ConfigGuess()
 
-	env = conf.Finish()
+env = conf.Finish()
 
 if env['DEBUG']:
 	print "Doing a DEBUG build"
