@@ -25,18 +25,5 @@ Import( 'env' )
 
 env = env.Copy()
 
-#env.AppendUnique( CPPPATH=["#/src"] )
-#env.AppendUnique( LIBPATH=["#/src"] )
-#env.AppendUnique( LIBS=["ffado"] )
-
-#for app in ["test-ffado", "test-extplugcmd", "test-fw410", "test-volume", "test-mixer", "test-cycletimer", "test-timestampedbuffer", "test-ieee1394service", "test-streamdump"]:
-#	env.Program( target=app, source = app+".cpp" )
-
-#env.Program( target="test-ffado", source = "test-ffado.cpp" )
-#env.Program( target="", source = ".cpp" )
-
-#env.Program( target="test-sytmonitor", source = env.Split( "test-sytmonitor.cpp SytMonitor.cpp" ) )
-#
-
 env.SConscript( dirs=["mixer","firmware","dbus"], exports="env" )
 
