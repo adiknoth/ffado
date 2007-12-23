@@ -135,7 +135,7 @@ CycleTimerHelper::getNominalRate()
     return rate;
 }
 
-//#define OLD_STYLE
+#define OLD_STYLE
 #ifdef OLD_STYLE
 
 bool
