@@ -500,7 +500,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         // to be 'running'
         // we then check whether we have to switch on this cycle
         if ((cycle_diff >= 0) && (diffCycles(cycle, m_cycle_to_switch_state) >= 0)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning due to good packet\n");
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStream to DryRunning\n");
             // hence go to the dryRunning state
             m_next_state = ePS_DryRunning;
             if (!updateState()) { // we are allowed to change the state directly
