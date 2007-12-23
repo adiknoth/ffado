@@ -1,0 +1,38 @@
+#!/usr/bin/python
+#
+
+import sys
+from optparse import OptionParser
+import runpy
+
+print """FFADO generic mixer app
+ Copyright 2007 Arnold Krille, Pieter Palmers
+ Licensed under the GPL v2 and v3.
+"""
+
+myname = sys.argv[0].split("/")[-1].split("_")[-1]
+#print "My name is " + myname
+
+mixerapps = $MIXERAPPS
+
+if not myname in mixerapps:
+	print "Have to figure which app to start by commandline..."
+
+	parser = OptionParser()
+	parser.add_option( "-m", "--mixer", dest="mixer", help="The mixer-app to actually start", choices=mixerapps )
+
+	(options, args) = parser.parse_args()
+
+	myname = options.mixer
+
+print "Will start app '"+myname+"'"
+
+if len(myname) == 0:
+	exit( 1 )
+
+sys.path.append( "$PYTHONDIR" )
+
+#print sys.path
+
+runpy.run_module( "mixer_"+myname, run_name="__main__" )
+

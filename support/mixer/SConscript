@@ -20,14 +20,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import os
+from string import Template
 
 Import( 'env' )
 
 if env.has_key('PYUIC'):
-	for app in [ "mixer_phase24.ui",
-	             "mixer_phase88.ui",
-	             "mixer_saffirepro.ui",
-	             "mixer_saffire.ui",
-	             "mixer_af2.ui",
-	           ]:
-		env.PyUIC( source=app, target=app.replace(".","")+".py" )
+	e = env.Clone()
+
+	e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire', 'af2', 'aktest' ]
+	e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
+
+	apps = []
+
+	for m in e['MIXERAPPS']:
+		apps.append( "mixer_" + m )
+
+	for app in apps:
+		if os.path.exists( app+".ui" ):
+			e.PyUIC( source=app+".ui", target=app+"ui.py" )
+			e.Install( "$PYTHONDIR", app+"ui.py" )
+		e.Install( "$PYTHONDIR", app+".py" )
+
+	e.ScanReplace( "ffadomixer.in" )
+	e.Depends( "ffadomixer", "SConscript" )
+	e.Install( "$bindir", "ffadomixer" )
+
+	for app in apps:
+		e.InstallAs( os.path.join( e['bindir'], "ffado"+app ), "ffadomixer" )
+
+
