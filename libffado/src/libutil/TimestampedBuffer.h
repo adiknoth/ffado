@@ -204,6 +204,8 @@ class TimestampedBuffer
         float m_dll_c;
 
         float m_nominal_rate;
+        float calculateRate();
+        float m_current_rate;
         unsigned int m_update_period;
 };
 

@@ -26,6 +26,7 @@
 
 #include "TimestampedBuffer.h"
 #include "assert.h"
+#include "errno.h"
 
 // FIXME: note that it will probably be better to use a DLL bandwidth that is 
 //        dependant on the sample rate
@@ -39,6 +40,14 @@
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
+/*
+#define ENTER_CRITICAL_SECTION { \
+    if (pthread_mutex_trylock(&m_framecounter_lock) == EBUSY) { \
+        debugWarning(" (%p) lock clash\n", this); \
+        pthread_mutex_lock(&m_framecounter_lock); \
+    } \
+    }
+*/
 #define ENTER_CRITICAL_SECTION { \
     pthread_mutex_lock(&m_framecounter_lock); \
     }
@@ -61,7 +70,7 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
       m_buffer_tail_timestamp(0.0),
       m_buffer_next_tail_timestamp(0.0),
       m_dll_e2(0.0), m_dll_b(DLL_COEFF_B), m_dll_c(DLL_COEFF_C),
-      m_nominal_rate(0.0), m_update_period(0)
+      m_nominal_rate(0.0), m_current_rate(0.0), m_update_period(0)
 {
     pthread_mutex_init(&m_framecounter_lock, NULL);
 
@@ -122,11 +131,20 @@ bool TimestampedBuffer::setWrapValue(ffado_timestamp_t w) {
  * @return rate (in timeunits/frame)
  */
 float TimestampedBuffer::getRate() {
+    return m_current_rate;
+}
+
+/**
+ * \brief calculate the effective rate
+ *
+ * Returns the effective rate calculated by the DLL.
+ * @note should be called with the lock held
+ * @return rate (in timeunits/frame)
+ */
+float TimestampedBuffer::calculateRate() {
     ffado_timestamp_t diff;
     
-    ENTER_CRITICAL_SECTION;
     diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    EXIT_CRITICAL_SECTION;
     
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"getRate: %f/%f=%f\n",
         (float)(diff),
@@ -296,6 +314,8 @@ bool TimestampedBuffer::prepare() {
 
     assert(m_nominal_rate != 0.0L);
     assert(m_update_period != 0);
+
+    m_current_rate = m_nominal_rate;
 
     if( !(m_event_buffer=ffado_ringbuffer_create(
             (m_events_per_frame * m_buffer_size) * m_event_size))) {
@@ -972,7 +992,7 @@ void TimestampedBuffer::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int
     // NOTE: this is still ok with threads, because we use *fc to compute
     //       the timestamp
     *fc = m_framecounter;
-    *ts=getTimestampFromTail(*fc);
+    *ts = getTimestampFromTail(*fc);
 }
 
 /**
@@ -986,10 +1006,10 @@ void TimestampedBuffer::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int
  * @param fc address to store the associated framecounter in
  */
 void TimestampedBuffer::getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc) {
-    ENTER_CRITICAL_SECTION;
+    // NOTE: this is still ok with threads, because we use *fc to compute
+    //       the timestamp
     *fc = m_framecounter;
-    *ts = m_buffer_tail_timestamp;
-    EXIT_CRITICAL_SECTION;
+    *ts = getTimestampFromTail(0);
 }
 
 /**
@@ -1005,21 +1025,10 @@ ffado_timestamp_t TimestampedBuffer::getTimestampFromTail(int nframes)
 {
     // ts(x) = m_buffer_tail_timestamp -
     //         (m_buffer_next_tail_timestamp - m_buffer_tail_timestamp)/(samples_between_updates)*(x)
-    ffado_timestamp_t diff;
-    float rate;
     ffado_timestamp_t timestamp;
-    
-    ENTER_CRITICAL_SECTION;
-
-    diff = m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
     timestamp = m_buffer_tail_timestamp;
-    
-    EXIT_CRITICAL_SECTION;
-    
-    if (diff < 0) diff += m_wrap_at;
-    rate = (float)diff / (float)m_update_period;
 
-    timestamp -= (ffado_timestamp_t)((nframes) * rate);
+    timestamp -= (ffado_timestamp_t)((nframes) * m_current_rate);
 
     if(timestamp >= m_wrap_at) {
         timestamp -= m_wrap_at;
@@ -1086,10 +1095,6 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
 
     if (diff < 0) diff += m_wrap_at;
 
-#ifdef DEBUG
-    float rate=(float)diff / (float)m_update_period;
-#endif
-
     ffado_timestamp_t ts = new_timestamp;
     ts += m_tick_offset;
 
@@ -1134,7 +1139,6 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
                      "Updated ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC") to ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC")\n",
                      m_buffer_tail_timestamp, m_buffer_next_tail_timestamp,
                      m_buffer_tail_timestamp, pred_buffer_next_tail_timestamp);
-        
     }
     
     // the difference between the given TS and the one predicted for this time instant
@@ -1168,25 +1172,10 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
 
     ENTER_CRITICAL_SECTION;
     m_framecounter += nbframes;
-
     m_buffer_tail_timestamp = pred_buffer_next_tail_timestamp;
     m_buffer_next_tail_timestamp = pred_buffer_next_tail_timestamp + (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
-//    m_buffer_tail_timestamp=ts;
-//    m_buffer_next_tail_timestamp += (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
-    
     m_dll_e2 += m_dll_c*err;
 
-    EXIT_CRITICAL_SECTION;
-
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "tail for (%p) to "
-                                          TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", NTS="
-                                          TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
-                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
-
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "U: FC=%10u, TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
-                    m_framecounter, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
-
-    ENTER_CRITICAL_SECTION;
     if (m_buffer_next_tail_timestamp >= m_wrap_at) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Unwrapping next tail timestamp: "TIMESTAMP_FORMAT_SPEC"",
                 m_buffer_next_tail_timestamp);
@@ -1197,10 +1186,11 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
                 m_buffer_next_tail_timestamp);
 
     }
+    m_current_rate = calculateRate();
     EXIT_CRITICAL_SECTION;
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "A: TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC", DLLe2=%f, RATE=%f\n",
-                m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, rate);
+                m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, m_current_rate);
 
 
     if(m_buffer_tail_timestamp>=m_wrap_at) {
