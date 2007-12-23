@@ -44,7 +44,7 @@ AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(FFADODevice &parent, in
 
 unsigned int
 AmdtpReceiveStreamProcessor::getSytInterval() {
-    switch (m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate()) {
+    switch (m_StreamProcessorManager.getNominalRate()) {
         case 32000:
         case 44100:
         case 48000:
@@ -56,7 +56,7 @@ AmdtpReceiveStreamProcessor::getSytInterval() {
         case 192000:
             return 32;
         default:
-            debugError("Unsupported rate: %d\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+            debugError("Unsupported rate: %d\n", m_StreamProcessorManager.getNominalRate());
             return 0;
     }
 }
@@ -92,7 +92,7 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
                   (packet->dbs > 0) &&
                   (length >= 2*sizeof(quadlet_t));
     if(ok) {
-        uint64_t now = m_Parent.get1394Service().getCycleTimer();
+        uint64_t now = m_1394service.getCycleTimer();
         //=> convert the SYT to a full timestamp in ticks
         m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
                                               cycle, now);

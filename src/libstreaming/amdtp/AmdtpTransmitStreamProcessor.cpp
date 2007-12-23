@@ -59,7 +59,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     /* Our node ID can change after a bus reset, so it is best to fetch
     * our node ID for each packet. */
-    packet->sid = m_Parent.get1394Service().getLocalNodeId() & 0x3f;
+    packet->sid = m_1394service.getLocalNodeId() & 0x3f;
 
     packet->dbs = m_dimension;
     packet->fn = 0;
@@ -164,6 +164,8 @@ try_block_of_frames:
             debugOutput ( DEBUG_LEVEL_VERBOSE,
                         "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
                         fc, cycle, transmit_at_cycle, cycles_until_transmit );
+            debugWarning( "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
+                          fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // there is still time left to send the packet
             // we want the system to give this packet another go at a later time instant
             return eCRV_Again; // note that the raw1394 again system doesn't work as expected
@@ -293,7 +295,7 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
 
     /* Our node ID can change after a bus reset, so it is best to fetch
     * our node ID for each packet. */
-    packet->sid = m_Parent.get1394Service().getLocalNodeId() & 0x3f;
+    packet->sid = m_1394service.getLocalNodeId() & 0x3f;
 
     packet->dbs = m_dimension;
     packet->fn = 0;
@@ -364,7 +366,7 @@ unsigned int AmdtpTransmitStreamProcessor::fillNoDataPacketHeader (
 
 unsigned int
 AmdtpTransmitStreamProcessor::getSytInterval() {
-    switch (m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate()) {
+    switch (m_StreamProcessorManager.getNominalRate()) {
         case 32000:
         case 44100:
         case 48000:
@@ -376,13 +378,13 @@ AmdtpTransmitStreamProcessor::getSytInterval() {
         case 192000:
             return 32;
         default:
-            debugError("Unsupported rate: %d\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+            debugError("Unsupported rate: %d\n", m_StreamProcessorManager.getNominalRate());
             return 0;
     }
 }
 unsigned int
 AmdtpTransmitStreamProcessor::getFDF() {
-    switch (m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate()) {
+    switch (m_StreamProcessorManager.getNominalRate()) {
         case 32000: return IEC61883_FDF_SFC_32KHZ;
         case 44100: return IEC61883_FDF_SFC_44K1HZ;
         case 48000: return IEC61883_FDF_SFC_48KHZ;
@@ -391,7 +393,7 @@ AmdtpTransmitStreamProcessor::getFDF() {
         case 176400: return IEC61883_FDF_SFC_176K4HZ;
         case 192000: return IEC61883_FDF_SFC_192KHZ;
         default:
-            debugError("Unsupported rate: %d\n", m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+            debugError("Unsupported rate: %d\n", m_StreamProcessorManager.getNominalRate());
             return 0;
     }
 }
@@ -406,7 +408,7 @@ bool AmdtpTransmitStreamProcessor::prepareChild()
         &m_cip_status,
         IEC61883_FMT_AMDTP,
         m_fdf,
-        m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate(),
+        m_StreamProcessorManager.getNominalRate(),
         m_dimension,
         m_syt_interval );
 

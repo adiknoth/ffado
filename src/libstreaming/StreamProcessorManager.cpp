@@ -711,6 +711,7 @@ bool StreamProcessorManager::waitForPeriod() {
     bool ready;
     xrun_occurred = false;
     while (!ready_for_transfer && !xrun_occurred) {
+        // FIXME: can deadlock when the iso handlers die (e.g. unplug the device)
         ready_for_transfer = true;
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();

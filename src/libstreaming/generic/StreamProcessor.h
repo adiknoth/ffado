@@ -36,6 +36,9 @@
 
 #include <pthread.h>
 
+class Ieee1394Service;
+class IsoHandlerManager;
+
 namespace Streaming {
 
     class StreamProcessorManager;
@@ -51,8 +54,6 @@ class StreamProcessor : public PortManager,
                         public Util::TimestampedBufferClient,
                         public Util::OptionContainer
 {
-    friend class StreamProcessorManager; // FIXME: get rid of this
-
 public:
     ///> the streamprocessor type
     enum eProcessorType {
@@ -132,7 +133,10 @@ public: // constructor/destructor
     StreamProcessor(FFADODevice &parent, enum eProcessorType type);
     virtual ~StreamProcessor();
 protected:
-    FFADODevice&    m_Parent;
+    FFADODevice&                m_Parent;
+    Ieee1394Service&            m_1394service;
+    IsoHandlerManager&          m_IsoHandlerManager;
+    StreamProcessorManager&     m_StreamProcessorManager;
 
 public: // the public receive/transmit functions
     // the transmit interface accepts frames and provides packets
@@ -255,6 +259,7 @@ private:
 
     bool transferSilence(unsigned int size);
 
+public:
     // move to private?
     bool xrunOccurred() { return m_in_xrun; };
 
@@ -264,8 +269,7 @@ public:
     bool setChannel(int c)
         {m_channel = c; return true;};
 
-    virtual unsigned int getNbPacketsIsoXmitBuffer()
-        {return (getPacketsPerPeriod() * 750)/1000;};
+    virtual unsigned int getNbPacketsIsoXmitBuffer();
     virtual unsigned int getPacketsPerPeriod();
     virtual unsigned int getMaxPacketSize() = 0;
 private:
