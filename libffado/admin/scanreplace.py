@@ -26,9 +26,11 @@
 #
 
 from string import Template
+import os
 
 def replace_action(target, source, env):
 	open( str(target[0]), 'w' ).write( Template( open( str(source[0]), 'r' ).read() ).safe_substitute( env ) )
+	os.chmod( str(target[0]), os.stat( str(source[0]) ).st_mode )
 	return 0
 
 def replace_string(target, source, env):
