@@ -32,6 +32,22 @@
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
+/*
+#define ENTER_CRITICAL_SECTION { \
+    if (pthread_mutex_trylock(&m_compute_vars_lock) == EBUSY) { \
+        debugWarning(" (%p) lock clash\n", this); \
+        ENTER_CRITICAL_SECTION; \
+    } \
+    }
+*/
+#define ENTER_CRITICAL_SECTION { \
+    ENTER_CRITICAL_SECTION; \
+    }
+#define EXIT_CRITICAL_SECTION { \
+    EXIT_CRITICAL_SECTION; \
+    }
+
+
 IMPL_DEBUG_MODULE( CycleTimerHelper, CycleTimerHelper, DEBUG_LEVEL_NORMAL );
 
 CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_period_us)
@@ -167,14 +183,14 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 bool
 CycleTimerHelper::Execute()
 {
-    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "Execute %p...\n", this);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
     uint32_t cycle_timer;
     uint64_t local_time;
     if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
         debugError("Could not read cycle timer register\n");
         return false;
     }
-    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                     cycle_timer, local_time);
 
     double usecs_late;
@@ -194,7 +210,7 @@ CycleTimerHelper::Execute()
     } else {
 
         double diff = m_next_time_usecs - m_current_time_usecs;
-        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " usecs: local: %11llu current: %f next: %f, diff: %f\n",
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: local: %11llu current: %f next: %f, diff: %f\n",
                     local_time, m_current_time_usecs, m_next_time_usecs, diff);
 
         uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
@@ -203,7 +219,7 @@ CycleTimerHelper::Execute()
         // we update the x-axis values
         m_current_time_usecs = m_next_time_usecs;
         m_next_time_usecs = (local_time - usecs_late) + m_usecs_per_update;
-        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
                     m_current_time_usecs, m_next_time_usecs, usecs_late);
 
         // and the y-axis values
@@ -212,10 +228,10 @@ CycleTimerHelper::Execute()
         m_next_time_ticks = addTicks((uint64_t)m_current_time_ticks,
                                      (uint64_t)((DLL_COEFF_B * diff_ticks) + m_dll_e2));
         m_dll_e2 += DLL_COEFF_C * diff_ticks;
-        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
                     m_current_time_ticks, m_next_time_ticks, diff_ticks);
 
-        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
                     local_time, m_dll_e2, getRate());
     }
 
@@ -223,18 +239,18 @@ CycleTimerHelper::Execute()
     m_avg_wakeup_delay += 0.01 * usecs_late;
 
     // FIXME: priority inversion!
-    pthread_mutex_lock(&m_compute_vars_lock);
+    ENTER_CRITICAL_SECTION;
     m_current_vars.ticks = m_current_time_ticks;
     m_current_vars.usecs = m_current_time_usecs;
     m_current_vars.rate = getRate();
-    pthread_mutex_unlock(&m_compute_vars_lock);
+    EXIT_CRITICAL_SECTION;
 
     // wait for the next update period
     int64_t time_to_sleep = (int64_t)m_next_time_usecs - m_Parent.getCurrentTimeAsUsecs();
     time_to_sleep -= (int64_t)m_avg_wakeup_delay;
     //int64_t time_to_sleep = m_usecs_per_update;
     if (time_to_sleep > 0) {
-        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " sleeping %lld usecs (avg delay: %f)\n", time_to_sleep, m_avg_wakeup_delay);
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " sleeping %lld usecs (avg delay: %f)\n", time_to_sleep, m_avg_wakeup_delay);
         usleep(time_to_sleep);
     }
     return true;
@@ -254,9 +270,9 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
     struct compute_vars my_vars;
 
     // reduce lock contention
-    pthread_mutex_lock(&m_compute_vars_lock);
+    ENTER_CRITICAL_SECTION;
     my_vars = m_current_vars;
-    pthread_mutex_unlock(&m_compute_vars_lock);
+    EXIT_CRITICAL_SECTION;
 
     double time_diff = now - my_vars.usecs;
     double y_step_in_ticks = time_diff * my_vars.rate;
@@ -265,11 +281,14 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+                     y_step_in_ticks_int, time_diff, my_vars.rate, retval);
     } else {
-        // this can happen if the update thread was woken up earlier than it should have been
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f\n", 
-                     y_step_in_ticks_int, time_diff, my_vars.rate);
         retval = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
+
+        // this can happen if the update thread was woken up earlier than it should have been
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+                     y_step_in_ticks_int, time_diff, my_vars.rate, retval);
     }
 
     return retval;
