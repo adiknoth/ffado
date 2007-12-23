@@ -40,6 +40,7 @@ if env.has_key('PYUIC'):
 		if os.path.exists( app+".ui" ):
 			e.PyUIC( source=app+".ui", target=app+"ui.py" )
 			e.Install( "$PYTHONDIR", app+"ui.py" )
+			e.Install( "$PYTHONDIR", app+".ui" )
 		e.Install( "$PYTHONDIR", app+".py" )
 
 	e.ScanReplace( "ffadomixer.in" )
@@ -48,5 +49,4 @@ if env.has_key('PYUIC'):
 
 	for app in apps:
 		e.InstallAs( os.path.join( e['bindir'], "ffado"+app ), "ffadomixer" )
-
 

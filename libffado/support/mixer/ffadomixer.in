@@ -5,18 +5,17 @@ import sys
 from optparse import OptionParser
 import runpy
 
-print """FFADO generic mixer app
+print """FFADO generic mixer starter
  Copyright 2007 Arnold Krille, Pieter Palmers
  Licensed under the GPL v2 and v3.
 """
 
 myname = sys.argv[0].split("/")[-1].split("_")[-1]
-#print "My name is " + myname
 
 mixerapps = $MIXERAPPS
 
 if not myname in mixerapps:
-	print "Have to figure which app to start by commandline..."
+	print "Have to figure which mixer to start by commandline..."
 
 	parser = OptionParser()
 	parser.add_option( "-m", "--mixer", dest="mixer", help="The mixer-app to actually start", choices=mixerapps )
@@ -25,14 +24,15 @@ if not myname in mixerapps:
 
 	myname = options.mixer
 
-print "Will start app '"+myname+"'"
-
-if len(myname) == 0:
+if not myname or len(myname) == 0:
+	print "No mixer selected. Try the option \"-m <mixer>\" with <mixer> being one of " + str( mixerapps )
 	exit( 1 )
+
+print "Will start mixer '"+myname+"'"
 
 sys.path.append( "$PYTHONDIR" )
 
-#print sys.path
-
 runpy.run_module( "mixer_"+myname, run_name="__main__" )
+
+print "Finished."
 
