@@ -105,7 +105,15 @@ StreamProcessor::getPacketsPerPeriod()
 unsigned int
 StreamProcessor::getNbPacketsIsoXmitBuffer()
 {
-    return (getPacketsPerPeriod() * 1000)/1000;
+    // the target is to have all of the transmit buffer (at period transfer) as ISO packets
+    // when one period is received, there will be approx (NbBuffers - 1) * period_size frames
+    // in the transmit buffer (the others are still to be put into the xmit frame buffer)
+    unsigned int packets_to_prebuffer = (getPacketsPerPeriod() * (m_StreamProcessorManager.getNbBuffers()-1));
+    
+    // however we have to take into account the fact that there is some sync delay (unknown at this point)
+    packets_to_prebuffer -= 16; //FIXME: magic
+    
+    return packets_to_prebuffer;
 }
 
 /***********************************************
@@ -606,7 +614,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                     return RAW1394_ISO_ERROR;
                 }
             }
-            //usleep(125); // only when using thread per handler mode!
+            usleep(125); // only when using thread per handler mode!
             return RAW1394_ISO_AGAIN;
         } else {
             debugError("Invalid return value: %d\n", result);
