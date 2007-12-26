@@ -250,7 +250,7 @@ bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned in
     return ok;
 }
 
-#ifdef USE_SSE
+#if USE_SSE
 typedef float v4sf __attribute__ ((vector_size (16)));
 typedef int v4si __attribute__ ((vector_size (16)));
 typedef int v2si __attribute__ ((vector_size (8)));
