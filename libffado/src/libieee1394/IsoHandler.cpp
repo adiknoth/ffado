@@ -182,6 +182,7 @@ IsoHandler::Execute() {
         return true;
     }
 
+#ifdef DO_POLL
     uint64_t poll_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
     err = poll(&m_poll_fd, 1, m_poll_timeout);
     uint64_t poll_exit = m_manager.get1394Service().getCurrentTimeAsUsecs();
@@ -214,6 +215,13 @@ IsoHandler::Execute() {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%c %p) poll took %lldus, iterate took %lldus\n", 
                 (this->getType()==eHT_Receive?'R':'X'), this, 
                 poll_exit-poll_enter, iter_exit-iter_enter);
+#else
+    // iterate itself blocks if nothing is available
+    // so poll'ing is not really necessary
+    bool result = iterate();
+    usleep(125);
+    return result;
+#endif
     return true;
 }
 
