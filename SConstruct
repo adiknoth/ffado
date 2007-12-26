@@ -291,8 +291,9 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
-	env.AppendUnique( CCFLAGS=opt_flags )
-	print "Doing an optimized build..."
+    opt_flags.extend (["-fomit-frame-pointer","-ffast-math","-funroll-loops"])
+    env.AppendUnique( CCFLAGS=opt_flags )
+    print "Doing an optimized build..."
 
 
 env['REVISION'] = os.popen('svnversion .').read()[:-1]
