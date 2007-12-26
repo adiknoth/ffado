@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include "config.h"
 
 #include "AmdtpReceiveStreamProcessor.h"
 #include "AmdtpPort.h"
@@ -249,6 +250,102 @@ bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned in
     return ok;
 }
 
+#ifdef USE_SSE
+typedef float v4sf __attribute__ ((vector_size (16)));
+typedef int v4si __attribute__ ((vector_size (16)));
+typedef int v2si __attribute__ ((vector_size (8)));
+
+int
+AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
+                       AmdtpAudioPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents)
+{
+    unsigned int j=0;
+    quadlet_t *target_event;
+
+    target_event=(quadlet_t *)(data + p->getPosition());
+
+    static const float multiplier = 1.0f / (float)(0x7FFFFF);
+    static const float sse_multiplier[4] __attribute__((aligned(16))) = {
+            1.0f / (float)(0x7FFFFF),
+            1.0f / (float)(0x7FFFFF),
+            1.0f / (float)(0x7FFFFF),
+            1.0f / (float)(0x7FFFFF)
+    };
+    unsigned int tmp[4];
+
+    switch(p->getDataType()) {
+        default:
+        case Port::E_Int24:
+            {
+                quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+
+                assert(nevents + offset <= p->getBufferSize());
+
+                buffer+=offset;
+
+                for(j = 0; j < nevents; j += 1) { // decode max nsamples
+                    *(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+                    buffer++;
+                    target_event+=m_dimension;
+                }
+            }
+            break;
+        case Port::E_Float:
+            {
+                float *buffer=(float *)(p->getBufferAddress());
+
+                assert(nevents + offset <= p->getBufferSize());
+
+                buffer += offset;
+                j = 0;
+                if(nevents > 3) {
+                    for(j = 0; j < nevents-3; j += 4) {
+                        tmp[0] = ntohl(*target_event);
+                        target_event += m_dimension;
+                        tmp[1] = ntohl(*target_event);
+                        target_event += m_dimension;
+                        tmp[2] = ntohl(*target_event);
+                        target_event += m_dimension;
+                        tmp[3] = ntohl(*target_event);
+                        target_event += m_dimension;
+                        asm("pslld $8, %[in2]\n\t" // sign extend 24th bit
+                                "pslld $8, %[in1]\n\t"
+                                "psrad $8, %[in2]\n\t"
+                                "psrad $8, %[in1]\n\t"
+                                "cvtpi2ps %[in2], %%xmm0\n\t"
+                                "movlhps %%xmm0, %%xmm0\n\t"
+                                "cvtpi2ps %[in1], %%xmm0\n\t"
+                                "mulps %[ssemult], %%xmm0\n\t"
+                                "movups %%xmm0, %[floatbuff]"
+                            : [floatbuff] "=m" (*(v4sf*)buffer)
+                            : [in1] "y" (*(v2si*)tmp),
+                        [in2] "y" (*(v2si*)(tmp+2)),
+                        [ssemult] "x" (*(v4sf*)sse_multiplier)
+                            : "xmm0");
+                        buffer += 4;
+                    }
+                }
+                for(; j < nevents; ++j) { // decode max nsamples
+                    unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+                    // sign-extend highest bit of 24-bit int
+                    int tmp = (int)(v << 8) / 256;
+                    *buffer = tmp * multiplier;
+
+                    buffer++;
+                    target_event += m_dimension;
+                }
+                asm volatile("emms");
+                break;
+            }
+            break;
+    }
+
+    return 0;
+}
+
+#else
+
 int
 AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
                        AmdtpAudioPort *p, quadlet_t *data,
@@ -302,4 +399,5 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
     return 0;
 }
+#endif
 } // end of namespace Streaming

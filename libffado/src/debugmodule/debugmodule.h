@@ -52,7 +52,10 @@ typedef short debug_level_t;
 
 #define MB_BUFFERSIZE       DEBUG_MAX_MESSAGE_LENGTH
 
-#define IMPLEMENT_BACKLOG
+#ifdef DEBUG
+ #define IMPLEMENT_BACKLOG
+#endif
+
 #ifdef IMPLEMENT_BACKLOG
 // the backlog is a similar buffer as the message buffer
 #define BACKLOG_MB_BUFFERS      (256)
