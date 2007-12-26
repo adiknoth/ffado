@@ -321,6 +321,7 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 env.ScanReplace( "config.h.in" )
 # ensure that the config.h is updated with the version
 env.Depends( "config.h", "SConstruct" )
+env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
 
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
