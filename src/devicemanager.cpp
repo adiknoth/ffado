@@ -80,6 +80,7 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
     : Control::Container("devicemanager")
+    , m_processorManager( new Streaming::StreamProcessorManager() )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -87,6 +88,8 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
+    delete m_processorManager;
+
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -97,14 +100,15 @@ DeviceManager::~DeviceManager()
         delete *it;
     }
 
-    for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
-          it != m_1394Services.end();
+    for ( FunctorVectorIterator it = m_busreset_functors.begin();
+          it != m_busreset_functors.end();
           ++it )
     {
         delete *it;
     }
-    for ( FunctorVectorIterator it = m_busreset_functors.begin();
-          it != m_busreset_functors.end();
+
+    for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
+          it != m_1394Services.end();
           ++it )
     {
         delete *it;
@@ -113,7 +117,7 @@ DeviceManager::~DeviceManager()
 
 bool
 DeviceManager::setThreadParameters(bool rt, int priority) {
-    if (!m_processorManager.setThreadParameters(rt, priority)) {
+    if (!m_processorManager->setThreadParameters(rt, priority)) {
         debugError("Could not set processor manager thread parameters\n");
         return false;
     }
@@ -418,17 +422,17 @@ DeviceManager::initStreaming()
         }
 
         debugOutput(DEBUG_LEVEL_VERBOSE, "Setting samplerate to %d for (%p)\n",
-                    m_processorManager.getNominalRate(), device);
+                    m_processorManager->getNominalRate(), device);
 
         // Set the device's sampling rate to that requested
         // FIXME: does this really belong here?  If so we need to handle errors.
-        if (!device->setSamplingFrequency(m_processorManager.getNominalRate())) {
+        if (!device->setSamplingFrequency(m_processorManager->getNominalRate())) {
             debugOutput(DEBUG_LEVEL_VERBOSE, " => Retry setting samplerate to %d for (%p)\n",
-                        m_processorManager.getNominalRate(), device);
+                        m_processorManager->getNominalRate(), device);
 
             // try again:
-            if (!device->setSamplingFrequency(m_processorManager.getNominalRate())) {
-                debugFatal("Could not set sampling frequency to %d\n",m_processorManager.getNominalRate());
+            if (!device->setSamplingFrequency(m_processorManager->getNominalRate())) {
+                debugFatal("Could not set sampling frequency to %d\n",m_processorManager->getNominalRate());
                 return false;
             }
         }
@@ -437,7 +441,7 @@ DeviceManager::initStreaming()
     }
 
     // set the sync source
-    if (!m_processorManager.setSyncSource(getSyncSource())) {
+    if (!m_processorManager->setSyncSource(getSyncSource())) {
         debugWarning("Could not set processorManager sync source (%p)\n",
             getSyncSource());
     }
@@ -447,7 +451,7 @@ DeviceManager::initStreaming()
 bool
 DeviceManager::prepareStreaming()
 {
-    if (!m_processorManager.prepare()) {
+    if (!m_processorManager->prepare()) {
         debugFatal("Could not prepare streaming...\n");
         return false;
     }
@@ -499,7 +503,7 @@ DeviceManager::startStreaming() {
         }
     }
 
-    if(m_processorManager.start()) {
+    if(m_processorManager->start()) {
         return true;
     } else {
         stopStreaming();
@@ -516,7 +520,7 @@ bool
 DeviceManager::stopStreaming()
 {
     bool result = true;
-    m_processorManager.stop();
+    m_processorManager->stop();
 
     // create the connections for all devices
     // iterate over the found devices
@@ -549,21 +553,21 @@ DeviceManager::stopStreaming()
 
 bool
 DeviceManager::waitForPeriod() {
-    if(m_processorManager.waitForPeriod()) {
+    if(m_processorManager->waitForPeriod()) {
         return true;
     } else {
         debugWarning("XRUN detected\n");
         // do xrun recovery
-        m_processorManager.handleXrun();
+        m_processorManager->handleXrun();
         return false;
     }
 }
 
 bool
 DeviceManager::setStreamingParams(unsigned int period, unsigned int rate, unsigned int nb_buffers) {
-    m_processorManager.setPeriodSize(period);
-    m_processorManager.setNominalRate(rate);
-    m_processorManager.setNbBuffers(nb_buffers);
+    m_processorManager->setPeriodSize(period);
+    m_processorManager->setNominalRate(rate);
+    m_processorManager->setNbBuffers(nb_buffers);
     return true;
 }
 
@@ -755,7 +759,7 @@ DeviceManager::setVerboseLevel(int l)
 {
     setDebugLevel(l);
     Control::Element::setVerboseLevel(l);
-    m_processorManager.setVerboseLevel(l);
+    m_processorManager->setVerboseLevel(l);
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -809,5 +813,5 @@ DeviceManager::showDeviceInfo() {
 }
 void
 DeviceManager::showStreamingInfo() {
-    m_processorManager.dumpInfo();
+    m_processorManager->dumpInfo();
 }

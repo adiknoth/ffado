@@ -216,7 +216,7 @@ IsoHandler::Execute() {
                 (this->getType()==eHT_Receive?'R':'X'), this, 
                 poll_exit-poll_enter, iter_exit-iter_enter);
 #else
-    // iterate itself blocks if nothing is available
+    // iterate blocks if no 1394 data is available
     // so poll'ing is not really necessary
     bool result = iterate();
     usleep(125);

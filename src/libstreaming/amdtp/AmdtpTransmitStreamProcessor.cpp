@@ -21,6 +21,7 @@
  *
  */
 
+#include "config.h"
 #include "AmdtpTransmitStreamProcessor.h"
 #include "AmdtpPort.h"
 #include "../StreamProcessorManager.h"
@@ -98,7 +99,6 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // packets early if we want to. (not completely according to spec)
     const int max_cycles_to_transmit_early = 2;
 
-try_block_of_frames:
     debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "Try for cycle %d\n", cycle );
     // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
@@ -590,6 +590,111 @@ bool AmdtpTransmitStreamProcessor::encodePacketPorts ( quadlet_t *data, unsigned
     return ok;
 }
 
+#ifdef USE_SSE
+typedef float v4sf __attribute__ ((vector_size (16)));
+typedef int v4si __attribute__ ((vector_size (16)));
+typedef int v2si __attribute__ ((vector_size (8)));
+
+int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, quadlet_t *data,
+        unsigned int offset, unsigned int nevents )
+{
+    static const float sse_multiplier[4] __attribute__((aligned(16))) = {
+        (float)(0x7FFFFF00),
+        (float)(0x7FFFFF00),
+        (float)(0x7FFFFF00),
+        (float)(0x7FFFFF00)
+    };
+
+    static const int sse_mask[4] __attribute__((aligned(16))) = {
+        0x40000000,  0x40000000,  0x40000000,  0x40000000
+    };
+
+    unsigned int out[4];
+
+    unsigned int j=0;
+    unsigned int read=0;
+
+    quadlet_t *target_event;
+
+    target_event= ( quadlet_t * ) ( data + p->getPosition() );
+
+    switch ( p->getDataType() )
+    {
+        default:
+        case Port::E_Int24:
+        {
+            quadlet_t *buffer= ( quadlet_t * ) ( p->getBufferAddress() );
+
+            assert ( nevents + offset <= p->getBufferSize() );
+
+            buffer+=offset;
+
+            for ( j = 0; j < nevents; j += 1 )   // decode max nsamples
+            {
+                *target_event = htonl ( ( * ( buffer ) & 0x00FFFFFF ) | 0x40000000 );
+                buffer++;
+                target_event += m_dimension;
+            }
+        }
+        break;
+        case Port::E_Float:
+        {
+            const float multiplier = ( float ) ( 0x7FFFFF00 );
+            float *buffer= ( float * ) ( p->getBufferAddress() );
+
+            assert ( nevents + offset <= p->getBufferSize() );
+
+            buffer+=offset;
+
+            j=0;
+            if(read>3) {
+                for (j = 0; j < read-3; j += 4) {
+                    asm("movups %[floatbuff], %%xmm0\n\t"
+                            "mulps %[ssemult], %%xmm0\n\t"
+                            "cvttps2pi %%xmm0, %[out1]\n\t"
+                            "movhlps %%xmm0, %%xmm0\n\t"
+                            "psrld $8, %[out1]\n\t"
+                            "cvttps2pi %%xmm0, %[out2]\n\t"
+                            "por %[mmxmask], %[out1]\n\t"
+                            "psrld $8, %[out2]\n\t"
+                            "por %[mmxmask], %[out2]\n\t"
+                        : [out1] "=&y" (*(v2si*)&out[0]),
+                    [out2] "=&y" (*(v2si*)&out[2])
+                        : [floatbuff] "m" (*(v4sf*)buffer),
+                    [ssemult] "x" (*(v4sf*)sse_multiplier),
+                    [mmxmask] "y" (*(v2si*)sse_mask)
+                        : "xmm0");
+                    buffer += 4;
+                    *target_event = htonl(out[0]);
+                    target_event += m_dimension;
+                    *target_event = htonl(out[1]);
+                    target_event += m_dimension;
+                    *target_event = htonl(out[2]);
+                    target_event += m_dimension;
+                    *target_event = htonl(out[3]);
+                    target_event += m_dimension;
+                }
+            }
+            for(; j < read; ++j) {
+            // don't care for overflow
+                float v = *buffer * multiplier;  // v: -231 .. 231
+                unsigned int tmp = (int)v;
+                *target_event = htonl((tmp >> 8) | 0x40000000);
+    
+                buffer++;
+                target_event += m_dimension;
+            }
+
+            asm volatile("emms");
+            break;
+        }
+        break;
+    }
+
+    return 0;
+}
+
+#else
 
 int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, quadlet_t *data,
         unsigned int offset, unsigned int nevents )
@@ -645,6 +750,8 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, qu
 
     return 0;
 }
+#endif
+
 int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents ( AmdtpAudioPort *p, quadlet_t *data,
         unsigned int offset, unsigned int nevents )
 {

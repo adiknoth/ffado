@@ -101,7 +101,6 @@ Ieee1394Service::~Ieee1394Service()
 {
     delete m_pCTRHelper;
     delete m_pIsoManager;
-    delete m_pTimeSource;
     stopRHThread();
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
@@ -115,6 +114,7 @@ Ieee1394Service::~Ieee1394Service()
         }
     }
 
+    delete m_pTimeSource;
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
     }
@@ -351,8 +351,12 @@ Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
 
 uint64_t
 Ieee1394Service::getCurrentTimeAsUsecs() {
-    assert(m_pTimeSource);
-    return m_pTimeSource->getCurrentTimeAsUsecs();
+    if(m_pTimeSource) {
+        return m_pTimeSource->getCurrentTimeAsUsecs();
+    } else {
+        debugError("No timesource!\n");
+        return 0;
+    }
 }
 
 bool

@@ -284,7 +284,8 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
             elif config[config_cpu] == "i686":
                 opt_flags.append ("-march=i686")
     
-    if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) and build_host_supports_sse:
+    if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) \
+       and build_host_supports_sse and env['ENABLE_OPTIMIZATIONS']:
         opt_flags.extend (["-msse", "-mfpmath=sse"])
         env['USE_SSE'] = 1
 

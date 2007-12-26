@@ -116,9 +116,9 @@ protected:
 
 public: // FIXME: this should be better
     Streaming::StreamProcessorManager&  getStreamProcessorManager() 
-        {return m_processorManager;};
+        {return *m_processorManager;};
 private:
-    Streaming::StreamProcessorManager  m_processorManager;
+    Streaming::StreamProcessorManager*  m_processorManager;
 protected:
     std::vector<std::string>          m_SpecStrings;
 
