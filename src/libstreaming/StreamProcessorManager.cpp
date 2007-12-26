@@ -409,7 +409,7 @@ bool StreamProcessorManager::syncStartAll() {
     }
     // wait for the syncsource to start running.
     // that will block the waitForPeriod call until everyone has started (theoretically)
-    int cnt = CYCLES_FOR_STARTUP * 2; // by then it should have started
+    int cnt = CYCLES_FOR_STARTUP * 20; // by then it should have started
     while (!m_SyncSource->isRunning() && cnt) {
         usleep(125);
         cnt--;
@@ -431,8 +431,8 @@ bool StreamProcessorManager::syncStartAll() {
 bool
 StreamProcessorManager::alignReceivedStreams()
 {
-    #define NB_PERIODS_FOR_ALIGN_AVERAGE 20
-    #define NB_ALIGN_TRIES 20
+    #define ALIGN_AVERAGE_TIME_MSEC 200
+    #define NB_ALIGN_TRIES 40
     debugOutput( DEBUG_LEVEL_VERBOSE, "Aligning received streams...\n");
     unsigned int nb_sync_runs;
     unsigned int nb_rcv_sp = m_ReceiveProcessors.size();
@@ -441,10 +441,15 @@ StreamProcessorManager::alignReceivedStreams()
 
     unsigned int i;
 
+    unsigned int periods_per_align_try = (ALIGN_AVERAGE_TIME_MSEC * getNominalRate());
+    periods_per_align_try /= 1000;
+    periods_per_align_try /= getPeriodSize();
+    debugOutput( DEBUG_LEVEL_VERBOSE, " averaging over %u periods...\n", periods_per_align_try);
+
     bool aligned = false;
     int cnt = NB_ALIGN_TRIES;
     while (!aligned && cnt--) {
-        nb_sync_runs = NB_PERIODS_FOR_ALIGN_AVERAGE;
+        nb_sync_runs = periods_per_align_try;
         while(nb_sync_runs) {
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " check (%d)...\n", nb_sync_runs);
             waitForPeriod();
@@ -455,7 +460,7 @@ StreamProcessorManager::alignReceivedStreams()
                 diff = diffTicks(m_SyncSource->getTimeAtPeriod(), s->getTimeAtPeriod());
                 debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "  offset between SyncSP %p and SP %p is %lld ticks...\n", 
                     m_SyncSource, s, diff);
-                if ( nb_sync_runs == NB_PERIODS_FOR_ALIGN_AVERAGE ) {
+                if ( nb_sync_runs == periods_per_align_try ) {
                     diff_between_streams[i] = diff;
                 } else {
                     diff_between_streams[i] += diff;
@@ -474,7 +479,7 @@ StreamProcessorManager::alignReceivedStreams()
         for ( i = 0; i < nb_rcv_sp; i++) {
             StreamProcessor *s = m_ReceiveProcessors.at(i);
 
-            diff_between_streams[i] /= NB_PERIODS_FOR_ALIGN_AVERAGE;
+            diff_between_streams[i] /= periods_per_align_try;
             diff_between_streams_frames[i] = (int)roundf(diff_between_streams[i] / s->getTicksPerFrame());
             debugOutput( DEBUG_LEVEL_VERBOSE, "   avg offset between SyncSP %p and SP %p is %lld ticks, %d frames...\n", 
                 m_SyncSource, s, diff_between_streams[i], diff_between_streams_frames[i]);

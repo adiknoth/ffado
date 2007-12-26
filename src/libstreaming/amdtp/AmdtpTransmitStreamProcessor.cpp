@@ -161,11 +161,14 @@ try_block_of_frames:
         }
         else
         {
+            unsigned int now_cycle = ( unsigned int ) ( TICKS_TO_CYCLES ( m_1394service.getCycleTimerTicks() ) );
+
             debugOutput ( DEBUG_LEVEL_VERBOSE,
-                        "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
-                        fc, cycle, transmit_at_cycle, cycles_until_transmit );
-            debugWarning( "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
-                          fc, cycle, transmit_at_cycle, cycles_until_transmit );
+                        "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
+                        fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
+            debugWarning("Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
+                         fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
+
             // there is still time left to send the packet
             // we want the system to give this packet another go at a later time instant
             return eCRV_Again; // note that the raw1394 again system doesn't work as expected
@@ -212,7 +215,8 @@ try_block_of_frames:
                         cycle,
                         transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
-
+            debugShowBackLogLines(200);
+            flushDebugOutput();
             // however, if we can send this sufficiently before the presentation
             // time, it could be harmless.
             // NOTE: dangerous since the device has no way of reporting that it didn't get

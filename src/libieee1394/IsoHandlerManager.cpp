@@ -355,7 +355,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
         if(irq_interval <= 0) irq_interval=1;
         // FIXME: test
-        irq_interval=1;
+//        irq_interval=1;
 
 #else
         // hardware interrupts occur when one DMA block is full, and the size of one DMA
@@ -439,7 +439,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         if (max_packet_size < stream->getMaxPacketSize()) {
             debugError("Max packet size too large! (%d)\n", stream->getMaxPacketSize());
         }
-        irq_interval=2;
+  //      irq_interval=2;
 #endif
         // the SP specifies how many packets to buffer
         int buffers = stream->getNbPacketsIsoXmitBuffer();

@@ -33,7 +33,7 @@
 
 #include <vector>
 
-// #define THREAD_PER_ISOHANDLER
+#define THREAD_PER_ISOHANDLER
 
 #define FFADO_MAX_ISO_HANDLERS_PER_PORT 16
 

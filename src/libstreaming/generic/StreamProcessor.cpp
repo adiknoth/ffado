@@ -113,6 +113,9 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
     // however we have to take into account the fact that there is some sync delay (unknown at this point)
     packets_to_prebuffer -= 16; //FIXME: magic
     
+    // only queue a part (80%) of the theoretical max in order not to have too much 'not ready' cycles
+    packets_to_prebuffer = (packets_to_prebuffer * 8000) / 10000;
+    
     return packets_to_prebuffer;
 }
 
@@ -614,8 +617,10 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                     return RAW1394_ISO_ERROR;
                 }
             }
-            usleep(125); // only when using thread per handler mode!
-            return RAW1394_ISO_AGAIN;
+//             return RAW1394_ISO_AGAIN;
+            generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            return RAW1394_ISO_DEFER;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
