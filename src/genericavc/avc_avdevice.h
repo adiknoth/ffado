@@ -48,8 +48,8 @@ namespace GenericAVC {
 class AvDevice : public FFADODevice, public AVC::Unit {
 public:
     AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~AvDevice() {};
-
+    virtual ~AvDevice();
+    
     static bool probe( ConfigRom& configRom );
     virtual bool discover();
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
@@ -94,6 +94,7 @@ protected:
 
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
+    typedef std::vector< Streaming::StreamProcessor * >::iterator StreamProcessorVectorIterator;
     StreamProcessorVector m_receiveProcessors;
     StreamProcessorVector m_transmitProcessors;
 
