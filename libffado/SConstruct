@@ -48,6 +48,7 @@ opts.AddOptions(
 	BoolOption( "DEBUG", """\
 Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
   \"-O2\" to optimise.""", True ),
+	BoolOption( "PROFILE", "Build with symbols and other profiling info", False ),
 	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathOption.PathAccept ),
 	PathOption( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin", PathOption.PathAccept ),
 	PathOption( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib", PathOption.PathAccept ),
@@ -189,9 +190,18 @@ env = conf.Finish()
 if env['DEBUG']:
 	print "Doing a DEBUG build"
 	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
-	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] ) # HACK!!
+	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
+	env.AppendUnique( CFLAGS=["-DDEBUG","-Wall","-g"] )
 else:
 	env.AppendUnique( CCFLAGS=["-O2","-DNDEBUG"] )
+	env.AppendUnique( CFLAGS=["-O2","-DNDEBUG"] )
+
+if env['PROFILE']:
+	print "Doing a PROFILE build"
+	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
+	env.AppendUnique( CCFLAGS=["-Wall","-g"] )
+	env.AppendUnique( CFLAGS=["-Wall","-g"] )
+
 
 # this is required to indicate that the DBUS version we use has support
 # for platform dependent threading init functions
@@ -293,6 +303,7 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
 if env['ENABLE_OPTIMIZATIONS']:
     opt_flags.extend (["-fomit-frame-pointer","-ffast-math","-funroll-loops"])
     env.AppendUnique( CCFLAGS=opt_flags )
+    env.AppendUnique( CFLAGS=opt_flags )
     print "Doing an optimized build..."
 
 
