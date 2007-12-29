@@ -26,6 +26,8 @@
 #include "generic/Port.h"
 #include "libieee1394/cycletimer.h"
 
+#include "libutil/Time.h"
+
 #include <errno.h>
 #include <assert.h>
 #include <math.h>
@@ -262,7 +264,7 @@ bool StreamProcessorManager::startDryRunning() {
             all_dry_running &= (*it)->isDryRunning();
         }
 
-        usleep(125);
+        SleepRelativeUsec(125);
         cnt--;
     }
     if(cnt==0) {
@@ -331,7 +333,7 @@ bool StreamProcessorManager::syncStartAll() {
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
         if(time_till_next_period > 0) {
             // wait for the period
-            usleep(time_till_next_period);
+            SleepRelativeUsec(time_till_next_period);
         }
     }
 
@@ -411,7 +413,7 @@ bool StreamProcessorManager::syncStartAll() {
     // that will block the waitForPeriod call until everyone has started (theoretically)
     int cnt = CYCLES_FOR_STARTUP * 20; // by then it should have started
     while (!m_SyncSource->isRunning() && cnt) {
-        usleep(125);
+        SleepRelativeUsec(125);
         cnt--;
     }
     if(cnt==0) {
@@ -556,7 +558,7 @@ bool StreamProcessorManager::stop() {
             ++it ) {
             ready &= ((*it)->isDryRunning() || (*it)->isStopped());
         }
-        usleep(125);
+        SleepRelativeUsec(125);
         cnt--;
     }
     if(cnt==0) {
@@ -596,7 +598,7 @@ bool StreamProcessorManager::stop() {
             ++it ) {
             ready &= (*it)->isStopped();
         }
-        usleep(125);
+        SleepRelativeUsec(125);
         cnt--;
     }
     if(cnt==0) {
@@ -669,7 +671,7 @@ bool StreamProcessorManager::waitForPeriod() {
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
 
         // wait for the period
-        usleep(time_till_next_period);
+        SleepRelativeUsec(time_till_next_period);
 
         // check for underruns on the ISO side,
         // those should make us bail out of the wait loop
@@ -736,7 +738,7 @@ bool StreamProcessorManager::waitForPeriod() {
         }
         if (!ready_for_transfer) {
             
-            usleep(125); // MAGIC: one cycle sleep...
+            SleepRelativeUsec(125); // MAGIC: one cycle sleep...
 
             // in order to avoid this in the future, we increase the sync delay of the sync source SP
             int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;

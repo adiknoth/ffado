@@ -39,6 +39,7 @@
 #include "src/libieee1394/cycletimer.h"
 
 #include "src/libutil/TimestampedBuffer.h"
+#include "libutil/Time.h"
 
 #include <pthread.h>
 
@@ -296,7 +297,7 @@ int main(int argc, char *argv[])
 
     t->prepare();
 
-    usleep(1000);
+    SleepRelativeUsec(1000);
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Start setBufferHeadTimestamp test...\n");
     {
@@ -364,7 +365,7 @@ int main(int argc, char *argv[])
             }
 
             // allow for the messagebuffer thread to catch up
-            usleep(200);
+            SleepRelativeUsec(200);
 
             if(!run) break;
         }
@@ -479,7 +480,7 @@ int main(int argc, char *argv[])
             }
 
             // allow for the messagebuffer thread to catch up
-            usleep(200);
+            SleepRelativeUsec(200);
 
             if(!run) break;
         }
@@ -579,7 +580,7 @@ int main(int argc, char *argv[])
             }
 
             // allow for the messagebuffer thread to catch up
-            usleep(200);
+            SleepRelativeUsec(200);
 
             if(!run) break;
         }

@@ -25,6 +25,7 @@
 #include <libraw1394/raw1394.h>
 #include <libiec61883/iec61883.h>
 #include <libavc1394/avc1394.h>
+#include "libutil/Time.h"
 
 #include <argp.h>
 #include <stdlib.h>
@@ -144,7 +145,7 @@ main(int argc, char **argv)
 //     cmd[0] = 0x00600880;
 //     cmd[1] = 0x01FF0000;
 //     avc1394_transaction_block2(pHandle, 0xffc0 | iNodeId, cmd, 2, &response_len, 10);
-//     usleep(100000); 
+//     SleepRelativeUsec(100000); 
 //     
 //     cerr << "Reading descriptor" << endl;
 // //     0h 05m 21.760700s - GetDescriptorRead:  cmd[0]= < 0x00 0x60 0x09 0x80 0xFF 0xFF 0x00 0x00 0x00 0x00>
@@ -155,13 +156,13 @@ main(int argc, char **argv)
 //     cmd[2] = 0x00000000;
 //      
 //     avc1394_transaction_block2(pHandle, 0xffc0 | iNodeId, cmd, 3, &response_len, 10);
-//     usleep(100000);
+//     SleepRelativeUsec(100000);
 //     
 //     cerr << "Closing descriptor" << endl;
 //     cmd[0] = 0x00600880;
 //     cmd[1] = 0x00FF0000;
 //     avc1394_transaction_block2(pHandle, 0xffc0 | iNodeId, cmd, 2, &response_len, 10);
-//     usleep(100000);
+//     SleepRelativeUsec(100000);
 
     cerr << "getting signal source" << endl;
 //     0h 05m 21.762917s - at line 2283, fMaxAudioOutputChannels=2, fMaxAudioInputChannels=0
@@ -195,12 +196,12 @@ main(int argc, char **argv)
     cmd[0] = 0x01FF1AFF;
     cmd[1] = 0xFFFE6000;
     avc1394_transaction_block2(pHandle, 0xffc0 | iNodeId, cmd, 2, &response_len, 10);
-//     usleep(100000);
+//     SleepRelativeUsec(100000);
     
     cmd[0] = 0x01FF1AFF;
     cmd[1] = 0xFFFEFF00;
     avc1394_transaction_block2(pHandle, 0xffc0 | iNodeId, cmd, 2, &response_len, 10);
-    usleep(100000);
+    SleepRelativeUsec(100000);
 
 
 

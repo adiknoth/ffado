@@ -27,6 +27,8 @@
 #include "../StreamProcessorManager.h"
 #include "devicemanager.h"
 
+#include "libutil/Time.h"
+
 #include "libieee1394/ieee1394service.h"
 #include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
@@ -179,7 +181,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
             // and hence there is no progression in the number of frames available.
 
             // for example:
-            // usleep(125); // one cycle
+            // SleepRelativeUsec(125); // one cycle
             // goto try_block_of_frames;
 
             // or more advanced, calculate how many cycles we are ahead of 'now' and
