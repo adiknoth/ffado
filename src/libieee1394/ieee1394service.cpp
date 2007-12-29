@@ -56,7 +56,7 @@ Ieee1394Service::Ieee1394Service()
     , m_realtime ( false )
     , m_base_priority ( 0 )
     , m_pIsoManager( new IsoHandlerManager( *this ) )
-    , m_pCTRHelper ( new CycleTimerHelper( *this, 1000 ) )
+    , m_pCTRHelper ( new CycleTimerHelper( *this, 10000 ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
 {
@@ -99,8 +99,8 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
 
 Ieee1394Service::~Ieee1394Service()
 {
-    delete m_pCTRHelper;
     delete m_pIsoManager;
+    delete m_pCTRHelper;
     stopRHThread();
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
