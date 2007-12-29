@@ -55,6 +55,10 @@ IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, int 
 IsoHandlerManager::~IsoHandlerManager()
 {
     stopHandlers();
+    pruneHandlers();
+    if(m_IsoHandlers.size() > 0) {
+        debugError("Still some handlers in use\n");
+    }
     if (m_Thread) {
         m_Thread->Stop();
         delete m_Thread;

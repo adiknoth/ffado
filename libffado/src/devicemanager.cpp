@@ -88,8 +88,6 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
-    delete m_processorManager;
-
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -99,6 +97,9 @@ DeviceManager::~DeviceManager()
         }
         delete *it;
     }
+
+    // the SP's are automatically unregistered at the SPM
+    delete m_processorManager;
 
     for ( FunctorVectorIterator it = m_busreset_functors.begin();
           it != m_busreset_functors.end();

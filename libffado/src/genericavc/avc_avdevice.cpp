@@ -58,6 +58,22 @@ AvDevice::AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
+AvDevice::~AvDevice()
+{
+    for ( StreamProcessorVectorIterator it = m_receiveProcessors.begin();
+          it != m_receiveProcessors.end();
+          ++it )
+    {
+        delete *it;
+    }
+    for ( StreamProcessorVectorIterator it = m_transmitProcessors.begin();
+          it != m_transmitProcessors.end();
+          ++it )
+    {
+        delete *it;
+    }
+}
+
 bool
 AvDevice::probe( ConfigRom& configRom )
 {

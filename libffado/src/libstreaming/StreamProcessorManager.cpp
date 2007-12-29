@@ -119,6 +119,10 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
               ++it )
         {
             if ( *it == processor ) {
+                if (*it == m_SyncSource) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "unregistering sync source");
+                    m_SyncSource = NULL;
+                }
                 m_ReceiveProcessors.erase(it);
                 return true;
             }
@@ -131,6 +135,10 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
               ++it )
         {
             if ( *it == processor ) {
+                if (*it == m_SyncSource) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "unregistering sync source");
+                    m_SyncSource = NULL;
+                }
                 m_TransmitProcessors.erase(it);
                 return true;
             }
@@ -288,6 +296,7 @@ bool StreamProcessorManager::startDryRunning() {
 }
 
 bool StreamProcessorManager::syncStartAll() {
+    if(m_SyncSource == NULL) return false;
     // figure out when to get the SP's running.
     // the xmit SP's should also know the base timestamp
     // streams should be aligned here
@@ -433,6 +442,7 @@ bool StreamProcessorManager::syncStartAll() {
 bool
 StreamProcessorManager::alignReceivedStreams()
 {
+    if(m_SyncSource == NULL) return false;
     #define ALIGN_AVERAGE_TIME_MSEC 200
     #define NB_ALIGN_TRIES 40
     debugOutput( DEBUG_LEVEL_VERBOSE, "Aligning received streams...\n");
@@ -658,12 +668,11 @@ bool StreamProcessorManager::handleXrun() {
  * @return true if the period is ready, false if an xrun occurred
  */
 bool StreamProcessorManager::waitForPeriod() {
+    if(m_SyncSource == NULL) return false;
     int time_till_next_period;
     bool xrun_occurred = false;
 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
-
-    assert(m_SyncSource);
 
     time_till_next_period=m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
 
@@ -838,6 +847,7 @@ bool StreamProcessorManager::transfer() {
  * @return true if successful, false otherwise (indicates xrun).
  */
 bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
+    if(m_SyncSource == NULL) return false;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
         (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
@@ -908,6 +918,7 @@ bool StreamProcessorManager::transferSilence() {
  * @return true if successful, false otherwise (indicates xrun).
  */
 bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorType t) {
+    if(m_SyncSource == NULL) return false;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transferSilence(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
         (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
