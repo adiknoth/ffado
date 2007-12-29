@@ -43,6 +43,9 @@ public:
     ffado_microsecs_t getCurrentTimeAsUsecs();
     inline ffado_microsecs_t unWrapTime(ffado_microsecs_t t) {return t;};
     inline ffado_microsecs_t wrapTime(ffado_microsecs_t t) {return t;};
+    
+    static void SleepUsecRelative(ffado_microsecs_t usecs);
+    static void SleepUsecAbsolute(ffado_microsecs_t wake_time);
 
 protected:
     DECLARE_DEBUG_MODULE;

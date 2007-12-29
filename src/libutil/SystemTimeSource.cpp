@@ -29,11 +29,19 @@ namespace Util {
 IMPL_DEBUG_MODULE( SystemTimeSource, SystemTimeSource, DEBUG_LEVEL_NORMAL );
 
 SystemTimeSource::SystemTimeSource() {
-//     InitTime();
 }
 
 SystemTimeSource::~SystemTimeSource() {
+}
 
+void
+SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs) {
+    usleep(usecs);
+}
+
+void
+SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at) {
+    // FIXME: not implemented yet
 }
 
 ffado_microsecs_t SystemTimeSource::getCurrentTime() {
