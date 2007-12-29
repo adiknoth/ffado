@@ -204,6 +204,9 @@ MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 
 MotuDevice::~MotuDevice()
 {
+    delete m_receiveProcessor;
+    delete m_transmitProcessor;
+
     // Free ieee1394 bus resources if they have been allocated
     if (m_iso_recv_channel>=0 && !get1394Service().freeIsoChannel(m_iso_recv_channel)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
