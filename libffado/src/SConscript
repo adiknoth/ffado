@@ -78,7 +78,6 @@ ffado_source = env.Split( '\
 	libutil/serialize.cpp \
 	libutil/StreamStatistics.cpp \
 	libutil/SystemTimeSource.cpp \
-	libutil/Time.c \
 	libutil/TimeSource.cpp \
 	libutil/TimestampedBuffer.cpp \
 	libcontrol/Element.cpp \

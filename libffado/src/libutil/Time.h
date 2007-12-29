@@ -24,11 +24,9 @@
 #ifndef __Time__
 #define __Time__
 
-#include <stdio.h>
 #include <inttypes.h>
-#include <unistd.h>
 
-#include <time.h>
+#include "SystemTimeSource.h"
 
 /**
  * Type used to represent the value of free running
@@ -36,9 +34,10 @@
  */
 typedef uint64_t ffado_microsecs_t;
 
-static inline void SleepRelativeUsec(unsigned long usec) {
-    usleep(usec);
+static inline void SleepRelativeUsec(ffado_microsecs_t usec) {
+    Util::SystemTimeSource::SleepUsecRelative(usec);
 }
+
 #endif
 
 
