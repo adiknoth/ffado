@@ -31,6 +31,7 @@
 #include "libieee1394/ieee1394service.h"
 #include "libutil/cmd_serialize.h"
 #include "libavc/general/avc_generic.h"
+#include "libutil/Time.h"
 
 #include "bebob/focusrite/focusrite_cmd.h"
 using namespace BeBoB::Focusrite;
@@ -190,7 +191,7 @@ main(int argc, char **argv)
                 old_vals[id] = cmd.m_value;
             }
         }
-        usleep(1000000);
+        SleepRelativeUsec(1000000);
     }
 
 

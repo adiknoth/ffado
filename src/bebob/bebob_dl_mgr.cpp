@@ -29,6 +29,7 @@
 #include "libieee1394/ieee1394service.h"
 
 #include "libutil/cmd_serialize.h"
+#include "libutil/Time.h"
 
 #include <netinet/in.h>
 
@@ -435,7 +436,7 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
             result = false;
             break;
         }
-        usleep( 100 );
+        SleepRelativeUsec( 100 );
 
         if ( !readResponse( ccBlock ) ) {
             debugError( "downloadObject: (block) read request failed\n" );

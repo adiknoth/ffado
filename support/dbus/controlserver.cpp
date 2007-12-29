@@ -25,6 +25,7 @@
 #include "libcontrol/Element.h"
 #include "libcontrol/BasicElements.h"
 #include "libcontrol/MatrixMixer.h"
+#include "libutil/Time.h"
 
 namespace DBusControl {
 
@@ -171,7 +172,7 @@ Continuous::setValue( const DBus::Double& value )
 {
     m_Slave.setValue(value);
 /*    
-    usleep(1000*500);
+    SleepRelativeUsec(1000*500);
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%lf) => %lf\n", value, m_Slave.getValue() );
     
@@ -201,7 +202,7 @@ Discrete::setValue( const DBus::Int32& value )
 {
     m_Slave.setValue(value);
     
-/*    usleep(1000*500);
+/*    SleepRelativeUsec(1000*500);
     debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%d) => %d\n", value, m_Slave.getValue() );
     
     return m_Slave.getValue();*/

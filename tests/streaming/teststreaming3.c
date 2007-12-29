@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <signal.h>
+#include <sched.h>
 
 #include "libffado/ffado.h"
 
@@ -46,6 +47,38 @@ int run;
 static void sighandler (int sig)
 {
 	run = 0;
+	set_realtime_priority(0);
+}
+
+int set_realtime_priority(unsigned int prio)
+{
+  if (prio > 0) {
+    struct sched_param schp;
+    /*
+     * set the process to realtime privs
+     */
+    memset(&schp, 0, sizeof(schp));
+    schp.sched_priority = prio;
+    
+    if (sched_setscheduler(0, SCHED_FIFO, &schp) != 0) {
+      perror("sched_setscheduler");
+      exit(1);
+    }
+  } else {
+        struct sched_param schp;
+        /*
+        * set the process to realtime privs
+        */
+        memset(&schp, 0, sizeof(schp));
+        schp.sched_priority = prio;
+        
+        if (sched_setscheduler(0, SCHED_OTHER, &schp) != 0) {
+        perror("sched_setscheduler");
+        exit(1);
+        }
+    
+  }
+  return 0;
 }
 
 int main(int argc, char *argv[])
@@ -68,7 +101,7 @@ int main(int argc, char *argv[])
 	
 	run=1;
 
-	printf("Ffado streaming test application (3)\n");
+	printf("FFADO streaming test application (3)\n");
 
 	signal (SIGINT, sighandler);
 	signal (SIGPIPE, sighandler);
@@ -85,7 +118,7 @@ int main(int argc, char *argv[])
 	dev_options.nb_buffers=3;
 
 	dev_options.realtime=1;
-	dev_options.packetizer_priority=70;
+	dev_options.packetizer_priority=60;
 	
 	dev_options.verbose = 6;
         
@@ -202,6 +235,7 @@ int main(int argc, char *argv[])
 	ffado_streaming_prepare(dev);
 	start_flag = ffado_streaming_start(dev);
 
+	set_realtime_priority(dev_options.packetizer_priority-1);
 	fprintf(stderr,"Entering receive loop (%d,%d)\n",nb_in_channels,nb_out_channels);
 	while(run && start_flag==0) {
 		retval = ffado_streaming_wait(dev);

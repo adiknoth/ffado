@@ -30,6 +30,8 @@
 #include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
+#include "libutil/Time.h"
+
 #include "libutil/Atomic.h"
 
 #include <assert.h>
@@ -922,7 +924,7 @@ StreamProcessor::waitForState(enum eProcessorState state, unsigned int timeout_m
     debugOutput(DEBUG_LEVEL_VERBOSE, "Waiting for state %s\n", ePSToString(state));
     int cnt = timeout_ms;
     while (m_state != state && cnt) {
-        usleep(1000);
+        SleepRelativeUsec(1000);
         cnt--;
     }
     if(cnt==0) {

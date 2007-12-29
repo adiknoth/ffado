@@ -24,6 +24,8 @@
 #include "focusrite_saffirepro.h"
 #include "focusrite_cmd.h"
 
+#include "libutil/Time.h"
+
 namespace BeBoB {
 namespace Focusrite {
 
@@ -384,7 +386,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for device to finish rebooting...\n");
 
                 // the device needs quite some time to reboot
-                usleep(2 * 1000 * 1000);
+                SleepRelativeUsec(2 * 1000 * 1000);
 
                 int timeout = 5; // multiples of 1s
                 // wait for a busreset to occur
@@ -392,14 +394,14 @@ SaffireProDevice::setSamplingFrequency( int s )
                        && --timeout)
                 {
                     // wait for a while
-                    usleep(1000 * 1000);
+                    SleepRelativeUsec(1000 * 1000);
                 }
                 if (!timeout) {
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Device did not reset itself, forcing reboot...\n");
                     rebootDevice();
 
                     // the device needs quite some time to reboot
-                    usleep(2 * 1000 * 1000);
+                    SleepRelativeUsec(2 * 1000 * 1000);
 
                     // wait for the device to finish the reboot
                     timeout = 10; // multiples of 1s
@@ -407,7 +409,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                            && --timeout)
                     {
                         // wait for a while
-                        usleep(1000 * 1000);
+                        SleepRelativeUsec(1000 * 1000);
                     }
                     if (!timeout) {
                         debugError( "Device did not reset itself after forced reboot...\n");
@@ -424,7 +426,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Waiting... (gen: %u)\n", gen_current);
 
                     // wait for a while
-                    usleep(4 * 1000 * 1000);
+                    SleepRelativeUsec(4 * 1000 * 1000);
                 } while (gen_current != get1394Service().getGeneration()
                          && --timeout);
 
@@ -437,7 +439,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                     gen_before, get1394Service().getGeneration());
 
                 // wait some more
-                usleep(1 * 1000 * 1000);
+                SleepRelativeUsec(1 * 1000 * 1000);
 
                 // we have to rediscover the device
                 if (discover()) break;

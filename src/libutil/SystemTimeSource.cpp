@@ -37,11 +37,12 @@ SystemTimeSource::~SystemTimeSource() {
 }
 
 ffado_microsecs_t SystemTimeSource::getCurrentTime() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000000ULL + tv.tv_usec;
-
-//     return GetMicroSeconds();
+//     struct timeval tv;
+//     gettimeofday(&tv, NULL);
+//     return tv.tv_sec * 1000000ULL + tv.tv_usec;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ffado_microsecs_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 }
 
 ffado_microsecs_t SystemTimeSource::getCurrentTimeAsUsecs() {

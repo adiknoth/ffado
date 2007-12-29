@@ -43,6 +43,7 @@
 #include "src/libieee1394/ARMHandler.h"
 
 #include <libraw1394/raw1394.h>
+#include "libutil/Time.h"
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
     while(run) {
         fflush(stderr);
         fflush(stdout);
-        usleep(900*1000);
+        SleepRelativeUsec(900*1000);
 
         uint32_t cycle_timer;
         uint64_t local_time;

@@ -27,6 +27,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "libutil/Time.h"
+
 #include <netinet/in.h>
 
 #define DEBUG_EXTRA_VERBOSE 5
@@ -264,7 +266,7 @@ AVCCommand::fire()
 
     m_p1394Service->transactionBlockClose();
 
-    usleep( m_time );
+    SleepRelativeUsec( m_time );
 
     return result;
 }

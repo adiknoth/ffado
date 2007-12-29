@@ -36,6 +36,7 @@
 #include "libstreaming/motu/MotuPort.h"
 
 #include "libutil/DelayLockedLoop.h"
+#include "libutil/Time.h"
 
 #include <string>
 #include <stdint.h>
@@ -958,7 +959,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }
 
-  usleep(100);
+  SleepRelativeUsec(100);
   return (err==0)?0:-1;
 }
 

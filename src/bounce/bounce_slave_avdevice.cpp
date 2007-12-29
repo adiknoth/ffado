@@ -27,6 +27,8 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
+#include "libutil/Time.h"
+
 #include "bounce_slave_avdevice.h"
 
 #include <libraw1394/raw1394.h>
@@ -312,7 +314,7 @@ BounceSlaveDevice::waitForRegisterNotEqualTo(nodeaddr_t offset, fb_quadlet_t v) 
             debugError("Could not read register\n");
             return false;
         }
-        usleep(100000);
+        SleepRelativeUsec(100000);
     }
 
     if(!wait_cycles) { // timout has occurred
