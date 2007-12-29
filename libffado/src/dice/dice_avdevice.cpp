@@ -77,7 +77,18 @@ DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRo
 
 DiceAvDevice::~DiceAvDevice()
 {
-    // FIXME: clean up m_receiveProcessors & xmit
+    for ( StreamProcessorVectorIterator it = m_receiveProcessors.begin();
+          it != m_receiveProcessors.end();
+          ++it )
+    {
+        delete *it;
+    }
+    for ( StreamProcessorVectorIterator it = m_transmitProcessors.begin();
+          it != m_transmitProcessors.end();
+          ++it )
+    {
+        delete *it;
+    }
 
     if (m_notifier) {
         unlock();

@@ -93,6 +93,7 @@ protected:
 
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
+    typedef std::vector< Streaming::StreamProcessor * >::iterator StreamProcessorVectorIterator;
     StreamProcessorVector m_receiveProcessors;
     StreamProcessorVector m_transmitProcessors;
 
