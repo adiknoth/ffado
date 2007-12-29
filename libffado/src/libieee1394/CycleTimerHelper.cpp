@@ -41,12 +41,13 @@
     }
 */
 #define ENTER_CRITICAL_SECTION { \
-    ENTER_CRITICAL_SECTION; \
+    pthread_mutex_lock(&m_compute_vars_lock); \
     }
 #define EXIT_CRITICAL_SECTION { \
-    EXIT_CRITICAL_SECTION; \
+    pthread_mutex_unlock(&m_compute_vars_lock); \
     }
 
+#define OLD_STYLE
 
 IMPL_DEBUG_MODULE( CycleTimerHelper, CycleTimerHelper, DEBUG_LEVEL_NORMAL );
 
@@ -98,6 +99,7 @@ bool
 CycleTimerHelper::Start()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start %p...\n", this);
+#ifndef OLD_STYLE
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
@@ -108,6 +110,7 @@ CycleTimerHelper::Start()
         debugFatal("Could not start update thread\n");
         return false;
     }
+#endif
     return true;
 }
 
@@ -126,6 +129,7 @@ CycleTimerHelper::setThreadParameters(bool rt, int priority) {
     m_realtime = rt;
     m_priority = priority;
 
+#ifndef OLD_STYLE
     if (m_Thread) {
         if (m_realtime) {
             m_Thread->AcquireRealTime(m_priority);
@@ -133,6 +137,7 @@ CycleTimerHelper::setThreadParameters(bool rt, int priority) {
             m_Thread->DropRealTime();
         }
     }
+#endif
     return true;
 }
 
@@ -151,7 +156,6 @@ CycleTimerHelper::getNominalRate()
     return rate;
 }
 
-#define OLD_STYLE
 #ifdef OLD_STYLE
 
 bool
