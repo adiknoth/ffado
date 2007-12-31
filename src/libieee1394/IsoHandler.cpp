@@ -434,7 +434,7 @@ enum raw1394_iso_disposition IsoHandler::getPacket(
                     unsigned char *tag, unsigned char *sy,
                     int cycle, unsigned int dropped) {
 
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE,
                     "sending packet: length=%d, cycle=%d\n",
                     *length, cycle );
     m_packetcount++;

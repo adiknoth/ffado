@@ -264,6 +264,7 @@ apps = { \
 	"test-debugmodule" : "debugmodule/test_debugmodule.cpp", \
 	"test-dll" : "libutil/test-dll.cpp", \
 	"test-unittests-util" : "libutil/unittests.cpp", \
+	"test-cyclecalc" : "libieee1394/test-cyclecalc.cpp", \
 }
 
 installapps = []

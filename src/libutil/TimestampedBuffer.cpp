@@ -1150,14 +1150,20 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
     ffado_timestamp_t one_update_step = nbframes * getRate();
     ffado_timestamp_t max_abs_diff = one_update_step * (1.0 + max_deviation);
     
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " nbframes: %d, m_update_period: %d \n", nbframes, m_update_period);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " tail TS: "TIMESTAMP_FORMAT_SPEC", next tail TS: "TIMESTAMP_FORMAT_SPEC"\n", 
+                                          m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " new TS: "TIMESTAMP_FORMAT_SPEC", wrapped new TS: "TIMESTAMP_FORMAT_SPEC"\n", 
+                                          new_timestamp, ts);
+
     if (diff > max_abs_diff) {
+        debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (+): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
             this, diff, max_abs_diff, ts, pred_buffer_next_tail_timestamp);
-//         debugShowBackLogLines(40);
     } else if (diff < -max_abs_diff) {
+        debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (-): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
             this, diff, -max_abs_diff, ts, pred_buffer_next_tail_timestamp);
-//         debugShowBackLogLines(40);
     }
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p): diff="TIMESTAMP_FORMAT_SPEC" ",
