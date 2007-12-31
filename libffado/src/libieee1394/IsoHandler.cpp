@@ -213,13 +213,13 @@ IsoHandler::Execute() {
         }
     }
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%c %p) poll took %lldus, iterate took %lldus\n", 
-                (this->getType()==eHT_Receive?'R':'X'), this, 
+                (getType()==eHT_Receive?'R':'X'), this, 
                 poll_exit-poll_enter, iter_exit-iter_enter);
 #else
     // iterate blocks if no 1394 data is available
     // so poll'ing is not really necessary
     bool result = iterate();
-    usleep(125);
+    //usleep(125);
     return result;
 #endif
     return true;
@@ -227,6 +227,7 @@ IsoHandler::Execute() {
 
 bool
 IsoHandler::iterate() {
+    flush();
     if(raw1394_loop_iterate(m_handle)) {
         debugOutput( DEBUG_LEVEL_VERBOSE,
                     "IsoHandler (%p): Failed to iterate handler: %s\n",

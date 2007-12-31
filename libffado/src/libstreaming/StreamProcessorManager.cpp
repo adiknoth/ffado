@@ -464,7 +464,10 @@ StreamProcessorManager::alignReceivedStreams()
         nb_sync_runs = periods_per_align_try;
         while(nb_sync_runs) {
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " check (%d)...\n", nb_sync_runs);
-            waitForPeriod();
+            if(!waitForPeriod()) {
+                debugWarning("xrun while aligning streams...\n");
+                return false;
+            };
 
             i = 0;
             for ( i = 0; i < nb_rcv_sp; i++) {
@@ -540,17 +543,21 @@ bool StreamProcessorManager::stop() {
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
           ++it ) {
-        if(!(*it)->scheduleStopRunning(-1)) {
-            debugError("%p->scheduleStopRunning(-1) failed\n", *it);
-            return false;
+        if((*it)->isRunning()) {
+            if(!(*it)->scheduleStopRunning(-1)) {
+                debugError("%p->scheduleStopRunning(-1) failed\n", *it);
+                return false;
+            }
         }
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
           it != m_TransmitProcessors.end();
           ++it ) {
-        if(!(*it)->scheduleStopRunning(-1)) {
-            debugError("%p->scheduleStopRunning(-1) failed\n", *it);
-            return false;
+        if((*it)->isRunning()) {
+            if(!(*it)->scheduleStopRunning(-1)) {
+                debugError("%p->scheduleStopRunning(-1) failed\n", *it);
+                return false;
+            }
         }
     }
     // wait for the SP's to get into the dry-running state
@@ -753,7 +760,9 @@ bool StreamProcessorManager::waitForPeriod() {
             int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;
             m_SyncSource->setSyncDelay(d);
             d = m_SyncSource->getSyncDelay();
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Increased the Sync delay to: %d\n", d);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Increased the Sync delay to: %d ticks (%f frames, %f cy)\n", 
+                                             d, ((float)d)/m_SyncSource->getTicksPerFrame(), 
+                                             ((float)d)/((float)TICKS_PER_CYCLE));
 
             #ifdef DEBUG
             waited++;
