@@ -161,7 +161,7 @@ CycleTimerHelper::getNominalRate()
 bool
 CycleTimerHelper::Execute()
 {
-    usleep(m_usecs_per_update);
+    usleep(1000*1000);
     return true;
 }
 uint32_t
@@ -171,7 +171,7 @@ CycleTimerHelper::getCycleTimerTicks()
     uint64_t local_time;
     if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
         debugError("Could not read cycle timer register\n");
-        return false;
+        return 0;
     }
     return CYCLE_TIMER_TO_TICKS(cycle_timer);
 }
@@ -182,6 +182,23 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
     return getCycleTimerTicks();
 }
 
+uint32_t
+CycleTimerHelper::getCycleTimer()
+{
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
+        debugError("Could not read cycle timer register\n");
+        return 0;
+    }
+    return cycle_timer;
+}
+
+uint32_t
+CycleTimerHelper::getCycleTimer(uint64_t now)
+{
+    return getCycleTimer();
+}
 #else
 
 bool
@@ -297,7 +314,6 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 
     return retval;
 }
-#endif
 
 uint32_t
 CycleTimerHelper::getCycleTimer()
@@ -310,6 +326,7 @@ CycleTimerHelper::getCycleTimer(uint64_t now)
 {
     return TICKS_TO_CYCLE_TIMER(getCycleTimerTicks(now));
 }
+#endif
 
 void
 CycleTimerHelper::setVerboseLevel(int l)
