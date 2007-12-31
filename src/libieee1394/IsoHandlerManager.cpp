@@ -367,9 +367,10 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             return false;
         }
 
-        unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
-        if(irq_interval <= 0) irq_interval=1;
-
+        //unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+        //if(irq_interval <= 0) irq_interval=1;
+        unsigned int irq_interval=2; // this is not the HW IRQ interval
+        
         // the receive buffer size doesn't matter for the latency,
         // but it has a minimal value in order for libraw to operate correctly (300)
         int buffers=400;
@@ -422,8 +423,9 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             return false;
         }
 
-        unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
-        if(irq_interval <= 0) irq_interval=1;
+        // unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+        // if(irq_interval <= 0) irq_interval=1;
+        unsigned int irq_interval=2; // this is not the HW IRQ interval
 
         // the SP specifies how many packets to ISO-buffer
         int buffers = stream->getNbPacketsIsoXmitBuffer();

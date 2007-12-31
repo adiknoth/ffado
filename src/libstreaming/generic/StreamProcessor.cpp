@@ -116,7 +116,7 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
     packets_to_prebuffer -= 16; //FIXME: magic
     
     // only queue a part (80%) of the theoretical max in order not to have too much 'not ready' cycles
-    packets_to_prebuffer = (packets_to_prebuffer * 8000) / 10000;
+    packets_to_prebuffer = (packets_to_prebuffer * 7000) / 10000;
     
     return packets_to_prebuffer;
 }
@@ -619,10 +619,11 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                     return RAW1394_ISO_ERROR;
                 }
             }
-//             return RAW1394_ISO_AGAIN;
-            generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-            generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
-            return RAW1394_ISO_DEFER;
+            usleep(125); // only when using thread-per-handler
+            return RAW1394_ISO_AGAIN;
+//             generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+//             generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+//             return RAW1394_ISO_DEFER;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
@@ -1283,8 +1284,12 @@ StreamProcessor::doDryRunning()
                 // FIXME: PC=master mode will have to do something here I guess...
             }
             break;
+        case ePS_WaitingForStreamEnable: // when xrunning at startup
+            result &= m_data_buffer->clearBuffer();
+            m_data_buffer->setTransparent(true);
+            break;
         case ePS_WaitingForStreamDisable:
-            result &= m_data_buffer->clearBuffer(); // FIXME: don't like the reset() name
+            result &= m_data_buffer->clearBuffer();
             m_data_buffer->setTransparent(true);
             break;
         default:
