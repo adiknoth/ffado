@@ -141,8 +141,24 @@ typedef short debug_level_t;
 
 #ifdef IMPLEMENT_BACKLOG
 
-#define debugShowBackLog()          DebugModuleManager::instance()->showBackLog()
-#define debugShowBackLogLines(x)    DebugModuleManager::instance()->showBackLog(x)
+#define debugShowBackLog() \
+    {                                                       \
+        m_debugModule.print( DebugModule::eDL_Warning,      \
+                             __FILE__,                      \
+                             __FUNCTION__,                  \
+                             __LINE__,                      \
+                             "Backlog print requested\n");  \
+        DebugModuleManager::instance()->showBackLog();      \
+    }
+#define debugShowBackLogLines(x) \
+    {                                                       \
+        m_debugModule.print( DebugModule::eDL_Warning,      \
+                             __FILE__,                      \
+                             __FUNCTION__,                  \
+                             __LINE__,                      \
+                             "Backlog print requested\n");  \
+        DebugModuleManager::instance()->showBackLog(x);     \
+    }
 
 #else
 #define debugShowBackLog()

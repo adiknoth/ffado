@@ -752,6 +752,8 @@ bool StreamProcessorManager::waitForPeriod() {
             // in order to avoid this in the future, we increase the sync delay of the sync source SP
             int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;
             m_SyncSource->setSyncDelay(d);
+            d = m_SyncSource->getSyncDelay();
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Increased the Sync delay to: %d\n", d);
 
             #ifdef DEBUG
             waited++;

@@ -281,7 +281,7 @@ AmdtpTransmitStreamProcessor::generatePacketData (
         {
             debugWarning ( "Problem encoding Packet Ports\n" );
         }
-        debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT DATA: TSP=%011llu (%04u)\n",
+        debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT DATA (cy %04d): TSP=%011llu (%04u)\n",
                     cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
         return eCRV_OK;
     }
@@ -296,7 +296,7 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     int cycle, unsigned int dropped, unsigned int max_length )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
-    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT NONE: CY=%04u, TSP=%011llu (%04u)\n",
+    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT NONE (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
     /* Our node ID can change after a bus reset, so it is best to fetch

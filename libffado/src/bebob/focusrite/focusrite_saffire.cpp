@@ -33,7 +33,7 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
-    // the saffire pro doesn't seem to like it if the commands are too fast
+    // the saffire doesn't seem to like it if the commands are too fast
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
     }
@@ -45,9 +45,9 @@ SaffireDevice::buildMixer()
 {
     bool result=true;
     debugOutput(DEBUG_LEVEL_VERBOSE, "Building a Focusrite Saffire mixer...\n");
-    
+
     destroyMixer();
-    
+
     // create the mixer object container
     m_MixerContainer = new Control::Container("Mixer");
 
