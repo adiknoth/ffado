@@ -50,13 +50,10 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 // Program documentation.
 // Program documentation.
 static char doc[] = "FFADO -- a driver for Firewire Audio devices (streaming test application)\n\n"
-                    "OPERATION: Discover\n"
-                    "           SetSamplerate samplerate\n"
-                    "           SetClockSource [id]\n"
                     ;
 
 // A description of the arguments we accept.
-static char args_doc[] = "OPERATION";
+static char args_doc[] = "";
 
 struct arguments
 {
