@@ -703,6 +703,9 @@ bool StreamProcessorManager::waitForPeriod() {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n",
         m_time_of_transfer);
 
+    xrun_occurred = false;
+
+#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
     // normally we can transfer frames at this time, but in some cases this is not true
     // e.g. when there are not enough frames in the receive buffer.
     // however this doesn't have to be a problem, since we can wait some more until we
@@ -711,14 +714,12 @@ bool StreamProcessorManager::waitForPeriod() {
     // the iso threads
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
-#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
     #ifdef DEBUG
     int waited = 0;
     #endif
-#endif
+    
     bool ready_for_transfer = false;
     bool ready;
-    xrun_occurred = false;
     while (!ready_for_transfer && !xrun_occurred) {
         // FIXME: can deadlock when the iso handlers die (e.g. unplug the device)
         ready_for_transfer = true;
@@ -736,7 +737,9 @@ bool StreamProcessorManager::waitForPeriod() {
             //ready_for_transfer &= ready;
             xrun_occurred |= (*it)->xrunOccurred();
         }
-#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
+        if(!ready_for_transfer) {
+            debugWarning("xrun_occurred = %d\n", xrun_occurred);
+        }
         if (!ready_for_transfer) {
             
             SleepRelativeUsec(125); // MAGIC: one cycle sleep...
@@ -753,10 +756,8 @@ bool StreamProcessorManager::waitForPeriod() {
             waited++;
             #endif
         }
-#endif
     } // we are either ready or an xrun occurred
-
-#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
+    
     // in order to avoid a runaway value of the sync delay, we gradually decrease
     // it. It will be increased by a 'too early' event (cfr some lines higher)
     // hence we'll be at a good point on average.

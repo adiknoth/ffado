@@ -443,6 +443,10 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         return RAW1394_ISO_OK;
     }
 
+    unsigned int ctr;
+    int now_cycles;
+    int cycle_diff;
+
     if(m_last_cycle == -1) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
     }
@@ -457,8 +461,21 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         if (dropped_cycles > 0) {
             debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d)\n", this, dropped_cycles, cycle, m_last_cycle, dropped);
             m_dropped += dropped_cycles;
-//             flushDebugOutput();
-//             assert(0);
+            // HACK: this should not be necessary, since the header generation functions should trigger the xrun.
+            //       but apparently there are some issues with the 1394 stack
+            m_in_xrun = true;
+            if(m_state == ePS_Running) {
+                debugShowBackLogLines(200);
+                debugWarning("dropped packets xrun\n");
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
+                m_next_state = ePS_WaitingForStreamDisable;
+                // execute the requested change
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    return RAW1394_ISO_ERROR;
+                }
+                goto send_empty_packet;
+            }
         }
     }
     if (cycle >= 0) {
@@ -482,12 +499,12 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // because packets are queued in advance. This means that
     // we the packet we are constructing will be sent out
     // on 'cycle', not 'now'.
-    unsigned int ctr = m_1394service.getCycleTimer();
-    int now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
+    ctr = m_1394service.getCycleTimer();
+    now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
 
     // the difference between the cycle this
     // packet is intended for and 'now'
-    int cycle_diff = diffCycles(cycle, now_cycles);
+    cycle_diff = diffCycles(cycle, now_cycles);
 
     if(cycle_diff < 0 && (m_state == ePS_Running || m_state == ePS_DryRunning)) {
         debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",

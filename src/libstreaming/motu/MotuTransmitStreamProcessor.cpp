@@ -116,7 +116,6 @@ MotuTransmitStreamProcessor::generatePacketHeader (
     // packets early if we want to. (not completely according to spec)
     const int max_cycles_to_transmit_early = 2;
 
-try_block_of_frames:
     debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "Try for cycle %d\n", cycle );
     // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
@@ -303,7 +302,7 @@ MotuTransmitStreamProcessor::generatePacketData (
 #endif
 
         // Set up each frames's SPH.
-        for (unsigned int i=0; i < n_events; i++, quadlet += dbs) {
+        for (int i=0; i < n_events; i++, quadlet += dbs) {
 //FIXME: not sure which is best for the MOTU
 //            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)(i * ticks_per_frame));
