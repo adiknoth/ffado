@@ -27,7 +27,9 @@
 #define FFADO_API_VERSION $FFADO_API_VERSION
 
 /* Define to 1 if SSE assembly is available. */
-#define USE_SSE $USE_SSE
+// broken
+//#define USE_SSE $USE_SSE
+#define USE_SSE 0
 
 #define CACHEDIR "~/.ffado"
 
@@ -48,7 +50,7 @@
 // more robust. It should be noted though that shifting the transfer
 // time to a later time instant also causes the xmit buffer fill to be
 // lower on average.
-#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*1)
+#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*4)
 
 #define STREAMPROCESSORMANAGER_CYCLES_FOR_DRYRUN            40000
 #define STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP           2000
@@ -67,6 +69,22 @@
 // as per AMDTP2.1:
 // 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
 #define AMDTP_TRANSMIT_TRANSFER_DELAY   (11776U)
+
+// the absolute minimum number of cycles we want to transmit
+// a packet ahead of the presentation time. The nominal time
+// the packet is transmitted ahead of the presentation time is
+// given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
+// are too late for that, this constant defines how late we can
+// be.
+#define AMDTP_MIN_CYCLES_BEFORE_PRESENTATION                1
+
+// the absolute maximum number of cycles we want to transmit
+// a packet ahead of the ideal transmit time. The nominal time
+// the packet is transmitted ahead of the presentation time is
+// given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
+// packets early if we want to. (not completely according to spec)
+// (for spec compliance you need to specify a value of 1 or 2)
+#define AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY                  6
 
 #define MOTU_TRANSMIT_TRANSFER_DELAY    (11776U)
 

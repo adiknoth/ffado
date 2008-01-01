@@ -78,22 +78,6 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     unsigned int transmit_at_cycle;
     int cycles_until_transmit;
 
-    // FIXME: should become a define
-    // the absolute minimum number of cycles we want to transmit
-    // a packet ahead of the presentation time. The nominal time
-    // the packet is transmitted ahead of the presentation time is
-    // given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
-    // are too late for that, this constant defines how late we can
-    // be.
-    const int min_cycles_before_presentation = 1;
-    // FIXME: should become a define
-    // the absolute maximum number of cycles we want to transmit
-    // a packet ahead of the ideal transmit time. The nominal time
-    // the packet is transmitted ahead of the presentation time is
-    // given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
-    // packets early if we want to. (not completely according to spec)
-    const int max_cycles_to_transmit_early = 2;
-
     debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "Try for cycle %d\n", cycle );
     // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
@@ -146,7 +130,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 
         // we can still postpone the queueing of the packets
         // if we are far enough ahead of the presentation time
-        if ( cycles_until_presentation <= min_cycles_before_presentation )
+        if ( cycles_until_presentation <= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION )
         {
             debugOutput ( DEBUG_LEVEL_VERBOSE,
                         "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
@@ -215,7 +199,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 //             // time, it could be harmless.
 //             // NOTE: dangerous since the device has no way of reporting that it didn't get
 //             //       this packet on time.
-//             if(cycles_until_presentation >= min_cycles_before_presentation)
+//             if(cycles_until_presentation >= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION)
 //             {
 //                 // we are not that late and can still try to transmit the packet
 //                 m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
@@ -226,7 +210,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
                 return eCRV_XRun;
 //             }
         }
-        else if(cycles_until_transmit <= max_cycles_to_transmit_early)
+        else if(cycles_until_transmit <= AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY)
         {
             // it's time send the packet
             m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
@@ -241,7 +225,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
                         transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
                         presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
 #ifdef DEBUG
-            if ( cycles_until_transmit > max_cycles_to_transmit_early + 1 )
+            if ( cycles_until_transmit > AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY + 1 )
             {
                 debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                             "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
