@@ -27,9 +27,7 @@
  * for floating point use
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,27 +38,165 @@
 
 #include "libffado/ffado.h"
 
-#include "debugtools.h"
+#include "debugmodule/debugmodule.h"
 
 #include <math.h>
+#include <argp.h>
 
 int run;
 
+DECLARE_GLOBAL_DEBUG_MODULE;
+
+// Program documentation.
+// Program documentation.
+static char doc[] = "FFADO -- a driver for Firewire Audio devices (streaming test application)\n\n"
+                    "OPERATION: Discover\n"
+                    "           SetSamplerate samplerate\n"
+                    "           SetClockSource [id]\n"
+                    ;
+
+// A description of the arguments we accept.
+static char args_doc[] = "OPERATION";
+
+struct arguments
+{
+    long int verbose;
+    long int test_tone;
+    long int test_tone_freq;
+    long int period;
+    long int slave_mode;
+    long int snoop_mode;
+    long int nb_buffers;
+    long int sample_rate;
+    long int rtprio;
+    char* args[2];
+    
+};
+
+// The options we understand.
+static struct argp_option options[] = {
+    {"verbose",  'v', "level",    0,  "Verbose level" },
+    {"rtprio",  'P', "prio",  0,  "Realtime priority (0 = no RT scheduling)" },
+    {"test-tone",  't', "bool",  0,  "Output test sine" },
+    {"test-tone-freq",  'f', "hz",  0,  "Test sine frequency" },
+    {"samplerate",  'r', "hz",  0,  "Sample rate" },
+    {"period",  'p', "frames",  0,  "Period (buffer) size" },
+    {"nb_buffers",  'n', "nb",  0,  "Nb buffers (periods)" },
+    {"slave_mode",  's', "bool",  0,  "Run in slave mode" },
+    {"snoop_mode",  'S', "bool",  0,  "Run in snoop mode" },
+    { 0 }
+};
+
+//-------------------------------------------------------------
+
+// Parse a single option.
+static error_t
+parse_opt( int key, char* arg, struct argp_state* state )
+{
+    // Get the input argument from `argp_parse', which we
+    // know is a pointer to our arguments structure.
+    struct arguments* arguments = ( struct arguments* ) state->input;
+    char* tail;
+
+    switch (key) {
+    case 'v':
+        if (arg) {
+            arguments->verbose = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'verbose' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'P':
+        if (arg) {
+            arguments->rtprio = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'rtprio' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'p':
+        if (arg) {
+            arguments->period = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'period' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'n':
+        if (arg) {
+            arguments->nb_buffers = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'nb_buffers' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'r':
+        if (arg) {
+            arguments->sample_rate = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'samplerate' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 't':
+        if (arg) {
+            arguments->test_tone = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'test-tone' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'f':
+        if (arg) {
+            arguments->test_tone_freq = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'test-tone-freq' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 's':
+        if (arg) {
+            arguments->slave_mode = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'slave_mode' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'S':
+        if (arg) {
+            arguments->snoop_mode = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'snoop_mode' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case ARGP_KEY_ARG:
+        break;
+    case ARGP_KEY_END:
+        break;
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+// Our argp parser.
+static struct argp argp = { options, parse_opt, args_doc, doc };
+
 int set_realtime_priority(unsigned int prio)
 {
-  if (prio > 0) {
-    struct sched_param schp;
-    /*
-     * set the process to realtime privs
-     */
-    memset(&schp, 0, sizeof(schp));
-    schp.sched_priority = prio;
-    
-    if (sched_setscheduler(0, SCHED_FIFO, &schp) != 0) {
-      perror("sched_setscheduler");
-      exit(1);
-    }
-  } else {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Setting thread prio to %u\n", prio);
+    if (prio > 0) {
         struct sched_param schp;
         /*
         * set the process to realtime privs
@@ -68,11 +204,22 @@ int set_realtime_priority(unsigned int prio)
         memset(&schp, 0, sizeof(schp));
         schp.sched_priority = prio;
         
-        if (sched_setscheduler(0, SCHED_OTHER, &schp) != 0) {
-        perror("sched_setscheduler");
-        exit(1);
+        if (sched_setscheduler(0, SCHED_FIFO, &schp) != 0) {
+            perror("sched_setscheduler");
+            return -1;
         }
-    
+  } else {
+        struct sched_param schp;
+        /*
+        * set the process to realtime privs
+        */
+        memset(&schp, 0, sizeof(schp));
+        schp.sched_priority = 0;
+        
+        if (sched_setscheduler(0, SCHED_OTHER, &schp) != 0) {
+            perror("sched_setscheduler");
+            return -1;
+        }
   }
   return 0;
 }
@@ -86,9 +233,28 @@ static void sighandler (int sig)
 int main(int argc, char *argv[])
 {
 
-    #define PERIOD_SIZE 1024
-    #define TEST_FREQ 1000.0
-    #define do_test_tone 1
+    struct arguments arguments;
+
+    // Default values.
+    arguments.test_tone         = 0;
+    arguments.test_tone_freq    = 1000;
+    arguments.verbose           = 6;
+    arguments.period            = 1024;
+    arguments.slave_mode        = 0;
+    arguments.snoop_mode        = 0;
+    arguments.nb_buffers        = 3;
+    arguments.sample_rate       = 44100;
+    arguments.rtprio            = 0;
+    
+    // Parse our arguments; every option seen by `parse_opt' will
+    // be reflected in `arguments'.
+    if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
+        debugError("Could not parse command line\n" );
+        return -1;
+    }
+
+    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
+    setDebugLevel(arguments.verbose);
 
     int samplesread=0;
 //     int sampleswritten=0;
@@ -111,7 +277,7 @@ int main(int argc, char *argv[])
     
     run=1;
 
-    printf("FFADO streaming test application (3)\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "FFADO streaming test application (3)\n");
 
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
@@ -122,25 +288,25 @@ int main(int argc, char *argv[])
     ffado_options_t dev_options;
     memset(&dev_options,0,sizeof(ffado_options_t));
 
-    dev_options.sample_rate=44100;
-    dev_options.period_size=PERIOD_SIZE;
+    dev_options.sample_rate = arguments.sample_rate;
+    dev_options.period_size = arguments.period;
 
-    dev_options.nb_buffers=3;
+    dev_options.nb_buffers = arguments.nb_buffers;
 
-    dev_options.realtime=1;
-    dev_options.packetizer_priority=60;
+    dev_options.realtime = (arguments.rtprio != 0);
+    dev_options.packetizer_priority = arguments.rtprio + 1;
     
-    dev_options.verbose = 6;
+    dev_options.verbose = arguments.verbose;
         
-    dev_options.slave_mode=0;
-    dev_options.snoop_mode=0;
+    dev_options.slave_mode = arguments.slave_mode;
+    dev_options.snoop_mode = arguments.snoop_mode;
     
-    sine_advance = 2.0*M_PI*TEST_FREQ/((float)dev_options.sample_rate);
+    sine_advance = 2.0*M_PI*arguments.test_tone_freq/((float)dev_options.sample_rate);
 
     ffado_device_t *dev=ffado_streaming_init(device_info, dev_options);
 
     if (!dev) {
-        fprintf(stderr,"Could not init Ffado Streaming layer\n");
+        debugError("Could not init Ffado Streaming layer\n");
         exit(-1);
     }
 
@@ -156,7 +322,7 @@ int main(int argc, char *argv[])
     /* allocate intermediate buffers */
     audiobuffers_in = (float **)calloc(nb_in_channels, sizeof(float *));
     for (i=0; i < nb_in_channels; i++) {
-        audiobuffers_in[i] = (float *)calloc(PERIOD_SIZE+1, sizeof(float));
+        audiobuffers_in[i] = (float *)calloc(arguments.period+1, sizeof(float));
             
         switch (ffado_streaming_get_capture_stream_type(dev,i)) {
             case ffado_stream_type_audio:
@@ -174,7 +340,7 @@ int main(int argc, char *argv[])
     
     audiobuffers_out = (float **)calloc(nb_out_channels, sizeof(float));
     for (i=0; i < nb_out_channels; i++) {
-        audiobuffers_out[i] = (float *)calloc(PERIOD_SIZE+1, sizeof(float));
+        audiobuffers_out[i] = (float *)calloc(arguments.period+1, sizeof(float));
             
         switch (ffado_streaming_get_playback_stream_type(dev,i)) {
             case ffado_stream_type_audio:
@@ -190,7 +356,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    nullbuffer = (float *)calloc(PERIOD_SIZE+1, sizeof(float));
+    nullbuffer = (float *)calloc(arguments.period+1, sizeof(float));
     
     
 //     /* open the files to write to*/
@@ -224,28 +390,28 @@ int main(int argc, char *argv[])
     ffado_streaming_prepare(dev);
     start_flag = ffado_streaming_start(dev);
     
-    set_realtime_priority(dev_options.packetizer_priority-1);
-    fprintf(stderr,"Entering receive loop (IN: %d, OUT: %d)\n", nb_in_channels, nb_out_channels);
+    set_realtime_priority(arguments.rtprio);
+    debugOutput(DEBUG_LEVEL_NORMAL, "Entering receive loop (IN: %d, OUT: %d)\n", nb_in_channels, nb_out_channels);
     while(run && start_flag==0) {
         retval = ffado_streaming_wait(dev);
         if (retval < 0) {
-            fprintf(stderr,"Xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Xrun\n");
             ffado_streaming_reset(dev);
             continue;
         }
         
         ffado_streaming_transfer_capture_buffers(dev);
         
-        if (do_test_tone) {
+        if (arguments.test_tone) {
             // generate the test tone
-            for (i=0; i<PERIOD_SIZE; i++) {
+            for (i=0; i<arguments.period; i++) {
                 nullbuffer[i] = amplitude * sin(sine_advance * (frame_counter + (float)i));
             }
             
             // copy the test tone to the audio buffers
             for (i=0; i < nb_out_channels; i++) {
                 if (ffado_streaming_get_playback_stream_type(dev,i) == ffado_stream_type_audio) {
-                    memcpy((char *)(audiobuffers_out[i]), (char *)(nullbuffer), sizeof(float) * PERIOD_SIZE);
+                    memcpy((char *)(audiobuffers_out[i]), (char *)(nullbuffer), sizeof(float) * arguments.period);
                 }
             }
         } else {
@@ -254,7 +420,7 @@ int main(int argc, char *argv[])
                     case ffado_stream_type_audio:
                         // if both channels are audio channels, copy the buffers
                         if (ffado_streaming_get_playback_stream_type(dev,i) == ffado_stream_type_audio) {
-                            memcpy((char *)(audiobuffers_out[i]), (char *)(audiobuffers_in[i]), sizeof(float) * PERIOD_SIZE);
+                            memcpy((char *)(audiobuffers_out[i]), (char *)(audiobuffers_in[i]), sizeof(float) * arguments.period);
                         }
                         break;
                         // this is done with read/write routines because the nb of bytes can differ.
@@ -268,10 +434,10 @@ int main(int argc, char *argv[])
         ffado_streaming_transfer_playback_buffers(dev);
         
         nb_periods++;
-        frame_counter += PERIOD_SIZE;
+        frame_counter += arguments.period;
 
 //         if((nb_periods % 32)==0) {
-// //             fprintf(stderr,"\r%05d periods",nb_periods);
+// //             debugOutput(DEBUG_LEVEL_NORMAL, "\r%05d periods",nb_periods);
 //         }
 
 //         for(i=0;i<nb_in_channels;i++) {
@@ -280,11 +446,11 @@ int main(int argc, char *argv[])
 //             switch (ffado_streaming_get_capture_stream_type(dev,i)) {
 //             case ffado_stream_type_audio:
 //                 // no need to get the buffers manually, we have set the API internal buffers to the audiobuffer[i]'s
-// //                 //samplesread=freebob_streaming_read(dev, i, audiobuffer[i], PERIOD_SIZE);
-//                 samplesread=PERIOD_SIZE;
+// //                 //samplesread=freebob_streaming_read(dev, i, audiobuffer[i], arguments.period);
+//                 samplesread=arguments.period;
 //                 break;
 //             case ffado_stream_type_midi:
-//                 //samplesread=ffado_streaming_read(dev, i, audiobuffers_out[i], PERIOD_SIZE);
+//                 //samplesread=ffado_streaming_read(dev, i, audiobuffers_out[i], arguments.period);
 //                 break;
 //                         default: break;
 //             }
@@ -304,11 +470,11 @@ int main(int argc, char *argv[])
 //             
 //             switch (ffado_streaming_get_playback_stream_type(dev,i)) {
 //             case ffado_stream_type_audio:
-// //                  sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
-//                 sampleswritten=PERIOD_SIZE;
+// //                  sampleswritten=freebob_streaming_write(dev, i, buff, arguments.period);
+//                 sampleswritten=arguments.period;
 //                 break;
 //             case ffado_stream_type_midi:
-// //                 sampleswritten=freebob_streaming_write(dev, i, buff, PERIOD_SIZE);
+// //                 sampleswritten=freebob_streaming_write(dev, i, buff, arguments.period);
 //                 break;
 //                         default: break;
 //             }
@@ -317,9 +483,7 @@ int main(int argc, char *argv[])
 //         }
     }
 
-    fprintf(stderr,"\n");
-
-    fprintf(stderr,"Exiting receive loop\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "Exiting receive loop\n");
     
     ffado_streaming_stop(dev);
     ffado_streaming_finish(dev);
