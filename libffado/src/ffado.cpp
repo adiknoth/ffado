@@ -232,12 +232,12 @@ int ffado_streaming_wait(ffado_device_t *dev) {
 
     periods++;
     if(periods>periods_print) {
-        debugOutputShort(DEBUG_LEVEL_VERBOSE, "\nffado_streaming_wait\n");
-        debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
-        debugOutputShort(DEBUG_LEVEL_VERBOSE, "Xruns: %d\n", xruns);
-        debugOutputShort(DEBUG_LEVEL_VERBOSE, "============================================\n");
+        debugOutputShort(DEBUG_LEVEL_NORMAL, "\nffado_streaming_wait\n");
+        debugOutputShort(DEBUG_LEVEL_NORMAL, "============================================\n");
+        debugOutputShort(DEBUG_LEVEL_NORMAL, "Xruns: %d\n", xruns);
+        debugOutputShort(DEBUG_LEVEL_NORMAL, "============================================\n");
         dev->m_deviceManager->showStreamingInfo();
-        debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
+        debugOutputShort(DEBUG_LEVEL_NORMAL, "\n");
         periods_print+=100;
     }
 

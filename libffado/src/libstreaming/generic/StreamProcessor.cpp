@@ -1609,26 +1609,32 @@ StreamProcessor::ePTToString(enum eProcessorType t) {
 void
 StreamProcessor::dumpInfo()
 {
-    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p information\n", this);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p:\n", this);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_1394service.getPort(), m_channel);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  StreamProcessor info:\n");
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
                         now,
                         (unsigned int)TICKS_TO_SECS(now),
                         (unsigned int)TICKS_TO_CYCLES(now),
                         (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xruns                 : %s\n", (m_in_xrun ? "True":"False"));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", ePSToString(m_state));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "   Next state           : %s\n", ePSToString(m_next_state));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "    transition at       : %u\n", m_cycle_to_switch_state);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xrun?                 : %s\n", (m_in_xrun ? "True":"False"));
+    if (m_state == m_next_state) {
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", 
+                                            ePSToString(m_state));
+    } else {
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s (Next: %s)\n", 
+                                              ePSToString(m_state), ePSToString(m_next_state));
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "    transition at       : %u\n", m_cycle_to_switch_state);
+    }
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer                : %p\n", m_data_buffer);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Nominal framerate     : %u\n", m_StreamProcessorManager.getNominalRate());
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Device framerate      : Sync: %f, Buffer %f\n",
-        24576000.0/m_StreamProcessorManager.getSyncSource().m_data_buffer->getRate(),
-        24576000.0/m_data_buffer->getRate()
-        );
-
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Framerate             : Nominal: %u, Sync: %f, Buffer %f\n",
+                                          m_StreamProcessorManager.getNominalRate(),
+                                          24576000.0/m_StreamProcessorManager.getSyncSource().m_data_buffer->getRate(),
+                                          24576000.0/m_data_buffer->getRate());
+    float d = getSyncDelay();
+    debugOutputShort(DEBUG_LEVEL_NORMAL, "  Sync delay             : %f ticks (%f frames, %f cy)\n",
+                                         d, d/getTicksPerFrame(),
+                                         d/((float)TICKS_PER_CYCLE));
     m_data_buffer->dumpInfo();
 }
 

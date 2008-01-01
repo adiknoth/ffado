@@ -741,15 +741,13 @@ bool StreamProcessorManager::waitForPeriod() {
             ++it ) {
             ready = ((*it)->canClientTransferFrames(m_period));
             ready_for_transfer &= ready;
-            if (!ready) (*it)->flush();
             xrun_occurred |= (*it)->xrunOccurred();
         }
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
             ready = ((*it)->canClientTransferFrames(m_period));
-            ready_for_transfer &= ready;
-            if (!ready) (*it)->flush();
+            //ready_for_transfer &= ready;
             xrun_occurred |= (*it)->xrunOccurred();
         }
         if (!ready_for_transfer) {

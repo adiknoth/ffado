@@ -67,11 +67,11 @@ static char args_doc[] = "OPERATION";
 
 struct arguments
 {
-    short silent;
-    short verbose;
-    int   port;
-    int   node_id;
-    int   node_id_set;
+    short    silent;
+    long int verbose;
+    long int port;
+    long int node_id;
+    long int node_id_set;
     char* args[2];
 };
 
@@ -184,8 +184,6 @@ main( int argc, char **argv )
     arguments.args[0]     = "";
     arguments.args[1]     = "";
 
-    setDebugLevel(arguments.verbose);
-
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
@@ -194,6 +192,7 @@ main( int argc, char **argv )
     }
 
     printf("verbose level = %d\n", arguments.verbose);
+    setDebugLevel(arguments.verbose);
 
     printf( "Using ffado library version: %s\n\n", ffado_get_version() );
 
