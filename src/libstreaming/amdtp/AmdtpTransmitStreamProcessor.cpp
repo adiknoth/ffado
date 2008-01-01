@@ -210,22 +210,21 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
                         cycle,
                         transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
-            debugShowBackLogLines(200);
-            flushDebugOutput();
-            // however, if we can send this sufficiently before the presentation
-            // time, it could be harmless.
-            // NOTE: dangerous since the device has no way of reporting that it didn't get
-            //       this packet on time.
-            if(cycles_until_presentation >= min_cycles_before_presentation)
-            {
-                // we are not that late and can still try to transmit the packet
-                m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
-                return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
-            }
-            else   // definitely too late
-            {
+            //debugShowBackLogLines(200);
+//             // however, if we can send this sufficiently before the presentation
+//             // time, it could be harmless.
+//             // NOTE: dangerous since the device has no way of reporting that it didn't get
+//             //       this packet on time.
+//             if(cycles_until_presentation >= min_cycles_before_presentation)
+//             {
+//                 // we are not that late and can still try to transmit the packet
+//                 m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
+//                 return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
+//             }
+//             else   // definitely too late
+//             {
                 return eCRV_XRun;
-            }
+//             }
         }
         else if(cycles_until_transmit <= max_cycles_to_transmit_early)
         {

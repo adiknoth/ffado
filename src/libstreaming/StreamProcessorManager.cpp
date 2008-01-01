@@ -711,9 +711,11 @@ bool StreamProcessorManager::waitForPeriod() {
     // the iso threads
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
+#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
     #ifdef DEBUG
     int waited = 0;
     #endif
+#endif
     bool ready_for_transfer = false;
     bool ready;
     xrun_occurred = false;
@@ -734,6 +736,7 @@ bool StreamProcessorManager::waitForPeriod() {
             //ready_for_transfer &= ready;
             xrun_occurred |= (*it)->xrunOccurred();
         }
+#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
         if (!ready_for_transfer) {
             
             SleepRelativeUsec(125); // MAGIC: one cycle sleep...
@@ -750,8 +753,10 @@ bool StreamProcessorManager::waitForPeriod() {
             waited++;
             #endif
         }
+#endif
     } // we are either ready or an xrun occurred
 
+#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
     // in order to avoid a runaway value of the sync delay, we gradually decrease
     // it. It will be increased by a 'too early' event (cfr some lines higher)
     // hence we'll be at a good point on average.
@@ -764,6 +769,7 @@ bool StreamProcessorManager::waitForPeriod() {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Waited %d x 125us due to SP not ready for transfer\n", waited);
     }
     #endif
+#endif
 
     // this is to notify the client of the delay that we introduced by waiting
     m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
