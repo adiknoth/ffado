@@ -35,8 +35,8 @@
 
 #define SHAREDIR "$sharedir"
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD   4U
-#define MAX_ISO_XMIT_BUFFER_FILL_PCT    70
+#define MINIMUM_INTERRUPTS_PER_PERIOD   2U
+#define MAX_ISO_XMIT_BUFFER_FILL_PCT    50
 
 #define ISOHANDLER_PER_HANDLER_THREAD   0
 #define ISOHANDLER_USE_POLL             0
@@ -57,6 +57,7 @@
 #define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      200
 #define STREAMPROCESSORMANAGER_NB_ALIGN_TRIES               40
 
+#define STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY           0
 
 // FIXME: note that it will probably be better to use a DLL bandwidth that is 
 //        dependant on the sample rate

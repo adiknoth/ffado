@@ -126,7 +126,7 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
                                      est_sync_delay,
                                      packets_to_prebuffer);
     
-    // only queue a part (70%) of the theoretical max in order not to have too much 'not ready' cycles
+    // only queue a part of the theoretical max in order not to have too much 'not ready' cycles
     packets_to_prebuffer = (packets_to_prebuffer * MAX_ISO_XMIT_BUFFER_FILL_PCT * 1000) / 100000;
     debugOutput(DEBUG_LEVEL_VERBOSE, " reduce to %d%%: %u\n",
                                      MAX_ISO_XMIT_BUFFER_FILL_PCT, packets_to_prebuffer);
@@ -489,7 +489,6 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // packet is intended for and 'now'
     int cycle_diff = diffCycles(cycle, now_cycles);
 
-    #ifdef DEBUG
     if(cycle_diff < 0 && (m_state == ePS_Running || m_state == ePS_DryRunning)) {
         debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
             cycle, now_cycles);
@@ -497,9 +496,18 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugShowBackLogLines(200);
 //             flushDebugOutput();
 //             assert(0);
+            debugWarning("generatePacketData xrun\n");
+            m_in_xrun = true;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
+            m_next_state = ePS_WaitingForStreamDisable;
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
+            }
+            goto send_empty_packet;
         }
     }
-    #endif
 
     // store the previous timestamp
     m_last_timestamp2 = m_last_timestamp;
@@ -603,7 +611,6 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugWarning("generatePacketHeader xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to header xrun\n");
-            m_cycle_to_switch_state = cycle+1; // switch in the next cycle
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
