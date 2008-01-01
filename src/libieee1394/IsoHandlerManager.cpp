@@ -21,6 +21,7 @@
  *
  */
 
+#include "config.h"
 #include "IsoHandlerManager.h"
 #include "ieee1394service.h" 
 #include "IsoHandler.h"
@@ -31,8 +32,6 @@
 #include "libutil/PosixThread.h"
 
 #include <assert.h>
-
-#define MINIMUM_INTERRUPTS_PER_PERIOD  4U
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
 
@@ -100,9 +99,9 @@ IsoHandlerManager::updateShadowVars()
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "updating shadow vars...\n");
     unsigned int i;
     m_poll_nfds_shadow = m_IsoHandlers.size();
-    if(m_poll_nfds_shadow > FFADO_MAX_ISO_HANDLERS_PER_PORT) {
+    if(m_poll_nfds_shadow > ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT) {
         debugWarning("Too much ISO Handlers in manager...\n");
-        m_poll_nfds_shadow = FFADO_MAX_ISO_HANDLERS_PER_PORT;
+        m_poll_nfds_shadow = ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT;
     }
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         IsoHandler *h = m_IsoHandlers.at(i);
@@ -208,7 +207,8 @@ bool IsoHandlerManager::init()
         return false;
     }
 
-#ifndef THREAD_PER_ISOHANDLER
+#if ISOHANDLER_PER_HANDLER_THREAD
+#else
     // create a thread to iterate our handlers
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
@@ -367,9 +367,9 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             return false;
         }
 
-        //unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
-        //if(irq_interval <= 0) irq_interval=1;
-        unsigned int irq_interval=2; // this is not the HW IRQ interval
+        unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval=1;
+//         unsigned int irq_interval=2; // this is not the HW IRQ interval
         
         // the receive buffer size doesn't matter for the latency,
         // but it has a minimal value in order for libraw to operate correctly (300)

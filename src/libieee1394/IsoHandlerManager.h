@@ -24,6 +24,8 @@
 #ifndef __FFADO_ISOHANDLERMANAGER__
 #define __FFADO_ISOHANDLERMANAGER__
 
+#include "config.h"
+
 #include "debugmodule/debugmodule.h"
 
 #include "libutil/Thread.h"
@@ -33,13 +35,6 @@
 
 #include <vector>
 
-//#define THREAD_PER_ISOHANDLER
-
-#define FFADO_MAX_ISO_HANDLERS_PER_PORT 16
-
-#define USLEEP_AFTER_UPDATE_FAILURE 10
-#define USLEEP_AFTER_UPDATE 100
-#define MAX_UPDATE_TRIES 10
 class Ieee1394Service;
 
 class IsoHandler;
@@ -73,8 +68,8 @@ class IsoHandlerManager : public Util::RunnableInterface
         void updateShadowVars();
     private:
         // shadow variables
-        struct pollfd m_poll_fds_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
-        IsoHandler *m_IsoHandler_map_shadow[FFADO_MAX_ISO_HANDLERS_PER_PORT];
+        struct pollfd m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+        IsoHandler *m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
         unsigned int m_poll_nfds_shadow;
 
     public:

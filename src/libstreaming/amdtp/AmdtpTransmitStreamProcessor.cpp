@@ -36,13 +36,6 @@
 #include <netinet/in.h>
 #include <assert.h>
 
-// in ticks
-// as per AMDTP2.1:
-// 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
-#define DEFAULT_TRANSFER_DELAY (11776U)
-
-#define TRANSMIT_TRANSFER_DELAY DEFAULT_TRANSFER_DELAY
-
 namespace Streaming
 {
 
@@ -89,7 +82,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // the absolute minimum number of cycles we want to transmit
     // a packet ahead of the presentation time. The nominal time
     // the packet is transmitted ahead of the presentation time is
-    // given by TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
+    // given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
     // are too late for that, this constant defines how late we can
     // be.
     const int min_cycles_before_presentation = 1;
@@ -97,7 +90,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // the absolute maximum number of cycles we want to transmit
     // a packet ahead of the ideal transmit time. The nominal time
     // the packet is transmitted ahead of the presentation time is
-    // given by TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
+    // given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
     // packets early if we want to. (not completely according to spec)
     const int max_cycles_to_transmit_early = 2;
 
@@ -113,7 +106,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     m_last_timestamp = presentation_time;
 
     // now we calculate the time when we have to transmit the sample block
-    transmit_at_time = substractTicks ( presentation_time, TRANSMIT_TRANSFER_DELAY );
+    transmit_at_time = substractTicks ( presentation_time, AMDTP_TRANSMIT_TRANSFER_DELAY );
 
     // calculate the cycle this block should be presented in
     // (this is just a virtual calculation since at that time it should
