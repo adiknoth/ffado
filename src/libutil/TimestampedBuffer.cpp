@@ -1238,14 +1238,12 @@ void TimestampedBuffer::dumpInfo() {
     ffado_timestamp_t diff=(ffado_timestamp_t)ts_head - (ffado_timestamp_t)m_buffer_tail_timestamp;
 #endif
 
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  TimestampedBuffer (%p) info:\n",this);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Frame counter         : %d\n", m_framecounter);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Events in buffer      : %d\n", getBufferFill());
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer head timestamp : "TIMESTAMP_FORMAT_SPEC"\n",ts_head);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer tail timestamp : "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_tail_timestamp);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Next tail timestamp   : "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_next_tail_timestamp);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Head - Tail           : "TIMESTAMP_FORMAT_SPEC"\n",diff);
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  rate                  : %f (%f)\n",m_dll_e2,m_dll_e2/m_update_period);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  TimestampedBuffer (%p): %04d frames, %04d events\n",
+                                          this, m_framecounter, getBufferFill());
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "   Timestamps           : head: "TIMESTAMP_FORMAT_SPEC", Tail: "TIMESTAMP_FORMAT_SPEC", Next tail: "TIMESTAMP_FORMAT_SPEC"\n",
+                                          ts_head, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "    Head - Tail         : "TIMESTAMP_FORMAT_SPEC"\n", diff);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "   DLL Rate             : %f (%f)\n", m_dll_e2, m_dll_e2/m_update_period);
 }
 
 } // end of namespace Util
