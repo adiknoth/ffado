@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include "config.h"
 
 #include "StreamProcessorManager.h"
 #include "generic/StreamProcessor.h"
@@ -31,17 +32,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <math.h>
-
-#define RUNNING_TIMEOUT_MSEC 4000
-#define PREPARE_TIMEOUT_MSEC 4000
-#define ENABLE_TIMEOUT_MSEC 4000
-
-// allows to add some processing margin. This shifts the time
-// at which the buffer is transfer()'ed, making things somewhat
-// more robust. It should be noted though that shifting the transfer
-// time to a later time instant also causes the xmit buffer fill to be
-// lower on average.
-#define FFADO_SIGNAL_DELAY_TICKS (3072*1)
 
 namespace Streaming {
 
@@ -256,8 +246,7 @@ bool StreamProcessorManager::startDryRunning() {
     debugOutput( DEBUG_LEVEL_VERBOSE, " Waiting for all SP's to be dry-running...\n");
     // wait for the syncsource to start running.
     // that will block the waitForPeriod call until everyone has started (theoretically)
-    #define CYCLES_FOR_DRYRUN 40000
-    int cnt = CYCLES_FOR_DRYRUN; // by then it should have started
+    int cnt = STREAMPROCESSORMANAGER_CYCLES_FOR_DRYRUN; // by then it should have started
     bool all_dry_running = false;
     while (!all_dry_running && cnt) {
         all_dry_running = true;
@@ -318,7 +307,7 @@ bool StreamProcessorManager::syncStartAll() {
     // more robust. It should be noted though that shifting the transfer
     // time to a later time instant also causes the xmit buffer fill to be
     // lower on average.
-    max_of_min_delay += FFADO_SIGNAL_DELAY_TICKS;
+    max_of_min_delay += STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS;
     debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d ticks (%03us %04uc %04ut)...\n", 
         max_of_min_delay,
         (unsigned int)TICKS_TO_SECS(max_of_min_delay),
@@ -360,12 +349,11 @@ bool StreamProcessorManager::syncStartAll() {
         (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
         (unsigned int)TICKS_TO_OFFSET(time_of_first_sample));
 
-    #define CYCLES_FOR_STARTUP 2000
-    // start wet-running in CYCLES_FOR_STARTUP cycles
+    // start wet-running in STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP cycles
     // this is the time window we have to setup all SP's such that they 
     // can start wet-running correctly.
     time_of_first_sample = addTicks(time_of_first_sample,
-                                    CYCLES_FOR_STARTUP * TICKS_PER_CYCLE);
+                                    STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP * TICKS_PER_CYCLE);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "  => first sample at TS=%011llu (%03us %04uc %04ut)...\n", 
         time_of_first_sample,
@@ -375,13 +363,11 @@ bool StreamProcessorManager::syncStartAll() {
 
     // we should start wet-running the transmit SP's some cycles in advance
     // such that we know it is wet-running when it should output its first sample
-    #define PRESTART_CYCLES_FOR_XMIT 20
     uint64_t time_to_start_xmit = substractTicks(time_of_first_sample, 
-                                                 PRESTART_CYCLES_FOR_XMIT * TICKS_PER_CYCLE);
+                                                 STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_XMIT * TICKS_PER_CYCLE);
 
-    #define PRESTART_CYCLES_FOR_RECV 0
     uint64_t time_to_start_recv = substractTicks(time_of_first_sample,
-                                                 PRESTART_CYCLES_FOR_RECV * TICKS_PER_CYCLE);
+                                                 STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV * TICKS_PER_CYCLE);
     debugOutput( DEBUG_LEVEL_VERBOSE, "  => xmit starts at  TS=%011llu (%03us %04uc %04ut)...\n", 
         time_to_start_xmit,
         (unsigned int)TICKS_TO_SECS(time_to_start_xmit),
@@ -420,7 +406,7 @@ bool StreamProcessorManager::syncStartAll() {
     }
     // wait for the syncsource to start running.
     // that will block the waitForPeriod call until everyone has started (theoretically)
-    int cnt = CYCLES_FOR_STARTUP * 20; // by then it should have started
+    int cnt = STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP * 20; // by then it should have started
     while (!m_SyncSource->isRunning() && cnt) {
         SleepRelativeUsec(125);
         cnt--;
@@ -443,8 +429,6 @@ bool
 StreamProcessorManager::alignReceivedStreams()
 {
     if(m_SyncSource == NULL) return false;
-    #define ALIGN_AVERAGE_TIME_MSEC 200
-    #define NB_ALIGN_TRIES 40
     debugOutput( DEBUG_LEVEL_VERBOSE, "Aligning received streams...\n");
     unsigned int nb_sync_runs;
     unsigned int nb_rcv_sp = m_ReceiveProcessors.size();
@@ -453,13 +437,13 @@ StreamProcessorManager::alignReceivedStreams()
 
     unsigned int i;
 
-    unsigned int periods_per_align_try = (ALIGN_AVERAGE_TIME_MSEC * getNominalRate());
+    unsigned int periods_per_align_try = (STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC * getNominalRate());
     periods_per_align_try /= 1000;
     periods_per_align_try /= getPeriodSize();
     debugOutput( DEBUG_LEVEL_VERBOSE, " averaging over %u periods...\n", periods_per_align_try);
 
     bool aligned = false;
-    int cnt = NB_ALIGN_TRIES;
+    int cnt = STREAMPROCESSORMANAGER_NB_ALIGN_TRIES;
     while (!aligned && cnt--) {
         nb_sync_runs = periods_per_align_try;
         while(nb_sync_runs) {

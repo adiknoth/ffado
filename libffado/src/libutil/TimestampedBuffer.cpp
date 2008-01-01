@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include "libutil/Atomic.h"
 #include "libieee1394/cycletimer.h"
 
@@ -28,15 +30,10 @@
 #include "assert.h"
 #include "errno.h"
 
-// FIXME: note that it will probably be better to use a DLL bandwidth that is 
-//        dependant on the sample rate
 
-
-// #define DLL_BANDWIDTH (4800/48000.0)
-#define DLL_BANDWIDTH (0.01)
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)
-#define DLL_OMEGA     (2.0*DLL_PI*DLL_BANDWIDTH)
+#define DLL_OMEGA     (2.0*DLL_PI*TIMESTAMPEDBUFFER_DLL_BANDWIDTH)
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 

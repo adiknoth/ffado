@@ -35,4 +35,38 @@
 
 #define SHAREDIR "$sharedir"
 
+#define MINIMUM_INTERRUPTS_PER_PERIOD   4U
+#define MAX_ISO_XMIT_BUFFER_FILL_PCT    70
+
+#define ISOHANDLER_PER_HANDLER_THREAD   0
+#define ISOHANDLER_USE_POLL             0
+
+#define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
+
+// allows to add some processing margin. This shifts the time
+// at which the buffer is transfer()'ed, making things somewhat
+// more robust. It should be noted though that shifting the transfer
+// time to a later time instant also causes the xmit buffer fill to be
+// lower on average.
+#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*1)
+
+#define STREAMPROCESSORMANAGER_CYCLES_FOR_DRYRUN            40000
+#define STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP           2000
+#define STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_XMIT     20
+#define STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV     0
+#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      200
+#define STREAMPROCESSORMANAGER_NB_ALIGN_TRIES               40
+
+
+// FIXME: note that it will probably be better to use a DLL bandwidth that is 
+//        dependant on the sample rate
+#define TIMESTAMPEDBUFFER_DLL_BANDWIDTH                     (0.01)
+
+// in ticks
+// as per AMDTP2.1:
+// 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
+#define AMDTP_TRANSMIT_TRANSFER_DELAY   (11776U)
+
+#define MOTU_TRANSMIT_TRANSFER_DELAY    (11776U)
+
 #endif // CONFIG_H

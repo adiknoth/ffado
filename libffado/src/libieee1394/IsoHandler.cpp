@@ -21,7 +21,7 @@
  *
  */
 
-//#define PER_HANDLER_THREAD
+#include "config.h"
 
 #include "IsoHandler.h"
 #include "ieee1394service.h" 
@@ -182,7 +182,7 @@ IsoHandler::Execute() {
         return true;
     }
 
-#ifdef DO_POLL
+#if ISOHANDLER_USE_POLL
     uint64_t poll_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
     err = poll(&m_poll_fd, 1, m_poll_timeout);
     uint64_t poll_exit = m_manager.get1394Service().getCurrentTimeAsUsecs();
@@ -227,7 +227,7 @@ IsoHandler::Execute() {
 
 bool
 IsoHandler::iterate() {
-    flush();
+    //flush();
     if(raw1394_loop_iterate(m_handle)) {
         debugOutput( DEBUG_LEVEL_VERBOSE,
                     "IsoHandler (%p): Failed to iterate handler: %s\n",
@@ -287,7 +287,7 @@ IsoHandler::init()
         raw1394_set_bus_reset_handler(m_handle, busreset_handler);
     }
 
-#ifdef THREAD_PER_ISOHANDLER
+#if ISOHANDLER_PER_HANDLER_THREAD
     // create a thread to iterate ourselves
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
@@ -470,7 +470,8 @@ bool IsoHandler::prepare()
                                     m_buf_packets,
                                     m_max_packet_size,
                                     m_Client->getChannel(),
-                                    RAW1394_DMA_BUFFERFILL,
+//                                     RAW1394_DMA_BUFFERFILL,
+                                    RAW1394_DMA_PACKET_PER_BUFFER,
                                     m_irq_interval)) {
                 debugFatal("Could not do receive initialisation (DMA_BUFFERFILL)!\n" );
                 debugFatal("  %s\n",strerror(errno));
