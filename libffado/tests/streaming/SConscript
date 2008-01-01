@@ -29,11 +29,16 @@ env.PrependUnique( CPPPATH=["#/src"] )
 env.PrependUnique( LIBPATH=["#/src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
-apps = "teststreaming teststreaming2 teststreaming3"
+apps = "teststreaming teststreaming2"
 if env.GetOption('clean') or env['ALSA_SEQ_OUTPUT']:
 	apps += " testmidistreaming1"
 
 for app in env.Split( apps ):
 	env.Program( target=app, source = [ app+".c", "debugtools.c" ] )
+
+cppapps = "teststreaming3"
+
+for app in env.Split( cppapps ):
+	env.Program( target=app, source = [ app+".cpp" ] )
 
 

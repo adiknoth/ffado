@@ -154,9 +154,9 @@ int main(int argc, char *argv[])
     }
     
     /* allocate intermediate buffers */
-    audiobuffers_in = calloc(nb_in_channels, sizeof(float *));
+    audiobuffers_in = (float **)calloc(nb_in_channels, sizeof(float *));
     for (i=0; i < nb_in_channels; i++) {
-        audiobuffers_in[i] = calloc(PERIOD_SIZE+1, sizeof(float));
+        audiobuffers_in[i] = (float *)calloc(PERIOD_SIZE+1, sizeof(float));
             
         switch (ffado_streaming_get_capture_stream_type(dev,i)) {
             case ffado_stream_type_audio:
@@ -172,9 +172,9 @@ int main(int argc, char *argv[])
         }
     }
     
-    audiobuffers_out = calloc(nb_out_channels, sizeof(float));
+    audiobuffers_out = (float **)calloc(nb_out_channels, sizeof(float));
     for (i=0; i < nb_out_channels; i++) {
-        audiobuffers_out[i] = calloc(PERIOD_SIZE+1, sizeof(float));
+        audiobuffers_out[i] = (float *)calloc(PERIOD_SIZE+1, sizeof(float));
             
         switch (ffado_streaming_get_playback_stream_type(dev,i)) {
             case ffado_stream_type_audio:
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    nullbuffer = calloc(PERIOD_SIZE+1, sizeof(float));
+    nullbuffer = (float *)calloc(PERIOD_SIZE+1, sizeof(float));
     
     
 //     /* open the files to write to*/
