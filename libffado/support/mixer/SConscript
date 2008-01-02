@@ -28,25 +28,18 @@ Import( 'env' )
 if env.has_key('PYUIC'):
 	e = env.Clone()
 
-	e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire', 'af2', 'bcoaudio5', 'aktest' ]
+	e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire', 'af2', 'bcoaudio5' ]
 	e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
 
-	apps = []
-
 	for m in e['MIXERAPPS']:
-		apps.append( "mixer_" + m )
-
-	for app in apps:
+		app = "mixer_" + m
 		if os.path.exists( app+".ui" ):
 			e.PyUIC( source=app+".ui", target=app+"ui.py" )
 			e.Install( "$PYTHONDIR", app+"ui.py" )
 			e.Install( "$PYTHONDIR", app+".ui" )
 		e.Install( "$PYTHONDIR", app+".py" )
 
-	#e.ScanReplace( "ffadomixer.in" )
-	#e.Depends( "ffadomixer", "SConscript" )
-	#e.Install( "$bindir", "ffadomixer" )
-
-	#for app in apps:
-	#	e.InstallAs( os.path.join( e['bindir'], "ffado"+app ), "ffadomixer" )
+	e.ScanReplace( "ffadomixer.in" )
+	e.Depends( "ffadomixer", "SConscript" )
+	e.Install( "$bindir", "ffadomixer" )
 
