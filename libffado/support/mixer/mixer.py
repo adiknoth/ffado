@@ -27,6 +27,7 @@ from mixer_phase24 import *
 from mixer_saffirepro import *
 from mixer_saffire import *
 from mixer_af2 import *
+from mixer_bcoaudio5 import *
 import sys
 import dbus
 
@@ -38,6 +39,7 @@ SupportedDevices=[
     [(0x00130e, 0x00000006),'SaffireProMixer'],
     [(0x00130e, 0x00000000),'SaffireMixer'],
     [(0x001486, 0x00000af2),'AudioFire2Mixer'],
+    [(0x0007f5, 0x00010049),'BCoAudio5Control'],
     ]
 
 class ControlInterface:
