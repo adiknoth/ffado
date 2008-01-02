@@ -43,10 +43,10 @@ if env.has_key('PYUIC'):
 			e.Install( "$PYTHONDIR", app+".ui" )
 		e.Install( "$PYTHONDIR", app+".py" )
 
-	e.ScanReplace( "ffadomixer.in" )
-	e.Depends( "ffadomixer", "SConscript" )
-	e.Install( "$bindir", "ffadomixer" )
+	#e.ScanReplace( "ffadomixer.in" )
+	#e.Depends( "ffadomixer", "SConscript" )
+	#e.Install( "$bindir", "ffadomixer" )
 
-	for app in apps:
-		e.InstallAs( os.path.join( e['bindir'], "ffado"+app ), "ffadomixer" )
+	#for app in apps:
+	#	e.InstallAs( os.path.join( e['bindir'], "ffado"+app ), "ffadomixer" )
 
