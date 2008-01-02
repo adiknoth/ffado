@@ -26,6 +26,7 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
+#include <semaphore.h>
 
 //typedef float ffado_timestamp_t;
 //#define TIMESTAMP_FORMAT_SPEC "%14.3f"
@@ -87,6 +88,40 @@ class TimestampedBuffer
     public:
         TimestampedBuffer ( TimestampedBufferClient * );
         virtual ~TimestampedBuffer();
+
+        /**
+         * @brief waits for the availability of frames (blocking)
+         * @param nframes number of frames
+         *
+         * @return true if frames are available, false if not (e.g. signal occurred)
+         */
+        bool waitForFrames(unsigned int nframes);
+
+        /**
+         * @brief waits for the availability of frames (blocking)
+         *
+         * waits for one update period of frames
+         *
+         * @return true if frames are available, false if not (e.g. signal occurred)
+         */
+        bool waitForFrames();
+
+        /**
+         * @brief waits for the availability of frames (non-blocking)
+         * @param nframes number of frames
+         *
+         * @return true if frames are available, false if not
+         */
+        bool tryWaitForFrames(unsigned int nframes);
+
+        /**
+         * @brief waits for the availability of frames (non-blocking)
+         *
+         * waits for one update period of frames
+         *
+         * @return true if frames are available, false if not
+         */
+        bool tryWaitForFrames();
 
         bool writeDummyFrame();
         bool dropFrames ( unsigned int nbframes );
@@ -151,6 +186,7 @@ class TimestampedBuffer
         float getRate();
 
         bool setUpdatePeriod ( unsigned int t );
+        unsigned int getUpdatePeriod();
 
         // misc stuff
         void dumpInfo();
@@ -207,6 +243,8 @@ class TimestampedBuffer
         float calculateRate();
         float m_current_rate;
         unsigned int m_update_period;
+
+        sem_t m_frame_semaphore;
 };
 
 /**

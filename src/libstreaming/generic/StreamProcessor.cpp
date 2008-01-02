@@ -109,6 +109,14 @@ StreamProcessor::getPacketsPerPeriod()
 unsigned int
 StreamProcessor::getNbPacketsIsoXmitBuffer()
 {
+#if ISOHANDLER_PER_HANDLER_THREAD
+    // if we use one thread per packet, we can put every frame into the ISO buffer
+    // the waitForClient in IsoHandler will take care of the fact that the frames are
+    // not present in time
+    unsigned int packets_to_prebuffer = (getPacketsPerPeriod() * (m_StreamProcessorManager.getNbBuffers()-1));
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Nominal prebuffer: %u\n", packets_to_prebuffer);
+    return packets_to_prebuffer;
+#else
     // the target is to have all of the transmit buffer (at period transfer) as ISO packets
     // when one period is received, there will be approx (NbBuffers - 1) * period_size frames
     // in the transmit buffer (the others are still to be put into the xmit frame buffer)
@@ -132,6 +140,7 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
                                      MAX_ISO_XMIT_BUFFER_FILL_PCT, packets_to_prebuffer);
     
     return packets_to_prebuffer;
+#endif
 }
 
 /***********************************************
@@ -761,6 +770,7 @@ bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.putFrames(%d, %11llu)", nbframes, ts);
     assert( getType() == ePT_Transmit );
+
     if(isDryRunning()) return putFramesDry(nbframes, ts);
     else return putFramesWet(nbframes, ts);
 }
@@ -806,6 +816,40 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
         return false;
     }
     return true;
+}
+
+bool
+StreamProcessor::waitForFrames()
+{
+    if(m_state == ePS_Running) {
+        assert(m_data_buffer);
+        if(getType() == ePT_Receive) {
+            return m_data_buffer->waitForFrames(m_StreamProcessorManager.getPeriodSize());
+        } else {
+            return m_data_buffer->waitForFrames(getNominalFramesPerPacket());
+        }
+    } else {
+        // when we're not running, we can always provide frames
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Not running...\n");
+        return true;
+    }
+}
+
+bool
+StreamProcessor::tryWaitForFrames()
+{
+    if(m_state == ePS_Running) {
+        assert(m_data_buffer);
+        if(getType() == ePT_Receive) {
+            return m_data_buffer->tryWaitForFrames(m_StreamProcessorManager.getPeriodSize());
+        } else {
+            return m_data_buffer->tryWaitForFrames(getNominalFramesPerPacket());
+        }
+    } else {
+        // when we're not running, we can always provide frames
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Not running...\n");
+        return true;
+    }
 }
 
 bool

@@ -34,8 +34,6 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include <pthread.h>
-
 class Ieee1394Service;
 class IsoHandlerManager;
 
@@ -157,6 +155,22 @@ public: // the public receive/transmit functions
 
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
+
+    /**
+     * @brief waits for the availability of frames (blocking)
+     * @param nframes number of frames
+     *
+     * @return true if frames are available, false if not (e.g. signal occurred)
+     */
+    bool waitForFrames();
+
+    /**
+     * @brief waits for the availability of frames (non-blocking)
+     * @param nframes number of frames
+     *
+     * @return true if frames are available, false if not
+     */
+    bool tryWaitForFrames();
 
     /**
      * @brief drop nframes from the internal buffer as if they were transferred to the client side
@@ -445,7 +459,6 @@ protected:
         int m_sync_delay;
     private:
         bool m_in_xrun;
-
 public:
     // debug stuff
     virtual void dumpInfo();
