@@ -21,15 +21,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
+# Add the path of the installed ffado-mixer-modules
+sys.path.append( "$PYTHONDIR" )
+
+import dbus
 from qt import *
+
 from mixer_phase88 import *
 from mixer_phase24 import *
 from mixer_saffirepro import *
 from mixer_saffire import *
 from mixer_af2 import *
 from mixer_bcoaudio5 import *
-import sys
-import dbus
 
 SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
