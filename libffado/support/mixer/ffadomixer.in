@@ -148,6 +148,8 @@ if __name__ == "__main__":
     
     app = QApplication(sys.argv)
     
+    msg = QMessageBox()
+
     try:
         devmgr=DeviceManagerInterface(server, basepath)
     except dbus.DBusException, ex:
@@ -156,6 +158,7 @@ if __name__ == "__main__":
         print "ERROR: Could not communicate with the FFADO DBus service..."
         print "==========================================================="
         print "\n"
+        msg.warning( msg, "FFADO-DBus not found", "<qt><b>The connection to FFADOs DBus service could not be established.</b><p>Maybe you didn't start ffado-dbus-server?</qt>" )
         sys.exit(-1)
     
     nbDevices=devmgr.getNbDevices()
@@ -188,3 +191,4 @@ if __name__ == "__main__":
         app.exec_loop()
     else:
         print "No supported device found..."
+        msg.information( msg, "No mixer found", "Your device doesn't seem to have a supported mixer." )
