@@ -40,7 +40,7 @@
 #define MINIMUM_INTERRUPTS_PER_PERIOD   2U
 #define MAX_ISO_XMIT_BUFFER_FILL_PCT    50
 
-#define ISOHANDLER_PER_HANDLER_THREAD   0
+#define ISOHANDLER_PER_HANDLER_THREAD   1
 #define ISOHANDLER_USE_POLL             0
 
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
@@ -50,7 +50,7 @@
 // more robust. It should be noted though that shifting the transfer
 // time to a later time instant also causes the xmit buffer fill to be
 // lower on average.
-#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*4)
+#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*6)
 
 #define STREAMPROCESSORMANAGER_CYCLES_FOR_DRYRUN            40000
 #define STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP           2000

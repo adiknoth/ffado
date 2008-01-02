@@ -125,6 +125,9 @@ public:
     bool registerStream(Streaming::StreamProcessor *);
     bool unregisterStream(Streaming::StreamProcessor *);
 
+    bool waitForClient();
+    bool tryWaitForClient();
+
 private:
     IsoHandlerManager& m_manager;
     enum EHandlerType m_type;

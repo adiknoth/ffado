@@ -139,14 +139,10 @@ IsoHandlerManager::Execute() {
 
     unsigned int m_poll_timeout = 100;
 
-    // update the shadow variables if requested
-   // if(m_request_fdmap_update) {
-        updateShadowVars();
-    //    ZERO_ATOMIC((SInt32*)&m_request_fdmap_update);
-    //}
-
+    updateShadowVars();
     // bypass if no handlers are registered
     if (m_poll_nfds_shadow == 0) {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "bypass iterate since no handlers registered\n");
         usleep(m_poll_timeout * 1000);
         return true;
     }
@@ -181,16 +177,20 @@ IsoHandlerManager::Execute() {
         }
 
         if(m_poll_fds_shadow[i].revents & (POLLIN)) {
-            m_IsoHandler_map_shadow[i]->iterate();
             if (m_IsoHandler_map_shadow[i]->getType() == IsoHandler::eHT_Receive) {
+                m_IsoHandler_map_shadow[i]->iterate();
                 nb_rcv++;
             } else {
-                nb_xmit++;
+                // only iterate the xmit handler if it makes sense
+                if(m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
+                    m_IsoHandler_map_shadow[i]->iterate();
+                    nb_xmit++;
+                }
             }
         }
     }
     uint64_t iter_exit = m_service.getCurrentTimeAsUsecs();
-    
+
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
                 poll_exit-poll_enter, iter_exit-iter_enter,
                 nb_rcv, nb_xmit);
@@ -208,6 +208,7 @@ bool IsoHandlerManager::init()
     }
 
 #if ISOHANDLER_PER_HANDLER_THREAD
+    // the IsoHandlers will create their own thread.
 #else
     // create a thread to iterate our handlers
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
@@ -273,6 +274,7 @@ bool IsoHandlerManager::registerHandler(IsoHandler *handler)
     assert(handler);
     handler->setVerboseLevel(getDebugLevel());
     m_IsoHandlers.push_back(handler);
+    updateShadowVars();
     return true;
 }
 
@@ -287,6 +289,7 @@ bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
     {
         if ( *it == handler ) {
             m_IsoHandlers.erase(it);
+            updateShadowVars();
             return true;
         }
     }

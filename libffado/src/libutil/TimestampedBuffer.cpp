@@ -51,7 +51,21 @@
 #define EXIT_CRITICAL_SECTION { \
     pthread_mutex_unlock(&m_framecounter_lock); \
     }
+/*
+#define POST_SEMAPHORE { \
+    int tmp; \
+    sem_getvalue(&m_frame_semaphore, &tmp); \
+    debugWarning("posting semaphore from value %d\n", tmp); \
+    sem_post(&m_frame_semaphore); \
+}
+*/
 
+//HACK
+#define POST_SEMAPHORE { \
+    if(m_update_period > 8) { \
+        sem_post(&m_frame_semaphore); \
+    } \
+}
 namespace Util {
 
 IMPL_DEBUG_MODULE( TimestampedBuffer, TimestampedBuffer, DEBUG_LEVEL_VERBOSE );
@@ -76,6 +90,7 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
 TimestampedBuffer::~TimestampedBuffer() {
     ffado_ringbuffer_free(m_event_buffer);
     free(m_cluster_buffer);
+    sem_destroy(&m_frame_semaphore);
 }
 
 /**
@@ -107,6 +122,18 @@ bool TimestampedBuffer::setNominalRate(float r) {
 bool TimestampedBuffer::setUpdatePeriod(unsigned int n) {
     m_update_period=n;
     return true;
+}
+
+/**
+ * \brief Get the nominal update period (in frames)
+ *
+ * Gets the nominal update period. This period is the number of frames
+ * between two timestamp updates (hence buffer writes)
+ *
+ * @return period in frames
+ */
+unsigned int TimestampedBuffer::getUpdatePeriod() {
+    return m_update_period;
 }
 
 /**
@@ -261,6 +288,10 @@ unsigned int TimestampedBuffer::getBufferFill() {
  * @return true if successful
  */
 bool TimestampedBuffer::init() {
+    if (sem_init(&m_frame_semaphore, 0, 0) == -1) {
+        debugError("Could not init frame semaphore");
+        return false;
+    }
     return true;
 }
 
@@ -339,6 +370,63 @@ bool TimestampedBuffer::prepare() {
     return true;
 }
 
+bool
+TimestampedBuffer::waitForFrames(unsigned int nframes)
+{
+    int result;
+    do {
+        unsigned int bufferfill = getBufferFill();
+        if(bufferfill >= nframes) {
+            // first make the semaphore 0
+            while((result=sem_trywait(&m_frame_semaphore)) == 0) {};
+            return true;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                        "only %d frames in buffer, waiting for more (%d)\n", 
+                        bufferfill, nframes);
+        }
+    } while((result=sem_wait(&m_frame_semaphore)) == 0);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "sem_wait returns: %d\n",
+                result);
+    return false;
+}
+
+bool
+TimestampedBuffer::tryWaitForFrames(unsigned int nframes)
+{
+    int result;
+    do {
+        unsigned int bufferfill = getBufferFill();
+        if(bufferfill >= nframes) {
+            // first make the semaphore 0
+            while((result=sem_trywait(&m_frame_semaphore)) == 0) {};
+            return true;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                        "only %d frames in buffer, waiting for more (%d)\n", 
+                        bufferfill, nframes);
+        }
+    } while((result=sem_trywait(&m_frame_semaphore)) == 0);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                "sem_trywait returns: %d\n", 
+                result);
+    return false;
+}
+
+bool
+TimestampedBuffer::waitForFrames()
+{
+    return waitForFrames(m_update_period);
+}
+
+bool
+TimestampedBuffer::tryWaitForFrames()
+{
+    return tryWaitForFrames(m_update_period);
+}
+
+
 /**
  * @brief Insert a dummy frame to the head buffer
  *
@@ -370,7 +458,8 @@ bool TimestampedBuffer::writeDummyFrame() {
     ENTER_CRITICAL_SECTION;
     m_framecounter++;
     EXIT_CRITICAL_SECTION;
-    
+
+    POST_SEMAPHORE;
     return true;
 }
 
@@ -448,6 +537,7 @@ bool TimestampedBuffer::preloadFrames(unsigned int nframes, char *data, bool kee
         setBufferTailTimestamp(ts);
     }
 
+    POST_SEMAPHORE;
     return true;
 }
 
@@ -1219,7 +1309,7 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
     //
     // ts(x) = m_buffer_tail_timestamp +
     //         (m_buffer_next_tail_timestamp - m_buffer_tail_timestamp)/(samples_between_updates)*x
-
+    POST_SEMAPHORE;
 }
 
 /**
