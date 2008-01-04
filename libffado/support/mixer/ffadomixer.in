@@ -25,6 +25,8 @@ import sys
 # Add the path of the installed ffado-mixer-modules
 sys.path.append( "$PYTHONDIR" )
 
+import os
+import time
 import dbus
 from qt import *
 
@@ -150,16 +152,24 @@ if __name__ == "__main__":
     
     msg = QMessageBox()
 
-    try:
-        devmgr=DeviceManagerInterface(server, basepath)
-    except dbus.DBusException, ex:
-        print "\n"
-        print "==========================================================="
-        print "ERROR: Could not communicate with the FFADO DBus service..."
-        print "==========================================================="
-        print "\n"
-        msg.warning( msg, "FFADO-DBus not found", "<qt><b>The connection to FFADOs DBus service could not be established.</b><p>Maybe you didn't start ffado-dbus-server?</qt>" )
-        sys.exit(-1)
+    repeat = 1
+    while repeat > 0:
+        try:
+            devmgr=DeviceManagerInterface(server, basepath)
+            repeat -= 1
+        except dbus.DBusException, ex:
+            print "\n"
+            print "==========================================================="
+            print "ERROR: Could not communicate with the FFADO DBus service..."
+            print "==========================================================="
+            print "\n"
+            tmp = msg.question( msg, "FFADO-DBus not found", "<qt><b>The connection to FFADOs DBus service could not be established.</b><p>Probably you didn't start the ffado-dbus-server. Should I try this now?</qt>", QMessageBox.Yes, QMessageBox.No )
+            if tmp == 4:
+                sys.exit(-1)
+            else:
+                os.spawnlp( os.P_NOWAIT, "ffado-dbus-server" )
+                time.sleep( 2.5 )
+
     
     nbDevices=devmgr.getNbDevices()
     
