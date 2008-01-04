@@ -363,7 +363,6 @@ if 'debian' in COMMAND_LINE_TARGETS:
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
-    Default( 'external' )
     Default( 'src' )
     Default( 'support' )
     if env['BUILD_TESTS']:
