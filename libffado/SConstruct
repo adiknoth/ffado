@@ -94,6 +94,12 @@ if os.environ.has_key('LD_LIBRARY_PATH'):
 else:
 	buildenv['LD_LIBRARY_PATH']=''
 
+if os.environ.has_key('XDG_CONFIG_DIRS'):
+	buildenv['XDG_CONFIG_DIRS']=os.environ['XDG_CONFIG_DIRS']
+if os.environ.has_key('XDG_DATA_DIRS'):
+	buildenv['XDG_DATA_DIRS']=os.environ['XDG_DATA_DIRS']
+if os.environ.has_key('HOME'):
+	buildenv['HOME']=os.environ['HOME']
 
 env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
@@ -127,7 +133,13 @@ def ConfigGuess( context ):
 	context.Result( ret )
 	return ret
 
-tests = { "ConfigGuess" : ConfigGuess }
+def CheckForApp( context, app ):
+	context.Message( "Checking wether '" + app + "' executes " )
+	ret = context.TryAction( app )
+	context.Result( ret[0] )
+	return ret
+
+tests = { "ConfigGuess" : ConfigGuess, "CheckForApp" : CheckForApp }
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
 
@@ -180,8 +192,11 @@ install the needed packages (remember to also install the *-devel packages)
 	#
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
-if conf.PyQtCheck():
+if conf.CheckForApp( "which pyuic" ):
 	env['PYUIC'] = True
+
+if conf.CheckForApp( "xdg-desktop-menu --help" ):
+	env['XDG_TOOLS'] = True
 
 config_guess = conf.ConfigGuess()
 

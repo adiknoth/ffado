@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Copyright (C) 2007 Arnold Krille
 # Copyright (C) 2007 Pieter Palmers
@@ -42,4 +43,9 @@ if env.has_key('PYUIC'):
 	e.ScanReplace( "ffadomixer.in" )
 	e.Depends( "ffadomixer", "SConscript" )
 	e.Install( "$bindir", "ffadomixer" )
+
+	if env.has_key('XDG_TOOLS'):
+		e.Command( ".ffado.org-ffadomixer.desktop", "ffado.org-ffadomixer.desktop", "xdg-desktop-menu install $SOURCES && touch $TARGET" )
+		e.NoCache( ".ffado.org-ffadomixer.desktop" )
+		e.Alias( "install", ".ffado.org-ffadomixer.desktop" )
 
