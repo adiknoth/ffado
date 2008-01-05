@@ -22,6 +22,7 @@
  *
  */
 
+#include "config.h"
 #include "ieee1394service.h"
 #include "ARMHandler.h"
 #include "cycletimer.h"
@@ -41,11 +42,6 @@
 
 #include <iostream>
 #include <iomanip>
-
-#define FFADO_MAX_FIREWIRE_PORTS 16
-
-#define ISOMANAGER_PRIO_INCREASE         11
-#define CYCLETIMER_HELPER_PRIO_INCREASE  10
 
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
@@ -79,8 +75,8 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_threadRunning( false )
     , m_realtime ( rt )
     , m_base_priority ( prio )
-    , m_pIsoManager( new IsoHandlerManager( *this, rt, prio + ISOMANAGER_PRIO_INCREASE ) )
-    , m_pCTRHelper ( new CycleTimerHelper( *this, 1000, rt, prio + CYCLETIMER_HELPER_PRIO_INCREASE ) )
+    , m_pIsoManager( new IsoHandlerManager( *this, rt, prio + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE ) )
+    , m_pCTRHelper ( new CycleTimerHelper( *this, 1000, rt, prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
 {
@@ -134,8 +130,8 @@ Ieee1394Service::detectNbPorts( )
         debugError("Could not get libraw1394 handle.\n");
         return 0;
     }
-    struct raw1394_portinfo pinf[FFADO_MAX_FIREWIRE_PORTS];
-    int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, FFADO_MAX_FIREWIRE_PORTS);
+    struct raw1394_portinfo pinf[IEEE1394SERVICE_MAX_FIREWIRE_PORTS];
+    int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, IEEE1394SERVICE_MAX_FIREWIRE_PORTS);
     raw1394_destroy_handle(tmp_handle);
 
     if (nb_detected_ports < 0) {
@@ -214,8 +210,8 @@ Ieee1394Service::initialize( int port )
         debugError("Could not get temporaty libraw1394 handle.\n");
         return false;
     }
-    struct raw1394_portinfo pinf[FFADO_MAX_FIREWIRE_PORTS];
-    int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, FFADO_MAX_FIREWIRE_PORTS);
+    struct raw1394_portinfo pinf[IEEE1394SERVICE_MAX_FIREWIRE_PORTS];
+    int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, IEEE1394SERVICE_MAX_FIREWIRE_PORTS);
     raw1394_destroy_handle(tmp_handle);
 
     if (nb_detected_ports < 0) {
@@ -223,7 +219,7 @@ Ieee1394Service::initialize( int port )
         return false;
     }
 
-    if(nb_detected_ports && port < FFADO_MAX_FIREWIRE_PORTS) {
+    if(nb_detected_ports && port < IEEE1394SERVICE_MAX_FIREWIRE_PORTS) {
         m_portName = pinf[port].name;
     } else {
         m_portName = "Unknown";
@@ -274,18 +270,18 @@ Ieee1394Service::initialize( int port )
 bool
 Ieee1394Service::setThreadParameters(bool rt, int priority) {
     bool result = true;
-    if (priority > 98) priority = 98;
+    if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO;
     m_base_priority = priority;
     m_realtime = rt;
     if (m_pIsoManager) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching IsoManager to (rt=%d, prio=%d)\n",
-                                         rt, priority + ISOMANAGER_PRIO_INCREASE);
-        result &= m_pIsoManager->setThreadParameters(rt, priority + ISOMANAGER_PRIO_INCREASE);
+                                         rt, priority + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE);
+        result &= m_pIsoManager->setThreadParameters(rt, priority + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE);
     }
     if (m_pCTRHelper) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching CycleTimerHelper to (rt=%d, prio=%d)\n", 
-                                         rt, priority + CYCLETIMER_HELPER_PRIO_INCREASE);
-        result &= m_pCTRHelper->setThreadParameters(rt, priority + CYCLETIMER_HELPER_PRIO_INCREASE);
+                                         rt, priority + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE);
+        result &= m_pCTRHelper->setThreadParameters(rt, priority + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE);
     }
     return result;
 }

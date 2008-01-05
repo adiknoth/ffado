@@ -33,6 +33,7 @@
 #include "libutil/OptionContainer.h"
 
 #include "debugmodule/debugmodule.h"
+#include <semaphore.h>
 
 class Ieee1394Service;
 class IsoHandlerManager;
@@ -156,21 +157,49 @@ public: // the public receive/transmit functions
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
 
+    unsigned int getSignalPeriod() {return m_signal_period;};
+    bool setSignalPeriod(unsigned int p) {m_signal_period=p; return true;};
     /**
-     * @brief waits for the availability of frames (blocking)
-     * @param nframes number of frames
+     * @brief waits for a 'signal' (blocking)
      *
-     * @return true if frames are available, false if not (e.g. signal occurred)
+     * a 'signal' is:
+     * when type==Receive:
+     *  - one signal_period of frames is present in the buffer
+     *    (received by the iso side)
+     *  - an error has occurred (xrun, iso error, ...)
+     * when type==Transmit:
+     *  - at least one signal_period of frames are present in the buffer
+     *    (have been written into it by the client)
+     *  - an error occurred
+     *
+     * @return true if the 'signal' is available, false if error
      */
-    bool waitForFrames();
+    bool waitForSignal();
 
     /**
-     * @brief waits for the availability of frames (non-blocking)
-     * @param nframes number of frames
+     * @brief checks for a 'signal' (non-blocking)
      *
-     * @return true if frames are available, false if not
+     * a 'signal' is:
+     * when type==Receive:
+     *  - one signal_period of frames is present in the buffer
+     *    (received by the iso side)
+     *  - an error has occurred (xrun, iso error, ...)
+     * when type==Transmit:
+     *  - at least one signal_period of frames are present in the buffer
+     *    (have been written into it by the client)
+     *  - an error occurred
+     *
+     * @return true if the 'signal' is available, false if not (or error)
      */
-    bool tryWaitForFrames();
+    bool tryWaitForSignal();
+
+    /**
+     * @brief can a SP process (queue, dequeue) packets at this moment?
+     *
+     *
+     * @return true if packet processing makes sense
+     */
+    bool canProcessPackets();
 
     /**
      * @brief drop nframes from the internal buffer as if they were transferred to the client side
@@ -459,6 +488,10 @@ protected:
         int m_sync_delay;
     private:
         bool m_in_xrun;
+        sem_t m_signal_semaphore;
+        unsigned int m_signal_period;
+        unsigned int m_signal_offset;
+
 public:
     // debug stuff
     virtual void dumpInfo();
