@@ -645,8 +645,7 @@ int AmdtpTransmitStreamProcessor::encodePortToMidiEvents ( AmdtpMidiPort *p, qua
     unsigned int j=0;
     unsigned int position = p->getPosition();
     unsigned int location = p->getLocation();
-    char byte;
-    
+
     quadlet_t *target_event;
     quadlet_t tmpval;
 
@@ -669,19 +668,20 @@ int AmdtpTransmitStreamProcessor::encodePortToMidiEvents ( AmdtpMidiPort *p, qua
 
                 if ( *buffer & 0xFF000000 )   // we can send a byte
                 {
-                    byte = *buffer & 0xFF;
-                    tmpval=htonl(IEC61883_AM824_SET_LABEL((byte)<<16, IEC61883_AM824_LABEL_MIDI_1X));
-    
-//                     debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "MIDI port %s, pos=%d, loc=%d, nevents=%d, dim=%d\n",
-//                                 p->getName().c_str(), position, location, nevents, m_dimension );
-//                     debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "base=%p, target=%p, value=%08X\n",
-//                                 data, target_event, tmpval );
+                    tmpval = ((*buffer)<<16) & 0x00FF0000;
+                    tmpval=IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
+                    *target_event = htonl(tmpval);
+
+                    // debugOutput ( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
+                    //            p->getName().c_str(), position, location, nevents, m_dimension );
+                    // debugOutput ( DEBUG_LEVEL_VERBOSE, "base=%p, target=%p, value=%08X\n",
+                    //            data, target_event, tmpval );
                 } else {
                     // can't send a byte, either because there is no byte,
                     // or because this would exceed the maximum rate
-                    tmpval=htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
+                    // FIXME: this can be ifdef optimized since it's a constant
+                    *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
                 }
-                *target_event=tmpval;
                 buffer+=8;
             }
         }

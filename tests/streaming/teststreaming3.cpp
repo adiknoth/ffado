@@ -354,7 +354,7 @@ int main(int argc, char *argv[])
             case ffado_stream_type_midi:
                 ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_midi);
                 ffado_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_out[i]));
-                ffado_streaming_playback_stream_onoff(dev, i, 0);
+                ffado_streaming_playback_stream_onoff(dev, i, 1);
             default:
                 break;
         }
@@ -447,10 +447,18 @@ int main(int argc, char *argv[])
                         break;
                 }
             }
+            for (i=0; i < nb_out_channels; i++) {
+                if (ffado_streaming_get_playback_stream_type(dev,i) == ffado_stream_type_midi) {
+                    uint32_t *midievent = (uint32_t *)audiobuffers_out[i];
+                    *midievent = 0x010000FF;
+                    break;
+                }
+            }
+
         }
-        
+
         ffado_streaming_transfer_playback_buffers(dev);
-        
+
         nb_periods++;
         frame_counter += arguments.period;
 
