@@ -110,7 +110,7 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
         {
             if ( *it == processor ) {
                 if (*it == m_SyncSource) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE, "unregistering sync source");
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "unregistering sync source\n");
                     m_SyncSource = NULL;
                 }
                 m_ReceiveProcessors.erase(it);
@@ -126,7 +126,7 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
         {
             if ( *it == processor ) {
                 if (*it == m_SyncSource) {
-                    debugOutput(DEBUG_LEVEL_VERBOSE, "unregistering sync source");
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "unregistering sync source\n");
                     m_SyncSource = NULL;
                 }
                 m_TransmitProcessors.erase(it);
@@ -545,7 +545,7 @@ bool StreamProcessorManager::stop() {
         }
     }
     // wait for the SP's to get into the dry-running state
-    int cnt = 200;
+    int cnt = 2000;
     bool ready = false;
     while (!ready && cnt) {
         ready = true;
@@ -564,6 +564,16 @@ bool StreamProcessorManager::stop() {
     }
     if(cnt==0) {
         debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to start dry-running\n");
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            (*it)->dumpInfo();
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            (*it)->dumpInfo();
+        }
         return false;
     }
 
@@ -660,18 +670,26 @@ bool StreamProcessorManager::handleXrun() {
  */
 bool StreamProcessorManager::waitForPeriod() {
     if(m_SyncSource == NULL) return false;
-    int time_till_next_period;
     bool xrun_occurred = false;
+    bool period_not_ready = true;
 
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "enter...\n");
+    while(period_not_ready) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
+        if(!m_SyncSource->waitForSignal()) {
+            debugError("Error waiting for signal\n");
+            return false;
+        }
 
-    time_till_next_period = m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
+        unsigned int bufferfill = m_SyncSource->getBufferFill();
+        period_not_ready = bufferfill < m_period;
 
-    while(time_till_next_period > 0) {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
-
-        // wait for the period
-        SleepRelativeUsec(time_till_next_period);
+#ifdef DEBUG
+        if(period_not_ready) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "period is not ready (bufferfill: %u)\n", bufferfill);
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "period is ready (bufferfill: %u)\n", bufferfill);
+        }
+#endif
 
         // check for underruns on the ISO side,
         // those should make us bail out of the wait loop
@@ -688,9 +706,7 @@ bool StreamProcessorManager::waitForPeriod() {
             xrun_occurred |= (*it)->xrunOccurred();
         }
         if(xrun_occurred) break;
-
-        // check if we were waked up too soon
-        time_till_next_period = m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
+        // FIXME: make sure we also exit this loop when something else happens (e.g. signal, iso error)
     }
 
     // we save the 'ideal' time of the transfer at this point,
@@ -700,77 +716,8 @@ bool StreamProcessorManager::waitForPeriod() {
     // NOTE: before waitForPeriod() is called again, both the transmit
     //       and the receive processors should have done their transfer.
     m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "transfer at %llu ticks...\n",
         m_time_of_transfer);
-
-    xrun_occurred = false;
-
-#if STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY
-    // normally we can transfer frames at this time, but in some cases this is not true
-    // e.g. when there are not enough frames in the receive buffer.
-    // however this doesn't have to be a problem, since we can wait some more until we
-    // have enough frames. There is only a problem once the ISO xmit doesn't have packets
-    // to transmit, or if the receive buffer overflows. These conditions are signaled by
-    // the iso threads
-    // check if xruns occurred on the Iso side.
-    // also check if xruns will occur should we transfer() now
-    #ifdef DEBUG
-    int waited = 0;
-    #endif
-    
-    bool ready_for_transfer = false;
-    bool ready;
-    while (!ready_for_transfer && !xrun_occurred) {
-        // FIXME: can deadlock when the iso handlers die (e.g. unplug the device)
-        ready_for_transfer = true;
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-            it != m_ReceiveProcessors.end();
-            ++it ) {
-            ready = ((*it)->canClientTransferFrames(m_period));
-            ready_for_transfer &= ready;
-            xrun_occurred |= (*it)->xrunOccurred();
-        }
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-            it != m_TransmitProcessors.end();
-            ++it ) {
-            ready = ((*it)->canClientTransferFrames(m_period));
-            //ready_for_transfer &= ready;
-            xrun_occurred |= (*it)->xrunOccurred();
-        }
-        if(!ready_for_transfer) {
-            debugWarning("xrun_occurred = %d\n", xrun_occurred);
-        }
-        if (!ready_for_transfer) {
-            
-            SleepRelativeUsec(125); // MAGIC: one cycle sleep...
-
-            // in order to avoid this in the future, we increase the sync delay of the sync source SP
-            int d = m_SyncSource->getSyncDelay() + TICKS_PER_CYCLE;
-            m_SyncSource->setSyncDelay(d);
-            d = m_SyncSource->getSyncDelay();
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Increased the Sync delay to: %d ticks (%f frames, %f cy)\n", 
-                                             d, ((float)d)/m_SyncSource->getTicksPerFrame(), 
-                                             ((float)d)/((float)TICKS_PER_CYCLE));
-
-            #ifdef DEBUG
-            waited++;
-            #endif
-        }
-    } // we are either ready or an xrun occurred
-    
-    // in order to avoid a runaway value of the sync delay, we gradually decrease
-    // it. It will be increased by a 'too early' event (cfr some lines higher)
-    // hence we'll be at a good point on average.
-    int d = m_SyncSource->getSyncDelay() - 1;
-    if (d >= 0) m_SyncSource->setSyncDelay(d);
-
-
-    #ifdef DEBUG
-    if(waited > 0) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Waited %d x 125us due to SP not ready for transfer\n", waited);
-    }
-    #endif
-#endif
 
     // this is to notify the client of the delay that we introduced by waiting
     m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();

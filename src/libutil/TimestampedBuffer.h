@@ -26,7 +26,6 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
-#include <semaphore.h>
 
 //typedef float ffado_timestamp_t;
 //#define TIMESTAMP_FORMAT_SPEC "%14.3f"
@@ -155,6 +154,7 @@ class TimestampedBuffer
         bool setWrapValue ( ffado_timestamp_t w );
 
         unsigned int getBufferFill();
+        unsigned int getBufferSpace();
 
         // timestamp stuff
         int getFrameCounter() {return m_framecounter;};
@@ -243,8 +243,6 @@ class TimestampedBuffer
         float calculateRate();
         float m_current_rate;
         unsigned int m_update_period;
-
-        sem_t m_frame_semaphore;
 };
 
 /**

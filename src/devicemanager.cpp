@@ -559,8 +559,12 @@ DeviceManager::waitForPeriod() {
     } else {
         debugWarning("XRUN detected\n");
         // do xrun recovery
-        m_processorManager->handleXrun();
-        return false;
+        if(m_processorManager->handleXrun()) {
+            return false;
+        } else {
+            debugError("Could not handle XRUN\n");
+            return false;
+        }
     }
 }
 

@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
     dev_options.nb_buffers = arguments.nb_buffers;
 
     dev_options.realtime = (arguments.rtprio != 0);
-    dev_options.packetizer_priority = arguments.rtprio + 1;
+    dev_options.packetizer_priority = arguments.rtprio;
     
     dev_options.verbose = arguments.verbose;
         

@@ -244,7 +244,7 @@ int ffado_streaming_wait(ffado_device_t *dev) {
     if(dev->m_deviceManager->waitForPeriod()) {
         return dev->options.period_size;
     } else {
-        debugWarning("XRUN");
+        debugWarning("XRUN\n");
         xruns++;
         return -1;
     }

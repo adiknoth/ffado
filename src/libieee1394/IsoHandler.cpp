@@ -173,11 +173,13 @@ IsoHandler::Init()
 bool
 IsoHandler::waitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "waiting...\n");
     if(m_Client) {
-        bool result = m_Client->waitForFrames();
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
+        bool result = m_Client->waitForSignal();
+        debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
         return result;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " no client\n");
     }
     return false;
 }
@@ -187,9 +189,11 @@ IsoHandler::tryWaitForClient()
 {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
-        bool result = m_Client->tryWaitForFrames();
+        bool result = m_Client->tryWaitForSignal();
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
     }
     return false;
 }
@@ -208,8 +212,13 @@ IsoHandler::Execute()
     }
 
     // wait for the availability of frames in the client
-    // (blocking)
-    if (getType()==eHT_Receive || waitForClient()) {
+    // (blocking for transmit handlers)
+#ifdef DEBUG
+    if (getType() == eHT_Transmit) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Waiting for Client to signal frame availability...\n", this);
+    }
+#endif
+    if (getType() == eHT_Receive || waitForClient()) {
 
 #if ISOHANDLER_USE_POLL
         uint64_t poll_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
@@ -248,8 +257,13 @@ IsoHandler::Execute()
 #else
         // iterate blocks if no 1394 data is available
         // so poll'ing is not really necessary
-        bool result = iterate();
-        //usleep(125);
+        
+        bool result = true;
+        while(result && m_Client->canProcessPackets()) {
+            result = iterate();
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterate returned: %d\n",
+                        this, (m_type==eHT_Receive?"Receive":"Transmit"), result);
+        }
         return result;
 #endif
     } else {
@@ -260,20 +274,30 @@ IsoHandler::Execute()
 
 bool
 IsoHandler::iterate() {
-    //flush();
-    if(raw1394_loop_iterate(m_handle)) {
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                    "IsoHandler (%p): Failed to iterate handler: %s\n",
-                    this,strerror(errno));
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
+                this, (m_type==eHT_Receive?"Receive":"Transmit"));
+    if(m_State == E_Running) {
+#if ISOHANDLER_FLUSH_BEFORE_ITERATE
+        flush();
+#endif
+        if(raw1394_loop_iterate(m_handle)) {
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        "IsoHandler (%p): Failed to iterate handler: %s\n",
+                        this, strerror(errno));
+            return false;
+        }
+        return true;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Not iterating a non-running handler...\n",
+                    this, (m_type==eHT_Receive?"Receive":"Transmit"));
         return false;
     }
-    return true;
 }
 
 bool
 IsoHandler::setThreadParameters(bool rt, int priority) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
-    if (priority > 98) priority = 98; // cap the priority
+    if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
     m_realtime = rt;
     m_priority = priority;
 
@@ -342,7 +366,8 @@ IsoHandler::init()
 
 bool IsoHandler::disable()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "enter...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) enter...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
 
     // check state
     if(m_State == E_Prepared) return true;

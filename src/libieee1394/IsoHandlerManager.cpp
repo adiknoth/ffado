@@ -67,7 +67,7 @@ IsoHandlerManager::~IsoHandlerManager()
 bool
 IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
-    if (priority > 98) priority = 98; // cap the priority
+    if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
     m_realtime = rt;
     m_priority = priority;
     bool result = true;
@@ -408,7 +408,20 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
     }
 
     // set the handler's thread parameters
-    if(!h->setThreadParameters(m_realtime, m_priority)) {
+    // receive handlers have lower priority than the client thread
+    // since they have ISO side buffering
+    // xmit handlers have higher priority since we want client side
+    // frames to be put into the ISO buffers ASAP
+    int thread_prio;
+    if (stream->getType()==StreamProcessor::ePT_Receive) {
+        thread_prio = m_priority - 1;
+        if (thread_prio < THREAD_MIN_RTPRIO) thread_prio = THREAD_MIN_RTPRIO;
+    } else {
+        thread_prio = m_priority + 1;
+        if (thread_prio > THREAD_MAX_RTPRIO) thread_prio = THREAD_MAX_RTPRIO;
+    }
+
+    if(!h->setThreadParameters(m_realtime, thread_prio)) {
         debugFatal("Could not set handler thread parameters\n");
         return false;
     }

@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include "CycleTimerHelper.h"
 #include "ieee1394service.h"
 #include "libutil/PosixThread.h"
@@ -46,8 +48,6 @@
 #define EXIT_CRITICAL_SECTION { \
     pthread_mutex_unlock(&m_compute_vars_lock); \
     }
-
-#define OLD_STYLE
 
 IMPL_DEBUG_MODULE( CycleTimerHelper, CycleTimerHelper, DEBUG_LEVEL_NORMAL );
 
@@ -99,7 +99,7 @@ bool
 CycleTimerHelper::Start()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start %p...\n", this);
-#ifndef OLD_STYLE
+#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
@@ -125,11 +125,11 @@ CycleTimerHelper::Init()
 bool
 CycleTimerHelper::setThreadParameters(bool rt, int priority) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
-    if (priority > 98) priority = 98; // cap the priority
+    if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
     m_realtime = rt;
     m_priority = priority;
 
-#ifndef OLD_STYLE
+#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
     if (m_Thread) {
         if (m_realtime) {
             m_Thread->AcquireRealTime(m_priority);
@@ -138,6 +138,7 @@ CycleTimerHelper::setThreadParameters(bool rt, int priority) {
         }
     }
 #endif
+
     return true;
 }
 
@@ -156,50 +157,7 @@ CycleTimerHelper::getNominalRate()
     return rate;
 }
 
-#ifdef OLD_STYLE
-
-bool
-CycleTimerHelper::Execute()
-{
-    usleep(1000*1000);
-    return true;
-}
-uint32_t
-CycleTimerHelper::getCycleTimerTicks()
-{
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
-        debugError("Could not read cycle timer register\n");
-        return 0;
-    }
-    return CYCLE_TIMER_TO_TICKS(cycle_timer);
-}
-
-uint32_t
-CycleTimerHelper::getCycleTimerTicks(uint64_t now)
-{
-    return getCycleTimerTicks();
-}
-
-uint32_t
-CycleTimerHelper::getCycleTimer()
-{
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
-        debugError("Could not read cycle timer register\n");
-        return 0;
-    }
-    return cycle_timer;
-}
-
-uint32_t
-CycleTimerHelper::getCycleTimer(uint64_t now)
-{
-    return getCycleTimer();
-}
-#else
+#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
 
 bool
 CycleTimerHelper::Execute()
@@ -326,6 +284,51 @@ CycleTimerHelper::getCycleTimer(uint64_t now)
 {
     return TICKS_TO_CYCLE_TIMER(getCycleTimerTicks(now));
 }
+
+#else
+
+bool
+CycleTimerHelper::Execute()
+{
+    usleep(1000*1000);
+    return true;
+}
+uint32_t
+CycleTimerHelper::getCycleTimerTicks()
+{
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
+        debugError("Could not read cycle timer register\n");
+        return 0;
+    }
+    return CYCLE_TIMER_TO_TICKS(cycle_timer);
+}
+
+uint32_t
+CycleTimerHelper::getCycleTimerTicks(uint64_t now)
+{
+    return getCycleTimerTicks();
+}
+
+uint32_t
+CycleTimerHelper::getCycleTimer()
+{
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
+        debugError("Could not read cycle timer register\n");
+        return 0;
+    }
+    return cycle_timer;
+}
+
+uint32_t
+CycleTimerHelper::getCycleTimer(uint64_t now)
+{
+    return getCycleTimer();
+}
+
 #endif
 
 void
