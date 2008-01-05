@@ -277,18 +277,6 @@ unsigned int TimestampedBuffer::getBufferSpace() {
 }
 
 /**
- * \brief Initializes the TimestampedBuffer
- *
- * Initializes the TimestampedBuffer, should be called before anything else
- * is done.
- *
- * @return true if successful
- */
-bool TimestampedBuffer::init() {
-    return true;
-}
-
-/**
  * \brief Resets the TimestampedBuffer
  *
  * Resets the TimestampedBuffer, clearing the buffers and counters.

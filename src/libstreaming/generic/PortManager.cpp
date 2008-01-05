@@ -35,7 +35,6 @@ namespace Streaming {
 IMPL_DEBUG_MODULE( PortManager, PortManager, DEBUG_LEVEL_NORMAL );
 
 PortManager::PortManager() {
-
 }
 
 PortManager::~PortManager() {

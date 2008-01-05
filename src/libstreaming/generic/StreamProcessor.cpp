@@ -87,9 +87,9 @@ StreamProcessor::~StreamProcessor() {
     if(!m_IsoHandlerManager.unregisterStream(this)) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister stream processor with the Iso manager\n");
     }
+    // make the threads leave the wait condition
+    POST_SEMAPHORE;
     sem_destroy(&m_signal_semaphore);
-
-    // FIXME: how do we ensure that nobody is using us?
 
     if (m_data_buffer) delete m_data_buffer;
     if (m_scratch_buffer) delete[] m_scratch_buffer;
@@ -1276,8 +1276,6 @@ StreamProcessor::doStop()
     switch(m_state) {
         case ePS_Created:
             assert(m_data_buffer);
-            // object just created
-            result = m_data_buffer->init();
 
             // prepare the framerate estimate
             ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_StreamProcessorManager.getNominalRate());
