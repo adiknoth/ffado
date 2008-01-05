@@ -291,7 +291,7 @@ protected: // the helper receive/transmit functions
     virtual bool transmitSilenceBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
 protected: // some generic helpers
-    int provideSilenceToPort(AudioPort *p, unsigned int offset, unsigned int nevents);
+    int provideSilenceToPort(Port *p, unsigned int offset, unsigned int nevents);
     bool provideSilenceBlock(unsigned int nevents, unsigned int offset);
 
 private:

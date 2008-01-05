@@ -262,25 +262,6 @@ int ffado_streaming_transfer_buffers(ffado_device_t *dev) {
     return dev->m_deviceManager->getStreamProcessorManager().transfer();
 }
 
-
-int ffado_streaming_write(ffado_device_t *dev, int i, ffado_sample_t *buffer, int nsamples) {
-    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Playback);
-    // use an assert here performancewise,
-    // it should already have failed before, if not correct
-    assert(p);
-
-    return p->writeEvents((void *)buffer, nsamples);
-}
-
-int ffado_streaming_read(ffado_device_t *dev, int i, ffado_sample_t *buffer, int nsamples) {
-    Streaming::Port *p=dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
-    // use an assert here performancewise,
-    // it should already have failed before, if not correct
-    assert(p);
-
-    return p->readEvents((void *)buffer, nsamples);
-}
-
 int ffado_streaming_get_nb_capture_streams(ffado_device_t *dev) {
     return dev->m_deviceManager->getStreamProcessorManager().getPortCount(Streaming::Port::E_Capture);
 }
@@ -369,18 +350,10 @@ int ffado_streaming_set_stream_buffer_type(ffado_device_t *dev, int i,
             debugWarning("%s: Could not set data type to Int24\n",p->getName().c_str());
             return -1;
         }
-        if (!p->setBufferType(Streaming::Port::E_PointerBuffer)) {
-            debugWarning("%s: Could not set buffer type to Pointerbuffer\n",p->getName().c_str());
-            return -1;
-        }
         break;
     case ffado_buffer_type_float:
         if (!p->setDataType(Streaming::Port::E_Float)) {
             debugWarning("%s: Could not set data type to Float\n",p->getName().c_str());
-            return -1;
-        }
-        if (!p->setBufferType(Streaming::Port::E_PointerBuffer)) {
-            debugWarning("%s: Could not set buffer type to Pointerbuffer\n",p->getName().c_str());
             return -1;
         }
         break;
@@ -389,13 +362,9 @@ int ffado_streaming_set_stream_buffer_type(ffado_device_t *dev, int i,
             debugWarning("%s: Could not set data type to MidiEvent\n",p->getName().c_str());
             return -1;
         }
-        if (!p->setBufferType(Streaming::Port::E_RingBuffer)) {
-            debugWarning("%s: Could not set buffer type to Ringbuffer\n",p->getName().c_str());
-            return -1;
-        }
         break;
     default:
-        debugWarning("%s: Unsupported buffer type\n",p->getName().c_str());
+        debugWarning("%s: Unsupported buffer type (%d)\n", p->getName().c_str(), t);
         return -1;
     }
     return 0;
@@ -434,19 +403,13 @@ int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on
     return ffado_streaming_stream_onoff(dev, number, on, Streaming::Port::E_Capture);
 }
 
-// TODO: the way port buffers are set in the C api doesn't satisfy me
 int ffado_streaming_set_capture_stream_buffer(ffado_device_t *dev, int i, char *buff) {
         Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
-
         // use an assert here performancewise,
         // it should already have failed before, if not correct
         assert(p);
-
-        p->useExternalBuffer(true);
-        p->setExternalBufferAddress((void *)buff);
-
+        p->setBufferAddress((void *)buff);
         return 0;
-
 }
 
 int ffado_streaming_set_playback_stream_buffer(ffado_device_t *dev, int i, char *buff) {
@@ -454,9 +417,6 @@ int ffado_streaming_set_playback_stream_buffer(ffado_device_t *dev, int i, char 
         // use an assert here performancewise,
         // it should already have failed before, if not correct
         assert(p);
-
-        p->useExternalBuffer(true);
-        p->setExternalBufferAddress((void *)buff);
-
+        p->setBufferAddress((void *)buff);
         return 0;
 }

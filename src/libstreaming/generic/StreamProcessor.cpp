@@ -959,47 +959,36 @@ StreamProcessor::shiftStream(int nbframes)
 bool StreamProcessor::provideSilenceBlock(unsigned int nevents, unsigned int offset)
 {
     bool no_problem=true;
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
+    for ( PortVectorIterator it = m_Ports.begin();
+          it != m_Ports.end();
           ++it ) {
         if((*it)->isDisabled()) {continue;};
 
-        //FIXME: make this into a static_cast when not DEBUG?
-        Port *port=dynamic_cast<Port *>(*it);
-
-        switch(port->getPortType()) {
-
-        case Port::E_Audio:
-            if(provideSilenceToPort(static_cast<AudioPort *>(*it), offset, nevents)) {
-                debugWarning("Could not put silence into to port %s",(*it)->getName().c_str());
-                no_problem=false;
-            }
-            break;
-        // midi is a packet based port, don't process
-        //    case MotuPortInfo::E_Midi:
-        //        break;
-
-        default: // ignore
-            break;
+        if(provideSilenceToPort((*it), offset, nevents)) {
+            debugWarning("Could not put silence into to port %s",(*it)->getName().c_str());
+            no_problem=false;
         }
     }
     return no_problem;
 }
 
 int
-StreamProcessor::provideSilenceToPort(
-                       AudioPort *p, unsigned int offset, unsigned int nevents)
+StreamProcessor::provideSilenceToPort(Port *p, unsigned int offset, unsigned int nevents)
 {
     unsigned int j=0;
     switch(p->getDataType()) {
         default:
+            debugError("Invalid port type: %d\n", p->getDataType());
+            return -1;
         case Port::E_Int24:
+        case Port::E_MidiEvent:
+        case Port::E_ControlEvent:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
                 assert(nevents + offset <= p->getBufferSize());
                 buffer+=offset;
 
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
+                for(j = 0; j < nevents; j += 1) {
                     *(buffer)=0;
                     buffer++;
                 }
@@ -1011,7 +1000,7 @@ StreamProcessor::provideSilenceToPort(
                 assert(nevents + offset <= p->getBufferSize());
                 buffer+=offset;
 
-                for(j = 0; j < nevents; j += 1) { // decode max nsamples
+                for(j = 0; j < nevents; j += 1) {
                     *buffer = 0.0;
                     buffer++;
                 }
@@ -1318,49 +1307,6 @@ StreamProcessor::doStop()
                 if(!(*it)->setBufferSize(m_StreamProcessorManager.getPeriodSize())) {
                     debugFatal("Could not set buffer size to %d\n",m_StreamProcessorManager.getPeriodSize());
                     return false;
-                }
-                switch ((*it)->getPortType()) {
-                    case Port::E_Audio:
-                        if(!(*it)->setSignalType(Port::E_PeriodSignalled)) {
-                            debugFatal("Could not set signal type to PeriodSignalling");
-                            return false;
-                        }
-                        // buffertype and datatype are dependant on the API
-                        debugWarning("---------------- ! Doing hardcoded dummy setup ! --------------\n");
-                        // buffertype and datatype are dependant on the API
-                        if(!(*it)->setBufferType(Port::E_PointerBuffer)) {
-                            debugFatal("Could not set buffer type");
-                            return false;
-                        }
-                        if(!(*it)->useExternalBuffer(true)) {
-                            debugFatal("Could not set external buffer usage");
-                            return false;
-                        }
-                        if(!(*it)->setDataType(Port::E_Float)) {
-                            debugFatal("Could not set data type");
-                            return false;
-                        }
-                        break;
-                    case Port::E_Midi:
-                        if(!(*it)->setSignalType(Port::E_PacketSignalled)) {
-                            debugFatal("Could not set signal type to PacketSignalling");
-                            return false;
-                        }
-                        // buffertype and datatype are dependant on the API
-                        debugWarning("---------------- ! Doing hardcoded test setup ! --------------\n");
-                        // buffertype and datatype are dependant on the API
-                        if(!(*it)->setBufferType(Port::E_RingBuffer)) {
-                            debugFatal("Could not set buffer type");
-                            return false;
-                        }
-                        if(!(*it)->setDataType(Port::E_MidiEvent)) {
-                            debugFatal("Could not set data type");
-                            return false;
-                        }
-                        break;
-                    default:
-                        debugWarning("Unsupported port type specified\n");
-                        break;
                 }
             }
             // the API specific settings of the ports should already be set,

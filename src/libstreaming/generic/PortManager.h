@@ -32,7 +32,6 @@
 
 namespace Streaming {
 
-class Port;
 typedef std::vector<Port *> PortVector;
 typedef std::vector<Port *>::iterator PortVectorIterator;
 /*!
@@ -49,14 +48,11 @@ public:
     virtual ~PortManager();
 
     virtual bool makeNameUnique(Port *port);
-    virtual bool addPort(Port *port);
-    virtual bool deletePort(Port *port);
-    virtual void deleteAllPorts();
+    virtual bool registerPort(Port *port);
+    virtual bool unregisterPort(Port *port);
 
     int getPortCount(enum Port::E_PortType);
     int getPortCount();
-
-//     virtual bool setPortBuffersize(unsigned int newsize);
 
     Port *getPortAtIdx(unsigned int index);
 
@@ -68,12 +64,8 @@ public:
 
 protected:
     PortVector m_Ports;
-    PortVector m_PacketPorts;
-    PortVector m_PeriodPorts;
-//     PortVector m_SamplePorts;
 
     DECLARE_DEBUG_MODULE;
-
 };
 
 }

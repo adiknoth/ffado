@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
     audiobuffers_in = (float **)calloc(nb_in_channels, sizeof(float *));
     for (i=0; i < nb_in_channels; i++) {
         audiobuffers_in[i] = (float *)calloc(arguments.period+1, sizeof(float));
-            
+
         switch (ffado_streaming_get_capture_stream_type(dev,i)) {
             case ffado_stream_type_audio:
                 /* assign the audiobuffer to the stream */
@@ -330,15 +330,19 @@ int main(int argc, char *argv[])
                 break;
                 // this is done with read/write routines because the nb of bytes can differ.
             case ffado_stream_type_midi:
+                // note that using a float * buffer for midievents is a HACK
+                ffado_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
+                ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_midi);
+                ffado_streaming_capture_stream_onoff(dev, i, 1);
             default:
                 break;
         }
     }
-    
+
     audiobuffers_out = (float **)calloc(nb_out_channels, sizeof(float));
     for (i=0; i < nb_out_channels; i++) {
         audiobuffers_out[i] = (float *)calloc(arguments.period+1, sizeof(float));
-            
+
         switch (ffado_streaming_get_playback_stream_type(dev,i)) {
             case ffado_stream_type_audio:
                 /* assign the audiobuffer to the stream */
@@ -348,6 +352,8 @@ int main(int argc, char *argv[])
                 break;
                 // this is done with read/write routines because the nb of bytes can differ.
             case ffado_stream_type_midi:
+                ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_midi);
+                ffado_streaming_playback_stream_onoff(dev, i, 0);
             default:
                 break;
         }
@@ -412,6 +418,8 @@ int main(int argc, char *argv[])
                 }
             }
         } else {
+            uint32_t *midibuffer;
+            int idx;
             for (i=0; i < min_ch_count; i++) {
                 switch (ffado_streaming_get_capture_stream_type(dev,i)) {
                     case ffado_stream_type_audio:
@@ -422,6 +430,14 @@ int main(int argc, char *argv[])
                         break;
                         // this is done with read/write routines because the nb of bytes can differ.
                     case ffado_stream_type_midi:
+                        midibuffer=(uint32_t *)audiobuffers_in[i];
+                        for(idx=0; idx < arguments.period; idx++) {
+                            uint32_t midievent = *(midibuffer + idx);
+                            if(midievent & 0xFF000000) {
+                                debugOutput(DEBUG_LEVEL_NORMAL, " Received midi event %08X on idx %d of period %d\n", 
+                                            midievent, idx, nb_periods);
+                            }
+                        }
                     default:
                         break;
                 }

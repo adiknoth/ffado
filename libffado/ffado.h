@@ -205,12 +205,11 @@ typedef enum {
 } ffado_streaming_stream_type;
 
 /**
- * 
+ *
  * Buffer types known to the API
- * 
+ *
  */
 typedef enum {
-    ffado_buffer_type_per_stream      = -1, // use this to use the per-stream read functions
     ffado_buffer_type_int24           =  0,
     ffado_buffer_type_float           =  1,
     ffado_buffer_type_midi            =  2,
@@ -409,30 +408,6 @@ int ffado_streaming_reset(ffado_device_t *dev);
  * @return The number of frames ready. -1 when a problem occurred.
  */
 int ffado_streaming_wait(ffado_device_t *dev);
-
-/**
- * Reads from a specific channel to a supplied buffer.
- * 
- * @param dev the ffado device
- * @param number the stream number
- * @param buffer the buffer to copy the samples into
- * @param nsamples the number of samples to be read. the buffer has to be big enough for this amount of samples.
- *
- * @return the amount of samples actually read. -1 on error (xrun).
- */
-int ffado_streaming_read(ffado_device_t *dev, int number, ffado_sample_t *buffer, int nsamples);
-
-/**
- * Write to a specific channel from a supplied buffer.
- * 
- * @param dev the ffado device
- * @param number the stream number
- * @param buffer the buffer to copy the samples from
- * @param nsamples the number of samples to be written.
- *
- * @return the amount of samples actually written. -1 on error.
- */
-int ffado_streaming_write(ffado_device_t *dev, int number, ffado_sample_t *buffer, int nsamples);
 
 /**
  * Transfer & decode the events from the packet buffer to the sample buffers

@@ -114,13 +114,14 @@ private:
     int transmitBlock(char *data, unsigned int nevents,
                         unsigned int offset);
 
-    bool encodePacketPorts(quadlet_t *data, unsigned int nevents,
-                           unsigned int dbc);
-
     int encodePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
-                                unsigned int offset, unsigned int nevents);
+                               unsigned int offset, unsigned int nevents);
+    int encodePortToMidiEvents(AmdtpMidiPort *p, quadlet_t *data,
+                               unsigned int offset, unsigned int nevents);
     int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
-                                unsigned int offset, unsigned int nevents);
+                                      unsigned int offset, unsigned int nevents);
+    int encodeSilencePortToMidiEvents(AmdtpMidiPort *p, quadlet_t *data,
+                                      unsigned int offset, unsigned int nevents);
 
     unsigned int getFDF();
     unsigned int getSytInterval();
