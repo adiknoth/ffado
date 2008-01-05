@@ -48,6 +48,7 @@ Port::Port(PortManager& m, std::string name,
 }
 
 Port::~Port() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n", getName().c_str());
     m_manager.unregisterPort(this);
 }
 
@@ -65,8 +66,13 @@ bool Port::init() {
         return false;
     }
 
-    if (m_buffersize==0) {
+    if (m_buffersize == 0) {
         debugFatal("Cannot initialize a port with buffersize=0\n");
+        return false;
+    }
+
+    if (m_buffer == NULL) {
+        debugFatal("Cannot initialize a port with no attached buffer\n");
         return false;
     }
 

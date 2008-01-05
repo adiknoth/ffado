@@ -39,12 +39,15 @@ PortManager::PortManager() {
 }
 
 PortManager::~PortManager() {
+    flushDebugOutput();
     // delete all ports that are still registered to the manager
     for ( PortVectorIterator it = m_Ports.begin();
     it != m_Ports.end();
     ++it )
     {
-        delete *it;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s at %p\n", (*it)->getName().c_str(), *it);
+        flushDebugOutput();
+        delete *it; //FIXME
     }
 }
 
@@ -103,7 +106,7 @@ bool PortManager::registerPort(Port *port)
 bool PortManager::unregisterPort(Port *port)
 {
     assert(port);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering port %s\n",port->getName().c_str());
 
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();

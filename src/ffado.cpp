@@ -183,7 +183,7 @@ int ffado_streaming_prepare(ffado_device_t *dev) {
     // prepare here or there are no ports for jack
     if(!dev->m_deviceManager->prepareStreaming()) {
         debugFatal("Could not prepare the streaming system\n");
-        return 0;
+        return -1;
     }
     return 0;
 }
@@ -404,19 +404,19 @@ int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on
 }
 
 int ffado_streaming_set_capture_stream_buffer(ffado_device_t *dev, int i, char *buff) {
-        Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
-        // use an assert here performancewise,
-        // it should already have failed before, if not correct
-        assert(p);
-        p->setBufferAddress((void *)buff);
-        return 0;
+    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
+    // use an assert here performancewise,
+    // it should already have failed before, if not correct
+    assert(p);
+    p->setBufferAddress((void *)buff);
+    return 0;
 }
 
 int ffado_streaming_set_playback_stream_buffer(ffado_device_t *dev, int i, char *buff) {
-        Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Playback);
-        // use an assert here performancewise,
-        // it should already have failed before, if not correct
-        assert(p);
-        p->setBufferAddress((void *)buff);
-        return 0;
+    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Playback);
+    // use an assert here performancewise,
+    // it should already have failed before, if not correct
+    assert(p);
+    p->setBufferAddress((void *)buff);
+    return 0;
 }

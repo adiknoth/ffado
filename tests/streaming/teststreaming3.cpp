@@ -353,6 +353,7 @@ int main(int argc, char *argv[])
                 // this is done with read/write routines because the nb of bytes can differ.
             case ffado_stream_type_midi:
                 ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_midi);
+                ffado_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_out[i]));
                 ffado_streaming_playback_stream_onoff(dev, i, 0);
             default:
                 break;
@@ -390,7 +391,11 @@ int main(int argc, char *argv[])
 //     }
 
     // start the streaming layer
-    ffado_streaming_prepare(dev);
+    if (ffado_streaming_prepare(dev)) {
+        debugFatal("Could not prepare streaming system\n");
+        ffado_streaming_finish(dev);
+        return -1;
+    }
     start_flag = ffado_streaming_start(dev);
     
     set_realtime_priority(arguments.rtprio);
@@ -434,8 +439,8 @@ int main(int argc, char *argv[])
                         for(idx=0; idx < arguments.period; idx++) {
                             uint32_t midievent = *(midibuffer + idx);
                             if(midievent & 0xFF000000) {
-                                debugOutput(DEBUG_LEVEL_NORMAL, " Received midi event %08X on idx %d of period %d\n", 
-                                            midievent, idx, nb_periods);
+                                debugOutput(DEBUG_LEVEL_NORMAL, " Received midi event %08X at idx %d of period %d on port %d\n", 
+                                            midievent, idx, nb_periods, i);
                             }
                         }
                     default:

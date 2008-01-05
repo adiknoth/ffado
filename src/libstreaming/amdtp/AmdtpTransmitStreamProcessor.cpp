@@ -655,7 +655,7 @@ int AmdtpTransmitStreamProcessor::encodePortToMidiEvents ( AmdtpMidiPort *p, qua
         default:
             debugError("bad type: %d\n", p->getDataType());
             return -1;
-        case Port::E_Midi:
+        case Port::E_MidiEvent:
         {
             quadlet_t *buffer = (quadlet_t *)(p->getBufferAddress());
 
@@ -733,9 +733,8 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMidiEvents ( AmdtpMidiPort 
         default:
             debugError("bad type: %d\n", p->getDataType());
             return -1;
-        case Port::E_Midi:
+        case Port::E_MidiEvent:
         {
-            assert(nevents + offset <= p->getBufferSize());
             for ( j = location; j < nevents; j += 8 )
             {
                 target_event = (quadlet_t *) (data + ((j * m_dimension) + position));

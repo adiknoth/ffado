@@ -420,8 +420,8 @@ AmdtpReceiveStreamProcessor::decodeMidiEventsToPort(
                     if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
                         sample_int=(sample_int >> 16) & 0x000000FF;
                         sample_int |= 0x01000000; // flag that there is a midi event present
+                        *buffer = sample_int;
                     }
-                    *buffer = sample_int;
                     buffer += 8; // skip 8 frames
                 }
             }

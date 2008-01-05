@@ -87,10 +87,12 @@ StreamProcessor::~StreamProcessor() {
     if(!m_IsoHandlerManager.unregisterStream(this)) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister stream processor with the Iso manager\n");
     }
+    sem_destroy(&m_signal_semaphore);
+
+    // FIXME: how do we ensure that nobody is using us?
 
     if (m_data_buffer) delete m_data_buffer;
     if (m_scratch_buffer) delete[] m_scratch_buffer;
-    sem_destroy(&m_signal_semaphore);
 }
 
 uint64_t StreamProcessor::getTimeNow() {
