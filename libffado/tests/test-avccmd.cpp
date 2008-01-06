@@ -50,8 +50,8 @@ public:
     TestCmd(Ieee1394Service& ieee1394service, opcode_t opcode );
     virtual ~TestCmd();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TestCmd"; }
@@ -241,7 +241,7 @@ TestCmd::~TestCmd()
 }
 
 bool
-TestCmd::serialize( Util::IOSSerialize& se )
+TestCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -253,7 +253,7 @@ TestCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TestCmd::deserialize( Util::IISDeserialize& de )
+TestCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );
