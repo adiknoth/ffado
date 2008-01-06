@@ -245,9 +245,9 @@ signed int MotuReceiveStreamProcessor::decodeMotuEventsToPort(MotuAudioPort *p,
     unsigned char *src_data;
     src_data = (unsigned char *)data + p->getPosition();
 
-    switch(p->getDataType()) {
+    switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
-        case Port::E_Int24:
+        case StreamProcessorManager::eADT_Int24:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
 
@@ -273,7 +273,7 @@ signed int MotuReceiveStreamProcessor::decodeMotuEventsToPort(MotuAudioPort *p,
                 }
             }
             break;
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Float:
             {
                 const float multiplier = 1.0f / (float)(0x7FFFFF);
                 float *buffer=(float *)(p->getBufferAddress());

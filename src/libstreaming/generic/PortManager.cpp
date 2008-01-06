@@ -89,8 +89,8 @@ bool PortManager::registerPort(Port *port)
 {
     assert(port);
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s, type: %d, dir: %d, dtype: %d\n",
-        port->getName().c_str(), port->getPortType(), port->getDirection(), port->getDataType());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s, type: %d, dir: %d\n",
+        port->getName().c_str(), port->getPortType(), port->getDirection());
 
     port->setVerboseLevel(getDebugLevel());
 

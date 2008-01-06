@@ -58,16 +58,6 @@ class Port {
 
 public:
     /*!
-    \brief The datatype of the port buffer
-    */
-    enum E_DataType {
-        E_Float,
-        E_Int24,
-        E_MidiEvent,
-        E_ControlEvent,
-    };
-
-    /*!
     \brief The port type
     */
     enum E_PortType {
@@ -84,7 +74,7 @@ public:
         E_Capture,
     };
 
-    Port(PortManager&, std::string name, enum E_PortType, enum E_Direction, enum E_DataType);
+    Port(PortManager&, std::string name, enum E_PortType, enum E_Direction);
 
     virtual ~Port();
 
@@ -112,15 +102,6 @@ public:
      *
      */
     unsigned int getEventSize();
-
-    /**
-     * \brief sets the event type for the port buffer
-     *
-     * \note use before calling init()
-     */
-    virtual bool setDataType(enum E_DataType);
-
-    enum E_DataType getDataType() {return m_DataType;};
 
     enum E_PortType getPortType() {return m_PortType;}; ///< returns the port type (is fixed)
     enum E_Direction getDirection() {return m_Direction;}; ///< returns the direction (is fixed)
@@ -159,14 +140,12 @@ protected:
     bool m_disabled; ///< is the port disabled?, [anytime]
 
     unsigned int m_buffersize;
-    unsigned int m_eventsize;
 
-    enum E_DataType m_DataType;
     enum E_PortType m_PortType;
     enum E_Direction m_Direction;
 
     void *m_buffer;
-    
+
     PortManager& m_manager;
 
     DECLARE_DEBUG_MODULE;
@@ -194,7 +173,7 @@ class AudioPort : public Port {
 public:
 
     AudioPort(PortManager& m, std::string name, enum E_Direction direction)
-      : Port(m, name, E_Audio, direction, E_Int24)
+      : Port(m, name, E_Audio, direction)
     {};
 
     virtual ~AudioPort() {};
@@ -210,7 +189,7 @@ class MidiPort : public Port {
 public:
 
     MidiPort(PortManager& m, std::string name, enum E_Direction direction)
-      : Port(m, name, E_Midi, direction, E_MidiEvent)
+      : Port(m, name, E_Midi, direction)
     {};
     virtual ~MidiPort() {};
 };
@@ -225,7 +204,7 @@ class ControlPort : public Port {
 public:
 
     ControlPort(PortManager& m, std::string name, enum E_Direction direction)
-      : Port(m, name, E_Control, direction, E_ControlEvent)
+      : Port(m, name, E_Control, direction)
     {};
     virtual ~ControlPort() {};
 };

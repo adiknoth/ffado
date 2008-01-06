@@ -334,49 +334,41 @@ ffado_streaming_stream_type ffado_streaming_get_playback_stream_type(ffado_devic
     }
 }
 
-int ffado_streaming_set_stream_buffer_type(ffado_device_t *dev, int i,
-    ffado_streaming_buffer_type t, enum Streaming::Port::E_Direction direction) {
-
-    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, direction);
-    if(!p) {
-        debugWarning("Could not get %s port at index %d\n",
-            (direction==Streaming::Port::E_Playback?"Playback":"Capture"),i);
-        return -1;
-    }
-
+int ffado_streaming_set_audio_datatype(ffado_device_t *dev,
+    ffado_streaming_audio_datatype t) {
     switch(t) {
-    case ffado_buffer_type_int24:
-        if (!p->setDataType(Streaming::Port::E_Int24)) {
-            debugWarning("%s: Could not set data type to Int24\n",p->getName().c_str());
+        case ffado_audio_datatype_int24:
+            if(!dev->m_deviceManager->getStreamProcessorManager().setAudioDataType(
+               Streaming::StreamProcessorManager::eADT_Int24)) {
+                debugError("Could not set datatype\n");
+                return -1;
+            }
+            break;
+        case ffado_audio_datatype_float:
+            if(!dev->m_deviceManager->getStreamProcessorManager().setAudioDataType(
+               Streaming::StreamProcessorManager::eADT_Float)) {
+                debugError("Could not set datatype\n");
+                return -1;
+            }
+            break;
+        default:
+            debugError("Invalid audio datatype\n");
             return -1;
-        }
-        break;
-    case ffado_buffer_type_float:
-        if (!p->setDataType(Streaming::Port::E_Float)) {
-            debugWarning("%s: Could not set data type to Float\n",p->getName().c_str());
-            return -1;
-        }
-        break;
-    case ffado_buffer_type_midi:
-        if (!p->setDataType(Streaming::Port::E_MidiEvent)) {
-            debugWarning("%s: Could not set data type to MidiEvent\n",p->getName().c_str());
-            return -1;
-        }
-        break;
-    default:
-        debugWarning("%s: Unsupported buffer type (%d)\n", p->getName().c_str(), t);
-        return -1;
     }
     return 0;
-
 }
 
-int ffado_streaming_set_playback_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t) {
-    return ffado_streaming_set_stream_buffer_type(dev, i, t, Streaming::Port::E_Playback);
-}
-
-int ffado_streaming_set_capture_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t) {
-    return ffado_streaming_set_stream_buffer_type(dev, i, t, Streaming::Port::E_Capture);
+ffado_streaming_audio_datatype ffado_streaming_get_audio_datatype(ffado_device_t *dev) {
+    switch(dev->m_deviceManager->getStreamProcessorManager().getAudioDataType()) {
+        case Streaming::StreamProcessorManager::eADT_Int24:
+            return ffado_audio_datatype_int24;
+        case Streaming::StreamProcessorManager::eADT_Float:
+            return ffado_audio_datatype_float;
+        default:
+            debugError("Invalid audio datatype\n");
+            return ffado_audio_datatype_error;
+    }
+    #warning FIXME
 }
 
 int ffado_streaming_stream_onoff(ffado_device_t *dev, int i,

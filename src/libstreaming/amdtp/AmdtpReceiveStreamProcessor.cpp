@@ -335,11 +335,11 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
     target_event=(quadlet_t *)(data + p->getPosition());
 
-    switch(p->getDataType()) {
+    switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
-            debugError("bad type: %d\n", p->getDataType());
+            debugError("bad type: %d\n", m_StreamProcessorManager.getAudioDataType());
             return -1;
-        case Port::E_Int24:
+        case StreamProcessorManager::eADT_Int24:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
 
@@ -354,7 +354,7 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
                 }
             }
             break;
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Float:
             {
                 const float multiplier = 1.0f / (float)(0x7FFFFF);
                 float *buffer=(float *)(p->getBufferAddress());
@@ -392,40 +392,31 @@ AmdtpReceiveStreamProcessor::decodeMidiEventsToPort(
     unsigned int position = p->getPosition();
     unsigned int location = p->getLocation();
 
-    switch(p->getDataType()) {
-        default:
-            debugError("bad type: %d\n", p->getDataType());
-            return -1;
-        case Port::E_MidiEvent:
-            {
-                quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+    quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
 
-                assert(nevents + offset <= p->getBufferSize());
+    assert(nevents + offset <= p->getBufferSize());
 
-                buffer+=offset;
+    buffer+=offset;
 
-                // clear
-                memset(buffer, 0, nevents * 4);
+    // clear
+    memset(buffer, 0, nevents * 4);
 
-                // assumes that dbc%8 == 0, which is always true if data points to the
-                // start of a packet in blocking mode
-                // midi events that belong to the same time mpx-ed block should all be
-                // timed at the SYT timestamp of the packet. This basically means that they
-                // all correspond to the first audio frame in the packet.
-                for(j = location; j < nevents; j += 8) {
-                    target_event=(quadlet_t *)(data + ((j * m_dimension) + position));
-                    sample_int=ntohl(*target_event);
-                    // FIXME: this assumes that 2X and 3X speed isn't used,
-                    // because only the 1X slot is put into the ringbuffer
-                    if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-                        sample_int=(sample_int >> 16) & 0x000000FF;
-                        sample_int |= 0x01000000; // flag that there is a midi event present
-                        *buffer = sample_int;
-                    }
-                    buffer += 8; // skip 8 frames
-                }
-            }
-            break;
+    // assumes that dbc%8 == 0, which is always true if data points to the
+    // start of a packet in blocking mode
+    // midi events that belong to the same time mpx-ed block should all be
+    // timed at the SYT timestamp of the packet. This basically means that they
+    // all correspond to the first audio frame in the packet.
+    for(j = location; j < nevents; j += 8) {
+        target_event=(quadlet_t *)(data + ((j * m_dimension) + position));
+        sample_int=ntohl(*target_event);
+        // FIXME: this assumes that 2X and 3X speed isn't used,
+        // because only the 1X slot is put into the ringbuffer
+        if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
+            sample_int=(sample_int >> 16) & 0x000000FF;
+            sample_int |= 0x01000000; // flag that there is a midi event present
+            *buffer = sample_int;
+        }
+        buffer += 8; // skip 8 frames
     }
 
     return 0;

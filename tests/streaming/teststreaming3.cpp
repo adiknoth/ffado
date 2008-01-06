@@ -316,6 +316,11 @@ int main(int argc, char *argv[])
         debugError("Could not init Ffado Streaming layer\n");
         exit(-1);
     }
+    if (arguments.audio_buffer_type == 0) {
+        ffado_streaming_set_audio_datatype(dev, ffado_audio_datatype_float);
+    } else {
+        ffado_streaming_set_audio_datatype(dev, ffado_audio_datatype_int24);
+    }
 
     nb_in_channels = ffado_streaming_get_nb_capture_streams(dev);
     nb_out_channels = ffado_streaming_get_nb_playback_streams(dev);
@@ -325,7 +330,7 @@ int main(int argc, char *argv[])
     } else {
         min_ch_count = nb_out_channels;
     }
-    
+
     /* allocate intermediate buffers */
     audiobuffers_in = (float **)calloc(nb_in_channels, sizeof(float *));
     for (i=0; i < nb_in_channels; i++) {
@@ -335,18 +340,12 @@ int main(int argc, char *argv[])
             case ffado_stream_type_audio:
                 /* assign the audiobuffer to the stream */
                 ffado_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
-                if (arguments.audio_buffer_type == 0) {
-                    ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_float);
-                } else {
-                    ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_int24);
-                }
                 ffado_streaming_capture_stream_onoff(dev, i, 1);
                 break;
                 // this is done with read/write routines because the nb of bytes can differ.
             case ffado_stream_type_midi:
                 // note that using a float * buffer for midievents is a HACK
                 ffado_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
-                ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_midi);
                 ffado_streaming_capture_stream_onoff(dev, i, 1);
             default:
                 break;
@@ -361,16 +360,10 @@ int main(int argc, char *argv[])
             case ffado_stream_type_audio:
                 /* assign the audiobuffer to the stream */
                 ffado_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_out[i]));
-                if (arguments.audio_buffer_type == 0) {
-                    ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_float);
-                } else {
-                    ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_int24);
-                }
                 ffado_streaming_playback_stream_onoff(dev, i, 1);
                 break;
                 // this is done with read/write routines because the nb of bytes can differ.
             case ffado_stream_type_midi:
-                ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_midi);
                 ffado_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_out[i]));
                 ffado_streaming_playback_stream_onoff(dev, i, 1);
             default:

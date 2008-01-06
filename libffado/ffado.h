@@ -206,14 +206,14 @@ typedef enum {
 
 /**
  *
- * Buffer types known to the API
+ * Audio data types known to the API
  *
  */
 typedef enum {
-    ffado_buffer_type_int24           =  0,
-    ffado_buffer_type_float           =  1,
-    ffado_buffer_type_midi            =  2,
-} ffado_streaming_buffer_type;
+    ffado_audio_datatype_error           = -1,
+    ffado_audio_datatype_int24           =  0,
+    ffado_audio_datatype_float           =  1,
+} ffado_streaming_audio_datatype;
 
 /**
  * Initializes the streaming from/to a FFADO device. A FFADO device
@@ -337,7 +337,6 @@ ffado_streaming_stream_type ffado_streaming_get_playback_stream_type(ffado_devic
  */
 
 int ffado_streaming_set_capture_stream_buffer(ffado_device_t *dev, int number, char *buff);
-int ffado_streaming_set_capture_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t);
 int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on);
 
 /**
@@ -353,9 +352,10 @@ int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on
  * @return -1 on error, 0 on success
  */
 int ffado_streaming_set_playback_stream_buffer(ffado_device_t *dev, int number, char *buff);
-int ffado_streaming_set_playback_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t);
 int ffado_streaming_playback_stream_onoff(ffado_device_t *dev, int number, int on);
 
+ffado_streaming_audio_datatype ffado_streaming_get_audio_datatype(ffado_device_t *dev);
+int ffado_streaming_set_audio_datatype(ffado_device_t *dev, ffado_streaming_audio_datatype t);
 
 /**
  * preparation should be done after setting all per-stream parameters

@@ -979,13 +979,12 @@ int
 StreamProcessor::provideSilenceToPort(Port *p, unsigned int offset, unsigned int nevents)
 {
     unsigned int j=0;
-    switch(p->getDataType()) {
+    switch(p->getPortType()) {
         default:
-            debugError("Invalid port type: %d\n", p->getDataType());
+            debugError("Invalid port type: %d\n", p->getPortType());
             return -1;
-        case Port::E_Int24:
-        case Port::E_MidiEvent:
-        case Port::E_ControlEvent:
+        case Port::E_Midi:
+        case Port::E_Control:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
                 assert(nevents + offset <= p->getBufferSize());
@@ -997,16 +996,32 @@ StreamProcessor::provideSilenceToPort(Port *p, unsigned int offset, unsigned int
                 }
             }
             break;
-        case Port::E_Float:
-            {
-                float *buffer=(float *)(p->getBufferAddress());
-                assert(nevents + offset <= p->getBufferSize());
-                buffer+=offset;
-
-                for(j = 0; j < nevents; j += 1) {
-                    *buffer = 0.0;
-                    buffer++;
+        case Port::E_Audio:
+            switch(m_StreamProcessorManager.getAudioDataType()) {
+            case StreamProcessorManager::eADT_Int24:
+                {
+                    quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+                    assert(nevents + offset <= p->getBufferSize());
+                    buffer+=offset;
+    
+                    for(j = 0; j < nevents; j += 1) {
+                        *(buffer)=0;
+                        buffer++;
+                    }
                 }
+                break;
+            case StreamProcessorManager::eADT_Float:
+                {
+                    float *buffer=(float *)(p->getBufferAddress());
+                    assert(nevents + offset <= p->getBufferSize());
+                    buffer+=offset;
+    
+                    for(j = 0; j < nevents; j += 1) {
+                        *buffer = 0.0;
+                        buffer++;
+                    }
+                }
+                break;
             }
             break;
     }

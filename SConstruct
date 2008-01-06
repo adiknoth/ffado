@@ -330,10 +330,10 @@ env['REVISION'] = env['REVISION'].split(':')[-1]
 if env['REVISION'] == 'exported':
 	env['REVISION'] = ''
 
-env['FFADO_API_VERSION']="6"
+env['FFADO_API_VERSION']="7"
 
 env['PACKAGE'] = "libffado"
-env['VERSION'] = "1.999.12"
+env['VERSION'] = "1.999.13"
 env['LIBVERSION'] = "1.0.0"
 
 #

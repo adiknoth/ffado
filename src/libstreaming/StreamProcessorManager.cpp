@@ -40,10 +40,11 @@ IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_V
 StreamProcessorManager::StreamProcessorManager()
     : m_is_slave( false )
     , m_SyncSource(NULL)
+    , m_xrun_happened( false )
     , m_nb_buffers( 0 )
     , m_period( 0 )
+    , m_audio_datatype( eADT_Float )
     , m_nominal_framerate ( 0 )
-    , m_xrun_happened( false )
     , m_xruns(0)
     , m_nbperiods(0)
 {
@@ -53,11 +54,12 @@ StreamProcessorManager::StreamProcessorManager()
 StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int framerate, unsigned int nb_buffers)
     : m_is_slave( false )
     , m_SyncSource(NULL)
+    , m_xrun_happened( false )
     , m_nb_buffers(nb_buffers)
     , m_period(period)
+    , m_audio_datatype( eADT_Float )
     , m_nominal_framerate ( framerate )
     , m_xruns(0)
-    , m_xrun_happened( false )
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
@@ -914,6 +916,7 @@ void StreamProcessorManager::dumpInfo() {
     debugOutputShort( DEBUG_LEVEL_NORMAL, "----------------------------------------------------\n");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping StreamProcessorManager information...\n");
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Period count: %6d\n", m_nbperiods);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "Data type: %s\n", (m_audio_datatype==eADT_Float?"float":"int24"));
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, " Receive processors...\n");
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();

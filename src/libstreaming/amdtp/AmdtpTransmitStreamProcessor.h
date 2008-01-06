@@ -137,7 +137,6 @@ private:
 private: // local port caching for performance
     struct _MBLA_port_cache {
         AmdtpAudioPort*     port;
-        Port::E_DataType    type;
         void*               buffer;
 #ifdef DEBUG
         unsigned int        buffer_size;

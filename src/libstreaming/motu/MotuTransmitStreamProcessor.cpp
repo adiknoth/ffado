@@ -491,9 +491,9 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
     unsigned char *target;
     target = (unsigned char *)data + p->getPosition();
 
-    switch(p->getDataType()) {
+    switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
-        case Port::E_Int24:
+        case StreamProcessorManager::eADT_Int24:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
 
@@ -515,7 +515,7 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
                 }
             }
             break;
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Float:
             {
                 const float multiplier = (float)(0x7FFFFF);
                 float *buffer=(float *)(p->getBufferAddress());
@@ -545,10 +545,10 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMotuEvents(MotuAudioPort *p,
     unsigned int j=0;
     unsigned char *target = (unsigned char *)data + p->getPosition();
 
-    switch (p->getDataType()) {
+    switch (m_StreamProcessorManager.getAudioDataType()) {
     default:
-        case Port::E_Int24:
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Int24:
+        case StreamProcessorManager::eADT_Float:
         for (j = 0; j < nevents; j++) {
             *target = *(target+1) = *(target+2) = 0;
             target += m_event_size;

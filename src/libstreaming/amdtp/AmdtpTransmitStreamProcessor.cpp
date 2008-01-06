@@ -495,12 +495,12 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, qu
 
     target_event= ( quadlet_t * ) ( data + p->getPosition() );
 
-    switch ( p->getDataType() )
+    switch ( m_StreamProcessorManager.getAudioDataType() )
     {
         default:
-            debugError("bad type: %d\n", p->getDataType());
+            debugError("bad type: %d\n", m_StreamProcessorManager.getAudioDataType());
             return -1;
-        case Port::E_Int24:
+        case StreamProcessorManager::eADT_Int24:
         {
             quadlet_t *buffer= ( quadlet_t * ) ( p->getBufferAddress() );
 
@@ -516,7 +516,7 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, qu
             }
         }
         break;
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Float:
         {
             float *buffer= ( float * ) ( p->getBufferAddress() );
 
@@ -554,44 +554,35 @@ int AmdtpTransmitStreamProcessor::encodePortToMidiEvents ( AmdtpMidiPort *p, qua
     quadlet_t *target_event;
     quadlet_t tmpval;
 
-    switch ( p->getDataType() )
+    quadlet_t *buffer = (quadlet_t *)(p->getBufferAddress());
+
+    assert(nevents + offset <= p->getBufferSize());
+
+    buffer+=offset;
+
+    for ( j = location; j < nevents; j += 8 )
     {
-        default:
-            debugError("bad type: %d\n", p->getDataType());
-            return -1;
-        case Port::E_MidiEvent:
+        target_event = (quadlet_t *) (data + ((j * m_dimension) + position));
+
+        if ( *buffer & 0xFF000000 )   // we can send a byte
         {
-            quadlet_t *buffer = (quadlet_t *)(p->getBufferAddress());
+            tmpval = ((*buffer)<<16) & 0x00FF0000;
+            tmpval=IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
+            *target_event = htonl(tmpval);
 
-            assert(nevents + offset <= p->getBufferSize());
-
-            buffer+=offset;
-
-            for ( j = location; j < nevents; j += 8 )
-            {
-                target_event = (quadlet_t *) (data + ((j * m_dimension) + position));
-
-                if ( *buffer & 0xFF000000 )   // we can send a byte
-                {
-                    tmpval = ((*buffer)<<16) & 0x00FF0000;
-                    tmpval=IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
-                    *target_event = htonl(tmpval);
-
-                    // debugOutput ( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
-                    //            p->getName().c_str(), position, location, nevents, m_dimension );
-                    // debugOutput ( DEBUG_LEVEL_VERBOSE, "base=%p, target=%p, value=%08X\n",
-                    //            data, target_event, tmpval );
-                } else {
-                    // can't send a byte, either because there is no byte,
-                    // or because this would exceed the maximum rate
-                    // FIXME: this can be ifdef optimized since it's a constant
-                    *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
-                }
-                buffer+=8;
-            }
+            // debugOutput ( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
+            //            p->getName().c_str(), position, location, nevents, m_dimension );
+            // debugOutput ( DEBUG_LEVEL_VERBOSE, "base=%p, target=%p, value=%08X\n",
+            //            data, target_event, tmpval );
+        } else {
+            // can't send a byte, either because there is no byte,
+            // or because this would exceed the maximum rate
+            // FIXME: this can be ifdef optimized since it's a constant
+            *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
         }
-        break;
+        buffer+=8;
     }
+
     return 0;
 }
 
@@ -604,11 +595,11 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents ( AmdtpAudioPort
 
     target_event= ( quadlet_t * ) ( data + p->getPosition() );
 
-    switch ( p->getDataType() )
+    switch ( m_StreamProcessorManager.getAudioDataType() )
     {
         default:
-        case Port::E_Int24:
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Int24:
+        case StreamProcessorManager::eADT_Float:
         {
             for ( j = 0; j < nevents; j += 1 )   // decode max nsamples
             {
@@ -631,21 +622,12 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMidiEvents ( AmdtpMidiPort 
 
     quadlet_t *target_event;
 
-    switch ( p->getDataType() )
+    for ( j = location; j < nevents; j += 8 )
     {
-        default:
-            debugError("bad type: %d\n", p->getDataType());
-            return -1;
-        case Port::E_MidiEvent:
-        {
-            for ( j = location; j < nevents; j += 8 )
-            {
-                target_event = (quadlet_t *) (data + ((j * m_dimension) + position));
-                *target_event=htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
-            }
-        }
-        break;
+        target_event = (quadlet_t *) (data + ((j * m_dimension) + position));
+        *target_event=htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
     }
+
     return 0;
 }
 
@@ -670,9 +652,9 @@ AmdtpTransmitStreamProcessor::encodeAudioPorts(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        switch ( p.type )
+        switch ( m_StreamProcessorManager.getAudioDataType() )
         {
-            case Port::E_Float:
+            case StreamProcessorManager::eADT_Float:
             {
                 float *buffer = (float *)(p.buffer);
                 buffer += offset;
@@ -688,7 +670,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPorts(quadlet_t *data,
                 }
             }
             break;
-            case Port::E_Int24:
+            case StreamProcessorManager::eADT_Int24:
             {
                 uint32_t *buffer = (uint32_t *)(p.buffer);
                 buffer += offset;
@@ -702,7 +684,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPorts(quadlet_t *data,
             }
             break;
             default:
-                debugError("bad type: %d\n", m_audio_ports.at(i).type);
+                debugError("bad type: %d\n", m_StreamProcessorManager.getAudioDataType());
                 return false;
         }
     }
@@ -761,7 +743,6 @@ AmdtpTransmitStreamProcessor::initPortCache() {
                 }
 //                p.position = pinfo->getPosition();
                 p.buffer = NULL; // to be filled by updatePortCache
-                p.type = (*it)->getDataType();
 #ifdef DEBUG
                 p.buffer_size = (*it)->getBufferSize();
 #endif

@@ -49,6 +49,10 @@ class StreamProcessorManager : public Util::OptionContainer {
     friend class StreamProcessor;
 
 public:
+    enum eADT_AudioDataType {
+        eADT_Int24,
+        eADT_Float,
+    };
 
     StreamProcessorManager();
     StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
@@ -70,6 +74,11 @@ public:
             {m_period = period;};
     unsigned int getPeriodSize()
             {return m_period;};
+
+    bool setAudioDataType(enum eADT_AudioDataType t)
+        {m_audio_datatype = t; return true;};
+    enum eADT_AudioDataType getAudioDataType()
+        {return m_audio_datatype;}
 
     void setNbBuffers(unsigned int nb_buffers)
             {m_nb_buffers = nb_buffers;};
@@ -138,6 +147,7 @@ protected:
 
     unsigned int m_nb_buffers;
     unsigned int m_period;
+    enum eADT_AudioDataType m_audio_datatype;
     unsigned int m_nominal_framerate;
     unsigned int m_xruns;
 
