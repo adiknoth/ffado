@@ -26,6 +26,8 @@
 #include "bebob/bebob_avdevice.h"
 #include "libieee1394/configrom.h"
 
+#include "libutil/cmd_serialize.h"
+
 using namespace AVC;
 
 namespace BeBoB {
@@ -383,28 +385,35 @@ FunctionBlockEnhancedMixer::discover()
     if (!FunctionBlock::discover())
         return false;
 
-//     FunctionBlockCmd fbCmd( m_subunit->getUnit().get1394Service(),
-//                             FunctionBlockCmd::eFBT_Processing,
-//                             m_id,
-//                             FunctionBlockCmd::eCA_Current);
-//     fbCmd.setNodeId( m_subunit->getUnit().getConfigRom().getNodeId() );
-//     fbCmd.setSubunitId( 0x00 );
-//     fbCmd.setCommandType( AVCCommand::eCT_Status );
-//     fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
+    AVC::FunctionBlockCmd fbCmd( m_subunit->getUnit().get1394Service(),
+                                 FunctionBlockCmd::eFBT_Processing,
+                                 m_id,
+                                 FunctionBlockCmd::eCA_Current);
+    fbCmd.setNodeId( m_subunit->getUnit().getConfigRom().getNodeId() );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Status );
+    // fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
 
-//     if ( !fbCmd.fire() ) {
-//         debugError( "cmd failed\n" );
-//         return false;
-//     }
+    // Ok, this enhanced  mixer setting here is just a hack, we need
+    // a sane way to set processing features (read pointer management)
+    AVC::FunctionBlockProcessingEnhancedMixer em;
+    delete fbCmd.m_pFBProcessing->m_pMixer;
+    fbCmd.m_pFBProcessing->m_pMixer = 0;
+    fbCmd.m_pFBProcessing->m_pEnhancedMixer = em.clone();
+    
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return false;
+    }
     
 //     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
 //         Util::Cmd::CoutSerializer se;
 //         fbCmd.serialize( se );
 //     }
 
-//     if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
-//         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
-//     }
+    if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
+    }
     
     return true;
 }
