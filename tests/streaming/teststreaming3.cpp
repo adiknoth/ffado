@@ -418,9 +418,9 @@ int main(int argc, char *argv[])
             ffado_streaming_reset(dev);
             continue;
         }
-        
+
         ffado_streaming_transfer_capture_buffers(dev);
-        
+
         if (arguments.test_tone) {
             // generate the test tone
             for (i=0; i<arguments.period; i++) {
