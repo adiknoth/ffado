@@ -36,6 +36,8 @@
 #include <netinet/in.h>
 #include <assert.h>
 
+#define AMDTP_FLOAT_MULTIPLIER 2147483392.0
+
 namespace Streaming
 {
 
@@ -44,6 +46,8 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(FFADODevice &parent, 
         : StreamProcessor(parent, ePT_Transmit)
         , m_dimension( dimension )
         , m_dbc( 0 )
+        , m_nb_audio_ports( 0 )
+        , m_nb_midi_ports( 0 )
 {}
 
 enum StreamProcessor::eChildReturnValue
@@ -387,6 +391,11 @@ bool AmdtpTransmitStreamProcessor::prepareChild()
         m_dimension,
         m_syt_interval );
 
+    if (!initPortCache()) {
+        debugError("Could not init port cache\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -397,39 +406,45 @@ bool AmdtpTransmitStreamProcessor::processWriteBlock ( char *data,
         unsigned int nevents, unsigned int offset )
 {
     bool no_problem = true;
+    updatePortCache();
 
-    for ( PortVectorIterator it = m_Ports.begin();
-          it != m_Ports.end();
-          ++it )
-    {
-        if ( (*it)->isDisabled() ) { continue; };
-
-        //FIXME: make this into a static_cast when not DEBUG?
-        AmdtpPortInfo *pinfo = dynamic_cast<AmdtpPortInfo *> ( *it );
-        assert ( pinfo ); // this should not fail!!
-
-        switch( pinfo->getFormat() )
-        {
-            case AmdtpPortInfo::E_MBLA:
-                if( encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents) )
-                {
-                    debugWarning ( "Could not encode port %s to MBLA events", (*it)->getName().c_str() );
-                    no_problem = false;
-                }
-                break;
-            case AmdtpPortInfo::E_SPDIF: // still unimplemented
-                break;
-            case AmdtpPortInfo::E_Midi:
-                if( encodePortToMidiEvents(static_cast<AmdtpMidiPort *>(*it), (quadlet_t *)data, offset, nevents) )
-                {
-                    debugWarning ( "Could not encode port %s to Midi events", (*it)->getName().c_str() );
-                    no_problem = false;
-                }
-                break;
-            default: // ignore
-                break;
-        }
+    if(!encodeAudioPorts((quadlet_t *)data, offset, nevents)) {
+        debugError("Could not encode audio ports\n");
+        return false;
     }
+
+//     for ( PortVectorIterator it = m_Ports.begin();
+//           it != m_Ports.end();
+//           ++it )
+//     {
+//         if ( (*it)->isDisabled() ) { continue; };
+// 
+//         //FIXME: make this into a static_cast when not DEBUG?
+//         AmdtpPortInfo *pinfo = dynamic_cast<AmdtpPortInfo *> ( *it );
+//         assert ( pinfo ); // this should not fail!!
+// 
+//         switch( pinfo->getFormat() )
+//         {
+//             case AmdtpPortInfo::E_MBLA:
+//                 if( encodePortToMBLAEvents(static_cast<AmdtpAudioPort *>(*it), (quadlet_t *)data, offset, nevents) )
+//                 {
+//                     debugWarning ( "Could not encode port %s to MBLA events", (*it)->getName().c_str() );
+//                     no_problem = false;
+//                 }
+//                 break;
+//             case AmdtpPortInfo::E_SPDIF: // still unimplemented
+//                 break;
+//             case AmdtpPortInfo::E_Midi:
+//                 if( encodePortToMidiEvents(static_cast<AmdtpMidiPort *>(*it), (quadlet_t *)data, offset, nevents) )
+//                 {
+//                     debugWarning ( "Could not encode port %s to Midi events", (*it)->getName().c_str() );
+//                     no_problem = false;
+//                 }
+//                 break;
+//             default: // ignore
+//                 break;
+//         }
+//     }
     return no_problem;
 }
 
@@ -471,115 +486,6 @@ AmdtpTransmitStreamProcessor::transmitSilenceBlock(
     return no_problem;
 }
 
-#if USE_SSE
-#error Broken
-typedef float v4sf __attribute__ ((vector_size (16)));
-typedef int v4si __attribute__ ((vector_size (16)));
-typedef int v2si __attribute__ ((vector_size (8)));
-
-int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, quadlet_t *data,
-        unsigned int offset, unsigned int nevents )
-{
-    static const float sse_multiplier[4] __attribute__((aligned(16))) = {
-        (float)(0x7FFFFF00),
-        (float)(0x7FFFFF00),
-        (float)(0x7FFFFF00),
-        (float)(0x7FFFFF00)
-    };
-
-    static const int sse_mask[4] __attribute__((aligned(16))) = {
-        0x40000000,  0x40000000,  0x40000000,  0x40000000
-    };
-
-    unsigned int out[4];
-
-    unsigned int j=0;
-    unsigned int read=0;
-
-    quadlet_t *target_event;
-
-    target_event= ( quadlet_t * ) ( data + p->getPosition() );
-
-    switch ( p->getDataType() )
-    {
-        default:
-            debugError("bad type: %d\n", p->getDataType());
-            return -1;
-        case Port::E_Int24:
-        {
-            quadlet_t *buffer= ( quadlet_t * ) ( p->getBufferAddress() );
-
-            assert ( nevents + offset <= p->getBufferSize() );
-
-            buffer+=offset;
-
-            for ( j = 0; j < nevents; j += 1 )   // decode max nsamples
-            {
-                *target_event = htonl ( ( * ( buffer ) & 0x00FFFFFF ) | 0x40000000 );
-                buffer++;
-                target_event += m_dimension;
-            }
-        }
-        break;
-        case Port::E_Float:
-        {
-            const float multiplier = ( float ) ( 0x7FFFFF00 );
-            float *buffer= ( float * ) ( p->getBufferAddress() );
-
-            assert ( nevents + offset <= p->getBufferSize() );
-
-            buffer+=offset;
-
-            j=0;
-            if(read>3) {
-                for (j = 0; j < read-3; j += 4) {
-                    asm("movups %[floatbuff], %%xmm0\n\t"
-                            "mulps %[ssemult], %%xmm0\n\t"
-                            "cvttps2pi %%xmm0, %[out1]\n\t"
-                            "movhlps %%xmm0, %%xmm0\n\t"
-                            "psrld $8, %[out1]\n\t"
-                            "cvttps2pi %%xmm0, %[out2]\n\t"
-                            "por %[mmxmask], %[out1]\n\t"
-                            "psrld $8, %[out2]\n\t"
-                            "por %[mmxmask], %[out2]\n\t"
-                        : [out1] "=&y" (*(v2si*)&out[0]),
-                    [out2] "=&y" (*(v2si*)&out[2])
-                        : [floatbuff] "m" (*(v4sf*)buffer),
-                    [ssemult] "x" (*(v4sf*)sse_multiplier),
-                    [mmxmask] "y" (*(v2si*)sse_mask)
-                        : "xmm0");
-                    buffer += 4;
-                    *target_event = htonl(out[0]);
-                    target_event += m_dimension;
-                    *target_event = htonl(out[1]);
-                    target_event += m_dimension;
-                    *target_event = htonl(out[2]);
-                    target_event += m_dimension;
-                    *target_event = htonl(out[3]);
-                    target_event += m_dimension;
-                }
-            }
-            for(; j < read; ++j) {
-            // don't care for overflow
-                float v = *buffer * multiplier;  // v: -231 .. 231
-                unsigned int tmp = (int)v;
-                *target_event = htonl((tmp >> 8) | 0x40000000);
-    
-                buffer++;
-                target_event += m_dimension;
-            }
-
-            asm volatile("emms");
-            break;
-        }
-        break;
-    }
-
-    return 0;
-}
-
-#else
-
 int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, quadlet_t *data,
         unsigned int offset, unsigned int nevents )
 {
@@ -612,7 +518,6 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, qu
         break;
         case Port::E_Float:
         {
-            const float multiplier = ( float ) ( 0x7FFFFF00 );
             float *buffer= ( float * ) ( p->getBufferAddress() );
 
             assert ( nevents + offset <= p->getBufferSize() );
@@ -623,7 +528,7 @@ int AmdtpTransmitStreamProcessor::encodePortToMBLAEvents ( AmdtpAudioPort *p, qu
             {
 
                 // don't care for overflow
-                float v = *buffer * multiplier;  // v: -231 .. 231
+                float v = *buffer * AMDTP_FLOAT_MULTIPLIER;  // v: -231 .. 231
                 unsigned int tmp = ( ( int ) v );
                 *target_event = htonl ( ( tmp >> 8 ) | 0x40000000 );
 
@@ -690,8 +595,6 @@ int AmdtpTransmitStreamProcessor::encodePortToMidiEvents ( AmdtpMidiPort *p, qua
     return 0;
 }
 
-#endif
-
 int AmdtpTransmitStreamProcessor::encodeSilencePortToMBLAEvents ( AmdtpAudioPort *p, quadlet_t *data,
         unsigned int offset, unsigned int nevents )
 {
@@ -744,6 +647,147 @@ int AmdtpTransmitStreamProcessor::encodeSilencePortToMidiEvents ( AmdtpMidiPort 
         break;
     }
     return 0;
+}
+
+/**
+ * @brief encodes all audio ports in the cache to events
+ * @param data 
+ * @param offset 
+ * @param nevents 
+ * @return 
+ */
+bool
+AmdtpTransmitStreamProcessor::encodeAudioPorts(quadlet_t *data,
+                                               unsigned int offset,
+                                               unsigned int nevents)
+{
+    unsigned int j=0;
+
+    quadlet_t *target_event;
+    unsigned int i;
+    for (i = 0; i < m_nb_audio_ports; i++) {
+        struct _MBLA_port_cache p = m_audio_ports.at(i);
+        target_event = (quadlet_t *)(data + i);
+        assert(nevents + offset <= p.buffer_size );
+
+        switch ( p.type )
+        {
+            case Port::E_Float:
+            {
+                float *buffer = (float *)(p.buffer);
+                buffer += offset;
+
+                for (j = 0;j < nevents; j += 1)   // decode max nsamples
+                {
+                    // don't care for overflow
+                    float v = (*buffer) * AMDTP_FLOAT_MULTIPLIER;
+                    unsigned int tmp = ((int) v);
+                    *target_event = htonl ( ( tmp >> 8 ) | 0x40000000 );
+                    buffer++;
+                    target_event += m_dimension;
+                }
+            }
+            break;
+            case Port::E_Int24:
+            {
+                uint32_t *buffer = (uint32_t *)(p.buffer);
+                buffer += offset;
+
+                for (j = 0; j < nevents; j += 1)   // decode max nsamples
+                {
+                    *target_event = htonl(((*buffer) & 0x00FFFFFF) | 0x40000000);
+                    buffer++;
+                    target_event += m_dimension;
+                }
+            }
+            break;
+            default:
+                debugError("bad type: %d\n", m_audio_ports.at(i).type);
+                return false;
+        }
+    }
+    return true;
+}
+
+
+bool
+AmdtpTransmitStreamProcessor::initPortCache() {
+    // make use of the fact that audio ports are the first ports in
+    // the cluster as per AMDTP. so we can sort the ports by position
+    // and have very efficient lookups:
+    // m_float_ports.at(i).buffer -> audio stream i buffer
+    m_nb_audio_ports = 0;
+    m_audio_ports.clear();
+    
+    m_nb_midi_ports = 0;
+    
+    for(PortVectorIterator it = m_Ports.begin();
+        it != m_Ports.end();
+        ++it )
+    {
+        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+        assert(pinfo); // this should not fail!!
+
+        switch( pinfo->getFormat() )
+        {
+            case AmdtpPortInfo::E_MBLA:
+                m_nb_audio_ports++;
+                break;
+            case AmdtpPortInfo::E_SPDIF: // still unimplemented
+                break;
+            case AmdtpPortInfo::E_Midi:
+                m_nb_midi_ports++;
+                break;
+            default: // ignore
+                break;
+        }
+    }
+
+    unsigned int idx;
+    for (idx = 0; idx < m_nb_audio_ports; idx++) {
+        for(PortVectorIterator it = m_Ports.begin();
+            it != m_Ports.end();
+            ++it )
+        {
+            AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "idx %u: looking at port %s at position %u\n",
+                                              idx, (*it)->getName().c_str(), pinfo->getPosition());
+            if(pinfo->getPosition() == idx) {
+                struct _MBLA_port_cache p;
+                p.port = dynamic_cast<AmdtpAudioPort *>(*it);
+                if(p.port == NULL) {
+                    debugError("Port is not an AmdtpAudioPort!\n");
+                    return false;
+                }
+//                p.position = pinfo->getPosition();
+                p.buffer = NULL; // to be filled by updatePortCache
+                p.type = (*it)->getDataType();
+#ifdef DEBUG
+                p.buffer_size = (*it)->getBufferSize();
+#endif
+
+                m_audio_ports.push_back(p);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Cached port %s at position %u\n",
+                                                 p.port->getName().c_str(), idx);
+                goto next_index;
+            }
+        }
+        debugError("No MBLA port found for position %d\n", idx);
+        return false;
+next_index:
+        continue;
+    }
+
+    return true;
+}
+
+void
+AmdtpTransmitStreamProcessor::updatePortCache() {
+    unsigned int idx;
+    for (idx = 0; idx < m_nb_audio_ports; idx++) {
+        AmdtpAudioPort *port = m_audio_ports.at(idx).port;
+        m_audio_ports.at(idx).buffer = port->getBufferAddress();
+    }
 }
 
 } // end of namespace Streaming

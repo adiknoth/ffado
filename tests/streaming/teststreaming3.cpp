@@ -66,6 +66,7 @@ struct arguments
     long int nb_buffers;
     long int sample_rate;
     long int rtprio;
+    long int audio_buffer_type;
     char* args[2];
     
 };
@@ -81,6 +82,7 @@ static struct argp_option options[] = {
     {"nb_buffers",  'n', "nb",  0,  "Nb buffers (periods)" },
     {"slave_mode",  's', "bool",  0,  "Run in slave mode" },
     {"snoop_mode",  'S', "bool",  0,  "Run in snoop mode" },
+    {"audio_buffer_type",  'b', "",  0,  "Datatype of audio buffers (0=float, 1=int24)" },
     { 0 }
 };
 
@@ -155,6 +157,15 @@ parse_opt( int key, char* arg, struct argp_state* state )
             arguments->test_tone_freq = strtol( arg, &tail, 0 );
             if ( errno ) {
                 fprintf( stderr,  "Could not parse 'test-tone-freq' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;
+    case 'b':
+        if (arg) {
+            arguments->audio_buffer_type = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'audio-buffer-type' argument\n" );
                 return ARGP_ERR_UNKNOWN;
             }
         }
@@ -242,6 +253,7 @@ int main(int argc, char *argv[])
     arguments.nb_buffers        = 3;
     arguments.sample_rate       = 44100;
     arguments.rtprio            = 0;
+    arguments.audio_buffer_type = 0;
     
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
@@ -253,8 +265,6 @@ int main(int argc, char *argv[])
     debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
     setDebugLevel(arguments.verbose);
 
-    int samplesread=0;
-//     int sampleswritten=0;
     int nb_in_channels=0, nb_out_channels=0;
     int retval=0;
     int i=0;
@@ -325,7 +335,11 @@ int main(int argc, char *argv[])
             case ffado_stream_type_audio:
                 /* assign the audiobuffer to the stream */
                 ffado_streaming_set_capture_stream_buffer(dev, i, (char *)(audiobuffers_in[i]));
-                ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_float);
+                if (arguments.audio_buffer_type == 0) {
+                    ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_float);
+                } else {
+                    ffado_streaming_set_capture_buffer_type(dev, i, ffado_buffer_type_int24);
+                }
                 ffado_streaming_capture_stream_onoff(dev, i, 1);
                 break;
                 // this is done with read/write routines because the nb of bytes can differ.
@@ -347,7 +361,11 @@ int main(int argc, char *argv[])
             case ffado_stream_type_audio:
                 /* assign the audiobuffer to the stream */
                 ffado_streaming_set_playback_stream_buffer(dev, i, (char *)(audiobuffers_out[i]));
-                ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_float);
+                if (arguments.audio_buffer_type == 0) {
+                    ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_float);
+                } else {
+                    ffado_streaming_set_playback_buffer_type(dev, i, ffado_buffer_type_int24);
+                }
                 ffado_streaming_playback_stream_onoff(dev, i, 1);
                 break;
                 // this is done with read/write routines because the nb of bytes can differ.
@@ -413,7 +431,15 @@ int main(int argc, char *argv[])
         if (arguments.test_tone) {
             // generate the test tone
             for (i=0; i<arguments.period; i++) {
-                nullbuffer[i] = amplitude * sin(sine_advance * (frame_counter + (float)i));
+                float v = amplitude * sin(sine_advance * (frame_counter + (float)i));
+                if (arguments.audio_buffer_type == 0) {
+                    nullbuffer[i] = v;
+                } else {
+                    v = (v * 2147483392.0);
+                    int32_t tmp = ((int) v);
+                    tmp = tmp >> 8;
+                    memcpy(&nullbuffer[i], &tmp, sizeof(float));
+                }
             }
             
             // copy the test tone to the audio buffers

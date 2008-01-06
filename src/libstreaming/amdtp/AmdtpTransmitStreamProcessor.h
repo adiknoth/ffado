@@ -123,6 +123,8 @@ private:
     int encodeSilencePortToMidiEvents(AmdtpMidiPort *p, quadlet_t *data,
                                       unsigned int offset, unsigned int nevents);
 
+    bool encodeAudioPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);
+
     unsigned int getFDF();
     unsigned int getSytInterval();
 
@@ -131,6 +133,23 @@ private:
     unsigned int m_syt_interval;
     int m_fdf;
     unsigned int m_dbc;
+
+private: // local port caching for performance
+    struct _MBLA_port_cache {
+        AmdtpAudioPort*     port;
+        Port::E_DataType    type;
+        void*               buffer;
+#ifdef DEBUG
+        unsigned int        buffer_size;
+#endif
+    };
+    std::vector<struct _MBLA_port_cache> m_audio_ports;
+    unsigned int m_nb_audio_ports;
+    unsigned int m_nb_midi_ports;
+
+    bool initPortCache();
+    void updatePortCache();
+
 };
 
 } // end of namespace Streaming

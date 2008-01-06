@@ -173,10 +173,10 @@ IsoHandler::Init()
 bool
 IsoHandler::waitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "waiting...\n");
+    //debugOutput(DEBUG_LEVEL_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result = m_Client->waitForSignal();
-        debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
+        //debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, " no client\n");
@@ -187,10 +187,10 @@ IsoHandler::waitForClient()
 bool
 IsoHandler::tryWaitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result = m_Client->tryWaitForSignal();
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
+        //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
@@ -201,7 +201,7 @@ IsoHandler::tryWaitForClient()
 bool
 IsoHandler::Execute()
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
+    //debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
 
     // bypass if not running
     if (m_State != E_Running) {
@@ -213,7 +213,8 @@ IsoHandler::Execute()
 
     // wait for the availability of frames in the client
     // (blocking for transmit handlers)
-#ifdef DEBUG
+
+#if 0 //#ifdef DEBUG
     if (getType() == eHT_Transmit) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Waiting for Client to signal frame availability...\n", this);
     }
@@ -255,14 +256,13 @@ IsoHandler::Execute()
                     poll_exit-poll_enter, iter_exit-iter_enter);
         return true;
 #else
-        // iterate blocks if no 1394 data is available
+        // iterate() is blocking if no 1394 data is available
         // so poll'ing is not really necessary
-        
         bool result = true;
         while(result && m_Client->canProcessPackets()) {
             result = iterate();
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterate returned: %d\n",
-                        this, (m_type==eHT_Receive?"Receive":"Transmit"), result);
+            //debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterate returned: %d\n",
+            //            this, (m_type==eHT_Receive?"Receive":"Transmit"), result);
         }
         return result;
 #endif
@@ -274,8 +274,8 @@ IsoHandler::Execute()
 
 bool
 IsoHandler::iterate() {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
-                this, (m_type==eHT_Receive?"Receive":"Transmit"));
+    //debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
+    //            this, (m_type==eHT_Receive?"Receive":"Transmit"));
     if(m_State == E_Running) {
 #if ISOHANDLER_FLUSH_BEFORE_ITERATE
         flush();

@@ -59,13 +59,13 @@ public:
     virtual ~AmdtpPortInfo() {};
 
 
-    int getLocation()     {return m_location;};
-    int getPosition()     {return m_position;};
+    unsigned int getLocation()     {return m_location;};
+    unsigned int getPosition()     {return m_position;};
     enum E_Formats getFormat()       {return m_format;};
 
 protected:
-    int m_position;
-    int m_location;
+    unsigned int m_position;
+    unsigned int m_location;
     enum E_Formats m_format;
 
 };

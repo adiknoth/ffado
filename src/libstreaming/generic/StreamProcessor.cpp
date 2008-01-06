@@ -473,6 +473,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     }
                     // the process thread should have higher prio such that we are blocked until
                     // the samples are processed.
+                    return RAW1394_ISO_DEFER;
                 }
             }
             return RAW1394_ISO_OK;
@@ -935,8 +936,8 @@ StreamProcessor::canProcessPackets()
         bufferfill = m_data_buffer->getBufferFill();
     }
     result = bufferfill > getNominalFramesPerPacket();
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) for a bufferfill of %d, we return %d\n",
-                this, ePTToString(getType()), bufferfill, result);
+    // debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) for a bufferfill of %d, we return %d\n",
+    //             this, ePTToString(getType()), bufferfill, result);
     return result;
 }
 
@@ -1050,6 +1051,27 @@ bool StreamProcessor::prepare()
     m_scratch_buffer = new byte_t[m_scratch_buffer_size_bytes];
     if(m_scratch_buffer == NULL) {
         debugFatal("Could not allocate scratch buffer\n");
+        return false;
+    }
+
+    // set the parameters of ports we can:
+    // we want the audio ports to be period buffered,
+    // and the midi ports to be packet buffered
+    for ( PortVectorIterator it = m_Ports.begin();
+        it != m_Ports.end();
+        ++it )
+    {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
+        if(!(*it)->setBufferSize(m_StreamProcessorManager.getPeriodSize())) {
+            debugFatal("Could not set buffer size to %d\n",m_StreamProcessorManager.getPeriodSize());
+            return false;
+        }
+    }
+    // the API specific settings of the ports should already be set,
+    // as this is called from the processorManager->prepare()
+    // so we can init the ports
+    if(!PortManager::initPorts()) {
+        debugFatal("Could not initialize ports\n");
         return false;
     }
 
@@ -1295,24 +1317,6 @@ StreamProcessor::doStop()
             result &= m_data_buffer->setNominalRate(ticks_per_frame);
             result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
             result &= m_data_buffer->prepare(); // FIXME: the name
-
-            // set the parameters of ports we can:
-            // we want the audio ports to be period buffered,
-            // and the midi ports to be packet buffered
-            for ( PortVectorIterator it = m_Ports.begin();
-                it != m_Ports.end();
-                ++it )
-            {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
-                if(!(*it)->setBufferSize(m_StreamProcessorManager.getPeriodSize())) {
-                    debugFatal("Could not set buffer size to %d\n",m_StreamProcessorManager.getPeriodSize());
-                    return false;
-                }
-            }
-            // the API specific settings of the ports should already be set,
-            // as this is called from the processorManager->prepare()
-            // so we can init the ports
-            result &= PortManager::initPorts();
 
             break;
         case ePS_DryRunning:
