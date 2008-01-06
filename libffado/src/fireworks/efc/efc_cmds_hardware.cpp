@@ -37,7 +37,7 @@ EfcHardwareInfoCmd::EfcHardwareInfoCmd()
 {}
 
 bool
-EfcHardwareInfoCmd::serialize( Util::IOSSerialize& se )
+EfcHardwareInfoCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     
@@ -50,7 +50,7 @@ EfcHardwareInfoCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcHardwareInfoCmd::deserialize( Util::IISDeserialize& de )
+EfcHardwareInfoCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     uint32_t tmp;
@@ -175,7 +175,7 @@ EfcPolledValuesCmd::EfcPolledValuesCmd()
 {}
 
 bool
-EfcPolledValuesCmd::serialize( Util::IOSSerialize& se )
+EfcPolledValuesCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     
@@ -188,7 +188,7 @@ EfcPolledValuesCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcPolledValuesCmd::deserialize( Util::IISDeserialize& de )
+EfcPolledValuesCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     

@@ -61,7 +61,7 @@ EfcGenericMixerCmd::EfcGenericMixerCmd(enum eMixerTarget target,
 }
 
 bool
-EfcGenericMixerCmd::serialize( Util::IOSSerialize& se )
+EfcGenericMixerCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -93,7 +93,7 @@ EfcGenericMixerCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcGenericMixerCmd::deserialize( Util::IISDeserialize& de )
+EfcGenericMixerCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 

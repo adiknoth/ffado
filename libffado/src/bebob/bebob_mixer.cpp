@@ -143,6 +143,19 @@ Mixer::addElementForFunctionBlock(FunctionBlock& b) {
             retval &= false;
         }
     }
+
+    if (dynamic_cast<FunctionBlockEnhancedMixer *>(&b) != NULL) {
+        FunctionBlockEnhancedMixer *bf=dynamic_cast<FunctionBlockEnhancedMixer *>(&b);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a FunctionBlockEnhancedMixer\n");
+        e=new EnhancedMixerFBFeature(*this, *bf);
+        if (e) {
+            e->setVerboseLevel(getDebugLevel());
+            retval &= Control::Container::addElement(e);
+        } else {
+            debugError("Control element creation failed\n");
+            retval &= false;
+        }
+    }
     
     if (!e) {
         debugError("No control element created\n");
@@ -247,7 +260,7 @@ MixerFBFeature::getValue()
                             FunctionBlockCmd::eFBT_Feature,
                             m_Slave.getId(),
                             FunctionBlockCmd::eCA_Current );
-    fbCmd.setNodeId( m_Parent.getParent().getNodeId()  );
+    fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
     fbCmd.m_pFBFeature->m_audioChannelNumber=0;
@@ -272,6 +285,46 @@ MixerFBFeature::getValue()
     int16_t volume=(int16_t)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
     
     return volume;
+}
+
+// --- element implementation classes
+
+EnhancedMixerFBFeature::EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer& s)
+: Control::Continuous()
+, m_Parent(parent) 
+, m_Slave(s)
+{
+    std::ostringstream ostrm;
+    ostrm << s.getName() << "_" << (int)(s.getId());
+    
+    Control::Continuous::setName(ostrm.str());
+    
+    ostrm.str("");
+    ostrm << "Label for " << s.getName() << " " << (int)(s.getId());
+    setLabel(ostrm.str());
+    
+    ostrm.str("");
+    ostrm << "Description for " << s.getName() << " " << (int)(s.getId());
+    setDescription(ostrm.str());
+}
+
+bool
+EnhancedMixerFBFeature::setValue(double v)
+{
+    int volume=(int)v;
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
+                m_Slave.getId(), volume);
+
+    return true;
+}
+
+double
+EnhancedMixerFBFeature::getValue()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
+                m_Slave.getId());
+
+    return 0;
 }
 
 // --- element implementation classes
@@ -360,5 +413,6 @@ MixerFBSelector::getValue()
     
     return fbCmd.m_pFBSelector->m_inputFbPlugNumber;
 }
+
 
 } // end of namespace BeBoB

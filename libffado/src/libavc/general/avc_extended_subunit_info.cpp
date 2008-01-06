@@ -47,7 +47,7 @@ ExtendedSubunitInfoPageData::~ExtendedSubunitInfoPageData()
 }
 
 bool
-ExtendedSubunitInfoPageData::serialize( Util::IOSSerialize& se )
+ExtendedSubunitInfoPageData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_functionBlockType, "ExtendedSubunitInfoPageData: function block type" );
     se.write( m_functionBlockId, "ExtendedSubunitInfoPageData: function block id" );
@@ -59,7 +59,7 @@ ExtendedSubunitInfoPageData::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedSubunitInfoPageData::deserialize( Util::IISDeserialize& de )
+ExtendedSubunitInfoPageData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_functionBlockType );
     de.read( &m_functionBlockId );
@@ -110,7 +110,7 @@ ExtendedSubunitInfoCmd::~ExtendedSubunitInfoCmd()
 }
 
 bool
-ExtendedSubunitInfoCmd::serialize( Util::IOSSerialize& se )
+ExtendedSubunitInfoCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool status = false;
     status = AVCCommand::serialize( se );
@@ -134,7 +134,7 @@ ExtendedSubunitInfoCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedSubunitInfoCmd::deserialize( Util::IISDeserialize& de )
+ExtendedSubunitInfoCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool status = false;
     status = AVCCommand::deserialize( de );

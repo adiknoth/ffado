@@ -94,7 +94,7 @@ EfcGenericMonitorCmd::EfcGenericMonitorCmd(enum eCmdType type,
 }
 
 bool
-EfcGenericMonitorCmd::serialize( Util::IOSSerialize& se )
+EfcGenericMonitorCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -123,7 +123,7 @@ EfcGenericMonitorCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcGenericMonitorCmd::deserialize( Util::IISDeserialize& de )
+EfcGenericMonitorCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 

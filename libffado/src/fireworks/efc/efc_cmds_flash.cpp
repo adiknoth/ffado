@@ -38,7 +38,7 @@ EfcFlashEraseCmd::EfcFlashEraseCmd()
 }
 
 bool
-EfcFlashEraseCmd::serialize( Util::IOSSerialize& se )
+EfcFlashEraseCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -53,7 +53,7 @@ EfcFlashEraseCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcFlashEraseCmd::deserialize( Util::IISDeserialize& de )
+EfcFlashEraseCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 
@@ -81,7 +81,7 @@ EfcFlashReadCmd::EfcFlashReadCmd()
 }
 
 bool
-EfcFlashReadCmd::serialize( Util::IOSSerialize& se )
+EfcFlashReadCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -98,7 +98,7 @@ EfcFlashReadCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcFlashReadCmd::deserialize( Util::IISDeserialize& de )
+EfcFlashReadCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 
@@ -141,7 +141,7 @@ EfcFlashWriteCmd::EfcFlashWriteCmd()
 }
 
 bool
-EfcFlashWriteCmd::serialize( Util::IOSSerialize& se )
+EfcFlashWriteCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -168,7 +168,7 @@ EfcFlashWriteCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcFlashWriteCmd::deserialize( Util::IISDeserialize& de )
+EfcFlashWriteCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= EfcCmd::deserialize ( de );
@@ -197,7 +197,7 @@ EfcFlashLockCmd::EfcFlashLockCmd()
 }
 
 bool
-EfcFlashLockCmd::serialize( Util::IOSSerialize& se )
+EfcFlashLockCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -212,7 +212,7 @@ EfcFlashLockCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcFlashLockCmd::deserialize( Util::IISDeserialize& de )
+EfcFlashLockCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 
@@ -238,7 +238,7 @@ EfcFlashGetStatusCmd::EfcFlashGetStatusCmd()
 }
 
 bool
-EfcFlashGetStatusCmd::serialize( Util::IOSSerialize& se )
+EfcFlashGetStatusCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     // the length should be specified before
@@ -249,7 +249,7 @@ EfcFlashGetStatusCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcFlashGetStatusCmd::deserialize( Util::IISDeserialize& de )
+EfcFlashGetStatusCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= EfcCmd::deserialize ( de );
@@ -274,7 +274,7 @@ EfcFlashGetSessionBaseCmd::EfcFlashGetSessionBaseCmd()
 }
 
 bool
-EfcFlashGetSessionBaseCmd::serialize( Util::IOSSerialize& se )
+EfcFlashGetSessionBaseCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     // the length should be specified before
@@ -285,7 +285,7 @@ EfcFlashGetSessionBaseCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcFlashGetSessionBaseCmd::deserialize( Util::IISDeserialize& de )
+EfcFlashGetSessionBaseCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= EfcCmd::deserialize ( de );

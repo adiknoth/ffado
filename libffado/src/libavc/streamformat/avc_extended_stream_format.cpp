@@ -52,7 +52,7 @@ StreamFormatInfo::StreamFormatInfo()
 }
 
 bool
-StreamFormatInfo::serialize( Util::IOSSerialize& se )
+StreamFormatInfo::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_numberOfChannels, "StreamFormatInfo numberOfChannels" );
     se.write( m_streamFormat, "StreamFormatInfo streamFormat" );
@@ -60,7 +60,7 @@ StreamFormatInfo::serialize( Util::IOSSerialize& se )
 }
 
 bool
-StreamFormatInfo::deserialize( Util::IISDeserialize& de )
+StreamFormatInfo::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_numberOfChannels );
     de.read( &m_streamFormat );
@@ -85,7 +85,7 @@ FormatInformationStreamsSync::FormatInformationStreamsSync()
 }
 
 bool
-FormatInformationStreamsSync::serialize( Util::IOSSerialize& se )
+FormatInformationStreamsSync::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_reserved0, "FormatInformationStreamsSync reserved" );
 
@@ -101,7 +101,7 @@ FormatInformationStreamsSync::serialize( Util::IOSSerialize& se )
 }
 
 bool
-FormatInformationStreamsSync::deserialize( Util::IISDeserialize& de )
+FormatInformationStreamsSync::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_reserved0 );
 
@@ -156,7 +156,7 @@ FormatInformationStreamsCompound::~FormatInformationStreamsCompound()
 }
 
 bool
-FormatInformationStreamsCompound::serialize( Util::IOSSerialize& se )
+FormatInformationStreamsCompound::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_samplingFrequency, "FormatInformationStreamsCompound samplingFrequency" );
     se.write( m_rateControl, "FormatInformationStreamsCompound rateControl" );
@@ -171,7 +171,7 @@ FormatInformationStreamsCompound::serialize( Util::IOSSerialize& se )
 }
 
 bool
-FormatInformationStreamsCompound::deserialize( Util::IISDeserialize& de )
+FormatInformationStreamsCompound::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_samplingFrequency );
     de.read( &m_rateControl );
@@ -222,7 +222,7 @@ FormatInformation::~FormatInformation()
 }
 
 bool
-FormatInformation::serialize( Util::IOSSerialize& se )
+FormatInformation::serialize( Util::Cmd::IOSSerialize& se )
 {
     if ( m_root != eFHR_Invalid ) {
         se.write( m_root, "FormatInformation hierarchy root" );
@@ -240,7 +240,7 @@ FormatInformation::serialize( Util::IOSSerialize& se )
 }
 
 bool
-FormatInformation::deserialize( Util::IISDeserialize& de )
+FormatInformation::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result = false;
 
@@ -337,7 +337,7 @@ ExtendedStreamFormatCmd::setIndexInStreamFormat( const int index )
 }
 
 bool
-ExtendedStreamFormatCmd::serialize( Util::IOSSerialize& se )
+ExtendedStreamFormatCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
     se.write( m_subFunction, "ExtendedStreamFormatCmd subFunction" );
@@ -351,7 +351,7 @@ ExtendedStreamFormatCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedStreamFormatCmd::deserialize( Util::IISDeserialize& de )
+ExtendedStreamFormatCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
     de.read( &m_subFunction );

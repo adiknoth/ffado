@@ -37,8 +37,8 @@ public:
     OutputPlugSignalFormatCmd(Ieee1394Service& ieee1394service);
     virtual ~OutputPlugSignalFormatCmd();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "OutputPlugSignalFormatCmd"; }
@@ -56,8 +56,8 @@ public:
     InputPlugSignalFormatCmd(Ieee1394Service& ieee1394service);
     virtual ~InputPlugSignalFormatCmd();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "InputPlugSignalFormatCmd"; }

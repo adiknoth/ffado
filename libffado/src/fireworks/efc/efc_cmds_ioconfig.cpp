@@ -41,7 +41,7 @@ EfcGenericIOConfigCmd::EfcGenericIOConfigCmd(enum eIOConfigRegister r)
 }
 
 bool
-EfcGenericIOConfigCmd::serialize( Util::IOSSerialize& se )
+EfcGenericIOConfigCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -65,7 +65,7 @@ EfcGenericIOConfigCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcGenericIOConfigCmd::deserialize( Util::IISDeserialize& de )
+EfcGenericIOConfigCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 

@@ -41,7 +41,7 @@ SignalUnitAddress::SignalUnitAddress()
 }
 
 bool
-SignalUnitAddress::serialize( Util::IOSSerialize& se )
+SignalUnitAddress::serialize( Util::Cmd::IOSSerialize& se )
 {
     byte_t reserved = 0xff;
     se.write( reserved, "SignalUnitAddress" );
@@ -50,7 +50,7 @@ SignalUnitAddress::serialize( Util::IOSSerialize& se )
 }
 
 bool
-SignalUnitAddress::deserialize( Util::IISDeserialize& de )
+SignalUnitAddress::deserialize( Util::Cmd::IISDeserialize& de )
 {
     byte_t operand;
     de.read( &operand );
@@ -74,7 +74,7 @@ SignalSubunitAddress::SignalSubunitAddress()
 }
 
 bool
-SignalSubunitAddress::serialize( Util::IOSSerialize& se )
+SignalSubunitAddress::serialize( Util::Cmd::IOSSerialize& se )
 {
     byte_t operand = ( m_subunitType << 3 ) | ( m_subunitId & 0x7 );
     se.write( operand,  "SignalSubunitAddress subunitType & subunitId" );
@@ -83,7 +83,7 @@ SignalSubunitAddress::serialize( Util::IOSSerialize& se )
 }
 
 bool
-SignalSubunitAddress::deserialize( Util::IISDeserialize& de )
+SignalSubunitAddress::deserialize( Util::Cmd::IISDeserialize& de )
 {
     byte_t operand;
     de.read( &operand );
@@ -122,7 +122,7 @@ SignalSourceCmd::~SignalSourceCmd()
 }
 
 bool
-SignalSourceCmd::serialize( Util::IOSSerialize& se )
+SignalSourceCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
 
@@ -175,7 +175,7 @@ SignalSourceCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-SignalSourceCmd::deserialize( Util::IISDeserialize& de )
+SignalSourceCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     delete m_signalSource;
     m_signalSource = 0;

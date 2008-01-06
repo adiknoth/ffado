@@ -30,6 +30,7 @@
 #include <string>
 
 namespace Util {
+	namespace Cmd {
 
 // Interfaces
 
@@ -161,6 +162,7 @@ private:
     DECLARE_DEBUG_MODULE;
 };
 
+	}
 }
 #endif // UTIL_CMD_SERIALIZE_H
 

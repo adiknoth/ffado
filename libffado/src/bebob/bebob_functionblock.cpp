@@ -107,7 +107,7 @@ FunctionBlock::discover()
 
 bool
 FunctionBlock::discoverPlugs( AVC::Plug::EPlugDirection plugDirection,
-                                     plug_id_t plugMaxId )
+                              plug_id_t plugMaxId )
 {
     for ( int plugId = 0; plugId < plugMaxId; ++plugId ) {
         AVC::Plug* plug = new BeBoB::Plug(
@@ -273,15 +273,15 @@ FunctionBlockSelector::getName()
 
 bool
 FunctionBlockSelector::serializeChild( Glib::ustring basePath,
-                                              Util::IOSerialize& ser ) const
+                                       Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
 FunctionBlockSelector::deserializeChild( Glib::ustring basePath,
-                                                Util::IODeserialize& deser,
-                                                AvDevice& unit )
+                                         Util::IODeserialize& deser,
+                                         AvDevice& unit )
 {
     return true;
 }
@@ -329,15 +329,15 @@ FunctionBlockFeature::getName()
 
 bool
 FunctionBlockFeature::serializeChild( Glib::ustring basePath,
-                                             Util::IOSerialize& ser ) const
+                                      Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
 FunctionBlockFeature::deserializeChild( Glib::ustring basePath,
-                                               Util::IODeserialize& deser,
-                                               AvDevice& unit )
+                                        Util::IODeserialize& deser,
+                                        AvDevice& unit )
 {
     return true;
 }
@@ -377,6 +377,39 @@ FunctionBlockEnhancedMixer::~FunctionBlockEnhancedMixer()
 {
 }
 
+bool 
+FunctionBlockEnhancedMixer::discover()
+{
+    if (!FunctionBlock::discover())
+        return false;
+
+//     FunctionBlockCmd fbCmd( m_subunit->getUnit().get1394Service(),
+//                             FunctionBlockCmd::eFBT_Processing,
+//                             m_id,
+//                             FunctionBlockCmd::eCA_Current);
+//     fbCmd.setNodeId( m_subunit->getUnit().getConfigRom().getNodeId() );
+//     fbCmd.setSubunitId( 0x00 );
+//     fbCmd.setCommandType( AVCCommand::eCT_Status );
+//     fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
+
+//     if ( !fbCmd.fire() ) {
+//         debugError( "cmd failed\n" );
+//         return false;
+//     }
+    
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::Cmd::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
+
+//     if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
+//         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
+//     }
+    
+    return true;
+}
+
+
 const char*
 FunctionBlockEnhancedMixer::getName()
 {
@@ -385,15 +418,15 @@ FunctionBlockEnhancedMixer::getName()
 
 bool
 FunctionBlockEnhancedMixer::serializeChild( Glib::ustring basePath,
-                                                   Util::IOSerialize& ser ) const
+                                            Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
 FunctionBlockEnhancedMixer::deserializeChild( Glib::ustring basePath,
-                                                     Util::IODeserialize& deser,
-                                                     AvDevice& unit )
+                                              Util::IODeserialize& deser,
+                                              AvDevice& unit )
 {
     return true;
 }
@@ -441,15 +474,15 @@ FunctionBlockProcessing::getName()
 
 bool
 FunctionBlockProcessing::serializeChild( Glib::ustring basePath,
-                                                Util::IOSerialize& ser ) const
+                                         Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
 FunctionBlockProcessing::deserializeChild( Glib::ustring basePath,
-                                                  Util::IODeserialize& deser,
-                                                  AvDevice& unit )
+                                           Util::IODeserialize& deser,
+                                           AvDevice& unit )
 {
     return true;
 }
@@ -496,15 +529,15 @@ FunctionBlockCodec::getName()
 
 bool
 FunctionBlockCodec::serializeChild( Glib::ustring basePath,
-                                           Util::IOSerialize& ser ) const
+                                    Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
 FunctionBlockCodec::deserializeChild( Glib::ustring basePath,
-                                             Util::IODeserialize& deser,
-                                             AvDevice& unit )
+                                      Util::IODeserialize& deser,
+                                      AvDevice& unit )
 {
     return true;
 }

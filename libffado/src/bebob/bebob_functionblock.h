@@ -185,6 +185,8 @@ public:
     FunctionBlockEnhancedMixer( const FunctionBlockEnhancedMixer& rhs );
     virtual ~FunctionBlockEnhancedMixer();
 
+    virtual bool discover();
+
     virtual const char* getName();
 
 protected:

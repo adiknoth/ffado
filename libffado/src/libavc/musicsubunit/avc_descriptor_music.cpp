@@ -47,7 +47,7 @@ AVCMusicGeneralStatusInfoBlock::AVCMusicGeneralStatusInfoBlock( )
 {}
 
 bool
-AVCMusicGeneralStatusInfoBlock::serialize( Util::IOSSerialize& se )
+AVCMusicGeneralStatusInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -62,7 +62,7 @@ AVCMusicGeneralStatusInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicGeneralStatusInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCMusicGeneralStatusInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -85,7 +85,7 @@ AVCMusicOutputPlugStatusInfoBlock::AVCMusicOutputPlugStatusInfoBlock( )
 {}
 
 bool
-AVCMusicOutputPlugStatusInfoBlock::serialize( Util::IOSSerialize& se )
+AVCMusicOutputPlugStatusInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -95,7 +95,7 @@ AVCMusicOutputPlugStatusInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicOutputPlugStatusInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCMusicOutputPlugStatusInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -127,7 +127,7 @@ AVCMusicClusterInfoBlock::clear( ) {
 }
 
 bool
-AVCMusicClusterInfoBlock::serialize( Util::IOSSerialize& se )
+AVCMusicClusterInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -161,7 +161,7 @@ AVCMusicClusterInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicClusterInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCMusicClusterInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -254,7 +254,7 @@ AVCMusicSubunitPlugInfoBlock::clear()
 }
 
 bool
-AVCMusicSubunitPlugInfoBlock::serialize( Util::IOSSerialize& se )
+AVCMusicSubunitPlugInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -285,7 +285,7 @@ AVCMusicSubunitPlugInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicSubunitPlugInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCMusicSubunitPlugInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -387,7 +387,7 @@ AVCMusicPlugInfoBlock::clear( ) {
 }
 
 bool
-AVCMusicPlugInfoBlock::serialize( Util::IOSSerialize& se )
+AVCMusicPlugInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -417,7 +417,7 @@ AVCMusicPlugInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicPlugInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCMusicPlugInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -518,7 +518,7 @@ AVCMusicRoutingStatusInfoBlock::clear()
 }
 
 bool
-AVCMusicRoutingStatusInfoBlock::serialize( Util::IOSSerialize& se )
+AVCMusicRoutingStatusInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -559,7 +559,7 @@ AVCMusicRoutingStatusInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicRoutingStatusInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCMusicRoutingStatusInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -653,7 +653,7 @@ AVCMusicStatusDescriptor::AVCMusicStatusDescriptor( Unit* unit, Subunit* subunit
 {}
 
 bool
-AVCMusicStatusDescriptor::serialize( Util::IOSSerialize& se )
+AVCMusicStatusDescriptor::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     
@@ -673,7 +673,7 @@ AVCMusicStatusDescriptor::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCMusicStatusDescriptor::deserialize( Util::IISDeserialize& de )
+AVCMusicStatusDescriptor::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     

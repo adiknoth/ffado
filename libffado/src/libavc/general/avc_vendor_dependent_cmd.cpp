@@ -44,7 +44,7 @@ VendorDependentCmd::~VendorDependentCmd()
 }
 
 bool
-VendorDependentCmd::serialize( Util::IOSSerialize& se )
+VendorDependentCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -59,7 +59,7 @@ VendorDependentCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-VendorDependentCmd::deserialize( Util::IISDeserialize& de )
+VendorDependentCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );
