@@ -34,10 +34,10 @@
 class Ieee1394Service;
 
 namespace Util {
-	namespace Cmd {
-		class IOSSerialize;
-		class IISDeserialize;
-	}
+        namespace Cmd {
+                class IOSSerialize;
+                class IISDeserialize;
+        }
 };
 
 namespace AVC {
