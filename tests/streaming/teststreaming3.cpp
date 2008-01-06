@@ -266,7 +266,6 @@ int main(int argc, char *argv[])
     setDebugLevel(arguments.verbose);
 
     int nb_in_channels=0, nb_out_channels=0;
-    int retval=0;
     int i=0;
     int start_flag = 0;
 
@@ -412,13 +411,16 @@ int main(int argc, char *argv[])
     set_realtime_priority(arguments.rtprio);
     debugOutput(DEBUG_LEVEL_NORMAL, "Entering receive loop (IN: %d, OUT: %d)\n", nb_in_channels, nb_out_channels);
     while(run && start_flag==0) {
-        retval = ffado_streaming_wait(dev);
-        if (retval < 0) {
+        ffado_wait_response response;
+        response = ffado_streaming_wait(dev);
+        if (response == ffado_wait_xrun) {
             debugOutput(DEBUG_LEVEL_NORMAL, "Xrun\n");
             ffado_streaming_reset(dev);
             continue;
+        } else if (response == ffado_wait_error) {
+            debugError("fatal xrun\n");
+            break;
         }
-
         ffado_streaming_transfer_capture_buffers(dev);
 
         if (arguments.test_tone) {

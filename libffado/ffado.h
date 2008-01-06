@@ -216,6 +216,17 @@ typedef enum {
 } ffado_streaming_audio_datatype;
 
 /**
+ *
+ * Wait responses
+ *
+ */
+typedef enum {
+    ffado_wait_error           = -2,
+    ffado_wait_xrun            = -1,
+    ffado_wait_ok              =  0,
+} ffado_wait_response;
+
+/**
  * Initializes the streaming from/to a FFADO device. A FFADO device
  * is a virtual device composed of several BeBoB or compatible devices,
  * linked together in one sync domain.
@@ -407,7 +418,7 @@ int ffado_streaming_reset(ffado_device_t *dev);
  *
  * @return The number of frames ready. -1 when a problem occurred.
  */
-int ffado_streaming_wait(ffado_device_t *dev);
+ffado_wait_response ffado_streaming_wait(ffado_device_t *dev);
 
 /**
  * Transfer & decode the events from the packet buffer to the sample buffers

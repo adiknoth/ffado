@@ -418,11 +418,11 @@ bool StreamProcessorManager::syncStartAll() {
         return false;
     }
 
-    // now align the received streams
     if(!alignReceivedStreams()) {
-        debugError("Could not align streams\n");
+        debugError("Could not align streams...\n");
         return false;
     }
+
     debugOutput( DEBUG_LEVEL_VERBOSE, " StreamProcessor streams running...\n");
     return true;
 }
@@ -430,7 +430,6 @@ bool StreamProcessorManager::syncStartAll() {
 bool
 StreamProcessorManager::alignReceivedStreams()
 {
-    if(m_SyncSource == NULL) return false;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Aligning received streams...\n");
     unsigned int nb_sync_runs;
     unsigned int nb_rcv_sp = m_ReceiveProcessors.size();
@@ -507,17 +506,28 @@ StreamProcessorManager::alignReceivedStreams()
 bool StreamProcessorManager::start() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Starting Processors...\n");
 
-    // put all SP's into dry-running state
-    if (!startDryRunning()) {
-        debugFatal("Could not put SP's in dry-running state\n");
-        return false;
-    }
-
     // start all SP's synchonized
-    if (!syncStartAll()) {
+    bool start_result = false;
+    for (int ntries; ntries < STREAMPROCESSORMANAGER_SYNCSTART_TRIES; ntries++) {
+        // put all SP's into dry-running state
+        if (!startDryRunning()) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not put SP's in dry-running state (try %d)\n", ntries);
+            start_result = false;
+            continue;
+        }
+
+        start_result = syncStartAll();
+        if(start_result) {
+            break;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Sync start try %d failed...\n", ntries);
+        }
+    }
+    if (!start_result) {
         debugFatal("Could not syncStartAll...\n");
         return false;
     }
+
     return true;
 }
 
@@ -644,19 +654,29 @@ bool StreamProcessorManager::handleXrun() {
      * 3) Re-enable the SP's
      */
 
-    // put all SP's back into dry-running state
-    if (!startDryRunning()) {
-        debugFatal("Could not put SP's in dry-running state\n");
-        return false;
-    }
-
     debugOutput( DEBUG_LEVEL_VERBOSE, "Restarting StreamProcessors...\n");
     // start all SP's synchonized
-    if (!syncStartAll()) {
+    bool start_result = false;
+    for (int ntries; ntries < STREAMPROCESSORMANAGER_SYNCSTART_TRIES; ntries++) {
+        // put all SP's into dry-running state
+        if (!startDryRunning()) {
+            debugShowBackLog();
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not put SP's in dry-running state (try %d)\n", ntries);
+            start_result = false;
+            continue;
+        }
+
+        start_result = syncStartAll();
+        if(start_result) {
+            break;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Sync start try %d failed...\n", ntries);
+        }
+    }
+    if (!start_result) {
         debugFatal("Could not syncStartAll...\n");
         return false;
     }
-
     debugOutput( DEBUG_LEVEL_VERBOSE, "Xrun handled...\n");
 
     return true;
@@ -676,7 +696,7 @@ bool StreamProcessorManager::waitForPeriod() {
     bool period_not_ready = true;
 
     while(period_not_ready) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
         if(!m_SyncSource->waitForSignal()) {
             debugError("Error waiting for signal\n");
             return false;
@@ -687,9 +707,9 @@ bool StreamProcessorManager::waitForPeriod() {
 
 #ifdef DEBUG
         if(period_not_ready) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "period is not ready (bufferfill: %u)\n", bufferfill);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "period is not ready (bufferfill: %u)\n", bufferfill);
         } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "period is ready (bufferfill: %u)\n", bufferfill);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "period is ready (bufferfill: %u)\n", bufferfill);
         }
 #endif
 
@@ -718,7 +738,7 @@ bool StreamProcessorManager::waitForPeriod() {
     // NOTE: before waitForPeriod() is called again, both the transmit
     //       and the receive processors should have done their transfer.
     m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "transfer at %llu ticks...\n",
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n",
         m_time_of_transfer);
 
     // this is to notify the client of the delay that we introduced by waiting

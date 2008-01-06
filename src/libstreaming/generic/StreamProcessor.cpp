@@ -287,9 +287,11 @@ enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
                            unsigned int cycle, unsigned int dropped) {
+#ifdef DEBUG
     if(m_last_cycle == -1) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %u)\n", getTypeString(), this, cycle);
     }
+#endif
 
     int dropped_cycles = 0;
     if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
@@ -302,12 +304,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             debugWarning("(%p) dropped %d packets on cycle %u, 'dropped'=%u, cycle=%d, m_last_cycle=%d\n",
                 this, dropped_cycles, cycle, dropped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
-            m_in_xrun = true;
             m_last_cycle = cycle;
-            POST_SEMAPHORE;
-            return RAW1394_ISO_DEFER;
-            //flushDebugOutput();
-            //assert(0);
         }
     }
     m_last_cycle = cycle;
@@ -345,6 +342,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         }
         // the received data can be discarded while waiting for the stream
         // to be disabled
+        // similarly for dropped packets
         return RAW1394_ISO_OK;
     }
 
@@ -373,6 +371,27 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         // update some accounting
         m_last_good_cycle = cycle;
         m_last_dropped = dropped_cycles;
+
+        // handle dropped cycles
+        if(dropped_cycles) {
+            // they represent a discontinuity in the timestamps, and hence are
+            // to be dealt with
+            debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
+            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
+            if (m_state == ePS_Running) {
+                // this is an xrun situation
+                m_in_xrun = true;
+                debugWarning("Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
+                m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+                m_next_state = ePS_WaitingForStreamDisable;
+                // execute the requested change
+                if (!updateState()) { // we are allowed to change the state directly
+                    debugError("Could not update state!\n");
+                    POST_SEMAPHORE;
+                    return RAW1394_ISO_ERROR;
+                }
+            }
+        }
 
         // check whether we are waiting for a stream to startup
         // this requires that the packet is good
@@ -410,29 +429,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             }
         }
 
-        // handle dropped cycles
-        if(dropped_cycles) {
-            // they represent a discontinuity in the timestamps, and hence are
-            // to be dealt with
-            debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
-            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
-            if (m_state == ePS_Running) {
-                // this is an xrun situation
-                m_in_xrun = true;
-                debugWarning("Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
-                m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
-                m_next_state = ePS_WaitingForStreamDisable;
-                // execute the requested change
-                if (!updateState()) { // we are allowed to change the state directly
-                    debugError("Could not update state!\n");
-                    POST_SEMAPHORE;
-                    return RAW1394_ISO_ERROR;
-                }
-                POST_SEMAPHORE;
-                return RAW1394_ISO_DEFER;
-            }
-        }
-
         // for all states that reach this we are allowed to
         // do protocol specific data reception
         enum eChildReturnValue result2 = processPacketData(data, length, channel, tag, sy, cycle, dropped_cycles);
@@ -467,7 +463,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     sem_getvalue(&m_signal_semaphore, &semval);
                     unsigned int signal_period = m_signal_period * (semval + 1) + m_signal_offset;
                     if(bufferfill >= signal_period) {
-                        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) buffer fill (%d) > signal period (%d), sem_val=%d\n",
+                        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) buffer fill (%d) > signal period (%d), sem_val=%d\n",
                                     this, m_data_buffer->getBufferFill(), signal_period, semval);
                         POST_SEMAPHORE;
                     }
@@ -510,9 +506,11 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     int now_cycles;
     int cycle_diff;
 
+#ifdef DEBUG
     if(m_last_cycle == -1) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
     }
+#endif
 
     int dropped_cycles = 0;
     if (m_last_cycle != cycle && m_last_cycle != -1) {
@@ -531,6 +529,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 debugShowBackLogLines(200);
                 debugWarning("dropped packets xrun\n");
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
+                m_cycle_to_switch_state = cycle + 1;
                 m_next_state = ePS_WaitingForStreamDisable;
                 // execute the requested change
                 if (!updateState()) { // we are allowed to change the state directly
@@ -545,11 +544,14 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         m_last_cycle = cycle;
     }
 
+#ifdef DEBUG
     // bypass based upon state
     if (m_state == ePS_Invalid) {
         debugError("Should not have state %s\n", ePSToString(m_state) );
         return RAW1394_ISO_ERROR;
     }
+#endif
+
     if (m_state == ePS_Created) {
         *tag = 0;
         *sy = 0;
@@ -579,6 +581,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugWarning("generatePacketData xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
+            m_cycle_to_switch_state = cycle + 1;
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
@@ -672,7 +675,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 debugWarning("generatePacketData xrun\n");
                 m_in_xrun = true;
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
-                m_cycle_to_switch_state = cycle+1; // switch in the next cycle
+                m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
                 m_next_state = ePS_WaitingForStreamDisable;
                 // execute the requested change
                 if (!updateState()) { // we are allowed to change the state directly
@@ -691,6 +694,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugWarning("generatePacketHeader xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to header xrun\n");
+            m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
@@ -743,7 +747,7 @@ send_empty_packet:
         }
     }
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u\n", cycle);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT EMPTY: CY=%04u\n", cycle);
     generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
     generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
     return RAW1394_ISO_OK;
@@ -839,11 +843,11 @@ StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts)
 
     unsigned int bufferfill = m_data_buffer->getBufferFill();
     if (bufferfill >= m_signal_period + m_signal_offset) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) sufficient frames in buffer (%d / %d), posting semaphore\n",
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) sufficient frames in buffer (%d / %d), posting semaphore\n",
                                          this, bufferfill, m_signal_period + m_signal_offset);
         POST_SEMAPHORE;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) insufficient frames in buffer (%d / %d), not posting semaphore\n",
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) insufficient frames in buffer (%d / %d), not posting semaphore\n",
                                          this, bufferfill, m_signal_period + m_signal_offset);
     }
     return true; // FIXME: what about failure?
@@ -897,16 +901,17 @@ bool
 StreamProcessor::waitForSignal()
 {
     int result;
-    if(m_state == ePS_Running) {
+    if(m_state == ePS_Running && m_next_state == ePS_Running) {
         result = sem_wait(&m_signal_semaphore);
 #ifdef DEBUG
         int tmp;
         sem_getvalue(&m_signal_semaphore, &tmp);
-        debugOutput(DEBUG_LEVEL_VERBOSE, " sem_wait returns: %d, sem_value: %d\n", result, tmp);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " sem_wait returns: %d, sem_value: %d\n", result, tmp);
 #endif
         return result == 0;
     } else {
         // when we're not running, we can always provide frames
+        // when we're in a state transition, keep iterating too
         debugOutput(DEBUG_LEVEL_VERBOSE, "Not running...\n");
         return true;
     }
@@ -927,7 +932,7 @@ StreamProcessor::tryWaitForSignal()
 bool
 StreamProcessor::canProcessPackets()
 {
-    if(m_state != ePS_Running) return true;
+    if(m_state != ePS_Running || m_next_state != ePS_Running) return true;
     bool result;
     int bufferfill;
     if(getType() == ePT_Receive) {
@@ -936,8 +941,8 @@ StreamProcessor::canProcessPackets()
         bufferfill = m_data_buffer->getBufferFill();
     }
     result = bufferfill > getNominalFramesPerPacket();
-    // debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) for a bufferfill of %d, we return %d\n",
-    //             this, ePTToString(getType()), bufferfill, result);
+//     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) for a bufferfill of %d, we return %d\n",
+//                 this, ePTToString(getType()), bufferfill, result);
     return result;
 }
 
@@ -1116,6 +1121,7 @@ StreamProcessor::scheduleStateTransition(enum eProcessorState state, uint64_t ti
     // using the time
     m_cycle_to_switch_state = TICKS_TO_CYCLES(time_instant);
     m_next_state = state;
+    POST_SEMAPHORE; // needed to ensure that things don't get deadlocked
     return true;
 }
 
@@ -1596,7 +1602,7 @@ bool StreamProcessor::updateState() {
         }
         // do init here 
         result = doStop();
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1606,7 +1612,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doWaitForRunningStream();
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1617,7 +1623,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doDryRunning();
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1634,7 +1640,7 @@ bool StreamProcessor::updateState() {
         } else {
             result = doWaitForStreamEnable();
         }
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1651,7 +1657,7 @@ bool StreamProcessor::updateState() {
         } else {
             result = doRunning();
         }
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1661,7 +1667,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doWaitForStreamDisable();
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1671,7 +1677,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doDryRunning();
-        if (result) return true;
+        if (result) {POST_SEMAPHORE; return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1679,10 +1685,12 @@ bool StreamProcessor::updateState() {
 updateState_exit_with_error:
     debugError("Invalid state transition: %s => %s\n",
         ePSToString(m_state), ePSToString(next_state));
+    POST_SEMAPHORE;
     return false;
 updateState_exit_change_failed:
     debugError("State transition failed: %s => %s\n",
         ePSToString(m_state), ePSToString(next_state));
+    POST_SEMAPHORE;
     return false;
 }
 

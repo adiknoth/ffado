@@ -60,6 +60,12 @@ class DeviceManager
       public Control::Container
 {
 public:
+    enum eWaitResult {
+        eWR_OK,
+        eWR_Xrun,
+        eWR_Error,
+    };
+
     DeviceManager();
     ~DeviceManager();
 
@@ -78,7 +84,7 @@ public:
     bool startStreaming();
     bool stopStreaming();
     bool resetStreaming();
-    bool waitForPeriod();
+    enum eWaitResult waitForPeriod();
     bool setStreamingParams(unsigned int period, unsigned int rate, unsigned int nb_buffers);
 
     bool isValidNode( int node );

@@ -225,7 +225,8 @@ int ffado_streaming_reset(ffado_device_t *dev) {
     return 0;
 }
 
-int ffado_streaming_wait(ffado_device_t *dev) {
+ffado_wait_response
+ffado_streaming_wait(ffado_device_t *dev) {
     static int periods=0;
     static int periods_print=0;
     static int xruns=0;
@@ -241,12 +242,18 @@ int ffado_streaming_wait(ffado_device_t *dev) {
         periods_print+=100;
     }
 
-    if(dev->m_deviceManager->waitForPeriod()) {
-        return dev->options.period_size;
-    } else {
-        debugWarning("XRUN\n");
+    enum DeviceManager::eWaitResult result;
+    result = dev->m_deviceManager->waitForPeriod();
+    if(result == DeviceManager::eWR_OK) {
+        return ffado_wait_ok;
+    } else if (result == DeviceManager::eWR_Xrun) {
+        debugWarning("Handled XRUN\n");
         xruns++;
-        return -1;
+        return ffado_wait_xrun;
+    } else {
+        debugError("Unhandled XRUN (BUG)\n");
+        xruns++;
+        return ffado_wait_error;
     }
 }
 
