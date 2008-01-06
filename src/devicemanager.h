@@ -71,7 +71,7 @@ public:
     bool addSpecString(char *);
     bool isSpecStringValid(std::string s);
 
-    bool discover();
+    bool discover(bool userCache=true);
     bool initStreaming();
     bool prepareStreaming();
     bool finishStreaming();
