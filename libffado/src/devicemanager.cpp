@@ -211,7 +211,7 @@ DeviceManager::busresetHandler()
 }
 
 bool
-DeviceManager::discover( )
+DeviceManager::discover( bool useCache )
 {
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {
@@ -297,7 +297,7 @@ DeviceManager::discover( )
 
                     avDevice->setVerboseLevel( getDebugLevel() );
                     bool isFromCache = false;
-                    if ( avDevice->loadFromCache() ) {
+                    if ( useCache && avDevice->loadFromCache() ) {
                         debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
                         isFromCache = true;
                         // restore the debug level for everything that was loaded
