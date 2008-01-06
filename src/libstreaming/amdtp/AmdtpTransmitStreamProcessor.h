@@ -114,16 +114,11 @@ private:
     int transmitBlock(char *data, unsigned int nevents,
                         unsigned int offset);
 
-    int encodePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
-                               unsigned int offset, unsigned int nevents);
-    int encodePortToMidiEvents(AmdtpMidiPort *p, quadlet_t *data,
-                               unsigned int offset, unsigned int nevents);
-    int encodeSilencePortToMBLAEvents(AmdtpAudioPort *, quadlet_t *data,
-                                      unsigned int offset, unsigned int nevents);
-    int encodeSilencePortToMidiEvents(AmdtpMidiPort *p, quadlet_t *data,
-                                      unsigned int offset, unsigned int nevents);
-
-    bool encodeAudioPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void encodeAudioPortsSilence(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void encodeAudioPortsFloat(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void encodeAudioPortsInt24(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void encodeMidiPortsSilence(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void encodeMidiPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);
 
     unsigned int getFDF();
     unsigned int getSytInterval();
@@ -144,11 +139,21 @@ private: // local port caching for performance
     };
     std::vector<struct _MBLA_port_cache> m_audio_ports;
     unsigned int m_nb_audio_ports;
+
+    struct _MIDI_port_cache {
+        AmdtpMidiPort*      port;
+        void*               buffer;
+        unsigned int        position;
+        unsigned int        location;
+#ifdef DEBUG
+        unsigned int        buffer_size;
+#endif
+    };
+    std::vector<struct _MIDI_port_cache> m_midi_ports;
     unsigned int m_nb_midi_ports;
 
     bool initPortCache();
     void updatePortCache();
-
 };
 
 } // end of namespace Streaming
