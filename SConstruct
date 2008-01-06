@@ -367,4 +367,9 @@ if not env.GetOption('clean'):
     Default( 'support' )
     if env['BUILD_TESTS']:
         Default( 'tests' )
+#
+# Create a tags-file for easier emacs/vim-source-browsing
+#  I don't know if the dependency is right...
+#
+env.Command( "tags", Dir("src"), "find . -iname \"*.[ch]*\" > .ctags-files && ctags -L .ctags-files && rm .ctags-files" )
 
