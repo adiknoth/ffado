@@ -373,6 +373,7 @@ if not env.GetOption('clean'):
 #
 findcommand = "find . \( -path \"*.h\" -o -path \"*.cpp\" -o -path \"*.c\" \) \! -path \"*.svn*\" \! -path \"./doc*\" \! -path \"./cache*\""
 env.Command( "tags", "", findcommand + " |xargs ctags" )
-env.AlwaysBuild( "tags" )
-env.NoCache( "tags" )
+env.Command( "TAGS", "", findcommand + " |xargs etags" )
+env.AlwaysBuild( "tags", "TAGS" )
+env.NoCache( "tags", "TAGS" )
 
