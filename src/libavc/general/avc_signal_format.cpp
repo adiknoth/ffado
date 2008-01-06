@@ -49,7 +49,7 @@ OutputPlugSignalFormatCmd::~OutputPlugSignalFormatCmd()
 }
 
 bool
-OutputPlugSignalFormatCmd::serialize( Util::IOSSerialize& se )
+OutputPlugSignalFormatCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -70,7 +70,7 @@ OutputPlugSignalFormatCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-OutputPlugSignalFormatCmd::deserialize( Util::IISDeserialize& de )
+OutputPlugSignalFormatCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );
@@ -109,7 +109,7 @@ InputPlugSignalFormatCmd::~InputPlugSignalFormatCmd()
 }
 
 bool
-InputPlugSignalFormatCmd::serialize( Util::IOSSerialize& se )
+InputPlugSignalFormatCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -130,7 +130,7 @@ InputPlugSignalFormatCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-InputPlugSignalFormatCmd::deserialize( Util::IISDeserialize& de )
+InputPlugSignalFormatCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );

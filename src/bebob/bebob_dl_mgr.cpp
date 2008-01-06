@@ -552,7 +552,7 @@ BeBoB::BootloaderManager::writeRequest( CommandCodes& cmd )
     unsigned char buf[ ( ( cmd.getMaxSize()+3 )/4 ) * 4 ];
     memset( buf, 0, sizeof( buf ) );
 
-    Util::BufferSerialize se( buf,  sizeof( buf ) );
+    Util::Cmd::BufferSerialize se( buf,  sizeof( buf ) );
     if ( !cmd.serialize( se ) ) {
         debugError( "writeRequest: Could not serialize command code %d\n",
                     cmd.getCommandCode() );
@@ -587,7 +587,7 @@ BeBoB::BootloaderManager::readResponse( CommandCodes& writeRequestCmd )
         return false;
     }
 
-    Util::BufferDeserialize de( raw, buf_length );
+    Util::Cmd::BufferDeserialize de( raw, buf_length );
     if ( !writeRequestCmd.deserialize( de ) ) {
         debugError( "readResponse: deserialize failed\n" );
         return false;

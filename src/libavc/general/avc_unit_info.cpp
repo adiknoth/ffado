@@ -47,7 +47,7 @@ UnitInfoCmd::~UnitInfoCmd()
 }
 
 bool
-UnitInfoCmd::serialize( Util::IOSSerialize& se )
+UnitInfoCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
 
@@ -65,7 +65,7 @@ UnitInfoCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-UnitInfoCmd::deserialize( Util::IISDeserialize& de )
+UnitInfoCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
 

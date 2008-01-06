@@ -48,8 +48,8 @@ public:
     UnitPlugAddress( EPlugType plugType,  plug_type_t plugId );
     virtual ~UnitPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual UnitPlugAddress* clone() const;
 
     plug_id_t   m_plugType;
@@ -65,8 +65,8 @@ public:
     SubunitPlugAddress( plug_id_t plugId );
     virtual ~SubunitPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual SubunitPlugAddress* clone() const;
 
     plug_id_t m_plugId;
@@ -85,8 +85,8 @@ public:
                               plug_id_t plugId );
     virtual ~FunctionBlockPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual FunctionBlockPlugAddress* clone() const;
 
     function_block_type_t m_functionBlockType;
@@ -102,8 +102,8 @@ public:
     UndefinedPlugAddress();
     virtual ~UndefinedPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual UndefinedPlugAddress* clone() const;
 
     reserved_t m_reserved0;
@@ -127,8 +127,8 @@ public:
                                      plug_type_t plugId );
     virtual ~UnitPlugSpecificDataPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual UnitPlugSpecificDataPlugAddress* clone() const;
 
     plug_type_t m_plugType;
@@ -148,8 +148,8 @@ public:
                                         plug_id_t plugId );
     virtual ~SubunitPlugSpecificDataPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual SubunitPlugSpecificDataPlugAddress* clone() const;
 
     subunit_type_t m_subunitType;
@@ -171,8 +171,8 @@ public:
                                               plug_id_t plugId);
     virtual ~FunctionBlockPlugSpecificDataPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual FunctionBlockPlugSpecificDataPlugAddress* clone() const;
 
     subunit_type_t        m_subunitType;
@@ -190,8 +190,8 @@ public:
     UndefinedPlugSpecificDataPlugAddress();
     virtual ~UndefinedPlugSpecificDataPlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual UndefinedPlugSpecificDataPlugAddress* clone() const;
 
     reserved_t m_reserved0;
@@ -233,8 +233,8 @@ public:
 
     virtual ~PlugAddress();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual PlugAddress* clone() const;
 
@@ -277,8 +277,8 @@ public:
 
     virtual ~PlugAddressSpecificData();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual PlugAddressSpecificData* clone() const;
 

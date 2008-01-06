@@ -40,7 +40,7 @@ TerratecVendorDependentCmd::TerratecVendorDependentCmd(Ieee1394Service& ieee1394
 }
 
 bool
-TerratecVendorDependentCmd::serialize( Util::IOSSerialize& se )
+TerratecVendorDependentCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= VendorDependentCmd::serialize( se );
@@ -50,7 +50,7 @@ TerratecVendorDependentCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TerratecVendorDependentCmd::deserialize( Util::IISDeserialize& de )
+TerratecVendorDependentCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= VendorDependentCmd::deserialize( de );
@@ -69,7 +69,7 @@ TerratecSyncStateCmd::TerratecSyncStateCmd(Ieee1394Service& ieee1394service)
 }
 
 bool
-TerratecSyncStateCmd::serialize( Util::IOSSerialize& se )
+TerratecSyncStateCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::serialize( se );
@@ -78,7 +78,7 @@ TerratecSyncStateCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TerratecSyncStateCmd::deserialize( Util::IISDeserialize& de )
+TerratecSyncStateCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::deserialize( de );
@@ -95,13 +95,13 @@ TerratecStoreMixerSettingsCmd::TerratecStoreMixerSettingsCmd(Ieee1394Service& ie
 }
 
 bool
-TerratecStoreMixerSettingsCmd::serialize( Util::IOSSerialize& se )
+TerratecStoreMixerSettingsCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     return TerratecVendorDependentCmd::serialize( se );;
 }
 
 bool
-TerratecStoreMixerSettingsCmd::deserialize( Util::IISDeserialize& de )
+TerratecStoreMixerSettingsCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     return TerratecVendorDependentCmd::deserialize( de );;
 }
@@ -116,7 +116,7 @@ TerratecSetMidiRemoteChannelCmd::TerratecSetMidiRemoteChannelCmd(Ieee1394Service
 }
 
 bool
-TerratecSetMidiRemoteChannelCmd::serialize( Util::IOSSerialize& se )
+TerratecSetMidiRemoteChannelCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::serialize( se );
@@ -125,7 +125,7 @@ TerratecSetMidiRemoteChannelCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TerratecSetMidiRemoteChannelCmd::deserialize( Util::IISDeserialize& de )
+TerratecSetMidiRemoteChannelCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::deserialize( de );
@@ -142,7 +142,7 @@ TerratecSetMidiControlCmd::TerratecSetMidiControlCmd(Ieee1394Service& ieee1394se
 }
 
 bool
-TerratecSetMidiControlCmd::serialize( Util::IOSSerialize& se )
+TerratecSetMidiControlCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::serialize( se );
@@ -152,7 +152,7 @@ TerratecSetMidiControlCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TerratecSetMidiControlCmd::deserialize( Util::IISDeserialize& de )
+TerratecSetMidiControlCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::deserialize( de );
@@ -170,7 +170,7 @@ TerratecSetDefaultRoutingCmd::TerratecSetDefaultRoutingCmd(Ieee1394Service& ieee
 }
 
 bool
-TerratecSetDefaultRoutingCmd::serialize( Util::IOSSerialize& se )
+TerratecSetDefaultRoutingCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::serialize( se );
@@ -180,7 +180,7 @@ TerratecSetDefaultRoutingCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TerratecSetDefaultRoutingCmd::deserialize( Util::IISDeserialize& de )
+TerratecSetDefaultRoutingCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::deserialize( de );
@@ -198,7 +198,7 @@ TerratecDeviceIdCmd::TerratecDeviceIdCmd(Ieee1394Service& ieee1394service)
 }
 
 bool
-TerratecDeviceIdCmd::serialize( Util::IOSSerialize& se )
+TerratecDeviceIdCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::serialize( se );
@@ -207,7 +207,7 @@ TerratecDeviceIdCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-TerratecDeviceIdCmd::deserialize( Util::IISDeserialize& de )
+TerratecDeviceIdCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= TerratecVendorDependentCmd::deserialize( de );

@@ -58,7 +58,7 @@ OpenDescriptorCmd::clear()
 }
 
 bool
-OpenDescriptorCmd::serialize( Util::IOSSerialize& se )
+OpenDescriptorCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
     
@@ -87,7 +87,7 @@ OpenDescriptorCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-OpenDescriptorCmd::deserialize( Util::IISDeserialize& de )
+OpenDescriptorCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
     
@@ -157,7 +157,7 @@ ReadDescriptorCmd::clear()
 }
 
 bool
-ReadDescriptorCmd::serialize( Util::IOSSerialize& se )
+ReadDescriptorCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     AVCCommand::serialize( se );
     
@@ -184,7 +184,7 @@ ReadDescriptorCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ReadDescriptorCmd::deserialize( Util::IISDeserialize& de )
+ReadDescriptorCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     AVCCommand::deserialize( de );
 

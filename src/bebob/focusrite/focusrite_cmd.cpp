@@ -47,7 +47,7 @@ FocusriteVendorDependentCmd::~FocusriteVendorDependentCmd()
 }
 
 bool
-FocusriteVendorDependentCmd::serialize( Util::IOSSerialize& se )
+FocusriteVendorDependentCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= VendorDependentCmd::serialize( se );
@@ -61,7 +61,7 @@ FocusriteVendorDependentCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-FocusriteVendorDependentCmd::deserialize( Util::IISDeserialize& de )
+FocusriteVendorDependentCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= VendorDependentCmd::deserialize( de );

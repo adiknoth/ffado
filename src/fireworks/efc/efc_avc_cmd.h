@@ -40,8 +40,8 @@ public:
     EfcOverAVCCmd(Ieee1394Service& ieee1394service);
     virtual ~EfcOverAVCCmd();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcOverAVCCmd"; }

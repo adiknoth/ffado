@@ -105,7 +105,7 @@ EfcCmd::~EfcCmd()
 }
 
 bool
-EfcCmd::serialize( Util::IOSSerialize& se )
+EfcCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     
@@ -132,7 +132,7 @@ EfcCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcCmd::deserialize( Util::IISDeserialize& de )
+EfcCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     

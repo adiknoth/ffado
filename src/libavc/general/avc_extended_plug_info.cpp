@@ -46,7 +46,7 @@ ExtendedPlugInfoPlugTypeSpecificData::~ExtendedPlugInfoPlugTypeSpecificData()
 }
 
 bool
-ExtendedPlugInfoPlugTypeSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugTypeSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_plugType, "ExtendedPlugInfoPlugTypeSpecificData plugType" );
     return true;
@@ -54,7 +54,7 @@ ExtendedPlugInfoPlugTypeSpecificData::serialize( Util::IOSSerialize& se )
 
 
 bool
-ExtendedPlugInfoPlugTypeSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugTypeSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_plugType );
     return true;
@@ -98,7 +98,7 @@ ExtendedPlugInfoPlugNameSpecificData::~ExtendedPlugInfoPlugNameSpecificData()
 }
 
 bool
-ExtendedPlugInfoPlugNameSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugNameSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     byte_t length = strlen( m_name.c_str() );
     se.write( length,
@@ -112,7 +112,7 @@ ExtendedPlugInfoPlugNameSpecificData::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoPlugNameSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugNameSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     byte_t length;
     de.read( &length );
@@ -147,7 +147,7 @@ ExtendedPlugInfoPlugNumberOfChannelsSpecificData::~ExtendedPlugInfoPlugNumberOfC
 }
 
 bool
-ExtendedPlugInfoPlugNumberOfChannelsSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugNumberOfChannelsSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_nrOfChannels,
               "ExtendedPlugInfoPlugNumberOfChannelsSpecificData: "
@@ -156,7 +156,7 @@ ExtendedPlugInfoPlugNumberOfChannelsSpecificData::serialize( Util::IOSSerialize&
 }
 
 bool
-ExtendedPlugInfoPlugNumberOfChannelsSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugNumberOfChannelsSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_nrOfChannels );
     return true;
@@ -182,7 +182,7 @@ ExtendedPlugInfoPlugChannelPositionSpecificData::~ExtendedPlugInfoPlugChannelPos
 }
 
 bool
-ExtendedPlugInfoPlugChannelPositionSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugChannelPositionSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_nrOfClusters,
               "ExtendedPlugInfoPlugChannelPositionSpecificData: "
@@ -216,7 +216,7 @@ ExtendedPlugInfoPlugChannelPositionSpecificData::serialize( Util::IOSSerialize& 
 }
 
 bool
-ExtendedPlugInfoPlugChannelPositionSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugChannelPositionSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     m_clusterInfos.clear();
 
@@ -256,7 +256,7 @@ ExtendedPlugInfoPlugChannelNameSpecificData::~ExtendedPlugInfoPlugChannelNameSpe
 }
 
 bool
-ExtendedPlugInfoPlugChannelNameSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugChannelNameSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_streamPosition,
               "ExtendedPlugInfoPlugChannelNameSpecificData: stream position" );
@@ -271,7 +271,7 @@ ExtendedPlugInfoPlugChannelNameSpecificData::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoPlugChannelNameSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugChannelNameSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_streamPosition );
     de.read( &m_stringLength );
@@ -325,7 +325,7 @@ ExtendedPlugInfoPlugInputSpecificData::~ExtendedPlugInfoPlugInputSpecificData()
 }
 
 bool
-ExtendedPlugInfoPlugInputSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugInputSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     if ( m_plugAddress ) {
         return m_plugAddress->serialize( se );
@@ -335,7 +335,7 @@ ExtendedPlugInfoPlugInputSpecificData::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoPlugInputSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugInputSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     return m_plugAddress->deserialize( de );
 }
@@ -380,7 +380,7 @@ ExtendedPlugInfoPlugOutputSpecificData::~ExtendedPlugInfoPlugOutputSpecificData(
 }
 
 bool
-ExtendedPlugInfoPlugOutputSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoPlugOutputSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_nrOfOutputPlugs, "ExtendedPlugInfoPlugOutputSpecificData: number of output plugs" );
     for ( PlugAddressVector::const_iterator it = m_outputPlugAddresses.begin();
@@ -394,7 +394,7 @@ ExtendedPlugInfoPlugOutputSpecificData::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoPlugOutputSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoPlugOutputSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
     de.read( &m_nrOfOutputPlugs );
 
@@ -437,7 +437,7 @@ ExtendedPlugInfoClusterInfoSpecificData::~ExtendedPlugInfoClusterInfoSpecificDat
 }
 
 bool
-ExtendedPlugInfoClusterInfoSpecificData::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoClusterInfoSpecificData::serialize( Util::Cmd::IOSSerialize& se )
 {
     se.write( m_clusterIndex,
               "ExtendedPlugInfoClusterInfoSpecificData: cluster index" );
@@ -454,7 +454,7 @@ ExtendedPlugInfoClusterInfoSpecificData::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoClusterInfoSpecificData::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoClusterInfoSpecificData::deserialize( Util::Cmd::IISDeserialize& de )
 {
 
     de.read( &m_clusterIndex );
@@ -624,9 +624,9 @@ ExtendedPlugInfoInfoType::initialize()
 }
 
 bool
-ExtendedPlugInfoInfoType::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoInfoType::serialize( Util::Cmd::IOSSerialize& se )
 {
-    // XXX \todo improve Util::IOSSerialize::write interface
+    // XXX \todo improve Util::Cmd::IOSSerialize::write interface
     char* buf;
     asprintf( &buf, "ExtendedPlugInfoInfoType infoType (%s)",
               extendedPlugInfoInfoTypeToString( m_infoType ) );
@@ -683,7 +683,7 @@ ExtendedPlugInfoInfoType::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoInfoType::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoInfoType::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool status = false;
 
@@ -813,7 +813,7 @@ ExtendedPlugInfoCmd::~ExtendedPlugInfoCmd()
 }
 
 bool
-ExtendedPlugInfoCmd::serialize( Util::IOSSerialize& se )
+ExtendedPlugInfoCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool status = false;
     AVCCommand::serialize( se );
@@ -825,7 +825,7 @@ ExtendedPlugInfoCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ExtendedPlugInfoCmd::deserialize( Util::IISDeserialize& de )
+ExtendedPlugInfoCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool status = false;
     AVCCommand::deserialize( de );

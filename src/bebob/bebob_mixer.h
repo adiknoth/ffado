@@ -36,6 +36,7 @@ class AvDevice;
 class FunctionBlock;
 class FunctionBlockFeature;
 class FunctionBlockSelector;
+class FunctionBlockEnhancedMixer;
 
 class Mixer 
     : public Control::Container
@@ -79,6 +80,20 @@ public:
 private:
     Mixer&                  m_Parent;
     FunctionBlockFeature&   m_Slave;
+};
+
+class EnhancedMixerFBFeature
+    : public Control::Continuous
+{
+public:
+    EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer&);
+    
+    virtual bool setValue(double v);
+    virtual double getValue();
+    
+private:
+    Mixer&                      m_Parent;
+    FunctionBlockEnhancedMixer& m_Slave;
 };
 
 class MixerFBSelector

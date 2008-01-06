@@ -40,7 +40,7 @@ EfcGetClockCmd::EfcGetClockCmd()
 }
 
 bool
-EfcGetClockCmd::serialize( Util::IOSSerialize& se )
+EfcGetClockCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -54,7 +54,7 @@ EfcGetClockCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcGetClockCmd::deserialize( Util::IISDeserialize& de )
+EfcGetClockCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 
@@ -87,7 +87,7 @@ EfcSetClockCmd::EfcSetClockCmd()
 }
 
 bool
-EfcSetClockCmd::serialize( Util::IOSSerialize& se )
+EfcSetClockCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -105,7 +105,7 @@ EfcSetClockCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcSetClockCmd::deserialize( Util::IISDeserialize& de )
+EfcSetClockCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 
@@ -135,7 +135,7 @@ EfcPhyReconnectCmd::EfcPhyReconnectCmd()
 }
 
 bool
-EfcPhyReconnectCmd::serialize( Util::IOSSerialize& se )
+EfcPhyReconnectCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
 
@@ -149,7 +149,7 @@ EfcPhyReconnectCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-EfcPhyReconnectCmd::deserialize( Util::IISDeserialize& de )
+EfcPhyReconnectCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
 

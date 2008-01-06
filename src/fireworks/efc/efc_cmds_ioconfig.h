@@ -34,8 +34,8 @@ public:
     EfcGenericIOConfigCmd(enum eIOConfigRegister r);
     virtual ~EfcGenericIOConfigCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual void showEfcCmd();
     

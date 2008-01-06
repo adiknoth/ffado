@@ -105,8 +105,8 @@ namespace AVC {
 #define AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NO_STREAM_FORMAT 0x02
 #define AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NOT_USED         0xff
 
-class Util::IOSSerialize;
-class Util::IISDeserialize;
+class Util::Cmd::IOSSerialize;
+class Util::Cmd::IISDeserialize;
 
 enum ERateControl {
     eRC_Supported = 0x00,
@@ -120,8 +120,8 @@ class StreamFormatInfo: public IBusData
 public:
     StreamFormatInfo();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual StreamFormatInfo* clone() const;
 
@@ -146,8 +146,8 @@ class FormatInformationStreamsSync: public FormatInformationStreams
 public:
     FormatInformationStreamsSync();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual FormatInformationStreamsSync* clone() const;
 
     reserved_t           m_reserved0;
@@ -164,8 +164,8 @@ public:
     FormatInformationStreamsCompound();
     virtual ~FormatInformationStreamsCompound();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual FormatInformationStreamsCompound* clone() const;
 
     sampling_frequency_t                     m_samplingFrequency;
@@ -230,8 +230,8 @@ public:
     FormatInformation( const FormatInformation& rhs );
     virtual ~FormatInformation();
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual FormatInformation* clone() const;
 
@@ -270,8 +270,8 @@ public:
     bool setIndexInStreamFormat( const int index );
     bool setSubFunction( ESubFunction subFunction );
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     EStatus getStatus();
     FormatInformation* getFormatInformation();

@@ -42,7 +42,7 @@ ConnectCmd::~ConnectCmd()
 }
 
 bool
-ConnectCmd::serialize( Util::IOSSerialize& se )
+ConnectCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCCommand::serialize( se );
@@ -50,7 +50,7 @@ ConnectCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-ConnectCmd::deserialize( Util::IISDeserialize& de )
+ConnectCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCCommand::deserialize( de );

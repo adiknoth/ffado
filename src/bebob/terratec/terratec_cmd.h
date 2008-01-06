@@ -39,8 +39,8 @@ public:
     TerratecVendorDependentCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecVendorDependentCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecVendorDependentCmd"; }
@@ -55,8 +55,8 @@ public:
     TerratecSyncStateCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecSyncStateCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecSyncStateCmd"; }
@@ -70,8 +70,8 @@ public:
     TerratecStoreMixerSettingsCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecStoreMixerSettingsCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecStoreMixerSettingsCmd"; }
@@ -83,8 +83,8 @@ public:
     TerratecSetMidiRemoteChannelCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecSetMidiRemoteChannelCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecSetMidiRemoteChannelCmd"; }
@@ -98,8 +98,8 @@ public:
     TerratecSetMidiControlCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecSetMidiControlCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecSetMidiControlCmd"; }
@@ -114,8 +114,8 @@ public:
     TerratecSetDefaultRoutingCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecSetDefaultRoutingCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecSetDefaultRoutingCmd"; }
@@ -130,8 +130,8 @@ public:
     TerratecDeviceIdCmd(Ieee1394Service& ieee1394service);
     virtual ~TerratecDeviceIdCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "TerratecDeviceIdCmd"; }

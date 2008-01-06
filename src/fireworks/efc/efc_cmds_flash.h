@@ -43,8 +43,8 @@ public:
     EfcFlashEraseCmd();
     virtual ~EfcFlashEraseCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcFlashEraseCmd"; }
@@ -60,8 +60,8 @@ public:
     EfcFlashReadCmd();
     virtual ~EfcFlashReadCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcFlashReadCmd"; }
@@ -79,8 +79,8 @@ public:
     EfcFlashWriteCmd();
     virtual ~EfcFlashWriteCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcFlashWriteCmd"; }
@@ -98,8 +98,8 @@ public:
     EfcFlashLockCmd();
     virtual ~EfcFlashLockCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcFlashLockCmd"; }
@@ -115,8 +115,8 @@ public:
     EfcFlashGetStatusCmd();
     virtual ~EfcFlashGetStatusCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcFlashGetStatusCmd"; }
@@ -132,8 +132,8 @@ public:
     EfcFlashGetSessionBaseCmd();
     virtual ~EfcFlashGetSessionBaseCmd() {};
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
     { return "EfcFlashGetSessionBaseCmd"; }

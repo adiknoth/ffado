@@ -30,6 +30,7 @@
 
 
 namespace Util {
+  namespace Cmd {
 
 
 IMPL_DEBUG_MODULE( CoutSerializer, CoutSerializer, DEBUG_LEVEL_NORMAL );
@@ -307,4 +308,5 @@ BufferDeserialize::isCurPosValid() const
     return true;
 }
 
+  }
 }

@@ -79,7 +79,7 @@ PlugInfoCmd::clear()
 }
 
 bool
-PlugInfoCmd::serialize( Util::IOSSerialize& se )
+PlugInfoCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     byte_t reserved = 0xff;
 
@@ -115,7 +115,7 @@ PlugInfoCmd::serialize( Util::IOSSerialize& se )
 }
 
 bool
-PlugInfoCmd::deserialize( Util::IISDeserialize& de )
+PlugInfoCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     byte_t reserved;
 

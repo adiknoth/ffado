@@ -34,8 +34,10 @@
 class Ieee1394Service;
 
 namespace Util {
-    class IOSSerialize;
-    class IISDeserialize;
+	namespace Cmd {
+		class IOSSerialize;
+		class IISDeserialize;
+	}
 };
 
 namespace AVC {
@@ -54,8 +56,8 @@ public:
     IBusData() {}
     virtual ~IBusData() {}
 
-    virtual bool serialize( Util::IOSSerialize& se ) = 0;
-    virtual bool deserialize( Util::IISDeserialize& de ) = 0;
+    virtual bool serialize( Util::Cmd::IOSSerialize& se ) = 0;
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de ) = 0;
 
     virtual IBusData* clone() const = 0;
 
@@ -86,8 +88,8 @@ public:
         eCT_Unknown         = 0xff,
     };
 
-    virtual bool serialize( Util::IOSSerialize& se );
-    virtual bool deserialize( Util::IISDeserialize& de );
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual bool setCommandType( ECommandType commandType );
     virtual bool fire();

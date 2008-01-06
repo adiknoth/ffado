@@ -46,7 +46,7 @@ AVCDescriptorSpecifier::AVCDescriptorSpecifier( enum EType type )
 }
 
 bool
-AVCDescriptorSpecifier::serialize( Util::IOSSerialize& se ) 
+AVCDescriptorSpecifier::serialize( Util::Cmd::IOSSerialize& se ) 
 {
     se.write( (byte_t)m_type, "AVCDescriptorSpecifier descriptor_specifier_type" );
     switch ( m_type ) {
@@ -71,7 +71,7 @@ AVCDescriptorSpecifier::serialize( Util::IOSSerialize& se )
 }
 
 bool 
-AVCDescriptorSpecifier::deserialize( Util::IISDeserialize& de ) 
+AVCDescriptorSpecifier::deserialize( Util::Cmd::IISDeserialize& de ) 
 {
     de.read( (byte_t *)&m_type );
     switch ( m_type ) {
@@ -288,7 +288,7 @@ AVCDescriptor::load()
 #endif
     debugOutput(DEBUG_LEVEL_VERBOSE, " Parse descriptor\n");
     // parse the descriptor
-    Util::BufferDeserialize de( m_data, m_descriptor_length );
+    Util::Cmd::BufferDeserialize de( m_data, m_descriptor_length );
     result = deserialize( de );
     if (!result) {
         debugOutput(DEBUG_LEVEL_VERBOSE, " Could not parse descriptor\n");
@@ -297,7 +297,7 @@ AVCDescriptor::load()
     
 #ifdef DEBUG
     if(getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
-        Util::StringSerializer se_dbg;
+        Util::Cmd::StringSerializer se_dbg;
         serialize( se_dbg );
         
         // output the debug message in smaller chunks to avoid problems
@@ -316,13 +316,13 @@ AVCDescriptor::load()
 }
 
 bool
-AVCDescriptor::serialize( Util::IOSSerialize& se )
+AVCDescriptor::serialize( Util::Cmd::IOSSerialize& se )
 {
     return true;
 }
 
 bool
-AVCDescriptor::deserialize( Util::IISDeserialize& de )
+AVCDescriptor::deserialize( Util::Cmd::IISDeserialize& de )
 {
     return true;
 }
@@ -392,7 +392,7 @@ AVCInfoBlock::AVCInfoBlock( uint16_t supported_type )
 {}
 
 bool
-AVCInfoBlock::serialize( Util::IOSSerialize& se )
+AVCInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     if((m_supported_info_block_type != 0xFFFF) 
@@ -408,7 +408,7 @@ AVCInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= de.read( &m_compound_length );
@@ -430,13 +430,13 @@ AVCInfoBlock::deserialize( Util::IISDeserialize& de )
 }
 
 bool
-AVCInfoBlock::peekBlockType( Util::IISDeserialize& de, uint16_t *type )
+AVCInfoBlock::peekBlockType( Util::Cmd::IISDeserialize& de, uint16_t *type )
 {
     return de.peek(type, 2);
 }
 
 bool
-AVCInfoBlock::peekBlockLength( Util::IISDeserialize& de, uint16_t *type )
+AVCInfoBlock::peekBlockLength( Util::Cmd::IISDeserialize& de, uint16_t *type )
 {
     return de.peek(type, 0);
 }
@@ -478,7 +478,7 @@ AVCRawTextInfoBlock::clear()
 }
 
 bool
-AVCRawTextInfoBlock::serialize( Util::IOSSerialize& se )
+AVCRawTextInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -489,7 +489,7 @@ AVCRawTextInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCRawTextInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCRawTextInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
@@ -524,7 +524,7 @@ AVCNameInfoBlock::clear()
 }
 
 bool
-AVCNameInfoBlock::serialize( Util::IOSSerialize& se )
+AVCNameInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
@@ -542,7 +542,7 @@ AVCNameInfoBlock::serialize( Util::IOSSerialize& se )
 }
 
 bool
-AVCNameInfoBlock::deserialize( Util::IISDeserialize& de )
+AVCNameInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result=true;
     result &= AVCInfoBlock::deserialize(de);
