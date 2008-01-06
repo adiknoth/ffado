@@ -371,5 +371,6 @@ if not env.GetOption('clean'):
 # Create a tags-file for easier emacs/vim-source-browsing
 #  I don't know if the dependency is right...
 #
-env.Command( "tags", Dir("src"), "find . -iname \"*.[ch]*\" > .ctags-files && ctags -L .ctags-files && rm .ctags-files" )
+findcommand = "find . \( -path \"*.h\" -o -path \"*.cpp\" -o -path \"*.c\" \) \! -path \"*.svn*\" \! -path \"./doc*\" \! -path \"./cache*\""
+env.Command( "tags", "", findcommand + " |xargs ctags" )
 
