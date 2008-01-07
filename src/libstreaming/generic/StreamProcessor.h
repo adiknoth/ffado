@@ -136,6 +136,7 @@ protected:
     Ieee1394Service&            m_1394service;
     IsoHandlerManager&          m_IsoHandlerManager;
     StreamProcessorManager&     m_StreamProcessorManager;
+    unsigned int                m_local_node_id;
 
 public: // the public receive/transmit functions
     // the transmit interface accepts frames and provides packets

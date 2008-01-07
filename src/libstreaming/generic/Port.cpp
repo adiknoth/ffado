@@ -69,11 +69,6 @@ bool Port::init() {
         return false;
     }
 
-    if (m_buffer == NULL) {
-        debugFatal("Cannot initialize a port with no attached buffer\n");
-        return false;
-    }
-
     m_State = E_Initialized;
     return true;
 }

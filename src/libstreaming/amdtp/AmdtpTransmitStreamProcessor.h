@@ -133,6 +133,7 @@ private: // local port caching for performance
     struct _MBLA_port_cache {
         AmdtpAudioPort*     port;
         void*               buffer;
+        bool                enabled;
 #ifdef DEBUG
         unsigned int        buffer_size;
 #endif
@@ -143,6 +144,7 @@ private: // local port caching for performance
     struct _MIDI_port_cache {
         AmdtpMidiPort*      port;
         void*               buffer;
+        bool                enabled;
         unsigned int        position;
         unsigned int        location;
 #ifdef DEBUG

@@ -65,6 +65,7 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_1394service( parent.get1394Service() ) // local cache
     , m_IsoHandlerManager( parent.get1394Service().getIsoHandlerManager() ) // local cache
     , m_StreamProcessorManager( m_Parent.getDeviceManager().getStreamProcessorManager() ) // local cache
+    , m_local_node_id ( 0 ) // local cache
     , m_channel( -1 )
     , m_dropped(0)
     , m_last_timestamp(0)
@@ -934,7 +935,7 @@ StreamProcessor::canProcessPackets()
 {
     if(m_state != ePS_Running || m_next_state != ePS_Running) return true;
     bool result;
-    int bufferfill;
+    unsigned int bufferfill;
     if(getType() == ePT_Receive) {
         bufferfill = m_data_buffer->getBufferSpace();
     } else {
@@ -1323,6 +1324,8 @@ StreamProcessor::doStop()
             // prepare the framerate estimate
             ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_StreamProcessorManager.getNominalRate());
             m_ticks_per_frame = ticks_per_frame;
+            m_local_node_id= m_1394service.getLocalNodeId() & 0x3f;
+
             debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n", ticks_per_frame);
 
             // initialize internal buffer
@@ -1419,6 +1422,7 @@ StreamProcessor::doDryRunning()
         case ePS_WaitingForStream:
             // a running stream has been detected
             debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started dry-running at cycle %d\n", this, m_last_cycle);
+            m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
             if (getType() == ePT_Receive) {
                 // this to ensure that there is no discontinuity when starting to 
                 // update the DLL based upon the received packets
@@ -1525,6 +1529,7 @@ StreamProcessor::doRunning()
             debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running at cycle %d\n", 
                                              this, m_last_cycle);
             m_in_xrun = false;
+            m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
             m_data_buffer->setTransparent(false);
             break;
         default:

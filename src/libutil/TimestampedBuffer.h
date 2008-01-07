@@ -165,7 +165,9 @@ class TimestampedBuffer
     protected:
 
         ffado_ringbuffer_t * m_event_buffer;
-        char* m_cluster_buffer;
+        char* m_process_buffer;
+        unsigned int m_cluster_size;
+        unsigned int m_process_block_size;
 
         unsigned int m_event_size; // the size of one event
         unsigned int m_events_per_frame; // the number of events in a frame
