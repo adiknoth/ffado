@@ -35,30 +35,20 @@ namespace Streaming {
 IMPL_DEBUG_MODULE( PortManager, PortManager, DEBUG_LEVEL_NORMAL );
 
 PortManager::PortManager() {
-
 }
 
 PortManager::~PortManager() {
-//     deleteAllPorts();
+    flushDebugOutput();
+    // delete all ports that are still registered to the manager
+    for ( PortVectorIterator it = m_Ports.begin();
+    it != m_Ports.end();
+    ++it )
+    {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s at %p\n", (*it)->getName().c_str(), *it);
+        flushDebugOutput();
+        delete *it; //FIXME
+    }
 }
-
-// bool PortManager::setPortBuffersize(unsigned int newsize) {
-//     debugOutput( DEBUG_LEVEL_VERBOSE, "setting port buffer size to %d\n",newsize);
-//
-//
-//     for ( PortVectorIterator it = m_Ports.begin();
-//       it != m_Ports.end();
-//       ++it )
-//     {
-//         if(!(*it)->setBufferSize(newsize)) {
-//             debugFatal("Could not set buffer size for port %s\n",(*it)->getName().c_str());
-//             return false;
-//         }
-//     }
-//
-//     return true; //not found
-//
-// }
 
 bool PortManager::makeNameUnique(Port *port)
 {
@@ -95,12 +85,12 @@ bool PortManager::makeNameUnique(Port *port)
  * @param port
  * @return
  */
-bool PortManager::addPort(Port *port)
+bool PortManager::registerPort(Port *port)
 {
     assert(port);
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s, type: %d, dir: %d, dtype: %d\n",
-        port->getName().c_str(), port->getPortType(), port->getDirection(), port->getDataType());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Adding port %s, type: %d, dir: %d\n",
+        port->getName().c_str(), port->getPortType(), port->getDirection());
 
     port->setVerboseLevel(getDebugLevel());
 
@@ -112,10 +102,10 @@ bool PortManager::addPort(Port *port)
     }
 }
 
-bool PortManager::deletePort(Port *port)
+bool PortManager::unregisterPort(Port *port)
 {
     assert(port);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s\n",port->getName().c_str());
+    debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering port %s\n",port->getName().c_str());
 
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
@@ -123,7 +113,6 @@ bool PortManager::deletePort(Port *port)
     {
         if(*it == port) {
             m_Ports.erase(it);
-//             delete *it;
             return true;
         }
     }
@@ -131,22 +120,6 @@ bool PortManager::deletePort(Port *port)
     debugOutput( DEBUG_LEVEL_VERBOSE, "port %s not found \n",port->getName().c_str());
 
     return false; //not found
-
-}
-
-void PortManager::deleteAllPorts()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "deleting all ports\n");
-
-    for ( PortVectorIterator it = m_Ports.begin();
-      it != m_Ports.end();
-      ++it )
-    {
-        m_Ports.erase(it);
-//         delete *it;
-    }
-
-    return;
 
 }
 
@@ -212,7 +185,7 @@ bool PortManager::initPorts() {
       ++it )
     {
         if(!(*it)->init()) {
-            debugFatal("Could not init port %s",(*it)->getName().c_str());
+            debugFatal("Could not init port %s\n", (*it)->getName().c_str());
             return false;
         }
     }
@@ -221,10 +194,6 @@ bool PortManager::initPorts() {
 
 bool PortManager::preparePorts() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "preparing ports\n");
-
-    // clear the cache lists
-    m_PeriodPorts.clear();
-    m_PacketPorts.clear();
 
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
@@ -235,19 +204,6 @@ bool PortManager::preparePorts() {
             return false;
         }
 
-        // now prepare the cache lists
-        switch((*it)->getSignalType()) {
-            case Port::E_PacketSignalled:
-                m_PacketPorts.push_back(*it);
-                break;
-            case Port::E_PeriodSignalled:
-                m_PeriodPorts.push_back(*it);
-                break;
-            default:
-                debugWarning("%s has unsupported port type\n",
-                             (*it)->getName().c_str());
-            break;
-        }
     }
     return true;
 }

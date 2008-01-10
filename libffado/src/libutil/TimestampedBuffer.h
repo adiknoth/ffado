@@ -88,40 +88,6 @@ class TimestampedBuffer
         TimestampedBuffer ( TimestampedBufferClient * );
         virtual ~TimestampedBuffer();
 
-        /**
-         * @brief waits for the availability of frames (blocking)
-         * @param nframes number of frames
-         *
-         * @return true if frames are available, false if not (e.g. signal occurred)
-         */
-        bool waitForFrames(unsigned int nframes);
-
-        /**
-         * @brief waits for the availability of frames (blocking)
-         *
-         * waits for one update period of frames
-         *
-         * @return true if frames are available, false if not (e.g. signal occurred)
-         */
-        bool waitForFrames();
-
-        /**
-         * @brief waits for the availability of frames (non-blocking)
-         * @param nframes number of frames
-         *
-         * @return true if frames are available, false if not
-         */
-        bool tryWaitForFrames(unsigned int nframes);
-
-        /**
-         * @brief waits for the availability of frames (non-blocking)
-         *
-         * waits for one update period of frames
-         *
-         * @return true if frames are available, false if not
-         */
-        bool tryWaitForFrames();
-
         bool writeDummyFrame();
         bool dropFrames ( unsigned int nbframes );
 
@@ -133,7 +99,6 @@ class TimestampedBuffer
         bool blockProcessWriteFrames ( unsigned int nbframes, ffado_timestamp_t ts );
         bool blockProcessReadFrames ( unsigned int nbframes );
 
-        bool init();
         bool prepare();
         bool clearBuffer();
 
@@ -200,7 +165,9 @@ class TimestampedBuffer
     protected:
 
         ffado_ringbuffer_t * m_event_buffer;
-        char* m_cluster_buffer;
+        char* m_process_buffer;
+        unsigned int m_cluster_size;
+        unsigned int m_process_block_size;
 
         unsigned int m_event_size; // the size of one event
         unsigned int m_events_per_frame; // the number of events in a frame

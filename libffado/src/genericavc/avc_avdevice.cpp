@@ -442,7 +442,7 @@ AvDevice::prepare() {
         return false;
     }
 
-    if (!addPlugToProcessor(*outputPlug,p,
+    if (!addPlugToProcessor(*outputPlug, p,
         Streaming::Port::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
         delete p;
@@ -471,13 +471,13 @@ AvDevice::prepare() {
     }
 
     if (snoopMode) {
-        if (!addPlugToProcessor(*inputPlug,p,
+        if (!addPlugToProcessor(*inputPlug, p,
             Streaming::Port::E_Capture)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
     } else {
-        if (!addPlugToProcessor(*inputPlug,p,
+        if (!addPlugToProcessor(*inputPlug, p,
             Streaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
             return false;
@@ -531,6 +531,7 @@ AvDevice::addPlugToProcessor(
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding audio channel %s (pos=0x%02X, loc=0x%02X)\n",
                     channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
                 p=new Streaming::AmdtpAudioPort(
+                        *processor,
                         portname.str(),
                         direction,
                         channelInfo->m_streamPosition,
@@ -543,6 +544,7 @@ AvDevice::addPlugToProcessor(
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel %s (pos=0x%02X, loc=0x%02X)\n",
                     channelInfo->m_name.c_str(), channelInfo->m_streamPosition, processor->getPortCount(Streaming::Port::E_Midi));
                 p=new Streaming::AmdtpMidiPort(
+                        *processor,
                         portname.str(),
                         direction,
                         channelInfo->m_streamPosition,
@@ -564,6 +566,7 @@ AvDevice::addPlugToProcessor(
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding digital audio channel %s (pos=0x%02X, loc=0x%02X)\n",
                     channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
                 p=new Streaming::AmdtpAudioPort(
+                        *processor,
                         portname.str(),
                         direction,
                         channelInfo->m_streamPosition,
@@ -580,12 +583,6 @@ AvDevice::addPlugToProcessor(
 
             if (!p) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->m_name.c_str());
-            } else {
-
-                if (!processor->addPort(p)) {
-                    debugWarning("Could not register port with stream processor\n");
-                    return false;
-                }
             }
          }
     }

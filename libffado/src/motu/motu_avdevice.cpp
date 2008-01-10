@@ -553,18 +553,10 @@ MotuDevice::prepare() {
     // MIDI byte sent using a 3 byte sequence starting at byte 4 of the
     // event data.
     asprintf(&buff,"%s_cap_MIDI0",id.c_str());
-    p = new Streaming::MotuMidiPort(buff,
+    p = new Streaming::MotuMidiPort(*m_receiveProcessor, buff,
         Streaming::Port::E_Capture, 4);
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
-    } else {
-        if (!m_receiveProcessor->addPort(p)) {
-            debugWarning("Could not register port with stream processor\n");
-            free(buff);
-            return false;
-        } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n", buff);
-        }
     }
     free(buff);
 
@@ -612,18 +604,10 @@ MotuDevice::prepare() {
     // MIDI byte transmitted using a 3 byte sequence starting at byte 4
     // of the event data.
     asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
-    p = new Streaming::MotuMidiPort(buff,
+    p = new Streaming::MotuMidiPort(*m_transmitProcessor, buff,
         Streaming::Port::E_Capture, 4);
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
-    } else {
-        if (!m_receiveProcessor->addPort(p)) {
-            debugWarning("Could not register port with stream processor\n");
-            free(buff);
-            return false;
-        } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n", buff);
-        }
     }
     free(buff);
 
@@ -861,19 +845,10 @@ bool MotuDevice::addPort(Streaming::StreamProcessor *s_processor,
  */
 Streaming::Port *p=NULL;
 
-    p = new Streaming::MotuAudioPort(name, direction, position, size);
+    p = new Streaming::MotuAudioPort(*s_processor, name, direction, position, size);
 
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
-    } else {
-        if (!s_processor->addPort(p)) {
-            debugWarning("Could not register port with stream processor\n");
-            free(name);
-            return false;
-        } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",name);
-        }
-        p->enable();
     }
     free(name);
     return true;

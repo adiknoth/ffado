@@ -183,7 +183,7 @@ int ffado_streaming_prepare(ffado_device_t *dev) {
     // prepare here or there are no ports for jack
     if(!dev->m_deviceManager->prepareStreaming()) {
         debugFatal("Could not prepare the streaming system\n");
-        return 0;
+        return -1;
     }
     return 0;
 }
@@ -225,7 +225,8 @@ int ffado_streaming_reset(ffado_device_t *dev) {
     return 0;
 }
 
-int ffado_streaming_wait(ffado_device_t *dev) {
+ffado_wait_response
+ffado_streaming_wait(ffado_device_t *dev) {
     static int periods=0;
     static int periods_print=0;
     static int xruns=0;
@@ -241,12 +242,18 @@ int ffado_streaming_wait(ffado_device_t *dev) {
         periods_print+=100;
     }
 
-    if(dev->m_deviceManager->waitForPeriod()) {
-        return dev->options.period_size;
-    } else {
-        debugWarning("XRUN\n");
+    enum DeviceManager::eWaitResult result;
+    result = dev->m_deviceManager->waitForPeriod();
+    if(result == DeviceManager::eWR_OK) {
+        return ffado_wait_ok;
+    } else if (result == DeviceManager::eWR_Xrun) {
+        debugWarning("Handled XRUN\n");
         xruns++;
-        return -1;
+        return ffado_wait_xrun;
+    } else {
+        debugError("Unhandled XRUN (BUG)\n");
+        xruns++;
+        return ffado_wait_error;
     }
 }
 
@@ -260,25 +267,6 @@ int ffado_streaming_transfer_playback_buffers(ffado_device_t *dev) {
 
 int ffado_streaming_transfer_buffers(ffado_device_t *dev) {
     return dev->m_deviceManager->getStreamProcessorManager().transfer();
-}
-
-
-int ffado_streaming_write(ffado_device_t *dev, int i, ffado_sample_t *buffer, int nsamples) {
-    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Playback);
-    // use an assert here performancewise,
-    // it should already have failed before, if not correct
-    assert(p);
-
-    return p->writeEvents((void *)buffer, nsamples);
-}
-
-int ffado_streaming_read(ffado_device_t *dev, int i, ffado_sample_t *buffer, int nsamples) {
-    Streaming::Port *p=dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
-    // use an assert here performancewise,
-    // it should already have failed before, if not correct
-    assert(p);
-
-    return p->readEvents((void *)buffer, nsamples);
 }
 
 int ffado_streaming_get_nb_capture_streams(ffado_device_t *dev) {
@@ -353,61 +341,41 @@ ffado_streaming_stream_type ffado_streaming_get_playback_stream_type(ffado_devic
     }
 }
 
-int ffado_streaming_set_stream_buffer_type(ffado_device_t *dev, int i,
-    ffado_streaming_buffer_type t, enum Streaming::Port::E_Direction direction) {
-
-    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, direction);
-    if(!p) {
-        debugWarning("Could not get %s port at index %d\n",
-            (direction==Streaming::Port::E_Playback?"Playback":"Capture"),i);
-        return -1;
-    }
-
+int ffado_streaming_set_audio_datatype(ffado_device_t *dev,
+    ffado_streaming_audio_datatype t) {
     switch(t) {
-    case ffado_buffer_type_int24:
-        if (!p->setDataType(Streaming::Port::E_Int24)) {
-            debugWarning("%s: Could not set data type to Int24\n",p->getName().c_str());
+        case ffado_audio_datatype_int24:
+            if(!dev->m_deviceManager->getStreamProcessorManager().setAudioDataType(
+               Streaming::StreamProcessorManager::eADT_Int24)) {
+                debugError("Could not set datatype\n");
+                return -1;
+            }
+            break;
+        case ffado_audio_datatype_float:
+            if(!dev->m_deviceManager->getStreamProcessorManager().setAudioDataType(
+               Streaming::StreamProcessorManager::eADT_Float)) {
+                debugError("Could not set datatype\n");
+                return -1;
+            }
+            break;
+        default:
+            debugError("Invalid audio datatype\n");
             return -1;
-        }
-        if (!p->setBufferType(Streaming::Port::E_PointerBuffer)) {
-            debugWarning("%s: Could not set buffer type to Pointerbuffer\n",p->getName().c_str());
-            return -1;
-        }
-        break;
-    case ffado_buffer_type_float:
-        if (!p->setDataType(Streaming::Port::E_Float)) {
-            debugWarning("%s: Could not set data type to Float\n",p->getName().c_str());
-            return -1;
-        }
-        if (!p->setBufferType(Streaming::Port::E_PointerBuffer)) {
-            debugWarning("%s: Could not set buffer type to Pointerbuffer\n",p->getName().c_str());
-            return -1;
-        }
-        break;
-    case ffado_buffer_type_midi:
-        if (!p->setDataType(Streaming::Port::E_MidiEvent)) {
-            debugWarning("%s: Could not set data type to MidiEvent\n",p->getName().c_str());
-            return -1;
-        }
-        if (!p->setBufferType(Streaming::Port::E_RingBuffer)) {
-            debugWarning("%s: Could not set buffer type to Ringbuffer\n",p->getName().c_str());
-            return -1;
-        }
-        break;
-    default:
-        debugWarning("%s: Unsupported buffer type\n",p->getName().c_str());
-        return -1;
     }
     return 0;
-
 }
 
-int ffado_streaming_set_playback_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t) {
-    return ffado_streaming_set_stream_buffer_type(dev, i, t, Streaming::Port::E_Playback);
-}
-
-int ffado_streaming_set_capture_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t) {
-    return ffado_streaming_set_stream_buffer_type(dev, i, t, Streaming::Port::E_Capture);
+ffado_streaming_audio_datatype ffado_streaming_get_audio_datatype(ffado_device_t *dev) {
+    switch(dev->m_deviceManager->getStreamProcessorManager().getAudioDataType()) {
+        case Streaming::StreamProcessorManager::eADT_Int24:
+            return ffado_audio_datatype_int24;
+        case Streaming::StreamProcessorManager::eADT_Float:
+            return ffado_audio_datatype_float;
+        default:
+            debugError("Invalid audio datatype\n");
+            return ffado_audio_datatype_error;
+    }
+    #warning FIXME
 }
 
 int ffado_streaming_stream_onoff(ffado_device_t *dev, int i,
@@ -434,29 +402,20 @@ int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on
     return ffado_streaming_stream_onoff(dev, number, on, Streaming::Port::E_Capture);
 }
 
-// TODO: the way port buffers are set in the C api doesn't satisfy me
 int ffado_streaming_set_capture_stream_buffer(ffado_device_t *dev, int i, char *buff) {
-        Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
-
-        // use an assert here performancewise,
-        // it should already have failed before, if not correct
-        assert(p);
-
-        p->useExternalBuffer(true);
-        p->setExternalBufferAddress((void *)buff);
-
-        return 0;
-
+    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Capture);
+    // use an assert here performancewise,
+    // it should already have failed before, if not correct
+    assert(p);
+    p->setBufferAddress((void *)buff);
+    return 0;
 }
 
 int ffado_streaming_set_playback_stream_buffer(ffado_device_t *dev, int i, char *buff) {
-        Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Playback);
-        // use an assert here performancewise,
-        // it should already have failed before, if not correct
-        assert(p);
-
-        p->useExternalBuffer(true);
-        p->setExternalBufferAddress((void *)buff);
-
-        return 0;
+    Streaming::Port *p = dev->m_deviceManager->getStreamProcessorManager().getPortByIndex(i, Streaming::Port::E_Playback);
+    // use an assert here performancewise,
+    // it should already have failed before, if not correct
+    assert(p);
+    p->setBufferAddress((void *)buff);
+    return 0;
 }

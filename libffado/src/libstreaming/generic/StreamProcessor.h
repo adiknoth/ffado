@@ -136,6 +136,7 @@ protected:
     Ieee1394Service&            m_1394service;
     IsoHandlerManager&          m_IsoHandlerManager;
     StreamProcessorManager&     m_StreamProcessorManager;
+    unsigned int                m_local_node_id;
 
 public: // the public receive/transmit functions
     // the transmit interface accepts frames and provides packets
@@ -291,7 +292,7 @@ protected: // the helper receive/transmit functions
     virtual bool transmitSilenceBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
 protected: // some generic helpers
-    int provideSilenceToPort(AudioPort *p, unsigned int offset, unsigned int nevents);
+    int provideSilenceToPort(Port *p, unsigned int offset, unsigned int nevents);
     bool provideSilenceBlock(unsigned int nevents, unsigned int offset);
 
 private:
@@ -324,7 +325,8 @@ protected: // FIXME: move to private
     int m_last_good_cycle; /// FIXME:debug
     uint64_t m_last_timestamp; /// last timestamp (in ticks)
     uint64_t m_last_timestamp2; /// last timestamp (in ticks)
-    uint64_t m_last_timestamp_at_period_ticks;
+    bool m_correct_last_timestamp;
+    uint64_t m_last_timestamp_at_period_ticks; // FIXME: still used?
 
 //--- data buffering and accounting
 public:

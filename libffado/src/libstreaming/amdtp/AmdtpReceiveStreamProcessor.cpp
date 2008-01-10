@@ -166,13 +166,6 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     #endif
 
     if(m_data_buffer->writeFrames(nevents, (char *)(data+8), m_last_timestamp)) {
-        // process all ports that should be handled on a per-packet base
-        // this is MIDI for AMDTP (due to the need of DBC)
-        if(isRunning()) {
-            if (!decodePacketPorts((quadlet_t *)(data+8), nevents, packet->dbc)) {
-                debugWarning("Problem decoding Packet Ports\n");
-            }
-        }
         return eCRV_OK;
     } else {
         return eCRV_XRun;
@@ -192,8 +185,8 @@ bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
 
     bool no_problem=true;
 
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-          it != m_PeriodPorts.end();
+    for ( PortVectorIterator it = m_Ports.begin();
+          it != m_Ports.end();
           ++it )
     {
         if((*it)->isDisabled()) {continue;};
@@ -212,9 +205,12 @@ bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
             break;
         case AmdtpPortInfo::E_SPDIF: // still unimplemented
             break;
-    /* for this processor, midi is a packet based port
         case AmdtpPortInfo::E_Midi:
-            break;*/
+            if(decodeMidiEventsToPort(static_cast<AmdtpMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+                debugWarning("Could not decode packet Midi to port %s",(*it)->getName().c_str());
+                no_problem=false;
+            }
+            break;
         default: // ignore
             break;
         }
@@ -222,64 +218,8 @@ bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
     return no_problem;
 }
 
-/**
- * @brief decode a packet for the packet-based ports
- *
- * @param data Packet data
- * @param nevents number of events in data (including events of other ports & port types)
- * @param dbc DataBlockCount value for this packet
- * @return true if all successfull
- */
-bool AmdtpReceiveStreamProcessor::decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc)
-{
-    bool ok=true;
-
-    quadlet_t *target_event=NULL;
-    unsigned int j;
-
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-          it != m_PacketPorts.end();
-          ++it )
-    {
-
-#ifdef DEBUG
-        AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        assert(pinfo); // this should not fail!!
-
-        // the only packet type of events for AMDTP is MIDI in mbla
-        assert(pinfo->getFormat()==AmdtpPortInfo::E_Midi);
-#endif
-        AmdtpMidiPort *mp=static_cast<AmdtpMidiPort *>(*it);
-
-        // we decode this directly (no function call) due to the high frequency
-        /* idea:
-        spec says: current_midi_port=(dbc+j)%8;
-        => if we start at (dbc+stream->location-1)%8,
-        we'll start at the right event for the midi port.
-        => if we increment j with 8, we stay at the right event.
-        */
-        // FIXME: as we know in advance how big a packet is (syt_interval) we can
-        //        predict how much loops will be present here
-        for(j = (dbc & 0x07)+mp->getLocation(); j < nevents; j += 8) {
-            target_event=(quadlet_t *)(data + ((j * m_dimension) + mp->getPosition()));
-            quadlet_t sample_int=ntohl(*target_event);
-            // FIXME: this assumes that 2X and 3X speed isn't used,
-            // because only the 1X slot is put into the ringbuffer
-            if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
-                sample_int=(sample_int >> 16) & 0x000000FF;
-                if(!mp->writeEvent(&sample_int)) {
-                    debugWarning("Packet port events lost\n");
-                    ok=false;
-                }
-            }
-        }
-
-    }
-
-    return ok;
-}
-
 #if USE_SSE
+#error broken
 typedef float v4sf __attribute__ ((vector_size (16)));
 typedef int v4si __attribute__ ((vector_size (16)));
 typedef int v2si __attribute__ ((vector_size (8)));
@@ -305,6 +245,8 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
     switch(p->getDataType()) {
         default:
+            debugError("bad type: %d\n", p->getDataType());
+            return -1;
         case Port::E_Int24:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
@@ -373,6 +315,14 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
     return 0;
 }
 
+int
+AmdtpReceiveStreamProcessor::decodeMidiEventsToPort(
+                       AmdtpMidiPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents)
+{
+    #warning implement
+}
+
 #else
 
 int
@@ -385,9 +335,11 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
     target_event=(quadlet_t *)(data + p->getPosition());
 
-    switch(p->getDataType()) {
+    switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
-        case Port::E_Int24:
+            debugError("bad type: %d\n", m_StreamProcessorManager.getAudioDataType());
+            return -1;
+        case StreamProcessorManager::eADT_Int24:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
 
@@ -402,7 +354,7 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
                 }
             }
             break;
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Float:
             {
                 const float multiplier = 1.0f / (float)(0x7FFFFF);
                 float *buffer=(float *)(p->getBufferAddress());
@@ -428,5 +380,48 @@ AmdtpReceiveStreamProcessor::decodeMBLAEventsToPort(
 
     return 0;
 }
+
+int
+AmdtpReceiveStreamProcessor::decodeMidiEventsToPort(
+                       AmdtpMidiPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents)
+{
+    unsigned int j=0;
+    quadlet_t *target_event;
+    quadlet_t sample_int;
+    unsigned int position = p->getPosition();
+    unsigned int location = p->getLocation();
+
+    quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
+
+    assert(nevents + offset <= p->getBufferSize());
+
+    buffer+=offset;
+
+    // clear
+    memset(buffer, 0, nevents * 4);
+
+    // assumes that dbc%8 == 0, which is always true if data points to the
+    // start of a packet in blocking mode
+    // midi events that belong to the same time mpx-ed block should all be
+    // timed at the SYT timestamp of the packet. This basically means that they
+    // all correspond to the first audio frame in the packet.
+    for(j = location; j < nevents; j += 8) {
+        target_event=(quadlet_t *)(data + ((j * m_dimension) + position));
+        sample_int=ntohl(*target_event);
+        // FIXME: this assumes that 2X and 3X speed isn't used,
+        // because only the 1X slot is put into the ringbuffer
+        if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
+            sample_int=(sample_int >> 16) & 0x000000FF;
+            sample_int |= 0x01000000; // flag that there is a midi event present
+            *buffer = sample_int;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Received midi byte %08X on port %p index %d\n", sample_int, p, j-location);
+        }
+        buffer += 8; // skip 8 frames
+    }
+
+    return 0;
+}
+
 #endif
 } // end of namespace Streaming

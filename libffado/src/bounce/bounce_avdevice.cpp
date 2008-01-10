@@ -211,6 +211,7 @@ BounceDevice::addPortsToProcessor(
 
         Streaming::Port *p=NULL;
         p=new Streaming::AmdtpAudioPort(
+                *processor,
                 buff,
                 direction,
                 // \todo: streaming backend expects indexing starting from 0
@@ -223,15 +224,6 @@ BounceDevice::addPortsToProcessor(
 
         if (!p) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
-        } else {
-
-            if (!processor->addPort(p)) {
-                debugWarning("Could not register port with stream processor\n");
-                free(buff);
-                return false;
-            } else {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-            }
         }
         free(buff);
     }
@@ -242,6 +234,7 @@ BounceDevice::addPortsToProcessor(
 
         Streaming::Port *p=NULL;
         p=new Streaming::AmdtpMidiPort(
+                *processor,
                 buff,
                 direction,
                 // \todo: streaming backend expects indexing starting from 0
@@ -254,15 +247,6 @@ BounceDevice::addPortsToProcessor(
 
         if (!p) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
-        } else {
-
-            if (!processor->addPort(p)) {
-                debugWarning("Could not register port with stream processor\n");
-                free(buff);
-                return false;
-            } else {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
-            }
         }
         free(buff);
      }

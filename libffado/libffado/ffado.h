@@ -205,16 +205,26 @@ typedef enum {
 } ffado_streaming_stream_type;
 
 /**
- * 
- * Buffer types known to the API
- * 
+ *
+ * Audio data types known to the API
+ *
  */
 typedef enum {
-    ffado_buffer_type_per_stream      = -1, // use this to use the per-stream read functions
-    ffado_buffer_type_int24           =  0,
-    ffado_buffer_type_float           =  1,
-    ffado_buffer_type_midi            =  2,
-} ffado_streaming_buffer_type;
+    ffado_audio_datatype_error           = -1,
+    ffado_audio_datatype_int24           =  0,
+    ffado_audio_datatype_float           =  1,
+} ffado_streaming_audio_datatype;
+
+/**
+ *
+ * Wait responses
+ *
+ */
+typedef enum {
+    ffado_wait_error           = -2,
+    ffado_wait_xrun            = -1,
+    ffado_wait_ok              =  0,
+} ffado_wait_response;
 
 /**
  * Initializes the streaming from/to a FFADO device. A FFADO device
@@ -338,7 +348,6 @@ ffado_streaming_stream_type ffado_streaming_get_playback_stream_type(ffado_devic
  */
 
 int ffado_streaming_set_capture_stream_buffer(ffado_device_t *dev, int number, char *buff);
-int ffado_streaming_set_capture_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t);
 int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on);
 
 /**
@@ -354,9 +363,10 @@ int ffado_streaming_capture_stream_onoff(ffado_device_t *dev, int number, int on
  * @return -1 on error, 0 on success
  */
 int ffado_streaming_set_playback_stream_buffer(ffado_device_t *dev, int number, char *buff);
-int ffado_streaming_set_playback_buffer_type(ffado_device_t *dev, int i, ffado_streaming_buffer_type t);
 int ffado_streaming_playback_stream_onoff(ffado_device_t *dev, int number, int on);
 
+ffado_streaming_audio_datatype ffado_streaming_get_audio_datatype(ffado_device_t *dev);
+int ffado_streaming_set_audio_datatype(ffado_device_t *dev, ffado_streaming_audio_datatype t);
 
 /**
  * preparation should be done after setting all per-stream parameters
@@ -408,31 +418,7 @@ int ffado_streaming_reset(ffado_device_t *dev);
  *
  * @return The number of frames ready. -1 when a problem occurred.
  */
-int ffado_streaming_wait(ffado_device_t *dev);
-
-/**
- * Reads from a specific channel to a supplied buffer.
- * 
- * @param dev the ffado device
- * @param number the stream number
- * @param buffer the buffer to copy the samples into
- * @param nsamples the number of samples to be read. the buffer has to be big enough for this amount of samples.
- *
- * @return the amount of samples actually read. -1 on error (xrun).
- */
-int ffado_streaming_read(ffado_device_t *dev, int number, ffado_sample_t *buffer, int nsamples);
-
-/**
- * Write to a specific channel from a supplied buffer.
- * 
- * @param dev the ffado device
- * @param number the stream number
- * @param buffer the buffer to copy the samples from
- * @param nsamples the number of samples to be written.
- *
- * @return the amount of samples actually written. -1 on error.
- */
-int ffado_streaming_write(ffado_device_t *dev, int number, ffado_sample_t *buffer, int nsamples);
+ffado_wait_response ffado_streaming_wait(ffado_device_t *dev);
 
 /**
  * Transfer & decode the events from the packet buffer to the sample buffers
