@@ -838,6 +838,7 @@ DiceAvDevice::addChannelToProcessor(
     switch(channelInfo->portType) {
     case ePT_Analog:
         p=new Streaming::AmdtpAudioPort(
+                *processor,
                 portname.str(),
                 direction,
                 channelInfo->streamPosition,
@@ -848,6 +849,7 @@ DiceAvDevice::addChannelToProcessor(
 
     case ePT_MIDI:
         p=new Streaming::AmdtpMidiPort(
+                *processor,
                 portname.str(),
                 direction,
                 channelInfo->streamPosition,
@@ -863,12 +865,6 @@ DiceAvDevice::addChannelToProcessor(
 
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->name.c_str());
-    } else {
-
-        if (!processor->addPort(p)) {
-            debugWarning("Could not register port with stream processor\n");
-            return false;
-        }
     }
 
     return true;

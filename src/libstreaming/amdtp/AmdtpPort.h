@@ -46,19 +46,17 @@ class AmdtpAudioPort
 
 public:
 
-    AmdtpAudioPort(std::string name,
-                       enum E_Direction direction,
+    AmdtpAudioPort(PortManager &m,
+                   std::string name,
+                   enum E_Direction direction,
                    int position,
                    int location,
                    enum E_Formats format)
-    : AudioPort(name, direction),
+    : AudioPort(m, name, direction),
       AmdtpPortInfo(position, location, format)
     {};
 
     virtual ~AmdtpAudioPort() {};
-
-protected:
-
 };
 
 /*!
@@ -73,20 +71,17 @@ class AmdtpMidiPort
 
 public:
 
-    AmdtpMidiPort(std::string name,
-                       enum E_Direction direction,
-                   int position,
-                   int location,
-                   enum E_Formats format)
-        : MidiPort(name, direction),
+    AmdtpMidiPort(PortManager &m,
+                  std::string name,
+                  enum E_Direction direction,
+                  int position,
+                  int location,
+                  enum E_Formats format)
+        : MidiPort(m, name, direction),
           AmdtpPortInfo(position, location, format)
     {};
 
-
     virtual ~AmdtpMidiPort() {};
-
-protected:
-
 };
 
 } // end of namespace Streaming

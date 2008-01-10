@@ -61,7 +61,6 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, un
         , m_tx_dbc( 0 )
 {}
 
-
 unsigned int
 MotuTransmitStreamProcessor::getMaxPacketSize() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
@@ -309,20 +308,6 @@ MotuTransmitStreamProcessor::generatePacketData (
             *quadlet = htonl(fullTicksToSph(ts_frame));
         }
 
-        // Process all ports that should be handled on a per-packet base
-        // this is MIDI for AMDTP (due to the need of DBC, which is lost
-        // when putting the events in the ringbuffer)
-        // for motu this might also be control data, however as control
-        // data isn't time specific I would also include it in the period
-        // based processing
-
-        // FIXME: m_tx_dbc probably needs to be initialised to a non-zero
-        // value somehow so MIDI sync is possible.  For now we ignore
-        // this issue.
-        if (!encodePacketPorts((quadlet_t *)(data+8), n_events, m_tx_dbc)) {
-            debugWarning("Problem encoding Packet Ports\n");
-        }
-
         return eCRV_OK;
     }
     else return eCRV_XRun;
@@ -402,36 +387,6 @@ unsigned int MotuTransmitStreamProcessor::fillNoDataPacketHeader (
 bool MotuTransmitStreamProcessor::prepareChild()
 {
     debugOutput ( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this );
-
-
-#if 0
-    for ( PortVectorIterator it = m_Ports.begin();
-            it != m_Ports.end();
-            ++it )
-    {
-        if ( ( *it )->getPortType() == Port::E_Midi )
-        {
-            // we use a timing unit of 10ns
-            // this makes sure that for the max syt interval
-            // we don't have rounding, and keeps the numbers low
-            // we have 1 slot every 8 events
-            // we have syt_interval events per packet
-            // => syt_interval/8 slots per packet
-            // packet rate is 8000pkt/sec => interval=125us
-            // so the slot interval is (1/8000)/(syt_interval/8)
-            // or: 1/(1000 * syt_interval) sec
-            // which is 1e9/(1000*syt_interval) nsec
-            // or 100000/syt_interval 'units'
-            // the event interval is fixed to 320us = 32000 'units'
-            if ( ! ( *it )->useRateControl ( true, ( 100000/m_syt_interval ),32000, false ) )
-            {
-                debugFatal ( "Could not set signal type to PeriodSignalling" );
-                return false;
-            }
-            break;
-        }
-    }
-#endif
     return true;
 }
 
@@ -449,27 +404,28 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
         memset(data+4+i*m_event_size, 0x00, 6);
     }
 
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-      it != m_PeriodPorts.end();
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
       ++it ) {
         // If this port is disabled, don't process it
         if((*it)->isDisabled()) {continue;};
 
-        //FIXME: make this into a static_cast when not DEBUG?
-        Port *port=dynamic_cast<Port *>(*it);
+        Port *port=(*it);
 
         switch(port->getPortType()) {
 
         case Port::E_Audio:
             if (encodePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to Motu events",(*it)->getName().c_str());
                 no_problem=false;
             }
             break;
-        // midi is a packet based port, don't process
-        //    case MotuPortInfo::E_Midi:
-        //        break;
-
+        case Port::E_Midi:
+//             if (encodePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+//                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+//                 no_problem=false;
+//             }
+            break;
         default: // ignore
             break;
         }
@@ -483,11 +439,10 @@ MotuTransmitStreamProcessor::transmitSilenceBlock(char *data,
     // This is the same as the non-silence version, except that is
     // doesn't read from the port buffers.
     bool no_problem = true;
-    for ( PortVectorIterator it = m_PeriodPorts.begin();
-      it != m_PeriodPorts.end();
+    for ( PortVectorIterator it = m_Ports.begin();
+      it != m_Ports.end();
       ++it ) {
-        //FIXME: make this into a static_cast when not DEBUG?
-        Port *port=dynamic_cast<Port *>(*it);
+        Port *port=(*it);
 
         switch(port->getPortType()) {
 
@@ -497,76 +452,17 @@ MotuTransmitStreamProcessor::transmitSilenceBlock(char *data,
                 no_problem = false;
             }
             break;
-        // midi is a packet based port, don't process
-        //    case MotuPortInfo::E_Midi:
-        //        break;
-
+        case Port::E_Midi:
+//             if (encodeSilencePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+//                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+//                 no_problem = false;
+//             }
+            break;
         default: // ignore
             break;
         }
     }
     return no_problem;
-}
-
-/**
- * @brief encode a packet for the packet-based ports
- *
- * @param data Packet data
- * @param nevents number of events in data (including events of other ports & port types)
- * @param dbc DataBlockCount value for this packet
- * @return true if all successfull
- */
-bool MotuTransmitStreamProcessor::encodePacketPorts(quadlet_t *data, unsigned int nevents,
-        unsigned int dbc) {
-    bool ok=true;
-    char byte;
-
-    // Use char here since the target address won't necessarily be
-    // aligned; use of an unaligned quadlet_t may cause issues on
-    // certain architectures.  Besides, the target for MIDI data going
-    // directly to the MOTU isn't structured in quadlets anyway; it is a
-    // sequence of 3 unaligned bytes.
-    unsigned char *target = NULL;
-
-    for ( PortVectorIterator it = m_PacketPorts.begin();
-        it != m_PacketPorts.end();
-        ++it ) {
-
-        Port *port=static_cast<Port *>(*it);
-         assert(port); // this should not fail!!
-
-        // Currently the only packet type of events for MOTU
-        // is MIDI in mbla.  However in future control data
-        // might also be sent via "packet" events.
-        // assert(pinfo->getFormat()==MotuPortInfo::E_Midi);
-
-        // FIXME: MIDI output is completely untested at present.
-        switch (port->getPortType()) {
-            case Port::E_Midi: {
-                MotuMidiPort *mp=static_cast<MotuMidiPort *>(*it);
-
-                // Send a byte if we can. MOTU MIDI data is
-                // sent using a 3-byte sequence starting at
-                // the port's position.  For now we'll
-                // always send in the first event of a
-                // packet, but this might need refinement
-                // later.
-                if (mp->canRead()) {
-                    mp->readEvent(&byte);
-                    target = (unsigned char *)data + mp->getPosition();
-                    *(target++) = 0x01;
-                    *(target++) = 0x00;
-                    *(target++) = byte;
-                }
-                break;
-            }
-            default:
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown packet-type port type %d\n",port->getPortType());
-                return ok;
-              }
-    }
-
-    return ok;
 }
 
 int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadlet_t *data,
@@ -595,9 +491,9 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
     unsigned char *target;
     target = (unsigned char *)data + p->getPosition();
 
-    switch(p->getDataType()) {
+    switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
-        case Port::E_Int24:
+        case StreamProcessorManager::eADT_Int24:
             {
                 quadlet_t *buffer=(quadlet_t *)(p->getBufferAddress());
 
@@ -619,7 +515,7 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
                 }
             }
             break;
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Float:
             {
                 const float multiplier = (float)(0x7FFFFF);
                 float *buffer=(float *)(p->getBufferAddress());
@@ -649,10 +545,10 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMotuEvents(MotuAudioPort *p,
     unsigned int j=0;
     unsigned char *target = (unsigned char *)data + p->getPosition();
 
-    switch (p->getDataType()) {
+    switch (m_StreamProcessorManager.getAudioDataType()) {
     default:
-        case Port::E_Int24:
-        case Port::E_Float:
+        case StreamProcessorManager::eADT_Int24:
+        case StreamProcessorManager::eADT_Float:
         for (j = 0; j < nevents; j++) {
             *target = *(target+1) = *(target+2) = 0;
             target += m_event_size;

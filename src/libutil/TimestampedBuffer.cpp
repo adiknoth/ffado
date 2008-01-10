@@ -37,6 +37,7 @@
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
+#define FRAMES_PER_PROCESS_BLOCK 8
 /*
 #define ENTER_CRITICAL_SECTION { \
     if (pthread_mutex_trylock(&m_framecounter_lock) == EBUSY) { \
@@ -57,7 +58,8 @@ namespace Util {
 IMPL_DEBUG_MODULE( TimestampedBuffer, TimestampedBuffer, DEBUG_LEVEL_VERBOSE );
 
 TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
-    : m_event_buffer(NULL), m_cluster_buffer(NULL),
+    : m_event_buffer(NULL), m_process_buffer(NULL), m_cluster_size( 0 ),
+      m_process_block_size( 0 ),
       m_event_size(0), m_events_per_frame(0), m_buffer_size(0),
       m_bytes_per_frame(0), m_bytes_per_buffer(0),
       m_enabled( false ), m_transparent ( true ),
@@ -74,7 +76,7 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
 
 TimestampedBuffer::~TimestampedBuffer() {
     ffado_ringbuffer_free(m_event_buffer);
-    free(m_cluster_buffer);
+    free(m_process_buffer);
 }
 
 /**
@@ -277,18 +279,6 @@ unsigned int TimestampedBuffer::getBufferSpace() {
 }
 
 /**
- * \brief Initializes the TimestampedBuffer
- *
- * Initializes the TimestampedBuffer, should be called before anything else
- * is done.
- *
- * @return true if successful
- */
-bool TimestampedBuffer::init() {
-    return true;
-}
-
-/**
  * \brief Resets the TimestampedBuffer
  *
  * Resets the TimestampedBuffer, clearing the buffers and counters.
@@ -345,7 +335,12 @@ bool TimestampedBuffer::prepare() {
     }
 
     // allocate the temporary cluster buffer
-    if( !(m_cluster_buffer=(char *)calloc(m_events_per_frame,m_event_size))) {
+    // NOTE: has to be a multiple of 8 in order to
+    //       correctly decode midi bytes (since that 
+    //       enforces packet alignment)
+    m_cluster_size = m_events_per_frame * m_event_size;
+    m_process_block_size = m_cluster_size * FRAMES_PER_PROCESS_BLOCK;
+    if( !(m_process_buffer=(char *)calloc(m_process_block_size, 1))) {
             debugFatal("Could not allocate temporary cluster buffer\n");
         ffado_ringbuffer_free(m_event_buffer);
         return false;
@@ -534,13 +529,13 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
 
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
     int xrun;
-    unsigned int offset=0;
+    unsigned int offset = 0;
 
     ffado_ringbuffer_data_t vec[2];
     // we received one period of frames
     // this is period_size*dimension of events
-    unsigned int events2write=nbframes*m_events_per_frame;
-    unsigned int bytes2write=events2write*m_event_size;
+    unsigned int events2write = nbframes * m_events_per_frame;
+    unsigned int bytes2write = events2write * m_event_size;
 
     /* write events2write bytes to the ringbuffer
     *  first see if it can be done in one read.
@@ -550,17 +545,16 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
     *  then write the remaining data directly to the buffer in a third pass
     *  Make sure that we cannot end up on a non-cluster aligned position!
     */
-    unsigned int cluster_size=m_events_per_frame*m_event_size;
 
-    while(bytes2write>0) {
-        int byteswritten=0;
+    while(bytes2write > 0) {
+        int byteswritten = 0;
 
-        unsigned int frameswritten=(nbframes*cluster_size-bytes2write)/cluster_size;
-        offset=frameswritten;
+        unsigned int frameswritten = (nbframes * m_cluster_size - bytes2write) / m_cluster_size;
+        offset = frameswritten;
 
         ffado_ringbuffer_get_write_vector(m_event_buffer, vec);
 
-        if(vec[0].len==0) { // this indicates a full event buffer
+        if(vec[0].len + vec[1].len < m_process_block_size) { // this indicates a full event buffer
             debugError("Event buffer overrun in buffer %p, fill: %u, bytes2write: %u \n",
                        this, ffado_ringbuffer_read_space(m_event_buffer), bytes2write);
             debugShowBackLog();
@@ -573,12 +567,14 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
         * smaller than one cluster
         * this can happen because the ringbuffer size is always a power of 2
         */
-        if(vec[0].len<cluster_size) {
+        if(vec[0].len < m_process_block_size) {
 
             // encode to the temporary buffer
-            xrun = m_Client->processWriteBlock(m_cluster_buffer, 1, offset);
+            // note that we always process 8 frames at once, in order to ensure that
+            // we don't have to care about the DBC field
+            xrun = m_Client->processWriteBlock(m_process_buffer, FRAMES_PER_PROCESS_BLOCK, offset);
 
-            if(xrun<0) {
+            if(xrun < 0) {
                 // xrun detected
                 debugError("Frame buffer underrun in buffer %p\n",this);
                 return false;
@@ -587,27 +583,27 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
             // use the ringbuffer function to write one cluster
             // the write function handles the wrap around.
             ffado_ringbuffer_write(m_event_buffer,
-                         m_cluster_buffer,
-                         cluster_size);
+                                   m_process_buffer,
+                                   m_process_block_size);
 
             // we advanced one cluster_size
-            bytes2write-=cluster_size;
+            bytes2write -= m_process_block_size;
 
         } else { //
 
-            if(bytes2write>vec[0].len) {
+            if(bytes2write > vec[0].len) {
                 // align to a cluster boundary
-                byteswritten=vec[0].len-(vec[0].len%cluster_size);
+                byteswritten = vec[0].len - (vec[0].len % m_process_block_size);
             } else {
-                byteswritten=bytes2write;
+                byteswritten = bytes2write;
             }
 
             xrun = m_Client->processWriteBlock(vec[0].buf,
-                         byteswritten/cluster_size,
-                         offset);
+                                               byteswritten / m_cluster_size,
+                                               offset);
 
-            if(xrun<0) {
-                    // xrun detected
+            if(xrun < 0 ) {
+                // xrun detected
                 debugError("Frame buffer underrun in buffer %p\n",this);
                 return false; // FIXME: return false ?
             }
@@ -616,8 +612,8 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
             bytes2write -= byteswritten;
         }
 
-        // the bytes2write should always be cluster aligned
-        assert(bytes2write%cluster_size==0);
+        // the bytes2write should always be process block aligned
+        assert(bytes2write % m_process_block_size == 0);
 
     }
 
@@ -643,14 +639,14 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Reading %u from buffer (%p)...\n", nbframes, this);
 
     int xrun;
-    unsigned int offset=0;
+    unsigned int offset = 0;
 
     ffado_ringbuffer_data_t vec[2];
     // we received one period of frames on each connection
     // this is period_size*dimension of events
 
-    unsigned int events2read=nbframes*m_events_per_frame;
-    unsigned int bytes2read=events2read*m_event_size;
+    unsigned int events2read = nbframes * m_events_per_frame;
+    unsigned int bytes2read = events2read * m_event_size;
     /* read events2read bytes from the ringbuffer
     *  first see if it can be done in one read.
     *  if so, ok.
@@ -659,17 +655,16 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
     *  then read the remaining data directly from the buffer in a third pass
     *  Make sure that we cannot end up on a non-cluster aligned position!
     */
-    unsigned int cluster_size=m_events_per_frame*m_event_size;
 
-    while(bytes2read>0) {
-        unsigned int framesread=(nbframes*cluster_size-bytes2read)/cluster_size;
-        offset=framesread;
+    while(bytes2read > 0) {
+        unsigned int framesread = (nbframes * m_cluster_size - bytes2read) / m_cluster_size;
+        offset = framesread;
 
-        int bytesread=0;
+        int bytesread = 0;
 
         ffado_ringbuffer_get_read_vector(m_event_buffer, vec);
 
-        if(vec[0].len==0) { // this indicates an empty event buffer
+        if(vec[0].len + vec[1].len < m_process_block_size) { // this indicates an empty event buffer
             debugError("Event buffer underrun in buffer %p\n",this);
             return false;
         }
@@ -679,36 +674,38 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
         * the remaining nb of bytes in one read operation can be smaller than one cluster
         * this can happen because the ringbuffer size is always a power of 2
                 */
-        if(vec[0].len<cluster_size) {
+        if(vec[0].len < m_process_block_size) {
             // use the ringbuffer function to read one cluster
             // the read function handles wrap around
-            ffado_ringbuffer_read(m_event_buffer,m_cluster_buffer,cluster_size);
+            ffado_ringbuffer_read(m_event_buffer, m_process_buffer, m_process_block_size);
 
             assert(m_Client);
-            xrun = m_Client->processReadBlock(m_cluster_buffer, 1, offset);
+            // note that we always process 8 frames at once, in order to ensure that
+            // we don't have to care about the DBC field
+            xrun = m_Client->processReadBlock(m_process_buffer, FRAMES_PER_PROCESS_BLOCK, offset);
 
-            if(xrun<0) {
+            if(xrun < 0) {
                 // xrun detected
                 debugError("Frame buffer overrun in buffer %p\n",this);
                     return false;
             }
 
             // we advanced one cluster_size
-            bytes2read-=cluster_size;
+            bytes2read -= m_process_block_size;
 
         } else { //
 
-            if(bytes2read>vec[0].len) {
+            if(bytes2read > vec[0].len) {
                 // align to a cluster boundary
-                bytesread=vec[0].len-(vec[0].len%cluster_size);
+                bytesread = vec[0].len - (vec[0].len % m_process_block_size);
             } else {
-                bytesread=bytes2read;
+                bytesread = bytes2read;
             }
 
             assert(m_Client);
-            xrun = m_Client->processReadBlock(vec[0].buf, bytesread/cluster_size, offset);
+            xrun = m_Client->processReadBlock(vec[0].buf, bytesread/m_cluster_size, offset);
 
-            if(xrun<0) {
+            if(xrun < 0) {
                 // xrun detected
                 debugError("Frame buffer overrun in buffer %p\n",this);
                 return false;
@@ -719,7 +716,7 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
         }
 
         // the bytes2read should always be cluster aligned
-        assert(bytes2read%cluster_size==0);
+        assert(bytes2read % m_process_block_size == 0);
     }
 
     decrementFrameCounter(nbframes);
@@ -1176,11 +1173,11 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
                                           new_timestamp, ts);
 
     if (diff > max_abs_diff) {
-        debugShowBackLogLines(100);
+//         debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (+): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
             this, diff, max_abs_diff, ts, pred_buffer_next_tail_timestamp);
     } else if (diff < -max_abs_diff) {
-        debugShowBackLogLines(100);
+//         debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (-): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
             this, diff, -max_abs_diff, ts, pred_buffer_next_tail_timestamp);
     }

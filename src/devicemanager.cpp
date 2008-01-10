@@ -552,18 +552,18 @@ DeviceManager::stopStreaming()
     return result;
 }
 
-bool
+enum DeviceManager::eWaitResult
 DeviceManager::waitForPeriod() {
     if(m_processorManager->waitForPeriod()) {
-        return true;
+        return eWR_OK;
     } else {
         debugWarning("XRUN detected\n");
         // do xrun recovery
         if(m_processorManager->handleXrun()) {
-            return false;
+            return eWR_Xrun;
         } else {
             debugError("Could not handle XRUN\n");
-            return false;
+            return eWR_Error;
         }
     }
 }

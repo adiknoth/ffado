@@ -173,10 +173,10 @@ IsoHandler::Init()
 bool
 IsoHandler::waitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "waiting...\n");
+    //debugOutput(DEBUG_LEVEL_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result = m_Client->waitForSignal();
-        debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
+        //debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, " no client\n");
@@ -187,10 +187,10 @@ IsoHandler::waitForClient()
 bool
 IsoHandler::tryWaitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result = m_Client->tryWaitForSignal();
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
+        //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
@@ -213,56 +213,53 @@ IsoHandler::Execute()
 
     // wait for the availability of frames in the client
     // (blocking for transmit handlers)
-#ifdef DEBUG
+#if 0 //#ifdef DEBUG
     if (getType() == eHT_Transmit) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Waiting for Client to signal frame availability...\n", this);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) Waiting for Client to signal frame availability...\n", this);
     }
 #endif
     if (getType() == eHT_Receive || waitForClient()) {
 
 #if ISOHANDLER_USE_POLL
-        uint64_t poll_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
-        err = poll(&m_poll_fd, 1, m_poll_timeout);
-        uint64_t poll_exit = m_manager.get1394Service().getCurrentTimeAsUsecs();
-        if (err == -1) {
-            if (errno == EINTR) {
-                return true;
-            }
-            debugFatal("%p, poll error: %s\n", this, strerror (errno));
-            return false;
-        }
-        uint64_t iter_enter=0;
-        uint64_t iter_exit=0;
-        if(m_poll_fd.revents & (POLLIN)) {
-            iter_enter = m_manager.get1394Service().getCurrentTimeAsUsecs();
-            if(!iterate()) {
-                debugOutput( DEBUG_LEVEL_VERBOSE,
-                            "IsoHandler (%p): Failed to iterate handler\n",
-                            this);
+        bool result = true;
+        while(result && m_Client && m_Client->canProcessPackets()) {
+            int err = poll(&m_poll_fd, 1, m_poll_timeout);
+            if (err == -1) {
+                if (errno == EINTR) {
+                    return true;
+                }
+                debugFatal("%p, poll error: %s\n", this, strerror (errno));
                 return false;
             }
-            iter_exit = m_manager.get1394Service().getCurrentTimeAsUsecs();
-        } else {
-            if (m_poll_fd.revents & POLLERR) {
-                debugWarning("error on fd for %p\n", this);
-            }
-            if (m_poll_fd.revents & POLLHUP) {
-                debugWarning("hangup on fd for %p\n",this);
+
+            if(m_poll_fd.revents & (POLLIN)) {
+                result=iterate();
+                if(!result) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE,
+                                "IsoHandler (%p): Failed to iterate handler\n",
+                                this);
+                }
+            } else {
+                if (m_poll_fd.revents & POLLERR) {
+                    debugWarning("error on fd for %p\n", this);
+                }
+                if (m_poll_fd.revents & POLLHUP) {
+                    debugWarning("hangup on fd for %p\n",this);
+                }
+                break;
             }
         }
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%c %p) poll took %lldus, iterate took %lldus\n", 
-                    (getType()==eHT_Receive?'R':'X'), this, 
-                    poll_exit-poll_enter, iter_exit-iter_enter);
-        return true;
+        return result;
 #else
-        // iterate blocks if no 1394 data is available
+        // iterate() is blocking if no 1394 data is available
         // so poll'ing is not really necessary
-        
         bool result = true;
-        while(result && m_Client->canProcessPackets()) {
+        while(result && m_Client && m_Client->canProcessPackets()) {
             result = iterate();
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterate returned: %d\n",
-                        this, (m_type==eHT_Receive?"Receive":"Transmit"), result);
+//             if (getType() == eHT_Receive) {
+//                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterate returned: %d\n",
+//                             this, (m_type==eHT_Receive?"Receive":"Transmit"), result);
+//             }
         }
         return result;
 #endif
@@ -274,18 +271,21 @@ IsoHandler::Execute()
 
 bool
 IsoHandler::iterate() {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
-                this, (m_type==eHT_Receive?"Receive":"Transmit"));
+//     if(m_type==eHT_Receive) {
+//         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
+//                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+//     }
     if(m_State == E_Running) {
 #if ISOHANDLER_FLUSH_BEFORE_ITERATE
         flush();
 #endif
         if(raw1394_loop_iterate(m_handle)) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                        "IsoHandler (%p): Failed to iterate handler: %s\n",
+            debugError( "IsoHandler (%p): Failed to iterate handler: %s\n",
                         this, strerror(errno));
             return false;
         }
+//         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s)  done iterating ISO handler\n", 
+//                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
         return true;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Not iterating a non-running handler...\n",

@@ -100,8 +100,8 @@ protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
 
 private:
-    bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
     int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
+    int decodeMidiEventsToPort(AmdtpMidiPort *p, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
     unsigned int getSytInterval();
 

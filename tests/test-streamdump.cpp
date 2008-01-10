@@ -190,6 +190,7 @@ main(int argc, char **argv)
         Connection* pCons = &cons[i];
 
         if ( pCons->m_iIsoChannel != -1 ) {
+            printf( "disconnect\n");
             iec61883_cmp_disconnect( pHandle,
                                      pCons->m_output,
                                      pCons->m_oplug,

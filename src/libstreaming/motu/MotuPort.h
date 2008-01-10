@@ -47,18 +47,16 @@ class MotuAudioPort
 
 public:
 
-    MotuAudioPort(std::string name,
-                       enum E_Direction direction,
-                   int position,
-                   int size)
-    : AudioPort(name, direction),
+    MotuAudioPort(PortManager &m,
+                  std::string name,
+                  enum E_Direction direction,
+                  int position,
+                  int size)
+    : AudioPort(m, name, direction),
       MotuPortInfo( position, size) // TODO: add more port information parameters here if nescessary
     {};
 
     virtual ~MotuAudioPort() {};
-
-protected:
-
 };
 
 /*!
@@ -72,18 +70,15 @@ class MotuMidiPort
 
 public:
 
-    MotuMidiPort(std::string name,
-                       enum E_Direction direction,
-                   int position)
-        : MidiPort(name, direction),
+    MotuMidiPort(PortManager &m,
+                 std::string name,
+                 enum E_Direction direction,
+                 int position)
+        : MidiPort(m, name, direction),
           MotuPortInfo(position, 0)  // TODO: add more port information parameters here if nescessary
     {};
 
-
     virtual ~MotuMidiPort() {};
-
-protected:
-
 };
 
 /*!
@@ -97,18 +92,15 @@ class MotuControlPort
 
 public:
 
-    MotuControlPort(std::string name,
-                       enum E_Direction direction,
-                   int position)
-        : ControlPort(name, direction),
+    MotuControlPort(PortManager &m,
+                    std::string name,
+                    enum E_Direction direction,
+                    int position)
+        : ControlPort(m, name, direction),
           MotuPortInfo(position, 2) // TODO: add more port information parameters here if nescessary
     {};
 
-
     virtual ~MotuControlPort() {};
-
-protected:
-
 };
 
 } // end of namespace Streaming

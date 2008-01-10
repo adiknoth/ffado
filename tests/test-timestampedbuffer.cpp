@@ -281,8 +281,6 @@ int main(int argc, char *argv[])
     }
     t->setVerboseLevel(arguments.verbose);
 
-    t->init();
-
     // Setup the buffer
     t->setBufferSize(arguments.buffersize);
     t->setEventSize(sizeof(int));
