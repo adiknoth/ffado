@@ -26,30 +26,31 @@ from mixer_phase24ui import *
 class PhaseX24Control(PhaseX24ControlUI):
     def __init__(self,parent = None,name = None,modal = 0,fl = 0):
         PhaseX24ControlUI.__init__(self,parent,name,modal,fl)
+        self.init()
 
     # public slot
     def setVolume12(self,a0):
-        self.setVolume('out12', -a0)
+        self.setVolume('out12', a0)
 
     # public slot
     def setVolume34(self,a0):
-        self.setVolume('out34', -a0)
+        self.setVolume('out34', a0)
 
     # public slot
     def setVolumeLineIn(self,a0):
-        self.setVolume('analogin', -a0)
+        self.setVolume('analogin', a0)
 
     # public slot
     def setVolumeSPDIFOut(self,a0):
-        self.setVolume('outspdif', -a0)
+        self.setVolume('outspdif', a0)
 
     # public slot
     def setVolumeSPDIFIn(self,a0):
-        self.setVolume('spdifin', -a0)
+        self.setVolume('spdifin', a0)
 
     # public slot
     def setVolumeMaster(self,a0):
-        self.setVolume('master', -a0)
+        self.setVolume('master', a0)
 
     # public slot
     def setLineLevel(self,a0):
@@ -103,7 +104,7 @@ class PhaseX24Control(PhaseX24ControlUI):
                 'spdifin' :       ['/Mixer/Feature_7', self.sldSPDIFIn],
                 'out12' :         ['/Mixer/Feature_3', self.sldInput12],
                 'out34' :         ['/Mixer/Feature_4', self.sldInput34],
-                'outspdif' :      ['/Mixer/Feature_5', self.sldInputSPDIF],
+                'outspdif' :      ['/Mixer/Feature_5', self.sldSPDIFOut],
                 }
 
             self.SelectorControls={
@@ -135,4 +136,3 @@ class PhaseX24Control(PhaseX24ControlUI):
                 self.cmbFrontLevel.setCurrentItem(1)
             else:
                 self.cmbFrontLevel.setCurrentItem(0)
-           
