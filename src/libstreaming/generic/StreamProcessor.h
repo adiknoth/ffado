@@ -325,7 +325,8 @@ protected: // FIXME: move to private
     int m_last_good_cycle; /// FIXME:debug
     uint64_t m_last_timestamp; /// last timestamp (in ticks)
     uint64_t m_last_timestamp2; /// last timestamp (in ticks)
-    uint64_t m_last_timestamp_at_period_ticks;
+    bool m_correct_last_timestamp;
+    uint64_t m_last_timestamp_at_period_ticks; // FIXME: still used?
 
 //--- data buffering and accounting
 public:

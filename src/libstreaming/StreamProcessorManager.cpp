@@ -221,8 +221,8 @@ bool StreamProcessorManager::prepare() {
 bool StreamProcessorManager::startDryRunning() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Putting StreamProcessor streams into dry-running state...\n");
     debugOutput( DEBUG_LEVEL_VERBOSE, " Schedule start dry-running...\n");
-    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-            it != m_ReceiveProcessors.end();
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
             ++it ) {
         if (!(*it)->isDryRunning()) {
             if(!(*it)->scheduleStartDryRunning(-1)) {
@@ -233,8 +233,8 @@ bool StreamProcessorManager::startDryRunning() {
             debugOutput( DEBUG_LEVEL_VERBOSE, " SP %p already dry-running...\n", *it);
         }
     }
-    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-            it != m_TransmitProcessors.end();
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
             ++it ) {
         if (!(*it)->isDryRunning()) {
             if(!(*it)->scheduleStartDryRunning(-1)) {
@@ -325,7 +325,11 @@ bool StreamProcessorManager::syncStartAll() {
     // make sure that we are dry-running long enough for the
     // DLL to have a decent sync (FIXME: does the DLL get updated when dry-running)?
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for sync...\n");
-    int nb_sync_runs=20;
+    
+    unsigned int nb_sync_runs = (STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC * getNominalRate());
+    nb_sync_runs /= 1000;
+    nb_sync_runs /= getPeriodSize();
+
     int64_t time_till_next_period;
     while(nb_sync_runs--) { // or while not sync-ed?
         // check if we were woken up too soon

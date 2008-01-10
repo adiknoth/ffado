@@ -377,7 +377,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             return false;
         }
 
-        max_packet_size = page_size;
+        //max_packet_size = page_size; // HACK
         unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
         if(irq_interval <= 0) irq_interval=1;
 
@@ -394,6 +394,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             debugFatal("Could not create IsoXmitHandler\n");
             return false;
         }
+
     } else {
         debugFatal("Bad stream type\n");
         return false;

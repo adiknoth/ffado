@@ -235,7 +235,6 @@ int set_realtime_priority(unsigned int prio)
 static void sighandler (int sig)
 {
     run = 0;
-    set_realtime_priority(0);
 }
 
 int main(int argc, char *argv[])

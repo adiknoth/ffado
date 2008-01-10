@@ -55,7 +55,7 @@ using namespace Util;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 
-#define DIFF_CONSIDERED_LARGE 100000
+#define DIFF_CONSIDERED_LARGE 3072
 int PORT_TO_USE = 0;
 
 int run=1;

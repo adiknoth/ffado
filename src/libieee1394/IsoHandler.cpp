@@ -201,7 +201,7 @@ IsoHandler::tryWaitForClient()
 bool
 IsoHandler::Execute()
 {
-    //debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
 
     // bypass if not running
     if (m_State != E_Running) {
@@ -272,7 +272,7 @@ IsoHandler::Execute()
 bool
 IsoHandler::iterate() {
 //     if(m_type==eHT_Receive) {
-//         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
+//         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
 //                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
 //     }
     if(m_State == E_Running) {
@@ -280,11 +280,12 @@ IsoHandler::iterate() {
         flush();
 #endif
         if(raw1394_loop_iterate(m_handle)) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                        "IsoHandler (%p): Failed to iterate handler: %s\n",
+            debugError( "IsoHandler (%p): Failed to iterate handler: %s\n",
                         this, strerror(errno));
             return false;
         }
+//         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s)  done iterating ISO handler\n", 
+//                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
         return true;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Not iterating a non-running handler...\n",

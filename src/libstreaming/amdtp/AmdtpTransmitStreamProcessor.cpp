@@ -675,7 +675,7 @@ AmdtpTransmitStreamProcessor::initPortCache() {
             ++it )
         {
             AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "idx %u: looking at port %s at position %u\n",
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "idx %u: looking at port %s at position %u\n",
                                               idx, (*it)->getName().c_str(), pinfo->getPosition());
             if(pinfo->getPosition() == idx) {
                 struct _MBLA_port_cache p;
@@ -706,7 +706,7 @@ next_index:
         ++it )
     {
         AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "idx %u: looking at port %s at position %u, location %u\n",
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "idx %u: looking at port %s at position %u, location %u\n",
                                         idx, (*it)->getName().c_str(), pinfo->getPosition(), pinfo->getLocation());
         if ((*it)->getPortType() == Port::E_Midi) {
             struct _MIDI_port_cache p;

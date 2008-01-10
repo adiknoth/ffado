@@ -1173,11 +1173,11 @@ void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t ne
                                           new_timestamp, ts);
 
     if (diff > max_abs_diff) {
-        debugShowBackLogLines(100);
+//         debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (+): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
             this, diff, max_abs_diff, ts, pred_buffer_next_tail_timestamp);
     } else if (diff < -max_abs_diff) {
-        debugShowBackLogLines(100);
+//         debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (-): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
             this, diff, -max_abs_diff, ts, pred_buffer_next_tail_timestamp);
     }

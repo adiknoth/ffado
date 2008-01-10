@@ -67,9 +67,10 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_StreamProcessorManager( m_Parent.getDeviceManager().getStreamProcessorManager() ) // local cache
     , m_local_node_id ( 0 ) // local cache
     , m_channel( -1 )
-    , m_dropped(0)
-    , m_last_timestamp(0)
-    , m_last_timestamp2(0)
+    , m_dropped( 0 )
+    , m_last_timestamp( 0 )
+    , m_last_timestamp2( 0 )
+    , m_correct_last_timestamp( false )
     , m_scratch_buffer( NULL )
     , m_scratch_buffer_size_bytes( 0 )
     , m_ticks_per_frame( 0 )
@@ -132,7 +133,7 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
     // if we use one thread per packet, we can put every frame directly into the ISO buffer
     // the waitForClient in IsoHandler will take care of the fact that the frames are
     // not present in time
-    unsigned int packets_to_prebuffer = (getPacketsPerPeriod() * (m_StreamProcessorManager.getNbBuffers()));
+    unsigned int packets_to_prebuffer = (getPacketsPerPeriod() * (m_StreamProcessorManager.getNbBuffers())) + 10;
     debugOutput(DEBUG_LEVEL_VERBOSE, "Nominal prebuffer: %u\n", packets_to_prebuffer);
     return packets_to_prebuffer;
 #else
@@ -366,6 +367,26 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
     // check the packet header
     enum eChildReturnValue result = processPacketHeader(data, length, channel, tag, sy, cycle, dropped_cycles);
+
+    // handle dropped cycles
+    if(dropped_cycles) {
+        // make sure the last_timestamp is corrected
+        m_correct_last_timestamp = true;
+        if (m_state == ePS_Running) {
+            // this is an xrun situation
+            m_in_xrun = true;
+            debugWarning("Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
+            m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+            m_next_state = ePS_WaitingForStreamDisable;
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                POST_SEMAPHORE;
+                return RAW1394_ISO_ERROR;
+            }
+        }
+    }
+
     if (result == eCRV_OK) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "RECV: CY=%04u TS=%011llu\n",
                 cycle, m_last_timestamp);
@@ -373,25 +394,12 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         m_last_good_cycle = cycle;
         m_last_dropped = dropped_cycles;
 
-        // handle dropped cycles
-        if(dropped_cycles) {
+        if(m_correct_last_timestamp) {
             // they represent a discontinuity in the timestamps, and hence are
             // to be dealt with
             debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
-            m_data_buffer->setBufferTailTimestamp(m_last_timestamp);
-            if (m_state == ePS_Running) {
-                // this is an xrun situation
-                m_in_xrun = true;
-                debugWarning("Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
-                m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
-                m_next_state = ePS_WaitingForStreamDisable;
-                // execute the requested change
-                if (!updateState()) { // we are allowed to change the state directly
-                    debugError("Could not update state!\n");
-                    POST_SEMAPHORE;
-                    return RAW1394_ISO_ERROR;
-                }
-            }
+            m_data_buffer->setBufferTailTimestamp(substractTicks(m_last_timestamp, getNominalFramesPerPacket() * getTicksPerFrame()));
+            m_correct_last_timestamp = false;
         }
 
         // check whether we are waiting for a stream to startup
@@ -748,7 +756,7 @@ send_empty_packet:
         }
     }
 
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT EMPTY: CY=%04u\n", cycle);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u\n", cycle);
     generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
     generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
     return RAW1394_ISO_OK;
@@ -901,6 +909,7 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::waitForSignal()
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
     int result;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
         result = sem_wait(&m_signal_semaphore);
@@ -1325,6 +1334,7 @@ StreamProcessor::doStop()
             ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_StreamProcessorManager.getNominalRate());
             m_ticks_per_frame = ticks_per_frame;
             m_local_node_id= m_1394service.getLocalNodeId() & 0x3f;
+            m_correct_last_timestamp = false;
 
             debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n", ticks_per_frame);
 
