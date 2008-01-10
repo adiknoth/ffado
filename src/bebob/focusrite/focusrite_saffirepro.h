@@ -253,15 +253,17 @@ class SaffireProMultiControl
     : public Control::Discrete
 {
 public:
-    enum eTriggerControlType {
+    enum eMultiControlType {
         eTCT_Reboot,
         eTCT_FlashLed,
         eTCT_UseHighVoltageRail,
+        eTCT_ExitStandalone,
+        eTCT_PllLockRange,
     };
 
 public:
-    SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType);
-    SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType,
+    SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType);
+    SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType,
                   std::string name, std::string label, std::string descr);
 
     virtual bool setValue(int v);
@@ -269,7 +271,7 @@ public:
 
 private:
     SaffireProDevice&          m_Parent;
-    enum eTriggerControlType  m_type;
+    enum eMultiControlType  m_type;
 };
 
 
@@ -319,9 +321,13 @@ protected:
     bool isAudioOn();
     bool isExtClockLocked();
     uint32_t getCount32();
+    void exitStandalone();
 
     void useHighVoltageRail(bool useIt);
     bool usingHighVoltageRail();
+    unsigned int getPllLockRange();
+    void setPllLockRange(unsigned int);
+
 private:
     virtual bool setSamplingFrequencyDo( uint32_t );
     virtual bool setSamplingFrequencyDoNoReboot( uint32_t );

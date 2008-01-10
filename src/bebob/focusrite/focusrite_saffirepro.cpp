@@ -230,6 +230,14 @@ SaffireProDevice::buildMixer()
         new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_UseHighVoltageRail,
             "UseHighVoltageRail", "Use High Supply", "Prefer the high voltage power supply rail"));
 
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_ExitStandalone,
+            "ExitStandalone", "Exit Standalone mode", "Try to leave standalonbe mode"));
+
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_PllLockRange,
+            "PllLockRange", "PLL Lock Range", "Get/Set PLL Lock range"));
+
     if (!result) {
         debugWarning("One or more device control elements could not be created.");
         // clean up those that couldn't be created
@@ -483,6 +491,15 @@ SaffireProDevice::rebootDevice() {
 }
 
 void
+SaffireProDevice::exitStandalone() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "exit standalone mode...\n" );
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_EXIT_STANDALONE, 
+                           FR_SAFFIREPRO_CMD_EXIT_STANDALONE_CODE ) ) {
+        debugError( "setSpecificValue failed\n" );
+    }
+}
+
+void
 SaffireProDevice::flashLed() {
     int ledFlashDuration=2;
     if(!getOption("ledFlashDuration", ledFlashDuration)) {
@@ -569,13 +586,37 @@ SaffireProDevice::usingHighVoltageRail() {
     return retval != 0;
 }
 
+void
+SaffireProDevice::setPllLockRange(unsigned int i) {
+    uint32_t reg=i;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "set PLL lock range: %d ...\n", i );
+
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_PLL_LOCK_RANGE, 
+                           reg ) ) {
+        debugError( "setSpecificValue failed\n" );
+    }
+}
+
+unsigned int
+SaffireProDevice::getPllLockRange() {
+    uint32_t retval;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_PLL_LOCK_RANGE, &retval ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "PLL lock range: %d\n", retval );
+    return retval;
+}
+
 // swiss army knife control element
-SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType t)
+SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType t)
 : Control::Discrete()
 , m_Parent(parent)
 , m_type ( t )
 {}
-SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eTriggerControlType t,
+SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType t,
                 std::string name, std::string label, std::string descr)
 : Control::Discrete()
 , m_Parent(parent)
@@ -593,6 +634,8 @@ SaffireProMultiControl::setValue(int v)
         case eTCT_Reboot: m_Parent.rebootDevice(); return true;
         case eTCT_FlashLed: m_Parent.flashLed(); return true;
         case eTCT_UseHighVoltageRail: m_Parent.useHighVoltageRail(v); return true;
+        case eTCT_ExitStandalone: m_Parent.exitStandalone(); return true;
+        case eTCT_PllLockRange: m_Parent.setPllLockRange(v); return true;
     }
     return false;
 }
@@ -604,6 +647,8 @@ SaffireProMultiControl::getValue()
         case eTCT_Reboot: return 0;
         case eTCT_FlashLed: return 0;
         case eTCT_UseHighVoltageRail: return m_Parent.usingHighVoltageRail();
+        case eTCT_ExitStandalone: return 0;
+        case eTCT_PllLockRange: return m_Parent.getPllLockRange();
     }
     return -1;
 }
