@@ -137,7 +137,7 @@ def CheckForApp( context, app ):
 	context.Message( "Checking wether '" + app + "' executes " )
 	ret = context.TryAction( app )
 	context.Result( ret[0] )
-	return ret
+	return ret[0]
 
 tests = { "ConfigGuess" : ConfigGuess, "CheckForApp" : CheckForApp }
 tests.update( env['PKGCONFIG_TESTS'] )
