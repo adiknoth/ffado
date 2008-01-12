@@ -81,6 +81,7 @@ struct arguments
 {
     short silent;
     short verbose;
+    int   use_cache;
     int   port;
     int   node_id;
     int   node_id_set;
@@ -93,6 +94,7 @@ static struct argp_option options[] = {
     {"silent",   's',       0,    OPTION_ALIAS },
 
     {"verbose",  'v', "level",    0,  "Produce verbose output" },
+    {"cache",    'c', "enable",   0,  "Use AVC model cache (default=disabled)" },
 
 
     {"node",     'n',    "id",    0,  "Only expose mixer of a device on a specific node" },
@@ -124,6 +126,15 @@ parse_opt( int key, char* arg, struct argp_state* state )
             }
         }
         break;
+    case 'c':
+        if (arg) {
+            arguments->use_cache = strtol( arg, &tail, 0 );
+            if ( errno ) {
+                fprintf( stderr,  "Could not parse 'cache' argument\n" );
+                return ARGP_ERR_UNKNOWN;
+            }
+        }
+        break;      
     case 'p':
         if (arg) {
             arguments->port = strtol( arg, &tail, 0 );
@@ -189,6 +200,7 @@ main( int argc, char **argv )
     // Default values.
     arguments.silent      = 0;
     arguments.verbose     = 0;
+    arguments.use_cache   = 0;
     arguments.port        = 0;
     arguments.node_id     = 0;
     arguments.node_id_set = 0; // if we don't specify a node, discover all
@@ -220,7 +232,7 @@ main( int argc, char **argv )
         if ( arguments.verbose ) {
             m_deviceManager->setVerboseLevel(arguments.verbose);
         }
-        if ( !m_deviceManager->discover() ) {
+        if ( !m_deviceManager->discover(arguments.use_cache) ) {
             debugError("Could not discover devices\n" );
             delete m_deviceManager;
             return exitfunction(-1);
