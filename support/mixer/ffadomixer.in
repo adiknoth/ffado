@@ -37,6 +37,7 @@ from mixer_saffire import *
 from mixer_af2 import *
 from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
+from mixer_mackie_generic import *
 
 SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
@@ -48,6 +49,8 @@ SupportedDevices=[
     [(0x001486, 0x00000af2),'AudioFire2Mixer'],
     [(0x0007f5, 0x00010049),'BCoAudio5Control'],
     [(0x0040AB, 0x00010049),'EdirolFa66Control'],
+    [(0x00000f, 0x00010067),'MackieGenericControl'],
+    [(0x000f1b, 0x00010064),'MackieGenericControl'],
     ]
 
 class ControlInterface:
