@@ -909,7 +909,7 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::waitForSignal()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
     int result;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
         result = sem_wait(&m_signal_semaphore);

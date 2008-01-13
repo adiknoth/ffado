@@ -46,7 +46,7 @@ PortManager::~PortManager() {
     {
         debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s at %p\n", (*it)->getName().c_str(), *it);
         flushDebugOutput();
-        delete *it; //FIXME
+        delete *it;
     }
 }
 
