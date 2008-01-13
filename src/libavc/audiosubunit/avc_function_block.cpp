@@ -217,6 +217,10 @@ FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de
 
     bStatus &= de.read( &m_statusSelector );
 
+    // same here
+    //m_statusSelector = eSS_Level; 
+    m_statusSelector = eSS_ProgramableState; 
+
     byte_t data_length_hi;
     byte_t data_length_lo;
     bStatus &= de.read( &data_length_hi );

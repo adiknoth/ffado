@@ -67,6 +67,11 @@ public:
 
 ///////////////////////////////////////////
 
+/* 
+ * The enhanced mixer feature function block is not
+ * working on all current BeBoB devices.  This code
+ * is there for not really tested or even working.
+ */
 class FunctionBlockProcessingEnhancedMixer: public IBusData
 {
 public:
