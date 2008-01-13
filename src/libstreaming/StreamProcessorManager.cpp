@@ -579,7 +579,7 @@ bool StreamProcessorManager::stop() {
         cnt--;
     }
     if(cnt==0) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to start dry-running\n");
+        debugWarning(" Timeout waiting for the SP's to start dry-running\n");
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
@@ -610,8 +610,8 @@ bool StreamProcessorManager::stop() {
             return false;
         }
     }
-    // wait for the SP's to get into the running state
-    cnt = 200;
+    // wait for the SP's to get into the stopped state
+    cnt = 2000;
     ready = false;
     while (!ready && cnt) {
         ready = true;
@@ -629,7 +629,17 @@ bool StreamProcessorManager::stop() {
         cnt--;
     }
     if(cnt==0) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, " Timeout waiting for the SP's to stop\n");
+        debugWarning(" Timeout waiting for the SP's to stop\n");
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            (*it)->dumpInfo();
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            (*it)->dumpInfo();
+        }
         return false;
     }
     return true;
