@@ -206,9 +206,10 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
 }
 
 void
-StreamProcessor::setSyncDelay(int d) {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "Setting SP %p SyncDelay to %d ticks\n", this, d);
-    m_sync_delay = d;
+StreamProcessor::setSyncDelay(unsigned int d) {
+    unsigned int frames = d / getTicksPerFrame();
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks, %u frames\n", this, d, frames);
+    m_sync_delay = d; // FIXME: sync delay not necessary anymore
 }
 
 uint64_t
@@ -272,7 +273,7 @@ StreamProcessor::canClientTransferFrames(unsigned int nbframes)
     
     #ifdef DEBUG
     if (!can_transfer) {
-        debugWarning("(%p, %s) cannot transfer since fc == %u, nbframes == %u\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) cannot transfer since fc == %u, nbframes == %u\n", 
             this, ePTToString(getType()), fc, nbframes);
     }
     #endif
@@ -912,6 +913,12 @@ StreamProcessor::waitForSignal()
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
     int result;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
+        // check whether we already fullfil the criterion
+        unsigned int bufferfill = m_data_buffer->getBufferFill();
+        if(bufferfill >= m_signal_period + m_signal_offset) {
+            return true;
+        }
+
         result = sem_wait(&m_signal_semaphore);
 #ifdef DEBUG
         int tmp;
@@ -930,11 +937,26 @@ StreamProcessor::waitForSignal()
 bool
 StreamProcessor::tryWaitForSignal()
 {
-    if(m_state == ePS_Running) {
-        return sem_trywait(&m_signal_semaphore) == 0;
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) trywait ...\n", this, getTypeString());
+    int result;
+    if(m_state == ePS_Running && m_next_state == ePS_Running) {
+        // check whether we already fullfil the criterion
+        unsigned int bufferfill = m_data_buffer->getBufferFill();
+        if(bufferfill >= m_signal_period + m_signal_offset) {
+            return true;
+        }
+
+        result = sem_trywait(&m_signal_semaphore);
+#ifdef DEBUG
+        int tmp;
+        sem_getvalue(&m_signal_semaphore, &tmp);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " sem_wait returns: %d, sem_value: %d\n", result, tmp);
+#endif
+        return result == 0;
     } else {
         // when we're not running, we can always provide frames
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Not running...\n");
+        // when we're in a state transition, keep iterating too
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Not running...\n");
         return true;
     }
 }

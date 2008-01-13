@@ -110,6 +110,8 @@ public: //--- state stuff
             {return m_state == ePS_DryRunning;};
     bool isStopped()
             {return m_state == ePS_Stopped;};
+    bool isWaitingForStream()
+            {return m_state == ePS_WaitingForStream;};
 
     // these schedule and wait for the state transition
     bool startDryRunning(int64_t time_to_start_at);
@@ -405,12 +407,12 @@ protected:
          * delays a period signal, e.g. to cope with buffering.
          * @return the sync delay
          */
-        int getSyncDelay() {return m_sync_delay;};
+        unsigned int getSyncDelay() {return m_sync_delay;};
         /**
          * sets the sync delay
          * @param d sync delay
          */
-        void setSyncDelay(int d);
+        void setSyncDelay(unsigned int d);
 
         /**
          * @brief get the maximal frame latency
@@ -487,7 +489,7 @@ protected:
     protected:
         float m_ticks_per_frame;
         int m_last_cycle;
-        int m_sync_delay;
+        unsigned int m_sync_delay;
     private:
         bool m_in_xrun;
         sem_t m_signal_semaphore;

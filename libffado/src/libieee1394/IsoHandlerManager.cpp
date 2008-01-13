@@ -97,25 +97,30 @@ void
 IsoHandlerManager::updateShadowVars()
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "updating shadow vars...\n");
-    unsigned int i;
-    m_poll_nfds_shadow = m_IsoHandlers.size();
-    if(m_poll_nfds_shadow > ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT) {
-        debugWarning("Too much ISO Handlers in manager...\n");
-        m_poll_nfds_shadow = ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT;
-    }
-    for (i = 0; i < m_poll_nfds_shadow; i++) {
+    unsigned int i, cnt, max;
+    max = m_IsoHandlers.size();
+    for (i = 0, cnt = 0; i < max; i++) {
         IsoHandler *h = m_IsoHandlers.at(i);
         assert(h);
-        m_IsoHandler_map_shadow[i] = h;
-
-        m_poll_fds_shadow[i].fd = h->getFileDescriptor();
-        m_poll_fds_shadow[i].revents = 0;
         if (h->isEnabled()) {
-            m_poll_fds_shadow[i].events = POLLIN;
-        } else {
-            m_poll_fds_shadow[i].events = 0;
+            // receive handlers are always poll'ed
+            // transmit handlers only when the client is ready
+            if (h->getType() == IsoHandler::eHT_Receive || h->tryWaitForClient()) {
+                m_IsoHandler_map_shadow[cnt] = h;
+                m_poll_fds_shadow[cnt].fd = h->getFileDescriptor();
+                m_poll_fds_shadow[cnt].revents = 0;
+                m_poll_fds_shadow[cnt].events = POLLIN;
+                cnt++;
+            } else {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "skipped handler %p\n", h);
+            }
+        }
+        if(cnt > ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT) {
+            debugWarning("Too much ISO Handlers in manager...\n");
+            break;
         }
     }
+    m_poll_nfds_shadow = cnt;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " updated shadow vars...\n");
 }
 
@@ -142,7 +147,7 @@ IsoHandlerManager::Execute() {
     updateShadowVars();
     // bypass if no handlers are registered
     if (m_poll_nfds_shadow == 0) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "bypass iterate since no handlers registered\n");
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "bypass iterate since no handlers to poll\n");
         usleep(m_poll_timeout * 1000);
         return true;
     }
