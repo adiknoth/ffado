@@ -385,6 +385,12 @@ FunctionBlockEnhancedMixer::discover()
     if (!FunctionBlock::discover())
         return false;
 
+    /*
+     * Disable discovering of enhanced mixer because all
+     * device out there do not use, and all implementations
+     * are buggy. So there is no point to use it. 
+     * All 'mixer' functions are implemented with selector function blocks
+
     AVC::FunctionBlockCmd fbCmd( m_subunit->getUnit().get1394Service(),
                                  FunctionBlockCmd::eFBT_Processing,
                                  m_id,
@@ -406,14 +412,15 @@ FunctionBlockEnhancedMixer::discover()
         return false;
     }
     
-//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-//         Util::Cmd::CoutSerializer se;
-//         fbCmd.serialize( se );
-//     }
+    //     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+    //         Util::Cmd::CoutSerializer se;
+    //         fbCmd.serialize( se );
+    //     }
 
     if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
     }
+    */
     
     return true;
 }
