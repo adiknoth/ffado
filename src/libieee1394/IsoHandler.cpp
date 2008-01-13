@@ -190,7 +190,7 @@ IsoHandler::tryWaitForClient()
     //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result = m_Client->tryWaitForSignal();
-        //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
+        //debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");

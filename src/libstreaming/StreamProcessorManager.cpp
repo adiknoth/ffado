@@ -560,7 +560,7 @@ bool StreamProcessorManager::stop() {
             }
         }
     }
-    // wait for the SP's to get into the dry-running state
+    // wait for the SP's to get into the dry-running/stopped state
     int cnt = 2000;
     bool ready = false;
     while (!ready && cnt) {
@@ -568,12 +568,12 @@ bool StreamProcessorManager::stop() {
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-            ready &= ((*it)->isDryRunning() || (*it)->isStopped());
+            ready &= ((*it)->isDryRunning() || (*it)->isStopped() || (*it)->isWaitingForStream());
         }
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-            ready &= ((*it)->isDryRunning() || (*it)->isStopped());
+            ready &= ((*it)->isDryRunning() || (*it)->isStopped() || (*it)->isWaitingForStream());
         }
         SleepRelativeUsec(125);
         cnt--;
@@ -716,17 +716,16 @@ bool StreamProcessorManager::waitForPeriod() {
             return false;
         }
 
-        unsigned int bufferfill = m_SyncSource->getBufferFill();
-        period_not_ready = bufferfill < m_period;
-
-#ifdef DEBUG
-        if(period_not_ready) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "period is not ready (bufferfill: %u)\n", bufferfill);
-        } else {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "period is ready (bufferfill: %u)\n", bufferfill);
+        // HACK: this should be solved more elegantly
+        period_not_ready = false;
+        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+            it != m_ReceiveProcessors.end();
+            ++it ) {
+            bool this_sp_period_ready = (*it)->canClientTransferFrames(m_period);
+            if (!this_sp_period_ready) {
+                period_not_ready = true;
+            }
         }
-#endif
-
         // check for underruns on the ISO side,
         // those should make us bail out of the wait loop
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
