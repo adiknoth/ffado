@@ -471,6 +471,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     // this to avoid multiple signals for the same period
                     int semval;
                     sem_getvalue(&m_signal_semaphore, &semval);
+                    // NOTE: this can cause 2 posts to be done when the receiving thread
+                    //       decreases the semaphore but hasn't processed the frames yet
                     unsigned int signal_period = m_signal_period * (semval + 1) + m_signal_offset;
                     if(bufferfill >= signal_period) {
                         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) buffer fill (%d) > signal period (%d), sem_val=%d\n",
@@ -733,11 +735,11 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                     return RAW1394_ISO_ERROR;
                 }
             }
-            usleep(125); // only when using thread-per-handler
-            return RAW1394_ISO_AGAIN;
-//             generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-//             generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
-//             return RAW1394_ISO_DEFER;
+//             usleep(125); // only when using thread-per-handler
+//             return RAW1394_ISO_AGAIN;
+            generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            return RAW1394_ISO_DEFER;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
