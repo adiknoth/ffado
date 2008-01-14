@@ -289,6 +289,7 @@ if env['DIST_TARGET'] == 'auto':
 if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64", config[config_cpu]) != None)):
     
     build_host_supports_sse = 0
+    build_host_supports_sse2 = 0
 
     if config[config_kernel] == 'linux' :
         
@@ -301,6 +302,8 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
                 opt_flags.append ("-mmmx")
             if "sse" in x86_flags:
                 build_host_supports_sse = 1
+            if "sse2" in x86_flags:
+                build_host_supports_sse2 = 1
             if "3dnow" in x86_flags:
                 opt_flags.append ("-m3dnow")
             
@@ -313,6 +316,11 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
        and build_host_supports_sse and env['ENABLE_OPTIMIZATIONS']:
         opt_flags.extend (["-msse", "-mfpmath=sse"])
         env['USE_SSE'] = 1
+
+    if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) \
+       and build_host_supports_sse2 and env['ENABLE_OPTIMIZATIONS']:
+        opt_flags.extend (["-msse2"])
+        env['USE_SSE2'] = 1
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:

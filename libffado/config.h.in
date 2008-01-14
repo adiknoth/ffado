@@ -30,6 +30,8 @@
 // broken
 //#define USE_SSE $USE_SSE
 #define USE_SSE 0
+//#define USE_SSE2 $USE_SSE2
+#define USE_SSE2 0
 
 #define CACHEDIR "~/.ffado"
 

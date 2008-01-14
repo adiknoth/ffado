@@ -50,6 +50,7 @@ apps = {
 	"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
 	"test-ieee1394service" : "test-ieee1394service.cpp",
 	"test-streamdump" : "test-streamdump.cpp",
+	"test-bufferops" : "test-bufferops.cpp",
 }
 
 if env['ENABLE_BEBOB']:
