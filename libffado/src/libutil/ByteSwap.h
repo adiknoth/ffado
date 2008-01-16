@@ -25,6 +25,7 @@
 #define __FFADO_BYTESWAP__
 
 #include <netinet/in.h>
+#include <endian.h>
 #include <assert.h>
 
 // to check for SSE etc...
@@ -32,11 +33,29 @@
 
 #include <stdio.h>
 
+#if __BYTE_ORDER == __BIG_ENDIAN
+
+// no-op for big endian machines
+static inline void
+byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
+{
+    return;
+}
+
+static inline void
+byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
+{
+    return;
+}
+
+#else
+
 #ifdef __SSE2__
 #include <emmintrin.h>
 #warning SSE2 build
 
-static inline void
+//static inline void
+void
 byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
@@ -84,7 +103,8 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
     }
 }
 
-static inline void
+//static inline void
+void
 byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
@@ -108,9 +128,6 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
     
     __m128i v;
     while(nb_elements >= 4) {
-        // prefetch the data for the next round
-         __builtin_prefetch(data+128, 0, 0);
-
         // load the data into the vector unit
         v = _mm_load_si128((__m128i*)data);
         // do first swap
@@ -154,6 +171,8 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
     }
 }
 
-#endif
+#endif // sse2
 
-#endif
+#endif // byte order
+
+#endif // h
