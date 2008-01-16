@@ -119,6 +119,7 @@ private:
     void encodeAudioPortsInt24(quadlet_t *data, unsigned int offset, unsigned int nevents);
     void encodeMidiPortsSilence(quadlet_t *data, unsigned int offset, unsigned int nevents);
     void encodeMidiPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void muxAudioPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);
 
     unsigned int getFDF();
     unsigned int getSytInterval();

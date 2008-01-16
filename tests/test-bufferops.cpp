@@ -26,26 +26,17 @@
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 #include "libutil/ByteSwap.h"
+#include "libstreaming/amdtp/AmdtpBufferOps.h"
+
 #include "libutil/SystemTimeSource.h"
 #include <inttypes.h>
 
-#include <emmintrin.h>
-/*
-void test() {
-    vSInt16	*in, *out; //must be 16 byte aligned
-
-    for( x = 0; x < array_bytes / sizeof( vSInt16); x++ )
-    {
-        vSInt16 v = in[x]; //load 16 bytes
-        v = _mm_or_si128( _mm_slli_epi16( v, 8 ), _mm_srli_epi16( v, 8 ) ); //swap it
-        out[x] = v; //store it out
-    }
-}*/
-
-#define NB_QUADLETS (4096 * 4096)
+// 32M of test data
+#define NB_QUADLETS (1024 * 1024 * 32)
 #define NB_TESTS 10
-int
-main(int argc, char **argv) {
+
+bool
+testByteSwap(int nb_quadlets, int nb_tests) {
     quadlet_t *buffer_1;
     quadlet_t *buffer_ref;
     int i=0;
@@ -56,11 +47,11 @@ main(int argc, char **argv) {
     
     setDebugLevel(DEBUG_LEVEL_NORMAL);
     
-    buffer_1 = new quadlet_t[NB_QUADLETS];
-    buffer_ref = new quadlet_t[NB_QUADLETS];
+    buffer_1 = new quadlet_t[nb_quadlets];
+    buffer_ref = new quadlet_t[nb_quadlets];
     
-    debugOutput(DEBUG_LEVEL_NORMAL, "Generating test data...\n");
-    for (i=0; i<NB_QUADLETS; i++) {
+    printMessage( "Generating test data...\n");
+    for (i=0; i<nb_quadlets; i++) {
         byte_t tmp = i & 0xFF;
         buffer_1[i]   = tmp << 24;
         tmp = (i + 1) & 0xFF;
@@ -73,15 +64,15 @@ main(int argc, char **argv) {
     
     // do reference conversion
     
-    for (i=0; i<NB_QUADLETS; i++) {
+    for (i=0; i<nb_quadlets; i++) {
         buffer_ref[i] = htonl(buffer_1[i]);
     }
     
-    debugOutput(DEBUG_LEVEL_NORMAL, "Performing byte-swap...\n");
+    printMessage( "Performing byte-swap...\n");
     
     int test=0;
-    for (test=0; test<NB_TESTS; test++) {
-        for (i=0; i<NB_QUADLETS; i++) {
+    for (test=0; test<nb_tests; test++) {
+        for (i=0; i<nb_quadlets; i++) {
             byte_t tmp = i & 0xFF;
             buffer_1[i]   = tmp << 24;
             tmp = (i + 1) & 0xFF;
@@ -93,18 +84,18 @@ main(int argc, char **argv) {
         }
 
         start = time.getCurrentTimeAsUsecs();
-        byteSwapToBus(buffer_1, NB_QUADLETS);
+        byteSwapToBus(buffer_1, nb_quadlets);
         elapsed = time.getCurrentTimeAsUsecs() - start;
-        debugOutput(DEBUG_LEVEL_NORMAL, " took %lluusec...\n", elapsed);
+        printMessage( " took %lluusec...\n", elapsed);
         
     }
 
     // check
-    debugOutput(DEBUG_LEVEL_NORMAL, "Checking results...\n");
+    printMessage( "Checking results...\n");
     bool all_ok=true;
-    for (i=0; i<NB_QUADLETS; i++) {
+    for (i=0; i<nb_quadlets; i++) {
         if (buffer_1[i] != buffer_ref[i]) {
-            debugOutput(DEBUG_LEVEL_NORMAL, " bad result: %08X should be %08X\n",
+            printMessage( " bad result: %08X should be %08X\n",
                         buffer_1[i], buffer_ref[i]);
             all_ok=false;
         } else {
@@ -115,6 +106,168 @@ main(int argc, char **argv) {
 
     delete[] buffer_1;
     delete[] buffer_ref;
+    return all_ok;
+}
+
+bool
+testInt24Label(int nb_quadlets, int nb_tests) {
+    quadlet_t *buffer_1;
+    quadlet_t *buffer_ref;
+    int i=0;
+    
+    Util::SystemTimeSource time;
+    ffado_microsecs_t start;
+    ffado_microsecs_t elapsed;
+    
+    setDebugLevel(DEBUG_LEVEL_MESSAGE);
+    
+    buffer_1 = new quadlet_t[nb_quadlets];
+    buffer_ref = new quadlet_t[nb_quadlets];
+    
+    printMessage( "Generating test data...\n");
+    for (i=0; i<nb_quadlets; i++) {
+        byte_t tmp = i & 0xFF;
+        buffer_1[i]   = tmp << 16;
+        tmp = (i + 1) & 0xFF;
+        buffer_1[i]   |= tmp << 8;
+        tmp = (i + 2) & 0xFF;
+        buffer_1[i]   |= tmp;
+    }
+    
+    // do reference conversion
+    for (i=0; i<nb_quadlets; i++) {
+        buffer_ref[i] = buffer_1[i] | 0x40000000;
+    }
+    
+    printMessage( "Performing AMDTP labeling...\n");
+    
+    int test=0;
+    for (test=0; test<nb_tests; test++) {
+        for (i=0; i<nb_quadlets; i++) {
+            byte_t tmp = i & 0xFF;
+            buffer_1[i]   = tmp << 16;
+            tmp = (i + 1) & 0xFF;
+            buffer_1[i]   |= tmp << 8;
+            tmp = (i + 2) & 0xFF;
+            buffer_1[i]   |= tmp;
+        }
+
+        start = time.getCurrentTimeAsUsecs();
+        convertFromInt24AndLabelAsMBLA(buffer_1, nb_quadlets);
+        elapsed = time.getCurrentTimeAsUsecs() - start;
+        printMessage( " took %lluusec...\n", elapsed);
+    }
+
+    // check
+    printMessage( "Checking results...\n");
+    bool all_ok=true;
+    for (i=0; i<nb_quadlets; i++) {
+        if (buffer_1[i] != buffer_ref[i]) {
+            printMessage( " bad result: %08X should be %08X\n",
+                        buffer_1[i], buffer_ref[i]);
+            all_ok=false;
+        } else {
+            //debugOutput(DEBUG_LEVEL_VERBOSE, "good result: %08X should be %08X\n",
+            //            buffer_1[i], buffer_ref[i]);
+        }
+    }
+
+    delete[] buffer_1;
+    delete[] buffer_ref;
+    return all_ok;
+}
+
+bool
+testFloatLabel(int nb_quadlets, int nb_tests) {
+    quadlet_t *buffer_1;
+    quadlet_t *buffer_ref;
+    quadlet_t *buffer_in;
+    float *buffer_float;
+    int i=0;
+    
+    Util::SystemTimeSource time;
+    ffado_microsecs_t start;
+    ffado_microsecs_t elapsed;
+    
+    setDebugLevel(DEBUG_LEVEL_MESSAGE);
+    
+    buffer_1 = new quadlet_t[nb_quadlets];
+    buffer_in = new quadlet_t[nb_quadlets];
+    buffer_ref = new quadlet_t[nb_quadlets];
+    buffer_float = new float[nb_quadlets];
+    
+    printMessage( "Generating test data...\n");
+    for (i=0; i<nb_quadlets; i++) {
+        byte_t tmp = i & 0xFF;
+        buffer_in[i]   = tmp << 16;
+        tmp = (i + 1) & 0xFF;
+        buffer_in[i]   |= tmp << 8;
+        tmp = (i + 2) & 0xFF;
+        buffer_in[i]   |= tmp;
+        
+        // convert to float and normalize
+        buffer_float[i] = (float)(buffer_in[i]);
+        buffer_float[i] /= (float)(0x007FFFFF); // range: 0..2
+        buffer_float[i] -= 1.0; // range: 1..-1
+        
+        // copy to input buffer
+        float *t = &(buffer_float[i]);
+        quadlet_t *v = (quadlet_t *)t;
+        buffer_1[i] = *v;
+    }
+    
+    // do reference conversion
+    for (i=0; i<nb_quadlets; i++) {
+        float v = (buffer_float[i]) * AMDTP_FLOAT_MULTIPLIER;
+        unsigned int tmp = ((int) v);
+        tmp = ( tmp >> 8 ) | 0x40000000;
+        buffer_ref[i] = tmp;
+    }
+    
+    printMessage( "Performing AMDTP labeling...\n");
+    
+    int test=0;
+    for (test=0; test<nb_tests; test++) {
+    for (i=0; i<nb_quadlets; i++) {
+        // copy float to input buffer
+        float *t = &(buffer_float[i]);
+        quadlet_t *v = (quadlet_t *)t;
+        buffer_1[i] = *v;
+    }
+
+        start = time.getCurrentTimeAsUsecs();
+        convertFromFloatAndLabelAsMBLA(buffer_1, nb_quadlets);
+        elapsed = time.getCurrentTimeAsUsecs() - start;
+        printMessage( " took %lluusec...\n", elapsed);
+    }
+
+    // check
+    printMessage( "Checking results...\n");
+    bool all_ok=true;
+    for (i=0; i<nb_quadlets; i++) {
+        if (buffer_1[i] != buffer_ref[i]) {
+            printMessage( " bad result: %08X should be %08X\n",
+                        buffer_1[i], buffer_ref[i]);
+            all_ok=false;
+        } else {
+            //debugOutput(DEBUG_LEVEL_VERBOSE, "good result: %08X should be %08X\n",
+            //            buffer_1[i], buffer_ref[i]);
+        }
+    }
+
+    delete[] buffer_1;
+    delete[] buffer_ref;
+    delete[] buffer_in;
+    delete[] buffer_float;
+    return all_ok;
+}
+
+int
+main(int argc, char **argv) {
+
+    testByteSwap(NB_QUADLETS, NB_TESTS);
+    testInt24Label(NB_QUADLETS, NB_TESTS);
+    testFloatLabel(NB_QUADLETS, NB_TESTS);
     
     return 0;
 }
