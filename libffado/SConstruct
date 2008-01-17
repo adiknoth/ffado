@@ -153,8 +153,15 @@ if not env.GetOption('clean'):
 	# Check if the environment can actually compile c-files by checking for a
 	# header shipped with gcc.
 	#
-	if not conf.CheckHeader( "stdio.h" ):
+	if not conf.CheckHeader( "stdio.h", language="C" ):
 		print "It seems as if stdio.h is missing. This probably means that your build environment is broken, please make sure you have a working c-compiler and libstdc installed and usable."
+		Exit( 1 )
+	#
+	# ... and do the same with a c++-header. Because some distributions have
+	# distinct packages for gcc and g++.
+	#
+	if not conf.CheckHeader( "iostream", language="C++" ):
+		print "It seems as if iostream is missing. This probably means that your build environment is broken, please make sure you have a working c++-compiler installed and usable."
 		Exit( 1 )
 
 	#
