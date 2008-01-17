@@ -25,6 +25,7 @@
 import os
 import re
 from string import Template
+import imp
 
 build_dir = ARGUMENTS.get('BUILDDIR', "")
 if build_dir:
@@ -34,6 +35,8 @@ if build_dir:
 	print "Building into: " + build_base
 else:
 	build_base=''
+
+destdir = ARGUMENTS.get( 'DESTDIR', "" )
 
 if not os.path.isdir( "cache" ):
 	os.makedirs( "cache" )
@@ -131,7 +134,21 @@ def CheckForApp( context, app ):
 	context.Result( ret[0] )
 	return ret[0]
 
-tests = { "ConfigGuess" : ConfigGuess, "CheckForApp" : CheckForApp }
+def CheckForPyModule( context, module ):
+	context.Message( "Checking for the python module '" + module + "' " )
+	ret = True
+	try:
+		imp.find_module( module )
+	except ImportError:
+		ret = False
+	context.Result( ret )
+	return ret
+
+tests = {
+	"ConfigGuess" : ConfigGuess,
+	"CheckForApp" : CheckForApp,
+	"CheckForPyModule": CheckForPyModule,
+}
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
 
@@ -192,7 +209,7 @@ install the needed packages for each of the lines saying "no".
 	#
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
-if conf.CheckForApp( "which pyuic" ):
+if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ):
 	env['PYUIC'] = True
 
 if conf.CheckForApp( "xdg-desktop-menu --help" ):
@@ -247,12 +264,17 @@ else:
 	env['build_base']="#/"
 
 #
-# XXX: Maybe we can even drop these lower-case variables and only use the uppercase ones?
+# Uppercase variables are for usage in code, lowercase versions for usage in
+# scons-files for installing.
 #
-env['bindir'] = Template( os.path.join( env['BINDIR'] ) ).safe_substitute( env )
-env['libdir'] = Template( os.path.join( env['LIBDIR'] ) ).safe_substitute( env )
-env['includedir'] = Template( os.path.join( env['INCLUDEDIR'] ) ).safe_substitute( env )
-env['sharedir'] = Template( os.path.join( env['SHAREDIR'] ) ).safe_substitute( env )
+env['BINDIR'] = Template( env['BINDIR'] ).safe_substitute( env )
+env['LIBDIR'] = Template( env['LIBDIR'] ).safe_substitute( env )
+env['INCLUDEDIR'] = Template( env['INCLUDEDIR'] ).safe_substitute( env )
+env['SHAREDIR'] = Template( env['SHAREDIR'] ).safe_substitute( env )
+env['bindir'] = Template( destdir + env['BINDIR'] ).safe_substitute( env )
+env['libdir'] = Template( destdir + env['LIBDIR'] ).safe_substitute( env )
+env['includedir'] = Template( destdir + env['INCLUDEDIR'] ).safe_substitute( env )
+env['sharedir'] = Template( destdir + env['SHAREDIR'] ).safe_substitute( env )
 
 env.Command( target=env['sharedir'], source="", action=Mkdir( env['sharedir'] ) )
 
@@ -380,6 +402,27 @@ if not env.GetOption('clean'):
     Default( 'support' )
     if env['BUILD_TESTS']:
         Default( 'tests' )
+
+#
+# Deal with the DESTDIR vs. xdg-tools conflict (which is basicely that the xdg-tools can't deal with DESTDIR, so the packagers have to deal with this their own :-)
+#
+if len(destdir) > 0:
+	if not len( ARGUMENTS.get( "WILL_DEAL_WITH_XDG_MYSELF", "" ) ) > 0:
+		print """
+WARNING!
+You are usin the (packagers) option DESTDIR to install this package to a
+different place than the real prefix. As the xdg-tools can't cope with
+that, the .desktop-files are not installed by this build, you have to
+deal with them your own.
+(And you have to look into the SConstruct to learn how to disable this
+message.)
+"""
+else:
+	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC' ):
+		env.Command( "support/mixer/.ffado.org-ffadomixer.desktop", "support/mixer/ffado.org-ffadomixer.desktop", "xdg-desktop-menu install $SOURCES && touch $TARGET" )
+		env.NoCache( "support/mixer/.ffado.org-ffadomixer.desktop" )
+		env.Alias( "install", "support/mixer/.ffado.org-ffadomixer.desktop" )
+
 #
 # Create a tags-file for easier emacs/vim-source-browsing
 #  I don't know if the dependency is right...

@@ -35,9 +35,9 @@
 
 #define CACHEDIR "~/.ffado"
 
-#define LIBDIR "$libdir"
-
-#define SHAREDIR "$sharedir"
+#define BINDIR "$BINDIR"
+#define LIBDIR "$LIBDIR"
+#define SHAREDIR "$SHAREDIR"
 
 #define IEEE1394SERVICE_USE_CYCLETIMER_DLL  0
 #define IEEE1394SERVICE_MAX_FIREWIRE_PORTS  16
