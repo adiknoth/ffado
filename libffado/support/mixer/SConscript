@@ -37,15 +37,9 @@ if env.has_key('PYUIC'):
 		if os.path.exists( app+".ui" ):
 			e.PyUIC( source=app+".ui", target=app+"ui.py" )
 			e.Install( "$PYTHONDIR", app+"ui.py" )
-			e.Install( "$PYTHONDIR", app+".ui" )
 		e.Install( "$PYTHONDIR", app+".py" )
 
 	e.ScanReplace( "ffadomixer.in" )
 	e.Depends( "ffadomixer", "SConscript" )
 	e.Install( "$bindir", "ffadomixer" )
-
-	if env.has_key('XDG_TOOLS'):
-		e.Command( ".ffado.org-ffadomixer.desktop", "ffado.org-ffadomixer.desktop", "xdg-desktop-menu install $SOURCES && touch $TARGET" )
-		e.NoCache( ".ffado.org-ffadomixer.desktop" )
-		e.Alias( "install", ".ffado.org-ffadomixer.desktop" )
 
