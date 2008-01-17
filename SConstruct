@@ -79,27 +79,19 @@ Build the tests in their directory. As some contain quite some functionality,
 
 ## Load the builders in config
 buildenv={}
-if os.environ.has_key('PATH'):
-	buildenv['PATH']=os.environ['PATH']
-else:
-	buildenv['PATH']=''
-
-if os.environ.has_key('PKG_CONFIG_PATH'):
-	buildenv['PKG_CONFIG_PATH']=os.environ['PKG_CONFIG_PATH']
-else:
-	buildenv['PKG_CONFIG_PATH']=''
-
-if os.environ.has_key('LD_LIBRARY_PATH'):
-	buildenv['LD_LIBRARY_PATH']=os.environ['LD_LIBRARY_PATH']
-else:
-	buildenv['LD_LIBRARY_PATH']=''
-
-if os.environ.has_key('XDG_CONFIG_DIRS'):
-	buildenv['XDG_CONFIG_DIRS']=os.environ['XDG_CONFIG_DIRS']
-if os.environ.has_key('XDG_DATA_DIRS'):
-	buildenv['XDG_DATA_DIRS']=os.environ['XDG_DATA_DIRS']
-if os.environ.has_key('HOME'):
-	buildenv['HOME']=os.environ['HOME']
+vars_to_check = [
+	'PATH',
+	'PKG_CONFIG_PATH',
+	'LD_LIBRARY_PATH',
+	'XDG_CONFIG_DIRS',
+	'XDG_DATA_DIRS',
+	'HOME',
+]
+for var in vars_to_check:
+	if os.environ.has_key(var):
+		buildenv[var]=os.environ[var]
+	else:
+		buildenv[var]=''
 
 env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
