@@ -209,7 +209,7 @@ install the needed packages for each of the lines saying "no".
 	#
 	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
-if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ):
+if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 	env['PYUIC'] = True
 
 if conf.CheckForApp( "xdg-desktop-menu --help" ):
