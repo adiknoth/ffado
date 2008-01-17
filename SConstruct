@@ -419,9 +419,9 @@ message.)
 """
 else:
 	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC' ):
-		env.Command( "support/mixer/.ffado.org-ffadomixer.desktop", "support/mixer/ffado.org-ffadomixer.desktop", "xdg-desktop-menu install $SOURCES && touch $TARGET" )
-		env.NoCache( "support/mixer/.ffado.org-ffadomixer.desktop" )
-		env.Alias( "install", "support/mixer/.ffado.org-ffadomixer.desktop" )
+		env.Command( "support/xdg/.ffado.org-ffadomixer.desktop", "support/xdg/ffado.org-ffadomixer.desktop", "xdg-desktop-menu install $SOURCES && touch $TARGET" )
+		env.NoCache( "support/xdg/.ffado.org-ffadomixer.desktop" )
+		env.Alias( "install", "support/xdg/.ffado.org-ffadomixer.desktop" )
 
 #
 # Create a tags-file for easier emacs/vim-source-browsing
