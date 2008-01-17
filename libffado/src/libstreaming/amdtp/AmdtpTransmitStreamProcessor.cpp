@@ -24,7 +24,6 @@
 #include "config.h"
 #include "AmdtpTransmitStreamProcessor.h"
 #include "AmdtpPort.h"
-#include "AmdtpBufferOps.h"
 #include "../StreamProcessorManager.h"
 #include "devicemanager.h"
 
@@ -37,7 +36,7 @@
 #include <netinet/in.h>
 #include <assert.h>
 
-#include "libutil/ByteSwap.h"
+#define AMDTP_FLOAT_MULTIPLIER 2147483392.0
 
 namespace Streaming
 {
@@ -411,27 +410,17 @@ bool AmdtpTransmitStreamProcessor::processWriteBlock ( char *data,
     updatePortCache();
 
     // encode audio data
-    // the data is stored in the original format (float, int). later on
-    // the complete buffer is converted to the correct type and labeled at once
-    muxAudioPorts((quadlet_t *)data, offset, nevents);
-
-    // label everything as MBLA audio since those are by far the most
-    // occurring. If we treat all as audio we can use efficient block
-    // processing. Afterwards we can correct wrong labels of other
-    // types.
     switch(m_StreamProcessorManager.getAudioDataType()) {
         case StreamProcessorManager::eADT_Int24:
-            convertFromInt24AndLabelAsMBLA(((quadlet_t *)data), nevents * m_dimension);
+            encodeAudioPortsInt24((quadlet_t *)data, offset, nevents);
             break;
         case StreamProcessorManager::eADT_Float:
-            convertFromFloatAndLabelAsMBLA(((quadlet_t *)data), nevents * m_dimension);
+            encodeAudioPortsFloat((quadlet_t *)data, offset, nevents);
             break;
     }
 
     // do midi ports
     encodeMidiPorts((quadlet_t *)data, offset, nevents);
-    // do endian conversion
-    byteSwapToBus(((quadlet_t *)data), nevents * m_dimension);
     return true;
 }
 
@@ -441,11 +430,8 @@ AmdtpTransmitStreamProcessor::transmitSilenceBlock(
 {
     // no need to update the port cache when transmitting silence since
     // no dynamic values are used to do so.
-
     encodeAudioPortsSilence((quadlet_t *)data, offset, nevents);
-    convertFromInt24AndLabelAsMBLA(((quadlet_t *)data), nevents * m_dimension);
     encodeMidiPortsSilence((quadlet_t *)data, offset, nevents);
-    byteSwapToBus(((quadlet_t *)data), nevents * m_dimension);
     return true;
 }
 
@@ -466,13 +452,11 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         target_event = (quadlet_t *)(data + i);
-        __builtin_prefetch(target_event, 1, 0); // prefetch events for write, no temporal locality
 
         for (j = 0;j < nevents; j += 1)
         {
-            *target_event = 0;
+            *target_event = 0x00000040;
             target_event += m_dimension;
-            __builtin_prefetch(target_event, 1, 0); // prefetch events for write, no temporal locality
         }
     }
 }
@@ -489,21 +473,25 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
  * @param nevents 
  */
 void
-AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
-                                            unsigned int offset,
-                                            unsigned int nevents)
+AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
+                                                    unsigned int offset,
+                                                    unsigned int nevents)
 {
     unsigned int j;
     quadlet_t *target_event;
     unsigned int i;
 
-    quadlet_t * client_buffers[4];
-    quadlet_t tmp_values[4] __attribute__ ((aligned (16)));
+    float * client_buffers[4];
+    float tmp_values[4] __attribute__ ((aligned (16)));
+    uint32_t tmp_values_int[4] __attribute__ ((aligned (16)));
 
     // prepare the scratch buffer
     assert(m_scratch_buffer_size_bytes > nevents * 4);
     memset(m_scratch_buffer, 0, nevents * 4);
-    
+
+    const __m128i label = _mm_set_epi32 (0x40000000, 0x40000000, 0x40000000, 0x40000000);
+    const __m128 mult = _mm_set_ps(AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER);
+
     // this assumes that audio ports are sorted by position,
     // and that there are no gaps
     for (i = 0; i < m_nb_audio_ports-4; i += 4) {
@@ -513,12 +501,12 @@ AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
         for (j=0; j<4; j++) {
             p = &(m_audio_ports.at(i+j));
             if(p->buffer && p->enabled) {
-                client_buffers[j] = (quadlet_t *) p->buffer;
+                client_buffers[j] = (float *) p->buffer;
                 client_buffers[j] += offset;
             } else {
                 // if a port is disabled or has no valid
                 // buffer, use the scratch buffer (all zero's)
-                client_buffers[j] = (quadlet_t *) m_scratch_buffer;
+                client_buffers[j] = (float *) m_scratch_buffer;
             }
         }
 
@@ -534,13 +522,29 @@ AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
             tmp_values[2] = *(client_buffers[2]);
             tmp_values[3] = *(client_buffers[3]);
 
-            // convert to packed int
-            __m128i v_vals = *((__m128i*)tmp_values);
+            // now do the SSE based conversion/labeling
+            __m128 v_float = *((__m128*)tmp_values);
             __m128i *target = (__m128i*)target_event;
+            __m128i v_int;
+
+            // multiply
+            v_float = _mm_mul_ps(v_float, mult);
+            // convert to signed integer
+            v_int = _mm_cvttps_epi32( v_float );
+            // shift right 8 bits
+            v_int = _mm_srli_epi32( v_int, 8 );
+            // label it
+            v_int = _mm_or_si128( v_int, label );
+
+            // do endian conversion (SSE is always little endian)
+            // do first swap
+            v_int = _mm_or_si128( _mm_slli_epi16( v_int, 8 ), _mm_srli_epi16( v_int, 8 ) );
+            // do second swap
+            v_int = _mm_or_si128( _mm_slli_epi32( v_int, 16 ), _mm_srli_epi32( v_int, 16 ) );
 
             // store the packed int
             // (target misalignment is assumed since we don't know the m_dimension)
-            _mm_storeu_si128 (target, v_vals);
+            _mm_storeu_si128 (target, v_int);
 
             // increment the buffer pointers
             client_buffers[0]++;
@@ -554,25 +558,233 @@ AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
     }
 
     // do remaining ports
+    // NOTE: these can be time-SSE'd
     for (; i < m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
         if(p.buffer && p.enabled) {
-            quadlet_t *buffer = (quadlet_t *)(p.buffer);
+            float *buffer = (float *)(p.buffer);
             buffer += offset;
     
-            for (j = 0;j < nevents; j += 1)
+            for (j = 0;j < nevents; j += 4)
             {
-                *target_event = *buffer;
+                // read the values
+                tmp_values[0] = *buffer;
+                buffer++;
+                tmp_values[1] = *buffer;
+                buffer++;
+                tmp_values[2] = *buffer;
+                buffer++;
+                tmp_values[3] = *buffer;
+                buffer++;
+    
+                // now do the SSE based conversion/labeling
+                __m128 v_float = *((__m128*)tmp_values);
+                __m128i v_int;
+    
+                // multiply
+                v_float = _mm_mul_ps(v_float, mult);
+                // convert to signed integer
+                v_int = _mm_cvttps_epi32( v_float );
+                // shift right 8 bits
+                v_int = _mm_srli_epi32( v_int, 8 );
+                // label it
+                v_int = _mm_or_si128( v_int, label );
+    
+                // do endian conversion (SSE is always little endian)
+                // do first swap
+                v_int = _mm_or_si128( _mm_slli_epi16( v_int, 8 ), _mm_srli_epi16( v_int, 8 ) );
+                // do second swap
+                v_int = _mm_or_si128( _mm_slli_epi32( v_int, 16 ), _mm_srli_epi32( v_int, 16 ) );
+
+                // store the packed int
+                _mm_store_si128 ((__m128i *)(&tmp_values_int), v_int);
+
+                // increment the buffer pointers
+                *target_event = tmp_values_int[0];
+                target_event += m_dimension;
+                *target_event = tmp_values_int[1];
+                target_event += m_dimension;
+                *target_event = tmp_values_int[2];
+                target_event += m_dimension;
+                *target_event = tmp_values_int[3];
+                target_event += m_dimension;
+            }
+
+            // do the remainder of the events
+            for(;j < nevents; j += 1) {
+                float *in = (float *)buffer;
+                float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
+                unsigned int tmp = ((int) v);
+                tmp = ( tmp >> 8 ) | 0x40000000;
+                *target_event = htonl((quadlet_t)tmp);
                 buffer++;
                 target_event += m_dimension;
             }
+
         } else {
             for (j = 0;j < nevents; j += 1)
             {
-                *target_event = 0x0;
+                // hardcoded byte swapped
+                *target_event = 0x00000040;
+                target_event += m_dimension;
+            }
+        }
+    }
+}
+
+
+/**
+ * @brief mux all audio ports to events
+ * @param data 
+ * @param offset 
+ * @param nevents 
+ */
+void
+AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
+                                                    unsigned int offset,
+                                                    unsigned int nevents)
+{
+    unsigned int j;
+    quadlet_t *target_event;
+    unsigned int i;
+
+    uint32_t *client_buffers[4];
+    uint32_t tmp_values[4] __attribute__ ((aligned (16)));
+
+    // prepare the scratch buffer
+    assert(m_scratch_buffer_size_bytes > nevents * 4);
+    memset(m_scratch_buffer, 0, nevents * 4);
+
+    const __m128i label = _mm_set_epi32 (0x40000000, 0x40000000, 0x40000000, 0x40000000);
+    const __m128i mask  = _mm_set_epi32 (0x00FFFFFF, 0x00FFFFFF, 0x00FFFFFF, 0x00FFFFFF);
+
+    // this assumes that audio ports are sorted by position,
+    // and that there are no gaps
+    for (i = 0; i < m_nb_audio_ports-4; i += 4) {
+        struct _MBLA_port_cache *p;
+
+        // get the port buffers
+        for (j=0; j<4; j++) {
+            p = &(m_audio_ports.at(i+j));
+            if(p->buffer && p->enabled) {
+                client_buffers[j] = (uint32_t *) p->buffer;
+                client_buffers[j] += offset;
+            } else {
+                // if a port is disabled or has no valid
+                // buffer, use the scratch buffer (all zero's)
+                client_buffers[j] = (uint32_t *) m_scratch_buffer;
+            }
+        }
+
+        // the base event for this position
+        target_event = (quadlet_t *)(data + i);
+
+        // process the events
+        for (j=0;j < nevents; j += 1)
+        {
+            // read the values
+            tmp_values[0] = *(client_buffers[0]);
+            tmp_values[1] = *(client_buffers[1]);
+            tmp_values[2] = *(client_buffers[2]);
+            tmp_values[3] = *(client_buffers[3]);
+
+            // now do the SSE based conversion/labeling
+            __m128i *target = (__m128i*)target_event;
+            __m128i v_int = *((__m128i*)tmp_values);;
+
+            // mask
+            v_int = _mm_and_si128( v_int, mask );
+            // label it
+            v_int = _mm_or_si128( v_int, label );
+
+            // do endian conversion (SSE is always little endian)
+            // do first swap
+            v_int = _mm_or_si128( _mm_slli_epi16( v_int, 8 ), _mm_srli_epi16( v_int, 8 ) );
+            // do second swap
+            v_int = _mm_or_si128( _mm_slli_epi32( v_int, 16 ), _mm_srli_epi32( v_int, 16 ) );
+
+            // store the packed int
+            // (target misalignment is assumed since we don't know the m_dimension)
+            _mm_storeu_si128 (target, v_int);
+
+            // increment the buffer pointers
+            client_buffers[0]++;
+            client_buffers[1]++;
+            client_buffers[2]++; 
+            client_buffers[3]++;
+
+            // go to next target event position
+            target_event += m_dimension;
+        }
+    }
+
+    // do remaining ports
+    // NOTE: these can be time-SSE'd
+    for (; i < m_nb_audio_ports; i++) {
+        struct _MBLA_port_cache &p = m_audio_ports.at(i);
+        target_event = (quadlet_t *)(data + i);
+        assert(nevents + offset <= p.buffer_size );
+
+        if(p.buffer && p.enabled) {
+            uint32_t *buffer = (uint32_t *)(p.buffer);
+            buffer += offset;
+    
+            for (j = 0;j < nevents; j += 4)
+            {
+                // read the values
+                tmp_values[0] = *buffer;
+                buffer++;
+                tmp_values[1] = *buffer;
+                buffer++;
+                tmp_values[2] = *buffer;
+                buffer++;
+                tmp_values[3] = *buffer;
+                buffer++;
+
+                // now do the SSE based conversion/labeling
+                __m128i v_int = *((__m128i*)tmp_values);;
+
+                // mask
+                v_int = _mm_and_si128( v_int, mask );
+                // label it
+                v_int = _mm_or_si128( v_int, label );
+
+                // do endian conversion (SSE is always little endian)
+                // do first swap
+                v_int = _mm_or_si128( _mm_slli_epi16( v_int, 8 ), _mm_srli_epi16( v_int, 8 ) );
+                // do second swap
+                v_int = _mm_or_si128( _mm_slli_epi32( v_int, 16 ), _mm_srli_epi32( v_int, 16 ) );
+
+                // store the packed int
+                _mm_store_si128 ((__m128i *)(&tmp_values), v_int);
+
+                // increment the buffer pointers
+                *target_event = tmp_values[0];
+                target_event += m_dimension;
+                *target_event = tmp_values[1];
+                target_event += m_dimension;
+                *target_event = tmp_values[2];
+                target_event += m_dimension;
+                *target_event = tmp_values[3];
+                target_event += m_dimension;
+            }
+
+            // do the remainder of the events
+            for(;j < nevents; j += 1) {
+                uint32_t in = (uint32_t)(*buffer);
+                *target_event = htonl((quadlet_t)((in & 0x00FFFFFF) | 0x40000000));
+                buffer++;
+                target_event += m_dimension;
+            }
+
+        } else {
+            for (j = 0;j < nevents; j += 1)
+            {
+                // hardcoded byte swapped
+                *target_event = 0x00000040;
                 target_event += m_dimension;
             }
         }
@@ -588,9 +800,9 @@ AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
  * @param nevents 
  */
 void
-AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
-                                            unsigned int offset,
-                                            unsigned int nevents)
+AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
+                                                    unsigned int offset,
+                                                    unsigned int nevents)
 {
     unsigned int j;
     quadlet_t *target_event;
@@ -607,14 +819,60 @@ AmdtpTransmitStreamProcessor::muxAudioPorts(quadlet_t *data,
     
             for (j = 0;j < nevents; j += 1)
             {
-                *target_event = *buffer;
+                uint32_t in = (uint32_t)(*buffer);
+                *target_event = htonl((quadlet_t)((in & 0x00FFFFFF) | 0x40000000));
                 buffer++;
                 target_event += m_dimension;
             }
         } else {
             for (j = 0;j < nevents; j += 1)
             {
-                *target_event = 0x0;
+                *target_event = 0x00000040;
+                target_event += m_dimension;
+            }
+        }
+    }
+}
+
+/**
+ * @brief mux all audio ports to events
+ * @param data 
+ * @param offset 
+ * @param nevents 
+ */
+void
+AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
+                                                    unsigned int offset,
+                                                    unsigned int nevents)
+{
+    unsigned int j;
+    quadlet_t *target_event;
+    unsigned int i;
+
+    for (i = 0; i < m_nb_audio_ports; i++) {
+        struct _MBLA_port_cache &p = m_audio_ports.at(i);
+        target_event = (quadlet_t *)(data + i);
+        assert(nevents + offset <= p.buffer_size );
+
+        if(p.buffer && p.enabled) {
+            quadlet_t *buffer = (quadlet_t *)(p.buffer);
+            buffer += offset;
+    
+            for (j = 0;j < nevents; j += 1)
+            {
+                float *in = (float *)buffer;
+                float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
+                unsigned int tmp = ((int) v);
+                tmp = ( tmp >> 8 ) | 0x40000000;
+                *target_event = htonl((quadlet_t)tmp);
+                buffer++;
+                target_event += m_dimension;
+            }
+        } else {
+            for (j = 0;j < nevents; j += 1)
+            {
+                // hardcoded little endian
+                *target_event = 0x00000040;
                 target_event += m_dimension;
             }
         }
@@ -641,8 +899,7 @@ AmdtpTransmitStreamProcessor::encodeMidiPortsSilence(quadlet_t *data,
 
         for (j = p.location;j < nevents; j += 8) {
             target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
-            __builtin_prefetch(target_event, 1, 0); // prefetch events for write, no temporal locality
-            *target_event = IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA);
+            *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
         }
     }
 }
@@ -666,18 +923,16 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
         if (p.buffer && p.enabled) {
             uint32_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
-            __builtin_prefetch(buffer, 0, 0); // prefetch events for read, no temporal locality
-    
+
             for (j = p.location;j < nevents; j += 8) {
                 target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
-                __builtin_prefetch(target_event, 1, 0); // prefetch events for write, no temporal locality
-    
+
                 if ( *buffer & 0xFF000000 )   // we can send a byte
                 {
                     quadlet_t tmpval;
                     tmpval = ((*buffer)<<16) & 0x00FF0000;
                     tmpval = IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
-                    *target_event = tmpval;
+                    *target_event = htonl(tmpval);
 
 //                     debugOutput ( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
 //                                p.port->getName().c_str(), p.position, p.location, nevents, m_dimension );
@@ -687,15 +942,15 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                     // can't send a byte, either because there is no byte,
                     // or because this would exceed the maximum rate
                     // FIXME: this can be ifdef optimized since it's a constant
-                    *target_event = IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA);
+                    *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
                 }
                 buffer+=8;
             }
         } else {
             for (j = p.location;j < nevents; j += 8) {
-                target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
+                target_event = (quadlet_t *)(data + ((j * m_dimension) + p.position));
                 __builtin_prefetch(target_event, 1, 0); // prefetch events for write, no temporal locality
-                *target_event = IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA);
+                *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
             }
         }
     }
