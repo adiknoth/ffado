@@ -183,7 +183,8 @@ if not env.GetOption('clean'):
 	if not allpresent:
 		print """
 (At least) One of the dependencies is missing. I can't go on without it, please
-install the needed packages (remember to also install the *-devel packages)
+install the needed packages for each of the lines saying "no".
+(Remember to also install the *-devel packages!)
 """
 		Exit( 1 )
 
