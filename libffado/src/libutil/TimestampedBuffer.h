@@ -26,6 +26,7 @@
 
 #include "../debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
+#include <pthread.h>
 
 //typedef float ffado_timestamp_t;
 //#define TIMESTAMP_FORMAT_SPEC "%14.3f"
@@ -158,8 +159,8 @@ class TimestampedBuffer
         void setVerboseLevel ( int l ) {setDebugLevel ( l );};
 
     private:
-        void decrementFrameCounter ( int nbframes );
-        void incrementFrameCounter ( int nbframes, ffado_timestamp_t new_timestamp );
+        void decrementFrameCounter(unsigned int nbframes);
+        void incrementFrameCounter(unsigned int nbframes, ffado_timestamp_t new_timestamp);
         void resetFrameCounter();
 
     protected:

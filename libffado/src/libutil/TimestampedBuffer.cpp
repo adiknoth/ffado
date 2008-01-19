@@ -75,6 +75,8 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
 }
 
 TimestampedBuffer::~TimestampedBuffer() {
+    pthread_mutex_destroy(&m_framecounter_lock);
+
     ffado_ringbuffer_free(m_event_buffer);
     free(m_process_buffer);
 }
@@ -262,7 +264,8 @@ bool TimestampedBuffer::setTickOffset(ffado_timestamp_t nticks) {
  * @return the internal buffer fill in frames
  */
 unsigned int TimestampedBuffer::getBufferFill() {
-    return ffado_ringbuffer_read_space(m_event_buffer)/(m_bytes_per_frame);
+    //return ffado_ringbuffer_read_space(m_event_buffer)/(m_bytes_per_frame);
+    return m_framecounter;
 }
 
 /**
@@ -275,7 +278,9 @@ unsigned int TimestampedBuffer::getBufferFill() {
  * @return the internal buffer fill in frames
  */
 unsigned int TimestampedBuffer::getBufferSpace() {
-    return ffado_ringbuffer_write_space(m_event_buffer)/(m_bytes_per_frame);
+    //return ffado_ringbuffer_write_space(m_event_buffer)/(m_bytes_per_frame);
+    assert(m_buffer_size-m_framecounter >= 0);
+    return m_buffer_size-m_framecounter;
 }
 
 /**
@@ -354,7 +359,7 @@ bool TimestampedBuffer::prepare() {
     
     // this will init the internal timestamps to a sensible value
     setBufferTailTimestamp(m_buffer_tail_timestamp);
-    
+
     return true;
 }
 
@@ -1084,7 +1089,7 @@ void TimestampedBuffer::resetFrameCounter() {
  *
  * @param nbframes number of frames to decrement
  */
-void TimestampedBuffer::decrementFrameCounter(int nbframes) {
+void TimestampedBuffer::decrementFrameCounter(unsigned int nbframes) {
     ENTER_CRITICAL_SECTION;
     m_framecounter -= nbframes;
     EXIT_CRITICAL_SECTION;
@@ -1100,7 +1105,7 @@ void TimestampedBuffer::decrementFrameCounter(int nbframes) {
  * @param nbframes the number of frames to add
  * @param new_timestamp the new timestamp
  */
-void TimestampedBuffer::incrementFrameCounter(int nbframes, ffado_timestamp_t new_timestamp) {
+void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_timestamp_t new_timestamp) {
 
     // add the offsets
     ffado_timestamp_t diff;
