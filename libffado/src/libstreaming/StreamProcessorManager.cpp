@@ -710,7 +710,7 @@ bool StreamProcessorManager::waitForPeriod() {
     bool period_not_ready = true;
 
     while(period_not_ready) {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
+        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
         bool result;
         if(m_SyncSource->getType() == StreamProcessor::ePT_Receive) {
             result = m_SyncSource->waitForConsumePeriod();
@@ -756,6 +756,10 @@ bool StreamProcessorManager::waitForPeriod() {
         }
         if(xrun_occurred) break;
         // FIXME: make sure we also exit this loop when something else happens (e.g. signal, iso error)
+    }
+
+    if(xrun_occurred) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "exit due to xrun...\n");
     }
 
     // we save the 'ideal' time of the transfer at this point,
