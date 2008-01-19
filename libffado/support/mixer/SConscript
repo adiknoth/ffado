@@ -30,14 +30,18 @@ if env.has_key('PYUIC'):
 	e = env.Clone()
 
 	e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire', 'af2', 'bcoaudio5', 'edirolfa66', 'mackie_generic' ]
+	#
+	# For the ffadomixer.in
 	e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
+	# For the installation of the stuff
+	e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
 
 	for m in e['MIXERAPPS']:
 		app = "mixer_" + m
 		if os.path.exists( app+".ui" ):
 			e.PyUIC( source=app+".ui", target=app+"ui.py" )
-			e.Install( "$PYTHONDIR", app+"ui.py" )
-		e.Install( "$PYTHONDIR", app+".py" )
+			e.Install( "$pythondir", app+"ui.py" )
+		e.Install( "$pythondir", app+".py" )
 
 	e.ScanReplace( "ffadomixer.in" )
 	e.Depends( "ffadomixer", "SConscript" )
