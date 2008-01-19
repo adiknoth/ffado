@@ -116,6 +116,22 @@ public:
     uint32_t getCycleTimer();
 
     /**
+     * @brief get the cycle timer value for a specific time instant (in ticks)
+     *
+     * @note Uses the most appropriate method for getting the cycle timer
+     *       which is not necessarily a direct read (could be DLL)
+     */
+    uint32_t getCycleTimerTicks(uint64_t t);
+
+    /**
+     * @brief get the cycle timer value for a specific time instant (in CTR format)
+     *
+     * @note Uses the most appropriate method for getting the cycle timer
+     *       which is not necessarily a direct read (could be DLL)
+     */
+    uint32_t getCycleTimer(uint64_t t);
+
+    /**
      * @brief read the cycle timer value from the controller (in CTR format)
      *
      * @note Uses a direct method to read the value from the controller

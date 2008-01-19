@@ -52,7 +52,7 @@ Ieee1394Service::Ieee1394Service()
     , m_realtime ( false )
     , m_base_priority ( 0 )
     , m_pIsoManager( new IsoHandlerManager( *this ) )
-    , m_pCTRHelper ( new CycleTimerHelper( *this, 10000 ) )
+    , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
 {
@@ -76,7 +76,8 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_realtime ( rt )
     , m_base_priority ( prio )
     , m_pIsoManager( new IsoHandlerManager( *this, rt, prio + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE ) )
-    , m_pCTRHelper ( new CycleTimerHelper( *this, 1000, rt, prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
+    , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC,
+                                           rt, prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
 {
@@ -315,6 +316,27 @@ Ieee1394Service::getCycleTimerTicks() {
 uint32_t
 Ieee1394Service::getCycleTimer() {
     return m_pCTRHelper->getCycleTimer();
+}
+
+/**
+ * Returns the current value of the cycle timer (in ticks)
+ * for a specific time instant (usecs since epoch)
+ * @return the current value of the cycle timer (in ticks)
+ */
+
+uint32_t
+Ieee1394Service::getCycleTimerTicks(uint64_t t) {
+    return m_pCTRHelper->getCycleTimerTicks(t);
+}
+
+/**
+ * Returns the current value of the cycle timer (as is)
+ * for a specific time instant (usecs since epoch)
+ * @return the current value of the cycle timer (as is)
+ */
+uint32_t
+Ieee1394Service::getCycleTimer(uint64_t t) {
+    return m_pCTRHelper->getCycleTimer(t);
 }
 
 bool
@@ -1064,8 +1086,20 @@ Ieee1394Service::setVerboseLevel(int l)
 void
 Ieee1394Service::show()
 {
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    if(!readCycleTimerReg(&cycle_timer, &local_time)) {
+        debugWarning("Could not read cycle timer register\n");
+    }
+    uint64_t ctr = CYCLE_TIMER_TO_TICKS( cycle_timer );
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "Port:  %d\n", getPort() );
     debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Time: %011llu (%03us %04ucy %04uticks)\n",
+                ctr,
+                (unsigned int)TICKS_TO_SECS( ctr ),
+                (unsigned int)TICKS_TO_CYCLES( ctr ),
+                (unsigned int)TICKS_TO_OFFSET( ctr ) );
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Iso handler info:\n");
     if (m_pIsoManager) m_pIsoManager->dumpInfo();
 }
