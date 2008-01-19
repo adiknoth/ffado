@@ -1639,7 +1639,7 @@ bool StreamProcessor::waitForProducePeriod()
 }
 bool StreamProcessor::waitForProduce(unsigned int nframes)
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) wait ...\n", this);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
     struct timespec ts;
     int result;
 
@@ -1661,11 +1661,11 @@ bool StreamProcessor::waitForProduce(unsigned int nframes)
     
         if (result == -1) {
             if (errno == ETIMEDOUT) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) pthread_cond_timedwait() timed out\n", this);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) pthread_cond_timedwait() timed out\n", this, getTypeString());
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             } else {
-                debugError("(%p) pthread_cond_timedwait error\n", this);
+                debugError("(%p, %s) pthread_cond_timedwait error\n", this, getTypeString());
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             }
@@ -1685,7 +1685,7 @@ bool StreamProcessor::waitForConsumePeriod()
 }
 bool StreamProcessor::waitForConsume(unsigned int nframes)
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) wait ...\n", this);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
     struct timespec ts;
     int result;
 
@@ -1704,20 +1704,20 @@ bool StreamProcessor::waitForConsume(unsigned int nframes)
     pthread_mutex_lock(&m_activity_cond_lock);
     while(!canConsume(nframes)) {
         result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
-    
         if (result == -1) {
             if (errno == ETIMEDOUT) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) pthread_cond_timedwait() timed out\n", this);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) pthread_cond_timedwait() timed out\n", this, getTypeString());
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             } else {
-                debugError("(%p) pthread_cond_timedwait error\n", this);
+                debugError("(%p, %s) pthread_cond_timedwait error\n", this, getTypeString());
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             }
         }
     }
     pthread_mutex_unlock(&m_activity_cond_lock);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) leave ...\n", this, getTypeString());
     return true;
 }
 
@@ -1731,6 +1731,7 @@ bool StreamProcessor::canProducePeriod()
 }
 bool StreamProcessor::canProduce(unsigned int nframes)
 {
+    if(m_in_xrun) return true;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
         // check whether we already fullfil the criterion
         unsigned int bufferspace = m_data_buffer->getBufferSpace();
@@ -1761,6 +1762,7 @@ bool StreamProcessor::canConsumePeriod()
 }
 bool StreamProcessor::canConsume(unsigned int nframes)
 {
+    if(m_in_xrun) return true;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
         // check whether we already fullfil the criterion
         unsigned int bufferfill = m_data_buffer->getBufferFill();

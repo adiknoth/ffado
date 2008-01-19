@@ -49,13 +49,13 @@
     #define NB_THREADS 3
     #define THREAD_RT true
     #define THREAD_PRIO 90
-    #define THREAD_SLEEP_US 1000
+    #define THREAD_SLEEP_US 100
     
 using namespace Util;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 
-#define DIFF_CONSIDERED_LARGE 3072
+#define DIFF_CONSIDERED_LARGE 30720
 int PORT_TO_USE = 0;
 
 int run=1;
