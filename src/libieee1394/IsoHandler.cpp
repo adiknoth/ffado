@@ -173,10 +173,15 @@ IsoHandler::Init()
 bool
 IsoHandler::waitForClient()
 {
-    //debugOutput(DEBUG_LEVEL_VERBOSE, "waiting...\n");
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
-        bool result = m_Client->waitForSignal();
-        //debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
+        bool result;
+        if (m_type == eHT_Receive) {
+            result = m_Client->waitForProducePacket();
+        } else {
+            result = m_Client->waitForConsumePacket();
+        }
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, " no client\n");
@@ -187,10 +192,15 @@ IsoHandler::waitForClient()
 bool
 IsoHandler::tryWaitForClient()
 {
-    //debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
-        bool result = m_Client->tryWaitForSignal();
-        //debugOutput(DEBUG_LEVEL_VERBOSE, " returns %d\n", result);
+        bool result;
+        if (m_type == eHT_Receive) {
+            result = m_Client->canProducePacket();
+        } else {
+            result = m_Client->canConsumePacket();
+        }
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
     } else {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
@@ -213,16 +223,11 @@ IsoHandler::Execute()
 
     // wait for the availability of frames in the client
     // (blocking for transmit handlers)
-#if 0 //#ifdef DEBUG
-    if (getType() == eHT_Transmit) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) Waiting for Client to signal frame availability...\n", this);
-    }
-#endif
-    if (getType() == eHT_Receive || waitForClient()) {
-
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Waiting for Client activity...\n", this, getTypeString());
+    if (waitForClient()) {
 #if ISOHANDLER_USE_POLL
         bool result = true;
-        while(result && m_Client && m_Client->canProcessPackets()) {
+        while(result && m_Client && tryWaitForClient()) {
             int err = poll(&m_poll_fd, 1, m_poll_timeout);
             if (err == -1) {
                 if (errno == EINTR) {
@@ -254,7 +259,7 @@ IsoHandler::Execute()
         // iterate() is blocking if no 1394 data is available
         // so poll'ing is not really necessary
         bool result = true;
-        while(result && m_Client && m_Client->canProcessPackets()) {
+        while(result && m_Client && tryWaitForClient()) {
             result = iterate();
 //             if (getType() == eHT_Receive) {
 //                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterate returned: %d\n",
@@ -271,10 +276,8 @@ IsoHandler::Execute()
 
 bool
 IsoHandler::iterate() {
-//     if(m_type==eHT_Receive) {
-//         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Iterating ISO handler\n", 
-//                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
-//     }
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler...\n",
+                this, getTypeString());
     if(m_State == E_Running) {
 #if ISOHANDLER_FLUSH_BEFORE_ITERATE
         flush();
@@ -284,12 +287,12 @@ IsoHandler::iterate() {
                         this, strerror(errno));
             return false;
         }
-//         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s)  done iterating ISO handler\n", 
-//                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) done interating ISO handler...\n",
+                    this, getTypeString());
         return true;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Not iterating a non-running handler...\n",
-                    this, (m_type==eHT_Receive?"Receive":"Transmit"));
+                    this, getTypeString());
         return false;
     }
 }
@@ -414,7 +417,7 @@ void IsoHandler::dumpInfo()
     if (m_Client) channel=m_Client->getChannel();
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Handler type................: %s\n",
-            (this->getType() == eHT_Receive ? "Receive" : "Transmit"));
+            getTypeString());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel...............: %2d, %2d\n",
             m_manager.get1394Service().getPort(), channel);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Buffer, MaxPacketSize, IRQ..: %4d, %4d, %4d\n",
@@ -474,9 +477,9 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped) {
 
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+/*    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
                  "received packet: length=%d, channel=%d, cycle=%d\n",
-                 length, channel, cycle );
+                 length, channel, cycle );*/
     m_packetcount++;
     m_dropped += dropped;
 
@@ -493,15 +496,18 @@ enum raw1394_iso_disposition IsoHandler::getPacket(
                     unsigned char *tag, unsigned char *sy,
                     int cycle, unsigned int dropped) {
 
-    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE,
+/*    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE,
                     "sending packet: length=%d, cycle=%d\n",
-                    *length, cycle );
+                    *length, cycle );*/
     m_packetcount++;
     m_dropped += dropped;
 
     if(m_Client) {
         return m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
     }
+    *tag = 0;
+    *sy = 0;
+    *length = 0;
     return RAW1394_ISO_OK;
 }
 
@@ -592,4 +598,18 @@ bool IsoHandler::enable(int cycle)
     m_poll_fd.events = POLLIN;
     m_State = E_Running;
     return true;
+}
+
+/**
+ * @brief convert a EHandlerType to a string
+ * @param t the type
+ * @return a char * describing the state
+ */
+const char *
+IsoHandler::eHTToString(enum EHandlerType t) {
+    switch (t) {
+        case eHT_Receive: return "Receive";
+        case eHT_Transmit: return "Transmit";
+        default: return "error: unknown type";
+    }
 }

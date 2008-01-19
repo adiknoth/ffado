@@ -711,17 +711,31 @@ bool StreamProcessorManager::waitForPeriod() {
 
     while(period_not_ready) {
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
-        if(!m_SyncSource->waitForSignal()) {
-            debugError("Error waiting for signal\n");
-            return false;
+        bool result;
+        if(m_SyncSource->getType() == StreamProcessor::ePT_Receive) {
+            result = m_SyncSource->waitForConsumePeriod();
+        } else {
+            result = m_SyncSource->waitForProducePeriod();
         }
+//         if(!result) {
+//             debugError("Error waiting for signal\n");
+//             return false;
+//         }
 
         // HACK: this should be solved more elegantly
         period_not_ready = false;
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-            bool this_sp_period_ready = (*it)->canClientTransferFrames(m_period);
+            bool this_sp_period_ready = (*it)->canConsumePeriod();
+            if (!this_sp_period_ready) {
+                period_not_ready = true;
+            }
+        }
+        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+            it != m_TransmitProcessors.end();
+            ++it ) {
+            bool this_sp_period_ready = (*it)->canProducePeriod();
             if (!this_sp_period_ready) {
                 period_not_ready = true;
             }

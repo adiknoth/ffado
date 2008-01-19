@@ -99,6 +99,10 @@ public:
 
     void flush();
     enum EHandlerType getType() {return m_type;};
+    const char *getTypeString() {return eHTToString(m_type); };
+
+    // pretty printing
+    const char *eHTToString(enum EHandlerType);
 
     bool isEnabled()
         {return m_State == E_Running;};

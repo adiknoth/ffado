@@ -39,17 +39,10 @@
 #include <assert.h>
 #include <math.h>
 
-/*
-#define POST_SEMAPHORE { \
-    int tmp; \
-    sem_getvalue(&m_signal_semaphore, &tmp); \
-    debugWarning("posting semaphore from value %d\n", tmp); \
-    sem_post(&m_signal_semaphore); \
-}
-*/
-
-#define POST_SEMAPHORE { \
-    sem_post(&m_signal_semaphore); \
+#define SIGNAL_ACTIVITY { \
+    pthread_mutex_lock(&m_activity_cond_lock); \
+    pthread_cond_broadcast(&m_activity_cond); \
+    pthread_mutex_unlock(&m_activity_cond_lock); \
 }
 
 namespace Streaming {
@@ -77,11 +70,11 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_last_cycle( -1 )
     , m_sync_delay( 0 )
     , m_in_xrun( false )
-    , m_signal_period( 0 )
-    , m_signal_offset( 0 )
 {
     // create the timestamped buffer and register ourselves as its client
     m_data_buffer = new Util::TimestampedBuffer(this);
+    pthread_mutex_init(&m_activity_cond_lock, NULL);
+    pthread_cond_init(&m_activity_cond, NULL);
 }
 
 StreamProcessor::~StreamProcessor() {
@@ -89,10 +82,19 @@ StreamProcessor::~StreamProcessor() {
     if(!m_IsoHandlerManager.unregisterStream(this)) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister stream processor with the Iso manager\n");
     }
-    // make the threads leave the wait condition
-    POST_SEMAPHORE;
-    sem_destroy(&m_signal_semaphore);
 
+    // lock the condition mutex to keep threads from blocking on
+    // the condition var while we destroy it
+    pthread_mutex_lock(&m_activity_cond_lock);
+    // now signal activity, releasing threads that
+    // are already blocking on the condition variable
+    pthread_cond_broadcast(&m_activity_cond);
+    // then destroy it
+    pthread_cond_destroy(&m_activity_cond);
+    pthread_mutex_unlock(&m_activity_cond_lock);
+
+    // destroy the mutexes
+    pthread_mutex_destroy(&m_activity_cond_lock);
     if (m_data_buffer) delete m_data_buffer;
     if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
@@ -315,7 +317,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // bypass based upon state
     if (m_state == ePS_Invalid) {
         debugError("Should not have state %s\n", ePSToString(m_state) );
-        POST_SEMAPHORE;
         return RAW1394_ISO_ERROR;
     }
     if (m_state == ePS_Created) {
@@ -337,7 +338,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             m_next_state = ePS_DryRunning;
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
-                POST_SEMAPHORE;
                 return RAW1394_ISO_ERROR;
             }
         } else {
@@ -357,7 +357,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             m_next_state = ePS_Running;
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
-                POST_SEMAPHORE;
                 return RAW1394_ISO_ERROR;
             }
         } else {
@@ -382,7 +381,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
-                POST_SEMAPHORE;
                 return RAW1394_ISO_ERROR;
             }
         }
@@ -416,7 +414,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 m_next_state = ePS_DryRunning;
                 if (!updateState()) { // we are allowed to change the state directly
                     debugError("Could not update state!\n");
-                    POST_SEMAPHORE;
                     return RAW1394_ISO_ERROR;
                 }
             } else {
@@ -434,7 +431,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
-                POST_SEMAPHORE;
                 return RAW1394_ISO_ERROR;
             }
         }
@@ -454,40 +450,15 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
-                POST_SEMAPHORE;
                 return RAW1394_ISO_ERROR;
             }
-            POST_SEMAPHORE;
             return RAW1394_ISO_DEFER;
         } else if(result2 == eCRV_OK) {
             // no problem here
-            // if we have enough samples, we can post the semaphore and 
-            // defer further processing until later. this will allow us to
-            // run the client and process the frames such that we can put them
-            // into the xmit buffers ASAP
-            if (m_state == ePS_Running) {
-                unsigned int bufferfill = m_data_buffer->getBufferFill();
-                if(bufferfill >= m_signal_period + m_signal_offset) {
-                    // this to avoid multiple signals for the same period
-                    int semval;
-                    sem_getvalue(&m_signal_semaphore, &semval);
-                    // NOTE: this can cause 2 posts to be done when the receiving thread
-                    //       decreases the semaphore but hasn't processed the frames yet
-                    unsigned int signal_period = m_signal_period * (semval + 1) + m_signal_offset;
-                    if(bufferfill >= signal_period) {
-                        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) buffer fill (%d) > signal period (%d), sem_val=%d\n",
-                                    this, m_data_buffer->getBufferFill(), signal_period, semval);
-                        POST_SEMAPHORE;
-                    }
-                    // the process thread should have higher prio such that we are blocked until
-                    // the samples are processed.
-                    return RAW1394_ISO_DEFER;
-                }
-            }
+            SIGNAL_ACTIVITY;
             return RAW1394_ISO_OK;
         } else {
             debugError("Invalid response\n");
-            POST_SEMAPHORE;
             return RAW1394_ISO_ERROR;
         }
     } else if(result == eCRV_Invalid) {
@@ -495,11 +466,9 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         return RAW1394_ISO_OK;
     } else {
         debugError("Invalid response\n");
-        POST_SEMAPHORE;
         return RAW1394_ISO_ERROR;
     }
     debugError("reached the unreachable\n");
-    POST_SEMAPHORE;
     return RAW1394_ISO_ERROR;
 }
 
@@ -632,7 +601,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             m_last_dropped = dropped_cycles;
 
             // assumed not to xrun
-            enum eChildReturnValue result2 = generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
             return RAW1394_ISO_OK;
         } else {
             debugError("Invalid return value: %d\n", result);
@@ -788,10 +757,13 @@ send_empty_packet:
  * @return 
  */
 bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
+    bool result;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.getFrames(%d, %11llu)", nbframes, ts);
     assert( getType() == ePT_Receive );
-    if(isDryRunning()) return getFramesDry(nbframes, ts);
-    else return getFramesWet(nbframes, ts);
+    if(isDryRunning()) result = getFramesDry(nbframes, ts);
+    else result = getFramesWet(nbframes, ts);
+    SIGNAL_ACTIVITY;
+    return result;
 }
 
 bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
@@ -846,17 +818,22 @@ bool StreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::dropFrames(unsigned int nbframes, int64_t ts)
 {
+    bool result;
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d, %lld)\n", nbframes, ts);
-    return m_data_buffer->dropFrames(nbframes);
+    result = m_data_buffer->dropFrames(nbframes);
+    SIGNAL_ACTIVITY;
+    return result;
 }
 
 bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
 {
+    bool result;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.putFrames(%d, %11llu)", nbframes, ts);
     assert( getType() == ePT_Transmit );
-
-    if(isDryRunning()) return putFramesDry(nbframes, ts);
-    else return putFramesWet(nbframes, ts);
+    if(isDryRunning()) result = putFramesDry(nbframes, ts);
+    else result = putFramesWet(nbframes, ts);
+    SIGNAL_ACTIVITY;
+    return result;
 }
 
 bool
@@ -866,16 +843,6 @@ StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts)
     // transfer the data
     m_data_buffer->blockProcessWriteFrames(nbframes, ts);
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, " New timestamp: %llu\n", ts);
-
-    unsigned int bufferfill = m_data_buffer->getBufferFill();
-    if (bufferfill >= m_signal_period + m_signal_offset) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) sufficient frames in buffer (%d / %d), posting semaphore\n",
-                                         this, bufferfill, m_signal_period + m_signal_offset);
-        POST_SEMAPHORE;
-    } else {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) insufficient frames in buffer (%d / %d), not posting semaphore\n",
-                                         this, bufferfill, m_signal_period + m_signal_offset);
-    }
     return true; // FIXME: what about failure?
 }
 
@@ -910,101 +877,25 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
         return false;
     }
 
-    unsigned int bufferfill = m_data_buffer->getBufferFill();
-    if (bufferfill >= m_signal_period + m_signal_offset) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) sufficient frames in buffer (%d / %d), posting semaphore\n",
-                                         this, bufferfill, m_signal_period + m_signal_offset);
-        POST_SEMAPHORE;
-    } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) insufficient frames in buffer (%d / %d), not posting semaphore\n",
-                                         this, bufferfill, m_signal_period + m_signal_offset);
-    }
-
+    SIGNAL_ACTIVITY;
     return true;
-}
-
-bool
-StreamProcessor::waitForSignal()
-{
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
-    int result;
-    if(m_state == ePS_Running && m_next_state == ePS_Running) {
-        // check whether we already fullfil the criterion
-        unsigned int bufferfill = m_data_buffer->getBufferFill();
-        if(bufferfill >= m_signal_period + m_signal_offset) {
-            return true;
-        }
-
-        result = sem_wait(&m_signal_semaphore);
-#ifdef DEBUG
-        int tmp;
-        sem_getvalue(&m_signal_semaphore, &tmp);
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " sem_wait returns: %d, sem_value: %d\n", result, tmp);
-#endif
-        return result == 0;
-    } else {
-        // when we're not running, we can always provide frames
-        // when we're in a state transition, keep iterating too
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Not running...\n");
-        return true;
-    }
-}
-
-bool
-StreamProcessor::tryWaitForSignal()
-{
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) trywait ...\n", this, getTypeString());
-    int result;
-    if(m_state == ePS_Running && m_next_state == ePS_Running) {
-        // check whether we already fullfil the criterion
-        unsigned int bufferfill = m_data_buffer->getBufferFill();
-        if(bufferfill >= m_signal_period + m_signal_offset) {
-            return true;
-        }
-
-        result = sem_trywait(&m_signal_semaphore);
-#ifdef DEBUG
-        int tmp;
-        sem_getvalue(&m_signal_semaphore, &tmp);
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " sem_wait returns: %d, sem_value: %d\n", result, tmp);
-#endif
-        return result == 0;
-    } else {
-        // when we're not running, we can always provide frames
-        // when we're in a state transition, keep iterating too
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Not running...\n");
-        return true;
-    }
-}
-
-bool
-StreamProcessor::canProcessPackets()
-{
-    if(m_state != ePS_Running || m_next_state != ePS_Running) return true;
-    bool result;
-    unsigned int bufferfill;
-    if(getType() == ePT_Receive) {
-        bufferfill = m_data_buffer->getBufferSpace();
-    } else {
-        bufferfill = m_data_buffer->getBufferFill();
-    }
-    result = bufferfill > getNominalFramesPerPacket();
-//     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) for a bufferfill of %d, we return %d\n",
-//                 this, ePTToString(getType()), bufferfill, result);
-    return result;
 }
 
 bool
 StreamProcessor::shiftStream(int nbframes)
 {
+    bool result;
     if(nbframes == 0) return true;
     if(nbframes > 0) {
-        return m_data_buffer->dropFrames(nbframes);
+        result = m_data_buffer->dropFrames(nbframes);
+        SIGNAL_ACTIVITY;
+        return result;
     } else {
-        bool result = true;
+        result = true;
         while(nbframes++) {
             result &= m_data_buffer->writeDummyFrame();
         }
+        SIGNAL_ACTIVITY;
         return result;
     }
 }
@@ -1088,11 +979,6 @@ bool StreamProcessor::init()
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "init...\n");
 
-    if (sem_init(&m_signal_semaphore, 0, 0) == -1) {
-        debugError("Could not init signal semaphore");
-        return false;
-    }
-
     if(!m_IsoHandlerManager.registerStream(this)) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Could not register stream processor with the Iso manager\n");
         return false;
@@ -1169,7 +1055,9 @@ StreamProcessor::scheduleStateTransition(enum eProcessorState state, uint64_t ti
     // using the time
     m_cycle_to_switch_state = TICKS_TO_CYCLES(time_instant);
     m_next_state = state;
-    POST_SEMAPHORE; // needed to ensure that things don't get deadlocked
+    // wake up any threads that might be waiting on data in the buffers
+    // since a state transition can cause data to become available
+    SIGNAL_ACTIVITY;
     return true;
 }
 
@@ -1416,6 +1304,7 @@ StreamProcessor::doStop()
         dumpInfo();
     }
     #endif
+    SIGNAL_ACTIVITY;
     return result;
 }
 
@@ -1449,6 +1338,7 @@ StreamProcessor::doWaitForRunningStream()
         dumpInfo();
     }
     #endif
+    SIGNAL_ACTIVITY;
     return true;
 }
 
@@ -1498,6 +1388,7 @@ StreamProcessor::doDryRunning()
         dumpInfo();
     }
     #endif
+    SIGNAL_ACTIVITY;
     return result;
 }
 
@@ -1521,10 +1412,6 @@ StreamProcessor::doWaitForStreamEnable()
             // this basically means nothing, the state change will
             // be picked up by the packet iterator
 
-            sem_init(&m_signal_semaphore, 0, 0);
-            m_signal_period = m_StreamProcessorManager.getPeriodSize();
-            m_signal_offset = 0; // FIXME: we have to ensure that everyone is ready
-
             if(!m_data_buffer->clearBuffer()) {
                 debugError("Could not reset data buffer\n");
                 return false;
@@ -1537,11 +1424,7 @@ StreamProcessor::doWaitForStreamEnable()
                     debugFatal("Could not prefill transmit stream\n");
                     return false;
                 }
-                if (m_data_buffer->getBufferFill() >= m_signal_period + m_signal_offset) {
-                    POST_SEMAPHORE;
-                }
             }
-
             break;
         default:
             debugError("Entry from invalid state: %s\n", ePSToString(m_state));
@@ -1554,6 +1437,7 @@ StreamProcessor::doWaitForStreamEnable()
         dumpInfo();
     }
     #endif
+    SIGNAL_ACTIVITY;
     return true;
 }
 
@@ -1591,6 +1475,7 @@ StreamProcessor::doRunning()
         dumpInfo();
     }
     #endif
+    SIGNAL_ACTIVITY;
     return result;
 }
 
@@ -1610,9 +1495,6 @@ StreamProcessor::doWaitForStreamDisable()
     switch(m_state) {
         case ePS_Running:
             // the thread will do the transition
-
-            // we have to wake the iterator if it's asleep
-            POST_SEMAPHORE;
             break;
         default:
             debugError("Entry from invalid state: %s\n", ePSToString(m_state));
@@ -1625,6 +1507,7 @@ StreamProcessor::doWaitForStreamDisable()
         dumpInfo();
     }
     #endif
+    SIGNAL_ACTIVITY;
     return true;
 }
 
@@ -1647,7 +1530,6 @@ bool StreamProcessor::updateState() {
         debugWarning("ignoring identity state update from/to %s\n", ePSToString(m_state) );
         return true;
     }
-
     // after creation, only initialization is allowed
     if (m_state == ePS_Created) {
         if(next_state != ePS_Stopped) {
@@ -1655,7 +1537,7 @@ bool StreamProcessor::updateState() {
         }
         // do init here 
         result = doStop();
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1665,7 +1547,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doWaitForRunningStream();
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1676,7 +1558,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doDryRunning();
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1693,7 +1575,7 @@ bool StreamProcessor::updateState() {
         } else {
             result = doWaitForStreamEnable();
         }
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1710,7 +1592,7 @@ bool StreamProcessor::updateState() {
         } else {
             result = doRunning();
         }
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1720,7 +1602,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doWaitForStreamDisable();
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1730,7 +1612,7 @@ bool StreamProcessor::updateState() {
             goto updateState_exit_with_error;
         }
         result = doDryRunning();
-        if (result) {POST_SEMAPHORE; return true;}
+        if (result) {return true;}
         else goto updateState_exit_change_failed;
     }
 
@@ -1738,13 +1620,165 @@ bool StreamProcessor::updateState() {
 updateState_exit_with_error:
     debugError("Invalid state transition: %s => %s\n",
         ePSToString(m_state), ePSToString(next_state));
-    POST_SEMAPHORE;
+    SIGNAL_ACTIVITY;
     return false;
 updateState_exit_change_failed:
     debugError("State transition failed: %s => %s\n",
         ePSToString(m_state), ePSToString(next_state));
-    POST_SEMAPHORE;
+    SIGNAL_ACTIVITY;
     return false;
+}
+
+bool StreamProcessor::waitForProducePacket()
+{
+    return waitForProduce(getNominalFramesPerPacket());
+}
+bool StreamProcessor::waitForProducePeriod()
+{
+    return waitForProduce(m_StreamProcessorManager.getPeriodSize());
+}
+bool StreamProcessor::waitForProduce(unsigned int nframes)
+{
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) wait ...\n", this);
+    struct timespec ts;
+    int result;
+
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+        debugError("clock_gettime failed\n");
+        return false;
+    }
+
+    // FIXME: hardcoded timeout of 0.1 sec
+    ts.tv_nsec += 100 * 1000000LL;
+    if (ts.tv_nsec > 1000000000LL) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000000000LL;
+    }
+
+    pthread_mutex_lock(&m_activity_cond_lock);
+    while(!canProduce(nframes)) {
+        result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
+    
+        if (result == -1) {
+            if (errno == ETIMEDOUT) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) pthread_cond_timedwait() timed out\n", this);
+                pthread_mutex_unlock(&m_activity_cond_lock);
+                return false;
+            } else {
+                debugError("(%p) pthread_cond_timedwait error\n", this);
+                pthread_mutex_unlock(&m_activity_cond_lock);
+                return false;
+            }
+        }
+    }
+    pthread_mutex_unlock(&m_activity_cond_lock);
+    return true;
+}
+
+bool StreamProcessor::waitForConsumePacket()
+{
+    return waitForConsume(getNominalFramesPerPacket());
+}
+bool StreamProcessor::waitForConsumePeriod()
+{
+    return waitForConsume(m_StreamProcessorManager.getPeriodSize());
+}
+bool StreamProcessor::waitForConsume(unsigned int nframes)
+{
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) wait ...\n", this);
+    struct timespec ts;
+    int result;
+
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+        debugError("clock_gettime failed\n");
+        return false;
+    }
+
+    // FIXME: hardcoded timeout of 0.1 sec
+    ts.tv_nsec += 100 * 1000000LL;
+    if (ts.tv_nsec > 1000000000LL) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000000000LL;
+    }
+
+    pthread_mutex_lock(&m_activity_cond_lock);
+    while(!canConsume(nframes)) {
+        result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
+    
+        if (result == -1) {
+            if (errno == ETIMEDOUT) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) pthread_cond_timedwait() timed out\n", this);
+                pthread_mutex_unlock(&m_activity_cond_lock);
+                return false;
+            } else {
+                debugError("(%p) pthread_cond_timedwait error\n", this);
+                pthread_mutex_unlock(&m_activity_cond_lock);
+                return false;
+            }
+        }
+    }
+    pthread_mutex_unlock(&m_activity_cond_lock);
+    return true;
+}
+
+bool StreamProcessor::canProducePacket()
+{
+    return canProduce(getNominalFramesPerPacket());
+}
+bool StreamProcessor::canProducePeriod()
+{
+    return canProduce(m_StreamProcessorManager.getPeriodSize());
+}
+bool StreamProcessor::canProduce(unsigned int nframes)
+{
+    if(m_state == ePS_Running && m_next_state == ePS_Running) {
+        // check whether we already fullfil the criterion
+        unsigned int bufferspace = m_data_buffer->getBufferSpace();
+        if(bufferspace >= nframes) {
+//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "enough space (%u)...\n", bufferspace);
+            return true;
+        } else return false;
+    } else {
+        if(getType() == ePT_Transmit) {
+            // if we are an xmit SP, we cannot accept frames 
+            // when not running
+            return false;
+        } else {
+            // if we are a receive SP, we can always accept frames
+            // when not running
+            return true;
+        }
+    }
+}
+
+bool StreamProcessor::canConsumePacket()
+{
+    return canConsume(getNominalFramesPerPacket());
+}
+bool StreamProcessor::canConsumePeriod()
+{
+    return canConsume(m_StreamProcessorManager.getPeriodSize());
+}
+bool StreamProcessor::canConsume(unsigned int nframes)
+{
+    if(m_state == ePS_Running && m_next_state == ePS_Running) {
+        // check whether we already fullfil the criterion
+        unsigned int bufferfill = m_data_buffer->getBufferFill();
+        if(bufferfill >= nframes) {
+//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "enough items (%u)...\n", bufferfill);
+            return true;
+        } else return false;
+    } else {
+        if(getType() == ePT_Transmit) {
+            // if we are an xmit SP, and we're not running,
+            // we can always provide frames
+            return true;
+        } else {
+            // if we are a receive SP, we can't provide frames
+            // when not running
+            return false;
+        }
+    }
 }
 
 /***********************************************
