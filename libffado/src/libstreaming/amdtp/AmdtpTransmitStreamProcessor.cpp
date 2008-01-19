@@ -270,11 +270,45 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     int cycle, unsigned int dropped, unsigned int max_length )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
-    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT NONE (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
+    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT SILENT (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
-    /* Our node ID can change after a bus reset, so it is best to fetch
-    * our node ID for each packet. */
+    packet->sid = m_local_node_id;
+
+    packet->dbs = m_dimension;
+    packet->fn = 0;
+    packet->qpc = 0;
+    packet->sph = 0;
+    packet->reserved = 0;
+    packet->dbc = m_dbc;
+    packet->eoh1 = 2;
+    packet->fmt = IEC61883_FMT_AMDTP;
+
+    *tag = IEC61883_TAG_WITH_CIP;
+    *sy = 0;
+
+    m_dbc += fillNoDataPacketHeader ( packet, length );
+    return eCRV_Packet;
+}
+
+enum StreamProcessor::eChildReturnValue
+AmdtpTransmitStreamProcessor::generateSilentPacketData (
+    unsigned char *data, unsigned int *length,
+    unsigned char *tag, unsigned char *sy,
+    int cycle, unsigned int dropped, unsigned int max_length )
+{
+    return eCRV_OK; // no need to do anything
+}
+
+enum StreamProcessor::eChildReturnValue
+AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
+    unsigned char *data, unsigned int *length,
+    unsigned char *tag, unsigned char *sy,
+    int cycle, unsigned int dropped, unsigned int max_length )
+{
+    struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
+    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT EMPTY (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
+                cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
     packet->sid = m_local_node_id;
 
     packet->dbs = m_dimension;
@@ -294,7 +328,7 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
 }
 
 enum StreamProcessor::eChildReturnValue
-AmdtpTransmitStreamProcessor::generateSilentPacketData (
+AmdtpTransmitStreamProcessor::generateEmptyPacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
     int cycle, unsigned int dropped, unsigned int max_length )

@@ -315,12 +315,12 @@ MotuTransmitStreamProcessor::generatePacketData (
 }
 
 enum StreamProcessor::eChildReturnValue
-MotuTransmitStreamProcessor::generateSilentPacketHeader (
+MotuTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
     int cycle, unsigned int dropped, unsigned int max_length )
 {
-    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT NONE: CY=%04u, TSP=%011llu (%04u)\n",
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u, TSP=%011llu (%04u)\n",
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
     // Do housekeeping expected for all packets sent to the MOTU, even
@@ -331,6 +331,34 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
 
     m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
     return eCRV_OK;
+}
+
+enum StreamProcessor::eChildReturnValue
+MotuTransmitStreamProcessor::generateEmptyPacketData (
+    unsigned char *data, unsigned int *length,
+    unsigned char *tag, unsigned char *sy,
+    int cycle, unsigned int dropped, unsigned int max_length )
+{
+    return eCRV_OK; // no need to do anything
+}
+
+enum StreamProcessor::eChildReturnValue
+MotuTransmitStreamProcessor::generateSilentPacketHeader (
+    unsigned char *data, unsigned int *length,
+    unsigned char *tag, unsigned char *sy,
+    int cycle, unsigned int dropped, unsigned int max_length )
+{
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u, TSP=%011llu (%04u)\n",
+                cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
+
+    // Do housekeeping expected for all packets sent to the MOTU, even
+    // for packets containing no audio data.
+    *sy = 0x00;
+    *tag = 1;      // All MOTU packets have a CIP-like header
+    *length = 8;
+
+    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
+    return eCRV_Packet;
 }
 
 enum StreamProcessor::eChildReturnValue

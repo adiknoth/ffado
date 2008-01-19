@@ -279,6 +279,16 @@ protected: // the helper receive/transmit functions
                                     int cycle, unsigned int dropped,
                                     unsigned int max_length)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
+    virtual enum eChildReturnValue generateEmptyPacketHeader(unsigned char *data, unsigned int *length,
+                                            unsigned char *tag, unsigned char *sy,
+                                            int cycle, unsigned int dropped,
+                                            unsigned int max_length)
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
+    virtual enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length,
+                                          unsigned char *tag, unsigned char *sy,
+                                          int cycle, unsigned int dropped,
+                                          unsigned int max_length)
+        {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
                                             unsigned char *tag, unsigned char *sy,
                                             int cycle, unsigned int dropped,
