@@ -33,7 +33,8 @@
 #include "libutil/OptionContainer.h"
 
 #include "debugmodule/debugmodule.h"
-#include <semaphore.h>
+
+#include <pthread.h>
 
 class Ieee1394Service;
 class IsoHandlerManager;
@@ -160,50 +161,24 @@ public: // the public receive/transmit functions
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
 
-    unsigned int getSignalPeriod() {return m_signal_period;};
-    bool setSignalPeriod(unsigned int p) {m_signal_period=p; return true;};
-    /**
-     * @brief waits for a 'signal' (blocking)
-     *
-     * a 'signal' is:
-     * when type==Receive:
-     *  - one signal_period of frames is present in the buffer
-     *    (received by the iso side)
-     *  - an error has occurred (xrun, iso error, ...)
-     * when type==Transmit:
-     *  - at least one signal_period of frames are present in the buffer
-     *    (have been written into it by the client)
-     *  - an error occurred
-     *
-     * @return true if the 'signal' is available, false if error
-     */
-    bool waitForSignal();
+    //FIXME: document wait functions
+    bool waitForProducePacket();
+    bool waitForProducePeriod();
+    bool waitForProduce(unsigned int nframes);
 
-    /**
-     * @brief checks for a 'signal' (non-blocking)
-     *
-     * a 'signal' is:
-     * when type==Receive:
-     *  - one signal_period of frames is present in the buffer
-     *    (received by the iso side)
-     *  - an error has occurred (xrun, iso error, ...)
-     * when type==Transmit:
-     *  - at least one signal_period of frames are present in the buffer
-     *    (have been written into it by the client)
-     *  - an error occurred
-     *
-     * @return true if the 'signal' is available, false if not (or error)
-     */
-    bool tryWaitForSignal();
+    bool waitForConsumePacket();
+    bool waitForConsumePeriod();
+    bool waitForConsume(unsigned int nframes);
 
-    /**
-     * @brief can a SP process (queue, dequeue) packets at this moment?
-     *
-     *
-     * @return true if packet processing makes sense
-     */
-    bool canProcessPackets();
+    bool canProducePacket();
+    bool canProducePeriod();
+    bool canProduce(unsigned int nframes);
 
+    bool canConsumePacket();
+    bool canConsumePeriod();
+    bool canConsume(unsigned int nframes);
+
+public:
     /**
      * @brief drop nframes from the internal buffer as if they were transferred to the client side
      *
@@ -502,9 +477,8 @@ protected:
         unsigned int m_sync_delay;
     private:
         bool m_in_xrun;
-        sem_t m_signal_semaphore;
-        unsigned int m_signal_period;
-        unsigned int m_signal_offset;
+        pthread_mutex_t m_activity_cond_lock;
+        pthread_cond_t  m_activity_cond;
 
 public:
     // debug stuff
