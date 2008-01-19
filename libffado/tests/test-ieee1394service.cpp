@@ -46,17 +46,20 @@
 #include "libutil/Time.h"
 
 
-    #define NB_THREADS 3
-    #define THREAD_RT true
-    #define THREAD_PRIO 90
-    #define THREAD_SLEEP_US 100
+    #define NB_THREADS 1
+    #define THREAD_RT  true
+    #define THREAD_PRIO 51
+    #define THREAD_SLEEP_US 2000
     
 using namespace Util;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 
-#define DIFF_CONSIDERED_LARGE 30720
-int PORT_TO_USE = 0;
+#define DIFF_CONSIDERED_LARGE (3027/2)
+int PORT_TO_USE = 1;
+
+int max_diff=-99999;
+int min_diff= 99999;
 
 int run=1;
 static void sighandler (int sig)
@@ -129,7 +132,7 @@ bool CtrThread::Execute() {
     ctr_dll_prev = ctr_dll;
     
     ctr = CYCLE_TIMER_TO_TICKS( cycle_timer );
-    ctr_dll = m_service->getCycleTimerTicks();
+    ctr_dll = m_service->getCycleTimerTicks(local_time);
 
     if(err) {
         debugError("(%p) CTR read error\n", this);
@@ -148,6 +151,10 @@ bool CtrThread::Execute() {
                 (unsigned int)TICKS_TO_OFFSET( ctr_dll ) );
     int64_t diff = diffTicks(ctr, ctr_dll);
     uint64_t abs_diff;
+
+    // not 100% thread safe, but will do
+    if (diff > max_diff) max_diff = diff;
+    if (diff < min_diff) min_diff = diff;
 
     if (diff < 0) {
         abs_diff = -diff;
@@ -254,9 +261,9 @@ int main(int argc, char *argv[])
     Ieee1394Service *m_service=NULL;
 
     m_service = new Ieee1394Service();
-    m_service->setVerboseLevel(DEBUG_LEVEL_VERBOSE );
+    m_service->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     m_service->initialize(PORT_TO_USE);
-    m_service->setThreadParameters(true, 20);
+    m_service->setThreadParameters(true, 60);
 
     MyFunctor *test_busreset=new MyFunctor();
 
@@ -314,7 +321,8 @@ int main(int argc, char *argv[])
     i=0;
     while(run) {
         i++;
-        debugOutput(DEBUG_LEVEL_NORMAL, "%08d: alive...\n", i);
+        debugOutput(DEBUG_LEVEL_NORMAL, "%08d: alive, (max: %6d, min: %6d)\n", i, max_diff, min_diff);
+        m_service->show();
         sleep(5);
     }
 

@@ -27,13 +27,14 @@
 #include "ieee1394service.h"
 #include "libutil/PosixThread.h"
 
-#define DLL_BANDWIDTH (0.01)
+#define DLL_BANDWIDTH (0.1)
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)
 #define DLL_OMEGA     (2.0*DLL_PI*DLL_BANDWIDTH)
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
+#define OFFSET_AVERAGE_COEFF 0.01
 /*
 #define ENTER_CRITICAL_SECTION { \
     if (pthread_mutex_trylock(&m_compute_vars_lock) == EBUSY) { \
@@ -62,6 +63,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_current_time_ticks ( 0 )
     , m_next_time_ticks ( 0 )
     , m_first_run ( true )
+    , m_sleep_until ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
@@ -80,6 +82,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_current_time_ticks ( 0 )
     , m_next_time_ticks ( 0 )
     , m_first_run ( true )
+    , m_sleep_until ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
@@ -142,6 +145,7 @@ CycleTimerHelper::setThreadParameters(bool rt, int priority) {
     return true;
 }
 
+#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
 float
 CycleTimerHelper::getRate()
 {
@@ -157,12 +161,20 @@ CycleTimerHelper::getNominalRate()
     return rate;
 }
 
-#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
-
 bool
 CycleTimerHelper::Execute()
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
+    if (!m_first_run) {
+        // wait for the next update period
+        ffado_microsecs_t now = m_TimeSource.getCurrentTimeAsUsecs();
+        int sleep_time = m_sleep_until - now;
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
+                    this, m_sleep_until, m_next_time_usecs, now, sleep_time);
+        m_TimeSource.SleepUsecAbsolute(m_sleep_until);
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
+    }
+
     uint32_t cycle_timer;
     uint64_t local_time;
     if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
@@ -172,9 +184,8 @@ CycleTimerHelper::Execute()
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                     cycle_timer, local_time);
 
-    double usecs_late;
     if (m_first_run) {
-        usecs_late = 0.0;
+        m_sleep_until = local_time + m_usecs_per_update;
         m_dll_e2 = m_ticks_per_update;
         m_current_time_usecs = local_time;
         m_next_time_usecs = m_current_time_usecs + m_usecs_per_update;
@@ -187,26 +198,35 @@ CycleTimerHelper::Execute()
         debugOutput( DEBUG_LEVEL_VERBOSE, "  ticks current: %f, next: %f\n", m_current_time_ticks, m_next_time_ticks);
         m_first_run = false;
     } else {
-
-        double diff = m_next_time_usecs - m_current_time_usecs;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: local: %11llu current: %f next: %f, diff: %f\n",
-                    local_time, m_current_time_usecs, m_next_time_usecs, diff);
-
+        m_sleep_until += m_usecs_per_update;
         uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
-        usecs_late = ((double)local_time) - (m_next_time_usecs);
+        double usecs_late = ((double)local_time) - (m_next_time_usecs);
 
-        // we update the x-axis values
-        m_current_time_usecs = m_next_time_usecs;
-        m_next_time_usecs = (local_time - usecs_late) + m_usecs_per_update;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
-                    m_current_time_usecs, m_next_time_usecs, usecs_late);
-
-        // and the y-axis values
+        // update the x-axis values
         double diff_ticks = diffTicks(cycle_timer_ticks, (int64_t)m_next_time_ticks);
         m_current_time_ticks = m_next_time_ticks;
-        m_next_time_ticks = addTicks((uint64_t)m_current_time_ticks,
-                                     (uint64_t)((DLL_COEFF_B * diff_ticks) + m_dll_e2));
+        // do the calculation in 'tick space'
+        int64_t tmp = (uint64_t)(DLL_COEFF_B * diff_ticks);
+        if(m_dll_e2 > 0) {
+            tmp = addTicks(tmp, (uint64_t)m_dll_e2);
+        } else {
+            tmp = substractTicks(tmp, (uint64_t)(-m_dll_e2));
+        }
+        if(tmp < 0) {
+            debugWarning("negative slope: %lld!\n", tmp);
+        }
+        m_next_time_ticks = addTicks((uint64_t)m_current_time_ticks, tmp);
+
+        // it should be ok to not do this in tick space since it's value
+        // is approx equal to the rate, being 24.576 ticks/usec
         m_dll_e2 += DLL_COEFF_C * diff_ticks;
+
+        // update the y-axis values
+        m_current_time_usecs = m_next_time_usecs;
+        m_next_time_usecs = local_time + m_usecs_per_update;
+
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
+                    m_current_time_usecs, m_next_time_usecs, usecs_late);
         debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
                     m_current_time_ticks, m_next_time_ticks, diff_ticks);
 
@@ -214,24 +234,13 @@ CycleTimerHelper::Execute()
                     local_time, m_dll_e2, getRate());
     }
 
-    // track the average wakeup delay
-    m_avg_wakeup_delay += 0.01 * usecs_late;
-
     // FIXME: priority inversion!
     ENTER_CRITICAL_SECTION;
-    m_current_vars.ticks = m_current_time_ticks;
-    m_current_vars.usecs = m_current_time_usecs;
+    m_current_vars.ticks = (uint64_t)(m_current_time_ticks);// + m_average_offset_ticks);
+    m_current_vars.usecs = (uint64_t)m_current_time_usecs;
     m_current_vars.rate = getRate();
     EXIT_CRITICAL_SECTION;
 
-    // wait for the next update period
-    int64_t time_to_sleep = (int64_t)m_next_time_usecs - m_Parent.getCurrentTimeAsUsecs();
-    time_to_sleep -= (int64_t)m_avg_wakeup_delay;
-    //int64_t time_to_sleep = m_usecs_per_update;
-    if (time_to_sleep > 0) {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " sleeping %lld usecs (avg delay: %f)\n", time_to_sleep, m_avg_wakeup_delay);
-        usleep(time_to_sleep);
-    }
     return true;
 }
 
@@ -253,10 +262,10 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
     my_vars = m_current_vars;
     EXIT_CRITICAL_SECTION;
 
-    double time_diff = now - my_vars.usecs;
-    double y_step_in_ticks = time_diff * my_vars.rate;
+    int64_t time_diff = now - my_vars.usecs;
+    double y_step_in_ticks = ((double)time_diff) * my_vars.rate;
     int64_t y_step_in_ticks_int = (int64_t)y_step_in_ticks;
-    uint64_t offset_in_ticks_int = (uint64_t)my_vars.ticks;
+    uint64_t offset_in_ticks_int = my_vars.ticks;
 
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
@@ -276,16 +285,37 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 uint32_t
 CycleTimerHelper::getCycleTimer()
 {
-    return TICKS_TO_CYCLE_TIMER(getCycleTimerTicks());
+    uint64_t now = m_Parent.getCurrentTimeAsUsecs();
+    return getCycleTimer(now);
 }
 
 uint32_t
 CycleTimerHelper::getCycleTimer(uint64_t now)
 {
-    return TICKS_TO_CYCLE_TIMER(getCycleTimerTicks(now));
+    uint32_t ticks = getCycleTimerTicks(now);
+    uint32_t result = TICKS_TO_CYCLE_TIMER(ticks);
+#ifdef DEBUG
+    if(CYCLE_TIMER_TO_TICKS(result) != ticks) {
+        debugWarning("Bad ctr conversion");
+    }
+#endif
+    return result;
 }
 
 #else
+
+float
+CycleTimerHelper::getRate()
+{
+    return getNominalRate();
+}
+
+float
+CycleTimerHelper::getNominalRate()
+{
+    float rate = ((double)TICKS_PER_SECOND) / 1000000.0;
+    return rate;
+}
 
 bool
 CycleTimerHelper::Execute()
@@ -308,6 +338,7 @@ CycleTimerHelper::getCycleTimerTicks()
 uint32_t
 CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 {
+    debugWarning("not implemented!\n");
     return getCycleTimerTicks();
 }
 
@@ -326,6 +357,7 @@ CycleTimerHelper::getCycleTimer()
 uint32_t
 CycleTimerHelper::getCycleTimer(uint64_t now)
 {
+    debugWarning("not implemented!\n");
     return getCycleTimer();
 }
 

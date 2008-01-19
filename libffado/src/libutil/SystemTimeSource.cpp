@@ -24,6 +24,13 @@
 #include "SystemTimeSource.h"
 #include "Time.h"
 
+// needed for clock_nanosleep
+#ifndef _GNU_SOURCE
+    #define _GNU_SOURCE
+#endif
+
+#include <time.h>
+
 namespace Util {
 
 IMPL_DEBUG_MODULE( SystemTimeSource, SystemTimeSource, DEBUG_LEVEL_NORMAL );
@@ -36,12 +43,19 @@ SystemTimeSource::~SystemTimeSource() {
 
 void
 SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs) {
-    usleep(usecs);
+    //usleep(usecs);
+    struct timespec ts;
+    ts.tv_sec = usecs / (1000000LL);
+    ts.tv_nsec = (usecs % (1000000LL)) * 1000LL;
+    clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
 }
 
 void
-SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at) {
-    // FIXME: not implemented yet
+SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec) {
+    struct timespec ts;
+    ts.tv_sec = wake_at_usec / (1000000LL);
+    ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
+    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
 }
 
 ffado_microsecs_t SystemTimeSource::getCurrentTime() {
@@ -49,7 +63,7 @@ ffado_microsecs_t SystemTimeSource::getCurrentTime() {
 //     gettimeofday(&tv, NULL);
 //     return tv.tv_sec * 1000000ULL + tv.tv_usec;
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    clock_gettime(CLOCK_REALTIME, &ts);
     return (ffado_microsecs_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 }
 

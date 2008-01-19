@@ -20,9 +20,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#include "libutil/Thread.h"
-#include "cycletimer.h"
+#ifndef __CYCLETIMERHELPER_H__
+#define __CYCLETIMERHELPER_H__
 
 /**
  * Implements a DLL based mechanism to track the cycle timer
@@ -49,16 +48,14 @@
  * on to 1394 time for the current host controller, hence enabling
  * different clock domains to operate together.
  */
-#ifndef __CYCLETIMERTHREAD_H__
-#define __CYCLETIMERTHREAD_H__
+
+#include "libutil/Thread.h"
+#include "libutil/SystemTimeSource.h"
+#include "cycletimer.h"
 
 #include "debugmodule/debugmodule.h"
 
 class Ieee1394Service;
-namespace Util {
-    class TimeSource;
-    class Thread;
-}
 
 class CycleTimerHelper : public Util::RunnableInterface
 {
@@ -104,6 +101,7 @@ public:
 
 private:
     Ieee1394Service &m_Parent;
+    Util::SystemTimeSource m_TimeSource;
     // parameters
     uint32_t m_ticks_per_update;
     uint32_t m_usecs_per_update;
@@ -118,11 +116,12 @@ private:
     double m_current_time_ticks;
     double m_next_time_ticks;
     bool m_first_run;
+    ffado_microsecs_t m_sleep_until;
 
     // cached vars used for computation
     struct compute_vars {
-        double usecs;
-        double ticks;
+        uint64_t usecs;
+        uint64_t ticks;
         double rate;
     };
 
