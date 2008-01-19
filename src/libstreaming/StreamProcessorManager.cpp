@@ -561,7 +561,7 @@ bool StreamProcessorManager::stop() {
         }
     }
     // wait for the SP's to get into the dry-running/stopped state
-    int cnt = 2000;
+    int cnt = 8000;
     bool ready = false;
     while (!ready && cnt) {
         ready = true;
@@ -611,7 +611,7 @@ bool StreamProcessorManager::stop() {
         }
     }
     // wait for the SP's to get into the stopped state
-    cnt = 2000;
+    cnt = 8000;
     ready = false;
     while (!ready && cnt) {
         ready = true;

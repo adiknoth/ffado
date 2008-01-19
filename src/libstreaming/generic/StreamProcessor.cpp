@@ -621,8 +621,22 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 debugError("Could not update state!\n");
                 return RAW1394_ISO_ERROR;
             }
+        }
+        // generate the silent packet header
+        enum eChildReturnValue result = generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+        if (result == eCRV_Packet) {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u TS=%011llu\n",
+                    cycle, m_last_timestamp);
+            // update some accounting
+            m_last_good_cycle = cycle;
+            m_last_dropped = dropped_cycles;
+
+            // assumed not to xrun
+            enum eChildReturnValue result2 = generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            return RAW1394_ISO_OK;
         } else {
-            // not time to disable yet
+            debugError("Invalid return value: %d\n", result);
+            return RAW1394_ISO_ERROR;
         }
     }
     // check whether we are waiting for a stream to be enabled
@@ -737,8 +751,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
 //             usleep(125); // only when using thread-per-handler
 //             return RAW1394_ISO_AGAIN;
-            generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-            generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
             return RAW1394_ISO_DEFER;
         } else {
             debugError("Invalid return value: %d\n", result);
@@ -760,8 +774,8 @@ send_empty_packet:
     }
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u\n", cycle);
-    generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-    generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+    generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+    generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
     return RAW1394_ISO_OK;
 }
 
@@ -1236,7 +1250,7 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
 bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_1394service.getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_1394service.getCycleTimerTicks(), 2000 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }
@@ -1259,7 +1273,7 @@ bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
 bool StreamProcessor::scheduleStopRunning(int64_t t) {
     uint64_t tx;
     if (t < 0) {
-        tx = addTicks(m_1394service.getCycleTimerTicks(), 200 * TICKS_PER_CYCLE);
+        tx = addTicks(m_1394service.getCycleTimerTicks(), 2000 * TICKS_PER_CYCLE);
     } else {
         tx = t;
     }

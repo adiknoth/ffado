@@ -85,6 +85,12 @@ public:
     enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length,
                             unsigned char *tag, unsigned char *sy,
                             int cycle, unsigned int dropped, unsigned int max_length);
+    enum eChildReturnValue generateEmptyPacketHeader(unsigned char *data, unsigned int *length,
+                                    unsigned char *tag, unsigned char *sy,
+                                    int cycle, unsigned int dropped, unsigned int max_length);
+    enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length,
+                                  unsigned char *tag, unsigned char *sy,
+                                  int cycle, unsigned int dropped, unsigned int max_length);
     enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
                                     unsigned char *tag, unsigned char *sy,
                                     int cycle, unsigned int dropped, unsigned int max_length);
