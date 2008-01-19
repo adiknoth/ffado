@@ -25,6 +25,8 @@
 #ifndef DEBUGMODULE_H
 #define DEBUGMODULE_H
 
+#include "config.h"
+
 #include "../fbtypes.h"
 #include <assert.h>
 
@@ -53,7 +55,9 @@ typedef short debug_level_t;
 #define MB_BUFFERSIZE       DEBUG_MAX_MESSAGE_LENGTH
 
 #ifdef DEBUG
- #define IMPLEMENT_BACKLOG
+    #if DEBUG_IMPLEMENT_BACKLOG
+        #define IMPLEMENT_BACKLOG
+    #endif
 #endif
 
 #ifdef IMPLEMENT_BACKLOG
