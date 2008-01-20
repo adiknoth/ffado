@@ -1,10 +1,5 @@
-prefix=$PREFIX
-exec_prefix=$bindir
-libdir=$libdir
-includedir=$includedir
-
 Name: libffado
 Description: FFADO
 Version: $VERSION
-Libs: -L${libdir} -lffado
-Cflags: -I${includedir}
+Libs: -L$LIBDIR -lffado
+Cflags: -I$INCLUDEDIR
