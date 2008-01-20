@@ -82,6 +82,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_buf_packets( 400 )
    , m_max_packet_size( 1024 )
    , m_irq_interval( -1 )
+   , m_last_wakeup( -1 )
    , m_Client( 0 )
    , m_poll_timeout( 100 )
    , m_realtime ( false )
@@ -101,6 +102,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
+   , m_last_wakeup( -1 )
    , m_Client( 0 )
    , m_poll_timeout( 100 )
    , m_realtime ( false )
@@ -121,6 +123,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
+   , m_last_wakeup( -1 )
    , m_Client( 0 )
    , m_poll_timeout( 100 )
    , m_realtime ( false )
@@ -162,6 +165,23 @@ IsoHandler::Init()
         m_poll_fd.events = 0;
     }
     return true;
+}
+
+bool
+IsoHandler::isDead()
+{
+    if(m_last_wakeup < 0) return false; // startup artifacts
+    if(m_State != E_Running) return false; // not running can't be dead
+    int64_t now = m_manager.get1394Service().getCurrentTimeAsUsecs();
+    int64_t last_call = m_last_wakeup + ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS;
+    if(now > last_call) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p, %s) Handler timed out: %lld usecs since last wakeup\n",
+                    this, getTypeString(), now-m_last_wakeup);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool
@@ -472,6 +492,9 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "received packet: length=%d, channel=%d, cycle=%d\n",
                        length, channel, cycle);
+    #ifdef DEBUG
+    m_last_wakeup = m_manager.get1394Service().getCurrentTimeAsUsecs();
+    #endif
     if(m_Client) {
         return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
     }
@@ -488,6 +511,9 @@ enum raw1394_iso_disposition IsoHandler::getPacket(
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "sending packet: length=%d, cycle=%d\n",
                        *length, cycle);
+    #ifdef DEBUG
+    m_last_wakeup = m_manager.get1394Service().getCurrentTimeAsUsecs();
+    #endif
     if(m_Client) {
         return m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
     }
@@ -510,6 +536,7 @@ bool IsoHandler::prepare()
     // confirmed present in libraw1394 1.2.1.
     //     raw1394_iso_shutdown(m_handle);
     m_State = E_Prepared;
+    m_last_wakeup = -1;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso handler (%p, client=%p)\n", this, m_Client);
     dumpInfo();

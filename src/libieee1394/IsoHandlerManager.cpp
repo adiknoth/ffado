@@ -105,7 +105,7 @@ IsoHandlerManager::updateShadowVars()
         if (h->isEnabled()) {
             // receive handlers are always poll'ed
             // transmit handlers only when the client is ready
-            if (h->getType() == IsoHandler::eHT_Receive || h->tryWaitForClient()) {
+            if (h->tryWaitForClient()) {
                 m_IsoHandler_map_shadow[cnt] = h;
                 m_poll_fds_shadow[cnt].fd = h->getFileDescriptor();
                 m_poll_fds_shadow[cnt].revents = 0;
@@ -170,8 +170,12 @@ IsoHandlerManager::Execute() {
     DEBUG_EXTREME( uint64_t iter_enter = m_service.getCurrentTimeAsUsecs() );
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         if(m_poll_fds_shadow[i].revents) {
-            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "received events: %08X for (%p)\n",
-                               m_poll_fds_shadow[i].revents, m_IsoHandler_map_shadow[i]);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "received events: %08X for (%d/%d, %p, %s)\n",
+                        m_poll_fds_shadow[i].revents, 
+                        i, m_poll_nfds_shadow,
+                        m_IsoHandler_map_shadow[i],
+                        m_IsoHandler_map_shadow[i]->getTypeString());
         }
         if (m_poll_fds_shadow[i].revents & POLLERR) {
             debugWarning("error on fd for %d\n",i);
@@ -193,6 +197,17 @@ IsoHandlerManager::Execute() {
                 }
             }
         }
+
+        #ifdef DEBUG
+        // check if the handler is still alive
+        if(m_IsoHandler_map_shadow[i]->isDead()) {
+            debugError("Iso handler %p (%s) is dead!\n",
+                       m_IsoHandler_map_shadow[i],
+                       m_IsoHandler_map_shadow[i]->getTypeString());
+            return false; // shutdown the system
+        }
+        #endif
+        
     }
     DEBUG_EXTREME( uint64_t iter_exit = m_service.getCurrentTimeAsUsecs() );
 
