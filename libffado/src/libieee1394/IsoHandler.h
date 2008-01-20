@@ -97,6 +97,8 @@ public:
     bool enable(int cycle);
     bool disable();
 
+    bool isDead();
+
     void flush();
     enum EHandlerType getType() {return m_type;};
     const char *getTypeString() {return eHTToString(m_type); };
@@ -133,6 +135,8 @@ private:
     unsigned int    m_buf_packets;
     unsigned int    m_max_packet_size;
     int             m_irq_interval;
+
+    int64_t         m_last_wakeup;
 
     Streaming::StreamProcessor *m_Client;
 
