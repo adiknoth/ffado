@@ -276,27 +276,27 @@ BeBoB::SubunitAudio::createFunctionBlock(
         case ExtendedSubunitInfoCmd::ePT_Chorus:
         case ExtendedSubunitInfoCmd::ePT_DynamicRangeCompression:
         default:
-            fb = new FunctionBlockProcessing( *this,
-                                              data.m_functionBlockId,
-                                              purpose,
-                                              data.m_noOfInputPlugs,
-                                              data.m_noOfOutputPlugs,
-                                              (int)getDebugLevel() );
-            debugWarning( "Dummy function block processing created. "
-                          "Implementation is missing\n" );
+            /* It is no use to add a dummy FunctionBlockProcessing because
+               then the function type is not set in FunctionBlockProcessing. 
+               When we try to discover the plugs attached to this function block
+               it will fail. It's better just to skip them. */
+            debugWarning( "Found a processing subfunction (type %d) which is not supported. "
+                          "It will be ignored.\n",
+                          data.m_functionBlockType);
+            return true;
         }
     }
     break;
     case ExtendedSubunitInfoCmd::eFBT_AudioSubunitCodec:
     {
-        fb = new FunctionBlockCodec( *this,
-                                     data.m_functionBlockId,
-                                     purpose,
-                                     data.m_noOfInputPlugs,
-                                     data.m_noOfOutputPlugs,
-                                     (int)getDebugLevel() );
-        debugWarning( "Dummy function block codec created. "
-                      "Implementation is missing\n" );
+            /* It is no use to add a dummy FunctionBlockProcessing because
+               then the function type is not set in FunctionBlockProcessing. 
+               When we try to discover the plugs attached to this function block
+               it will fail. It's better just to skip them. */
+            debugWarning( "Found a codec subfunction (type %d) which is not supported. "
+                          "It will be ignored.\n",
+                          data.m_functionBlockType);
+            return true;
     }
     break;
     default:
