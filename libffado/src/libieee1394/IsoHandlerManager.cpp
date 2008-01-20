@@ -170,7 +170,7 @@ IsoHandlerManager::Execute() {
     DEBUG_EXTREME( uint64_t iter_enter = m_service.getCurrentTimeAsUsecs() );
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         if(m_poll_fds_shadow[i].revents) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "received events: %08X for (%d/%d, %p, %s)\n",
                         m_poll_fds_shadow[i].revents, 
                         i, m_poll_nfds_shadow,
@@ -201,7 +201,7 @@ IsoHandlerManager::Execute() {
         #ifdef DEBUG
         // check if the handler is still alive
         if(m_IsoHandler_map_shadow[i]->isDead()) {
-            debugError("Iso handler %p (%s) is dead!\n",
+            debugError("Iso handler (%p, %s) is dead!\n",
                        m_IsoHandler_map_shadow[i],
                        m_IsoHandler_map_shadow[i]->getTypeString());
             return false; // shutdown the system
@@ -388,21 +388,30 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
         unsigned int max_packet_size = stream->getMaxPacketSize();
-        unsigned int page_size = getpagesize();
+//         unsigned int page_size = getpagesize();
 
         // Ensure we don't request a packet size bigger than the
         // kernel-enforced maximum which is currently 1 page.
-        if (max_packet_size > page_size) {
-            debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
+//         if (max_packet_size > page_size) {
+//             debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
+//             return false;
+//         }
+        if (max_packet_size > MAX_XMIT_PACKET_SIZE) {
+            debugError("max packet size (%u) > MAX_XMIT_PACKET_SIZE (%u)\n",
+                       max_packet_size, MAX_XMIT_PACKET_SIZE);
             return false;
         }
 
-        //max_packet_size = page_size; // HACK
-        unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
-        if(irq_interval <= 0) irq_interval=1;
-
         // the SP specifies how many packets to ISO-buffer
         int buffers = stream->getNbPacketsIsoXmitBuffer();
+        if (buffers > MAX_XMIT_NB_BUFFERS) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "nb buffers (%u) > MAX_XMIT_NB_BUFFERS (%u)\n",
+                        buffers, MAX_XMIT_NB_BUFFERS);
+            buffers = MAX_XMIT_NB_BUFFERS;
+        }
+        unsigned int irq_interval = buffers / MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval=1;
 
         debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoXmitHandler\n");
 

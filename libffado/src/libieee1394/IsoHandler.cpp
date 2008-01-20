@@ -494,6 +494,10 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                        length, channel, cycle);
     #ifdef DEBUG
     m_last_wakeup = m_manager.get1394Service().getCurrentTimeAsUsecs();
+    if (length > m_max_packet_size) {
+        debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
+                     this, getTypeString(), length, m_max_packet_size);
+    }
     #endif
     if(m_Client) {
         return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
@@ -503,10 +507,10 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 }
 
 
-enum raw1394_iso_disposition IsoHandler::getPacket(
-                    unsigned char *data, unsigned int *length,
-                    unsigned char *tag, unsigned char *sy,
-                    int cycle, unsigned int dropped) {
+enum raw1394_iso_disposition
+IsoHandler::getPacket(unsigned char *data, unsigned int *length,
+                      unsigned char *tag, unsigned char *sy,
+                      int cycle, unsigned int dropped) {
 
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "sending packet: length=%d, cycle=%d\n",
@@ -514,8 +518,17 @@ enum raw1394_iso_disposition IsoHandler::getPacket(
     #ifdef DEBUG
     m_last_wakeup = m_manager.get1394Service().getCurrentTimeAsUsecs();
     #endif
+
     if(m_Client) {
-        return m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
+        enum raw1394_iso_disposition retval;
+        retval = m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
+        #ifdef DEBUG
+        if (*length > m_max_packet_size) {
+            debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
+                         this, getTypeString(), *length, m_max_packet_size);
+        }
+        #endif
+        return retval;
     }
     *tag = 0;
     *sy = 0;
