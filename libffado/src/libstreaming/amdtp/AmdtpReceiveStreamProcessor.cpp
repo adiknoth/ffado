@@ -160,8 +160,9 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     // later than expected (the real receive time)
     #ifdef DEBUG
     if(isRunning()) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | syt_interval=%d, tpf=%f\n",
-            m_last_timestamp, m_syt_interval, getTicksPerFrame());
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "STMP: %lluticks | syt_interval=%d, tpf=%f\n",
+                           m_last_timestamp, m_syt_interval, getTicksPerFrame());
     }
     #endif
 
@@ -181,7 +182,9 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
 bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
                        unsigned int nevents, unsigned int offset)
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p)->processReadBlock(%u, %u)\n",this,nevents,offset);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, 
+                        "(%p)->processReadBlock(%u, %u)\n",
+                        this,nevents,offset);
 
     bool no_problem=true;
 

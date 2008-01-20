@@ -112,12 +112,6 @@ public:
     unsigned int getNbBuffers() { return m_buf_packets;};
     int getPacketLatency() { return m_irq_interval;};
 
-    int getPacketCount() {return m_packetcount;};
-    void resetPacketCount() {m_packetcount=0;};
-
-    int getDroppedCount() {return m_dropped;};
-    void resetDroppedCount() {m_dropped=0;};
-
     unsigned int getPreBuffers() {return m_prebuffers;};
     void setPreBuffers(unsigned int n) {m_prebuffers=n;};
 
@@ -140,8 +134,6 @@ private:
     unsigned int    m_max_packet_size;
     int             m_irq_interval;
 
-    int m_packetcount;
-    int m_dropped;
     Streaming::StreamProcessor *m_Client;
 
     int handleBusReset(unsigned int generation);

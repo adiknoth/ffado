@@ -710,7 +710,9 @@ bool StreamProcessorManager::waitForPeriod() {
     bool period_not_ready = true;
 
     while(period_not_ready) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for period (%d frames in buffer)...\n", m_SyncSource->getBufferFill());
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
+                           "waiting for period (%d frames in buffer)...\n",
+                           m_SyncSource->getBufferFill());
         bool result;
         if(m_SyncSource->getType() == StreamProcessor::ePT_Receive) {
             result = m_SyncSource->waitForConsumePeriod();
@@ -769,12 +771,15 @@ bool StreamProcessorManager::waitForPeriod() {
     // NOTE: before waitForPeriod() is called again, both the transmit
     //       and the receive processors should have done their transfer.
     m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer at %llu ticks...\n",
-        m_time_of_transfer);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
+                        "transfer at %llu ticks...\n",
+                        m_time_of_transfer);
 
     // this is to notify the client of the delay that we introduced by waiting
     m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "delayed for %d usecs...\n", m_delayed_usecs);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
+                        "delayed for %d usecs...\n",
+                        m_delayed_usecs);
 
 #ifdef DEBUG
     int rcv_bf=0, xmt_bf=0;
@@ -788,8 +793,9 @@ bool StreamProcessorManager::waitForPeriod() {
         ++it ) {
         xmt_bf = (*it)->getBufferFill();
     }
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n",
-        m_time_of_transfer, rcv_bf, xmt_bf, rcv_bf+xmt_bf);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, 
+                        "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n",
+                        m_time_of_transfer, rcv_bf, xmt_bf, rcv_bf+xmt_bf);
 
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
@@ -831,7 +837,7 @@ bool StreamProcessorManager::waitForPeriod() {
  * @return true if successful, false otherwise (indicates xrun).
  */
 bool StreamProcessorManager::transfer() {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
     bool retval=true;
     retval &= transfer(StreamProcessor::ePT_Receive);
     retval &= transfer(StreamProcessor::ePT_Transmit);
@@ -848,7 +854,8 @@ bool StreamProcessorManager::transfer() {
  */
 bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
     if(m_SyncSource == NULL) return false;
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transfer(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
+        "transfer(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
         (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
         (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),
@@ -919,7 +926,8 @@ bool StreamProcessorManager::transferSilence() {
  */
 bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorType t) {
     if(m_SyncSource == NULL) return false;
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "transferSilence(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
+        "transferSilence(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
         (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
         (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),

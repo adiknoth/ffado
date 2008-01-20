@@ -153,9 +153,9 @@ IsoHandlerManager::Execute() {
     }
 
     // Use a shadow map of the fd's such that the poll call is not in a critical section
-    uint64_t poll_enter = m_service.getCurrentTimeAsUsecs();
+    DEBUG_EXTREME( uint64_t poll_enter = m_service.getCurrentTimeAsUsecs() );
     err = poll (m_poll_fds_shadow, m_poll_nfds_shadow, m_poll_timeout);
-    uint64_t poll_exit = m_service.getCurrentTimeAsUsecs();
+    DEBUG_EXTREME( uint64_t poll_exit = m_service.getCurrentTimeAsUsecs() );
 
     if (err == -1) {
         if (errno == EINTR) {
@@ -167,11 +167,11 @@ IsoHandlerManager::Execute() {
 
     int nb_rcv = 0;
     int nb_xmit = 0;
-    uint64_t iter_enter = m_service.getCurrentTimeAsUsecs();
+    DEBUG_EXTREME( uint64_t iter_enter = m_service.getCurrentTimeAsUsecs() );
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         if(m_poll_fds_shadow[i].revents) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "received events: %08X for (%p)\n",
-                m_poll_fds_shadow[i].revents, m_IsoHandler_map_shadow[i]);
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "received events: %08X for (%p)\n",
+                               m_poll_fds_shadow[i].revents, m_IsoHandler_map_shadow[i]);
         }
         if (m_poll_fds_shadow[i].revents & POLLERR) {
             debugWarning("error on fd for %d\n",i);
@@ -194,11 +194,11 @@ IsoHandlerManager::Execute() {
             }
         }
     }
-    uint64_t iter_exit = m_service.getCurrentTimeAsUsecs();
+    DEBUG_EXTREME( uint64_t iter_exit = m_service.getCurrentTimeAsUsecs() );
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
-                poll_exit-poll_enter, iter_exit-iter_enter,
-                nb_rcv, nb_xmit);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
+                       poll_exit-poll_enter, iter_exit-iter_enter,
+                       nb_rcv, nb_xmit);
 
     return true;
 }

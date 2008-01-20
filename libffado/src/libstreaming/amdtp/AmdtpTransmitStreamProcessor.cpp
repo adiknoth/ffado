@@ -83,7 +83,8 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     unsigned int transmit_at_cycle;
     int cycles_until_transmit;
 
-    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "Try for cycle %d\n", cycle );
+    debugOutputExtreme( DEBUG_LEVEL_ULTRA_VERBOSE,
+                        "Try for cycle %d\n", cycle );
     // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
     ffado_timestamp_t ts_head_tmp;
@@ -116,12 +117,12 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     cycles_until_transmit = diffCycles ( transmit_at_cycle, cycle );
 
     if (dropped) {
-        debugOutput ( DEBUG_LEVEL_VERBOSE,
-                    "Gen HDR: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                    cycle,
-                    transmit_at_cycle, cycles_until_transmit,
-                    transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
-                    presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
+        debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "Gen HDR: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                     cycle,
+                     transmit_at_cycle, cycles_until_transmit,
+                     transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
+                     presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
     }
     // two different options:
     // 1) there are not enough frames for one packet
@@ -137,9 +138,9 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         // if we are far enough ahead of the presentation time
         if ( cycles_until_presentation <= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION )
         {
-            debugOutput ( DEBUG_LEVEL_VERBOSE,
-                        "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
-                        fc, cycle, transmit_at_cycle, cycles_until_transmit );
+            debugOutput( DEBUG_LEVEL_NORMAL,
+                         "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
+                         fc, cycle, transmit_at_cycle, cycles_until_transmit );
             // we are too late
             return eCRV_XRun;
         }
@@ -147,11 +148,9 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         {
             unsigned int now_cycle = ( unsigned int ) ( TICKS_TO_CYCLES ( m_1394service.getCycleTimerTicks() ) );
 
-            debugOutput ( DEBUG_LEVEL_VERBOSE,
-                        "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
-                        fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
-            debugWarning("Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
-                         fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                               "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
+                               fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
 
             // there is still time left to send the packet
             // we want the system to give this packet another go at a later time instant
@@ -194,7 +193,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         if(cycles_until_transmit < 0)
         {
             // we are too late
-            debugOutput(DEBUG_LEVEL_VERBOSE,
+            debugOutput(DEBUG_LEVEL_NORMAL,
                         "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
                         cycle,
                         transmit_at_cycle, cycles_until_transmit,
@@ -223,21 +222,21 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         }
         else
         {
-            debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                        "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                        cycle,
-                        transmit_at_cycle, cycles_until_transmit,
-                        transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
-                        presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                               cycle,
+                               transmit_at_cycle, cycles_until_transmit,
+                               transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
+                               presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
 #ifdef DEBUG
             if ( cycles_until_transmit > AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY + 1 )
             {
-                debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                            "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                            cycle,
-                            transmit_at_cycle, cycles_until_transmit,
-                            transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
-                            presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
+                debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                                   "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                                   cycle,
+                                   transmit_at_cycle, cycles_until_transmit,
+                                   transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
+                                   presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
             }
 #endif
             // we are too early, send only an empty packet
@@ -255,8 +254,9 @@ AmdtpTransmitStreamProcessor::generatePacketData (
 {
     if ( m_data_buffer->readFrames ( m_syt_interval, ( char * ) ( data + 8 ) ) )
     {
-        debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT DATA (cy %04d): TSP=%011llu (%04u)\n",
-                    cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
+        debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                           "XMIT DATA (cy %04d): TSP=%011llu (%04u)\n",
+                           cycle, m_last_timestamp, (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
         return eCRV_OK;
     }
     else return eCRV_XRun;
@@ -270,8 +270,9 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     int cycle, unsigned int dropped, unsigned int max_length )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
-    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT SILENT (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
-                cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "XMIT SILENT (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
+                       cycle, m_last_timestamp, (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
 
     packet->sid = m_local_node_id;
 
@@ -307,8 +308,9 @@ AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
     int cycle, unsigned int dropped, unsigned int max_length )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
-    debugOutput ( DEBUG_LEVEL_ULTRA_VERBOSE, "XMIT EMPTY (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
-                cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "XMIT EMPTY (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
+                       cycle, m_last_timestamp, (unsigned int)TICKS_TO_CYCLES(m_last_timestamp) );
     packet->sid = m_local_node_id;
 
     packet->dbs = m_dimension;
@@ -1033,8 +1035,9 @@ AmdtpTransmitStreamProcessor::initPortCache() {
             ++it )
         {
             AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "idx %u: looking at port %s at position %u\n",
-                                              idx, (*it)->getName().c_str(), pinfo->getPosition());
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                        "idx %u: looking at port %s at position %u\n",
+                        idx, (*it)->getName().c_str(), pinfo->getPosition());
             if(pinfo->getPosition() == idx) {
                 struct _MBLA_port_cache p;
                 p.port = dynamic_cast<AmdtpAudioPort *>(*it);
@@ -1048,8 +1051,9 @@ AmdtpTransmitStreamProcessor::initPortCache() {
                 #endif
 
                 m_audio_ports.push_back(p);
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Cached port %s at position %u\n",
-                                                 p.port->getName().c_str(), idx);
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "Cached port %s at position %u\n",
+                            p.port->getName().c_str(), idx);
                 goto next_index;
             }
         }
@@ -1064,8 +1068,9 @@ next_index:
         ++it )
     {
         AmdtpPortInfo *pinfo=dynamic_cast<AmdtpPortInfo *>(*it);
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "idx %u: looking at port %s at position %u, location %u\n",
-                                        idx, (*it)->getName().c_str(), pinfo->getPosition(), pinfo->getLocation());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                    "idx %u: looking at port %s at position %u, location %u\n",
+                    idx, (*it)->getName().c_str(), pinfo->getPosition(), pinfo->getLocation());
         if ((*it)->getPortType() == Port::E_Midi) {
             struct _MIDI_port_cache p;
             p.port = dynamic_cast<AmdtpMidiPort *>(*it);
@@ -1081,8 +1086,9 @@ next_index:
             #endif
 
             m_midi_ports.push_back(p);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Cached port %s at position %u, location %u\n",
-                                            p.port->getName().c_str(), p.position, p.location);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "Cached port %s at position %u, location %u\n",
+                        p.port->getName().c_str(), p.position, p.location);
         }
     }
 

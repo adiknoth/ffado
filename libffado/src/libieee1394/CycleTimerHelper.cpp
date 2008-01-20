@@ -164,7 +164,7 @@ CycleTimerHelper::getNominalRate()
 bool
 CycleTimerHelper::Execute()
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
     if (!m_first_run) {
         // wait for the next update period
         ffado_microsecs_t now = m_TimeSource.getCurrentTimeAsUsecs();
@@ -181,8 +181,8 @@ CycleTimerHelper::Execute()
         debugError("Could not read cycle timer register\n");
         return false;
     }
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
-                    cycle_timer, local_time);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+                        cycle_timer, local_time);
 
     if (m_first_run) {
         m_sleep_until = local_time + m_usecs_per_update;
@@ -225,16 +225,15 @@ CycleTimerHelper::Execute()
         m_current_time_usecs = m_next_time_usecs;
         m_next_time_usecs = local_time + m_usecs_per_update;
 
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
-                    m_current_time_usecs, m_next_time_usecs, usecs_late);
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
-                    m_current_time_ticks, m_next_time_ticks, diff_ticks);
-
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
-                    local_time, m_dll_e2, getRate());
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
+                            m_current_time_usecs, m_next_time_usecs, usecs_late);
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
+                            m_current_time_ticks, m_next_time_ticks, diff_ticks);
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
+                            local_time, m_dll_e2, getRate());
     }
 
-    // FIXME: priority inversion!
+    // FIXME: priority inversion possible, run this at higher prio than client threads
     ENTER_CRITICAL_SECTION;
     m_current_vars.ticks = (uint64_t)(m_current_time_ticks);// + m_average_offset_ticks);
     m_current_vars.usecs = (uint64_t)m_current_time_usecs;
@@ -269,14 +268,14 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
-                     y_step_in_ticks_int, time_diff, my_vars.rate, retval);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+                    y_step_in_ticks_int, time_diff, my_vars.rate, retval);
     } else {
         retval = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
 
         // this can happen if the update thread was woken up earlier than it should have been
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
-                     y_step_in_ticks_int, time_diff, my_vars.rate, retval);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+                    y_step_in_ticks_int, time_diff, my_vars.rate, retval);
     }
 
     return retval;

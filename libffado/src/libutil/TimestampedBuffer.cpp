@@ -155,14 +155,15 @@ float TimestampedBuffer::getRate() {
  */
 float TimestampedBuffer::calculateRate() {
     ffado_timestamp_t diff;
-    
+
     diff=m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"getRate: %f/%f=%f\n",
-        (float)(diff),
-        (float)m_update_period,
-        ((float)(diff))/((float) m_update_period));
-    
+
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "getRate: %f/%f=%f\n",
+                       (float)(diff),
+                       (float)m_update_period,
+                       ((float)(diff))/((float) m_update_period));
+
     // the maximal difference we can allow (64secs)
     const ffado_timestamp_t max=m_wrap_at/((ffado_timestamp_t)2);
 
@@ -175,7 +176,8 @@ float TimestampedBuffer::calculateRate() {
     float rate=((float)diff)/((float) m_update_period);
     if (rate<0.0) debugError("rate < 0! (%f)\n",rate);
     if (fabsf(m_nominal_rate - rate)>(m_nominal_rate*0.1)) {
-        debugWarning("(%p) rate (%10.5f) more that 10%% off nominal (rate=%10.5f, diff="TIMESTAMP_FORMAT_SPEC", update_period=%d)\n",
+        debugWarning("(%p) rate (%10.5f) more that 10%% off nominal "
+                     "(rate=%10.5f, diff="TIMESTAMP_FORMAT_SPEC", update_period=%d)\n",
                      this, rate,m_nominal_rate,diff, m_update_period);
 
         return m_nominal_rate;
@@ -531,8 +533,9 @@ bool TimestampedBuffer::readFrames(unsigned int nframes, char *data) {
  * @return true if successful
  */
 bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_timestamp_t ts) {
-
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring period...\n");
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p) Writing %u frames for ts "TIMESTAMP_FORMAT_SPEC"\n",
+                       this, nbframes, ts);
     int xrun;
     unsigned int offset = 0;
 
@@ -641,7 +644,9 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
  */
 bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
 
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Reading %u from buffer (%p)...\n", nbframes, this);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p) Reading %u frames\n",
+                       this, nbframes);
 
     int xrun;
     unsigned int offset = 0;
@@ -772,10 +777,10 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
 
     EXIT_CRITICAL_SECTION;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "for (%p) to "
-                                          TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", NTS="
-                                          TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
-                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
+                       "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", "
+                       "NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
+                       this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
 
 }
 
@@ -819,184 +824,10 @@ void TimestampedBuffer::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp) 
 
     EXIT_CRITICAL_SECTION;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "
-                                          TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
-                this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
-
-}
-
-/**
- * @brief Synchronize the buffer head to a specified timestamp
- *
- * Try to synchronize the buffer head to a specific timestamp. This
- * can mean adding or removing samples to/from the buffer such that
- * the buffer head aligns with the specified timestamp. The alignment
- * is within ts +/- Tsample/2
- *
- * @param target the timestamp to align to
- * @return true if alignment succeeded, false if not 
- */
-bool
-TimestampedBuffer::syncBufferHeadToTimestamp(ffado_timestamp_t target)
-{
-    uint64_t ts_head;
-    uint64_t ts_target=(uint64_t)target;
-    signed int fc;
-    int32_t lag_ticks;
-    float lag_frames;
-
-    ffado_timestamp_t ts_head_tmp;
-    getBufferHeadTimestamp(&ts_head_tmp, &fc);
-    ts_head=(uint64_t)ts_head_tmp;
-    // if target > ts_head then the wanted buffer head timestamp
-    // is later than the actual. This means that we (might) have to drop
-    // some frames.
-    lag_ticks=diffTicks(ts_target, ts_head);
-    float rate=getRate();
-    
-    assert(rate!=0.0);
-
-    lag_frames=(((float)lag_ticks)/rate);
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): HEAD=%llu, TS=%llu, diff=%ld = %10.5f frames (rate=%10.5f)\n",
-                                      this, ts_head, ts_target, lag_ticks, lag_frames, rate);
-
-    if (lag_frames>=1.0) {
-        // the buffer head is too early
-        // ditch frames until the buffer head is on time
-        char dummy[getBytesPerFrame()]; // one frame of garbage
-        int frames_to_ditch=(int)roundf(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): ditching %d frames (@ ts=%lld)\n",this,frames_to_ditch,ts_target);
-        
-        while (frames_to_ditch--) {
-            readFrames(1, dummy);
-        }
-        
-    } else if (lag_frames<=-1.0) {
-        // the buffer head is too late
-        // add some padding frames
-        int frames_to_add=(int)roundf(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): adding %d frames (@ ts=%lld)\n",this,-frames_to_add,ts_target);
-        
-        while (frames_to_add++) {
-             writeDummyFrame();
-        }
-    }
-    getBufferHeadTimestamp(&ts_head_tmp, &fc);
-    ts_head=(uint64_t)ts_head_tmp;
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): new HEAD=%llu, fc=%d, target=%llu, new diff=%lld\n",
-                                      this, ts_head, fc, ts_target, diffTicks(ts_target, ts_head));
-    // FIXME: of course this doesn't always succeed
-    return true;
-}
-
-/**
- * @brief Synchronize the buffer tail to a specified timestamp
- *
- * Try to synchronize the buffer tail to a specific timestamp. This
- * can mean adding or removing samples to/from the buffer such that
- * the buffer tail aligns with the specified timestamp. The alignment
- * is within ts +/- Tsample/2
- *
- * @param target the timestamp to align to
- * @return true if alignment succeeded, false if not 
- */
-bool
-TimestampedBuffer::syncBufferTailToTimestamp(ffado_timestamp_t target)
-{
-    uint64_t ts_tail;
-    uint64_t ts_target=(uint64_t)target;
-    signed int fc;
-    int32_t lag_ticks;
-    float lag_frames;
-
-    debugWarning("Untested\n");
-    
-    ffado_timestamp_t ts_tail_tmp;
-    getBufferTailTimestamp(&ts_tail_tmp, &fc);
-    ts_tail=(uint64_t)ts_tail_tmp;
-    // if target < ts_tail then the wanted buffer head timestamp
-    // is later than the actual. This means that we (might) have to drop
-    // some frames.
-    lag_ticks=diffTicks(ts_tail, ts_target);
-    float rate=getRate();
-    
-    assert(rate!=0.0);
-
-    lag_frames=(((float)lag_ticks)/rate);
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): HEAD=%llu, TS=%llu, diff=%ld = %10.5f frames (rate=%10.5f)\n",
-                                      this, ts_tail, ts_target, lag_ticks, lag_frames, rate);
-
-    if (lag_frames>=1.0) {
-        // the buffer head is too early
-        // ditch frames until the buffer head is on time
-        char dummy[getBytesPerFrame()]; // one frame of garbage
-        int frames_to_ditch=(int)roundf(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): ditching %d frames (@ ts=%lld)\n",this,frames_to_ditch,ts_target);
-        
-        while (frames_to_ditch--) {
-            readFrames(1, dummy);
-        }
-        
-    } else if (lag_frames<=-1.0) {
-        // the buffer head is too late
-        // add some padding frames
-        int frames_to_add=(int)roundf(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): adding %d frames (@ ts=%lld)\n",this,-frames_to_add,ts_target);
-        
-        while (frames_to_add++) {
-             writeDummyFrame();
-        }
-    }
-    getBufferHeadTimestamp(&ts_tail_tmp, &fc);
-    ts_tail=(uint64_t)ts_tail_tmp;
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): new HEAD=%llu, fc=%d, target=%llu, new diff=%lld\n",
-                                      this, ts_tail, fc, ts_target, diffTicks(ts_target, ts_tail));
-    // FIXME: of course this doesn't always succeed
-    return true;
-}
-
-/**
- * @brief correct lag
- *
- * Try to synchronize the buffer tail to a specific timestamp. This
- * can mean adding or removing samples to/from the buffer such that
- * the buffer tail aligns with the specified timestamp. The alignment
- * is within ts +/- Tsample/2
- *
- * @param target the timestamp to align to
- * @return true if alignment succeeded, false if not 
- */
-bool
-TimestampedBuffer::syncCorrectLag(int64_t lag_ticks)
-{
-    float lag_frames;
-    float rate=getRate();
-    assert(rate!=0.0);
-
-    lag_frames=(((float)lag_ticks)/rate);
-    if (lag_frames >= 1.0) {
-        // the buffer head is too late
-        // add some padding frames
-        int frames_to_add=(int)roundf(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): adding %d frames\n",this,frames_to_add);
-
-        while (frames_to_add++) {
-             writeDummyFrame();
-        }
-    } else if (lag_frames <= -1.0) {
-        // the buffer head is too early
-        // ditch frames until the buffer head is on time
-        char dummy[getBytesPerFrame()]; // one frame of garbage
-        int frames_to_ditch=(int)roundf(lag_frames);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p): ditching %d frames\n",this,-frames_to_ditch);
-
-        while (frames_to_ditch--) {
-            readFrames(1, dummy);
-        }
-    }
-    return true;
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", "
+                       "NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
+                       this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
 }
 
 /**
@@ -1157,7 +988,8 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
         EXIT_CRITICAL_SECTION;
         
         debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "Updated ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC") to ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC")\n",
+                     "Updated ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC") "
+                     "to ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC")\n",
                      m_buffer_tail_timestamp, m_buffer_next_tail_timestamp,
                      m_buffer_tail_timestamp, pred_buffer_next_tail_timestamp);
     }
@@ -1171,11 +1003,15 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
     ffado_timestamp_t one_update_step = nbframes * getRate();
     ffado_timestamp_t max_abs_diff = one_update_step * (1.0 + max_deviation);
     
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " nbframes: %d, m_update_period: %d \n", nbframes, m_update_period);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " tail TS: "TIMESTAMP_FORMAT_SPEC", next tail TS: "TIMESTAMP_FORMAT_SPEC"\n", 
-                                          m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " new TS: "TIMESTAMP_FORMAT_SPEC", wrapped new TS: "TIMESTAMP_FORMAT_SPEC"\n", 
-                                          new_timestamp, ts);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       " nbframes: %d, m_update_period: %d \n",
+                       nbframes, m_update_period);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       " tail TS: "TIMESTAMP_FORMAT_SPEC", next tail TS: "TIMESTAMP_FORMAT_SPEC"\n", 
+                       m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       " new TS: "TIMESTAMP_FORMAT_SPEC", wrapped new TS: "TIMESTAMP_FORMAT_SPEC"\n", 
+                       new_timestamp, ts);
 
     if (diff > max_abs_diff) {
 //         debugShowBackLogLines(100);
@@ -1187,15 +1023,17 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
             this, diff, -max_abs_diff, ts, pred_buffer_next_tail_timestamp);
     }
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p): diff="TIMESTAMP_FORMAT_SPEC" ",
-                this, diff);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p): diff="TIMESTAMP_FORMAT_SPEC" ",
+                       this, diff);
 
     double err = diff;
-
-    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "diff2="TIMESTAMP_FORMAT_SPEC" err=%f\n",
-                    diff, err);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "B: FC=%10u, TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
-                    m_framecounter, m_buffer_tail_timestamp, pred_buffer_next_tail_timestamp);
+    debugOutputShortExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                            "diff2="TIMESTAMP_FORMAT_SPEC" err=%f\n",
+                            diff, err);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "B: FC=%10u, TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
+                       m_framecounter, m_buffer_tail_timestamp, pred_buffer_next_tail_timestamp);
 
     ENTER_CRITICAL_SECTION;
     m_framecounter += nbframes;
@@ -1204,20 +1042,23 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
     m_dll_e2 += m_dll_c*err;
 
     if (m_buffer_next_tail_timestamp >= m_wrap_at) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Unwrapping next tail timestamp: "TIMESTAMP_FORMAT_SPEC"",
-                m_buffer_next_tail_timestamp);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "Unwrapping next tail timestamp: "TIMESTAMP_FORMAT_SPEC"",
+                           m_buffer_next_tail_timestamp);
 
         m_buffer_next_tail_timestamp -= m_wrap_at;
 
-        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, " => "TIMESTAMP_FORMAT_SPEC"\n",
-                m_buffer_next_tail_timestamp);
+        debugOutputShortExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                                " => "TIMESTAMP_FORMAT_SPEC"\n",
+                                m_buffer_next_tail_timestamp);
 
     }
     m_current_rate = calculateRate();
     EXIT_CRITICAL_SECTION;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "A: TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC", DLLe2=%f, RATE=%f\n",
-                m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, m_current_rate);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "A: TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC", DLLe2=%f, RATE=%f\n",
+                       m_buffer_tail_timestamp, m_buffer_next_tail_timestamp, m_dll_e2, m_current_rate);
 
 
     if(m_buffer_tail_timestamp>=m_wrap_at) {
