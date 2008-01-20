@@ -203,7 +203,7 @@ main( int argc, char **argv )
         return exitfunction(-1);
     }
 
-    printf("verbose level = %d\n", arguments.verbose);
+    printf("verbose level = %ld\n", arguments.verbose);
     setDebugLevel(arguments.verbose);
 
     printf( "Using ffado library version: %s\n\n", ffado_get_version() );
@@ -274,7 +274,7 @@ main( int argc, char **argv )
             int i=0;
 
             int devices_on_bus = m_deviceManager->getNbDevices();
-            printf("  port = %d, devices_on_bus = %d\n", arguments.port, devices_on_bus);
+            printf("  port = %ld, devices_on_bus = %d\n", arguments.port, devices_on_bus);
 
             for(i=0;i<devices_on_bus;i++) {
                 int node_id=m_deviceManager->getDeviceNodeId(i);

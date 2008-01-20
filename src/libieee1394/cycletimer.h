@@ -304,8 +304,8 @@ static inline uint64_t substractTicks(uint64_t x, uint64_t y) {
 static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int rcv_cycle, uint64_t ctr_now) {
     uint64_t timestamp;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%04llX CY=%u CTR=%08llX\n",
-        syt_timestamp, rcv_cycle, ctr_now);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%04llX CY=%u CTR=%08llX\n",
+                       syt_timestamp, rcv_cycle, ctr_now);
 
     // reconstruct the full cycle
     uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
@@ -344,9 +344,9 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     if(new_cycles<8000) {
         timestamp  = new_cycles * TICKS_PER_CYCLE;
     } else {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-            "Detected wraparound: %d + %d = %d\n",
-            rcv_cycle,delta_cycles,new_cycles);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "Detected wraparound: %d + %d = %d\n",
+                           rcv_cycle, delta_cycles, new_cycles);
 
         new_cycles-=8000; // wrap around
 #ifdef DEBUG
@@ -390,8 +390,8 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
 static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int xmt_cycle, uint64_t ctr_now) {
     uint64_t timestamp;
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"SYT=%08llX CY=%04X CTR=%08llX\n",
-        syt_timestamp,xmt_cycle,ctr_now);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%08llX CY=%04X CTR=%08llX\n",
+                       syt_timestamp, xmt_cycle, ctr_now);
 
     // reconstruct the full cycle
     uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
@@ -430,9 +430,9 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     if(new_cycles<8000) {
         timestamp  = new_cycles * TICKS_PER_CYCLE;
     } else {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-            "Detected wraparound: %d + %d = %d\n",
-            xmt_cycle,delta_cycles,new_cycles);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "Detected wraparound: %d + %d = %d\n",
+                           xmt_cycle, delta_cycles, new_cycles);
 
         new_cycles-=8000; // wrap around
 #ifdef DEBUG

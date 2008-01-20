@@ -82,8 +82,6 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_buf_packets( 400 )
    , m_max_packet_size( 1024 )
    , m_irq_interval( -1 )
-   , m_packetcount( 0 )
-   , m_dropped( 0 )
    , m_Client( 0 )
    , m_poll_timeout( 100 )
    , m_realtime ( false )
@@ -103,8 +101,6 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
-   , m_packetcount( 0 )
-   , m_dropped( 0 )
    , m_Client( 0 )
    , m_poll_timeout( 100 )
    , m_realtime ( false )
@@ -125,8 +121,6 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
-   , m_packetcount( 0 )
-   , m_dropped( 0 )
    , m_Client( 0 )
    , m_poll_timeout( 100 )
    , m_realtime ( false )
@@ -173,7 +167,7 @@ IsoHandler::Init()
 bool
 IsoHandler::waitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result;
         if (m_type == eHT_Receive) {
@@ -181,10 +175,10 @@ IsoHandler::waitForClient()
         } else {
             result = m_Client->waitForConsumePacket();
         }
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, " no client\n");
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " no client\n");
     }
     return false;
 }
@@ -192,7 +186,7 @@ IsoHandler::waitForClient()
 bool
 IsoHandler::tryWaitForClient()
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
     if(m_Client) {
         bool result;
         if (m_type == eHT_Receive) {
@@ -200,10 +194,10 @@ IsoHandler::tryWaitForClient()
         } else {
             result = m_Client->canConsumePacket();
         }
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
         return result;
     } else {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
     }
     return false;
 }
@@ -211,7 +205,7 @@ IsoHandler::tryWaitForClient()
 bool
 IsoHandler::Execute()
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
 
     // bypass if not running
     if (m_State != E_Running) {
@@ -223,7 +217,7 @@ IsoHandler::Execute()
 
     // wait for the availability of frames in the client
     // (blocking for transmit handlers)
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Waiting for Client activity...\n", this, getTypeString());
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Waiting for Client activity...\n", this, getTypeString());
     if (waitForClient()) {
 #if ISOHANDLER_USE_POLL
         bool result = true;
@@ -276,7 +270,7 @@ IsoHandler::Execute()
 
 bool
 IsoHandler::iterate() {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler...\n",
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler...\n",
                 this, getTypeString());
     if(m_State == E_Running) {
 #if ISOHANDLER_FLUSH_BEFORE_ITERATE
@@ -287,8 +281,8 @@ IsoHandler::iterate() {
                         this, strerror(errno));
             return false;
         }
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) done interating ISO handler...\n",
-                    this, getTypeString());
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) done interating ISO handler...\n",
+                           this, getTypeString());
         return true;
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) Not iterating a non-running handler...\n",
@@ -426,8 +420,6 @@ void IsoHandler::dumpInfo()
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  Speed, PreBuffers...........: %2d, %2d\n",
                                             m_speed, m_prebuffers);
     }
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packet count................: %10d (%5d dropped)\n",
-            this->getPacketCount(), this->getDroppedCount());
 }
 
 void IsoHandler::setVerboseLevel(int l)
@@ -477,12 +469,9 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped) {
 
-/*    debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-                 "received packet: length=%d, channel=%d, cycle=%d\n",
-                 length, channel, cycle );*/
-    m_packetcount++;
-    m_dropped += dropped;
-
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "received packet: length=%d, channel=%d, cycle=%d\n",
+                       length, channel, cycle);
     if(m_Client) {
         return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
     }
@@ -496,12 +485,9 @@ enum raw1394_iso_disposition IsoHandler::getPacket(
                     unsigned char *tag, unsigned char *sy,
                     int cycle, unsigned int dropped) {
 
-/*    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE,
-                    "sending packet: length=%d, cycle=%d\n",
-                    *length, cycle );*/
-    m_packetcount++;
-    m_dropped += dropped;
-
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "sending packet: length=%d, cycle=%d\n",
+                       *length, cycle);
     if(m_Client) {
         return m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
     }

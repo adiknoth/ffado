@@ -387,8 +387,9 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     if (result == eCRV_OK) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "RECV: CY=%04u TS=%011llu\n",
-                cycle, m_last_timestamp);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                          "RECV: CY=%04u TS=%011llu\n",
+                          cycle, m_last_timestamp);
         // update some accounting
         m_last_good_cycle = cycle;
         m_last_dropped = dropped_cycles;
@@ -501,7 +502,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                          this, dropped_cycles, cycle, m_last_cycle, dropped);
         }
         if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d)\n", this, dropped_cycles, cycle, m_last_cycle, dropped);
+            debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d)\n",
+                         this, dropped_cycles, cycle, m_last_cycle, dropped);
             m_dropped += dropped_cycles;
             // HACK: this should not be necessary, since the header generation functions should trigger the xrun.
             //       but apparently there are some issues with the 1394 stack
@@ -594,8 +596,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         // generate the silent packet header
         enum eChildReturnValue result = generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
         if (result == eCRV_Packet) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u TS=%011llu\n",
-                    cycle, m_last_timestamp);
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "XMIT SILENT: CY=%04u TS=%011llu\n",
+                               cycle, m_last_timestamp);
             // update some accounting
             m_last_good_cycle = cycle;
             m_last_dropped = dropped_cycles;
@@ -645,8 +648,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         // check the packet header
         enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
         if (result == eCRV_Packet || result == eCRV_Defer) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT: CY=%04u TS=%011llu\n",
-                    cycle, m_last_timestamp);
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "XMIT: CY=%04u TS=%011llu\n",
+                               cycle, m_last_timestamp);
             // update some accounting
             m_last_good_cycle = cycle;
             m_last_dropped = dropped_cycles;
@@ -742,7 +746,9 @@ send_empty_packet:
         }
     }
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u\n", cycle);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "XMIT EMPTY: CY=%04u\n",
+                       cycle);
     generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
     generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
     return RAW1394_ISO_OK;
@@ -758,7 +764,9 @@ send_empty_packet:
  */
 bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
     bool result;
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.getFrames(%d, %11llu)", nbframes, ts);
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
+                        "%p.getFrames(%d, %11llu)",
+                        nbframes, ts);
     assert( getType() == ePT_Receive );
     if(isDryRunning()) result = getFramesDry(nbframes, ts);
     else result = getFramesWet(nbframes, ts);
@@ -787,8 +795,9 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
 
     lag_ticks = diffTicks(ts, ts_expected);
     lag_frames = (((float)lag_ticks) / srate);
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): drifts %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
-                 this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "stream (%p): drifts %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+                       this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     if (lag_frames >= 1.0) {
         // the stream lags
         debugWarning( "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
@@ -808,8 +817,9 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
 
 bool StreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts)
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "stream (%p): dry run %d frames (@ ts=%lld)\n",
-                 this, nbframes, ts);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "stream (%p): dry run %d frames (@ ts=%lld)\n",
+                       this, nbframes, ts);
     // dry run on this side means that we put silence in all enabled ports
     // since there is do data put into the ringbuffer in the dry-running state
     return provideSilenceBlock(nbframes, 0);
@@ -828,7 +838,9 @@ StreamProcessor::dropFrames(unsigned int nbframes, int64_t ts)
 bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
 {
     bool result;
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "%p.putFrames(%d, %11llu)", nbframes, ts);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "%p.putFrames(%d, %11llu)",
+                       nbframes, ts);
     assert( getType() == ePT_Transmit );
     if(isDryRunning()) result = putFramesDry(nbframes, ts);
     else result = putFramesWet(nbframes, ts);
@@ -839,17 +851,22 @@ bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts)
 {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "StreamProcessor::putFramesWet(%d, %llu)\n", nbframes, ts);
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "StreamProcessor::putFramesWet(%d, %llu)\n",
+                       nbframes, ts);
     // transfer the data
     m_data_buffer->blockProcessWriteFrames(nbframes, ts);
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, " New timestamp: %llu\n", ts);
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       " New timestamp: %llu\n", ts);
     return true; // FIXME: what about failure?
 }
 
 bool
 StreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts)
 {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "StreamProcessor::putFramesDry(%d, %llu)\n", nbframes, ts);
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "StreamProcessor::putFramesDry(%d, %llu)\n",
+                       nbframes, ts);
     // do nothing
     return true;
 }
@@ -857,7 +874,9 @@ StreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "StreamProcessor::putSilenceFrames(%d, %llu)\n", nbframes, ts);
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+                       "StreamProcessor::putSilenceFrames(%d, %llu)\n",
+                       nbframes, ts);
 
     size_t bytes_per_frame = getEventSize() * getEventsPerFrame();
     unsigned int scratch_buffer_size_frames = m_scratch_buffer_size_bytes / bytes_per_frame;
@@ -1639,7 +1658,9 @@ bool StreamProcessor::waitForProducePeriod()
 }
 bool StreamProcessor::waitForProduce(unsigned int nframes)
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p, %s) wait ...\n",
+                       this, getTypeString());
     struct timespec ts;
     int result;
 
@@ -1661,11 +1682,14 @@ bool StreamProcessor::waitForProduce(unsigned int nframes)
     
         if (result == -1) {
             if (errno == ETIMEDOUT) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) pthread_cond_timedwait() timed out\n", this, getTypeString());
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "(%p, %s) pthread_cond_timedwait() timed out\n",
+                            this, getTypeString());
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             } else {
-                debugError("(%p, %s) pthread_cond_timedwait error\n", this, getTypeString());
+                debugError("(%p, %s) pthread_cond_timedwait error\n", 
+                           this, getTypeString());
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             }
@@ -1685,7 +1709,9 @@ bool StreamProcessor::waitForConsumePeriod()
 }
 bool StreamProcessor::waitForConsume(unsigned int nframes)
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) wait ...\n", this, getTypeString());
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p, %s) wait ...\n",
+                       this, getTypeString());
     struct timespec ts;
     int result;
 
@@ -1717,7 +1743,9 @@ bool StreamProcessor::waitForConsume(unsigned int nframes)
         }
     }
     pthread_mutex_unlock(&m_activity_cond_lock);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) leave ...\n", this, getTypeString());
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p, %s) leave ...\n",
+                       this, getTypeString());
     return true;
 }
 
@@ -1736,7 +1764,6 @@ bool StreamProcessor::canProduce(unsigned int nframes)
         // check whether we already fullfil the criterion
         unsigned int bufferspace = m_data_buffer->getBufferSpace();
         if(bufferspace >= nframes) {
-//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "enough space (%u)...\n", bufferspace);
             return true;
         } else return false;
     } else {
@@ -1767,7 +1794,6 @@ bool StreamProcessor::canConsume(unsigned int nframes)
         // check whether we already fullfil the criterion
         unsigned int bufferfill = m_data_buffer->getBufferFill();
         if(bufferfill >= nframes) {
-//             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "enough items (%u)...\n", bufferfill);
             return true;
         } else return false;
     } else {

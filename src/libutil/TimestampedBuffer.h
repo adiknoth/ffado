@@ -131,11 +131,6 @@ class TimestampedBuffer
         void setBufferTailTimestamp ( ffado_timestamp_t new_timestamp );
         void setBufferHeadTimestamp ( ffado_timestamp_t new_timestamp );
 
-        // sync related, also drops or add frames when necessary
-        bool syncBufferHeadToTimestamp ( ffado_timestamp_t ts );
-        bool syncBufferTailToTimestamp ( ffado_timestamp_t ts );
-        bool syncCorrectLag ( int64_t ts );
-
         ffado_timestamp_t getTimestampFromTail ( int nframes );
         ffado_timestamp_t getTimestampFromHead ( int nframes );
 

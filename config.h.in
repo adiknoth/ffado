@@ -39,7 +39,11 @@
 #define LIBDIR "$LIBDIR"
 #define SHAREDIR "$SHAREDIR"
 
-#define DEBUG_IMPLEMENT_BACKLOG 0
+#define DEBUG_IMPLEMENT_BACKLOG     0
+
+// make this zero to disable the most extreme
+// debug logging in the critical sections
+#define DEBUG_EXTREME_ENABLE        0
 
 #define IEEE1394SERVICE_USE_CYCLETIMER_DLL  1
 #define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC 50000

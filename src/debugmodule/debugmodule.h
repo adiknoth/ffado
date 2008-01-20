@@ -184,11 +184,36 @@ typedef short debug_level_t;
                 m_debugModule.printShort( level,                   \
                                      format,                       \
                                      ##args )
+    #define DEBUG_NORMAL( x ) x;
+
+    #if DEBUG_EXTREME_ENABLE
+        #define debugOutputExtreme( level, format, args... )           \
+                    m_debugModule.print( level,                        \
+                                        __FILE__,                     \
+                                        __FUNCTION__,                 \
+                                        __LINE__,                     \
+                                        format,                       \
+                                        ##args )
+        #define debugOutputShortExtreme( level, format, args... )      \
+                    m_debugModule.printShort( level,                   \
+                                        format,                       \
+                                        ##args )
+        #define DEBUG_EXTREME( x ) x;
+    #else
+        #define debugOutputExtreme( level, format, args... )
+        #define debugOutputShortExtreme( level, format, args... )
+        #define DEBUG_EXTREME( x )
+    #endif
 
 #else
 
     #define debugOutput( level, format, args... )
     #define debugOutputShort( level, format, args... )
+    #define DEBUG_NORMAL( x )
+
+    #define debugOutputExtreme( level, format, args... )
+    #define debugOutputShortExtreme( level, format, args... )
+    #define DEBUG_EXTREME( x )
 
 #endif
 
