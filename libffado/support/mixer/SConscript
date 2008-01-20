@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2007 Arnold Krille
-# Copyright (C) 2007 Pieter Palmers
+# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007-2008 Pieter Palmers
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -10,8 +10,8 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
