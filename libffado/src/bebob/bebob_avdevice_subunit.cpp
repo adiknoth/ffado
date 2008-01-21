@@ -280,9 +280,9 @@ BeBoB::SubunitAudio::createFunctionBlock(
                then the function type is not set in FunctionBlockProcessing. 
                When we try to discover the plugs attached to this function block
                it will fail. It's better just to skip them. */
-            debugWarning( "Found a processing subfunction (type %d) which is not supported. "
-                          "It will be ignored.\n",
-                          data.m_functionBlockType);
+            debugOutput( DEBUG_LEVEL_NORMAL, "Found a processing subfunction (type %d) which is not supported. "
+                         "It will be ignored.\n",
+                         data.m_functionBlockType);
             return true;
         }
     }
@@ -293,9 +293,9 @@ BeBoB::SubunitAudio::createFunctionBlock(
                then the function type is not set in FunctionBlockProcessing. 
                When we try to discover the plugs attached to this function block
                it will fail. It's better just to skip them. */
-            debugWarning( "Found a codec subfunction (type %d) which is not supported. "
-                          "It will be ignored.\n",
-                          data.m_functionBlockType);
+            debugOutput( DEBUG_LEVEL_NORMAL, "Found a codec subfunction (type %d) which is not supported. "
+                         "It will be ignored.\n",
+                         data.m_functionBlockType);
             return true;
     }
     break;
