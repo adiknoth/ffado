@@ -1,0 +1,2 @@
+# Vendor ID	Model ID	Vendor Name			Model Name
+0x0040ab,	0x00010048,	"EDIROL"			,"FA-101"
