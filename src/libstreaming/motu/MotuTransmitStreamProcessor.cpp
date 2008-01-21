@@ -302,7 +302,7 @@ MotuTransmitStreamProcessor::generatePacketData (
 
         // Set up each frames's SPH.
         for (int i=0; i < n_events; i++, quadlet += dbs) {
-//FIXME: not sure which is best for the MOTU
+//FIXME: not sure which is best for the MOTU.  Should be consistent with generateSilentPacketData().
 //            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)(i * ticks_per_frame));
             *quadlet = htonl(fullTicksToSph(ts_frame));
@@ -351,14 +351,10 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u, TSP=%011llu (%04u)\n",
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
-    // Do housekeeping expected for all packets sent to the MOTU, even
-    // for packets containing no audio data.
-    *sy = 0x00;
-    *tag = 1;      // All MOTU packets have a CIP-like header
-    *length = 8;
-
-    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
-    return eCRV_Packet;
+    // A "silent" packet is identical to a regular data packet except
+    // all audio data is set to zero.  Therefore we can just use
+    // generatePacketHeader() to do the work here.
+    return generatePacketHeader(data, length, tag, sy, cycle, dropped, max_length);
 }
 
 enum StreamProcessor::eChildReturnValue
@@ -367,7 +363,31 @@ MotuTransmitStreamProcessor::generateSilentPacketData (
     unsigned char *tag, unsigned char *sy,
     int cycle, unsigned int dropped, unsigned int max_length )
 {
-    return eCRV_OK; // no need to do anything
+    // Simply set all audio data to zero since that's what's meant by
+    // a "silent" packet.  Note that m_event_size is in bytes for MOTU.
+
+    quadlet_t *quadlet = (quadlet_t *)data;
+    quadlet += 2; // skip the header
+    // Size of a single data frame in quadlets
+    unsigned dbs = m_event_size / 4;
+
+    // The number of events per packet expected by the MOTU is solely
+    // dependent on the current sample rate.  An 'event' is one sample from
+    // all channels plus possibly other midi and control data.
+    signed n_events = getNominalFramesPerPacket();
+
+    memset(quadlet, 0, n_events*m_event_size);
+    float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getActualRate();
+
+    // Set up each frames's SPH.
+    for (int i=0; i < n_events; i++, quadlet += dbs) {
+//FIXME: not sure which is best for the MOTU.  Should be consistent with generatePacketData().
+//        int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
+        int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)(i * ticks_per_frame));
+        *quadlet = htonl(fullTicksToSph(ts_frame));
+    }
+
+    return eCRV_OK;
 }
 
 unsigned int MotuTransmitStreamProcessor::fillDataPacketHeader (
@@ -449,10 +469,10 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
             }
             break;
         case Port::E_Midi:
-//             if (encodePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-//                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
-//                 no_problem=false;
-//             }
+             if (encodePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+                 no_problem=false;
+             }
             break;
         default: // ignore
             break;
@@ -481,10 +501,10 @@ MotuTransmitStreamProcessor::transmitSilenceBlock(char *data,
             }
             break;
         case Port::E_Midi:
-//             if (encodeSilencePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-//                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
-//                 no_problem = false;
-//             }
+            if (encodeSilencePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+                debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+                no_problem = false;
+            }
             break;
         default: // ignore
             break;
@@ -582,6 +602,49 @@ int MotuTransmitStreamProcessor::encodeSilencePortToMotuEvents(MotuAudioPort *p,
             target += m_event_size;
         }
         break;
+    }
+
+    return 0;
+}
+
+int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
+                       MotuMidiPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents) {
+
+    unsigned int j;
+    quadlet_t *src = (quadlet_t *)p->getBufferAddress();
+    src += offset;
+
+    unsigned char *target = (unsigned char *)data + p->getPosition();
+
+    // Send a MIDI byte if there is one to send.  MOTU MIDI data is sent using
+    // a 3-byte sequence within a frame starting at the port's position.  For
+    // now we assume that a zero within the port's buffer means there is no
+    // MIDI data for the corresponding frame, but this may need refining.
+
+    for (j=0; j<nevents; j++, src++, target+=m_event_size) {
+        if (*src != 0) {
+            *(target) = 0x01;
+            *(target+1) = 0x00;
+            *(target+2) = (*src & 0xff);
+        } else
+          memset(target, 0, 3);
+    }
+
+    return 0;
+}
+
+int MotuTransmitStreamProcessor::encodeSilencePortToMotuMidiEvents(
+                       MotuMidiPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents) {
+
+    unsigned int j;
+    unsigned char *target = (unsigned char *)data + p->getPosition();
+
+    // For now, a "silent" MIDI event contains nothing but zeroes.  This
+    // may have to change if we find this isn't for some reason appropriate.
+    for (j=0; j<nevents; j++, target+=m_event_size) {
+       memset(target, 0, 3);
     }
 
     return 0;

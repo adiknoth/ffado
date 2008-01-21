@@ -218,10 +218,10 @@ bool MotuReceiveStreamProcessor::processReadBlock(char *data,
             }
             break;
         case Port::E_Midi:
-//             if(decodeMotuMidiEventsToPort(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-//                 debugWarning("Could not decode packet midi data to port %s",(*it)->getName().c_str());
-//                 no_problem=false;
-//             }
+             if(decodeMotuMidiEventsToPort(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+                 debugWarning("Could not decode packet midi data to port %s",(*it)->getName().c_str());
+                 no_problem=false;
+             }
             break;
 
         default: // ignore
@@ -299,6 +299,41 @@ signed int MotuReceiveStreamProcessor::decodeMotuEventsToPort(MotuAudioPort *p,
     }
 
     return 0;
+}
+
+int
+MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
+                      MotuMidiPort *p, quadlet_t *data,
+                      unsigned int offset, unsigned int nevents)
+{
+    quadlet_t sample;
+    unsigned int j = 0;
+    unsigned char *src = NULL;
+
+    quadlet_t *buffer = (quadlet_t *)(p->getBufferAddress());
+    assert(nevents + offset <= p->getBufferSize());
+    buffer += offset;
+
+    // Zero the buffer
+    memset(buffer, 0, nevents*sizeof(*buffer));
+
+    // Get MIDI bytes if present in any frames within the packet.  MOTU MIDI
+    // data is sent using a 3-byte sequence starting at the port's position. 
+    // It's thought that there can never be MIDI data in more than one frame
+    // in a given packet, but for completeness we'll check all frames
+    // anyway.
+    src = (unsigned char *)data + p->getPosition();
+    while (j < nevents) {
+        if (*src==0x01 && *(src+1)==0x00) {
+            sample = *(src+2);
+            *buffer = sample;
+        }
+        buffer++;
+        j++;
+        src += m_event_size;
+    }
+
+    return 0;    
 }
 
 } // end of namespace Streaming

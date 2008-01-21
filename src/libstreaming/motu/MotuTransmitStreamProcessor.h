@@ -38,7 +38,7 @@ namespace Streaming {
 
 class Port;
 class MotuAudioPort;
-
+class MotuMidiPort;
 /*!
 \brief The Base Class for an MOTU transmit stream processor
 
@@ -103,6 +103,13 @@ private:
                                 unsigned int offset, unsigned int nevents);
     int encodeSilencePortToMotuEvents(MotuAudioPort *, quadlet_t *data,
                                 unsigned int offset, unsigned int nevents);
+
+    int encodePortToMotuMidiEvents(
+                       MotuMidiPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents);
+    int encodeSilencePortToMotuMidiEvents(
+                       MotuMidiPort *p, quadlet_t *data,
+                       unsigned int offset, unsigned int nevents);
 
     /*
      * An iso packet mostly consists of multiple events.  m_event_size
