@@ -37,6 +37,7 @@
 namespace Streaming {
 
 class MotuAudioPort;
+class MotuMidiPort;
 /*!
  * \brief The Base Class for a MOTU receive stream processor
  *
@@ -82,6 +83,7 @@ private:
     bool decodePacketPorts(quadlet_t *data, unsigned int nevents, unsigned int dbc);
 
     int decodeMotuEventsToPort(MotuAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
+    int decodeMotuMidiEventsToPort(MotuMidiPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
     /*
      * An iso packet mostly consists of multiple events.  m_event_size
