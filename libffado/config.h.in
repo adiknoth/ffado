@@ -60,7 +60,7 @@
 
 // These are the result of a lot of trial and error
 // due to weirdness in the kernel layer
-#define MAX_XMIT_PACKET_SIZE                512
+#define MAX_XMIT_PACKET_SIZE                2048
 #define MAX_XMIT_NB_BUFFERS                 64
 
 #define ISOHANDLER_PER_HANDLER_THREAD       0
