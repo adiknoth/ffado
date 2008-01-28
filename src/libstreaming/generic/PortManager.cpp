@@ -40,22 +40,10 @@ PortManager::PortManager() {
 PortManager::~PortManager() {
     flushDebugOutput();
     // delete all ports that are still registered to the manager
-    for ( PortVectorIterator it = m_Ports.begin();
-    it != m_Ports.end();
-    // See note below as to why there's no need to increment "it" here
-    // ++it 
-    )
-    {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "deleting port %s at %p\n", (*it)->getName().c_str(), *it);
-        flushDebugOutput();
-        delete *it;
-
-        // Note: it seems that after the delete operation "it" points to
-        // the port in the list which *follows* the one which has been
-        // deleted.  Therefore there is no need to increment "it" in the
-        // for() statement.   Doing so causes only every second port to be
-        // deleted, and (if there's an odd number of ports) "it" will point
-        // to invalid memory in the final iteration (causing a segv).
+    while (m_Ports.size()) {
+      // This will also remove the port from m_Ports via 
+      // PortManager::unregister().
+      delete m_Ports.front();
     }
 }
 
