@@ -174,9 +174,16 @@ if __name__ == "__main__":
                 sys.exit(-1)
             else:
                 os.spawnlp( os.P_NOWAIT, "ffado-dbus-server" )
-                time.sleep( 2.5 )
+                nb_checks = 10
+                while nb_checks > 0:
+                    nb_checks = nb_checks - 1
+                    try:
+                        devmgr=DeviceManagerInterface(server, basepath)
+                        nb_checks = 0
+                        repeat = 0
+                    except dbus.DBusException, ex:
+                        time.sleep( 1 )
 
-    
     nbDevices=devmgr.getNbDevices()
     
     forms=[];
