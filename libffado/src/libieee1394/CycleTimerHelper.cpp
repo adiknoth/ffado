@@ -64,6 +64,8 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_next_time_ticks ( 0 )
     , m_first_run ( true )
     , m_sleep_until ( 0 )
+    , m_cycle_timer_prev ( 0 )
+    , m_cycle_timer_ticks_prev ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
@@ -83,6 +85,8 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_next_time_ticks ( 0 )
     , m_first_run ( true )
     , m_sleep_until ( 0 )
+    , m_cycle_timer_prev ( 0 )
+    , m_cycle_timer_ticks_prev ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
@@ -322,16 +326,11 @@ CycleTimerHelper::Execute()
     usleep(1000*1000);
     return true;
 }
+
 uint32_t
 CycleTimerHelper::getCycleTimerTicks()
 {
-    uint32_t cycle_timer;
-    uint64_t local_time;
-    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
-        debugError("Could not read cycle timer register\n");
-        return 0;
-    }
-    return CYCLE_TIMER_TO_TICKS(cycle_timer);
+    return CYCLE_TIMER_TO_TICKS(getCycleTimer());
 }
 
 uint32_t
@@ -344,12 +343,54 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 uint32_t
 CycleTimerHelper::getCycleTimer()
 {
+    bool good=false;
+    int maxtries = 10;
     uint32_t cycle_timer;
     uint64_t local_time;
-    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
-        debugError("Could not read cycle timer register\n");
-        return 0;
-    }
+    
+    do {
+        // the ctr read can return 0 sometimes. if that happens, reread the ctr.
+        int maxtries2=10;
+        do {
+            if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
+                debugError("Could not read cycle timer register\n");
+                return 0;
+            }
+            if (cycle_timer == 0) {
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                           "Bogus CTR: %08X on try %02d\n",
+                           cycle_timer, maxtries2);
+            }
+        } while (cycle_timer == 0 && maxtries2--);
+        
+        // catch bogus ctr reads (can happen)
+        uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+    
+        if (diffTicks(cycle_timer_ticks, m_cycle_timer_ticks_prev) < 0) {
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        "non-monotonic CTR (try %02d): %llu -> %llu\n",
+                        maxtries, m_cycle_timer_ticks_prev, cycle_timer_ticks);
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        "                            : %08X -> %08X\n",
+                        m_cycle_timer_prev, cycle_timer);
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        " current: %011llu (%03us %04ucy %04uticks)\n",
+                        cycle_timer_ticks,
+                        (unsigned int)TICKS_TO_SECS( cycle_timer_ticks ),
+                        (unsigned int)TICKS_TO_CYCLES( cycle_timer_ticks ),
+                        (unsigned int)TICKS_TO_OFFSET( cycle_timer_ticks ) );
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        " prev   : %011llu (%03us %04ucy %04uticks)\n",
+                        m_cycle_timer_ticks_prev,
+                        (unsigned int)TICKS_TO_SECS( m_cycle_timer_ticks_prev ),
+                        (unsigned int)TICKS_TO_CYCLES( m_cycle_timer_ticks_prev ),
+                        (unsigned int)TICKS_TO_OFFSET( m_cycle_timer_ticks_prev ) );
+        } else {
+            good = true;
+            m_cycle_timer_prev = cycle_timer;
+            m_cycle_timer_ticks_prev = cycle_timer_ticks;
+        }
+    } while (!good && maxtries--);
     return cycle_timer;
 }
 
