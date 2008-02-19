@@ -118,6 +118,9 @@ private:
     bool m_first_run;
     ffado_microsecs_t m_sleep_until;
 
+    uint32_t m_cycle_timer_prev;
+    uint32_t m_cycle_timer_ticks_prev;
+
     // cached vars used for computation
     struct compute_vars {
         uint64_t usecs;
