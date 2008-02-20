@@ -122,6 +122,7 @@ private:
 
     uint32_t m_cycle_timer_prev;
     uint64_t m_cycle_timer_ticks_prev;
+    int m_high_bw_updates;
 
     // cached vars used for computation
     struct compute_vars {

@@ -27,14 +27,25 @@
 #include "ieee1394service.h"
 #include "libutil/PosixThread.h"
 
-#define DLL_BANDWIDTH (0.1)
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)
+
+// the high-bandwidth coefficients are used
+// to speed up inital tracking
+#define DLL_BANDWIDTH_HIGH (0.1)
+#define DLL_OMEGA_HIGH     (2.0*DLL_PI*DLL_BANDWIDTH_HIGH)
+#define DLL_COEFF_B_HIGH   (DLL_SQRT2 * DLL_OMEGA_HIGH)
+#define DLL_COEFF_C_HIGH   (DLL_OMEGA_HIGH * DLL_OMEGA_HIGH)
+
+// the low-bandwidth coefficients are used once we have a
+// good estimate of the internal parameters
+#define DLL_BANDWIDTH (0.01)
 #define DLL_OMEGA     (2.0*DLL_PI*DLL_BANDWIDTH)
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
-#define OFFSET_AVERAGE_COEFF 0.01
+#define UPDATES_WITH_HIGH_BANDWIDTH 200
+
 /*
 #define ENTER_CRITICAL_SECTION { \
     if (pthread_mutex_trylock(&m_compute_vars_lock) == EBUSY) { \
@@ -66,6 +77,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_sleep_until ( 0 )
     , m_cycle_timer_prev ( 0 )
     , m_cycle_timer_ticks_prev ( 0 )
+    , m_high_bw_updates ( UPDATES_WITH_HIGH_BANDWIDTH )
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
@@ -87,6 +99,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_sleep_until ( 0 )
     , m_cycle_timer_prev ( 0 )
     , m_cycle_timer_ticks_prev ( 0 )
+    , m_high_bw_updates ( UPDATES_WITH_HIGH_BANDWIDTH )
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
@@ -107,6 +120,7 @@ CycleTimerHelper::Start()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start %p...\n", this);
 #if IEEE1394SERVICE_USE_CYCLETIMER_DLL
+    m_high_bw_updates = UPDATES_WITH_HIGH_BANDWIDTH;
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
@@ -263,8 +277,22 @@ CycleTimerHelper::Execute()
         // update the x-axis values
         m_current_time_ticks = m_next_time_ticks;
 
+        // decide what coefficients to use
+        double coeff_b, coeff_c;
+        if (m_high_bw_updates > 0) {
+            coeff_b = DLL_COEFF_B_HIGH;
+            coeff_c = DLL_COEFF_C_HIGH;
+            m_high_bw_updates--;
+            if (m_high_bw_updates == 0) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Switching to low-bandwidth coefficients\n");
+            }
+        } else {
+            coeff_b = DLL_COEFF_B;
+            coeff_c = DLL_COEFF_C;
+        }
+
         // do the calculation in 'tick space'
-        int64_t tmp = (uint64_t)(DLL_COEFF_B * diff_ticks_corr);
+        int64_t tmp = (uint64_t)(coeff_b * diff_ticks_corr);
         if(m_dll_e2 > 0) {
             tmp = addTicks(tmp, (uint64_t)m_dll_e2);
         } else {
@@ -277,11 +305,11 @@ CycleTimerHelper::Execute()
 
         // it should be ok to not do this in tick space since it's value
         // is approx equal to the rate, being 24.576 ticks/usec
-        m_dll_e2 += DLL_COEFF_C * diff_ticks_corr;
+        m_dll_e2 += coeff_c * diff_ticks_corr;
 
         // For jitter graphs
-        //debugOutputShort(DEBUG_LEVEL_NORMAL, "0123456789 %f %f %f %lld %lld %lld\n", 
-        //                 diff_ticks, diff_ticks_corr, m_dll_e2, cycle_timer_ticks, (int64_t)m_next_time_ticks, usecs_late);
+        debugOutputShort(DEBUG_LEVEL_NORMAL, "0123456789 %f %f %f %lld %lld %lld\n", 
+                         diff_ticks, diff_ticks_corr, m_dll_e2, cycle_timer_ticks, (int64_t)m_next_time_ticks, usecs_late);
 
         // update the y-axis values
         m_current_time_usecs = m_next_time_usecs;
