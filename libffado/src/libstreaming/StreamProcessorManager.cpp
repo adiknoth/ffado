@@ -671,7 +671,7 @@ bool StreamProcessorManager::handleXrun() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Restarting StreamProcessors...\n");
     // start all SP's synchonized
     bool start_result = false;
-    for (int ntries; ntries < STREAMPROCESSORMANAGER_SYNCSTART_TRIES; ntries++) {
+    for (int ntries=0; ntries < STREAMPROCESSORMANAGER_SYNCSTART_TRIES; ntries++) {
         // put all SP's into dry-running state
         if (!startDryRunning()) {
             debugShowBackLog();
