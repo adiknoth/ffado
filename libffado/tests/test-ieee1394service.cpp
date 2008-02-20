@@ -115,6 +115,10 @@ class CtrThread : public Util::RunnableInterface
 
         uint64_t ctr_prev;
         uint64_t ctr_dll_prev;
+        
+        uint64_t nb_checks;
+        int64_t summed_diff;
+        double avg_diff;
 };
 
 bool CtrThread::Execute() {
@@ -124,9 +128,20 @@ bool CtrThread::Execute() {
 
     uint32_t cycle_timer;
     uint64_t local_time;
-    // read the CTR 'raw' from a handle
-    // and read it from the 1394 service, which uses a DLL
-    int err = raw1394_read_cycle_timer(m_handle, &cycle_timer, &local_time);
+    uint32_t cycle_timer2;
+    uint64_t local_time2;
+    uint64_t ticks1, ticks2;
+    int err;
+
+    do {
+        // read the CTR 'raw' from a handle
+        // and read it from the 1394 service, which uses a DLL
+        err = raw1394_read_cycle_timer(m_handle, &cycle_timer2, &local_time2);
+        err = raw1394_read_cycle_timer(m_handle, &cycle_timer, &local_time);
+        
+        ticks1 = CYCLE_TIMER_TO_TICKS(cycle_timer);
+        ticks2 = CYCLE_TIMER_TO_TICKS(cycle_timer2);
+    } while (diffTicks(ticks1, ticks2) < 0);
     
     ctr_prev = ctr;
     ctr_dll_prev = ctr_dll;
@@ -155,7 +170,10 @@ bool CtrThread::Execute() {
     // not 100% thread safe, but will do
     if (diff > max_diff) max_diff = diff;
     if (diff < min_diff) min_diff = diff;
-
+    summed_diff += diff;
+    nb_checks++;
+    avg_diff = ((double)summed_diff)/((double)nb_checks);
+    
     if (diff < 0) {
         abs_diff = -diff;
     } else {
@@ -318,11 +336,17 @@ int main(int argc, char *argv[])
         threads[i]->Start();
     }
 
-    i=0;
+    int cnt=0;
     while(run) {
-        i++;
-        debugOutput(DEBUG_LEVEL_NORMAL, "%08d: alive, (max: %6d, min: %6d)\n", i, max_diff, min_diff);
+        cnt++;
+        debugOutput(DEBUG_LEVEL_NORMAL, "%08d: (max: %6d, min: %6d)\n", cnt, max_diff, min_diff);
         m_service->show();
+        
+        for (i=0; i < NB_THREADS; i++) {
+            debugOutput(DEBUG_LEVEL_NORMAL, "%2d: avg: %6f\n", i,  thread_runners[i]->avg_diff);
+        }
+        
+        
         sleep(5);
     }
 

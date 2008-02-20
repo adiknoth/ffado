@@ -126,6 +126,22 @@ CycleTimerHelper::Init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initialize %p...\n", this);
     pthread_mutex_init(&m_compute_vars_lock, NULL);
+    
+    // initialize the 'prev ctr' values
+    uint64_t local_time;
+    int maxtries2 = 10;
+    do {
+        if(!m_Parent.readCycleTimerReg(&m_cycle_timer_prev, &local_time)) {
+            debugError("Could not read cycle timer register\n");
+            return false;
+        }
+        if (m_cycle_timer_prev == 0) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "Bogus CTR: %08X on try %02d\n",
+                        m_cycle_timer_prev, maxtries2);
+        }
+    } while (m_cycle_timer_prev == 0 && maxtries2--);
+    m_cycle_timer_ticks_prev = CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev);
     return true;
 }
 
@@ -173,18 +189,37 @@ CycleTimerHelper::Execute()
         // wait for the next update period
         ffado_microsecs_t now = m_TimeSource.getCurrentTimeAsUsecs();
         int sleep_time = m_sleep_until - now;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
                     this, m_sleep_until, m_next_time_usecs, now, sleep_time);
         m_TimeSource.SleepUsecAbsolute(m_sleep_until);
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
     }
 
     uint32_t cycle_timer;
     uint64_t local_time;
-    if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
-        debugError("Could not read cycle timer register\n");
-        return false;
-    }
+    int64_t usecs_late;
+    int ntries=2;
+    uint64_t cycle_timer_ticks;
+    double diff_ticks;
+
+    // if the difference between the predicted value and the
+    // actual value seems to be too large, retry reading the cycle timer
+    // some host controllers return bogus values on some reads
+    // (looks like a non-atomic update of the register)
+    do {
+        if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
+            debugError("Could not read cycle timer register\n");
+            return false;
+        }
+        usecs_late = local_time - m_sleep_until;
+        cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+        diff_ticks = diffTicks(cycle_timer_ticks, (int64_t)m_next_time_ticks);
+        if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "have to retry, diff = %f\n",diff_ticks);
+        }
+        
+    } while(diff_ticks < -((double)TICKS_PER_HALFCYCLE) && --ntries && !m_first_run);
+
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                         cycle_timer, local_time);
 
@@ -203,14 +238,33 @@ CycleTimerHelper::Execute()
         m_first_run = false;
     } else {
         m_sleep_until += m_usecs_per_update;
-        uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
-        double usecs_late = ((double)local_time) - (m_next_time_usecs);
+
+        double diff_ticks_corr;
+        // correct for late wakeup
+        int64_t ticks_late = (usecs_late * TICKS_PER_SECOND) / 1000000LL;
+        if (ticks_late > 0) {
+            // if we are usecs_late usecs late 
+            // the cycle timer has ticked approx ticks_late ticks too much
+            cycle_timer_ticks = substractTicks(cycle_timer_ticks, ticks_late);
+            diff_ticks_corr = diff_ticks - ticks_late;
+        } else {
+            debugError("Early wakeup, should not happen!\n");
+            // recover
+            cycle_timer_ticks = addTicks(cycle_timer_ticks, -ticks_late);
+            diff_ticks_corr = diff_ticks + ticks_late;
+        }
+
+        #ifdef DEBUG
+        if(usecs_late > 20) {
+            debugWarning("Rather late wakeup: %lld usecs\n", usecs_late);
+        }
+        #endif
 
         // update the x-axis values
-        double diff_ticks = diffTicks(cycle_timer_ticks, (int64_t)m_next_time_ticks);
         m_current_time_ticks = m_next_time_ticks;
+
         // do the calculation in 'tick space'
-        int64_t tmp = (uint64_t)(DLL_COEFF_B * diff_ticks);
+        int64_t tmp = (uint64_t)(DLL_COEFF_B * diff_ticks_corr);
         if(m_dll_e2 > 0) {
             tmp = addTicks(tmp, (uint64_t)m_dll_e2);
         } else {
@@ -223,14 +277,18 @@ CycleTimerHelper::Execute()
 
         // it should be ok to not do this in tick space since it's value
         // is approx equal to the rate, being 24.576 ticks/usec
-        m_dll_e2 += DLL_COEFF_C * diff_ticks;
+        m_dll_e2 += DLL_COEFF_C * diff_ticks_corr;
+
+        // For jitter graphs
+        //debugOutputShort(DEBUG_LEVEL_NORMAL, "0123456789 %f %f %f %lld %lld %lld\n", 
+        //                 diff_ticks, diff_ticks_corr, m_dll_e2, cycle_timer_ticks, (int64_t)m_next_time_ticks, usecs_late);
 
         // update the y-axis values
         m_current_time_usecs = m_next_time_usecs;
-        m_next_time_usecs = local_time + m_usecs_per_update;
+        m_next_time_usecs += m_usecs_per_update;
 
-        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%f\n",
-                            m_current_time_usecs, m_next_time_usecs, usecs_late);
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%lld ticks_late=%lld\n",
+                            m_current_time_usecs, m_next_time_usecs, usecs_late, ticks_late);
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
                             m_current_time_ticks, m_next_time_ticks, diff_ticks);
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
@@ -239,7 +297,7 @@ CycleTimerHelper::Execute()
 
     // FIXME: priority inversion possible, run this at higher prio than client threads
     ENTER_CRITICAL_SECTION;
-    m_current_vars.ticks = (uint64_t)(m_current_time_ticks);// + m_average_offset_ticks);
+    m_current_vars.ticks = (uint64_t)(m_current_time_ticks);
     m_current_vars.usecs = (uint64_t)m_current_time_usecs;
     m_current_vars.rate = getRate();
     EXIT_CRITICAL_SECTION;
@@ -343,28 +401,44 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 uint32_t
 CycleTimerHelper::getCycleTimer()
 {
-    bool good=false;
-    int maxtries = 10;
     uint32_t cycle_timer;
     uint64_t local_time;
-    
+    readCycleTimerWithRetry(&cycle_timer, &local_time, 10);
+    return cycle_timer;
+}
+
+uint32_t
+CycleTimerHelper::getCycleTimer(uint64_t now)
+{
+    debugWarning("not implemented!\n");
+    return getCycleTimer();
+}
+
+#endif
+
+bool
+CycleTimerHelper::readCycleTimerWithRetry(uint32_t *cycle_timer, uint64_t *local_time, int ntries)
+{
+    bool good=false;
+    int maxtries = ntries;
+
     do {
         // the ctr read can return 0 sometimes. if that happens, reread the ctr.
-        int maxtries2=10;
+        int maxtries2=ntries;
         do {
-            if(!m_Parent.readCycleTimerReg(&cycle_timer, &local_time)) {
+            if(!m_Parent.readCycleTimerReg(cycle_timer, local_time)) {
                 debugError("Could not read cycle timer register\n");
-                return 0;
+                return false;
             }
-            if (cycle_timer == 0) {
+            if (*cycle_timer == 0) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,
                            "Bogus CTR: %08X on try %02d\n",
-                           cycle_timer, maxtries2);
+                           *cycle_timer, maxtries2);
             }
-        } while (cycle_timer == 0 && maxtries2--);
+        } while (*cycle_timer == 0 && maxtries2--);
         
         // catch bogus ctr reads (can happen)
-        uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+        uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(*cycle_timer);
     
         if (diffTicks(cycle_timer_ticks, m_cycle_timer_ticks_prev) < 0) {
             debugOutput( DEBUG_LEVEL_VERBOSE,
@@ -372,7 +446,7 @@ CycleTimerHelper::getCycleTimer()
                         maxtries, m_cycle_timer_ticks_prev, cycle_timer_ticks);
             debugOutput( DEBUG_LEVEL_VERBOSE,
                         "                            : %08X -> %08X\n",
-                        m_cycle_timer_prev, cycle_timer);
+                        m_cycle_timer_prev, *cycle_timer);
             debugOutput( DEBUG_LEVEL_VERBOSE,
                         " current: %011llu (%03us %04ucy %04uticks)\n",
                         cycle_timer_ticks,
@@ -387,21 +461,12 @@ CycleTimerHelper::getCycleTimer()
                         (unsigned int)TICKS_TO_OFFSET( m_cycle_timer_ticks_prev ) );
         } else {
             good = true;
-            m_cycle_timer_prev = cycle_timer;
+            m_cycle_timer_prev = *cycle_timer;
             m_cycle_timer_ticks_prev = cycle_timer_ticks;
         }
     } while (!good && maxtries--);
-    return cycle_timer;
+    return true;
 }
-
-uint32_t
-CycleTimerHelper::getCycleTimer(uint64_t now)
-{
-    debugWarning("not implemented!\n");
-    return getCycleTimer();
-}
-
-#endif
 
 void
 CycleTimerHelper::setVerboseLevel(int l)

@@ -100,6 +100,8 @@ public:
     void setVerboseLevel(int l);
 
 private:
+    bool readCycleTimerWithRetry(uint32_t *cycle_timer, uint64_t *local_time, int ntries);
+
     Ieee1394Service &m_Parent;
     Util::SystemTimeSource m_TimeSource;
     // parameters
@@ -119,7 +121,7 @@ private:
     ffado_microsecs_t m_sleep_until;
 
     uint32_t m_cycle_timer_prev;
-    uint32_t m_cycle_timer_ticks_prev;
+    uint64_t m_cycle_timer_ticks_prev;
 
     // cached vars used for computation
     struct compute_vars {
