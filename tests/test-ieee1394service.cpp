@@ -166,6 +166,8 @@ bool CtrThread::Execute() {
                 (unsigned int)TICKS_TO_OFFSET( ctr_dll ) );
     int64_t diff = diffTicks(ctr, ctr_dll);
     uint64_t abs_diff;
+    // for jitter plots
+    //     debugOutput(DEBUG_LEVEL_NORMAL, "9876543210: %lld\n", diff);
 
     // not 100% thread safe, but will do
     if (diff > max_diff) max_diff = diff;

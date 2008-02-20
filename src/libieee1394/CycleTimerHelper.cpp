@@ -308,8 +308,8 @@ CycleTimerHelper::Execute()
         m_dll_e2 += coeff_c * diff_ticks_corr;
 
         // For jitter graphs
-        debugOutputShort(DEBUG_LEVEL_NORMAL, "0123456789 %f %f %f %lld %lld %lld\n", 
-                         diff_ticks, diff_ticks_corr, m_dll_e2, cycle_timer_ticks, (int64_t)m_next_time_ticks, usecs_late);
+        // debugOutputShort(DEBUG_LEVEL_NORMAL, "0123456789 %f %f %f %lld %lld %lld\n", 
+        //                 diff_ticks, diff_ticks_corr, m_dll_e2, cycle_timer_ticks, (int64_t)m_next_time_ticks, usecs_late);
 
         // update the y-axis values
         m_current_time_usecs = m_next_time_usecs;
