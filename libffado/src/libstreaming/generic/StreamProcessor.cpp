@@ -800,11 +800,11 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
                        this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     if (lag_frames >= 1.0) {
         // the stream lags
-        debugWarning( "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+        debugOutput(DEBUG_LEVEL_VERBOSE, "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
                       this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     } else if (lag_frames <= -1.0) {
         // the stream leads
-        debugWarning( "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+        debugOutput(DEBUG_LEVEL_VERBOSE, "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
                       this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     }
 #endif
