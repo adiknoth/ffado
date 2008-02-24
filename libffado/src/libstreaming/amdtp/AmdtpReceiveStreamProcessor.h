@@ -100,13 +100,42 @@ protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
 
 private:
-    int decodeMBLAEventsToPort(AmdtpAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
-    int decodeMidiEventsToPort(AmdtpMidiPort *p, quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void decodeAudioPortsFloat(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void decodeAudioPortsInt24(quadlet_t *data, unsigned int offset, unsigned int nevents);
+    void decodeMidiPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);
 
     unsigned int getSytInterval();
 
     int m_dimension;
     unsigned int m_syt_interval;
+
+private: // local port caching for performance
+    struct _MBLA_port_cache {
+        AmdtpAudioPort*     port;
+        void*               buffer;
+        bool                enabled;
+#ifdef DEBUG
+        unsigned int        buffer_size;
+#endif
+    };
+    std::vector<struct _MBLA_port_cache> m_audio_ports;
+    unsigned int m_nb_audio_ports;
+
+    struct _MIDI_port_cache {
+        AmdtpMidiPort*      port;
+        void*               buffer;
+        bool                enabled;
+        unsigned int        position;
+        unsigned int        location;
+#ifdef DEBUG
+        unsigned int        buffer_size;
+#endif
+    };
+    std::vector<struct _MIDI_port_cache> m_midi_ports;
+    unsigned int m_nb_midi_ports;
+
+    bool initPortCache();
+    void updatePortCache();
 };
 
 
