@@ -119,6 +119,23 @@ bool
 CycleTimerHelper::Start()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start %p...\n", this);
+
+    // initialize the 'prev ctr' values
+    uint64_t local_time;
+    int maxtries2 = 10;
+    do {
+        if(!m_Parent.readCycleTimerReg(&m_cycle_timer_prev, &local_time)) {
+            debugError("Could not read cycle timer register\n");
+            return false;
+        }
+        if (m_cycle_timer_prev == 0) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "Bogus CTR: %08X on try %02d\n",
+                        m_cycle_timer_prev, maxtries2);
+        }
+    } while (m_cycle_timer_prev == 0 && maxtries2--);
+    m_cycle_timer_ticks_prev = CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev);
+
 #if IEEE1394SERVICE_USE_CYCLETIMER_DLL
     m_high_bw_updates = UPDATES_WITH_HIGH_BANDWIDTH;
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
@@ -140,22 +157,6 @@ CycleTimerHelper::Init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initialize %p...\n", this);
     pthread_mutex_init(&m_compute_vars_lock, NULL);
-    
-    // initialize the 'prev ctr' values
-    uint64_t local_time;
-    int maxtries2 = 10;
-    do {
-        if(!m_Parent.readCycleTimerReg(&m_cycle_timer_prev, &local_time)) {
-            debugError("Could not read cycle timer register\n");
-            return false;
-        }
-        if (m_cycle_timer_prev == 0) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "Bogus CTR: %08X on try %02d\n",
-                        m_cycle_timer_prev, maxtries2);
-        }
-    } while (m_cycle_timer_prev == 0 && maxtries2--);
-    m_cycle_timer_ticks_prev = CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev);
     return true;
 }
 
