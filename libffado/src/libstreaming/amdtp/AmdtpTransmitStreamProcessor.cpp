@@ -528,6 +528,11 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
     const __m128i label = _mm_set_epi32 (0x40000000, 0x40000000, 0x40000000, 0x40000000);
     const __m128 mult = _mm_set_ps(AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER);
 
+#if AMDTP_CLIP_FLOATS
+    const __m128 v_max = _mm_set_ps(1.0, 1.0, 1.0, 1.0);
+    const __m128 v_min = _mm_set_ps(-1.0, -1.0, -1.0, -1.0);
+#endif
+
     // this assumes that audio ports are sorted by position,
     // and that there are no gaps
     for (i = 0; i < m_nb_audio_ports-4; i += 4) {
@@ -562,6 +567,23 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             __m128 v_float = *((__m128*)tmp_values);
             __m128i *target = (__m128i*)target_event;
             __m128i v_int;
+
+            // clip
+#if AMDTP_CLIP_FLOATS
+            // implement sample<min?min:sample
+            // and sample>max?max:sample
+            // we use separate masks since that allows the
+            // compiler/cpu to do more out-of-order optimization
+
+            // is any of the pieces less than the minimum?
+            // or larger than the maximum?
+            __m128 mask1 = _mm_cmplt_ps(v_float, v_min);
+            __m128 mask2 = _mm_cmpgt_ps(v_float, v_max);
+            // clip the values that need to be clipped
+            // pass the values that don't
+            v_float = _mm_or_ps(_mm_andnot_ps(mask1, v_float), _mm_and_ps(mask1, v_min));
+            v_float = _mm_or_ps(_mm_andnot_ps(mask2, v_float), _mm_and_ps(mask2, v_max));
+#endif
 
             // multiply
             v_float = _mm_mul_ps(v_float, mult);
@@ -615,11 +637,27 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 buffer++;
                 tmp_values[3] = *buffer;
                 buffer++;
-    
+
                 // now do the SSE based conversion/labeling
                 __m128 v_float = *((__m128*)tmp_values);
                 __m128i v_int;
-    
+
+#if AMDTP_CLIP_FLOATS
+                // implement sample<min?min:sample
+                // and sample>max?max:sample
+                // we use separate masks since that allows the
+                // compiler/cpu to do more out-of-order optimization
+
+                // is any of the pieces less than the minimum?
+                // or larger than the maximum?
+                __m128 mask1 = _mm_cmplt_ps(v_float, v_min);
+                __m128 mask2 = _mm_cmpgt_ps(v_float, v_max);
+                // clip the values that need to be clipped
+                // pass the values that don't
+                v_float = _mm_or_ps(_mm_andnot_ps(mask1, v_float), _mm_and_ps(mask1, v_min));
+                v_float = _mm_or_ps(_mm_andnot_ps(mask2, v_float), _mm_and_ps(mask2, v_max));
+#endif
+
                 // multiply
                 v_float = _mm_mul_ps(v_float, mult);
                 // convert to signed integer
@@ -652,6 +690,10 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             // do the remainder of the events
             for(;j < nevents; j += 1) {
                 float *in = (float *)buffer;
+#if AMDTP_CLIP_FLOATS
+                if(*in > 1.0) *in=1.0;
+                if(*in < -1.0) *in=-1.0;
+#endif
                 float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
                 unsigned int tmp = ((int) v);
                 tmp = ( tmp >> 8 ) | 0x40000000;
@@ -897,6 +939,10 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             for (j = 0;j < nevents; j += 1)
             {
                 float *in = (float *)buffer;
+#if AMDTP_CLIP_FLOATS
+                if(*in > 1.0) *in=1.0;
+                if(*in < -1.0) *in=-1.0;
+#endif
                 float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
                 unsigned int tmp = ((int) v);
                 tmp = ( tmp >> 8 ) | 0x40000000;

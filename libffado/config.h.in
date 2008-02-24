@@ -26,13 +26,6 @@
 /* Define to the api version */
 #define FFADO_API_VERSION $FFADO_API_VERSION
 
-/* Define to 1 if SSE assembly is available. */
-// broken
-//#define USE_SSE $USE_SSE
-#define USE_SSE 0
-//#define USE_SSE2 $USE_SSE2
-#define USE_SSE2 0
-
 #define CACHEDIR "~/.ffado"
 
 #define BINDIR "$BINDIR"
@@ -113,6 +106,10 @@
 // packets early if we want to. (not completely according to spec)
 // (for spec compliance you need to specify a value of 1 or 2)
 #define AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY                  6
+
+// ensure that the AMDTP SP clips all float values to [-1.0..1.0]
+#define AMDTP_CLIP_FLOATS                                   1
+
 
 #define MOTU_TRANSMIT_TRANSFER_DELAY    (11776U)
 
