@@ -354,11 +354,6 @@ if env['ENABLE_OPTIMIZATIONS']:
     env.AppendUnique( CFLAGS=opt_flags )
     print "Doing an optimized build..."
 
-#>>!!!!!!!HACK!!!!!!
-env.AppendUnique( CCFLAGS=["-msse2"] )
-env.AppendUnique( CFLAGS=["-msse2"] )
-#<<!!!!!!!HACK!!!!!!
-
 env['REVISION'] = os.popen('svnversion .').read()[:-1]
 # This may be as simple as '89' or as complex as '4123:4184M'.
 # We'll just use the last bit.
