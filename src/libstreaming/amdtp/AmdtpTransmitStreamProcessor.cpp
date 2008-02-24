@@ -643,19 +643,9 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 __m128i v_int;
 
 #if AMDTP_CLIP_FLOATS
-                // implement sample<min?min:sample
-                // and sample>max?max:sample
-                // we use separate masks since that allows the
-                // compiler/cpu to do more out-of-order optimization
-
-                // is any of the pieces less than the minimum?
-                // or larger than the maximum?
-                __m128 mask1 = _mm_cmplt_ps(v_float, v_min);
-                __m128 mask2 = _mm_cmpgt_ps(v_float, v_max);
-                // clip the values that need to be clipped
-                // pass the values that don't
-                v_float = _mm_or_ps(_mm_andnot_ps(mask1, v_float), _mm_and_ps(mask1, v_min));
-                v_float = _mm_or_ps(_mm_andnot_ps(mask2, v_float), _mm_and_ps(mask2, v_max));
+                // do SSE clipping
+                v_float = _mm_max_ps(v_float,v_min);
+                v_float = _mm_min_ps(v_float,v_max);
 #endif
 
                 // multiply
