@@ -55,7 +55,7 @@
 namespace Util
 {
 
-IMPL_DEBUG_MODULE( Thread, Thread, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Thread, Thread, DEBUG_LEVEL_NORMAL );
 
 void* PosixThread::ThreadHandler(void* arg)
 {
