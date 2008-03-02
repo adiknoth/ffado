@@ -284,7 +284,7 @@ DeviceManager::discover( bool useCache )
                 }
 
                 if( getDebugLevel() >= DEBUG_LEVEL_VERBOSE) {
-                    configRom->printConfigRom();
+                    configRom->printConfigRomDebug();
                 }
 
                 FFADODevice* avDevice = getDriverForDevice( configRom,
