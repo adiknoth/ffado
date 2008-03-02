@@ -104,6 +104,7 @@ class ConfigRom
                    Util::IODeserialize& deser,
                    Ieee1394Service& ieee1394Service );
 
+    void printConfigRomDebug() const;
     void printConfigRom() const;
     void setVerboseLevel(int level) {
         setDebugLevel(level);
