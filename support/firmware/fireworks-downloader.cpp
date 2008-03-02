@@ -22,6 +22,8 @@
  *
  */
 
+#include "downloader.h"
+
 #include "src/fireworks/fireworks_device.h"
 #include "src/fireworks/fireworks_firmware.h"
 
@@ -32,107 +34,43 @@
 
 #include "devicemanager.h"
 
-#include <argp.h>
 #include <iostream>
 
 #include <string.h>
 #include <string>
 
+using namespace FireWorks;
+
 DECLARE_GLOBAL_DEBUG_MODULE;
 
-using namespace FireWorks;
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "fireworks-downloader 0.1";
+const char *argp_program_version = "fireworks-downloader 0.2";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-static char doc[] = "fireworks-downloader -- firmware downloader application for ECHO Fireworks devices\n\n"
+char* doc = "fireworks-downloader -- firmware downloader application for ECHO Fireworks devices\n\n"
                     "OPERATION: display\n"
                     "           firmware FILE\n";
-static char args_doc[] = "NODE_ID OPERATION";
-static struct argp_option options[] = {
+
+static struct argp_option _options[] = {
     {"verbose",   'v', "level",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
     { 0 }
 };
-
-struct arguments
-{
-    arguments()
-        : verbose( 0 )
-        , port( 0 )
-        {
-            args[0] = 0;
-            args[1] = 0;
-            args[2] = 0;
-        }
-
-    char* args[3];
-    short verbose;
-    int   port;
-} arguments;
-
-// Parse a single option.
-static error_t
-parse_opt( int key, char* arg, struct argp_state* state )
-{
-    // Get the input argument from `argp_parse', which we
-    // know is a pointer to our arguments structure.
-    struct arguments* arguments = ( struct arguments* ) state->input;
-
-    char* tail;
-    switch (key) {
-    case 'v':
-        if (arg) {
-            arguments->verbose = strtol( arg, &tail, 0 );
-            if ( errno ) {
-                debugError( "Could not parse 'verbose' argument\n" );
-                return ARGP_ERR_UNKNOWN;
-            }
-        }
-        break;
-    case 'p':
-        errno = 0;
-        arguments->port = strtol(arg, &tail, 0);
-        if (errno) {
-            debugError("argument parsing failed: %s\n",
-                       strerror(errno));
-            return errno;
-        }
-        break;
-    case ARGP_KEY_ARG:
-        if (state->arg_num >= 3) {
-            // Too many arguments.
-            argp_usage (state);
-        }
-        arguments->args[state->arg_num] = arg;
-        break;
-    case ARGP_KEY_END:
-        if (state->arg_num < 2) {
-            // Not enough arguments.
-            argp_usage (state);
-        }
-        break;
-    default:
-        return ARGP_ERR_UNKNOWN;
-    }
-    return 0;
-}
-
-static struct argp argp = { options, parse_opt, args_doc, doc };
-
+struct argp_option* options = _options;
 
 int
 main( int argc, char** argv )
 {
     using namespace std;
 
-    // arg parsing
-    argp_parse (&argp, argc, argv, 0, 0, &arguments);
+    argp_parse (argp, argc, argv, 0, 0, args);
 
     errno = 0;
     char* tail;
-    int node_id = strtol(arguments.args[0], &tail, 0);
+    int node_id = -1;
+
+    fb_octlet_t guid = strtoll(args->args[0], &tail, 0);
     if (errno) {
         debugError("argument parsing failed: %s\n",
                     strerror(errno));
@@ -140,18 +78,31 @@ main( int argc, char** argv )
     }
 
     Ieee1394Service service;
-    if ( !service.initialize( arguments.port ) ) {
+    if ( !service.initialize( args->port ) ) {
         debugError("Could not initialize IEEE 1394 service\n");
         return -1;
     }
-    service.setVerboseLevel( arguments.verbose );
+    service.setVerboseLevel( args->verbose );
+ 
+    for (int i = 0; i < service.getNodeCount(); i++) {
+        ConfigRom configRom(service, i);
+        configRom.initialize();
+        
+        if (configRom.getGuid() == guid)
+            node_id = configRom.getNodeId();
+    }
+
+    if (node_id < 0) {
+        cerr << "Could not find device with matching GUID" << endl;
+        return -1;
+    }
 
     ConfigRom *configRom = new ConfigRom(service, node_id );
     if (configRom == NULL) {
         debugError("Could not create ConfigRom\n");
         return -1;
     }
-    configRom->setVerboseLevel( arguments.verbose );
+    configRom->setVerboseLevel( args->verbose );
 
     if ( !configRom->initialize() ) {
         debugError( "Could not read config rom from device (node id %d).\n",
@@ -177,24 +128,24 @@ main( int argc, char** argv )
 
     // create the firmware util class
     FirmwareUtil util = FirmwareUtil(*dev);
-    util.setVerboseLevel( arguments.verbose );
+    util.setVerboseLevel( args->verbose );
     
-    if ( strcmp( arguments.args[1], "firmware" ) == 0 ) {
-        if (!arguments.args[2] ) {
+    if ( strcmp( args->args[1], "firmware" ) == 0 ) {
+        if (!args->args[2] ) {
             cerr << "FILE argument is missing" << endl;
             delete dev;
             return -1;
         }
-        std::string str( arguments.args[2] );
+        std::string str( args->args[2] );
 
         // load the file
         Firmware f = Firmware();
-        f.setVerboseLevel( arguments.verbose );
+        f.setVerboseLevel( args->verbose );
         
         f.loadFile(str);
         f.show();
 
-    } else if ( strcmp( arguments.args[1], "display" ) == 0 ) {
+    } else if ( strcmp( args->args[1], "display" ) == 0 ) {
         // nothing to do
         dev->showDevice();
     } else {

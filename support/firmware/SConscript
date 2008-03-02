@@ -45,11 +45,11 @@ env.PrependUnique( LIBPATH=env['build_base']+"src" )
 env.PrependUnique( LIBS="ffado" )
 
 if env['ENABLE_BEBOB']:
-    apps["ffado-bridgeco-downloader"] = "bridgeco-downloader.cpp"
+    apps["ffado-bridgeco-downloader"] = "downloader.cpp bridgeco-downloader.cpp"
     installapps += [ "ffado-bridgeco-downloader" ]
 
 if env['ENABLE_FIREWORKS']:
-    apps["ffado-fireworks-downloader"] = "fireworks-downloader.cpp"
+    apps["ffado-fireworks-downloader"] = "downloader.cpp fireworks-downloader.cpp"
     installapps += [ "ffado-fireworks-downloader" ]
 
 for app in apps.keys():
