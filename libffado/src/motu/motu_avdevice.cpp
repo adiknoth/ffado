@@ -201,11 +201,11 @@ const PortEntry Ports_8PRE[] =
 
 const DevicePropertyEntry DevicesProperty[] = {
 //  { Ports_map,       sizeof( Ports_map ),        MaxSR },
-    { Ports_828MKI,    sizeof( Ports_828MKI ),     48000 },
     { Ports_828MKII,   sizeof( Ports_828MKII ),    96000 },
     { Ports_TRAVELER,  sizeof( Ports_TRAVELER ),  192000 },
     { Ports_ULTRALITE, sizeof( Ports_ULTRALITE ),  96000 },
     { Ports_8PRE,      sizeof( Ports_8PRE ),       96000 },
+    { Ports_828MKI,    sizeof( Ports_828MKI ),     48000 },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
