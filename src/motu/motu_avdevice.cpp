@@ -49,7 +49,7 @@
 
 namespace Motu {
 
-// to define the supported devices
+// Define the supported devices.  Device ordering is arbitary here.
 static VendorModelEntry supportedDeviceList[] =
 {
 //  {vendor_id, model_id, unit_version, unit_specifier_id, model, vendor_name,model_name}
@@ -199,6 +199,9 @@ const PortEntry Ports_8PRE[] =
     {"ADAT8", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 43},
 };
 
+/* The order of DevicesProperty entries must match the numeric order of the
+ * MOTU model enumeration (EMotuModel).
+ */
 const DevicePropertyEntry DevicesProperty[] = {
 //  { Ports_map,       sizeof( Ports_map ),        MaxSR },
     { Ports_828MKII,   sizeof( Ports_828MKII ),    96000 },
