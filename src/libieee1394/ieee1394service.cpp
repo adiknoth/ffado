@@ -75,7 +75,7 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_threadRunning( false )
     , m_realtime ( rt )
     , m_base_priority ( prio )
-    , m_pIsoManager( new IsoHandlerManager( *this, rt, prio + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE ) )
+    , m_pIsoManager( new IsoHandlerManager( *this, rt, prio ) )
     , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC,
                                            rt, prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
     , m_have_new_ctr_read ( false )
@@ -276,8 +276,8 @@ Ieee1394Service::setThreadParameters(bool rt, int priority) {
     m_realtime = rt;
     if (m_pIsoManager) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching IsoManager to (rt=%d, prio=%d)\n",
-                                         rt, priority + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE);
-        result &= m_pIsoManager->setThreadParameters(rt, priority + IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE);
+                                         rt, priority);
+        result &= m_pIsoManager->setThreadParameters(rt, priority);
     }
     if (m_pCTRHelper) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching CycleTimerHelper to (rt=%d, prio=%d)\n", 

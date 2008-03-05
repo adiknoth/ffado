@@ -124,14 +124,14 @@ void Port::setBufferAddress(void *buff) {
 /// Enable the port. (this can be called anytime)
 void
 Port::enable()  {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Enabling port %s...\n",m_Name.c_str());
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enabling port %s...\n",m_Name.c_str());
     m_disabled=false;
 }
 
 /// Disable the port. (this can be called anytime)
 void
 Port::disable() {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Disabling port %s...\n",m_Name.c_str());
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disabling port %s...\n",m_Name.c_str());
     m_disabled=false;
 }
 

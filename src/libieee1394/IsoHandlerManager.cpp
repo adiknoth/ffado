@@ -31,24 +31,213 @@
 
 #include "libutil/PosixThread.h"
 
+#include "libutil/SystemTimeSource.h"
+
 #include <assert.h>
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( IsoTask, IsoTask, DEBUG_LEVEL_NORMAL );
 
 using namespace Streaming;
 
+// --- ISO Thread --- //
+
+IsoTask::IsoTask(IsoHandlerManager& manager, enum IsoTask::eTaskType t)
+    : m_manager( manager )
+    , m_type( t )
+{
+}
+
+bool
+IsoTask::Init()
+{
+    request_update = 0;
+
+    int i;
+    for (i=0; i < ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT; i++) {
+        m_IsoHandler_map_shadow[i] = NULL;
+        m_poll_fds_shadow[i].events = 0;
+    }
+    m_poll_nfds_shadow = 0;
+    return true;
+}
+
+bool
+IsoTask::requestShadowMapUpdate()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "enter\n");
+    INC_ATOMIC(&request_update);
+    return true;
+}
+
+// updates the internal stream map
+// note that this should be executed with the guarantee that
+// nobody will modify 
+void
+IsoTask::updateShadowMapHelper()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "updating shadow vars...\n");
+    unsigned int i, cnt, max;
+    max = m_manager.m_IsoHandlers.size();
+    for (i = 0, cnt = 0; i < max; i++) {
+        IsoHandler *h = m_manager.m_IsoHandlers.at(i);
+        assert(h);
+
+        // skip handlers of the wrong type
+        if (h->getType() == IsoHandler::eHT_Receive  && m_type == eTT_Transmit) continue;
+        if (h->getType() == IsoHandler::eHT_Transmit && m_type == eTT_Receive) continue;
+
+        if (h->isEnabled()) {
+            m_IsoHandler_map_shadow[cnt] = h;
+            m_poll_fds_shadow[cnt].fd = h->getFileDescriptor();
+            m_poll_fds_shadow[cnt].revents = 0;
+            m_poll_fds_shadow[cnt].events = POLLIN;
+            cnt++;
+            debugOutput( DEBUG_LEVEL_VERBOSE, "%s handler %p added\n", h->getTypeString(), h);
+        } else {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "%s handler %p skipped (disabled)\n", h->getTypeString(), h);
+        }
+        if(cnt > ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT) {
+            debugWarning("Too much ISO Handlers in thread...\n");
+            break;
+        }
+    }
+    m_poll_nfds_shadow = cnt;
+    debugOutput( DEBUG_LEVEL_VERBOSE, " updated shadow vars...\n");
+}
+
+bool
+IsoTask::Execute()
+{
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Execute\n");
+    int err;
+    unsigned int i;
+    unsigned int m_poll_timeout = 10;
+
+    // if some other thread requested a shadow map update, do it
+    if(request_update) {
+        updateShadowMapHelper();
+        DEC_ATOMIC(&request_update); // ack the update
+    }
+
+    // bypass if no handlers are registered
+    if (m_poll_nfds_shadow == 0) {
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "bypass iterate since no handlers to poll\n");
+        usleep(m_poll_timeout * 1000);
+        return true;
+    }
+
+    // setup the poll here
+    if (m_type==eTT_Transmit) {
+        // if we are a transmit thread, we should only poll on
+        // those handlers that have a client that is ready to send
+        // something. poll'ing the others will only cause busy-wait
+        // looping.
+        for (i = 0; i < m_poll_nfds_shadow; i++) {
+            short events = 0;
+            if (m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
+                events = POLLIN | POLLPRI;
+            }
+            m_poll_fds_shadow[i].events = events;
+        }
+    } else {
+        // for receive handlers, we can do the same. we might not have to though
+        // FIXME: check whether this is necessary
+        for (i = 0; i < m_poll_nfds_shadow; i++) {
+            short events = 0;
+//             if (m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
+//                 events = POLLIN | POLLERR | POLLHUP;
+//             }
+            events = POLLIN | POLLPRI;
+            m_poll_fds_shadow[i].events = events;
+        }
+    }
+
+    // Use a shadow map of the fd's such that the poll call is not in a critical section
+    DEBUG_EXTREME( uint64_t poll_enter = m_service.getCurrentTimeAsUsecs() );
+    err = poll (m_poll_fds_shadow, m_poll_nfds_shadow, m_poll_timeout);
+    DEBUG_EXTREME( uint64_t poll_exit = m_service.getCurrentTimeAsUsecs() );
+
+    if (err < 0) {
+        if (errno == EINTR) {
+            return true;
+        }
+        debugFatal("poll error: %s\n", strerror (errno));
+        return false;
+    }
+
+    DEBUG_EXTREME( uint64_t iter_enter = m_service.getCurrentTimeAsUsecs() );
+    for (i = 0; i < m_poll_nfds_shadow; i++) {
+        #ifdef DEBUG
+        if(m_poll_fds_shadow[i].revents) {
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                        "received events: %08X for (%d/%d, %p, %s)\n",
+                        m_poll_fds_shadow[i].revents,
+                        i, m_poll_nfds_shadow,
+                        m_IsoHandler_map_shadow[i],
+                        m_IsoHandler_map_shadow[i]->getTypeString());
+        }
+        #endif
+
+        // if we get here, it means two things:
+        // 1) the kernel can accept or provide packets (poll returned POLLIN)
+        // 2) the client can provide or accept packets (we enabled polling)
+        if(m_poll_fds_shadow[i].revents & (POLLIN)) {
+            m_IsoHandler_map_shadow[i]->iterate();
+        } else {
+            // there might be some error condition
+            if (m_poll_fds_shadow[i].revents & POLLERR) {
+                debugWarning("error on fd for %d\n",i);
+            }
+            if (m_poll_fds_shadow[i].revents & POLLHUP) {
+                debugWarning("hangup on fd for %d\n",i);
+            }
+        }
+
+//         #ifdef DEBUG
+//         // check if the handler is still alive
+//         if(m_IsoHandler_map_shadow[i]->isDead()) {
+//             debugError("Iso handler (%p, %s) is dead!\n",
+//                        m_IsoHandler_map_shadow[i],
+//                        m_IsoHandler_map_shadow[i]->getTypeString());
+//             return false; // shutdown the system
+//         }
+//         #endif
+
+    }
+    DEBUG_EXTREME( uint64_t iter_exit = m_service.getCurrentTimeAsUsecs() );
+
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
+                       poll_exit-poll_enter, iter_exit-iter_enter,
+                       nb_rcv, nb_xmit);
+
+    return true;
+
+}
+
+void IsoTask::setVerboseLevel(int i) {
+    setDebugLevel(i);
+}
+
+// -- the ISO handler manager -- //
 IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service)
    : m_State(E_Created)
    , m_service( service )
    , m_realtime(false), m_priority(0)
-   , m_Thread ( NULL )
+   , m_ReceiveThread ( NULL )
+   , m_TransmitThread ( NULL )
+   , m_ReceiveTask ( NULL )
+   , m_TransmitTask ( NULL )
 {}
 
 IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, int rt_prio)
    : m_State(E_Created)
    , m_service( service )
    , m_realtime(run_rt), m_priority(rt_prio)
-   , m_Thread ( NULL )
+   , m_ReceiveThread ( NULL )
+   , m_TransmitThread ( NULL )
+   , m_ReceiveTask ( NULL )
+   , m_TransmitTask ( NULL )
 {}
 
 IsoHandlerManager::~IsoHandlerManager()
@@ -58,9 +247,20 @@ IsoHandlerManager::~IsoHandlerManager()
     if(m_IsoHandlers.size() > 0) {
         debugError("Still some handlers in use\n");
     }
-    if (m_Thread) {
-        m_Thread->Stop();
-        delete m_Thread;
+    if (m_ReceiveThread) {
+        m_ReceiveThread->Stop();
+        delete m_ReceiveThread;
+    }
+    if (m_ReceiveTask) {
+        delete m_ReceiveTask;
+    }
+
+    if (m_TransmitThread) {
+        m_TransmitThread->Stop();
+        delete m_TransmitThread;
+    }
+    if (m_TransmitTask) {
+        delete m_TransmitTask;
     }
 }
 
@@ -71,151 +271,23 @@ IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     m_realtime = rt;
     m_priority = priority;
     bool result = true;
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-        it != m_IsoHandlers.end();
-        ++it )
-    {
-        result &= (*it)->setThreadParameters(m_realtime, m_priority);
-    }
 
-    if (m_Thread) {
+    if (m_ReceiveThread) {
         if (m_realtime) {
-            m_Thread->AcquireRealTime(m_priority);
+            m_ReceiveThread->AcquireRealTime(m_priority);
         } else {
-            m_Thread->DropRealTime();
+            m_ReceiveThread->DropRealTime();
+        }
+    }
+    if (m_TransmitThread) {
+        if (m_realtime) {
+            m_TransmitThread->AcquireRealTime(m_priority);
+        } else {
+            m_TransmitThread->DropRealTime();
         }
     }
 
     return result;
-}
-
-/**
- * Update the shadow variables. Should only be called from
- * the iso handler iteration thread
- */
-void
-IsoHandlerManager::updateShadowVars()
-{
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "updating shadow vars...\n");
-    unsigned int i, cnt, max;
-    max = m_IsoHandlers.size();
-    for (i = 0, cnt = 0; i < max; i++) {
-        IsoHandler *h = m_IsoHandlers.at(i);
-        assert(h);
-        if (h->isEnabled()) {
-            // receive handlers are always poll'ed
-            // transmit handlers only when the client is ready
-            if (h->tryWaitForClient()) {
-                m_IsoHandler_map_shadow[cnt] = h;
-                m_poll_fds_shadow[cnt].fd = h->getFileDescriptor();
-                m_poll_fds_shadow[cnt].revents = 0;
-                m_poll_fds_shadow[cnt].events = POLLIN;
-                cnt++;
-            } else {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "skipped handler %p\n", h);
-            }
-        }
-        if(cnt > ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT) {
-            debugWarning("Too much ISO Handlers in manager...\n");
-            break;
-        }
-    }
-    m_poll_nfds_shadow = cnt;
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " updated shadow vars...\n");
-}
-
-bool
-IsoHandlerManager::Init() {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "%p: Init thread...\n", this);
-    bool result = true;
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-        it != m_IsoHandlers.end();
-        ++it )
-    {
-        result &= (*it)->Init();
-    }
-    return result;
-}
-
-bool
-IsoHandlerManager::Execute() {
-    int err;
-    unsigned int i;
-
-    unsigned int m_poll_timeout = 100;
-
-    updateShadowVars();
-    // bypass if no handlers are registered
-    if (m_poll_nfds_shadow == 0) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "bypass iterate since no handlers to poll\n");
-        usleep(m_poll_timeout * 1000);
-        return true;
-    }
-
-    // Use a shadow map of the fd's such that the poll call is not in a critical section
-    DEBUG_EXTREME( uint64_t poll_enter = m_service.getCurrentTimeAsUsecs() );
-    err = poll (m_poll_fds_shadow, m_poll_nfds_shadow, m_poll_timeout);
-    DEBUG_EXTREME( uint64_t poll_exit = m_service.getCurrentTimeAsUsecs() );
-
-    if (err == -1) {
-        if (errno == EINTR) {
-            return true;
-        }
-        debugFatal("poll error: %s\n", strerror (errno));
-        return false;
-    }
-
-    int nb_rcv = 0;
-    int nb_xmit = 0;
-    DEBUG_EXTREME( uint64_t iter_enter = m_service.getCurrentTimeAsUsecs() );
-    for (i = 0; i < m_poll_nfds_shadow; i++) {
-        if(m_poll_fds_shadow[i].revents) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-                        "received events: %08X for (%d/%d, %p, %s)\n",
-                        m_poll_fds_shadow[i].revents, 
-                        i, m_poll_nfds_shadow,
-                        m_IsoHandler_map_shadow[i],
-                        m_IsoHandler_map_shadow[i]->getTypeString());
-        }
-        if (m_poll_fds_shadow[i].revents & POLLERR) {
-            debugWarning("error on fd for %d\n",i);
-        }
-
-        if (m_poll_fds_shadow[i].revents & POLLHUP) {
-            debugWarning("hangup on fd for %d\n",i);
-        }
-
-        if(m_poll_fds_shadow[i].revents & (POLLIN)) {
-            if (m_IsoHandler_map_shadow[i]->getType() == IsoHandler::eHT_Receive) {
-                m_IsoHandler_map_shadow[i]->iterate();
-                nb_rcv++;
-            } else {
-                // only iterate the xmit handler if it makes sense
-                if(m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
-                    m_IsoHandler_map_shadow[i]->iterate();
-                    nb_xmit++;
-                }
-            }
-        }
-
-        #ifdef DEBUG
-        // check if the handler is still alive
-        if(m_IsoHandler_map_shadow[i]->isDead()) {
-            debugError("Iso handler (%p, %s) is dead!\n",
-                       m_IsoHandler_map_shadow[i],
-                       m_IsoHandler_map_shadow[i]->getTypeString());
-            return false; // shutdown the system
-        }
-        #endif
-        
-    }
-    DEBUG_EXTREME( uint64_t iter_exit = m_service.getCurrentTimeAsUsecs() );
-
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
-                       poll_exit-poll_enter, iter_exit-iter_enter,
-                       nb_rcv, nb_xmit);
-
-    return true;
 }
 
 bool IsoHandlerManager::init()
@@ -227,24 +299,65 @@ bool IsoHandlerManager::init()
         return false;
     }
 
-#if ISOHANDLER_PER_HANDLER_THREAD
-    // the IsoHandlers will create their own thread.
-#else
-    // create a thread to iterate our handlers
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
-    m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
-                                     PTHREAD_CANCEL_DEFERRED);
-    if(!m_Thread) {
+    // create a thread to iterate our receive handlers
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create receive thread for %p...\n", this);
+    m_ReceiveTask = new IsoTask( *this, IsoTask::eTT_Receive );
+    if(!m_ReceiveTask) {
+        debugFatal("No task\n");
+        return false;
+    }
+    m_ReceiveThread = new Util::PosixThread(m_ReceiveTask, m_realtime,
+                                            m_priority + ISOHANDLERMANAGER_RECEIVE_PRIO_INCREASE,
+                                            PTHREAD_CANCEL_DEFERRED);
+
+    if(!m_ReceiveThread) {
         debugFatal("No thread\n");
         return false;
     }
-    if (m_Thread->Start() != 0) {
-        debugFatal("Could not start update thread\n");
+    if (m_ReceiveThread->Start() != 0) {
+        debugFatal("Could not start receive thread\n");
         return false;
     }
-#endif
+
+    // create a thread to iterate our transmit handlers
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create transmit thread for %p...\n", this);
+    m_TransmitTask = new IsoTask( *this, IsoTask::eTT_Transmit );
+    if(!m_TransmitTask) {
+        debugFatal("No task\n");
+        return false;
+    }
+    m_TransmitThread = new Util::PosixThread(m_TransmitTask, m_realtime,
+                                             m_priority + ISOHANDLERMANAGER_TRANSMIT_PRIO_INCREASE,
+                                             PTHREAD_CANCEL_DEFERRED);
+    if(!m_TransmitThread) {
+        debugFatal("No thread\n");
+        return false;
+    }
+    if (m_TransmitThread->Start() != 0) {
+        debugFatal("Could not start transmit thread\n");
+        return false;
+    }
 
     m_State=E_Running;
+    return true;
+}
+
+
+bool
+IsoHandlerManager::updateShadowMapFor(IsoHandler *h)
+{
+    // update the shadow map
+    if(h->getType() == IsoHandler::eHT_Receive) {
+        if(!m_ReceiveTask->requestShadowMapUpdate()) {
+            debugError("failed to update shadow map\n");
+            return false;
+        }
+    } else {
+        if(!m_TransmitTask->requestShadowMapUpdate()) {
+            debugError("failed to update shadow map\n");
+            return false;
+        }
+    }
     return true;
 }
 
@@ -252,13 +365,14 @@ bool
 IsoHandlerManager::disable(IsoHandler *h) {
     bool result;
     int i=0;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disable on IsoHandler %p\n", h);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Disable on IsoHandler %p\n", h);
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
     {
         if ((*it) == h) {
             result = h->disable();
+            result &= updateShadowMapFor(h);
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " disabled\n");
             return result;
         }
@@ -272,13 +386,14 @@ bool
 IsoHandlerManager::enable(IsoHandler *h) {
     bool result;
     int i=0;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enable on IsoHandler %p\n", h);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Enable on IsoHandler %p\n", h);
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
         it != m_IsoHandlers.end();
         ++it )
     {
         if ((*it) == h) {
             result = h->enable();
+            result &= updateShadowMapFor(h);
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " enabled\n");
             return result;
         }
@@ -294,8 +409,7 @@ bool IsoHandlerManager::registerHandler(IsoHandler *handler)
     assert(handler);
     handler->setVerboseLevel(getDebugLevel());
     m_IsoHandlers.push_back(handler);
-    updateShadowVars();
-    return true;
+    return updateShadowMapFor(handler);
 }
 
 bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
@@ -309,8 +423,7 @@ bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
     {
         if ( *it == handler ) {
             m_IsoHandlers.erase(it);
-            updateShadowVars();
-            return true;
+            return updateShadowMapFor(handler);
         }
     }
     debugFatal("Could not find handler (%p)\n", handler);
@@ -451,11 +564,6 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         if (thread_prio > THREAD_MAX_RTPRIO) thread_prio = THREAD_MAX_RTPRIO;
     }
 
-    if(!h->setThreadParameters(m_realtime, thread_prio)) {
-        debugFatal("Could not set handler thread parameters\n");
-        return false;
-    }
-
     // register the stream with the handler
     if(!h->registerStream(stream)) {
         debugFatal("Could not register receive stream with handler\n");
@@ -562,11 +670,13 @@ IsoHandlerManager::stopHandlerForStream(Streaming::StreamProcessor *stream) {
       ++it )
     {
         if((*it)->isStreamRegistered(stream)) {
-            bool result;
             debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler %p for stream %p\n", *it, stream);
-            result = (*it)->disable();
-            if(!result) {
+            if(!(*it)->disable()) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, " could not disable handler (%p)\n",*it);
+                return false;
+            }
+            if(!updateShadowMapFor(*it)) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, " could not update shadow map for handler (%p)\n",*it);
                 return false;
             }
             return true;
@@ -621,11 +731,13 @@ IsoHandlerManager::startHandlerForStream(Streaming::StreamProcessor *stream, int
       ++it )
     {
         if((*it)->isStreamRegistered(stream)) {
-            bool result;
             debugOutput( DEBUG_LEVEL_VERBOSE, " starting handler %p for stream %p\n", *it, stream);
-            result = (*it)->enable(cycle);
-            if(!result) {
+            if(!(*it)->enable(cycle)) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, " could not enable handler (%p)\n",*it);
+                return false;
+            }
+            if(!updateShadowMapFor(*it)) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, " could not update shadow map for handler (%p)\n",*it);
                 return false;
             }
             return true;
@@ -653,6 +765,10 @@ bool IsoHandlerManager::stopHandlers() {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handler (%p)\n",*it);
         if(!(*it)->disable()){
             debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
+            retval=false;
+        }
+        if(!updateShadowMapFor(*it)) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " could not update shadow map for handler (%p)\n",*it);
             retval=false;
         }
     }
@@ -685,6 +801,10 @@ void IsoHandlerManager::setVerboseLevel(int i) {
     {
         (*it)->setVerboseLevel(i);
     }
+    if(m_ReceiveThread) m_ReceiveThread->setVerboseLevel(i);
+    if(m_ReceiveTask) m_ReceiveTask->setVerboseLevel(i);
+    if(m_TransmitThread) m_TransmitThread->setVerboseLevel(i);
+    if(m_TransmitTask) m_TransmitTask->setVerboseLevel(i);
 }
 
 void IsoHandlerManager::dumpInfo() {

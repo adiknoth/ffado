@@ -131,38 +131,12 @@ StreamProcessor::getPacketsPerPeriod()
 unsigned int
 StreamProcessor::getNbPacketsIsoXmitBuffer()
 {
-#if ISOHANDLER_PER_HANDLER_THREAD
     // if we use one thread per packet, we can put every frame directly into the ISO buffer
     // the waitForClient in IsoHandler will take care of the fact that the frames are
     // not present in time
     unsigned int packets_to_prebuffer = (getPacketsPerPeriod() * (m_StreamProcessorManager.getNbBuffers())) + 10;
     debugOutput(DEBUG_LEVEL_VERBOSE, "Nominal prebuffer: %u\n", packets_to_prebuffer);
     return packets_to_prebuffer;
-#else
-    // the target is to have all of the transmit buffer (at period transfer) as ISO packets
-    // when one period is received, there will be approx (NbBuffers - 1) * period_size frames
-    // in the transmit buffer (the others are still to be put into the xmit frame buffer)
-    unsigned int packets_to_prebuffer = (getPacketsPerPeriod() * (m_StreamProcessorManager.getNbBuffers()-1));
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Nominal prebuffer: %u\n", packets_to_prebuffer);
-    
-    // however we have to take into account the fact that there is some sync delay
-    // we assume that the SPM has indicated
-    // HACK: this counts on the fact that the latency for this stream will be the same as the
-    //       latency for the receive sync source
-    unsigned int est_sync_delay = getPacketsPerPeriod() / MINIMUM_INTERRUPTS_PER_PERIOD;
-    est_sync_delay += STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS / TICKS_PER_CYCLE;
-    packets_to_prebuffer -= est_sync_delay;
-    debugOutput(DEBUG_LEVEL_VERBOSE, " correct for sync delay (%d): %u\n",
-                                     est_sync_delay,
-                                     packets_to_prebuffer);
-    
-    // only queue a part of the theoretical max in order not to have too much 'not ready' cycles
-    packets_to_prebuffer = (packets_to_prebuffer * MAX_ISO_XMIT_BUFFER_FILL_PCT * 1000) / 100000;
-    debugOutput(DEBUG_LEVEL_VERBOSE, " reduce to %d%%: %u\n",
-                                     MAX_ISO_XMIT_BUFFER_FILL_PCT, packets_to_prebuffer);
-    
-    return packets_to_prebuffer;
-#endif
 }
 
 /***********************************************
