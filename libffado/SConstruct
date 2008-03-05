@@ -84,7 +84,7 @@ Build the tests in their directory. As some contain quite some functionality,
 	)
 
 ## Load the builders in config
-buildenv={}
+buildenv=os.environ
 vars_to_check = [
 	'PATH',
 	'PKG_CONFIG_PATH',
