@@ -232,7 +232,7 @@ CycleTimerHelper::Execute()
         if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "have to retry, diff = %f\n",diff_ticks);
         }
-        
+
     } while(diff_ticks < -((double)TICKS_PER_HALFCYCLE) && --ntries && !m_first_run);
 
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
@@ -470,19 +470,19 @@ CycleTimerHelper::readCycleTimerWithRetry(uint32_t *cycle_timer, uint64_t *local
         uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(*cycle_timer);
     
         if (diffTicks(cycle_timer_ticks, m_cycle_timer_ticks_prev) < 0) {
-            debugOutput( DEBUG_LEVEL_VERBOSE,
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
                         "non-monotonic CTR (try %02d): %llu -> %llu\n",
                         maxtries, m_cycle_timer_ticks_prev, cycle_timer_ticks);
-            debugOutput( DEBUG_LEVEL_VERBOSE,
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
                         "                            : %08X -> %08X\n",
                         m_cycle_timer_prev, *cycle_timer);
-            debugOutput( DEBUG_LEVEL_VERBOSE,
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
                         " current: %011llu (%03us %04ucy %04uticks)\n",
                         cycle_timer_ticks,
                         (unsigned int)TICKS_TO_SECS( cycle_timer_ticks ),
                         (unsigned int)TICKS_TO_CYCLES( cycle_timer_ticks ),
                         (unsigned int)TICKS_TO_OFFSET( cycle_timer_ticks ) );
-            debugOutput( DEBUG_LEVEL_VERBOSE,
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
                         " prev   : %011llu (%03us %04ucy %04uticks)\n",
                         m_cycle_timer_ticks_prev,
                         (unsigned int)TICKS_TO_SECS( m_cycle_timer_ticks_prev ),

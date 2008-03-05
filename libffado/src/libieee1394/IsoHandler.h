@@ -44,7 +44,7 @@ namespace Streaming {
 
 */
 
-class IsoHandler : public Util::RunnableInterface
+class IsoHandler
 {
 public:
     enum EHandlerType {
@@ -81,12 +81,9 @@ private: // the ISO callback interface
 
 public:
     // runnable interface
-    bool Init();
-    bool Execute();
     bool iterate();
 
     int getFileDescriptor() { return raw1394_get_fd(m_handle);};
-    bool setThreadParameters(bool rt, int priority);
 
     bool init();
     bool prepare();
@@ -96,8 +93,6 @@ public:
     bool enable() {return enable(-1);};
     bool enable(int cycle);
     bool disable();
-
-    bool isDead();
 
     void flush();
     enum EHandlerType getType() {return m_type;};
@@ -136,20 +131,11 @@ private:
     unsigned int    m_max_packet_size;
     int             m_irq_interval;
 
-    int64_t         m_last_wakeup;
-
     Streaming::StreamProcessor *m_Client;
 
     int handleBusReset(unsigned int generation);
 
     static int busreset_handler(raw1394handle_t handle, unsigned int generation);
-
-    struct pollfd   m_poll_fd;
-    int             m_poll_timeout;
-    // threading
-    bool            m_realtime;
-    int             m_priority;
-    Util::Thread *  m_Thread;
 
     enum raw1394_iso_speed m_speed;
     unsigned int m_prebuffers;

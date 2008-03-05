@@ -36,8 +36,8 @@
 #include <vector>
 
 class Ieee1394Service;
-
 class IsoHandler;
+
 namespace Streaming {
     class StreamProcessor;
     class StreamProcessorManager;
@@ -47,6 +47,52 @@ namespace Streaming {
 
 typedef std::vector<IsoHandler *> IsoHandlerVector;
 typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
+
+class IsoHandlerManager;
+
+// threads that will handle the packet framing
+// one thread per direction, as a compromise for one per
+// channel and one for all
+class IsoTask : public Util::RunnableInterface
+{
+    public:
+        enum eTaskType {
+            eTT_Receive,
+            eTT_Transmit,
+        };
+        IsoTask(IsoHandlerManager& manager, enum IsoTask::eTaskType t);
+        virtual ~IsoTask() {};
+
+    public:
+        bool Init();
+        bool Execute();
+
+        /**
+         * requests the thread to sync it's stream map with the manager
+         */
+        bool requestShadowMapUpdate();
+
+        void setVerboseLevel(int i);
+    protected:
+        IsoHandlerManager& m_manager;
+        enum eTaskType m_type;
+
+        // the event request structure
+        SInt32 request_update;
+
+        // static allocation due to RT constraints
+        // this is the map used by the actual thread
+        // it is a shadow of the m_StreamProcessors vector
+        struct pollfd m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+        IsoHandler *m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+        unsigned int m_poll_nfds_shadow;
+
+        // updates the streams map
+        void updateShadowMapHelper();
+
+        // debug stuff
+        DECLARE_DEBUG_MODULE;
+};
 
 /*!
 \brief The ISO Handler management class
@@ -59,18 +105,11 @@ typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
  it can be assigned.
 
 */
-class IsoHandlerManager : public Util::RunnableInterface
+
+class IsoHandlerManager
 {
     friend class Streaming::StreamProcessorManager;
-    public:
-        bool Init();
-        bool Execute();
-        void updateShadowVars();
-    private:
-        // shadow variables
-        struct pollfd m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
-        IsoHandler *m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
-        unsigned int m_poll_nfds_shadow;
+    friend class IsoTask;
 
     public:
 
@@ -150,7 +189,15 @@ class IsoHandlerManager : public Util::RunnableInterface
         // thread params for the handler threads
         bool m_realtime;
         int m_priority;
-        Util::Thread *  m_Thread;
+        // handler threads
+        Util::Thread *  m_ReceiveThread;
+        Util::Thread *  m_TransmitThread;
+
+        // actual tasks
+        IsoTask *  m_ReceiveTask;
+        IsoTask *  m_TransmitTask;
+
+        bool updateShadowMapFor(IsoHandler *h);
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

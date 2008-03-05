@@ -82,12 +82,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_buf_packets( 400 )
    , m_max_packet_size( 1024 )
    , m_irq_interval( -1 )
-   , m_last_wakeup( -1 )
    , m_Client( 0 )
-   , m_poll_timeout( 100 )
-   , m_realtime ( false )
-   , m_priority ( 0 )
-   , m_Thread ( NULL )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
    , m_State( E_Created )
@@ -102,12 +97,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
-   , m_last_wakeup( -1 )
    , m_Client( 0 )
-   , m_poll_timeout( 100 )
-   , m_realtime ( false )
-   , m_priority ( 0 )
-   , m_Thread ( NULL )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
    , m_State( E_Created )
@@ -123,12 +113,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
-   , m_last_wakeup( -1 )
    , m_Client( 0 )
-   , m_poll_timeout( 100 )
-   , m_realtime ( false )
-   , m_priority ( 0 )
-   , m_Thread ( NULL )
    , m_speed( speed )
    , m_prebuffers( 0 )
    , m_State( E_Created )
@@ -136,10 +121,6 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
 }
 
 IsoHandler::~IsoHandler() {
-    if (m_Thread) {
-        m_Thread->Stop();
-        delete m_Thread;
-    }
 // Don't call until libraw1394's raw1394_new_handle() function has been
 // fixed to correctly initialise the iso_packet_infos field.  Bug is
 // confirmed present in libraw1394 1.2.1.  In any case,
@@ -150,37 +131,6 @@ IsoHandler::~IsoHandler() {
             disable();
         }
         raw1394_destroy_handle(m_handle);
-    }
-}
-
-bool
-IsoHandler::Init()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "%p: Init thread...\n", this);
-    m_poll_fd.fd = getFileDescriptor();
-    m_poll_fd.revents = 0;
-    if (isEnabled()) {
-        m_poll_fd.events = POLLIN;
-    } else {
-        m_poll_fd.events = 0;
-    }
-    return true;
-}
-
-bool
-IsoHandler::isDead()
-{
-    if(m_last_wakeup < 0) return false; // startup artifacts
-    if(m_State != E_Running) return false; // not running can't be dead
-    int64_t now = m_manager.get1394Service().getCurrentTimeAsUsecs();
-    int64_t last_call = m_last_wakeup + ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS;
-    if(now > last_call) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "(%p, %s) Handler timed out: %lld usecs since last wakeup\n",
-                    this, getTypeString(), now-m_last_wakeup);
-        return true;
-    } else {
-        return false;
     }
 }
 
@@ -221,7 +171,7 @@ IsoHandler::tryWaitForClient()
     }
     return false;
 }
-
+/*
 bool
 IsoHandler::Execute()
 {
@@ -286,7 +236,7 @@ IsoHandler::Execute()
         debugError("waitForClient() failed.\n");
         return false;
     }
-}
+}*/
 
 bool
 IsoHandler::iterate() {
@@ -309,23 +259,6 @@ IsoHandler::iterate() {
                     this, getTypeString());
         return false;
     }
-}
-
-bool
-IsoHandler::setThreadParameters(bool rt, int priority) {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
-    if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
-    m_realtime = rt;
-    m_priority = priority;
-
-    if (m_Thread) {
-        if (m_realtime) {
-            m_Thread->AcquireRealTime(m_priority);
-        } else {
-            m_Thread->DropRealTime();
-        }
-    }
-    return true;
 }
 
 bool
@@ -361,21 +294,6 @@ IsoHandler::init()
         raw1394_set_bus_reset_handler(m_handle, busreset_handler);
     }
 
-#if ISOHANDLER_PER_HANDLER_THREAD
-    // create a thread to iterate ourselves
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Start thread for %p...\n", this);
-    m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
-                                     PTHREAD_CANCEL_DEFERRED);
-    if(!m_Thread) {
-        debugFatal("No thread\n");
-        return false;
-    }
-    if (m_Thread->Start() != 0) {
-        debugFatal("Could not start update thread\n");
-        return false;
-    }
-#endif
-
     // update the internal state
     m_State=E_Initialized;
     return true;
@@ -392,8 +310,6 @@ bool IsoHandler::disable()
         debugError("Incorrect state, expected E_Running, got %d\n",(int)m_State);
         return false;
     }
-
-    m_poll_fd.events = 0;
 
     // this is put here to try and avoid the
     // Runaway context problem
@@ -445,7 +361,6 @@ void IsoHandler::dumpInfo()
 void IsoHandler::setVerboseLevel(int l)
 {
     setDebugLevel(l);
-    if(m_Thread) m_Thread->setVerboseLevel(l);
 }
 
 bool IsoHandler::registerStream(StreamProcessor *stream)
@@ -493,7 +408,6 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                        "received packet: length=%d, channel=%d, cycle=%d\n",
                        length, channel, cycle);
     #ifdef DEBUG
-    m_last_wakeup = m_manager.get1394Service().getCurrentTimeAsUsecs();
     if (length > m_max_packet_size) {
         debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
                      this, getTypeString(), length, m_max_packet_size);
@@ -515,10 +429,6 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "sending packet: length=%d, cycle=%d\n",
                        *length, cycle);
-    #ifdef DEBUG
-    m_last_wakeup = m_manager.get1394Service().getCurrentTimeAsUsecs();
-    #endif
-
     if(m_Client) {
         enum raw1394_iso_disposition retval;
         retval = m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
@@ -549,7 +459,6 @@ bool IsoHandler::prepare()
     // confirmed present in libraw1394 1.2.1.
     //     raw1394_iso_shutdown(m_handle);
     m_State = E_Prepared;
-    m_last_wakeup = -1;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso handler (%p, client=%p)\n", this, m_Client);
     dumpInfo();
@@ -621,7 +530,6 @@ bool IsoHandler::enable(int cycle)
         }
     }
 
-    m_poll_fd.events = POLLIN;
     m_State = E_Running;
     return true;
 }

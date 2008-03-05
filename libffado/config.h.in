@@ -42,27 +42,26 @@
 #define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC 200000
 #define IEEE1394SERVICE_MAX_FIREWIRE_PORTS  16
 
-#define IEEE1394SERVICE_ISOMANAGER_PRIO_INCREASE         0
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE  5
 
 #define THREAD_MAX_RTPRIO                   98
 #define THREAD_MIN_RTPRIO                   0
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD       2U
-#define MAX_ISO_XMIT_BUFFER_FILL_PCT        50
+#define MINIMUM_INTERRUPTS_PER_PERIOD       4U
 
 // These are the result of a lot of trial and error
 // due to weirdness in the kernel layer
 #define MAX_XMIT_PACKET_SIZE                2048
-#define MAX_XMIT_NB_BUFFERS                 64
+#define MAX_XMIT_NB_BUFFERS                 20
 
-#define ISOHANDLER_PER_HANDLER_THREAD       0
-#define ISOHANDLER_USE_POLL                 0
 #define ISOHANDLER_FLUSH_BEFORE_ITERATE     0
 
 #define ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS    1000000LL
 
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
+#define ISOHANDLERMANAGER_MAX_STREAMS_PER_ISOTHREAD         16
+#define ISOHANDLERMANAGER_TRANSMIT_PRIO_INCREASE            1
+#define ISOHANDLERMANAGER_RECEIVE_PRIO_INCREASE             0
 
 // allows to add some processing margin. This shifts the time
 // at which the buffer is transfer()'ed, making things somewhat
