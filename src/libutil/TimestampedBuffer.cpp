@@ -65,7 +65,6 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
       m_enabled( false ), m_transparent ( true ),
       m_wrap_at(0xFFFFFFFFFFFFFFFFLLU),
       m_Client(c), m_framecounter(0),
-      m_tick_offset(0.0),
       m_buffer_tail_timestamp(0.0),
       m_buffer_next_tail_timestamp(0.0),
       m_dll_e2(0.0), m_dll_b(DLL_COEFF_B), m_dll_c(DLL_COEFF_C),
@@ -223,31 +222,6 @@ bool TimestampedBuffer::setBufferSize(unsigned int n) {
 
     m_bytes_per_frame=m_event_size*m_events_per_frame;
     m_bytes_per_buffer=m_bytes_per_frame*m_buffer_size;
-
-    return true;
-}
-
-/**
- * Sets the buffer offset in ticks.
- *
- * A positive value means that the buffer is 'delayed' for nticks ticks.
- *
- * @note These offsets are only used when reading timestamps. Any function
- *       that returns a timestamp will incorporate this offset.
- * @param nframes the number of ticks (positive = delay buffer)
- * @return true if successful
- */
-bool TimestampedBuffer::setTickOffset(ffado_timestamp_t nticks) {
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Setting ticks offset to "TIMESTAMP_FORMAT_SPEC"\n",nticks);
-
-    // JMW: I think we need to update the internal DLL state to take account
-    // of the new offset.  Doing so certainly makes for a smoother MOTU
-    // startup.
-    ENTER_CRITICAL_SECTION;
-    m_buffer_tail_timestamp = m_buffer_tail_timestamp - m_tick_offset + nticks;
-    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
-    m_tick_offset=nticks;
-    EXIT_CRITICAL_SECTION;
 
     return true;
 }
@@ -426,7 +400,7 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, ffado_time
             debugWarning("ringbuffer full, %u, %u\n", write_size, written);
             return false;
         }
-        incrementFrameCounter(nframes,ts);
+        incrementFrameCounter(nframes, ts);
     }
     return true;
 }
@@ -751,7 +725,6 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
 
     // add the offsets
     ffado_timestamp_t ts=new_timestamp;
-    ts += m_tick_offset;
 
     if (ts >= m_wrap_at) {
         ts -= m_wrap_at;
@@ -841,10 +814,10 @@ void TimestampedBuffer::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp) 
  * @param fc address to store the associated framecounter in
  */
 void TimestampedBuffer::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int *fc) {
-    // NOTE: this is still ok with threads, because we use *fc to compute
-    //       the timestamp
+    ENTER_CRITICAL_SECTION;
     *fc = m_framecounter;
     *ts = getTimestampFromTail(*fc);
+    EXIT_CRITICAL_SECTION;
 }
 
 /**
@@ -858,10 +831,10 @@ void TimestampedBuffer::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int
  * @param fc address to store the associated framecounter in
  */
 void TimestampedBuffer::getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc) {
-    // NOTE: this is still ok with threads, because we use *fc to compute
-    //       the timestamp
+    ENTER_CRITICAL_SECTION;
     *fc = m_framecounter;
     *ts = getTimestampFromTail(0);
+    EXIT_CRITICAL_SECTION;
 }
 
 /**
@@ -902,7 +875,11 @@ ffado_timestamp_t TimestampedBuffer::getTimestampFromTail(int nframes)
  */
 ffado_timestamp_t TimestampedBuffer::getTimestampFromHead(int nframes)
 {
-    return getTimestampFromTail(m_framecounter-nframes);
+    ffado_timestamp_t retval;
+    ENTER_CRITICAL_SECTION;
+    retval = getTimestampFromTail(m_framecounter-nframes);
+    EXIT_CRITICAL_SECTION;
+    return retval;
 }
 
 /**
@@ -938,70 +915,23 @@ void TimestampedBuffer::decrementFrameCounter(unsigned int nbframes) {
  */
 void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_timestamp_t new_timestamp) {
 
-    // add the offsets
-    ffado_timestamp_t diff;
-    
-    ENTER_CRITICAL_SECTION;
-    diff = m_buffer_next_tail_timestamp - m_buffer_tail_timestamp;
-    EXIT_CRITICAL_SECTION;
+    // require the timestamps to be in the correct range
+    assert(new_timestamp < m_wrap_at);
+    assert(new_timestamp >= 0);
+    // if this is not true the timestamps have to be corrected
+    // to account for the non-uniform update period
+    assert(nbframes == m_update_period);
 
-    if (diff < 0) diff += m_wrap_at;
-
-    ffado_timestamp_t ts = new_timestamp;
-    ts += m_tick_offset;
-
-    if (ts >= m_wrap_at) {
-        ts -= m_wrap_at;
-    } else if (ts < 0) {
-        ts += m_wrap_at;
-    }
-
-#ifdef DEBUG
-    if (new_timestamp >= m_wrap_at) {
-        debugWarning("timestamp not wrapped: "TIMESTAMP_FORMAT_SPEC"\n", new_timestamp);
-    }
-    if ((ts >= m_wrap_at) || (ts < 0 )) {
-        debugWarning("ts not wrapped correctly: "TIMESTAMP_FORMAT_SPEC"\n",ts);
-    }
-#endif
-// FIXME: JMW: at some points during startup the timestamp doesn't change.
-// This still needs to be verified in more detail.  
-// if (ts>m_buffer_tail_timestamp-1 && ts<m_buffer_tail_timestamp+1) {
-//   ENTER_CRITICAL_SECTION;
-//   m_framecounter += nbframes;
-//   EXIT_CRITICAL_SECTION;
-//   return;
-// }
-    ffado_timestamp_t pred_buffer_next_tail_timestamp;
-    if(nbframes == m_update_period) {
-        pred_buffer_next_tail_timestamp = m_buffer_next_tail_timestamp;
-    } else {
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "Number of frames (%u) != update period (%u)\n",
-                     nbframes, m_update_period );
-        // calculate the predicted timestamp for nframes (instead of m_update_period)
-        // after the previous update.
-        float rel_step = ((float)nbframes)/((float)m_update_period);
-        ENTER_CRITICAL_SECTION; // FIXME: do we need these?
-        ffado_timestamp_t corrected_step = (m_buffer_next_tail_timestamp - m_buffer_tail_timestamp) * rel_step;
-        pred_buffer_next_tail_timestamp = m_buffer_tail_timestamp + corrected_step;
-        EXIT_CRITICAL_SECTION;
-        
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "Updated ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC") "
-                     "to ("TIMESTAMP_FORMAT_SPEC","TIMESTAMP_FORMAT_SPEC")\n",
-                     m_buffer_tail_timestamp, m_buffer_next_tail_timestamp,
-                     m_buffer_tail_timestamp, pred_buffer_next_tail_timestamp);
-    }
-    
     // the difference between the given TS and the one predicted for this time instant
     // this is the error for the DLL
-    diff = ts - pred_buffer_next_tail_timestamp;
+    ffado_timestamp_t diff = new_timestamp - m_buffer_next_tail_timestamp;
 
+#ifdef DEBUG
     // check whether the update is within the allowed bounds
-    const float max_deviation = (50.0/100.0); // maximal relative difference considered normal
+/*    const float max_deviation = (50.0/100.0); // maximal relative difference considered normal
     ffado_timestamp_t one_update_step = nbframes * getRate();
-    ffado_timestamp_t max_abs_diff = one_update_step * (1.0 + max_deviation);
+    ffado_timestamp_t max_abs_diff = one_update_step * (1.0 + max_deviation);*/
+    ffado_timestamp_t max_abs_diff = 200;
     
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        " nbframes: %d, m_update_period: %d \n",
@@ -1011,21 +941,22 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
                        m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        " new TS: "TIMESTAMP_FORMAT_SPEC", wrapped new TS: "TIMESTAMP_FORMAT_SPEC"\n", 
-                       new_timestamp, ts);
+                       new_timestamp, new_timestamp);
 
     if (diff > max_abs_diff) {
-//         debugShowBackLogLines(100);
+        //debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (+): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
-            this, diff, max_abs_diff, ts, pred_buffer_next_tail_timestamp);
+            this, diff, max_abs_diff, new_timestamp, m_buffer_next_tail_timestamp);
     } else if (diff < -max_abs_diff) {
-//         debugShowBackLogLines(100);
+        //debugShowBackLogLines(100);
         debugWarning("(%p) difference rather large (-): diff="TIMESTAMP_FORMAT_SPEC", max="TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC", "TIMESTAMP_FORMAT_SPEC"\n",
-            this, diff, -max_abs_diff, ts, pred_buffer_next_tail_timestamp);
+            this, diff, -max_abs_diff, new_timestamp, m_buffer_next_tail_timestamp);
     }
 
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        "(%p): diff="TIMESTAMP_FORMAT_SPEC" ",
                        this, diff);
+#endif
 
     double err = diff;
     debugOutputShortExtreme(DEBUG_LEVEL_VERY_VERBOSE,
@@ -1037,8 +968,8 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
 
     ENTER_CRITICAL_SECTION;
     m_framecounter += nbframes;
-    m_buffer_tail_timestamp = pred_buffer_next_tail_timestamp;
-    m_buffer_next_tail_timestamp = pred_buffer_next_tail_timestamp + (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
+    m_buffer_tail_timestamp = m_buffer_next_tail_timestamp;
+    m_buffer_next_tail_timestamp = m_buffer_next_tail_timestamp + (ffado_timestamp_t)(m_dll_b * err + m_dll_e2);
     m_dll_e2 += m_dll_c*err;
 
     if (m_buffer_next_tail_timestamp >= m_wrap_at) {
@@ -1064,19 +995,18 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
     if(m_buffer_tail_timestamp>=m_wrap_at) {
         debugError("Wrapping failed for m_buffer_tail_timestamp! "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_tail_timestamp);
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " IN="TIMESTAMP_FORMAT_SPEC", TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
-                    ts, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+                    new_timestamp, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
 
     }
     if(m_buffer_next_tail_timestamp>=m_wrap_at) {
         debugError("Wrapping failed for m_buffer_next_tail_timestamp! "TIMESTAMP_FORMAT_SPEC"\n",m_buffer_next_tail_timestamp);
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " IN="TIMESTAMP_FORMAT_SPEC", TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
-                    ts, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+                    new_timestamp, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     }
     
     if(m_buffer_tail_timestamp==m_buffer_next_tail_timestamp) {
         debugError("Current and next timestamps are equal: "TIMESTAMP_FORMAT_SPEC" "TIMESTAMP_FORMAT_SPEC"\n",
                    m_buffer_tail_timestamp,m_buffer_next_tail_timestamp);
-    
     }
 
     // this DLL allows the calculation of any sample timestamp relative to the buffer tail,

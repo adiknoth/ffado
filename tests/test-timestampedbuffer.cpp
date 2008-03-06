@@ -291,8 +291,6 @@ int main(int argc, char *argv[])
 
     t->setWrapValue(arguments.wrap_at);
 
-    t->setTickOffset(10000);
-
     t->prepare();
 
     SleepRelativeUsec(1000);
@@ -313,7 +311,7 @@ int main(int argc, char *argv[])
         // account for the fact that there is offset,
         // and that setBufferHeadTimestamp doesn't take offset
         // into account
-        uint64_t timestamp2=timestamp+t->getTickOffset();
+        uint64_t timestamp2=timestamp;
         if (timestamp2>=arguments.wrap_at) {
             timestamp2-=arguments.wrap_at;
         }

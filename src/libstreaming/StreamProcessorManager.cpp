@@ -771,6 +771,22 @@ bool StreamProcessorManager::waitForPeriod() {
     // NOTE: before waitForPeriod() is called again, both the transmit
     //       and the receive processors should have done their transfer.
     m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
+    
+    #ifdef DEBUG
+    static uint64_t m_time_of_transfer2 = m_time_of_transfer;
+    
+    int ticks_per_period = m_SyncSource->getTicksPerFrame() * m_period;
+    int diff=diffTicks(m_time_of_transfer, m_time_of_transfer2);
+    // display message if the difference between two successive tick
+    // values is more than 50 ticks. 1 sample at 48k is 512 ticks
+    // so 50 ticks = 10%, which is a rather large jitter value.
+    if(diff-ticks_per_period > 50 || diff-ticks_per_period < -50) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                            m_time_of_transfer2, m_time_of_transfer, diff, ticks_per_period);
+    }
+    m_time_of_transfer2 = m_time_of_transfer;
+    #endif
+    
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
                         "transfer at %llu ticks...\n",
                         m_time_of_transfer);

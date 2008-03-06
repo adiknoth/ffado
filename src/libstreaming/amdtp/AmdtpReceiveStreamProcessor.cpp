@@ -173,6 +173,11 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
                            "STMP: %lluticks | syt_interval=%d, tpf=%f\n",
                            m_last_timestamp, m_syt_interval, getTicksPerFrame());
     }
+
+    // check whether nevents is a multiple of 8.
+    if (nevents & 0x7) {
+        debugError("Invalid nevents value for AMDTP (%u)\n", nevents);
+    }
     #endif
 
     if(m_data_buffer->writeFrames(nevents, (char *)(data+8), m_last_timestamp)) {
