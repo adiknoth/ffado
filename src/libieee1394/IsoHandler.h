@@ -68,7 +68,7 @@ private: // the ISO callback interface
     enum raw1394_iso_disposition
             putPacket(unsigned char *data, unsigned int length,
                         unsigned char channel, unsigned char tag, unsigned char sy,
-                        unsigned int cycle, unsigned int dropped);
+                        unsigned int cycle, unsigned int dropped, unsigned int skipped);
 
     static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
                     unsigned char *data, unsigned int *length,
@@ -77,7 +77,7 @@ private: // the ISO callback interface
     enum raw1394_iso_disposition
             getPacket(unsigned char *data, unsigned int *length,
                     unsigned char *tag, unsigned char *sy,
-                    int cycle, unsigned int dropped);
+                    int cycle, unsigned int dropped, unsigned int skipped);
 
 public:
     // runnable interface
