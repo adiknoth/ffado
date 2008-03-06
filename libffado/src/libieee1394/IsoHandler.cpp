@@ -46,24 +46,29 @@ enum raw1394_iso_disposition
 IsoHandler::iso_transmit_handler(raw1394handle_t handle,
         unsigned char *data, unsigned int *length,
         unsigned char *tag, unsigned char *sy,
-        int cycle, unsigned int dropped) {
+        int cycle, unsigned int dropped1) {
 
     IsoHandler *xmitHandler = static_cast<IsoHandler *>(raw1394_get_userdata(handle));
     assert(xmitHandler);
+    unsigned int skipped = (dropped1 & 0xFFFF0000) >> 16;
+    unsigned int dropped = dropped1 & 0xFFFF;
 
-    return xmitHandler->getPacket(data, length, tag, sy, cycle, dropped);
+    return xmitHandler->getPacket(data, length, tag, sy, cycle, dropped, skipped);
 }
 
 enum raw1394_iso_disposition
 IsoHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data,
                         unsigned int length, unsigned char channel,
                         unsigned char tag, unsigned char sy, unsigned int cycle,
-                        unsigned int dropped) {
+                        unsigned int dropped1) {
 
     IsoHandler *recvHandler = static_cast<IsoHandler *>(raw1394_get_userdata(handle));
     assert(recvHandler);
 
-    return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped);
+    unsigned int skipped = (dropped1 & 0xFFFF0000) >> 16;
+    unsigned int dropped = dropped1 & 0xFFFF;
+
+    return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped, skipped);
 }
 
 int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation)
@@ -402,7 +407,7 @@ void IsoHandler::flush()
 enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char *data, unsigned int length,
                     unsigned char channel, unsigned char tag, unsigned char sy,
-                    unsigned int cycle, unsigned int dropped) {
+                    unsigned int cycle, unsigned int dropped, unsigned int skipped) {
 
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "received packet: length=%d, channel=%d, cycle=%d\n",
@@ -414,7 +419,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     }
     #endif
     if(m_Client) {
-        return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped);
+        return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped, skipped);
     }
 
     return RAW1394_ISO_OK;
@@ -424,14 +429,14 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 enum raw1394_iso_disposition
 IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                       unsigned char *tag, unsigned char *sy,
-                      int cycle, unsigned int dropped) {
+                      int cycle, unsigned int dropped, unsigned int skipped) {
 
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "sending packet: length=%d, cycle=%d\n",
                        *length, cycle);
     if(m_Client) {
         enum raw1394_iso_disposition retval;
-        retval = m_Client->getPacket(data, length, tag, sy, cycle, dropped, m_max_packet_size);
+        retval = m_Client->getPacket(data, length, tag, sy, cycle, dropped, skipped, m_max_packet_size);
         #ifdef DEBUG
         if (*length > m_max_packet_size) {
             debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
