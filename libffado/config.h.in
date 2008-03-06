@@ -85,6 +85,8 @@
 //        dependant on the sample rate
 #define TIMESTAMPEDBUFFER_DLL_BANDWIDTH                     (0.01)
 
+// -- AMDTP options -- //
+
 // in ticks
 // as per AMDTP2.1:
 // 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
@@ -109,7 +111,27 @@
 // ensure that the AMDTP SP clips all float values to [-1.0..1.0]
 #define AMDTP_CLIP_FLOATS                                   1
 
+// -- MOTU options -- //
 
+// the transfer delay is substracted from the ideal presentation
+// time to obtain a corrected presentation time. This values is
+// then used to stamp the packet and determine the transmission
+// time instant.
 #define MOTU_TRANSMIT_TRANSFER_DELAY    (11776U)
+
+// the absolute minimum number of cycles we want to transmit
+// a packet ahead of the presentation time. The nominal time
+// the packet is transmitted ahead of the presentation time is
+// given by MOTU_TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
+// are too late for that, this constant defines how late we can
+// be.
+#define MOTU_MIN_CYCLES_BEFORE_PRESENTATION                1
+
+// the absolute maximum number of cycles we want to transmit
+// a packet ahead of the ideal transmit time. The nominal time
+// the packet is transmitted ahead of the presentation time is
+// given by MOTU_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
+// packets early if we want to.
+#define MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY                  6
 
 #endif // CONFIG_H
