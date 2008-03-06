@@ -198,7 +198,7 @@ uint64_t
 StreamProcessor::getTimeAtPeriod() 
 {
     if (getType() == ePT_Receive) {
-        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromHead(m_StreamProcessorManager.getPeriodSize());
+        ffado_timestamp_t next_period_boundary = m_data_buffer->getTimestampFromHead(m_StreamProcessorManager.getPeriodSize());
     
         #ifdef DEBUG
         ffado_timestamp_t ts;
@@ -211,7 +211,7 @@ StreamProcessor::getTimeAtPeriod()
         #endif
         return (uint64_t)next_period_boundary;
     } else {
-        ffado_timestamp_t next_period_boundary=m_data_buffer->getTimestampFromTail((m_StreamProcessorManager.getNbBuffers()-1) * m_StreamProcessorManager.getPeriodSize());
+        ffado_timestamp_t next_period_boundary = m_data_buffer->getTimestampFromTail((m_StreamProcessorManager.getNbBuffers()-1) * m_StreamProcessorManager.getPeriodSize());
     
         #ifdef DEBUG
         ffado_timestamp_t ts;
@@ -362,6 +362,18 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     if (result == eCRV_OK) {
+        #ifdef DEBUG
+        int ticks_per_packet = getTicksPerFrame() * getNominalFramesPerPacket();
+        int diff=diffTicks(m_last_timestamp, m_last_timestamp2);
+        // display message if the difference between two successive tick
+        // values is more than 50 ticks. 1 sample at 48k is 512 ticks
+        // so 50 ticks = 10%, which is a rather large jitter value.
+        if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                             m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+        }
+        #endif
+
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                           "RECV: CY=%04u TS=%011llu\n",
                           cycle, m_last_timestamp);

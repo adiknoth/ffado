@@ -349,6 +349,7 @@ unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader (
     uint16_t timestamp_SYT = TICKS_TO_SYT ( ts );
     packet->syt = ntohs ( timestamp_SYT );
 
+    // FIXME: use a precomputed value here
     *length = m_syt_interval*sizeof ( quadlet_t ) *m_dimension + 8;
 
     return m_syt_interval;

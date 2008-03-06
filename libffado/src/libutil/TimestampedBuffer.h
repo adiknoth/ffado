@@ -134,13 +134,6 @@ class TimestampedBuffer
         ffado_timestamp_t getTimestampFromTail ( int nframes );
         ffado_timestamp_t getTimestampFromHead ( int nframes );
 
-        // buffer offset stuff
-        /// return the tick offset value
-        ffado_timestamp_t getTickOffset() {return m_tick_offset;};
-
-        bool setFrameOffset ( int nframes );
-        bool setTickOffset ( ffado_timestamp_t );
-
         // dll stuff
         bool setNominalRate ( float r );
         float getNominalRate() {return m_nominal_rate;};
@@ -182,9 +175,6 @@ class TimestampedBuffer
     private:
         // the framecounter gives the number of frames in the buffer
         signed int m_framecounter;
-
-        // the offset that define the timing of the buffer
-        ffado_timestamp_t m_tick_offset;
 
         // the buffer tail timestamp gives the timestamp of the last frame
         // that was put into the buffer
