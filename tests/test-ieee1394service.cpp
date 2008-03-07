@@ -56,7 +56,7 @@ using namespace Util;
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 #define DIFF_CONSIDERED_LARGE (3027/2)
-int PORT_TO_USE = 0;
+int PORT_TO_USE = 1;
 
 int max_diff=-99999;
 int min_diff= 99999;
@@ -88,11 +88,15 @@ class CtrThread : public Util::RunnableInterface
         virtual bool Init()
         {
             debugOutput(DEBUG_LEVEL_NORMAL, "(%p) Execute\n", this);
-            ctr=0;
-            ctr_dll=0;
+            ctr = 0;
+            ctr_dll = 0;
         
-            ctr_prev=0;
-            ctr_dll_prev=0;
+            ctr_prev = 0;
+            ctr_dll_prev = 0;
+            nb_checks = 0;
+            summed_diff = 0;
+            avg_diff = 0;
+            m_reset_avg = 1;
             m_handle = raw1394_new_handle_on_port( PORT_TO_USE );
             if ( !m_handle ) {
                 if ( !errno ) {
@@ -119,6 +123,7 @@ class CtrThread : public Util::RunnableInterface
         uint64_t nb_checks;
         int64_t summed_diff;
         double avg_diff;
+        int m_reset_avg;
 };
 
 bool CtrThread::Execute() {
@@ -168,6 +173,12 @@ bool CtrThread::Execute() {
     uint64_t abs_diff;
     // for jitter plots
     //     debugOutput(DEBUG_LEVEL_NORMAL, "9876543210: %lld\n", diff);
+
+    if(m_reset_avg) {
+        m_reset_avg = 0;
+        summed_diff = 0;
+        nb_checks = 0;
+    }
 
     // not 100% thread safe, but will do
     if (diff > max_diff) max_diff = diff;
@@ -347,9 +358,12 @@ int main(int argc, char *argv[])
         cnt++;
         debugOutput(DEBUG_LEVEL_NORMAL, "%08d: (max: %6d, min: %6d)\n", cnt, max_diff, min_diff);
         m_service->show();
+        max_diff = -999999;
+        min_diff = 999999;
         
         for (i=0; i < NB_THREADS; i++) {
             debugOutput(DEBUG_LEVEL_NORMAL, "%2d: avg: %6f\n", i,  thread_runners[i]->avg_diff);
+            thread_runners[i]->m_reset_avg = 1;
         }
         
         
