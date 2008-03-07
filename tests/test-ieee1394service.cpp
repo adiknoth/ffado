@@ -56,7 +56,7 @@ using namespace Util;
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 #define DIFF_CONSIDERED_LARGE (3027/2)
-int PORT_TO_USE = 1;
+int PORT_TO_USE = 0;
 
 int max_diff=-99999;
 int min_diff= 99999;
@@ -282,7 +282,11 @@ int main(int argc, char *argv[])
 
     m_service = new Ieee1394Service();
     m_service->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    m_service->initialize(PORT_TO_USE);
+    if(!m_service->initialize(PORT_TO_USE)) {
+        printf("Could not initialize 1394 service\n");
+        delete m_service;
+        exit(-1);
+    }
     m_service->setThreadParameters(true, 60);
 
     MyFunctor *test_busreset=new MyFunctor();
