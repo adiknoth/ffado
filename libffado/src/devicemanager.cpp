@@ -142,9 +142,13 @@ DeviceManager::initialize()
     assert(m_1394Services.size() == 0);
     assert(m_busreset_functors.size() == 0);
 
-    unsigned int nb_detected_ports = Ieee1394Service::detectNbPorts();
+    int nb_detected_ports = Ieee1394Service::detectNbPorts();
+    if (nb_detected_ports < 0) {
+        debugFatal("Failed to detect the number of 1394 adapters. Is the IEEE1394 stack loaded (raw1394)?\n");
+        return false;
+    }
     if (nb_detected_ports == 0) {
-        debugFatal("No firewire ports found.\n");
+        debugFatal("No firewire adapters (ports) found.\n");
         return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Found %d firewire adapters (ports)\n", nb_detected_ports);

@@ -123,13 +123,13 @@ Ieee1394Service::~Ieee1394Service()
     }
 }
 
-unsigned int
-Ieee1394Service::detectNbPorts( )
+int
+Ieee1394Service::detectNbPorts()
 {
     raw1394handle_t tmp_handle = raw1394_new_handle();
     if ( tmp_handle == NULL ) {
         debugError("Could not get libraw1394 handle.\n");
-        return 0;
+        return -1;
     }
     struct raw1394_portinfo pinf[IEEE1394SERVICE_MAX_FIREWIRE_PORTS];
     int nb_detected_ports = raw1394_get_port_info(tmp_handle, pinf, IEEE1394SERVICE_MAX_FIREWIRE_PORTS);
@@ -137,7 +137,7 @@ Ieee1394Service::detectNbPorts( )
 
     if (nb_detected_ports < 0) {
         debugError("Failed to detect number of ports\n");
-        return 0;
+        return -1;
     }
     return nb_detected_ports;
 }
@@ -146,6 +146,11 @@ bool
 Ieee1394Service::initialize( int port )
 {
     using namespace std;
+
+    int nb_ports = detectNbPorts();
+    if (port + 1 > nb_ports) {
+        debugFatal("Requested port (%d) out of range (# ports: %d)\n", port, nb_ports);
+    }
 
     m_handle = raw1394_new_handle_on_port( port );
     if ( !m_handle ) {

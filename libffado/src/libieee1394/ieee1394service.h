@@ -59,7 +59,7 @@ public:
     *
     * @return the number of ports
     */
-    static unsigned int detectNbPorts();
+    static int detectNbPorts();
 
    /**
     * @brief get port (adapter) id
