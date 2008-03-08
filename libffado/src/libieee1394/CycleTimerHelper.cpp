@@ -26,6 +26,7 @@
 #include "CycleTimerHelper.h"
 #include "ieee1394service.h"
 #include "libutil/PosixThread.h"
+#include "libutil/Atomic.h"
 
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)
@@ -48,21 +49,6 @@
 #define UPDATES_WITH_HIGH_BANDWIDTH \
          (5000000 / IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC)
 
-/*
-#define ENTER_CRITICAL_SECTION { \
-    if (pthread_mutex_trylock(&m_compute_vars_lock) == EBUSY) { \
-        debugWarning(" (%p) lock clash\n", this); \
-        ENTER_CRITICAL_SECTION; \
-    } \
-    }
-*/
-#define ENTER_CRITICAL_SECTION { \
-    pthread_mutex_lock(&m_compute_vars_lock); \
-    }
-#define EXIT_CRITICAL_SECTION { \
-    pthread_mutex_unlock(&m_compute_vars_lock); \
-    }
-
 IMPL_DEBUG_MODULE( CycleTimerHelper, CycleTimerHelper, DEBUG_LEVEL_NORMAL );
 
 CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_period_us)
@@ -80,6 +66,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_cycle_timer_prev ( 0 )
     , m_cycle_timer_ticks_prev ( 0 )
     , m_high_bw_updates ( UPDATES_WITH_HIGH_BANDWIDTH )
+    , m_current_shadow_idx ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
@@ -102,6 +89,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_cycle_timer_prev ( 0 )
     , m_cycle_timer_ticks_prev ( 0 )
     , m_high_bw_updates ( UPDATES_WITH_HIGH_BANDWIDTH )
+    , m_current_shadow_idx ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
@@ -158,7 +146,6 @@ bool
 CycleTimerHelper::Init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initialize %p...\n", this);
-    pthread_mutex_init(&m_compute_vars_lock, NULL);
     return true;
 }
 
@@ -386,13 +373,35 @@ CycleTimerHelper::Execute()
                            local_time, m_dll_e2, getRate());
     }
 
-    // FIXME: priority inversion possible, run this at higher prio than client threads
-    ENTER_CRITICAL_SECTION;
-    m_current_vars.ticks = (uint64_t)(m_current_time_ticks);
-    m_current_vars.usecs = (uint64_t)m_current_time_usecs;
-    m_current_vars.rate = getRate();
-    EXIT_CRITICAL_SECTION;
+    // prepare the new compute vars
+    struct compute_vars new_vars;
+    new_vars.ticks = (uint64_t)(m_current_time_ticks);
+    new_vars.usecs = (uint64_t)m_current_time_usecs;
+    new_vars.rate = getRate();
+    
+    // get the next index
+    unsigned int next_idx = (m_current_shadow_idx + 1) % CTRHELPER_NB_SHADOW_VARS;
+    
+    // check whether next index position is in use
+    while(m_shadow_usecount[next_idx] > 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "next shadow position still in use (pos: %d, %d uses)",
+                    next_idx, m_shadow_usecount[next_idx]);
 
+        // sleep for some time
+        m_TimeSource.SleepUsecRelative(100);
+    }
+    //debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " updating %d\n", next_idx);
+
+    // the next index position is now unused, so we can update it
+    m_shadow_vars[next_idx] = new_vars;
+
+    // then we can update the current index
+    m_current_shadow_idx = next_idx;
+    //debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " updated %d\n", m_current_shadow_idx);
+    
+    // reclaim is not necessary since it's a preallocated array
+    
     return true;
 }
 
@@ -409,11 +418,34 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
     uint32_t retval;
     struct compute_vars my_vars;
 
-    // reduce lock contention
-    ENTER_CRITICAL_SECTION;
-    my_vars = m_current_vars;
-    EXIT_CRITICAL_SECTION;
+    // get pointer and prevent it from disappearing
+    // by marking it as in-use
+    unsigned int curr_idx;
+    do {
+        // get the current shadow var set idx
+        curr_idx = m_current_shadow_idx;
+        // mark it as used
+        INC_ATOMIC(&m_shadow_usecount[curr_idx]);
+    
+        // check whether the pointer changed between getting the idx
+        // and marking it as used
+        if (curr_idx != m_current_shadow_idx) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "pointer (%d) changed to (%d) while marking it as used\n",
+                        curr_idx, m_current_shadow_idx);
+            // undo in-use marking
+            DEC_ATOMIC(&m_shadow_usecount[curr_idx]);
+            // this requires a retry to obtain the new pointer
+        }
+    } while(curr_idx != m_current_shadow_idx); // retry if needed
+    //debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " using %d\n",curr_idx);
 
+    // copy the contents
+    my_vars = m_shadow_vars[curr_idx];
+    
+    // release the pointer
+    DEC_ATOMIC(&m_shadow_usecount[curr_idx]);
+    
     int64_t time_diff = now - my_vars.usecs;
     double y_step_in_ticks = ((double)time_diff) * my_vars.rate;
     int64_t y_step_in_ticks_int = (int64_t)y_step_in_ticks;

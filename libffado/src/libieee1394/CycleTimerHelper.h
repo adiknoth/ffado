@@ -108,7 +108,7 @@ private:
     uint32_t m_ticks_per_update;
     uint32_t m_usecs_per_update;
 
-    float               m_avg_wakeup_delay; 
+    float    m_avg_wakeup_delay; 
 
     // state variables
     double m_dll_e2;
@@ -131,8 +131,10 @@ private:
         double rate;
     };
 
-    struct compute_vars m_current_vars;
-    pthread_mutex_t m_compute_vars_lock;
+    #define CTRHELPER_NB_SHADOW_VARS 8
+    struct compute_vars m_shadow_vars[CTRHELPER_NB_SHADOW_VARS];
+    SInt32 m_shadow_usecount[CTRHELPER_NB_SHADOW_VARS];
+    unsigned int m_current_shadow_idx;
 
     // Threading
     Util::Thread *  m_Thread;
