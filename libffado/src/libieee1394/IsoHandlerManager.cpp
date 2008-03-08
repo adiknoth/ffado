@@ -109,7 +109,9 @@ IsoTask::updateShadowMapHelper()
 bool
 IsoTask::Execute()
 {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Execute\n");
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "(%p, %s) Execute\n",
+                       this, m_type==eTT_Transmit?"Transmit":"Receive");
     int err;
     unsigned int i;
     unsigned int m_poll_timeout = 10;
@@ -122,10 +124,15 @@ IsoTask::Execute()
 
     // bypass if no handlers are registered
     if (m_poll_nfds_shadow == 0) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "bypass iterate since no handlers to poll\n");
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "(%p, %s) bypass iterate since no handlers to poll\n",
+                           this, m_type==eTT_Transmit?"Transmit":"Receive");
         usleep(m_poll_timeout * 1000);
         return true;
     }
+
+    // FIXME: what can happen is that poll() returns, but not all clients are
+    // ready. there might be some busy waiting behavior that still has to be solved.
 
     // setup the poll here
     if (m_type==eTT_Transmit) {

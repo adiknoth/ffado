@@ -750,11 +750,10 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
 
     EXIT_CRITICAL_SECTION;
 
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", "
                        "NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
                        this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
-
 }
 
 /**
@@ -932,7 +931,7 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
     ffado_timestamp_t one_update_step = nbframes * getRate();
     ffado_timestamp_t max_abs_diff = one_update_step * (1.0 + max_deviation);*/
     ffado_timestamp_t max_abs_diff = 200;
-    
+
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        " nbframes: %d, m_update_period: %d \n",
                        nbframes, m_update_period);
@@ -940,8 +939,8 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
                        " tail TS: "TIMESTAMP_FORMAT_SPEC", next tail TS: "TIMESTAMP_FORMAT_SPEC"\n", 
                        m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       " new TS: "TIMESTAMP_FORMAT_SPEC", wrapped new TS: "TIMESTAMP_FORMAT_SPEC"\n", 
-                       new_timestamp, new_timestamp);
+                       " new TS: "TIMESTAMP_FORMAT_SPEC", diff: "TIMESTAMP_FORMAT_SPEC"\n", 
+                       new_timestamp, diff);
 
     if (diff > max_abs_diff) {
         //debugShowBackLogLines(100);
