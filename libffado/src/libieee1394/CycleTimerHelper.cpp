@@ -33,7 +33,7 @@
 
 // the high-bandwidth coefficients are used
 // to speed up inital tracking
-#define DLL_BANDWIDTH_HIGH (0.1)
+#define DLL_BANDWIDTH_HIGH (0.2)
 #define DLL_OMEGA_HIGH     (2.0*DLL_PI*DLL_BANDWIDTH_HIGH)
 #define DLL_COEFF_B_HIGH   (DLL_SQRT2 * DLL_OMEGA_HIGH)
 #define DLL_COEFF_C_HIGH   (DLL_OMEGA_HIGH * DLL_OMEGA_HIGH)
@@ -379,30 +379,16 @@ CycleTimerHelper::Execute()
     new_vars.ticks = (uint64_t)(m_current_time_ticks);
     new_vars.usecs = (uint64_t)m_current_time_usecs;
     new_vars.rate = getRate();
-    
+
     // get the next index
     unsigned int next_idx = (m_current_shadow_idx + 1) % CTRHELPER_NB_SHADOW_VARS;
-    
-    // check whether next index position is in use
-    while(m_shadow_usecount[next_idx] > 0) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "next shadow position still in use (pos: %d, %d uses)",
-                    next_idx, m_shadow_usecount[next_idx]);
 
-        // sleep for some time
-        m_TimeSource.SleepUsecRelative(100);
-    }
-    //debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " updating %d\n", next_idx);
-
-    // the next index position is now unused, so we can update it
+    // update the next index position
     m_shadow_vars[next_idx] = new_vars;
 
     // then we can update the current index
     m_current_shadow_idx = next_idx;
-    //debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " updated %d\n", m_current_shadow_idx);
-    
-    // reclaim is not necessary since it's a preallocated array
-    
+
     return true;
 }
 
@@ -419,34 +405,16 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
     uint32_t retval;
     struct compute_vars my_vars;
 
-    // get pointer and prevent it from disappearing
-    // by marking it as in-use
-    unsigned int curr_idx;
-    do {
-        // get the current shadow var set idx
-        curr_idx = m_current_shadow_idx;
-        // mark it as used
-        INC_ATOMIC(&m_shadow_usecount[curr_idx]);
-    
-        // check whether the pointer changed between getting the idx
-        // and marking it as used
-        if (curr_idx != m_current_shadow_idx) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "pointer (%d) changed to (%d) while marking it as used\n",
-                        curr_idx, m_current_shadow_idx);
-            // undo in-use marking
-            DEC_ATOMIC(&m_shadow_usecount[curr_idx]);
-            // this requires a retry to obtain the new pointer
-        }
-    } while(curr_idx != m_current_shadow_idx); // retry if needed
-    //debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " using %d\n",curr_idx);
-
-    // copy the contents
+    // get pointer and copy the contents
+    // no locking should be needed since we have more than one
+    // of these vars available, and the copy will always be finished before
+    // m_current_shadow_idx changes since this thread's priority should
+    // be higher than the one of the writer thread. Even if not, we only have to ensure
+    // that the used dataset is consistent. We can use an older dataset if it's consistent
+    // since it will also provide a fairly decent extrapolation.
+    unsigned int curr_idx = m_current_shadow_idx; // NOTE: this needs ordering
     my_vars = m_shadow_vars[curr_idx];
-    
-    // release the pointer
-    DEC_ATOMIC(&m_shadow_usecount[curr_idx]);
-    
+
     int64_t time_diff = now - my_vars.usecs;
     double y_step_in_ticks = ((double)time_diff) * my_vars.rate;
     int64_t y_step_in_ticks_int = (int64_t)y_step_in_ticks;

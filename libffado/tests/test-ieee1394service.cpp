@@ -46,7 +46,7 @@
 #include "libutil/Time.h"
 
 
-#define NB_THREADS 10
+#define NB_THREADS 2
 #define THREAD_RT  true
 #define THREAD_PRIO 51
 #define THREAD_SLEEP_US 125
@@ -58,7 +58,7 @@ using namespace Util;
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 #define DIFF_CONSIDERED_LARGE (TICKS_PER_CYCLE/2)
-int PORT_TO_USE = 0;
+int PORT_TO_USE = 1;
 
 int max_diff=-99999;
 int min_diff= 99999;
