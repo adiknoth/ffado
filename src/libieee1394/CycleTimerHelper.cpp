@@ -44,7 +44,9 @@
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
-#define UPDATES_WITH_HIGH_BANDWIDTH 200
+// is 5 sec
+#define UPDATES_WITH_HIGH_BANDWIDTH \
+         (5000000 / IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC)
 
 /*
 #define ENTER_CRITICAL_SECTION { \
@@ -229,14 +231,24 @@ CycleTimerHelper::Execute()
         usecs_late = local_time - m_sleep_until;
         cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
         diff_ticks = diffTicks(cycle_timer_ticks, (int64_t)m_next_time_ticks);
+
+        // check for unrealistic CTR reads (NEC controller does that sometimes)
         if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "have to retry, diff = %f\n",diff_ticks);
+            debugOutput(DEBUG_LEVEL_VERBOSE, 
+                        "have to retry CTR read, diff unrealistic: diff: %f, max: %f\n", 
+                        diff_ticks, -((double)TICKS_PER_HALFCYCLE));
         }
 
     } while(diff_ticks < -((double)TICKS_PER_HALFCYCLE) && --ntries && !m_first_run);
 
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                         cycle_timer, local_time);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
+                           (uint32_t)cycle_timer, (uint64_t)cycle_timer_ticks,
+                           (unsigned int)TICKS_TO_SECS( (uint64_t)cycle_timer_ticks ),
+                           (unsigned int)TICKS_TO_CYCLES( (uint64_t)cycle_timer_ticks ),
+                           (unsigned int)TICKS_TO_OFFSET( (uint64_t)cycle_timer_ticks ) );
 
     if (m_first_run) {
         m_sleep_until = local_time + m_usecs_per_update;
@@ -245,27 +257,42 @@ CycleTimerHelper::Execute()
         m_next_time_usecs = m_current_time_usecs + m_usecs_per_update;
         m_current_time_ticks = CYCLE_TIMER_TO_TICKS( cycle_timer );
         m_next_time_ticks = addTicks( (uint64_t)m_current_time_ticks, (uint64_t)m_dll_e2);
-        debugOutput( DEBUG_LEVEL_VERBOSE, " First run\n");
-        debugOutput( DEBUG_LEVEL_VERBOSE, "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
-                                          m_usecs_per_update, m_ticks_per_update, m_dll_e2);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "  usecs current: %f, next: %f\n", m_current_time_usecs, m_next_time_usecs);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "  ticks current: %f, next: %f\n", m_current_time_ticks, m_next_time_ticks);
+        debugOutput(DEBUG_LEVEL_VERBOSE, " First run\n");
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
+                    m_usecs_per_update, m_ticks_per_update, m_dll_e2);
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "  usecs current: %f, next: %f\n",
+                    m_current_time_usecs, m_next_time_usecs);
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "  ticks current: %f, next: %f\n",
+                    m_current_time_ticks, m_next_time_ticks);
         m_first_run = false;
     } else {
+        // calculate next sleep time
         m_sleep_until += m_usecs_per_update;
 
-        double diff_ticks_corr;
-        // correct for late wakeup
+        // correct for the latency between the wakeup and the actual CTR
+        // read. The only time we can trust is the time returned by the
+        // CTR read kernel call, since that (should be) atomically read
+        // together with the ctr register itself.
+
+        // if we are usecs_late usecs late 
+        // the cycle timer has ticked approx ticks_late ticks too much
+        // if we are woken up early (which shouldn't happen according to POSIX)
+        // the cycle timer has ticked approx -ticks_late too little
         int64_t ticks_late = (usecs_late * TICKS_PER_SECOND) / 1000000LL;
+        // the corrected difference between predicted and actual ctr
+        // i.e. DLL error signal
+        double diff_ticks_corr;
         if (ticks_late > 0) {
-            // if we are usecs_late usecs late 
-            // the cycle timer has ticked approx ticks_late ticks too much
-            cycle_timer_ticks = substractTicks(cycle_timer_ticks, ticks_late);
             diff_ticks_corr = diff_ticks - ticks_late;
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "diff_ticks_corr=%f, diff_ticks = %f, ticks_late = %lld\n",
+                               diff_ticks_corr, diff_ticks, ticks_late);
         } else {
             debugError("Early wakeup, should not happen!\n");
             // recover
-            cycle_timer_ticks = addTicks(cycle_timer_ticks, -ticks_late);
             diff_ticks_corr = diff_ticks + ticks_late;
         }
 
@@ -285,43 +312,78 @@ CycleTimerHelper::Execute()
             coeff_c = DLL_COEFF_C_HIGH;
             m_high_bw_updates--;
             if (m_high_bw_updates == 0) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Switching to low-bandwidth coefficients\n");
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "Switching to low-bandwidth coefficients\n");
             }
         } else {
             coeff_b = DLL_COEFF_B;
             coeff_c = DLL_COEFF_C;
         }
 
-        // do the calculation in 'tick space'
-        int64_t tmp = (uint64_t)(coeff_b * diff_ticks_corr);
-        if(m_dll_e2 > 0) {
-            tmp = addTicks(tmp, (uint64_t)m_dll_e2);
-        } else {
-            tmp = substractTicks(tmp, (uint64_t)(-m_dll_e2));
-        }
-        if(tmp < 0) {
-            debugWarning("negative slope: %lld!\n", tmp);
-        }
-        m_next_time_ticks = addTicks((uint64_t)m_current_time_ticks, tmp);
+        // it should be ok to not do this in tick space 
+        // since diff_ticks_corr should not be near wrapping
+        // (otherwise we are out of range. we need a few calls
+        //  w/o wrapping for this to work. That should not be
+        //  an issue as long as the update interval is smaller
+        //  than the wrapping interval.)
+        // and coeff_b < 1, hence tmp is not near wrapping
 
-        // it should be ok to not do this in tick space since it's value
-        // is approx equal to the rate, being 24.576 ticks/usec
+        double step_ticks = (coeff_b * diff_ticks_corr);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "diff_ticks_corr=%f, step_ticks=%f\n",
+                           diff_ticks_corr, step_ticks);
+
+        // the same goes for m_dll_e2, which should be approx equal
+        // to the ticks/usec rate (= 24.576) hence also not near
+        // wrapping
+        step_ticks += m_dll_e2;
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "add %f ticks to step_ticks => step_ticks=%f\n",
+                           m_dll_e2, step_ticks);
+
+        // it can't be that we have to update to a value in the past
+        if(step_ticks < 0) {
+            debugError("negative step: %f! (correcting to nominal)\n", step_ticks);
+            // recover to an estimated value
+            step_ticks = (double)m_ticks_per_update;
+        }
+
+        if(step_ticks > TICKS_PER_SECOND) {
+            debugWarning("rather large step: %f ticks (> 1sec)\n", step_ticks);
+        }
+
+        // now add the step ticks with wrapping.
+        m_next_time_ticks = (double)(addTicks((uint64_t)m_current_time_ticks, (uint64_t)step_ticks));
+
+        // update the DLL state
         m_dll_e2 += coeff_c * diff_ticks_corr;
-
-        // For jitter graphs
-        // debugOutputShort(DEBUG_LEVEL_NORMAL, "0123456789 %f %f %f %lld %lld %lld\n", 
-        //                 diff_ticks, diff_ticks_corr, m_dll_e2, cycle_timer_ticks, (int64_t)m_next_time_ticks, usecs_late);
 
         // update the y-axis values
         m_current_time_usecs = m_next_time_usecs;
         m_next_time_usecs += m_usecs_per_update;
 
-        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " usecs: current: %f next: %f usecs_late=%lld ticks_late=%lld\n",
-                            m_current_time_usecs, m_next_time_usecs, usecs_late, ticks_late);
-        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " ticks: current: %f next: %f diff=%f\n",
-                            m_current_time_ticks, m_next_time_ticks, diff_ticks);
-        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " state: local: %11llu, dll_e2: %f, rate: %f\n",
-                            local_time, m_dll_e2, getRate());
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
+                           " usecs: current: %f next: %f usecs_late=%lld ticks_late=%lld\n",
+                           m_current_time_usecs, m_next_time_usecs, usecs_late, ticks_late);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           " ticks: current: %f next: %f diff=%f\n",
+                           m_current_time_ticks, m_next_time_ticks, diff_ticks);
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           " ticks: current: %011llu (%03us %04ucy %04uticks)\n",
+                           (uint64_t)m_current_time_ticks,
+                           (unsigned int)TICKS_TO_SECS( (uint64_t)m_current_time_ticks ),
+                           (unsigned int)TICKS_TO_CYCLES( (uint64_t)m_current_time_ticks ),
+                           (unsigned int)TICKS_TO_OFFSET( (uint64_t)m_current_time_ticks ) );
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           " ticks: next   : %011llu (%03us %04ucy %04uticks)\n",
+                           (uint64_t)m_next_time_ticks,
+                           (unsigned int)TICKS_TO_SECS( (uint64_t)m_next_time_ticks ),
+                           (unsigned int)TICKS_TO_CYCLES( (uint64_t)m_next_time_ticks ),
+                           (unsigned int)TICKS_TO_OFFSET( (uint64_t)m_next_time_ticks ) );
+
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           " state: local: %11llu, dll_e2: %f, rate: %f\n",
+                           local_time, m_dll_e2, getRate());
     }
 
     // FIXME: priority inversion possible, run this at higher prio than client threads
@@ -359,14 +421,14 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
-                    y_step_in_ticks_int, time_diff, my_vars.rate, retval);
+/*        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+                    y_step_in_ticks_int, time_diff, my_vars.rate, retval);*/
     } else {
         retval = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
 
         // this can happen if the update thread was woken up earlier than it should have been
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
-                    y_step_in_ticks_int, time_diff, my_vars.rate, retval);
+/*        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+                    y_step_in_ticks_int, time_diff, my_vars.rate, retval);*/
     }
 
     return retval;
