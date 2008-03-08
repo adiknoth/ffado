@@ -133,8 +133,7 @@ private:
 
     #define CTRHELPER_NB_SHADOW_VARS 8
     struct compute_vars m_shadow_vars[CTRHELPER_NB_SHADOW_VARS];
-    SInt32 m_shadow_usecount[CTRHELPER_NB_SHADOW_VARS];
-    unsigned int m_current_shadow_idx;
+    volatile unsigned int m_current_shadow_idx;
 
     // Threading
     Util::Thread *  m_Thread;
