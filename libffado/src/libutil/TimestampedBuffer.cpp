@@ -964,7 +964,7 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
                             diff, err);
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        "B: FC=%10u, TS="TIMESTAMP_FORMAT_SPEC", NTS="TIMESTAMP_FORMAT_SPEC"\n",
-                       m_framecounter, m_buffer_tail_timestamp, pred_buffer_next_tail_timestamp);
+                       m_framecounter, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
 
     ENTER_CRITICAL_SECTION;
     m_framecounter += nbframes;

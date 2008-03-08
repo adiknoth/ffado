@@ -154,9 +154,7 @@ IsoTask::Execute()
     }
 
     // Use a shadow map of the fd's such that the poll call is not in a critical section
-    DEBUG_EXTREME( uint64_t poll_enter = m_service.getCurrentTimeAsUsecs() );
     err = poll (m_poll_fds_shadow, m_poll_nfds_shadow, m_poll_timeout);
-    DEBUG_EXTREME( uint64_t poll_exit = m_service.getCurrentTimeAsUsecs() );
 
     if (err < 0) {
         if (errno == EINTR) {
@@ -166,7 +164,6 @@ IsoTask::Execute()
         return false;
     }
 
-    DEBUG_EXTREME( uint64_t iter_enter = m_service.getCurrentTimeAsUsecs() );
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         #ifdef DEBUG
         if(m_poll_fds_shadow[i].revents) {
@@ -205,11 +202,7 @@ IsoTask::Execute()
 //         #endif
 
     }
-    DEBUG_EXTREME( uint64_t iter_exit = m_service.getCurrentTimeAsUsecs() );
-
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " poll took %6lldus, iterate took %6lldus, iterated (R: %2d, X: %2d) handlers\n",
-                       poll_exit-poll_enter, iter_exit-iter_enter,
-                       nb_rcv, nb_xmit);
+                      nb_rcv, nb_xmit);
 
     return true;
 
