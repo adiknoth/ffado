@@ -77,7 +77,8 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_base_priority ( prio )
     , m_pIsoManager( new IsoHandlerManager( *this, rt, prio ) )
     , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC,
-                                           rt, prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
+                                           rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
+                                           prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
 {
@@ -286,8 +287,10 @@ Ieee1394Service::setThreadParameters(bool rt, int priority) {
     }
     if (m_pCTRHelper) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching CycleTimerHelper to (rt=%d, prio=%d)\n", 
-                                         rt, priority + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE);
-        result &= m_pCTRHelper->setThreadParameters(rt, priority + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE);
+                                         rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
+                                         priority + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE);
+        result &= m_pCTRHelper->setThreadParameters(rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
+                                                    priority + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE);
     }
     return result;
 }
