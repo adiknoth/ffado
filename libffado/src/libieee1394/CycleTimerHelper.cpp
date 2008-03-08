@@ -285,7 +285,7 @@ CycleTimerHelper::Execute()
 
         #ifdef DEBUG
         if(usecs_late > 200) {
-            debugWarning("Rather late wakeup: %lld usecs\n", usecs_late);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Rather late wakeup: %lld usecs\n", usecs_late);
         }
         #endif
 
