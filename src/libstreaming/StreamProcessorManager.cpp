@@ -470,6 +470,25 @@ StreamProcessorManager::alignReceivedStreams()
                     diff_between_streams[i] += diff;
                 }
             }
+
+            // we now set the buffer tail timestamp of the transmit buffer
+            // to the period transfer time instant plus what's nb_buffers - 1
+            // in ticks. This due to the fact that we (should) have received one period
+            // worth of ticks at t=m_time_of_transfer
+            // hence one period of frames should also have been transmitted, which means
+            // that there should be (nb_buffers - 1) * periodsize of frames in the xmit buffer
+            // that allows us to calculate the tail timestamp for the buffer.
+            float rate = m_SyncSource->getTicksPerFrame();
+            int64_t delay_in_ticks=(int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
+            int64_t transmit_tail_timestamp = addTicks(m_time_of_transfer, delay_in_ticks);
+
+            for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+                  it != m_TransmitProcessors.end();
+                  ++it ) {
+                // m_time_of_transfer is set by waitForPeriod()
+                (*it)->setBufferTailTimestamp(transmit_tail_timestamp);
+            }
+
             if(!transferSilence()) {
                 debugError("Could not transfer silence\n");
                 return false;

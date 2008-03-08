@@ -284,7 +284,8 @@ CycleTimerHelper::Execute()
         }
 
         #ifdef DEBUG
-        if(usecs_late > 200) {
+        // makes no sense if not running realtime
+        if(m_realtime && usecs_late > 200) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Rather late wakeup: %lld usecs\n", usecs_late);
         }
         #endif
