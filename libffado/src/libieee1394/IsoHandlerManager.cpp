@@ -202,7 +202,6 @@ IsoTask::Execute()
 //         #endif
 
     }
-                      nb_rcv, nb_xmit);
 
     return true;
 
