@@ -1,9 +1,27 @@
 #!/usr/bin/python
 #
 
+#
+# Copyright (C) 2008 Pieter Palmers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 import os
 import commands
 import re
+
+VERSION="0.2"
 
 class IRQ:
 	def __init__(self):
@@ -14,8 +32,23 @@ class IRQ:
 		self.drivers = []
 		self.cpu_counts = []
 	def __str__(self):
-		s = "IRQ %4s: PID %6s, Sched %4s (priority %4s), drivers: %s" % \
-		    (self.number, self.process_id ,self.scheduling_class, self.scheduling_priority, self.drivers)
+		s = " IRQ %4s: PID: %5s, count: %18s, Sched %4s (priority %4s), drivers: %s" % \
+		    (self.number, self.process_id, self.cpu_counts,
+		     self.scheduling_class, self.scheduling_priority,
+		     self.drivers)
+		return s
+
+class SoftIRQ:
+	def __init__(self):
+		self.name = None
+		self.fullname = None
+		self.scheduling_class = None
+		self.scheduling_priority = None
+		self.process_id = None
+		self.cpu_counts = []
+	def __str__(self):
+		s = " SoftIRQ %10s: PID %6s, Sched %4s (priority %4s), name: %s" % \
+		    (self.name, self.process_id ,self.scheduling_class, self.scheduling_priority, self.fullname)
 		return s
 
 def sortedDictValues(adict):
@@ -23,7 +56,11 @@ def sortedDictValues(adict):
     items.sort()
     return [value for key, value in items]
 
-
+print ""
+print "Interrupt list utility " + VERSION
+print "=========================="
+print "(C) 2008 Pieter Palmers"
+print ""
 
 # get PID info
 (exitstatus, outtext) = commands.getstatusoutput('ps -eLo pid,cmd,class,rtprio | grep IRQ')
@@ -41,6 +78,23 @@ for line in outtext.splitlines():
 		irq.scheduling_class = match_obj.group(3)
 		irq.scheduling_priority = int(match_obj.group(4))
 		IRQs[irq.number] = irq
+
+(exitstatus, outtext) = commands.getstatusoutput('ps -eLo pid,cmd,class,rtprio | grep softirq')
+
+rawstr = r"""([0-9]+) +\[softirq-(.*)\] +([A-F]{2}) +([0-9]+)"""
+compile_obj = re.compile(rawstr)
+
+softIRQs = {}
+for line in outtext.splitlines():
+	match_obj = compile_obj.search(line)
+	if match_obj:
+		irq = SoftIRQ()
+		irq.process_id = int(match_obj.group(1))
+		irq.name = match_obj.group(2)
+		irq.fullname = "softirq-" + irq.name
+		irq.scheduling_class = match_obj.group(3)
+		irq.scheduling_priority = int(match_obj.group(4))
+		softIRQs[irq.name] = irq
 
 # get PID info
 (exitstatus, outtext) = commands.getstatusoutput('cat /proc/interrupts')
@@ -76,8 +130,16 @@ for line in outtext.splitlines():
 
 		IRQs[irq.number] = irq
 
-print "Interrupt list: "
+print "Hardware Interrupts:"
+print "--------------------"
+
 for irq in sortedDictValues(IRQs):
 	print irq
-	
 
+print ""
+print "Software Interrupts:"
+print "--------------------"
+for irq in sortedDictValues(softIRQs):
+	print irq
+	
+print ""
