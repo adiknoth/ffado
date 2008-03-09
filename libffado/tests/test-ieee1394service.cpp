@@ -30,6 +30,8 @@
 #include <string.h>
 #include <endian.h>
 
+#include <getopt.h>
+
 #include <signal.h>
 #include "src/debugmodule/debugmodule.h"
 
@@ -58,7 +60,7 @@ using namespace Util;
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 #define DIFF_CONSIDERED_LARGE (TICKS_PER_CYCLE/2)
-int PORT_TO_USE = 1;
+int PORT_TO_USE = 0;
 
 int max_diff=-99999;
 int min_diff= 99999;
@@ -288,6 +290,26 @@ int main(int argc, char *argv[])
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
 
+    static struct option long_opts[] = { { "port", 1, 0, 'p' }, { "help", 0, 0, 'h' }, { 0, 0, 0, 0 } };
+    int optindex = 0;
+    while(1) {
+        int c = getopt_long( argc, argv, "p:h", long_opts, &optindex );
+        if(c==-1)
+            break;
+        switch(c) {
+            case 'p':
+                PORT_TO_USE = atoi( optarg );
+                break;
+            case 'h':
+                printf( "USAGE:\n\
+ Currently two options are understood:\n\
+  --port <number> or -p <number> selects the firewire-port to use, default is 0\n\
+  --help or -h shows this help and exits.\n\
+" );
+                return 0;
+                break;
+        }
+    }
 
     printf("FFADO Ieee1394Service test application\n");
 
