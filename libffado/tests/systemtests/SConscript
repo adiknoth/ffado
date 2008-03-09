@@ -40,33 +40,10 @@ static_env = env.Copy()
 # test-mixer, test-volume
 #
 apps = {
-	"test-ffado" : "test-ffado.cpp",
-	"test-fw410" : "test-fw410.cpp",
-	"test-avccmd" : "test-avccmd.cpp",
-	#"test-extplugcmd" : "test-extplugcmd.cpp",
- 	#"test-volume" : "test-volume.cpp",
-	#"test-mixer" : "test-mixer.cpp",
- 	"test-enhanced-mixer" : "test-enhanced-mixer.cpp",
-	"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
-	"test-ieee1394service" : "test-ieee1394service.cpp",
-	"test-streamdump" : "test-streamdump.cpp",
-	"test-bufferops" : "test-bufferops.cpp",
-	"dumpiso_mod" : "dumpiso_mod.cpp"
+	"test-isorecv-1" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
+	"test-isoxmit-1" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
 }
-
-if env['ENABLE_BEBOB']:
-	apps.update( { "test-focusrite" : "test-focusrite.cpp" } )
-if env['ENABLE_FIREWORKS']:
-	apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )
 
-env.SConscript( dirs=["streaming", "systemtests"], exports="env" )
-
-# static versions
-if static_env['BUILD_STATIC_TOOLS']:
-    static_env.Append(LIBS=File('#/src/libffado.a'))
-    for app in apps.keys():
-        static_app = app + "-static"
-        static_env.Program( target=static_app, source = static_env.Split( apps[app] ) )
