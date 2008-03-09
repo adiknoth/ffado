@@ -47,7 +47,7 @@ class SoftIRQ:
 		self.process_id = None
 		self.cpu_counts = []
 	def __str__(self):
-		s = " SoftIRQ %10s: PID %6s, Sched %4s (priority %4s), name: %s" % \
+		s = " SoftIRQ %12s: PID %6s, Sched %4s (priority %4s), name: %s" % \
 		    (self.name, self.process_id ,self.scheduling_class, self.scheduling_priority, self.fullname)
 		return s
 
@@ -65,7 +65,7 @@ print ""
 # get PID info
 (exitstatus, outtext) = commands.getstatusoutput('ps -eLo pid,cmd,class,rtprio | grep IRQ')
 
-rawstr = r"""([0-9]+) +\[IRQ-([0-9]+)\] +([A-F]{2}) +([0-9]+)"""
+rawstr = r"""([0-9]+) +\[IRQ-([0-9]+)\] +([A-Z]{2}) +([0-9]+)"""
 compile_obj = re.compile(rawstr)
 
 IRQs = {}
@@ -81,7 +81,7 @@ for line in outtext.splitlines():
 
 (exitstatus, outtext) = commands.getstatusoutput('ps -eLo pid,cmd,class,rtprio | grep softirq')
 
-rawstr = r"""([0-9]+) +\[softirq-(.*)\] +([A-F]{2}) +([0-9]+)"""
+rawstr = r"""([0-9]+) +\[softirq-(.*)\] +([A-Z]{2}) +([0-9]+)"""
 compile_obj = re.compile(rawstr)
 
 softIRQs = {}
@@ -90,13 +90,13 @@ for line in outtext.splitlines():
 	if match_obj:
 		irq = SoftIRQ()
 		irq.process_id = int(match_obj.group(1))
-		irq.name = match_obj.group(2)
-		irq.fullname = "softirq-" + irq.name
+		irq.name = "%s-%s" % (match_obj.group(2),irq.process_id)
+		irq.fullname = "softirq-%s" % match_obj.group(2)
 		irq.scheduling_class = match_obj.group(3)
 		irq.scheduling_priority = int(match_obj.group(4))
 		softIRQs[irq.name] = irq
 
-# get PID info
+# get irq info
 (exitstatus, outtext) = commands.getstatusoutput('cat /proc/interrupts')
 lines = outtext.splitlines()
 nb_cpus = len(lines[0].split())
