@@ -336,9 +336,28 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
     // A "silent" packet is identical to a regular data packet except
-    // all audio data is set to zero.  Therefore we can just use
-    // generatePacketHeader() to do the work here.
-    return generatePacketHeader(data, length, tag, sy, cycle, dropped, max_length);
+    // all audio data is set to zero.
+
+    // The number of events per packet expected by the MOTU is solely
+    // dependent on the current sample rate.  An 'event' is one sample from
+    // all channels plus possibly other midi and control data.
+    signed n_events = getNominalFramesPerPacket();
+
+    // Do housekeeping expected for all packets sent to the MOTU, even
+    // for packets containing no audio data.
+    *sy = 0x00;
+    *tag = 1;      // All MOTU packets have a CIP-like header
+
+    /* Assume the packet will have audio data.  This is not strictly valid
+     * but seems to work most of the time.  The MOTU data packets have
+     * either 8, 16 or 32 samples in them.  This is more than would normally
+     * be required in each cycle period and so every so often an empty
+     * packet must be sent to allow things to "catch up".
+     */
+    *length = n_events*m_event_size + 8;
+
+    return eCRV_Packet;
+    //generatePacketHeader(data, length, tag, sy, cycle, dropped, max_length);
 }
 
 enum StreamProcessor::eChildReturnValue
