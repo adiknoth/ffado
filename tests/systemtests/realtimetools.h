@@ -23,6 +23,12 @@
 #ifndef __REALTIMETOOLS_H__
 #define __REALTIMETOOLS_H__
 
+#include <inttypes.h>
+
 int set_realtime_priority(unsigned int prio);
+
+void rt_sleep_relative_usecs(uint64_t usecs);
+void rt_sleep_absolute_usecs(uint64_t wake_at);
+uint64_t rt_gettime_usecs();
 
 #endif

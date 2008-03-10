@@ -221,6 +221,7 @@ int32_t main(int32_t argc, char **argv)
     arguments.startoncycle = -1;
     arguments.countdown = 10000;
     arguments.printinterval = 100;
+    arguments.rtprio = 0;
 
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
@@ -267,8 +268,9 @@ int32_t main(int32_t argc, char **argv)
     }
     raw1394_set_bus_reset_handler(handle, myResetHandler);
 
-    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority...\n");
+    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", arguments.rtprio);
     set_realtime_priority(arguments.rtprio);
+
     int countdown = arguments.countdown;
     debugOutput(DEBUG_LEVEL_INFO, "Starting iterate loop...\n");
     while(countdown--)

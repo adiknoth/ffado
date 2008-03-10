@@ -30,6 +30,13 @@
 #include <string.h>
 #include <sched.h>
 
+// needed for clock_nanosleep
+#ifndef _GNU_SOURCE
+    #define _GNU_SOURCE
+#endif
+
+#include <time.h>
+
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 int set_realtime_priority(unsigned int prio)
@@ -62,3 +69,27 @@ int set_realtime_priority(unsigned int prio)
   }
   return 0;
 }
+
+void
+rt_sleep_relative_usecs(uint64_t usecs) {
+    //usleep(usecs);
+    struct timespec ts;
+    ts.tv_sec = usecs / (1000000LL);
+    ts.tv_nsec = (usecs % (1000000LL)) * 1000LL;
+    clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
+}
+
+void
+rt_sleep_absolute_usecs(uint64_t wake_at_usec) {
+    struct timespec ts;
+    ts.tv_sec = wake_at_usec / (1000000LL);
+    ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
+    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
+}
+
+uint64_t rt_gettime_usecs() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (uint64_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
+}
+

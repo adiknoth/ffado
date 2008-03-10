@@ -42,6 +42,7 @@ static_env = env.Copy()
 apps = {
 	"test-isorecv-1" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
 	"test-isoxmit-1" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
+	"test-sysload" : ["test-sysload.cpp", "realtimetools.cpp"],
 }
 
 for app in apps.keys():

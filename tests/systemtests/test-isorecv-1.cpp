@@ -42,7 +42,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 #define MAX_EXTRA_ARGS 2
 // Program documentation.
 // Program documentation.
-static char doc[] = "FFADO -- ISO transmit stall test\n\n";
+static char doc[] = "FFADO -- ISO receive test\n\n";
 
 // A description of the arguments we accept.
 static char args_doc[] = "";
@@ -168,6 +168,7 @@ int main(int argc, char **argv)
     arguments.startoncycle = -1;
     arguments.countdown = 10000;
     arguments.printinterval = 100;
+    arguments.rtprio = 0;
 
     // Parse our arguments; every option seen by `parse_opt' will
     // be reflected in `arguments'.
@@ -221,7 +222,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority...\n");
+    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", arguments.rtprio);
     set_realtime_priority(arguments.rtprio);
 
     debugOutput(DEBUG_LEVEL_INFO, "Starting iterate loop...\n");
