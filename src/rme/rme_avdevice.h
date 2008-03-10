@@ -37,10 +37,20 @@ class Ieee1394Service;
 
 namespace Rme {
 
+// Note: the values in this enum do not have to correspond to the unit
+// version reported by the respective devices.  It just so happens that they
+// currently do for the Fireface-800 and Fireface-400.
+enum ERmeModel {
+    RME_MODEL_NONE          = 0x0000,
+    RME_MODEL_FIREFACE800   = 0x0001,
+    RME_MODEL_FIREFACE400   = 0x0002,
+};
+
 // struct to define the supported devices
 struct VendorModelEntry {
     unsigned int vendor_id;
-    unsigned int model_id;
+    unsigned int unit_version;
+    enum ERmeModel model;
     char *vendor_name;
     char *model_name;
 };
@@ -79,6 +89,7 @@ public:
 
 protected:
     struct VendorModelEntry *m_model;
+    enum ERmeModel m_rme_model;
 };
 
 }

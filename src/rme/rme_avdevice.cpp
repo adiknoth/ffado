@@ -46,13 +46,15 @@ namespace Rme {
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {FW_VENDORID_RME, 0x0001, "RME", "Fireface-800"},  // RME Fireface-800
+    {FW_VENDORID_RME, 0x0001, RME_MODEL_FIREFACE800, "RME", "Fireface-800"},
+    {FW_VENDORID_RME, 0x0002, RME_MODEL_FIREFACE400, "RME", "Fireface-400"},
 };
 
 RmeDevice::RmeDevice( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
     , m_model( NULL )
+    , m_rme_model( RME_MODEL_NONE )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::RmeDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -67,14 +69,14 @@ bool
 RmeDevice::probe( ConfigRom& configRom )
 {
     unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    unsigned int unitVersion = configRom.getUnitVersion();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
+             && ( supportedDeviceList[i].unit_version == unitVersion )
            )
         {
             return true;
@@ -94,17 +96,18 @@ bool
 RmeDevice::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
-    unsigned int modelId = getConfigRom().getModelId();
+    unsigned int unitVersion = getConfigRom().getUnitVersion();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
+             && ( supportedDeviceList[i].unit_version == unitVersion )
            )
         {
             m_model = &(supportedDeviceList[i]);
+            m_rme_model = supportedDeviceList[i].model;
         }
     }
 
