@@ -92,7 +92,7 @@ static struct argp_option options[] = {
     {"startoncycle",  't', "cycle",  0,  "start on a specific cycle" },
     {"countdown",  'u', "count",  0,  "number of iterations to run" },
     {"printinterval",  'r', "packets",  0,  "number of packets between successive status prints" },
-    {"rtprio",  'P', "packets",  0,  "real time priority of the iterator process/thread (0 = no RT)" },
+    {"rtprio",  'P', "prio",  0,  "real time priority of the iterator process/thread (0 = no RT)" },
     { 0 }
 };
 
@@ -127,6 +127,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
     PARSE_ARG_LONG('t', arguments->startoncycle, "startoncycle");
     PARSE_ARG_LONG('u', arguments->countdown, "countdown");
     PARSE_ARG_LONG('r', arguments->printinterval, "printinterval");
+    PARSE_ARG_LONG('P', arguments->rtprio, "rtprio");
 
     case ARGP_KEY_ARG:
         break;
@@ -231,6 +232,7 @@ int32_t main(int32_t argc, char **argv)
     debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
     setDebugLevel(arguments.verbose);
 
+    debugOutput(DEBUG_LEVEL_INFO, "Get 1394 handle...\n");
     handle = raw1394_new_handle();
     if(!handle)
     {
@@ -238,6 +240,7 @@ int32_t main(int32_t argc, char **argv)
         return -1;
     }
 
+    debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", arguments.port);
     do
     {
         if (raw1394_get_port_info(handle, NULL, 0) < 0)
@@ -254,6 +257,7 @@ int32_t main(int32_t argc, char **argv)
         return 1;
     }
 
+    debugOutput(DEBUG_LEVEL_INFO, "Prepare/start ISO transmit...\n");
     prepareXmit(handle);
 
     if(raw1394_busreset_notify(handle, RAW1394_NOTIFY_ON))
@@ -263,8 +267,10 @@ int32_t main(int32_t argc, char **argv)
     }
     raw1394_set_bus_reset_handler(handle, myResetHandler);
 
+    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority...\n");
     set_realtime_priority(arguments.rtprio);
     int countdown = arguments.countdown;
+    debugOutput(DEBUG_LEVEL_INFO, "Starting iterate loop...\n");
     while(countdown--)
     {
         if(raw1394_loop_iterate(handle))
