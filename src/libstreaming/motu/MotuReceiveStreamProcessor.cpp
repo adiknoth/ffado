@@ -140,6 +140,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // we can just pick it straight from the packet.
         uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
         m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
+
         return eCRV_OK;
     } else {
         return eCRV_Invalid;
