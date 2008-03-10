@@ -65,7 +65,7 @@ print ""
 # get PID info
 (exitstatus, outtext) = commands.getstatusoutput('ps -eLo pid,cmd,class,rtprio | grep IRQ')
 
-rawstr = r"""([0-9]+) +\[IRQ-([0-9]+)\] +([A-Z]{2}) +([0-9]+)"""
+rawstr = r"""([0-9]+) +\[IRQ-([0-9]+)\] +([A-Z]{2}) +([-0-9]+)"""
 compile_obj = re.compile(rawstr)
 
 IRQs = {}
@@ -76,12 +76,15 @@ for line in outtext.splitlines():
 		irq.process_id = int(match_obj.group(1))
 		irq.number = int(match_obj.group(2))
 		irq.scheduling_class = match_obj.group(3)
-		irq.scheduling_priority = int(match_obj.group(4))
+		if match_obj.group(4) != '-':
+			irq.scheduling_priority = int(match_obj.group(4))
+		else:
+			irq.scheduling_priority = None
 		IRQs[irq.number] = irq
 
 (exitstatus, outtext) = commands.getstatusoutput('ps -eLo pid,cmd,class,rtprio | grep softirq')
 
-rawstr = r"""([0-9]+) +\[softirq-(.*)\] +([A-Z]{2}) +([0-9]+)"""
+rawstr = r"""([0-9]+) +\[softirq-(.*)\] +([A-Z]+) +([-0-9]+)"""
 compile_obj = re.compile(rawstr)
 
 softIRQs = {}
@@ -93,7 +96,10 @@ for line in outtext.splitlines():
 		irq.name = "%s-%s" % (match_obj.group(2),irq.process_id)
 		irq.fullname = "softirq-%s" % match_obj.group(2)
 		irq.scheduling_class = match_obj.group(3)
-		irq.scheduling_priority = int(match_obj.group(4))
+		if match_obj.group(4) != '-':
+			irq.scheduling_priority = int(match_obj.group(4))
+		else:
+			irq.scheduling_priority = None
 		softIRQs[irq.name] = irq
 
 # get irq info
