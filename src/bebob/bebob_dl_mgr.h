@@ -27,7 +27,7 @@
 #include "bebob_dl_codes.h"
 
 #include "fbtypes.h"
-#include "threads.h"
+#include "libutil/Functors.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -35,6 +35,8 @@
 
 class Ieee1394Service;
 class ConfigRom;
+
+using namespace Util;
 
 namespace BeBoB {
     class BCD;

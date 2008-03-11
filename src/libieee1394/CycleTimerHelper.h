@@ -53,6 +53,8 @@
 #include "libutil/SystemTimeSource.h"
 #include "cycletimer.h"
 
+#include "libutil/Functors.h"
+
 #include "debugmodule/debugmodule.h"
 
 class Ieee1394Service;
@@ -97,10 +99,20 @@ public:
     float getRate();
     float getNominalRate();
 
+    /**
+     * @brief handle a bus reset
+     */
+    void busresetHandler();
+
     void setVerboseLevel(int l);
 
 private:
     bool readCycleTimerWithRetry(uint32_t *cycle_timer, uint64_t *local_time, int ntries);
+    bool initValues();
+
+#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
+    bool initDLL();
+#endif
 
     Ieee1394Service &m_Parent;
     Util::SystemTimeSource m_TimeSource;
@@ -139,6 +151,11 @@ private:
     Util::Thread *  m_Thread;
     bool            m_realtime;
     unsigned int    m_priority;
+    pthread_mutex_t mb_update_lock;
+
+    // busreset handling
+    Util::Functor* m_busreset_functor;
+    bool            m_unhandled_busreset;
 
     // debug stuff
     DECLARE_DEBUG_MODULE;

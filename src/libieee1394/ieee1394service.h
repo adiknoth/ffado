@@ -26,7 +26,7 @@
 #define FFADO_IEEE1394SERVICE_H
 
 #include "fbtypes.h"
-#include "threads.h"
+#include "libutil/Functors.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -228,8 +228,8 @@ public:
 
     int getVerboseLevel();
 
-    bool addBusResetHandler( Functor* functor );
-    bool remBusResetHandler( Functor* functor );
+    bool addBusResetHandler( Util::Functor* functor );
+    bool remBusResetHandler( Util::Functor* functor );
 
     /**
      * @brief get the current generation
@@ -330,7 +330,7 @@ private:
     // the time source
     Util::TimeSource*   m_pTimeSource;
 
-    typedef std::vector< Functor* > reset_handler_vec_t;
+    typedef std::vector< Util::Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;
 
     // ARM stuff

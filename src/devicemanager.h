@@ -52,8 +52,8 @@ typedef std::vector< FFADODevice* >::iterator FFADODeviceVectorIterator;
 typedef std::vector< Ieee1394Service* > Ieee1394ServiceVector;
 typedef std::vector< Ieee1394Service* >::iterator Ieee1394ServiceVectorIterator;
 
-typedef std::vector< Functor* > FunctorVector;
-typedef std::vector< Functor* >::iterator FunctorVectorIterator;
+typedef std::vector< Util::Functor* > FunctorVector;
+typedef std::vector< Util::Functor* >::iterator FunctorVectorIterator;
 
 class DeviceManager
     : public Util::OptionContainer,

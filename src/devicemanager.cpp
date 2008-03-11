@@ -167,7 +167,7 @@ DeviceManager::initialize()
             return false;
         }
         // add the bus reset handler
-        Functor* tmp_busreset_functor = new MemberFunctor0< DeviceManager*,
+        Util::Functor* tmp_busreset_functor = new Util::MemberFunctor0< DeviceManager*,
                     void (DeviceManager::*)() >
                     ( this, &DeviceManager::busresetHandler, false );
         if ( !tmp_busreset_functor ) {
