@@ -620,7 +620,7 @@ Ieee1394Service::resetHandler( unsigned int generation )
           it != m_busResetHandlers.end();
           ++it )
     {
-        Functor* func = *it;
+        Util::Functor* func = *it;
         ( *func )();
     }
 
@@ -814,7 +814,7 @@ Ieee1394Service::rHThread( void* arg )
 }
 
 bool
-Ieee1394Service::addBusResetHandler( Functor* functor )
+Ieee1394Service::addBusResetHandler( Util::Functor* functor )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Adding busreset handler (%p)\n", functor);
     m_busResetHandlers.push_back( functor );
@@ -822,7 +822,7 @@ Ieee1394Service::addBusResetHandler( Functor* functor )
 }
 
 bool
-Ieee1394Service::remBusResetHandler( Functor* functor )
+Ieee1394Service::remBusResetHandler( Util::Functor* functor )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Removing busreset handler (%p)\n", functor);
 

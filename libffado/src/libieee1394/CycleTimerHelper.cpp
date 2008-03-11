@@ -70,8 +70,11 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
+    , m_busreset_functor ( NULL)
+    , m_unhandled_busreset ( false )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create %p...\n", this);
+    pthread_mutex_init(&mb_update_lock, NULL);
 }
 
 CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_period_us, bool rt, int prio)
@@ -93,8 +96,11 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
+    , m_busreset_functor ( NULL)
+    , m_unhandled_busreset ( false )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create %p...\n", this);
+    pthread_mutex_init(&mb_update_lock, NULL);
 }
 
 CycleTimerHelper::~CycleTimerHelper()
@@ -103,6 +109,13 @@ CycleTimerHelper::~CycleTimerHelper()
         m_Thread->Stop();
         delete m_Thread;
     }
+
+    // unregister the bus reset handler
+    if(m_busreset_functor) {
+        m_Parent.remBusResetHandler( m_busreset_functor );
+        delete m_busreset_functor;
+    }
+    pthread_mutex_destroy(&mb_update_lock);
 }
 
 bool
@@ -110,24 +123,11 @@ CycleTimerHelper::Start()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Start %p...\n", this);
 
-    // initialize the 'prev ctr' values
-    uint64_t local_time;
-    int maxtries2 = 10;
-    do {
-        if(!m_Parent.readCycleTimerReg(&m_cycle_timer_prev, &local_time)) {
-            debugError("Could not read cycle timer register\n");
-            return false;
-        }
-        if (m_cycle_timer_prev == 0) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "Bogus CTR: %08X on try %02d\n",
-                        m_cycle_timer_prev, maxtries2);
-        }
-    } while (m_cycle_timer_prev == 0 && maxtries2--);
-    m_cycle_timer_ticks_prev = CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev);
+    if(!initValues()) {
+        debugFatal("(%p) Could not init values\n", this);
+        return false;
+    }
 
-#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
-    m_high_bw_updates = UPDATES_WITH_HIGH_BANDWIDTH;
     m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
@@ -138,7 +138,55 @@ CycleTimerHelper::Start()
         debugFatal("Could not start update thread\n");
         return false;
     }
+    return true;
+}
+
+bool
+CycleTimerHelper::initValues()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Init values...\n" );
+    pthread_mutex_lock(&mb_update_lock);
+    // initialize the 'prev ctr' values
+    uint64_t local_time;
+    int maxtries2 = 10;
+    do {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Read CTR...\n" );
+        if(!m_Parent.readCycleTimerReg(&m_cycle_timer_prev, &local_time)) {
+            debugError("Could not read cycle timer register\n");
+            pthread_mutex_unlock(&mb_update_lock);
+            return false;
+        }
+        if (m_cycle_timer_prev == 0) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "Bogus CTR: %08X on try %02d\n",
+                        m_cycle_timer_prev, maxtries2);
+        }
+        debugOutput( DEBUG_LEVEL_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+                            m_cycle_timer_prev, local_time);
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                           "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
+                           (uint32_t)m_cycle_timer_prev, (uint64_t)CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev),
+                           (unsigned int)CYCLE_TIMER_GET_SECS( m_cycle_timer_prev ),
+                           (unsigned int)CYCLE_TIMER_GET_CYCLES( m_cycle_timer_prev ),
+                           (unsigned int)CYCLE_TIMER_GET_OFFSET( m_cycle_timer_prev ) );
+        
+    } while (m_cycle_timer_prev == 0 && maxtries2--);
+    m_cycle_timer_ticks_prev = CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev);
+
+#if IEEE1394SERVICE_USE_CYCLETIMER_DLL
+    debugOutput( DEBUG_LEVEL_VERBOSE, "requesting DLL re-init...\n" );
+    m_TimeSource.SleepUsecRelative(1000); // some time to settle
+    m_high_bw_updates = UPDATES_WITH_HIGH_BANDWIDTH;
+    if(!initDLL()) {
+        debugError("(%p) Could not init DLL\n", this);
+        pthread_mutex_unlock(&mb_update_lock);
+        return false;
+    }
+    // make the DLL re-init itself as if it were started up
+    m_first_run = true;
 #endif
+    pthread_mutex_unlock(&mb_update_lock);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "ready...\n" );
     return true;
 }
 
@@ -146,7 +194,32 @@ bool
 CycleTimerHelper::Init()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initialize %p...\n", this);
+
+    // register a bus reset handler
+    Util::Functor* m_busreset_functor = new Util::MemberFunctor0< CycleTimerHelper*,
+                void (CycleTimerHelper::*)() >
+                ( this, &CycleTimerHelper::busresetHandler, false );
+    if ( !m_busreset_functor ) {
+        debugFatal( "(%p) Could not create busreset handler\n", this );
+        return false;
+    }
+    m_Parent.addBusResetHandler( m_busreset_functor );
+
     return true;
+}
+
+void
+CycleTimerHelper::busresetHandler()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Bus reset...\n" );
+    m_unhandled_busreset = true;
+    // whenever a bus reset occurs, the root node can change,
+    // and the CTR timer can be reset. We should hence reinit
+    // the DLL
+    if(!initValues()) {
+        debugError("(%p) Could not re-init values\n", this);
+    }
+    m_unhandled_busreset = false;
 }
 
 bool
@@ -186,18 +259,66 @@ CycleTimerHelper::getNominalRate()
 }
 
 bool
+CycleTimerHelper::initDLL() {
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    uint64_t cycle_timer_ticks;
+
+    if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
+        debugError("Could not read cycle timer register\n");
+        pthread_mutex_unlock(&mb_update_lock);
+        return false;
+    }
+    cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+
+    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+                        cycle_timer, local_time);
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
+                       (uint32_t)cycle_timer, (uint64_t)cycle_timer_ticks,
+                       (unsigned int)TICKS_TO_SECS( (uint64_t)cycle_timer_ticks ),
+                       (unsigned int)TICKS_TO_CYCLES( (uint64_t)cycle_timer_ticks ),
+                       (unsigned int)TICKS_TO_OFFSET( (uint64_t)cycle_timer_ticks ) );
+
+    m_sleep_until = local_time + m_usecs_per_update;
+    m_dll_e2 = m_ticks_per_update;
+    m_current_time_usecs = local_time;
+    m_next_time_usecs = m_current_time_usecs + m_usecs_per_update;
+    m_current_time_ticks = CYCLE_TIMER_TO_TICKS( cycle_timer );
+    m_next_time_ticks = addTicks( (uint64_t)m_current_time_ticks, (uint64_t)m_dll_e2);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " First run\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
+                m_usecs_per_update, m_ticks_per_update, m_dll_e2);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "  usecs current: %f, next: %f\n",
+                m_current_time_usecs, m_next_time_usecs);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "  ticks current: %f, next: %f\n",
+                m_current_time_ticks, m_next_time_ticks);
+    return true;
+}
+
+bool
 CycleTimerHelper::Execute()
 {
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
+
     if (!m_first_run) {
         // wait for the next update period
+        #if DEBUG_EXTREME_ENABLE
         ffado_microsecs_t now = m_TimeSource.getCurrentTimeAsUsecs();
         int sleep_time = m_sleep_until - now;
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
                     this, m_sleep_until, m_next_time_usecs, now, sleep_time);
+        #endif
         m_TimeSource.SleepUsecAbsolute(m_sleep_until);
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
     }
+
+    // grab the lock after sleeping, otherwise we can't be interrupted by
+    // the busreset thread (lower prio)
+    pthread_mutex_lock(&mb_update_lock);
 
     uint32_t cycle_timer;
     uint64_t local_time;
@@ -213,6 +334,7 @@ CycleTimerHelper::Execute()
     do {
         if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
             debugError("Could not read cycle timer register\n");
+            pthread_mutex_unlock(&mb_update_lock);
             return false;
         }
         usecs_late = local_time - m_sleep_until;
@@ -226,34 +348,33 @@ CycleTimerHelper::Execute()
                         diff_ticks, -((double)TICKS_PER_HALFCYCLE));
         }
 
-    } while(diff_ticks < -((double)TICKS_PER_HALFCYCLE) && --ntries && !m_first_run);
+    } while( diff_ticks < -((double)TICKS_PER_HALFCYCLE) 
+             && --ntries && !m_first_run && !m_unhandled_busreset);
+
+    if(m_unhandled_busreset) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) Skipping DLL update due to unhandled busreset\n", this);
+        m_sleep_until += m_usecs_per_update;
+        pthread_mutex_unlock(&mb_update_lock);
+        // keep the thread running
+        return true;
+    }
 
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                         cycle_timer, local_time);
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
-                           (uint32_t)cycle_timer, (uint64_t)cycle_timer_ticks,
-                           (unsigned int)TICKS_TO_SECS( (uint64_t)cycle_timer_ticks ),
-                           (unsigned int)TICKS_TO_CYCLES( (uint64_t)cycle_timer_ticks ),
-                           (unsigned int)TICKS_TO_OFFSET( (uint64_t)cycle_timer_ticks ) );
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
+                       (uint32_t)cycle_timer, (uint64_t)cycle_timer_ticks,
+                       (unsigned int)TICKS_TO_SECS( (uint64_t)cycle_timer_ticks ),
+                       (unsigned int)TICKS_TO_CYCLES( (uint64_t)cycle_timer_ticks ),
+                       (unsigned int)TICKS_TO_OFFSET( (uint64_t)cycle_timer_ticks ) );
 
     if (m_first_run) {
-        m_sleep_until = local_time + m_usecs_per_update;
-        m_dll_e2 = m_ticks_per_update;
-        m_current_time_usecs = local_time;
-        m_next_time_usecs = m_current_time_usecs + m_usecs_per_update;
-        m_current_time_ticks = CYCLE_TIMER_TO_TICKS( cycle_timer );
-        m_next_time_ticks = addTicks( (uint64_t)m_current_time_ticks, (uint64_t)m_dll_e2);
-        debugOutput(DEBUG_LEVEL_VERBOSE, " First run\n");
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
-                    m_usecs_per_update, m_ticks_per_update, m_dll_e2);
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "  usecs current: %f, next: %f\n",
-                    m_current_time_usecs, m_next_time_usecs);
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "  ticks current: %f, next: %f\n",
-                    m_current_time_ticks, m_next_time_ticks);
+        if(!initDLL()) {
+            debugError("(%p) Could not init DLL\n", this);
+            pthread_mutex_unlock(&mb_update_lock);
+            return false;
+        }
         m_first_run = false;
     } else {
         // calculate next sleep time
@@ -389,6 +510,7 @@ CycleTimerHelper::Execute()
     // then we can update the current index
     m_current_shadow_idx = next_idx;
 
+    pthread_mutex_unlock(&mb_update_lock);
     return true;
 }
 

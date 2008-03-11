@@ -21,10 +21,12 @@
  *
  */
 
-#ifndef THREADS_H
-#define THREADS_H
+#ifndef __FFADO_FUNCTORS__
+#define __FFADO_FUNCTORS__
 
 #include <semaphore.h>
+
+namespace Util {
 
 class Functor
 {
@@ -130,6 +132,8 @@ private:
     sem_t* m_pSem;
     bool       m_bDelete;
 };
+
+}; // end of namespace Util
 
 #endif
 

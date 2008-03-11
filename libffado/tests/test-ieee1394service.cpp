@@ -43,15 +43,16 @@
 #include "src/libieee1394/ARMHandler.h"
 
 #include "src/libutil/Thread.h"
+#include "src/libutil/Functors.h"
 #include "src/libutil/PosixThread.h"
 #include <libraw1394/raw1394.h>
 #include "libutil/Time.h"
 
 
-#define NB_THREADS 2
+#define NB_THREADS 1
 #define THREAD_RT  true
 #define THREAD_PRIO 51
-#define THREAD_SLEEP_US 125
+#define THREAD_SLEEP_US 50000
 
 #define DISP_CYCLE_SLEEP_SECS 2
 
@@ -61,6 +62,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 
 #define DIFF_CONSIDERED_LARGE (TICKS_PER_CYCLE/2)
 int PORT_TO_USE = 0;
+int VERBOSE_LEVEL = 4;
 
 int max_diff=-99999;
 int min_diff= 99999;
@@ -91,7 +93,7 @@ class CtrThread : public Util::RunnableInterface
         virtual ~CtrThread() {};
         virtual bool Init()
         {
-            debugOutput(DEBUG_LEVEL_NORMAL, "(%p) Execute\n", this);
+            debugOutput(DEBUG_LEVEL_NORMAL, "(%p) Init\n", this);
             ctr = 0;
             ctr_dll = 0;
         
@@ -131,7 +133,7 @@ class CtrThread : public Util::RunnableInterface
 };
 
 bool CtrThread::Execute() {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Execute\n", this);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) Execute\n", this);
     
     SleepRelativeUsec(THREAD_SLEEP_US);
 
@@ -161,13 +163,13 @@ bool CtrThread::Execute() {
     if(err) {
         debugError("(%p) CTR read error\n", this);
     }
-    debugOutput ( DEBUG_LEVEL_VERBOSE,
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                 "(%p) Cycle timer: %011llu (%03us %04ucy %04uticks)\n",
                 this, ctr,
                 (unsigned int)TICKS_TO_SECS( ctr ),
                 (unsigned int)TICKS_TO_CYCLES( ctr ),
                 (unsigned int)TICKS_TO_OFFSET( ctr ) );
-    debugOutput ( DEBUG_LEVEL_VERBOSE,
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                 "(%p)    from DLL: %011llu (%03us %04ucy %04uticks)\n",
                 this, ctr_dll,
                 (unsigned int)TICKS_TO_SECS( ctr_dll ),
@@ -196,7 +198,7 @@ bool CtrThread::Execute() {
     } else {
         abs_diff = diff;
     }
-    debugOutput ( DEBUG_LEVEL_VERBOSE,
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                 "(%p)       diff: %s%011llu (%03us %04ucy %04uticks)\n", this,
                 ((int64_t)abs_diff==diff?" ":"-"), abs_diff, (unsigned int)TICKS_TO_SECS( abs_diff ),
                 (unsigned int)TICKS_TO_CYCLES( abs_diff ), (unsigned int)TICKS_TO_OFFSET( abs_diff ) );
@@ -258,19 +260,19 @@ bool CtrThread::Execute() {
     
     if (tmp_orig != tmp_ctr) {
         debugError("CTR => TICKS => CTR failed\n");
-        debugOutput ( DEBUG_LEVEL_VERBOSE,
+        debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                     "(%p) orig CTR : %08X (%03us %04ucy %04uticks)\n",
                     this, (uint32_t)tmp_orig,
                     (unsigned int)CYCLE_TIMER_GET_SECS( tmp_orig ),
                     (unsigned int)CYCLE_TIMER_GET_CYCLES( tmp_orig ),
                     (unsigned int)CYCLE_TIMER_GET_OFFSET( tmp_orig ) );
-        debugOutput ( DEBUG_LEVEL_VERBOSE,
+        debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                     "(%p) TICKS: %011llu (%03us %04ucy %04uticks)\n",
                     this, tmp_ticks,
                     (unsigned int)TICKS_TO_SECS( tmp_ticks ),
                     (unsigned int)TICKS_TO_CYCLES( tmp_ticks ),
                     (unsigned int)TICKS_TO_OFFSET( tmp_ticks ) );
-        debugOutput ( DEBUG_LEVEL_VERBOSE,
+        debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                     "(%p) new CTR : %08X (%03us %04ucy %04uticks)\n",
                     this, (uint32_t)tmp_ctr,
                     (unsigned int)CYCLE_TIMER_GET_SECS( tmp_ctr ),
@@ -278,7 +280,7 @@ bool CtrThread::Execute() {
                     (unsigned int)CYCLE_TIMER_GET_OFFSET( tmp_ctr ) );
     }
     
-    debugOutput ( DEBUG_LEVEL_VERBOSE,
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
                 "(%p)  wait...\n", this);
     return true;
 }
@@ -286,11 +288,10 @@ bool CtrThread::Execute() {
 int main(int argc, char *argv[])
 {
     int i=0;
-    setDebugLevel(DEBUG_LEVEL_NORMAL);
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
 
-    static struct option long_opts[] = { { "port", 1, 0, 'p' }, { "help", 0, 0, 'h' }, { 0, 0, 0, 0 } };
+    static struct option long_opts[] = { { "port", 1, 0, 'p' },  { "verbose", 1, 0, 'v' }, { "help", 0, 0, 'h' }, { 0, 0, 0, 0 } };
     int optindex = 0;
     while(1) {
         int c = getopt_long( argc, argv, "p:h", long_opts, &optindex );
@@ -300,10 +301,14 @@ int main(int argc, char *argv[])
             case 'p':
                 PORT_TO_USE = atoi( optarg );
                 break;
+            case 'v':
+                VERBOSE_LEVEL = atoi( optarg );
+                break;
             case 'h':
                 printf( "USAGE:\n\
  Currently two options are understood:\n\
   --port <number> or -p <number> selects the firewire-port to use, default is 0\n\
+  --verbose <number> or -v <number> selects the verbose level, default is 4\n\
   --help or -h shows this help and exits.\n\
 " );
                 return 0;
@@ -312,11 +317,15 @@ int main(int argc, char *argv[])
     }
 
     printf("FFADO Ieee1394Service test application\n");
+    printf(" Using port %d\n", PORT_TO_USE);
+    printf(" Verbose level %d\n", VERBOSE_LEVEL);
+
+    setDebugLevel(VERBOSE_LEVEL);
 
     Ieee1394Service *m_service=NULL;
 
     m_service = new Ieee1394Service();
-    m_service->setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    m_service->setVerboseLevel(VERBOSE_LEVEL);
     if(!m_service->initialize(PORT_TO_USE)) {
         printf("Could not initialize 1394 service\n");
         delete m_service;
