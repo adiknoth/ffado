@@ -1904,6 +1904,14 @@ StreamProcessor::dumpInfo()
 }
 
 void
+StreamProcessor::printBufferInfo()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,
+                "(%p, %8s) fc: %d fill: %u\n",
+                this, getTypeString(), m_data_buffer->getFrameCounter(), m_data_buffer->getBufferFill() );
+}
+
+void
 StreamProcessor::setVerboseLevel(int l) {
     setDebugLevel(l);
     PortManager::setVerboseLevel(l);

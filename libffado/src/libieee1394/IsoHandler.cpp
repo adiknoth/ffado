@@ -91,6 +91,9 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
    , m_State( E_Created )
+#ifdef DEBUG
+   , m_packets ( 0 )
+#endif
 {
 }
 
@@ -106,6 +109,9 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
    , m_State( E_Created )
+#ifdef DEBUG
+   , m_packets ( 0 )
+#endif
 {
 }
 
@@ -122,6 +128,9 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_speed( speed )
    , m_prebuffers( 0 )
    , m_State( E_Created )
+#ifdef DEBUG
+   , m_packets ( 0 )
+#endif
 {
 }
 
@@ -413,6 +422,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                        "received packet: length=%d, channel=%d, cycle=%d\n",
                        length, channel, cycle);
     #ifdef DEBUG
+    m_packets++;
     if (length > m_max_packet_size) {
         debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
                      this, getTypeString(), length, m_max_packet_size);
@@ -434,6 +444,9 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "sending packet: length=%d, cycle=%d\n",
                        *length, cycle);
+    #ifdef DEBUG
+    m_packets++;
+    #endif
     if(m_Client) {
         enum raw1394_iso_disposition retval;
         retval = m_Client->getPacket(data, length, tag, sy, cycle, dropped, skipped, m_max_packet_size);

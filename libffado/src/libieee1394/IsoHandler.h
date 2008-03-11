@@ -149,6 +149,11 @@ private:
         E_Error
     };
     enum EHandlerStates m_State;
+
+    #ifdef DEBUG
+    int             m_packets;
+    #endif
+
     DECLARE_DEBUG_MODULE;
 };
 

@@ -42,11 +42,11 @@
 #define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC 200000
 #define IEEE1394SERVICE_MAX_FIREWIRE_PORTS  16
 
-#define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME    0
-#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE  -5
+#define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME    1
+#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE  -10
 
 #define THREAD_MAX_RTPRIO                   98
-#define THREAD_MIN_RTPRIO                   0
+#define THREAD_MIN_RTPRIO                   1
 
 #define MINIMUM_INTERRUPTS_PER_PERIOD       4U
 
@@ -61,8 +61,13 @@
 
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
 #define ISOHANDLERMANAGER_MAX_STREAMS_PER_ISOTHREAD         16
+// the transmit thread should run at elevated priority since it
+// should push packets into the kernel ASAP
 #define ISOHANDLERMANAGER_TRANSMIT_PRIO_INCREASE            1
-#define ISOHANDLERMANAGER_RECEIVE_PRIO_INCREASE             0
+// the receive thread should have lower priority than the transmit one, since
+// it should be interrupted once it has flagged the semaphore that indicates
+// one period of frames.
+#define ISOHANDLERMANAGER_RECEIVE_PRIO_INCREASE             -6
 
 // allows to add some processing margin. This shifts the time
 // at which the buffer is transfer()'ed, making things somewhat
