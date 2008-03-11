@@ -103,4 +103,42 @@ Discrete::getValue()
     return m_Value;
 }
 
+//// ---
+
+Text::Text()
+: Element()
+, m_Value( "" )
+{
+}
+
+Text::Text(std::string n)
+: Element(n)
+, m_Value( "" )
+{
+}
+
+void
+Text::show()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "Text Element %s, value=%s\n",
+                 getName().c_str(), m_Value.c_str());
+}
+
+bool
+Text::setValue(std::string v)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%s)\n",
+                 getName().c_str(), v.c_str());
+    m_Value=v;
+    return true;
+}
+
+std::string
+Text::getValue()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%s\n",
+                 getName().c_str(), m_Value.c_str());
+    return m_Value;
+}
+
 } // namespace Control
