@@ -483,6 +483,7 @@ protected:
 public:
     // debug stuff
     virtual void dumpInfo();
+    virtual void printBufferInfo();
     virtual void setVerboseLevel(int l);
     const char *getStateString()
         {return ePSToString(getState());};

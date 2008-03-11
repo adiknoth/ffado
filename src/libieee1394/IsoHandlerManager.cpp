@@ -125,7 +125,7 @@ IsoTask::Execute()
     // bypass if no handlers are registered
     if (m_poll_nfds_shadow == 0) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "(%p, %s) bypass iterate since no handlers to poll\n",
+                           "(%p, %8s) bypass iterate since no handlers to poll\n",
                            this, m_type==eTT_Transmit?"Transmit":"Receive");
         usleep(m_poll_timeout * 1000);
         return true;
@@ -135,28 +135,43 @@ IsoTask::Execute()
     // ready. there might be some busy waiting behavior that still has to be solved.
 
     // setup the poll here
-    if (m_type==eTT_Transmit) {
-        // if we are a transmit thread, we should only poll on
-        // those handlers that have a client that is ready to send
-        // something. poll'ing the others will only cause busy-wait
-        // looping.
-        for (i = 0; i < m_poll_nfds_shadow; i++) {
-            short events = 0;
-            if (m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
-                events = POLLIN | POLLPRI;
+    // we should prevent a poll() where no events are specified, since that will only time-out
+    bool no_one_to_poll = true;
+    while(no_one_to_poll) {
+        if (m_type==eTT_Transmit) {
+            // if we are a transmit thread, we should only poll on
+            // those handlers that have a client that is ready to send
+            // something. poll'ing the others will only cause busy-wait
+            // looping.
+            for (i = 0; i < m_poll_nfds_shadow; i++) {
+                short events = 0;
+                if (m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
+                    events = POLLIN | POLLPRI;
+                    no_one_to_poll = false;
+                }
+                m_poll_fds_shadow[i].events = events;
             }
-            m_poll_fds_shadow[i].events = events;
+        } else {
+            // for receive handlers, we can do the same. we might not have to though
+            for (i = 0; i < m_poll_nfds_shadow; i++) {
+                short events = 0;
+                if (m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
+                    events = POLLIN | POLLERR | POLLHUP;
+                    no_one_to_poll = false;
+                }
+                m_poll_fds_shadow[i].events = events;
+            }
         }
-    } else {
-        // for receive handlers, we can do the same. we might not have to though
-        // FIXME: check whether this is necessary
-        for (i = 0; i < m_poll_nfds_shadow; i++) {
-            short events = 0;
-//             if (m_IsoHandler_map_shadow[i]->tryWaitForClient()) {
-//                 events = POLLIN | POLLERR | POLLHUP;
-//             }
-            events = POLLIN | POLLPRI;
-            m_poll_fds_shadow[i].events = events;
+        if(no_one_to_poll) {
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "(%p, %8s) No one to poll, waiting on the first handler to become ready\n",
+                               this, m_type==eTT_Transmit?"Transmit":"Receive");
+
+            m_IsoHandler_map_shadow[0]->waitForClient();
+
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "(%p, %8s) handler ready\n",
+                               this, m_type==eTT_Transmit?"Transmit":"Receive");
         }
     }
 
@@ -209,7 +224,6 @@ IsoTask::Execute()
 //         #endif
 
     }
-
     return true;
 
 }

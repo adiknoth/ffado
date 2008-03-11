@@ -58,7 +58,8 @@ SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec) {
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
 }
 
-ffado_microsecs_t SystemTimeSource::getCurrentTime() {
+ffado_microsecs_t
+SystemTimeSource::getCurrentTime() {
 //     struct timeval tv;
 //     gettimeofday(&tv, NULL);
 //     return tv.tv_sec * 1000000ULL + tv.tv_usec;
@@ -67,7 +68,8 @@ ffado_microsecs_t SystemTimeSource::getCurrentTime() {
     return (ffado_microsecs_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 }
 
-ffado_microsecs_t SystemTimeSource::getCurrentTimeAsUsecs() {
+ffado_microsecs_t
+SystemTimeSource::getCurrentTimeAsUsecs() {
     return getCurrentTime();
 }
 
