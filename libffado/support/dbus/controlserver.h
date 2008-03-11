@@ -117,6 +117,22 @@ private:
     Control::Discrete &m_Slave;
 };
 
+class Text
+: public org::ffado::Control::Element::Text
+, public Element
+{
+public:
+    Text( DBus::Connection& connection,
+          std::string p,
+          Control::Text &slave );
+
+    DBus::String setValue( const DBus::String & value );
+    DBus::String getValue( );
+
+private:
+    Control::Text &m_Slave;
+};
+
 // FIXME: to change this to a normal ConfigRom class name we have to
 // put the 1394 config rom class into a separate namespace.
 class ConfigRomX

@@ -259,6 +259,7 @@ public:
         eTCT_UseHighVoltageRail,
         eTCT_ExitStandalone,
         eTCT_PllLockRange,
+        eTCT_SaveSettings,
     };
 
 public:
@@ -295,12 +296,29 @@ protected:
     enum eMatrixMixerType m_type;
 };
 
+// -- wrapper for the name stored on the device
+class SaffireProDeviceNameControl
+    : public Control::Text
+{
+public:
+    SaffireProDeviceNameControl(SaffireProDevice& parent);
+    SaffireProDeviceNameControl(SaffireProDevice& parent,
+                  std::string name, std::string label, std::string descr);
 
+    virtual bool setValue(std::string);
+    virtual std::string getValue();
+
+private:
+    SaffireProDevice&          m_Parent;
+};
+
+// -- the actual device
 class SaffireProDevice : public FocusriteDevice
 {
 
 // we want all outside control to be done by this class
 friend class SaffireProMultiControl;
+friend class SaffireProDeviceNameControl;
 
 public:
     SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
@@ -327,6 +345,10 @@ protected:
     bool usingHighVoltageRail();
     unsigned int getPllLockRange();
     void setPllLockRange(unsigned int);
+    void saveSettings();
+
+    bool setDeviceName(std::string n);
+    std::string getDeviceName();
 
 private:
     virtual bool setSamplingFrequencyDo( uint32_t );

@@ -64,6 +64,16 @@
       </method>
   </interface>
 
+  <interface name="org.ffado.Control.Element.Text">
+      <method name="setValue">
+          <arg type="s" name="value" direction="in"/>
+          <arg type="s" name="value" direction="out"/>
+      </method>
+      <method name="getValue">
+          <arg type="s" name="value" direction="out"/>
+      </method>
+  </interface>
+
   <interface name="org.ffado.Control.Element.MatrixMixer">
       <method name="setValue">
           <arg type="i" name="row" direction="in"/>
