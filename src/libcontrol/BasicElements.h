@@ -73,6 +73,26 @@ private:
     int m_Value;
 };
 
+/*!
+@brief Base class for textual control elements
+*/
+class Text
+: public Element
+{
+public:
+    Text();
+    Text(std::string n);
+    virtual ~Text() {};
+
+    virtual bool setValue(std::string v);
+    virtual std::string getValue();
+
+    virtual void show();
+
+private:
+    std::string m_Value;
+};
+
 }; // namespace Control
 
 #endif // CONTROL_BASICELEMENTS_H
