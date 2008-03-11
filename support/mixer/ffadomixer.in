@@ -98,6 +98,25 @@ class ControlInterface:
             print "Failed to get Discrete %s on server %s" % (path, self.servername)
             return 0
 
+    def setText(self, subpath, v):
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Text')
+            dev_cont.setValue(v)
+        except:
+            print "Failed to set Text %s on server %s" % (path, self.servername)
+
+    def getText(self, subpath):
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Text')
+            return dev_cont.getValue()
+        except:
+            print "Failed to get Text %s on server %s" % (path, self.servername)
+            return 0
+
     def setMatrixMixerValue(self, subpath, row, col, v):
         try:
             path = self.basepath + subpath

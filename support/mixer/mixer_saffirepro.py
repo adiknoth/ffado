@@ -64,6 +64,13 @@ class SaffireProMixer(SaffireProMixerUI):
                     self.TriggerButtonControls[sender][0])
         self.hw.setDiscrete(self.TriggerButtonControls[sender][0], 1)
 
+    def saveText(self):
+        sender = self.sender()
+        textbox = self.saveTextControls[sender][0]
+        print "save %s" % (
+                    textbox.text().ascii())
+        self.hw.setText(self.TextControls[textbox][0], textbox.text().ascii())
+
     def init(self):
             print "Init Saffire Pro mixer window"
 
@@ -190,8 +197,16 @@ class SaffireProMixer(SaffireProMixerUI):
             }
 
             self.TriggerButtonControls={
-                self.btnReboot:      ['/Control/Reboot'],
-                self.btnIdentify:    ['/Control/FlashLed'],
+                self.btnReboot:        ['/Control/Reboot'],
+                self.btnIdentify:      ['/Control/FlashLed'],
+                self.btnSaveSettings:  ['/Control/SaveSettings'],
+            }
+
+            self.TextControls={
+                self.txtDeviceName:        ['/Control/DeviceName'],
+            }
+            self.saveTextControls={
+                self.btnSaveName:        [self.txtDeviceName],
             }
 
     def updateValues(self):
@@ -220,6 +235,11 @@ class SaffireProMixer(SaffireProMixerUI):
         for ctrl, info in self.TriggerButtonControls.iteritems():
             pass
 
+        for ctrl, info in self.TextControls.iteritems():
+            text = self.hw.getText(self.TextControls[ctrl][0])
+            print "%s text is %s" % (ctrl.name() , text)
+            ctrl.setText(text)
+
     def initValues(self):
         self.updateValues()
         for ctrl, info in self.VolumeControls.iteritems():
@@ -238,3 +258,6 @@ class SaffireProMixer(SaffireProMixerUI):
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('clicked()'),self.triggerButton)
 
+        for ctrl, info in self.saveTextControls.iteritems():
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('clicked()'), self.saveText)

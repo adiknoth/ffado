@@ -26,6 +26,8 @@
 
 #include "libutil/Time.h"
 
+#include <netinet/in.h>
+
 namespace BeBoB {
 namespace Focusrite {
 
@@ -237,6 +239,14 @@ SaffireProDevice::buildMixer()
     result &= m_ControlContainer->addElement(
         new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_PllLockRange,
             "PllLockRange", "PLL Lock Range", "Get/Set PLL Lock range"));
+
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_SaveSettings,
+            "SaveSettings", "Save settings to Flash", "Save the current mixer settings to flash memory"));
+
+    result &= m_ControlContainer->addElement(
+        new SaffireProDeviceNameControl(*this,
+            "DeviceName", "Flash Device Name", "Device name stored in flash memory"));
 
     if (!result) {
         debugWarning("One or more device control elements could not be created.");
@@ -500,6 +510,15 @@ SaffireProDevice::exitStandalone() {
 }
 
 void
+SaffireProDevice::saveSettings() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "saving settings on device...\n" );
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SAVE_SETTINGS,
+                           FR_SAFFIREPRO_CMD_REBOOT_CODE ) ) { // FIXME: is this correct?
+        debugError( "setSpecificValue failed\n" );
+    }
+}
+
+void
 SaffireProDevice::flashLed() {
     int ledFlashDuration=2;
     if(!getOption("ledFlashDuration", ledFlashDuration)) {
@@ -610,6 +629,60 @@ SaffireProDevice::getPllLockRange() {
     return retval;
 }
 
+bool
+SaffireProDevice::setDeviceName(std::string n) {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "set device name : %s ...\n", n.c_str() );
+
+    uint32_t tmp;
+    char name[16]; // the device name field length is fixed
+    memset(name, 0, 16);
+    
+    unsigned int nb_chars = n.size();
+    if(nb_chars > 16) {
+        debugWarning("Specified name too long: %s\n", n.c_str());
+        nb_chars = 16;
+    }
+    
+    unsigned int i;
+    for(i=0; i<nb_chars; i++) {
+        name[i] = n.at(i);
+    }
+
+    for (i=0; i<4; i++) {
+        char *ptr = (char *) &name[i*4];
+        tmp = *((uint32_t *)ptr);
+        tmp = htonl(tmp);
+        if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_DEVICE_NAME_1 + i, tmp ) ) {
+            debugError( "setSpecificValue failed\n" );
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string
+SaffireProDevice::getDeviceName() {
+    std::string retval="";
+    uint32_t tmp;
+    unsigned int i;
+    for (i=0; i<4; i++) {
+        if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_DEVICE_NAME_1 + i, &tmp ) ) {
+            debugError( "getSpecificValue failed\n" );
+            return "";
+        }
+        tmp = ntohl(tmp);
+        unsigned int j;
+        char *ptr = (char *) &tmp;
+        for (j=0; j<4; j++) {
+            retval += *ptr;
+            ptr++;
+        }
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "device name: %s\n",  retval.c_str() );
+    return retval;
+}
+
 // swiss army knife control element
 SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType t)
 : Control::Discrete()
@@ -636,6 +709,7 @@ SaffireProMultiControl::setValue(int v)
         case eTCT_UseHighVoltageRail: m_Parent.useHighVoltageRail(v); return true;
         case eTCT_ExitStandalone: m_Parent.exitStandalone(); return true;
         case eTCT_PllLockRange: m_Parent.setPllLockRange(v); return true;
+        case eTCT_SaveSettings: m_Parent.saveSettings(); return true;
     }
     return false;
 }
@@ -649,10 +723,38 @@ SaffireProMultiControl::getValue()
         case eTCT_UseHighVoltageRail: return m_Parent.usingHighVoltageRail();
         case eTCT_ExitStandalone: return 0;
         case eTCT_PllLockRange: return m_Parent.getPllLockRange();
+        case eTCT_SaveSettings: return 0;
     }
     return -1;
 }
 
+// -- device name
+
+SaffireProDeviceNameControl::SaffireProDeviceNameControl(SaffireProDevice& parent)
+: Control::Text()
+, m_Parent(parent)
+{}
+SaffireProDeviceNameControl::SaffireProDeviceNameControl(SaffireProDevice& parent,
+                std::string name, std::string label, std::string descr)
+: Control::Text()
+, m_Parent(parent)
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+bool
+SaffireProDeviceNameControl::setValue(std::string v)
+{
+    return m_Parent.setDeviceName(v);
+}
+
+std::string
+SaffireProDeviceNameControl::getValue()
+{
+    return m_Parent.getDeviceName();
+}
 
 // Saffire pro matrix mixer element
 

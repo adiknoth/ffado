@@ -139,6 +139,13 @@ Container::createHandler(Control::Element& e) {
             *dynamic_cast<Control::Discrete *>(&e));
     }
     
+    if (dynamic_cast<Control::Text *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Text\n");
+        
+        return new Text(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::Text *>(&e));
+    }
+    
     if (dynamic_cast<ConfigRom *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
         
@@ -210,9 +217,38 @@ Discrete::setValue( const DBus::Int32& value )
 }
 
 DBus::Int32
-Discrete::getValue(  )
+Discrete::getValue()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %d\n", m_Slave.getValue() );
+    return m_Slave.getValue();
+}
+
+// --- Text
+
+Text::Text( DBus::Connection& connection, std::string p, Control::Text &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Text on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::String
+Text::setValue( const DBus::String& value )
+{
+    m_Slave.setValue(value);
+    
+/*    SleepRelativeUsec(1000*500);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%d) => %d\n", value, m_Slave.getValue() );
+    
+    return m_Slave.getValue();*/
+    return value;
+}
+
+DBus::String
+Text::getValue()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %s\n", m_Slave.getValue().c_str() );
     return m_Slave.getValue();
 }
 
