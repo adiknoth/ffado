@@ -563,20 +563,6 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         return false;
     }
 
-    // set the handler's thread parameters
-    // receive handlers have lower priority than the client thread
-    // since they have ISO side buffering
-    // xmit handlers have higher priority since we want client side
-    // frames to be put into the ISO buffers ASAP
-    int thread_prio;
-    if (stream->getType()==StreamProcessor::ePT_Receive) {
-        thread_prio = m_priority - 1;
-        if (thread_prio < THREAD_MIN_RTPRIO) thread_prio = THREAD_MIN_RTPRIO;
-    } else {
-        thread_prio = m_priority + 1;
-        if (thread_prio > THREAD_MAX_RTPRIO) thread_prio = THREAD_MAX_RTPRIO;
-    }
-
     // register the stream with the handler
     if(!h->registerStream(stream)) {
         debugFatal("Could not register receive stream with handler\n");
