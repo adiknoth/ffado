@@ -924,6 +924,9 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
 
     int c = -1;
     int bandwidth=1;
+    #if IEEE1394SERVICE_SKIP_IEC61883_BANDWIDTH_ALLOCATION
+    bandwidth=0;
+    #endif
 
     // do connection management: make connection
     c = iec61883_cmp_connect(
