@@ -183,8 +183,10 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
 
 void
 StreamProcessor::setSyncDelay(unsigned int d) {
-    unsigned int frames = d / getTicksPerFrame();
+    #ifdef DEBUG
+    unsigned int frames = (unsigned int)((float)d / getTicksPerFrame());
     debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks, %u frames\n", this, d, frames);
+    #endif
     m_sync_delay = d; // FIXME: sync delay not necessary anymore
 }
 
@@ -385,7 +387,9 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // they represent a discontinuity in the timestamps, and hence are
             // to be dealt with
             debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
-            m_data_buffer->setBufferTailTimestamp(substractTicks(m_last_timestamp, getNominalFramesPerPacket() * getTicksPerFrame()));
+            m_data_buffer->setBufferTailTimestamp(substractTicks(m_last_timestamp,
+                                                                 (uint64_t)(getNominalFramesPerPacket()
+                                                                            * getTicksPerFrame())));
             m_correct_last_timestamp = false;
         }
 
@@ -1101,6 +1105,7 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
     uint64_t start_handler_ticks = substractTicks(tx, 100 * TICKS_PER_CYCLE);
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
+    #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
@@ -1112,6 +1117,7 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
                           (unsigned int)TICKS_TO_OFFSET(tx));
+    #endif
     if (m_state == ePS_Stopped) {
         if(!m_IsoHandlerManager.startHandlerForStream(
                                         this, TICKS_TO_CYCLES(start_handler_ticks))) {
@@ -1135,6 +1141,7 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
+    #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
@@ -1146,6 +1153,7 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
                           (unsigned int)TICKS_TO_OFFSET(tx));
+    #endif
     return scheduleStateTransition(ePS_WaitingForStreamEnable, tx);
 }
 
@@ -1157,17 +1165,19 @@ bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
+    #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at              : %011llu (%03us %04uc %04ut)\n",
                           tx,
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
                           (unsigned int)TICKS_TO_OFFSET(tx));
+    #endif
 
     return scheduleStateTransition(ePS_Stopped, tx);
 }
@@ -1180,17 +1190,19 @@ bool StreamProcessor::scheduleStopRunning(int64_t t) {
         tx = t;
     }
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
+    #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at               : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at              : %011llu (%03us %04uc %04ut)\n",
                           tx,
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
                           (unsigned int)TICKS_TO_OFFSET(tx));
+    #endif
     return scheduleStateTransition(ePS_WaitingForStreamDisable, tx);
 }
 
@@ -1874,6 +1886,7 @@ StreamProcessor::ePTToString(enum eProcessorType t) {
 void
 StreamProcessor::dumpInfo()
 {
+    #ifdef DEBUG
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p, %s:\n", this, ePTToString(m_processor_type));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_1394service.getPort(), m_channel);
     uint64_t now = m_1394service.getCycleTimerTicks();
@@ -1900,6 +1913,7 @@ StreamProcessor::dumpInfo()
     debugOutputShort(DEBUG_LEVEL_NORMAL, "  Sync delay             : %f ticks (%f frames, %f cy)\n",
                                          d, d/getTicksPerFrame(),
                                          d/((float)TICKS_PER_CYCLE));
+    #endif
     m_data_buffer->dumpInfo();
 }
 

@@ -36,8 +36,8 @@ IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 
 FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) )
     : Control::Container()
-    , m_pDeviceManager( d )
     , m_pConfigRom( configRom )
+    , m_pDeviceManager( d )
 {
     addOption(Util::OptionContainer::Option("id",std::string("dev?")));
 
@@ -147,6 +147,7 @@ FFADODevice::setVerboseLevel(int l)
 void
 FFADODevice::showDevice()
 {
+    #ifdef DEBUG
     Ieee1394Service& s = getConfigRom().get1394Service();
     debugOutput(DEBUG_LEVEL_NORMAL, "Attached to port.......: %d (%s)\n",
                                     s.getPort(), s.getPortName().c_str());
@@ -164,6 +165,7 @@ FFADODevice::showDevice()
     debugOutput(DEBUG_LEVEL_NORMAL, "Assigned ID....: %s\n", id.c_str());
 
     flushDebugOutput();
+    #endif
 }
 
 
