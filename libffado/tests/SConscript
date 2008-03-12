@@ -51,6 +51,7 @@ apps = {
 	"test-ieee1394service" : "test-ieee1394service.cpp",
 	"test-streamdump" : "test-streamdump.cpp",
 	"test-bufferops" : "test-bufferops.cpp",
+	"test-watchdog" : "test-watchdog.cpp",
 	"dumpiso_mod" : "dumpiso_mod.cpp"
 }
 
