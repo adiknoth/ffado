@@ -52,6 +52,7 @@ apps = {
 	"test-streamdump" : "test-streamdump.cpp",
 	"test-bufferops" : "test-bufferops.cpp",
 	"test-watchdog" : "test-watchdog.cpp",
+	"test-devicestringparser" : "test-devicestringparser.cpp",
 	"dumpiso_mod" : "dumpiso_mod.cpp"
 }
 

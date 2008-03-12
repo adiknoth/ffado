@@ -42,6 +42,8 @@
 
 class Ieee1394Service;
 class FFADODevice;
+class DeviceStringParser;
+
 namespace Streaming {
     class StreamProcessor;
 }
@@ -125,8 +127,9 @@ public: // FIXME: this should be better
         {return *m_processorManager;};
 private:
     Streaming::StreamProcessorManager*  m_processorManager;
+    DeviceStringParser*                 m_deviceStringParser;
 protected:
-    std::vector<std::string>          m_SpecStrings;
+    std::vector<std::string>            m_SpecStrings;
 
     bool m_thread_realtime;
     int m_thread_priority;
