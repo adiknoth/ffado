@@ -28,10 +28,9 @@
 #include "libstreaming/generic/StreamProcessor.h"
 
 #include "libutil/Atomic.h"
-
 #include "libutil/PosixThread.h"
-
 #include "libutil/SystemTimeSource.h"
+#include "libutil/Watchdog.h"
 
 #include <assert.h>
 
@@ -334,6 +333,16 @@ bool IsoHandlerManager::init()
         debugFatal("No thread\n");
         return false;
     }
+    // register the thread with the RT watchdog
+    Util::Watchdog *watchdog = m_service.getWatchdog();
+    if(watchdog) {
+        if(!watchdog->registerThread(m_IsoThread)) {
+            debugWarning("could not register iso thread with watchdog\n");
+        }
+    } else {
+        debugWarning("could not find valid watchdog\n");
+    }
+
     if (m_IsoThread->Start() != 0) {
         debugFatal("Could not start ISO thread\n");
         return false;

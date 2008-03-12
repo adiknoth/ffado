@@ -27,6 +27,7 @@
 #include "ieee1394service.h"
 #include "libutil/PosixThread.h"
 #include "libutil/Atomic.h"
+#include "libutil/Watchdog.h"
 
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)
@@ -134,6 +135,16 @@ CycleTimerHelper::Start()
         debugFatal("No thread\n");
         return false;
     }
+    // register the thread with the RT watchdog
+    Util::Watchdog *watchdog = m_Parent.getWatchdog();
+    if(watchdog) {
+        if(!watchdog->registerThread(m_Thread)) {
+            debugWarning("could not register update thread with watchdog\n");
+        }
+    } else {
+        debugWarning("could not find valid watchdog\n");
+    }
+    
     if (m_Thread->Start() != 0) {
         debugFatal("Could not start update thread\n");
         return false;
