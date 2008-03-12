@@ -512,7 +512,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
     } else if (stream->getType()==StreamProcessor::ePT_Transmit) {
         // setup the optimal parameters for the raw1394 ISO buffering
-        unsigned int packets_per_period = stream->getPacketsPerPeriod();
+//        unsigned int packets_per_period = stream->getPacketsPerPeriod();
         unsigned int max_packet_size = stream->getMaxPacketSize();
 //         unsigned int page_size = getpagesize();
 
@@ -807,7 +807,8 @@ void IsoHandlerManager::setVerboseLevel(int i) {
 }
 
 void IsoHandlerManager::dumpInfo() {
-    int i=0;
+    #ifdef DEBUG
+    unsigned int i=0;
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Dumping IsoHandlerManager Stream handler information...\n");
     debugOutputShort( DEBUG_LEVEL_NORMAL, " State: %d\n",(int)m_State);
 
@@ -818,6 +819,7 @@ void IsoHandlerManager::dumpInfo() {
         debugOutputShort( DEBUG_LEVEL_NORMAL, " IsoHandler %d (%p)\n",i++,*it);
         (*it)->dumpInfo();
     }
+    #endif
 }
 
 const char *

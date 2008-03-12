@@ -1206,6 +1206,7 @@ Plug::plugDirectionToString(enum EPlugDirection t) {
 void
 Plug::showPlug() const
 {
+    #ifdef DEBUG
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tName               = %s\n",
                  getName() );
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tType               = %s\n",
@@ -1264,8 +1265,8 @@ Plug::showPlug() const
                 channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
         }
     }
-
     flushDebugOutput();
+    #endif
 }
 
 

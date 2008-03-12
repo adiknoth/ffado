@@ -103,6 +103,7 @@ Firmware::~Firmware()
 void
 Firmware::show()
 {
+    #ifdef DEBUG
     debugOutput(DEBUG_LEVEL_NORMAL, "Firmware from %s\n", m_filename.c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, " Type                 : %s\n", eDatTypeToString(m_Type));
     if (m_Type == eDT_Invalid) return;
@@ -118,6 +119,7 @@ Firmware::show()
                                     version_major, version_minor, version_build, m_version);
     debugOutput(DEBUG_LEVEL_NORMAL, " Append CRC           : %s\n", (m_append_crc?"Yes":"No"));
     debugOutput(DEBUG_LEVEL_NORMAL, " Footprint (Quadlets) : 0x%08lX\n", m_footprint_quads);
+    #endif
 }
 
 bool

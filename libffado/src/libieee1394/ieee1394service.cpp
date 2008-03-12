@@ -1097,10 +1097,12 @@ Ieee1394Service::setVerboseLevel(int l)
 void
 Ieee1394Service::show()
 {
+    #ifdef DEBUG
     uint32_t cycle_timer;
     uint64_t local_time;
     if(!readCycleTimerReg(&cycle_timer, &local_time)) {
         debugWarning("Could not read cycle timer register\n");
+    
     }
     uint64_t ctr = CYCLE_TIMER_TO_TICKS( cycle_timer );
 
@@ -1112,5 +1114,6 @@ Ieee1394Service::show()
                 (unsigned int)TICKS_TO_CYCLES( ctr ),
                 (unsigned int)TICKS_TO_OFFSET( ctr ) );
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Iso handler info:\n");
+    #endif
     if (m_pIsoManager) m_pIsoManager->dumpInfo();
 }
