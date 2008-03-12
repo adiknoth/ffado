@@ -66,13 +66,9 @@
 
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
 #define ISOHANDLERMANAGER_MAX_STREAMS_PER_ISOTHREAD         16
-// the transmit thread should run at elevated priority since it
-// should push packets into the kernel ASAP
-#define ISOHANDLERMANAGER_TRANSMIT_PRIO_INCREASE            1
-// the receive thread should have lower priority than the transmit one, since
-// it should be interrupted once it has flagged the semaphore that indicates
-// one period of frames.
-#define ISOHANDLERMANAGER_RECEIVE_PRIO_INCREASE             -6
+
+// Ideally the audio processing will be driven by this thread
+#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE            1
 
 // allows to add some processing margin. This shifts the time
 // at which the buffer is transfer()'ed, making things somewhat
