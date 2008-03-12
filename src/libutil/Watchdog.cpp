@@ -121,11 +121,13 @@ Watchdog::Watchdog(unsigned int interval_usec, bool realtime, unsigned int prior
 Watchdog::~Watchdog()
 {
     if (m_CheckThread) {
-        m_CheckThread->Stop();
+        //m_CheckThread->Stop();
+        m_CheckThread->Kill();
         delete m_CheckThread;
     }
     if (m_HartbeatThread) {
-        m_HartbeatThread->Stop();
+        //m_HartbeatThread->Stop();
+        m_HartbeatThread->Kill();
         delete m_HartbeatThread;
     }
     if (m_CheckTask) {
@@ -153,11 +155,14 @@ Watchdog::start()
         return false;
     }
     m_HartbeatThread = new Util::PosixThread(m_HartbeatTask, false,
-                                             0, PTHREAD_CANCEL_DEFERRED);
+                                             0, PTHREAD_CANCEL_ASYNCHRONOUS);
     if(!m_HartbeatThread) {
         debugFatal("No hartbeat thread\n");
         return false;
     }
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 " hartbeat task: %p, thread %p...\n",
+                 m_HartbeatTask, m_HartbeatThread);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create check task/thread for %p...\n", this);
     m_CheckTask = new WatchdogCheckTask( *this, m_check_interval );
@@ -166,11 +171,14 @@ Watchdog::start()
         return false;
     }
     m_CheckThread = new Util::PosixThread(m_CheckTask, m_realtime,
-                                          m_priority, PTHREAD_CANCEL_DEFERRED);
+                                          m_priority, PTHREAD_CANCEL_ASYNCHRONOUS);
     if(!m_CheckThread) {
         debugFatal("No check thread\n");
         return false;
     }
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 " check task: %p, thread %p...\n",
+                 m_CheckTask, m_CheckThread);
 
     // start threads
     if (m_HartbeatThread->Start() != 0) {
