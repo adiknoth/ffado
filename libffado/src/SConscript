@@ -34,6 +34,7 @@ ffado_source = env.Split( '\
 	ffado.cpp \
 	ffadodevice.cpp \
 	debugmodule/debugmodule.cpp \
+	DeviceStringParser.cpp \
 	libavc/streamformat/avc_extended_stream_format.cpp \
 	libavc/musicsubunit/avc_descriptor_music.cpp \
 	libavc/musicsubunit/avc_musicsubunit.cpp \

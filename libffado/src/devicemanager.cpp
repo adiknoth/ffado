@@ -26,6 +26,7 @@
 
 #include "devicemanager.h"
 #include "ffadodevice.h"
+#include "DeviceStringParser.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -81,6 +82,7 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 DeviceManager::DeviceManager()
     : Control::Container("devicemanager")
     , m_processorManager( new Streaming::StreamProcessorManager() )
+    , m_deviceStringParser( new DeviceStringParser() )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -114,6 +116,8 @@ DeviceManager::~DeviceManager()
     {
         delete *it;
     }
+
+    delete m_deviceStringParser;
 }
 
 bool
@@ -187,7 +191,8 @@ DeviceManager::addSpecString(char *s) {
     std::string spec = s;
     if(isSpecStringValid(spec)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Adding spec string %s\n", spec.c_str());
-        m_SpecStrings.push_back(spec);
+        assert(m_deviceStringParser);
+        m_deviceStringParser->parseString(spec);
         return true;
     } else {
         debugError("Invalid spec string: %s\n", spec.c_str());
@@ -197,7 +202,8 @@ DeviceManager::addSpecString(char *s) {
 
 bool
 DeviceManager::isSpecStringValid(std::string s) {
-    return true;
+    assert(m_deviceStringParser);
+    return m_deviceStringParser->isValidString(s);
 }
 
 void
@@ -238,6 +244,12 @@ DeviceManager::discover( bool useCache )
         delete *it;
     }
     m_avDevices.clear();
+
+    assert(m_deviceStringParser);
+    // show the spec strings we're going to use
+    if(getDebugLevel() >= DEBUG_LEVEL_VERBOSE) {
+        m_deviceStringParser->show();
+    }
 
     if (!slaveMode) {
         for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
@@ -281,16 +293,27 @@ DeviceManager::discover( bool useCache )
                         break;
                     }
                 }
-                if (already_in_vector) {
+                if(already_in_vector) {
                     debugWarning("Device with GUID %s already discovered on other port, skipping device...\n",
                                  configRom->getGuidString().c_str());
                     continue;
                 }
 
-                if( getDebugLevel() >= DEBUG_LEVEL_VERBOSE) {
+                if(getDebugLevel() >= DEBUG_LEVEL_VERBOSE) {
                     configRom->printConfigRomDebug();
                 }
 
+                // if spec strings are given, only add those devices
+                // that match the spec string(s).
+                // if no (valid) spec strings are present, grab all
+                // supported devices.
+                if(m_deviceStringParser->countDeviceStrings() &&
+                  !m_deviceStringParser->match(*configRom.get())) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "Device doesn't match any of the spec strings. skipping...\n");
+                    continue;
+                }
+
+                // find a driver
                 FFADODevice* avDevice = getDriverForDevice( configRom,
                                                             nodeId );
 
@@ -769,6 +792,7 @@ DeviceManager::setVerboseLevel(int l)
     setDebugLevel(l);
     Control::Element::setVerboseLevel(l);
     m_processorManager->setVerboseLevel(l);
+    m_deviceStringParser->setVerboseLevel(l);
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
