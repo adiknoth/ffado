@@ -56,11 +56,7 @@ class IsoHandlerManager;
 class IsoTask : public Util::RunnableInterface
 {
     public:
-        enum eTaskType {
-            eTT_Receive,
-            eTT_Transmit,
-        };
-        IsoTask(IsoHandlerManager& manager, enum IsoTask::eTaskType t);
+        IsoTask(IsoHandlerManager& manager);
         virtual ~IsoTask() {};
 
     public:
@@ -75,7 +71,6 @@ class IsoTask : public Util::RunnableInterface
         void setVerboseLevel(int i);
     protected:
         IsoHandlerManager& m_manager;
-        enum eTaskType m_type;
 
         // the event request structure
         SInt32 request_update;
@@ -83,9 +78,10 @@ class IsoTask : public Util::RunnableInterface
         // static allocation due to RT constraints
         // this is the map used by the actual thread
         // it is a shadow of the m_StreamProcessors vector
-        struct pollfd m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
-        IsoHandler *m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
-        unsigned int m_poll_nfds_shadow;
+        struct pollfd   m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+        IsoHandler *    m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+        unsigned int    m_poll_nfds_shadow;
+        IsoHandler *    m_SyncIsoHandler;
 
         // updates the streams map
         void updateShadowMapHelper();
@@ -186,18 +182,11 @@ class IsoHandlerManager
         // the collection of streams
         Streaming::StreamProcessorVector m_StreamProcessors;
 
-        // thread params for the handler threads
-        bool m_realtime;
-        int m_priority;
-        // handler threads
-        Util::Thread *  m_ReceiveThread;
-        Util::Thread *  m_TransmitThread;
-
-        // actual tasks
-        IsoTask *  m_ReceiveTask;
-        IsoTask *  m_TransmitTask;
-
-        bool updateShadowMapFor(IsoHandler *h);
+        // handler thread/task
+        bool            m_realtime;
+        int             m_priority;
+        Util::Thread *  m_IsoThread;
+        IsoTask *       m_IsoTask;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

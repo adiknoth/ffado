@@ -1768,11 +1768,22 @@ bool StreamProcessor::canProduce(unsigned int nframes)
 {
     if(m_in_xrun) return true;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
-        // check whether we already fullfil the criterion
-        unsigned int bufferspace = m_data_buffer->getBufferSpace();
-        if(bufferspace >= nframes) {
-            return true;
-        } else return false;
+        
+        if(getType() == ePT_Transmit) {
+            // can we put a certain amount of frames into the buffer?
+            unsigned int bufferspace = m_data_buffer->getBufferSpace();
+            if(bufferspace >= nframes) {
+                return true;
+            } else return false;
+        } else {
+            // do we still have to put frames in the buffer?
+            unsigned int bufferfill = m_data_buffer->getBufferFill();
+            unsigned int periodsize = m_StreamProcessorManager.getPeriodSize();
+            if (bufferfill > periodsize) return false;
+            else return true;
+        }
+
+
     } else {
         if(getType() == ePT_Transmit) {
             // if we are an xmit SP, we cannot accept frames 
