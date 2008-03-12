@@ -80,6 +80,7 @@ ffado_source = env.Split( '\
 	libutil/SystemTimeSource.cpp \
 	libutil/TimeSource.cpp \
 	libutil/TimestampedBuffer.cpp \
+	libutil/Watchdog.cpp \
 	libcontrol/Element.cpp \
 	libcontrol/BasicElements.cpp \
 	libcontrol/MatrixMixer.cpp \

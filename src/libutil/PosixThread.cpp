@@ -180,6 +180,7 @@ int PosixThread::AcquireRealTime()
 {
     struct sched_param rtparam;
     int res;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Aquire realtime, prio %d\n", this, fPriority);
 
     if (!fThread)
         return -1;
@@ -208,6 +209,7 @@ int PosixThread::DropRealTime()
 {
     struct sched_param rtparam;
     int res;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Drop realtime\n", this);
 
     if (!fThread)
         return -1;

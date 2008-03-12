@@ -117,6 +117,7 @@ typedef short debug_level_t;
                                      ##args )
 
 #define DECLARE_DEBUG_MODULE static DebugModule m_debugModule
+#define DECLARE_DEBUG_MODULE_REFERENCE DebugModule &m_debugModule
 #define IMPL_DEBUG_MODULE( ClassName, RegisterName, Level )        \
                 DebugModule ClassName::m_debugModule =             \
                     DebugModule( #RegisterName, Level )
