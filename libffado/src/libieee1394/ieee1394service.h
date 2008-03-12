@@ -44,6 +44,7 @@ class CycleTimerHelper;
 
 namespace Util {
     class TimeSource;
+    class Watchdog;
 }
 
 class Ieee1394Service : public IEC61883 {
@@ -54,6 +55,8 @@ public:
 
     bool initialize( int port );
     bool setThreadParameters(bool rt, int priority);
+    Util::Watchdog *getWatchdog() {return m_pWatchdog;};
+
    /**
     * @brief get number of ports (firewire adapters) in this machine
     *
@@ -329,6 +332,9 @@ private:
 
     // the time source
     Util::TimeSource*   m_pTimeSource;
+
+    // the RT watchdog
+    Util::Watchdog*     m_pWatchdog;
 
     typedef std::vector< Util::Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;

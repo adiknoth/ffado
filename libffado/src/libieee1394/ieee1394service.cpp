@@ -34,6 +34,7 @@
 #include <libiec61883/iec61883.h>
 
 #include "libutil/SystemTimeSource.h"
+#include "libutil/Watchdog.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -55,6 +56,7 @@ Ieee1394Service::Ieee1394Service()
     , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
+    , m_pWatchdog ( new Util::Watchdog() )
 {
     pthread_mutex_init( &m_mutex, 0 );
 
@@ -81,6 +83,7 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
                                            prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
     , m_have_new_ctr_read ( false )
     , m_pTimeSource ( new Util::SystemTimeSource() )
+    , m_pWatchdog ( new Util::Watchdog() )
 {
     pthread_mutex_init( &m_mutex, 0 );
 
@@ -113,6 +116,7 @@ Ieee1394Service::~Ieee1394Service()
     }
 
     delete m_pTimeSource;
+    delete m_pWatchdog;
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
     }
@@ -151,6 +155,15 @@ Ieee1394Service::initialize( int port )
     int nb_ports = detectNbPorts();
     if (port + 1 > nb_ports) {
         debugFatal("Requested port (%d) out of range (# ports: %d)\n", port, nb_ports);
+    }
+
+    if(!m_pWatchdog) {
+        debugError("No valid RT watchdog found.\n");
+        return false;
+    }
+    if(!m_pWatchdog->start()) {
+        debugError("Could not start RT watchdog.\n");
+        return false;
     }
 
     m_handle = raw1394_new_handle_on_port( port );
@@ -1090,6 +1103,7 @@ Ieee1394Service::setVerboseLevel(int l)
 {
     if (m_pIsoManager) m_pIsoManager->setVerboseLevel(l);
     if (m_pCTRHelper) m_pCTRHelper->setVerboseLevel(l);
+    if (m_pWatchdog) m_pWatchdog->setVerboseLevel(l);
     setDebugLevel(l);
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
