@@ -45,6 +45,11 @@
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME    1
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE  -10
 
+// The current version of libiec61883 doesn't seem to calculate
+// the bandwidth correctly. Defining this to non-zero skips
+// bandwidth allocation when doing CMP connections.
+#define IEEE1394SERVICE_SKIP_IEC61883_BANDWIDTH_ALLOCATION 1
+
 #define THREAD_MAX_RTPRIO                   98
 #define THREAD_MIN_RTPRIO                   1
 
