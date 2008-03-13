@@ -528,12 +528,12 @@ ConfigRom::printConfigRomDebug() const
     debugOutput(DEBUG_LEVEL_NORMAL, "\tModel Name:\t\t%s\n",          getModelName().c_str() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tModel Id:\t\t0x%08x\n",        getModelId() );
-    debugOutput(DEBUG_LEVEL_NORMAL, "\tUnit Specifier ID:\t0x%06x\n",  getUnitSpecifierId() );
-    debugOutput(DEBUG_LEVEL_NORMAL, "\tUnit version:\t\t0x%08x\n",        getUnitVersion() );
+    debugOutput(DEBUG_LEVEL_NORMAL, "\tUnit Specifier ID:\t0x%06x\n", getUnitSpecifierId() );
+    debugOutput(DEBUG_LEVEL_NORMAL, "\tUnit version:\t\t0x%08x\n",    getUnitVersion() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tISO resource manager:\t%d\n",  isIsoResourseManager() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tCycle master capable:\t%d\n",  isSupportsIsoOperations() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tBus manager capable:\t%d\n",   isBusManagerCapable() );
-    debugOutput(DEBUG_LEVEL_NORMAL, "\tCycle clock accuracy:\t%d\n", getCycleClockAccurancy() );
+    debugOutput(DEBUG_LEVEL_NORMAL, "\tCycle clock accuracy:\t%d\n",  getCycleClockAccurancy() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tMax rec:\t\t%d (max asy payload: %d bytes)\n",
             getMaxRec(), getAsyMaxPayload() );
 }
@@ -542,20 +542,20 @@ void
 ConfigRom::printConfigRom() const
 {
     using namespace std;
-    printf("Config ROM\n" );
-    printf("\tCurrent Node Id:\t%d\n",       getNodeId() );
-    printf("\tGUID:\t\t\t0x%016llX\n",       getGuid());
-    printf("\tVendor Name:\t\t%s\n",         getVendorName().c_str() );
-    printf("\tModel Name:\t\t%s\n",          getModelName().c_str() );
-    printf("\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );
-    printf("\tModel Id:\t\t0x%08x\n",        getModelId() );
-    printf("\tUnit Specifier ID:\t0x%06x\n",  getUnitSpecifierId() );
-    printf("\tUnit version:\t\t0x%08x\n",        getUnitVersion() );
-    printf("\tISO resource manager:\t%d\n",  isIsoResourseManager() );
-    printf("\tCycle master capable:\t%d\n",  isSupportsIsoOperations() );
-    printf("\tBus manager capable:\t%d\n",   isBusManagerCapable() );
-    printf("\tCycle clock accuracy:\t%d\n", getCycleClockAccurancy() );
-    printf("\tMax rec:\t\t%d (max asy payload: %d bytes)\n", getMaxRec(), getAsyMaxPayload() );
+    printMessage("Config ROM\n" );
+    printMessage("\tCurrent Node Id:\t%d\n",       getNodeId() );
+    printMessage("\tGUID:\t\t\t0x%016llX\n",       getGuid());
+    printMessage("\tVendor Name:\t\t%s\n",         getVendorName().c_str() );
+    printMessage("\tModel Name:\t\t%s\n",          getModelName().c_str() );
+    printMessage("\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );
+    printMessage("\tModel Id:\t\t0x%08x\n",        getModelId() );
+    printMessage("\tUnit Specifier ID:\t0x%06x\n", getUnitSpecifierId() );
+    printMessage("\tUnit version:\t\t0x%08x\n",    getUnitVersion() );
+    printMessage("\tISO resource manager:\t%d\n",  isIsoResourseManager() );
+    printMessage("\tCycle master capable:\t%d\n",  isSupportsIsoOperations() );
+    printMessage("\tBus manager capable:\t%d\n",   isBusManagerCapable() );
+    printMessage("\tCycle clock accuracy:\t%d\n",  getCycleClockAccurancy() );
+    printMessage("\tMax rec:\t\t%d (max asy payload: %d bytes)\n", getMaxRec(), getAsyMaxPayload() );
 }
 
 unsigned short
