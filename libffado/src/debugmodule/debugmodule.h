@@ -104,6 +104,7 @@ typedef short debug_level_t;
 
 // these are for messages that are also displayed when not compiled
 // for debug
+#ifdef DEBUG
 #define printMessage( format, args... )                             \
                 m_debugModule.print( DebugModule::eDL_Message,      \
                                      __FILE__,                      \
@@ -111,6 +112,12 @@ typedef short debug_level_t;
                                      __LINE__,                      \
                                     format,                         \
                                     ##args )
+#else
+#define printMessage( format, args... )                             \
+                m_debugModule.printShort( DebugModule::eDL_Message,      \
+                                    format,                         \
+                                    ##args )
+#endif
 #define printMessageShort( format, args... )                        \
                 m_debugModule.printShort( DebugModule::eDL_Message, \
                                      format,                        \
