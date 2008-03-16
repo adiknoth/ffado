@@ -32,6 +32,12 @@
 #define LIBDIR "$LIBDIR"
 #define SHAREDIR "$SHAREDIR"
 
+/* Define indicating availability of lrint() */
+#define HAVE_LRINT $HAVE_LRINT
+
+/* Define indicatin availability of lrintf() */
+#define HAVE_LRINTF $HAVE_LRINTF
+
 #define DEBUG_IMPLEMENT_BACKLOG     0
 
 // make this zero to disable the most extreme
