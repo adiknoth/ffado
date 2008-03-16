@@ -35,6 +35,7 @@ from mixer_phase88 import *
 from mixer_phase24 import *
 from mixer_saffirepro import *
 from mixer_saffire import *
+from mixer_saffirele import *
 from mixer_af2 import *
 from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
@@ -210,19 +211,30 @@ if __name__ == "__main__":
         path=devmgr.getDeviceName(idx)
         print "Found device %d: %s" % (idx, path)
         
-        cfgrom=ConfigRomInterface(server, basepath+'/DeviceManager/'+path)
-        vendorId=cfgrom.getVendorId()
-        modelId=cfgrom.getModelId()
-        
-        print "Found (%X, %X) %s %s" % (vendorId, modelId, cfgrom.getVendorName() , cfgrom.getModelName())
+        cfgrom = ConfigRomInterface(server, basepath+'/DeviceManager/'+path)
+        vendorId = cfgrom.getVendorId()
+        modelId = cfgrom.getModelId()
+        GUID = cfgrom.getGUID()
+        print " Found (%X, %X, %X) %s %s" % (GUID, vendorId, modelId, cfgrom.getVendorName(), cfgrom.getModelName())
         
         thisdev=(vendorId, modelId);
         
         for dev in SupportedDevices:
-            if dev[0]==thisdev:
-                print dev[1]
-                exec('forms.append('+dev[1]+'())')
-                forms[idx].hw=ControlInterface(server, basepath+'/DeviceManager/'+path)
+            if dev[0] == thisdev:
+                mixerapp = dev[1]
+                
+                # hack for the focusrite devices
+                # Saffire:        0x130e010001????
+                # SaffireLE:    0x130e010004????
+                if thisdev == (0x00130e, 0x00000000):
+                    if GUID < 0x130e0100040000:
+                        mixerapp = "SaffireMixer"
+                    else:
+                        mixerapp = "SaffireLEMixer"
+
+                print mixerapp
+                exec('forms.append('+mixerapp+'())')
+                forms[idx].hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
                 forms[idx].initValues()
                 forms[idx].show()
                 app.setMainWidget(forms[idx])
