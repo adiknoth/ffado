@@ -38,6 +38,11 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
         AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
     }
 
+    if(getConfigRom().getGuid() < 0x130e0100040000LL) {
+        m_isSaffireLE = false;
+    } else {
+        m_isSaffireLE = true;
+    }
 }
 
 bool
@@ -55,84 +60,139 @@ SaffireDevice::buildMixer()
         debugError("Could not create mixer container...\n");
         return false;
     }
-
-    // create control objects for the saffire
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_SPDIF_SWITCH, 0,
-                "SpdifSwitch", "S/PDIF Switch", "S/PDIF Switch"));
-
-    // output mute controls
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
-                "Out12Mute", "Out1/2 Mute", "Output 1/2 Mute"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
-                "Out34Mute", "Out3/4 Mute", "Output 3/4 Mute"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
-                "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
-                "Out78Mute", "Out7/8 Mute", "Output 7/8 Mute"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT910, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
-                "Out910Mute", "Out9/10 Mute", "Output 9/10 Mute"));
-
-    // output front panel hw volume control
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
-                "Out12HwCtrl", "Out1/2 HwCtrl", "Output 1/2 Front Panel Hardware volume control"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
-                "Out34HwCtrl", "Out3/4 HwCtrl", "Output 3/4 Front Panel Hardware volume control"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
-                "Out56HwCtrl", "Out5/6 HwCtrl", "Output 5/6 Front Panel Hardware volume control"));
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
-                "Out78HwCtrl", "Out7/8 HwCtrl", "Output 7/8 Front Panel Hardware volume control"));
     
-    // output level dim
-    result &= m_MixerContainer->addElement(
-        new BinaryControl(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DIM,
-                "Out12Dim", "Out1/2 Dim", "Output 1/2 Level Dim"));
+    if(m_isSaffireLE) {
+        // create control objects for the saffire LE
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_SPDIF_TRANSPARENT, 0,
+                    "SpdifTransparent", "S/PDIF Transparent", "S/PDIF Transparent"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_MIDITHRU, 0,
+                    "MidiThru", "MIDI Thru", "MIDI Thru"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_SAVE_SETTINGS, 0,
+                    "SaveSettings", "Save Settings", "Save Settings"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_HIGH_GAIN_LINE3, 0,
+                    "HighGainLine3", "High Gain Line-in 3", "High Gain Line-in 3"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_HIGH_GAIN_LINE4, 0,
+                    "HighGainLine4", "High Gain Line-in 4", "High Gain Line-in 4"));
 
-    // output level controls
-    result &= m_MixerContainer->addElement(
-        new VolumeControlLowRes(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, 0,
-                "Out12Level", "Out1/2 Level", "Output 1/2 Level"));
-    result &= m_MixerContainer->addElement(
-        new VolumeControlLowRes(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, 0,
-                "Out34Level", "Out3/4 Level", "Output 3/4 Level"));
-    result &= m_MixerContainer->addElement(
-        new VolumeControlLowRes(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, 0,
-                "Out56Level", "Out5/6 Level", "Output 5/6 Level"));
-    result &= m_MixerContainer->addElement(
-        new VolumeControlLowRes(*this, 
-                FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, 0,
-                "Out78Level", "Out7/8 Level", "Output 7/8 Level"));
+        // output mute controls
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out12Mute", "Out1/2 Mute", "Output 1/2 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out34Mute", "Out3/4 Mute", "Output 3/4 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
+    } else {
+        // create control objects for the saffire
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_SPDIF_SWITCH, 0,
+                    "SpdifSwitch", "S/PDIF Switch", "S/PDIF Switch"));
+
+        // output mute controls
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out12Mute", "Out1/2 Mute", "Output 1/2 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out34Mute", "Out3/4 Mute", "Output 3/4 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out78Mute", "Out7/8 Mute", "Output 7/8 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT910, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out910Mute", "Out9/10 Mute", "Output 9/10 Mute"));
+
+        // output front panel hw volume control
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out12HwCtrl", "Out1/2 HwCtrl", "Output 1/2 Front Panel Hardware volume control"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out34HwCtrl", "Out3/4 HwCtrl", "Output 3/4 Front Panel Hardware volume control"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out56HwCtrl", "Out5/6 HwCtrl", "Output 5/6 Front Panel Hardware volume control"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out78HwCtrl", "Out7/8 HwCtrl", "Output 7/8 Front Panel Hardware volume control"));
+
+        // output level dim
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DIM,
+                    "Out12Dim", "Out1/2 Dim", "Output 1/2 Level Dim"));
+
+        // output level controls
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, 0,
+                    "Out12Level", "Out1/2 Level", "Output 1/2 Level"));
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, 0,
+                    "Out34Level", "Out3/4 Level", "Output 3/4 Level"));
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, 0,
+                    "Out56Level", "Out5/6 Level", "Output 5/6 Level"));
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, 0,
+                    "Out78Level", "Out7/8 Level", "Output 7/8 Level"));
+    }
     
     // matrix mix controls
-    result &= m_MixerContainer->addElement(
-        new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_InputMix, "InputMix"));
+    if(m_isSaffireLE) {
+        result &= m_MixerContainer->addElement(
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_LEMix48, "LEMix48"));
+    
+        result &= m_MixerContainer->addElement(
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_LEMix96, "LEMix96"));
 
-    result &= m_MixerContainer->addElement(
-        new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_PCMix, "PCMix"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_SWAP_OUT4_OUT1_48K, 0,
+                    "Swap41_48", "Swap41_48", "Swap41_48"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_SWAP_OUT4_OUT1_96K, 0,
+                    "Swap41_96", "Swap41_96", "Swap41_96"));
 
+    } else {
+        result &= m_MixerContainer->addElement(
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_InputMix, "InputMix"));
+    
+        result &= m_MixerContainer->addElement(
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_PCMix, "PCMix"));
+    }
 
     if (!result) {
         debugWarning("One or more control elements could not be created.");
@@ -175,7 +235,11 @@ SaffireDevice::destroyMixer()
 void
 SaffireDevice::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Focusrite::SaffireDevice\n");
+    if(m_isSaffireLE) {
+        debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Focusrite::SaffireDevice (Saffire LE)\n");
+    } else {
+        debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Focusrite::SaffireDevice (Saffire)\n");
+    }
     FocusriteDevice::showDevice();
 }
 
@@ -339,6 +403,172 @@ void SaffireMatrixMixer::init()
         setCellInfo(4,8,FR_SAFFIRE_CMD_ID_REV1_TO_OUT9, true);
         setCellInfo(5,9,FR_SAFFIRE_CMD_ID_REV2_TO_OUT10, true);
 
+    } else if (m_type == eMMT_LEMix48) {
+        addSignalInfo(m_RowInfo, "IN1", "Input 1", "Analog Input 1");
+        addSignalInfo(m_RowInfo, "IN2", "Input 2", "Analog Input 2");
+        addSignalInfo(m_RowInfo, "IN3", "Input 3", "Analog Input 3");
+        addSignalInfo(m_RowInfo, "IN4", "Input 4", "Analog Input 4");
+        addSignalInfo(m_RowInfo, "SPDIFL", "SPDIF L", "S/PDIF Left Input");
+        addSignalInfo(m_RowInfo, "SPDIFR", "SPDIF R", "S/PDIF Right Input");
+
+        addSignalInfo(m_RowInfo, "PC1", "PC 1", "PC Channel 1");
+        addSignalInfo(m_RowInfo, "PC2", "PC 2", "PC Channel 2");
+        addSignalInfo(m_RowInfo, "PC3", "PC 3", "PC Channel 3");
+        addSignalInfo(m_RowInfo, "PC4", "PC 4", "PC Channel 4");
+        addSignalInfo(m_RowInfo, "PC5", "PC 5", "PC Channel 5");
+        addSignalInfo(m_RowInfo, "PC6", "PC 6", "PC Channel 6");
+        addSignalInfo(m_RowInfo, "PC7", "PC 7", "PC Channel 7");
+        addSignalInfo(m_RowInfo, "PC8", "PC 8", "PC Channel 8");
+
+        addSignalInfo(m_ColInfo, "OUT1", "OUT 1", "Output 1");
+        addSignalInfo(m_ColInfo, "OUT2", "OUT 2", "Output 2");
+        addSignalInfo(m_ColInfo, "OUT3", "OUT 3", "Output 3");
+        addSignalInfo(m_ColInfo, "OUT4", "OUT 4", "Output 4");
+
+        // init the cell matrix
+        #define FOCUSRITE_SAFFIRELE_48KMIX_NB_COLS 4
+        #define FOCUSRITE_SAFFIRELE_48KMIX_NB_ROWS 14
+        
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRELE_48KMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRELE_48KMIX_NB_ROWS,tmp_cols);
+        m_CellInfo = tmp_all;
+    
+        struct sCellInfo c;
+        c.row=-1;
+        c.col=-1;
+        c.valid=false;
+        c.address=0;
+        
+        for (int i=0;i<FOCUSRITE_SAFFIRELE_48KMIX_NB_COLS;i++) {
+            for (int j=0;j<FOCUSRITE_SAFFIRELE_48KMIX_NB_ROWS;j++) {
+                m_CellInfo[i][j]=c;
+            }
+        }
+
+        // now set the cells that are valid
+        setCellInfo(0,0,FR_SAFFIRELE_CMD_ID_IN1_TO_OUT1, true);
+        setCellInfo(0,1,FR_SAFFIRELE_CMD_ID_IN1_TO_OUT2, true);
+        setCellInfo(0,2,FR_SAFFIRELE_CMD_ID_IN1_TO_OUT3, true);
+        setCellInfo(0,3,FR_SAFFIRELE_CMD_ID_IN1_TO_OUT4, true);
+        setCellInfo(1,0,FR_SAFFIRELE_CMD_ID_IN2_TO_OUT1, true);
+        setCellInfo(1,1,FR_SAFFIRELE_CMD_ID_IN2_TO_OUT2, true);
+        setCellInfo(1,2,FR_SAFFIRELE_CMD_ID_IN2_TO_OUT3, true);
+        setCellInfo(1,3,FR_SAFFIRELE_CMD_ID_IN2_TO_OUT4, true);
+        setCellInfo(2,0,FR_SAFFIRELE_CMD_ID_IN3_TO_OUT1, true);
+        setCellInfo(2,1,FR_SAFFIRELE_CMD_ID_IN3_TO_OUT2, true);
+        setCellInfo(2,2,FR_SAFFIRELE_CMD_ID_IN3_TO_OUT3, true);
+        setCellInfo(2,3,FR_SAFFIRELE_CMD_ID_IN3_TO_OUT4, true);
+        setCellInfo(3,0,FR_SAFFIRELE_CMD_ID_IN4_TO_OUT1, true);
+        setCellInfo(3,1,FR_SAFFIRELE_CMD_ID_IN4_TO_OUT2, true);
+        setCellInfo(3,2,FR_SAFFIRELE_CMD_ID_IN4_TO_OUT3, true);
+        setCellInfo(3,3,FR_SAFFIRELE_CMD_ID_IN4_TO_OUT4, true);
+        
+        setCellInfo(4,0,FR_SAFFIRELE_CMD_ID_SPDIF1_TO_OUT1, true);
+        setCellInfo(4,1,FR_SAFFIRELE_CMD_ID_SPDIF1_TO_OUT2, true);
+        setCellInfo(4,2,FR_SAFFIRELE_CMD_ID_SPDIF1_TO_OUT3, true);
+        setCellInfo(4,3,FR_SAFFIRELE_CMD_ID_SPDIF1_TO_OUT4, true);
+        setCellInfo(5,0,FR_SAFFIRELE_CMD_ID_SPDIF2_TO_OUT1, true);
+        setCellInfo(5,1,FR_SAFFIRELE_CMD_ID_SPDIF2_TO_OUT2, true);
+        setCellInfo(5,2,FR_SAFFIRELE_CMD_ID_SPDIF2_TO_OUT3, true);
+        setCellInfo(5,3,FR_SAFFIRELE_CMD_ID_SPDIF2_TO_OUT4, true);
+        setCellInfo(6,0,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT1, true);
+        setCellInfo(6,1,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT2, true);
+        setCellInfo(6,2,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT3, true);
+        setCellInfo(6,3,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT4, true);
+        setCellInfo(7,0,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT1, true);
+        setCellInfo(7,1,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT2, true);
+        setCellInfo(7,2,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT3, true);
+        setCellInfo(7,3,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT4, true);
+        setCellInfo(8,0,FR_SAFFIRELE_CMD_ID_PC3_TO_OUT1, true);
+        setCellInfo(8,1,FR_SAFFIRELE_CMD_ID_PC3_TO_OUT2, true);
+        setCellInfo(8,2,FR_SAFFIRELE_CMD_ID_PC3_TO_OUT3, true);
+        setCellInfo(8,3,FR_SAFFIRELE_CMD_ID_PC3_TO_OUT4, true);
+        setCellInfo(9,0,FR_SAFFIRELE_CMD_ID_PC4_TO_OUT1, true);
+        setCellInfo(9,1,FR_SAFFIRELE_CMD_ID_PC4_TO_OUT2, true);
+        setCellInfo(9,2,FR_SAFFIRELE_CMD_ID_PC4_TO_OUT3, true);
+        setCellInfo(9,3,FR_SAFFIRELE_CMD_ID_PC4_TO_OUT4, true);
+        setCellInfo(10,0,FR_SAFFIRELE_CMD_ID_PC5_TO_OUT1, true);
+        setCellInfo(10,1,FR_SAFFIRELE_CMD_ID_PC5_TO_OUT2, true);
+        setCellInfo(10,2,FR_SAFFIRELE_CMD_ID_PC5_TO_OUT3, true);
+        setCellInfo(10,3,FR_SAFFIRELE_CMD_ID_PC5_TO_OUT4, true);
+        setCellInfo(11,0,FR_SAFFIRELE_CMD_ID_PC6_TO_OUT1, true);
+        setCellInfo(11,1,FR_SAFFIRELE_CMD_ID_PC6_TO_OUT2, true);
+        setCellInfo(11,2,FR_SAFFIRELE_CMD_ID_PC6_TO_OUT3, true);
+        setCellInfo(11,3,FR_SAFFIRELE_CMD_ID_PC6_TO_OUT4, true);
+        setCellInfo(12,0,FR_SAFFIRELE_CMD_ID_PC7_TO_OUT1, true);
+        setCellInfo(12,1,FR_SAFFIRELE_CMD_ID_PC7_TO_OUT2, true);
+        setCellInfo(12,2,FR_SAFFIRELE_CMD_ID_PC7_TO_OUT3, true);
+        setCellInfo(12,3,FR_SAFFIRELE_CMD_ID_PC7_TO_OUT4, true);
+        setCellInfo(13,0,FR_SAFFIRELE_CMD_ID_PC8_TO_OUT1, true);
+        setCellInfo(13,1,FR_SAFFIRELE_CMD_ID_PC8_TO_OUT2, true);
+        setCellInfo(13,2,FR_SAFFIRELE_CMD_ID_PC8_TO_OUT3, true);
+        setCellInfo(13,3,FR_SAFFIRELE_CMD_ID_PC8_TO_OUT4, true);
+
+    } else if (m_type == eMMT_LEMix96) {
+        addSignalInfo(m_RowInfo, "IN1", "Input 1", "Analog Input 1");
+        addSignalInfo(m_RowInfo, "IN2", "Input 2", "Analog Input 2");
+        addSignalInfo(m_RowInfo, "IN3", "Input 3", "Analog Input 3");
+        addSignalInfo(m_RowInfo, "IN4", "Input 4", "Analog Input 4");
+        addSignalInfo(m_RowInfo, "SPDIFL", "SPDIF L", "S/PDIF Left Input");
+        addSignalInfo(m_RowInfo, "SPDIFR", "SPDIF R", "S/PDIF Right Input");
+
+        addSignalInfo(m_RowInfo, "PC1", "PC 1", "PC Channel 1");
+        addSignalInfo(m_RowInfo, "PC2", "PC 2", "PC Channel 2");
+        addSignalInfo(m_RowInfo, "PC3", "PC 3", "PC Channel 3");
+        addSignalInfo(m_RowInfo, "PC4", "PC 4", "PC Channel 4");
+        addSignalInfo(m_RowInfo, "PC5", "PC 5", "PC Channel 5");
+        addSignalInfo(m_RowInfo, "PC6", "PC 6", "PC Channel 6");
+        addSignalInfo(m_RowInfo, "PC7", "PC 7", "PC Channel 7");
+        addSignalInfo(m_RowInfo, "PC8", "PC 8", "PC Channel 8");
+        addSignalInfo(m_RowInfo, "RECMIXRETURN", "RECMIXRETURN", "Record mix (mono) return");
+
+        addSignalInfo(m_ColInfo, "OUT1", "OUT 1", "Output 1");
+        addSignalInfo(m_ColInfo, "OUT2", "OUT 2", "Output 2");
+        addSignalInfo(m_ColInfo, "OUT3", "OUT 3", "Output 3");
+        addSignalInfo(m_ColInfo, "OUT4", "OUT 4", "Output 4");
+        addSignalInfo(m_ColInfo, "RECMIX", "RECMIX", "Record mix (mono)");
+
+        // init the cell matrix
+        #define FOCUSRITE_SAFFIRELE_96KMIX_NB_COLS 5
+        #define FOCUSRITE_SAFFIRELE_96KMIX_NB_ROWS 15
+        
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRELE_96KMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRELE_96KMIX_NB_ROWS,tmp_cols);
+        m_CellInfo = tmp_all;
+    
+        struct sCellInfo c;
+        c.row=-1;
+        c.col=-1;
+        c.valid=false;
+        c.address=0;
+        
+        for (int i=0;i<FOCUSRITE_SAFFIRELE_96KMIX_NB_COLS;i++) {
+            for (int j=0;j<FOCUSRITE_SAFFIRELE_96KMIX_NB_ROWS;j++) {
+                m_CellInfo[i][j]=c;
+            }
+        }
+
+        // now set the cells that are valid
+        setCellInfo(0,4,FR_SAFFIRELE_CMD_ID_IN1_TO_RECMIX_96K, true);
+        setCellInfo(1,4,FR_SAFFIRELE_CMD_ID_IN2_TO_RECMIX_96K, true);
+        setCellInfo(2,4,FR_SAFFIRELE_CMD_ID_IN3_TO_RECMIX_96K, true);
+        setCellInfo(3,4,FR_SAFFIRELE_CMD_ID_IN4_TO_RECMIX_96K, true);
+        setCellInfo(4,4,FR_SAFFIRELE_CMD_ID_SPDIF1_TO_RECMIX_96K, true);
+        setCellInfo(5,4,FR_SAFFIRELE_CMD_ID_SPDIF2_TO_RECMIX_96K, true);
+
+        setCellInfo(14,0,FR_SAFFIRELE_CMD_ID_RECMIX_TO_OUT1_96K, true);
+        setCellInfo(14,1,FR_SAFFIRELE_CMD_ID_RECMIX_TO_OUT2_96K, true);
+        setCellInfo(14,2,FR_SAFFIRELE_CMD_ID_RECMIX_TO_OUT3_96K, true);
+        setCellInfo(14,3,FR_SAFFIRELE_CMD_ID_RECMIX_TO_OUT4_96K, true);
+
+        setCellInfo(7,0,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT1_96K, true);
+        setCellInfo(7,1,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT2_96K, true);
+        setCellInfo(7,2,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT3_96K, true);
+        setCellInfo(7,3,FR_SAFFIRELE_CMD_ID_PC1_TO_OUT4_96K, true);
+        setCellInfo(8,0,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT1_96K, true);
+        setCellInfo(8,1,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT2_96K, true);
+        setCellInfo(8,2,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT3_96K, true);
+        setCellInfo(8,3,FR_SAFFIRELE_CMD_ID_PC2_TO_OUT4_96K, true);
     } else {
         debugError("Invalid mixer type\n");
     }
@@ -346,7 +576,7 @@ void SaffireMatrixMixer::init()
 
 void SaffireMatrixMixer::show()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Saffire Pro Matrix mixer type %d\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "Saffire Matrix mixer type %d\n");
 }
 
 } // Focusrite
