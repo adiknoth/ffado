@@ -1,9 +1,9 @@
 [Desktop Entry]
 Comment=
-Exec[$e]=ffadomixer
+Exec=ffadomixer
 GenericName=
 Icon=ffado
 Name=ffadomixer
-Path[$e]=
+Path=
 Type=Application
 Categories=Mixer;Audio;AudioVideo;HardwareSettings;Qt

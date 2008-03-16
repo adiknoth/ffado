@@ -410,7 +410,9 @@ if not env.GetOption('clean'):
         Default( 'tests' )
 
 #
-# Deal with the DESTDIR vs. xdg-tools conflict (which is basicely that the xdg-tools can't deal with DESTDIR, so the packagers have to deal with this their own :-)
+# Deal with the DESTDIR vs. xdg-tools conflict (which is basicely that the
+# xdg-tools can't deal with DESTDIR, so the packagers have to deal with this
+# their own :-/
 #
 if len(destdir) > 0:
 	if not len( ARGUMENTS.get( "WILL_DEAL_WITH_XDG_MYSELF", "" ) ) > 0:
@@ -424,10 +426,23 @@ deal with them your own.
 message.)
 """
 else:
+
+	def CleanAction( action ):
+		if env.GetOption( "clean" ):
+			env.Execute( action )
+
 	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC' ):
-		env.Command( "support/xdg/.ffado.org-ffadomixer.desktop", "support/xdg/ffado.org-ffadomixer.desktop", "xdg-desktop-menu install $SOURCES && touch $TARGET" )
-		env.NoCache( "support/xdg/.ffado.org-ffadomixer.desktop" )
-		env.Alias( "install", "support/xdg/.ffado.org-ffadomixer.desktop" )
+		if not env.GetOption("clean"):
+			action = "install"
+		else:
+			action = "uninstall"
+		mixerdesktopaction = env.Action( "xdg-desktop-menu %s support/xdg/ffado.org-ffadomixer.desktop" % action )
+		mixericonaction = env.Action( "xdg-icon-resource %s --size 64 --context apps support/xdg/hi64-apps-ffado.png" % action )
+		env.Command( "__xdgstuff1", None, mixerdesktopaction )
+		env.Command( "__xdgstuff2", None, mixericonaction )
+		env.Alias( "install", ["__xdgstuff1", "__xdgstuff2" ] )
+		CleanAction( mixerdesktopaction )
+		CleanAction( mixericonaction )
 
 #
 # Create a tags-file for easier emacs/vim-source-browsing
