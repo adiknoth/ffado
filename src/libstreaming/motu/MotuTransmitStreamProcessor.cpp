@@ -24,6 +24,8 @@
 
 #include "config.h"
 
+#include "libutil/float_cast.h"
+
 #include "MotuTransmitStreamProcessor.h"
 #include "MotuPort.h"
 #include "../StreamProcessorManager.h"
@@ -36,7 +38,9 @@
 #include <netinet/in.h>
 #include <assert.h>
 
-// Set to 1 to enable the generation of a 1 kHz test tone in analog output 1
+// Set to 1 to enable the generation of a 1 kHz test tone in analog output 1.  Even with
+// this defined to 1 the test tone will now only be produced if run with a non-zero 
+// debug level.
 #define TESTTONE 1
 
 #if TESTTONE
@@ -267,28 +271,31 @@ MotuTransmitStreamProcessor::generatePacketData (
         float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getActualRate();
 
 #if TESTTONE
+    /* Now things are beginning to stabilise, make things easier for others by only playing
+     * the test tone when run with a non-zero debug level.
+     */
+    if (getDebugLevel() > 0) {
         // FIXME: remove this hacked in 1 kHz test signal to
         // analog-1 when testing is complete.
-        signed int i, int_tpf = (int)ticks_per_frame;
+        signed int i, int_tpf = lrintf(ticks_per_frame);
         unsigned char *sample = data+8+16;
         for (i=0; i<n_events; i++, sample+=m_event_size) {
             static signed int a_cx = 0;
             // Each sample is 3 bytes with MSB in lowest address (ie: 
             // network byte order).  After byte order swap, the 24-bit
             // MSB is in the second byte of val.
-            signed int val = htonl((int)(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx)));
+            signed int val = htonl(lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx)));
             memcpy(sample,((char *)&val)+1,3);
             if ((a_cx+=int_tpf) >= 24576000) {
                 a_cx -= 24576000;
             }
         }
+    }
 #endif
 
         // Set up each frames's SPH.
         for (int i=0; i < n_events; i++, quadlet += dbs) {
-//FIXME: not sure which is best for the MOTU.  Should be consistent with generateSilentPacketData().
-//            int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
-            int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)(i * ticks_per_frame));
+            int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
             *quadlet = htonl(fullTicksToSph(ts_frame));
         }
 
@@ -384,9 +391,7 @@ MotuTransmitStreamProcessor::generateSilentPacketData (
 
     // Set up each frames's SPH.
     for (int i=0; i < n_events; i++, quadlet += dbs) {
-//FIXME: not sure which is best for the MOTU.  Should be consistent with generatePacketData().
-//        int64_t ts_frame = addTicks(ts, (unsigned int)(i * ticks_per_frame));
-        int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)(i * ticks_per_frame));
+        int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
         *quadlet = htonl(fullTicksToSph(ts_frame));
     }
 
@@ -576,7 +581,7 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
                 buffer+=offset;
 
                 for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    unsigned int v = (int)(*buffer * multiplier);
+                    unsigned int v = lrintf(*buffer * multiplier);
                     *target = (v >> 16) & 0xff;
                     *(target+1) = (v >> 8) & 0xff;
                     *(target+2) = v & 0xff;

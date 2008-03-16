@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2007 Arnold Krille
 # Copyright (C) 2007 Pieter Palmers
+# Copyright (C) 2008 Jonathan Woithe
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -206,6 +207,26 @@ install the needed packages for each of the lines saying "no".
 (Remember to also install the *-devel packages!)
 """
 		Exit( 1 )
+
+	# Check for C99 lrint() and lrintf() functions used to convert from
+	# float to integer more efficiently via float_cast.h.  If not
+	# present the standard slower methods will be used instead.  This
+	# might not be the best way of testing for these but it's the only
+	# way which seems to work properly.  CheckFunc() fails due to
+	# argument count problems.
+	oldcf = env['CFLAGS']
+	oldcf = env.Append(CFLAGS = '-std=c99')
+	if conf.CheckLibWithHeader( "m", "math.h", "c", "lrint(3.2);" ):
+		HAVE_LRINT = 1
+	else:
+		HAVE_LRINT = 0
+	if conf.CheckLibWithHeader( "m", "math.h", "c", "lrintf(3.2);" ):
+		HAVE_LRINTF = 1
+	else:
+		HAVE_LRINTF = 0
+	env['HAVE_LRINT'] = HAVE_LRINT;
+	env['HAVE_LRINTF'] = HAVE_LRINTF;
+	env.Replace(CFLAGS=oldcf)
 
 	#
 	# Optional checks follow:
