@@ -215,8 +215,19 @@ install the needed packages for each of the lines saying "no".
 if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 	env['PYUIC'] = True
 
-if conf.CheckForApp( "xdg-desktop-menu --help" ):
-	env['XDG_TOOLS'] = True
+	if conf.CheckForApp( "xdg-desktop-menu --help" ):
+		env['XDG_TOOLS'] = True
+	else:
+		print """
+I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+this is needed to add the fancy entry to your menu.
+"""
+
+else:
+	print """
+I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
+'qt') to build the mixer. Therefor it won't get installed.
+"""
 
 config_guess = conf.ConfigGuess()
 
@@ -418,7 +429,7 @@ if len(destdir) > 0:
 	if not len( ARGUMENTS.get( "WILL_DEAL_WITH_XDG_MYSELF", "" ) ) > 0:
 		print """
 WARNING!
-You are usin the (packagers) option DESTDIR to install this package to a
+You are using the (packagers) option DESTDIR to install this package to a
 different place than the real prefix. As the xdg-tools can't cope with
 that, the .desktop-files are not installed by this build, you have to
 deal with them your own.
