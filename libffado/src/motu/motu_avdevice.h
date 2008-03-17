@@ -96,6 +96,7 @@ enum EMotuModel {
       MOTUFW_MODEL_ULTRALITE= 0x0003,
       MOTUFW_MODEL_8PRE     = 0x0004,
       MOTUFW_MODEL_828MkI   = 0x0005,
+      MOTUFW_MODEL_896HD    = 0x0006,
 };
 
 struct VendorModelEntry {
