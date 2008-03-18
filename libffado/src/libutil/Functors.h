@@ -133,6 +133,45 @@ private:
     bool       m_bDelete;
 };
 
+template< typename FunPtr >
+class CallbackFunctor0
+    : public Functor
+{
+public:
+    CallbackFunctor0( FunPtr pMemFun,
+            bool bDelete = true )
+        : m_pMemFun( pMemFun )
+        , m_pSem( 0 )
+        , m_bDelete( bDelete )
+        {}
+
+    CallbackFunctor0( FunPtr pMemFun,
+            sem_t* pSem,
+            bool bDelete = true )
+        : m_pMemFun( pMemFun )
+        , m_pSem( pSem )
+        , m_bDelete( bDelete )
+        {}
+
+    virtual ~CallbackFunctor0()
+        {}
+
+    virtual void operator() ()
+        {
+            ( *m_pMemFun )();
+            if ( m_pSem ) {
+                sem_post( m_pSem);
+            }
+            if (m_bDelete) {
+                delete this;
+            }
+        }
+
+private:
+    FunPtr      m_pMemFun;
+    sem_t*      m_pSem;
+    bool        m_bDelete;
+};
 }; // end of namespace Util
 
 #endif

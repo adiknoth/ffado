@@ -37,6 +37,8 @@
 
 #include <glibmm/ustring.h>
 
+#include "libutil/Functors.h"
+
 #include <vector>
 #include <string>
 
@@ -56,6 +58,9 @@ typedef std::vector< Ieee1394Service* >::iterator Ieee1394ServiceVectorIterator;
 
 typedef std::vector< Util::Functor* > FunctorVector;
 typedef std::vector< Util::Functor* >::iterator FunctorVectorIterator;
+
+typedef std::vector< ConfigRom* > ConfigRomVector;
+typedef std::vector< ConfigRom* >::iterator ConfigRomVectorIterator;
 
 class DeviceManager
     : public Util::OptionContainer,
@@ -79,7 +84,7 @@ public:
     bool addSpecString(char *);
     bool isSpecStringValid(std::string s);
 
-    bool discover(bool userCache=true);
+    bool discover(bool useCache=true, bool rediscover=false);
     bool initStreaming();
     bool prepareStreaming();
     bool finishStreaming();
@@ -98,6 +103,10 @@ public:
     unsigned int getAvDeviceCount();
 
     Streaming::StreamProcessor *getSyncSource();
+
+    void ignoreBusResets(bool b) {m_ignore_busreset = b;};
+    bool registerBusresetNotification(Util::Functor *);
+    bool unregisterBusresetNotification(Util::Functor *);
 
     void showDeviceInfo();
     void showStreamingInfo();
@@ -128,6 +137,12 @@ public: // FIXME: this should be better
 private:
     Streaming::StreamProcessorManager*  m_processorManager;
     DeviceStringParser*                 m_deviceStringParser;
+    bool                                m_used_cache_last_time;
+    bool                                m_ignore_busreset;
+
+    typedef std::vector< Util::Functor* > busreset_notif_vec_t;
+    busreset_notif_vec_t                m_busResetNotifiers;
+
 protected:
     std::vector<std::string>            m_SpecStrings;
 
