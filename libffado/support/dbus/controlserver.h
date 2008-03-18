@@ -107,8 +107,8 @@ class Discrete
 {
 public:
     Discrete( DBus::Connection& connection,
-                  std::string p,
-                  Control::Discrete &slave );
+              std::string p,
+              Control::Discrete &slave );
     
     DBus::Int32 setValue( const DBus::Int32 & value );
     DBus::Int32 getValue( );
@@ -131,6 +131,45 @@ public:
 
 private:
     Control::Text &m_Slave;
+};
+
+class Enum
+: public org::ffado::Control::Element::Enum
+, public Element
+{
+public:
+    Enum( DBus::Connection& connection,
+          std::string p,
+          Control::Enum &slave );
+    
+    DBus::Int32 select( const DBus::Int32 & idx );
+    DBus::Int32 selected( );
+    DBus::Int32 count( );
+    DBus::String getEnumLabel( const DBus::Int32 & idx );
+
+private:
+    Control::Enum &m_Slave;
+};
+
+class AttributeEnum
+: public org::ffado::Control::Element::AttributeEnum
+, public Element
+{
+public:
+    AttributeEnum( DBus::Connection& connection,
+                   std::string p,
+                   Control::AttributeEnum &slave );
+    
+    DBus::Int32 select( const DBus::Int32 & idx );
+    DBus::Int32 selected( );
+    DBus::Int32 count( );
+    DBus::Int32 attributeCount();
+    DBus::String getEnumLabel( const DBus::Int32 & idx );
+    DBus::String getAttributeValue( const DBus::Int32 & idx );
+    DBus::String getAttributeName( const DBus::Int32 & idx );
+
+private:
+    Control::AttributeEnum &m_Slave;
 };
 
 // FIXME: to change this to a normal ConfigRom class name we have to

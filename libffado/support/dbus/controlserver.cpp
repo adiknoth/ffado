@@ -145,6 +145,22 @@ Container::createHandler(Control::Element& e) {
         return new Text(conn(), std::string(path()+"/"+e.getName()),
             *dynamic_cast<Control::Text *>(&e));
     }
+
+    // note that we have to check this before checking the Enum,
+    // since Enum is a base class
+    if (dynamic_cast<Control::AttributeEnum *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::AttributeEnum\n");
+        
+        return new AttributeEnum(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::AttributeEnum *>(&e));
+    }
+    
+    if (dynamic_cast<Control::Enum *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Enum\n");
+        
+        return new Enum(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::Enum *>(&e));
+    }
     
     if (dynamic_cast<ConfigRom *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
@@ -250,6 +266,112 @@ Text::getValue()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %s\n", m_Slave.getValue().c_str() );
     return m_Slave.getValue();
+}
+
+
+// --- Enum
+
+Enum::Enum( DBus::Connection& connection, std::string p, Control::Enum &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Enum on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::Int32
+Enum::select( const DBus::Int32& idx )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "select(%d)\n", idx );
+    return  m_Slave.select(idx);
+}
+
+DBus::Int32
+Enum::selected()
+{
+    int retval = m_Slave.selected();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "selected() => %d\n", retval );
+    return retval;
+}
+
+DBus::Int32
+Enum::count()
+{
+    int retval = m_Slave.count();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "count() => %d\n", retval );
+    return retval;
+}
+
+DBus::String
+Enum::getEnumLabel( const DBus::Int32 & idx )
+{
+    std::string retval = m_Slave.getEnumLabel(idx);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
+    return retval;
+}
+
+// --- AttributeEnum
+AttributeEnum::AttributeEnum( DBus::Connection& connection, std::string p, Control::AttributeEnum &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Enum on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::Int32
+AttributeEnum::select( const DBus::Int32& idx )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "select(%d)\n", idx );
+    return  m_Slave.select(idx);
+}
+
+DBus::Int32
+AttributeEnum::selected()
+{
+    int retval = m_Slave.selected();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "selected() => %d\n", retval );
+    return retval;
+}
+
+DBus::Int32
+AttributeEnum::count()
+{
+    int retval = m_Slave.count();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "count() => %d\n", retval );
+    return retval;
+}
+
+DBus::Int32
+AttributeEnum::attributeCount()
+{
+    int retval = m_Slave.attributeCount();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "attributeCount() => %d\n", retval );
+    return retval;
+}
+
+DBus::String
+AttributeEnum::getEnumLabel( const DBus::Int32 & idx )
+{
+    std::string retval = m_Slave.getEnumLabel(idx);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
+    return retval;
+}
+
+DBus::String
+AttributeEnum::getAttributeValue( const DBus::Int32 & idx )
+{
+    std::string retval = m_Slave.getAttributeValue(idx);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getAttributeValue(%d) => %s\n", idx, retval.c_str() );
+    return retval;
+}
+
+DBus::String
+AttributeEnum::getAttributeName( const DBus::Int32 & idx )
+{
+    std::string retval = m_Slave.getAttributeName(idx);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getAttributeName(%d) => %s\n", idx, retval.c_str() );
+    return retval;
 }
 
 // --- ConfigRom

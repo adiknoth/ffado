@@ -138,6 +138,22 @@ void start_server() {
     Control::Continuous c5("test5");
     c5.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
     cont1.addElement(&c5);
+    
+    Control::Discrete d1("test_discr1");
+    d1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    cont1.addElement(&d1);
+    
+    Control::Enum e1("test_enum");
+    e1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    cont1.addElement(&e1);
+
+    Control::AttributeEnum a1("test_attrenum");
+    a1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    cont1.addElement(&a1);
+    
+    Control::Text t1("test_text");
+    t1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+    cont1.addElement(&t1);
 
     // Note: create handlers AFTER all children are added
 

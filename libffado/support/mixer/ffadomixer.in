@@ -167,7 +167,28 @@ class ConfigRomInterface:
         return self.iface.getVendorId()
     def getModelId(self):
         return self.iface.getModelId()
-   
+
+class ClockSelectInterface:
+    def __init__(self, servername, devicepath):
+        self.basepath=devicepath + '/Generic/ClockSelect'
+        self.servername=servername
+        self.bus=dbus.SessionBus()
+        self.dev = self.bus.get_object(self.servername, self.basepath)
+        self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.AttributeEnum')
+    def count(self):
+        return self.iface.count()
+    def select(self, idx):
+        return self.iface.select(idx)
+    def selected(self):
+        return self.iface.selected()
+    def getEnumLabel(self, idx):
+        return self.iface.getEnumLabel(idx)
+    def attributeCount(self):
+        return self.iface.attributeCount()
+    def getAttributeValue(self, idx):
+        return self.iface.getAttributeValue(idx)
+    def getAttributeName(self, idx):
+        return self.iface.getAttributeName(idx)
 
 if __name__ == "__main__":
     
@@ -235,6 +256,7 @@ if __name__ == "__main__":
                 print mixerapp
                 exec('forms.append('+mixerapp+'())')
                 forms[idx].hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+                forms[idx].clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
                 forms[idx].initValues()
                 forms[idx].show()
                 app.setMainWidget(forms[idx])

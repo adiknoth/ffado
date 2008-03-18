@@ -141,4 +141,108 @@ Text::getValue()
     return m_Value;
 }
 
+//// ---
+
+Enum::Enum()
+: Element()
+, m_selected( -1 )
+{
+}
+
+Enum::Enum(std::string n)
+: Element(n)
+, m_selected( -1 )
+{
+}
+
+void
+Enum::show()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "Enum Element %s, selected=%d\n",
+                 getName().c_str(), m_selected);
+}
+
+// NOTE: dummy implementation for tests
+bool
+Enum::select(int idx)
+{
+    if(idx <3) {
+        m_selected=idx;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int
+Enum::selected()
+{
+    return m_selected;
+}
+
+int
+Enum::count()
+{
+    return 3;
+}
+
+std::string
+Enum::getEnumLabel(int idx)
+{
+    switch(idx) {
+        case 0: return "enum val 1";
+        case 1: return "enum val 2";
+        case 2: return "enum val 3";
+        default: return "bad index";
+    }
+}
+
+
+//// ---
+
+AttributeEnum::AttributeEnum()
+: Enum()
+{
+}
+
+AttributeEnum::AttributeEnum(std::string n)
+: Enum(n)
+{
+}
+
+void
+AttributeEnum::show()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "AttributeEnum Element %s\n",
+                 getName().c_str());
+    Enum::show();
+}
+
+// NOTE: dummy implementation for tests
+int
+AttributeEnum::attributeCount()
+{
+    return 2;
+}
+
+std::string
+AttributeEnum::getAttributeValue(int attridx)
+{
+    switch(attridx) {
+        case 0: return "attr val 1";
+        case 1: return "attr val 2";
+        default: return "bad attr index";
+    }
+}
+
+std::string
+AttributeEnum::getAttributeName(int attridx)
+{
+    switch(attridx) {
+        case 0: return "attr 1";
+        case 1: return "attr 2";
+        default: return "bad attr index";
+    }
+}
+
 } // namespace Control

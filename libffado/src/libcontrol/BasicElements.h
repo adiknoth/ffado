@@ -93,6 +93,63 @@ private:
     std::string m_Value;
 };
 
+/*!
+@brief Base class for basic enumerated control elements
+*/
+class Enum
+: public Element
+{
+public:
+    Enum();
+    Enum(std::string n);
+    virtual ~Enum() {};
+
+    virtual bool select(int idx);
+    virtual int selected();
+    virtual int count();
+    virtual std::string getEnumLabel(int idx);
+
+    virtual void show();
+//private: // HACK
+    int m_selected;
+};
+
+/*!
+@brief Base class for attribute enumerated control elements
+
+The idea of this is that one can have a set of config values
+available for a certain enum choice.
+
+Example: for clock source selection:
+idx Label     signal  locked  available
+  0 WordClock   0       0        1
+  1 S/PDIF      1       0        1
+  ...
+
+Attributes:
+ 0 signal
+ 1 locked
+ 2 available
+
+*/
+class AttributeEnum
+: public Enum
+{
+public:
+    AttributeEnum();
+    AttributeEnum(std::string n);
+    virtual ~AttributeEnum() {};
+
+    virtual int attributeCount();
+    ///> get a specific attribute value for the selected enum 
+    virtual std::string getAttributeValue(int attridx);
+    ///> get the name of the attribute with a certain index
+    virtual std::string getAttributeName(int attridx);
+
+    virtual void show();
+private:
+};
+
 }; // namespace Control
 
 #endif // CONTROL_BASICELEMENTS_H

@@ -74,6 +74,51 @@
       </method>
   </interface>
 
+  <interface name="org.ffado.Control.Element.Enum">
+      <method name="select">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="i" name="success" direction="out"/>
+      </method>
+      <method name="selected">
+          <arg type="i" name="idx" direction="out"/>
+      </method>
+      <method name="count">
+          <arg type="i" name="count" direction="out"/>
+      </method>
+      <method name="getEnumLabel">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="s" name="label" direction="out"/>
+      </method>
+  </interface>
+
+  <interface name="org.ffado.Control.Element.AttributeEnum">
+      <method name="select">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="i" name="success" direction="out"/>
+      </method>
+      <method name="selected">
+          <arg type="i" name="idx" direction="out"/>
+      </method>
+      <method name="count">
+          <arg type="i" name="count" direction="out"/>
+      </method>
+      <method name="attributeCount">
+          <arg type="i" name="count" direction="out"/>
+      </method>
+      <method name="getEnumLabel">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="s" name="label" direction="out"/>
+      </method>
+      <method name="getAttributeValue">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="s" name="value" direction="out"/>
+      </method>
+      <method name="getAttributeName">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="s" name="name" direction="out"/>
+      </method>
+  </interface>
+
   <interface name="org.ffado.Control.Element.MatrixMixer">
       <method name="setValue">
           <arg type="i" name="row" direction="in"/>
