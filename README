@@ -28,8 +28,8 @@ Features
 * supports for all samplerates a device supports
 * MIDI input/output (unlimited number of channels)
 * Support for S/PDIF and ADAT/SMUX I/O
-* Internal mixer and device control support for all officially supported devices
-  (NOTE: no support for internal DSP)
+* Internal mixer and device control support for all officially supported 
+  devices (NOTE: no support for internal DSP)
 * Support for device aggregation (limited to devices on the same bus)
 
 Device Support
@@ -44,25 +44,27 @@ The devices officially supported are:
 * ECHO AudioFire2
 * Mackie Onyx Mixer FireWire expansion
 
-The 'officially supported' label is only given to devices that fullfil the following:
+The 'officially supported' label is only given to devices that fullfil the
+following:
 * at least one of the developers has the device
 * the vendor provides development support (access to information)
 * the device works
 
 Through reverse-engineering the following devices will also work:
-* MotU traveller
-* MotU 828mkII
-Note: the support for these devices is based on a significant reverse engineering effort.
-This means that the developers had no support of the device vendor, and this of course
-limits the extent as to which problems can be solved. You have been warned. Please do not
-buy devices for which support is based upon reverse engineering, nor from vendors that are
-Linux-hostile (e.g. MotU). Value the support that some vendors provide and buy their stuff.
-Check ffado.org for details. It can't be said enough: currently it is a stupid move to buy
-a MotU device if you intend to use Linux.
+* MOTU traveller
+* MOTU 828mkII
+Note: the support for these devices is based on a significant reverse
+engineering effort. This means that the developers had no support from the
+device vendor, and this of course limits the extent to which problems can
+be solved. You have been warned. Please do not buy devices for which support
+is based upon reverse engineering, nor from vendors that are Linux-hostile
+(e.g. MOTU). Value the support that some vendors provide and buy their
+stuff. Check ffado.org for details. It can't be said enough: currently it is
+extremely unwise to buy a MOTU device if you intend to use Linux.
 
 The driver is written to provide generic support for all devices it might be
-able to handle. This means that most devices based on the BridgeCo BeBoB or the
-ECHO FireWorks platform will work, at least to a certain extent.
+able to handle. This means that most devices based on the BridgeCo BeBoB or
+the ECHO FireWorks platform will work, at least to a certain extent.
 
 Devices that have been reported to (partially) work with the generic support:
 * Presonus FireBox
