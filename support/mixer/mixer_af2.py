@@ -183,6 +183,26 @@ class AudioFire2Mixer(AudioFire2MixerUI):
                     self.SelectorControls[sender][0],
                     state)
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
+    
+    def updateClockSelection(self,a0):
+        #disable the combobox
+        self.comboClockSelect.setEnabled(False)
+        #change the clock source
+        self.clockselect.select(a0)
+        #refresh the clock source selection box
+        self.initClockSelector()
+        #make the box available again
+        self.comboClockSelect.setEnabled(True)
+
+    def initClockSelector(self):
+        self.comboClockSelect.clear()
+        nbsources = self.clockselect.count()
+        for idx in range(nbsources):
+            desc = self.clockselect.getEnumLabel(idx)
+            self.comboClockSelect.insertItem(desc)
+        active_idx = self.clockselect.selected();
+        if active_idx >= 0:
+            self.comboClockSelect.setCurrentItem(active_idx)
         
     def initValues(self):
             for ctrl, info in self.MatrixVolumeControls.iteritems():
@@ -240,3 +260,7 @@ class AudioFire2Mixer(AudioFire2MixerUI):
 
                 # connect the UI element
                 QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
+            
+            self.initClockSelector()
+            # connect the clock selector UI element
+            QObject.connect(self.comboClockSelect, SIGNAL('activated(int)'), self.updateClockSelection)

@@ -42,6 +42,10 @@ namespace Streaming {
     class StreamProcessorManager;
 }
 
+namespace Control {
+    class Container;
+}
+
 /*!
 @brief Base class for device support
 
@@ -173,7 +177,8 @@ public:
     /**
      * @brief Clock source identification struct
      */
-    struct sClockSource {
+    class sClockSource {
+        public:
         sClockSource()
             : type( eCT_Invalid )
             , id( 0 )
@@ -182,7 +187,8 @@ public:
             , locked( true )
             , slipping( false )
             , description( "" )
-        {}
+        {};
+        virtual ~sClockSource() {};
         /// indicates the type of the clock source (e.g. eCT_ADAT)
         enum eClockSourceType type;
         /// indicated the id of the clock source (e.g. id=1 => clocksource is ADAT_1)
@@ -197,6 +203,10 @@ public:
         bool slipping;
         /// description of the clock struct (optional)
         std::string description;
+        
+        bool operator==(const sClockSource& x) {
+            return (type == x.type) && (id == x.id);
+        }
     };
     typedef struct sClockSource ClockSource;
 
@@ -424,6 +434,7 @@ public:
 private:
     std::auto_ptr<ConfigRom>( m_pConfigRom );
     DeviceManager& m_pDeviceManager;
+    Control::Container* m_genericContainer;
 protected:
     DECLARE_DEBUG_MODULE;
 };

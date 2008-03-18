@@ -27,6 +27,9 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
+#include "libcontrol/Element.h"
+#include "libcontrol/ClockSelect.h"
+
 #include <iostream>
 #include <sstream>
 
@@ -47,12 +50,36 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
     if (!addElement(&getConfigRom())) {
         debugWarning("failed to add ConfigRom to Control::Container\n");
     }
+
+    m_genericContainer = new Control::Container("Generic");
+    if(m_genericContainer == NULL) {
+        debugError("Could not create Control::Container for generic controls\n");
+    } else {
+
+        if (!addElement(m_genericContainer)) {
+            debugWarning("failed to add generic container to Control::Container\n");
+        }
+        // add a generic control for the clock source selection
+        if(!m_genericContainer->addElement(new Control::ClockSelect(*this))) {
+            debugWarning("failed to add clock source control to container\n");
+        }
+    }
 }
 
 FFADODevice::~FFADODevice()
 {
     if (!deleteElement(&getConfigRom())) {
         debugWarning("failed to remove ConfigRom from Control::Container\n");
+    }
+
+    // remove generic controls if present
+    if(m_genericContainer) {
+        if (!deleteElement(m_genericContainer)) {
+            debugError("Generic controls present but not registered to the avdevice\n");
+        }
+        // remove and delete (as in free) child control elements
+        m_genericContainer->clearElements(true);
+        delete m_genericContainer;
     }
 }
 

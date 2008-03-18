@@ -49,7 +49,7 @@
                 <cstring>tab</cstring>
             </property>
             <attribute name="title">
-                <string>ANALOG OUT</string>
+                <string>&amp;ANALOG OUT</string>
             </attribute>
             <widget class="QLabel">
                 <property name="name">
@@ -83,7 +83,7 @@
                     </rect>
                 </property>
                 <property name="text">
-                    <string>Mute</string>
+                    <string>&amp;Mute</string>
                 </property>
                 <property name="toggleButton">
                     <bool>true</bool>
@@ -1839,7 +1839,7 @@
                 <cstring>TabPage</cstring>
             </property>
             <attribute name="title">
-                <string>S/PDIF OUT</string>
+                <string>S/PDIF &amp;OUT</string>
             </attribute>
             <widget class="QLabel">
                 <property name="name">
@@ -2715,27 +2715,8 @@
                 <cstring>TabPage</cstring>
             </property>
             <attribute name="title">
-                <string>SETTINGS</string>
+                <string>SETTI&amp;NGS</string>
             </attribute>
-            <widget class="QLabel">
-                <property name="name">
-                    <cstring>AnOut_textLabel1_2_2_4</cstring>
-                </property>
-                <property name="geometry">
-                    <rect>
-                        <x>20</x>
-                        <y>20</y>
-                        <width>110</width>
-                        <height>21</height>
-                    </rect>
-                </property>
-                <property name="text">
-                    <string>ANALOG</string>
-                </property>
-                <property name="alignment">
-                    <set>AlignCenter</set>
-                </property>
-            </widget>
             <widget class="QLabel">
                 <property name="name">
                     <cstring>AnOut_textLabel1_2_6</cstring>
@@ -2811,6 +2792,54 @@
                 <property name="toggleButton">
                     <bool>true</bool>
                 </property>
+            </widget>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>AnOut_textLabel1_2_2_4</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>20</x>
+                        <y>20</y>
+                        <width>110</width>
+                        <height>21</height>
+                    </rect>
+                </property>
+                <property name="text">
+                    <string>ANALOG</string>
+                </property>
+                <property name="alignment">
+                    <set>AlignCenter</set>
+                </property>
+            </widget>
+            <widget class="QGroupBox">
+                <property name="name">
+                    <cstring>groupBox1</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>20</x>
+                        <y>120</y>
+                        <width>521</width>
+                        <height>60</height>
+                    </rect>
+                </property>
+                <property name="title">
+                    <string>Clock Source</string>
+                </property>
+                <widget class="QComboBox">
+                    <property name="name">
+                        <cstring>comboClockSelect</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>20</y>
+                            <width>500</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                </widget>
             </widget>
         </widget>
     </widget>
