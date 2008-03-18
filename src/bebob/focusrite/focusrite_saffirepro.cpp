@@ -245,6 +245,16 @@ SaffireProDevice::buildMixer()
             "SaveSettings", "Save settings to Flash", "Save the current mixer settings to flash memory"));
 
     result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_EnableADAT1,
+            "EnableAdat1", "Enable ADAT 1", "Enable/disable ADAT channel 1"));
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_EnableADAT2,
+            "EnableAdat2", "Enable ADAT 2", "Enable/disable ADAT channel 2"));
+    result &= m_ControlContainer->addElement(
+        new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_EnableSPDIF,
+            "EnableSPDIF1", "Enable S/PDIF 1", "Enable/disable S/PDIF channel"));
+
+    result &= m_ControlContainer->addElement(
         new SaffireProDeviceNameControl(*this,
             "DeviceName", "Flash Device Name", "Device name stored in flash memory"));
 
@@ -629,6 +639,41 @@ SaffireProDevice::getPllLockRange() {
     return retval;
 }
 
+unsigned int
+SaffireProDevice::getEnableDigitalChannel(enum eDigitalChannel c) {
+    uint32_t retval;
+    unsigned int id;
+    switch(c) {
+        case eDC_ADAT1: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT1_INPUT; break;
+        case eDC_ADAT2: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT2_INPUT; break;
+        case eDC_SPDIF: id=FR_SAFFIREPRO_CMD_ID_ENABLE_SPDIF_INPUT; break;
+    }
+    if ( !getSpecificValue(id, &retval ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "get dig channel %d: %d\n", c, retval);
+    return retval;
+}
+
+void
+SaffireProDevice::setEnableDigitalChannel(enum eDigitalChannel c, unsigned int i) {
+    uint32_t reg=i;
+    unsigned int id;
+    switch(c) {
+        case eDC_ADAT1: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT1_INPUT; break;
+        case eDC_ADAT2: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT2_INPUT; break;
+        case eDC_SPDIF: id=FR_SAFFIREPRO_CMD_ID_ENABLE_SPDIF_INPUT; break;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, "set dig channel %d: %d...\n", c, i );
+
+    if ( !setSpecificValue(id, reg ) ) {
+        debugError( "setSpecificValue failed\n" );
+    }
+}
+
 bool
 SaffireProDevice::setDeviceName(std::string n) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "set device name : %s ...\n", n.c_str() );
@@ -710,6 +755,9 @@ SaffireProMultiControl::setValue(int v)
         case eTCT_ExitStandalone: m_Parent.exitStandalone(); return true;
         case eTCT_PllLockRange: m_Parent.setPllLockRange(v); return true;
         case eTCT_SaveSettings: m_Parent.saveSettings(); return true;
+        case eTCT_EnableADAT1: m_Parent.setEnableDigitalChannel(SaffireProDevice::eDC_ADAT1, v); return true;
+        case eTCT_EnableADAT2: m_Parent.setEnableDigitalChannel(SaffireProDevice::eDC_ADAT2, v); return true;
+        case eTCT_EnableSPDIF: m_Parent.setEnableDigitalChannel(SaffireProDevice::eDC_SPDIF, v); return true;
     }
     return false;
 }
@@ -724,6 +772,9 @@ SaffireProMultiControl::getValue()
         case eTCT_ExitStandalone: return 0;
         case eTCT_PllLockRange: return m_Parent.getPllLockRange();
         case eTCT_SaveSettings: return 0;
+        case eTCT_EnableADAT1: return m_Parent.getEnableDigitalChannel(SaffireProDevice::eDC_ADAT1);
+        case eTCT_EnableADAT2: return m_Parent.getEnableDigitalChannel(SaffireProDevice::eDC_ADAT2);
+        case eTCT_EnableSPDIF: return m_Parent.getEnableDigitalChannel(SaffireProDevice::eDC_SPDIF);
     }
     return -1;
 }

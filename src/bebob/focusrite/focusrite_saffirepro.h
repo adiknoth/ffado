@@ -260,6 +260,9 @@ public:
         eTCT_ExitStandalone,
         eTCT_PllLockRange,
         eTCT_SaveSettings,
+        eTCT_EnableADAT1,
+        eTCT_EnableADAT2,
+        eTCT_EnableSPDIF,
     };
 
 public:
@@ -349,6 +352,15 @@ protected:
 
     bool setDeviceName(std::string n);
     std::string getDeviceName();
+
+    enum eDigitalChannel {
+        eDC_ADAT1,
+        eDC_ADAT2,
+        eDC_SPDIF
+    };
+
+    unsigned int getEnableDigitalChannel(enum eDigitalChannel);
+    void setEnableDigitalChannel(enum eDigitalChannel, unsigned int);
 
 private:
     virtual bool setSamplingFrequencyDo( uint32_t );
