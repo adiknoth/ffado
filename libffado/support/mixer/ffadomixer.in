@@ -215,7 +215,7 @@ if __name__ == "__main__":
         vendorId = cfgrom.getVendorId()
         modelId = cfgrom.getModelId()
         GUID = cfgrom.getGUID()
-        print " Found (%X, %X, %X) %s %s" % (GUID, vendorId, modelId, cfgrom.getVendorName(), cfgrom.getModelName())
+        print " Found (%s, %X, %X) %s %s" % (str(GUID), vendorId, modelId, cfgrom.getVendorName(), cfgrom.getModelName())
         
         thisdev=(vendorId, modelId);
         
