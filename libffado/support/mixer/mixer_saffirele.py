@@ -95,10 +95,6 @@ class SaffireLEMixer(SaffireLEMixerUI):
                     self.chkOut2Mute:      ['/Mixer/Out2Mute'],
                     self.chkOut3Mute:      ['/Mixer/Out3Mute'],
                     self.chkOut4Mute:      ['/Mixer/Out4Mute'],
-                    self.chkOut5Mute:      ['/Mixer/Out5Mute'],
-                    self.chkOut6Mute:      ['/Mixer/Out6Mute'],
-                    self.chkOut7Mute:      ['/Mixer/Out7Mute'],
-                    self.chkOut8Mute:      ['/Mixer/Out8Mute'],
                     }
 
             self.VolumeControlsLowRes={
