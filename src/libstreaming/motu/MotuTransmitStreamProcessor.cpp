@@ -588,7 +588,7 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
                     float in = *buffer;
 #if MOTU_CLIP_FLOATS
                     if (unlikely(in > 1.0)) in = 1.0;
-                    if (unlikely(in < 1.0)) in = -1.0;
+                    if (unlikely(in < -1.0)) in = -1.0;
 #endif
                     unsigned int v = lrintf(in * multiplier);
                     *target = (v >> 16) & 0xff;
