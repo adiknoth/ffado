@@ -83,6 +83,8 @@ DeviceManager::DeviceManager()
     : Control::Container("devicemanager")
     , m_processorManager( new Streaming::StreamProcessorManager() )
     , m_deviceStringParser( new DeviceStringParser() )
+    , m_used_cache_last_time( false )
+    , m_ignore_busreset( false )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
@@ -210,6 +212,11 @@ void
 DeviceManager::busresetHandler()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Bus reset...\n" );
+    if(m_ignore_busreset) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " ignoring...\n" );
+        return;
+    }
+
     // FIXME: what port was the bus reset on?
     // propagate the bus reset to all avDevices
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
@@ -218,11 +225,65 @@ DeviceManager::busresetHandler()
     {
         (*it)->handleBusReset();
     }
+
+    // rediscover to find new devices
+    // (only for the control server ATM, streaming can't dynamically add/remove devices)
+    if(!discover(m_used_cache_last_time, true)) {
+        debugError("Could not rediscover devices\n");
+    }
+
+    // notify any clients
+    for ( busreset_notif_vec_t::iterator it = m_busResetNotifiers.begin();
+          it != m_busResetNotifiers.end();
+          ++it )
+    {
+        Util::Functor* func = *it;
+        debugOutput( DEBUG_LEVEL_VERBOSE, " running notifier %p...\n", func );
+        ( *func )();
+    }
 }
 
 bool
-DeviceManager::discover( bool useCache )
+DeviceManager::registerBusresetNotification(Util::Functor *handler)
 {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "register %p...\n", handler);
+    assert(handler);
+    for ( busreset_notif_vec_t::iterator it = m_busResetNotifiers.begin();
+      it != m_busResetNotifiers.end();
+      ++it )
+    {
+        if ( *it == handler ) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "already registered\n");
+            return false;
+        }
+    }
+    m_busResetNotifiers.push_back(handler);
+    return true;
+}
+
+bool
+DeviceManager::unregisterBusresetNotification(Util::Functor *handler)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "unregister %p...\n", handler);
+    assert(handler);
+
+    for ( busreset_notif_vec_t::iterator it = m_busResetNotifiers.begin();
+      it != m_busResetNotifiers.end();
+      ++it )
+    {
+        if ( *it == handler ) {
+            m_busResetNotifiers.erase(it);
+            return true;
+        }
+    }
+    debugError("Could not find handler (%p)\n", handler);
+    return false; //not found
+}
+
+bool
+DeviceManager::discover( bool useCache, bool rediscover )
+{
+    m_used_cache_last_time = useCache;
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {
         debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
@@ -234,16 +295,100 @@ DeviceManager::discover( bool useCache )
 
     setVerboseLevel(getDebugLevel());
 
-    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
-          it != m_avDevices.end();
-          ++it )
+    ConfigRomVector configRoms;
+    // build a list of configroms on the bus.
+    for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
+        it != m_1394Services.end();
+        ++it )
     {
-        if (!deleteElement(*it)) {
-            debugWarning("failed to remove AvDevice from Control::Container\n");
+        Ieee1394Service *portService = *it;
+        for ( fb_nodeid_t nodeId = 0;
+            nodeId < portService->getNodeCount();
+            ++nodeId )
+        {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Probing node %d...\n", nodeId );
+
+            if (nodeId == portService->getLocalNodeId()) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Skipping local node (%d)...\n", nodeId );
+                continue;
+            }
+
+            ConfigRom * configRom = new ConfigRom( *portService, nodeId );
+            if ( !configRom->initialize() ) {
+                // \todo If a PHY on the bus is in power safe mode then
+                // the config rom is missing. So this might be just
+                // such this case and we can safely skip it. But it might
+                // be there is a real software problem on our side.
+                // This should be handlede more carefuly.
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                            "Could not read config rom from device (node id %d). "
+                            "Skip device discovering for this node\n",
+                            nodeId );
+                continue;
+            }
+            configRoms.push_back(configRom);
         }
+    }
+
+    if(rediscover) {
+        FFADODeviceVector discovered_devices_on_bus;
+        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+            it != m_avDevices.end();
+            ++it )
+        {
+            bool seen_device = false;
+            for ( ConfigRomVectorIterator it2 = configRoms.begin();
+                it2 != configRoms.end();
+                ++it2 )
+            {
+                seen_device |= ((*it)->getConfigRom().getGuid() == (*it2)->getGuid());
+            }
+
+            if(seen_device) {
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                            "Already discovered device with GUID: %s\n",
+                            (*it)->getConfigRom().getGuidString().c_str() );
+                // we already discovered this device, and it is still here. keep it
+                discovered_devices_on_bus.push_back(*it);
+            } else {
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                            "Device with GUID: %s disappeared from bus, removing...\n",
+                            (*it)->getConfigRom().getGuidString().c_str() );
+
+                // the device has disappeared, remove it from the control tree
+                if (!deleteElement(*it)) {
+                    debugWarning("failed to remove AvDevice from Control::Container\n");
+                }
+                // delete the device
+                // FIXME: this will mess up the any code that waits for bus resets to
+                //        occur
+                delete *it;
+            }
+        }
+        // prune the devices that disappeared
+        m_avDevices = discovered_devices_on_bus;
+    } else { // remove everything since we are not rediscovering
+        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+            it != m_avDevices.end();
+            ++it )
+        {
+            if (!deleteElement(*it)) {
+                debugWarning("failed to remove AvDevice from Control::Container\n");
+            }
+            delete *it;
+        }
+
+        m_avDevices.clear();
+    }
+
+    // delete the config rom list entries
+    // FIXME: we should reuse it
+    for ( ConfigRomVectorIterator it = configRoms.begin();
+        it != configRoms.end();
+        ++it )
+    {
         delete *it;
     }
-    m_avDevices.clear();
 
     assert(m_deviceStringParser);
     // show the spec strings we're going to use
@@ -294,8 +439,10 @@ DeviceManager::discover( bool useCache )
                     }
                 }
                 if(already_in_vector) {
-                    debugWarning("Device with GUID %s already discovered on other port, skipping device...\n",
-                                 configRom->getGuidString().c_str());
+                    if(!rediscover) {
+                        debugWarning("Device with GUID %s already discovered on other port, skipping device...\n",
+                                    configRom->getGuidString().c_str());
+                    }
                     continue;
                 }
 

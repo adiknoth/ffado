@@ -27,6 +27,7 @@
  */
 
 #include <config.h>
+#include <semaphore.h>
 
 #include "libffado/ffado.h"
 
@@ -38,6 +39,8 @@
 #include <dbus-c++/dbus.h>
 #include "controlserver.h"
 #include "libcontrol/BasicElements.h"
+
+#include "libutil/Functors.h"
 
 #include <signal.h>
 
@@ -57,13 +60,19 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 
 // DBUS stuff
 DBus::BusDispatcher dispatcher;
+DBusControl::Container *container = NULL;
+DBus::Connection * global_conn;
+DeviceManager *m_deviceManager = NULL;
 
 // signal handler
 int run=1;
+sem_t run_sem;
+
 static void sighandler (int sig)
 {
     run = 0;
     dispatcher.leave();
+    sem_post(&run_sem);
 }
 
 // global's
@@ -134,7 +143,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
                 return ARGP_ERR_UNKNOWN;
             }
         }
-        break;      
+        break;
     case 'p':
         if (arg) {
             arguments->port = strtol( arg, &tail, 0 );
@@ -192,6 +201,26 @@ int exitfunction( int retval ) {
     return retval;
 }
 
+void
+busresetHandler()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "notified of bus reset...\n" );
+    dispatcher.leave();
+
+    // delete old container
+    delete container;
+    container = NULL;
+
+    // build new one
+    if(m_deviceManager) {
+        container = new DBusControl::Container(*global_conn, "/org/ffado/Control/DeviceManager", *m_deviceManager);
+    } else {
+        debugError("no device manager, bailing out\n");
+        run=0;
+    }
+    sem_post(&run_sem);
+}
+
 int
 main( int argc, char **argv )
 {
@@ -199,7 +228,7 @@ main( int argc, char **argv )
 
     // Default values.
     arguments.silent      = 0;
-    arguments.verbose     = 0;
+    arguments.verbose     = DEBUG_LEVEL_NORMAL;
     arguments.use_cache   = 0;
     arguments.port        = 0;
     arguments.node_id     = 0;
@@ -219,7 +248,7 @@ main( int argc, char **argv )
     debugOutput( DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
     debugOutput( DEBUG_LEVEL_NORMAL, "Using ffado library version: %s\n\n", ffado_get_version() );
 
-        DeviceManager *m_deviceManager = new DeviceManager();
+        m_deviceManager = new DeviceManager();
         if ( !m_deviceManager ) {
             debugError("Could not allocate device manager\n" );
             return exitfunction(-1);
@@ -237,25 +266,43 @@ main( int argc, char **argv )
             delete m_deviceManager;
             return exitfunction(-1);
         }
-       
+
+        // add busreset handler
+        Util::Functor* tmp_busreset_functor = new Util::CallbackFunctor0< void (*)() >
+                    ( &busresetHandler, false );
+        if ( !tmp_busreset_functor ) {
+            debugFatal( "Could not create busreset handler\n" );
+            return false;
+        }
+        if(!m_deviceManager->registerBusresetNotification(tmp_busreset_functor)) {
+            debugError("could not register busreset notifier");
+        }
+
         signal (SIGINT, sighandler);
         
         DBus::_init_threading();
     
         // test DBUS stuff
         DBus::default_dispatcher = &dispatcher;
-    
         DBus::Connection conn = DBus::Connection::SessionBus();
+        global_conn = &conn;
         conn.request_name("org.ffado.Control");
-        
-        DBusControl::Container *container
-            = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", *m_deviceManager);
+
+        container = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", *m_deviceManager);
         
         printMessage("DBUS test service running\n");
-        printMessage("press ctrl-c to stop it & continue\n");
+        printMessage("press ctrl-c to stop it & exit\n");
         
-        dispatcher.enter();
-    
+        while(run) {
+            debugOutput( DEBUG_LEVEL_NORMAL, "dispatching...\n");
+            dispatcher.enter();
+            sem_wait(&run_sem);
+        }
+        
+        if(!m_deviceManager->unregisterBusresetNotification(tmp_busreset_functor)) {
+            debugError("could not unregister busreset notifier");
+        }
+        delete tmp_busreset_functor;
         delete container;
 
         signal (SIGINT, SIG_DFL);

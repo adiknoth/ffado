@@ -24,6 +24,7 @@
 #include "focusrite_saffirepro.h"
 #include "focusrite_cmd.h"
 
+#include "devicemanager.h"
 #include "libutil/Time.h"
 
 #include <netinet/in.h>
@@ -402,6 +403,9 @@ SaffireProDevice::setSamplingFrequency( int s )
         const int max_tries = 2;
         int ntries = max_tries+1;
         
+        // FIXME: not very clean
+        getDeviceManager().ignoreBusResets(true);
+        
         unsigned int gen_before = get1394Service().getGeneration();
         
         while(--ntries) {
@@ -488,6 +492,9 @@ SaffireProDevice::setSamplingFrequency( int s )
             }
             debugOutput( DEBUG_LEVEL_VERBOSE, "setSampleRate (try %d) failed. Try again...\n" );
         }
+
+        // FIXME: not very clean
+        getDeviceManager().ignoreBusResets(false);
 
         if (ntries==0) {
             debugError("Setting samplerate failed...\n");
