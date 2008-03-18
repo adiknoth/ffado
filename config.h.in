@@ -154,4 +154,7 @@
 // packets early if we want to.
 #define MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY                  6
 
+// ensure that the MOTU tx SP clips all float values to [-1.0..1.0]
+#define MOTU_CLIP_FLOATS                                   1
+
 #endif // CONFIG_H

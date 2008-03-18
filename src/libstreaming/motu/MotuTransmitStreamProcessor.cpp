@@ -47,6 +47,10 @@
 #include <math.h>
 #endif
 
+/* Provide more intuitive access to GCC's branch predition built-ins */
+#define likely(x)   __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
+
 namespace Streaming
 {
 
@@ -581,7 +585,12 @@ int MotuTransmitStreamProcessor::encodePortToMotuEvents(MotuAudioPort *p, quadle
                 buffer+=offset;
 
                 for(j = 0; j < nevents; j += 1) { // decode max nsamples
-                    unsigned int v = lrintf(*buffer * multiplier);
+                    float in = *buffer;
+#if MOTU_CLIP_FLOATS
+                    if (unlikely(in > 1.0)) in = 1.0;
+                    if (unlikely(in < 1.0)) in = -1.0;
+#endif
+                    unsigned int v = lrintf(in * multiplier);
                     *target = (v >> 16) & 0xff;
                     *(target+1) = (v >> 8) & 0xff;
                     *(target+2) = v & 0xff;
