@@ -26,7 +26,7 @@
             <x>0</x>
             <y>0</y>
             <width>403</width>
-            <height>257</height>
+            <height>333</height>
         </rect>
     </property>
     <property name="caption">
@@ -474,6 +474,35 @@
             </rect>
         </property>
     </widget>
+    <widget class="QGroupBox">
+        <property name="name">
+            <cstring>groupBox1_3</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>250</y>
+                <width>380</width>
+                <height>70</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string>Clock Source</string>
+        </property>
+        <widget class="QComboBox">
+            <property name="name">
+                <cstring>comboClockSelect</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>30</y>
+                    <width>360</width>
+                    <height>31</height>
+                </rect>
+            </property>
+        </widget>
+    </widget>
 </widget>
 <connections>
     <connection>
@@ -525,9 +554,6 @@
         <slot>setComboMixSource(int)</slot>
     </connection>
 </connections>
-<includes>
-    <include location="local" impldecl="in implementation">mixer_bcoaudio5.ui.h</include>
-</includes>
 <slots>
     <slot>setVolumeIn12( int )</slot>
     <slot>setVolumeIn34( int )</slot>

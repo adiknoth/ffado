@@ -248,7 +248,7 @@ if __name__ == "__main__":
                 # Saffire:        0x130e010001????
                 # SaffireLE:    0x130e010004????
                 if thisdev == (0x00130e, 0x00000000):
-                    if GUID < 0x130e0100040000:
+                    if int(GUID, 16) < 0x130e0100040000:
                         mixerapp = "SaffireMixer"
                     else:
                         mixerapp = "SaffireLEMixer"

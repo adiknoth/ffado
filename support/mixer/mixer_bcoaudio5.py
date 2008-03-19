@@ -63,6 +63,26 @@ class BCoAudio5Control(BCoAudio5ControlUI):
             print "setting %s state to %d" % (name, state)
             self.hw.setDiscrete(self.SelectorControls[name][0], state)
 
+    def updateClockSelection(self,a0):
+        #disable the combobox
+        self.comboClockSelect.setEnabled(False)
+        #change the clock source
+        self.clockselect.select(a0)
+        #refresh the clock source selection box
+        self.initClockSelector()
+        #make the box available again
+        self.comboClockSelect.setEnabled(True)
+
+    def initClockSelector(self):
+        self.comboClockSelect.clear()
+        nbsources = self.clockselect.count()
+        for idx in range(nbsources):
+            desc = self.clockselect.getEnumLabel(idx)
+            self.comboClockSelect.insertItem(desc)
+        active_idx = self.clockselect.selected();
+        if active_idx >= 0:
+            self.comboClockSelect.setCurrentItem(active_idx)
+
     def init(self):
             print "Init BridgeCo Audio 5 window"
 
@@ -89,4 +109,8 @@ class BCoAudio5Control(BCoAudio5ControlUI):
             for name, ctrl in self.SelectorControls.iteritems():
                 state = self.hw.getDiscrete(ctrl[0])
                 print "%s state is %d" % (name , state)
-                ctrl[1].setCurrentItem(state)    
+                ctrl[1].setCurrentItem(state)
+
+            self.initClockSelector()
+            # connect the clock selector UI element
+            QObject.connect(self.comboClockSelect, SIGNAL('activated(int)'), self.updateClockSelection)
