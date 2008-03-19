@@ -140,35 +140,59 @@ class SaffireMixer(SaffireMixerUI):
                     self.SelectorControls[sender][0],
                     state)
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
-        
+
+    def updateClockSelection(self,a0):
+        #disable the combobox
+        self.comboClockSelect.setEnabled(False)
+        #change the clock source
+        self.clockselect.select(a0)
+        #refresh the clock source selection box
+        self.initClockSelector()
+        #make the box available again
+        self.comboClockSelect.setEnabled(True)
+
+    def initClockSelector(self):
+        self.comboClockSelect.clear()
+        nbsources = self.clockselect.count()
+        for idx in range(nbsources):
+            desc = self.clockselect.getEnumLabel(idx)
+            self.comboClockSelect.insertItem(desc)
+        active_idx = self.clockselect.selected();
+        if active_idx >= 0:
+            self.comboClockSelect.setCurrentItem(active_idx)
+
     def initValues(self):
-            for ctrl, info in self.VolumeControls.iteritems():
-                vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
-                                                  self.VolumeControls[ctrl][1],
-                                                  self.VolumeControls[ctrl][2])
+        for ctrl, info in self.VolumeControls.iteritems():
+            vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
+                                              self.VolumeControls[ctrl][1],
+                                              self.VolumeControls[ctrl][2])
 
-                print "%s volume is %d" % (ctrl.name() , 0x7FFF-vol)
-                ctrl.setValue(0x7FFF-vol)
+            print "%s volume is %d" % (ctrl.name() , 0x7FFF-vol)
+            ctrl.setValue(0x7FFF-vol)
 
-                # connect the UI element
-                QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateMatrixVolume)
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateMatrixVolume)
 
-            for ctrl, info in self.VolumeControlsLowRes.iteritems():
-                vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
+        for ctrl, info in self.VolumeControlsLowRes.iteritems():
+            vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
 
-                print "%s volume is %d" % (ctrl.name() , vol)
-                ctrl.setValue(vol)
+            print "%s volume is %d" % (ctrl.name() , vol)
+            ctrl.setValue(vol)
 
-                # connect the UI element
-                QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateLowResVolume)
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateLowResVolume)
 
-            for ctrl, info in self.SelectorControls.iteritems():
-                state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
-                print "%s state is %d" % (ctrl.name() , state)
-                if state:
-                    ctrl.setChecked(True)
-                else:
-                    ctrl.setChecked(False)
+        for ctrl, info in self.SelectorControls.iteritems():
+            state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
+            print "%s state is %d" % (ctrl.name() , state)
+            if state:
+                ctrl.setChecked(True)
+            else:
+                ctrl.setChecked(False)
 
-                # connect the UI element
-                QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
+            # connect the UI element
+            QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
+
+        self.initClockSelector()
+        # connect the clock selector UI element
+        QObject.connect(self.comboClockSelect, SIGNAL('activated(int)'), self.updateClockSelection)

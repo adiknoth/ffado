@@ -3072,6 +3072,43 @@
                 </widget>
             </widget>
         </widget>
+        <widget class="QWidget">
+            <property name="name">
+                <cstring>TabPage</cstring>
+            </property>
+            <attribute name="title">
+                <string>Control</string>
+            </attribute>
+            <widget class="QGroupBox">
+                <property name="name">
+                    <cstring>groupBox1_3</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>10</y>
+                        <width>380</width>
+                        <height>70</height>
+                    </rect>
+                </property>
+                <property name="title">
+                    <string>Clock Source</string>
+                </property>
+                <widget class="QComboBox">
+                    <property name="name">
+                        <cstring>comboClockSelect</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>30</y>
+                            <width>360</width>
+                            <height>31</height>
+                        </rect>
+                    </property>
+                </widget>
+            </widget>
+        </widget>
     </widget>
 </widget>
 <slots>
