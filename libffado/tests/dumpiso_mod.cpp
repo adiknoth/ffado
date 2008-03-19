@@ -52,9 +52,8 @@ void usage_exit(int exitcode)
 
 void parse_args(int argc, char **argv)
 {
-        int i;
         char *tail;
-        unsigned long chan1, chan2;
+        unsigned long i, chan1, chan2;
 
         int c;
         int index;
@@ -244,7 +243,7 @@ int main(int argc, char **argv)
         parse_args(argc, argv);
 
         fprintf(stderr, "port: %ld\nchannels: %#016llx\nfile: %s\n", which_port,
-                listen_channels, filename);
+                (long long unsigned int)(listen_channels), filename);
 
         handle = raw1394_new_handle();
         if (!handle) {
@@ -257,7 +256,7 @@ int main(int argc, char **argv)
         }
 
         do {
-                if (raw1394_get_port_info(handle, NULL, 0) <= which_port) {
+                if ((unsigned long)(raw1394_get_port_info(handle, NULL, 0)) <= which_port) {
                         fprintf(stderr, "Port %ld does not exist.\n",
                                 which_port);
                         exit(1);

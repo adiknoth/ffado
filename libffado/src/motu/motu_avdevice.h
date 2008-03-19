@@ -105,12 +105,12 @@ struct VendorModelEntry {
     unsigned int unit_version;
     unsigned int unit_specifier_id;
     enum EMotuModel model;
-    char *vendor_name;
-    char *model_name;
+    const char *vendor_name;
+    const char *model_name;
 };
 
 struct PortEntry {
-    char *port_name;
+    const char *port_name;
     unsigned int port_dir;
     unsigned int port_flags;
     unsigned int port_offset;

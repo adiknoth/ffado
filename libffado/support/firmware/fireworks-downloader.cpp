@@ -48,7 +48,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 ////////////////////////////////////////////////
 const char *argp_program_version = "fireworks-downloader 0.2";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-char* doc = "fireworks-downloader -- firmware downloader application for ECHO Fireworks devices\n\n"
+const char *doc = "fireworks-downloader -- firmware downloader application for ECHO Fireworks devices\n\n"
                     "OPERATION: display\n"
                     "           firmware FILE\n";
 

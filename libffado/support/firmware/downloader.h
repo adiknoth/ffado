@@ -28,7 +28,7 @@
 
 /* ------------------------------------- */
 /* has to be provided by the application */
-extern char *doc;
+extern const char *doc;
 extern struct argp_option* options;
 
 /* ------------------------------------- */

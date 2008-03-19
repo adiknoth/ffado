@@ -142,12 +142,12 @@ static inline int64_t wrapAtMinMaxTicks(int64_t x) {
 
     if (x < 0) {
         x += TICKS_PER_SECOND * 128L;
-    } else if (x >= TICKS_PER_SECOND * 128L) {
+    } else if (x >= (int64_t)(TICKS_PER_SECOND * 128L)) {
         x -= TICKS_PER_SECOND * 128L;
     }
 
 #ifdef DEBUG
-        if (x >= TICKS_PER_SECOND * 128L) {
+        if (x >= (int64_t)(TICKS_PER_SECOND * 128L)) {
             debugWarning("insufficient wrapping (max): %llu\n",x);
         }
         if (x < 0) {

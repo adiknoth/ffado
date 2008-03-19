@@ -73,7 +73,7 @@ struct arguments
     long int use_cache;
     long int node_id;
     long int node_id_set;
-    char* args[2];
+    const char* args[2];
 };
 
 // The options we understand.
