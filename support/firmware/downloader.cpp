@@ -39,7 +39,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 static char args_doc[] = "GUID OPERATION";
 static struct argp _argp = { options, parse_opt, args_doc, doc }; 
 struct argp* argp = &_argp;
-static struct arguments _args = { 0, };
+static struct arguments _args = { {0}, };
 struct arguments* args = &_args;
 
 error_t

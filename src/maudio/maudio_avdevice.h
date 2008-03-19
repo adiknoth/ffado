@@ -46,9 +46,9 @@ namespace MAudio {
 struct VendorModelEntry {
     unsigned int vendor_id;
     unsigned int model_id;
-    char *vendor_name;
-    char *model_name;
-    char *filename;
+    const char *vendor_name;
+    const char *model_name;
+    const char *filename;
 };
 
 class AvDevice : public BeBoB::AvDevice {

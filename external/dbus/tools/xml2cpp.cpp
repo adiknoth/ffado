@@ -83,7 +83,7 @@ int char_to_atomic_type( char t )
 
 const char* atomic_type_to_string( char t )
 {
-	static struct { char type; char* name; } atos[] =
+	static struct { const char type; const char *name; } atos[] =
 	{
 		{ 'y', "::DBus::Byte" },
 		{ 'b', "::DBus::Bool" },

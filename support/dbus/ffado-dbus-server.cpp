@@ -94,7 +94,7 @@ struct arguments
     int   port;
     int   node_id;
     int   node_id_set;
-    char* args[2];
+    const char* args[2];
 };
 
 // The options we understand.

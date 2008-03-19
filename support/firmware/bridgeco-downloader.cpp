@@ -38,7 +38,7 @@ using namespace std;
 ////////////////////////////////////////////////
 const char *argp_program_version = "bridgeco-downloader 0.2";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-char* doc = "bridgeco-downloader -- firmware downloader application for BridgeCo devices\n\n"
+const char *doc = "bridgeco-downloader -- firmware downloader application for BridgeCo devices\n\n"
                     "OPERATION: display\n"
                     "           setguid GUID\n"
                     "           firmware FILE\n"

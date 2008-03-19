@@ -117,7 +117,7 @@ parseSampleRate( int sampleRate )
 
 std::ostream& operator<<( std::ostream& stream, ESamplingFrequency samplingFrequency )
 {
-    char* str;
+    std::string str;
     switch ( samplingFrequency ) {
     case eSF_22050Hz:
         str = "22050";
