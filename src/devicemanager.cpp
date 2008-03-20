@@ -158,7 +158,7 @@ DeviceManager::initialize()
         return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, "Found %d firewire adapters (ports)\n", nb_detected_ports);
-    for (unsigned int port = 0; port < nb_detected_ports; port++) {
+    for (unsigned int port = 0; port < (unsigned int)nb_detected_ports; port++) {
         Ieee1394Service* tmp1394Service = new Ieee1394Service();
         if ( !tmp1394Service ) {
             debugFatal( "Could not create Ieee1349Service object for port %d\n", port );
