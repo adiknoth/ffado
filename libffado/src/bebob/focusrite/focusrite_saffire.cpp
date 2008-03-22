@@ -29,6 +29,7 @@ namespace Focusrite {
 
 SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : FocusriteDevice( d, configRom)
+    , m_MixerContainer( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -204,6 +205,14 @@ SaffireDevice::buildMixer()
     if (!addElement(m_MixerContainer)) {
         debugWarning("Could not register mixer to device\n");
         // clean up
+        destroyMixer();
+        return false;
+    }
+
+    // add a direct register access element
+    if (!addElement(new RegisterControl(*this, "Register", "Register Access", "Direct register access"))) {
+        debugWarning("Could not create register control element.");
+        // clean up those that couldn't be created
         destroyMixer();
         return false;
     }

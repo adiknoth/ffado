@@ -94,6 +94,22 @@ private:
 };
 
 /*!
+@brief Base class for register access control elements
+*/
+class Register
+: public Element
+{
+public:
+    Register() : Element() {};
+    Register(std::string n) : Element(n) {};
+    virtual ~Register() {};
+
+    virtual bool setValue(uint64_t addr, uint64_t value) = 0;
+    virtual uint64_t getValue(uint64_t addr) = 0;
+private:
+};
+
+/*!
 @brief Base class for basic enumerated control elements
 */
 class Enum
