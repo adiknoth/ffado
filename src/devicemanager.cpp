@@ -226,6 +226,13 @@ DeviceManager::busresetHandler()
         (*it)->handleBusReset();
     }
 
+    // notify the streamprocessormanager of the busreset
+    if(m_processorManager) {
+        m_processorManager->handleBusReset();
+    } else {
+        debugWarning("No valid SPM\n");
+    }
+
     // rediscover to find new devices
     // (only for the control server ATM, streaming can't dynamically add/remove devices)
     if(!discover(m_used_cache_last_time, true)) {
@@ -731,13 +738,18 @@ DeviceManager::waitForPeriod() {
     if(m_processorManager->waitForPeriod()) {
         return eWR_OK;
     } else {
-        debugWarning("XRUN detected\n");
-        // do xrun recovery
-        if(m_processorManager->handleXrun()) {
-            return eWR_Xrun;
+        if(m_processorManager->shutdownNeeded()) {
+            debugWarning("Shutdown requested\n");
+            return eWR_Shutdown;
         } else {
-            debugError("Could not handle XRUN\n");
-            return eWR_Error;
+            debugWarning("XRUN detected\n");
+            // do xrun recovery
+            if(m_processorManager->handleXrun()) {
+                return eWR_Xrun;
+            } else {
+                debugError("Could not handle XRUN\n");
+                return eWR_Error;
+            }
         }
     }
 }

@@ -72,7 +72,6 @@ protected:
     enum eProcessorState {
         ePS_Invalid,
         ePS_Created,
-        // ePS_WaitingToStop, FIXME: this will be needed for the MOTU's
         ePS_Stopped,
         ePS_WaitingForStream,
         ePS_DryRunning,
@@ -130,6 +129,8 @@ public: //--- state stuff
     // the SP is registered to a manager (FIXME: can't it be called by the manager?)
     bool init();
     bool prepare();
+
+    void handleBusReset();
 
 public: // constructor/destructor
     StreamProcessor(FFADODevice &parent, enum eProcessorType type);
@@ -293,6 +294,7 @@ private:
 public:
     // move to private?
     bool xrunOccurred() { return m_in_xrun; };
+    void handlerDied();
 
 // the ISO interface (can we get rid of this?)
 public:

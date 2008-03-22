@@ -97,6 +97,7 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 bool
 AvDevice::discover()
 {
+    m_DeviceMutex.Lock();
     // check if we already have a valid VendorModel entry
     // e.g. because a subclass called this function
     if (!GenericAVC::VendorModel::isValid(m_model)) {
@@ -109,6 +110,7 @@ AvDevice::discover()
         }
 
         if (!GenericAVC::VendorModel::isValid(m_model)) {
+            m_DeviceMutex.Unlock();
             return false;
         }
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
@@ -117,17 +119,21 @@ AvDevice::discover()
 
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
+        m_DeviceMutex.Unlock();
         return false;
     }
 
     if((getAudioSubunit( 0 ) == NULL)) {
         debugError( "Unit doesn't have an Audio subunit.\n");
+        m_DeviceMutex.Unlock();
         return false;
     }
     if((getMusicSubunit( 0 ) == NULL)) {
         debugError( "Unit doesn't have a Music subunit.\n");
+        m_DeviceMutex.Unlock();
         return false;
     }
+    m_DeviceMutex.Unlock();
 
     return true;
 }
@@ -135,11 +141,13 @@ AvDevice::discover()
 void
 AvDevice::setVerboseLevel(int l)
 {
+    m_DeviceMutex.Lock();
     setDebugLevel(l);
     m_pPlugManager->setVerboseLevel(l);
     FFADODevice::setVerboseLevel(l);
     AVC::Unit::setVerboseLevel(l);
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+    m_DeviceMutex.Unlock();
 }
 
 int
@@ -167,6 +175,7 @@ AvDevice::getSamplingFrequency( ) {
 bool
 AvDevice::setSamplingFrequency( int s )
 {
+    m_DeviceMutex.Lock();
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -177,40 +186,48 @@ AvDevice::setSamplingFrequency( int s )
         if (current_sr != s ) {
             debugError("In snoop mode it is impossible to set the sample rate.\n");
             debugError("Please start the client with the correct setting.\n");
+            m_DeviceMutex.Unlock();
             return false;
         }
+        m_DeviceMutex.Unlock();
         return true;
     } else {
         AVC::Plug* plug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
+            m_DeviceMutex.Unlock();
             return false;
         }
 
         if ( !plug->setSampleRate( s ) )
         {
             debugError( "setSampleRate: Setting sample rate failed\n" );
+            m_DeviceMutex.Unlock();
             return false;
         }
 
         plug = getPlugById( m_pcrPlugs, Plug::eAPD_Output,  0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
+            m_DeviceMutex.Unlock();
             return false;
         }
 
         if ( !plug->setSampleRate( s ) )
         {
             debugError( "setSampleRate: Setting sample rate failed\n" );
+            m_DeviceMutex.Unlock();
             return false;
         }
 
         debugOutput( DEBUG_LEVEL_VERBOSE,
                      "setSampleRate: Set sample rate to %d\n",
                      s );
+        m_DeviceMutex.Unlock();
         return true;
     }
     // not executable
+    m_DeviceMutex.Unlock();
     return false;
 
 }
@@ -218,6 +235,8 @@ AvDevice::setSamplingFrequency( int s )
 FFADODevice::ClockSourceVector
 AvDevice::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
+
+    m_DeviceMutex.Lock();
 
     PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
         eST_Music,
@@ -255,6 +274,7 @@ AvDevice::getSupportedClockSources() {
         }
     }
 
+    m_DeviceMutex.Unlock();
     return r;
 }
 
@@ -266,6 +286,7 @@ AvDevice::setActiveClockSource(ClockSource s) {
         return false;
     }
 
+    m_DeviceMutex.Lock();
     for ( SyncInfoVector::const_iterator it
               = getSyncInfos().begin();
           it != getSyncInfos().end();
@@ -274,9 +295,11 @@ AvDevice::setActiveClockSource(ClockSource s) {
         const SyncInfo si=*it;
 
         if (si.m_source==src) {
+            m_DeviceMutex.Unlock();
             return setActiveSync(si);
         }
     }
+    m_DeviceMutex.Unlock();
 
     return false;
 }
@@ -367,6 +390,7 @@ AvDevice::syncInfoToClockSource(const SyncInfo& si) {
 bool
 AvDevice::lock() {
     bool snoopMode=false;
+    m_DeviceMutex.Lock();
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
@@ -376,6 +400,7 @@ AvDevice::lock() {
     } else {
 //         return Unit::reserve(4);
     }
+    m_DeviceMutex.Unlock();
 
     return true;
 }
@@ -383,6 +408,7 @@ AvDevice::lock() {
 bool
 AvDevice::unlock() {
     bool snoopMode=false;
+    m_DeviceMutex.Lock();
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
@@ -392,6 +418,7 @@ AvDevice::unlock() {
     } else {
 //         return Unit::reserve(0);
     }
+    m_DeviceMutex.Unlock();
     return true;
 }
 
@@ -407,6 +434,7 @@ AvDevice::showDevice()
 bool
 AvDevice::prepare() {
     bool snoopMode=false;
+    m_DeviceMutex.Lock();
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
@@ -417,11 +445,13 @@ AvDevice::prepare() {
     AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
+        m_DeviceMutex.Unlock();
         return false;
     }
     AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Output, 0 );
     if ( !outputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
+        m_DeviceMutex.Unlock();
         return false;
     }
 
@@ -431,6 +461,7 @@ AvDevice::prepare() {
 
     if ( outputPlug->getNrOfChannels() == 0 ) {
         debugError("Receive plug has no channels\n");
+        m_DeviceMutex.Unlock();
         return false;
     }
     p = new Streaming::AmdtpReceiveStreamProcessor(*this,
@@ -439,6 +470,7 @@ AvDevice::prepare() {
     if(!p->init()) {
         debugFatal("Could not initialize receive processor!\n");
         delete p;
+        m_DeviceMutex.Unlock();
         return false;
     }
 
@@ -446,6 +478,7 @@ AvDevice::prepare() {
         Streaming::Port::E_Capture)) {
         debugFatal("Could not add plug to processor!\n");
         delete p;
+        m_DeviceMutex.Unlock();
         return false;
     }
 
@@ -467,6 +500,7 @@ AvDevice::prepare() {
         debugFatal("Could not initialize transmit processor %s!\n",
             (snoopMode?" in snoop mode":""));
         delete p;
+        m_DeviceMutex.Unlock();
         return false;
     }
 
@@ -474,12 +508,14 @@ AvDevice::prepare() {
         if (!addPlugToProcessor(*inputPlug, p,
             Streaming::Port::E_Capture)) {
             debugFatal("Could not add plug to processor!\n");
+            m_DeviceMutex.Unlock();
             return false;
         }
     } else {
         if (!addPlugToProcessor(*inputPlug, p,
             Streaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
+            m_DeviceMutex.Unlock();
             return false;
         }
     }
@@ -490,6 +526,7 @@ AvDevice::prepare() {
     // a certain stream should have.
     m_transmitProcessors.push_back(p);
 
+    m_DeviceMutex.Unlock();
     return true;
 }
 
@@ -591,7 +628,11 @@ AvDevice::addPlugToProcessor(
 
 int
 AvDevice::getStreamCount() {
-    return m_receiveProcessors.size() + m_transmitProcessors.size();
+    int retval;
+    m_DeviceMutex.Lock();
+    retval = m_receiveProcessors.size() + m_transmitProcessors.size();
+    m_DeviceMutex.Unlock();
+    return retval;
     //return 1;
 }
 

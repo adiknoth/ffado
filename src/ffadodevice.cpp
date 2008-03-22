@@ -141,6 +141,7 @@ FFADODevice::getSyncState( ) {
 bool
 FFADODevice::setId( unsigned int id)
 {
+    m_DeviceMutex.Lock();
     bool retval;
     // FIXME: decent ID system nescessary
     std::ostringstream idstr;
@@ -148,6 +149,7 @@ FFADODevice::setId( unsigned int id)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
 
     retval=setOption("id",idstr.str());
+    m_DeviceMutex.Unlock();
     return retval;
 }
 
@@ -155,12 +157,14 @@ void
 FFADODevice::handleBusReset()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Handle bus reset...\n");
-    
+
     // update the config rom node id
     sleep(1);
+
+    m_DeviceMutex.Lock();
     getConfigRom().setVerboseLevel(getDebugLevel());
     getConfigRom().updatedNodeId();
-
+    m_DeviceMutex.Unlock();
 }
 
 void
@@ -168,6 +172,7 @@ FFADODevice::setVerboseLevel(int l)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
     setDebugLevel(l);
+    m_DeviceMutex.setVerboseLevel(l);
     getConfigRom().setVerboseLevel(l);
 }
 

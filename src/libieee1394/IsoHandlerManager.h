@@ -106,6 +106,7 @@ class IsoHandlerManager
 {
     friend class Streaming::StreamProcessorManager;
     friend class IsoTask;
+    friend class IsoHandler;
 
     public:
 
@@ -149,6 +150,9 @@ class IsoHandlerManager
         void flushHandlerForStream(Streaming::StreamProcessor *stream);
 
         Ieee1394Service& get1394Service() {return m_service;};
+
+    protected:
+        void requestShadowMapUpdate();
 
     // the state machine
     private:

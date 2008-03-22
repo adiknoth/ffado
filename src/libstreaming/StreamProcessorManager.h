@@ -29,6 +29,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libutil/Thread.h"
+#include "libutil/PosixMutex.h"
 #include "libutil/OptionContainer.h"
 
 #include <vector>
@@ -57,6 +58,8 @@ public:
     StreamProcessorManager();
     StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
+
+    void handleBusReset();
 
     bool prepare(); ///< to be called after the processors are registered
 
@@ -101,6 +104,7 @@ private:
 public:
     int getDelayedUsecs() {return m_delayed_usecs;};
     bool xrunOccurred();
+    bool shutdownNeeded() {return m_shutdown_needed;};
     int getXrunCount() {return m_xruns;};
 
     void setNominalRate(unsigned int r) {m_nominal_framerate = r;};
@@ -150,8 +154,11 @@ protected:
     enum eADT_AudioDataType m_audio_datatype;
     unsigned int m_nominal_framerate;
     unsigned int m_xruns;
+    bool m_shutdown_needed;
 
     unsigned int m_nbperiods;
+
+    Util::PosixMutex m_WaitLock;
 
     DECLARE_DEBUG_MODULE;
 

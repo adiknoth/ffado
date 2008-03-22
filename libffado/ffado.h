@@ -221,6 +221,7 @@ typedef enum {
  *
  */
 typedef enum {
+    ffado_wait_shutdown        = -3,
     ffado_wait_error           = -2,
     ffado_wait_xrun            = -1,
     ffado_wait_ok              =  0,

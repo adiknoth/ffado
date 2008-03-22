@@ -291,6 +291,12 @@ IsoHandlerManager::~IsoHandlerManager()
     }
 }
 
+void
+IsoHandlerManager::requestShadowMapUpdate()
+{
+    if(m_IsoTask) m_IsoTask->requestShadowMapUpdate();
+}
+
 bool
 IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);

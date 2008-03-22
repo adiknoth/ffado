@@ -99,6 +99,24 @@ StreamProcessor::~StreamProcessor() {
     if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
 
+void
+StreamProcessor::handleBusReset()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handling busreset\n", this);
+    // for now, we try and make sure everything is cleanly shutdown
+    if(!stopRunning(-1)) {
+        debugError("Failed to stop SP\n");
+    }
+    SIGNAL_ACTIVITY;
+}
+
+void StreamProcessor::handlerDied()
+{
+    debugWarning("Handler died for %p\n", this);
+    m_state = ePS_Stopped;
+    m_in_xrun = true;
+}
+
 uint64_t StreamProcessor::getTimeNow() {
     return m_1394service.getCycleTimerTicks();
 }
@@ -1207,6 +1225,10 @@ bool StreamProcessor::scheduleStopRunning(int64_t t) {
 }
 
 bool StreamProcessor::startDryRunning(int64_t t) {
+    if(getState() == ePS_DryRunning) {
+        // already in the correct state
+        return true;
+    }
     if(!scheduleStartDryRunning(t)) {
         debugError("Could not schedule transition\n");
         return false;
@@ -1219,6 +1241,10 @@ bool StreamProcessor::startDryRunning(int64_t t) {
 }
 
 bool StreamProcessor::startRunning(int64_t t) {
+    if(getState() == ePS_Running) {
+        // already in the correct state
+        return true;
+    }
     if(!scheduleStartRunning(t)) {
         debugError("Could not schedule transition\n");
         return false;
@@ -1231,6 +1257,10 @@ bool StreamProcessor::startRunning(int64_t t) {
 }
 
 bool StreamProcessor::stopDryRunning(int64_t t) {
+    if(getState() == ePS_Stopped) {
+        // already in the correct state
+        return true;
+    }
     if(!scheduleStopDryRunning(t)) {
         debugError("Could not schedule transition\n");
         return false;
@@ -1243,6 +1273,10 @@ bool StreamProcessor::stopDryRunning(int64_t t) {
 }
 
 bool StreamProcessor::stopRunning(int64_t t) {
+    if(getState() == ePS_DryRunning) {
+        // already in the correct state
+        return true;
+    }
     if(!scheduleStopRunning(t)) {
         debugError("Could not schedule transition\n");
         return false;
