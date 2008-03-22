@@ -26,6 +26,8 @@
 #define FFADODEVICE_H
 
 #include "libutil/OptionContainer.h"
+#include "libutil/PosixMutex.h"
+
 #include "libcontrol/BasicElements.h"
 
 #include "libieee1394/vendor_model_ids.h"
@@ -437,6 +439,7 @@ private:
     Control::Container* m_genericContainer;
 protected:
     DECLARE_DEBUG_MODULE;
+    Util::PosixMutex m_DeviceMutex;
 };
 
 #endif

@@ -352,6 +352,16 @@ IsoHandler::handleBusReset(unsigned int generation)
     quadlet_t buf=0;
     raw1394_read(m_handle, raw1394_get_local_id(m_handle),
                  CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
+
+    // notify the client of the fact that we have died
+    m_Client->handlerDied();
+
+    if(!disable()) {
+        debugError("(%p) Could not disable IsoHandler\n", this);
+    }
+
+    // request the manager to update it's shadow map
+    m_manager.requestShadowMapUpdate();
     return 0;
 }
 

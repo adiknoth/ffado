@@ -74,6 +74,7 @@ ffado_source = env.Split( '\
 	libutil/DelayLockedLoop.cpp \
 	libutil/PacketBuffer.cpp \
 	libutil/OptionContainer.cpp \
+	libutil/PosixMutex.cpp \
 	libutil/PosixThread.cpp \
 	libutil/ringbuffer.c \
 	libutil/serialize.cpp \

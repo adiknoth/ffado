@@ -46,6 +46,7 @@ StreamProcessorManager::StreamProcessorManager()
     , m_audio_datatype( eADT_Float )
     , m_nominal_framerate ( 0 )
     , m_xruns(0)
+    , m_shutdown_needed(false)
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
@@ -60,12 +61,44 @@ StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int
     , m_audio_datatype( eADT_Float )
     , m_nominal_framerate ( framerate )
     , m_xruns(0)
+    , m_shutdown_needed(false)
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
 }
 
 StreamProcessorManager::~StreamProcessorManager() {
+}
+
+void
+StreamProcessorManager::handleBusReset()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Handle bus reset...\n", this);
+
+    // FIXME: we request shutdown for now.
+    m_shutdown_needed=true;
+
+    // note that all receive streams are gone once a device is unplugged
+
+    // synchronize with the wait lock
+    m_WaitLock.Lock();
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) got wait lock...\n", this);
+    // cause all SP's to bail out
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+          it != m_ReceiveProcessors.end();
+          ++it )
+    {
+        (*it)->handleBusReset();
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+          it != m_TransmitProcessors.end();
+          ++it )
+    {
+        (*it)->handleBusReset();
+    }
+
+    m_WaitLock.Unlock();
 }
 
 /**
@@ -150,11 +183,12 @@ bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
 bool StreamProcessorManager::prepare() {
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing...\n");
-
     m_is_slave=false;
     if(!getOption("slaveMode", m_is_slave)) {
         debugWarning("Could not retrieve slaveMode parameter, defaulting to false\n");
     }
+
+    m_shutdown_needed=false;
 
     // if no sync source is set, select one here
     if(m_SyncSource == NULL) {
@@ -691,6 +725,10 @@ bool StreamProcessorManager::handleXrun() {
     // start all SP's synchonized
     bool start_result = false;
     for (int ntries=0; ntries < STREAMPROCESSORMANAGER_SYNCSTART_TRIES; ntries++) {
+        if(m_shutdown_needed) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Shutdown requested...\n");
+            return true;
+        }
         // put all SP's into dry-running state
         if (!startDryRunning()) {
             debugShowBackLog();
@@ -721,12 +759,16 @@ bool StreamProcessorManager::handleXrun() {
  * This function does not return until a full period of samples is (or should be)
  * ready to be transferred.
  *
- * @return true if the period is ready, false if an xrun occurred
+ * @return true if the period is ready, false if not
  */
 bool StreamProcessorManager::waitForPeriod() {
     if(m_SyncSource == NULL) return false;
+    if(m_shutdown_needed) return false;
     bool xrun_occurred = false;
     bool period_not_ready = true;
+
+    // grab the wait lock
+    m_WaitLock.Lock();
 
     while(period_not_ready) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
@@ -777,6 +819,9 @@ bool StreamProcessorManager::waitForPeriod() {
         }
         if(xrun_occurred) break;
         // FIXME: make sure we also exit this loop when something else happens (e.g. signal, iso error)
+
+        // if we have to shutdown due to some async event (busreset), do so
+        if(m_shutdown_needed) break;
     }
 
     if(xrun_occurred) {
@@ -860,6 +905,8 @@ bool StreamProcessorManager::waitForPeriod() {
 #endif
 
     m_nbperiods++;
+
+    m_WaitLock.Unlock();
     // now we can signal the client that we are (should be) ready
     return !xrun_occurred;
 }
@@ -1032,6 +1079,7 @@ void StreamProcessorManager::dumpInfo() {
 
 void StreamProcessorManager::setVerboseLevel(int l) {
     setDebugLevel(l);
+    m_WaitLock.setVerboseLevel(l);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();

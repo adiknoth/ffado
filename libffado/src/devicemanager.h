@@ -71,6 +71,7 @@ public:
         eWR_OK,
         eWR_Xrun,
         eWR_Error,
+        eWR_Shutdown,
     };
 
     DeviceManager();

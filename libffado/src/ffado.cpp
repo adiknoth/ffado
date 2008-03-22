@@ -250,8 +250,11 @@ ffado_streaming_wait(ffado_device_t *dev) {
         debugWarning("Handled XRUN\n");
         xruns++;
         return ffado_wait_xrun;
+    } else if (result == DeviceManager::eWR_Shutdown) {
+        debugWarning("Streaming system requests shutdown.\n");
+        return ffado_wait_shutdown;
     } else {
-        debugError("Unhandled XRUN (BUG)\n");
+        debugError("Error condition while waiting (Unhandled XRUN)\n");
         xruns++;
         return ffado_wait_error;
     }
