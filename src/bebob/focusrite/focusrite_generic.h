@@ -71,6 +71,21 @@ private:
     unsigned int            m_cmd_id;
 };
 
+class RegisterControl
+    : public Control::Register
+{
+public:
+    RegisterControl(FocusriteDevice& parent);
+    RegisterControl(FocusriteDevice& parent,
+                    std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(uint64_t addr, uint64_t value);
+    virtual uint64_t getValue(uint64_t addr);
+
+private:
+    FocusriteDevice&        m_Parent;
+};
+
 class VolumeControlLowRes
     : public Control::Discrete
 {

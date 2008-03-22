@@ -277,7 +277,6 @@ VolumeControl::VolumeControl(FocusriteDevice& parent, int id,
     setDescription(descr);
 }
 
-
 bool
 VolumeControl::setValue(int v)
 {
@@ -308,6 +307,48 @@ VolumeControl::getValue()
     }
 }
 
+// reg control
+RegisterControl::RegisterControl(FocusriteDevice& parent)
+: Control::Register()
+, m_Parent(parent)
+{}
+RegisterControl::RegisterControl(FocusriteDevice& parent,
+                 std::string name, std::string label, std::string descr)
+: Control::Register()
+, m_Parent(parent)
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+bool
+RegisterControl::setValue(uint64_t addr, uint64_t v)
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for addr %llu to %llu\n",
+                                     addr, v);
+
+    if ( !m_Parent.setSpecificValue(addr, v) ) {
+        debugError( "setSpecificValue failed\n" );
+        return false;
+    } else return true;
+}
+
+uint64_t
+RegisterControl::getValue(uint64_t addr)
+{
+    uint32_t val=0;
+
+    if ( !m_Parent.getSpecificValue(addr, &val) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %llu = %lu\n", 
+                                         addr, val);
+        return val;
+    }
+}
+
 // low resolution volume control
 VolumeControlLowRes::VolumeControlLowRes(FocusriteDevice& parent, int id, int shift)
 : Control::Discrete()
@@ -326,7 +367,6 @@ VolumeControlLowRes::VolumeControlLowRes(FocusriteDevice& parent, int id, int sh
     setLabel(label);
     setDescription(descr);
 }
-
 
 bool
 VolumeControlLowRes::setValue(int v)
@@ -373,7 +413,6 @@ VolumeControlLowRes::getValue()
 
 
 // Saffire pro matrix mixer element
-
 FocusriteMatrixMixer::FocusriteMatrixMixer(FocusriteDevice& p)
 : Control::MatrixMixer("MatrixMixer")
 , m_Parent(p)

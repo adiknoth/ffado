@@ -133,6 +133,22 @@ private:
     Control::Text &m_Slave;
 };
 
+class Register
+: public org::ffado::Control::Element::Register
+, public Element
+{
+public:
+    Register( DBus::Connection& connection,
+              std::string p,
+              Control::Register &slave );
+    
+    DBus::UInt64 setValue( const DBus::UInt64 & addr, const DBus::UInt64 & value );
+    DBus::UInt64 getValue( const DBus::UInt64 & addr );
+
+private:
+    Control::Register &m_Slave;
+};
+
 class Enum
 : public org::ffado::Control::Element::Enum
 , public Element

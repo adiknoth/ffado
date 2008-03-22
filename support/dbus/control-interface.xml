@@ -74,6 +74,18 @@
       </method>
   </interface>
 
+  <interface name="org.ffado.Control.Element.Register">
+      <method name="setValue">
+          <arg type="t" name="address" direction="in"/>
+          <arg type="t" name="value" direction="in"/>
+          <arg type="t" name="value" direction="out"/>
+      </method>
+      <method name="getValue">
+          <arg type="t" name="address" direction="in"/>
+          <arg type="t" name="value" direction="out"/>
+      </method>
+  </interface>
+
   <interface name="org.ffado.Control.Element.Enum">
       <method name="select">
           <arg type="i" name="idx" direction="in"/>

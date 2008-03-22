@@ -146,6 +146,13 @@ Container::createHandler(Control::Element& e) {
             *dynamic_cast<Control::Text *>(&e));
     }
 
+    if (dynamic_cast<Control::Register *>(&e) != NULL) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Register\n");
+        
+        return new Register(conn(), std::string(path()+"/"+e.getName()),
+            *dynamic_cast<Control::Register *>(&e));
+    }
+
     // note that we have to check this before checking the Enum,
     // since Enum is a base class
     if (dynamic_cast<Control::AttributeEnum *>(&e) != NULL) {
@@ -206,8 +213,9 @@ Continuous::setValue( const DBus::Double& value )
 DBus::Double
 Continuous::getValue(  )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %lf\n", m_Slave.getValue() );
-    return m_Slave.getValue();
+    double val = m_Slave.getValue();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %lf\n", val );
+    return val;
 }
 
 // --- Discrete
@@ -235,8 +243,9 @@ Discrete::setValue( const DBus::Int32& value )
 DBus::Int32
 Discrete::getValue()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %d\n", m_Slave.getValue() );
-    return m_Slave.getValue();
+    int32_t val = m_Slave.getValue();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %d\n", val );
+    return val;
 }
 
 // --- Text
@@ -264,10 +273,40 @@ Text::setValue( const DBus::String& value )
 DBus::String
 Text::getValue()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %s\n", m_Slave.getValue().c_str() );
-    return m_Slave.getValue();
+    std::string val = m_Slave.getValue();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %s\n", val.c_str() );
+    return val;
 }
 
+// --- Register
+
+Register::Register( DBus::Connection& connection, std::string p, Control::Register &slave)
+: Element(connection, p, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Register on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::UInt64
+Register::setValue( const DBus::UInt64& addr, const DBus::UInt64& value )
+{
+    m_Slave.setValue(addr, value);
+    
+/*    SleepRelativeUsec(1000*500);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%d) => %d\n", value, m_Slave.getValue() );
+    
+    return m_Slave.getValue();*/
+    return value;
+}
+
+DBus::UInt64
+Register::getValue( const DBus::UInt64& addr )
+{
+    DBus::UInt64 val = m_Slave.getValue(addr);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%lld) => %lld\n", addr, val );
+    return val;
+}
 
 // --- Enum
 
