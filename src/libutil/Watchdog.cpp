@@ -170,8 +170,8 @@ Watchdog::start()
         debugFatal("No check task\n");
         return false;
     }
-    m_CheckThread = new Util::PosixThread(m_CheckTask, m_realtime,
-                                          m_priority, PTHREAD_CANCEL_ASYNCHRONOUS);
+    m_CheckThread = new Util::PosixThread(m_CheckTask, false,
+                                          0, PTHREAD_CANCEL_ASYNCHRONOUS);
     if(!m_CheckThread) {
         debugFatal("No check thread\n");
         return false;
@@ -179,6 +179,13 @@ Watchdog::start()
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  " check task: %p, thread %p...\n",
                  m_CheckTask, m_CheckThread);
+
+    // switch to realtime if necessary
+    if(m_realtime) {
+        if(m_CheckThread->AcquireRealTime(m_priority)) {
+            debugWarning("(%p) Could not aquire realtime priotiry for watchdog thread.\n", this);
+        }
+    }
 
     // start threads
     if (m_HartbeatThread->Start() != 0) {
