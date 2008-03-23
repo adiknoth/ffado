@@ -96,6 +96,9 @@ public:
     
     DBus::Double setValue( const DBus::Double & value );
     DBus::Double getValue( );
+    DBus::Double setValueIdx( const DBus::Int32 & idx,
+                              const DBus::Double & value );
+    DBus::Double getValueIdx( const DBus::Int32 & idx );
 
 private:
     Control::Continuous &m_Slave;
@@ -112,6 +115,9 @@ public:
     
     DBus::Int32 setValue( const DBus::Int32 & value );
     DBus::Int32 getValue( );
+    DBus::Int32 setValueIdx( const DBus::Int32 & idx,
+                             const DBus::Int32 & value );
+    DBus::Int32 getValueIdx( const DBus::Int32 & idx );
 
 private:
     Control::Discrete &m_Slave;

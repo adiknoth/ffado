@@ -73,10 +73,12 @@ class MixerFBFeature
 {
 public:
     MixerFBFeature(Mixer& parent, FunctionBlockFeature&);
-    
+
     virtual bool setValue(double v);
     virtual double getValue();
-    
+    virtual bool setValue(int idx, double v);
+    virtual double getValue(int idx);
+
 private:
     Mixer&                  m_Parent;
     FunctionBlockFeature&   m_Slave;
@@ -87,10 +89,10 @@ class EnhancedMixerFBFeature
 {
 public:
     EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer&);
-    
+
     virtual bool setValue(double v);
     virtual double getValue();
-    
+
 private:
     Mixer&                      m_Parent;
     FunctionBlockEnhancedMixer& m_Slave;
@@ -101,10 +103,10 @@ class MixerFBSelector
 {
 public:
     MixerFBSelector(Mixer& parent, FunctionBlockSelector&);
-    
+
     virtual bool setValue(int v);
     virtual int getValue();
-    
+
 private:
     Mixer&                  m_Parent;
     FunctionBlockSelector&  m_Slave;

@@ -218,6 +218,27 @@ Continuous::getValue(  )
     return val;
 }
 
+DBus::Double
+Continuous::setValueIdx( const DBus::Int32 & idx, const DBus::Double& value )
+{
+    m_Slave.setValue(idx, value);
+/*    
+    SleepRelativeUsec(1000*500);
+    
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%lf) => %lf\n", value, m_Slave.getValue() );
+    
+    return m_Slave.getValue();*/
+    return value;
+}
+
+DBus::Double
+Continuous::getValueIdx( const DBus::Int32 & idx )
+{
+    double val = m_Slave.getValue(idx);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%d) => %lf\n", idx, val );
+    return val;
+}
+
 // --- Discrete
 
 Discrete::Discrete( DBus::Connection& connection, std::string p, Control::Discrete &slave)
@@ -245,6 +266,26 @@ Discrete::getValue()
 {
     int32_t val = m_Slave.getValue();
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue() => %d\n", val );
+    return val;
+}
+
+DBus::Int32
+Discrete::setValueIdx( const DBus::Int32& idx, const DBus::Int32& value )
+{
+    m_Slave.setValue(idx, value);
+    
+/*    SleepRelativeUsec(1000*500);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "setValue(%d) => %d\n", value, m_Slave.getValue() );
+    
+    return m_Slave.getValue();*/
+    return value;
+}
+
+DBus::Int32
+Discrete::getValueIdx( const DBus::Int32& idx )
+{
+    int32_t val = m_Slave.getValue(idx);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%d) => %d\n", idx, val );
     return val;
 }
 

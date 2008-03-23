@@ -475,8 +475,8 @@ int FocusriteMatrixMixer::canWrite( const int row, const int col )
 
 double FocusriteMatrixMixer::setValue( const int row, const int col, const double val )
 {
-    int32_t v=val;
-    struct sCellInfo c=m_CellInfo.at(row).at(col);
+    int32_t v = (int32_t)val;
+    struct sCellInfo c = m_CellInfo.at(row).at(col);
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%ld)\n", 
                                      c.address, row, col, val, v);
