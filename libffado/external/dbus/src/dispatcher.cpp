@@ -66,7 +66,8 @@ Watch::Watch( Watch::Internal* i )
 
 int Watch::descriptor() const
 {
-	return dbus_watch_get_unix_fd((DBusWatch*)_int);
+    return dbus_watch_get_fd((DBusWatch*)_int);
+//	return dbus_watch_get_unix_fd((DBusWatch*)_int);
 }
 
 int Watch::flags() const
