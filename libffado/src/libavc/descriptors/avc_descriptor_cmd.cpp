@@ -63,7 +63,7 @@ OpenDescriptorCmd::serialize( Util::Cmd::IOSSerialize& se )
     AVCCommand::serialize( se );
     
     if(m_specifier==NULL) {
-        debugError("m_specifier==NULL");
+        debugError("m_specifier==NULL\n");
         return false;
     }
     
@@ -92,7 +92,7 @@ OpenDescriptorCmd::deserialize( Util::Cmd::IISDeserialize& de )
     AVCCommand::deserialize( de );
     
     if(m_specifier==NULL) {
-        debugError("m_specifier==NULL");
+        debugError("m_specifier==NULL\n");
         return false;
     }
     
@@ -162,7 +162,7 @@ ReadDescriptorCmd::serialize( Util::Cmd::IOSSerialize& se )
     AVCCommand::serialize( se );
     
     if(m_specifier==NULL) {
-        debugError("m_specifier==NULL");
+        debugError("m_specifier==NULL\n");
         return false;
     }
     
@@ -189,7 +189,7 @@ ReadDescriptorCmd::deserialize( Util::Cmd::IISDeserialize& de )
     AVCCommand::deserialize( de );
 
     if(m_specifier==NULL) {
-        debugError("m_specifier==NULL");
+        debugError("m_specifier==NULL\n");
         return false;
     }
 
@@ -208,14 +208,14 @@ ReadDescriptorCmd::deserialize( Util::Cmd::IISDeserialize& de )
                 // hence we copy the data to an internal buffer
                 m_data = new byte_t[m_data_length];
                 if(m_data == NULL) {
-                    debugError("Could not allocate memory for payload data");
+                    debugError("Could not allocate memory for payload data\n");
                     return false;
                 }
                 char * cmd_data = NULL;
                 if (!de.read( (char **)&cmd_data, m_data_length )) {
                     delete[] m_data;
                     m_data = NULL;
-                    debugError("Could not read payload data");
+                    debugError("Could not read payload data\n");
                     return false;
                 }
                 memcpy(m_data, cmd_data, m_data_length);

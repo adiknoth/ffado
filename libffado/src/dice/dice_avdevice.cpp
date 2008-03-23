@@ -649,11 +649,11 @@ DiceAvDevice::prepare() {
         unsigned int nb_channels=0;
 
         if(!readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &nb_audio)) {
-            debugError("Could not read DICE_REGISTER_TX_NB_AUDIO_BASE register for ATX%u",i);
+            debugError("Could not read DICE_REGISTER_TX_NB_AUDIO_BASE register for ATX%u\n",i);
             continue;
         }
         if(!readTxReg(i, DICE_REGISTER_TX_MIDI_BASE, &nb_midi)) {
-            debugError("Could not read DICE_REGISTER_TX_MIDI_BASE register for ATX%u",i);
+            debugError("Could not read DICE_REGISTER_TX_MIDI_BASE register for ATX%u\n",i);
             continue;
         }
 
@@ -734,11 +734,11 @@ DiceAvDevice::prepare() {
         unsigned int nb_channels=0;
 
         if(!readTxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &nb_audio)) {
-            debugError("Could not read DICE_REGISTER_RX_NB_AUDIO_BASE register for ARX%u",i);
+            debugError("Could not read DICE_REGISTER_RX_NB_AUDIO_BASE register for ARX%u\n",i);
             continue;
         }
         if(!readTxReg(i, DICE_REGISTER_RX_MIDI_BASE, &nb_midi)) {
-            debugError("Could not read DICE_REGISTER_RX_MIDI_BASE register for ARX%u",i);
+            debugError("Could not read DICE_REGISTER_RX_MIDI_BASE register for ARX%u\n",i);
             continue;
         }
 

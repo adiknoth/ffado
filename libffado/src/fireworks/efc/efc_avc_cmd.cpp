@@ -48,7 +48,7 @@ bool
 EfcOverAVCCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     if (m_cmd==NULL) {
-        debugError("no child EFC command");
+        debugError("no child EFC command\n");
         return false;
     }
     bool result=true;
@@ -70,7 +70,7 @@ bool
 EfcOverAVCCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     if (m_cmd==NULL) {
-        debugError("no child EFC command");
+        debugError("no child EFC command\n");
         return false;
     }
     bool result=true;
