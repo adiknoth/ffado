@@ -449,7 +449,7 @@ BounceDevice::stopStreamByIndex(int i) {
         // write value of ISO_CHANNEL register
         reg_isoch=0xFFFFFFFFUL;
         if(!writeReg(BOUNCE_REGISTER_TX_ISOCHANNEL, reg_isoch)) {
-            debugError("Could not write ISO_CHANNEL register" );
+            debugError("Could not write ISO_CHANNEL register\n" );
             return false;
         }
 

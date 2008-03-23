@@ -154,7 +154,7 @@ Unit::clean()
     m_pPlugManager = new PlugManager();
 
     if (m_pPlugManager == NULL) {
-        debugError("Could not create new plugmanager");
+        debugError("Could not create new plugmanager\n");
         return false;
     }
 

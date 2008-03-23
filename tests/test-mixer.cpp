@@ -244,7 +244,7 @@ main( int argc, char **argv )
         value2 = strtol(argv[6], &tail, 0 );
     
     if (errno) {
-        debugError("argument parsing failed: %s", strerror(errno));
+        debugError("argument parsing failed: %s\n", strerror(errno));
         return -1;
     }
     Ieee1394Service ieee1394service;

@@ -154,11 +154,11 @@ EfcCmd::deserialize( Util::Cmd::IISDeserialize& de )
 
     // check whether the category and command of the response are valid
     if (m_header.category != m_category_id) {
-        debugError("Invalid category response: %d != %d", m_header.category, m_category_id);
+        debugError("Invalid category response: %d != %d\n", m_header.category, m_category_id);
         return false;
     }
     if (m_header.command != m_command_id) {
-        debugError("Invalid command response: %d != %d", m_header.command, m_command_id);
+        debugError("Invalid command response: %d != %d\n", m_header.command, m_command_id);
         return false;
     }
     return result;

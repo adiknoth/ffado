@@ -387,7 +387,7 @@ Device::setActiveClockSource(ClockSource s) {
 
 //     EfcPhyReconnectCmd rccmd;
 //     if(!doEfcOverAVC(rccmd)) {
-//         debugError("Phy reconnect failed");
+//         debugError("Phy reconnect failed\n");
 //     } else {
 //         // sleep for one second such that the phy can get reconnected
 //         sleep(1);

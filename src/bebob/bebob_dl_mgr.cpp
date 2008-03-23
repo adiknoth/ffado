@@ -432,7 +432,7 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
         ccBlock.setNumberBytes( blockSize );
 
         if ( !writeRequest( ccBlock ) ) {
-            debugError( "downloadObject: (block) write request failed" );
+            debugError( "downloadObject: (block) write request failed\n" );
             result = false;
             break;
         }

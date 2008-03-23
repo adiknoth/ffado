@@ -64,12 +64,12 @@ void* PosixThread::ThreadHandler(void* arg)
     int err;
 
     if ((err = pthread_setcanceltype(obj->fCancellation, NULL)) != 0) {
-        debugError("pthread_setcanceltype err = %s", strerror(err));
+        debugError("pthread_setcanceltype err = %s\n", strerror(err));
     }
 
     // Call Init method
     if (!runnable->Init()) {
-        debugError("Thread init fails: thread quits");
+        debugError("Thread init fails: thread quits\n");
         return 0;
     }
 
@@ -103,22 +103,22 @@ int PosixThread::Start()
         pthread_attr_init(&attributes);
 
         if ((res = pthread_attr_setinheritsched(&attributes, PTHREAD_EXPLICIT_SCHED))) {
-            debugError("Cannot request explicit scheduling for RT thread  %d %s", res, strerror(res));
+            debugError("Cannot request explicit scheduling for RT thread  %d %s\n", res, strerror(res));
             return -1;
         }
         if ((res = pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE))) {
-            debugError("Cannot request joinable thread creation for RT thread  %d %s", res, strerror(res));
+            debugError("Cannot request joinable thread creation for RT thread  %d %s\n", res, strerror(res));
             return -1;
         }
         if ((res = pthread_attr_setscope(&attributes, PTHREAD_SCOPE_SYSTEM))) {
-            debugError("Cannot set scheduling scope for RT thread %d %s", res, strerror(res));
+            debugError("Cannot set scheduling scope for RT thread %d %s\n", res, strerror(res));
             return -1;
         }
 
         if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
 
         //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
-            debugError("Cannot set FIFO scheduling class for RT thread  %d %s", res, strerror(res));
+            debugError("Cannot set FIFO scheduling class for RT thread  %d %s\n", res, strerror(res));
             return -1;
         }
 
@@ -126,12 +126,12 @@ int PosixThread::Start()
         rt_param.sched_priority = fPriority;
 
         if ((res = pthread_attr_setschedparam(&attributes, &rt_param))) {
-            debugError("Cannot set scheduling priority for RT thread %d %s", res, strerror(res));
+            debugError("Cannot set scheduling priority for RT thread %d %s\n", res, strerror(res));
             return -1;
         }
 
         if ((res = pthread_create(&fThread, &attributes, ThreadHandler, this))) {
-            debugError("Cannot set create thread %d %s", res, strerror(res));
+            debugError("Cannot set create thread %d %s\n", res, strerror(res));
             return -1;
         }
 
@@ -140,7 +140,7 @@ int PosixThread::Start()
         debugOutput( DEBUG_LEVEL_VERBOSE, "Create non RT thread %p\n", this);
 
         if ((res = pthread_create(&fThread, 0, ThreadHandler, this))) {
-            debugError("Cannot set create thread %d %s", res, strerror(res));
+            debugError("Cannot set create thread %d %s\n", res, strerror(res));
             return -1;
         }
 
