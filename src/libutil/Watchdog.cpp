@@ -182,7 +182,7 @@ Watchdog::start()
 
     // switch to realtime if necessary
     if(m_realtime) {
-        if(m_CheckThread->AcquireRealTime(m_priority)) {
+        if(!m_CheckThread->AcquireRealTime(m_priority)) {
             debugWarning("(%p) Could not aquire realtime priotiry for watchdog thread.\n", this);
         }
     }
