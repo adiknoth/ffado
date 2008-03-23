@@ -52,6 +52,15 @@
       <method name="getValue">
           <arg type="d" name="value" direction="out"/>
       </method>
+      <method name="setValueIdx">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="d" name="value" direction="in"/>
+          <arg type="d" name="value" direction="out"/>
+      </method>
+      <method name="getValueIdx">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="d" name="value" direction="out"/>
+      </method>
   </interface>
 
   <interface name="org.ffado.Control.Element.Discrete">
@@ -60,6 +69,15 @@
           <arg type="i" name="value" direction="out"/>
       </method>
       <method name="getValue">
+          <arg type="i" name="value" direction="out"/>
+      </method>
+      <method name="setValueIdx">
+          <arg type="i" name="idx" direction="in"/>
+          <arg type="i" name="value" direction="in"/>
+          <arg type="i" name="value" direction="out"/>
+      </method>
+      <method name="getValueIdx">
+          <arg type="i" name="idx" direction="in"/>
           <arg type="i" name="value" direction="out"/>
       </method>
   </interface>

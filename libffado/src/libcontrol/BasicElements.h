@@ -46,6 +46,8 @@ public:
     
     virtual bool setValue(double v);
     virtual double getValue();
+    virtual bool setValue(int idx, double v);
+    virtual double getValue(int idx);
 
     virtual void show();
 
@@ -66,6 +68,8 @@ public:
     
     virtual bool setValue(int v);
     virtual int getValue();
+    virtual bool setValue(int idx, int v);
+    virtual int getValue(int idx);
 
     virtual void show();
 

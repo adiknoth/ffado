@@ -49,7 +49,6 @@ Continuous::setValue(double v)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%lf)\n",
         getName().c_str(), v);
-    
     m_Value=v;
     return true;
 }
@@ -59,8 +58,24 @@ Continuous::getValue()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%lf\n",
         getName().c_str(), m_Value);
-    
     return m_Value;
+}
+
+bool
+Continuous::setValue(int idx, double v)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%d, %lf)\n",
+        getName().c_str(), idx, v);
+    return setValue(v);
+}
+
+double
+Continuous::getValue(int idx)
+{
+    double retval = getValue();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%lf\n",
+        getName().c_str(), retval);
+    return retval;
 }
 
 //// ---
@@ -89,7 +104,6 @@ Discrete::setValue(int v)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%d)\n",
         getName().c_str(), v);
-    
     m_Value=v;
     return true;
 }
@@ -99,8 +113,23 @@ Discrete::getValue()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%d\n",
         getName().c_str(), m_Value);
-    
     return m_Value;
+}
+bool
+Discrete::setValue(int idx, int v)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s setValue(%d, %d)\n",
+        getName().c_str(), idx, v);
+    return setValue(v);
+}
+
+int
+Discrete::getValue(int idx)
+{
+    int retval = getValue();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s getValue()=%d\n",
+        getName().c_str(), retval);
+    return retval;
 }
 
 //// ---

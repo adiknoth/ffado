@@ -217,6 +217,12 @@ MixerFBFeature::MixerFBFeature(Mixer& parent, FunctionBlockFeature& s)
 bool
 MixerFBFeature::setValue(double v)
 {
+    return setValue(0, v);
+}
+
+bool
+MixerFBFeature::setValue(int idx, double v)
+{
     int volume=(int)v;
     debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
         m_Slave.getId(), volume);
@@ -228,7 +234,7 @@ MixerFBFeature::setValue(double v)
     fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Control );
-    fbCmd.m_pFBFeature->m_audioChannelNumber=0; // m_channel
+    fbCmd.m_pFBFeature->m_audioChannelNumber=idx; // m_channel
     fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
     fbCmd.m_pFBFeature->m_pVolume->m_volume=volume;
     fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
@@ -253,6 +259,12 @@ MixerFBFeature::setValue(double v)
 double
 MixerFBFeature::getValue()
 {
+    return getValue(0);
+}
+
+double
+MixerFBFeature::getValue(int idx)
+{
     debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
         m_Slave.getId());
 
@@ -263,7 +275,7 @@ MixerFBFeature::getValue()
     fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
-    fbCmd.m_pFBFeature->m_audioChannelNumber=0;
+    fbCmd.m_pFBFeature->m_audioChannelNumber=idx;
     fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume; // FIXME
     fbCmd.m_pFBFeature->m_pVolume->m_volume=0;
     fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
