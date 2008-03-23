@@ -46,8 +46,8 @@ class QuataFireMixer(QuataFireMixerUI):
                     self.sldDawCH8: ['/Mixer/Feature_4', 8],
                     }
             self.PanControls={
-                    self.dialCh1: ['/Mixer/Feature_1'],
-                    self.dialCh2: ['/Mixer/Feature_1'],
+                    #self.dialCh1: ['/Mixer/Feature_1'],
+                    #self.dialCh2: ['/Mixer/Feature_1'],
                     self.dialCh34: ['/Mixer/Feature_2'],
                     self.dialCh56: ['/Mixer/Feature_3'],
                     }
@@ -60,11 +60,11 @@ class QuataFireMixer(QuataFireMixerUI):
         
     def updatePan(self,a0):
         sender = self.sender()
-        pan_left = -a0
+        pan_left = a0
         if pan_left < 0:
             pan_left = 0
 
-        pan_right = a0
+        pan_right = -a0
         if pan_right < 0:
             pan_right = 0
 
@@ -91,10 +91,11 @@ class QuataFireMixer(QuataFireMixerUI):
             print "%s pan right is %d" % (ctrl.name() , pan_right)
 
             if pan_left == 0:
-                ctrl.setValue(0x7FFF-pan_left)
+                val = pan_right
             else:
-                ctrl.setValue(-(0x7FFF-pan_right))
-
+                val = -pan_left
+            
+            ctrl.setValue(val)
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updatePan)
 
