@@ -47,21 +47,21 @@ PosixMutex::~PosixMutex()
 void
 PosixMutex::Lock()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) lock\n", this);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) lock\n", this);
     pthread_mutex_lock(&m_mutex);
 }
 
 bool
 PosixMutex::TryLock()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) trying to lock\n", this);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) trying to lock\n", this);
     return pthread_mutex_trylock(&m_mutex) == 0;
 }
 
 void
 PosixMutex::Unlock()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) unlock\n", this);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) unlock\n", this);
     pthread_mutex_unlock(&m_mutex);
 }
 
