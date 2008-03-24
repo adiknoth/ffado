@@ -157,6 +157,11 @@ private:
     Util::Functor* m_busreset_functor;
     bool            m_unhandled_busreset;
 
+#ifdef DEBUG
+    uint64_t m_last_loop_entry;
+    int m_successive_short_loops;
+#endif
+
     // debug stuff
     DECLARE_DEBUG_MODULE;
 };

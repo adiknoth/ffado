@@ -216,6 +216,11 @@ CycleTimerHelper::Init()
     }
     m_Parent.addBusResetHandler( m_busreset_functor );
 
+    #ifdef DEBUG
+    m_last_loop_entry = 0;
+    m_successive_short_loops = 0;
+    #endif
+
     return true;
 }
 
@@ -314,6 +319,25 @@ bool
 CycleTimerHelper::Execute()
 {
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
+
+    #ifdef DEBUG
+    uint64_t now = m_Parent.getCurrentTimeAsUsecs();
+    int diff = now - m_last_loop_entry;
+    if(diff < 100) {
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "(%p) short loop detected (%d usec), cnt: %d\n",
+                           this, diff, m_successive_short_loops);
+        m_successive_short_loops++;
+        if(m_successive_short_loops > 100) {
+            debugError("Shutting down runaway thread\n");
+            return false;
+        }
+    } else {
+        // reset the counter
+        m_successive_short_loops = 0;
+    }
+    m_last_loop_entry = now;
+    #endif
 
     if (!m_first_run) {
         // wait for the next update period

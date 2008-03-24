@@ -49,6 +49,10 @@ private:
         Watchdog& m_parent;
         unsigned int m_interval;
         // debug stuff
+        #ifdef DEBUG
+            uint64_t m_last_loop_entry;
+            int m_successive_short_loops;
+        #endif
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
@@ -64,6 +68,10 @@ private:
         Watchdog& m_parent;
         unsigned int m_interval;
         // debug stuff
+        #ifdef DEBUG
+            uint64_t m_last_loop_entry;
+            int m_successive_short_loops;
+        #endif
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
