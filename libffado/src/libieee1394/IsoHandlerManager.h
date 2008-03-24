@@ -86,6 +86,11 @@ class IsoTask : public Util::RunnableInterface
         // updates the streams map
         void updateShadowMapHelper();
 
+#ifdef DEBUG
+        uint64_t m_last_loop_entry;
+        int m_successive_short_loops;
+#endif
+
         // debug stuff
         DECLARE_DEBUG_MODULE;
 };
