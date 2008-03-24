@@ -67,7 +67,7 @@ Mixer::Mixer(AvDevice &d)
 
 Mixer::~Mixer() {
     
-    debugOutput(DEBUG_LEVEL_NORMAL,"Unregistering from Control::Container...\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Unregistering from Control::Container...\n");
     if (!m_device.deleteElement(this)) {
         debugWarning("Could not delete myself from Control::Container\n");
     }
