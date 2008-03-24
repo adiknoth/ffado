@@ -49,6 +49,10 @@ Watchdog::WatchdogCheckTask::WatchdogCheckTask(Watchdog& parent, unsigned int in
 bool
 Watchdog::WatchdogCheckTask::Init()
 {
+    #ifdef DEBUG
+    m_last_loop_entry = 0;
+    m_successive_short_loops = 0;
+    #endif
     return true;
 }
 
@@ -65,6 +69,26 @@ Watchdog::WatchdogCheckTask::Execute()
         // set all watched threads to non-rt scheduling
         m_parent.rescheduleThreads();
     }
+
+    #ifdef DEBUG
+    uint64_t now = SystemTimeSource().getCurrentTimeAsUsecs();
+    int diff = now - m_last_loop_entry;
+    if(diff < 100) {
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "(%p) short loop detected (%d usec), cnt: %d\n",
+                           this, diff, m_successive_short_loops);
+        m_successive_short_loops++;
+        if(m_successive_short_loops > 100) {
+            debugError("Shutting down runaway thread\n");
+            return false;
+        }
+    } else {
+        // reset the counter
+        m_successive_short_loops = 0;
+    }
+    m_last_loop_entry = now;
+    #endif
+
     return true;
 }
 
@@ -80,6 +104,10 @@ Watchdog::WatchdogHartbeatTask::WatchdogHartbeatTask(Watchdog& parent, unsigned 
 bool
 Watchdog::WatchdogHartbeatTask::Init()
 {
+    #ifdef DEBUG
+    m_last_loop_entry = 0;
+    m_successive_short_loops = 0;
+    #endif
     return true;
 }
 
@@ -90,6 +118,26 @@ Watchdog::WatchdogHartbeatTask::Execute()
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "(%p) watchdog %p hartbeat\n", this, &m_parent);
     m_parent.setHartbeat();
+
+    #ifdef DEBUG
+    uint64_t now = SystemTimeSource().getCurrentTimeAsUsecs();
+    int diff = now - m_last_loop_entry;
+    if(diff < 100) {
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "(%p) short loop detected (%d usec), cnt: %d\n",
+                           this, diff, m_successive_short_loops);
+        m_successive_short_loops++;
+        if(m_successive_short_loops > 100) {
+            debugError("Shutting down runaway thread\n");
+            return false;
+        }
+    } else {
+        // reset the counter
+        m_successive_short_loops = 0;
+    }
+    m_last_loop_entry = now;
+    #endif
+
     return true;
 }
 
