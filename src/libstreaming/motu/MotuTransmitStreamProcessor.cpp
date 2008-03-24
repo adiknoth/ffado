@@ -297,10 +297,17 @@ MotuTransmitStreamProcessor::generatePacketData (
     }
 #endif
 
+//fprintf(stderr,"tx: %d/%d\n",
+//  TICKS_TO_CYCLES(fullTicksToSph(m_last_timestamp)),
+//  TICKS_TO_OFFSET(fullTicksToSph(m_last_timestamp)));
         // Set up each frames's SPH.
+//fprintf(stderr,"tpf=%f\n", ticks_per_frame);
         for (int i=0; i < n_events; i++, quadlet += dbs) {
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
             *quadlet = htonl(fullTicksToSph(ts_frame));
+//fprintf(stderr,"tx: %d/%d\n",
+//  CYCLE_TIMER_GET_CYCLES(fullTicksToSph(ts_frame)),
+//  CYCLE_TIMER_GET_OFFSET(fullTicksToSph(ts_frame)));
         }
 
         return eCRV_OK;

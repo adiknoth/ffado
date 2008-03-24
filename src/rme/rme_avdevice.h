@@ -32,6 +32,9 @@
 
 // #include "libstreaming/rme/RmeStreamProcessor.h"
 
+/* RME Fireface register definitions */
+#define RME_REG_DDS_CONTROL       0xfc88f000
+
 class ConfigRom;
 class Ieee1394Service;
 
@@ -87,9 +90,14 @@ public:
     virtual bool startStreamByIndex(int i);
     virtual bool stopStreamByIndex(int i);
 
+    unsigned int readRegister(unsigned int reg);
+    signed int writeRegister(unsigned int reg, quadlet_t data);
+
 protected:
     struct VendorModelEntry *m_model;
     enum ERmeModel m_rme_model;
+
+    signed int m_ddsFreq;
 };
 
 }

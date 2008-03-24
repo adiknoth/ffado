@@ -148,14 +148,22 @@ const PortEntry Ports_TRAVELER[] =
     {"Mix-R", MOTUFW_DIR_IN, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 13},
     {"Phones-L", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 10},
     {"Phones-R", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 13},
-    {"Analog1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 16},
-    {"Analog2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 19},
-    {"Analog3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 22},
-    {"Analog4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 25},
-    {"Analog5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 28},
-    {"Analog6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 31},
-    {"Analog7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 34},
-    {"Analog8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ANY, 37},
+    {"Analog1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_4x|MOTUFW_PA_OPTICAL_ANY, 31},
     {"AES/EBU1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 40},
     {"AES/EBU2", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_ANY, 43},
     {"SPDIF1", MOTUFW_DIR_INOUT, MOTUFW_PA_RATE_1x2x|MOTUFW_PA_OPTICAL_OFF|MOTUFW_PA_OPTICAL_ADAT, 46},
@@ -254,7 +262,6 @@ MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-
 }
 
 MotuDevice::~MotuDevice()
@@ -275,7 +282,6 @@ bool
 MotuDevice::probe( ConfigRom& configRom )
 {
     unsigned int vendorId = configRom.getNodeVendorId();
-//     unsigned int modelId = configRom.getModelId();
     unsigned int unitVersion = configRom.getUnitVersion();
     unsigned int unitSpecifierId = configRom.getUnitSpecifierId();
 
@@ -284,7 +290,6 @@ MotuDevice::probe( ConfigRom& configRom )
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-//              && ( supportedDeviceList[i].model_id == modelId )
              && ( supportedDeviceList[i].unit_version == unitVersion )
              && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
            )
@@ -306,7 +311,6 @@ bool
 MotuDevice::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
-//     unsigned int modelId = getConfigRom().getModelId();
     unsigned int unitVersion = getConfigRom().getUnitVersion();
     unsigned int unitSpecifierId = getConfigRom().getUnitSpecifierId();
 
@@ -315,7 +319,6 @@ MotuDevice::discover()
           ++i )
     {
         if ( ( supportedDeviceList[i].vendor_id == vendorId )
-//              && ( supportedDeviceList[i].model_id == modelId )
              && ( supportedDeviceList[i].unit_version == unitVersion )
              && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
            )
@@ -815,6 +818,12 @@ reg & MOTUFW_OPTICAL_OUT_MODE_MASK);
 signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
     unsigned int reg = ReadRegister(MOTUFW_REG_ROUTE_PORT_CONF);
     unsigned int opt_ctrl = 0x0000002;
+
+    /* THe 896HD doesn't have an SPDIF/TOSLINK optical mode, so don't try to
+     * set it
+     */
+    if (m_motu_model==MOTUFW_MODEL_896HD && mode==MOTUFW_OPTICAL_MODE_TOSLINK)
+        return -1;
 
     // Set up the optical control register value according to the current
     // optical port modes.  At this stage it's not completely understood

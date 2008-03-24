@@ -72,7 +72,9 @@ uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
 MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(FFADODevice &parent, unsigned int event_size)
     : StreamProcessor(parent, ePT_Receive)
     , m_event_size( event_size )
-{}
+{
+    memset(&m_devctrls, 0, sizeof(m_devctrls));
+}
 
 unsigned int
 MotuReceiveStreamProcessor::getMaxPacketSize() {
@@ -203,6 +205,10 @@ bool MotuReceiveStreamProcessor::processReadBlock(char *data,
                        unsigned int nevents, unsigned int offset)
 {
     bool no_problem=true;
+
+    /* Scan incoming block for device control events */
+    decodeMotuCtrlEvents(data, nevents);
+
     for ( PortVectorIterator it = m_Ports.begin();
           it != m_Ports.end();
           ++it ) {
@@ -332,6 +338,72 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
         buffer++;
         j++;
         src += m_event_size;
+    }
+
+    return 0;    
+}
+
+int
+MotuReceiveStreamProcessor::decodeMotuCtrlEvents(
+                      char *data, unsigned int nevents)
+{
+    unsigned int j = 0;
+    unsigned char *src = NULL;
+    unsigned char *arg = NULL;
+
+    // Get control bytes if present in any frames within the packet.  The
+    // device control messages start at (zero-based) byte 0x04 in the data
+    // stream.
+    src = (unsigned char *)data + 0x04;
+    arg = src+1;
+    while (j < nevents) {
+        
+        if (m_devctrls.status == MOTU_DEVCTRL_INVALID) {
+            // Start acquiring on reception of a key which we know occurs
+            // only once per cycle.  The only potential problem with this is if
+            // this key can interrupt a sequence of other keys.  Time will tell
+            // whether the assumption that it doesn't is valid.
+            if (*src == MOTU_KEY_MAINOUT_VOL) {
+                 debugOutput(DEBUG_LEVEL_VERBOSE, "acquiring device control status events\n");
+                 m_devctrls.status = MOTU_DEVCTRL_ACQUIRING;
+            }
+        } else
+        if (m_devctrls.status == MOTU_DEVCTRL_ACQUIRING) {
+            // If our "once per cycle" key occurs in the acquiring state we
+            // know we've been right through the control event cycle, making
+            // our picture of the device status complete.  See note above
+            // for the caveats with this logic.
+            if (*src == MOTU_KEY_MAINOUT_VOL) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "device control status collection valid\n");
+                m_devctrls.status = MOTU_DEVCTRL_VALID;
+            }
+        }
+
+        if (m_devctrls.status != MOTU_DEVCTRL_INVALID) {
+            switch (*src) {
+                case MOTU_KEY_CHANNEL_GAIN:
+                case MOTU_KEY_CHANNEL_PAN:
+                case MOTU_KEY_CHANNEL_CTRL:
+                case MOTU_KEY_MIXBUS_GAIN:
+                case MOTU_KEY_MIXBUS_DEST:
+                case MOTU_KEY_MAINOUT_VOL:
+                case MOTU_KEY_PHONES_VOL:
+                case MOTU_KEY_PHONES_DEST:
+                case MOTU_KEY_INPUT_6dB_BOOST:
+                case MOTU_KEY_INPUT_REF_LEVEL:
+                    break;
+                case MOTU_KEY_MIDI:
+                    // MIDI is dealt with elsewhere, so just pass it over
+                    break;
+                default:
+                    // Ignore any unknown keys or those we don't care about, at
+                    // least for now.
+                    break;
+            }
+        }
+        j++;
+        src += m_event_size;
+        arg += m_event_size;
     }
 
     return 0;    
