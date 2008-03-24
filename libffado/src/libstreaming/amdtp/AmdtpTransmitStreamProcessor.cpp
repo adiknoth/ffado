@@ -28,6 +28,7 @@
 #include "devicemanager.h"
 
 #include "libutil/Time.h"
+#include "libutil/float_cast.h"
 
 #include "libieee1394/ieee1394service.h"
 #include "libieee1394/IsoHandlerManager.h"
@@ -146,11 +147,13 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         }
         else
         {
+            #if DEBUG_EXTREME
             unsigned int now_cycle = ( unsigned int ) ( TICKS_TO_CYCLES ( m_1394service.getCycleTimerTicks() ) );
 
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                                "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
                                fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
+            #endif
 
             // there is still time left to send the packet
             // we want the system to give this packet another go at a later time instant
@@ -925,7 +928,8 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 if(*in < -1.0) *in=-1.0;
 #endif
                 float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
-                unsigned int tmp = ((int) v);
+                unsigned int tmp = ((int) lrintf(v));
+
                 tmp = ( tmp >> 8 ) | 0x40000000;
                 *target_event = htonl((quadlet_t)tmp);
                 buffer++;
