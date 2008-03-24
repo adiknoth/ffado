@@ -58,6 +58,12 @@ IsoTask::Init()
         m_poll_fds_shadow[i].events = 0;
     }
     m_poll_nfds_shadow = 0;
+
+    #ifdef DEBUG
+    m_last_loop_entry = 0;
+    m_successive_short_loops = 0;
+    #endif
+
     return true;
 }
 
@@ -127,10 +133,30 @@ IsoTask::Execute()
     unsigned int i;
     unsigned int m_poll_timeout = 10;
 
+    #ifdef DEBUG
+    uint64_t now = m_manager.get1394Service().getCurrentTimeAsUsecs();
+    int diff = now - m_last_loop_entry;
+    if(diff < 100) {
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "(%p) short loop detected (%d usec), cnt: %d\n",
+                           this, diff, m_successive_short_loops);
+        m_successive_short_loops++;
+        if(m_successive_short_loops > 100) {
+            debugError("Shutting down runaway thread\n");
+            return false;
+        }
+    } else {
+        // reset the counter
+        m_successive_short_loops = 0;
+    }
+    m_last_loop_entry = now;
+    #endif
+
     // if some other thread requested a shadow map update, do it
     if(request_update) {
         updateShadowMapHelper();
         DEC_ATOMIC(&request_update); // ack the update
+        assert(request_update >= 0);
     }
 
     // bypass if no handlers are registered
@@ -216,8 +242,8 @@ IsoTask::Execute()
         #ifdef DEBUG
         if(m_poll_fds_shadow[i].revents) {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-                        "received events: %08X for (%d/%d, %p, %s)\n",
-                        m_poll_fds_shadow[i].revents,
+                        "(%p) received events: %08X for (%d/%d, %p, %s)\n",
+                        this, m_poll_fds_shadow[i].revents,
                         i, m_poll_nfds_shadow,
                         m_IsoHandler_map_shadow[i],
                         m_IsoHandler_map_shadow[i]->getTypeString());
@@ -232,10 +258,10 @@ IsoTask::Execute()
         } else {
             // there might be some error condition
             if (m_poll_fds_shadow[i].revents & POLLERR) {
-                debugWarning("error on fd for %d\n",i);
+                debugWarning("(%p) error on fd for %d\n", this, i);
             }
             if (m_poll_fds_shadow[i].revents & POLLHUP) {
-                debugWarning("hangup on fd for %d\n",i);
+                debugWarning("(%p) hangup on fd for %d\n", this, i);
             }
         }
 
