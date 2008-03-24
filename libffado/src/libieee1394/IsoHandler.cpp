@@ -497,8 +497,8 @@ bool IsoHandler::prepare()
                                     m_buf_packets,
                                     m_max_packet_size,
                                     m_Client->getChannel(),
-//                                     RAW1394_DMA_BUFFERFILL,
-                                    RAW1394_DMA_PACKET_PER_BUFFER,
+                                    RAW1394_DMA_BUFFERFILL,
+//                                     RAW1394_DMA_PACKET_PER_BUFFER,
                                     m_irq_interval)) {
                 debugFatal("Could not do receive initialisation (DMA_BUFFERFILL)!\n" );
                 debugFatal("  %s\n",strerror(errno));
