@@ -155,7 +155,7 @@ CycleTimerHelper::Start()
 bool
 CycleTimerHelper::initValues()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Init values...\n" );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Init values...\n", this );
     pthread_mutex_lock(&mb_update_lock);
     // initialize the 'prev ctr' values
     uint64_t local_time;
@@ -302,7 +302,7 @@ CycleTimerHelper::initDLL() {
     m_next_time_usecs = m_current_time_usecs + m_usecs_per_update;
     m_current_time_ticks = CYCLE_TIMER_TO_TICKS( cycle_timer );
     m_next_time_ticks = addTicks( (uint64_t)m_current_time_ticks, (uint64_t)m_dll_e2);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " First run\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, " (%p) First run\n", this);
     debugOutput(DEBUG_LEVEL_VERBOSE,
                 "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
                 m_usecs_per_update, m_ticks_per_update, m_dll_e2);
@@ -379,8 +379,8 @@ CycleTimerHelper::Execute()
         // check for unrealistic CTR reads (NEC controller does that sometimes)
         if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, 
-                        "have to retry CTR read, diff unrealistic: diff: %f, max: %f\n", 
-                        diff_ticks, -((double)TICKS_PER_HALFCYCLE));
+                        "(%p) have to retry CTR read, diff unrealistic: diff: %f, max: %f\n", 
+                        this, diff_ticks, -((double)TICKS_PER_HALFCYCLE));
         }
 
     } while( diff_ticks < -((double)TICKS_PER_HALFCYCLE) 

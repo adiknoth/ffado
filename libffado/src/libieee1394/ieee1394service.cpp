@@ -1122,6 +1122,8 @@ Ieee1394Service::show()
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Port:  %d\n", getPort() );
     debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
+    debugOutput( DEBUG_LEVEL_VERBOSE, " CycleTimerHelper: %p, IsoManager: %p, WatchDog: %p\n",
+                 m_pCTRHelper, m_pIsoManager, m_pWatchdog );
     debugOutput( DEBUG_LEVEL_VERBOSE, " Time: %011llu (%03us %04ucy %04uticks)\n",
                 ctr,
                 (unsigned int)TICKS_TO_SECS( ctr ),
