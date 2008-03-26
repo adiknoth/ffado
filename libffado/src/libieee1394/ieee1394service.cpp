@@ -409,7 +409,7 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
 
         #ifdef DEBUG
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-            "read: node 0x%X, addr = 0x%016llX, length = %u\n",
+            "read: node 0x%hX, addr = 0x%016llX, length = %u\n",
             nodeId, addr, length);
         printBuffer( DEBUG_LEVEL_VERY_VERBOSE, length, buffer );
         #endif
@@ -417,7 +417,7 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
         return true;
     } else {
         #ifdef DEBUG
-        debugError("raw1394_read failed: node 0x%X, addr = 0x%016llX, length = %u\n",
+        debugError("raw1394_read failed: node 0x%hX, addr = 0x%016llX, length = %u\n",
               nodeId, addr, length);
         #endif
 
@@ -453,7 +453,7 @@ Ieee1394Service::write( fb_nodeid_t nodeId,
     using namespace std;
 
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%X, addr = 0x%016X, length = %d\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%hX, addr = 0x%016llX, length = %d\n",
                 nodeId, addr, length);
     printBuffer( DEBUG_LEVEL_VERY_VERBOSE, length, data );
     #endif
