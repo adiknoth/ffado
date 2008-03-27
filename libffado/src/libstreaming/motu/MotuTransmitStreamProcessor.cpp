@@ -642,9 +642,8 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
     unsigned char *target = (unsigned char *)data + p->getPosition();
 
     // Send a MIDI byte if there is one to send.  MOTU MIDI data is sent using
-    // a 3-byte sequence within a frame starting at the port's position.  For
-    // now we assume that a zero within the port's buffer means there is no
-    // MIDI data for the corresponding frame, but this may need refining.
+    // a 3-byte sequence within a frame starting at the port's position.
+    // A non-zero MSB indicates there is MIDI data to send.
 
     for (j=0; j<nevents; j++, src++, target+=m_event_size) {
         if (*src & 0xff000000) {    /* A MIDI byte is ready to send */
