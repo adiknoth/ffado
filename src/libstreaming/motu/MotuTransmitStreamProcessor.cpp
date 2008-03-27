@@ -647,7 +647,7 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
     // MIDI data for the corresponding frame, but this may need refining.
 
     for (j=0; j<nevents; j++, src++, target+=m_event_size) {
-        if (*src != 0) {
+        if (*src & 0xff000000) {    /* A MIDI byte is ready to send */
             *(target) = 0x01;
             *(target+1) = 0x00;
             *(target+2) = (*src & 0xff);

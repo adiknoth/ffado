@@ -331,8 +331,9 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
     // anyway.
     src = (unsigned char *)data + p->getPosition();
     while (j < nevents) {
-        if (*src==0x01 && *(src+1)==0x00) {
+        if ((*src & 0x01) == 0x01) {  // A MIDI byte is in *(src+2)
             sample = *(src+2);
+            sample |= 0x01000000; // Flag MIDI byte as being present
             *buffer = sample;
         }
         buffer++;
