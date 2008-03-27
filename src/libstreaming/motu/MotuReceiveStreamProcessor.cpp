@@ -326,17 +326,26 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
 
     // Get MIDI bytes if present in any frames within the packet.  MOTU MIDI
     // data is sent using a 3-byte sequence starting at the port's position. 
-    // It's thought that there can never be MIDI data in more than one frame
-    // in a given packet, but for completeness we'll check all frames
-    // anyway.
+    // On no occasion has more than one MIDI data byte been observed in a
+    // single packet coming from a MOTU device.  This is fortunate given
+    // the alignment requirement imposed by the FFADO MIDI layer.
     src = (unsigned char *)data + p->getPosition();
+    // Force alignment of MIDI data to multiples of 8 samples.  This is
+    // a requirement of the upper FFADO MIDI layer.  Ensure the aligned
+    // position is within the buffer.  This will cause trouble if there are
+    // fewer than 8 samples in the buffer but in practice this shouldn' be
+    // an issue.
+    if (buffer & 0x07) 
+        buffer = (buffer & (~0x07)) + 8;
     while (j < nevents) {
         if ((*src & 0x01) == 0x01) {  // A MIDI byte is in *(src+2)
             sample = *(src+2);
             sample |= 0x01000000; // Flag MIDI byte as being present
             *buffer = sample;
+            // This packet's MIDI byte has been found so there's nothing
+            // more to do.
+            break;
         }
-        buffer++;
         j++;
         src += m_event_size;
     }
