@@ -330,13 +330,9 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
     // single packet coming from a MOTU device.  This is fortunate given
     // the alignment requirement imposed by the FFADO MIDI layer.
     src = (unsigned char *)data + p->getPosition();
-    // Force alignment of MIDI data to multiples of 8 samples.  This is
-    // a requirement of the upper FFADO MIDI layer.  Ensure the aligned
-    // position is within the buffer.  This will cause trouble if there are
-    // fewer than 8 samples in the buffer but in practice this shouldn' be
-    // an issue.
-    if (buffer & 0x07) 
-        buffer = (buffer & (~0x07)) + 8;
+    // We assume that the buffer has been set up in such a way that the first
+    // element is correctly aligned for FFADOs MIDI layer.  The requirement
+    // is that actual MIDI bytes must be aligned to multiples of 8 samples.  
     while (j < nevents) {
         if ((*src & 0x01) == 0x01) {  // A MIDI byte is in *(src+2)
             sample = *(src+2);
