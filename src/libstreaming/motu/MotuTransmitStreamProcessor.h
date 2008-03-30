@@ -120,6 +120,16 @@ private:
     // Keep track of transmission data block count
     unsigned int m_tx_dbc;
 
+    // A simple circular buffer for outgoing MIDI data to allow
+    // a rate control to be implemented on the data to suit the MOTU
+    // devices.  Note that this buffer's size is forced to be a power
+    // of 2 to allow for buffer manipulation optimisations.
+    #define MIDIBUFFER_SIZE_EXP 10
+    #define MIDIBUFFER_SIZE     (1<<MIDIBUFFER_SIZE_EXP)
+    unsigned int midibuffer[MIDIBUFFER_SIZE];
+    unsigned int mb_head, mb_tail;
+    unsigned int midi_lock;
+    unsigned int midi_tx_period; /* Measured in audio clock periods */
 };
 
 } // end of namespace Streaming

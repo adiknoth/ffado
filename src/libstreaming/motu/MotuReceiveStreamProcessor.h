@@ -63,46 +63,58 @@ namespace Streaming {
 #define MOTU_DEST_MUTE             0x10
 
 enum EMotuDevCtrlStatus {
-  MOTU_DEVCTRL_INVALID           = 0x00,
-  MOTU_DEVCTRL_ACQUIRING         = 0x01,
-  MOTU_DEVCTRL_VALID             = 0x02,
+    MOTU_DEVCTRL_INVALID           = 0x00,
+    MOTU_DEVCTRL_SYNCING           = 0x01,
+    MOTU_DEVCTRL_INIT              = 0x02,
+    MOTU_DEVCTRL_VALID             = 0x03,
 };
 
 struct MotuDevControls {
-    unsigned int status, lastkey;
+    unsigned int status;
     unsigned int input_6dB_boost;
     unsigned int input_ref_level;
     unsigned int input_20dB_pad;
     unsigned int input_gaintrim[MOTUFW_MAX_MIXBUS_CHANNELS];
     unsigned char input_gaintrim_index;
     struct MixBus {
-      unsigned char channel_gain[MOTUFW_MAX_MIXBUS_CHANNELS];
-      unsigned char channel_gain_index;
-      unsigned char channel_pan[MOTUFW_MAX_MIXBUS_CHANNELS];
-      unsigned char channel_pan_index;
-      unsigned char channel_control[MOTUFW_MAX_MIXBUS_CHANNELS];
-      unsigned char channel_control_index;
-      unsigned char bus_gain;
-      unsigned char bus_dest;
+        unsigned char channel_gain[MOTUFW_MAX_MIXBUS_CHANNELS];
+        unsigned char channel_gain_index;
+        unsigned char channel_pan[MOTUFW_MAX_MIXBUS_CHANNELS];
+        unsigned char channel_pan_index;
+        unsigned char channel_control[MOTUFW_MAX_MIXBUS_CHANNELS];
+        unsigned char channel_control_index;
+        unsigned char bus_gain;
+        unsigned char bus_dest;
     } mixbus[MOTUFW_MAX_MIXBUSES];
     unsigned char mixbus_index;
     unsigned char main_out_volume;
     unsigned char phones_volume;
     unsigned char phones_assign;
+    unsigned char n_mixbuses;
+    unsigned char n_channels;
 };
 
 enum EMotuCtrlKeys {
-  MOTU_KEY_MIDI            = 0x01,
-  MOTU_KEY_CHANNEL_GAIN    = 0x14,
-  MOTU_KEY_CHANNEL_PAN     = 0x1c,
-  MOTU_KEY_CHANNEL_CTRL    = 0x24,
-  MOTU_KEY_MIXBUS_GAIN     = 0x2c,
-  MOTU_KEY_MIXBUS_DEST     = 0x34,
-  MOTU_KEY_MAINOUT_VOL     = 0x3c,
-  MOTU_KEY_PHONES_VOL      = 0x44,
-  MOTU_KEY_PHONES_DEST     = 0x4c,
-  MOTU_KEY_INPUT_6dB_BOOST = 0x6c,
-  MOTU_KEY_INPUT_REF_LEVEL = 0x74,
+    MOTU_KEY_MIDI            = 0x01,
+    MOTU_KEY_SEQ_SYNC        = 0x0c,
+    MOTU_KEY_CHANNEL_GAIN    = 0x14,
+    MOTU_KEY_CHANNEL_PAN     = 0x1c,
+    MOTU_KEY_CHANNEL_CTRL    = 0x24,
+    MOTU_KEY_MIXBUS_GAIN     = 0x2c,
+    MOTU_KEY_MIXBUS_DEST     = 0x34,
+    MOTU_KEY_MAINOUT_VOL     = 0x3c,
+    MOTU_KEY_PHONES_VOL      = 0x44,
+    MOTU_KEY_PHONES_DEST     = 0x4c,
+    MOTU_KEY_INPUT_6dB_BOOST = 0x6c,
+    MOTU_KEY_INPUT_REF_LEVEL = 0x74,
+    MOTU_KEY_MASK_MIDI       = 0x01,
+};
+
+enum EMotuSeqSyncMixbuses {
+    MOTU_KEY_SEQ_SYNC_MIXBUS1 = 0x00,
+    MOTU_KEY_SEQ_SYNC_MIXBUS2 = 0x20,
+    MOTU_KEY_SEQ_SYNC_MIXBUS3 = 0x40,
+    MOTU_KEY_SEQ_SYNC_MIXBUS4 = 0x60,
 };
 
 class MotuAudioPort;

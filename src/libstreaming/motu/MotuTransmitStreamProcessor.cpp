@@ -67,7 +67,19 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, un
         : StreamProcessor(parent, ePT_Transmit )
         , m_event_size( event_size )
         , m_tx_dbc( 0 )
-{}
+        , mb_head( 0 )
+        , mb_tail( 0 )
+        , midi_lock( 0 )
+{
+  int srate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
+  /* Work out how many audio samples should be left between MIDI data bytes in order
+   * to stay under the MIDI hardware baud rate of 31250.  MIDI data is transmitted
+   * using 10 bits per byte (including the start/stop bit) so this gives us 3125 bytes
+   * per second.  If we send to the MOTU at a faster rate than this, some MIDI bytes
+   * will be dropped or corrupted in interesting ways.
+   */
+  midi_tx_period = lrintf(ceil((float)srate / 3125));
+}
 
 unsigned int
 MotuTransmitStreamProcessor::getMaxPacketSize() {
@@ -465,8 +477,8 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
     bool no_problem=true;
     unsigned int i;
 
-    // FIXME: ensure the MIDI and control streams are all zeroed until
-    // such time as they are fully implemented.
+    // Start with MIDI and control streams all zeroed.  Due to the sparce nature
+    // of these streams it is best to simply fill them in on an as-needs basis.
     for (i=0; i<nevents; i++) {
         memset(data+4+i*m_event_size, 0x00, 6);
     }
@@ -638,7 +650,6 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
     unsigned int j;
     quadlet_t *src = (quadlet_t *)p->getBufferAddress();
     src += offset;
-
     unsigned char *target = (unsigned char *)data + p->getPosition();
 
     // Send a MIDI byte if there is one to send.  MOTU MIDI data is sent using
@@ -646,12 +657,34 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
     // A non-zero MSB indicates there is MIDI data to send.
 
     for (j=0; j<nevents; j++, src++, target+=m_event_size) {
-        if (*src & 0xff000000) {    /* A MIDI byte is ready to send */
+        if (midi_lock)
+            midi_lock--;
+
+        if (*src & 0xff000000) {    /* A MIDI byte is ready to send - buffer it */
+            midibuffer[mb_head++] = *src;
+            mb_head &= MIDIBUFFER_SIZE-1;
+            if (mb_head == mb_tail) {
+            /* Buffer overflow - dump oldest byte */
+            /* FIXME: ideally this would dump an entire MIDI message, but this is only
+             * feasible if it's possible to determine the message size easily.
+             */
+                mb_tail = (mb_tail+1) & (MIDIBUFFER_SIZE-1);
+                debugWarning("MOTU MIDI buffer overflow\n");
+            }
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Buffered MIDI byte %d\n", *src & 0xff);
+        }
+
+        /* Send the MIDI byte at the tail of the buffer if enough time has elapsed
+         * since the last MIDI byte was sent.
+         */
+        if (mb_head!=mb_tail && !midi_lock) {
             *(target) = 0x01;
             *(target+1) = 0x00;
-            *(target+2) = (*src & 0xff);
-        } else
-          memset(target, 0, 3);
+            *(target+2) = midibuffer[mb_tail] & 0xff;
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Sent MIDI byte %d (j=%d)\n", midibuffer[mb_tail], j);
+            mb_tail = (mb_tail+1) & (MIDIBUFFER_SIZE-1);
+            midi_lock = midi_tx_period;
+        }
     }
 
     return 0;
