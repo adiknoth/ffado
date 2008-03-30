@@ -313,6 +313,7 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
                       MotuMidiPort *p, quadlet_t *data,
                       unsigned int offset, unsigned int nevents)
 {
+static unsigned int cx = 0;
     quadlet_t sample;
     unsigned int j = 0;
     unsigned char *src = NULL;
@@ -338,8 +339,10 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
     // We assume that the buffer has been set up in such a way that the first
     // element is correctly aligned for FFADOs MIDI layer.  The requirement
     // is that actual MIDI bytes must be aligned to multiples of 8 samples.  
+
     while (j < nevents) {
-        if ((*src & 0x01) == 0x01) {  // A MIDI byte is in *(src+2)
+        if ((*src & MOTU_KEY_MASK_MIDI) == MOTU_KEY_MASK_MIDI) {
+            // A MIDI byte is in *(src+2)
             sample = *(src+2);
             sample |= 0x01000000; // Flag MIDI byte as being present
             *buffer = sample;
@@ -349,6 +352,7 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
         src += m_event_size;
     }
 
+cx++;
     return 0;    
 }
 
@@ -366,40 +370,117 @@ MotuReceiveStreamProcessor::decodeMotuCtrlEvents(
     src = (unsigned char *)data + 0x04;
     arg = src+1;
     while (j < nevents) {
+        unsigned int control_key = *src & ~MOTU_KEY_MASK_MIDI;
         
         if (m_devctrls.status == MOTU_DEVCTRL_INVALID) {
-            // Start acquiring on reception of a key which we know occurs
-            // only once per cycle.  The only potential problem with this is if
-            // this key can interrupt a sequence of other keys.  Time will tell
-            // whether the assumption that it doesn't is valid.
-            if (*src == MOTU_KEY_MAINOUT_VOL) {
-                 debugOutput(DEBUG_LEVEL_VERBOSE, "acquiring device control status events\n");
-                 m_devctrls.status = MOTU_DEVCTRL_ACQUIRING;
+            // Start syncing on reception of the sequence sync key which indicates
+            // mix bus 1 values are pending.  Acquisition will start when we see the
+            // first channel gain key after this.
+            if (control_key==MOTU_KEY_SEQ_SYNC && *arg==MOTU_KEY_SEQ_SYNC_MIXBUS1) {
+                 debugOutput(DEBUG_LEVEL_VERBOSE, "syncing device control status stream\n");
+                 m_devctrls.status = MOTU_DEVCTRL_SYNCING;
             }
         } else
-        if (m_devctrls.status == MOTU_DEVCTRL_ACQUIRING) {
-            // If our "once per cycle" key occurs in the acquiring state we
-            // know we've been right through the control event cycle, making
-            // our picture of the device status complete.  See note above
-            // for the caveats with this logic.
-            if (*src == MOTU_KEY_MAINOUT_VOL) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "device control status collection valid\n");
+        if (m_devctrls.status == MOTU_DEVCTRL_SYNCING) {
+            // Start acquiring when we see a channel gain key for mixbus 1.
+            if (control_key == MOTU_KEY_SEQ_SYNC) {
+                // Keep mixbus index updated since we don't execute the main parser until
+                // we move to the initialising state.  Since we don't dereference this until
+                // we know it's equal to 0 there's no need for bounds checking here.
+                m_devctrls.mixbus_index = *arg;
+            } else
+            if (control_key==MOTU_KEY_CHANNEL_GAIN && m_devctrls.mixbus_index==0) {
+              debugOutput(DEBUG_LEVEL_VERBOSE, "initialising device control status\n");
+              m_devctrls.status = MOTU_DEVCTRL_INIT;
+            }
+        } else
+        if (m_devctrls.status == MOTU_DEVCTRL_INIT) {
+            // Consider ourselves fully initialised when a control sequence sync key
+            // arrives which takes things back to mixbus 1.
+            if (control_key==MOTU_KEY_SEQ_SYNC && *arg==MOTU_KEY_SEQ_SYNC_MIXBUS1 && m_devctrls.mixbus_index>0) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "device control status valid: n_mixbuses=%d, n_channels=%d\n",
+                    m_devctrls.n_mixbuses, m_devctrls.n_channels);
                 m_devctrls.status = MOTU_DEVCTRL_VALID;
             }
         }
 
-        if (m_devctrls.status != MOTU_DEVCTRL_INVALID) {
-            switch (*src) {
+        if (m_devctrls.status==MOTU_DEVCTRL_INIT || m_devctrls.status==MOTU_DEVCTRL_VALID) {
+            unsigned int i;
+            switch (control_key) {
+                case MOTU_KEY_SEQ_SYNC:
+                    if (m_devctrls.mixbus_index < MOTUFW_MAX_MIXBUSES) {
+                        if (m_devctrls.n_channels==0 && m_devctrls.mixbus[m_devctrls.mixbus_index].channel_gain_index!=0) {
+                            m_devctrls.n_channels = m_devctrls.mixbus[m_devctrls.mixbus_index].channel_gain_index;
+                        }
+                    }
+                    /* Mix bus to configure next is in bits 5-7 of the argument */
+                    m_devctrls.mixbus_index = (*arg >> 5);
+                    if (m_devctrls.mixbus_index >= MOTUFW_MAX_MIXBUSES) {
+                        debugWarning("MOTU cuemix value parser error: mix bus index %d exceeded maximum %d\n",
+                            m_devctrls.mixbus_index, MOTUFW_MAX_MIXBUSES);
+                    } else {
+                        if (m_devctrls.n_mixbuses < m_devctrls.mixbus_index+1) {
+                            m_devctrls.n_mixbuses = m_devctrls.mixbus_index+1;
+                        }
+                        m_devctrls.mixbus[m_devctrls.mixbus_index].channel_gain_index =
+                            m_devctrls.mixbus[m_devctrls.mixbus_index].channel_pan_index =
+                            m_devctrls.mixbus[m_devctrls.mixbus_index].channel_control_index = 0;
+                        }
+                    break;
                 case MOTU_KEY_CHANNEL_GAIN:
+                    i = m_devctrls.mixbus[m_devctrls.mixbus_index].channel_gain_index++;
+                    if (m_devctrls.mixbus_index<MOTUFW_MAX_MIXBUSES && i<MOTUFW_MAX_MIXBUS_CHANNELS) {
+                        m_devctrls.mixbus[m_devctrls.mixbus_index].channel_gain[i] = *arg;
+                    }
+                    if (i >= MOTUFW_MAX_MIXBUS_CHANNELS) {
+                        debugWarning("MOTU cuemix value parser error: channel gain index %d exceeded maximum %d\n",
+                            i, MOTUFW_MAX_MIXBUS_CHANNELS);
+                    }
+                    break;
                 case MOTU_KEY_CHANNEL_PAN:
+                    i = m_devctrls.mixbus[m_devctrls.mixbus_index].channel_pan_index++;
+                    if (m_devctrls.mixbus_index<MOTUFW_MAX_MIXBUSES && i<MOTUFW_MAX_MIXBUS_CHANNELS) {
+                        m_devctrls.mixbus[m_devctrls.mixbus_index].channel_pan[i] = *arg;
+                    }
+                    if (i >= MOTUFW_MAX_MIXBUS_CHANNELS) {
+                        debugWarning("MOTU cuemix value parser error: channel pan index %d exceeded maximum %d\n",
+                            i, MOTUFW_MAX_MIXBUS_CHANNELS);
+                    }
+                    break;
                 case MOTU_KEY_CHANNEL_CTRL:
+                    i = m_devctrls.mixbus[m_devctrls.mixbus_index].channel_control_index++;
+                    if (m_devctrls.mixbus_index<MOTUFW_MAX_MIXBUSES && i<MOTUFW_MAX_MIXBUS_CHANNELS) {
+                        m_devctrls.mixbus[m_devctrls.mixbus_index].channel_control[i] = *arg;
+                    }
+                    if (i >= MOTUFW_MAX_MIXBUS_CHANNELS) {
+                        debugWarning("MOTU cuemix value parser error: channel control index %d exceeded maximum %d\n",
+                            i, MOTUFW_MAX_MIXBUS_CHANNELS);
+                    }
+                    break;
                 case MOTU_KEY_MIXBUS_GAIN:
+                    if (m_devctrls.mixbus_index < MOTUFW_MAX_MIXBUSES) {
+                        m_devctrls.mixbus[m_devctrls.mixbus_index].bus_gain = *arg;
+                    }
+                    break;
                 case MOTU_KEY_MIXBUS_DEST:
+                    if (m_devctrls.mixbus_index < MOTUFW_MAX_MIXBUSES) {
+                        m_devctrls.mixbus[m_devctrls.mixbus_index].bus_dest = *arg;
+                    }
+                    break;
                 case MOTU_KEY_MAINOUT_VOL:
+                    m_devctrls.main_out_volume = *arg;
+                    break;
                 case MOTU_KEY_PHONES_VOL:
+                    m_devctrls.phones_volume = *arg;
+                    break;
                 case MOTU_KEY_PHONES_DEST:
+                    m_devctrls.phones_assign = *arg;
+                    break;
                 case MOTU_KEY_INPUT_6dB_BOOST:
+                    m_devctrls.input_6dB_boost = *arg;
+                    break;
                 case MOTU_KEY_INPUT_REF_LEVEL:
+                    m_devctrls.input_ref_level = *arg;
                     break;
                 case MOTU_KEY_MIDI:
                     // MIDI is dealt with elsewhere, so just pass it over
