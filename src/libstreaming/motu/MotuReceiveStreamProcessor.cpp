@@ -22,6 +22,9 @@
  *
  */
 
+#include "config.h"
+#include "libutil/float_cast.h"
+
 #include "MotuReceiveStreamProcessor.h"
 #include "MotuPort.h"
 #include "../StreamProcessorManager.h"
@@ -34,6 +37,11 @@
 #include <math.h>
 #include <netinet/in.h>
 #include <assert.h>
+
+/* Provide more intuitive access to GCC's branch predition built-ins */
+#define likely(x)   __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
+
 
 namespace Streaming {
 
@@ -54,14 +62,14 @@ uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
     // (have seen a delay >12 cycles).
     // Every so often we also see sph wrapping ahead of ct_now, so deal with that
     // too.
-    if (CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000) {
-        if (ts_sec)
+    if (unlikely(CYCLE_TIMER_GET_CYCLES(sph) > now_cycles + 1000)) {
+        if (likely(ts_sec))
             ts_sec--;
         else
             ts_sec = 127;
     } else
-    if (now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000) {
-        if (ts_sec == 127)
+    if (unlikely(now_cycles > CYCLE_TIMER_GET_CYCLES(sph) + 1000)) {
+        if (unlikely(ts_sec == 127))
             ts_sec = 0;
         else
             ts_sec++;
@@ -72,6 +80,8 @@ uint32_t ts_sec = CYCLE_TIMER_GET_SECS(ct_now);
 MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(FFADODevice &parent, unsigned int event_size)
     : StreamProcessor(parent, ePT_Receive)
     , m_event_size( event_size )
+    , mb_head ( 0 )
+    , mb_tail ( 0 )
 {
     memset(&m_devctrls, 0, sizeof(m_devctrls));
 }
@@ -291,13 +301,11 @@ signed int MotuReceiveStreamProcessor::decodeMotuEventsToPort(MotuAudioPort *p,
 
                 for(j = 0; j < nevents; j += 1) { // decode max nsamples
 
-                    unsigned int v = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
-
-                    // sign-extend highest bit of 24-bit int
-                    int tmp = (int)(v << 8) / 256;
-
-                    *buffer = tmp * multiplier;
-
+                    signed int v = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
+                    /* Sign-extend highest bit of incoming 24-bit integer */
+                    if (*src_data & 0x80)
+                      v |= 0xff000000;
+                    *buffer = v * multiplier;
                     buffer++;
                     src_data+=m_event_size;
                 }
@@ -313,8 +321,6 @@ MotuReceiveStreamProcessor::decodeMotuMidiEventsToPort(
                       MotuMidiPort *p, quadlet_t *data,
                       unsigned int offset, unsigned int nevents)
 {
-static unsigned int cx = 0;
-    quadlet_t sample;
     unsigned int j = 0;
     unsigned char *src = NULL;
 
@@ -326,33 +332,49 @@ static unsigned int cx = 0;
     memset(buffer, 0, nevents*sizeof(*buffer));
 
     // Get MIDI bytes if present in any frames within the packet.  MOTU MIDI
-    // data is sent using a 3-byte sequence starting at the port's position. 
-    // Some MOTUs (eg: the 868MkII send more than one MIDI byte in some
-    // packets, so allow for this.  Because of the requirement by the FFADO
-    // MIDI layer to align MIDI data in multiples of 8 samples the buffer
-    // must be incremented by 8 samples after every byte.  This seems to
-    // work in some cases but is probably wrong in the case where there is
-    // more than one MIDI byte per packet since we have no guarantee that
-    // the buffer is larger than nevents samples.  This will need to be fixed,
-    // probably by using some of our own buffering.
+    // data is sent as part of a 3-byte sequence starting at the port's
+    // position.  Some MOTUs (eg: the 828MkII) send more than one MIDI byte
+    // in some packets.  Since the FFADO MIDI layer requires a MIDI byte in
+    // only every 8th buffer position we allow for this by buffering the
+    // incoming data.  The buffer is small since it only has to cover for
+    // short-term excursions in the data rate.  Since the MIDI data
+    // originates on a physical MIDI bus the overall data rate is limited by
+    // the baud rate of that bus (31250), which is no more than one byte in
+    // 8 even for 1x sample rates.
     src = (unsigned char *)data + p->getPosition();
     // We assume that the buffer has been set up in such a way that the first
     // element is correctly aligned for FFADOs MIDI layer.  The requirement
     // is that actual MIDI bytes must be aligned to multiples of 8 samples.  
 
     while (j < nevents) {
-        if ((*src & MOTU_KEY_MASK_MIDI) == MOTU_KEY_MASK_MIDI) {
-            // A MIDI byte is in *(src+2)
-            sample = *(src+2);
-            sample |= 0x01000000; // Flag MIDI byte as being present
-            *buffer = sample;
+        /* Most events don't have MIDI data bytes */
+        if (unlikely((*src & MOTU_KEY_MASK_MIDI) == MOTU_KEY_MASK_MIDI)) {
+            // A MIDI byte is in *(src+2).  Bit 24 is used to flag MIDI data
+            // as present once the data makes it to the output buffer.
+            midibuffer[mb_head++] = 0x01000000 | *(src+2);
+            mb_head &= RX_MIDIBUFFER_SIZE-1;
+            if (unlikely(mb_head == mb_tail)) {
+                debugWarning("MOTU rx MIDI buffer overflow\n");
+                /* Dump oldest byte.  This overflow can only happen if the
+                 * rate coming in from the hardware MIDI port grossly
+                 * exceeds the official MIDI baud rate of 31250 bps, so it
+                 * should never occur in practice.
+                 */
+                mb_tail = (mb_tail + 1) & (RX_MIDIBUFFER_SIZE-1);
+            }
+        }
+        /* Write to the buffer if we're at an 8-sample boundary */
+        if (unlikely(!(j & 0x07))) {
+            if (mb_head != mb_tail) {
+                *buffer = midibuffer[mb_tail++];
+                mb_tail &= RX_MIDIBUFFER_SIZE-1;
+            }
             buffer += 8;
         }
         j++;
         src += m_event_size;
     }
 
-cx++;
     return 0;    
 }
 

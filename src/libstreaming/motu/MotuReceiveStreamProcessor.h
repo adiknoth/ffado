@@ -175,6 +175,18 @@ private:
 
     struct MotuDevControls m_devctrls;
 
+    /* A small MIDI buffer to cover for the case where we need to span a
+     * period.  This can only occur if more than one MIDI byte is sent per
+     * packet, but this has been observed with some MOTUs (eg: 828MkII). 
+     * Since the long-term average data rate must be close to the MIDI spec
+     * since it's coming from a physical MIDI port this buffer doesn't have
+     * to be particularly large.  The size is a power of 2 for optimisation
+     * reasons.
+     */
+    #define RX_MIDIBUFFER_SIZE_EXP 6
+    #define RX_MIDIBUFFER_SIZE     (1<<RX_MIDIBUFFER_SIZE_EXP)
+    unsigned int midibuffer[RX_MIDIBUFFER_SIZE];
+    unsigned mb_head, mb_tail;
 };
 
 
