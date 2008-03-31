@@ -23,7 +23,6 @@
  */
 
 #include "config.h"
-
 #include "libutil/float_cast.h"
 
 #include "MotuTransmitStreamProcessor.h"
@@ -660,10 +659,14 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
         if (midi_lock)
             midi_lock--;
 
-        if (*src & 0xff000000) {    /* A MIDI byte is ready to send - buffer it */
+        /* FFADO's MIDI subsystem dictates that at the most there will be one
+         * MIDI byte every 8th's sample, making a MIDI byte "unlikely".
+         */
+        if (unlikely(*src & 0xff000000)) { 
+            /* A MIDI byte is ready to send - buffer it */
             midibuffer[mb_head++] = *src;
             mb_head &= MIDIBUFFER_SIZE-1;
-            if (mb_head == mb_tail) {
+            if (unlikely(mb_head == mb_tail)) {
             /* Buffer overflow - dump oldest byte */
             /* FIXME: ideally this would dump an entire MIDI message, but this is only
              * feasible if it's possible to determine the message size easily.
@@ -675,9 +678,10 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
         }
 
         /* Send the MIDI byte at the tail of the buffer if enough time has elapsed
-         * since the last MIDI byte was sent.
+         * since the last MIDI byte was sent.  For most iterations through the loop
+         * this condition will be false.
          */
-        if (mb_head!=mb_tail && !midi_lock) {
+        if (unlikely(mb_head!=mb_tail && !midi_lock)) {
             *(target) = 0x01;
             *(target+1) = 0x00;
             *(target+2) = midibuffer[mb_tail] & 0xff;
