@@ -41,6 +41,7 @@ from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
 from mixer_mackie_generic import *
 from mixer_quatafire import *
+from mixer_motu import *
 
 SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
@@ -54,6 +55,7 @@ SupportedDevices=[
     [(0x0040AB, 0x00010049),'EdirolFa66Control'],
     [(0x00000f, 0x00010067),'MackieGenericControl'],
     [(0x000f1b, 0x00010064),'QuataFireMixer'],
+    [(0x0001f2, 0x00000000),'MotuMixer'],
     ]
 
 class ControlInterface:
@@ -174,6 +176,8 @@ class ConfigRomInterface:
         return self.iface.getVendorId()
     def getModelId(self):
         return self.iface.getModelId()
+    def getUnitVersion(self):
+        return self.iface.getUnitVersion()
 
 class ClockSelectInterface:
     def __init__(self, servername, devicepath):
@@ -242,10 +246,16 @@ if __name__ == "__main__":
         cfgrom = ConfigRomInterface(server, basepath+'/DeviceManager/'+path)
         vendorId = cfgrom.getVendorId()
         modelId = cfgrom.getModelId()
+        unitVersion = cfgrom.getUnitVersion()
         GUID = cfgrom.getGUID()
         print " Found (%s, %X, %X) %s %s" % (str(GUID), vendorId, modelId, cfgrom.getVendorName(), cfgrom.getModelName())
         
         thisdev=(vendorId, modelId);
+        # The MOTU devices use unitVersion to differentiate models.  For the
+        # moment thought we don't need to know precisely which model we're
+        # using.
+        if vendorId == 0x1f2:
+            thisdev=(vendorId, 0x00000000)
         
         for dev in SupportedDevices:
             if dev[0] == thisdev:
@@ -259,7 +269,6 @@ if __name__ == "__main__":
                         mixerapp = "SaffireMixer"
                     else:
                         mixerapp = "SaffireLEMixer"
-
                 print mixerapp
                 exec('forms.append('+mixerapp+'())')
                 forms[idx].hw = ControlInterface(server, basepath+'/DeviceManager/'+path)

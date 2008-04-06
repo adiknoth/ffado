@@ -38,6 +38,8 @@
 #include "libutil/DelayLockedLoop.h"
 #include "libutil/Time.h"
 
+#include "libcontrol/BasicElements.h"
+
 #include <string>
 #include <stdint.h>
 #include <assert.h>
@@ -244,17 +246,36 @@ const PortEntry Ports_8PRE[] =
     {"ADAT8", MOTUFW_DIR_OUT, MOTUFW_PA_RATE_ANY|MOTUFW_PA_OPTICAL_ADAT, 43},
 };
 
+// Mixer registers
+const MixerCtrl MixerCtrls_Traveler[] = {
+    {"Mix1/Ana1_", "Mix 1 analog 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4000, },
+    {"Mix1/Ana2_", "Mix 1 analog 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4004, },
+    {"Mix1/Ana3_", "Mix 1 analog 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4008, },
+    {"Mix1/Ana4_", "Mix 1 analog 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x400c, },
+    {"Mix1/Ana5_", "Mix 1 analog 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4010, },
+    {"Mix1/Ana6_", "Mix 1 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4014, },
+    {"Mix1/Ana7_", "Mix 1 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4018, },
+    {"Mix1/Ana8_", "Mix 1 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x401c, },
+};
+
+// For convenience during initial testing, just make the 828MkII and 896HD
+// use the Traveler's mixer definition.  Separate definitions for these 
+// models will come once the final mixer structure is in place.  For now
+// it's in a state of flux and subject to significant change.
+#define MixerCtrls_828MkII MixerCtrls_Traveler
+#define MixerCtrls_896HD   MixerCtrls_Traveler
+
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
  */
 const DevicePropertyEntry DevicesProperty[] = {
-//  { Ports_map,       sizeof( Ports_map ),        MaxSR },
-    { Ports_828MKII,   sizeof( Ports_828MKII ),    96000 },
-    { Ports_TRAVELER,  sizeof( Ports_TRAVELER ),  192000 },
-    { Ports_ULTRALITE, sizeof( Ports_ULTRALITE ),  96000 },
-    { Ports_8PRE,      sizeof( Ports_8PRE ),       96000 },
-    { Ports_828MKI,    sizeof( Ports_828MKI ),     48000 },
-    { Ports_896HD,     sizeof( Ports_896HD ),     192000 },
+//  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR },
+    { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, MixerCtrls_828MkII, N_ELEMENTS(MixerCtrls_828MkII), },
+    { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, MixerCtrls_Traveler, N_ELEMENTS(MixerCtrls_Traveler), },
+    { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000 },
+    { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
+    { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
+    { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, MixerCtrls_896HD, N_ELEMENTS(MixerCtrls_896HD),  },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -266,7 +287,8 @@ MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     , m_tx_bandwidth ( -1 )
     , m_receiveProcessor ( 0 )
     , m_transmitProcessor ( 0 )
-
+    , m_MixerContainer ( NULL )
+    , m_ControlContainer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -284,6 +306,124 @@ MotuDevice::~MotuDevice()
     if (m_iso_send_channel>=0 && !get1394Service().freeIsoChannel(m_iso_send_channel)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
     }
+
+    destroyMixer();
+}
+
+bool
+MotuDevice::buildMixer() {
+    unsigned int i;
+    bool result = true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
+
+    destroyMixer();
+        
+    // create the mixer object container
+    m_MixerContainer = new Control::Container("Mixer");
+    if (!m_MixerContainer) {
+        debugError("Could not create mixer container...\n");
+        return false;
+    }
+
+    // Mixer controls get added here
+    for (i=0; i<DevicesProperty[m_motu_model-1].n_mixer_ctrls; i++) {
+        unsigned int type = DevicesProperty[m_motu_model-1].mixer_ctrl[i].type;
+        char name[100];
+        char label[100];
+        if (type & MOTU_CTRL_CHANNEL_FADER) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "fader");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"fader");
+            result &= m_MixerContainer->addElement(
+                new ChannelFader(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_FADER;
+        }
+        if (type & MOTU_CTRL_CHANNEL_PAN) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "pan");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"pan");
+            result &= m_MixerContainer->addElement(
+                new ChannelPan(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_PAN;
+        }
+        if (type) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", DevicesProperty[m_motu_model-1].mixer_ctrl[i].type);
+        }
+    }
+
+    if (!addElement(m_MixerContainer)) {
+        debugWarning("Could not register mixer to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    // Special controls
+    m_ControlContainer = new Control::Container("Control");
+    if (!m_ControlContainer) {
+        debugError("Could not create control container...\n");
+        return false;
+    }
+
+    // Special controls get added here
+
+    if (!result) {
+        debugWarning("One or more device control elements could not be created.");
+        // clean up those that couldn't be created
+        destroyMixer();
+        return false;
+    }
+    if (!addElement(m_ControlContainer)) {
+        debugWarning("Could not register controls to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    return true;
+}
+
+
+bool
+MotuDevice::destroyMixer() {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "destroy mixer...\n");
+
+    if (m_MixerContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
+        return true;
+    }
+    
+    if (!deleteElement(m_MixerContainer)) {
+        debugError("Mixer present but not registered to the avdevice\n");
+        return false;
+    }
+
+    // remove and delete (as in free) child control elements
+    m_MixerContainer->clearElements(true);
+    delete m_MixerContainer;
+    m_MixerContainer = NULL;
+
+    // remove control container
+    if (m_ControlContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no controls to destroy...\n");
+        return true;
+    }
+    
+    if (!deleteElement(m_ControlContainer)) {
+        debugError("Controls present but not registered to the avdevice\n");
+        return false;
+    }
+    
+    // remove and delete (as in free) child control elements
+    m_ControlContainer->clearElements(true);
+    delete m_ControlContainer;
+    m_ControlContainer = NULL;
+
+    return true;
 }
 
 bool
@@ -336,13 +476,18 @@ MotuDevice::discover()
         }
     }
 
-    if (m_model != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
-        return true;
+    if (m_model == NULL) {
+        return false;
     }
 
-    return false;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+        m_model->vendor_name, m_model->model_name);
+
+    if (!buildMixer()) {
+        debugWarning("Could not build mixer\n");
+    }
+
+    return true;
 }
 
 int
@@ -893,10 +1038,10 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     else
         flags |= MOTUFW_PA_RATE_1x;
 
-    for (i=0; i < ( DevicesProperty[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
-        if (( DevicesProperty[m_motu_model-1].PortsList[i].port_dir & dir ) &&
-	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
-	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+    for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
+        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
             size += 3;
         }
     }
@@ -955,7 +1100,7 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     // retrieve the ID
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
-        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
 
     if (direction == Streaming::Port::E_Capture) {
@@ -964,13 +1109,13 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
         s_processor = m_transmitProcessor;
     }
 
-    for (i=0; i < ( DevicesProperty[m_motu_model-1].PortsListLength /sizeof( PortEntry ) ); i++) {
-        if (( DevicesProperty[m_motu_model-1].PortsList[i].port_dir & dir ) &&
-	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
-	   ( DevicesProperty[m_motu_model-1].PortsList[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
+    for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
+        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTUFW_PA_RATE_MASK & flags ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTUFW_PA_OPTICAL_MASK & flags )) {
 	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
-              DevicesProperty[m_motu_model-1].PortsList[i].port_name);
-            if (!addPort(s_processor, buff, direction, DevicesProperty[m_motu_model-1].PortsList[i].port_offset, 0))
+              DevicesProperty[m_motu_model-1].port_entry[i].port_name);
+            if (!addPort(s_processor, buff, direction, DevicesProperty[m_motu_model-1].port_entry[i].port_offset, 0))
                 return false;
         }
     }
