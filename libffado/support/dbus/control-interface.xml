@@ -42,6 +42,9 @@
       <method name="getModelId">
           <arg type="i" name="modelid" direction="out"/>
       </method>
+      <method name="getUnitVersion">
+          <arg type="i" name="unitversion" direction="out"/>
+      </method>
   </interface>
 
   <interface name="org.ffado.Control.Element.Continuous">

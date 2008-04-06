@@ -494,6 +494,12 @@ ConfigRomX::getModelId( )
     return m_Slave.getModelId();
 }
 
+DBus::Int32
+ConfigRomX::getUnitVersion( )
+{
+    return m_Slave.getUnitVersion();
+}
+
 // --- MatrixMixer
 
 MatrixMixer::MatrixMixer( DBus::Connection& connection, std::string p, Control::MatrixMixer &slave)

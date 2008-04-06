@@ -210,6 +210,7 @@ public:
     DBus::String getModelName( );
     DBus::Int32 getVendorId( );
     DBus::Int32 getModelId( );
+    DBus::Int32 getUnitVersion( );
 
 private:
     ConfigRom &m_Slave;
