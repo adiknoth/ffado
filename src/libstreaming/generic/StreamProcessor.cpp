@@ -1145,6 +1145,12 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
         return scheduleStateTransition(ePS_WaitingForStream, tx);
     } else if (m_state == ePS_Running) {
         return scheduleStateTransition(ePS_WaitingForStreamDisable, tx);
+    } else if (m_state == ePS_DryRunning) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " %p already in DryRunning state\n", this);
+        return true;
+    } else if (m_state == ePS_WaitingForStreamDisable) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " %p already waiting to switch to DryRunning state\n", this);
+        return true;
     } else {
         debugError("Cannot switch to ePS_DryRunning from %s\n", ePSToString(m_state));
         return false;
@@ -1704,39 +1710,50 @@ bool StreamProcessor::waitForProduce(unsigned int nframes)
                        this, getTypeString());
     struct timespec ts;
     int result;
+    int max_runs = 1000;
 
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
         debugError("clock_gettime failed\n");
         return false;
     }
 
-    // FIXME: hardcoded timeout of 0.1 sec
-    ts.tv_nsec += 100 * 1000000LL;
-    if (ts.tv_nsec > 1000000000LL) {
-        ts.tv_sec += 1;
-        ts.tv_nsec -= 1000000000LL;
-    }
-
+    // FIXME: hardcoded timeout of 10 sec
+//     ts.tv_nsec += 1000 * 1000000LL;
+//     while (ts.tv_nsec > 1000000000LL) {
+//         ts.tv_sec += 1;
+//         ts.tv_nsec -= 1000000000LL;
+//     }
+    ts.tv_sec += 2;
+    
     pthread_mutex_lock(&m_activity_cond_lock);
-    while(!canProduce(nframes)) {
+    while(!canProduce(nframes) && max_runs) {
         result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
     
-        if (result == -1) {
-            if (errno == ETIMEDOUT) {
+        if(result != 0) {
+            if (result == ETIMEDOUT) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "(%p, %s) pthread_cond_timedwait() timed out\n",
-                            this, getTypeString());
+                            "(%p, %s) pthread_cond_timedwait() timed out (result=%d)\n",
+                            this, getTypeString(), result);
+                pthread_mutex_unlock(&m_activity_cond_lock);
+                return false;
+            } else if (result == EINTR) {
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "(%p, %s) pthread_cond_timedwait() interrupted by signal (result=%d)\n",
+                            this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             } else {
-                debugError("(%p, %s) pthread_cond_timedwait error\n", 
-                           this, getTypeString());
+                debugError("(%p, %s) pthread_cond_timedwait error (result=%d)\n", 
+                            this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             }
         }
     }
     pthread_mutex_unlock(&m_activity_cond_lock);
+    if(max_runs == 0) {
+        debugWarning("(%p) runaway loop\n");
+    }
     return true;
 }
 
@@ -1756,34 +1773,52 @@ bool StreamProcessor::waitForConsume(unsigned int nframes)
     struct timespec ts;
     int result;
 
+    int max_runs = 1000;
+
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
         debugError("clock_gettime failed\n");
         return false;
     }
 
-    // FIXME: hardcoded timeout of 0.1 sec
-    ts.tv_nsec += 100 * 1000000LL;
-    if (ts.tv_nsec > 1000000000LL) {
-        ts.tv_sec += 1;
-        ts.tv_nsec -= 1000000000LL;
-    }
+    // FIXME: hardcoded timeout of 10 sec
+//     ts.tv_nsec += 1000 * 1000000LL;
+//     while (ts.tv_nsec > 1000000000LL) {
+//         ts.tv_sec += 1;
+//         ts.tv_nsec -= 1000000000LL;
+//     }
+    ts.tv_sec += 2;
 
     pthread_mutex_lock(&m_activity_cond_lock);
-    while(!canConsume(nframes)) {
+    while(!canConsume(nframes) && max_runs) {
         result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
-        if (result == -1) {
-            if (errno == ETIMEDOUT) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) pthread_cond_timedwait() timed out\n", this, getTypeString());
+        if(result != 0) {
+            if (result == ETIMEDOUT) {
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "(%p, %s) pthread_cond_timedwait() timed out (result=%d)\n",
+                            this, getTypeString(), result);
+                pthread_mutex_unlock(&m_activity_cond_lock);
+                return false;
+            } else if (result == EINTR) {
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "(%p, %s) pthread_cond_timedwait() interrupted by signal (result=%d)\n",
+                            this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             } else {
-                debugError("(%p, %s) pthread_cond_timedwait error\n", this, getTypeString());
+                debugError("(%p, %s) pthread_cond_timedwait error (result=%d)\n", 
+                            this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
                 return false;
             }
         }
+        max_runs--;
     }
     pthread_mutex_unlock(&m_activity_cond_lock);
+    
+    if(max_runs == 0) {
+        debugWarning("(%p) runaway loop\n");
+    }
+    
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        "(%p, %s) leave ...\n",
                        this, getTypeString());
