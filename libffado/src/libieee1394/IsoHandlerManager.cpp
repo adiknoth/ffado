@@ -208,7 +208,12 @@ IsoTask::Execute()
 
             if(!m_SyncIsoHandler->waitForClient()) {
                 debugError("Failed to wait for client\n");
-                return false;
+                // This can be due to error or due to timeout
+                
+                // sleep for a while
+                usleep(m_poll_timeout * 1000); // FIXME
+                // exit this iteration loop
+                return true;
             }
 
             #ifdef DEBUG
