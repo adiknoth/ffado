@@ -43,6 +43,8 @@ from mixer_mackie_generic import *
 from mixer_quatafire import *
 from mixer_motu import *
 
+from mixer_generic import *
+
 SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
     [(0x000aac, 0x00000004),'PhaseX24Control'],
@@ -275,9 +277,14 @@ if __name__ == "__main__":
                 forms[idx].clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
                 forms[idx].initValues()
                 forms[idx].show()
-                app.setMainWidget(forms[idx])
+
+    if not forms and nbDevices > 0:
+        forms.append( GenericMixer( devmgr.bus, server ) )
+        forms[0].show()
 
     if forms:
+        app.setMainWidget(forms[0])
+
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
         app.exec_loop()
