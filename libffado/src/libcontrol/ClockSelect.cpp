@@ -40,7 +40,7 @@ bool
 ClockSelect::select(int idx)
 {
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
-    if(idx > (int)v.size()) {
+    if(idx >= (int)v.size()) {
         debugError("index out of range\n");
         return false;
     }
@@ -77,7 +77,7 @@ std::string
 ClockSelect::getEnumLabel(int idx)
 {
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
-    if(idx > (int)v.size()) {
+    if(idx >= (int)v.size()) {
         debugError("index out of range\n");
         return false;
     }
