@@ -1,0 +1,934 @@
+Notes on the MOTU Traveler/828MkII firewire protocol
+====================================================
+
+Author: Jonathan Woithe
+Document version: 20080413-1
+
+
+Audio/MIDI data
+---------------
+
+Audio data is sent via iso packets.  With nothing else present on the
+firewire bus Iso channel 0 is used by the PC to send data to the MOTU while
+iso channel 1 is used by the MOTU to send data to the PC.  The channels
+used can be arbitarily chosen by software subject to availability as
+indicated by the Isochronous Resource Manager (IRM).
+
+The MOTU appears to utilise some ideas from IEC 61883-6.  For example, each
+iso packet seems to include a CIP header (the iso packet header has the tag
+field set to 0x01 to indicate the presence of the CIP).  However, the
+standard is not followed completely to the finest detail.  Typical CIP
+header values from the Traveler for audio data packets at a 44.1 kHz rate
+with SPDIF enabled and the optical I/O ports set to ADAT mode are as
+follows:
+
+  SID = 0x02    dependent on bus topography
+  DBS = 0x13    expressed in quadlets
+  FN  = 0       as expected from IEC 61883-6
+  QPC = 0       as expected from IEC 61883-6
+  SPH = 1       indicating a source packet header is included.  IEC 61883-6
+                expects SPH to be 0 for A/V transport.
+  Rsv = 0
+  DBC = yyy     Data block count varies from packet to packet
+  FMT = 0x02    IEC 61883-6 expects this to be 0x10 for A/V data.  MOTU
+                seem to be using 0x02 for their own purposes.
+  FDF = 0x22    This means the data is 32 bit floating point according to
+                IEC 61883-6.  The data isn't 32 bit floating point, so MOTU
+                obviously use this field to mean their own thing.
+  SYT = 0xffff  IEC 61883-6 says this field is the time the event is to be
+                presented to the receiver.  Clearly this isn't used by MOTU.
+
+The FDF field is interesting in that when interpreted as per IEC 61883-6, it
+doesn't reflect the reality of the audio stream used by the Traveler (see
+below).  One has to assume that MOTU have redefined this for their own
+purposes.
+
+The DBC field is incremented from packet to packet by the number of
+data blocks contained in the packet.  At 1x rates there are nominally 8
+data blocks per packet, so DBC increments by 8 between successive iso data
+packets.
+
+The DBS (Data Block Size) varies according to the sampling rate in use. At
+1x rates (44.1 kHz, 48 kHz) it is 0x13.  At 2x rates it reduces to 0x10
+while at 4x rates it decreases again to 0x09.  Similarly the iso data length
+differs according to the sampling rate: 0x268 at 1x rates (giving 8 blocks
+per iso data packet), 0x408 at 2x rates (giving 16 blocks per iso data
+packet) and 0x488 at 4x rates (giving 32 blocks per iso data packet).
+
+The traveler usually becomes the IRM on the firewire bus it is plugged into;
+when functioning as the IRM it also broadcasts "cycle start" packets on a
+regular basis as would be expected. These appear to be as per ieee1394-1995. 
+These broadcast a quadlet in the same form as the Traveler's cycle time
+register with a value equal to the cycle time register at the time the
+packet was submitted for transmittsion.  The format of this register is as
+follows:
+
+  bits 31-25 = seconds count (0-127)
+  bits 24-12 = cycle count (0-7999)
+  bits 11-0  = cycle offset (0-3071)
+
+Each portion of the register wraps to 0 at the end of the range, causing
+the next most significant component to be incremented by one.  When the
+"seconds count" overflows it simply wraps to 0 without incrementing
+anything.  The cycle offset is incremented by a 24.576 MHz clock.
+The cycle count can be thought of as the fractional part of the current
+second in units of 125 us.
+
+The data portion of a typical iso packet to/from the Traveler contains a CIP
+header and 8, 16 or 32 data blocks (depending on sampling rate) of size DBS
+quadlets (DBS*4 bytes).  Empty packets are utilised periodically to maintain
+the long-term average equal to the sampling interval.  For example, at 48
+kHz, 3 packets with 8 datablocks are sent, followed by a single empty
+packet.
+
+The format of each data block varies according to whether a 1x, 2x or 4x
+clock multiplier is in use.  At 44.1 kHz or 48 kHz (ie: a 1x clock), each
+data block contains the following in this order:
+
+  32 bit Source Packet Header (SPH) (+)
+  48 bits of control/MIDI data (&)
+  24 bit audio values: headphone L&R / mix1 L&R (*)
+  24 bit audio values: analog channels 1-8
+  24 bit audio values: AES-EBU L and R
+  24 bit audio values: SPDIF L and R
+  24 bit audio values: ADAT channels 1-8
+
+At 2x clock frequencies (88.2 kHz and 96 kHz) the ADAT channels 5-8 are
+dropped from the datablock, leaving the following arrangement:
+
+  32 bit Source Packet Header (SPH) (+)
+  48 bits of control/MIDI data (&)
+  24 bit audio values: headphone L&R / mix1 L&R (*)
+  24 bit audio values: analog channels 1-8
+  24 bit audio values: AES-EBU L and R
+  24 bit audio values: SPDIF L and R
+  24 bit audio values: ADAT channels 1-4
+
+At 4x clock frequencies (176.4 k kHz and 192 kHz) all digital I/O is disabled
+along with the separate headphone / mix1 bus.  The resulting datablock
+is formatted as follows.
+
+  32 bit Source Packet Header (SPH) (+)
+  48 bits of control/MIDI, MSB first (&)
+  24 bit audio values: analog channels 1-8
+  16 bits of padding (%)
+
+Notes:
+ (+) The SPH is defined in IEC 61883-6:
+       Bits 31-25 = reserved
+       Bits 24-12 = cycle count (0-7999)
+       Bits 11-0  = cycle offset (0-3071)
+ (&) These values have been observed to be almost always 0 in packets sent
+     by the PC except when MIDI is sent, but for packets sent by the MOTU
+     they are generally non-zero.  See below for more details on these
+     bytes.
+ (*) Packets from the traveler send mix1 data here; packets from the PC
+     send data for the headphone channel here.
+ (%) It appears the Motu pads data in a cycle using values of either 0x0000
+     or 0xffff.  It appears to use a regular pattern, although the pattern
+     itself appears variable.  Two patterns have been observed so far:
+       * two blocks of 0xffff followed by two blocks of 0x0000.
+       * a block of 0xffff followed by three blocks of 0xffff.
+    The PC driver always appears to send pad values of 0x0000.
+
+If the optical ports have been set to TOSLINK rather than ADAT, the data
+sent in the iso datablocks is adjusted accordingly - the 8 (or 4) ADAT
+channels and 2 coax SPDIF channels are omitted and the 2 optical TOSLINK
+channels are sent in their place.
+
+For packets from the PC to the MOTU, the timestamp given in the SPH probably
+represents the cycle time at which the data given should be output by the
+interface.  For packets coming from the MOTU to the PC this timestamp is
+most likely the cycle time at which the data was sampled by the interface.
+
+The cycle offset increment used for each successive datablock varies
+according to the sampling frequency as one would expect.  While the
+increment value is "mostly constant" it does vary by +/-1 at times.  This
+would be to keep the data in sync with the audio sampling frequency in use,
+as some audio sampling frequencies - those which are multiples of 44.1 kHz -
+are not integral factors of the cycle offset frequency (and even those which
+are sometimes deviate from the theoretical increment by 1).  The increments
+seen in data coming from the Motu are generally a lot more consistent than
+those coming from the PC.
+
+The 48 bits Control/MIDI data appears to play a part in MIDI data
+transmission.  When the PC is transmitting a MIDI stream to the Motu it does
+so byte by byte.  A byte of midi data is sent using the first and third bytes
+following a data block's SPH, forming a midi subpacket for want of a better
+description.  The format of the midi subpacket appears to be
+
+  0x0100nn
+
+where nn is the MIDI byte being sent.  Having more than one MIDI subpacket
+in a single transmitted iso data packet has never been observed; it seems
+therefore that on this interface the timing of the MIDI subpackets is to
+match exactly their transmission onto the wire.  Furthermore, sending data
+to the MOTU at a rate faster then the hardware midi rate of 3125 bytes per
+second (31250 baud with 8 bit data, 1 start bit and 1 stop bit) will cause
+MIDI bytes to be dropped or corrupted in interesting ways.
+
+For data coming from the Motu it appears that these 48 Control/MIDI bits are
+used for a number of purposes, although some of the details are yet to be
+worked out.  However, it appears that MIDI data is intermingled with this. 
+At this stage it seems that when bit 40 is set then bits 24-31 contain a
+MIDI byte.  The contents of bits 41-47 and 32-39 do not appear to be
+affected by having bit 40 set, so at this stage one concludes that their
+function (mostly related to Cuemix setting updates) continues even when MIDI
+data is sent.  Obviously any other function of bits 24-31 is interrupted when
+these bits are required for a MIDI byte.
+
+Putting all this together, bit 40 appears to be a "MIDI byte present" bit;
+if set, bits 24-31 contain a MIDI byte.  All other bits of the Control/MIDI
+fields continue to function even when bit 40 is set.  If this definition is
+adopted it applies equally well to both incoming and outgoing MIDI data.
+
+It should be noted that the Traveler has never been observed to send more
+than one MIDI data byte per iso packet.  Presumedly therefore the timing of
+the bytes delivered by the Traveler is very close to the timing on the MIDI
+wire.  However, other MOTU devices (the 828Mk2 for example) do transmit more
+than one MIDI byte in a single packet.  On these devices MIDI messages must
+be buffered in the device and sent in a burst once a complete message has
+been received.
+
+
+SMPTE timecode
+--------------
+It appears that the traveler itself has no way to generate SMPTE timecode
+internally.  The SMTPE console application allows one to generate timecode,
+but the timecode stops as soon as this application is exitted.
+
+In addition, changing any of the settings in the SMPTE console does not
+appear to change any hardware settings in the MOTU with the exception of the
+"clock/address" control - this changes the source in a similar way to that
+in the main MOTU setup program.  The obvious conclusion here is that SMTPE
+generation appears to be a feature implemented in the host software.
+
+
+Talkback/listenback
+-------------------
+These features of the Cuemix console appear to be implemented in the host
+software.  Enabling either of these appears to simply set the mixer
+registers to suit talkback/listenback, with the "normal" settings 
+restored when talkback/listenback is disengaged.  The motu itself does not
+appear to have any explicit on-board support of these modes.
+
+
+Bus renaming in Cuemix console
+------------------------------
+The naming of the 4 mix buses provided by the Cuemix console seems to be
+internal to the Cuemix console application.  Changing the mix names results
+in no traffic being sent to/from the motu.
+
+
+MIDI in/out
+-----------
+MIDI data is sent within the first 48 bytes of the data blocks within an
+iso data packet.  This is described in detail in the "Audio/MIDI data" 
+section.
+
+
+Controlling Cuemix
+------------------
+It has been noted that some mixer settings (particularly registers 0x4yyy)
+have been found to utilise "write enable" bits which when set allow their
+associated part of the control register to be acted upon.  There is no
+reason to think that the 0x4yyy registers are unique here; it's likely that
+other control registers implement a similar idea.  It is thought that
+whenever bits are seemingly set to 1 by the Cuemix console there is a stong
+possibility they form some kind of enable mask.  When such values are noted
+in the register description it is likely that they must be supplied as noted
+if the desired register change is to be successful.  In time it is hoped that
+the function of these magic settings can be deduced.
+
+Finally, when manually changing Cuemix settings on the Motu's front panel,
+the Cuemix console is observed to update its display accordingly.  The data
+for these updates comes via a byte stream transmitted by the Motu using a
+key/value system in the first two bytes of each data block in the iso
+stream.  Within a given data block, bits 7-1 of the first byte is the key
+while the second byte gives the respective value.  Recall that bit 0 of the
+first byte is a "MIDI byte present" flag, indicating that the third byte in
+the data block contains a MIDI data byte - refer to the "Audio/MIDI data"
+section for more details.
+
+The following describes all keys observed so far from the Traveler.  Note
+that the key values reported here are for bits 7-0 of the first byte with
+bit 0 (the MIDI present bit) masked to zero.
+
+  0x04 = Some kind of timer/counter.  Details not yet identified.
+  0x0c = Mix bus sync key.  The mix bus to which the next mix bus 
+         parameter(s) apply to is given by bits 7-5 in the data byte.
+  0x14 = channel gain value (0x00-0x80)
+  0x1c = channel pan value (0x00-0x80, 0x40=centre)
+  0x24 = channel control: 0x01=mute, 0x02=solo, 0x08=paired
+  0x2c = mix bus gain (0x00-0x80)
+  0x34 = mix bus destination/mute.  Bits 3-0 are as per "output destination"
+         in register 0x0c20; bit 4 is the mute bit.
+  0x3c = main out volume (0x00-0x80)
+  0x44 = phones volume (0x00-0x80)
+  0x4c = phones assign (values as per "output destination" in register 0x0c20)
+  0x54 = at 48 kHz remains fixed at 0x00.  Purpose unknown.
+  0x64 = at 48 kHz remains fixed at 0x00.  Purpose unknown.
+  0x6c = +6 dB boost (analog channels 5-8 only).  Bits 4-7 = channels 5-8.
+  0x74 = ref level.  Bits 4-7 = channels 5-8.  Bit set/clear = +4/-10.
+  0xfc = Some kind of timer/counter.  Details not yet identified.
+
+For many of these keys there are multiple values to communicate; for
+example, for key 0x14 (channel gain) there are up to 20 values for each of 4
+mix buses, corresponding to the 20 input channels available (analog 1-8,
+SPDIF, AES/EDU, ADAT 1-8).  In such situations the multiple values for a
+given mix bus are transmitted sequentially (each having the same key)
+following a mix bus sync key which gives the mix bus to which the values
+apply.
+
+In the case of the Traveler the following sequence of keys is used.
+Timing/counter events have been omitted from this sequence.  N is the number
+of channels active.
+
+  Mix bus sync key
+  N channel gain keys
+  Mix bus sync key
+  N channel pan keys
+  Mix bus sync key
+  N channel control keys
+  Mix bus sync key
+  Mix bus gain key
+  Mix bus destination key
+  Main out volume key
+  Phones volume key
+  Phones destination key
+  Input 6dB boost key
+  Input reference level key
+
+The device-wide keys are therefore seen 4 times as often as the per-mixbus
+keys.
+
+Curiously enough, the gain trim and pad settings for analog channels 1-4
+use a different method to communicate their changed status; for these
+settings the Motu writes to a specific address on the PC and in
+response the PC reads a register from the Motu.  When a channel's gain trim
+or pad setting is altered:
+ * Motu sends 0x20ffffff to address offset 0x100000000 on the PC 
+ * In response the PC reads register 0x0c1c from the Motu to obtain the new
+   gain trim value and pad setting.
+
+
+Controlling sample rate
+-----------------------
+
+Sample rate is mainly controlled by the clock control register (0x0b14)
+although other registers do play a part.  It seems that the front panel
+sample rate control is locked out by any write to the clock control
+register; once locked it is only unlockable by power cycling the MOTU or by
+unplugging it from the computer.
+
+
+Device identification
+---------------------
+
+The ieee1394 vendor ID field currently seems to be set to 0x000001f2 to
+signify MOTU.
+
+The ieee1394 model ID is a little more interesting.  Originally it was
+thought that 0x00101800 represented the 828MkII while 0x00104800 was the
+Traveler.  However, following an update to Traveler firmware 1.07 the model
+ID field changed to 0x00107800.  From this it appears that the model ID
+field probably does not identify the MOTU model but rather communicates the
+firmware version along with other information.  It appears that bits 19-12
+of the model ID are a binary-coded decimal representation of the minor
+firmware version number while at least bits 23-20 (and possibly 27-20) give
+the major firmware version number.  Further datapoints will be needed to
+verify these details, particularly the span of the major version number.
+The meaning of bits 11-0 are currently unknown; they seem to equal 0x800
+in all 828MkIIs and Travelers.
+
+The ieee1394 GUID (globally unique ID) is preserved for a given unit
+across firmware updates, but is unique to each particular unit.  Therefore
+it cannot be used to unambiguously differentiate between different MOTU
+interfaces.  However, the unit directory version entry does appear to be set
+for particular models across firmware upgrades (0x00000003 for 828MkII,
+0x00000009 for Traveler).  Therefore the best bet at this stage appears to be 
+a probe for a vendor ID of 0x000001f2 with one of the above version values
+in the unit directory of the config ROM.
+
+Alternatively one could probe for registers known to exist on only one of
+the interfaces.  The trim gain / 20 dB pad status register (0x0c1c) is an
+obvious choice since these features are only present on the Traveler.  At
+this stage however this seems to be unnecessary.
+
+
+Firmware updates
+----------------
+
+A firmware update is initiated by powering the unit up in "update" mode by
+turning on while the "cursor" button is held.  After verifying "update"
+mode, registers 0x010000, 0x010004, 0x010008 and 0x01000c are read; with
+firmware 1.04 loaded the values returned were 0x23ba58f, 0x86e5aa30,
+0xe7fb2202 and 0x4b85130d.  These match exactly the first 16 data bytes of
+firmware 1.07 as downloaded to the device, so it's thought that these first
+4 quadlets contain some kind of magic number signature designed to confirm
+that the device really is a MOTU, or (somewhat less likely) to perhaps
+confirm that the MOTU is in update mode.
+
+Next 0x4d4f5455 ("MOTU") is written to register 0x0c00; the new firmware is
+then loaded by writing to sequential registers 0x010000 - 0x019ffc and
+0x01c000 - 0x02fffc. At the end of writing, 0x00 is written to register
+0x0c00.
+
+Verification is by way of reading back the firmware registers from the
+device.
+
+The process of confirming that the device is in update mode is not yet fully
+understood.  In terms of the startup sequence it appears that the only
+difference between normal and update modes is that register 0x0400 is set to
+0x410df42 in normal mode and 0x410f3a8 when in update mode.
+
+The Travimage.bin firmware file provided by MOTU seems to comprise some kind
+of header in bytes 0x00 - 0x17, with the actual firmware data starting at
+byte 0x18.  The firmware is stored in network byte order (ie: big endian)
+quadlets - precisely the same format used to send them to the MOTU device. 
+The file also appears to include bytes 0x01a000 - 0x01bfff even though the
+traveler updater doesn't appear to send this range to the MOTU device.
+The firmware file for 1.07 seems to contain 0x020000 bytes of firmware data;
+given that the firmware updater writes up to register 0x02fffc the updater
+must infer data values of 0xff once the file ends.
+
+
+Register map
+------------
+
+MOTU registers currently known.  The base address is 0xfffff0000000.
+
+0x0b00 - Iso streaming control
+0x0b04 - Device initialisation/discovery?
+0x0b08 - Device initialisation/discovery?
+0x0b10 - Optical port control?
+0x0b14 - clock control register
+0x0b24 - non-existent register probed during discovery/initialisation
+0x0b28 - copy of model_id unit directory
+0x0b2c - something related to selections in mixer application
+0x0c00 - firmware programming control
+0x0c04 - routing / port configuration
+0x0c08 - input level (for analog channels 5-8 only)
+0x0c14 - boost controls (for analog channels 5-8 only)
+0x0c18 - something related to selections in mixer application
+0x0c1c - gain trim / 20 dB pad controls (for analog channels 1-4 only)
+0x0c20 - mix1 routing control
+0x0c24 - mix2 routing control
+0x0c28 - mix3 routing control
+0x0c2c - mix4 routing control
+0x0c60 - ASCII name of current clock source (characters 0-3)
+0x0c64 - ASCII name of current clock source (characters 4-7)
+0x0c68 - ASCII name of current clock source (characters 8-11)
+0x0c6c - ASCII name of current clock source (characters 12-15)
+0x4000 - mix1 gain/pan/solo/mute, analog channel 1
+0x4004 - mix1 gain/pan/solo/mute, analog channel 2
+0x4008 - mix1 gain/pan/solo/mute, analog channel 3
+0x400c - mix1 gain/pan/solo/mute, analog channel 4
+0x4010 - mix1 gain/pan/solo/mute, analog channel 5
+0x4014 - mix1 gain/pan/solo/mute, analog channel 6
+0x4018 - mix1 gain/pan/solo/mute, analog channel 7
+0x401c - mix1 gain/pan/solo/mute, analog channel 8
+0x4020 - mix1 gain/pan/solo/mute, AES-EBU 1/L
+0x4024 - mix1 gain/pan/solo/mute, AES-EBU 2/R
+0x4028 - mix1 gain/pan/solo/mute, SPDIF 1/L
+0x402c - mix1 gain/pan/solo/mute, SPDIF 2/R
+0x4030 - mix1 gain/pan/solo/mute, ADAT channel 1
+0x4034 - mix1 gain/pan/solo/mute, ADAT channel 2
+0x4038 - mix1 gain/pan/solo/mute, ADAT channel 3
+0x403c - mix1 gain/pan/solo/mute, ADAT channel 4
+0x4040 - mix1 gain/pan/solo/mute, ADAT channel 5
+0x4044 - mix1 gain/pan/solo/mute, ADAT channel 6
+0x4048 - mix1 gain/pan/solo/mute, ADAT channel 7
+0x404c - mix1 gain/pan/solo/mute, ADAT channel 8
+0x4100
+ :     - mix2 gain/pan/solo/mute, order as for mix1
+0x414c
+0x4200
+ :     - mix3 gain/pan/solo/mute, order as for mix1
+0x424c
+0x4300
+ :     - mix4 gain/pan/solo/mute, order as for mix1
+0x434c
+
+0x010000
+ :     - firmware, block 1
+0x019ffc
+
+0x01c000
+ :     - firmware, block 2
+0x02fffc
+
+
+Register details
+----------------
+
+0x0b00 - Iso streaming control
+
+This register is primarily for the control of iso streaming.  It has been
+observed to be set to one of two values: 0x80810000 or 0xc0c10000.  The
+latter value appears to activate ISO streaming while the former turns it
+off.  On readback bits 31 and 23 are zero no matter whether the previously
+written value was 0x80810000 or 0xc0c10000.  This suggests that these two
+bits are effectively "write enable" for iso receive/send configuration on
+the Motu, with bits 30/22 being "iso receive/send enable" (again as viewed
+by the Motu).
+
+Experiments indicate that bits 29-24 give the iso channel number the Motu
+should expect data on (ie: the PC->Motu iso channel number) while bits 21-16
+specify the iso channel the Motu should send its data on (ie: the Motu->PC
+iso channel number).  This makes sense since there are 64 iso channels
+available on the firewire bus requiring 6 bits to specify.  If it is then
+assumed that bits 15-0 are reserved we have the following layout for
+this register.
+
+  bit 31 = enable configuration change of PC->Motu iso streaming
+  bit 30 = PC->Motu iso streaming enable
+  bits 29-24 = PC->Motu iso channel
+  bit 23 = enable configuration change of Motu->PC iso streaming
+  bit 22 = Motu->PC iso streaming enable
+  bits 21-16 = Motu->PC iso channel
+  bits 15-0 = reserved, always 0
+
+
+0x0b04 - Device initialisation/discovery?
+
+This register seems to come into play only during device
+discovery/initialisation.  The driver writes 0xffc20001 to this register
+which is accepted by the MOTU.  The purpose of this is not known.
+
+
+0x0b08 - Device initialisation/discovery?
+
+This is another register which shows up only during device
+discovery/initialisation.  A value of 0x00 is written to this register which
+is accepted by the MOTU.  The purpose of this is not currently understood.
+
+
+0x0b10 - Optical port control?
+
+It is not yet clear what this register does.  It plays some part in
+setting the mode of the optical ports (see also register c04).
+
+Bit 7 is set to 1 by Cuemix console whenever the optical input port is set
+to "off" or "TOSLink" and is 0 if set to "ADAT".
+
+Bit 6 is set to 1 by Cuemix console whenever the optical output port is set
+to "off" or "TOSLink" and is 0 if set to "ADAT".
+
+Bit 1 seems to be set most if not all of the time in values written by
+the Cuemix console.
+
+Originally it was thought that bit 7 might control the availability of
+the 8 ADAT inputs while bit 6 controlled the ADAT outputs.  However,
+subsequent tests seemed to indicate that this was not the case - setting
+these bits in isolation did not affect the hardware cuemix display in
+any way.
+
+When this register is read back its value appears to be 0x00001800 no matter
+what the optical inputs are set up as.
+
+
+0x0b14 - clock control register
+
+This register is used in conjunction with others (like 0x0c0-0x0c6) to
+control the sample clock.  Not all bits have been identified yet.  Any write
+to this register seems to lock out the front panel sample rate control until
+the MOTU is turned off or the MOTU is unplugged from the computer.
+
+The details of the clock control register are summarised below.
+
+  bits 31-28: unknown at present.  Seem to always be set to 0.
+
+  bit 27: in 2x or 4x clock mode, this bit indicates whether word clock out
+    should follow the system clock (bit 27 set to 1) or should be forced to
+    the base rate (bit 27 set to 0).
+
+  bits 26-6: unknown at present.  Bit 26 appears to be set in every write to
+    this register.  Bits 25 and 24 are toggled at various stages when the
+    rate is changed and seem to both be set at times when iso data streaming
+    is enabled.  Other bits appear to always be set to zero.
+
+  bit 5: 4x rate multiplier selector
+    Enables the 4x clock multiplier (giving access to 176000 Hz and 192000 Hz
+    rates)
+
+  bit 4: 2x rate multiplier selector
+    Enables the 2x clock multiplier (giving access to 88200 Hz and 96000 Hz
+    rates)
+
+  bit 3: Base rate selector:
+           0 = 44100 Hz
+           1 = 48000 Hz
+
+  bits 2-0: clock source:
+              0 = internal (and SMTPE if in the Audio console)
+              1 = ADAT optical
+              2 = (coaxial) SPDIF or (optical) TOSLink
+              3 = SMTPE (set only by SMTPE console)
+              4 = Word clock in
+              5 = ADAT 9 pin
+              6 = [ reserved? ]
+              7 = AES-EBU
+
+Note: when changing the rate multipliers additional work needs to be done
+involving bits 11-8 of register 0x0c04 (routing/port configuration
+register), bits 6 and 7 of 0x0b10 (optical control register) and other as
+yet unidentified bits of 0x0b14.  While 0x0b10 and 0x0c04 are always
+written, they only seem to change value only when moving to a 4x multiplier.
+to ensure the ADAT/SPDIF optical port is disabled at 4x sample rates.
+
+The rest of the details associated with these other registers are yet to be
+deduced.  Note for instance that the 0x0b10 changes only appear to affect
+ADAT controls - verified by observing that the same changes to 0x0b10 are
+made when the optical ports are turned off in the Audio console program.
+
+When the clock source is changed via this register, the textual name of the
+source is always sent immediately afterward to 0x0c60-0x06c.  This is used
+to report the current clock as selected by the PC on the LCD via the setup
+menu.  See the description of these registers for more details.
+
+SMTPE is interesting: its distinct value (3) is configured only if one
+requests SMTPE as the clock source under the SMTPE console.  Selecting SMTPE
+as the source in the Audio console appears to use the "internal" setting for
+bits 0-3.
+
+
+0x0b24 - non-existent register probed during discovery/initialisation
+
+Register 0x0b24 doesn't exist in the MOTU hardware, but a read request is
+sent to it twice during device discovery/initialisation.  In response the
+MOTU returns "type_error" with data equal to 0x40000.  The precise purpose
+of this is not known.
+
+
+0x0b28 - copy of model_id unit directory
+
+This register appears to be a copy of the model_id unit directory, normally
+found in config ROM register 0x0434.  The presence and contents of this
+register have only been verified on the 828MkII - the driver reads this
+register when a 828MkII is connected but the Traveler initialisation
+sequence does not appear to read it.
+
+
+0x0b2c - something related to selections in mixer application
+
+This register has something to do with destination of the selected mix bus
+in the mixer application.  When a mix bus is selected, 0xbXX is written to
+this register where XX is the output destination of the selected mix bus.
+The interpretation of XX is the same as for the 0x0c20 register - see below.
+
+The point of this is not currently known.
+
+If "Cuemix input includes computer output" is selected in cuemix console:
+  0xc01 is written to register 0x0b2c
+  0x001 is written to register 0x0c18
+
+When "Cuemix input includes computer output" is turned off in cuemix console:
+  0xc00 is written to register 0x0b2c
+  0x000 is written to register 0x0c18
+
+When Cuemix console is started, 0xb00 is written to register 0x0b2c after
+the rest of the startup sequence is complete; some time later a value
+of 0x0b02 is written.  This sequence is possibly related to the mix
+inherently selected when cuemix is started; as noted above, when a mix
+is selected it does cause 0xb00 to be written to.
+
+Register 0x0b2c appears to be read-only.
+
+
+0x0c00 - firmware programming control
+
+It appears that when the MOTU is in "update" mode this register is used
+to enable writing to the device's firmware area (registers 0x010000 -
+0x019ffc and 0x01c000 - 0x02fffc).  Writing 0x4d4f5455 ("MOTU") seems
+to enable writes to the firmware while writing 0x00 is written when the
+firmware update is complete.
+
+
+0x0c04 - routing / port configuration
+
+This register appears to have something to do with routing and port
+configuration.
+
+Bits 7-0 control the source for the phones output.  The numbers used are
+the same as for the output destination of the mix routing control (0x0c20
+etc) - see below for details.
+
+Bits 9-8 specify the mode of the optical input port:
+  00 = off, 01 = ADAT, 10 = TOSLink (numbers given are in binary)
+Register 0xb10 also plays a role in setting the optical input port mode.
+
+Bits 11-10 specify the mode of the optical output port in the same way
+as for the optical input port.  Again, register 0b10 seems to play a role
+in setting the optical output port mode.
+
+Bits 31-12 are unknown at present.  They seem to be set to 0x03000 in 
+the default condition.
+
+
+0x0c08 - input level (for analog channels 5-8 only)
+
+This sets the input level for analog channels 5 to 8.  The default is
++4 dBU, but this register can be used to select -10 dBU if desired.
+
+Only bits 4-7 appear to be significant in this register when setting input
+level; all other bits are set to zero.
+
+  bit 4: analog channel 5 input level
+  bit 5: analog channel 6 input level
+  bit 6: analog channel 7 input level
+  bit 7: analog channel 8 input level
+
+When a channel's bit is set (the default condition) an input level of +4 dBU
+is assumed.  If the bit is zero it selects an input level of -10 dBU for
+the respective channel.
+
+A write to this register sets the input level for all channels.
+
+The MOTU mixer application ties analog channels 5/6 and 7/8 together
+(presumedly as a stereo pair) and activates the input level for the pair
+whenever one channel is selected.  It seems likely that the channels can
+be individually controlled though, but this hasn't been verified yet.
+
+
+0x0c14 - boost controls (for analog channels 5-8 only)
+
+Bits 4-7 of this register controls the activation of an additional 6dB of
+gain for analog channels 5-8.  All other bits are set to zero.
+
+  bit 4: analog channel 5 boost
+  bit 5: analog channel 6 boost
+  bit 6: analog channel 7 boost
+  bit 7: analog channel 8 boost
+
+When a bit is zero (the default condition) the additional 6 dB boost is not
+active.  When set to 1, the boost becomes active for the respective channel.
+
+The boost status of all 4 channels is always updated by a write to this
+register.
+
+
+0x0c18 - something related to selections in mixer application
+
+If "Cuemix input includes computer output" is selected:
+  0xc01 is written to register 0x0b2c
+  0x001 is written to register 0x0c18
+
+When "Cuemix input includes computer output" is turned off:
+  0xc00 is written to register 0x0b2c
+  0x000 is written to register 0x0c18
+
+
+0x0c1c - gain trim / 20 dB pad controls (for analog channels 1-4 only)
+
+This register controls the trim gain and 20 dB pad available on analog
+channels 1-4.  Byte 0 (the least significant byte) controls analog channel
+1.  Bytes 1-3 are for analog channels 2-4 respectively.
+
+Bit 7 in each byte appears to always be set to 1.  The effect of setting
+bit 7 to 0 is currently unknown.  On write, bit 7 may be a write-enable
+control.
+
+Bit 6 of a byte controls the 20 dB pad for the channel.  When bit 6 is set
+(ie: equal to 1) the pad is engaged.  When bit 6 is zero the pad is switched
+out.
+
+Bits 0-5 set the gain trim value; 0 sets a gain of 0dB (the default) while
+a value of 0x35 (53) sets the maximum gain of 53 dB.  The trim gain acts
+in steps of 1 dB.
+
+It seems the gain trim and pad settings of all channels can be set with a
+single write to this register.  However, if a channel's byte is written as
+zero its settings remain unchanged.
+
+
+0x0c20, 0x0c24, 0x0c28, 0x0c2c - mix1, mix2, mix3 and mix4 routing controls
+
+These registers control routing for the mix buses.  The format used by the
+four mix buses is the same, so only 0x0c20 (mix1 routing control) is
+explicitly discussed.
+
+  bits 31-26: function currently unknown.  All bits seem to be set to 0.
+  bit 25:     enable setting of mute status and destination.
+  bit 24:     enable setting of fader.
+  bits 23-16: function currently unknown.  All bits seem to be set to 0.
+  bits 15-13: purpose unknown.  Seems to be set to 0.
+  bit 12:     mute control.  0=unmute, 1=mute.
+  bits 11-8:  output destination (see below).
+  bits 7-0:   mix output fader.  0x80 = 0 dB, 0x00 = -inf
+
+The output destination is defined as follows:
+
+  0x0 = disabled
+  0x1 = headphone output
+  0x2 = analog 1-2
+  0x3 = analog 3-4
+  0x4 = analog 5-6
+  0x5 = analog 7-8
+  0x6 = AES-EBU
+  0x7 = SPDIF
+  0x8 = ADAT 1-2
+  0x9 = ADAT 3-4
+  0xa = ADAT 5-6
+  0xb = ADAT 7-8
+
+Note that it is not possible to set the mute and destination status
+separately - they are both set when bit 25 is set.
+
+
+0x0c60, 0x0c64, 0x0c68, 0x0c6c - ASCII name of current clock source
+
+These registers appear to hold the ASCII name of the current clock source.
+If the source name is less than 16 characters it is padded with spaces
+(0x20).  The most significant byte of each register holds the leftmost
+character of the group of 4 characters held by a that register.  For
+example, if a register needs to hold the string "ABCD", the most significant
+byte will be 65 ("A").
+
+Currently defined strings are as follows.
+
+  "Internal        " - internal clock source
+  "SMPTE           " - SMPTE syncing
+  "AES-EBU         " - use clock from AES-EBU
+  "SPDIF           " - clock from (coaxial) SPDIF
+  "TOSLink         " - clock from (optical) TOSLink
+  "Word Clock In   " - use the word clock input
+  "ADAT 9-pin      " - use the 9-pin ADAT interface for the clock
+  "ADAT Optical    " - sync from ADAT optical interface
+
+When a computer is connected to the MOTU the only way to set the clock
+source is from the computer - the front panel controls for this are
+disabled.  The string sent via these registers is used to display the name
+of the clock source as selected by the computer.  If the clock source is
+changed (via register 0x0b14) but nothing is downloaded using these
+registers, the "current clock source" display on the LCD via the setup menu
+will be blank.
+
+One would have thought the Motu would be smart enough to provide the display
+string by itself given that it seems to manage to set the string fine by
+itself when there's no PC connected and the front panel is used to change
+the clock source.
+
+
+0x4y00-0x4y4c (y=0-3) - gain/pan/solo/mute registers
+
+These registers control the fader, pan, mute and solo settings for a given
+input channel in each of the 4 mix buses.  y=0 is mix1, y=1 is mix2, y=2 is
+mix3 and y=3 is mix4.
+
+  Bit 31:     enable setting of pan
+  Bit 30:     enable setting of gain
+  Bit 29:     enable setting of bit 21
+  Bit 28:     enable setting of bit 20
+  Bit 27:     enable setting of pairing
+  Bit 26:     enable setting of bit 18
+  Bit 25:     enable setting of solo
+  Bit 24:     enable setting of mute
+  Bit 23:     seems to be unsettable; set to zero
+  Bit 22:     seems to be unsettable; set to zero
+  Bit 21:     can be set to 1 but no effect apparent
+  Bit 20:     can be set to 1 but no effect apparent
+  Bit 19:     activate pairing
+  Bit 18:     can be set to 1 but no effect apparent
+  Bit 17:     channel solo.  0=solo off, 1=solo on.
+  Bit 16:     channel mute.  0=unmuted, 1=muted.
+  Bits 15-8:  pan.  0x40=0 (centre), 0x80=+64 (right), 0x00=-64 (left)
+  Bits 7-0:   gain.  0x00 = -inf, 0x80 = 0 dB.
+
+When reading these registers in normal operation, bits 31-27 and bits 23-18
+seem to be all zero while bits 26-24 are all 1.  The Cuemix console however
+appears to set bits 31-30 and zero bits 29-18.  In other words, a typical
+read-back value might be 0x0700406a while to actually set the mixer to this
+one would need to use a value of 0xc300406a.  It seems likely that at least
+some of the bits have different meanings when read and written; for instance
+there doesn't seem to be much point in bits 24-26 being set on readback
+given the above definitions, but they are.
+
+If channel pairing is to be activated it must be set in both channels which
+form a stereo pair.
+
+
+Gain and pan value-dB mappings
+==============================
+
+The following gain map runs from 0x00 (-inf) to 0x80 (0 dB).  The dB values
+were taken directly off the Cuemix console application.
+
+Gain steps (dB): -inf, -84, -72, -65, -60, -56, -53, -50, -48, -46, -44, 
+  -43, -41, -39.7, -38.4, -37.2, -36.1, -35.1, -34.1, -33.1, -32.2, -31.4,
+  -30.6, -29.8, -29.1, -28.4, -27.7, -27.0, -26.4, -25.8, -25.2, -24.6, 
+  -24.1, -23.5, -23.0, -22.5, -22.0, -21.5, -21.1, -20.6, -20.2, -19.8,
+  -19.4, -19.0, -18.6, -18.2, -17.8, -17.4, -17.0, -16.7, -16.3, -16.0,
+  -15.6, -15.3, -15.0, -14.7, -14.4, -14.1, -13.8, -13.5, -13.2, -12.9,
+  -12.6, -12.3, -12.0, -11.8, -11.5, -11.2, -11.0, -10.7, -10.5, -10.2,
+  -10.0, -9.8, -9.6, -9.3, -9.1, -8.8, -8.6, -8.4, -8.2, -7.9, -7.7, -7.5,
+  -7.3, -7.1, -6.9, -6.7, -6.5, -6.3, -6.1, -5.9, -5.7, -5.5, -5.4, -5.2,
+  -5.0, -4.8, -4.6, -4.5, -4.3, -4.1, -3.9, -3.7, -3.6, -3.4, -3.3, -3.1,
+  -3.0, -2.8, -2,6, -2.5, -2.3, -2.2, -2.0, -1.9, -1.7, -1.6, -1.4, -1.3,
+  -1.1, -1.0, -0.8, -0.7, -0.6, -0.4, -0.3, -0.1, 0.0
+
+Pan: (approximate findings)
+  full pan on: +3 dB gain
+  0: 0 dB
+  20/64 pan off: -3 dB
+  40/64 pan off: -6 dB
+  55/64 pan off: -15 dB
+  59/64 pan off: -24 dB
+  full pan off: -inf gain
+
+Pan dB map.  This table runs from value 0 (pan full left) to 0x80 (pan
+full right).  The gain values are for a left channel signal.
+  2.505, 2.505, 2.505, 2.499, 2.499, 2.492, 2.486, 2.479, 2.473, 2.460,
+  2.453, 2.440, 2.427, 2.414, 2.400, 2.387, 2.367, 2.347, 2.331, 2.308,
+  2.288, 2.267, 2.241, 2.220, 2.194, 2.166, 2.139, 2.105, 2.078, 2.044,
+  2.016, 1.982, 1.940, 1.905, 1.870, 1.828, 1.786, 1.743, 1.700, 1.657,
+  1.607, 1.563, 1.512, 1.461, 1.409, 1.358, 1.298, 1.245, 1.185, 1.124,
+  1.063, 1.001, 0.931, 0.868, 0.797, 0.725, 0.653, 0.580, 0.507, 0.424,
+  0.341, 0.265, 0.257, 0.087, 0.000,
+  -0.087, -0.176, -0.274, -0.373, -0.473, -0.584, -0.687, -0.801, -0.916,
+  -1.033, -1.151, -1.271, -1.403, -1.526, -1.662, -1.800, -1.940, -2.083,
+  -2.239, -2.386, -2.548, -2.713, -2.881, -3.058, -3.240, -3.437, -3.614,
+  -3.814, -4.018, -4.228, -4.457, -4.678, -4.920, -5.168, -5.489, -5.688,
+  -5.969, -6.259, -6.568, -6.889, -7.222, -7.568, -7.928, -8.327, -8.722,
+  -9.160, -9.621, -10.108, -10.624, -11.205, -11.810, -12.460, -13.182,
+  -13.971, -14.886, -15.855, -16.976, -18.264, -19.819, -21.715, -24.143,
+  -27.526, -33.143, -inf
+
+dB factors for values of 0, 1 and 2 are all 2.505 dB while those for pan
+values of 3 and 4 are both 0.499.  This is because the voltage variation
+across each of these groups of values was below the resolution of the meter
+used to measure the voltages (0.001 Vrms).  One can probably safely assume
+that the actual variation across these groups is approximately linear, so
+"corrected" dB values for the first 5 pan values can probably be taken to be
+  2.508, 2.505, 2.504, 2.501, 2.499
+
+The pan map was measured by injecting a 0.992 Vrms sine wave at 308 Hz into
+analog1 input channel of the Motu.  Channel 1's -20 dB pad was switched in
+to avoid overloading the preamp and a gain trim of +11 dB was used. This
+combination resulted in a signal of 0.999 Vrms being emitted from analog1
+output with the analog1's fader set to 0 dB.
+
+The output RMS voltage was then measured for each setting of the pan
+control.  Resolution of these measurements was 0.001 Vrms.  The dB gain
+value was calculated relative to the centre pan position using
+
+  dB = 20log10(V/ref)
+
+where ref was the voltage measured with the pan control set to the centre
+(ie: a pan value of 0x40).
+
+A frequency of approximately 300 Hz was chosen since this was firmly within
+the flat response region of the multimeter used for measuring the voltage.
+If the frequency drifted slightly the frequency response of the meter would
+therefore not artificially change the voltage measurement.
+
+The input signal was generated using a precision audio signal generator. 
+The amplitude is tightly regulated and did not change for the duration of
+these tests.
+
+The meter used was not able to measure voltages below 0.004 Vrms.  This was
+a limitation of the meter - it was not an additive offset which affected
+voltage measurements.
+
+Putting all this together it is expected that the dB values for the pan map
+are accurate to at least 1 decimal place.
