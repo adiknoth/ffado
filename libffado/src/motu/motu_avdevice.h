@@ -141,6 +141,11 @@ class MotuDevice : public FFADODevice {
 // transaction functions.
 friend class ChannelFader;
 friend class ChannelPan;
+friend class ChannelMute;
+friend class ChannelSolo;
+friend class MixFader;
+friend class MixMute;
+friend class MixDest;
 public:
 
     MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );

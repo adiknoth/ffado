@@ -36,11 +36,17 @@ class MotuDevice;
 #define MOTU_CTRL_CHANNEL_PAN     0x0002
 #define MOTU_CTRL_CHANNEL_SOLO    0x0004
 #define MOTU_CTRL_CHANNEL_MUTE    0x0008
-#define MOTU_CTRL_BUS_FADER       0x0100
+#define MOTU_CTRL_MIX_FADER       0x0100
+#define MOTU_CTRL_MIX_MUTE        0x0200
+#define MOTU_CTRL_MIX_DEST        0x0400
 
 #define MOTU_CTRL_STD_CHANNEL \
     (MOTU_CTRL_CHANNEL_FADER|MOTU_CTRL_CHANNEL_PAN|\
      MOTU_CTRL_CHANNEL_SOLO|MOTU_CTRL_CHANNEL_MUTE)
+
+#define MOTU_CTRL_STD_MIX \
+    (MOTU_CTRL_MIX_FADER|MOTU_CTRL_MIX_MUTE|\
+     MOTU_CTRL_MIX_DEST)
 
 class MotuDiscreteCtrl
     : public Control::Discrete
@@ -73,6 +79,66 @@ class ChannelPan
 public:
     ChannelPan(MotuDevice &parent, unsigned int dev_reg);
     ChannelPan(MotuDevice &parent, unsigned int dev_reg,
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class ChannelMute
+    : public MotuDiscreteCtrl
+{
+public:
+    ChannelMute(MotuDevice &parent, unsigned int dev_reg);
+    ChannelMute(MotuDevice &parent, unsigned int dev_reg, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class ChannelSolo
+    : public MotuDiscreteCtrl
+{
+public:
+    ChannelSolo(MotuDevice &parent, unsigned int dev_reg);
+    ChannelSolo(MotuDevice &parent, unsigned int dev_reg, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class MixFader
+    : public MotuDiscreteCtrl
+{
+public:
+    MixFader(MotuDevice &parent, unsigned int dev_reg);
+    MixFader(MotuDevice &parent, unsigned int dev_reg,
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class MixMute
+    : public MotuDiscreteCtrl
+{
+public:
+    MixMute(MotuDevice &parent, unsigned int dev_reg);
+    MixMute(MotuDevice &parent, unsigned int dev_reg, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class MixDest
+    : public MotuDiscreteCtrl
+{
+public:
+    MixDest(MotuDevice &parent, unsigned int dev_reg);
+    MixDest(MotuDevice &parent, unsigned int dev_reg, 
           std::string name, std::string label, std::string descr);
 
     virtual bool setValue(int v);
