@@ -256,6 +256,8 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Mix1/Ana6_", "Mix 1 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4014, },
     {"Mix1/Ana7_", "Mix 1 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4018, },
     {"Mix1/Ana8_", "Mix 1 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x401c, },
+
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
 };
 
 // For convenience during initial testing, just make the 828MkII and 896HD
@@ -350,6 +352,58 @@ MotuDevice::buildMixer() {
                     DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
             type &= ~MOTU_CTRL_CHANNEL_PAN;
         }
+        if (type & MOTU_CTRL_CHANNEL_MUTE) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "mute");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"mute");
+            result &= m_MixerContainer->addElement(
+                new ChannelMute(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_MUTE;
+        }
+        if (type & MOTU_CTRL_CHANNEL_SOLO) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "solo");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"solo");
+            result &= m_MixerContainer->addElement(
+                new ChannelSolo(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_SOLO;
+        }
+
+        if (type & MOTU_CTRL_MIX_FADER) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "fader");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"fader");
+            result &= m_MixerContainer->addElement(
+                new MixFader(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_MIX_FADER;
+        }
+        if (type & MOTU_CTRL_MIX_MUTE) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "mute");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"mute");
+            result &= m_MixerContainer->addElement(
+                new MixMute(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_MIX_MUTE;
+        }
+        if (type & MOTU_CTRL_MIX_DEST) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "dest");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"dest");
+            result &= m_MixerContainer->addElement(
+                new MixDest(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_MIX_DEST;
+        }
+
         if (type) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", DevicesProperty[m_motu_model-1].mixer_ctrl[i].type);
         }
