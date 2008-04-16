@@ -55,6 +55,12 @@
       <method name="getValue">
           <arg type="d" name="value" direction="out"/>
       </method>
+      <method name="getMinimum">
+          <arg type="d" name="value" direction="out"/>
+      </method>
+      <method name="getMaximum">
+          <arg type="d" name="value" direction="out"/>
+      </method>
       <method name="setValueIdx">
           <arg type="i" name="idx" direction="in"/>
           <arg type="d" name="value" direction="in"/>

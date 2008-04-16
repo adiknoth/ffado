@@ -46,6 +46,8 @@ public:
     
     virtual bool setValue(double v);
     virtual double getValue();
+    virtual double getMinimum();
+    virtual double getMaximum();
     virtual bool setValue(int idx, double v);
     virtual double getValue(int idx);
 

@@ -239,6 +239,20 @@ Continuous::getValueIdx( const DBus::Int32 & idx )
     return val;
 }
 
+DBus::Double
+Continuous::getMinimum()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getMinimum() TODO: Return a real device-value...\n" );
+    return -100.0;
+}
+
+DBus::Double
+Continuous::getMaximum()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getMaximum() TODO: Return a real device-value...\n" );
+    return 10.0;
+}
+
 // --- Discrete
 
 Discrete::Discrete( DBus::Connection& connection, std::string p, Control::Discrete &slave)
