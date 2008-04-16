@@ -61,6 +61,22 @@ Continuous::getValue()
     return m_Value;
 }
 
+double
+Continuous::getMinimum()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s getMinimum()=%lf\n",
+        getName().c_str(), m_Value);
+    return m_Value;
+}
+
+double
+Continuous::getMaximum()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "%s getMaximum()=%lf\n",
+        getName().c_str(), m_Value);
+    return m_Value;
+}
+
 bool
 Continuous::setValue(int idx, double v)
 {

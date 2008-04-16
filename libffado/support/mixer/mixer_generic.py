@@ -48,8 +48,22 @@ class ContinuousWidget( QWidget ):
 		l.addWidget( QLabel( name, self ) )
 		self.slider = QSlider( self )
 		l.addWidget( self.slider )
-		# Not yet working:
-		self.slider.setValue( self.interface.getValue() )
+
+		self.min = self.interface.getMinimum()
+		self.max = self.interface.getMaximum()
+		self.slider.setMinValue( 0 )
+		self.slider.setMaxValue( 100 )
+		self.slider.setValue( self.interfaceToSlider( self.interface.getValue() ) )
+		self.connect( self.slider, SIGNAL( "valueChanged(int)" ), self.sliderMoved )
+
+	def sliderToInterFace( self, slider ):
+		return ( self.max - self.min ) * (100-slider)/100.0 + self.min
+	def interfaceToSlider( self, interface ):
+		return - ( interface - self.min ) / ( self.max - self.min ) * 100.0 + 100
+
+	def sliderMoved( self, i ):
+		#print "ContinuousWidget::sliderMoved( %i )" % i
+		self.interface.setValue( self.sliderToInterFace( i ) )
 
 class EnumWidget( QWidget ):
 	def __init__( self, name, interface, parent ):
@@ -65,7 +79,7 @@ class EnumWidget( QWidget ):
 		self.connect( self.select, SIGNAL( "activated(int)" ), self.currentChanged )
 
 	def currentChanged( self, i ):
-		print "EnumWidget::currentChanged(" + str(i) + ")"
+		#print "EnumWidget::currentChanged(" + str(i) + ")"
 		self.interface.select( i )
 
 class GenericMixer( QWidget ):
@@ -83,13 +97,11 @@ class GenericMixer( QWidget ):
 			tmp = ".".join(t.split(".")[:-1])
 			if tmp not in interfacelist:
 				interfacelist.append( tmp )
-		#print interfacelist
 
 		name = "Unnamed"
 
 		if interfacelist.count( "org.ffado.Control.Element.Element" ):
 			name = dbus.Interface( element, "org.ffado.Control.Element.Element" ).getName()
-			#print name
 
 		if interfacelist.count( "org.ffado.Control.Element.Container" ):
 			end = 0
@@ -98,12 +110,11 @@ class GenericMixer( QWidget ):
 			w = ContainerWidget( name, container, parentwidget )
 			parentwidget.layout().addWidget( w )
 			for i in range( end ):
-				print "%s %i %s" % ( path, i, container.getElementName( i ) )
+				#print "%s %i %s" % ( path, i, container.getElementName( i ) )
 				self.introspect( bus, session, path + "/" + container.getElementName( i ), w )
 
 		if interfacelist.count( "org.ffado.Control.Element.Continuous" ):
 			control = dbus.Interface( element, "org.ffado.Control.Element.Continuous" )
-			#print control.getValue()
 			w = ContinuousWidget( name, control, parentwidget )
 			parentwidget.layout().addWidget( w )
 

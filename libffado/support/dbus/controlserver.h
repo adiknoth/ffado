@@ -96,6 +96,8 @@ public:
     
     DBus::Double setValue( const DBus::Double & value );
     DBus::Double getValue( );
+    DBus::Double getMinimum( );
+    DBus::Double getMaximum( );
     DBus::Double setValueIdx( const DBus::Int32 & idx,
                               const DBus::Double & value );
     DBus::Double getValueIdx( const DBus::Int32 & idx );
