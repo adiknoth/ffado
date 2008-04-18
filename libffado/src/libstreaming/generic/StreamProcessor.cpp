@@ -1735,17 +1735,20 @@ bool StreamProcessor::waitForProduce(unsigned int nframes)
                             "(%p, %s) pthread_cond_timedwait() timed out (result=%d)\n",
                             this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
+                dumpInfo();
                 return false;
             } else if (result == EINTR) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,
                             "(%p, %s) pthread_cond_timedwait() interrupted by signal (result=%d)\n",
                             this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
+                dumpInfo();
                 return false;
             } else {
                 debugError("(%p, %s) pthread_cond_timedwait error (result=%d)\n", 
                             this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
+                dumpInfo();
                 return false;
             }
         }
@@ -1797,17 +1800,20 @@ bool StreamProcessor::waitForConsume(unsigned int nframes)
                             "(%p, %s) pthread_cond_timedwait() timed out (result=%d)\n",
                             this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
+                dumpInfo();
                 return false;
             } else if (result == EINTR) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,
                             "(%p, %s) pthread_cond_timedwait() interrupted by signal (result=%d)\n",
                             this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
+                dumpInfo();
                 return false;
             } else {
                 debugError("(%p, %s) pthread_cond_timedwait error (result=%d)\n", 
                             this, getTypeString(), result);
                 pthread_mutex_unlock(&m_activity_cond_lock);
+                dumpInfo();
                 return false;
             }
         }
