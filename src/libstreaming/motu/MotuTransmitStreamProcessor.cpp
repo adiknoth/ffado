@@ -127,7 +127,6 @@ MotuTransmitStreamProcessor::generatePacketHeader (
     // the timestamp gives us the time at which we want the sample block
     // to be output by the device
     presentation_time = ( uint64_t ) ts_head_tmp;
-    m_last_timestamp = presentation_time;
 
     // now we calculate the time when we have to transmit the sample block
     transmit_at_time = substractTicks ( presentation_time, MOTU_TRANSMIT_TRANSFER_DELAY );
@@ -223,6 +222,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
             {
                 // we are not that late and can still try to transmit the packet
                 m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+                m_last_timestamp = presentation_time;
                 if (m_tx_dbc > 0xff)
                     m_tx_dbc -= 0x100;
                 return eCRV_Packet;
@@ -236,6 +236,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
         {
             // it's time send the packet
             m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+            m_last_timestamp = presentation_time;
             if (m_tx_dbc > 0xff)
                 m_tx_dbc -= 0x100;
             return eCRV_Packet;
@@ -283,7 +284,7 @@ MotuTransmitStreamProcessor::generatePacketData (
     signed n_events = getNominalFramesPerPacket();
 
     if (m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
-        float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getActualRate();
+        float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
 #if TESTTONE
     /* Now things are beginning to stabilise, make things easier for others by only playing
@@ -409,7 +410,7 @@ MotuTransmitStreamProcessor::generateSilentPacketData (
     signed n_events = getNominalFramesPerPacket();
 
     memset(quadlet, 0, n_events*m_event_size);
-    float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getActualRate();
+    float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
     // Set up each frames's SPH.
     for (int i=0; i < n_events; i++, quadlet += dbs) {

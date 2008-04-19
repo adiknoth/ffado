@@ -138,6 +138,7 @@ class TimestampedBuffer
         bool setNominalRate ( float r );
         float getNominalRate() {return m_nominal_rate;};
         float getRate();
+        void setRate(float rate);
 
         bool setUpdatePeriod ( unsigned int t );
         unsigned int getUpdatePeriod();
