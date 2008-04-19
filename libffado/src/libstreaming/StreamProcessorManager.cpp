@@ -427,25 +427,45 @@ bool StreamProcessorManager::syncStartAll() {
         (*it)->setBufferHeadTimestamp(time_of_first_sample);
     }
 
-    // STEP X: switch SP's over to the running state
+    // switch syncsource to running state
+    uint64_t time_to_start_sync;
+    // FIXME: this is most likely not going to work for transmit sync sources
+    // but those are unsupported in this version
+    if(m_SyncSource->getType() == StreamProcessor::ePT_Receive ) {
+        time_to_start_sync = time_to_start_recv;
+    } else { 
+        time_to_start_sync = time_to_start_xmit;
+    }
+    if(!m_SyncSource->scheduleStartRunning(time_to_start_sync)) {
+        debugError("m_SyncSource->scheduleStartRunning(%11llu) failed\n", time_to_start_sync);
+        return false;
+    }
+
+    // STEP X: switch all non-syncsource SP's over to the running state
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
           ++it ) {
-        if(!(*it)->scheduleStartRunning(time_to_start_recv)) {
-            debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_recv);
-            return false;
+        if(*it != m_SyncSource) {
+            if(!(*it)->scheduleStartRunning(time_to_start_recv)) {
+                debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_recv);
+                return false;
+            }
         }
     }
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
           it != m_TransmitProcessors.end();
           ++it ) {
-        if(!(*it)->scheduleStartRunning(time_to_start_xmit)) {
-            debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_xmit);
-            return false;
+        if(*it != m_SyncSource) {
+            if(!(*it)->scheduleStartRunning(time_to_start_xmit)) {
+                debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_xmit);
+                return false;
+            }
         }
     }
     // wait for the syncsource to start running.
     // that will block the waitForPeriod call until everyone has started (theoretically)
+    // note: the SP's are scheduled to start in STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP cycles,
+    // so a 20 times this value should be a good timeout
     int cnt = STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP * 20; // by then it should have started
     while (!m_SyncSource->isRunning() && cnt) {
         SleepRelativeUsec(125);
@@ -456,6 +476,38 @@ bool StreamProcessorManager::syncStartAll() {
         return false;
     }
 
+    // the sync source is running, we can now read a decent received timestamp from it
+    m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
+
+    // and a (still very rough) approximation of the rate
+    float rate = m_SyncSource->getTicksPerFrame();
+    int64_t delay_in_ticks=(int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  initial time of transfer %010lld, rate %f...\n",
+                m_time_of_transfer, rate);
+
+    // then use this information to initialize the xmit handlers
+
+    //  we now set the buffer tail timestamp of the transmit buffer
+    //  to the period transfer time instant plus what's nb_buffers - 1
+    //  in ticks. This due to the fact that we (should) have received one period
+    //  worth of ticks at t=m_time_of_transfer
+    //  hence one period of frames should also have been transmitted, which means
+    //  that there should be (nb_buffers - 1) * periodsize of frames in the xmit buffer
+    //  that allows us to calculate the tail timestamp for the buffer.
+
+    int64_t transmit_tail_timestamp = addTicks(m_time_of_transfer, delay_in_ticks);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  preset transmit tail TS %010lld, rate %f...\n",
+                transmit_tail_timestamp, rate);
+
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        (*it)->setBufferTailTimestamp(transmit_tail_timestamp);
+        (*it)->setTicksPerFrame(rate);
+    }
+
+    // align the received streams to be phase aligned
     if(!alignReceivedStreams()) {
         debugError("Could not align streams...\n");
         return false;
@@ -503,24 +555,6 @@ StreamProcessorManager::alignReceivedStreams()
                 } else {
                     diff_between_streams[i] += diff;
                 }
-            }
-
-            // we now set the buffer tail timestamp of the transmit buffer
-            // to the period transfer time instant plus what's nb_buffers - 1
-            // in ticks. This due to the fact that we (should) have received one period
-            // worth of ticks at t=m_time_of_transfer
-            // hence one period of frames should also have been transmitted, which means
-            // that there should be (nb_buffers - 1) * periodsize of frames in the xmit buffer
-            // that allows us to calculate the tail timestamp for the buffer.
-            float rate = m_SyncSource->getTicksPerFrame();
-            int64_t delay_in_ticks=(int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
-            int64_t transmit_tail_timestamp = addTicks(m_time_of_transfer, delay_in_ticks);
-
-            for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-                  it != m_TransmitProcessors.end();
-                  ++it ) {
-                // m_time_of_transfer is set by waitForPeriod()
-                (*it)->setBufferTailTimestamp(transmit_tail_timestamp);
             }
 
             if(!transferSilence()) {
@@ -839,7 +873,7 @@ bool StreamProcessorManager::waitForPeriod() {
     #ifdef DEBUG
     static uint64_t m_time_of_transfer2 = m_time_of_transfer;
     
-    int ticks_per_period = m_SyncSource->getTicksPerFrame() * m_period;
+    int ticks_per_period = (int)(m_SyncSource->getTicksPerFrame() * m_period);
     int diff=diffTicks(m_time_of_transfer, m_time_of_transfer2);
     // display message if the difference between two successive tick
     // values is more than 50 ticks. 1 sample at 48k is 512 ticks
@@ -960,7 +994,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
         // FIXME: in the SPM it would be nice to have system time instead of
         //        1394 time
         float rate = m_SyncSource->getTicksPerFrame();
-        int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers * m_period)) * rate);
+        int64_t one_ringbuffer_in_ticks=(int64_t)(((float)((m_nb_buffers * m_period))) * rate);
 
         // the data we are putting into the buffer is intended to be transmitted
         // one ringbuffer size after it has been received
@@ -990,7 +1024,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
  * @return true if successful, false otherwise (indicates xrun).
  */
 bool StreamProcessorManager::transferSilence() {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Transferring silent period...\n");
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Transferring silent period...\n");
     bool retval=true;
     retval &= transferSilence(StreamProcessor::ePT_Receive);
     retval &= transferSilence(StreamProcessor::ePT_Transmit);

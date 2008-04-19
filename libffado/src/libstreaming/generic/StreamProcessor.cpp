@@ -253,6 +253,13 @@ StreamProcessor::getTicksPerFrame()
     return m_data_buffer->getRate();
 }
 
+void
+StreamProcessor::setTicksPerFrame(float tpf)
+{
+    assert(m_data_buffer != NULL);
+    m_data_buffer->setRate(tpf);
+}
+
 bool
 StreamProcessor::canClientTransferFrames(unsigned int nbframes)
 {
@@ -305,6 +312,9 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
             m_last_cycle = cycle;
+            m_Parent.showDevice();
+//             flushDebugOutput();
+//             assert(0);
         }
     }
     m_last_cycle = cycle;
@@ -383,15 +393,20 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
     if (result == eCRV_OK) {
         #ifdef DEBUG
-        int ticks_per_packet = getTicksPerFrame() * getNominalFramesPerPacket();
+        int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
         int diff=diffTicks(m_last_timestamp, m_last_timestamp2);
         // display message if the difference between two successive tick
         // values is more than 50 ticks. 1 sample at 48k is 512 ticks
         // so 50 ticks = 10%, which is a rather large jitter value.
         if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                                             m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                        cycle, m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
         }
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "%04u %011llu %011llu %d %d\n",
+                           cycle, m_last_timestamp2, m_last_timestamp, 
+                           diff, ticks_per_packet);
         #endif
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
@@ -495,6 +510,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
 
     unsigned int ctr;
+    uint64_t prev_timestamp;
     int now_cycles;
     int cycle_diff;
 
@@ -593,8 +609,10 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
 
     // store the previous timestamp
-    m_last_timestamp2 = m_last_timestamp;
-
+    // keep the old value here, update m_last_timestamp2 only when
+    // a valid packet will be sent
+    prev_timestamp = m_last_timestamp;
+    
     // NOTE: synchronized switching is restricted to a 0.5 sec span (4000 cycles)
     //       it happens on the first 'good' cycle for the wait condition
     //       or on the first received cycle that is received afterwards (might be a problem)
@@ -623,6 +641,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             // assumed not to xrun
             generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
             return RAW1394_ISO_OK;
+        // FIXME: PP: I think this should be possible too
+        //} else if (result == eCRV_EmptyPacket) {
+        //    goto send_empty_packet;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
@@ -672,6 +693,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             m_last_good_cycle = cycle;
             m_last_dropped = dropped_cycles;
 
+            // valid packet timestamp
+            m_last_timestamp2 = prev_timestamp;
+
             // check whether a state change has been requested
             // note that only the wait state changes are synchronized with the cycles
             if(m_state != m_next_state) {
@@ -700,12 +724,29 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 }
                 goto send_empty_packet;
             }
+            #ifdef DEBUG
+            int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
+            int diff=diffTicks(m_last_timestamp, m_last_timestamp2);
+            // display message if the difference between two successive tick
+            // values is more than 50 ticks. 1 sample at 48k is 512 ticks
+            // so 50 ticks = 10%, which is a rather large jitter value.
+            if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "cy %04d, rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                            cycle, m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+            }
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "%04d %011llu %011llu %d %d\n",
+                               cycle, m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+            #endif
+
             // skip queueing packets if we detect that there are not enough frames
             // available
-            if(result2 == eCRV_Defer || result == eCRV_Defer)
+            if(result2 == eCRV_Defer || result == eCRV_Defer) {
                 return RAW1394_ISO_DEFER;
-            else
+            } else {
                 return RAW1394_ISO_OK;
+            }
         } else if (result == eCRV_XRun) { // pick up the possible xruns
             debugWarning("generatePacketHeader xrun\n");
             m_in_xrun = true;

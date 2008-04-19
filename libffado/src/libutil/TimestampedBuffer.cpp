@@ -146,6 +146,29 @@ float TimestampedBuffer::getRate() {
 }
 
 /**
+ * \brief presets the effective rate
+ *
+ * Presets the DLL such that the effective rate is as given
+ * @param rate rate (in timeunits/frame)
+ */
+void TimestampedBuffer::setRate(float rate) {
+    // we take the current tail timestamp and update the head timestamp
+    // to ensure the rate is ok
+
+    ENTER_CRITICAL_SECTION;
+
+    m_dll_e2 = m_update_period * (double)rate;
+    m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
+
+    EXIT_CRITICAL_SECTION;
+
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                       "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", "
+                       "NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
+                       this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
+}
+
+/**
  * \brief calculate the effective rate
  *
  * Returns the effective rate calculated by the DLL.

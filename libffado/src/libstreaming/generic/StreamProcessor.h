@@ -313,7 +313,9 @@ protected: // FIXME: move to private
     uint64_t m_last_dropped; /// FIXME:debug
     int m_last_good_cycle; /// FIXME:debug
     uint64_t m_last_timestamp; /// last timestamp (in ticks)
+private:
     uint64_t m_last_timestamp2; /// last timestamp (in ticks)
+protected:
     bool m_correct_last_timestamp;
     uint64_t m_last_timestamp_at_period_ticks; // FIXME: still used?
 
@@ -419,6 +421,7 @@ protected:
         int getMaxFrameLatency();
 
         float getTicksPerFrame();
+        void setTicksPerFrame(float tpf);
 
         int getLastCycle() {return m_last_cycle;};
 
@@ -465,13 +468,6 @@ protected:
          * @return the nominal number of packet necessary
          */
         virtual unsigned int getNominalPacketsNeeded(unsigned int nframes);
-
-        /**
-         * @brief returns the actual frame rate as calculated by the SP's DLL
-         * @return the actual frame rate as detected by the DLL
-         */
-        float getActualRate()
-            {return m_data_buffer->getRate();};
 
     protected:
         float m_ticks_per_frame;

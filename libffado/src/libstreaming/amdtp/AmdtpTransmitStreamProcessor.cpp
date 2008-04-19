@@ -94,7 +94,6 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // the timestamp gives us the time at which we want the sample block
     // to be output by the device
     presentation_time = ( uint64_t ) ts_head_tmp;
-    m_last_timestamp = presentation_time;
 
     // now we calculate the time when we have to transmit the sample block
     transmit_at_time = substractTicks ( presentation_time, AMDTP_TRANSMIT_TRANSFER_DELAY );
@@ -210,6 +209,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 //             {
 //                 // we are not that late and can still try to transmit the packet
 //                 m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
+//                 m_last_timestamp = presentation_time;
 //                 return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
 //             }
 //             else   // definitely too late
@@ -221,6 +221,9 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         {
             // it's time send the packet
             m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
+            m_last_timestamp = presentation_time;
+
+            // FIXME: this should not be multiplied by 2
             return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
         }
         else
