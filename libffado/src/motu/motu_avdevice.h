@@ -35,56 +35,59 @@
 
 #include "motu_controls.h"
 
-#define MOTUFW_BASE_ADDR               0xfffff0000000ULL
+#define MOTU_BASE_ADDR               0xfffff0000000ULL
 
-#define MOTUFW_RATE_BASE_44100         (0<<3)
-#define MOTUFW_RATE_BASE_48000         (1<<3)
-#define MOTUFW_RATE_MULTIPLIER_1X      (0<<4)
-#define MOTUFW_RATE_MULTIPLIER_2X      (1<<4)
-#define MOTUFW_RATE_MULTIPLIER_4X      (2<<4)
-#define MOTUFW_RATE_BASE_MASK          (0x00000008)
-#define MOTUFW_RATE_MULTIPLIER_MASK    (0x00000030)
+#define MOTU_RATE_BASE_44100         (0<<3)
+#define MOTU_RATE_BASE_48000         (1<<3)
+#define MOTU_RATE_MULTIPLIER_1X      (0<<4)
+#define MOTU_RATE_MULTIPLIER_2X      (1<<4)
+#define MOTU_RATE_MULTIPLIER_4X      (2<<4)
+#define MOTU_RATE_BASE_MASK          (0x00000008)
+#define MOTU_RATE_MULTIPLIER_MASK    (0x00000030)
 
-#define MOTUFW_OPTICAL_MODE_OFF        0x00
-#define MOTUFW_OPTICAL_MODE_ADAT       0x01
-#define MOTUFW_OPTICAL_MODE_TOSLINK    0x02
-#define MOTUFW_OPTICAL_IN_MODE_MASK    (0x00000300)
-#define MOTUFW_OPTICAL_OUT_MODE_MASK   (0x00000c00)
-#define MOTUFW_OPTICAL_MODE_MASK       (MOTUFW_OPTICAL_IN_MODE_MASK|MOTUFW_OPTICAL_MODE_MASK)
+#define MOTU_OPTICAL_MODE_OFF        0x00
+#define MOTU_OPTICAL_MODE_ADAT       0x01
+#define MOTU_OPTICAL_MODE_TOSLINK    0x02
+#define MOTU_OPTICAL_IN_MODE_MASK    (0x00000300)
+#define MOTU_OPTICAL_OUT_MODE_MASK   (0x00000c00)
+#define MOTU_OPTICAL_MODE_MASK       (MOTU_OPTICAL_IN_MODE_MASK|MOTU_OPTICAL_MODE_MASK)
 
-#define MOTUFW_CLKSRC_MASK             0x00000007
-#define MOTUFW_CLKSRC_INTERNAL         0
-#define MOTUFW_CLKSRC_ADAT_OPTICAL     1
-#define MOTUFW_CLKSRC_SPDIF_TOSLINK    2
-#define MOTUFW_CLKSRC_SMTPE            3
-#define MOTUFW_CLKSRC_WORDCLOCK        4
-#define MOTUFW_CLKSRC_ADAT_9PIN        5
-#define MOTUFW_CLKSRC_AES_EBU          7
+#define MOTU_CLKSRC_MASK             0x00000007
+#define MOTU_CLKSRC_INTERNAL         0
+#define MOTU_CLKSRC_ADAT_OPTICAL     1
+#define MOTU_CLKSRC_SPDIF_TOSLINK    2
+#define MOTU_CLKSRC_SMTPE            3
+#define MOTU_CLKSRC_WORDCLOCK        4
+#define MOTU_CLKSRC_ADAT_9PIN        5
+#define MOTU_CLKSRC_AES_EBU          7
 
-#define MOTUFW_DIR_IN          1
-#define MOTUFW_DIR_OUT         2
-#define MOTUFW_DIR_INOUT       (MOTUFW_DIR_IN | MOTUFW_DIR_OUT)
+#define MOTU_DIR_IN          1
+#define MOTU_DIR_OUT         2
+#define MOTU_DIR_INOUT       (MOTU_DIR_IN | MOTU_DIR_OUT)
 
 /* Device registers */
-#define MOTUFW_REG_ISOCTRL         0x0b00
-#define MOTUFW_REG_OPTICAL_CTRL    0x0b10
-#define MOTUFW_REG_CLK_CTRL        0x0b14
-#define MOTUFW_REG_ROUTE_PORT_CONF 0x0c04
-#define MOTUFW_REG_CLKSRC_NAME0    0x0c60
+#define MOTU_REG_ISOCTRL         0x0b00
+#define MOTU_REG_OPTICAL_CTRL    0x0b10
+#define MOTU_REG_CLK_CTRL        0x0b14
+#define MOTU_REG_ROUTE_PORT_CONF 0x0c04
+#define MOTU_REG_INPUT_LEVEL     0x0c08
+#define MOTU_REG_INPUT_BOOST     0x0c14
+#define MOTU_REG_INPUT_GAIN_PAD  0x0c1c
+#define MOTU_REG_CLKSRC_NAME0    0x0c60
 
 /* Port Active Flags (ports declaration) */
-#define MOTUFW_PA_RATE_1x          0x0001    /* 44k1 or 48k */
-#define MOTUFW_PA_RATE_2x          0x0002    /* 88k2 or 96k */
-#define MOTUFW_PA_RATE_4x          0x0004    /* 176k4 or 192k */
-#define MOTUFW_PA_RATE_1x2x        (MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x)
-#define MOTUFW_PA_RATE_ANY         (MOTUFW_PA_RATE_1x|MOTUFW_PA_RATE_2x|MOTUFW_PA_RATE_4x)
-#define MOTUFW_PA_RATE_MASK        MOTUFW_PA_RATE_ANY
-#define MOTUFW_PA_OPTICAL_OFF      0x0010    /* Optical port off */
-#define MOTUFW_PA_OPTICAL_ADAT     0x0020    /* Optical port in ADAT mode */
-#define MOTUFW_PA_OPTICAL_TOSLINK  0x0040    /* Optical port in SPDIF/Toslink mode */
-#define MOTUFW_PA_OPTICAL_ON       (MOTUFW_PA_OPTICAL_ADAT|MOTUFW_PA_OPTICAL_TOSLINK)
-#define MOTUFW_PA_OPTICAL_ANY      (MOTUFW_PA_OPTICAL_OFF|MOTUFW_PA_OPTICAL_ON)
-#define MOTUFW_PA_OPTICAL_MASK     MOTUFW_PA_OPTICAL_ANY
+#define MOTU_PA_RATE_1x          0x0001    /* 44k1 or 48k */
+#define MOTU_PA_RATE_2x          0x0002    /* 88k2 or 96k */
+#define MOTU_PA_RATE_4x          0x0004    /* 176k4 or 192k */
+#define MOTU_PA_RATE_1x2x        (MOTU_PA_RATE_1x|MOTU_PA_RATE_2x)
+#define MOTU_PA_RATE_ANY         (MOTU_PA_RATE_1x|MOTU_PA_RATE_2x|MOTU_PA_RATE_4x)
+#define MOTU_PA_RATE_MASK        MOTU_PA_RATE_ANY
+#define MOTU_PA_OPTICAL_OFF      0x0010    /* Optical port off */
+#define MOTU_PA_OPTICAL_ADAT     0x0020    /* Optical port in ADAT mode */
+#define MOTU_PA_OPTICAL_TOSLINK  0x0040    /* Optical port in SPDIF/Toslink mode */
+#define MOTU_PA_OPTICAL_ON       (MOTU_PA_OPTICAL_ADAT|MOTU_PA_OPTICAL_TOSLINK)
+#define MOTU_PA_OPTICAL_ANY      (MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ON)
+#define MOTU_PA_OPTICAL_MASK     MOTU_PA_OPTICAL_ANY
 
 class ConfigRom;
 class Ieee1394Service;
@@ -92,13 +95,13 @@ class Ieee1394Service;
 namespace Motu {
 
 enum EMotuModel {
-    MOTUFW_MODEL_NONE     = 0x0000,
-    MOTUFW_MODEL_828mkII  = 0x0001,
-    MOTUFW_MODEL_TRAVELER = 0x0002,
-    MOTUFW_MODEL_ULTRALITE= 0x0003,
-    MOTUFW_MODEL_8PRE     = 0x0004,
-    MOTUFW_MODEL_828MkI   = 0x0005,
-    MOTUFW_MODEL_896HD    = 0x0006,
+    MOTU_MODEL_NONE     = 0x0000,
+    MOTU_MODEL_828mkII  = 0x0001,
+    MOTU_MODEL_TRAVELER = 0x0002,
+    MOTU_MODEL_ULTRALITE= 0x0003,
+    MOTU_MODEL_8PRE     = 0x0004,
+    MOTU_MODEL_828MkI   = 0x0005,
+    MOTU_MODEL_896HD    = 0x0006,
 };
 
 struct VendorModelEntry {
@@ -137,15 +140,6 @@ struct DevicePropertyEntry {
 #define N_ELEMENTS(_array) (sizeof(_array) / sizeof((_array)[0]))
 
 class MotuDevice : public FFADODevice {
-// Declare mixer controls as friends so they can access the register 
-// transaction functions.
-friend class ChannelFader;
-friend class ChannelPan;
-friend class ChannelMute;
-friend class ChannelSolo;
-friend class MixFader;
-friend class MixMute;
-friend class MixDest;
 public:
 
     MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );
@@ -185,8 +179,8 @@ public:
 
     signed int getEventSize(unsigned int dir);
 
-protected:
     signed int       m_motu_model;
+protected:
     struct VendorModelEntry * m_model;
     signed int m_iso_recv_channel, m_iso_send_channel;
     signed int m_rx_bandwidth, m_tx_bandwidth;
@@ -203,9 +197,11 @@ private:
         enum Streaming::Port::E_Direction direction,
         unsigned int sample_rate, unsigned int optical_mode);
 
+public:
     unsigned int ReadRegister(unsigned int reg);
     signed int WriteRegister(unsigned int reg, quadlet_t data);
 
+private:
     Control::Container *m_MixerContainer;
     Control::Container *m_ControlContainer;
 };

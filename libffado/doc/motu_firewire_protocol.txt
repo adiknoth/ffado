@@ -2,7 +2,7 @@ Notes on the MOTU Traveler/828MkII firewire protocol
 ====================================================
 
 Author: Jonathan Woithe
-Document version: 20080413-1
+Document version: 20080419-1
 
 
 Audio/MIDI data
@@ -679,6 +679,9 @@ level; all other bits are set to zero.
   bit 6: analog channel 7 input level
   bit 7: analog channel 8 input level
 
+It seems likely that bits 0-3 are reserved for analog channels 1-4
+respectively.
+
 When a channel's bit is set (the default condition) an input level of +4 dBU
 is assumed.  If the bit is zero it selects an input level of -10 dBU for
 the respective channel.
@@ -687,8 +690,9 @@ A write to this register sets the input level for all channels.
 
 The MOTU mixer application ties analog channels 5/6 and 7/8 together
 (presumedly as a stereo pair) and activates the input level for the pair
-whenever one channel is selected.  It seems likely that the channels can
-be individually controlled though, but this hasn't been verified yet.
+whenever one channel is selected (even when the channels are not "paired"). 
+However, it has been verified that the input level of channels can be
+individually controlled though this register.
 
 
 0x0c14 - boost controls (for analog channels 5-8 only)
@@ -700,6 +704,9 @@ gain for analog channels 5-8.  All other bits are set to zero.
   bit 5: analog channel 6 boost
   bit 6: analog channel 7 boost
   bit 7: analog channel 8 boost
+
+Once again, bits 0-3 are probably reserved for analog channels 1-4 if they
+were ever to acquire this functionality.
 
 When a bit is zero (the default condition) the additional 6 dB boost is not
 active.  When set to 1, the boost becomes active for the respective channel.

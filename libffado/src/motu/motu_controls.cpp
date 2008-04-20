@@ -45,6 +45,69 @@ MotuDiscreteCtrl::MotuDiscreteCtrl(MotuDevice &parent, unsigned int dev_reg,
     setDescription(descr);
 }
 
+MotuBinarySwitch::MotuBinarySwitch(MotuDevice &parent, unsigned int dev_reg, 
+  unsigned int val_mask, unsigned int setenable_mask)
+: MotuDiscreteCtrl(parent, dev_reg)
+{
+    m_value_mask = val_mask;
+    /* If no "write enable" is implemented for a given switch it's safe to 
+     * pass zero in to setenable_mask.
+     */
+    m_setenable_mask = setenable_mask;
+}
+
+MotuBinarySwitch::MotuBinarySwitch(MotuDevice &parent, unsigned int dev_reg,
+    unsigned int val_mask, unsigned int setenable_mask,
+    std::string name, std::string label, std::string descr)
+: MotuDiscreteCtrl(parent, dev_reg, name, label, descr)
+{
+    m_value_mask = val_mask;
+    /* If no "write enable" is implemented for a given switch it's safe to 
+     * pass zero in to setenable_mask.
+     */
+    m_setenable_mask = setenable_mask;
+}
+             
+bool
+MotuBinarySwitch::setValue(int v)
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for switch %s (0x%04x) to %d\n", 
+      getName().c_str(), m_register, v);
+
+    // Set the value
+    if (m_setenable_mask) {
+      val = (v==0)?0:m_value_mask;
+      // Set the "write enable" bit for the value being set
+      val |= m_setenable_mask;
+    } else {
+      // It would be good to utilise the cached value from the receive
+      // processor (if running) later on.  For now we'll just fetch the
+      // current register value directly when needed.
+      val = m_parent.ReadRegister(m_register);
+      if (v==0)
+        val &= ~m_value_mask;
+      else
+        val |= m_value_mask;
+    }
+    m_parent.WriteRegister(m_register, val);
+
+    return true;
+}
+
+int
+MotuBinarySwitch::getValue()
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for switch %s (0x%04x)\n", 
+      getName().c_str(), m_register);
+
+    // FIXME: we could just read the appropriate mixer status field from the
+    // receive stream processor once we work out an efficient way to do this.
+    val = m_parent.ReadRegister(m_register);
+    return (val & m_value_mask) != 0;
+}
+
 ChannelFader::ChannelFader(MotuDevice &parent, unsigned int dev_reg)
 : MotuDiscreteCtrl(parent, dev_reg)
 {
@@ -121,82 +184,6 @@ ChannelPan::getValue()
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return ((val >> 8) & 0xff) - 0x40;
-}
-
-ChannelMute::ChannelMute(MotuDevice &parent, unsigned int dev_reg)
-: MotuDiscreteCtrl(parent, dev_reg)
-{
-}
-
-ChannelMute::ChannelMute(MotuDevice &parent, unsigned int dev_reg,
-             std::string name, std::string label, std::string descr)
-: MotuDiscreteCtrl(parent, dev_reg, name, label, descr)
-{
-}
-             
-bool
-ChannelMute::setValue(int v)
-{
-    unsigned int val;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel mute 0x%04x to %d\n", m_register, v);
-
-    // Mute status is bit 16
-    val = (v==0)?0:0x00010000;
-    // Bit 24 indicates that mute is being set
-    val |= 0x01000000;
-    m_parent.WriteRegister(m_register, val);
-
-    return true;
-}
-
-int
-ChannelMute::getValue()
-{
-    unsigned int val;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for channel mute 0x%04x\n", m_register);
-
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
-    val = m_parent.ReadRegister(m_register);
-    return (val & 0x00010000) != 0;
-}
-
-ChannelSolo::ChannelSolo(MotuDevice &parent, unsigned int dev_reg)
-: MotuDiscreteCtrl(parent, dev_reg)
-{
-}
-
-ChannelSolo::ChannelSolo(MotuDevice &parent, unsigned int dev_reg,
-             std::string name, std::string label, std::string descr)
-: MotuDiscreteCtrl(parent, dev_reg, name, label, descr)
-{
-}
-             
-bool
-ChannelSolo::setValue(int v)
-{
-    unsigned int val;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel solo 0x%04x to %d\n", m_register, v);
-
-    // Solo status is bit 17
-    val = (v==0)?0:0x00020000;
-    // Bit 25 indicates that solo is being set
-    val |= 0x02000000;
-    m_parent.WriteRegister(m_register, val);
-
-    return true;
-}
-
-int
-ChannelSolo::getValue()
-{
-    unsigned int val;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for channel solo 0x%04x\n", m_register);
-
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
-    val = m_parent.ReadRegister(m_register);
-    return (val & 0x00020000) != 0;
 }
 
 MixFader::MixFader(MotuDevice &parent, unsigned int dev_reg)
@@ -326,6 +313,75 @@ MixDest::getValue()
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return (val >> 8) & 0x0f;
+}
+
+InfoElement::InfoElement(MotuDevice &parent, unsigned infotype)
+: MotuDiscreteCtrl(parent, infotype)
+{
+}
+
+InfoElement::InfoElement(MotuDevice &parent, unsigned infotype,
+             std::string name, std::string label, std::string descr)
+: MotuDiscreteCtrl(parent, infotype, name, label, descr)
+{
+}
+             
+bool
+InfoElement::setValue(int v)
+{
+    /* This is a read-only field, so any call to setValue() is technically
+     * an error.
+     */
+    debugOutput(DEBUG_LEVEL_VERBOSE, "InfoElement (%d) is read-only\n", m_register);
+    return false;
+}
+
+int
+InfoElement::getValue()
+{
+    unsigned int val;
+    signed int res = 0;
+
+    switch (m_register) {
+        case MOTU_INFO_IS_STREAMING:
+            val = m_parent.ReadRegister(MOTU_REG_ISOCTRL);
+            /* Streaming is active if either bit 22 (Motu->PC streaming
+             * enable) or bit 30 (PC->Motu streaming enable) is set.
+             */
+            res = (val & 0x40400000) != 0;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "IsStreaming: %d (reg=%08x)\n", res, val);
+            break;
+        case MOTU_INFO_SAMPLE_RATE:
+            res = m_parent.getSamplingFrequency();
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SampleRate: %d\n", res);
+            break;
+        case MOTU_INFO_HAS_MIC_INPUTS:
+            /* Only the 828Mk2 has separate mic inputs.  In time this may be
+             * deduced by walking the port info array within the parent.
+             */
+            res = m_parent.m_motu_model == MOTU_MODEL_828mkII ? 1:0;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Has mic inputs: %d\n", res);
+            break;
+        case MOTU_INFO_HAS_AESEBU_INPUTS:
+            /* AES/EBU inputs are currently present on the Traveler and
+             * 896HD.  In time this may be deduced by walking the port info
+             * array within the parent.
+             */
+            val = m_parent.m_motu_model;
+            res = (val==MOTU_MODEL_TRAVELER || val==MOTU_MODEL_896HD);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "HasAESEBUInputs: %d\n", res);
+            break;
+        case MOTU_INFO_HAS_SPDIF_INPUTS:
+            /* SPDIF inputs are present on all supported models except the
+             * 896HD and the 8pre.  In time this may be deduced by walking
+             * the port info array within the parent.
+             */
+            val = m_parent.m_motu_model;
+            res = (val!=MOTU_MODEL_8PRE && val!=MOTU_MODEL_896HD);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "HasSPDIFInputs: %d\n", res);
+            break;
+    }
+    return res;
 }
 
 }
