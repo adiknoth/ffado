@@ -560,22 +560,21 @@ uint32_t
 CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 {
     uint32_t retval;
-    struct compute_vars my_vars;
+    struct compute_vars *my_vars;
 
     // get pointer and copy the contents
     // no locking should be needed since we have more than one
-    // of these vars available, and the copy will always be finished before
+    // of these vars available, and our use will always be finished before
     // m_current_shadow_idx changes since this thread's priority should
     // be higher than the one of the writer thread. Even if not, we only have to ensure
     // that the used dataset is consistent. We can use an older dataset if it's consistent
     // since it will also provide a fairly decent extrapolation.
-    unsigned int curr_idx = m_current_shadow_idx; // NOTE: this needs ordering
-    my_vars = m_shadow_vars[curr_idx];
+    my_vars = m_shadow_vars + m_current_shadow_idx;
 
-    int64_t time_diff = now - my_vars.usecs;
-    double y_step_in_ticks = ((double)time_diff) * my_vars.rate;
+    int64_t time_diff = now - my_vars->usecs;
+    double y_step_in_ticks = ((double)time_diff) * my_vars->rate;
     int64_t y_step_in_ticks_int = (int64_t)y_step_in_ticks;
-    uint64_t offset_in_ticks_int = my_vars.ticks;
+    uint64_t offset_in_ticks_int = my_vars->ticks;
 
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
