@@ -41,6 +41,7 @@ StreamProcessorManager::StreamProcessorManager()
     : m_is_slave( false )
     , m_SyncSource(NULL)
     , m_xrun_happened( false )
+    , m_activity_wait_timeout_usec( 1000*1000 )
     , m_nb_buffers( 0 )
     , m_period( 0 )
     , m_audio_datatype( eADT_Float )
@@ -50,12 +51,14 @@ StreamProcessorManager::StreamProcessorManager()
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
+    sem_init(&m_activity_semaphore, 0, 0);
 }
 
 StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int framerate, unsigned int nb_buffers)
     : m_is_slave( false )
     , m_SyncSource(NULL)
     , m_xrun_happened( false )
+    , m_activity_wait_timeout_usec( 1000*1000 )
     , m_nb_buffers(nb_buffers)
     , m_period(period)
     , m_audio_datatype( eADT_Float )
@@ -65,9 +68,12 @@ StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int
     , m_nbperiods(0)
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
+    sem_init(&m_activity_semaphore, 0, 0);
 }
 
 StreamProcessorManager::~StreamProcessorManager() {
+    sem_post(&m_activity_semaphore);
+    sem_destroy(&m_activity_semaphore);
 }
 
 void
@@ -99,6 +105,67 @@ StreamProcessorManager::handleBusReset()
     }
 
     m_WaitLock.Unlock();
+}
+
+void
+StreamProcessorManager::signalActivity()
+{
+    sem_post(&m_activity_semaphore);
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,"%p activity\n", this);
+}
+
+enum StreamProcessorManager::eActivityResult
+StreamProcessorManager::waitForActivity()
+{
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,"%p waiting for activity\n", this);
+    struct timespec ts;
+    int result;
+
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+        debugError("clock_gettime failed\n");
+        return eAR_Error;
+    }
+    long long int timeout_nsec=0;
+    int timeout_sec = 0;
+    if (m_activity_wait_timeout_usec >= 0) {
+        timeout_nsec = m_activity_wait_timeout_usec * 1000LL;
+        timeout_sec = 0;
+        while(timeout_nsec >= 1000000000LL) {
+            timeout_sec += 1;
+            timeout_nsec -= 1000000000LL;
+        }
+        ts.tv_nsec += timeout_nsec;
+        ts.tv_sec += timeout_sec;
+    }
+
+    if (m_activity_wait_timeout_usec >= 0) {
+        result = sem_timedwait(&m_activity_semaphore, &ts);
+    } else {
+        result = sem_wait(&m_activity_semaphore);
+    }
+
+    if(result != 0) {
+        if (result == ETIMEDOUT) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "(%p) pthread_cond_timedwait() timed out (result=%d)\n",
+                        this, result);
+            return eAR_Timeout;
+        } else if (result == EINTR) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "(%p) pthread_cond_[timed]wait() interrupted by signal (result=%d)\n",
+                        this, result);
+            return eAR_Interrupted;
+        } else {
+            debugError("(%p) pthread_cond_[timed]wait error (result=%d)\n", 
+                        this, result);
+            debugError("(%p) timeout_sec=%d timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
+                       this, timeout_sec, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            return eAR_Error;
+        }
+    }
+
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,"%p got activity\n", this);
+    return eAR_Activity;
 }
 
 /**
@@ -544,6 +611,13 @@ StreamProcessorManager::alignReceivedStreams()
                 return false;
             };
 
+            // before we do anything else, transfer
+            if(!transferSilence()) {
+                debugError("Could not transfer silence\n");
+                return false;
+            }
+
+            // now calculate the stream offset
             i = 0;
             for ( i = 0; i < nb_rcv_sp; i++) {
                 StreamProcessor *s = m_ReceiveProcessors.at(i);
@@ -557,10 +631,6 @@ StreamProcessorManager::alignReceivedStreams()
                 }
             }
 
-            if(!transferSilence()) {
-                debugError("Could not transfer silence\n");
-                return false;
-            }
             nb_sync_runs--;
         }
         // calculate the average offsets
@@ -805,19 +875,28 @@ bool StreamProcessorManager::waitForPeriod() {
     m_WaitLock.Lock();
 
     while(period_not_ready) {
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, 
                            "waiting for period (%d frames in buffer)...\n",
                            m_SyncSource->getBufferFill());
-        bool result;
-        if(m_SyncSource->getType() == StreamProcessor::ePT_Receive) {
-            result = m_SyncSource->waitForConsumePeriod();
-        } else {
-            result = m_SyncSource->waitForProducePeriod();
+
+        // wait for something to happen
+        switch(waitForActivity()) {
+            case eAR_Error:
+                debugError("Error while waiting for activity\n");
+                return false;
+            case eAR_Interrupted:
+                // FIXME: what to do here?
+                debugWarning("Interrupted while waiting for activity\n");
+                break;
+            case eAR_Timeout:
+                // FIXME: what to do here?
+                debugWarning("Timeout while waiting for activity\n");
+                break;
+            case eAR_Activity:
+                // do nothing
+                break;
         }
-//         if(!result) {
-//             debugError("Error waiting for signal\n");
-//             return false;
-//         }
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "got activity...\n");
 
         // HACK: this should be solved more elegantly
         period_not_ready = false;
@@ -837,6 +916,8 @@ bool StreamProcessorManager::waitForPeriod() {
                 period_not_ready = true;
             }
         }
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " period not ready? %d...\n", period_not_ready);
+
         // check for underruns on the ISO side,
         // those should make us bail out of the wait loop
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
@@ -884,8 +965,8 @@ bool StreamProcessorManager::waitForPeriod() {
     }
     m_time_of_transfer2 = m_time_of_transfer;
     #endif
-    
-    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
+
+    debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
                         "transfer at %llu ticks...\n",
                         m_time_of_transfer);
 
@@ -1026,8 +1107,12 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
 bool StreamProcessorManager::transferSilence() {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Transferring silent period...\n");
     bool retval=true;
-    retval &= transferSilence(StreamProcessor::ePT_Receive);
+    // NOTE: the order here is opposite from the order in
+    // normal operation (transmit is before receive), because
+    // we can do that here (data=silence=available) and 
+    // it increases reliability (esp. on startup)
     retval &= transferSilence(StreamProcessor::ePT_Transmit);
+    retval &= transferSilence(StreamProcessor::ePT_Receive);
     return retval;
 }
 

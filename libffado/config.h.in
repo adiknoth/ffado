@@ -79,8 +79,21 @@
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
 #define ISOHANDLERMANAGER_MAX_STREAMS_PER_ISOTHREAD         16
 
-// Ideally the audio processing will be driven by this thread
-#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE            1
+// The best setup is if the receive handlers have lower priority
+// than the client thread since that ensures that as soon as we
+// received sufficient frames, the client thread runs.
+// The transmit thread should have higher priority to ensure that
+// all available data is flushed to the ISO kernel buffers as
+// soon as possible
+// At this moment, the jack backend uses base+5 to init ffado
+// prio
+#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE                  0
+#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV            -6
+#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT             1
+
+// the timeout for ISO activity on any thread
+// NOTE: don't make this 0
+#define ISOHANDLERMANAGER_ISO_TASK_WAIT_TIMEOUT_USECS        1000000LL
 
 // allows to add some processing margin. This shifts the time
 // at which the buffer is transfer()'ed, making things somewhat
@@ -96,7 +109,7 @@
 #define STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV     0
 #define STREAMPROCESSORMANAGER_SYNCSTART_TRIES              10
 #define STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC          200
-#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      200
+#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      400
 #define STREAMPROCESSORMANAGER_NB_ALIGN_TRIES               40
 
 #define STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY           0

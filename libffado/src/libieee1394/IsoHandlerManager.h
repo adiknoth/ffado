@@ -25,18 +25,20 @@
 #define __FFADO_ISOHANDLERMANAGER__
 
 #include "config.h"
-
 #include "debugmodule/debugmodule.h"
 
 #include "libutil/Thread.h"
 
+#include "IsoHandler.h"
+
 #include <sys/poll.h>
 #include <errno.h>
-
 #include <vector>
+#include <semaphore.h>
 
 class Ieee1394Service;
-class IsoHandler;
+//class IsoHandler;
+//enum IsoHandler::EHandlerType;
 
 namespace Streaming {
     class StreamProcessor;
@@ -56,17 +58,32 @@ class IsoHandlerManager;
 class IsoTask : public Util::RunnableInterface
 {
     public:
-        IsoTask(IsoHandlerManager& manager);
-        virtual ~IsoTask() {};
+        IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType);
+        virtual ~IsoTask();
 
     public:
         bool Init();
         bool Execute();
 
         /**
-         * requests the thread to sync it's stream map with the manager
+         * @brief requests the thread to sync it's stream map with the manager
          */
         bool requestShadowMapUpdate();
+        enum eActivityResult {
+            eAR_Activity,
+            eAR_Timeout,
+            eAR_Interrupted,
+            eAR_Error
+        };
+
+        /**
+         * @brief signals that something happened in one of the clients of this task
+         */
+        void signalActivity();
+        /**
+         * @brief wait until something happened in one of the clients of this task
+         */
+        enum eActivityResult waitForActivity();
 
         void setVerboseLevel(int i);
     protected:
@@ -91,6 +108,10 @@ class IsoTask : public Util::RunnableInterface
         int m_successive_short_loops;
 #endif
 
+        // activity signaling
+        sem_t m_activity_semaphore;
+
+        enum IsoHandler::EHandlerType m_handlerType;
         // debug stuff
         DECLARE_DEBUG_MODULE;
 };
@@ -109,9 +130,7 @@ class IsoTask : public Util::RunnableInterface
 
 class IsoHandlerManager
 {
-    friend class Streaming::StreamProcessorManager;
     friend class IsoTask;
-    friend class IsoHandler;
 
     public:
 
@@ -137,6 +156,13 @@ class IsoHandlerManager
 
         bool disable(IsoHandler *); ///< disables a handler
         bool enable(IsoHandler *); ///< enables a handler
+
+        /**
+         * @brief signals that something happened in one of the clients
+         */
+        void signalActivityTransmit();
+        void signalActivityReceive();
+
         ///> disables the handler attached to the stream
         bool stopHandlerForStream(Streaming::StreamProcessor *);
         ///> starts the handler attached to the specific stream
@@ -156,7 +182,6 @@ class IsoHandlerManager
 
         Ieee1394Service& get1394Service() {return m_service;};
 
-    protected:
         void requestShadowMapUpdate();
 
     // the state machine
@@ -194,8 +219,10 @@ class IsoHandlerManager
         // handler thread/task
         bool            m_realtime;
         int             m_priority;
-        Util::Thread *  m_IsoThread;
-        IsoTask *       m_IsoTask;
+        Util::Thread *  m_IsoThreadTransmit;
+        IsoTask *       m_IsoTaskTransmit;
+        Util::Thread *  m_IsoThreadReceive;
+        IsoTask *       m_IsoTaskReceive;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

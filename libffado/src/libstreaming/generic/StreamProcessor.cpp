@@ -39,10 +39,19 @@
 #include <assert.h>
 #include <math.h>
 
-#define SIGNAL_ACTIVITY { \
-    pthread_mutex_lock(&m_activity_cond_lock); \
-    pthread_cond_broadcast(&m_activity_cond); \
-    pthread_mutex_unlock(&m_activity_cond_lock); \
+#define SIGNAL_ACTIVITY_SPM { \
+    m_StreamProcessorManager.signalActivity(); \
+}
+#define SIGNAL_ACTIVITY_ISO_XMIT { \
+    m_IsoHandlerManager.signalActivityTransmit(); \
+}
+#define SIGNAL_ACTIVITY_ISO_RECV { \
+    m_IsoHandlerManager.signalActivityReceive(); \
+}
+#define SIGNAL_ACTIVITY_ALL { \
+    m_StreamProcessorManager.signalActivity(); \
+    m_IsoHandlerManager.signalActivityTransmit(); \
+    m_IsoHandlerManager.signalActivityReceive(); \
 }
 
 namespace Streaming {
@@ -70,11 +79,10 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_last_cycle( -1 )
     , m_sync_delay( 0 )
     , m_in_xrun( false )
+    , m_min_ahead( 7999 )
 {
     // create the timestamped buffer and register ourselves as its client
     m_data_buffer = new Util::TimestampedBuffer(this);
-    pthread_mutex_init(&m_activity_cond_lock, NULL);
-    pthread_cond_init(&m_activity_cond, NULL);
 }
 
 StreamProcessor::~StreamProcessor() {
@@ -83,18 +91,6 @@ StreamProcessor::~StreamProcessor() {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Could not unregister stream processor with the Iso manager\n");
     }
 
-    // lock the condition mutex to keep threads from blocking on
-    // the condition var while we destroy it
-    pthread_mutex_lock(&m_activity_cond_lock);
-    // now signal activity, releasing threads that
-    // are already blocking on the condition variable
-    pthread_cond_broadcast(&m_activity_cond);
-    // then destroy it
-    pthread_cond_destroy(&m_activity_cond);
-    pthread_mutex_unlock(&m_activity_cond_lock);
-
-    // destroy the mutexes
-    pthread_mutex_destroy(&m_activity_cond_lock);
     if (m_data_buffer) delete m_data_buffer;
     if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
@@ -107,7 +103,7 @@ StreamProcessor::handleBusReset()
     if(!stopRunning(-1)) {
         debugError("Failed to stop SP\n");
     }
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
 }
 
 void StreamProcessor::handlerDied()
@@ -312,9 +308,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
             m_last_cycle = cycle;
-            m_Parent.showDevice();
-//             flushDebugOutput();
-//             assert(0);
+            dumpInfo();
         }
     }
     m_last_cycle = cycle;
@@ -480,7 +474,14 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             return RAW1394_ISO_DEFER;
         } else if(result2 == eCRV_OK) {
             // no problem here
-            SIGNAL_ACTIVITY;
+            // FIXME: cache the period size?
+            unsigned int periodsize = m_StreamProcessorManager.getPeriodSize();
+            unsigned int bufferfill = m_data_buffer->getBufferFill();
+            if(bufferfill >= periodsize) {
+                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "signal activity, %d>%d\n", bufferfill, periodsize);
+                SIGNAL_ACTIVITY_SPM;
+                return RAW1394_ISO_DEFER;
+            }
             return RAW1394_ISO_OK;
         } else {
             debugError("Invalid response\n");
@@ -588,8 +589,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     cycle_diff = diffCycles(cycle, now_cycles);
 
     if(cycle_diff < 0 && (m_state == ePS_Running || m_state == ePS_DryRunning)) {
-        debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy)\n",
-            cycle, now_cycles);
+        unsigned int fc = m_data_buffer->getBufferFill();
+        debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy, fill=%u)\n",
+            cycle, now_cycles, fc);
         if(m_state == ePS_Running) {
             debugShowBackLogLines(200);
 //             flushDebugOutput();
@@ -641,7 +643,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             // assumed not to xrun
             generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
             return RAW1394_ISO_OK;
-        // FIXME: PP: I think this should be possible too
+        // FIXME: PP: I think this should also be a possibility
         //} else if (result == eCRV_EmptyPacket) {
         //    goto send_empty_packet;
         } else {
@@ -686,9 +688,11 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         // check the packet header
         enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
         if (result == eCRV_Packet || result == eCRV_Defer) {
-            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                               "XMIT: CY=%04u TS=%011llu\n",
-                               cycle, m_last_timestamp);
+            int ahead = diffCycles(cycle, now_cycles);
+            if (ahead < m_min_ahead) m_min_ahead = ahead;
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                               "XMIT: CY=%04u TS=%011llu NOW_CY=%04u AHEAD=%04d\n",
+                               cycle, m_last_timestamp, now_cycles, ahead);
             // update some accounting
             m_last_good_cycle = cycle;
             m_last_dropped = dropped_cycles;
@@ -803,15 +807,19 @@ send_empty_packet:
             return RAW1394_ISO_ERROR;
         }
     }
+    
+    { // context to avoid ahead var clash
+        int ahead = diffCycles(cycle, now_cycles);
+        if (ahead < m_min_ahead) m_min_ahead = ahead;
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                           "XMIT EMPTY: CY=%04u, NOW_CY=%04u, AHEAD=%04d\n",
+                           cycle, now_cycles, ahead);
+    }
 
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "XMIT EMPTY: CY=%04u\n",
-                       cycle);
     generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
     generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
     return RAW1394_ISO_OK;
 }
-
 
 // Frame Transfer API
 /**
@@ -822,13 +830,13 @@ send_empty_packet:
  */
 bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
     bool result;
-    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
-                        "%p.getFrames(%d, %11llu)",
-                        nbframes, ts);
+    debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
+                        "(%p, %s) getFrames(%d, %11llu)\n",
+                        this, getTypeString(), nbframes, ts);
     assert( getType() == ePT_Receive );
     if(isDryRunning()) result = getFramesDry(nbframes, ts);
     else result = getFramesWet(nbframes, ts);
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ISO_RECV;
     return result;
 }
 
@@ -889,20 +897,20 @@ StreamProcessor::dropFrames(unsigned int nbframes, int64_t ts)
     bool result;
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d, %lld)\n", nbframes, ts);
     result = m_data_buffer->dropFrames(nbframes);
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ISO_RECV;
     return result;
 }
 
 bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
 {
     bool result;
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "%p.putFrames(%d, %11llu)",
-                       nbframes, ts);
+    debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
+                        "(%p, %s) putFrames(%d, %11llu)\n",
+                        this, getTypeString(), nbframes, ts);
     assert( getType() == ePT_Transmit );
     if(isDryRunning()) result = putFramesDry(nbframes, ts);
     else result = putFramesWet(nbframes, ts);
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ISO_XMIT;
     return result;
 }
 
@@ -932,7 +940,7 @@ StreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 {
-    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                        "StreamProcessor::putSilenceFrames(%d, %llu)\n",
                        nbframes, ts);
 
@@ -954,7 +962,7 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
         return false;
     }
 
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ISO_XMIT;
     return true;
 }
 
@@ -965,14 +973,14 @@ StreamProcessor::shiftStream(int nbframes)
     if(nbframes == 0) return true;
     if(nbframes > 0) {
         result = m_data_buffer->dropFrames(nbframes);
-        SIGNAL_ACTIVITY;
+        SIGNAL_ACTIVITY_ALL;
         return result;
     } else {
         result = true;
         while(nbframes++) {
             result &= m_data_buffer->writeDummyFrame();
         }
-        SIGNAL_ACTIVITY;
+        SIGNAL_ACTIVITY_ALL;
         return result;
     }
 }
@@ -1134,7 +1142,7 @@ StreamProcessor::scheduleStateTransition(enum eProcessorState state, uint64_t ti
     m_next_state = state;
     // wake up any threads that might be waiting on data in the buffers
     // since a state transition can cause data to become available
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return true;
 }
 
@@ -1411,7 +1419,7 @@ StreamProcessor::doStop()
         dumpInfo();
     }
     #endif
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return result;
 }
 
@@ -1445,7 +1453,7 @@ StreamProcessor::doWaitForRunningStream()
         dumpInfo();
     }
     #endif
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return true;
 }
 
@@ -1495,7 +1503,7 @@ StreamProcessor::doDryRunning()
         dumpInfo();
     }
     #endif
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return result;
 }
 
@@ -1544,7 +1552,7 @@ StreamProcessor::doWaitForStreamEnable()
         dumpInfo();
     }
     #endif
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return true;
 }
 
@@ -1568,6 +1576,7 @@ StreamProcessor::doRunning()
             debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running at cycle %d\n", 
                                              this, m_last_cycle);
             m_in_xrun = false;
+            m_min_ahead = 7999;
             m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
             m_data_buffer->setTransparent(false);
             break;
@@ -1582,7 +1591,7 @@ StreamProcessor::doRunning()
         dumpInfo();
     }
     #endif
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return result;
 }
 
@@ -1614,7 +1623,7 @@ StreamProcessor::doWaitForStreamDisable()
         dumpInfo();
     }
     #endif
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return true;
 }
 
@@ -1727,149 +1736,13 @@ bool StreamProcessor::updateState() {
 updateState_exit_with_error:
     debugError("Invalid state transition: %s => %s\n",
         ePSToString(m_state), ePSToString(next_state));
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return false;
 updateState_exit_change_failed:
     debugError("State transition failed: %s => %s\n",
         ePSToString(m_state), ePSToString(next_state));
-    SIGNAL_ACTIVITY;
+    SIGNAL_ACTIVITY_ALL;
     return false;
-}
-
-bool StreamProcessor::waitForProducePacket()
-{
-    return waitForProduce(getNominalFramesPerPacket());
-}
-bool StreamProcessor::waitForProducePeriod()
-{
-    return waitForProduce(m_StreamProcessorManager.getPeriodSize());
-}
-bool StreamProcessor::waitForProduce(unsigned int nframes)
-{
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "(%p, %s) wait ...\n",
-                       this, getTypeString());
-    struct timespec ts;
-    int result;
-    int max_runs = 1000;
-
-    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
-        debugError("clock_gettime failed\n");
-        return false;
-    }
-
-    // FIXME: hardcoded timeout of 10 sec
-//     ts.tv_nsec += 1000 * 1000000LL;
-//     while (ts.tv_nsec > 1000000000LL) {
-//         ts.tv_sec += 1;
-//         ts.tv_nsec -= 1000000000LL;
-//     }
-    ts.tv_sec += 2;
-    
-    pthread_mutex_lock(&m_activity_cond_lock);
-    while(!canProduce(nframes) && max_runs) {
-        result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
-    
-        if(result != 0) {
-            if (result == ETIMEDOUT) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "(%p, %s) pthread_cond_timedwait() timed out (result=%d)\n",
-                            this, getTypeString(), result);
-                pthread_mutex_unlock(&m_activity_cond_lock);
-                dumpInfo();
-                return false;
-            } else if (result == EINTR) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "(%p, %s) pthread_cond_timedwait() interrupted by signal (result=%d)\n",
-                            this, getTypeString(), result);
-                pthread_mutex_unlock(&m_activity_cond_lock);
-                dumpInfo();
-                return false;
-            } else {
-                debugError("(%p, %s) pthread_cond_timedwait error (result=%d)\n", 
-                            this, getTypeString(), result);
-                pthread_mutex_unlock(&m_activity_cond_lock);
-                dumpInfo();
-                return false;
-            }
-        }
-    }
-    pthread_mutex_unlock(&m_activity_cond_lock);
-    if(max_runs == 0) {
-        debugWarning("(%p) runaway loop\n");
-    }
-    return true;
-}
-
-bool StreamProcessor::waitForConsumePacket()
-{
-    return waitForConsume(getNominalFramesPerPacket());
-}
-bool StreamProcessor::waitForConsumePeriod()
-{
-    return waitForConsume(m_StreamProcessorManager.getPeriodSize());
-}
-bool StreamProcessor::waitForConsume(unsigned int nframes)
-{
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "(%p, %s) wait ...\n",
-                       this, getTypeString());
-    struct timespec ts;
-    int result;
-
-    int max_runs = 1000;
-
-    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
-        debugError("clock_gettime failed\n");
-        return false;
-    }
-
-    // FIXME: hardcoded timeout of 10 sec
-//     ts.tv_nsec += 1000 * 1000000LL;
-//     while (ts.tv_nsec > 1000000000LL) {
-//         ts.tv_sec += 1;
-//         ts.tv_nsec -= 1000000000LL;
-//     }
-    ts.tv_sec += 2;
-
-    pthread_mutex_lock(&m_activity_cond_lock);
-    while(!canConsume(nframes) && max_runs) {
-        result = pthread_cond_timedwait(&m_activity_cond, &m_activity_cond_lock, &ts);
-        if(result != 0) {
-            if (result == ETIMEDOUT) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "(%p, %s) pthread_cond_timedwait() timed out (result=%d)\n",
-                            this, getTypeString(), result);
-                pthread_mutex_unlock(&m_activity_cond_lock);
-                dumpInfo();
-                return false;
-            } else if (result == EINTR) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "(%p, %s) pthread_cond_timedwait() interrupted by signal (result=%d)\n",
-                            this, getTypeString(), result);
-                pthread_mutex_unlock(&m_activity_cond_lock);
-                dumpInfo();
-                return false;
-            } else {
-                debugError("(%p, %s) pthread_cond_timedwait error (result=%d)\n", 
-                            this, getTypeString(), result);
-                pthread_mutex_unlock(&m_activity_cond_lock);
-                dumpInfo();
-                return false;
-            }
-        }
-        max_runs--;
-    }
-    pthread_mutex_unlock(&m_activity_cond_lock);
-    
-    if(max_runs == 0) {
-        debugWarning("(%p) runaway loop\n");
-    }
-    
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "(%p, %s) leave ...\n",
-                       this, getTypeString());
-    return true;
 }
 
 bool StreamProcessor::canProducePacket()
@@ -1884,22 +1757,11 @@ bool StreamProcessor::canProduce(unsigned int nframes)
 {
     if(m_in_xrun) return true;
     if(m_state == ePS_Running && m_next_state == ePS_Running) {
-        
-        if(getType() == ePT_Transmit) {
-            // can we put a certain amount of frames into the buffer?
-            unsigned int bufferspace = m_data_buffer->getBufferSpace();
-            if(bufferspace >= nframes) {
-                return true;
-            } else return false;
-        } else {
-            // do we still have to put frames in the buffer?
-            unsigned int bufferfill = m_data_buffer->getBufferFill();
-            unsigned int periodsize = m_StreamProcessorManager.getPeriodSize();
-            if (bufferfill > periodsize) return false;
-            else return true;
-        }
-
-
+        // can we put a certain amount of frames into the buffer?
+        unsigned int bufferspace = m_data_buffer->getBufferSpace();
+        if(bufferspace >= nframes) {
+            return true;
+        } else return false;
     } else {
         if(getType() == ePT_Transmit) {
             // if we are an xmit SP, we cannot accept frames 
@@ -1946,21 +1808,24 @@ bool StreamProcessor::canConsume(unsigned int nframes)
 /***********************************************
  * Helper routines                             *
  ***********************************************/
+// FIXME: I think this can be removed and replaced by putSilenceFrames
 bool
 StreamProcessor::transferSilence(unsigned int nframes)
 {
     bool retval;
+
+    #ifdef DEBUG
     signed int fc;
     ffado_timestamp_t ts_tail_tmp;
-
-    // prepare a buffer of silence
-    char *dummybuffer = (char *)calloc(getEventSize(), nframes * getEventsPerFrame());
-    transmitSilenceBlock(dummybuffer, nframes, 0);
-
     m_data_buffer->getBufferTailTimestamp(&ts_tail_tmp, &fc);
     if (fc != 0) {
         debugWarning("Prefilling a buffer that already contains %d frames\n", fc);
     }
+    #endif
+
+    // prepare a buffer of silence
+    char *dummybuffer = (char *)calloc(getEventSize(), nframes * getEventsPerFrame());
+    transmitSilenceBlock(dummybuffer, nframes, 0);
 
     // add the silence data to the ringbuffer
     if(m_data_buffer->preloadFrames(nframes, dummybuffer, true)) {
@@ -1969,6 +1834,7 @@ StreamProcessor::transferSilence(unsigned int nframes)
         debugWarning("Could not write to event buffer\n");
         retval = false;
     }
+
     free(dummybuffer);
     return retval;
 }
@@ -2022,6 +1888,9 @@ StreamProcessor::dumpInfo()
                         (unsigned int)TICKS_TO_SECS(now),
                         (unsigned int)TICKS_TO_CYCLES(now),
                         (unsigned int)TICKS_TO_OFFSET(now));
+    if(getType() == ePT_Transmit) {
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Min ISOXMT bufferfill : %04d\n", m_min_ahead);
+    }
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xrun?                 : %s\n", (m_in_xrun ? "True":"False"));
     if (m_state == m_next_state) {
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", 

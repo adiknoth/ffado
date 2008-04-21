@@ -162,15 +162,6 @@ public: // the public receive/transmit functions
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
 
-    //FIXME: document wait functions
-    bool waitForProducePacket();
-    bool waitForProducePeriod();
-    bool waitForProduce(unsigned int nframes);
-
-    bool waitForConsumePacket();
-    bool waitForConsumePeriod();
-    bool waitForConsume(unsigned int nframes);
-
     bool canProducePacket();
     bool canProducePeriod();
     bool canProduce(unsigned int nframes);
@@ -475,8 +466,6 @@ protected:
         unsigned int m_sync_delay;
     private:
         bool m_in_xrun;
-        pthread_mutex_t m_activity_cond_lock;
-        pthread_cond_t  m_activity_cond;
 
 public:
     // debug stuff
@@ -487,9 +476,9 @@ public:
         {return ePSToString(getState());};
     const char *getTypeString()
         {return ePTToString(getType());};
-    StreamStatistics m_PacketStat;
-    StreamStatistics m_PeriodStat;
-    StreamStatistics m_WakeupStat;
+
+    int m_min_ahead; // DEBUG
+
     DECLARE_DEBUG_MODULE;
 };
 

@@ -25,12 +25,12 @@
 #define __FFADO_ISOHANDLER__
 
 #include "debugmodule/debugmodule.h"
-#include "IsoHandlerManager.h"
 
 #include "libutil/Thread.h"
 
 enum raw1394_iso_disposition;
 
+class IsoHandlerManager;
 namespace Streaming {
     class StreamProcessor;
 }
@@ -120,8 +120,22 @@ public:
     bool registerStream(Streaming::StreamProcessor *);
     bool unregisterStream(Streaming::StreamProcessor *);
 
-    bool waitForClient();
-    bool tryWaitForClient();
+    bool canIterateClient(); // FIXME: implement with functor
+
+    /**
+     * @brief request that the handler exits the packet processing loop ASAP
+     *
+     * The raw1394 lib doesn't provide a means to stop the packet iteration loop
+     * except when the iterate callback returns a DEFER value. Calling this function
+     * will make the callback return DEFER ASAP.
+     */
+    void requestIterateLoopExit() {m_dont_exit_iterate_loop = false;};
+    /**
+     * @brief allow the handler to stay in the packet processing loop
+     *
+     * This resets the state set by requestIterateLoopExit()
+     */
+    void allowIterateLoop() {m_dont_exit_iterate_loop = true;};
 
 private:
     IsoHandlerManager& m_manager;
@@ -131,7 +145,7 @@ private:
     unsigned int    m_max_packet_size;
     int             m_irq_interval;
 
-    Streaming::StreamProcessor *m_Client;
+    Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
 
     int handleBusReset(unsigned int generation);
 
@@ -139,6 +153,7 @@ private:
 
     enum raw1394_iso_speed m_speed;
     unsigned int m_prebuffers;
+    bool m_dont_exit_iterate_loop;
 
     // the state machine
     enum EHandlerStates {

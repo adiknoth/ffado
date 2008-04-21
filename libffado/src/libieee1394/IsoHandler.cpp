@@ -25,6 +25,7 @@
 
 #include "IsoHandler.h"
 #include "ieee1394service.h" 
+#include "IsoHandlerManager.h"
 
 #include "libstreaming/generic/StreamProcessor.h"
 #include "libutil/PosixThread.h"
@@ -90,6 +91,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
+   , m_dont_exit_iterate_loop( true )
    , m_State( E_Created )
 #ifdef DEBUG
    , m_packets ( 0 )
@@ -149,28 +151,9 @@ IsoHandler::~IsoHandler() {
 }
 
 bool
-IsoHandler::waitForClient()
+IsoHandler::canIterateClient()
 {
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
-    if(m_Client) {
-        bool result;
-        if (m_type == eHT_Receive) {
-            result = m_Client->waitForProducePacket();
-        } else {
-            result = m_Client->waitForConsumePacket();
-        }
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
-        return result;
-    } else {
-        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " no client\n");
-    }
-    return false;
-}
-
-bool
-IsoHandler::tryWaitForClient()
-{
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "waiting...\n");
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "checking...\n");
     if(m_Client) {
         bool result;
         if (m_type == eHT_Receive) {
@@ -185,72 +168,6 @@ IsoHandler::tryWaitForClient()
     }
     return false;
 }
-/*
-bool
-IsoHandler::Execute()
-{
-    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "%p: Execute thread...\n", this);
-
-    // bypass if not running
-    if (m_State != E_Running) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "%p: not polling since not running...\n", this);
-        usleep(m_poll_timeout * 1000);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "%p: done sleeping...\n", this);
-        return true;
-    }
-
-    // wait for the availability of frames in the client
-    // (blocking for transmit handlers)
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Waiting for Client activity...\n", this, getTypeString());
-    if (waitForClient()) {
-#if ISOHANDLER_USE_POLL
-        bool result = true;
-        while(result && m_Client && tryWaitForClient()) {
-            int err = poll(&m_poll_fd, 1, m_poll_timeout);
-            if (err == -1) {
-                if (errno == EINTR) {
-                    return true;
-                }
-                debugFatal("%p, poll error: %s\n", this, strerror (errno));
-                return false;
-            }
-
-            if(m_poll_fd.revents & (POLLIN)) {
-                result=iterate();
-                if(!result) {
-                    debugOutput( DEBUG_LEVEL_VERBOSE,
-                                "IsoHandler (%p): Failed to iterate handler\n",
-                                this);
-                }
-            } else {
-                if (m_poll_fd.revents & POLLERR) {
-                    debugWarning("error on fd for %p\n", this);
-                }
-                if (m_poll_fd.revents & POLLHUP) {
-                    debugWarning("hangup on fd for %p\n",this);
-                }
-                break;
-            }
-        }
-        return result;
-#else
-        // iterate() is blocking if no 1394 data is available
-        // so poll'ing is not really necessary
-        bool result = true;
-        while(result && m_Client && tryWaitForClient()) {
-            result = iterate();
-//             if (getType() == eHT_Receive) {
-//                 debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterate returned: %d\n",
-//                             this, (m_type==eHT_Receive?"Receive":"Transmit"), result);
-//             }
-        }
-        return result;
-#endif
-    } else {
-        debugError("waitForClient() failed.\n");
-        return false;
-    }
-}*/
 
 bool
 IsoHandler::iterate() {
@@ -439,7 +356,20 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     }
     #endif
     if(m_Client) {
-        return m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped, skipped);
+        enum raw1394_iso_disposition retval = m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped, skipped);
+        if (retval == RAW1394_ISO_OK) {
+            if (m_dont_exit_iterate_loop) {
+                return RAW1394_ISO_OK;
+            } else {
+                m_dont_exit_iterate_loop = true;
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                                "(%p) loop exit requested\n",
+                                this);
+                return RAW1394_ISO_DEFER;
+            }
+        } else {
+            return retval;
+        }
     }
 
     return RAW1394_ISO_OK;
@@ -466,7 +396,19 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                          this, getTypeString(), *length, m_max_packet_size);
         }
         #endif
-        return retval;
+        if (retval == RAW1394_ISO_OK) {
+            if (m_dont_exit_iterate_loop) {
+                return RAW1394_ISO_OK;
+            } else {
+                m_dont_exit_iterate_loop = true;
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                                "(%p) loop exit requested\n",
+                                this);
+                return RAW1394_ISO_DEFER;
+            }
+        } else {
+            return retval;
+        }
     }
     *tag = 0;
     *sy = 0;
