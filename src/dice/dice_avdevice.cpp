@@ -49,6 +49,7 @@ static VendorModelEntry supportedDeviceList[] =
     // vendor id, model id, vendor name, model name
     {FW_VENDORID_TCAT, 0x00000002, "TCAT", "DiceII EVM"},
     {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
+    {FW_VENDORID_TCAT, 0x00000023, "TC Electronic", "Konnekt Live"},
 };
 
 DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -643,6 +644,7 @@ DiceAvDevice::showDevice()
 bool
 DiceAvDevice::prepare() {
     // prepare receive SP's
+//     for (unsigned int i=0;i<1;i++) {
     for (unsigned int i=0;i<m_nb_tx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
@@ -728,6 +730,7 @@ DiceAvDevice::prepare() {
     }
 
     // prepare transmit SP's
+    //for (unsigned int i=0;i<1;i++) {
     for (unsigned int i=0;i<m_nb_rx;i++) {
         fb_quadlet_t nb_audio;
         fb_quadlet_t nb_midi;
