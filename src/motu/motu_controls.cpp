@@ -315,6 +315,101 @@ MixDest::getValue()
     return (val >> 8) & 0x0f;
 }
 
+PhonesSrc::PhonesSrc(MotuDevice &parent)
+: MotuDiscreteCtrl(parent, 0)
+{
+}
+
+PhonesSrc::PhonesSrc(MotuDevice &parent,
+             std::string name, std::string label, std::string descr)
+: MotuDiscreteCtrl(parent, 0, name, label, descr)
+{
+}
+             
+bool
+PhonesSrc::setValue(int v)
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for phones destination to %d\n", v);
+
+    /* Currently destination values between 0 and 0x0b are accepted. 
+     * Ultimately this will be device (and device configuration) dependent.
+     */
+    val = v;
+    if (val<0 || val>0x0b)
+      val = 0;
+    // Destination is given by bits 3-0.
+    // Bit 24 indicates that the phones source is being set.
+    val |= 0x01000000;
+    m_parent.WriteRegister(MOTU_REG_ROUTE_PORT_CONF, val);
+
+    return true;
+}
+
+int
+PhonesSrc::getValue()
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for phones destination\n");
+
+    // FIXME: we could just read the appropriate mixer status field from the
+    // receive stream processor once we work out an efficient way to do this.
+    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
+    return val & 0x0f;
+}
+
+OpticalMode::OpticalMode(MotuDevice &parent, unsigned int dev_reg)
+: MotuDiscreteCtrl(parent, dev_reg)
+{
+}
+
+OpticalMode::OpticalMode(MotuDevice &parent, unsigned int dev_reg,
+             std::string name, std::string label, std::string descr)
+: MotuDiscreteCtrl(parent, dev_reg, name, label, descr)
+{
+}
+             
+bool
+OpticalMode::setValue(int v)
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for optical mode %d to %d\n", m_register, v);
+
+    // Need to get current optical modes so we can preserve the one we're
+    // not setting.  Input mode is in bits 9-8, output is in bits 11-10.
+    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF) & 0x000000f0;
+
+    // Set mode as requested.  An invalid setting is effectively ignored.
+    if (v>=0 && v>=3) {
+      if (m_register == MOTU_DIR_IN) {
+        val = (val & ~0x0030) | ((v & 0x03) << 8);
+      } else {
+        val = (val & ~0x00c0) | ((v & 0x03) << 10);
+      }
+    }
+    // Bit 25 indicates that optical modes are being set
+    val |= 0x02000000;
+    m_parent.WriteRegister(MOTU_REG_ROUTE_PORT_CONF, val);
+
+    return true;
+}
+
+int
+OpticalMode::getValue()
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for optical mode %d\n", m_register);
+
+    // FIXME: we could just read the appropriate mixer status field from the
+    // receive stream processor once we work out an efficient way to do this.
+    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
+    if (m_register == MOTU_DIR_IN)
+      val = (val >> 8) & 0x03;
+    else
+      val = (val >> 10) & 0x03;
+    return val;
+}
+
 InfoElement::InfoElement(MotuDevice &parent, unsigned infotype)
 : MotuDiscreteCtrl(parent, infotype)
 {

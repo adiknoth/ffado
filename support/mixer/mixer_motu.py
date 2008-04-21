@@ -122,6 +122,11 @@ class MotuMixer(MotuMixerUI):
 
         self.MixDests={
             self.mix1_dest:      ['/Mixer/Mix1/Mix_dest'],
+
+            self.phones_src:	 ['/Mixer/Control/Phones_src'],
+
+            self.optical_in_mode:   ['/Mixer/Control/OpticalIn_mode'],
+            self.optical_out_mode:  ['/Mixer/Control/OpticalOut_mode'],
         }
 
         self.SelectorControls={

@@ -158,7 +158,7 @@
                 </property>
             </item>
             <property name="name">
-                <cstring>mix1_dest_2</cstring>
+                <cstring>phones_src</cstring>
             </property>
             <property name="geometry">
                 <rect>
@@ -182,12 +182,12 @@
             </item>
             <item>
                 <property name="text">
-                    <string>Toslink</string>
+                    <string>ADAT</string>
                 </property>
             </item>
             <item>
                 <property name="text">
-                    <string>ADAT</string>
+                    <string>Toslink</string>
                 </property>
             </item>
             <property name="name">
@@ -1430,39 +1430,6 @@
                 <set>WordBreak|AlignCenter</set>
             </property>
         </widget>
-        <widget class="QComboBox">
-            <item>
-                <property name="text">
-                    <string>Disabled</string>
-                </property>
-            </item>
-            <item>
-                <property name="text">
-                    <string>Toslink</string>
-                </property>
-            </item>
-            <item>
-                <property name="text">
-                    <string>ADAT</string>
-                </property>
-            </item>
-            <property name="name">
-                <cstring>optical_in_mode</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>480</y>
-                    <width>90</width>
-                    <height>21</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>9</pointsize>
-                </font>
-            </property>
-        </widget>
         <widget class="QLabel">
             <property name="name">
                 <cstring>textLabel1_2_11_3_2_2</cstring>
@@ -1706,6 +1673,39 @@
             </property>
             <property name="maxValue">
                 <number>53</number>
+            </property>
+        </widget>
+        <widget class="QComboBox">
+            <item>
+                <property name="text">
+                    <string>Disabled</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>ADAT</string>
+                </property>
+            </item>
+            <item>
+                <property name="text">
+                    <string>Toslink</string>
+                </property>
+            </item>
+            <property name="name">
+                <cstring>optical_in_mode</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>480</y>
+                    <width>90</width>
+                    <height>21</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>9</pointsize>
+                </font>
             </property>
         </widget>
     </widget>
@@ -2469,43 +2469,6 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>mix1ana1_fader</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
                     </property>
                 </widget>
                 <widget class="QSlider">
@@ -3383,6 +3346,43 @@
                         <string></string>
                     </property>
                 </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1ana1_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
             </widget>
             <widget class="QGroupBox">
                 <property name="name">
@@ -3921,30 +3921,6 @@
                 </widget>
                 <widget class="QLabel">
                     <property name="name">
-                        <cstring>textLabel1_2_2_3_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>80</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                            <pointsize>9</pointsize>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Mute</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
                         <cstring>textLabel2_10_2</cstring>
                     </property>
                     <property name="geometry">
@@ -4034,6 +4010,30 @@
                     </property>
                     <property name="tickInterval">
                         <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_3_3_2</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>80</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <pointsize>9</pointsize>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>Mute</string>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignCenter</set>
                     </property>
                 </widget>
             </widget>
