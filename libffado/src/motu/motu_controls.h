@@ -42,6 +42,8 @@ class MotuDevice;
 
 #define MOTU_CTRL_INPUT_LEVEL     0x10000000
 #define MOTU_CTRL_INPUT_BOOST     0x20000000
+#define MOTU_CTRL_PHONES_SRC      0x40000000
+#define MOTU_CTRL_OPTICAL_MODE    0x80000000
 
 #define MOTU_CTRL_STD_CHANNEL \
     (MOTU_CTRL_CHANNEL_FADER|MOTU_CTRL_CHANNEL_PAN|\
@@ -155,6 +157,30 @@ class MixDest
 public:
     MixDest(MotuDevice &parent, unsigned int dev_reg);
     MixDest(MotuDevice &parent, unsigned int dev_reg, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class PhonesSrc
+    : public MotuDiscreteCtrl
+{
+public:
+    PhonesSrc(MotuDevice &parent);
+    PhonesSrc(MotuDevice &parent, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+};
+
+class OpticalMode
+    : public MotuDiscreteCtrl
+{
+public:
+    OpticalMode(MotuDevice &parent, unsigned int dev_reg);
+    OpticalMode(MotuDevice &parent, unsigned int dev_reg, 
           std::string name, std::string label, std::string descr);
 
     virtual bool setValue(int v);

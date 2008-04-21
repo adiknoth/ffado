@@ -264,6 +264,11 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
     {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
     {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
 };
 
 // For convenience during initial testing, just make the 828MkII and 896HD
@@ -433,6 +438,23 @@ MotuDevice::buildMixer() {
                     name, label,
                     DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
             type &= ~MOTU_CTRL_INPUT_BOOST;
+        }
+        if (type & MOTU_CTRL_PHONES_SRC) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "src");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"src");
+            result &= m_MixerContainer->addElement(
+                new PhonesSrc(*this, 
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_PHONES_SRC;
+        }
+        if (type & MOTU_CTRL_OPTICAL_MODE) {
+            result &= m_MixerContainer->addElement(
+                new OpticalMode(*this, DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].name,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_OPTICAL_MODE;
         }
 
         if (type) {
