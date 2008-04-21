@@ -68,6 +68,15 @@ public:
 
     bool startDryRunning();
     bool syncStartAll();
+    // activity signaling
+    enum eActivityResult {
+        eAR_Activity,
+        eAR_Timeout,
+        eAR_Interrupted,
+        eAR_Error
+    };
+    void signalActivity();
+    enum eActivityResult waitForActivity();
 
     // this is the setup API
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
@@ -138,12 +147,16 @@ public:
     StreamProcessor& getSyncSource()
         {return *m_SyncSource;};
 
-protected:
+protected: // FIXME: private?
 
-    // thread sync primitives
+    // thread related vars
     bool m_xrun_happened;
+    int m_activity_wait_timeout_usec;
     bool m_thread_realtime;
     int m_thread_priority;
+
+    // activity signaling
+    sem_t m_activity_semaphore;
 
     // processor list
     StreamProcessorVector m_ReceiveProcessors;
