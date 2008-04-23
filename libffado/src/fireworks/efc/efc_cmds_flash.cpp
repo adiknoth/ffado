@@ -59,8 +59,6 @@ EfcFlashEraseCmd::deserialize( Util::Cmd::IISDeserialize& de )
 
     result &= EfcCmd::deserialize ( de );
 
-    EFC_DESERIALIZE_AND_SWAP(de, &m_address, result);
-
     return result;
 }
 
@@ -111,10 +109,7 @@ EfcFlashReadCmd::deserialize( Util::Cmd::IISDeserialize& de )
         return false;
     }
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
-        // FIXME: do we have to swap?
         EFC_DESERIALIZE_AND_SWAP(de, &m_data[i], result);
-        // or not?
-        //result &= de.read(&m_data[i]);
     }
     return result;
 }
@@ -160,9 +155,7 @@ EfcFlashWriteCmd::serialize( Util::Cmd::IOSSerialize& se )
     result &= se.write(htonl(m_nb_quadlets), "Length (quadlets)" );
 
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
-        // FIXME: do we have to swap?
-        // or not?
-        result &= se.write(m_data[i], "Data");
+        result &= se.write(htonl(m_data[i]), "Data");
     }
     return result;
 }

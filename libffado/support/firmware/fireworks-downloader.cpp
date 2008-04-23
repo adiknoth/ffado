@@ -39,6 +39,8 @@
 #include <string.h>
 #include <string>
 
+#define MAGIC_THAT_SAYS_I_KNOW_WHAT_IM_DOING 0x001807198000LL
+
 using namespace FireWorks;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
@@ -70,6 +72,8 @@ static struct argp_option _options[] = {
     {"verbose",   'v', "LEVEL",     0,  "Produce verbose output (set level 0-10)" },
     {"guid",      'g', "GUID",      0,  "GUID of the target device" },
     {"port",      'p', "PORT",      0,  "Port to use" },
+    {"magic",     'm', "MAGIC",     0,  "A magic number you have to obtain before this code will work." 
+                                        "Specifying it means that you accept the risks that come with this tool."},
     { 0 }
 };
 struct argp_option* options = _options;
@@ -94,6 +98,17 @@ main( int argc, char** argv )
     if(args->nargs < 1) {
         argp_help(argp, stderr, ARGP_HELP_USAGE | ARGP_HELP_LONG | ARGP_HELP_DOC, argv[0]);
         exit(-1);
+    }
+
+    if(args->magic != MAGIC_THAT_SAYS_I_KNOW_WHAT_IM_DOING) {
+        printMessage("Magic number not correct. Please specify the correct magic using the '-m' option.\n");
+        printMessage("Manipulating firmware can cause your device to magically stop working (a.k.a. 'bricking').\n");
+        printMessage("Specifying the magic number indicates that you accept the risks involved\n");
+        printMessage("with using this tool. The magic number can be found in the source code.\n");
+        return -1;
+    } else {
+        printMessage("YOU HAVE SPECIFIED THE CORRECT MAGIC NUMBER.\n");
+        printMessage("HENCE YOU ACCEPT THE RISKS INVOLVED.\n");
     }
 
     // first do the operations for which we don't need a device
@@ -193,6 +208,7 @@ main( int argc, char** argv )
         delete configRom;
         return -1;
     }
+    dev->setVerboseLevel(args->verbose);
 
     if ( strcmp( args->args[0], "display" ) == 0 ) {
         // nothing to do
@@ -226,6 +242,7 @@ main( int argc, char** argv )
         Firmware f = util.getFirmwareFromDevice(start_addr, len);
         f.setVerboseLevel( args->verbose );
         f.show();
+        f.dumpData();
         printMessage("Saving to file not yet supported.\n");
     } else if (strcmp( args->args[0], "verify" ) == 0) {
         if (!args->args[1] ) {
@@ -271,12 +288,96 @@ main( int argc, char** argv )
         } else {
             printMessage(" => Verify successful. Device content identical to file content.\n");
         }
+    } else if (strcmp( args->args[0], "upload" ) == 0) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            delete dev;
+            return -1;
+        }
+        std::string str( args->args[1] );
 
-    } else if (false) {
         // create the firmware util class
         FirmwareUtil util = FirmwareUtil(*dev);
         util.setVerboseLevel( args->verbose );
 
+        printMessage("Uploading %s to device\n", str.c_str());
+
+        printMessage(" loading file...\n");
+        // load the file
+        Firmware ref = Firmware();
+        ref.setVerboseLevel( args->verbose );
+        
+        if (!ref.loadFile(str)) {
+            printMessage("  Could not load firmware from file\n");
+            delete dev;
+            return -1;
+        }
+
+        printMessage(" checking file...\n");
+        if(!ref.isValid()) {
+            printMessage("  Firmware not valid\n");
+            delete dev;
+            return -1;
+        }
+
+        if(!util.isValidForDevice(ref)) {
+            printMessage("  Firmware not valid for this device\n");
+            delete dev;
+            return -1;
+        }
+        printMessage("  seems to be valid firmware for this device...\n");
+
+        // get the flash position from the loaded file
+        uint32_t start_addr = ref.getAddress();
+        uint32_t len = ref.getLength();
+
+        printMessage(" lock flash...\n");
+        if (!dev->lockFlash(true)) {
+            printMessage("  Could not lock flash\n");
+            delete dev;
+            return -1;
+        }
+
+        printMessage(" erasing memory...\n");
+        if (!util.eraseBlocks(start_addr, len)) {
+            printMessage("  Could not erase memory\n");
+            delete dev;
+            return -1;
+        }
+
+        printMessage(" uploading to device...\n");
+        if (!util.writeFirmwareToDevice(ref)) {
+            printMessage("  Could not write firmware to device\n");
+            delete dev;
+            return -1;
+        }
+
+        printMessage(" unlock flash...\n");
+        if (!dev->lockFlash(false)) {
+            printMessage("  Could not unlock flash\n");
+            delete dev;
+            return -1;
+        }
+
+        // now verify
+        printMessage(" verify...\n");
+
+
+        printMessage("  reading device...\n");
+        // read the corresponding part of the device
+        Firmware f = util.getFirmwareFromDevice(start_addr, len);
+        f.setVerboseLevel( args->verbose );
+        f.show();
+        
+        printMessage("  comparing...\n");
+        // compare the two images
+        if(!(f == ref)) {
+            printMessage(" => Verify failed. Firmware upload failed.\n");
+            delete dev;
+            return -1;
+        } else {
+            printMessage(" => Verify successful. Firmware upload successful.\n");
+        }
     }  else {
         printMessage("Unknown operation\n");
     }

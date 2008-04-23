@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Daniel Wagner
+ * Copyright (C) 2005-2008 by Pieter Palmers
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -44,6 +45,7 @@ struct arguments
     int   force;
     int   no_bootloader_restart;
     uint64_t guid;
+    uint64_t magic;
 };
 
 extern struct arguments* args;
