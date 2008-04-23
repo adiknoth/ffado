@@ -23,6 +23,7 @@
  */
 
 #include "debugmodule.h"
+#include "config.h"
 
 #include <stdarg.h>
 #include <netinet/in.h>
@@ -31,10 +32,13 @@
 
 #include <time.h>
 
-#define DO_MESSAGE_BUFFER_PRINT
-
-#ifndef DO_MESSAGE_BUFFER_PRINT
-    #warning Printing debug info without ringbuffer, not RT-safe!
+#if DEBUG_USE_MESSAGE_BUFFER
+#else
+    #ifdef DEBUG
+        #warning Printing debug info without ringbuffer, not RT-safe!
+    #else
+        #error Printing debug info without ringbuffer, not RT-safe (not allowed for non-debug builds)!
+    #endif
 #endif
 
 using namespace std;
@@ -388,7 +392,7 @@ DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
 void
 DebugModuleManager::flush()
 {
-#ifdef DO_MESSAGE_BUFFER_PRINT
+#ifdef DEBUG_USE_MESSAGE_BUFFER
     mb_flush();
 #else
     fflush(stderr);
@@ -518,7 +522,7 @@ DebugModuleManager::backlog_print(const char *msg)
 void
 DebugModuleManager::print(const char *msg)
 {
-#ifdef DO_MESSAGE_BUFFER_PRINT
+#ifdef DEBUG_USE_MESSAGE_BUFFER
     unsigned int ntries;
     struct timespec wait = {0,50000};
 #endif
@@ -531,7 +535,7 @@ DebugModuleManager::print(const char *msg)
         return;
     }
 
-#ifdef DO_MESSAGE_BUFFER_PRINT
+#ifdef DEBUG_USE_MESSAGE_BUFFER
     ntries=1;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
