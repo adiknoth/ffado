@@ -212,6 +212,9 @@ main( int argc, char** argv )
 
     if ( strcmp( args->args[0], "display" ) == 0 ) {
         // nothing to do
+        if (args->verbose < DEBUG_LEVEL_INFO) {
+            dev->setVerboseLevel(DEBUG_LEVEL_INFO);
+        }
         dev->showDevice();
     } else if (strcmp( args->args[0], "download" ) == 0) {
         if (args->nargs < 3) {
