@@ -181,14 +181,21 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
                 if(s.stream_position != mplug->m_dest_stream_position) {
                     debugWarning("s.stream_position (= 0x%02X) != mplug->m_dest_stream_position (= 0x%02X)\n",
                         s.stream_position, mplug->m_dest_stream_position);
+                    #if AVC_STREAMPOSITION_USE_MUSICPLUG
                     // use the one from the music plug
                     sinfo.m_streamPosition=mplug->m_dest_stream_position;
+                    #else
+                    // HACK: recent ECHO firmware only fills the AVCMusicClusterInfoBlock correctly
+                    sinfo.m_streamPosition=s.stream_position;
+                    #endif
                 }
                 if(s.stream_location != mplug->m_dest_stream_location) {
                     debugWarning("s.stream_location (= 0x%02X) != mplug->m_dest_stream_location (= 0x%02X)\n",
                         s.stream_location, mplug->m_dest_stream_location);
                     // use the one from the music plug
-                    sinfo.m_location=mplug->m_dest_stream_location;
+                    //sinfo.m_location=mplug->m_dest_stream_location;
+                    // HACK: recent ECHO firmware only fills the AVCMusicClusterInfoBlock correctly
+                    sinfo.m_location=s.stream_location;
                 }
             } else {
                 debugWarning("Invalid plug direction.\n");

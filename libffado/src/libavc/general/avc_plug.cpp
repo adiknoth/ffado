@@ -1247,6 +1247,7 @@ Plug::showPlug() const
     debugOutputShort(DEBUG_LEVEL_VERBOSE, "\n");
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "\tChannel info:\n");
+    unsigned int i=0;
     for ( Plug::ClusterInfoVector::const_iterator it = m_clusterInfos.begin();
           it != m_clusterInfos.end();
           ++it )
@@ -1254,7 +1255,7 @@ Plug::showPlug() const
         const Plug::ClusterInfo* clusterInfo = &( *it );
 
         debugOutput(DEBUG_LEVEL_VERBOSE, "         Cluster %s (idx=%2d, type=0x%02X, ch=%2d, format=0x%02X)\n",
-            clusterInfo->m_name.c_str(), clusterInfo->m_portType, clusterInfo->m_nrOfChannels, clusterInfo->m_streamFormat);
+            clusterInfo->m_name.c_str(), i, clusterInfo->m_portType, clusterInfo->m_nrOfChannels, clusterInfo->m_streamFormat);
         Plug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
         for ( Plug::ChannelInfoVector::const_iterator it = channelInfos.begin();
               it != channelInfos.end();
@@ -1264,6 +1265,7 @@ Plug::showPlug() const
             debugOutput(DEBUG_LEVEL_VERBOSE, "           Channel %s (pos=0x%02X, loc=0x%02X)\n",
                 channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
         }
+        i++;
     }
     flushDebugOutput();
     #endif
