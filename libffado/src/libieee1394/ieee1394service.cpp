@@ -218,7 +218,7 @@ Ieee1394Service::initialize( int port )
         debugWarning("==================================================================\n");
         m_have_new_ctr_read = false;
     } else {
-        debugOutput(DEBUG_LEVEL_NORMAL, "This system supports the raw1394_read_cycle_timer call, using it.\n");
+        debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer call, using it.\n");
         m_have_new_ctr_read = true;
     }
 
