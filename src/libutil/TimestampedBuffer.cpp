@@ -76,8 +76,8 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
 TimestampedBuffer::~TimestampedBuffer() {
     pthread_mutex_destroy(&m_framecounter_lock);
 
-    ffado_ringbuffer_free(m_event_buffer);
-    free(m_process_buffer);
+    if(m_event_buffer) ffado_ringbuffer_free(m_event_buffer);
+    if(m_process_buffer) free(m_process_buffer);
 }
 
 /**
