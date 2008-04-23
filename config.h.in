@@ -178,4 +178,9 @@
 // ensure that the MOTU tx SP clips all float values to [-1.0..1.0]
 #define MOTU_CLIP_FLOATS                                   1
 
+/// The unavoidable device specific hacks
+
+// specify this to 1 for ECHO audio firmwares older than v4.3
+#define AVC_STREAMPOSITION_USE_MUSICPLUG 0
+
 #endif // CONFIG_H
