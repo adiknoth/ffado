@@ -30,6 +30,8 @@
 #include "efc/efc_cmds_hardware.h"
 #include "efc/efc_cmds_flash.h"
 
+#include "IntelFlashMap.h"
+
 #include <string>
 
 class ConfigRom;
@@ -64,17 +66,42 @@ public:
     static const enum eDatType intToeDatType(int type);
 public:
     Firmware();
+    Firmware(const Firmware& f);
     virtual ~Firmware();
+    Firmware& operator=(const Firmware& f);
 
     virtual bool loadFile(std::string filename);
+    virtual bool loadFromMemory(uint32_t *data, uint32_t addr, uint32_t len);
+
+    virtual bool isValid() {return m_valid;};
+
+    /**
+     * @brief compare two firmwares
+     * compares only the address, length and data content, not the other fields
+     * @param x firmware to be compared to 'this'
+     * @return true if equal
+     */
+    bool operator==(const Firmware& x);
+
+    /**
+     * @brief get base address of the firmware image
+     * @return base address of the firmware image
+     */
+    virtual uint32_t getAddress() {return m_flash_offset_address;};
+    /**
+     * @brief get length of the firmware image (in quadlets)
+     * @return length of the firmware image (in quadlets)
+     */
+    virtual uint32_t getLength() {return m_length_quads;};
 
     virtual void show();
     virtual void setVerboseLevel(int l)
         {setDebugLevel(l);};
+    void dumpData();
 
 protected:
     // filename
-    std::string         m_filename;
+    std::string         m_source;
 
     // header data
     enum eDatType       m_Type;
@@ -90,6 +117,8 @@ protected:
     uint32_t            m_header[ECHO_FIRMWARE_HEADER_LENGTH_QUADLETS];
     uint32_t            *m_data;
 
+    bool m_valid;
+
 private:
     DECLARE_DEBUG_MODULE;
 };
@@ -104,6 +133,28 @@ public:
     virtual void show();
     virtual void setVerboseLevel(int l)
         {setDebugLevel(l);};
+    
+    /**
+     * @brief reads firmware block from device
+     * @param start start address
+     * @param length number of quadlets to read
+     * @return Firmware structure containing the read data
+     */
+    Firmware getFirmwareFromDevice(uint32_t start, uint32_t length);
+
+    /**
+     * @brief wait until the device indicates the flash memory is ready
+     * @return true if the flash is ready, false if not (or timeout)
+     */
+    bool waitForFlash();
+
+    /**
+     * @brief erases the flash memory starting at addr
+     * @param address 
+     * @param nb_quads 
+     * @return true if successful, false otherwise
+     */
+    bool eraseBlocks(unsigned int address, unsigned int nb_quads);
 
 protected:
     FireWorks::Device&          m_Parent;

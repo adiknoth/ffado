@@ -112,9 +112,9 @@ EfcFlashReadCmd::deserialize( Util::Cmd::IISDeserialize& de )
     }
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
         // FIXME: do we have to swap?
-        //EFC_DESERIALIZE_AND_SWAP(de, &m_data[i], result);
+        EFC_DESERIALIZE_AND_SWAP(de, &m_data[i], result);
         // or not?
-        result &= de.read(&m_data[i]);
+        //result &= de.read(&m_data[i]);
     }
     return result;
 }

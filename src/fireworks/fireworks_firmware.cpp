@@ -32,6 +32,8 @@
 #include <iostream>
 #include <fstream>
 
+#define ECHO_FLASH_TIMEOUT_MILLISECS 2000
+
 using namespace std;
 
 template <class T>
@@ -83,7 +85,8 @@ const enum Firmware::eDatType Firmware::intToeDatType(int type) {
 }
 
 Firmware::Firmware()
-: m_Type ( eDT_Invalid )
+: m_source( "none" )
+, m_Type ( eDT_Invalid )
 , m_flash_offset_address ( 0 )
 , m_length_quads ( 0 )
 , m_CRC32 ( 0 )
@@ -92,7 +95,48 @@ Firmware::Firmware()
 , m_append_crc ( false )
 , m_footprint_quads ( 0 )
 , m_data( NULL )
+, m_valid( false )
 {
+}
+
+Firmware::Firmware(const Firmware& f) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "copy constructor\n");
+    m_source = f.m_source;
+    m_Type = f.m_Type;
+    m_flash_offset_address = f.m_flash_offset_address;
+    m_length_quads = f.m_length_quads;
+    m_CRC32 = f.m_CRC32;
+    m_checksum = f.m_checksum;
+    m_version = f.m_version;
+    m_append_crc = f.m_append_crc;
+    m_footprint_quads = f.m_footprint_quads;
+    m_valid = f.m_valid;
+    m_data = new uint32_t[m_length_quads];
+
+    memcpy(m_data, f.m_data, m_length_quads*sizeof(uint32_t));
+}
+
+Firmware& Firmware::operator=(const Firmware& f) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "assignment\n");
+    if (this != &f) {  // make sure not same object
+        // assign new vars
+        m_source = f.m_source;
+        m_Type = f.m_Type;
+        m_flash_offset_address = f.m_flash_offset_address;
+        m_length_quads = f.m_length_quads;
+        m_CRC32 = f.m_CRC32;
+        m_checksum = f.m_checksum;
+        m_version = f.m_version;
+        m_append_crc = f.m_append_crc;
+        m_footprint_quads = f.m_footprint_quads;
+        m_valid = f.m_valid;
+
+        // replace dynamic data
+        delete [] m_data;
+        m_data = new uint32_t[m_length_quads];
+        memcpy(m_data, f.m_data, m_length_quads*sizeof(uint32_t));
+    }
+    return *this;    // Return ref for multiple assignment
 }
 
 Firmware::~Firmware()
@@ -104,7 +148,8 @@ void
 Firmware::show()
 {
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_NORMAL, "Firmware from %s\n", m_filename.c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Firmware from %s\n", m_source.c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, " Valid?               : %s\n", (m_valid?"Yes":"No"));
     debugOutput(DEBUG_LEVEL_NORMAL, " Type                 : %s\n", eDatTypeToString(m_Type));
     if (m_Type == eDT_Invalid) return;
 
@@ -112,7 +157,7 @@ Firmware::show()
     unsigned int version_minor = (m_version & 0x00FF0000) >> 16;
     unsigned int version_build = (m_version & 0x0000FFFF);
     debugOutput(DEBUG_LEVEL_NORMAL, " Address Offset       : 0x%08lX\n", m_flash_offset_address);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Lenght (Quadlets)    : 0x%08lX\n", m_length_quads);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Length (Quadlets)    : 0x%08lX\n", m_length_quads);
     debugOutput(DEBUG_LEVEL_NORMAL, " CRC 32               : 0x%08lX\n", m_CRC32);
     debugOutput(DEBUG_LEVEL_NORMAL, " Checksum             : 0x%08lX\n", m_checksum);
     debugOutput(DEBUG_LEVEL_NORMAL, " Firmware version     : %02u.%02u.%02u (0x%08X)\n", 
@@ -120,6 +165,47 @@ Firmware::show()
     debugOutput(DEBUG_LEVEL_NORMAL, " Append CRC           : %s\n", (m_append_crc?"Yes":"No"));
     debugOutput(DEBUG_LEVEL_NORMAL, " Footprint (Quadlets) : 0x%08lX\n", m_footprint_quads);
     #endif
+}
+
+bool
+Firmware::operator==(const Firmware& f)
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Comparing header...\n");
+    if(m_flash_offset_address != f.m_flash_offset_address) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "Flash address differs: %08X != %08X\n",
+                    m_flash_offset_address, f.m_flash_offset_address);
+        return false;
+    }
+    if(m_length_quads != f.m_length_quads) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "Flash length differs: %08X != %08X\n",
+                    m_length_quads, f.m_length_quads);
+        return false;
+    }
+    if(m_data == NULL && f.m_data == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "both firmwares have no data\n");
+        return true;
+    }
+    if(m_data == NULL || f.m_data == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "one of the firmwares has no data: %p != %p\n",
+                    m_data, f.m_data);
+        return false;
+    }
+    
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Comparing data...\n");
+    bool retval = true;
+    for(unsigned int i=0; i<m_length_quads; i++) {
+        if(m_data[i] != f.m_data[i]) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        " POS 0x%08X: %08X != %08X\n",
+                        i, m_data[i], f.m_data[i]);
+            retval = false;
+        }
+    }
+    return retval;
 }
 
 bool
@@ -211,8 +297,12 @@ Firmware::loadFile(std::string filename)
     debugOutput(DEBUG_LEVEL_VERBOSE, "  header ok...\n");
 
     debugOutput(DEBUG_LEVEL_VERBOSE, " Reading data...\n");
-    delete m_data;
+    delete[] m_data;
     m_data = new uint32_t[m_length_quads];
+    if(m_data == NULL) {
+        debugError("could not allocate memory for firmware\n");
+        return false;
+    }
     for (uint32_t i=0; i < m_length_quads; i++) {
         std::string buffer;
         getline(fwfile, buffer);
@@ -237,8 +327,49 @@ Firmware::loadFile(std::string filename)
     debugOutput(DEBUG_LEVEL_VERBOSE, "  data ok...\n");
     fwfile.close();
 
-    m_filename =  filename;
-    return false;
+    m_source = filename;
+    m_valid = true;
+    return true;
+}
+
+bool
+Firmware::loadFromMemory(uint32_t *data, uint32_t addr, uint32_t len) {
+    m_valid = false;
+
+    // mark it as invalid for now
+    m_Type                  = eDT_Invalid;
+
+    // set some values (FIXME)
+    m_flash_offset_address  = addr;
+    m_length_quads          = len;
+    m_CRC32                 = 0;
+    m_checksum              = 0;
+    m_version               = 0;
+    m_append_crc            = false;
+    m_footprint_quads       = 0;
+
+    // delete any old data
+    delete[] m_data;
+    m_data = new uint32_t[len];
+    if(m_data == NULL) {
+        debugError("could not allocate memory for firmware\n");
+        return false;
+    }
+    // copy data
+    memcpy(m_data, data, len*sizeof(uint32_t));
+
+    return true;
+}
+
+void
+Firmware::dumpData()
+{
+    debugWarning("-- char dump --");
+    hexDump((unsigned char*)m_data, m_length_quads*4);
+    
+    debugWarning("-- quadlet dump --");
+    hexDumpQuadlets(m_data, m_length_quads);
+
 }
 
 // the firmware loader helper class
@@ -250,6 +381,136 @@ FirmwareUtil::FirmwareUtil(FireWorks::Device& p)
 FirmwareUtil::~FirmwareUtil()
 {
 }
+
+Firmware
+FirmwareUtil::getFirmwareFromDevice(uint32_t start, uint32_t len)
+{
+    if(len == 0) {
+        debugError("Invalid length: %u\n", len);
+        return Firmware();
+    }
+
+    uint32_t data[len];
+    Firmware f = Firmware();
+
+    if(!m_Parent.readFlash(start, len, data)) {
+        debugError("Flash read failed\n");
+        return f;
+    }
+
+    if(!f.loadFromMemory(data, start, len)) {
+        debugError("Could not load firmware from memory dump\n");
+    }
+
+    return f;
+}
+
+bool
+FirmwareUtil::waitForFlash()
+{
+    bool ready;
+
+    EfcFlashGetStatusCmd statusCmd;
+    const unsigned int time_to_sleep_usecs = 10000;
+    int wait_cycles = ECHO_FLASH_TIMEOUT_MILLISECS * 1000 / time_to_sleep_usecs;
+
+    do {
+        if (!m_Parent.doEfcOverAVC(statusCmd)) {
+            debugError("Could not read flash status\n");
+            return false;
+        }
+        if (statusCmd.m_header.retval == EfcCmd::eERV_FlashBusy) {
+            ready = false;
+        } else {
+            ready = statusCmd.m_ready;
+        }
+        usleep(time_to_sleep_usecs);
+    } while (!ready && wait_cycles--);
+
+    if(wait_cycles == 0) {
+        debugError("Timeout while waiting for flash\n");
+        return false;
+    }
+
+    return ready;
+}
+
+bool
+FirmwareUtil::eraseBlocks(uint32_t start_address, unsigned int nb_quads)
+{
+    EfcFlashEraseCmd eraseCmd;
+    uint32_t blocksize_bytes;
+    uint32_t blocksize_quads;
+    unsigned int quads_left = nb_quads;
+    bool success = true;
+
+    const unsigned int max_nb_tries = 10;
+    unsigned int nb_tries = 0;
+
+    do {
+        // the erase block size is fixed by the HW, and depends
+        // on the flash section we're in
+        if (start_address < MAINBLOCKS_BASE_OFFSET_BYTES)
+                blocksize_bytes = PROGRAMBLOCK_SIZE_BYTES;
+        else
+                blocksize_bytes = MAINBLOCK_SIZE_BYTES;
+        start_address &= ~(blocksize_bytes - 1);
+        blocksize_quads = blocksize_bytes / 4;
+
+        // corner case: requested to erase less than one block
+        if (blocksize_quads > quads_left) {
+            blocksize_quads = quads_left;
+        }
+
+        // do the actual erase
+        eraseCmd.m_address = start_address;
+        if (!m_Parent.doEfcOverAVC(eraseCmd)) {
+            debugWarning("Could not erase flash block at 0x%08X\n", start_address);
+            success = false;
+        } else {
+            // verify that the block is empty as an extra precaution
+            EfcFlashReadCmd readCmd;
+            readCmd.m_address = start_address;
+            readCmd.m_nb_quadlets = blocksize_quads;
+            uint32_t verify_quadlets_read = 0;
+            do {
+                if (!m_Parent.doEfcOverAVC(readCmd)) {
+                    debugError("Could not read flash block at 0x%08X\n", start_address);
+                    return false;
+                }
+
+                // everything should be 0xFFFFFFFF if the erase was successful
+                for (unsigned int i = 0; i < readCmd.m_nb_quadlets; i++) {
+                    if (0xFFFFFFFF != readCmd.m_data[i]) {
+                        debugWarning("Flash erase verification failed.\n");
+                        success = false;
+                        break;
+                    }
+                }
+ 
+                // maybe not everything was read at once
+                verify_quadlets_read += readCmd.m_nb_quadlets;
+                readCmd.m_address += start_address + verify_quadlets_read * 4;
+                readCmd.m_nb_quadlets = blocksize_quads - verify_quadlets_read;
+            } while(verify_quadlets_read < blocksize_quads);
+        }
+
+        if (success) {
+            start_address += blocksize_bytes;
+            quads_left -= blocksize_quads;
+            nb_tries = 0;
+        } else {
+            nb_tries++;
+        }
+        if (nb_tries > max_nb_tries) {
+            debugError("Needed too many tries to erase flash at 0x%08X", start_address);
+            return false;
+        }
+    } while (quads_left > 0);
+    
+    return true;
+}
+
 
 void
 FirmwareUtil::show()

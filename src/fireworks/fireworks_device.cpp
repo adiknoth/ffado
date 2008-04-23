@@ -26,6 +26,7 @@
 #include "efc/efc_cmd.h"
 #include "efc/efc_cmds_hardware.h"
 #include "efc/efc_cmds_hardware_ctrl.h"
+#include "efc/efc_cmds_flash.h"
 
 #include "audiofire/audiofire_device.h"
 
@@ -494,6 +495,51 @@ Device::setClock(uint32_t id) {
     if (!doEfcOverAVC(sccmd)) {
         debugError("Could not set clock info\n");
         return false;
+    }
+    return true;
+}
+
+bool
+Device::readFlash(uint32_t start, uint32_t len, uint32_t* buffer) {
+
+    if(len <= 0 || 0xFFFFFFFF - len*4 < start) {
+        debugError("bogus start/len: 0x%08X / %u\n", start, len);
+        return false;
+    }
+    if(start & 0x03) {
+        debugError("start address not quadlet aligned: 0x%08X\n", start);
+        return false;
+    }
+
+    uint32_t start_addr = start;
+    uint32_t stop_addr = start + len*4;
+    uint32_t *target_buffer = buffer;
+
+    EfcFlashReadCmd cmd;
+    // read EFC_FLASH_SIZE_BYTES at a time
+    for(start_addr = start; start_addr < stop_addr; start_addr += EFC_FLASH_SIZE_BYTES) {
+        cmd.m_address = start_addr;
+        unsigned int quads_to_read = (stop_addr - start_addr)/4;
+        if (quads_to_read > EFC_FLASH_SIZE_QUADS) {
+            quads_to_read = EFC_FLASH_SIZE_QUADS;
+        }
+        cmd.m_nb_quadlets = quads_to_read;
+        if(!doEfcOverAVC(cmd)) {
+            debugError("Flash read failed for block 0x%08X (%d quadlets)\n", start_addr, quads_to_read);
+            return false;
+        }
+        if(cmd.m_nb_quadlets != quads_to_read) {
+            debugError("Flash read didn't return enough data (%u/%u) \n", cmd.m_nb_quadlets, quads_to_read);
+            return false;
+        }
+        if(cmd.m_data == NULL) {
+            debugError("No data block in EFC cmd\n");
+            return false;
+        }
+        for(unsigned int i=0; i<quads_to_read; i++) {
+            *target_buffer = cmd.m_data[i];
+            target_buffer++;
+        }
     }
     return true;
 }

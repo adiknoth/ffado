@@ -59,8 +59,18 @@ public:
 
     const EfcHardwareInfoCmd getHwInfo()
         {return m_HwInfo;};
-    
+
+// protected: //?
     bool doEfcOverAVC(EfcCmd& c);
+    
+    /**
+     * @brief Read flash
+     * @param start start address
+     * @param len length in quadlets (4 bytes)
+     * @param buffer target buffer (should be 'len*4' bytes long)
+     * @return true if successful
+     */
+    bool readFlash(uint32_t start, uint32_t len, uint32_t* buffer);
 
 // Echo specific stuff
 private:
