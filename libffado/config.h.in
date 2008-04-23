@@ -44,6 +44,11 @@
 // debug logging in the critical sections
 #define DEBUG_EXTREME_ENABLE        0
 
+// use a RT-safe message buffer for debug output
+// useful to disable this when the code aborts/segfaults to
+// not lose debug output. should be enabled though.
+#define DEBUG_USE_MESSAGE_BUFFER    1
+
 // watchdog
 #define WATCHDOG_DEFAULT_CHECK_INTERVAL_USECS   (1000*1000*4)
 #define WATCHDOG_DEFAULT_RUN_REALTIME           1
