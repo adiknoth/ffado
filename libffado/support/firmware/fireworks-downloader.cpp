@@ -49,12 +49,27 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 const char *argp_program_version = "fireworks-downloader 0.2";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
 const char *doc = "fireworks-downloader -- firmware downloader application for ECHO Fireworks devices\n\n"
-                    "OPERATION: display\n"
-                    "           firmware FILE\n";
+                    "OPERATIONS:\n" 
+                    "           list\n"
+                    "              Lists devices on the bus\n"
+                    "           display\n"
+                    "              Display information about a device and it's firmware\n"
+                    "           info FILE\n"
+                    "              Display information about the firmware contained in FILE\n"
+                    "           upload FILE\n"
+                    "              Upload the firmware contained in FILE to the device\n"
+                    "           download FILE START_ADDR LEN\n"
+                    "              Download the flash contents from the device to FILE\n"
+                    "              Starts at address START_ADDR and reads LEN quadlets\n"
+                    "           verify FILE\n"
+                    "              Verify that the firmware contained in the device corresponds\n"
+                    "              to the one contained in FILE\n"
+                    ;
 
 static struct argp_option _options[] = {
-    {"verbose",   'v', "level",     0,  "Produce verbose output" },
-    {"port",      'p', "PORT",      0,  "Set port" },
+    {"verbose",   'v', "LEVEL",     0,  "Produce verbose output (set level 0-10)" },
+    {"guid",      'g', "GUID",      0,  "GUID of the target device" },
+    {"port",      'p', "PORT",      0,  "Port to use" },
     { 0 }
 };
 struct argp_option* options = _options;
@@ -64,22 +79,73 @@ main( int argc, char** argv )
 {
     using namespace std;
 
+    memset(args, 0, sizeof(args));
+
+    args->guid = 0xFFFFFFFFFFFFFFFFLL;
     argp_parse (argp, argc, argv, 0, 0, args);
 
+    setDebugLevel(args->verbose);
+
     errno = 0;
-    char* tail;
     int node_id = -1;
 
-    fb_octlet_t guid = strtoll(args->args[0], &tail, 0);
-    if (errno) {
-        debugError("argument parsing failed: %s\n",
-                    strerror(errno));
-        return -1;
+    fb_octlet_t guid = args->guid;
+
+    if(args->nargs < 1) {
+        argp_help(argp, stderr, ARGP_HELP_USAGE | ARGP_HELP_LONG | ARGP_HELP_DOC, argv[0]);
+        exit(-1);
+    }
+
+    // first do the operations for which we don't need a device
+    if ( strcmp( args->args[0], "info" ) == 0 ) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            return -1;
+        }
+        std::string str( args->args[1] );
+
+        // load the file
+        Firmware f = Firmware();
+        f.setVerboseLevel( args->verbose );
+        
+        if (!f.loadFile(str)) {
+            printMessage("Could not load firmware\n");
+            return -1;
+        }
+        f.show();
+        return 0;
+    } else if ( strcmp( args->args[0], "dumpinfo" ) == 0 ) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            return -1;
+        }
+        std::string str( args->args[1] );
+
+        // load the file
+        Firmware f = Firmware();
+        f.setVerboseLevel( args->verbose );
+        
+        if (!f.loadFile(str)) {
+            printMessage("Could not load firmware\n");
+            return -1;
+        }
+        f.show();
+        f.dumpData();
+        return 0;
+    } else if ( strcmp( args->args[0], "list" ) == 0 ) {
+        printDeviceList();
+        exit(0);
+    }
+
+    // we need a device, so find the specified device
+    if (guid == 0xFFFFFFFFFFFFFFFFLL) {
+        printMessage("No GUID specified\n");
+        exit(-1);
     }
 
     Ieee1394Service service;
     if ( !service.initialize( args->port ) ) {
-        debugError("Could not initialize IEEE 1394 service\n");
+        printMessage("Could not initialize IEEE 1394 service\n");
         return -1;
     }
     service.setVerboseLevel( args->verbose );
@@ -88,31 +154,33 @@ main( int argc, char** argv )
         ConfigRom configRom(service, i);
         configRom.initialize();
         
-        if (configRom.getGuid() == guid)
+        if (configRom.getGuid() == guid) {
             node_id = configRom.getNodeId();
+            break;
+        }
     }
 
     if (node_id < 0) {
-        cerr << "Could not find device with matching GUID" << endl;
+        printMessage("Could not find device with GUID 0x%016X\n", guid);
         return -1;
     }
 
     ConfigRom *configRom = new ConfigRom(service, node_id );
     if (configRom == NULL) {
-        debugError("Could not create ConfigRom\n");
+        printMessage("Could not create ConfigRom\n");
         return -1;
     }
     configRom->setVerboseLevel( args->verbose );
 
     if ( !configRom->initialize() ) {
-        debugError( "Could not read config rom from device (node id %d).\n",
+        printMessage( "Could not read config rom from device (node id %d).\n",
                     node_id );
         delete configRom;
         return -1;
     }
 
-    if ( !Device::probe(*configRom) ) {
-        debugError( "Device with node id %d is not an ECHO FireWorks device.\n",
+    if ( !FireWorks::Device::probe(*configRom) ) {
+        printMessage( "Device with node id %d is not an ECHO FireWorks device.\n",
                     node_id );
         delete configRom;
         return -1;
@@ -121,35 +189,96 @@ main( int argc, char** argv )
     DeviceManager d = DeviceManager();
     Device *dev = new Device(d, std::auto_ptr<ConfigRom>(configRom) );
     if (dev == NULL) {
-        debugError("Could not create FireWorks::Device\n");
+        printMessage("Could not create FireWorks::Device\n");
         delete configRom;
         return -1;
     }
 
-    // create the firmware util class
-    FirmwareUtil util = FirmwareUtil(*dev);
-    util.setVerboseLevel( args->verbose );
-    
-    if ( strcmp( args->args[1], "firmware" ) == 0 ) {
-        if (!args->args[2] ) {
-            cerr << "FILE argument is missing" << endl;
+    if ( strcmp( args->args[0], "display" ) == 0 ) {
+        // nothing to do
+        dev->showDevice();
+    } else if (strcmp( args->args[0], "download" ) == 0) {
+        if (args->nargs < 3) {
+            printMessage("Address range not specified\n");
             delete dev;
             return -1;
         }
-        std::string str( args->args[2] );
-
-        // load the file
-        Firmware f = Firmware();
-        f.setVerboseLevel( args->verbose );
+        errno = 0;
+        uint32_t start_addr = strtol(args->args[2], NULL, 0);        
+        if (errno) {
+            printMessage("start address parsing failed: %s\n",
+                       strerror(errno));
+            delete dev;
+            return errno;
+        }
+        uint32_t len = strtol(args->args[3], NULL, 0);
+        if (errno) {
+            printMessage("length parsing failed: %s\n",
+                       strerror(errno));
+            delete dev;
+            return errno;
+        }
         
-        f.loadFile(str);
+        // create the firmware util class
+        FirmwareUtil util = FirmwareUtil(*dev);
+        util.setVerboseLevel( args->verbose );
+        
+        Firmware f = util.getFirmwareFromDevice(start_addr, len);
+        f.setVerboseLevel( args->verbose );
         f.show();
+        printMessage("Saving to file not yet supported.\n");
+    } else if (strcmp( args->args[0], "verify" ) == 0) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            delete dev;
+            return -1;
+        }
+        std::string str( args->args[1] );
 
-    } else if ( strcmp( args->args[1], "display" ) == 0 ) {
-        // nothing to do
-        dev->showDevice();
-    } else {
-        cout << "Unknown operation" << endl;
+        printMessage("Verifying device versus file: %s\n", str.c_str());
+
+        printMessage(" loading file...\n");
+        // load the file
+        Firmware ref = Firmware();
+        ref.setVerboseLevel( args->verbose );
+        
+        if (!ref.loadFile(str)) {
+            printMessage("Could not load firmware from file\n");
+            delete dev;
+            return -1;
+        }
+
+        // get the flash position from the loaded file
+        uint32_t start_addr = ref.getAddress();
+        uint32_t len = ref.getLength();
+
+        // create the firmware util class
+        FirmwareUtil util = FirmwareUtil(*dev);
+        util.setVerboseLevel( args->verbose );
+        
+        printMessage(" reading device...\n");
+        // read the corresponding part of the device
+        Firmware f = util.getFirmwareFromDevice(start_addr, len);
+        f.setVerboseLevel( args->verbose );
+        f.show();
+        
+        printMessage(" comparing...\n");
+        // compare the two images
+        if(!(f == ref)) {
+            printMessage(" => Verify failed. Device content not the same as file content.\n");
+            delete dev;
+            return -1;
+        } else {
+            printMessage(" => Verify successful. Device content identical to file content.\n");
+        }
+
+    } else if (false) {
+        // create the firmware util class
+        FirmwareUtil util = FirmwareUtil(*dev);
+        util.setVerboseLevel( args->verbose );
+
+    }  else {
+        printMessage("Unknown operation\n");
     }
 
     delete dev;
