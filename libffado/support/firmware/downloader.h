@@ -25,6 +25,9 @@
 #define downloader_h
 
 #include <argp.h>
+#include <inttypes.h>
+
+#define MAX_NB_ARGS 5
 
 /* ------------------------------------- */
 /* has to be provided by the application */
@@ -34,11 +37,13 @@ extern struct argp_option* options;
 /* ------------------------------------- */
 struct arguments
 {
-    char* args[3];
+    char* args[MAX_NB_ARGS];
+    int   nargs;
     short verbose;
     int   port;
     int   force;
     int   no_bootloader_restart;
+    uint64_t guid;
 };
 
 extern struct arguments* args;
