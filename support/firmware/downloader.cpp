@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Daniel Wagner
+ * Copyright (C) 2005-2008 by Pieter Palmers
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -72,6 +73,15 @@ parse_opt( int key, char* arg, struct argp_state* state )
     case 'g':
         errno = 0;
         arguments->guid = strtoll(arg, &tail, 0);
+        if (errno) {
+            debugError("argument parsing failed: %s\n",
+                       strerror(errno));
+            return errno;
+        }
+        break;
+    case 'm':
+        errno = 0;
+        arguments->magic = strtoll(arg, &tail, 0);
         if (errno) {
             debugError("argument parsing failed: %s\n",
                        strerror(errno));

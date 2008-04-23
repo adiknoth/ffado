@@ -51,6 +51,8 @@ namespace FireWorks {
 #define ECHO_FIRMWARE_FILE_MAX_LENGTH_QUADLETS  ((384 * 1024) / 4)
 #define ECHO_FIRMWARE_FILE_MAX_LENGTH_BYTES     (ECHO_FIRMWARE_FILE_MAX_LENGTH_QUADLETS * 12 + ECHO_FIRMWARE_HEADER_LENGTH_BYTES)
 
+#define ECHO_FIRMWARE_NUM_BOXTYPES  4
+
 class Firmware
 {
 public:
@@ -75,6 +77,8 @@ public:
 
     virtual bool isValid() {return m_valid;};
 
+    virtual std::string getSourceString() {return m_source;};
+
     /**
      * @brief compare two firmwares
      * compares only the address, length and data content, not the other fields
@@ -93,6 +97,18 @@ public:
      * @return length of the firmware image (in quadlets)
      */
     virtual uint32_t getLength() {return m_length_quads;};
+
+    /**
+     * @brief get length of data to be written to the device (in quadlets)
+     * @return length (in quadlets)
+     */
+    virtual uint32_t getWriteDataLen();
+    /**
+     * @brief prepares data to be written to the device
+     * @param buff buffer to copy data into. should be at least getWriteDataLen() quadlets.
+     * @return true if successful
+     */
+    virtual bool getWriteData(uint32_t *buff);
 
     virtual void show();
     virtual void setVerboseLevel(int l)
@@ -142,11 +158,13 @@ public:
      */
     Firmware getFirmwareFromDevice(uint32_t start, uint32_t length);
 
+
     /**
-     * @brief wait until the device indicates the flash memory is ready
-     * @return true if the flash is ready, false if not (or timeout)
+     * @brief writes a firmware to the device
+     * @param f firmware to write
+     * @return true if successful
      */
-    bool waitForFlash();
+    bool writeFirmwareToDevice(Firmware f);
 
     /**
      * @brief erases the flash memory starting at addr
@@ -156,8 +174,28 @@ public:
      */
     bool eraseBlocks(unsigned int address, unsigned int nb_quads);
 
+    /**
+     * @brief checks whether a firmware is valid for this device
+     * @param f firmware to check
+     * @return true if valid, false if not
+     */
+    bool isValidForDevice(Firmware f);
+
 protected:
     FireWorks::Device&          m_Parent;
+
+private:
+    struct dat_list
+    {
+        uint32_t    vendorid;
+        uint32_t    boxtype;
+        uint32_t    minversion;
+        int         count;
+        char        **filenames;
+    };
+
+    struct dat_list m_datlists[ECHO_FIRMWARE_NUM_BOXTYPES];
+
 private:
     DECLARE_DEBUG_MODULE;
 };

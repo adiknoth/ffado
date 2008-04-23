@@ -79,6 +79,11 @@ EfcOverAVCCmd::deserialize( Util::Cmd::IISDeserialize& de )
     result &= de.read(&m_dummy_1);
     result &= de.read(&m_dummy_2);
 
+    if(!result) {
+        debugWarning("AV/C deserialization failed\n");
+        return false;
+    }
+
     result &= m_cmd->deserialize( de );
     
     if(!result) {

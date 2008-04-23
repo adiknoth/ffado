@@ -27,12 +27,28 @@
 #include "efc/efc_cmd.h"
 #include "efc/efc_cmds_flash.h"
 
+#include "libieee1394/configrom.h"
+#include "libieee1394/vendor_model_ids.h"
+
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <fstream>
 
-#define ECHO_FLASH_TIMEOUT_MILLISECS 2000
+#define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
+
+#define DAT_EXTENSION "dat"
+
+// device id's
+#define AUDIOFIRE2			0x000af2
+#define AUDIOFIRE4			0x000af4
+#define AUDIOFIRE8			0x000af8
+#define AUDIOFIRE12			0x00af12
+#define AUDIOFIRE12HD		0x0af12d
+#define FWHDMI				0x00afd1
+#define ONYX400F			0x00400f 
+#define ONYX1200F			0x01200f
+#define FIREWORKS8			0x0000f8
 
 using namespace std;
 
@@ -361,25 +377,116 @@ Firmware::loadFromMemory(uint32_t *data, uint32_t addr, uint32_t len) {
     return true;
 }
 
+uint32_t
+Firmware::getWriteDataLen() {
+    uint32_t retval = 0;
+    if((m_append_crc != 0) && (m_length_quads < m_footprint_quads)) {
+        retval += m_footprint_quads;
+    } else {
+        retval += m_length_quads;
+    }
+    return retval;
+}
+
+bool
+Firmware::getWriteData(uint32_t *buff) {
+    // copy the payload data
+    memcpy(buff, m_data, m_length_quads*4);
+    // if necessary, add crc/version
+    if((m_append_crc != 0) && (m_length_quads < m_footprint_quads)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "appending CRC and version\n");
+        buff[m_footprint_quads - 1] = m_CRC32;
+        buff[m_footprint_quads - 2] = m_version;
+    }
+    return true;
+}
+
 void
 Firmware::dumpData()
 {
     debugWarning("-- char dump --");
     hexDump((unsigned char*)m_data, m_length_quads*4);
-    
+/*    
     debugWarning("-- quadlet dump --");
-    hexDumpQuadlets(m_data, m_length_quads);
+    hexDumpQuadlets(m_data, m_length_quads);*/
 
 }
 
+
 // the firmware loader helper class
+char *Af2Dats[] = 
+{
+	"Fireworks3"
+};
+
+char *Af4Dats[] = 
+{
+	"Fireworks3"
+};
+
+char *Af8Dats[] = 
+{
+	"bootstrap",
+	"audiofire8",
+	"audiofire8_E",
+	"FireworksARM"
+};
+
+char *Af12Dats[] = 
+{
+	"bootstrap",
+	"audiofire12",
+	"audiofire12_E",
+	"FireworksARM"
+};
+
 FirmwareUtil::FirmwareUtil(FireWorks::Device& p)
 : m_Parent(p)
 {
+
+    struct dat_list datlists[4] =
+    {
+            { FW_VENDORID_ECHO, AUDIOFIRE2,	0x04010000, 1, Af2Dats },
+            { FW_VENDORID_ECHO, AUDIOFIRE4,	0x04010000, 1, Af4Dats },
+            { FW_VENDORID_ECHO, AUDIOFIRE8,	0x04010000, 4, Af8Dats },
+            { FW_VENDORID_ECHO, AUDIOFIRE12,	0x04010000, 4, Af12Dats }
+    };
+
+    assert(sizeof(datlists) <= sizeof(m_datlists));
+    memset(&m_datlists, 0, sizeof(m_datlists));
+    memcpy(&m_datlists, &datlists, sizeof(datlists));
 }
 
 FirmwareUtil::~FirmwareUtil()
 {
+}
+
+bool
+FirmwareUtil::isValidForDevice(Firmware f)
+{
+    std::string src = f.getSourceString();
+
+    uint32_t vendor = m_Parent.getConfigRom().getNodeVendorId();
+    uint32_t model = m_Parent.getConfigRom().getModelId();
+
+    for (unsigned int i=0; i<ECHO_FIRMWARE_NUM_BOXTYPES; i++) {
+        if(m_datlists[i].boxtype == model
+           && m_datlists[i].vendorid == vendor)
+        {
+            for(int j=0; j<m_datlists[i].count; j++) {
+                std::string cmpstring = m_datlists[i].filenames[j];
+                cmpstring += ".dat";
+                std::string::size_type loc = src.find( cmpstring, 0 );
+                if( loc != std::string::npos ) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "found filename\n");
+                    return true;
+                    break;
+                 }
+            }
+        }
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "file not for this device\n");
+    return false;
 }
 
 Firmware
@@ -406,39 +513,25 @@ FirmwareUtil::getFirmwareFromDevice(uint32_t start, uint32_t len)
 }
 
 bool
-FirmwareUtil::waitForFlash()
+FirmwareUtil::writeFirmwareToDevice(Firmware f)
 {
-    bool ready;
-
-    EfcFlashGetStatusCmd statusCmd;
-    const unsigned int time_to_sleep_usecs = 10000;
-    int wait_cycles = ECHO_FLASH_TIMEOUT_MILLISECS * 1000 / time_to_sleep_usecs;
-
-    do {
-        if (!m_Parent.doEfcOverAVC(statusCmd)) {
-            debugError("Could not read flash status\n");
-            return false;
-        }
-        if (statusCmd.m_header.retval == EfcCmd::eERV_FlashBusy) {
-            ready = false;
-        } else {
-            ready = statusCmd.m_ready;
-        }
-        usleep(time_to_sleep_usecs);
-    } while (!ready && wait_cycles--);
-
-    if(wait_cycles == 0) {
-        debugError("Timeout while waiting for flash\n");
+    uint32_t start_addr = f.getAddress();
+    uint32_t writelen = f.getWriteDataLen();
+    uint32_t buff[writelen * 4];
+    if (!f.getWriteData(buff)) {
+        debugError("Could not prepare data for writing to the device\n");
         return false;
     }
-
-    return ready;
+    if(!m_Parent.writeFlash(start_addr, writelen, buff)) {
+        debugError("Writing to flash failed.\n");
+        return false;
+    }
+    return true;
 }
 
 bool
 FirmwareUtil::eraseBlocks(uint32_t start_address, unsigned int nb_quads)
 {
-    EfcFlashEraseCmd eraseCmd;
     uint32_t blocksize_bytes;
     uint32_t blocksize_quads;
     unsigned int quads_left = nb_quads;
@@ -457,42 +550,38 @@ FirmwareUtil::eraseBlocks(uint32_t start_address, unsigned int nb_quads)
         start_address &= ~(blocksize_bytes - 1);
         blocksize_quads = blocksize_bytes / 4;
 
+        uint32_t verify[blocksize_quads];
+
         // corner case: requested to erase less than one block
         if (blocksize_quads > quads_left) {
             blocksize_quads = quads_left;
         }
 
         // do the actual erase
-        eraseCmd.m_address = start_address;
-        if (!m_Parent.doEfcOverAVC(eraseCmd)) {
+        if (!m_Parent.eraseFlash(start_address)) {
             debugWarning("Could not erase flash block at 0x%08X\n", start_address);
             success = false;
         } else {
-            // verify that the block is empty as an extra precaution
-            EfcFlashReadCmd readCmd;
-            readCmd.m_address = start_address;
-            readCmd.m_nb_quadlets = blocksize_quads;
-            uint32_t verify_quadlets_read = 0;
-            do {
-                if (!m_Parent.doEfcOverAVC(readCmd)) {
-                    debugError("Could not read flash block at 0x%08X\n", start_address);
-                    return false;
-                }
+            // wait for the flash to become ready again
+            if (!m_Parent.waitForFlash(ECHO_FLASH_ERASE_TIMEOUT_MILLISECS)) {
+                debugError("Wait for flash timed out at address 0x%08X\n", start_address);
+                return false;
+            }
 
-                // everything should be 0xFFFFFFFF if the erase was successful
-                for (unsigned int i = 0; i < readCmd.m_nb_quadlets; i++) {
-                    if (0xFFFFFFFF != readCmd.m_data[i]) {
-                        debugWarning("Flash erase verification failed.\n");
-                        success = false;
-                        break;
-                    }
+            // verify that the block is empty as an extra precaution
+            if (!m_Parent.readFlash(start_address, blocksize_quads, verify)) {
+                debugError("Could not read flash block at 0x%08X\n", start_address);
+                return false;
+            }
+
+            // everything should be 0xFFFFFFFF if the erase was successful
+            for (unsigned int i = 0; i < blocksize_quads; i++) {
+                if (0xFFFFFFFF != verify[i]) {
+                    debugWarning("Flash erase verification failed.\n");
+                    success = false;
+                    break;
                 }
- 
-                // maybe not everything was read at once
-                verify_quadlets_read += readCmd.m_nb_quadlets;
-                readCmd.m_address += start_address + verify_quadlets_read * 4;
-                readCmd.m_nb_quadlets = blocksize_quads - verify_quadlets_read;
-            } while(verify_quadlets_read < blocksize_quads);
+            }
         }
 
         if (success) {
@@ -503,14 +592,13 @@ FirmwareUtil::eraseBlocks(uint32_t start_address, unsigned int nb_quads)
             nb_tries++;
         }
         if (nb_tries > max_nb_tries) {
-            debugError("Needed too many tries to erase flash at 0x%08X", start_address);
+            debugError("Needed too many tries to erase flash at 0x%08X\n", start_address);
             return false;
         }
     } while (quads_left > 0);
     
     return true;
 }
-
 
 void
 FirmwareUtil::show()

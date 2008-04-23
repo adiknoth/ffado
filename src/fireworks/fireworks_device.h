@@ -72,6 +72,35 @@ public:
      */
     bool readFlash(uint32_t start, uint32_t len, uint32_t* buffer);
 
+    /**
+     * @brief Write flash
+     * @param start start address
+     * @param len length in quadlets (4 bytes)
+     * @param buffer target buffer (should be 'len*4' bytes long)
+     * @return true if successful
+     */
+    bool writeFlash(uint32_t start, uint32_t len, uint32_t* buffer);
+
+    /**
+     * @brief (un)lock the flash
+     * @param lock true=locked, false=unlocked
+     * @return true if successful
+     */
+    bool lockFlash(bool lock);
+    /**
+     * @brief erase flash block
+     * @param addr address of block to erase
+     * @return true if successful
+     */
+    bool eraseFlash(uint32_t addr);
+
+    /**
+     * @brief wait until the device indicates the flash memory is ready
+     * @param msecs time to wait before timeout
+     * @return true if the flash is ready, false if timeout
+     */
+    bool waitForFlash(unsigned int msecs);
+
 // Echo specific stuff
 private:
     

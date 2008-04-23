@@ -500,6 +500,55 @@ Device::setClock(uint32_t id) {
 }
 
 bool
+Device::lockFlash(bool lock) {
+    EfcFlashLockCmd cmd;
+    cmd.m_lock = lock;
+
+    if(!doEfcOverAVC(cmd)) {
+        debugError("Flash lock failed\n");
+        return false;
+    }
+    return true;
+}
+
+bool
+Device::writeFlash(uint32_t start, uint32_t len, uint32_t* buffer) {
+
+    if(len <= 0 || 0xFFFFFFFF - len*4 < start) {
+        debugError("bogus start/len: 0x%08X / %u\n", start, len);
+        return false;
+    }
+    if(start & 0x03) {
+        debugError("start address not quadlet aligned: 0x%08X\n", start);
+        return false;
+    }
+
+    uint32_t start_addr = start;
+    uint32_t stop_addr = start + len*4;
+    uint32_t *target_buffer = buffer;
+
+    EfcFlashWriteCmd cmd;
+    // write EFC_FLASH_SIZE_BYTES at a time
+    for(start_addr = start; start_addr < stop_addr; start_addr += EFC_FLASH_SIZE_BYTES) {
+        cmd.m_address = start_addr;
+        unsigned int quads_to_write = (stop_addr - start_addr)/4;
+        if (quads_to_write > EFC_FLASH_SIZE_QUADS) {
+            quads_to_write = EFC_FLASH_SIZE_QUADS;
+        }
+        cmd.m_nb_quadlets = quads_to_write;
+        for(unsigned int i=0; i<quads_to_write; i++) {
+            cmd.m_data[i] = *target_buffer;
+            target_buffer++;
+        }
+        if(!doEfcOverAVC(cmd)) {
+            debugError("Flash write failed for block 0x%08X (%d quadlets)\n", start_addr, quads_to_write);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
 Device::readFlash(uint32_t start, uint32_t len, uint32_t* buffer) {
 
     if(len <= 0 || 0xFFFFFFFF - len*4 < start) {
@@ -518,30 +567,88 @@ Device::readFlash(uint32_t start, uint32_t len, uint32_t* buffer) {
     EfcFlashReadCmd cmd;
     // read EFC_FLASH_SIZE_BYTES at a time
     for(start_addr = start; start_addr < stop_addr; start_addr += EFC_FLASH_SIZE_BYTES) {
-        cmd.m_address = start_addr;
         unsigned int quads_to_read = (stop_addr - start_addr)/4;
         if (quads_to_read > EFC_FLASH_SIZE_QUADS) {
             quads_to_read = EFC_FLASH_SIZE_QUADS;
         }
-        cmd.m_nb_quadlets = quads_to_read;
-        if(!doEfcOverAVC(cmd)) {
-            debugError("Flash read failed for block 0x%08X (%d quadlets)\n", start_addr, quads_to_read);
+        uint32_t quadlets_read = 0;
+        int ntries = 10000;
+        do {
+            cmd.m_address = start_addr + quadlets_read*4;
+            unsigned int new_to_read = quads_to_read - quadlets_read;
+            cmd.m_nb_quadlets = new_to_read;
+            if(!doEfcOverAVC(cmd)) {
+                debugError("Flash read failed for block 0x%08X (%d quadlets)\n", start_addr, quads_to_read);
+                return false;
+            }
+            if(cmd.m_nb_quadlets != new_to_read) {
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "Flash read didn't return enough data (%u/%u) \n",
+                            cmd.m_nb_quadlets, new_to_read);
+                // continue trying
+            }
+            quadlets_read += cmd.m_nb_quadlets;
+
+            // copy content
+            for(unsigned int i=0; i<cmd.m_nb_quadlets; i++) {
+                *target_buffer = cmd.m_data[i];
+                target_buffer++;
+            }
+        } while(quadlets_read < quads_to_read && ntries--);
+        if(ntries==0) {
+            debugError("deadlock while reading flash\n");
             return false;
-        }
-        if(cmd.m_nb_quadlets != quads_to_read) {
-            debugError("Flash read didn't return enough data (%u/%u) \n", cmd.m_nb_quadlets, quads_to_read);
-            return false;
-        }
-        if(cmd.m_data == NULL) {
-            debugError("No data block in EFC cmd\n");
-            return false;
-        }
-        for(unsigned int i=0; i<quads_to_read; i++) {
-            *target_buffer = cmd.m_data[i];
-            target_buffer++;
         }
     }
     return true;
+}
+
+bool
+Device::eraseFlash(uint32_t addr) {
+    if(addr & 0x03) {
+        debugError("start address not quadlet aligned: 0x%08X\n", addr);
+        return false;
+    }
+    EfcFlashEraseCmd cmd;
+    cmd.m_address = addr;
+    if(!doEfcOverAVC(cmd)) {
+        if (cmd.m_header.retval == EfcCmd::eERV_FlashBusy) {
+            return true;
+        }
+        debugError("Flash erase failed for block 0x%08X\n", addr);
+        return false;
+    }
+    return true;
+}
+
+bool
+Device::waitForFlash(unsigned int msecs)
+{
+    bool ready;
+
+    EfcFlashGetStatusCmd statusCmd;
+    const unsigned int time_to_sleep_usecs = 10000;
+    int wait_cycles = msecs * 1000 / time_to_sleep_usecs;
+
+    do {
+        if (!doEfcOverAVC(statusCmd)) {
+            debugError("Could not read flash status\n");
+            return false;
+        }
+        if (statusCmd.m_header.retval == EfcCmd::eERV_FlashBusy) {
+            ready = false;
+        } else {
+            ready = statusCmd.m_ready;
+        }
+        usleep(time_to_sleep_usecs);
+    } while (!ready && wait_cycles--);
+
+    if(wait_cycles == 0) {
+        debugError("Timeout while waiting for flash\n");
+        return false;
+    }
+
+    return ready;
 }
 
 } // FireWorks
