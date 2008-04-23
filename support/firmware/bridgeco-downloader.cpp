@@ -60,6 +60,11 @@ main( int argc, char** argv )
     // arg parsing
     argp_parse (argp, argc, argv, 0, 0, args);
 
+    if (args->nargs < 2) {
+        printDeviceList();
+        exit(0);
+    }
+
     errno = 0;
     char* tail;
     int node_id = -1;

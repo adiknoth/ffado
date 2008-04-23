@@ -36,7 +36,7 @@ using namespace std;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
 
-static char args_doc[] = "GUID OPERATION";
+static char args_doc[] = "OPERATION [ARGUMENTS]";
 static struct argp _argp = { options, parse_opt, args_doc, doc }; 
 struct argp* argp = &_argp;
 static struct arguments _args = { {0}, };
@@ -69,6 +69,15 @@ parse_opt( int key, char* arg, struct argp_state* state )
             return errno;
         }
         break;
+    case 'g':
+        errno = 0;
+        arguments->guid = strtoll(arg, &tail, 0);
+        if (errno) {
+            debugError("argument parsing failed: %s\n",
+                       strerror(errno));
+            return errno;
+        }
+        break;
     case 'f':
         arguments->force = 1;
         break;
@@ -76,17 +85,16 @@ parse_opt( int key, char* arg, struct argp_state* state )
         arguments->no_bootloader_restart = 1;
         break;
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 3) {
+        if (state->arg_num >= MAX_NB_ARGS) {
             // Too many arguments.
             argp_usage (state);
         }
+        
         arguments->args[state->arg_num] = arg;
+        arguments->nargs = state->arg_num;
         break;
     case ARGP_KEY_END:
-        if (state->arg_num < 2) {
-            printDeviceList();
-            exit(0);
-        }
+        arguments->nargs = state->arg_num;
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -98,6 +106,8 @@ void
 printDeviceList()
 {
     Ieee1394Service service;
+    // switch off all messages since they mess up the list
+    service.setVerboseLevel(0);
     if ( !service.initialize( args->port ) ) {
         cerr << "Could not initialize IEEE 1394 service" << endl;
         exit(-1);
