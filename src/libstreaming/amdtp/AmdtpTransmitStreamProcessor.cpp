@@ -49,6 +49,9 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(FFADODevice &parent, 
         , m_dbc( 0 )
         , m_nb_audio_ports( 0 )
         , m_nb_midi_ports( 0 )
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+        , m_send_nodata_payload ( AMDTP_SEND_PAYLOAD_IN_NODATA_XMIT_BY_DEFAULT )
+#endif
 {}
 
 enum StreamProcessor::eChildReturnValue
@@ -364,27 +367,26 @@ unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader (
 unsigned int AmdtpTransmitStreamProcessor::fillNoDataPacketHeader (
     struct iec61883_packet *packet, unsigned int* length )
 {
-
     // no-data packets have syt=0xFFFF
-    // and have the usual amount of events as dummy data (?)
+    // and (can) have the usual amount of events as dummy data
+    // DBC is not increased
     packet->fdf = IEC61883_FDF_NODATA;
     packet->syt = 0xffff;
 
-    // FIXME: either make this a setting or choose
-    bool send_payload=true;
-    if ( send_payload )
-    {
-        // this means no-data packets with payload (DICE doesn't like that)
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+    if ( m_send_nodata_payload )
+    { // no-data packets with payload (NOTE: DICE-II doesn't like that)
         *length = 2*sizeof ( quadlet_t ) + m_syt_interval * m_dimension * sizeof ( quadlet_t );
         return m_syt_interval;
-    }
-    else
-    {
-        // dbc is not incremented
-        // this means no-data packets without payload
+    } else { // no-data packets without payload
         *length = 2*sizeof ( quadlet_t );
         return 0;
     }
+#else
+    // no-data packets without payload
+    *length = 2*sizeof ( quadlet_t );
+    return 0;
+#endif
 }
 
 unsigned int

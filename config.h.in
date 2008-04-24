@@ -149,6 +149,16 @@
 // ensure that the AMDTP SP clips all float values to [-1.0..1.0]
 #define AMDTP_CLIP_FLOATS                                   1
 
+// Allow that devices request that the AMDTP transmit SP adds
+// payload to the NO-DATA packets. Normally this should not be
+// necessary, and it even breaks some devices (DICE-II based).
+#define AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT                  0
+
+// Default setting for the payload setting if
+// AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT is enabled. Devices can
+// explicity override this
+#define AMDTP_SEND_PAYLOAD_IN_NODATA_XMIT_BY_DEFAULT    false
+
 // -- MOTU options -- //
 
 // the transfer delay is substracted from the ideal presentation

@@ -99,6 +99,11 @@ public:
                                   int cycle, unsigned int dropped, unsigned int max_length);
     virtual bool prepareChild();
 
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+public:
+    void sendPayloadForNoDataPackets(bool b) {m_send_nodata_payload = b;};
+#endif
+
 public:
     virtual unsigned int getEventSize()
                     {return 4;};
@@ -134,6 +139,11 @@ private:
     unsigned int m_syt_interval;
     int m_fdf;
     unsigned int m_dbc;
+
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+private:
+    bool m_send_nodata_payload;
+#endif
 
 private: // local port caching for performance
     struct _MBLA_port_cache {

@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.17"
+FFADO_VERSION="1.999.18"
 
 import os
 import re
