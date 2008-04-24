@@ -315,7 +315,12 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
     // was received
+    
     if (rcv_cycle>cc_cycles) {
+        if (!(diffCycles(cc_cycles, rcv_cycle)>=0)) {
+            debugWarning("possibly false cycle wraparound detected: rcv: %u / cc: %u (%d)\n",
+                         rcv_cycle, cc_cycles, diffCycles(cc_cycles, rcv_cycle));
+        }
         if (cc_seconds) {
             cc_seconds--;
         } else {
@@ -401,7 +406,12 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
     // is to be transmitted
-    if (xmt_cycle<cc_cycles) {
+    if (cc_cycles>xmt_cycle) {
+        if (!(diffCycles(xmt_cycle, cc_cycles)>=0)) {
+            debugWarning("possibly false cycle wraparound detected: cc: %u / xmt: %u (%d)\n",
+                         cc_cycles, xmt_cycle, diffCycles(xmt_cycle, cc_cycles));
+        }
+
         if (cc_seconds) {
             cc_seconds--;
         } else {
