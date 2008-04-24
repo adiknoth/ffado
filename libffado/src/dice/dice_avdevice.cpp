@@ -781,6 +781,13 @@ DiceAvDevice::prepare() {
             continue;
         }
 
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+        // the DICE-II cannot handle payload in the NO-DATA packets.
+        // the other DICE chips don't need payload. Therefore
+        // we disable it.
+        p->sendPayloadForNoDataPackets(false);
+#endif
+
         // add audio ports to the processor
         for (unsigned int j=0;j<nb_audio;j++) {
             diceChannelInfo channelInfo;
