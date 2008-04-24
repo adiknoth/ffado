@@ -199,7 +199,7 @@ static inline unsigned int addCycles(unsigned int x, unsigned int y) {
  * @return the difference x-y, unwrapped
  */
 static inline int diffCycles(unsigned int x, unsigned int y) {
-    int diff = x - y;
+    int diff = (int)x - (int)y;
 
     // the maximal difference we allow (64secs)
     const int max=CYCLES_PER_SECOND/2;
@@ -312,15 +312,17 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
     uint64_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
 
+    // check for bogus ctr
+    // the cycle timer should be ahead of the receive timer
+    if (diffCycles(cc_cycles, rcv_cycle)<0) {
+        debugWarning("current cycle timer not ahead of receive cycle: rcv: %u / cc: %llu (%d)\n",
+                        rcv_cycle, cc_cycles, diffCycles(cc_cycles, rcv_cycle));
+    }
+
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
     // was received
-    
     if (rcv_cycle>cc_cycles) {
-        if (!(diffCycles(cc_cycles, rcv_cycle)>=0)) {
-            debugWarning("possibly false cycle wraparound detected: rcv: %u / cc: %u (%d)\n",
-                         rcv_cycle, cc_cycles, diffCycles(cc_cycles, rcv_cycle));
-        }
         if (cc_seconds) {
             cc_seconds--;
         } else {
@@ -403,15 +405,16 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     uint64_t cc_cycles=CYCLE_TIMER_GET_CYCLES(ctr_now);
     uint64_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
 
+    // check for bogus CTR
+    if (diffCycles(xmt_cycle, cc_cycles)<0) {
+        debugWarning("xmit cycle not ahead of current cycle: xmt: %u / cc: %llu (%d)\n",
+                        xmt_cycle, cc_cycles, diffCycles(xmt_cycle, cc_cycles));
+    }
+
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
     // is to be transmitted
     if (cc_cycles>xmt_cycle) {
-        if (!(diffCycles(xmt_cycle, cc_cycles)>=0)) {
-            debugWarning("possibly false cycle wraparound detected: cc: %u / xmt: %u (%d)\n",
-                         cc_cycles, xmt_cycle, diffCycles(xmt_cycle, cc_cycles));
-        }
-
         if (cc_seconds) {
             cc_seconds--;
         } else {
