@@ -187,6 +187,33 @@ int exitfunction( int retval ) {
     return retval;
 }
 
+void 
+printDeviceList(unsigned int port)
+{
+    Ieee1394Service service;
+    // switch off all messages since they mess up the list
+    service.setVerboseLevel(0);
+    if ( !service.initialize( port ) ) {
+        printf("Could not initialize IEEE 1394 service on port %d\n", port);
+        exit(-1);
+    }
+
+    printf("=== 1394 PORT %d ===\n", port);
+    printf("  Node id  GUID                  VendorId     ModelId   Vendor - Model\n");
+    for (int i = 0; i < service.getNodeCount(); i++) {
+        ConfigRom crom(service, i);
+        if (!crom.initialize())
+            break;
+
+        printf("  %2d       0x%s  0x%08X  0x%08X   %s - %s\n",
+               i, crom.getGuidString().c_str(),
+               crom.getNodeVendorId(), crom.getModelId(),
+               crom.getVendorName().c_str(),
+               crom.getModelName().c_str());
+    }
+}
+
+
 int
 main( int argc, char **argv )
 {
@@ -239,6 +266,11 @@ main( int argc, char **argv )
         }
         delete m_deviceManager;
         return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "ListDevices" ) == 0 ) {
+        unsigned int nb_ports = Ieee1394Service::detectNbPorts();
+        for (unsigned int i=0;i<nb_ports;i++) {
+            printDeviceList(i);
+        }
     } else if ( strcmp( arguments.args[0], "SetSamplerate" ) == 0 ) {
         char* tail;
         int samplerate = strtol( arguments.args[1], &tail, 0 );
