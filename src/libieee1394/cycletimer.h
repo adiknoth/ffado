@@ -314,15 +314,16 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
 
     // check for bogus ctr
     // the cycle timer should be ahead of the receive timer
-    if (diffCycles(cc_cycles, rcv_cycle)<0) {
+    int diff_cycles = diffCycles(cc_cycles, rcv_cycle);
+    if (diff_cycles<0) {
         debugWarning("current cycle timer not ahead of receive cycle: rcv: %u / cc: %llu (%d)\n",
-                        rcv_cycle, cc_cycles, diffCycles(cc_cycles, rcv_cycle));
+                        rcv_cycle, cc_cycles, diff_cycles);
     }
 
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
     // was received
-    if (rcv_cycle>cc_cycles) {
+    if (rcv_cycle>cc_cycles && (diff_cycles>=0)) {
         if (cc_seconds) {
             cc_seconds--;
         } else {
@@ -406,15 +407,16 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     uint64_t cc_seconds=CYCLE_TIMER_GET_SECS(ctr_now);
 
     // check for bogus CTR
-    if (diffCycles(xmt_cycle, cc_cycles)<0) {
+    int diff_cycles = diffCycles(xmt_cycle, cc_cycles);
+    if (diff_cycles<0) {
         debugWarning("xmit cycle not ahead of current cycle: xmt: %u / cc: %llu (%d)\n",
-                        xmt_cycle, cc_cycles, diffCycles(xmt_cycle, cc_cycles));
+                        xmt_cycle, cc_cycles, diff_cycles);
     }
 
     // the cycletimer has wrapped since this packet was received
     // we want cc_seconds to reflect the 'seconds' at the point this
     // is to be transmitted
-    if (cc_cycles>xmt_cycle) {
+    if (cc_cycles>xmt_cycle && (diff_cycles>=0)) {
         if (cc_seconds) {
             cc_seconds--;
         } else {
