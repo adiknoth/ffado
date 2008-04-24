@@ -34,21 +34,21 @@
 
 // the high-bandwidth coefficients are used
 // to speed up inital tracking
-#define DLL_BANDWIDTH_HIGH (0.2)
+#define DLL_BANDWIDTH_HIGH (0.1)
 #define DLL_OMEGA_HIGH     (2.0*DLL_PI*DLL_BANDWIDTH_HIGH)
 #define DLL_COEFF_B_HIGH   (DLL_SQRT2 * DLL_OMEGA_HIGH)
 #define DLL_COEFF_C_HIGH   (DLL_OMEGA_HIGH * DLL_OMEGA_HIGH)
 
 // the low-bandwidth coefficients are used once we have a
 // good estimate of the internal parameters
-#define DLL_BANDWIDTH (0.01)
+#define DLL_BANDWIDTH (0.1)
 #define DLL_OMEGA     (2.0*DLL_PI*DLL_BANDWIDTH)
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
-// is 5 sec
+// is 1 sec
 #define UPDATES_WITH_HIGH_BANDWIDTH \
-         (5000000 / IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC)
+         (1000000 / IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC)
 
 IMPL_DEBUG_MODULE( CycleTimerHelper, CycleTimerHelper, DEBUG_LEVEL_NORMAL );
 
@@ -351,14 +351,10 @@ CycleTimerHelper::Execute()
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
     }
 
-    // grab the lock after sleeping, otherwise we can't be interrupted by
-    // the busreset thread (lower prio)
-    pthread_mutex_lock(&mb_update_lock);
-
     uint32_t cycle_timer;
     uint64_t local_time;
     int64_t usecs_late;
-    int ntries=2;
+    int ntries=4;
     uint64_t cycle_timer_ticks;
     double diff_ticks;
 
@@ -369,7 +365,6 @@ CycleTimerHelper::Execute()
     do {
         if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
             debugError("Could not read cycle timer register\n");
-            pthread_mutex_unlock(&mb_update_lock);
             return false;
         }
         usecs_late = local_time - m_sleep_until;
@@ -379,12 +374,22 @@ CycleTimerHelper::Execute()
         // check for unrealistic CTR reads (NEC controller does that sometimes)
         if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, 
-                        "(%p) have to retry CTR read, diff unrealistic: diff: %f, max: %f\n", 
-                        this, diff_ticks, -((double)TICKS_PER_HALFCYCLE));
+                        "(%p) have to retry CTR read, diff unrealistic: diff: %f, max: %f (try: %d)\n", 
+                        this, diff_ticks, -((double)TICKS_PER_HALFCYCLE), ntries);
         }
 
     } while( diff_ticks < -((double)TICKS_PER_HALFCYCLE) 
              && --ntries && !m_first_run && !m_unhandled_busreset);
+
+    // grab the lock after sleeping, otherwise we can't be interrupted by
+    // the busreset thread (lower prio)
+    // also grab it after reading the CTR register such that the jitter between
+    // wakeup and read is as small as possible
+    pthread_mutex_lock(&mb_update_lock);
+
+    // // simulate a random scheduling delay between (0-10ms)
+    // ffado_microsecs_t tmp = m_TimeSource.SleepUsecRandom(10000);
+    // debugOutput( DEBUG_LEVEL_VERBOSE, " (%p) random sleep of %llu usecs...\n", this, tmp);
 
     if(m_unhandled_busreset) {
         debugOutput(DEBUG_LEVEL_VERBOSE,
@@ -546,6 +551,36 @@ CycleTimerHelper::Execute()
     m_current_shadow_idx = next_idx;
 
     pthread_mutex_unlock(&mb_update_lock);
+
+#ifdef DEBUG
+    // do some verification
+    // we re-read a valid ctr timestamp
+    // then we use the attached system time to calculate
+    // the DLL generated timestamp and we check what the
+    // difference is
+
+    if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
+        debugError("Could not read cycle timer register (verify)\n");
+        return true; // true since this is a check only
+    }
+    cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+
+    // only check when successful
+    int64_t time_diff = local_time - new_vars.usecs;
+    double y_step_in_ticks = ((double)time_diff) * new_vars.rate;
+    int64_t y_step_in_ticks_int = (int64_t)y_step_in_ticks;
+    uint64_t offset_in_ticks_int = new_vars.ticks;
+    uint32_t dll_time;
+    if (y_step_in_ticks_int > 0) {
+        dll_time = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
+    } else {
+        dll_time = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
+    }
+    int32_t ctr_diff = cycle_timer_ticks-dll_time;
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) CTR DIFF: HW %010llu - DLL %010lu = %010ld (%s)\n", 
+                this, cycle_timer_ticks, dll_time, ctr_diff, (ctr_diff>0?"lag":"lead"));
+#endif
+
     return true;
 }
 
