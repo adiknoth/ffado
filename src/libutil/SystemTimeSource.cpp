@@ -30,19 +30,23 @@
 #endif
 
 #include <time.h>
+#include <stdlib.h>
 
 namespace Util {
 
 IMPL_DEBUG_MODULE( SystemTimeSource, SystemTimeSource, DEBUG_LEVEL_NORMAL );
 
-SystemTimeSource::SystemTimeSource() {
+SystemTimeSource::SystemTimeSource()
+{
 }
 
-SystemTimeSource::~SystemTimeSource() {
+SystemTimeSource::~SystemTimeSource()
+{
 }
 
 void
-SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs) {
+SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
+{
     //usleep(usecs);
     struct timespec ts;
     ts.tv_sec = usecs / (1000000LL);
@@ -51,7 +55,8 @@ SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs) {
 }
 
 void
-SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec) {
+SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
+{
     struct timespec ts;
     ts.tv_sec = wake_at_usec / (1000000LL);
     ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
@@ -59,7 +64,19 @@ SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec) {
 }
 
 ffado_microsecs_t
-SystemTimeSource::getCurrentTime() {
+SystemTimeSource::SleepUsecRandom(ffado_microsecs_t max_usec)
+{
+    long int rnd = random();
+    long long int tmp = (rnd*max_usec);
+    tmp /= RAND_MAX;
+    ffado_microsecs_t usec = tmp;
+    SleepUsecRelative(usec);
+    return usec;
+}
+
+ffado_microsecs_t
+SystemTimeSource::getCurrentTime()
+{
 //     struct timeval tv;
 //     gettimeofday(&tv, NULL);
 //     return tv.tv_sec * 1000000ULL + tv.tv_usec;
@@ -69,7 +86,8 @@ SystemTimeSource::getCurrentTime() {
 }
 
 ffado_microsecs_t
-SystemTimeSource::getCurrentTimeAsUsecs() {
+SystemTimeSource::getCurrentTimeAsUsecs()
+{
     return getCurrentTime();
 }
 
