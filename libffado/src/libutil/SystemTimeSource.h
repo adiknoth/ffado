@@ -46,7 +46,13 @@ public:
 
     static void SleepUsecRelative(ffado_microsecs_t usecs);
     static void SleepUsecAbsolute(ffado_microsecs_t wake_time);
-
+    
+    /**
+     * @brief sleeps for a random amound to usecs
+     * @param max_usec max usecs
+     * @return number of usecs slept
+     */
+    static ffado_microsecs_t SleepUsecRandom(ffado_microsecs_t max_usec);
 protected:
     DECLARE_DEBUG_MODULE;
 
