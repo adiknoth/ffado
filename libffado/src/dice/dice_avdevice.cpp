@@ -49,6 +49,7 @@ static VendorModelEntry supportedDeviceList[] =
     // vendor id, model id, vendor name, model name
     {FW_VENDORID_TCAT, 0x00000002, "TCAT", "DiceII EVM"},
     {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
+    {FW_VENDORID_TCAT, 0x00000021, "TC Electronic", "Konnekt 8"},
     {FW_VENDORID_TCAT, 0x00000023, "TC Electronic", "Konnekt Live"},
 };
 
