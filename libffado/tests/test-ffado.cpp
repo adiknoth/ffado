@@ -47,9 +47,13 @@
 #include <iostream>
 #include <sstream>
 
+#include "libieee1394/cycletimer.h"
+
 using namespace std;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
+
+#define MAX_ARGS 5
 
 // global's
 const char *argp_program_version = PACKAGE_STRING;
@@ -67,13 +71,14 @@ static char args_doc[] = "OPERATION";
 
 struct arguments
 {
+    unsigned int nargs;
     short    silent;
     long int verbose;
     long int port;
     long int use_cache;
     long int node_id;
     long int node_id_set;
-    const char* args[2];
+    const char* args[MAX_ARGS];
 };
 
 // The options we understand.
@@ -153,11 +158,12 @@ parse_opt( int key, char* arg, struct argp_state* state )
         }
         break;
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 3) {
+        if (state->arg_num >= MAX_ARGS) {
             // Too many arguments.
             argp_usage( state );
         }
         arguments->args[state->arg_num] = arg;
+        arguments->nargs++;
         break;
     case ARGP_KEY_END:
         if (state->arg_num < 1) {
@@ -187,6 +193,7 @@ main( int argc, char **argv )
     struct arguments arguments;
 
     // Default values.
+    arguments.nargs       = 0;
     arguments.silent      = 0;
     arguments.verbose     = 0;
     arguments.use_cache   = 1;
@@ -354,5 +361,35 @@ main( int argc, char **argv )
         }
         delete m_deviceManager;
         return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "SytCalcTest" ) == 0 ) {
+        if (arguments.nargs < 4) {
+            fprintf( stderr,"Not enough arguments\n");
+            return -1;
+        }
+        uint64_t syt_timestamp = strtol(arguments.args[1], NULL, 0);
+        if (errno) {
+            fprintf( stderr,"syt_timestamp parsing failed: %s\n",
+                     strerror(errno));
+            return errno;
+        }
+        uint32_t rcv_cycle = strtol(arguments.args[2], NULL, 0);
+        if (errno) {
+            fprintf( stderr,"rcv_cycle parsing failed: %s\n",
+                     strerror(errno));
+            return errno;
+        }
+        uint64_t ctr_now = strtoll(arguments.args[3], NULL, 0);
+        if (errno) {
+            fprintf( stderr,"ctr_now parsing failed: %s\n",
+                     strerror(errno));
+            return errno;
+        }
+        uint64_t result_rcv = sytRecvToFullTicks(syt_timestamp, rcv_cycle, ctr_now);
+        uint64_t result_xmt = sytXmitToFullTicks(syt_timestamp, rcv_cycle, ctr_now);
+        printf("RCV: 0x%010llX %010llu  XMT: 0x%010llX %010llu CTR: %010llu\n",
+               result_rcv, result_rcv, result_xmt, result_xmt, CYCLE_TIMER_TO_TICKS(ctr_now));
+
+    } else {
+        fprintf( stderr, "please specify a command\n" );
     }
 }

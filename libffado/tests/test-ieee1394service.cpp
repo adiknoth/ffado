@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
         delete m_service;
         exit(-1);
     }
-    m_service->setThreadParameters(true, 60);
+    m_service->setThreadParameters(true, 1);
 
     MyFunctor *test_busreset=new MyFunctor();
 
