@@ -225,11 +225,11 @@ protected: // the helper receive/transmit functions
     // the following methods are to be implemented by receive SP subclasses
     virtual enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
                                      unsigned char channel, unsigned char tag,
-                                     unsigned char sy, unsigned int cycle)
+                                     unsigned char sy, uint32_t pkt_ctr)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length,
                                    unsigned char channel, unsigned char tag,
-                                   unsigned char sy, unsigned int cycle)
+                                   unsigned char sy, uint32_t pkt_ctr)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual bool processReadBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};
@@ -237,27 +237,21 @@ protected: // the helper receive/transmit functions
     // the following methods are to be implemented by transmit SP subclasses
     virtual enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
                                       unsigned char *tag, unsigned char *sy,
-                                      int cycle, unsigned int max_length)
+                                      uint32_t pkt_ctr)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
-    virtual enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length,
-                                    unsigned char *tag, unsigned char *sy,
-                                    int cycle, unsigned int max_length)
+    virtual enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual enum eChildReturnValue generateEmptyPacketHeader(unsigned char *data, unsigned int *length,
                                             unsigned char *tag, unsigned char *sy,
-                                            int cycle, unsigned int max_length)
+                                            uint32_t pkt_ctr)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
-    virtual enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length,
-                                          unsigned char *tag, unsigned char *sy,
-                                          int cycle, unsigned int max_length)
+    virtual enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
                                             unsigned char *tag, unsigned char *sy,
-                                            int cycle, unsigned int max_length)
+                                            uint32_t pkt_ctr)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
-    virtual enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length,
-                                          unsigned char *tag, unsigned char *sy,
-                                          int cycle, unsigned int max_length)
+    virtual enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length)
         {debugWarning("call not allowed\n"); return eCRV_Invalid;};
     virtual bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset)
         {debugWarning("call not allowed\n"); return false;};

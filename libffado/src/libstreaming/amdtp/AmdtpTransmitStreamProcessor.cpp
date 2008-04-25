@@ -58,8 +58,10 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generatePacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int max_length )
+    uint32_t pkt_ctr )
 {
+    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
+
     __builtin_prefetch(data, 1, 0); // prefetch events for write, no temporal locality
     struct iec61883_packet *packet = (struct iec61883_packet *)data;
     /* Our node ID can change after a bus reset, so it is best to fetch
@@ -249,15 +251,14 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 
 enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generatePacketData (
-    unsigned char *data, unsigned int *length,
-    unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int max_length )
+    unsigned char *data, unsigned int *length )
 {
-    if ( m_data_buffer->readFrames ( m_syt_interval, ( char * ) ( data + 8 ) ) )
+    if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8)))
     {
         debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                           "XMIT DATA (cy %04d): TSP=%011llu (%04u)\n",
-                           cycle, m_last_timestamp, (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
+                           "XMIT DATA: TSP=%011llu (%04u)\n",
+                           m_last_timestamp,
+                           (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
         return eCRV_OK;
     }
     else return eCRV_XRun;
@@ -268,12 +269,13 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int max_length )
+    uint32_t pkt_ctr )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "XMIT SILENT (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
-                       cycle, m_last_timestamp, (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
+                       CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp,
+                       (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
 
     packet->sid = m_local_node_id;
 
@@ -289,15 +291,13 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     *tag = IEC61883_TAG_WITH_CIP;
     *sy = 0;
 
-    m_dbc += fillNoDataPacketHeader ( packet, length );
+    m_dbc += fillNoDataPacketHeader(packet, length);
     return eCRV_Packet;
 }
 
 enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateSilentPacketData (
-    unsigned char *data, unsigned int *length,
-    unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int max_length )
+    unsigned char *data, unsigned int *length )
 {
     return eCRV_OK; // no need to do anything
 }
@@ -306,12 +306,13 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int max_length )
+    uint32_t pkt_ctr )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "XMIT EMPTY (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
-                       cycle, m_last_timestamp, (unsigned int)TICKS_TO_CYCLES(m_last_timestamp) );
+                       CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp,
+                       (unsigned int)TICKS_TO_CYCLES(m_last_timestamp) );
     packet->sid = m_local_node_id;
 
     packet->dbs = m_dimension;
@@ -326,15 +327,13 @@ AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
     *tag = IEC61883_TAG_WITH_CIP;
     *sy = 0;
 
-    m_dbc += fillNoDataPacketHeader ( packet, length );
+    m_dbc += fillNoDataPacketHeader(packet, length);
     return eCRV_OK;
 }
 
 enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateEmptyPacketData (
-    unsigned char *data, unsigned int *length,
-    unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int max_length )
+    unsigned char *data, unsigned int *length )
 {
     return eCRV_OK; // no need to do anything
 }

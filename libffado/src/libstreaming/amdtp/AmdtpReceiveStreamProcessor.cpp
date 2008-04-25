@@ -85,14 +85,15 @@ bool AmdtpReceiveStreamProcessor::prepareChild() {
  * @param channel 
  * @param tag 
  * @param sy 
- * @param cycle 
+ * @param pkt_ctr CTR value when packet was received
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
 AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle)
+                  uint32_t pkt_ctr)
 {
+    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
     #ifdef DEBUG
     static uint32_t now_prev=0;
     static uint64_t now_prev_ticks=0;
@@ -146,13 +147,14 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
  * @param channel 
  * @param tag 
  * @param sy 
- * @param cycle 
+ * @param pkt_ctr 
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
 AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle) {
+                  uint32_t pkt_ctr) {
+    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
 
