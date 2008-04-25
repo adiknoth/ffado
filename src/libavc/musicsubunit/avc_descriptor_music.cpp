@@ -216,6 +216,27 @@ AVCMusicClusterInfoBlock::getName() {
     }
 }
 
+void
+AVCMusicClusterInfoBlock::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "AVCMusicClusterInfoBlock %s\n", getName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_stream_format......: 0x%02X\n", m_stream_format);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_port_type..........: 0x%02X\n", m_port_type);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_nb_signals.........: %d\n", m_nb_signals);
+    int i=0;
+    for ( AVCMusicClusterInfoBlock::SignalInfoVectorIterator sig_it
+                = m_SignalInfos.begin();
+            sig_it != m_SignalInfos.end();
+            ++sig_it )
+    {
+        struct AVCMusicClusterInfoBlock::sSignalInfo s=(*sig_it);
+        debugOutput(DEBUG_LEVEL_NORMAL, "  Signal %d\n", i);
+        debugOutput(DEBUG_LEVEL_NORMAL, "    music_plug_id........: 0x%04X\n", s.music_plug_id);
+        debugOutput(DEBUG_LEVEL_NORMAL, "    stream_position......: 0x%02X\n", s.stream_position);
+        debugOutput(DEBUG_LEVEL_NORMAL, "    stream_location......: 0x%02X\n", s.stream_location);
+        i++;
+    }
+}
 
 // ---------
 AVCMusicSubunitPlugInfoBlock::AVCMusicSubunitPlugInfoBlock( )
@@ -468,6 +489,24 @@ AVCMusicPlugInfoBlock::getName() {
     }
 }
 
+void
+AVCMusicPlugInfoBlock::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "AVCMusicPlugInfoBlock %s\n", getName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_music_plug_type...............: 0x%02X\n", m_music_plug_type);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_music_plug_id.................: 0x%04X\n", m_music_plug_id);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_routing_support...............: 0x%02X\n", m_routing_support);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_source_plug_function_type.....: 0x%02X\n", m_source_plug_function_type);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_source_plug_id................: 0x%02X\n", m_source_plug_id);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_source_plug_function_block_id.: 0x%02X\n", m_source_plug_function_block_id);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_source_stream_position........: 0x%02X\n", m_source_stream_position);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_source_stream_location........: 0x%02X\n", m_source_stream_location);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_dest_plug_function_type.......: 0x%02X\n", m_dest_plug_function_type);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_dest_plug_id..................: 0x%02X\n", m_dest_plug_id);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_dest_plug_function_block_id...: 0x%02X\n", m_dest_plug_function_block_id);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_dest_stream_position..........: 0x%02X\n", m_dest_stream_position);
+    debugOutput(DEBUG_LEVEL_NORMAL, " m_dest_stream_location..........: 0x%02X\n", m_dest_stream_location);
+}
 
 // ---------
 AVCMusicRoutingStatusInfoBlock::AVCMusicRoutingStatusInfoBlock( )
