@@ -77,7 +77,6 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_ticks_per_frame( 0 )
     , m_sync_delay( 0 )
     , m_in_xrun( false )
-    , m_min_ahead( 7999 )
 {
     // create the timestamped buffer and register ourselves as its client
     m_data_buffer = new Util::TimestampedBuffer(this);
@@ -291,10 +290,13 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
     // bypass based upon state
+#ifdef DEBUG
     if (m_state == ePS_Invalid) {
         debugError("Should not have state %s\n", ePSToString(m_state) );
         return RAW1394_ISO_ERROR;
     }
+#endif
+    // FIXME: isn't this also an error condition?
     if (m_state == ePS_Created) {
         return RAW1394_ISO_DEFER;
     }
@@ -484,11 +486,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         return RAW1394_ISO_OK;
     }
     unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
-
-    unsigned int ctr;
     uint64_t prev_timestamp;
-    int now_cycles;
-    int cycle_diff;
 
     // note that we can ignore skipped cycles since
     // the protocol will take care of that
@@ -519,6 +517,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
 #endif
 
+    // FIXME: can this happen?
     if (m_state == ePS_Created) {
         *tag = 0;
         *sy = 0;
@@ -527,44 +526,12 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
 
     // normal processing
-    // note that we can't use getCycleTimer directly here,
-    // because packets are queued in advance. This means that
-    // we the packet we are constructing will be sent out
-    // on 'cycle', not 'now'.
-    ctr = m_1394service.getCycleTimer();
-    now_cycles = (int)CYCLE_TIMER_GET_CYCLES(ctr);
-
-    // the difference between the cycle this
-    // packet is intended for and 'now'
-    cycle_diff = diffCycles(cycle, now_cycles);
-
-    if(cycle_diff < 0 && (m_state == ePS_Running || m_state == ePS_DryRunning)) {
-        unsigned int fc = m_data_buffer->getBufferFill();
-        debugWarning("Requesting packet for cycle %04d which is in the past (now=%04dcy, fill=%u)\n",
-            cycle, now_cycles, fc);
-        if(m_state == ePS_Running) {
-            debugShowBackLogLines(200);
-//             flushDebugOutput();
-//             assert(0);
-            debugWarning("generatePacketData xrun\n");
-            m_in_xrun = true;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
-            m_cycle_to_switch_state = cycle + 1;
-            m_next_state = ePS_WaitingForStreamDisable;
-            // execute the requested change
-            if (!updateState()) { // we are allowed to change the state directly
-                debugError("Could not update state!\n");
-                return RAW1394_ISO_ERROR;
-            }
-            goto send_empty_packet;
-        }
-    }
 
     // store the previous timestamp
     // keep the old value here, update m_last_timestamp2 only when
     // a valid packet will be sent
     prev_timestamp = m_last_timestamp;
-    
+
     // NOTE: synchronized switching is restricted to a 0.5 sec span (4000 cycles)
     //       it happens on the first 'good' cycle for the wait condition
     //       or on the first received cycle that is received afterwards (might be a problem)
@@ -615,11 +582,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
     // check whether we are waiting for a stream to startup
     else if(m_state == ePS_WaitingForStream) {
-        // as long as the cycle parameter is not in sync with
-        // the current time, the stream is considered not
-        // to be 'running'
-        // we then check whether we have to switch on this cycle
-        if ((cycle_diff >= 0) && (diffCycles(cycle, m_cycle_to_switch_state) >= 0)) {
+        // check whether we have to switch on this cycle
+        if ((diffCycles(cycle, m_cycle_to_switch_state) >= 0)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStream to DryRunning\n");
             // hence go to the dryRunning state
             m_next_state = ePS_DryRunning;
@@ -635,11 +599,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         // check the packet header
         enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
         if (result == eCRV_Packet || result == eCRV_Defer) {
-            int ahead = diffCycles(cycle, now_cycles);
-            if (ahead < m_min_ahead) m_min_ahead = ahead;
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                               "XMIT: CY=%04u TS=%011llu NOW_CY=%04u AHEAD=%04d\n",
-                               cycle, m_last_timestamp, now_cycles, ahead);
+                               "XMIT: CY=%04u TS=%011llu\n",
+                               cycle, m_last_timestamp);
 
             // valid packet timestamp
             m_last_timestamp2 = prev_timestamp;
@@ -751,14 +713,9 @@ send_empty_packet:
             return RAW1394_ISO_ERROR;
         }
     }
-    
-    { // context to avoid ahead var clash
-        int ahead = diffCycles(cycle, now_cycles);
-        if (ahead < m_min_ahead) m_min_ahead = ahead;
-        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                           "XMIT EMPTY: CY=%04u, NOW_CY=%04u, AHEAD=%04d\n",
-                           cycle, now_cycles, ahead);
-    }
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                       "XMIT EMPTY: CY=%04u\n",
+                       cycle);
 
     generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
     generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
@@ -1522,7 +1479,6 @@ StreamProcessor::doRunning()
             debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running\n", 
                                              this);
             m_in_xrun = false;
-            m_min_ahead = 7999;
             m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
             m_data_buffer->setTransparent(false);
             break;
@@ -1834,9 +1790,6 @@ StreamProcessor::dumpInfo()
                         (unsigned int)TICKS_TO_SECS(now),
                         (unsigned int)TICKS_TO_CYCLES(now),
                         (unsigned int)TICKS_TO_OFFSET(now));
-    if(getType() == ePT_Transmit) {
-        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Min ISOXMT bufferfill : %04d\n", m_min_ahead);
-    }
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Xrun?                 : %s\n", (m_in_xrun ? "True":"False"));
     if (m_state == m_next_state) {
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  State                 : %s\n", 

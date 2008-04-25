@@ -97,6 +97,8 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_State( E_Created )
 #ifdef DEBUG
    , m_packets ( 0 )
+   , m_dropped( 0 )
+   , m_min_ahead( 7999 )
 #endif
 {
 }
@@ -117,6 +119,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
 #ifdef DEBUG
    , m_packets ( 0 )
    , m_dropped( 0 )
+   , m_min_ahead( 7999 )
 #endif
 {
 }
@@ -301,6 +304,9 @@ void IsoHandler::dumpInfo()
     if (this->getType() == eHT_Transmit) {
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  Speed, PreBuffers...........: %2d, %2d\n",
                                             m_speed, m_prebuffers);
+        #ifdef DEBUG
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Min ISOXMT bufferfill : %04d\n", m_min_ahead);
+        #endif
     }
     #ifdef DEBUG
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Last cycle, dropped.........: %4d, %4u\n",
@@ -459,6 +465,12 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     }
     if (cycle >= 0) {
         m_last_cycle = cycle;
+        
+        #ifdef DEBUG
+/*        int ahead = diffCycles(cycle, now_cycles);
+        if (ahead < m_min_ahead) m_min_ahead = ahead;
+*/
+        #endif
     }
 
     if(m_Client) {
@@ -575,6 +587,7 @@ bool IsoHandler::enable(int cycle)
         }
     }
 
+    m_min_ahead = 7999;
     m_State = E_Running;
     return true;
 }
