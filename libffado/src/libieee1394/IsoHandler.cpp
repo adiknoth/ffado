@@ -27,6 +27,8 @@
 #include "ieee1394service.h" 
 #include "IsoHandlerManager.h"
 
+#include "cycletimer.h"
+
 #include "libstreaming/generic/StreamProcessor.h"
 #include "libutil/PosixThread.h"
 
@@ -53,7 +55,6 @@ IsoHandler::iso_transmit_handler(raw1394handle_t handle,
     assert(xmitHandler);
     unsigned int skipped = (dropped1 & 0xFFFF0000) >> 16;
     unsigned int dropped = dropped1 & 0xFFFF;
-
     return xmitHandler->getPacket(data, length, tag, sy, cycle, dropped, skipped);
 }
 
@@ -88,6 +89,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_buf_packets( 400 )
    , m_max_packet_size( 1024 )
    , m_irq_interval( -1 )
+   , m_last_cycle( -1 )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -107,12 +109,14 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
+   , m_last_cycle( -1 )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
    , m_State( E_Created )
 #ifdef DEBUG
    , m_packets ( 0 )
+   , m_dropped( 0 )
 #endif
 {
 }
@@ -131,7 +135,8 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_prebuffers( 0 )
    , m_State( E_Created )
 #ifdef DEBUG
-   , m_packets ( 0 )
+   , m_packets( 0 )
+   , m_dropped( 0 )
 #endif
 {
 }
@@ -297,10 +302,16 @@ void IsoHandler::dumpInfo()
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  Speed, PreBuffers...........: %2d, %2d\n",
                                             m_speed, m_prebuffers);
     }
+    #ifdef DEBUG
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Last cycle, dropped.........: %4d, %4u\n",
+            m_last_cycle, m_dropped);
+    #endif
+
 }
 
 void IsoHandler::setVerboseLevel(int l)
 {
+    debugError("setdebuglevel (%p, %d)\n", this, l);
     setDebugLevel(l);
 }
 
@@ -345,6 +356,8 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped, unsigned int skipped) {
 
+    unsigned int pkt_ctr = cycle << 12;
+
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "received packet: length=%d, channel=%d, cycle=%d\n",
                        length, channel, cycle);
@@ -354,9 +367,30 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
                      this, getTypeString(), length, m_max_packet_size);
     }
+    if(m_last_cycle == -1) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %u)\n", getTypeString(), this, cycle);
+    }
     #endif
+
+    // keep track of dropped cycles
+    int dropped_cycles = 0;
+    if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
+        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+        if (dropped_cycles < 0) {
+            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
+                        this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+        }
+        if (dropped_cycles > 0) {
+            debugWarning("(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
+                this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
+            m_dropped += dropped_cycles;
+        }
+    }
+    m_last_cycle = cycle;
+
+    // iterate the client if required
     if(m_Client) {
-        enum raw1394_iso_disposition retval = m_Client->putPacket(data, length, channel, tag, sy, cycle, dropped, skipped);
+        enum raw1394_iso_disposition retval = m_Client->putPacket(data, length, channel, tag, sy, pkt_ctr, dropped_cycles, skipped);
         if (retval == RAW1394_ISO_OK) {
             if (m_dont_exit_iterate_loop) {
                 return RAW1394_ISO_OK;
@@ -381,15 +415,55 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                       unsigned char *tag, unsigned char *sy,
                       int cycle, unsigned int dropped, unsigned int skipped) {
 
+    unsigned int pkt_ctr;
+    if (cycle < 0) {
+        pkt_ctr = 0xFFFFFFFF;
+    } else {
+        pkt_ctr = cycle << 12;
+    }
+
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "sending packet: length=%d, cycle=%d\n",
                        *length, cycle);
+
     #ifdef DEBUG
     m_packets++;
+    if(m_last_cycle == -1) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
+    }
     #endif
+
+    // keep track of dropped cycles
+    int dropped_cycles = 0;
+    if (m_last_cycle != cycle && m_last_cycle != -1) {
+        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+        // correct for skipped packets
+        // since those are not dropped, but only delayed
+        dropped_cycles -= skipped;
+
+        #ifdef DEBUG
+        if(skipped) {
+            debugWarning("(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
+                         this, skipped, cycle, m_last_cycle, dropped);
+        }
+        if (dropped_cycles < 0) { 
+            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, skipped: %d\n", 
+                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+        }
+        if (dropped_cycles > 0) {
+            debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d, skipped: %d)\n",
+                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+            m_dropped += dropped_cycles;
+        }
+        #endif
+    }
+    if (cycle >= 0) {
+        m_last_cycle = cycle;
+    }
+
     if(m_Client) {
         enum raw1394_iso_disposition retval;
-        retval = m_Client->getPacket(data, length, tag, sy, cycle, dropped, skipped, m_max_packet_size);
+        retval = m_Client->getPacket(data, length, tag, sy, pkt_ctr, dropped, skipped, m_max_packet_size);
         #ifdef DEBUG
         if (*length > m_max_packet_size) {
             debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
@@ -410,6 +484,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
             return retval;
         }
     }
+
     *tag = 0;
     *sy = 0;
     *length = 0;

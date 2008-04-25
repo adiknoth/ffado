@@ -452,6 +452,7 @@ bool IsoHandlerManager::init()
         debugFatal("No task\n");
         return false;
     }
+    m_IsoTaskTransmit->setVerboseLevel(getDebugLevel());
     m_IsoThreadTransmit = new Util::PosixThread(m_IsoTaskTransmit, m_realtime,
                                                 m_priority + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
                                                 + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT,
@@ -461,6 +462,7 @@ bool IsoHandlerManager::init()
         debugFatal("No thread\n");
         return false;
     }
+    m_IsoThreadTransmit->setVerboseLevel(getDebugLevel());
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create iso thread for %p receive...\n", this);
     m_IsoTaskReceive = new IsoTask( *this, IsoHandler::eHT_Receive );
@@ -468,6 +470,7 @@ bool IsoHandlerManager::init()
         debugFatal("No task\n");
         return false;
     }
+    m_IsoTaskReceive->setVerboseLevel(getDebugLevel());
     m_IsoThreadReceive = new Util::PosixThread(m_IsoTaskReceive, m_realtime,
                                                m_priority + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
                                                + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV,
@@ -477,6 +480,7 @@ bool IsoHandlerManager::init()
         debugFatal("No thread\n");
         return false;
     }
+    m_IsoThreadReceive->setVerboseLevel(getDebugLevel());
     // register the thread with the RT watchdog
     Util::Watchdog *watchdog = m_service.getWatchdog();
     if(watchdog) {

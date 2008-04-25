@@ -137,6 +137,13 @@ public:
      */
     void allowIterateLoop() {m_dont_exit_iterate_loop = true;};
 
+
+    /**
+     * @brief get last cycle number seen by handler
+     * @return cycle number
+     */
+    int getLastCycle() {return m_last_cycle;};
+
 private:
     IsoHandlerManager& m_manager;
     enum EHandlerType m_type;
@@ -144,6 +151,7 @@ private:
     unsigned int    m_buf_packets;
     unsigned int    m_max_packet_size;
     int             m_irq_interval;
+    int             m_last_cycle;
 
     Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
 
@@ -166,7 +174,8 @@ private:
     enum EHandlerStates m_State;
 
     #ifdef DEBUG
-    int             m_packets;
+    unsigned int    m_packets;
+    unsigned int    m_dropped;
     #endif
 
     DECLARE_DEBUG_MODULE;

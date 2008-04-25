@@ -69,14 +69,12 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_StreamProcessorManager( m_Parent.getDeviceManager().getStreamProcessorManager() ) // local cache
     , m_local_node_id ( 0 ) // local cache
     , m_channel( -1 )
-    , m_dropped( 0 )
     , m_last_timestamp( 0 )
     , m_last_timestamp2( 0 )
     , m_correct_last_timestamp( false )
     , m_scratch_buffer( NULL )
     , m_scratch_buffer_size_bytes( 0 )
     , m_ticks_per_frame( 0 )
-    , m_last_cycle( -1 )
     , m_sync_delay( 0 )
     , m_in_xrun( false )
     , m_min_ahead( 7999 )
@@ -288,30 +286,9 @@ StreamProcessor::canClientTransferFrames(unsigned int nbframes)
 enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
-                           unsigned int cycle, unsigned int dropped,
-                           unsigned int skipped) {
-#ifdef DEBUG
-    if(m_last_cycle == -1) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %u)\n", getTypeString(), this, cycle);
-    }
-#endif
-
-    int dropped_cycles = 0;
-    if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
-        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-        if (dropped_cycles < 0) {
-            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
-                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
-        }
-        if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
-                this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
-            m_dropped += dropped_cycles;
-            m_last_cycle = cycle;
-            dumpInfo();
-        }
-    }
-    m_last_cycle = cycle;
+                           unsigned int pkt_ctr,
+                           unsigned int dropped_cycles, unsigned int skipped) {
+    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
     // bypass based upon state
     if (m_state == ePS_Invalid) {
@@ -406,9 +383,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                           "RECV: CY=%04u TS=%011llu\n",
                           cycle, m_last_timestamp);
-        // update some accounting
-        m_last_good_cycle = cycle;
-        m_last_dropped = dropped_cycles;
 
         if(m_correct_last_timestamp) {
             // they represent a discontinuity in the timestamps, and hence are
@@ -501,64 +475,40 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 enum raw1394_iso_disposition
 StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                            unsigned char *tag, unsigned char *sy,
-                           int cycle, unsigned int dropped,
+                           unsigned int pkt_ctr, unsigned int dropped_cycles,
                            unsigned int skipped, unsigned int max_length) {
-    if (cycle<0) {
+    if (pkt_ctr == 0xFFFFFFFF) {
         *tag = 0;
         *sy = 0;
         *length = 0;
         return RAW1394_ISO_OK;
     }
+    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
     unsigned int ctr;
     uint64_t prev_timestamp;
     int now_cycles;
     int cycle_diff;
 
-#ifdef DEBUG
-    if(m_last_cycle == -1) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
-    }
-#endif
-
-    int dropped_cycles = 0;
-    if (m_last_cycle != cycle && m_last_cycle != -1) {
-        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-        // correct for skipped packets
-        // since those are not dropped, but only delayed
-        dropped_cycles =- skipped;
-        if(skipped) {
-            debugWarning("(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
-                         this, skipped, cycle, m_last_cycle, dropped);
-        }
-        if (dropped_cycles < 0) { 
-            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, skipped: %d\n", 
-                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
-        }
-        if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d, skipped: %d)\n",
-                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
-            m_dropped += dropped_cycles;
-            // HACK: this should not be necessary, since the header generation functions should trigger the xrun.
-            //       but apparently there are some issues with the 1394 stack
-            m_in_xrun = true;
-            if(m_state == ePS_Running) {
-                debugShowBackLogLines(200);
-                debugWarning("dropped packets xrun\n");
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
-                m_cycle_to_switch_state = cycle + 1;
-                m_next_state = ePS_WaitingForStreamDisable;
-                // execute the requested change
-                if (!updateState()) { // we are allowed to change the state directly
-                    debugError("Could not update state!\n");
-                    return RAW1394_ISO_ERROR;
-                }
-                goto send_empty_packet;
+    // note that we can ignore skipped cycles since
+    // the protocol will take care of that
+    if (dropped_cycles > 0) {
+        // HACK: this should not be necessary, since the header generation functions should trigger the xrun.
+        //       but apparently there are some issues with the 1394 stack
+        m_in_xrun = true;
+        if(m_state == ePS_Running) {
+            debugShowBackLogLines(200);
+            debugWarning("dropped packets xrun\n");
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
+            m_cycle_to_switch_state = cycle + 1;
+            m_next_state = ePS_WaitingForStreamDisable;
+            // execute the requested change
+            if (!updateState()) { // we are allowed to change the state directly
+                debugError("Could not update state!\n");
+                return RAW1394_ISO_ERROR;
             }
+            goto send_empty_packet;
         }
-    }
-    if (cycle >= 0) {
-        m_last_cycle = cycle;
     }
 
 #ifdef DEBUG
@@ -636,9 +586,6 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                "XMIT SILENT: CY=%04u TS=%011llu\n",
                                cycle, m_last_timestamp);
-            // update some accounting
-            m_last_good_cycle = cycle;
-            m_last_dropped = dropped_cycles;
 
             // assumed not to xrun
             generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
@@ -693,9 +640,6 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                                "XMIT: CY=%04u TS=%011llu NOW_CY=%04u AHEAD=%04d\n",
                                cycle, m_last_timestamp, now_cycles, ahead);
-            // update some accounting
-            m_last_good_cycle = cycle;
-            m_last_dropped = dropped_cycles;
 
             // valid packet timestamp
             m_last_timestamp2 = prev_timestamp;
@@ -1474,7 +1418,9 @@ StreamProcessor::doDryRunning()
     switch(m_state) {
         case ePS_WaitingForStream:
             // a running stream has been detected
-            debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started dry-running at cycle %d\n", this, m_last_cycle);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "StreamProcessor %p started dry-running\n",
+                        this);
             m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
             if (getType() == ePT_Receive) {
                 // this to ensure that there is no discontinuity when starting to 
@@ -1573,8 +1519,8 @@ StreamProcessor::doRunning()
     switch(m_state) {
         case ePS_WaitingForStreamEnable:
             // a running stream has been detected
-            debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running at cycle %d\n", 
-                                             this, m_last_cycle);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "StreamProcessor %p started running\n", 
+                                             this);
             m_in_xrun = false;
             m_min_ahead = 7999;
             m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;

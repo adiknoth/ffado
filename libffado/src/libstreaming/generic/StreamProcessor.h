@@ -152,12 +152,13 @@ public: // the public receive/transmit functions
     enum raw1394_iso_disposition
         putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped, unsigned int skipped);
+                  unsigned int pkt_ctr, unsigned int dropped, unsigned int skipped);
 
     enum raw1394_iso_disposition
     getPacket(unsigned char *data, unsigned int *length,
-                unsigned char *tag, unsigned char *sy,
-                int cycle, unsigned int dropped, unsigned int skipped, unsigned int max_length);
+              unsigned char *tag, unsigned char *sy,
+              unsigned int pkt_ctr, unsigned int dropped,
+              unsigned int skipped, unsigned int max_length);
 
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
@@ -300,9 +301,6 @@ private:
     int m_channel;
 
 protected: // FIXME: move to private
-    uint64_t m_dropped; /// FIXME:debug
-    uint64_t m_last_dropped; /// FIXME:debug
-    int m_last_good_cycle; /// FIXME:debug
     uint64_t m_last_timestamp; /// last timestamp (in ticks)
 private:
     uint64_t m_last_timestamp2; /// last timestamp (in ticks)
@@ -414,8 +412,6 @@ protected:
         float getTicksPerFrame();
         void setTicksPerFrame(float tpf);
 
-        int getLastCycle() {return m_last_cycle;};
-
         int getBufferFill();
 
         // Child implementation interface
@@ -462,7 +458,6 @@ protected:
 
     protected:
         float m_ticks_per_frame;
-        int m_last_cycle;
         unsigned int m_sync_delay;
     private:
         bool m_in_xrun;

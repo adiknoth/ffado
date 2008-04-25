@@ -47,11 +47,11 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(FFADODevice &parent, 
         : StreamProcessor(parent, ePT_Transmit)
         , m_dimension( dimension )
         , m_dbc( 0 )
-        , m_nb_audio_ports( 0 )
-        , m_nb_midi_ports( 0 )
 #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
         , m_send_nodata_payload ( AMDTP_SEND_PAYLOAD_IN_NODATA_XMIT_BY_DEFAULT )
 #endif
+        , m_nb_audio_ports( 0 )
+        , m_nb_midi_ports( 0 )
 {}
 
 enum StreamProcessor::eChildReturnValue
