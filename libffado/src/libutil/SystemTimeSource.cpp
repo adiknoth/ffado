@@ -77,18 +77,15 @@ SystemTimeSource::SleepUsecRandom(ffado_microsecs_t max_usec)
 ffado_microsecs_t
 SystemTimeSource::getCurrentTime()
 {
-//     struct timeval tv;
-//     gettimeofday(&tv, NULL);
-//     return tv.tv_sec * 1000000ULL + tv.tv_usec;
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    return (ffado_microsecs_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
+    return getCurrentTimeAsUsecs();
 }
 
 ffado_microsecs_t
 SystemTimeSource::getCurrentTimeAsUsecs()
 {
-    return getCurrentTime();
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (ffado_microsecs_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 }
 
 } // end of namespace Util
