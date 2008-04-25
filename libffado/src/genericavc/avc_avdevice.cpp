@@ -492,8 +492,14 @@ AvDevice::prepare() {
         p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                                   inputPlug->getNrOfChannels());
     } else {
-        p=new Streaming::AmdtpTransmitStreamProcessor(*this,
+        Streaming::AmdtpTransmitStreamProcessor * t;
+        t=new Streaming::AmdtpTransmitStreamProcessor(*this,
                                 inputPlug->getNrOfChannels());
+        #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+            // FIXME: it seems that some BeBoB devices can't handle NO-DATA without payload
+            t->sendPayloadForNoDataPackets(true);
+        #endif
+        p=t;
     }
 
     if(!p->init()) {
@@ -519,11 +525,6 @@ AvDevice::prepare() {
             return false;
         }
     }
-
-#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
-    // FIXME: it seems that some BeBoB devices can't handle NO-DATA without payload
-    p->sendPayloadForNoDataPackets(true);
-#endif
 
     // we put this SP into the transmit SP vector,
     // no matter if we are in snoop mode or not
