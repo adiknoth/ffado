@@ -426,6 +426,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     int dropped_cycles = 0;
     if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+        #ifdef DEBUG
         if (dropped_cycles < 0) {
             debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
@@ -435,6 +436,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                 this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
         }
+        #endif
     }
     m_last_cycle = cycle;
 
@@ -673,7 +675,9 @@ bool IsoHandler::enable(int cycle)
         }
     }
 
+#ifdef DEBUG
     m_min_ahead = 7999;
+#endif
     m_State = E_Running;
     return true;
 }
