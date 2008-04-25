@@ -344,7 +344,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     // check the packet header
-    enum eChildReturnValue result = processPacketHeader(data, length, channel, tag, sy, pkt_ctr);
+    enum eChildReturnValue result = processPacketHeader(data, length, tag, sy, pkt_ctr);
 
     // handle dropped cycles
     if(dropped_cycles) {
@@ -432,7 +432,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
         // for all states that reach this we are allowed to
         // do protocol specific data reception
-        enum eChildReturnValue result2 = processPacketData(data, length, channel, tag, sy, pkt_ctr);
+        enum eChildReturnValue result2 = processPacketData(data, length);
 
         // if an xrun occured, switch to the dryRunning state and
         // allow for the xrun to be picked up
