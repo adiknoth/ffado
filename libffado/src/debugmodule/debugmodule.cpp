@@ -31,6 +31,7 @@
 #include <iostream>
 
 #include <time.h>
+#include <execinfo.h>
 
 #if DEBUG_USE_MESSAGE_BUFFER
 #else
@@ -241,6 +242,7 @@ DebugModuleManager::DebugModuleManager()
     , mb_inbuffer(0)
     , mb_outbuffer(0)
     , mb_overruns(0)
+    , m_backtrace_buffer_nb_seen(0)
 #ifdef IMPLEMENT_BACKLOG
     , bl_mb_inbuffer(0)
 #endif
@@ -270,6 +272,20 @@ DebugModuleManager::~DebugModuleManager()
 
     pthread_join(mb_writer_thread, NULL);
     mb_flush();
+
+    pthread_mutex_lock(&m_backtrace_lock);
+    // print a list of the symbols seen in a backtrace
+    fprintf(stderr, "Backtrace saw %d symbols:\n", m_backtrace_buffer_nb_seen);
+    char **strings = backtrace_symbols(m_backtrace_buffer_seen, m_backtrace_buffer_nb_seen);
+    if (strings == NULL) {
+        perror("backtrace_symbols");
+    } else {
+        for (int j = 0; j < m_backtrace_buffer_nb_seen; j++) {
+            fprintf(stderr, " %p => %s\n", m_backtrace_buffer_seen[j], strings[j]);
+        }
+        free(strings);
+    }
+    pthread_mutex_unlock(&m_backtrace_lock);
 
     if (mb_overruns)
         fprintf(stderr, "WARNING: %d message buffer overruns!\n",
@@ -564,19 +580,50 @@ DebugModuleManager::print(const char *msg)
 }
 
 void
-DebugModuleManager::backtraceLock()
+DebugModuleManager::printBacktrace(int len)
 {
-    pthread_mutex_lock(&m_backtrace_lock);
-}
+    int nptrs;
+    int chars_written=0;
 
-void
-DebugModuleManager::backtraceUnlock()
-{
+    if(len>MAX_BACKTRACE_SIZE) {
+        len = MAX_BACKTRACE_SIZE;
+    }
+
+    pthread_mutex_lock(&m_backtrace_lock);
+    nptrs = backtrace(m_backtrace_buffer, len);
+    chars_written += snprintf(m_backtrace_strbuffer, MB_BUFFERSIZE-chars_written, "BACKTRACE (%d/%d): ", nptrs, len);
+
+    for (int j = 0; j < nptrs; j++) {
+        chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "%p ", m_backtrace_buffer[j]);
+    }
+    chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "\n");
+
+    // make sure the string is terminated properly
+    m_backtrace_strbuffer[MB_BUFFERSIZE-2] = '\n';
+    m_backtrace_strbuffer[MB_BUFFERSIZE-1] = 0;
+    
+    // save the pointers to the pointers-seen list such that we can
+    // dump their info later on
+    bool seen;
+    for (int i=0; i<nptrs; i++) {
+        seen = false;
+        int j;
+        for (j=0; j<m_backtrace_buffer_nb_seen & j < MAX_BACKTRACE_FUNCTIONS_SEEN; j++) {
+            if(m_backtrace_buffer_seen[j] == m_backtrace_buffer[i]) {
+                seen = true;
+                break;
+            }
+        }
+        if (!seen) {
+            m_backtrace_buffer_seen[j] = m_backtrace_buffer[i];
+            m_backtrace_buffer_nb_seen++;
+        }
+    }
+    
+    print(m_backtrace_strbuffer);
+
     pthread_mutex_unlock(&m_backtrace_lock);
 }
-
-
-
 
 //----------------------------------------
 
