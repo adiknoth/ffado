@@ -520,6 +520,11 @@ AvDevice::prepare() {
         }
     }
 
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+    // FIXME: it seems that some BeBoB devices can't handle NO-DATA without payload
+    p->sendPayloadForNoDataPackets(true);
+#endif
+
     // we put this SP into the transmit SP vector,
     // no matter if we are in snoop mode or not
     // this allows us to find out what direction
