@@ -384,6 +384,67 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
 }
 
 /**
+ * @brief Converts a received SYT timestamp to a full timestamp in ticks.
+ *
+ *
+ * @param syt_timestamp The SYT timestamp as present in the packet
+ * @param rcv_ctr The CTR value this timestamp was received on (offset can be 0)
+ * @return
+ */
+static inline uint64_t sytRecvToFullTicks2(uint64_t syt_timestamp, uint32_t rcv_ctr) {
+    uint64_t timestamp;
+
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%04llX RCV_CTR=%08X\n",
+                       syt_timestamp, rcv_ctr);
+
+    // reconstruct the top part of the timestamp using the current cycle number
+    unsigned int rcv_cycle = CYCLE_TIMER_GET_CYCLES(rcv_ctr);
+    unsigned int rcv_cycle_masked = rcv_cycle & 0xF;
+    unsigned int syt_cycle = CYCLE_TIMER_GET_CYCLES(syt_timestamp);
+
+    // if this is true, wraparound has occurred, undo this wraparound
+    if(syt_cycle<rcv_cycle_masked) syt_cycle += 0x10;
+
+    // this is the difference in cycles wrt the cycle the
+    // timestamp was received
+    unsigned int delta_cycles = syt_cycle - rcv_cycle_masked;
+
+    // reconstruct the cycle part of the timestamp
+    rcv_cycle += delta_cycles;
+
+    // if the cycles cause a wraparound of the cycle timer,
+    // perform this wraparound
+    // and convert the timestamp into ticks
+    if(rcv_cycle<8000) {
+        timestamp = rcv_cycle * TICKS_PER_CYCLE;
+    } else {
+        rcv_cycle -= 8000; // wrap around
+#ifdef DEBUG
+        if (rcv_cycle >= 8000) {
+            debugWarning("insufficient unwrapping\n");
+        }
+#endif
+        timestamp  = rcv_cycle * TICKS_PER_CYCLE;
+        // add one second due to wraparound
+        timestamp += TICKS_PER_SECOND;
+    }
+
+    timestamp += CYCLE_TIMER_GET_OFFSET(syt_timestamp);
+
+    timestamp = addTicks(timestamp, CYCLE_TIMER_GET_SECS(rcv_ctr) * TICKS_PER_SECOND);
+
+    #ifdef DEBUG
+        if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
+            debugWarning("back-converted timestamp not equal to SYT\n");
+            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+                  timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
+        }
+    #endif
+
+    return timestamp;
+}
+
+/**
  * @brief Converts a transmit SYT timestamp to a full timestamp in ticks.
  *
  * The difference between sytRecvToFullTicks and sytXmitToFullTicks is
