@@ -244,6 +244,10 @@ typedef short debug_level_t;
 #define CHECK_PREEMPTION(onoff)
 #endif
 
+/*
+ * helper functions
+ */
+
 unsigned char toAscii( unsigned char c );
 void quadlet2char( fb_quadlet_t quadlet, unsigned char* buff );
 void hexDump( unsigned char *data_start, unsigned int length );
@@ -314,6 +318,8 @@ public:
     void showBackLog();
     void showBackLog(int nblines);
 
+    void backtraceLock();
+    void backtraceUnlock();
 protected:
     bool registerModule( DebugModule& debugModule );
     bool unregisterModule( DebugModule& debugModule );
@@ -339,6 +345,8 @@ private:
     pthread_mutex_t mb_flush_lock;
     pthread_cond_t mb_ready_cond;
 
+    pthread_mutex_t m_backtrace_lock;
+
     static void *mb_thread_func(void *arg);
     void mb_flush();
 
@@ -352,5 +360,27 @@ private:
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;
 };
+
+
+/*
+ * Backtrace support
+ */
+#ifdef DEBUG
+    #include <execinfo.h>
+    #define debugPrintBacktrace( _SIZE_ )                       \
+       {                                                        \
+           int nptrs;                                           \
+           void *buffer[_SIZE_];                                \
+           nptrs = backtrace(buffer, _SIZE_);                   \
+           DebugModuleManager::instance()->backtraceLock(); \
+           fprintf(stderr, "BACKTRACE START (%d/%d)\n", nptrs, _SIZE_); \
+           backtrace_symbols_fd(buffer, nptrs, STDERR_FILENO);  \
+           fprintf(stderr, "BACKTRACE END\n");                  \
+           DebugModuleManager::instance()->backtraceUnlock(); \
+       }
+#else
+    #define debugPrintBacktrace( _SIZE_ )
+#endif
+
 
 #endif
