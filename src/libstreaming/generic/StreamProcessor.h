@@ -472,8 +472,6 @@ public:
     const char *getTypeString()
         {return ePTToString(getType());};
 
-    int m_min_ahead; // DEBUG
-
     DECLARE_DEBUG_MODULE;
 };
 

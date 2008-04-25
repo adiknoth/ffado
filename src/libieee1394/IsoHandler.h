@@ -176,6 +176,7 @@ private:
     #ifdef DEBUG
     unsigned int    m_packets;
     unsigned int    m_dropped;
+    int             m_min_ahead;
     #endif
 
     DECLARE_DEBUG_MODULE;
