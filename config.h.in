@@ -70,7 +70,7 @@
 #define THREAD_MAX_RTPRIO                   98
 #define THREAD_MIN_RTPRIO                   1
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD       4U
+#define MINIMUM_INTERRUPTS_PER_PERIOD       2U
 
 // These are the result of a lot of trial and error
 // due to weirdness in the kernel layer
