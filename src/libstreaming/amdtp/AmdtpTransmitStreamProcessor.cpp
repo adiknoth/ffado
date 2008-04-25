@@ -60,8 +60,6 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     unsigned char *tag, unsigned char *sy,
     uint32_t pkt_ctr )
 {
-    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
-
     __builtin_prefetch(data, 1, 0); // prefetch events for write, no temporal locality
     struct iec61883_packet *packet = (struct iec61883_packet *)data;
     /* Our node ID can change after a bus reset, so it is best to fetch
@@ -90,7 +88,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     int cycles_until_transmit;
 
     debugOutputExtreme( DEBUG_LEVEL_ULTRA_VERBOSE,
-                        "Try for cycle %d\n", cycle );
+                        "Try for cycle %d\n", CYCLE_TIMER_GET_CYCLES(pkt_ctr) );
     // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
     ffado_timestamp_t ts_head_tmp;
@@ -114,12 +112,12 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // we can check whether this cycle is within the 'window' we have
     // to send this packet.
     // first calculate the number of cycles left before presentation time
-    cycles_until_presentation = diffCycles ( presentation_cycle, cycle );
+    cycles_until_presentation = diffCycles ( presentation_cycle, CYCLE_TIMER_GET_CYCLES(pkt_ctr) );
 
     // we can check whether this cycle is within the 'window' we have
     // to send this packet.
     // first calculate the number of cycles left before presentation time
-    cycles_until_transmit = diffCycles ( transmit_at_cycle, cycle );
+    cycles_until_transmit = diffCycles ( transmit_at_cycle, CYCLE_TIMER_GET_CYCLES(pkt_ctr) );
 
     // two different options:
     // 1) there are not enough frames for one packet
@@ -137,7 +135,8 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         {
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
-                         fc, cycle, transmit_at_cycle, cycles_until_transmit );
+                         fc, CYCLE_TIMER_GET_CYCLES(pkt_ctr), 
+                         transmit_at_cycle, cycles_until_transmit );
             // we are too late
             return eCRV_XRun;
         }
@@ -148,7 +147,8 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                                "Insufficient frames (NP): N=%02d, CY=%04u, TC=%04u, CUT=%04d, NOW=%04d\n",
-                               fc, cycle, transmit_at_cycle, cycles_until_transmit, now_cycle );
+                               fc, CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                               transmit_at_cycle, cycles_until_transmit, now_cycle );
             #endif
 
             // there is still time left to send the packet
@@ -194,7 +194,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
             // we are too late
             debugOutput(DEBUG_LEVEL_NORMAL,
                         "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
-                        cycle,
+                        CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                         transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
             //debugShowBackLogLines(200);
@@ -227,7 +227,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         {
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                               cycle,
+                               CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                                transmit_at_cycle, cycles_until_transmit,
                                transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
                                presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
@@ -236,7 +236,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
             {
                 debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                    "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                                   cycle,
+                                   CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                                    transmit_at_cycle, cycles_until_transmit,
                                    transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
                                    presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
