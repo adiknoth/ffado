@@ -322,7 +322,6 @@ void IsoHandler::dumpInfo()
 
 void IsoHandler::setVerboseLevel(int l)
 {
-    debugError("setdebuglevel (%p, %d)\n", this, l);
     setDebugLevel(l);
 }
 
