@@ -96,7 +96,7 @@ enum StreamProcessor::eChildReturnValue
 MotuTransmitStreamProcessor::generatePacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     // The number of events per packet expected by the MOTU is solely
     // dependent on the current sample rate.  An 'event' is one sample from
@@ -149,14 +149,6 @@ MotuTransmitStreamProcessor::generatePacketHeader (
     // first calculate the number of cycles left before presentation time
     cycles_until_transmit = diffCycles ( transmit_at_cycle, cycle );
 
-    if (dropped) {
-        debugOutput ( DEBUG_LEVEL_VERBOSE,
-                    "Gen HDR: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                    cycle,
-                    transmit_at_cycle, cycles_until_transmit,
-                    transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
-                    presentation_time, ( unsigned int ) TICKS_TO_CYCLES ( presentation_time ) );
-    }
     // two different options:
     // 1) there are not enough frames for one packet
     //      => determine wether this is a problem, since we might still
@@ -271,7 +263,7 @@ enum StreamProcessor::eChildReturnValue
 MotuTransmitStreamProcessor::generatePacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     quadlet_t *quadlet = (quadlet_t *)data;
     quadlet += 2; // skip the header
@@ -332,7 +324,7 @@ enum StreamProcessor::eChildReturnValue
 MotuTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u, TSP=%011llu (%04u)\n",
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
@@ -351,7 +343,7 @@ enum StreamProcessor::eChildReturnValue
 MotuTransmitStreamProcessor::generateEmptyPacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     return eCRV_OK; // no need to do anything
 }
@@ -360,7 +352,7 @@ enum StreamProcessor::eChildReturnValue
 MotuTransmitStreamProcessor::generateSilentPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u, TSP=%011llu (%04u)\n",
                 cycle, m_last_timestamp, ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
@@ -387,14 +379,13 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
     *length = n_events*m_event_size + 8;
 
     return eCRV_Packet;
-    //generatePacketHeader(data, length, tag, sy, cycle, dropped, max_length);
 }
 
 enum StreamProcessor::eChildReturnValue
 MotuTransmitStreamProcessor::generateSilentPacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     // Simply set all audio data to zero since that's what's meant by
     // a "silent" packet.  Note that m_event_size is in bytes for MOTU.

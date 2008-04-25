@@ -86,13 +86,12 @@ bool AmdtpReceiveStreamProcessor::prepareChild() {
  * @param tag 
  * @param sy 
  * @param cycle 
- * @param dropped 
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
 AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped)
+                  unsigned int cycle)
 {
     #ifdef DEBUG
     static uint32_t now_prev=0;
@@ -148,13 +147,12 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
  * @param tag 
  * @param sy 
  * @param cycle 
- * @param dropped 
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
 AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped_cycles) {
+                  unsigned int cycle) {
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
 

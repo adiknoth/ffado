@@ -58,7 +58,7 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generatePacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     __builtin_prefetch(data, 1, 0); // prefetch events for write, no temporal locality
     struct iec61883_packet *packet = (struct iec61883_packet *)data;
@@ -119,14 +119,6 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // first calculate the number of cycles left before presentation time
     cycles_until_transmit = diffCycles ( transmit_at_cycle, cycle );
 
-    if (dropped) {
-        debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "Gen HDR: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
-                     cycle,
-                     transmit_at_cycle, cycles_until_transmit,
-                     transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
-                     presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
-    }
     // two different options:
     // 1) there are not enough frames for one packet
     //      => determine wether this is a problem, since we might still
@@ -259,7 +251,7 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generatePacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     if ( m_data_buffer->readFrames ( m_syt_interval, ( char * ) ( data + 8 ) ) )
     {
@@ -276,7 +268,7 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
@@ -305,7 +297,7 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateSilentPacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     return eCRV_OK; // no need to do anything
 }
@@ -314,7 +306,7 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
@@ -342,7 +334,7 @@ enum StreamProcessor::eChildReturnValue
 AmdtpTransmitStreamProcessor::generateEmptyPacketData (
     unsigned char *data, unsigned int *length,
     unsigned char *tag, unsigned char *sy,
-    int cycle, unsigned int dropped, unsigned int max_length )
+    int cycle, unsigned int max_length )
 {
     return eCRV_OK; // no need to do anything
 }
