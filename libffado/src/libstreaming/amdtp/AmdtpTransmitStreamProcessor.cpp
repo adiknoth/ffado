@@ -92,14 +92,14 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     // check whether the packet buffer has packets for us to send.
     // the base timestamp is the one of the next sample in the buffer
     ffado_timestamp_t ts_head_tmp;
-    m_data_buffer->getBufferHeadTimestamp ( &ts_head_tmp, &fc ); // thread safe
+    m_data_buffer->getBufferHeadTimestamp( &ts_head_tmp, &fc ); // thread safe
 
     // the timestamp gives us the time at which we want the sample block
     // to be output by the device
     presentation_time = ( uint64_t ) ts_head_tmp;
 
     // now we calculate the time when we have to transmit the sample block
-    transmit_at_time = substractTicks ( presentation_time, AMDTP_TRANSMIT_TRANSFER_DELAY );
+    transmit_at_time = substractTicks( presentation_time, AMDTP_TRANSMIT_TRANSFER_DELAY );
 
     // calculate the cycle this block should be presented in
     // (this is just a virtual calculation since at that time it should

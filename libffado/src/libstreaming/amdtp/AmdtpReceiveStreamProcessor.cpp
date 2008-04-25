@@ -93,48 +93,26 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
                                                  unsigned char tag, unsigned char sy,
                                                  uint32_t pkt_ctr)
 {
-    #ifdef DEBUG
-    static uint32_t now_prev=0;
-    static uint64_t now_prev_ticks=0;
-    #endif
-
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
     bool ok = (packet->syt != 0xFFFF) &&
-                  (packet->fdf != 0xFF) &&
-                  (packet->fmt == 0x10) &&
-                  (packet->dbs > 0) &&
-                  (length >= 2*sizeof(quadlet_t));
+              (packet->fdf != 0xFF) &&
+              (packet->fmt == 0x10) &&
+              (packet->dbs > 0) &&
+              (length >= 2*sizeof(quadlet_t));
     if(ok) {
+        m_last_timestamp = sytRecvToFullTicks2((uint32_t)ntohs(packet->syt), pkt_ctr);
+        //#ifdef DEBUG
+        #if 0
         uint32_t now = m_1394service.getCycleTimer();
 
-        #ifdef DEBUG
-        uint64_t now_ticks = CYCLE_TIMER_TO_TICKS(now);
-
-        if (diffTicks(now_ticks, now_prev_ticks) < 0) {
-            debugWarning("non-monotonic CTR on cycle %04u: %llu -> %llu\n", 
-                         CYCLE_TIMER_GET_CYCLES(pkt_ctr), now_prev_ticks, now_ticks);
-            debugWarning("                               : %08X -> %08X\n", now_prev, now);
-            debugOutput ( DEBUG_LEVEL_VERBOSE,
-                        " current: %011llu (%03us %04ucy %04uticks)\n",
-                        now,
-                        (unsigned int)TICKS_TO_SECS( now ),
-                        (unsigned int)TICKS_TO_CYCLES( now ),
-                        (unsigned int)TICKS_TO_OFFSET( now ) );
-            debugOutput ( DEBUG_LEVEL_VERBOSE,
-                        " prev   : %011llu (%03us %04ucy %04uticks)\n",
-                        now_prev,
-                        (unsigned int)TICKS_TO_SECS( now_prev ),
-                        (unsigned int)TICKS_TO_CYCLES( now_prev ),
-                        (unsigned int)TICKS_TO_OFFSET( now_prev ) );
-        }
-        now_prev = now;
-        now_prev_ticks=now_ticks;
-        #endif
-
         //=> convert the SYT to a full timestamp in ticks
-        m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
+        uint64_t old_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
                                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), now);
+        if(m_last_timestamp != old_last_timestamp) {
+            debugWarning("discepancy between timestamp calculations\n");
+        }
+        #endif
     }
     return (ok ? eCRV_OK : eCRV_Invalid );
 }
