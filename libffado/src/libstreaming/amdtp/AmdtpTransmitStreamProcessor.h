@@ -81,22 +81,22 @@ public:
 
     enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
                               unsigned char *tag, unsigned char *sy,
-                              int cycle, unsigned int dropped, unsigned int max_length);
+                              int cycle, unsigned int max_length);
     enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length,
                             unsigned char *tag, unsigned char *sy,
-                            int cycle, unsigned int dropped, unsigned int max_length);
+                            int cycle, unsigned int max_length);
     enum eChildReturnValue generateEmptyPacketHeader(unsigned char *data, unsigned int *length,
                                     unsigned char *tag, unsigned char *sy,
-                                    int cycle, unsigned int dropped, unsigned int max_length);
+                                    int cycle, unsigned int max_length);
     enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length,
                                   unsigned char *tag, unsigned char *sy,
-                                  int cycle, unsigned int dropped, unsigned int max_length);
+                                  int cycle, unsigned int max_length);
     enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
                                     unsigned char *tag, unsigned char *sy,
-                                    int cycle, unsigned int dropped, unsigned int max_length);
+                                    int cycle, unsigned int max_length);
     enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length,
                                   unsigned char *tag, unsigned char *sy,
-                                  int cycle, unsigned int dropped, unsigned int max_length);
+                                  int cycle, unsigned int max_length);
     virtual bool prepareChild();
 
 #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT

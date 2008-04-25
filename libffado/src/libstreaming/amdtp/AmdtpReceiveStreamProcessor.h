@@ -79,10 +79,10 @@ public:
 
     enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped);
+                  unsigned int cycle);
     enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle, unsigned int dropped);
+                  unsigned int cycle);
 
     virtual bool prepareChild();
 

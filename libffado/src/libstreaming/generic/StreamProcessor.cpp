@@ -344,7 +344,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     // check the packet header
-    enum eChildReturnValue result = processPacketHeader(data, length, channel, tag, sy, cycle, dropped_cycles);
+    enum eChildReturnValue result = processPacketHeader(data, length, channel, tag, sy, cycle);
 
     // handle dropped cycles
     if(dropped_cycles) {
@@ -367,7 +367,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     if (result == eCRV_OK) {
         #ifdef DEBUG
         int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
-        int diff=diffTicks(m_last_timestamp, m_last_timestamp2);
+        int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
         // display message if the difference between two successive tick
         // values is more than 50 ticks. 1 sample at 48k is 512 ticks
         // so 50 ticks = 10%, which is a rather large jitter value.
@@ -432,7 +432,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 
         // for all states that reach this we are allowed to
         // do protocol specific data reception
-        enum eChildReturnValue result2 = processPacketData(data, length, channel, tag, sy, cycle, dropped_cycles);
+        enum eChildReturnValue result2 = processPacketData(data, length, channel, tag, sy, cycle);
 
         // if an xrun occured, switch to the dryRunning state and
         // allow for the xrun to be picked up
@@ -548,14 +548,14 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
         }
         // generate the silent packet header
-        enum eChildReturnValue result = generateSilentPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+        enum eChildReturnValue result = generateSilentPacketHeader(data, length, tag, sy, cycle, max_length);
         if (result == eCRV_Packet) {
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                "XMIT SILENT: CY=%04u TS=%011llu\n",
                                cycle, m_last_timestamp);
 
             // assumed not to xrun
-            generateSilentPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateSilentPacketData(data, length, tag, sy, cycle, max_length);
             return RAW1394_ISO_OK;
         // FIXME: PP: I think this should also be a possibility
         //} else if (result == eCRV_EmptyPacket) {
@@ -597,7 +597,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     }
     else if(m_state == ePS_Running) {
         // check the packet header
-        enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
+        enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, cycle, max_length);
         if (result == eCRV_Packet || result == eCRV_Defer) {
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                                "XMIT: CY=%04u TS=%011llu\n",
@@ -618,7 +618,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 }
             }
 
-            enum eChildReturnValue result2 = generatePacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            enum eChildReturnValue result2 = generatePacketData(data, length, tag, sy, cycle, max_length);
             // if an xrun occured, switch to the dryRunning state and
             // allow for the xrun to be picked up
             if (result2 == eCRV_XRun) {
@@ -692,8 +692,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
 //             usleep(125); // only when using thread-per-handler
 //             return RAW1394_ISO_AGAIN;
-            generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-            generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+            generateEmptyPacketHeader(data, length, tag, sy, cycle, max_length);
+            generateEmptyPacketData(data, length, tag, sy, cycle, max_length);
             return RAW1394_ISO_DEFER;
         } else {
             debugError("Invalid return value: %d\n", result);
@@ -717,8 +717,8 @@ send_empty_packet:
                        "XMIT EMPTY: CY=%04u\n",
                        cycle);
 
-    generateEmptyPacketHeader(data, length, tag, sy, cycle, dropped_cycles, max_length);
-    generateEmptyPacketData(data, length, tag, sy, cycle, dropped_cycles, max_length);
+    generateEmptyPacketHeader(data, length, tag, sy, cycle, max_length);
+    generateEmptyPacketData(data, length, tag, sy, cycle, max_length);
     return RAW1394_ISO_OK;
 }
 
