@@ -144,7 +144,7 @@ IsoTask::Execute()
     unsigned int m_poll_timeout = 10;
 
     #ifdef DEBUG
-    uint64_t now = m_manager.get1394Service().getCurrentTimeAsUsecs();
+    uint64_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     int diff = now - m_last_loop_entry;
     if(diff < 100) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,

@@ -42,7 +42,6 @@
 
 using namespace Util;
 
-SystemTimeSource timesource;
 DECLARE_GLOBAL_DEBUG_MODULE;
 
 class HangTask : public Util::RunnableInterface
@@ -56,23 +55,23 @@ public:
     bool Init() {return true;};
     bool Execute() {
         debugOutput(DEBUG_LEVEL_VERBOSE, "execute\n");
-        ffado_microsecs_t start = timesource.getCurrentTimeAsUsecs();
+        ffado_microsecs_t start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         ffado_microsecs_t stop_at = start + m_time;
         int cnt;
         int dummyvar = 0;
-        while(timesource.getCurrentTimeAsUsecs() < stop_at) {
+        while(Util::SystemTimeSource::getCurrentTimeAsUsecs() < stop_at) {
             cnt=1000;
             while(cnt--) { dummyvar++; }
         }
 
         // ensure that dummyvar doesn't get optimized away
-        bool always_true = (dummyvar + timesource.getCurrentTimeAsUsecs() != 0);
+        bool always_true = (dummyvar + Util::SystemTimeSource::getCurrentTimeAsUsecs() != 0);
 
         bool stop = (m_nb_hangs == 0);
         m_nb_hangs--;
 
         // we sleep for 100ms after a 'hang'
-        timesource.SleepUsecRelative(1000*100);
+        Util::SystemTimeSource::SleepUsecRelative(1000*100);
 
         // we want the thread to exit after m_nb_hangs 'hangs'
         return always_true && !stop;
@@ -182,17 +181,17 @@ int main(int argc, char *argv[])
 
     // start the watchdog
     w->start();
-    timesource.SleepUsecRelative(1000*1000*1);
+    Util::SystemTimeSource::SleepUsecRelative(1000*1000*1);
 
     // start the first thread, should be harmless since it's hang time is too low
     thread1->Start();
-    timesource.SleepUsecRelative(1000*1000*1);
+    Util::SystemTimeSource::SleepUsecRelative(1000*1000*1);
 
     // start the second thread, should be rescheduled since it hangs too long
     thread2->Start();
 
     // wait for a while
-    timesource.SleepUsecRelative(1000*1000*5);
+    Util::SystemTimeSource::SleepUsecRelative(1000*1000*5);
 
 
     thread1->Stop();

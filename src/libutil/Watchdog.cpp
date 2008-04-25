@@ -71,7 +71,7 @@ Watchdog::WatchdogCheckTask::Execute()
     }
 
     #ifdef DEBUG
-    uint64_t now = SystemTimeSource().getCurrentTimeAsUsecs();
+    uint64_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     int diff = now - m_last_loop_entry;
     if(diff < 100) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
@@ -120,7 +120,7 @@ Watchdog::WatchdogHartbeatTask::Execute()
     m_parent.setHartbeat();
 
     #ifdef DEBUG
-    uint64_t now = SystemTimeSource().getCurrentTimeAsUsecs();
+    uint64_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     int diff = now - m_last_loop_entry;
     if(diff < 100) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
