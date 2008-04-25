@@ -280,6 +280,8 @@ DebugModuleManager::~DebugModuleManager()
     pthread_mutex_destroy(&mb_write_lock);
     pthread_cond_destroy(&mb_ready_cond);
 
+    pthread_mutex_destroy(&m_backtrace_lock);
+
 #ifdef IMPLEMENT_BACKLOG
     pthread_mutex_destroy(&bl_mb_write_lock);
 #endif
@@ -298,6 +300,8 @@ DebugModuleManager::init()
     pthread_mutex_init(&mb_write_lock, NULL);
     pthread_mutex_init(&mb_flush_lock, NULL);
     pthread_cond_init(&mb_ready_cond, NULL);
+
+    pthread_mutex_init(&m_backtrace_lock, NULL);
 
     mb_overruns = 0;
     mb_initialized = 1;
@@ -558,6 +562,21 @@ DebugModuleManager::print(const char *msg)
     fprintf(stderr,msg);
 #endif
 }
+
+void
+DebugModuleManager::backtraceLock()
+{
+    pthread_mutex_lock(&m_backtrace_lock);
+}
+
+void
+DebugModuleManager::backtraceUnlock()
+{
+    pthread_mutex_unlock(&m_backtrace_lock);
+}
+
+
+
 
 //----------------------------------------
 
