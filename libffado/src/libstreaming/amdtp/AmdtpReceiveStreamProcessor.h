@@ -78,11 +78,9 @@ public:
     virtual ~AmdtpReceiveStreamProcessor() {};
 
     enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
-                  unsigned char channel, unsigned char tag, unsigned char sy,
-                  uint32_t pkt_ctr);
-    enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length,
-                  unsigned char channel, unsigned char tag, unsigned char sy,
-                  uint32_t pkt_ctr);
+                                               unsigned char tag, unsigned char sy,
+                                               uint32_t pkt_ctr);
+    enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length);
 
     virtual bool prepareChild();
 
