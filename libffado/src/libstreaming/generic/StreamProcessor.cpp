@@ -285,10 +285,8 @@ StreamProcessor::canClientTransferFrames(unsigned int nbframes)
 enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
-                           unsigned int pkt_ctr,
+                           uint32_t pkt_ctr,
                            unsigned int dropped_cycles, unsigned int skipped) {
-    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
-
     // bypass based upon state
 #ifdef DEBUG
     if (m_state == ePS_Invalid) {
@@ -311,7 +309,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // check whether we are waiting for a stream to be disabled
     if(m_state == ePS_WaitingForStreamDisable) {
         // we then check whether we have to switch on this cycle
-        if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+        if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning\n");
             m_next_state = ePS_DryRunning;
             if (!updateState()) { // we are allowed to change the state directly
@@ -330,7 +328,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // check whether we are waiting for a stream to be enabled
     else if(m_state == ePS_WaitingForStreamEnable) {
         // we then check whether we have to switch on this cycle
-        if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+        if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to Running\n");
             m_next_state = ePS_Running;
             if (!updateState()) { // we are allowed to change the state directly
@@ -354,7 +352,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // this is an xrun situation
             m_in_xrun = true;
             debugWarning("Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
-            m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+            m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1; // switch in the next cycle
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
@@ -374,17 +372,20 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
             debugOutput(DEBUG_LEVEL_VERBOSE,
                         "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                        cycle, m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+                        CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                        m_last_timestamp, diff, ticks_per_packet);
         }
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            "%04u %011llu %011llu %d %d\n",
-                           cycle, m_last_timestamp2, m_last_timestamp, 
+                           CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                           m_last_timestamp2, m_last_timestamp, 
                            diff, ticks_per_packet);
         #endif
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                           "RECV: CY=%04u TS=%011llu\n",
-                          cycle, m_last_timestamp);
+                          CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                          m_last_timestamp);
 
         if(m_correct_last_timestamp) {
             // they represent a discontinuity in the timestamps, and hence are
@@ -403,7 +404,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // we can indicate that the stream started up
 
             // we then check whether we have to switch on this cycle
-            if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+            if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning due to good packet\n");
                 // hence go to the dryRunning state
                 m_next_state = ePS_DryRunning;
@@ -440,7 +441,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             debugWarning("processPacketData xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
-            m_cycle_to_switch_state = cycle+1; // switch in the next cycle
+            m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr)+1; // switch in the next cycle
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
@@ -477,7 +478,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
 enum raw1394_iso_disposition
 StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                            unsigned char *tag, unsigned char *sy,
-                           unsigned int pkt_ctr, unsigned int dropped_cycles,
+                           uint32_t pkt_ctr, unsigned int dropped_cycles,
                            unsigned int skipped, unsigned int max_length) {
     if (pkt_ctr == 0xFFFFFFFF) {
         *tag = 0;
@@ -485,7 +486,6 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         *length = 0;
         return RAW1394_ISO_OK;
     }
-    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
     uint64_t prev_timestamp;
 
     // note that we can ignore skipped cycles since
@@ -498,7 +498,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugShowBackLogLines(200);
             debugWarning("dropped packets xrun\n");
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
-            m_cycle_to_switch_state = cycle + 1;
+            m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1;
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
@@ -539,7 +539,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // check whether we are waiting for a stream to be disabled
     if(m_state == ePS_WaitingForStreamDisable) {
         // we then check whether we have to switch on this cycle
-        if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+        if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to DryRunning\n");
             m_next_state = ePS_DryRunning;
             if (!updateState()) { // we are allowed to change the state directly
@@ -568,7 +568,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // check whether we are waiting for a stream to be enabled
     else if(m_state == ePS_WaitingForStreamEnable) {
         // we then check whether we have to switch on this cycle
-        if (diffCycles(cycle, m_cycle_to_switch_state) >= 0) {
+        if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to Running\n");
             m_next_state = ePS_Running;
             if (!updateState()) { // we are allowed to change the state directly
@@ -583,7 +583,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
     // check whether we are waiting for a stream to startup
     else if(m_state == ePS_WaitingForStream) {
         // check whether we have to switch on this cycle
-        if ((diffCycles(cycle, m_cycle_to_switch_state) >= 0)) {
+        if ((diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0)) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStream to DryRunning\n");
             // hence go to the dryRunning state
             m_next_state = ePS_DryRunning;
@@ -625,7 +625,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 debugWarning("generatePacketData xrun\n");
                 m_in_xrun = true;
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
-                m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+                m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1; // switch in the next cycle
                 m_next_state = ePS_WaitingForStreamDisable;
                 // execute the requested change
                 if (!updateState()) { // we are allowed to change the state directly
@@ -636,18 +636,20 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
             #ifdef DEBUG
             int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
-            int diff=diffTicks(m_last_timestamp, m_last_timestamp2);
+            int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
             // display message if the difference between two successive tick
             // values is more than 50 ticks. 1 sample at 48k is 512 ticks
             // so 50 ticks = 10%, which is a rather large jitter value.
             if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
                 debugOutput(DEBUG_LEVEL_VERBOSE,
                             "cy %04d, rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                            cycle, m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+                            CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                            m_last_timestamp, diff, ticks_per_packet);
             }
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                "%04d %011llu %011llu %d %d\n",
-                               cycle, m_last_timestamp2, m_last_timestamp, diff, ticks_per_packet);
+                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                               m_last_timestamp, diff, ticks_per_packet);
             #endif
 
             // skip queueing packets if we detect that there are not enough frames
@@ -661,7 +663,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             debugWarning("generatePacketHeader xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to header xrun\n");
-            m_cycle_to_switch_state = cycle + 1; // switch in the next cycle
+            m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1; // switch in the next cycle
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
             if (!updateState()) { // we are allowed to change the state directly
@@ -680,7 +682,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
             goto send_empty_packet;
         } else if (result == eCRV_Again) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", cycle);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", CYCLE_TIMER_GET_CYCLES(pkt_ctr));
             if(m_state != m_next_state) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
                                                 ePSToString(m_state), ePSToString(m_next_state));
@@ -715,7 +717,7 @@ send_empty_packet:
     }
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                        "XMIT EMPTY: CY=%04u\n",
-                       cycle);
+                       CYCLE_TIMER_GET_CYCLES(pkt_ctr));
 
     generateEmptyPacketHeader(data, length, tag, sy, pkt_ctr);
     generateEmptyPacketData(data, length);

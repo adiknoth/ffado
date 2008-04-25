@@ -93,7 +93,6 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
                                                  unsigned char tag, unsigned char sy,
                                                  uint32_t pkt_ctr)
 {
-    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
     #ifdef DEBUG
     static uint32_t now_prev=0;
     static uint64_t now_prev_ticks=0;
@@ -113,7 +112,8 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
         uint64_t now_ticks = CYCLE_TIMER_TO_TICKS(now);
 
         if (diffTicks(now_ticks, now_prev_ticks) < 0) {
-            debugWarning("non-monotonic CTR on cycle %04u: %llu -> %llu\n", cycle, now_prev_ticks, now_ticks);
+            debugWarning("non-monotonic CTR on cycle %04u: %llu -> %llu\n", 
+                         CYCLE_TIMER_GET_CYCLES(pkt_ctr), now_prev_ticks, now_ticks);
             debugWarning("                               : %08X -> %08X\n", now_prev, now);
             debugOutput ( DEBUG_LEVEL_VERBOSE,
                         " current: %011llu (%03us %04ucy %04uticks)\n",
@@ -134,7 +134,7 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
 
         //=> convert the SYT to a full timestamp in ticks
         m_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
-                                              cycle, now);
+                                              CYCLE_TIMER_GET_CYCLES(pkt_ctr), now);
     }
     return (ok ? eCRV_OK : eCRV_Invalid );
 }

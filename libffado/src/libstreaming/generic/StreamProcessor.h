@@ -152,12 +152,12 @@ public: // the public receive/transmit functions
     enum raw1394_iso_disposition
         putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int pkt_ctr, unsigned int dropped, unsigned int skipped);
+                  uint32_t pkt_ctr, unsigned int dropped, unsigned int skipped);
 
     enum raw1394_iso_disposition
     getPacket(unsigned char *data, unsigned int *length,
               unsigned char *tag, unsigned char *sy,
-              unsigned int pkt_ctr, unsigned int dropped,
+              uint32_t pkt_ctr, unsigned int dropped,
               unsigned int skipped, unsigned int max_length);
 
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
