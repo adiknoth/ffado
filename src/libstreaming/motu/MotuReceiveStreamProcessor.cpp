@@ -123,7 +123,7 @@ MotuReceiveStreamProcessor::prepareChild() {
 enum StreamProcessor::eChildReturnValue
 MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle)
+                  uint32_t pkt_ctr)
 {
     if (length > 8) {
         // The iso data blocks from the MOTUs comprise a CIP-like
@@ -166,13 +166,13 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
  * @param channel 
  * @param tag 
  * @param sy 
- * @param cycle 
+ * @param pkt_ctr 
  * @return 
  */
 enum StreamProcessor::eChildReturnValue
 MotuReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  unsigned int cycle) {
+                  uint32_t pkt_ctr) {
     quadlet_t* quadlet = (quadlet_t*) data;
 
     unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size

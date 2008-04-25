@@ -58,23 +58,17 @@ public:
     virtual ~MotuTransmitStreamProcessor() {};
 
     enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
-                              unsigned char *tag, unsigned char *sy,
-                              int cycle, unsigned int max_length);
-    enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length,
-                            unsigned char *tag, unsigned char *sy,
-                            int cycle, unsigned int max_length);
+                                                unsigned char *tag, unsigned char *sy,
+                                                uint32_t pkt_ctr);
+    enum eChildReturnValue generatePacketData(unsigned char *data, unsigned int *length);
     enum eChildReturnValue generateEmptyPacketHeader(unsigned char *data, unsigned int *length,
-                                    unsigned char *tag, unsigned char *sy,
-                                    int cycle, unsigned int max_length);
-    enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length,
-                                  unsigned char *tag, unsigned char *sy,
-                                  int cycle, unsigned int max_length);
+                                                     unsigned char *tag, unsigned char *sy,
+                                                     uint32_t pkt_ctr);
+    enum eChildReturnValue generateEmptyPacketData(unsigned char *data, unsigned int *length);
     enum eChildReturnValue generateSilentPacketHeader(unsigned char *data, unsigned int *length,
-                                    unsigned char *tag, unsigned char *sy,
-                                    int cycle, unsigned int max_length);
-    enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length,
-                                  unsigned char *tag, unsigned char *sy,
-                                  int cycle, unsigned int max_length);
+                                                      unsigned char *tag, unsigned char *sy,
+                                                      uint32_t pkt_ctr);
+    enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length);
     virtual bool prepareChild();
 
 public:
