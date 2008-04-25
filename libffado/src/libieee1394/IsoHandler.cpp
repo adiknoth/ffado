@@ -90,6 +90,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_max_packet_size( 1024 )
    , m_irq_interval( -1 )
    , m_last_cycle( -1 )
+   , m_last_now( 0xFFFFFFFF )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -112,6 +113,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
    , m_last_cycle( -1 )
+   , m_last_now( 0xFFFFFFFF )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -133,6 +135,8 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
+   , m_last_cycle( -1 )
+   , m_last_now( 0xFFFFFFFF )
    , m_Client( 0 )
    , m_speed( speed )
    , m_prebuffers( 0 )
@@ -185,6 +189,7 @@ IsoHandler::iterate() {
 #if ISOHANDLER_FLUSH_BEFORE_ITERATE
         flush();
 #endif
+        m_last_now = m_manager.get1394Service().getCycleTimer();
         if(raw1394_loop_iterate(m_handle)) {
             debugError( "IsoHandler (%p): Failed to iterate handler: %s\n",
                         this, strerror(errno));
@@ -362,7 +367,46 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped, unsigned int skipped) {
 
-    unsigned int pkt_ctr = cycle << 12;
+    uint32_t pkt_ctr = cycle << 12;
+
+    // if we assume that one iterate() loop doesn't take longer than 0.5 seconds,
+    // the seconds field won't change while the iterate loop runs
+    // this means that we can preset 'now' before running iterate()
+    uint32_t now_secs = CYCLE_TIMER_GET_SECS(m_last_now);
+    // causality results in the fact that 'now' is always after 'cycle'
+    if(CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle) {
+        // the cycle field has wrapped, substract one second
+        if(now_secs == 0) {
+            now_secs = 127;
+        } else  {
+            now_secs -= 1;
+        }
+    }
+    pkt_ctr |= (now_secs & 0x7F) << 25;
+
+    #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
+    // add a seconds field
+    uint32_t now = m_manager.get1394Service().getCycleTimer();
+    uint32_t now_secs_ref = CYCLE_TIMER_GET_SECS(now);
+    // causality results in the fact that 'now' is always after 'cycle'
+    if(CYCLE_TIMER_GET_CYCLES(now) < cycle) {
+        // the cycle field has wrapped, substract one second
+        if(now_secs_ref == 0) {
+            now_secs_ref = 127;
+        } else  {
+            now_secs_ref -= 1;
+        }
+    }
+    uint32_t pkt_ctr_ref = cycle << 12;
+    pkt_ctr_ref |= (now_secs_ref & 0x7F) << 25;
+
+    if(pkt_ctr != pkt_ctr_ref) {
+        debugWarning("reconstructed CTR counter discrepancy\n");
+        pkt_ctr=pkt_ctr_ref;
+    }
+    #endif
+
+    // leave the offset field (for now?)
 
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "received packet: length=%d, channel=%d, cycle=%d\n",
@@ -421,11 +465,53 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                       unsigned char *tag, unsigned char *sy,
                       int cycle, unsigned int dropped, unsigned int skipped) {
 
-    unsigned int pkt_ctr;
+    uint32_t pkt_ctr;
     if (cycle < 0) {
+        // mark invalid
         pkt_ctr = 0xFFFFFFFF;
     } else {
         pkt_ctr = cycle << 12;
+
+#if 0 // we don't need this for xmit
+        // if we assume that one iterate() loop doesn't take longer than 0.5 seconds,
+        // the seconds field won't change while the iterate loop runs
+        // this means that we can preset 'now' before running iterate()
+        uint32_t now_secs = CYCLE_TIMER_GET_SECS(m_last_now);
+        // causality results in the fact that 'now' is always after 'cycle'
+        if(CYCLE_TIMER_GET_CYCLES(m_last_now) > (unsigned int)cycle) {
+            // the cycle field has wrapped, add one second
+            now_secs += 1;
+            // no need for this:
+            //if(now_secs == 128) {
+            //    now_secs = 0;
+            //}
+            // since we mask later on
+        }
+        pkt_ctr |= (now_secs & 0x7F) << 25;
+
+        #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
+        // add a seconds field
+        uint32_t now = m_manager.get1394Service().getCycleTimer();
+        uint32_t now_secs_ref = CYCLE_TIMER_GET_SECS(now);
+        // causality results in the fact that 'now' is always after 'cycle'
+        if(CYCLE_TIMER_GET_CYCLES(now) > (unsigned int)cycle) {
+            // the cycle field has wrapped, add one second
+            now_secs_ref += 1;
+            // no need for this:
+            //if(now_secs == 128) {
+            //    now_secs = 0;
+            //}
+            // since we mask later on
+        }
+        uint32_t pkt_ctr_ref = cycle << 12;
+        pkt_ctr_ref |= (now_secs_ref & 0x7F) << 25;
+    
+        if(pkt_ctr != pkt_ctr_ref) {
+            debugWarning("reconstructed CTR counter discrepancy\n");
+            pkt_ctr=pkt_ctr_ref;
+        }
+        #endif
+#endif
     }
 
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,

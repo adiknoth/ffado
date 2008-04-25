@@ -152,6 +152,7 @@ private:
     unsigned int    m_max_packet_size;
     int             m_irq_interval;
     int             m_last_cycle;
+    uint32_t        m_last_now;
 
     Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
 
