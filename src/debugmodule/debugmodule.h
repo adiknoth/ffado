@@ -47,6 +47,9 @@ typedef short debug_level_t;
 
 #define DEBUG_MAX_MESSAGE_LENGTH 512
 
+#define MAX_BACKTRACE_SIZE 32
+#define MAX_BACKTRACE_FUNCTIONS_SEEN 128
+
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
 #define MB_BUFFERS          (1<<16)
 
@@ -318,8 +321,7 @@ public:
     void showBackLog();
     void showBackLog(int nblines);
 
-    void backtraceLock();
-    void backtraceUnlock();
+    void printBacktrace(int len);
 protected:
     bool registerModule( DebugModule& debugModule );
     bool unregisterModule( DebugModule& debugModule );
@@ -346,7 +348,11 @@ private:
     pthread_cond_t mb_ready_cond;
 
     pthread_mutex_t m_backtrace_lock;
-
+    char m_backtrace_strbuffer[MB_BUFFERSIZE];
+    void *m_backtrace_buffer[MAX_BACKTRACE_SIZE];
+    void *m_backtrace_buffer_seen[MAX_BACKTRACE_FUNCTIONS_SEEN];
+    int m_backtrace_buffer_nb_seen;
+    
     static void *mb_thread_func(void *arg);
     void mb_flush();
 
@@ -366,18 +372,8 @@ private:
  * Backtrace support
  */
 #ifdef DEBUG
-    #include <execinfo.h>
     #define debugPrintBacktrace( _SIZE_ )                       \
-       {                                                        \
-           int nptrs;                                           \
-           void *buffer[_SIZE_];                                \
-           nptrs = backtrace(buffer, _SIZE_);                   \
-           DebugModuleManager::instance()->backtraceLock(); \
-           fprintf(stderr, "BACKTRACE START (%d/%d)\n", nptrs, _SIZE_); \
-           backtrace_symbols_fd(buffer, nptrs, STDERR_FILENO);  \
-           fprintf(stderr, "BACKTRACE END\n");                  \
-           DebugModuleManager::instance()->backtraceUnlock(); \
-       }
+        DebugModuleManager::instance()->printBacktrace( _SIZE_ );
 #else
     #define debugPrintBacktrace( _SIZE_ )
 #endif
