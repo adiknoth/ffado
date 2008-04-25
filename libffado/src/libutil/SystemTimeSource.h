@@ -25,37 +25,30 @@
 #define __FFADO_SYSTEMTIMESOURCE__
 
 #include "../debugmodule/debugmodule.h"
-#include "TimeSource.h"
+
+typedef uint64_t ffado_microsecs_t;
 
 namespace Util {
 
 class SystemTimeSource
-    : public Util::TimeSource
 {
+private: // don't allow objects to be created
+    SystemTimeSource() {};
+    virtual ~SystemTimeSource() {};
 
 public:
-
-    SystemTimeSource();
-    virtual ~SystemTimeSource();
-
-    // implement the TimeSource interface
-    ffado_microsecs_t getCurrentTime();
-    ffado_microsecs_t getCurrentTimeAsUsecs();
-    inline ffado_microsecs_t unWrapTime(ffado_microsecs_t t) {return t;};
-    inline ffado_microsecs_t wrapTime(ffado_microsecs_t t) {return t;};
+    static ffado_microsecs_t getCurrentTime();
+    static ffado_microsecs_t getCurrentTimeAsUsecs();
 
     static void SleepUsecRelative(ffado_microsecs_t usecs);
     static void SleepUsecAbsolute(ffado_microsecs_t wake_time);
     
     /**
-     * @brief sleeps for a random amound to usecs
+     * @brief sleeps for a random amount of usecs
      * @param max_usec max usecs
      * @return number of usecs slept
      */
     static ffado_microsecs_t SleepUsecRandom(ffado_microsecs_t max_usec);
-protected:
-    DECLARE_DEBUG_MODULE;
-
 };
 
 } // end of namespace Util

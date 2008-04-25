@@ -41,7 +41,6 @@ testByteSwap(int nb_quadlets, int nb_tests) {
     quadlet_t *buffer_ref;
     int i=0;
     
-    Util::SystemTimeSource time;
     ffado_microsecs_t start;
     ffado_microsecs_t elapsed;
     
@@ -83,9 +82,9 @@ testByteSwap(int nb_quadlets, int nb_tests) {
             buffer_1[i]   |= tmp;
         }
 
-        start = time.getCurrentTimeAsUsecs();
+        start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         byteSwapToBus(buffer_1, nb_quadlets);
-        elapsed = time.getCurrentTimeAsUsecs() - start;
+        elapsed = Util::SystemTimeSource::getCurrentTimeAsUsecs() - start;
         printMessage( " took %lluusec...\n", elapsed);
         
     }
@@ -115,7 +114,6 @@ testInt24Label(int nb_quadlets, int nb_tests) {
     quadlet_t *buffer_ref;
     int i=0;
     
-    Util::SystemTimeSource time;
     ffado_microsecs_t start;
     ffado_microsecs_t elapsed;
     
@@ -152,9 +150,9 @@ testInt24Label(int nb_quadlets, int nb_tests) {
             buffer_1[i]   |= tmp;
         }
 
-        start = time.getCurrentTimeAsUsecs();
+        start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         convertFromInt24AndLabelAsMBLA(buffer_1, nb_quadlets);
-        elapsed = time.getCurrentTimeAsUsecs() - start;
+        elapsed = Util::SystemTimeSource::getCurrentTimeAsUsecs() - start;
         printMessage( " took %lluusec...\n", elapsed);
     }
 
@@ -185,7 +183,6 @@ testFloatLabel(int nb_quadlets, int nb_tests) {
     float *buffer_float;
     int i=0;
     
-    Util::SystemTimeSource time;
     ffado_microsecs_t start;
     ffado_microsecs_t elapsed;
     
@@ -235,9 +232,9 @@ testFloatLabel(int nb_quadlets, int nb_tests) {
         buffer_1[i] = *v;
     }
 
-        start = time.getCurrentTimeAsUsecs();
+        start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         convertFromFloatAndLabelAsMBLA(buffer_1, nb_quadlets);
-        elapsed = time.getCurrentTimeAsUsecs() - start;
+        elapsed = Util::SystemTimeSource::getCurrentTimeAsUsecs() - start;
         printMessage( " took %lluusec...\n", elapsed);
     }
 

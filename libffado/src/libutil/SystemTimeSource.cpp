@@ -34,16 +34,6 @@
 
 namespace Util {
 
-IMPL_DEBUG_MODULE( SystemTimeSource, SystemTimeSource, DEBUG_LEVEL_NORMAL );
-
-SystemTimeSource::SystemTimeSource()
-{
-}
-
-SystemTimeSource::~SystemTimeSource()
-{
-}
-
 void
 SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
 {

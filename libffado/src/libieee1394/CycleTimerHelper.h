@@ -115,7 +115,6 @@ private:
 #endif
 
     Ieee1394Service &m_Parent;
-    Util::SystemTimeSource m_TimeSource;
     // parameters
     uint32_t m_ticks_per_update;
     uint32_t m_usecs_per_update;

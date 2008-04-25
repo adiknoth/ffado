@@ -55,7 +55,6 @@ Ieee1394Service::Ieee1394Service()
     , m_pIsoManager( new IsoHandlerManager( *this ) )
     , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC ) )
     , m_have_new_ctr_read ( false )
-    , m_pTimeSource ( new Util::SystemTimeSource() )
     , m_pWatchdog ( new Util::Watchdog() )
 {
     pthread_mutex_init( &m_mutex, 0 );
@@ -82,7 +81,6 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
                                            rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
                                            prio + IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE ) )
     , m_have_new_ctr_read ( false )
-    , m_pTimeSource ( new Util::SystemTimeSource() )
     , m_pWatchdog ( new Util::Watchdog() )
 {
     pthread_mutex_init( &m_mutex, 0 );
@@ -115,7 +113,6 @@ Ieee1394Service::~Ieee1394Service()
         }
     }
 
-    delete m_pTimeSource;
     delete m_pWatchdog;
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
@@ -390,12 +387,7 @@ Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
 
 uint64_t
 Ieee1394Service::getCurrentTimeAsUsecs() {
-    if(m_pTimeSource) {
-        return m_pTimeSource->getCurrentTimeAsUsecs();
-    } else {
-        debugError("No timesource!\n");
-        return 0;
-    }
+    return Util::SystemTimeSource::getCurrentTimeAsUsecs();
 }
 
 bool

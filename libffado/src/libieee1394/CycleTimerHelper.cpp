@@ -186,7 +186,7 @@ CycleTimerHelper::initValues()
 
 #if IEEE1394SERVICE_USE_CYCLETIMER_DLL
     debugOutput( DEBUG_LEVEL_VERBOSE, "requesting DLL re-init...\n" );
-    m_TimeSource.SleepUsecRelative(1000); // some time to settle
+    Util::SystemTimeSource::SleepUsecRelative(1000); // some time to settle
     m_high_bw_updates = UPDATES_WITH_HIGH_BANDWIDTH;
     if(!initDLL()) {
         debugError("(%p) Could not init DLL\n", this);
@@ -342,12 +342,12 @@ CycleTimerHelper::Execute()
     if (!m_first_run) {
         // wait for the next update period
         #if DEBUG_EXTREME_ENABLE
-        ffado_microsecs_t now = m_TimeSource.getCurrentTimeAsUsecs();
+        ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         int sleep_time = m_sleep_until - now;
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
                     this, m_sleep_until, m_next_time_usecs, now, sleep_time);
         #endif
-        m_TimeSource.SleepUsecAbsolute(m_sleep_until);
+        Util::SystemTimeSource::SleepUsecAbsolute(m_sleep_until);
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
     }
 
@@ -388,7 +388,7 @@ CycleTimerHelper::Execute()
     pthread_mutex_lock(&mb_update_lock);
 
     // // simulate a random scheduling delay between (0-10ms)
-    // ffado_microsecs_t tmp = m_TimeSource.SleepUsecRandom(10000);
+    // ffado_microsecs_t tmp = Util::SystemTimeSource::SleepUsecRandom(10000);
     // debugOutput( DEBUG_LEVEL_VERBOSE, " (%p) random sleep of %llu usecs...\n", this, tmp);
 
     if(m_unhandled_busreset) {

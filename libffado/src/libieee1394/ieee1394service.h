@@ -43,7 +43,6 @@ class IsoHandlerManager;
 class CycleTimerHelper;
 
 namespace Util {
-    class TimeSource;
     class Watchdog;
 }
 
@@ -329,9 +328,6 @@ private:
     IsoHandlerManager*      m_pIsoManager;
     CycleTimerHelper*       m_pCTRHelper;
     bool                    m_have_new_ctr_read;
-
-    // the time source
-    Util::TimeSource*   m_pTimeSource;
 
     // the RT watchdog
     Util::Watchdog*     m_pWatchdog;
