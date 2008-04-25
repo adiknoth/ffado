@@ -131,10 +131,12 @@ public:
 
     virtual const char* getDescriptorName() const
         {return "AVCDescriptor";};
-    
+
     bool load();
     bool reload();
-    
+
+    virtual void show();
+
 protected:
     void printBufferBytes(unsigned int level, size_t length, byte_t* buffer) const;
 
@@ -182,6 +184,9 @@ public:
     uint16_t    m_primary_field_length;
     
     uint16_t    m_supported_info_block_type;
+
+    virtual void show();
+
 private:
 
 };

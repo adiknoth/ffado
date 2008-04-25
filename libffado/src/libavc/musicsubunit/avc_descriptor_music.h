@@ -109,7 +109,7 @@ public:
     virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual bool clear();
-    
+
     std::string getName();
 
     AVCMusicClusterInfoBlock( );
@@ -124,6 +124,9 @@ public:
 
     AVCRawTextInfoBlock m_RawTextInfoBlock;
     AVCNameInfoBlock    m_NameInfoBlock;
+
+    virtual void show();
+
 protected:
 
 private:
@@ -207,7 +210,9 @@ public:
     
     AVCRawTextInfoBlock m_RawTextInfoBlock;
     AVCNameInfoBlock    m_NameInfoBlock;
-    
+
+    virtual void show();
+
 protected:
 
 private:

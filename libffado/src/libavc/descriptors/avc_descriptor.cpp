@@ -142,6 +142,7 @@ AVCDescriptor::~AVCDescriptor()
 {
     if (m_data != NULL) free(m_data);
 }
+
 bool
 AVCDescriptor::reload()
 {
@@ -359,6 +360,12 @@ AVCDescriptor::getVerboseLevel()
 }
 
 void
+AVCDescriptor::show()
+{
+
+}
+
+void
 AVCDescriptor::printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const
 {
 
@@ -457,6 +464,12 @@ int
 AVCInfoBlock::getVerboseLevel()
 {
     return getDebugLevel();
+}
+
+void
+AVCInfoBlock::show()
+{
+
 }
 
 // ---------
