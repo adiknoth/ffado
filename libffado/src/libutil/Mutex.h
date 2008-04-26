@@ -42,6 +42,7 @@ public:
     virtual void Unlock() = 0;
 
     virtual void show() = 0;
+    virtual void setVerboseLevel(int) = 0;
 };
 
 

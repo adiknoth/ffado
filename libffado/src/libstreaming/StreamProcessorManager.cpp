@@ -49,6 +49,7 @@ StreamProcessorManager::StreamProcessorManager()
     , m_xruns(0)
     , m_shutdown_needed(false)
     , m_nbperiods(0)
+    , m_WaitLock( new Util::PosixMutex )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     sem_init(&m_activity_semaphore, 0, 0);
@@ -66,6 +67,7 @@ StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int
     , m_xruns(0)
     , m_shutdown_needed(false)
     , m_nbperiods(0)
+    , m_WaitLock( new Util::PosixMutex )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     sem_init(&m_activity_semaphore, 0, 0);
@@ -74,6 +76,7 @@ StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int
 StreamProcessorManager::~StreamProcessorManager() {
     sem_post(&m_activity_semaphore);
     sem_destroy(&m_activity_semaphore);
+    delete m_WaitLock;
 }
 
 void
@@ -87,7 +90,7 @@ StreamProcessorManager::handleBusReset()
     // note that all receive streams are gone once a device is unplugged
 
     // synchronize with the wait lock
-    m_WaitLock.Lock();
+    Util::MutexLockHelper lock(*m_WaitLock);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) got wait lock...\n", this);
     // cause all SP's to bail out
@@ -103,8 +106,6 @@ StreamProcessorManager::handleBusReset()
     {
         (*it)->handleBusReset();
     }
-
-    m_WaitLock.Unlock();
 }
 
 void
@@ -873,7 +874,7 @@ bool StreamProcessorManager::waitForPeriod() {
 
     // grab the wait lock
     // this ensures that bus reset handling doesn't interfere
-    m_WaitLock.Lock();
+    Util::MutexLockHelper lock(*m_WaitLock);
 
     while(period_not_ready) {
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE, 
@@ -1022,7 +1023,6 @@ bool StreamProcessorManager::waitForPeriod() {
 
     m_nbperiods++;
 
-    m_WaitLock.Unlock();
     // now we can signal the client that we are (should be) ready
     return !xrun_occurred;
 }
@@ -1199,7 +1199,7 @@ void StreamProcessorManager::dumpInfo() {
 
 void StreamProcessorManager::setVerboseLevel(int l) {
     setDebugLevel(l);
-    m_WaitLock.setVerboseLevel(l);
+    if(m_WaitLock) m_WaitLock->setVerboseLevel(l);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
