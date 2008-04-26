@@ -38,16 +38,32 @@
 /* Define indicatin availability of lrintf() */
 #define HAVE_LRINTF $HAVE_LRINTF
 
-#define DEBUG_IMPLEMENT_BACKLOG     0
+// use a RT-safe message buffer for debug output
+// useful to disable this when the code aborts/segfaults to
+// not lose debug output. should be enabled though.
+#define DEBUG_USE_MESSAGE_BUFFER             1
+// max message length in the debug messagebuffer
+#define DEBUG_MAX_MESSAGE_LENGTH           512
+// number of messages in the debug messagebuffer (power of two)
+#define DEBUG_MB_BUFFERS                  1024
+
+// support a debug backlog
+// note that this does not influence non-debug builds
+#define DEBUG_BACKLOG_SUPPORT                0
+// number of messages in the backlog buffer (power of two)
+#define DEBUG_BACKLOG_MB_BUFFERS            64
+
+// support backtrace debugging
+// note that this does not influence non-debug builds
+#define DEBUG_BACKTRACE_SUPPORT              0
+// max length of backtrace
+#define DEBUG_MAX_BACKTRACE_LENGTH           8
+// max amount of function pointers to keep track of
+#define DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN  64
 
 // make this zero to disable the most extreme
 // debug logging in the critical sections
 #define DEBUG_EXTREME_ENABLE        0
-
-// use a RT-safe message buffer for debug output
-// useful to disable this when the code aborts/segfaults to
-// not lose debug output. should be enabled though.
-#define DEBUG_USE_MESSAGE_BUFFER    1
 
 // watchdog
 #define WATCHDOG_DEFAULT_CHECK_INTERVAL_USECS   (1000*1000*4)

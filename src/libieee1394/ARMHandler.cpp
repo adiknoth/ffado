@@ -23,7 +23,7 @@
 
 #include "ARMHandler.h"
 
-IMPL_DEBUG_MODULE( ARMHandler, ARMHandler, DEBUG_LEVEL_VERBOSE);
+IMPL_DEBUG_MODULE( ARMHandler, ARMHandler, DEBUG_LEVEL_NORMAL);
 /**
  * @param start          identifies addressrange
  * @param length         identifies addressrange length (in bytes)
@@ -67,19 +67,19 @@ ARMHandler::~ARMHandler() {
 }
 
 bool ARMHandler::handleRead(struct raw1394_arm_request *req) {
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Read\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Read\n");
     printRequest(req);
     return true;
 }
 
 bool ARMHandler::handleWrite(struct raw1394_arm_request *req) {
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Write\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Write\n");
     printRequest(req);
     return true;
 }
 
 bool ARMHandler::handleLock(struct raw1394_arm_request *req) {
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Lock\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Lock\n");
     printRequest(req);
     return true;
 }
@@ -108,14 +108,14 @@ bool ARMHandler::handleLock(struct raw1394_arm_request *req) {
 // } *raw1394_arm_request_response_t;
 
 void ARMHandler::printRequest(struct raw1394_arm_request *arm_req) {
-    debugOutput(DEBUG_LEVEL_VERBOSE," request info: \n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  from node 0x%04X to node 0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, " request info: \n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  from node 0x%04X to node 0x%04X\n",
         arm_req->source_nodeid, arm_req->destination_nodeid);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  tlabel: 0x%02X, tcode: 0x%02X, extended tcode: 0x%02X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  tlabel: 0x%02X, tcode: 0x%02X, extended tcode: 0x%02X\n",
         arm_req->tlabel, arm_req->tcode, arm_req->extended_transaction_code);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  generation: %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  generation: %lu\n",
         arm_req->generation);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  buffer length: %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  buffer length: %lu\n",
         arm_req->buffer_length);
     printBufferBytes(DEBUG_LEVEL_VERBOSE, arm_req->buffer_length, arm_req->buffer);
 }
