@@ -53,6 +53,7 @@ Ieee1394Service::Ieee1394Service()
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
+    , m_RHThread_lock( new Util::PosixMutex() )
     , m_threadRunning( false )
     , m_realtime ( false )
     , m_base_priority ( 0 )
@@ -61,8 +62,6 @@ Ieee1394Service::Ieee1394Service()
     , m_have_new_ctr_read ( false )
     , m_pWatchdog ( new Util::Watchdog() )
 {
-    pthread_mutex_init( &m_mutex, 0 );
-
     for (unsigned int i=0; i<64; i++) {
         m_channels[i].channel=-1;
         m_channels[i].bandwidth=-1;
@@ -80,6 +79,7 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
+    , m_RHThread_lock( new Util::PosixMutex() )
     , m_threadRunning( false )
     , m_realtime ( rt )
     , m_base_priority ( prio )
@@ -90,8 +90,6 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_have_new_ctr_read ( false )
     , m_pWatchdog ( new Util::Watchdog() )
 {
-    pthread_mutex_init( &m_mutex, 0 );
-
     for (unsigned int i=0; i<64; i++) {
         m_channels[i].channel=-1;
         m_channels[i].bandwidth=-1;
@@ -129,6 +127,7 @@ Ieee1394Service::~Ieee1394Service()
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
     }
+    delete m_RHThread_lock;
     if ( m_util_handle ) {
         raw1394_destroy_handle( m_util_handle );
     }
@@ -424,11 +423,9 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
         debugError("raw1394_read failed: node 0x%hX, addr = 0x%016llX, length = %u\n",
               nodeId, addr, length);
         #endif
-
         return false;
     }
 }
-
 
 bool
 Ieee1394Service::read_quadlet( fb_nodeid_t nodeId,
@@ -447,7 +444,6 @@ Ieee1394Service::read_octlet( fb_nodeid_t nodeId,
                  reinterpret_cast<fb_quadlet_t*>( buffer ) );
 }
 
-
 bool
 Ieee1394Service::write( fb_nodeid_t nodeId,
                         fb_nodeaddr_t addr,
@@ -465,7 +461,6 @@ Ieee1394Service::write( fb_nodeid_t nodeId,
 
     return raw1394_write( m_handle, nodeId, addr, length*4, data ) == 0;
 }
-
 
 bool
 Ieee1394Service::write_quadlet( fb_nodeid_t nodeId,
@@ -663,10 +658,10 @@ bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
         h, h->getStart(), h->getLength());
 
     int err=raw1394_arm_register(m_resetHandle, h->getStart(),
-                         h->getLength(), h->getBuffer(), (octlet_t)h,
-                         h->getAccessRights(),
-                         h->getNotificationOptions(),
-                         h->getClientTransactions());
+                                 h->getLength(), h->getBuffer(), (octlet_t)h,
+                                 h->getAccessRights(),
+                                 h->getNotificationOptions(),
+                                 h->getClientTransactions());
     if (err) {
         debugError("Failed to register ARM handler for 0x%016llX\n", h->getStart());
         debugError(" Error: %s\n", strerror(errno));
@@ -807,9 +802,9 @@ Ieee1394Service::startRHThread()
     if ( m_threadRunning ) {
         return true;
     }
-    pthread_mutex_lock( &m_mutex );
+    m_RHThread_lock->Lock();
     i = pthread_create( &m_thread, 0, rHThread, this );
-    pthread_mutex_unlock( &m_mutex );
+    m_RHThread_lock->Unlock();
     if (i) {
         debugFatal("Could not start ieee1394 service thread\n");
         return false;
@@ -823,10 +818,10 @@ void
 Ieee1394Service::stopRHThread()
 {
     if ( m_threadRunning ) {
-        pthread_mutex_lock (&m_mutex);
+        m_RHThread_lock->Lock();
         pthread_cancel (m_thread);
         pthread_join (m_thread, 0);
-        pthread_mutex_unlock (&m_mutex);
+        m_RHThread_lock->Unlock();
         m_threadRunning = false;
     }
 }
