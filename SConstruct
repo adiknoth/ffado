@@ -190,7 +190,6 @@ if not env.GetOption('clean'):
 		'libraw1394' : '1.3.0',
 		'libavc1394' : '0.5.3',
 		'libiec61883' : '1.1.0',
-		'alsa' : '1.0.0',
 		'libxml++-2.6' : '2.13.0',
 		'dbus-1' : '1.0',
 		}
@@ -234,7 +233,6 @@ results above get rechecked.
 	#
 	# Optional checks follow:
 	#
-	env['ALSA_SEQ_OUTPUT'] = conf.CheckLib( 'asound', symbol='snd_seq_event_output_direct', autoadd=0 )
 
 if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 	env['PYUIC'] = True

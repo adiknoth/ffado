@@ -213,7 +213,6 @@ if not env.GetOption( "clean" ):
 	libenv.MergeFlags( env['LIBRAW1394_FLAGS'] )
 	libenv.MergeFlags( env['LIBAVC1394_FLAGS'] )
 	libenv.MergeFlags( env['LIBIEC61883_FLAGS'] )
-	libenv.MergeFlags( env['ALSA_FLAGS'] )
 	libenv.MergeFlags( env['LIBXML26_FLAGS'] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )

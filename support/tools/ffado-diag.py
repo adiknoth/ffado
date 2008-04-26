@@ -138,8 +138,41 @@ def check_1394oldstack_devnode_permissions():
     else:
         return False
 
+def run_command(cmd):
+    (exitstatus, outtext) = commands.getstatusoutput(cmd)
+    log.debug("%s outputs: %s" % (cmd, outtext))
+    return outtext
 
-# 
+# package versions
+def get_package_version(name):
+    cmd = "pkg-config --modversion %s" % name
+    return run_command(cmd)
+
+def get_package_flags(name):
+    cmd = "pkg-config --cflags --libs %s" % name
+    return run_command(cmd)
+
+def get_command_path(name):
+    cmd = "which %s" % name
+    return run_command(cmd)
+
+def get_version_first_line(cmd):
+    ver = run_command(cmd).split("\n")
+    if len(ver) == 0:
+        ver = ["None"]
+    return ver[0]
+
+
+def list_host_controllers():
+    cmd = "lspci | grep 1394"
+    controllers = run_command(cmd).split("\n")
+    log.debug("lspci | grep 1394: %s" % controllers)
+    for c in controllers:
+        tmp = c.split()
+        if len(tmp) > 0:
+            tmp
+            cmd = "lspci -vv -nn -s %s" % tmp[0]
+            print run_command(cmd)
 
 ## main program
 if __name__== '__main__':
@@ -187,19 +220,44 @@ if __name__== '__main__':
         print "  /dev/raw1394 permissions.. " + str(devnode_permissions)
     else:
         devnode_permissions = None
-    
+
     # check libraries
+    print " Prerequisites..."
+    print "   gcc................ %s" % get_version_first_line('gcc --version')
+    print "   g++................ %s" % get_version_first_line('g++ --version')
+    print "   PyQt............... %s" % get_version_first_line('pyuic -version')
+    print "   jackd.............. %s" % get_version_first_line('jackd --version')
+    print "     path............. %s" % get_command_path('jackd')
+    print "     flags............ %s" % get_package_flags("jack")
+    print "   libraw1394......... %s" % get_package_version("libraw1394")
+    print "     flags............ %s" % get_package_flags("libraw1394")
+    print "   libavc1394......... %s" % get_package_version("libavc1394")
+    print "     flags............ %s" % get_package_flags("libavc1394")
+    print "   libiec61883........ %s" % get_package_version("libiec61883")
+    print "     flags............ %s" % get_package_flags("libiec61883")
+    print "   libxml++-2.6....... %s" % get_package_version("libxml++-2.6")
+    print "     flags............ %s" % get_package_flags("libxml++-2.6")
+    print "   dbus-1............. %s" % get_package_version("dbus-1")
+    print "     flags............ %s" % get_package_flags("dbus-1")
+
     # libraw
     
     print " Hardware..."
     # check host controller
-    print "  todo..."
+    print "   Host controllers:"
+    list_host_controllers()
+    print "   CPU info:"
+    print run_command("cat /proc/cpuinfo")
 
     print " Configuration..."
     # check RT settings
     
     # check IRQ settings 
-    print "  todo..."
+    print "  IRQ information"
+    info = IRQInfo()
+
+    info.load()
+    print str(info)
 
     print ""
     print "=== REPORT ==="
