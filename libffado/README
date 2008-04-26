@@ -42,6 +42,7 @@ The devices officially supported are:
 * Focusrite Saffire PRO10
 * Focusrite Saffire PRO26
 * ECHO AudioFire2
+* ECHO AudioFire4
 * Mackie Onyx Mixer FireWire expansion
 
 The 'officially supported' label is only given to devices that fullfil the
@@ -91,7 +92,6 @@ version is provided which is a 'known good' version.  The first few
 libraries it seems it is not necessary that the version must
 match. The chances that it works also with an older versions are good:
 
-alsa        (>= 1.0.0)
 libxml++2   (>= 2.13.0)
 
 These libraries here should be at least the version listed:
@@ -103,7 +103,7 @@ dbus-1      (>= 1.0),    http://dbus.freedesktop.org
 
 Currently only the jackd audio server is supported.
 
-jackd (>= 0.107.6), http://jackaudio.org
+jackd (>= 0.109.12), http://jackaudio.org
 
 Optionally, but recommended is that you install qjackctl:
 
@@ -149,6 +149,8 @@ NOTE: In order to build jackd with ffado support, you have
 to install libffado before you build jackd. The backend to use in jackd is
 firewire.
 
+NOTE: the beta versions are distributed with debugging enabled by default.
+
 DISTRIBUTION PACKAGERS NOTE: Please do not enable support for devices
 if it is not on by default. If device support for a specific device
 is not turned on by default by the developers, it means that it is not
@@ -186,113 +188,92 @@ For the other aspects of jackd usage, consult the jackd documentation.
 
 Here is a sample session (without realtime support enabled):
 
-[wagi@halo ~]$ jackd -d firewire
-jackd 0.102.9
-Copyright 2001-2005 Paul Davis and others.
-jackd comes with ABSOLUTELY NO WARRANTY
-This is free software, and you are welcome to redistribute it
-under certain conditions; see the file COPYING for details
-
-JACK compiled with System V SHM support.
-loading driver ..
-Freebob using Firewire port 0, node -1
-libiec61883 warning: Established connection on channel 0.
-You may need to manually set the channel on the receiving node.
-libiec61883 warning: Established connection on channel 1.
-You may need to manually set the channel on the transmitting node.
+    $ jackd -d firewire
+    no message buffer overruns
+    jackd 0.111.0
+    Copyright 2001-2005 Paul Davis and others.
+    jackd comes with ABSOLUTELY NO WARRANTY
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; see the file COPYING for details
+    
+    JACK compiled with System V SHM support.
+    loading driver ..
+    3106528665:  (ffado.cpp)[  99] ffado_streaming_init: libffado 1.999.20 built Apr 26 2008 20:26:32
+    libiec61883 warning: Established connection on channel 0.
+    You may need to manually set the channel on the receiving node.
+    libiec61883 warning: Established connection on channel 1.
+    You may need to manually set the channel on the transmitting node.
 
 (Note: you can safely ignore the libiec61883 warnings, they are normal.)
+
+An important remark is that for good performance, one should always run jack
+with the -R flag to enable realtime scheduling for critical threads:
+    $ jackd -R -d firewire
 
 In case of problems
 -------------------
 
-Under the tests directory there is a test program. You should first
-try to run this.
+First of all, check whether your problem is in fact a problem, and
+whether it is a FFADO problem. The magic tool for this is google.
 
-If you don't have installed libffado then you can adapt your
-LD_LIBRARY_PATH environment variable to
+User support is a rather annoying occupation, especially since it sucks
+time from developers that are not paid for developing, let alone for doing
+user support. Please make sure that you have checked the following places:
+    http://www.ffado.org/
+    http://subversion.ffado.org/
+    http://www.google.com/
+      (the terms "ffado-devel" "ffado-user" or "freebob-user" work great)
+Some might consider this a bit arrogant or "newbie-unfriendly", but personally
+I (Pieter Palmers) consider this a matter of politeness towards the developers.
 
-$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../src/.libs
+If you have tried to find a solution to your problem, but you couldn't find
+one or are confused, don't hesitate to ask for help. The preferred way is by
+signing up to the mailing list as described on http://www.ffado.org/?q=contact.
 
-Then you can try running the program without having to install it.
+Writing a bug report
+--------------------
 
-With the release version you see something like this:
+Note that the more effort you put in your bug report, the more effort we
+will put into helping you.
 
-wagi@cruxam:~/src/libffado/tests$ ./test-ffado discover
-verbose level = 0
-Using ffado library version: libffado 0.9.0
+Make sure you have compiled a DEBUG=yes version of
+libffado. If not there is no way we can trace the problem.
 
-  port = 2, devices_on_bus = 1
-  get info for device = 0, node = 1
-Direction:              0 (capture)
+When reporting a problem, please run jackd with the --verbose option,
+and add the -v6 option to the firewire backend:
+    $ jackd --verbose [...] -d firewire -v6 [...]
 
-Connection Info
-===============
+    ( [...] = other options )
 
-Number of connections:  1
+This will generate an increadible amount of debug output that should
+contain what we need to track down the problem. If you have troubles
+saving the output, try redirecting it to a file:
 
-  Connection  0
-  -------------
-    [ 0] Id:         0
-    [ 0] Port:       2
-    [ 0] Node:       1
-    [ 0] Plug:       0
-    [ 0] Dimension:  7
-    [ 0] Samplerate: 44100
-    [ 0] IsoChannel: -1
-    [ 0] IsMaster:   0
-    [ 0] Number of stream infos: 8
+    $ jackd --verbose -d firewire -v6 2> ffado-jack.log
 
-    StreamId  Position Location Format Type DPort Name
-    --------------------------------------------------
-    [ 0]:[ 0] 0x01     0x01     0x06   0x02 0x00  MicIn 1+2 left
-    [ 0]:[ 1] 0x04     0x02     0x06   0x02 0x00  MicIn 1+2 right
-    [ 0]:[ 2] 0x02     0x01     0x06   0x03 0x00  LineIn 1+2 left
-    [ 0]:[ 3] 0x05     0x02     0x06   0x03 0x00  LineIn 1+2 right
-    [ 0]:[ 4] 0x00     0x01     0x06   0x04 0x00  SpdifIn 1 left
-    [ 0]:[ 5] 0x03     0x02     0x06   0x04 0x00  SpdifIn 1 right
-    [ 0]:[ 6] 0x06     0x01     0x0d   0x0a 0x00  MidiIn2
-    [ 0]:[ 7] 0x06     0x02     0x0d   0x0a 0x00  MidiIn2
+this will create a ffado.log file containing the output. Use CTRL-C
+to exit jack if necessary.
 
+The distribution contains a tool to gather some information about your
+system. you can run it as follows:
 
-Direction:              1 (playback)
+    $ cd support/tools
+    $ python ffado-diag.py > ffado-diag.log
 
-Connection Info
-===============
+It will check your system for basic problems and gather some information
+regarding your hardware configuration. This will allow us to diagnose
+your problem faster.
 
-Number of connections:  1
+Once the logs have been created you can create a support ticket at
+http://subversion.ffado.org/newticket
 
-  Connection  0
-  -------------
-    [ 0] Id:         0
-    [ 0] Port:       2
-    [ 0] Node:       1
-    [ 0] Plug:       0
-    [ 0] Dimension:  11
-    [ 0] Samplerate: 44100
-    [ 0] IsoChannel: -1
-    [ 0] IsMaster:   0
-    [ 0] Number of stream infos: 12
+Be sure to include the following information:
+* the log file(s) (zipped/tar.gz'ed and attached)
+* the device you're trying to use
+* a description of what went wrong and how to reproduce it. You
+  preferrably try to figure out a sequence of steps that can reliably
+  reproduce the issue on your system. A one-time failure is very difficult
+  to diagnose and/or fix.
+* the distribution and its version
 
-    StreamId  Position Location Format Type DPort Name
-    --------------------------------------------------
-    [ 0]:[ 0] 0x01     0x01     0x06   0x03 0x00  MultiChannel 7.1 Front left
-    [ 0]:[ 1] 0x06     0x02     0x06   0x03 0x00  MultiChannel 7.1 Front right
-    [ 0]:[ 2] 0x02     0x03     0x06   0x03 0x00  MultiChannel 7.1 Center
-    [ 0]:[ 3] 0x07     0x04     0x06   0x03 0x00  MultiChannel 7.1 Subwoofer
-    [ 0]:[ 4] 0x03     0x05     0x06   0x03 0x00  MultiChannel 7.1 Rear left
-    [ 0]:[ 5] 0x08     0x06     0x06   0x03 0x00  MultiChannel 7.1 Rear right
-    [ 0]:[ 6] 0x04     0x07     0x06   0x03 0x00  MultiChannel 7.1 Surround left
-    [ 0]:[ 7] 0x09     0x08     0x06   0x03 0x00  MultiChannel 7.1 Surround right
-    [ 0]:[ 8] 0x00     0x01     0x06   0x04 0x00  SpdifOut 1 left
-    [ 0]:[ 9] 0x05     0x02     0x06   0x04 0x00  SpdifOut 1 right
-    [ 0]:[10] 0x0a     0x01     0x0d   0x0a 0x00  MidiOut2
-    [ 0]:[11] 0x0a     0x02     0x0d   0x0a 0x00  MidiOut2
-
-
-If you don't get this, check if you have multiple host controllers, and 
-use the -p parameter to specify them. If you get any error messages, the 
-best way to help us figure out what the problem might be is to build the 
-debug version (scons ENABLE_DEBUG=1). You can then rerun the test
-application (with -v5) and send us its output.
 
