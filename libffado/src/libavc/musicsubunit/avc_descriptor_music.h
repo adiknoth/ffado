@@ -270,7 +270,8 @@ public:
         
     AVCMusicSubunitPlugInfoBlock *getSubunitPlugInfoBlock(Plug::EPlugDirection, plug_id_t);
     AVCMusicPlugInfoBlock *getMusicPlugInfoBlock(plug_id_t);
-    
+    unsigned int getNbMusicPlugs();
+
 private:
     // the child info blocks
     AVCMusicGeneralStatusInfoBlock m_general_status_infoblock;

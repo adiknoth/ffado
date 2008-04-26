@@ -48,6 +48,8 @@ class SubunitMusic: public Subunit {
 
     virtual bool loadDescriptors();
     
+    virtual void showMusicPlugs();
+    
     virtual void setVerboseLevel(int l);
     virtual const char* getName();
 protected:

@@ -824,6 +824,8 @@ void
 Unit::show()
 {
     m_pPlugManager->showPlugs();
+    SubunitMusic* s=getMusicSubunit(0);
+    if(s) s->showMusicPlugs();
 }
 
 void

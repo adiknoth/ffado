@@ -768,4 +768,9 @@ AVCMusicStatusDescriptor::getMusicPlugInfoBlock(plug_id_t id) {
     return m_routing_status_infoblock.getMusicPlugInfoBlock(id);
 }
 
+unsigned int
+AVCMusicStatusDescriptor::getNbMusicPlugs() {
+    return m_routing_status_infoblock.m_nb_music_plugs;
+}
+
 }
