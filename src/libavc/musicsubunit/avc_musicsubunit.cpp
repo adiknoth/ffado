@@ -148,61 +148,59 @@ SubunitMusic::initPlugFromDescriptor( Plug& plug )
             struct AVCMusicClusterInfoBlock::sSignalInfo s=(*sig_it);
             struct Plug::ChannelInfo sinfo;
 
-            sinfo.m_streamPosition=s.stream_position;
-            sinfo.m_location=s.stream_location;
+            sinfo.m_streamPosition = s.stream_position;
+            sinfo.m_location = s.stream_location;
 
-            AVCMusicPlugInfoBlock *mplug=m_status_descriptor->getMusicPlugInfoBlock(s.music_plug_id);
+            AVCMusicPlugInfoBlock *mplug = m_status_descriptor->getMusicPlugInfoBlock(s.music_plug_id);
 
             if (mplug==NULL) {
                 debugWarning("No music plug found for this signal\n");
-                sinfo.m_name="unknown";
+                sinfo.m_name = "unknown";
             } else {
-                sinfo.m_name=mplug->getName();
-            }
+                sinfo.m_name = mplug->getName();
 
-            if (plug.getDirection() == Plug::eAPD_Input) {
-                // it's an input plug to the subunit
-                // so we have to check the source field of the music plug
-                if(s.stream_position != mplug->m_source_stream_position) {
-                    debugWarning("s.stream_position (= 0x%02X) != mplug->m_source_stream_position (= 0x%02X)\n",
-                        s.stream_position, mplug->m_source_stream_position);
-                    // use the one from the music plug
-                    sinfo.m_streamPosition= mplug->m_source_stream_position;
+                #if AVC_STREAMCONFIG_USE_MUSICPLUG
+                if (plug.getDirection() == Plug::eAPD_Input) {
+                    // it's an input plug to the subunit
+                    // so we have to check the source field of the music plug
+                    if(s.stream_position != mplug->m_source_stream_position) {
+                        debugWarning("s.stream_position (= 0x%02X) != mplug->m_source_stream_position (= 0x%02X)\n",
+                            s.stream_position, mplug->m_source_stream_position);
+                        // use the one from the music plug
+                        sinfo.m_streamPosition= mplug->m_source_stream_position;
+                    }
+                    if(s.stream_location != mplug->m_source_stream_location) {
+                        debugWarning("s.stream_location (= 0x%02X) != mplug->m_source_stream_location (= 0x%02X)\n",
+                            s.stream_location, mplug->m_source_stream_location);
+                        // use the one from the music plug
+                        sinfo.m_location=mplug->m_source_stream_location;
+                    }
+                } else if (plug.getDirection() == Plug::eAPD_Output) {
+                    // it's an output plug from the subunit
+                    // so we have to check the destination field of the music plug
+                    if(s.stream_position != mplug->m_dest_stream_position) {
+                        debugWarning("s.stream_position (= 0x%02X) != mplug->m_dest_stream_position (= 0x%02X)\n",
+                            s.stream_position, mplug->m_dest_stream_position);
+    
+                        // use the one from the music plug
+                        sinfo.m_streamPosition=mplug->m_dest_stream_position;
+                    }
+                    if(s.stream_location != mplug->m_dest_stream_location) {
+                        debugWarning("s.stream_location (= 0x%02X) != mplug->m_dest_stream_location (= 0x%02X)\n",
+                            s.stream_location, mplug->m_dest_stream_location);
+                        // use the one from the music plug
+                        //sinfo.m_location=mplug->m_dest_stream_location;
+                        // HACK: recent ECHO firmware only fills the AVCMusicClusterInfoBlock correctly
+                        sinfo.m_location=s.stream_location;
+                    }
+                } else {
+                    debugWarning("Invalid plug direction.\n");
                 }
-                if(s.stream_location != mplug->m_source_stream_location) {
-                    debugWarning("s.stream_location (= 0x%02X) != mplug->m_source_stream_location (= 0x%02X)\n",
-                        s.stream_location, mplug->m_source_stream_location);
-                    // use the one from the music plug
-                    sinfo.m_location=mplug->m_source_stream_location;
-                }
-            } else if (plug.getDirection() == Plug::eAPD_Output) {
-                // it's an output plug from the subunit
-                // so we have to check the destination field of the music plug
-                if(s.stream_position != mplug->m_dest_stream_position) {
-                    debugWarning("s.stream_position (= 0x%02X) != mplug->m_dest_stream_position (= 0x%02X)\n",
-                        s.stream_position, mplug->m_dest_stream_position);
-                    #if AVC_STREAMPOSITION_USE_MUSICPLUG
-                    // use the one from the music plug
-                    sinfo.m_streamPosition=mplug->m_dest_stream_position;
-                    #else
-                    // HACK: recent ECHO firmware only fills the AVCMusicClusterInfoBlock correctly
-                    sinfo.m_streamPosition=s.stream_position;
-                    #endif
-                }
-                if(s.stream_location != mplug->m_dest_stream_location) {
-                    debugWarning("s.stream_location (= 0x%02X) != mplug->m_dest_stream_location (= 0x%02X)\n",
-                        s.stream_location, mplug->m_dest_stream_location);
-                    // use the one from the music plug
-                    //sinfo.m_location=mplug->m_dest_stream_location;
-                    // HACK: recent ECHO firmware only fills the AVCMusicClusterInfoBlock correctly
-                    sinfo.m_location=s.stream_location;
-                }
-            } else {
-                debugWarning("Invalid plug direction.\n");
+                #endif
             }
 
             debugOutput(DEBUG_LEVEL_VERBOSE, "Adding signal pos=%2d loc=%2d name=%s\n",
-                sinfo.m_streamPosition, sinfo.m_location, mplug->getName().c_str());
+                sinfo.m_streamPosition, sinfo.m_location, sinfo.m_name.c_str());
 
             cinfo.m_channelInfos.push_back(sinfo);
         }
@@ -229,7 +227,68 @@ SubunitMusic::loadDescriptors()
     return result;
 }
 
-void SubunitMusic::setVerboseLevel(int l)
+void
+SubunitMusic::showMusicPlugs()
+{
+    if(m_status_descriptor) {
+        unsigned int nbplugs = m_status_descriptor->getNbMusicPlugs();
+        printf( "digraph musicplugconnections {\n" );
+
+        for(unsigned int i=0;i<nbplugs;i++) {
+            AVCMusicPlugInfoBlock *mplug = m_status_descriptor->getMusicPlugInfoBlock(i);
+            if(mplug==NULL) {
+                debugError("NULL plug!\n");
+                return;
+            }
+            char plugstr[32];
+            snprintf(plugstr, 32, "MusicPlug %d", mplug->m_music_plug_id);
+
+            // the plug itself
+            printf( "\t\"%s\" [color=red,style=filled];\n",
+                    plugstr );
+
+            Plug * plug;
+            // the source connection (where it's signal originates)
+            plug = m_unit->getPlugManager().getPlug( eST_Music, 0,
+                                                     0xFF, 0xFF,
+                                                     Plug::eAPA_SubunitPlug,
+                                                     Plug::eAPD_Input,
+                                                     mplug->m_source_plug_id);
+            if(plug) {
+                printf( "\t\"(%d) %s\" -> \"%s\"\n",
+                        plug->getGlobalId(),
+                        plug->getName(),
+                        plugstr );
+            } else {
+                debugWarning("Destination plug not found\n");
+            }
+
+            // the destination connection (where it's signal goes)
+            plug = m_unit->getPlugManager().getPlug( eST_Music, 0,
+                                                     0xFF, 0xFF,
+                                                     Plug::eAPA_SubunitPlug,
+                                                     Plug::eAPD_Output,
+                                                     mplug->m_dest_plug_id);
+            if(plug) {
+                
+                printf( "\t\"%s\" -> \"(%d) %s\"\n",
+                        plugstr,
+                        plug->getGlobalId(),
+                        plug->getName() );
+            } else {
+                debugWarning("Source plug not found\n");
+            }
+    
+        }
+        
+        printf("}\n" );
+        printf( "Use \"dot -Tps FILENAME.dot -o FILENAME.ps\" "
+                "to generate graph\n");
+    }
+}
+
+void
+SubunitMusic::setVerboseLevel(int l)
 {
     Subunit::setVerboseLevel(l);
     if (m_status_descriptor != NULL) {
