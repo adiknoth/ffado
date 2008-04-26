@@ -35,6 +35,7 @@
 
 #include "libutil/SystemTimeSource.h"
 #include "libutil/Watchdog.h"
+#include "libutil/PosixMutex.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -47,7 +48,10 @@
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
-    : m_handle( 0 ), m_resetHandle( 0 ), m_util_handle( 0 )
+    : m_handle( 0 )
+    , m_handle_lock( new Util::PosixMutex() )
+    , m_resetHandle( 0 )
+    , m_util_handle( 0 )
     , m_port( -1 )
     , m_threadRunning( false )
     , m_realtime ( false )
@@ -71,7 +75,10 @@ Ieee1394Service::Ieee1394Service()
 }
 
 Ieee1394Service::Ieee1394Service(bool rt, int prio)
-    : m_handle( 0 ), m_resetHandle( 0 ), m_util_handle( 0 )
+    : m_handle( 0 )
+    , m_handle_lock( new Util::PosixMutex() )
+    , m_resetHandle( 0 )
+    , m_util_handle( 0 )
     , m_port( -1 )
     , m_threadRunning( false )
     , m_realtime ( rt )
@@ -117,6 +124,8 @@ Ieee1394Service::~Ieee1394Service()
     if ( m_handle ) {
         raw1394_destroy_handle( m_handle );
     }
+    delete m_handle_lock;
+
     if ( m_resetHandle ) {
         raw1394_destroy_handle( m_resetHandle );
     }
@@ -308,10 +317,12 @@ Ieee1394Service::setThreadParameters(bool rt, int priority) {
 int
 Ieee1394Service::getNodeCount()
 {
+    Util::MutexLockHelper lock(*m_handle_lock);
     return raw1394_get_nodecount( m_handle );
 }
 
 nodeid_t Ieee1394Service::getLocalNodeId() {
+    Util::MutexLockHelper lock(*m_handle_lock);
     return raw1394_get_local_id(m_handle) & 0x3F;
 }
 
@@ -396,6 +407,7 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
                        size_t length,
                        fb_quadlet_t* buffer )
 {
+    Util::MutexLockHelper lock(*m_handle_lock);
     using namespace std;
     if ( raw1394_read( m_handle, nodeId, addr, length*4, buffer ) == 0 ) {
 
@@ -442,6 +454,7 @@ Ieee1394Service::write( fb_nodeid_t nodeId,
                         size_t length,
                         fb_quadlet_t* data )
 {
+    Util::MutexLockHelper lock(*m_handle_lock);
     using namespace std;
 
     #ifdef DEBUG
@@ -476,11 +489,13 @@ Ieee1394Service::byteSwap_octlet(fb_octlet_t value) {
     #if __BYTE_ORDER == __BIG_ENDIAN
         return value;
     #elif __BYTE_ORDER == __LITTLE_ENDIAN
-        fb_octlet_t value_new;
-        fb_quadlet_t *in_ptr=reinterpret_cast<fb_quadlet_t *>(&value);
-        fb_quadlet_t *out_ptr=reinterpret_cast<fb_quadlet_t *>(&value_new);
-        *(out_ptr+1)=htonl(*(in_ptr));
-        *(out_ptr)=htonl(*(in_ptr+1));
+        fb_quadlet_t in_hi = (value >> 32) & 0xFFFFFFFF;
+        fb_quadlet_t in_lo = value & 0xFFFFFFFF;
+        in_hi = htonl(in_hi);
+        in_lo = htonl(in_lo);
+        fb_octlet_t value_new = in_lo;
+        value_new <<= 32;
+        value_new |= in_hi;
         return value_new;
     #else
         #error Unknown endiannes
@@ -505,15 +520,23 @@ Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE,"before = 0x%016llX\n", buffer);
     }
-
     #endif
 
     // do endiannes swapping
-    compare_value=byteSwap_octlet(compare_value);
-    swap_value=byteSwap_octlet(swap_value);
+    compare_value = byteSwap_octlet(compare_value);
+    swap_value    = byteSwap_octlet(swap_value);
 
-    int retval=raw1394_lock64(m_handle, nodeId, addr, RAW1394_EXTCODE_COMPARE_SWAP,
-                          swap_value, compare_value, result);
+    // do separate locking here (no MutexLockHelper) since 
+    // we use read_octlet in the DEBUG code in this function
+    m_handle_lock->Lock();
+    int retval=raw1394_lock64(m_handle, nodeId, addr,
+                              RAW1394_EXTCODE_COMPARE_SWAP,
+                              swap_value, compare_value, result);
+    m_handle_lock->Unlock();
+
+    if(retval) {
+        debugError("raw1394_lock64 failed: %s\n", strerror(errno));
+    }
 
     #ifdef DEBUG
     if(!read_octlet( nodeId, addr,&buffer )) {
@@ -523,7 +546,7 @@ Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
     }
     #endif
 
-    *result=byteSwap_octlet(*result);
+    *result = byteSwap_octlet(*result);
 
     return (retval == 0);
 }
@@ -534,6 +557,8 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    int len,
                                    unsigned int* resp_len )
 {
+    // FIXME: this requires transactionBlockClose to unlock
+    m_handle_lock->Lock();
     for (int i = 0; i < len; ++i) {
         buf[i] = ntohl( buf[i] );
     }
@@ -558,6 +583,7 @@ bool
 Ieee1394Service::transactionBlockClose()
 {
     avc1394_transaction_block_close( m_handle );
+    m_handle_lock->Unlock();
     return true;
 }
 
@@ -864,6 +890,7 @@ Ieee1394Service::remBusResetHandler( Util::Functor* functor )
 signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using generic method...\n" );
 
+    Util::MutexLockHelper lock(*m_handle_lock);
     struct ChannelInfo cinfo;
 
     int c = -1;
@@ -924,6 +951,7 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
     ) {
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using IEC61883 CMP...\n" );
+    Util::MutexLockHelper lock(*m_handle_lock);
 
     struct ChannelInfo cinfo;
 
@@ -978,6 +1006,7 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
  */
 bool Ieee1394Service::freeIsoChannel(signed int c) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Freeing ISO channel %d...\n", c );
+    Util::MutexLockHelper lock(*m_handle_lock);
 
     if (c < 0 || c > 63) {
         debugWarning("Invalid channel number: %d\n", c);
@@ -1081,6 +1110,7 @@ bool Ieee1394Service::unregisterIsoChannel(unsigned int c) {
  */
 signed int Ieee1394Service::getAvailableBandwidth() {
     quadlet_t buffer;
+    Util::MutexLockHelper lock(*m_handle_lock);
     signed int result = raw1394_read (m_handle, raw1394_get_irm_id (m_handle),
         CSR_REGISTER_BASE + CSR_BANDWIDTH_AVAILABLE,
         sizeof (quadlet_t), &buffer);

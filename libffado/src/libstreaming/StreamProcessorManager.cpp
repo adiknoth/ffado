@@ -872,6 +872,7 @@ bool StreamProcessorManager::waitForPeriod() {
     bool period_not_ready = true;
 
     // grab the wait lock
+    // this ensures that bus reset handling doesn't interfere
     m_WaitLock.Lock();
 
     while(period_not_ready) {
