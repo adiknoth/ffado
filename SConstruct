@@ -1,7 +1,7 @@
 #! /usr/bin/python
 #
 # Copyright (C) 2007-2008 Arnold Krille
-# Copyright (C) 2007 Pieter Palmers
+# Copyright (C) 2007-2008 Pieter Palmers
 # Copyright (C) 2008 Jonathan Woithe
 #
 # This file is part of FFADO
@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.18"
+FFADO_VERSION="1.999.20"
 
 import os
 import re
