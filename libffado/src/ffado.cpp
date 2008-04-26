@@ -96,7 +96,7 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t device_info, ffado_opt
 
     struct _ffado_device *dev = new struct _ffado_device;
 
-    debugWarning("%s built %s %s\n", ffado_get_version(), __DATE__, __TIME__);
+    printMessage("%s built %s %s\n", ffado_get_version(), __DATE__, __TIME__);
 
     if(!dev) {
         debugFatal( "Could not allocate streaming device\n" );
@@ -247,7 +247,7 @@ ffado_streaming_wait(ffado_device_t *dev) {
     if(result == DeviceManager::eWR_OK) {
         return ffado_wait_ok;
     } else if (result == DeviceManager::eWR_Xrun) {
-        debugWarning("Handled XRUN\n");
+        debugOutput(DEBUG_LEVEL_NORMAL, "Handled XRUN\n");
         xruns++;
         return ffado_wait_xrun;
     } else if (result == DeviceManager::eWR_Shutdown) {

@@ -148,16 +148,16 @@ StreamProcessorManager::waitForActivity()
     if(result != 0) {
         if (result == ETIMEDOUT) {
             debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "(%p) pthread_cond_timedwait() timed out (result=%d)\n",
+                        "(%p) sem_timedwait() timed out (result=%d)\n",
                         this, result);
             return eAR_Timeout;
         } else if (result == EINTR) {
             debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "(%p) pthread_cond_[timed]wait() interrupted by signal (result=%d)\n",
+                        "(%p) sem_[timed]wait() interrupted by signal (result=%d)\n",
                         this, result);
             return eAR_Interrupted;
         } else {
-            debugError("(%p) pthread_cond_[timed]wait error (result=%d)\n", 
+            debugError("(%p) sem_[timed]wait error (result=%d)\n", 
                         this, result);
             debugError("(%p) timeout_sec=%d timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
                        this, timeout_sec, timeout_nsec, ts.tv_sec, ts.tv_nsec);
@@ -1001,11 +1001,13 @@ bool StreamProcessorManager::waitForPeriod() {
           ++it ) {
 
         if ((*it)->xrunOccurred()) {
-            debugWarning("Xrun on RECV SP %p due to ISO side xrun\n",*it);
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "Xrun on RECV SP %p due to ISO side xrun\n", *it);
             (*it)->dumpInfo();
         }
         if (!((*it)->canClientTransferFrames(m_period))) {
-            debugWarning("Xrun on RECV SP %p due to buffer side xrun\n",*it);
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "Xrun on RECV SP %p due to buffer side xrun\n", *it);
             (*it)->dumpInfo();
         }
     }
@@ -1013,16 +1015,16 @@ bool StreamProcessorManager::waitForPeriod() {
           it != m_TransmitProcessors.end();
           ++it ) {
         if ((*it)->xrunOccurred()) {
-            debugWarning("Xrun on XMIT SP %p due to ISO side xrun\n",*it);
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "Xrun on XMIT SP %p due to ISO side xrun\n", *it);
         }
         if (!((*it)->canClientTransferFrames(m_period))) {
-            debugWarning("Xrun on XMIT SP %p due to buffer side xrun\n",*it);
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "Xrun on XMIT SP %p due to buffer side xrun\n", *it);
         }
     }
 #endif
-
     m_nbperiods++;
-
     // now we can signal the client that we are (should be) ready
     return !xrun_occurred;
 }

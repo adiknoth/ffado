@@ -45,30 +45,25 @@ typedef short debug_level_t;
 #define DEBUG_LEVEL_VERY_VERBOSE   7
 #define DEBUG_LEVEL_ULTRA_VERBOSE  8
 
-#define DEBUG_MAX_MESSAGE_LENGTH 512
-
-#define MAX_BACKTRACE_SIZE 32
-#define MAX_BACKTRACE_FUNCTIONS_SEEN 128
-
 /* MB_NEXT() relies on the fact that MB_BUFFERS is a power of two */
-#define MB_BUFFERS          (1<<16)
-
-#define MB_NEXT(index)      (((index)+1) & (MB_BUFFERS-1))
-
+#define MB_NEXT(index)      (((index)+1) & (DEBUG_MB_BUFFERS-1))
 #define MB_BUFFERSIZE       DEBUG_MAX_MESSAGE_LENGTH
 
-#ifdef DEBUG
-    #if DEBUG_IMPLEMENT_BACKLOG
-        #define IMPLEMENT_BACKLOG
-    #endif
+// no backtrace support when not debugging
+#ifndef DEBUG
+    #undef DEBUG_BACKTRACE_SUPPORT
+    #define DEBUG_BACKTRACE_SUPPORT 0
 #endif
 
-#ifdef IMPLEMENT_BACKLOG
-// the backlog is a similar buffer as the message buffer
-#define BACKLOG_MB_BUFFERS      (256)
-#define BACKLOG_MB_NEXT(index)  (((index)+1) & (BACKLOG_MB_BUFFERS-1))
-#define BACKLOG_MIN_LEVEL       DEBUG_LEVEL_VERY_VERBOSE
+// no backlog support when not debugging
+#ifndef DEBUG
+    #undef DEBUG_BACKLOG_SUPPORT
+    #define DEBUG_BACKLOG_SUPPORT 0
 #endif
+
+// the backlog is a similar buffer as the message buffer
+#define DEBUG_BACKLOG_MB_NEXT(index)  (((index)+1) & (DEBUG_BACKLOG_MB_BUFFERS-1))
+#define DEBUG_BACKLOG_MIN_LEVEL       DEBUG_LEVEL_VERY_VERBOSE
 
 #define debugFatal( format, args... )                               \
                 m_debugModule.print( DebugModule::eDL_Fatal,        \
@@ -154,7 +149,7 @@ typedef short debug_level_t;
 
 #define flushDebugOutput()      DebugModuleManager::instance()->flush()
 
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
 
 #define debugShowBackLog() \
     {                                                       \
@@ -248,6 +243,18 @@ typedef short debug_level_t;
 #endif
 
 /*
+ * Backtrace support
+ */
+#ifdef DEBUG
+    #if DEBUG_BACKTRACE_SUPPORT
+        #define debugPrintBacktrace( _SIZE_ )                       \
+            DebugModuleManager::instance()->printBacktrace( _SIZE_ );
+    #endif
+#else
+    #define debugPrintBacktrace( _SIZE_ )
+#endif
+
+/*
  * helper functions
  */
 
@@ -312,6 +319,7 @@ public:
 
     void flush();
 
+#if DEBUG_BACKLOG_SUPPORT
     // the backlog is a ringbuffer of all the messages
     // that have been recorded using the debugPrint
     // statements, regardless of the debug level.
@@ -320,8 +328,12 @@ public:
     // much output in normal operation
     void showBackLog();
     void showBackLog(int nblines);
+#endif
 
+#if DEBUG_BACKTRACE_SUPPORT
     void printBacktrace(int len);
+#endif
+
 protected:
     bool registerModule( DebugModule& debugModule );
     bool unregisterModule( DebugModule& debugModule );
@@ -329,7 +341,10 @@ protected:
     bool init();
 
     void print(const char *msg);
+
+#if DEBUG_BACKLOG_SUPPORT
     void backlog_print(const char *msg);
+#endif
 
 private:
     DebugModuleManager();
@@ -337,8 +352,10 @@ private:
     typedef std::vector< DebugModule* > DebugModuleVector;
     typedef std::vector< DebugModule* >::iterator DebugModuleVectorIterator;
 
-    char mb_buffers[MB_BUFFERS][MB_BUFFERSIZE];
     unsigned int mb_initialized;
+
+#if DEBUG_USE_MESSAGE_BUFFER
+    char mb_buffers[DEBUG_MB_BUFFERS][MB_BUFFERSIZE];
     unsigned int mb_inbuffer;
     unsigned int mb_outbuffer;
     unsigned int mb_overruns;
@@ -346,19 +363,22 @@ private:
     pthread_mutex_t mb_write_lock;
     pthread_mutex_t mb_flush_lock;
     pthread_cond_t mb_ready_cond;
+#endif
 
+#if DEBUG_BACKTRACE_SUPPORT
     pthread_mutex_t m_backtrace_lock;
     char m_backtrace_strbuffer[MB_BUFFERSIZE];
-    void *m_backtrace_buffer[MAX_BACKTRACE_SIZE];
-    void *m_backtrace_buffer_seen[MAX_BACKTRACE_FUNCTIONS_SEEN];
+    void *m_backtrace_buffer[DEBUG_MAX_BACKTRACE_LENGTH];
+    void *m_backtrace_buffer_seen[DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN];
     int m_backtrace_buffer_nb_seen;
-    
+#endif
+
     static void *mb_thread_func(void *arg);
     void mb_flush();
 
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
     // the backlog
-    char bl_mb_buffers[BACKLOG_MB_BUFFERS][MB_BUFFERSIZE];
+    char bl_mb_buffers[DEBUG_BACKLOG_MB_BUFFERS][MB_BUFFERSIZE];
     unsigned int bl_mb_inbuffer;
     pthread_mutex_t bl_mb_write_lock;
 #endif
@@ -366,17 +386,5 @@ private:
     static DebugModuleManager* m_instance;
     DebugModuleVector          m_debugModules;
 };
-
-
-/*
- * Backtrace support
- */
-#ifdef DEBUG
-    #define debugPrintBacktrace( _SIZE_ )                       \
-        DebugModuleManager::instance()->printBacktrace( _SIZE_ );
-#else
-    #define debugPrintBacktrace( _SIZE_ )
-#endif
-
 
 #endif

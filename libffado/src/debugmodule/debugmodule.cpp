@@ -91,7 +91,7 @@ DebugModule::printShort( debug_level_t level,
 {
 
     // bypass for performance
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
     if (level > BACKLOG_MIN_LEVEL 
         && level > m_level) {
         return;
@@ -123,7 +123,7 @@ DebugModule::printShort( debug_level_t level,
         snprintf(msg+MB_BUFFERSIZE-warning_size, warning_size, "%s", warning);
     }
 
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
     // print to backlog if necessary
     if (level <= BACKLOG_MIN_LEVEL) {
         DebugModuleManager::instance()->backlog_print( msg );
@@ -145,7 +145,7 @@ DebugModule::print( debug_level_t level,
                     ... ) const
 {
     // bypass for performance
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
     if (level > BACKLOG_MIN_LEVEL 
         && level > m_level) {
         return;
@@ -202,7 +202,7 @@ DebugModule::print( debug_level_t level,
                  "%s", warning);
     }
 
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
     // print to backlog if necessary
     if (level <= BACKLOG_MIN_LEVEL) {
         DebugModuleManager::instance()->backlog_print( msg );
@@ -239,11 +239,15 @@ DebugModuleManager* DebugModuleManager::m_instance = 0;
 
 DebugModuleManager::DebugModuleManager()
     : mb_initialized(0)
+#if DEBUG_USE_MESSAGE_BUFFER
     , mb_inbuffer(0)
     , mb_outbuffer(0)
     , mb_overruns(0)
+#endif
+#if DEBUG_BACKTRACE_SUPPORT
     , m_backtrace_buffer_nb_seen(0)
-#ifdef IMPLEMENT_BACKLOG
+#endif
+#if DEBUG_BACKLOG_SUPPORT
     , bl_mb_inbuffer(0)
 #endif
 {
@@ -265,6 +269,7 @@ DebugModuleManager::~DebugModuleManager()
     if (!mb_initialized)
         return;
 
+#if DEBUG_USE_MESSAGE_BUFFER
     pthread_mutex_lock(&mb_write_lock);
     mb_initialized = 0;
     pthread_cond_signal(&mb_ready_cond);
@@ -272,7 +277,9 @@ DebugModuleManager::~DebugModuleManager()
 
     pthread_join(mb_writer_thread, NULL);
     mb_flush();
+#endif
 
+#if DEBUG_BACKTRACE_SUPPORT
     pthread_mutex_lock(&m_backtrace_lock);
     // print a list of the symbols seen in a backtrace
     fprintf(stderr, "Backtrace saw %d symbols:\n", m_backtrace_buffer_nb_seen);
@@ -286,7 +293,9 @@ DebugModuleManager::~DebugModuleManager()
         free(strings);
     }
     pthread_mutex_unlock(&m_backtrace_lock);
+#endif
 
+#if DEBUG_USE_MESSAGE_BUFFER
     if (mb_overruns)
         fprintf(stderr, "WARNING: %d message buffer overruns!\n",
             mb_overruns);
@@ -295,10 +304,13 @@ DebugModuleManager::~DebugModuleManager()
 
     pthread_mutex_destroy(&mb_write_lock);
     pthread_cond_destroy(&mb_ready_cond);
+#endif
 
+#if DEBUG_BACKTRACE_SUPPORT
     pthread_mutex_destroy(&m_backtrace_lock);
+#endif
 
-#ifdef IMPLEMENT_BACKLOG
+#if DEBUG_BACKLOG_SUPPORT
     pthread_mutex_destroy(&bl_mb_write_lock);
 #endif
 
@@ -313,21 +325,25 @@ DebugModuleManager::init()
         // if ( m_level >= eDL_VeryVerbose )
         //         cout << "DebugModuleManager init..." << endl;
 
-    pthread_mutex_init(&mb_write_lock, NULL);
+#if DEBUG_USE_MESSAGE_BUFFER
     pthread_mutex_init(&mb_flush_lock, NULL);
+    pthread_mutex_init(&mb_write_lock, NULL);
     pthread_cond_init(&mb_ready_cond, NULL);
-
-    pthread_mutex_init(&m_backtrace_lock, NULL);
 
     mb_overruns = 0;
     mb_initialized = 1;
 
-#ifdef IMPLEMENT_BACKLOG
-    pthread_mutex_init(&bl_mb_write_lock, NULL);
-#endif
-
     if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0)
          mb_initialized = 0;
+#endif
+
+#if DEBUG_BACKTRACE_SUPPORT
+    pthread_mutex_init(&m_backtrace_lock, NULL);
+#endif
+
+#if DEBUG_BACKLOG_SUPPORT
+    pthread_mutex_init(&bl_mb_write_lock, NULL);
+#endif
 
     return true;
 }
@@ -412,13 +428,14 @@ DebugModuleManager::setMgrDebugLevel( std::string name, debug_level_t level )
 void
 DebugModuleManager::flush()
 {
-#ifdef DEBUG_USE_MESSAGE_BUFFER
+#if DEBUG_USE_MESSAGE_BUFFER
     mb_flush();
 #else
     fflush(stderr);
 #endif
 }
 
+#if DEBUG_USE_MESSAGE_BUFFER
 void
 DebugModuleManager::mb_flush()
 {
@@ -438,7 +455,32 @@ DebugModuleManager::mb_flush()
     pthread_mutex_unlock(&m->mb_flush_lock);
 }
 
-#ifdef IMPLEMENT_BACKLOG
+void *
+DebugModuleManager::mb_thread_func(void *arg)
+{
+
+    DebugModuleManager *m=static_cast<DebugModuleManager *>(arg);
+
+    /* The mutex is only to eliminate collisions between multiple
+     * writer threads and protect the condition variable. */
+     pthread_mutex_lock(&m->mb_write_lock);
+
+    while (m->mb_initialized) {
+         pthread_cond_wait(&m->mb_ready_cond, &m->mb_write_lock);
+
+         /* releasing the mutex reduces contention */
+         pthread_mutex_unlock(&m->mb_write_lock);
+         m->mb_flush();
+         pthread_mutex_lock(&m->mb_write_lock);
+    }
+
+     pthread_mutex_unlock(&m->mb_write_lock);
+
+    return NULL;
+}
+#endif
+
+#if DEBUG_BACKLOG_SUPPORT
 void
 DebugModuleManager::showBackLog()
 {
@@ -490,33 +532,7 @@ DebugModuleManager::showBackLog(int nblines)
     fprintf(stderr, "=====================================================\n");
     pthread_mutex_unlock(&m->mb_flush_lock);
 }
-#endif
 
-void *
-DebugModuleManager::mb_thread_func(void *arg)
-{
-
-    DebugModuleManager *m=static_cast<DebugModuleManager *>(arg);
-
-    /* The mutex is only to eliminate collisions between multiple
-     * writer threads and protect the condition variable. */
-     pthread_mutex_lock(&m->mb_write_lock);
-
-    while (m->mb_initialized) {
-         pthread_cond_wait(&m->mb_ready_cond, &m->mb_write_lock);
-
-         /* releasing the mutex reduces contention */
-         pthread_mutex_unlock(&m->mb_write_lock);
-         m->mb_flush();
-         pthread_mutex_lock(&m->mb_write_lock);
-    }
-
-     pthread_mutex_unlock(&m->mb_write_lock);
-
-    return NULL;
-}
-
-#ifdef IMPLEMENT_BACKLOG
 void
 DebugModuleManager::backlog_print(const char *msg)
 {
@@ -542,10 +558,9 @@ DebugModuleManager::backlog_print(const char *msg)
 void
 DebugModuleManager::print(const char *msg)
 {
-#ifdef DEBUG_USE_MESSAGE_BUFFER
+#if DEBUG_USE_MESSAGE_BUFFER
     unsigned int ntries;
     struct timespec wait = {0,50000};
-#endif
 
     if (!mb_initialized) {
         /* Unable to print message with realtime safety.
@@ -555,7 +570,6 @@ DebugModuleManager::print(const char *msg)
         return;
     }
 
-#ifdef DEBUG_USE_MESSAGE_BUFFER
     ntries=1;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
@@ -579,14 +593,15 @@ DebugModuleManager::print(const char *msg)
 #endif
 }
 
+#if DEBUG_BACKTRACE_SUPPORT
 void
 DebugModuleManager::printBacktrace(int len)
 {
     int nptrs;
     int chars_written=0;
 
-    if(len>MAX_BACKTRACE_SIZE) {
-        len = MAX_BACKTRACE_SIZE;
+    if(len > DEBUG_MAX_BACKTRACE_LENGTH) {
+        len = DEBUG_MAX_BACKTRACE_LENGTH;
     }
 
     pthread_mutex_lock(&m_backtrace_lock);
@@ -608,7 +623,7 @@ DebugModuleManager::printBacktrace(int len)
     for (int i=0; i<nptrs; i++) {
         seen = false;
         int j;
-        for (j=0; j<m_backtrace_buffer_nb_seen & j < MAX_BACKTRACE_FUNCTIONS_SEEN; j++) {
+        for (j=0; j<m_backtrace_buffer_nb_seen & j < DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN; j++) {
             if(m_backtrace_buffer_seen[j] == m_backtrace_buffer[i]) {
                 seen = true;
                 break;
@@ -624,6 +639,7 @@ DebugModuleManager::printBacktrace(int len)
 
     pthread_mutex_unlock(&m_backtrace_lock);
 }
+#endif
 
 //----------------------------------------
 

@@ -428,11 +428,12 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         #ifdef DEBUG
         if (dropped_cycles < 0) {
             debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
-                        this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
         }
         if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
-                this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
+                        this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
         }
         #endif
@@ -536,17 +537,19 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
 
         #ifdef DEBUG
         if(skipped) {
-            debugWarning("(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
-                         this, skipped, cycle, m_last_cycle, dropped);
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
+                        this, skipped, cycle, m_last_cycle, dropped);
         }
         if (dropped_cycles < 0) { 
             debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, skipped: %d\n", 
                          this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
         }
         if (dropped_cycles > 0) {
-            debugWarning("(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d, skipped: %d)\n",
-                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
-            m_dropped += dropped_cycles;
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d, skipped: %d)\n",
+                        this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+            m_dropped += dropped_cycles - skipped;
         }
         #endif
     }

@@ -351,7 +351,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         if (m_state == ePS_Running) {
             // this is an xrun situation
             m_in_xrun = true;
-            debugWarning("Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Should update state to WaitingForStreamDisable due to dropped packet xrun\n");
             m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1; // switch in the next cycle
             m_next_state = ePS_WaitingForStreamDisable;
             // execute the requested change
@@ -390,7 +390,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         if(m_correct_last_timestamp) {
             // they represent a discontinuity in the timestamps, and hence are
             // to be dealt with
-            debugWarning("(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
+            debugOutput(DEBUG_LEVEL_NORMAL, "(%p) Correcting timestamp for dropped cycles, discarding packet...\n", this);
             m_data_buffer->setBufferTailTimestamp(substractTicks(m_last_timestamp,
                                                                  (uint64_t)(getNominalFramesPerPacket()
                                                                             * getTicksPerFrame())));
@@ -438,7 +438,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         // if an xrun occured, switch to the dryRunning state and
         // allow for the xrun to be picked up
         if (result2 == eCRV_XRun) {
-            debugWarning("processPacketData xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "processPacketData xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
             m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr)+1; // switch in the next cycle
@@ -496,7 +496,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         m_in_xrun = true;
         if(m_state == ePS_Running) {
             debugShowBackLogLines(200);
-            debugWarning("dropped packets xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "dropped packets xrun\n");
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
             m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1;
             m_next_state = ePS_WaitingForStreamDisable;
@@ -622,7 +622,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             // if an xrun occured, switch to the dryRunning state and
             // allow for the xrun to be picked up
             if (result2 == eCRV_XRun) {
-                debugWarning("generatePacketData xrun\n");
+                debugOutput(DEBUG_LEVEL_NORMAL, "generatePacketData xrun\n");
                 m_in_xrun = true;
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to data xrun\n");
                 m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1; // switch in the next cycle
@@ -660,7 +660,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 return RAW1394_ISO_OK;
             }
         } else if (result == eCRV_XRun) { // pick up the possible xruns
-            debugWarning("generatePacketHeader xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "generatePacketHeader xrun\n");
             m_in_xrun = true;
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to header xrun\n");
             m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1; // switch in the next cycle
