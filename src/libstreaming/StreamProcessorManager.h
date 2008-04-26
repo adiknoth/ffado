@@ -29,7 +29,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libutil/Thread.h"
-#include "libutil/PosixMutex.h"
+#include "libutil/Mutex.h"
 #include "libutil/OptionContainer.h"
 
 #include <vector>
@@ -171,7 +171,7 @@ protected: // FIXME: private?
 
     unsigned int m_nbperiods;
 
-    Util::PosixMutex m_WaitLock;
+    Util::Mutex *m_WaitLock;
 
     DECLARE_DEBUG_MODULE;
 
