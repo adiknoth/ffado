@@ -310,7 +310,7 @@ private:
     static int armHandlerLowLevel(raw1394handle_t handle, unsigned long arm_tag,
                      byte_t request_type, unsigned int requested_length,
                      void *data);
-    bool armHandler(  unsigned long arm_tag,
+    bool armHandler( unsigned long arm_tag,
                      byte_t request_type, unsigned int requested_length,
                      void *data);
 
@@ -322,7 +322,7 @@ private:
     std::string     m_portName;
 
     pthread_t       m_thread;
-    pthread_mutex_t m_mutex;
+    Util::Mutex*    m_RHThread_lock;
     bool            m_threadRunning;
 
     bool            m_realtime;
