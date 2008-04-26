@@ -29,6 +29,9 @@
 #include "controlclient.h"
 #include <dbus-c++/dbus.h>
 
+static const char* SERVER_NAME = "org.ffado.Control";
+static const char* SERVER_PATH = "/org/ffado/Control/Test/Fader";
+
 using namespace std;
 
 DECLARE_GLOBAL_DEBUG_MODULE;

@@ -172,7 +172,7 @@ int main(int argc, char **argv)
         // figure out when to stop calling the load function
         uint64_t run_until = sleep_time + arguments.period * arguments.cpu_pct / 100;
         
-        uint64_t tic = rt_gettime_usecs();
+//         uint64_t tic = rt_gettime_usecs();
         while(rt_gettime_usecs() < run_until) load_function();
         uint64_t toc = rt_gettime_usecs();
 

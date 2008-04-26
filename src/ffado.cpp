@@ -75,7 +75,7 @@ ffado_get_api_version() {
     return FFADO_API_VERSION;
 }
 
-#warning this should be cleaned up
+// FIXME: this should be cleaned up
 #include "libavc/general/avc_generic.h"
 void ffado_sleep_after_avc_command( int time )
 {
@@ -378,7 +378,6 @@ ffado_streaming_audio_datatype ffado_streaming_get_audio_datatype(ffado_device_t
             debugError("Invalid audio datatype\n");
             return ffado_audio_datatype_error;
     }
-    #warning FIXME
 }
 
 int ffado_streaming_stream_onoff(ffado_device_t *dev, int i,

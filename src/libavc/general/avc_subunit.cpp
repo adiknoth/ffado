@@ -225,7 +225,7 @@ Subunit::getPlug(Plug::EPlugDirection direction, plug_id_t plugId)
 bool
 Subunit::initPlugFromDescriptor( Plug& plug )
 {
-    debugError("plug loading from descriptor not implemented\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "plug loading from descriptor not implemented\n");
     return false;
 }
 
@@ -259,7 +259,6 @@ Subunit::deserialize( Glib::ustring basePath,
 
     Subunit* pSubunit = 0;
 
-    #warning FIXME: The derived class should be creating these
     // FIXME: The derived class should be creating these, such that discover() can become pure virtual
     switch( sbType ) {
     case eST_Audio:

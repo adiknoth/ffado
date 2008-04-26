@@ -38,10 +38,12 @@ int main() {
      *
      */
 
+    #ifdef DEBUG
     uint32_t now_ctr = 0x140001DA;
     uint64_t now = CYCLE_TIMER_TO_TICKS(0x140001DA);
     unsigned int cycle = 7968;
     uint16_t syt = 0x583B;
+    #endif
     
     debugOutput(DEBUG_LEVEL_VERBOSE,"NOW_CTR          : %08X (%03us %04uc %04ut)\n",
                           now_ctr,
@@ -61,8 +63,9 @@ int main() {
                           (unsigned int)CYCLE_TIMER_GET_OFFSET(syt));
     debugOutput(DEBUG_LEVEL_VERBOSE,"CYCLE            : %uc\n",
                           cycle);
-
+    #ifdef DEBUG
     uint64_t calc_ts = sytRecvToFullTicks(syt, cycle, now_ctr);
+    #endif
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"CALC_TS          : %011llu (%03us %04uc %04ut)\n",
                           calc_ts,

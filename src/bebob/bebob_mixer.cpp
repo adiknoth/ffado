@@ -323,9 +323,8 @@ EnhancedMixerFBFeature::EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhan
 bool
 EnhancedMixerFBFeature::setValue(double v)
 {
-    int volume=(int)v;
     debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
-                m_Slave.getId(), volume);
+                m_Slave.getId(), (int)v);
 
     return true;
 }
