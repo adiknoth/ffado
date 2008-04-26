@@ -631,21 +631,21 @@ Unit::discoverSyncModes()
                                                    Plug::eAPD_Input,
                                                    Plug::eAPT_Sync );
     if ( !syncPCRInputPlugs.size() ) {
-        debugWarning( "No PCR sync input plug found\n" );
+        debugOutput(DEBUG_LEVEL_NORMAL, "No PCR sync input plug found\n" );
     }
 
     PlugVector syncPCROutputPlugs = getPlugsByType( m_pcrPlugs,
                                                     Plug::eAPD_Output,
                                                     Plug::eAPT_Sync );
     if ( !syncPCROutputPlugs.size() ) {
-        debugWarning( "No PCR sync output plug found\n" );
+        debugOutput(DEBUG_LEVEL_NORMAL, "No PCR sync output plug found\n" );
     }
 
     PlugVector isoPCRInputPlugs = getPlugsByType( m_pcrPlugs,
                                                   Plug::eAPD_Input,
                                                   Plug::eAPT_IsoStream );
     if ( !isoPCRInputPlugs.size() ) {
-        debugWarning( "No PCR iso input plug found\n" );
+        debugOutput(DEBUG_LEVEL_NORMAL, "No PCR iso input plug found\n" );
 
     }
 
@@ -653,7 +653,7 @@ Unit::discoverSyncModes()
                                                    Plug::eAPD_Output,
                                                    Plug::eAPT_IsoStream );
     if ( !isoPCROutputPlugs.size() ) {
-        debugWarning( "No PCR iso output plug found\n" );
+        debugOutput(DEBUG_LEVEL_NORMAL, "No PCR iso output plug found\n" );
 
     }
 
@@ -824,8 +824,8 @@ void
 Unit::show()
 {
     m_pPlugManager->showPlugs();
-    SubunitMusic* s=getMusicSubunit(0);
-    if(s) s->showMusicPlugs();
+    //SubunitMusic* s=getMusicSubunit(0);
+    //if(s) s->showMusicPlugs();
 }
 
 void

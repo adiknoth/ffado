@@ -926,16 +926,18 @@ DeviceManager::getSyncSource() {
 
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {
-        debugWarning("Could not retrieve slaveMode parameter, defauling to false\n");
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not retrieve slaveMode parameter, defauling to false\n");
     }
-
+    return device->getStreamProcessorByIndex(0);
+/*
     #warning TEST CODE FOR BOUNCE DEVICE !!
     // this makes the bounce slave use the xmit SP as sync source
     if (slaveMode) {
         return device->getStreamProcessorByIndex(1);
     } else {
         return device->getStreamProcessorByIndex(0);
-    }
+    }*/
 }
 
 bool

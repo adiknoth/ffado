@@ -137,19 +137,22 @@ Plug::discover()
 {
 
     if ( !initFromDescriptor() ) {
-        debugError( "discover: Could not init plug from descriptor (%d,%d,%d,%d,%d)\n",
+        debugOutput(DEBUG_LEVEL_NORMAL,
+                    "discover: Could not init plug from descriptor (%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
 //         return false;
     }
 
     if ( !discoverPlugType() ) {
-        debugError( "discover: Could not discover plug type (%d,%d,%d,%d,%d)\n",
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "discover: Could not discover plug type (%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
         return false;
     }
 
     if ( !discoverName() ) {
-        debugError( "Could not discover name (%d,%d,%d,%d,%d)\n",
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not discover name (%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
         return false;
     }
@@ -162,35 +165,40 @@ Plug::discover()
     }
 
     if ( !discoverChannelPosition() ) {
-        debugError( "Could not discover channel positions "
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not discover channel positions "
                     "(%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
         return false;
     }
 
     if ( !discoverChannelName() ) {
-        debugError( "Could not discover channel name "
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not discover channel name "
                     "(%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
         return false;
     }
 
     if ( !discoverClusterInfo() ) {
-        debugError( "Could not discover channel name "
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not discover cluster info "
                     "(%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
         return false;
     }
 
     if ( !discoverStreamFormat() ) {
-        debugError( "Could not discover stream format "
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not discover stream format "
                     "(%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
 //         return false;
     }
 
     if ( !discoverSupportedStreamFormats() ) {
-        debugError( "Could not discover supported stream formats "
+        debugOutput(DEBUG_LEVEL_NORMAL, 
+                    "Could not discover supported stream formats "
                     "(%d,%d,%d,%d,%d)\n",
                     m_unit->getConfigRom().getNodeId(), getSubunitType(), getSubunitId(), m_direction, m_id );
 //         return false;
@@ -287,14 +295,14 @@ Plug::discoverStreamFormat()
     }
 
     if ( !extStreamFormatCmd.getFormatInformation() ) {
-        debugWarning( "No stream format information for plug found -> skip\n" );
+        debugOutput(DEBUG_LEVEL_NORMAL, "No stream format information for plug found -> skip\n" );
         return true;
     }
 
     if ( extStreamFormatCmd.getFormatInformation()->m_root
            != FormatInformation::eFHR_AudioMusic  )
     {
-        debugWarning( "Format hierarchy root is not Audio&Music -> skip\n" );
+        debugOutput(DEBUG_LEVEL_NORMAL, "Format hierarchy root is not Audio&Music -> skip\n" );
         return true;
     }
 
@@ -322,7 +330,8 @@ Plug::discoverStreamFormat()
                 const_cast<ClusterInfo*>( getClusterInfoByIndex( i ) );
 
             if ( !clusterInfo ) {
-                debugError( "No matching cluster "
+                debugOutput(DEBUG_LEVEL_NORMAL, 
+                            "No matching cluster "
                             "info found for index %d\n",  i );
                     return false;
             }
@@ -344,7 +353,8 @@ Plug::discoverStreamFormat()
             // sanity check
             if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
             {
-                debugWarning( "Number of channels "
+                debugOutput(DEBUG_LEVEL_NORMAL, 
+                              "Number of channels "
                               "mismatch: '%s' plug discovering reported "
                               "%d channels for cluster '%s', while stream "
                               "format reported %d\n",
@@ -563,14 +573,14 @@ Plug::getSignalSource()
     if((getPlugAddressType() == eAPA_PCR) ||
        (getPlugAddressType() == eAPA_ExternalPlug)) {
         if (getPlugDirection() != eAPD_Output) {
-            debugWarning("Signal Source command not valid for non-output unit plugs...\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Signal Source command not valid for non-output unit plugs...\n");
             return -1;
         }
     }
 
     if(getPlugAddressType() == eAPA_SubunitPlug) {
         if (getPlugDirection() != eAPD_Input) {
-            debugWarning("Signal Source command not valid for non-input subunit plugs...\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Signal Source command not valid for non-input subunit plugs...\n");
             return -1;
         }
     }
@@ -661,11 +671,11 @@ Plug::propagateFromConnectedPlug( ) {
 
     if (getDirection() == eAPD_Output) {
         if (getInputConnections().size()==0) {
-            debugWarning("No input connections to propagate from, skipping.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "No input connections to propagate from, skipping.\n");
             return true;
         }
         if (getInputConnections().size()>1) {
-            debugWarning("Too many input connections to propagate from, using first one.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Too many input connections to propagate from, using first one.\n");
         }
 
         Plug* p = *(getInputConnections().begin());
@@ -673,18 +683,18 @@ Plug::propagateFromConnectedPlug( ) {
 
     } else if (getDirection() == eAPD_Input) {
         if (getOutputConnections().size()==0) {
-            debugWarning("No output connections to propagate from, skipping.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "No output connections to propagate from, skipping.\n");
             return true;
         }
         if (getOutputConnections().size()>1) {
-            debugWarning("Too many output connections to propagate from, using first one.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Too many output connections to propagate from, using first one.\n");
         }
 
         Plug* p = *(getOutputConnections().begin());
         return propagateFromPlug( p );
 
     } else {
-        debugWarning("plug with undefined direction\n");
+        debugError("plug with undefined direction\n");
         return false;
     }
 }
@@ -1631,9 +1641,7 @@ Plug::deserialize( Glib::ustring basePath,
                    Unit& unit,
                    PlugManager& plugManager )
 {
-    #warning FIXME: The derived class should be creating these
     // FIXME: The derived class should be creating these, such that discover() can become pure virtual
-
     if ( !deser.isExisting( basePath + "m_subunitType" ) ) {
         return 0;
     }

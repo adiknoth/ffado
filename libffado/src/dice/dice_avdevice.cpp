@@ -308,10 +308,12 @@ DiceAvDevice::getSupportedClockSources() {
                                     clock_select, clock_selected);
     quadlet_t extended_status;
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &extended_status);
+    #ifdef DEBUG
     uint16_t clock_status = (extended_status) & 0xFFFF;
     uint16_t clock_slipping = (extended_status >> 16) & 0xFFFF;
     debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08X, status=0x%04X, slip=0x%04X\n",
                                     extended_status, clock_status, clock_slipping);
+    #endif
 
     diceNameVector names = getClockSourceNameString();
     if( names.size() < DICE_CLOCKSOURCE_COUNT) {
@@ -470,10 +472,12 @@ DiceAvDevice::getActiveClockSource() {
                                     clock_select, id);
     quadlet_t extended_status;
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &extended_status);
+    #ifdef DEBUG
     uint16_t clock_status = (extended_status) & 0xFFFF;
     uint16_t clock_slipping = (extended_status >> 16) & 0xFFFF;
     debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08X, status=0x%04X, slip=0x%04X\n",
                                     extended_status, clock_status, clock_slipping);
+    #endif
 
     diceNameVector names = getClockSourceNameString();
     if( names.size() < DICE_CLOCKSOURCE_COUNT) {
@@ -515,7 +519,7 @@ DiceAvDevice::showDevice()
 
     debugOutput(DEBUG_LEVEL_VERBOSE," Global param space:\n");
 
-    readGlobalRegBlock(DICE_REGISTER_GLOBAL_OWNER, (fb_quadlet_t *)&tmp_octlet,sizeof(fb_octlet_t));
+    readGlobalRegBlock(DICE_REGISTER_GLOBAL_OWNER, reinterpret_cast<fb_quadlet_t *>(&tmp_octlet), sizeof(fb_octlet_t));
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Owner            : 0x%016X\n",tmp_octlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);

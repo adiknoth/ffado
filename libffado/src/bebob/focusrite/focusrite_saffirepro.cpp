@@ -651,6 +651,7 @@ SaffireProDevice::getEnableDigitalChannel(enum eDigitalChannel c) {
     uint32_t retval;
     unsigned int id;
     switch(c) {
+        default:
         case eDC_ADAT1: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT1_INPUT; break;
         case eDC_ADAT2: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT2_INPUT; break;
         case eDC_SPDIF: id=FR_SAFFIREPRO_CMD_ID_ENABLE_SPDIF_INPUT; break;
@@ -670,6 +671,7 @@ SaffireProDevice::setEnableDigitalChannel(enum eDigitalChannel c, unsigned int i
     uint32_t reg=i;
     unsigned int id;
     switch(c) {
+        default:
         case eDC_ADAT1: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT1_INPUT; break;
         case eDC_ADAT2: id=FR_SAFFIREPRO_CMD_ID_ENABLE_ADAT2_INPUT; break;
         case eDC_SPDIF: id=FR_SAFFIREPRO_CMD_ID_ENABLE_SPDIF_INPUT; break;

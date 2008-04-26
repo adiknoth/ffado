@@ -30,9 +30,6 @@
 
 #include "controlclient-glue.h"
 
-static const char* SERVER_NAME = "org.ffado.Control";
-static const char* SERVER_PATH = "/org/ffado/Control/Test/Fader";
-
 namespace DBusControl {
 
 // simple fader element
