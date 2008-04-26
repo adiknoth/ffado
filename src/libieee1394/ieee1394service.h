@@ -27,6 +27,7 @@
 
 #include "fbtypes.h"
 #include "libutil/Functors.h"
+#include "libutil/Mutex.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -225,7 +226,7 @@ public:
                     unsigned int* resp_len );
 
     bool transactionBlockClose();
-
+// FIXME: private for thread safety !!
     raw1394handle_t getHandle() {return m_handle;};
 
     int getVerboseLevel();
@@ -239,6 +240,7 @@ public:
      * @return the current generation
      **/
     unsigned int getGeneration() {
+        Util::MutexLockHelper lock(*m_handle_lock);
         return raw1394_get_generation( m_handle );
     }
 
@@ -313,6 +315,7 @@ private:
                      void *data);
 
     raw1394handle_t m_handle;
+    Util::Mutex*    m_handle_lock;
     raw1394handle_t m_resetHandle;
     raw1394handle_t m_util_handle; // a handle for operations from the rt thread
     int             m_port;

@@ -44,6 +44,25 @@ public:
     virtual void show() = 0;
 };
 
+
+/**
+ * @brief A class to implement monitors
+ * Locks a mutex when an instance is created,
+ * unlocks it as soon as the instance is destroyed.
+ * when this class is created on the stack at function
+ * entry, this implements a monitor
+ */
+class MutexLockHelper
+{
+public:
+    MutexLockHelper(Mutex &m)
+    : m_mutex( m )
+      {m.Lock();};
+    virtual ~MutexLockHelper() {m_mutex.Unlock();};
+private:
+    Mutex &m_mutex;
+};
+
 } // end of namespace
 
 #endif

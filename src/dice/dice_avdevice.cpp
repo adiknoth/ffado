@@ -930,8 +930,9 @@ DiceAvDevice::lock() {
     swap_value = swap_value << 48;
     swap_value |= m_notifier->getStart();
 
-    if (!get1394Service().lockCompareSwap64(  getNodeId() | 0xFFC0, addr, DICE_OWNER_NO_OWNER,
-                                       swap_value, &result )) {
+    if (!get1394Service().lockCompareSwap64(getNodeId() | 0xFFC0,
+                                            addr, DICE_OWNER_NO_OWNER,
+                                            swap_value, &result )) {
         debugWarning("Could not register ourselves as device owner\n");
         return false;
     }
