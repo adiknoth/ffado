@@ -156,14 +156,6 @@ Running jackd
 The easiest way to run this is using qjackctl. There are only minor 
 differences with the other backends, however you should change some
 of the default values:
-- The 'interface' field should contain only a number. This number is
-  the port number of the IEEE1394 host controller the audio device
-  is connected to. For most people this will be '0', but if you have
-  multiple controllers, you have to change this number.
-- The 'Input channels' and 'Output channels' fields indicate if the
-  backend should provide capture and/or playback channels. If you set
-  these to 0, no channels are created. In order to enable capture and/or
-  playback, you have to set them to a nonzero value.
 - It is recommended to change the 'periods/buffer' field to 3, especially
   if you use low period sizes (=< 128)
 - It is recommended to raise the RT priority to 70.
