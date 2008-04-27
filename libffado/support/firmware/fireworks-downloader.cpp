@@ -176,7 +176,7 @@ main( int argc, char** argv )
     }
 
     if (node_id < 0) {
-        printMessage("Could not find device with GUID 0x%016X\n", guid);
+        printMessage("Could not find device with GUID 0x%016llX\n", guid);
         return -1;
     }
 
