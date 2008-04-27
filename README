@@ -125,16 +125,7 @@ SIP should not be needed.
 How to build
 ------------
 
-Building the code is straight forward if PKG_CONFIG_PATH, LD_LIBRARY_PATH
-and INCLUDE_PATH is correctly set up.
-
-E.g on my system I have installed libraw1394, libiec61883 and libavc1394
-under /usr/local:
-
-$ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-$ export LD_LIBRARY_PATH=/usr/local/lib
-
-If you want to build the release version you can do following:
+If you want to build the release version you can simply do following:
 
 $ scons
 $ scons install
@@ -144,6 +135,9 @@ to work correctly) you can try to do following:
 
 $ scons DEBUG=yes
 $ scons install
+
+More extended instructions can be found here:
+http://subversion.ffado.org/wiki/CompilationGuides
 
 NOTE: In order to build jackd with ffado support, you have 
 to install libffado before you build jackd. The backend to use in jackd is
