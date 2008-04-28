@@ -410,6 +410,10 @@ env['PACKAGE'] = "libffado"
 env['VERSION'] = FFADO_VERSION
 env['LIBVERSION'] = "1.0.0"
 
+env['CONFIGDIR'] = "~/.ffado"
+
+env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
+
 #
 # To have the top_srcdir as the doxygen-script is used from auto*
 #
