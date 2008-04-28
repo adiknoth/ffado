@@ -27,40 +27,42 @@ from string import Template
 Import( 'env' )
 
 if env.has_key('PYUIC'):
-	e = env.Clone()
+    e = env.Clone()
 
-	e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire',
-	                   'saffirele', 'af2', 'bcoaudio5', 'edirolfa66',
-	                   'mackie_generic', 'quatafire', 'motu', 
-                           'generic', 'dummy'
-                         ]
-        e['OTHERAPPS'] = ['ffado_regdialog']
-        
-	#
-	# For the ffadomixer.in
-	e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
-	# For the installation of the stuff
-	e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
+    e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire',
+                       'saffirele', 'af2', 'bcoaudio5', 'edirolfa66',
+                       'mackie_generic', 'quatafire', 'motu', 
+                       'generic', 'dummy'
+                     ]
+    e['OTHERAPPS'] = ['ffado_regdialog']
 
-	for m in e['MIXERAPPS']:
-		app = "mixer_" + m
-		if os.path.exists( app+".ui" ):
-			e.PyUIC( source=app+".ui", target=app+"ui.py" )
-			e.Install( "$pythondir", app+"ui.py" )
-		e.Install( "$pythondir", app+".py" )
+    #
+    # For the ffadomixer.in
+    e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
+    # For the installation of the stuff
+    e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
 
-	for app in e['OTHERAPPS']:
-		if os.path.exists( app+".ui" ):
-			e.PyUIC( source=app+".ui", target=app+"ui.py" )
-			e.Install( "$pythondir", app+"ui.py" )
-		e.Install( "$pythondir", app+".py" )
+    for m in e['MIXERAPPS']:
+        app = "mixer_" + m
+        if os.path.exists( app+".ui" ):
+            e.PyUIC( source=app+".ui", target=app+"ui.py" )
+            e.Install( "$pythondir", app+"ui.py" )
+        e.Install( "$pythondir", app+".py" )
 
-	e.ScanReplace( "ffadomixer_config.py.in" )
-	e.Depends( "ffadomixer_config.py", "#/SConstruct" )
-        e.Install( "$pythondir", "ffadomixer_config.py" )
+    for app in e['OTHERAPPS']:
+        if os.path.exists( app+".ui" ):
+            e.PyUIC( source=app+".ui", target=app+"ui.py" )
+            e.Install( "$pythondir", app+"ui.py" )
+        e.Install( "$pythondir", app+".py" )
 
-	e.ScanReplace( "ffadomixer.in" )
-	e.Depends( "ffadomixer", "#/SConstruct" )
-	e.Depends( "ffadomixer", "SConscript" )
-	e.Install( "$bindir", "ffadomixer" )
+    e.Install( "$pythondir", "ffado_registration.py" )
+
+    e.ScanReplace( "ffadomixer_config.py.in" )
+    e.Depends( "ffadomixer_config.py", "#/SConstruct" )
+    e.Install( "$pythondir", "ffadomixer_config.py" )
+
+    e.ScanReplace( "ffadomixer.in" )
+    e.Depends( "ffadomixer", "#/SConstruct" )
+    e.Depends( "ffadomixer", "SConscript" )
+    e.Install( "$bindir", "ffadomixer" )
 
