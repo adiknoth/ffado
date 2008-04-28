@@ -259,7 +259,11 @@ const MixerCtrl MixerCtrls_Traveler[] = {
 
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
 
-    /* For line input controls, the "register" is the zero-based channel number */
+    /* For mic/line input controls, the "register" is the zero-based channel number */
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 3},
     {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
     {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
     {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
@@ -415,6 +419,27 @@ MotuDevice::buildMixer() {
                     name, label,
                     DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
             type &= ~MOTU_CTRL_MIX_DEST;
+        }
+
+        if (type & MOTU_CTRL_INPUT_TRIMGAIN) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "trimgain");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"trimgain");
+            result &= m_MixerContainer->addElement(
+                new InputGainPad(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, MOTU_CTRL_MODE_TRIMGAIN,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_INPUT_TRIMGAIN;
+        }
+        if (type & MOTU_CTRL_INPUT_PAD) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "pad");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"pad");
+            result &= m_MixerContainer->addElement(
+                new InputGainPad(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, MOTU_CTRL_MODE_PAD,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_INPUT_PAD;
         }
 
         if (type & MOTU_CTRL_INPUT_LEVEL) {

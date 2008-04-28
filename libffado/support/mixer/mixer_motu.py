@@ -90,6 +90,11 @@ class MotuMixer(MotuMixerUI):
             self.mix1ana6_pan:   ['/Mixer/Mix1/Ana6_pan'],
             self.mix1ana7_pan:   ['/Mixer/Mix1/Ana7_pan'],
             self.mix1ana8_pan:   ['/Mixer/Mix1/Ana8_pan'],
+
+            self.ana1_trimgain:  ['/Mixer/Control/Ana1_trimgain'],
+            self.ana2_trimgain:  ['/Mixer/Control/Ana2_trimgain'],
+            self.ana3_trimgain:  ['/Mixer/Control/Ana3_trimgain'],
+            self.ana4_trimgain:  ['/Mixer/Control/Ana4_trimgain'],
         }
 
         self.BinarySwitches={
@@ -110,6 +115,10 @@ class MotuMixer(MotuMixerUI):
             self.mix1ana6_solo:  ['/Mixer/Mix1/Ana6_solo'],
             self.mix1ana7_solo:  ['/Mixer/Mix1/Ana7_solo'],
             self.mix1ana8_solo:  ['/Mixer/Mix1/Ana8_solo'],
+            self.ana1_pad:       ['/Mixer/Control/Ana1_pad'],
+            self.ana2_pad:       ['/Mixer/Control/Ana2_pad'],
+            self.ana3_pad:       ['/Mixer/Control/Ana3_pad'],
+            self.ana4_pad:       ['/Mixer/Control/Ana4_pad'],
             self.ana5_level:     ['/Mixer/Control/Ana5_level'],
             self.ana6_level:     ['/Mixer/Control/Ana6_level'],
             self.ana7_level:     ['/Mixer/Control/Ana7_level'],

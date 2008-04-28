@@ -2,7 +2,7 @@ Notes on the MOTU Traveler/828MkII firewire protocol
 ====================================================
 
 Author: Jonathan Woithe
-Document version: 20080419-1
+Document version: 20080421-1
 
 
 Audio/MIDI data
@@ -662,8 +662,10 @@ Bits 11-10 specify the mode of the optical output port in the same way
 as for the optical input port.  Again, register 0b10 seems to play a role
 in setting the optical output port mode.
 
-Bits 31-12 are unknown at present.  They seem to be set to 0x03000 in 
-the default condition.
+Bit 24 enables the setting of the phones source.  Bit 25 probably allows the
+optical modes to be set.
+
+Bits 31-26, 23-12 are unknown at present.  They seem to always be zero.
 
 
 0x0c08 - input level (for analog channels 5-8 only)
