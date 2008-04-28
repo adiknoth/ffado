@@ -500,6 +500,8 @@ MotuDevice::buildMixer() {
         new InfoElement(*this, MOTU_INFO_HAS_AESEBU_INPUTS, "Info/HasAESEBUInputs", "Device has AES/EBU inputs", ""));
     result &= m_MixerContainer->addElement(
         new InfoElement(*this, MOTU_INFO_HAS_SPDIF_INPUTS, "Info/HasSPDIFInputs", "Device has SPDIF inputs", ""));
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_HAS_OPTICAL_SPDIF, "Info/HasOpticalSPDIF", "Device has Optical SPDIF", ""));
 
     if (!addElement(m_MixerContainer)) {
         debugWarning("Could not register mixer to device\n");
