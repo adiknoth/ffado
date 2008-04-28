@@ -590,6 +590,12 @@ InfoElement::getValue()
             res = (val!=MOTU_MODEL_8PRE && val!=MOTU_MODEL_896HD);
             debugOutput(DEBUG_LEVEL_VERBOSE, "HasSPDIFInputs: %d\n", res);
             break;
+        case MOTU_INFO_HAS_OPTICAL_SPDIF:
+            /* THe 896HD doesn't have optical SPDIF capability */
+            val = m_parent.m_motu_model;
+            res = (val != MOTU_MODEL_896HD);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "HasOpticalSPDIF: %d\n", res);
+            break;
     }
     return res;
 }

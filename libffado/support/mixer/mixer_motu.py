@@ -160,6 +160,8 @@ class MotuMixer(MotuMixerUI):
         print "device has AES/EBU inputs: %d" % (self.has_aesebu_inputs)
         self.has_spdif_inputs = self.hw.getDiscrete('/Mixer/Info/HasSPDIFInputs')
         print "device has SPDIF inputs: %d" % (self.has_spdif_inputs)
+        self.has_optical_spdif = self.hw.getDiscrete('/Mixer/Info/HasOpticalSPDIF')
+        print "device has optical SPDIF: %d" % (self.has_optical_spdif)
 
         # Customise the UI based on device options retrieved
         if (self.has_mic_inputs):
@@ -174,6 +176,12 @@ class MotuMixer(MotuMixerUI):
                 self.mix1_aes_group.setEnabled(False)
         if (not(self.has_spdif_inputs)):
             self.mix1_spdif_group.setEnabled(False)
+
+        # Some devices don't have the option of selecting an optical SPDIF
+        # mode.
+        if (not(self.has_optical_spdif)):
+            self.optical_in_mode.removeItem(2)
+            self.optical_out_mode.removeItem(2)
 
         # Some controls must be disabled if the device is streaming
         if (self.is_streaming):

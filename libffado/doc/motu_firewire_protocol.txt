@@ -2,7 +2,7 @@ Notes on the MOTU Traveler/828MkII firewire protocol
 ====================================================
 
 Author: Jonathan Woithe
-Document version: 20080421-1
+Document version: 20080428-1
 
 
 Audio/MIDI data
@@ -854,7 +854,12 @@ there doesn't seem to be much point in bits 24-26 being set on readback
 given the above definitions, but they are.
 
 If channel pairing is to be activated it must be set in both channels which
-form a stereo pair.
+form a stereo pair.  However, paired channels are still controlled
+individually by the mixer registers - for example, if channels 1 and 2 are
+paired it is still possible to raise channel 1's volume in mix1 by writing 
+only to register 0x4000.  In other words, the device does not enforce linked
+controls when channels are paired.  The "paired" flag is really just a hint
+to the mixer at the end of the day.
 
 
 Gain and pan value-dB mappings
