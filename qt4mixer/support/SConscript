@@ -25,5 +25,5 @@ Import( 'env' )
 
 env = env.Copy()
 
-env.SConscript( dirs=["mixer","firmware","dbus"], exports="env" )
+env.SConscript( dirs=["mixer"], exports="env" )
 

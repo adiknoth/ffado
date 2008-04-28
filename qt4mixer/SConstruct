@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.20"
+FFADO_VERSION="1.999.20-qt4branch"
 
 import os
 import re
@@ -427,7 +427,7 @@ env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
-subdirs=['external','src','libffado','tests','support','doc']
+subdirs=['support']
 if build_base:
 	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
@@ -438,10 +438,7 @@ if 'debian' in COMMAND_LINE_TARGETS:
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
-    Default( 'src' )
     Default( 'support' )
-    if env['BUILD_TESTS']:
-        Default( 'tests' )
 
 #
 # Deal with the DESTDIR vs. xdg-tools conflict (which is basicely that the
