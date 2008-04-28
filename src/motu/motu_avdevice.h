@@ -66,14 +66,14 @@
 #define MOTU_DIR_INOUT       (MOTU_DIR_IN | MOTU_DIR_OUT)
 
 /* Device registers */
-#define MOTU_REG_ISOCTRL         0x0b00
-#define MOTU_REG_OPTICAL_CTRL    0x0b10
-#define MOTU_REG_CLK_CTRL        0x0b14
-#define MOTU_REG_ROUTE_PORT_CONF 0x0c04
-#define MOTU_REG_INPUT_LEVEL     0x0c08
-#define MOTU_REG_INPUT_BOOST     0x0c14
-#define MOTU_REG_INPUT_GAIN_PAD  0x0c1c
-#define MOTU_REG_CLKSRC_NAME0    0x0c60
+#define MOTU_REG_ISOCTRL           0x0b00
+#define MOTU_REG_OPTICAL_CTRL      0x0b10
+#define MOTU_REG_CLK_CTRL          0x0b14
+#define MOTU_REG_ROUTE_PORT_CONF   0x0c04
+#define MOTU_REG_INPUT_LEVEL       0x0c08
+#define MOTU_REG_INPUT_BOOST       0x0c14
+#define MOTU_REG_INPUT_GAIN_PAD_0  0x0c1c
+#define MOTU_REG_CLKSRC_NAME0      0x0c60
 
 /* Port Active Flags (ports declaration) */
 #define MOTU_PA_RATE_1x          0x0001    /* 44k1 or 48k */

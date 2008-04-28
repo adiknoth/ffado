@@ -40,10 +40,12 @@ class MotuDevice;
 #define MOTU_CTRL_MIX_MUTE        0x00000200
 #define MOTU_CTRL_MIX_DEST        0x00000400
 
-#define MOTU_CTRL_INPUT_LEVEL     0x10000000
-#define MOTU_CTRL_INPUT_BOOST     0x20000000
-#define MOTU_CTRL_PHONES_SRC      0x40000000
-#define MOTU_CTRL_OPTICAL_MODE    0x80000000
+#define MOTU_CTRL_INPUT_TRIMGAIN  0x01000000
+#define MOTU_CTRL_INPUT_PAD       0x02000000
+#define MOTU_CTRL_INPUT_LEVEL     0x04000000
+#define MOTU_CTRL_INPUT_BOOST     0x08000000
+#define MOTU_CTRL_PHONES_SRC      0x10000000
+#define MOTU_CTRL_OPTICAL_MODE    0x20000000
 
 #define MOTU_CTRL_STD_CHANNEL \
     (MOTU_CTRL_CHANNEL_FADER|MOTU_CTRL_CHANNEL_PAN|\
@@ -53,6 +55,8 @@ class MotuDevice;
     (MOTU_CTRL_MIX_FADER|MOTU_CTRL_MIX_MUTE|\
      MOTU_CTRL_MIX_DEST)
 
+#define MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS \
+    (MOTU_CTRL_INPUT_TRIMGAIN|MOTU_CTRL_INPUT_PAD)
 #define MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS \
     (MOTU_CTRL_INPUT_LEVEL|MOTU_CTRL_INPUT_BOOST)
 
@@ -66,11 +70,16 @@ class MotuDevice;
 #define MOTU_CTRL_MASK_ANA7_INPUT_LEVEL    0x00000040
 #define MOTU_CTRL_MASK_ANA8_INPUT_LEVEL    0x00000080
 
+#define MOTU_CTRL_MODE_PAD                 0x00000000
+#define MOTU_CTRL_MODE_TRIMGAIN            0x00000001
+
 #define MOTU_INFO_IS_STREAMING             0x00000001
 #define MOTU_INFO_SAMPLE_RATE		   0x00000002
 #define MOTU_INFO_HAS_MIC_INPUTS           0x00000003
 #define MOTU_INFO_HAS_AESEBU_INPUTS        0x00000004
 #define MOTU_INFO_HAS_SPDIF_INPUTS         0x00000005
+
+#define MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL  3
 
 class MotuDiscreteCtrl
     : public Control::Discrete
@@ -185,6 +194,22 @@ public:
 
     virtual bool setValue(int v);
     virtual int getValue();
+};
+
+class InputGainPad
+    : public MotuDiscreteCtrl
+{
+public:
+    InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode);
+    InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+protected:
+    void validate();
+    unsigned int dev_register();
+    unsigned int m_mode;
 };
 
 class InfoElement

@@ -393,93 +393,6 @@
         </widget>
         <widget class="QCheckBox">
             <property name="name">
-                <cstring>mix1ana1_mute_5</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>140</x>
-                    <y>110</y>
-                    <width>20</width>
-                    <height>26</height>
-                </rect>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>1</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>9</pointsize>
-                </font>
-            </property>
-            <property name="text">
-                <string></string>
-            </property>
-        </widget>
-        <widget class="QCheckBox">
-            <property name="name">
-                <cstring>mix1ana1_mute_4</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>100</x>
-                    <y>110</y>
-                    <width>20</width>
-                    <height>26</height>
-                </rect>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>1</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>9</pointsize>
-                </font>
-            </property>
-            <property name="text">
-                <string></string>
-            </property>
-        </widget>
-        <widget class="QCheckBox">
-            <property name="name">
-                <cstring>mix1ana1_mute_3</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>60</x>
-                    <y>110</y>
-                    <width>20</width>
-                    <height>26</height>
-                </rect>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>1</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>9</pointsize>
-                </font>
-            </property>
-            <property name="text">
-                <string></string>
-            </property>
-        </widget>
-        <widget class="QCheckBox">
-            <property name="name">
                 <cstring>mix1ana1_mute_2_2_2</cstring>
             </property>
             <property name="geometry">
@@ -639,25 +552,6 @@
         </widget>
         <widget class="QLabel">
             <property name="name">
-                <cstring>textLabel2_11</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>220</y>
-                    <width>30</width>
-                    <height>22</height>
-                </rect>
-            </property>
-            <property name="text">
-                <string>1</string>
-            </property>
-            <property name="alignment">
-                <set>AlignCenter</set>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
                 <cstring>textLabel2_2_4</cstring>
             </property>
             <property name="geometry">
@@ -711,35 +605,6 @@
             </property>
             <property name="alignment">
                 <set>AlignCenter</set>
-            </property>
-        </widget>
-        <widget class="QCheckBox">
-            <property name="name">
-                <cstring>mix1ana1_mute_2</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>20</x>
-                    <y>110</y>
-                    <width>20</width>
-                    <height>26</height>
-                </rect>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>1</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>9</pointsize>
-                </font>
-            </property>
-            <property name="text">
-                <string></string>
             </property>
         </widget>
         <widget class="QLabel">
@@ -1456,35 +1321,6 @@
         </widget>
         <widget class="QCheckBox">
             <property name="name">
-                <cstring>ana5_level</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>20</x>
-                    <y>260</y>
-                    <width>20</width>
-                    <height>26</height>
-                </rect>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>1</hsizetype>
-                    <vsizetype>0</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="font">
-                <font>
-                    <pointsize>9</pointsize>
-                </font>
-            </property>
-            <property name="text">
-                <string></string>
-            </property>
-        </widget>
-        <widget class="QCheckBox">
-            <property name="name">
                 <cstring>ana5_boost</cstring>
             </property>
             <property name="geometry">
@@ -1601,44 +1437,6 @@
         </widget>
         <widget class="QDial">
             <property name="name">
-                <cstring>ana1_trimgain</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>30</y>
-                    <width>30</width>
-                    <height>30</height>
-                </rect>
-            </property>
-            <property name="minValue">
-                <number>0</number>
-            </property>
-            <property name="maxValue">
-                <number>53</number>
-            </property>
-        </widget>
-        <widget class="QDial">
-            <property name="name">
-                <cstring>ana2_trimgain</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>50</x>
-                    <y>30</y>
-                    <width>30</width>
-                    <height>30</height>
-                </rect>
-            </property>
-            <property name="minValue">
-                <number>0</number>
-            </property>
-            <property name="maxValue">
-                <number>53</number>
-            </property>
-        </widget>
-        <widget class="QDial">
-            <property name="name">
                 <cstring>ana3_trimgain</cstring>
             </property>
             <property name="geometry">
@@ -1706,6 +1504,208 @@
                 <font>
                     <pointsize>9</pointsize>
                 </font>
+            </property>
+        </widget>
+        <widget class="QDial">
+            <property name="name">
+                <cstring>ana1_trimgain</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>30</y>
+                    <width>30</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>53</number>
+            </property>
+        </widget>
+        <widget class="QDial">
+            <property name="name">
+                <cstring>ana2_trimgain</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>50</x>
+                    <y>30</y>
+                    <width>30</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="minValue">
+                <number>0</number>
+            </property>
+            <property name="maxValue">
+                <number>53</number>
+            </property>
+        </widget>
+        <widget class="QCheckBox">
+            <property name="name">
+                <cstring>ana1_pad</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>110</y>
+                    <width>20</width>
+                    <height>26</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>1</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>9</pointsize>
+                </font>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+        </widget>
+        <widget class="QCheckBox">
+            <property name="name">
+                <cstring>ana2_pad</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>60</x>
+                    <y>110</y>
+                    <width>20</width>
+                    <height>26</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>1</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>9</pointsize>
+                </font>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+        </widget>
+        <widget class="QCheckBox">
+            <property name="name">
+                <cstring>ana5_level</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>260</y>
+                    <width>20</width>
+                    <height>26</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>1</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>9</pointsize>
+                </font>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+        </widget>
+        <widget class="QCheckBox">
+            <property name="name">
+                <cstring>ana3_pad</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>100</x>
+                    <y>110</y>
+                    <width>20</width>
+                    <height>26</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>1</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>9</pointsize>
+                </font>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+        </widget>
+        <widget class="QCheckBox">
+            <property name="name">
+                <cstring>ana4_pad</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>140</x>
+                    <y>110</y>
+                    <width>20</width>
+                    <height>26</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>1</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>9</pointsize>
+                </font>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_11</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>220</y>
+                    <width>30</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>1</string>
+            </property>
+            <property name="alignment">
+                <set>AlignCenter</set>
             </property>
         </widget>
     </widget>

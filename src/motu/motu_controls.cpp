@@ -377,14 +377,14 @@ OpticalMode::setValue(int v)
 
     // Need to get current optical modes so we can preserve the one we're
     // not setting.  Input mode is in bits 9-8, output is in bits 11-10.
-    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF) & 0x000000f0;
+    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF) & 0x00000f00;
 
     // Set mode as requested.  An invalid setting is effectively ignored.
-    if (v>=0 && v>=3) {
+    if (v>=0 && v<=3) {
       if (m_register == MOTU_DIR_IN) {
-        val = (val & ~0x0030) | ((v & 0x03) << 8);
+        val = (val & ~0x0300) | ((v & 0x03) << 8);
       } else {
-        val = (val & ~0x00c0) | ((v & 0x03) << 10);
+        val = (val & ~0x0c00) | ((v & 0x03) << 10);
       }
     }
     // Bit 25 indicates that optical modes are being set
@@ -407,6 +407,121 @@ OpticalMode::getValue()
       val = (val >> 8) & 0x03;
     else
       val = (val >> 10) & 0x03;
+    return val;
+}
+
+InputGainPad::InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode)
+: MotuDiscreteCtrl(parent, channel)
+{
+    m_mode = mode;
+    validate();
+}
+
+InputGainPad::InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode,
+             std::string name, std::string label, std::string descr)
+: MotuDiscreteCtrl(parent, channel, name, label, descr)
+{
+    m_mode = mode;
+    validate();
+}
+
+void InputGainPad::validate(void) {
+    if (m_register > MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Invalid channel %d: max supported is %d, assuming 0\n", 
+            m_register, MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL);
+        m_register = 0;
+    }
+    if (m_mode!=MOTU_CTRL_MODE_PAD && m_mode!=MOTU_CTRL_MODE_TRIMGAIN) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Invalid mode %d, assuming %d\n", m_mode, MOTU_CTRL_MODE_PAD);
+        m_mode = MOTU_CTRL_MODE_PAD;
+    }
+}
+
+unsigned int InputGainPad::dev_register(void) {
+    /* Work out the device register to use for the associated channel */
+    if (m_register>=0 && m_register<=3) {
+      return MOTU_REG_INPUT_GAIN_PAD_0;      
+    } else {
+      debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported channel %d\n", m_register);
+    }
+    return 0;
+}
+             
+bool
+InputGainPad::setValue(int v)
+{
+    unsigned int val;
+    unsigned int reg, reg_shift;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for mode %d input pad/trim %d to %d\n", m_mode, m_register, v);
+
+    reg = dev_register();
+    if (reg == 0)
+        return false;
+    reg_shift = (m_register & 0x03) * 8;
+
+    // Need to get current gain trim / pad value so we can preserve one
+    // while setting the other.  The pad status is in bit 6 of the channel's
+    // respective byte with the trim in bits 0-5.  Bit 7 is the write enable
+    // bit for the channel.
+    val = m_parent.ReadRegister(reg) & (0xff << reg_shift);
+
+    switch (m_mode) {
+        case MOTU_CTRL_MODE_PAD:
+            // Set pad bit (bit 6 of relevant channel's byte)
+            if (v == 0) {
+                val &= ~(0x40 << reg_shift);
+            } else {
+                val |= (0x40 << reg_shift);
+            }
+            break;
+      case MOTU_CTRL_MODE_TRIMGAIN:
+            // Set the gain trim (bits 0-5 of the channel's byte).  Maximum
+            // gain is 53 dB.
+            if (v > 0x35)
+                v = 0x35;
+            val = (val & ~(0x3f << reg_shift)) | (v << reg_shift);
+            break;
+      default:
+        debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported mode %d\n", m_mode);
+        return false;
+    }
+
+    // Set the channel's write enable bit
+    val |= (0x80 << reg_shift);
+
+    m_parent.WriteRegister(reg, val);
+
+    return true;
+}
+
+int
+InputGainPad::getValue()
+{
+    unsigned int val;
+    unsigned int reg, reg_shift;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for mode %d input pad/trim %d\n", m_mode, m_register);
+
+    reg = dev_register();
+    if (reg == 0)
+        return false;
+    reg_shift = (m_register & 0x03) * 8;
+
+    // The pad status is in bit 6 of the channel's respective byte with the
+    // trim in bits 0-5.  Bit 7 is the write enable bit for the channel.
+    val = m_parent.ReadRegister(reg);
+
+    switch (m_mode) {
+        case MOTU_CTRL_MODE_PAD:
+            val = ((val >> reg_shift) & 0x40) != 0;
+            break;
+      case MOTU_CTRL_MODE_TRIMGAIN:
+            val = ((val >> reg_shift) & 0x3f);
+            break;
+      default:
+        debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported mode %d\n", m_mode);
+        return 0;
+    }
+
     return val;
 }
 
