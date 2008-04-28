@@ -1,0 +1,65 @@
+#
+# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007-2008 Pieter Palmers
+#
+# This file is part of FFADO
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+Import( 'env' )
+
+env = env.Copy()
+
+env.AppendUnique( CPPPATH=["#/", "#/src"] )
+
+if not env.GetOption( "clean" ):
+    env.MergeFlags( "-lrt" )
+    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+    env.MergeFlags( env['LIBAVC1394_FLAGS'] )
+    env.MergeFlags( env['LIBIEC61883_FLAGS'] )
+    env.MergeFlags( env['LIBXML26_FLAGS'] )
+
+static_env = env.Copy()
+
+apps = {
+}
+
+installapps = []
+
+env.PrependUnique( LIBPATH=env['build_base']+"src" )
+env.PrependUnique( LIBS="ffado" )
+
+if env['ENABLE_BEBOB']:
+    apps["ffado-bridgeco-downloader"] = "downloader.cpp bridgeco-downloader.cpp"
+    installapps += [ "ffado-bridgeco-downloader" ]
+
+if env['ENABLE_FIREWORKS']:
+    apps["ffado-fireworks-downloader"] = "downloader.cpp fireworks-downloader.cpp"
+    installapps += [ "ffado-fireworks-downloader" ]
+
+for app in apps.keys():
+    env.Program( target=app, source = env.Split( apps[app] ) )
+    if app.find( "test" ) == -1:
+        env.Install( "$bindir", app )
+
+# static versions
+if static_env['BUILD_STATIC_TOOLS']:
+    static_env.Append(LIBS=File('#/src/libffado.a'))
+    for app in apps.keys():
+        static_app = app + "-static"
+        static_env.Program( target=static_app, source = static_env.Split( apps[app] ) )

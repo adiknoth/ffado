@@ -1,0 +1,1307 @@
+/*
+ * Copyright (C) 2005-2008 by Pieter Palmers
+ * Copyright (C) 2005-2008 by Jonathan Woithe
+ *
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
+ *
+ * FFADO is based upon FreeBoB.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#include "motu/motu_avdevice.h"
+
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
+
+#include "libavc/avc_definitions.h"
+
+#include "debugmodule/debugmodule.h"
+
+#include "libstreaming/motu/MotuReceiveStreamProcessor.h"
+#include "libstreaming/motu/MotuTransmitStreamProcessor.h"
+#include "libstreaming/motu/MotuPort.h"
+
+#include "libutil/DelayLockedLoop.h"
+#include "libutil/Time.h"
+
+#include "libcontrol/BasicElements.h"
+
+#include <string>
+#include <stdint.h>
+#include <assert.h>
+#include <netinet/in.h>
+#include <iostream>
+#include <sstream>
+
+#include <libraw1394/csr.h>
+
+namespace Motu {
+
+// Define the supported devices.  Device ordering is arbitary here.
+static VendorModelEntry supportedDeviceList[] =
+{
+//  {vendor_id, model_id, unit_version, unit_specifier_id, model, vendor_name,model_name}
+    {FW_VENDORID_MOTU, 0, 0x00000003, 0x000001f2, MOTU_MODEL_828mkII, "MOTU", "828MkII"},
+    {FW_VENDORID_MOTU, 0, 0x00000009, 0x000001f2, MOTU_MODEL_TRAVELER, "MOTU", "Traveler"},
+    {FW_VENDORID_MOTU, 0, 0x0000000d, 0x000001f2, MOTU_MODEL_ULTRALITE, "MOTU", "UltraLite"},
+    {FW_VENDORID_MOTU, 0, 0x0000000f, 0x000001f2, MOTU_MODEL_8PRE, "MOTU", "8pre"},
+    {FW_VENDORID_MOTU, 0, 0x00000001, 0x000001f2, MOTU_MODEL_828MkI, "MOTU", "828MkI"},
+    {FW_VENDORID_MOTU, 0, 0x00000005, 0x000001f2, MOTU_MODEL_896HD, "MOTU", "896HD"},
+};
+
+// Ports declarations
+const PortEntry Ports_828MKI[] =
+{
+    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
+    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
+    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 61},
+};
+
+const PortEntry Ports_896HD[] =
+{
+    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
+    {"MainOut-L", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"MainOut-R", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"AES/EBU1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 46},
+    {"AES/EBU2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
+    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+};
+
+const PortEntry Ports_828MKII[] =
+{
+    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Mic1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Mic2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
+    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+};
+
+const PortEntry Ports_TRAVELER[] = 
+{
+    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
+    {"AES/EBU1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"AES/EBU2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 46},
+    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 49},
+    {"Toslink1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 46},
+    {"Toslink2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 49},
+    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+};
+
+const PortEntry Ports_ULTRALITE[] =
+{
+    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Mic1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Mic2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog1", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
+};
+
+const PortEntry Ports_8PRE[] =
+{
+    {"Analog1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"ADAT1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT1", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 22},
+    {"ADAT2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+    {"ADAT2", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 25},
+    {"ADAT3", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
+    {"ADAT3", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 28},
+    {"ADAT4", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
+    {"ADAT4", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 31},
+    {"ADAT5", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT5", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 34},
+    {"ADAT6", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT6", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 37},
+    {"ADAT7", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT7", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT8", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT8", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+};
+
+// Mixer registers
+const MixerCtrl MixerCtrls_Traveler[] = {
+    {"Mix1/Ana1_", "Mix 1 analog 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4000, },
+    {"Mix1/Ana2_", "Mix 1 analog 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4004, },
+    {"Mix1/Ana3_", "Mix 1 analog 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4008, },
+    {"Mix1/Ana4_", "Mix 1 analog 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x400c, },
+    {"Mix1/Ana5_", "Mix 1 analog 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4010, },
+    {"Mix1/Ana6_", "Mix 1 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4014, },
+    {"Mix1/Ana7_", "Mix 1 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4018, },
+    {"Mix1/Ana8_", "Mix 1 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x401c, },
+
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+
+    /* For mic/line input controls, the "register" is the zero-based channel number */
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 3},
+    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
+    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
+    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
+    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+};
+
+// For convenience during initial testing, just make the 828MkII and 896HD
+// use the Traveler's mixer definition.  Separate definitions for these 
+// models will come once the final mixer structure is in place.  For now
+// it's in a state of flux and subject to significant change.
+#define MixerCtrls_828MkII MixerCtrls_Traveler
+#define MixerCtrls_896HD   MixerCtrls_Traveler
+
+/* The order of DevicesProperty entries must match the numeric order of the
+ * MOTU model enumeration (EMotuModel).
+ */
+const DevicePropertyEntry DevicesProperty[] = {
+//  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR },
+    { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, MixerCtrls_828MkII, N_ELEMENTS(MixerCtrls_828MkII), },
+    { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, MixerCtrls_Traveler, N_ELEMENTS(MixerCtrls_Traveler), },
+    { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000 },
+    { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
+    { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
+    { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, MixerCtrls_896HD, N_ELEMENTS(MixerCtrls_896HD),  },
+};
+
+MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( d, configRom )
+    , m_motu_model( MOTU_MODEL_NONE )
+    , m_iso_recv_channel ( -1 )
+    , m_iso_send_channel ( -1 )
+    , m_rx_bandwidth ( -1 )
+    , m_tx_bandwidth ( -1 )
+    , m_receiveProcessor ( 0 )
+    , m_transmitProcessor ( 0 )
+    , m_MixerContainer ( NULL )
+    , m_ControlContainer ( NULL )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Motu::MotuDevice (NodeID %d)\n",
+                 getConfigRom().getNodeId() );
+}
+
+MotuDevice::~MotuDevice()
+{
+    delete m_receiveProcessor;
+    delete m_transmitProcessor;
+
+    // Free ieee1394 bus resources if they have been allocated
+    if (m_iso_recv_channel>=0 && !get1394Service().freeIsoChannel(m_iso_recv_channel)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free recv iso channel %d\n", m_iso_recv_channel);
+    }
+    if (m_iso_send_channel>=0 && !get1394Service().freeIsoChannel(m_iso_send_channel)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free send iso channel %d\n", m_iso_send_channel);
+    }
+
+    destroyMixer();
+}
+
+bool
+MotuDevice::buildMixer() {
+    unsigned int i;
+    bool result = true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
+
+    destroyMixer();
+        
+    // create the mixer object container
+    m_MixerContainer = new Control::Container("Mixer");
+    if (!m_MixerContainer) {
+        debugError("Could not create mixer container...\n");
+        return false;
+    }
+
+    // Mixer controls get added here
+    for (i=0; i<DevicesProperty[m_motu_model-1].n_mixer_ctrls; i++) {
+        unsigned int type = DevicesProperty[m_motu_model-1].mixer_ctrl[i].type;
+        char name[100];
+        char label[100];
+        if (type & MOTU_CTRL_CHANNEL_FADER) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "fader");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"fader");
+            result &= m_MixerContainer->addElement(
+                new ChannelFader(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_FADER;
+        }
+        if (type & MOTU_CTRL_CHANNEL_PAN) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "pan");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"pan");
+            result &= m_MixerContainer->addElement(
+                new ChannelPan(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_PAN;
+        }
+        if (type & MOTU_CTRL_CHANNEL_MUTE) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "mute");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"mute");
+            result &= m_MixerContainer->addElement(
+                new MotuBinarySwitch(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    MOTU_CTRL_MASK_MUTE_VALUE, MOTU_CTRL_MASK_MUTE_SETENABLE,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_MUTE;
+        }
+        if (type & MOTU_CTRL_CHANNEL_SOLO) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "solo");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"solo");
+            result &= m_MixerContainer->addElement(
+                new MotuBinarySwitch(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    MOTU_CTRL_MASK_SOLO_VALUE, MOTU_CTRL_MASK_SOLO_SETENABLE,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_CHANNEL_SOLO;
+        }
+
+        if (type & MOTU_CTRL_MIX_FADER) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "fader");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"fader");
+            result &= m_MixerContainer->addElement(
+                new MixFader(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_MIX_FADER;
+        }
+        if (type & MOTU_CTRL_MIX_MUTE) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "mute");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"mute");
+            result &= m_MixerContainer->addElement(
+                new MixMute(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_MIX_MUTE;
+        }
+        if (type & MOTU_CTRL_MIX_DEST) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "dest");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"dest");
+            result &= m_MixerContainer->addElement(
+                new MixDest(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_MIX_DEST;
+        }
+
+        if (type & MOTU_CTRL_INPUT_TRIMGAIN) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "trimgain");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"trimgain");
+            result &= m_MixerContainer->addElement(
+                new InputGainPad(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, MOTU_CTRL_MODE_TRIMGAIN,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_INPUT_TRIMGAIN;
+        }
+        if (type & MOTU_CTRL_INPUT_PAD) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "pad");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"pad");
+            result &= m_MixerContainer->addElement(
+                new InputGainPad(*this, 
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, MOTU_CTRL_MODE_PAD,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_INPUT_PAD;
+        }
+
+        if (type & MOTU_CTRL_INPUT_LEVEL) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "level");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"level");
+            result &= m_MixerContainer->addElement(
+                new MotuBinarySwitch(*this, 
+                    MOTU_REG_INPUT_LEVEL,
+                    1<<DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, 0,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_INPUT_LEVEL;
+        }
+        if (type & MOTU_CTRL_INPUT_BOOST) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "boost");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"boost");
+            result &= m_MixerContainer->addElement(
+                new MotuBinarySwitch(*this, 
+                    MOTU_REG_INPUT_BOOST,
+                    1<<DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, 0,
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_INPUT_BOOST;
+        }
+        if (type & MOTU_CTRL_PHONES_SRC) {
+            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "src");
+            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"src");
+            result &= m_MixerContainer->addElement(
+                new PhonesSrc(*this, 
+                    name, label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_PHONES_SRC;
+        }
+        if (type & MOTU_CTRL_OPTICAL_MODE) {
+            result &= m_MixerContainer->addElement(
+                new OpticalMode(*this, DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].name,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,
+                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+            type &= ~MOTU_CTRL_OPTICAL_MODE;
+        }
+
+        if (type) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", DevicesProperty[m_motu_model-1].mixer_ctrl[i].type);
+        }
+    }
+
+    /* Now add some general device information controls.  These may yet
+     * become device-specific if it turns out to be easier that way.
+     */
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_IS_STREAMING, "Info/IsStreaming", "Is device streaming", ""));
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_SAMPLE_RATE, "Info/SampleRate", "Device sample rate", ""));
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_HAS_MIC_INPUTS, "Info/HasMicInputs", "Device has mic inputs", ""));
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_HAS_AESEBU_INPUTS, "Info/HasAESEBUInputs", "Device has AES/EBU inputs", ""));
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_HAS_SPDIF_INPUTS, "Info/HasSPDIFInputs", "Device has SPDIF inputs", ""));
+
+    if (!addElement(m_MixerContainer)) {
+        debugWarning("Could not register mixer to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    // Special controls
+    m_ControlContainer = new Control::Container("Control");
+    if (!m_ControlContainer) {
+        debugError("Could not create control container...\n");
+        return false;
+    }
+
+    // Special controls get added here
+
+    if (!result) {
+        debugWarning("One or more device control elements could not be created.");
+        // clean up those that couldn't be created
+        destroyMixer();
+        return false;
+    }
+    if (!addElement(m_ControlContainer)) {
+        debugWarning("Could not register controls to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    return true;
+}
+
+
+bool
+MotuDevice::destroyMixer() {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "destroy mixer...\n");
+
+    if (m_MixerContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
+        return true;
+    }
+    
+    if (!deleteElement(m_MixerContainer)) {
+        debugError("Mixer present but not registered to the avdevice\n");
+        return false;
+    }
+
+    // remove and delete (as in free) child control elements
+    m_MixerContainer->clearElements(true);
+    delete m_MixerContainer;
+    m_MixerContainer = NULL;
+
+    // remove control container
+    if (m_ControlContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no controls to destroy...\n");
+        return true;
+    }
+    
+    if (!deleteElement(m_ControlContainer)) {
+        debugError("Controls present but not registered to the avdevice\n");
+        return false;
+    }
+    
+    // remove and delete (as in free) child control elements
+    m_ControlContainer->clearElements(true);
+    delete m_ControlContainer;
+    m_ControlContainer = NULL;
+
+    return true;
+}
+
+bool
+MotuDevice::probe( ConfigRom& configRom )
+{
+    unsigned int vendorId = configRom.getNodeVendorId();
+    unsigned int unitVersion = configRom.getUnitVersion();
+    unsigned int unitSpecifierId = configRom.getUnitSpecifierId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].unit_version == unitVersion )
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
+           )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+FFADODevice *
+MotuDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+{
+    return new MotuDevice(d, configRom);
+}
+
+bool
+MotuDevice::discover()
+{
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int unitVersion = getConfigRom().getUnitVersion();
+    unsigned int unitSpecifierId = getConfigRom().getUnitSpecifierId();
+
+    for ( unsigned int i = 0;
+          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
+          ++i )
+    {
+        if ( ( supportedDeviceList[i].vendor_id == vendorId )
+             && ( supportedDeviceList[i].unit_version == unitVersion )
+             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
+           )
+        {
+            m_model = &(supportedDeviceList[i]);
+            m_motu_model=supportedDeviceList[i].model;
+        }
+    }
+
+    if (m_model == NULL) {
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+        m_model->vendor_name, m_model->model_name);
+
+    if (!buildMixer()) {
+        debugWarning("Could not build mixer\n");
+    }
+
+    return true;
+}
+
+int
+MotuDevice::getSamplingFrequency( ) {
+/*
+ * Retrieve the current sample rate from the MOTU device.
+ */
+    quadlet_t q = ReadRegister(MOTU_REG_CLK_CTRL);
+    int rate = 0;
+
+    switch (q & MOTU_RATE_BASE_MASK) {
+        case MOTU_RATE_BASE_44100:
+            rate = 44100;
+            break;
+        case MOTU_RATE_BASE_48000:
+            rate = 48000;
+            break;
+    }
+    switch (q & MOTU_RATE_MULTIPLIER_MASK) {
+        case MOTU_RATE_MULTIPLIER_2X:
+            rate *= 2;
+            break;
+        case MOTU_RATE_MULTIPLIER_4X:
+            rate *= 4;
+            break;
+    }
+    return rate;
+}
+
+int
+MotuDevice::getConfigurationId()
+{
+    return 0;
+}
+
+bool
+MotuDevice::setSamplingFrequency( int samplingFrequency )
+{
+/*
+ * Set the MOTU device's samplerate.
+ */
+    char *src_name;
+    quadlet_t q, new_rate=0;
+    int i, supported=true, cancel_adat=false;
+
+    if ( samplingFrequency > DevicesProperty[m_motu_model-1].MaxSampleRate )
+       return false; 
+
+    switch ( samplingFrequency ) {
+        case 22050:
+        case 24000:
+        case 32000:
+            supported=false;
+            break;
+        case 44100:
+            new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_1X;
+            break;
+        case 48000:
+            new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_1X;
+            break;
+        case 88200:
+            new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_2X;
+            break;
+        case 96000:
+            new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_2X;
+            break;
+        case 176400:
+            new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_4X;
+            cancel_adat = true;  // current ADAT protocol doesn't support sample rate > 96000
+            break;
+        case 192000:
+            new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_4X;
+            cancel_adat = true;
+            break;
+        default:
+            supported=false;
+    }
+
+    // Update the clock control register.  FIXME: while this is now rather
+    // comprehensive there may still be a need to manipulate MOTU_REG_CLK_CTRL
+    // a little more than we do.
+    if (supported) {
+        quadlet_t value=ReadRegister(MOTU_REG_CLK_CTRL);
+
+        // If optical port must be disabled (because a 4x sample rate has
+        // been selected) then do so before changing the sample rate.  At
+        // this stage it will be up to the user to re-enable the optical
+        // port if the sample rate is set to a 1x or 2x rate later.
+        if (cancel_adat) {
+            setOpticalMode(MOTU_DIR_INOUT, MOTU_OPTICAL_MODE_OFF);
+        }
+
+        value &= ~(MOTU_RATE_BASE_MASK|MOTU_RATE_MULTIPLIER_MASK);
+        value |= new_rate;
+
+        // In other OSes bit 26 of MOTU_REG_CLK_CTRL always seems
+        // to be set when this register is written to although the
+        // reason isn't currently known.  When we set it, it appears
+        // to prevent output being produced so we'll leave it unset
+        // until we work out what's going on.  Other systems write
+        // to MOTU_REG_CLK_CTRL multiple times, so that may be
+        // part of the mystery.
+        //   value |= 0x04000000;
+        if (WriteRegister(MOTU_REG_CLK_CTRL, value) == 0) {
+            supported=true;
+        } else {
+            supported=false;
+        }
+        // A write to the rate/clock control register requires the
+        // textual name of the current clock source be sent to the
+        // clock source name registers.
+        switch (value & MOTU_CLKSRC_MASK) {
+            case MOTU_CLKSRC_INTERNAL:
+                src_name = "Internal        ";
+                break;
+            case MOTU_CLKSRC_ADAT_OPTICAL:
+                src_name = "ADAT Optical    ";
+                break;
+            case MOTU_CLKSRC_SPDIF_TOSLINK:
+                if (getOpticalMode(MOTU_DIR_IN)  == MOTU_OPTICAL_MODE_TOSLINK)
+                    src_name = "TOSLink         ";
+                else
+                    src_name = "SPDIF           ";
+                break;
+            case MOTU_CLKSRC_SMTPE:
+                src_name = "SMPTE           ";
+                break;
+            case MOTU_CLKSRC_WORDCLOCK:
+                src_name = "Word Clock In   ";
+                break;
+            case MOTU_CLKSRC_ADAT_9PIN:
+                src_name = "ADAT 9-pin      ";
+                break;
+            case MOTU_CLKSRC_AES_EBU:
+                src_name = "AES-EBU         ";
+                break;
+            default:
+                src_name = "Unknown         ";
+        }
+        for (i=0; i<16; i+=4) {
+            q = (src_name[i]<<24) | (src_name[i+1]<<16) |
+                (src_name[i+2]<<8) | src_name[i+3];
+            WriteRegister(MOTU_REG_CLKSRC_NAME0+i, q);
+        }
+    }
+    return supported;
+}
+
+FFADODevice::ClockSourceVector
+MotuDevice::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
+}
+
+bool
+MotuDevice::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+MotuDevice::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
+bool
+MotuDevice::lock() {
+
+    return true;
+}
+
+
+bool
+MotuDevice::unlock() {
+
+    return true;
+}
+
+void
+MotuDevice::showDevice()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+        "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
+        getNodeId());
+}
+
+bool
+MotuDevice::prepare() {
+
+    int samp_freq = getSamplingFrequency();
+    unsigned int optical_in_mode = getOpticalMode(MOTU_DIR_IN);
+    unsigned int optical_out_mode = getOpticalMode(MOTU_DIR_OUT);
+    unsigned int event_size_in = getEventSize(MOTU_DIR_IN);
+    unsigned int event_size_out= getEventSize(MOTU_DIR_OUT);
+
+    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
+
+    // Allocate bandwidth if not previously done.
+    // FIXME: The bandwidth allocation calculation can probably be
+    // refined somewhat since this is currently based on a rudimentary
+    // understanding of the ieee1394 iso protocol.
+    // Currently we assume the following.
+    //   * Ack/iso gap = 0.05 us
+    //   * DATA_PREFIX = 0.16 us
+    //   * DATA_END    = 0.26 us
+    // These numbers are the worst-case figures given in the ieee1394
+    // standard.  This gives approximately 0.5 us of overheads per packet -
+    // around 25 bandwidth allocation units (from the ieee1394 standard 1
+    // bandwidth allocation unit is 125/6144 us).  We further assume the
+    // MOTU is running at S400 (which it should be) so one allocation unit
+    // is equivalent to 1 transmitted byte; thus the bandwidth allocation
+    // required for the packets themselves is just the size of the packet. 
+    // We used to allocate based on the maximum packet size (1160 bytes at
+    // 192 kHz for the traveler) but now do this based on the actual device
+    // state by utilising the result from getEventSize() and remembering
+    // that each packet has an 8 byte CIP header.  Note that bandwidth is
+    // allocated on a *per stream* basis - it must be allocated for both the
+    // transmit and receive streams.  While most MOTU modules are close to
+    // symmetric in terms of the number of in/out channels there are
+    // exceptions, so we deal with receive and transmit bandwidth separately.
+    signed int n_events_per_packet = samp_freq<=48000?8:(samp_freq<=96000?16:32);
+    m_rx_bandwidth = 25 + (n_events_per_packet*event_size_in);
+    m_tx_bandwidth = 25 + (n_events_per_packet*event_size_out);
+
+    // Assign iso channels if not already done
+    if (m_iso_recv_channel < 0)
+        m_iso_recv_channel = get1394Service().allocateIsoChannelGeneric(m_rx_bandwidth);
+
+    if (m_iso_send_channel < 0)
+        m_iso_send_channel = get1394Service().allocateIsoChannelGeneric(m_tx_bandwidth);
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
+        m_iso_recv_channel, m_iso_send_channel);
+
+    if (m_iso_recv_channel<0 || m_iso_send_channel<0) {
+        // be nice and deallocate
+        if (m_iso_recv_channel >= 0)
+            get1394Service().freeIsoChannel(m_iso_recv_channel);
+        if (m_iso_send_channel >= 0)
+            get1394Service().freeIsoChannel(m_iso_send_channel);
+
+        debugFatal("Could not allocate iso channels!\n");
+        return false;
+    }
+
+    m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(*this, event_size_in);
+
+    // The first thing is to initialize the processor.  This creates the
+    // data structures.
+    if(!m_receiveProcessor->init()) {
+        debugFatal("Could not initialize receive processor!\n");
+        return false;
+    }
+    m_receiveProcessor->setVerboseLevel(getDebugLevel());
+
+    // Now we add ports to the processor
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
+
+    char *buff;
+    Streaming::Port *p=NULL;
+
+    // retrieve the ID
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+    }
+
+    // Add audio capture ports
+    if (!addDirPorts(Streaming::Port::E_Capture, samp_freq, optical_in_mode)) {
+        return false;
+    }
+
+    // Add MIDI port.  The MOTU only has one MIDI input port, with each
+    // MIDI byte sent using a 3 byte sequence starting at byte 4 of the
+    // event data.
+    asprintf(&buff,"%s_cap_MIDI0",id.c_str());
+    p = new Streaming::MotuMidiPort(*m_receiveProcessor, buff,
+        Streaming::Port::E_Capture, 4);
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+    }
+    free(buff);
+
+    // example of adding an control port:
+//    asprintf(&buff,"%s_cap_%s",id.c_str(),"myportnamehere");
+//    p=new Streaming::MotuControlPort(
+//            buff,
+//            Streaming::Port::E_Capture,
+//            0 // you can add all other port specific stuff you
+//              // need to pass by extending MotuXXXPort and MotuPortInfo
+//    );
+//    free(buff);
+//
+//    if (!p) {
+//        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+//    } else {
+//
+//        if (!m_receiveProcessor->addPort(p)) {
+//            debugWarning("Could not register port with stream processor\n");
+//            return false;
+//        } else {
+//            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+//        }
+//    }
+
+    // Do the same for the transmit processor
+    m_transmitProcessor=new Streaming::MotuTransmitStreamProcessor(*this, event_size_out);
+
+    m_transmitProcessor->setVerboseLevel(getDebugLevel());
+
+    if(!m_transmitProcessor->init()) {
+        debugFatal("Could not initialize transmit processor!\n");
+        return false;
+    }
+
+    // Now we add ports to the processor
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
+
+    // Add audio playback ports
+    if (!addDirPorts(Streaming::Port::E_Playback, samp_freq, optical_out_mode)) {
+        return false;
+    }
+
+    // Add MIDI port.  The MOTU only has one output MIDI port, with each
+    // MIDI byte transmitted using a 3 byte sequence starting at byte 4
+    // of the event data.
+    asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
+    p = new Streaming::MotuMidiPort(*m_transmitProcessor, buff,
+        Streaming::Port::E_Capture, 4);
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+    }
+    free(buff);
+
+    // example of adding an control port:
+//    asprintf(&buff,"%s_pbk_%s",id.c_str(),"myportnamehere");
+//
+//    p=new Streaming::MotuControlPort(
+//            buff,
+//            Streaming::Port::E_Playback,
+//            0 // you can add all other port specific stuff you
+//              // need to pass by extending MotuXXXPort and MotuPortInfo
+//    );
+//    free(buff);
+//
+//    if (!p) {
+//        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",buff);
+//    } else {
+//        if (!m_transmitProcessor->addPort(p)) {
+//            debugWarning("Could not register port with stream processor\n");
+//            return false;
+//        } else {
+//            debugOutput(DEBUG_LEVEL_VERBOSE, "Added port %s\n",buff);
+//        }
+//    }
+
+    return true;
+}
+
+int
+MotuDevice::getStreamCount() {
+     return 2; // one receive, one transmit
+}
+
+Streaming::StreamProcessor *
+MotuDevice::getStreamProcessorByIndex(int i) {
+    switch (i) {
+    case 0:
+        return m_receiveProcessor;
+    case 1:
+         return m_transmitProcessor;
+    default:
+        return NULL;
+    }
+    return 0;
+}
+
+bool
+MotuDevice::startStreamByIndex(int i) {
+
+quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
+
+    // NOTE: this assumes that you have two streams
+    switch (i) {
+    case 0:
+        // TODO: do the stuff that is nescessary to make the device
+        // receive a stream
+
+        // Set the streamprocessor channel to the one obtained by
+        // the connection management
+        m_receiveProcessor->setChannel(m_iso_recv_channel);
+
+        // Mask out current transmit settings of the MOTU and replace
+        // with new ones.  Turn bit 24 on to enable changes to the
+        // MOTU's iso transmit settings when the iso control register
+        // is written.  Bit 23 enables iso transmit from the MOTU.
+        isoctrl &= 0xff00ffff;
+        isoctrl |= (m_iso_recv_channel << 16);
+        isoctrl |= 0x00c00000;
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+        break;
+    case 1:
+        // TODO: do the stuff that is nescessary to make the device
+        // transmit a stream
+
+        // Set the streamprocessor channel to the one obtained by
+        // the connection management
+        m_transmitProcessor->setChannel(m_iso_send_channel);
+
+        // Mask out current receive settings of the MOTU and replace
+        // with new ones.  Turn bit 31 on to enable changes to the
+        // MOTU's iso receive settings when the iso control register
+        // is written.  Bit 30 enables iso receive by the MOTU.
+        isoctrl &= 0x00ffffff;
+        isoctrl |= (m_iso_send_channel << 24);
+        isoctrl |= 0xc0000000;
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+        break;
+
+    default: // Invalid stream index
+        return false;
+    }
+
+    return true;
+}
+
+bool
+MotuDevice::stopStreamByIndex(int i) {
+
+quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
+
+    // TODO: connection management: break connection
+    // cfr the start function
+
+    // NOTE: this assumes that you have two streams
+    switch (i) {
+    case 0:
+        // Turn bit 22 off to disable iso send by the MOTU.  Turn
+        // bit 23 on to enable changes to the MOTU's iso transmit
+        // settings when the iso control register is written.
+        isoctrl &= 0xffbfffff;
+        isoctrl |= 0x00800000;
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+        break;
+    case 1:
+        // Turn bit 30 off to disable iso receive by the MOTU.  Turn
+        // bit 31 on to enable changes to the MOTU's iso receive
+        // settings when the iso control register is written.
+        isoctrl &= 0xbfffffff;
+        isoctrl |= 0x80000000;
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+        break;
+
+    default: // Invalid stream index
+        return false;
+    }
+
+    return true;
+}
+
+signed int MotuDevice::getIsoRecvChannel(void) {
+    return m_iso_recv_channel;
+}
+
+signed int MotuDevice::getIsoSendChannel(void) {
+    return m_iso_send_channel;
+}
+
+unsigned int MotuDevice::getOpticalMode(unsigned int dir) {
+    unsigned int reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
+
+debugOutput(DEBUG_LEVEL_VERBOSE, "optical mode: %x %x %x %x\n",dir, reg, reg & MOTU_OPTICAL_IN_MODE_MASK,
+reg & MOTU_OPTICAL_OUT_MODE_MASK);
+
+    if (dir == MOTU_DIR_IN)
+        return (reg & MOTU_OPTICAL_IN_MODE_MASK) >> 8;
+    else
+        return (reg & MOTU_OPTICAL_OUT_MODE_MASK) >> 10;
+}
+
+signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
+    unsigned int reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
+    unsigned int opt_ctrl = 0x0000002;
+
+    /* THe 896HD doesn't have an SPDIF/TOSLINK optical mode, so don't try to
+     * set it
+     */
+    if (m_motu_model==MOTU_MODEL_896HD && mode==MOTU_OPTICAL_MODE_TOSLINK)
+        return -1;
+
+    // Set up the optical control register value according to the current
+    // optical port modes.  At this stage it's not completely understood
+    // what the "Optical control" register does, so the values it's set to
+    // are more or less "magic" numbers.
+    if (reg & MOTU_OPTICAL_IN_MODE_MASK != (MOTU_OPTICAL_MODE_ADAT<<8))
+        opt_ctrl |= 0x00000080;
+    if (reg & MOTU_OPTICAL_OUT_MODE_MASK != (MOTU_OPTICAL_MODE_ADAT<<10))
+        opt_ctrl |= 0x00000040;
+
+    if (mode & MOTU_DIR_IN) {
+        reg &= ~MOTU_OPTICAL_IN_MODE_MASK;
+        reg |= (mode << 8) & MOTU_OPTICAL_IN_MODE_MASK;
+        if (mode != MOTU_OPTICAL_MODE_ADAT)
+            opt_ctrl |= 0x00000080;
+        else
+            opt_ctrl &= ~0x00000080;
+    }
+    if (mode & MOTU_DIR_OUT) {
+        reg &= ~MOTU_OPTICAL_OUT_MODE_MASK;
+        reg |= (mode <<10) & MOTU_OPTICAL_OUT_MODE_MASK;
+        if (mode != MOTU_OPTICAL_MODE_ADAT)
+            opt_ctrl |= 0x00000040;
+        else
+            opt_ctrl &= ~0x00000040;
+    }
+
+    // FIXME: there seems to be more to it than this, but for
+    // the moment at least this seems to work.
+    WriteRegister(MOTU_REG_ROUTE_PORT_CONF, reg);
+    return WriteRegister(MOTU_REG_OPTICAL_CTRL, opt_ctrl);
+}
+
+signed int MotuDevice::getEventSize(unsigned int direction) {
+//
+// Return the size in bytes of a single event sent to (dir==MOTU_OUT) or
+// from (dir==MOTU_IN) the MOTU as part of an iso data packet.
+//
+// FIXME: for performance it may turn out best to calculate the event
+// size in setOpticalMode and cache the result in a data field.  However,
+// as it stands this will not adapt to dynamic changes in sample rate - we'd
+// need a setFrameRate() for that.
+//
+// At the very least an event consists of the SPH (4 bytes) and the control/MIDI
+// bytes (6 bytes).
+// Note that all audio channels are sent using 3 bytes.
+signed int sample_rate = getSamplingFrequency();
+signed int optical_mode = getOpticalMode(direction);
+signed int size = 4+6;
+
+unsigned int i;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_DIR_IN:MOTU_DIR_OUT;
+unsigned int flags = (1 << ( optical_mode + 4 ));
+
+    if ( sample_rate > 96000 )
+        flags |= MOTU_PA_RATE_4x;
+    else if ( sample_rate > 48000 )
+        flags |= MOTU_PA_RATE_2x;
+    else
+        flags |= MOTU_PA_RATE_1x;
+
+    for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
+        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags )) {
+            size += 3;
+        }
+    }
+
+    // Finally round size up to the next quadlet boundary
+    return ((size+3)/4)*4;
+}
+/* ======================================================================= */
+
+bool MotuDevice::addPort(Streaming::StreamProcessor *s_processor,
+  char *name, enum Streaming::Port::E_Direction direction,
+  int position, int size) {
+/*
+ * Internal helper function to add a MOTU port to a given stream processor.
+ * This just saves the unnecessary replication of what is essentially
+ * boilerplate code.  Note that the port name is freed by this function
+ * prior to exit.
+ */
+Streaming::Port *p=NULL;
+
+    p = new Streaming::MotuAudioPort(*s_processor, name, direction, position, size);
+
+    if (!p) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
+    }
+    free(name);
+    return true;
+}
+/* ======================================================================= */
+
+bool MotuDevice::addDirPorts(
+  enum Streaming::Port::E_Direction direction,
+  unsigned int sample_rate, unsigned int optical_mode) {
+/*
+ * Internal helper method: adds all required ports for the given direction
+ * based on the indicated sample rate and optical mode.
+ *
+ * Notes: currently ports are not created if they are disabled due to sample
+ * rate or optical mode.  However, it might be better to unconditionally
+ * create all ports and just disable those which are not active.
+ */
+const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
+Streaming::StreamProcessor *s_processor;
+unsigned int i;
+char *buff;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_DIR_IN:MOTU_DIR_OUT;
+unsigned int flags = (1 << ( optical_mode + 4 ));
+
+    if ( sample_rate > 96000 )
+        flags |= MOTU_PA_RATE_4x;
+    else if ( sample_rate > 48000 )
+        flags |= MOTU_PA_RATE_2x;
+    else
+        flags |= MOTU_PA_RATE_1x;
+
+    // retrieve the ID
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
+    }
+
+    if (direction == Streaming::Port::E_Capture) {
+        s_processor = m_receiveProcessor;
+    } else {
+        s_processor = m_transmitProcessor;
+    }
+
+    for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
+        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags )) {
+	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
+              DevicesProperty[m_motu_model-1].port_entry[i].port_name);
+            if (!addPort(s_processor, buff, direction, DevicesProperty[m_motu_model-1].port_entry[i].port_offset, 0))
+                return false;
+        }
+    }
+    
+    return true;
+}
+/* ======================================================================== */
+
+unsigned int MotuDevice::ReadRegister(unsigned int reg) {
+/*
+ * Attempts to read the requested register from the MOTU.
+ */
+
+  quadlet_t quadlet;
+
+  quadlet = 0;
+  // Note: 1394Service::read() expects a physical ID, not the node id
+  if (get1394Service().read(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &quadlet) < 0) {
+    debugError("Error doing motu read from register 0x%06x\n",reg);
+  }
+
+  return ntohl(quadlet);
+}
+
+signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
+/*
+ * Attempts to write the given data to the requested MOTU register.
+ */
+
+  unsigned int err = 0;
+  data = htonl(data);
+
+  // Note: 1394Service::write() expects a physical ID, not the node id
+  if (get1394Service().write(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &data) < 0) {
+    err = 1;
+    debugError("Error doing motu write to register 0x%06x\n",reg);
+  }
+
+  SleepRelativeUsec(100);
+  return (err==0)?0:-1;
+}
+
+}
