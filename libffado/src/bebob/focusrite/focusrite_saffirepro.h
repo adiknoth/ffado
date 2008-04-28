@@ -336,6 +336,8 @@ public:
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
+    virtual std::string getNickname();
+    virtual bool setNickname(std::string name);
 protected:
     void rebootDevice();
     void flashLed();
@@ -368,6 +370,7 @@ private:
 
     Control::Container *m_MixerContainer;
     Control::Container *m_ControlContainer;
+    SaffireProDeviceNameControl *m_deviceNameControl;
 };
 
 } // namespace Focusrite

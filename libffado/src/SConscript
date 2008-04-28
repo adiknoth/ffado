@@ -86,6 +86,7 @@ ffado_source = env.Split( '\
 	libcontrol/BasicElements.cpp \
 	libcontrol/MatrixMixer.cpp \
 	libcontrol/ClockSelect.cpp \
+	libcontrol/Nickname.cpp \
 ')
 
 bebob_source = env.Split( '\

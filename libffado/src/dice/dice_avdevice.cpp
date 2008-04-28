@@ -499,6 +499,18 @@ DiceAvDevice::getActiveClockSource() {
     return s;
 }
 
+bool
+DiceAvDevice::setNickname( std::string name)
+{
+    return setDeviceNickName(name);
+}
+
+std::string
+DiceAvDevice::getNickname()
+{
+    return getDeviceNickName();
+}
+
 void
 DiceAvDevice::showDevice()
 {
@@ -1297,6 +1309,19 @@ DiceAvDevice::getDeviceNickName() {
 
     namestring[DICE_NICK_NAME_SIZE]='\0';
     return std::string(namestring);
+}
+
+bool
+DiceAvDevice::setDeviceNickName(std::string name) {
+    char namestring[DICE_NICK_NAME_SIZE+1];
+    strncpy(namestring, name.c_str(), DICE_NICK_NAME_SIZE);
+
+    if (!writeGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
+                        (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
+        debugError("Could not write nickname string \n");
+        return false;
+    }
+    return true;
 }
 
 DiceAvDevice::diceNameVector

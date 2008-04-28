@@ -29,6 +29,7 @@
 
 #include "libcontrol/Element.h"
 #include "libcontrol/ClockSelect.h"
+#include "libcontrol/Nickname.h"
 
 #include <iostream>
 #include <sstream>
@@ -62,6 +63,10 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
         // add a generic control for the clock source selection
         if(!m_genericContainer->addElement(new Control::ClockSelect(*this))) {
             debugWarning("failed to add clock source control to container\n");
+        }
+        // add a generic control for the nickname
+        if(!m_genericContainer->addElement(new Control::Nickname(*this))) {
+            debugWarning("failed to add Nickname control to container\n");
         }
     }
 }
@@ -151,6 +156,18 @@ FFADODevice::setId( unsigned int id)
     retval=setOption("id",idstr.str());
     m_DeviceMutex.Unlock();
     return retval;
+}
+
+bool
+FFADODevice::setNickname( std::string name)
+{
+    return false;
+}
+
+std::string
+FFADODevice::getNickname()
+{
+    return "Unknown";
 }
 
 void

@@ -88,6 +88,9 @@ public:
     virtual bool enableStreaming();
     virtual bool disableStreaming();
 
+    virtual std::string getNickname();
+    virtual bool setNickname(std::string name);
+
 protected:
     struct VendorModelEntry *m_model;
 
@@ -132,6 +135,7 @@ private: // helper functions
     diceNameVector getRxNameString(unsigned int i);
     diceNameVector getClockSourceNameString();
     std::string getDeviceNickName();
+    bool setDeviceNickName(std::string name);
 
     enum eClockSourceType  clockIdToType(unsigned int id);
     bool isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg);
