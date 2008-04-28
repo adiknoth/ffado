@@ -1,0 +1,273 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>ffadoRegDialogUI</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>ffadoRegDialogUI</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>468</width>
+            <height>565</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>FFADO Usage Statistics</string>
+    </property>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>regText</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>450</width>
+                <height>290</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>You are running this version of FFADO for the first time with this device.
+
+In order to collect decent usage statistics we would like to send some information about your system to ffado.org. We need usage statistics to convince vendors that Linux does matter.
+
+This information is intended only for usage monitoring. The only personal information sent is an optional email address. The source code for the registration process can be found in "ffado_registration.py".</string>
+        </property>
+        <property name="alignment">
+            <set>WordBreak|AlignTop</set>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnSend</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>520</y>
+                <width>121</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Send</string>
+        </property>
+        <property name="default">
+            <bool>true</bool>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnNoSend</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>140</x>
+                <y>520</y>
+                <width>160</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Don't send now</string>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnNeverSend</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>310</x>
+                <y>520</y>
+                <width>150</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Never send</string>
+        </property>
+    </widget>
+    <widget class="QGroupBox">
+        <property name="name">
+            <cstring>grpDeviceInfo</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>301</y>
+                <width>451</width>
+                <height>200</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string>Information being sent </string>
+        </property>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>159</y>
+                    <width>121</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Your E-Mail:</string>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtEmail</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>140</x>
+                    <y>160</y>
+                    <width>300</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>(optional)</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>txtVersion</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>160</x>
+                    <y>119</y>
+                    <width>280</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>0x1234546</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2_3</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>120</y>
+                    <width>140</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>FFADO Version:</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>30</x>
+                    <y>90</y>
+                    <width>90</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>GUID:</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>30</x>
+                    <y>60</y>
+                    <width>140</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Vendor/Model Id:</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>30</y>
+                    <width>100</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Device Info:</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>txtDevice</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>120</x>
+                    <y>30</y>
+                    <width>320</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>FFADO TEST </string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>txtGUID</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>190</x>
+                    <y>89</y>
+                    <width>250</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>0x1234546</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>txtVendorModel</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>190</x>
+                    <y>59</y>
+                    <width>250</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>0x1234546</string>
+            </property>
+        </widget>
+    </widget>
+</widget>
+<slots>
+    <slot>init()</slot>
+</slots>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
