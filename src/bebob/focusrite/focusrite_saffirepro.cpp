@@ -36,6 +36,7 @@ SaffireProDevice::SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( 
     : FocusriteDevice( d, configRom )
     , m_MixerContainer( NULL )
     , m_ControlContainer( NULL )
+    , m_deviceNameControl( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireProDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -255,9 +256,9 @@ SaffireProDevice::buildMixer()
         new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_EnableSPDIF,
             "EnableSPDIF1", "Enable S/PDIF 1", "Enable/disable S/PDIF channel"));
 
-    result &= m_ControlContainer->addElement(
-        new SaffireProDeviceNameControl(*this,
-            "DeviceName", "Flash Device Name", "Device name stored in flash memory"));
+    m_deviceNameControl = new SaffireProDeviceNameControl(*this,
+            "DeviceName", "Flash Device Name", "Device name stored in flash memory");
+    result &= m_ControlContainer->addElement(m_deviceNameControl);
 
     if (!result) {
         debugWarning("One or more device control elements could not be created.");
@@ -313,6 +314,22 @@ SaffireProDevice::destroyMixer()
     m_ControlContainer = NULL;
 
     return true;
+}
+
+bool
+SaffireProDevice::setNickname( std::string name)
+{
+    if(m_deviceNameControl) {
+        return m_deviceNameControl->setValue(name);
+    } else return false;
+}
+
+std::string
+SaffireProDevice::getNickname()
+{
+    if(m_deviceNameControl) {
+        return m_deviceNameControl->getValue();
+    } else return "Unknown";
 }
 
 void

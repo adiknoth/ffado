@@ -418,12 +418,27 @@ public:
     int getNodeId();
 
     /**
+     * @brief return the nick name of this device
+     *
+     * @return string containing the name
+     */
+    virtual std::string getNickname();
+
+    /**
+     * @brief set the nick name of this device
+     * @param name new nickname
+     * @return true if successful
+     */
+    virtual bool setNickname(std::string name);
+
+    /**
      * @brief handle a bus reset
      *
      * Called whenever a bus reset is detected. Handle everything
      * that has to be done to cope with a bus reset.
      *
      */
+    // FIXME: not virtual?
     void handleBusReset();
 
     // the Control::Container functions
