@@ -17,7 +17,7 @@
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details.
 </comment>
-<widget class="QDialog">
+<widget class="QWidget">
     <property name="name">
         <cstring>DummyMixerUI</cstring>
     </property>
@@ -25,56 +25,48 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>220</width>
-            <height>221</height>
+            <width>309</width>
+            <height>290</height>
         </rect>
     </property>
     <property name="caption">
         <string>Dummy Panel</string>
     </property>
-    <widget class="QLabel">
+    <grid>
         <property name="name">
-            <cstring>textLabel1</cstring>
+            <cstring>unnamed</cstring>
         </property>
-        <property name="geometry">
-            <rect>
-                <x>10</x>
-                <y>10</y>
-                <width>210</width>
-                <height>170</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>This panel is merely a placeholder for devices that don't have a mixer panel yet.</string>
-        </property>
-        <property name="alignment">
-            <set>WordBreak|AlignVCenter</set>
-        </property>
-    </widget>
-    <widget class="QPushButton">
-        <property name="name">
-            <cstring>pushButton1</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>90</x>
-                <y>180</y>
-                <width>121</width>
-                <height>31</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>Close</string>
-        </property>
-    </widget>
+        <widget class="QLabel" row="0" column="0" rowspan="1" colspan="2">
+            <property name="name">
+                <cstring>textLabel1</cstring>
+            </property>
+            <property name="text">
+                <string>This panel is merely a placeholder for devices that don't have a mixer panel yet.</string>
+            </property>
+            <property name="alignment">
+                <set>WordBreak|AlignVCenter</set>
+            </property>
+        </widget>
+        <spacer row="1" column="0">
+            <property name="name">
+                <cstring>spacer1</cstring>
+            </property>
+            <property name="orientation">
+                <enum>Horizontal</enum>
+            </property>
+            <property name="sizeType">
+                <enum>Expanding</enum>
+            </property>
+            <property name="sizeHint">
+                <size>
+                    <width>40</width>
+                    <height>20</height>
+                </size>
+            </property>
+        </spacer>
+    </grid>
 </widget>
 <connections>
-    <connection>
-        <sender>pushButton1</sender>
-        <signal>clicked()</signal>
-        <receiver>DummyMixerUI</receiver>
-        <slot>close()</slot>
-    </connection>
 </connections>
 <slots>
     <slot>setFB2(int)</slot>

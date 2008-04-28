@@ -49,7 +49,13 @@ from mixer_quatafire import *
 from mixer_motu import *
 from mixer_dummy import *
 
-from mixer_generic import *
+use_generic = False
+try:
+	from mixer_generic import *
+except ImportError:
+	print "Didn't find the generic-mixer"
+else:
+	use_generic = True
 
 SupportedDevices=[
     [(0x000aac, 0x00000003),'Phase88Control'],
@@ -243,14 +249,20 @@ if __name__ == "__main__":
                         repeat = 0
                     except dbus.DBusException, ex:
                         time.sleep( 1 )
-    
+
     nbDevices=devmgr.getNbDevices()
-    
-    forms=[];
+
+    if nbDevices == 0:
+        print "No supported device found..."
+        msg.information( msg, "No mixer found", "Your device doesn't seem to have a supported mixer." )
+        sys.exit( -1 )
+
+    mw = QTabWidget()
+
     for idx in range(nbDevices):
         path=devmgr.getDeviceName(idx)
         print "Found device %d: %s" % (idx, path)
-        
+
         cfgrom = ConfigRomInterface(server, basepath+'/DeviceManager/'+path)
         vendorId = cfgrom.getVendorId()
         modelId = cfgrom.getModelId()
@@ -272,12 +284,12 @@ if __name__ == "__main__":
         # using.
         if vendorId == 0x1f2:
             thisdev=(vendorId, 0x00000000)
-        
+
         found_panel = False
         for dev in SupportedDevices:
             if dev[0] == thisdev:
                 mixerapp = dev[1]
-                
+
                 # hack for the focusrite devices
                 # Saffire:        0x130e010001????
                 # SaffireLE:    0x130e010004????
@@ -287,35 +299,30 @@ if __name__ == "__main__":
                     else:
                         mixerapp = "SaffireLEMixer"
                 print mixerapp
-                exec('forms.append('+mixerapp+'())')
-                forms[idx].hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
-                forms[idx].configrom = cfgrom
-                forms[idx].clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
-                forms[idx].initValues()
-                forms[idx].show()
+                exec('tmp = '+mixerapp+'( mw )')
+                mw.addTab( tmp, mixerapp )
+                tmp.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+                tmp.configrom = cfgrom
+                tmp.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
+                tmp.initValues()
+                tmp.show()
                 found_panel = True
 
         if not found_panel:
-            forms.append( DummyMixer( ) )
-            forms[idx].hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
-            forms[idx].configrom = cfgrom
-            forms[idx].clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
-            forms[idx].initValues()
-            forms[idx].show()
+            tmp = DummyMixer( mw )
+            mw.addTab( tmp, modelName+" (Dummy)" )
+            tmp.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+            tmp.configrom = cfgrom
+            tmp.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
+            tmp.initValues()
+            tmp.show()
 
-    # note: the generic mixer is disabled for now...
-    use_generic = False # !!! HACK !!!
     if nbDevices > 0 and use_generic:
-        forms.append( GenericMixer( devmgr.bus, server ) )
-        forms[-1].show()
+        mw.addTab( GenericMixer( devmgr.bus, server, mw ), "Generic Mixer" )
 
-    if forms:
-        # not setting this makes that the app doesn't quit when the first window is closed
-        #app.setMainWidget(forms[0])
+    if mw.count() > 0:
+        mw.show()
 
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
         app.exec_loop()
-    else:
-        print "No supported device found..."
-        msg.information( msg, "No mixer found", "Your device doesn't seem to have a supported mixer." )

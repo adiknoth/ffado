@@ -31,8 +31,8 @@ if env.has_key('PYUIC'):
 
     e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire',
                        'saffirele', 'af2', 'bcoaudio5', 'edirolfa66',
-                       'mackie_generic', 'quatafire', 'motu', 
-                       'generic', 'dummy'
+                       'mackie_generic', 'quatafire', 'motu',
+                       'dummy'
                      ]
     e['OTHERAPPS'] = ['ffado_regdialog']
 
