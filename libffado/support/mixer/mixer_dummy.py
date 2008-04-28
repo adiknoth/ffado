@@ -25,7 +25,7 @@ from mixer_dummyui import *
 
 class DummyMixer(DummyMixerUI):
     def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        DummyMixerUI.__init__(self,parent,name,modal,fl)
+        DummyMixerUI.__init__(self,parent,name,fl)
 
     def init(self):
         print "Init Dummy mixer window"
