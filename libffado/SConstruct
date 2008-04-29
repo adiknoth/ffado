@@ -428,13 +428,6 @@ env.ScanReplace( "config.h.in" )
 env.Depends( "config.h", "SConstruct" )
 env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
 
-# always build config.h such that calculated options (svn version) are used
-# basically identical to making the config.h dependent on 'env'
-# if there are no changes in env, the config.h will contain the
-# same, and nothing is rebuilt.
-env.AlwaysBuild( "config.h" )
-env.NoCache( "config.h" )
-
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
