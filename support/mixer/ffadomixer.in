@@ -322,7 +322,6 @@ if __name__ == "__main__":
 
     if mw.count() > 0:
         mw.show()
-
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
         app.exec_loop()

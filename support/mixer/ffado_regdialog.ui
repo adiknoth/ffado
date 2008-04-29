@@ -1,5 +1,22 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
 <class>ffadoRegDialogUI</class>
+<comment>Copyright (C) 2005-2008 by Pieter Palmers
+  
+  This file is part of FFADO
+  FFADO = Free Firewire (pro-)audio drivers for linux
+  
+  FFADO is based upon FreeBoB.
+  
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) version 3 of the License.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+</comment>
 <widget class="QDialog">
     <property name="name">
         <cstring>ffadoRegDialogUI</cstring>
@@ -30,9 +47,9 @@
         <property name="text">
             <string>You are running this version of FFADO for the first time with this device.
 
-In order to collect decent usage statistics we would like to send some information about your system to ffado.org. We need usage statistics to convince vendors that Linux does matter.
+In order to collect usage statistics we would like to send some information about your system to ffado.org. It is very important for us to have good usage statistics. This to convince vendors that Linux users do exist. This is where you as a user can help.
 
-This information is intended only for usage monitoring. The only personal information sent is an optional email address. The source code for the registration process can be found in "ffado_registration.py".</string>
+The information collected is intended only for usage monitoring. The email address is optional, and will be used for FFADO related announcements only. If you provide one, please provide a valid one.</string>
         </property>
         <property name="alignment">
             <set>WordBreak|AlignTop</set>
