@@ -30,6 +30,7 @@
 #include "bebob/focusrite/focusrite_saffire.h"
 #include "bebob/focusrite/focusrite_saffirepro.h"
 #include "bebob/terratec/terratec_device.h"
+#include "bebob/esi/quatafire610.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -95,6 +96,11 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     unsigned int modelId = configRom->getModelId();
 
     switch (vendorId) {
+        case FW_VENDORID_ESI:
+            if (modelId == 0x00010064) {
+                return new ESI::QuataFireDevice(d, configRom);
+            }
+            break;
         case FW_VENDORID_TERRATEC:
             return new Terratec::PhaseSeriesDevice(d, configRom);
         case FW_VENDORID_FOCUSRITE:

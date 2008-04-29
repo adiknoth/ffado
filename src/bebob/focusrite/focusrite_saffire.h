@@ -25,7 +25,6 @@
 #ifndef BEBOB_FOCUSRITE_SAFFIRE_DEVICE_H
 #define BEBOB_FOCUSRITE_SAFFIRE_DEVICE_H
 
-#include "debugmodule/debugmodule.h"
 #include "focusrite_generic.h"
 
 #include "libcontrol/BasicElements.h"

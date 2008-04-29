@@ -159,6 +159,7 @@ public:
      */
     enum eClockSourceType {
         eCT_Invalid,   ///> invalid entry (e.g. on error)
+        eCT_Auto,      ///> automatically select clock source
         eCT_Internal,  ///> internal sync (unspecified)
         eCT_1394Bus,   ///> Sync on the 1394 bus clock (e.g. CSP)
         eCT_SytMatch,  ///> SYT match on incoming audio stream
