@@ -82,6 +82,20 @@ class EnumWidget( QWidget ):
 		#print "EnumWidget::currentChanged(" + str(i) + ")"
 		self.interface.select( i )
 
+class TextWidget( QWidget ):
+	def __init__( self, name, interface, parent ):
+		QWidget.__init__( self, parent )
+		self.interface = interface
+		l = QVBoxLayout( self )
+		l.addWidget( QLabel( name, self ) )
+		self.text = QLineEdit( self )
+		l.addWidget( self.text )
+		self.text.setText( interface.getValue() )
+		self.connect( self.text, SIGNAL( "textChanged( const QString & )" ), self.setText )
+
+	def setText( self, text ):
+		self.interface.setValue( text.latin1() )
+
 class GenericMixer( QWidget ):
 	def __init__( self, bus, session, parent=None ):
 		QWidget.__init__( self, parent )
@@ -103,22 +117,29 @@ class GenericMixer( QWidget ):
 		if interfacelist.count( "org.ffado.Control.Element.Element" ):
 			name = dbus.Interface( element, "org.ffado.Control.Element.Element" ).getName()
 
+		w = None
+
 		if interfacelist.count( "org.ffado.Control.Element.Container" ):
-			end = 0
 			container = dbus.Interface( element, "org.ffado.Control.Element.Container" )
-			end = container.getNbElements()
 			w = ContainerWidget( name, container, parentwidget )
 			parentwidget.layout().addWidget( w )
-			for i in range( end ):
+			for i in range( container.getNbElements() ):
 				#print "%s %i %s" % ( path, i, container.getElementName( i ) )
 				self.introspect( bus, session, path + "/" + container.getElementName( i ), w )
 
-		if interfacelist.count( "org.ffado.Control.Element.Continuous" ):
-			control = dbus.Interface( element, "org.ffado.Control.Element.Continuous" )
-			w = ContinuousWidget( name, control, parentwidget )
+		if w == None and interfacelist.count( "org.ffado.Control.Element.Continuous" ):
+			w = ContinuousWidget( name, dbus.Interface( element, "org.ffado.Control.Element.Continuous" ), parentwidget )
 			parentwidget.layout().addWidget( w )
 
-		if interfacelist.count( "org.ffado.Control.Element.AttributeEnum" ):
+		if w == None and interfacelist.count( "org.ffado.Control.Element.AttributeEnum" ):
 			w = EnumWidget( name, dbus.Interface( element, "org.ffado.Control.Element.AttributeEnum" ), parentwidget )
+			parentwidget.layout().addWidget( w )
+
+		if w == None and interfacelist.count( "org.ffado.Control.Element.Text" ):
+			w = TextWidget( name, dbus.Interface( element, "org.ffado.Control.Element.Text" ), parentwidget )
+			parentwidget.layout().addWidget( w )
+
+		if w == None:
+			w = QLabel( "<qt><b>%s</b> (Not yet implemented)</qt>" % name, parentwidget )
 			parentwidget.layout().addWidget( w )
 
