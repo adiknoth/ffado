@@ -433,6 +433,7 @@ env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
 # if there are no changes in env, the config.h will contain the
 # same, and nothing is rebuilt.
 env.AlwaysBuild( "config.h" )
+env.NoCache( "config.h" )
 
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
