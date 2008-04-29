@@ -424,8 +424,15 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 #
 env.ScanReplace( "config.h.in" )
 # ensure that the config.h is updated with the version
+
 env.Depends( "config.h", "SConstruct" )
 env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
+
+# always build config.h such that calculated options (svn version) are used
+# basically identical to making the config.h dependent on 'env'
+# if there are no changes in env, the config.h will contain the
+# same, and nothing is rebuilt.
+env.AlwaysBuild( "config.h" )
 
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
