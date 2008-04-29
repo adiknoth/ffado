@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.20"
+FFADO_VERSION="1.999.21"
 
 import os
 import re
@@ -62,8 +62,8 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	PathOption( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include", PathOption.PathAccept ),
 	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathOption.PathAccept ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
-	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks avc part.", True ),
-	BoolOption( "ENABLE_MOTU", "Enable/Disable the Motu part.", True ),
+	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks AV/C part.", True ),
+	BoolOption( "ENABLE_MOTU", "Enable/Disable the MOTU part.", True ),
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
 	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),

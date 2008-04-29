@@ -13,8 +13,9 @@ class ffado_registration():
                        model_id,
                        vendor_string,
                        model_string):
-        self.ffado_version = ffado_version
-        #import pdb;pdb.set_trace()
+        # only use the section before the SVN mark
+        # we don't need to keep track of all SVN version changes
+        self.ffado_version = ffado_version.split('-')[0]
         self.guid = guid
         self.vendor_id = vendor_id
         self.model_id = model_id
@@ -24,7 +25,7 @@ class ffado_registration():
         self.config_filename = os.path.expanduser(INI_FILE_PATH)
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.read(self.config_filename)
-        self.section_name = "%s:%X" % (ffado_version, guid)
+        self.section_name = "%s:%X" % (self.ffado_version, self.guid)
         self.email = "(optional)"
         if self.parser.has_section("history") \
            and self.parser.has_option("history", "email"):
