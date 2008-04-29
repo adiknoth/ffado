@@ -58,11 +58,11 @@ if env.has_key('PYUIC'):
     e.Install( "$pythondir", "ffado_registration.py" )
 
     e.ScanReplace( "ffadomixer_config.py.in" )
-    e.Depends( "ffadomixer_config.py", "#/SConstruct" )
+    e.Depends( "ffadomixer_config.py", "#/config.h" )
     e.Install( "$pythondir", "ffadomixer_config.py" )
 
     e.ScanReplace( "ffadomixer.in" )
-    e.Depends( "ffadomixer", "#/SConstruct" )
+    e.Depends( "ffadomixer", "#/config.h" )
     e.Depends( "ffadomixer", "SConscript" )
     e.Install( "$bindir", "ffadomixer" )
 
