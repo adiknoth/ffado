@@ -55,7 +55,7 @@
 
 // support backtrace debugging
 // note that this does not influence non-debug builds
-#define DEBUG_BACKTRACE_SUPPORT              0
+#define DEBUG_BACKTRACE_SUPPORT              1
 // max length of backtrace
 #define DEBUG_MAX_BACKTRACE_LENGTH           8
 // max amount of function pointers to keep track of

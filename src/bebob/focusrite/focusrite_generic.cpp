@@ -444,7 +444,7 @@ void FocusriteMatrixMixer::setCellInfo(int row, int col, int addr, bool valid)
     c.valid=valid;
     c.address=addr;
 
-    m_CellInfo[row][col]=c;
+    m_CellInfo.at(row).at(col) = c;
 }
 
 void FocusriteMatrixMixer::show()
