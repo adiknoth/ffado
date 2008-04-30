@@ -24,6 +24,8 @@
 #ifndef __POSIX_MUTEX__
 #define __POSIX_MUTEX__
 
+#include "config.h"
+
 #include "Mutex.h"
 #include <pthread.h>
 
@@ -54,6 +56,10 @@ protected:
 
 private:
     pthread_mutex_t m_mutex;
+
+    #if DEBUG_LOCK_COLLISION_TRACING
+    void *m_locked_by;
+    #endif
 };
 
 } // end of namespace

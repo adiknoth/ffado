@@ -23,6 +23,21 @@
 
 #include "PosixMutex.h"
 
+// disable collision tracing for non-debug builds
+#ifndef DEBUG
+    #undef DEBUG_LOCK_COLLISION_TRACING
+    #define DEBUG_LOCK_COLLISION_TRACING 0
+#endif
+
+// check whether backtracing is enabled
+#if DEBUG_LOCK_COLLISION_TRACING
+    #if DEBUG_BACKTRACE_SUPPORT
+    // ok
+    #else
+        #error cannot enable lock tracing without backtrace support
+    #endif
+#endif
+
 namespace Util
 {
 
@@ -37,6 +52,10 @@ PosixMutex::PosixMutex()
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_DEFAULT);
     #endif
     pthread_mutex_init(&m_mutex, &attr);
+
+    #if DEBUG_LOCK_COLLISION_TRACING
+    m_locked_by = NULL;
+    #endif
 }
 
 PosixMutex::~PosixMutex()
@@ -48,7 +67,24 @@ void
 PosixMutex::Lock()
 {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) lock\n", this);
+    #if DEBUG_LOCK_COLLISION_TRACING
+    if(TryLock()) {
+        // locking succeeded
+        m_locked_by = debugBacktraceGet(1);
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "%p has lock\n",
+                    m_locked_by);
+        return;
+    } else {
+        void *lock_try_by = debugBacktraceGet(1);
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "Lock collision: %p wants lock, %p has lock\n",
+                    lock_try_by);
+        pthread_mutex_lock(&m_mutex);
+    }
+    #else
     pthread_mutex_lock(&m_mutex);
+    #endif
 }
 
 bool

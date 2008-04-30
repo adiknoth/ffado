@@ -639,6 +639,26 @@ DebugModuleManager::printBacktrace(int len)
 
     pthread_mutex_unlock(&m_backtrace_lock);
 }
+
+void *
+DebugModuleManager::getBacktracePtr(int id)
+{
+    int nptrs;
+    void *retval = NULL;
+
+    if(id >= DEBUG_MAX_BACKTRACE_LENGTH) {
+        return NULL;
+    }
+
+    pthread_mutex_lock(&m_backtrace_lock);
+    nptrs = backtrace(m_backtrace_buffer, id+1);
+    if(id<nptrs) {
+        retval = m_backtrace_buffer[id];
+    }
+    pthread_mutex_unlock(&m_backtrace_lock);
+    
+    return retval;
+}
 #endif
 
 //----------------------------------------

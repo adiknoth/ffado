@@ -245,13 +245,14 @@ typedef short debug_level_t;
 /*
  * Backtrace support
  */
-#ifdef DEBUG
-    #if DEBUG_BACKTRACE_SUPPORT
-        #define debugPrintBacktrace( _SIZE_ )                       \
-            DebugModuleManager::instance()->printBacktrace( _SIZE_ );
-    #endif
+#if DEBUG_BACKTRACE_SUPPORT
+    #define debugPrintBacktrace( _SIZE_ )                       \
+        DebugModuleManager::instance()->printBacktrace( _SIZE_ );
+    #define debugBacktraceGet( _ID_ )                       \
+        DebugModuleManager::instance()->getBacktracePtr( _ID_ );
 #else
     #define debugPrintBacktrace( _SIZE_ )
+    #define debugBacktraceGet( _ID_ )       NULL 
 #endif
 
 /*
@@ -332,6 +333,7 @@ public:
 
 #if DEBUG_BACKTRACE_SUPPORT
     void printBacktrace(int len);
+    void *getBacktracePtr(int id);
 #endif
 
 protected:
