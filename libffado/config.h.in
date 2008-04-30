@@ -61,6 +61,9 @@
 // max amount of function pointers to keep track of
 #define DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN  64
 
+// lock debugging
+#define DEBUG_LOCK_COLLISION_TRACING         1
+
 // make this zero to disable the most extreme
 // debug logging in the critical sections
 #define DEBUG_EXTREME_ENABLE        0
