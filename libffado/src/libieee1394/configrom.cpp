@@ -26,6 +26,8 @@
 #include "configrom.h"
 #include "ieee1394service.h"
 
+#include "vendor_model_ids.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -410,13 +412,43 @@ ConfigRom::getGuidString() const
 const Glib::ustring
 ConfigRom::getModelName() const
 {
-    return m_modelName;
+    // HACK:
+    // workarounds for devices that don't fill a correct model name
+    switch(m_vendorId) {
+        case FW_VENDORID_MOTU:
+            switch(m_unit_specifier_id) {
+                case 0x00000003:
+                    return "828MkII";
+                case 0x00000009:
+                    return "Traveler";
+                case 0x0000000d:
+                    return "UltraLite";
+                case 0x0000000f:
+                    return "8pre";
+                case 0x00000001:
+                    return "828MkI";
+                case 0x00000005:
+                    return "896HD";
+                default:
+                    return "unknown";
+            }
+            break;
+        default:
+            return m_modelName;
+    }
 }
 
 const Glib::ustring
 ConfigRom::getVendorName() const
 {
-    return m_vendorName;
+    // HACK:
+    // workarounds for devices that don't fill a correct vendor name
+    switch(m_vendorId) {
+        case FW_VENDORID_MOTU:
+            return "MOTU";
+        default:
+            return m_vendorName;
+    }
 }
 
 const unsigned int
