@@ -309,7 +309,7 @@ void SaffireMatrixMixer::init()
         
         for (int i=0;i<FOCUSRITE_SAFFIRE_PCMIX_NB_ROWS;i++) {
             for (int j=0;j<FOCUSRITE_SAFFIRE_PCMIX_NB_COLS;j++) {
-                m_CellInfo[i][j]=c;
+                m_CellInfo.at(i).at(j) = c;
             }
         }
     
@@ -375,7 +375,7 @@ void SaffireMatrixMixer::init()
         
         for (int i=0;i<FOCUSRITE_SAFFIRE_INPUTMIX_NB_ROWS;i++) {
             for (int j=0;j<FOCUSRITE_SAFFIRE_INPUTMIX_NB_COLS;j++) {
-                m_CellInfo[i][j]=c;
+                m_CellInfo.at(i).at(j) = c;
             }
         }
 
@@ -448,9 +448,9 @@ void SaffireMatrixMixer::init()
         c.valid=false;
         c.address=0;
         
-        for (int i=0;i<FOCUSRITE_SAFFIRELE_48KMIX_NB_COLS;i++) {
-            for (int j=0;j<FOCUSRITE_SAFFIRELE_48KMIX_NB_ROWS;j++) {
-                m_CellInfo[i][j]=c;
+        for (int i=0;i<FOCUSRITE_SAFFIRELE_48KMIX_NB_ROWS;i++) {
+            for (int j=0;j<FOCUSRITE_SAFFIRELE_48KMIX_NB_COLS;j++) {
+                m_CellInfo.at(i).at(j) = c;
             }
         }
 
@@ -551,9 +551,9 @@ void SaffireMatrixMixer::init()
         c.valid=false;
         c.address=0;
         
-        for (int i=0;i<FOCUSRITE_SAFFIRELE_96KMIX_NB_COLS;i++) {
-            for (int j=0;j<FOCUSRITE_SAFFIRELE_96KMIX_NB_ROWS;j++) {
-                m_CellInfo[i][j]=c;
+        for (int i=0;i<FOCUSRITE_SAFFIRELE_96KMIX_NB_ROWS;i++) {
+            for (int j=0;j<FOCUSRITE_SAFFIRELE_96KMIX_NB_COLS;j++) {
+                m_CellInfo.at(i).at(j) = c;
             }
         }
 
