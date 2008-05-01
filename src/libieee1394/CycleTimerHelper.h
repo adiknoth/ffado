@@ -54,6 +54,7 @@
 #include "cycletimer.h"
 
 #include "libutil/Functors.h"
+#include "libutil/Mutex.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -150,7 +151,7 @@ private:
     Util::Thread *  m_Thread;
     bool            m_realtime;
     unsigned int    m_priority;
-    pthread_mutex_t mb_update_lock;
+    Util::Mutex*    m_update_lock;
 
     // busreset handling
     Util::Functor* m_busreset_functor;
