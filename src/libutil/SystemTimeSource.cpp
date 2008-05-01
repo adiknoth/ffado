@@ -32,6 +32,8 @@
 #include <time.h>
 #include <stdlib.h>
 
+DECLARE_GLOBAL_DEBUG_MODULE;
+
 namespace Util {
 
 void
@@ -47,10 +49,21 @@ SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
 void
 SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
 {
+#if USE_ABSOLUTE_NANOSLEEP
     struct timespec ts;
     ts.tv_sec = wake_at_usec / (1000000LL);
     ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
-    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "clock_nanosleep until %lld sec, %lld nanosec\n",
+                (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
+    int err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "back with err=%d\n",
+                err);
+#else
+    ffado_microsecs_t to_sleep = wake_at_usec - getCurrentTime();
+    SleepUsecRelative(to_sleep);
+#endif
 }
 
 ffado_microsecs_t
