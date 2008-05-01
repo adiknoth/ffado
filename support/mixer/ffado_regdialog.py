@@ -24,14 +24,16 @@ from qt import *
 from ffado_regdialogui import *
 
 class ffadoRegDialog(ffadoRegDialogUI):
-    def __init__(self, devtext, vendormodel,
+    def __init__(self, vendor_name, vendor_id, model_name, model_id,
                  guid, version, email="(optional)",
                  parent = None,name = None,modal = 1,fl = 0):
         ffadoRegDialogUI.__init__(self,parent,name,modal,fl)
 
-        self.txtDevice.setText(devtext)
-        self.txtVendorModel.setText(vendormodel)
-        self.txtGUID.setText("%016X" % guid)
+        self.txtVendorName.setText(vendor_name)
+        self.txtVendorId.setText(vendor_id)
+        self.txtModelName.setText(model_name)
+        self.txtModelId.setText(model_id)
+        self.txtGUID.setText(guid)
         self.txtVersion.setText(version)
         self.txtEmail.setText(email)
         self.choice = "nosend"

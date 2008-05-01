@@ -1,7 +1,7 @@
 import urllib
 import ConfigParser, os
 
-from ffadomixer_config import REGISTER_URL, INI_FILE_PATH
+from ffadomixer_config import REGISTER_URL, INI_FILE_PATH, FFADO_CONFIG_DIR
 
 from qt import *
 from ffado_regdialog import *
@@ -22,6 +22,12 @@ class ffado_registration:
         self.vendor_string = vendor_string
         self.model_string = model_string
 
+        #check if config file path exists, if not, create it
+        config_path = os.path.expanduser(FFADO_CONFIG_DIR)
+        if not os.path.exists(config_path):
+            os.makedirs(config_path)
+
+        # parse the ini file
         self.config_filename = os.path.expanduser(INI_FILE_PATH)
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.read(self.config_filename)
@@ -104,12 +110,10 @@ class ffado_registration:
                 print "version/GUID combo already registered"
             else:
                 print "show dialog..."
-                devtext = "%s %s" % (self.vendor_string,
-                                              self.model_string)
-                vendormodel = "0x%X / 0x%X" % (self.vendor_id,
-                                               self.model_id)
-                dlg = ffadoRegDialog(devtext, vendormodel, 
-                                     self.guid, self.ffado_version,
+
+                dlg = ffadoRegDialog(self.vendor_string, "0x%X" % self.vendor_id,
+                                     self.model_string, "0x%X" % self.model_id,
+                                     "0x%016X" % self.guid, self.ffado_version,
                                      self.email)
                 dlg.exec_loop()
 
@@ -124,8 +128,8 @@ class ffado_registration:
                     msg = QMessageBox()
                     if retval[0] == 0:
                         print "registration successful"
-                        devinfomsg = "<p>Device: %s<br> Vendor/Model Id: %s<br>Device GUID: %016X<br>FFADO Version: %s<br>E-Mail: %s</p>" % \
-                            (devtext, vendormodel, self.guid, self.ffado_version, self.email)
+                        devinfomsg = "<p>Device: %s %s<br> Vendor/Model Id: %X/%X<br>Device GUID: %016X<br>FFADO Version: %s<br>E-Mail: %s</p>" % \
+                            (self.vendor_string, self.model_string, self.vendor_id, self.model_id, self.guid, self.ffado_version, self.email)
                         tmp = msg.question( msg, "Registration Successful",
                                             "<qt><b>Thank you.</b>" +
                                             "<p>The registration of the following information was successful:</p>" +
