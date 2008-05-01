@@ -148,11 +148,7 @@ class ffado_registration:
                             self.mark_ignore_version()
                 elif dlg.choice == "nosend":
                     pass
-        # write the updated config.  Make sure the destination path exists first.
-        cpath = os.path.dirname(self.config_filename)
-        # This test should be more robust but it will do for most cases.
-        if (not(os.path.exists(cpath))):
-                os.makedirs(cpath, 0755)
+        # write the updated config
         f = open(self.config_filename, "w+")
         self.parser.write(f)
         f.close()
