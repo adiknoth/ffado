@@ -150,9 +150,6 @@ CycleTimerHelper::Start()
         debugFatal("Could not start update thread\n");
         return false;
     }
-
-    // sleep until the thread has updated at least once
-    Util::SystemTimeSource::SleepUsecRelative(IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC*2);
     return true;
 }
 
@@ -322,7 +319,7 @@ CycleTimerHelper::initDLL() {
 bool
 CycleTimerHelper::Execute()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Execute %p...\n", this);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
 
     #ifdef DEBUG
     uint64_t now = m_Parent.getCurrentTimeAsUsecs();
@@ -349,11 +346,11 @@ CycleTimerHelper::Execute()
         #ifdef DEBUG
         ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         int sleep_time = m_sleep_until - now;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
                     this, m_sleep_until, m_next_time_usecs, now, sleep_time);
         #endif
         Util::SystemTimeSource::SleepUsecAbsolute(m_sleep_until);
-        debugOutput( DEBUG_LEVEL_VERBOSE, " (%p) back...\n", this);
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
     }
 
     uint32_t cycle_timer;
@@ -368,7 +365,7 @@ CycleTimerHelper::Execute()
     // some host controllers return bogus values on some reads
     // (looks like a non-atomic update of the register)
     do {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) reading cycle timer register...\n", this);
+        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p) reading cycle timer register...\n", this);
         if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
             debugError("Could not read cycle timer register\n");
             return false;
