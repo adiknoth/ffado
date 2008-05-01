@@ -6,7 +6,7 @@ from ffadomixer_config import REGISTER_URL, INI_FILE_PATH
 from qt import *
 from ffado_regdialog import *
 
-class ffado_registration():
+class ffado_registration:
     def __init__(self, ffado_version,
                        guid,
                        vendor_id,
