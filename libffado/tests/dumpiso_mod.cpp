@@ -25,6 +25,10 @@
 #define BUFFER 1000
 #define PACKET_MAX 4096
 
+// one 32 bit value as marker for start and stop
+#define PACKET_START_MARKER 0x01020304
+#define PACKET_STOP_MARKER  0x04030201
+
 u_int64_t listen_channels;
 unsigned long which_port;
 char *filename;
@@ -211,6 +215,8 @@ iso_handler(raw1394handle_t handle, unsigned char *data,
         /* write header */
         unsigned short length2 = length;
         unsigned short cycle2 = cycle;
+        unsigned int marker = PACKET_START_MARKER;
+        write(file, &marker, 4);
         write(file, &length2, sizeof(length2));
         write(file, &cycle2, sizeof(cycle2));
         write(file, &channel, sizeof(channel));
@@ -231,6 +237,8 @@ iso_handler(raw1394handle_t handle, unsigned char *data,
                 length -= ret;
                 data += ret;
         }
+        marker = PACKET_STOP_MARKER;
+        write(file, &marker, 4);
 
         return RAW1394_ISO_OK;
 }
