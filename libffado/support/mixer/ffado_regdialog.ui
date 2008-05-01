@@ -25,87 +25,21 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>468</width>
-            <height>565</height>
+            <width>620</width>
+            <height>600</height>
         </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>5</hsizetype>
+            <vsizetype>5</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
     </property>
     <property name="caption">
         <string>FFADO Usage Statistics</string>
     </property>
-    <widget class="QLabel">
-        <property name="name">
-            <cstring>regText</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>10</x>
-                <y>10</y>
-                <width>450</width>
-                <height>290</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>You are running this version of FFADO for the first time with this device.
-
-In order to collect usage statistics we would like to send some information about your system to ffado.org. It is very important for us to have good usage statistics. This to convince vendors that Linux users do exist. This is where you as a user can help.
-
-The information collected is intended only for usage monitoring. The email address is optional, and will be used for FFADO related announcements only. If you provide one, please provide a valid one.</string>
-        </property>
-        <property name="alignment">
-            <set>WordBreak|AlignTop</set>
-        </property>
-    </widget>
-    <widget class="QPushButton">
-        <property name="name">
-            <cstring>btnSend</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>10</x>
-                <y>520</y>
-                <width>121</width>
-                <height>31</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>Send</string>
-        </property>
-        <property name="default">
-            <bool>true</bool>
-        </property>
-    </widget>
-    <widget class="QPushButton">
-        <property name="name">
-            <cstring>btnNoSend</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>140</x>
-                <y>520</y>
-                <width>160</width>
-                <height>31</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>Don't send now</string>
-        </property>
-    </widget>
-    <widget class="QPushButton">
-        <property name="name">
-            <cstring>btnNeverSend</cstring>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>310</x>
-                <y>520</y>
-                <width>150</width>
-                <height>31</height>
-            </rect>
-        </property>
-        <property name="text">
-            <string>Never send</string>
-        </property>
-    </widget>
     <widget class="QGroupBox">
         <property name="name">
             <cstring>grpDeviceInfo</cstring>
@@ -113,60 +47,35 @@ The information collected is intended only for usage monitoring. The email addre
         <property name="geometry">
             <rect>
                 <x>10</x>
-                <y>301</y>
-                <width>451</width>
-                <height>200</height>
+                <y>320</y>
+                <width>600</width>
+                <height>230</height>
             </rect>
+        </property>
+        <property name="paletteBackgroundColor">
+            <color>
+                <red>238</red>
+                <green>239</green>
+                <blue>242</blue>
+            </color>
         </property>
         <property name="title">
             <string>Information being sent </string>
         </property>
         <widget class="QLabel">
             <property name="name">
-                <cstring>textLabel2</cstring>
+                <cstring>textLabel2_2_2</cstring>
             </property>
             <property name="geometry">
                 <rect>
                     <x>10</x>
-                    <y>159</y>
-                    <width>121</width>
+                    <y>110</y>
+                    <width>130</width>
                     <height>30</height>
                 </rect>
             </property>
             <property name="text">
-                <string>Your E-Mail:</string>
-            </property>
-        </widget>
-        <widget class="QLineEdit">
-            <property name="name">
-                <cstring>txtEmail</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>140</x>
-                    <y>160</y>
-                    <width>300</width>
-                    <height>31</height>
-                </rect>
-            </property>
-            <property name="text">
-                <string>(optional)</string>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
-                <cstring>txtVersion</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>160</x>
-                    <y>119</y>
-                    <width>280</width>
-                    <height>30</height>
-                </rect>
-            </property>
-            <property name="text">
-                <string>0x1234546</string>
+                <string>GUID:</string>
             </property>
         </widget>
         <widget class="QLabel">
@@ -176,7 +85,7 @@ The information collected is intended only for usage monitoring. The email addre
             <property name="geometry">
                 <rect>
                     <x>10</x>
-                    <y>120</y>
+                    <y>150</y>
                     <width>140</width>
                     <height>30</height>
                 </rect>
@@ -187,18 +96,136 @@ The information collected is intended only for usage monitoring. The email addre
         </widget>
         <widget class="QLabel">
             <property name="name">
-                <cstring>textLabel2_2_2</cstring>
+                <cstring>textLabel2</cstring>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>30</x>
-                    <y>90</y>
-                    <width>90</width>
+                    <x>10</x>
+                    <y>190</y>
+                    <width>130</width>
                     <height>30</height>
                 </rect>
             </property>
             <property name="text">
-                <string>GUID:</string>
+                <string>Your E-Mail:</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2_2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>30</y>
+                    <width>130</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Vendor Name:</string>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel2_2_2_2_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>69</y>
+                    <width>130</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Model Name:</string>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtVendorId</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>451</x>
+                    <y>30</y>
+                    <width>130</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>0x000aac</string>
+            </property>
+            <property name="readOnly">
+                <bool>true</bool>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtModelId</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>451</x>
+                    <y>69</y>
+                    <width>130</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>0x00010065</string>
+            </property>
+            <property name="readOnly">
+                <bool>true</bool>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtGUID</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>150</x>
+                    <y>109</y>
+                    <width>430</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="readOnly">
+                <bool>true</bool>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtVersion</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>150</x>
+                    <y>149</y>
+                    <width>430</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="readOnly">
+                <bool>true</bool>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtEmail</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>150</x>
+                    <y>190</y>
+                    <width>430</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>(optional)</string>
             </property>
         </widget>
         <widget class="QLabel">
@@ -207,80 +234,164 @@ The information collected is intended only for usage monitoring. The email addre
             </property>
             <property name="geometry">
                 <rect>
-                    <x>30</x>
-                    <y>60</y>
-                    <width>140</width>
-                    <height>30</height>
-                </rect>
-            </property>
-            <property name="text">
-                <string>Vendor/Model Id:</string>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
-                <cstring>textLabel2_2</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
+                    <x>401</x>
                     <y>30</y>
-                    <width>100</width>
+                    <width>40</width>
                     <height>30</height>
                 </rect>
             </property>
             <property name="text">
-                <string>Device Info:</string>
+                <string>Id:</string>
             </property>
         </widget>
         <widget class="QLabel">
             <property name="name">
-                <cstring>txtDevice</cstring>
+                <cstring>textLabel2_2_2_2_3</cstring>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>120</x>
+                    <x>401</x>
+                    <y>69</y>
+                    <width>40</width>
+                    <height>30</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Id:</string>
+            </property>
+        </widget>
+        <widget class="QLineEdit">
+            <property name="name">
+                <cstring>txtVendorName</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>150</x>
                     <y>30</y>
-                    <width>320</width>
-                    <height>30</height>
+                    <width>230</width>
+                    <height>31</height>
                 </rect>
             </property>
-            <property name="text">
-                <string>FFADO TEST </string>
+            <property name="readOnly">
+                <bool>true</bool>
             </property>
         </widget>
-        <widget class="QLabel">
+        <widget class="QLineEdit">
             <property name="name">
-                <cstring>txtGUID</cstring>
+                <cstring>txtModelName</cstring>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>190</x>
-                    <y>89</y>
-                    <width>250</width>
-                    <height>30</height>
+                    <x>150</x>
+                    <y>69</y>
+                    <width>230</width>
+                    <height>31</height>
                 </rect>
             </property>
-            <property name="text">
-                <string>0x1234546</string>
+            <property name="readOnly">
+                <bool>true</bool>
             </property>
         </widget>
-        <widget class="QLabel">
-            <property name="name">
-                <cstring>txtVendorModel</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>190</x>
-                    <y>59</y>
-                    <width>250</width>
-                    <height>30</height>
-                </rect>
-            </property>
-            <property name="text">
-                <string>0x1234546</string>
-            </property>
-        </widget>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnNeverSend</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>560</y>
+                <width>70</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Never</string>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnNoSend</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>90</x>
+                <y>560</y>
+                <width>120</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Not now</string>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnSend</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>560</y>
+                <width>390</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Send</string>
+        </property>
+        <property name="default">
+            <bool>true</bool>
+        </property>
+    </widget>
+    <widget class="QTextEdit">
+        <property name="name">
+            <cstring>textEdit2</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>600</width>
+                <height>300</height>
+            </rect>
+        </property>
+        <property name="paletteBackgroundColor">
+            <color>
+                <red>238</red>
+                <green>239</green>
+                <blue>242</blue>
+            </color>
+        </property>
+        <property name="vScrollBarMode">
+            <enum>AlwaysOff</enum>
+        </property>
+        <property name="hScrollBarMode">
+            <enum>AlwaysOff</enum>
+        </property>
+        <property name="textFormat">
+            <enum>RichText</enum>
+        </property>
+        <property name="text">
+            <string>&lt;p&gt;You are running this version of FFADO for the first time with this device.&lt;/p&gt;
+
+&lt;p&gt;In order to collect usage statistics we would like to send some information
+about your system to ffado.org. It is very important for us to have good usage statistics.
+This to convince vendors that Linux users do exist. This is where you as a user can help 
+the project.&lt;/p&gt;
+
+&lt;p&gt;The information collected is intended only for usage monitoring.
+ The email address is optional, and will be used for FFADO related announcements only.
+ If you provide one, please provide a valid one.&lt;/p&gt;
+
+&lt;p&gt;Note: This registration can also be performed on-line at http://www.ffado.org/?=usage/register.&lt;/p&gt;</string>
+        </property>
+        <property name="wordWrap">
+            <enum>WidgetWidth</enum>
+        </property>
+        <property name="autoFormatting">
+            <set>AutoAll</set>
+        </property>
     </widget>
 </widget>
 <slots>
