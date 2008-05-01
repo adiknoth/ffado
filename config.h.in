@@ -79,8 +79,8 @@
 // time
 
 // we should be using absolute clock_nanosleep
-// but on my system it causes a lockup.
-#define USE_ABSOLUTE_NANOSLEEP 0
+// but on my system it causes a problem on shutdown.
+#define USE_ABSOLUTE_NANOSLEEP 1
 
 // 1394 service constants 
 #define IEEE1394SERVICE_USE_CYCLETIMER_DLL  1
