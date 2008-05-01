@@ -71,15 +71,15 @@ PosixMutex::Lock()
     if(TryLock()) {
         // locking succeeded
         m_locked_by = debugBacktraceGet(1);
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "%p has lock\n",
-                    m_locked_by);
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                    "(%p) %p has lock\n",
+                    this, m_locked_by);
         return;
     } else {
         void *lock_try_by = debugBacktraceGet(1);
         debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "Lock collision: %p wants lock, %p has lock\n",
-                    lock_try_by);
+                    "(%p) lock collision: %p wants lock, %p has lock\n",
+                    this, lock_try_by, m_locked_by);
         pthread_mutex_lock(&m_mutex);
     }
     #else
@@ -98,6 +98,15 @@ void
 PosixMutex::Unlock()
 {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) unlock\n", this);
+    #if DEBUG_LOCK_COLLISION_TRACING
+    // unlocking
+    m_locked_by = NULL;
+    void *unlocker = debugBacktraceGet(1);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                "(%p) %p releases lock\n",
+                this, unlocker);
+    #endif
+
     pthread_mutex_unlock(&m_mutex);
 }
 
