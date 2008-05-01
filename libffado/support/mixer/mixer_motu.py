@@ -35,12 +35,12 @@ class MotuMixer(MotuMixerUI):
         print "setting %s channel/mix fader to %d" % (self.ChannelFaders[sender][0], vol)
         self.hw.setDiscrete(self.ChannelFaders[sender][0], vol)
 
-    # public slot: channel pan
-    def updatePan(self, a0):
+    # public slot: a generic multivalue control
+    def updateControl(self, a0):
         sender = self.sender()
-        pan = a0
-        print "setting %s channel pan to %d" % (self.ChannelPans[sender][0], pan)
-        self.hw.setDiscrete(self.ChannelPans[sender][0], pan)
+        val = a0
+        print "setting %s control to %d" % (self.Controls[sender][0], val)
+        self.hw.setDiscrete(self.Controls[sender][0], val)
 
     # public slot: generic binary switch
     def updateBinarySwitch(self, a0):
@@ -81,7 +81,7 @@ class MotuMixer(MotuMixerUI):
             self.mix1_fader: ['/Mixer/Mix1/Mix_fader'],
             }
 
-        self.ChannelPans={
+        self.Controls={
             self.mix1ana1_pan:   ['/Mixer/Mix1/Ana1_pan'],
             self.mix1ana2_pan:   ['/Mixer/Mix1/Ana2_pan'],
             self.mix1ana3_pan:   ['/Mixer/Mix1/Ana3_pan'],
@@ -106,7 +106,6 @@ class MotuMixer(MotuMixerUI):
             self.mix1ana6_mute:  ['/Mixer/Mix1/Ana6_mute'],
             self.mix1ana7_mute:  ['/Mixer/Mix1/Ana7_mute'],
             self.mix1ana8_mute:  ['/Mixer/Mix1/Ana8_mute'],
-            self.mix1_mute:  ['/Mixer/Mix1/Mix_mute'],
             self.mix1ana1_solo:  ['/Mixer/Mix1/Ana1_solo'],
             self.mix1ana2_solo:  ['/Mixer/Mix1/Ana2_solo'],
             self.mix1ana3_solo:  ['/Mixer/Mix1/Ana3_solo'],
@@ -115,6 +114,7 @@ class MotuMixer(MotuMixerUI):
             self.mix1ana6_solo:  ['/Mixer/Mix1/Ana6_solo'],
             self.mix1ana7_solo:  ['/Mixer/Mix1/Ana7_solo'],
             self.mix1ana8_solo:  ['/Mixer/Mix1/Ana8_solo'],
+            self.mix1_mute:      ['/Mixer/Mix1/Mix_mute'],
             self.ana1_pad:       ['/Mixer/Control/Ana1_pad'],
             self.ana2_pad:       ['/Mixer/Control/Ana2_pad'],
             self.ana3_pad:       ['/Mixer/Control/Ana3_pad'],
@@ -127,6 +127,22 @@ class MotuMixer(MotuMixerUI):
             self.ana6_boost:     ['/Mixer/Control/Ana6_boost'],
             self.ana7_boost:     ['/Mixer/Control/Ana7_boost'],
             self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
+        }
+
+        # Ultimately these may be rolled into the BinarySwitches controls,
+        # but since they aren't implemented and therefore need to be
+        # disabled it's easier to keep them separate for the moment.
+        self.PairSwitches={
+            self.mix1ana1_2_pair:   ['Mixer/Mix1/Ana1_2_pair'],
+            self.mix1ana3_4_pair:   ['Mixer/Mix1/Ana3_4_pair'],
+            self.mix1ana5_6_pair:   ['Mixer/Mix1/Ana5_6_pair'],
+            self.mix1ana7_8_pair:   ['Mixer/Mix1/Ana7_8_pair'],
+            self.mix1aes1_2_pair:   ['Mixer/Mix1/Aes1_2_pair'],
+            self.mix1adat1_2_pair:  ['Mixer/Mix1/Adat1_2_pair'],
+            self.mix1adat3_4_pair:  ['Mixer/Mix1/Adat3_4_pair'],
+            self.mix1adat5_6_pair:  ['Mixer/Mix1/Adat5_6_pair'],
+            self.mix1adat7_8_pair:  ['Mixer/Mix1/Adat7_8_pair'],
+            self.mix1spdif1_2_pair: ['Mixer/Mix1/Spdif1_2_pair'],
         }
 
         self.MixDests={
@@ -209,13 +225,18 @@ class MotuMixer(MotuMixerUI):
             ctrl.setValue(vol)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateFader)
 
-        for ctrl, info in self.ChannelPans.iteritems():
+        for ctrl, info in self.Controls.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
             pan = self.hw.getDiscrete(info[0])
-            print "%s channel pan is %d" % (info[0] , pan)
+            print "%s control is %d" % (info[0] , pan)
             ctrl.setValue(pan)
-            QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updatePan)
+            QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateControl)
+
+        # Disable the channel pair controls since they aren't yet implemented
+        for ctrl, info in self.PairSwitches.iteritems():
+            print "%s control is not implemented yet: disabling" % (info[0])
+            ctrl.setEnabled(False)
 
         for ctrl, info in self.BinarySwitches.iteritems():
             if (not(ctrl.isEnabled())):

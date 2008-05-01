@@ -1,8 +1,8 @@
-Notes on the MOTU Traveler/828MkII firewire protocol
-====================================================
+Notes on the firewire protocol used by MOTU audio devices
+=========================================================
 
 Author: Jonathan Woithe
-Document version: 20080428-1
+Document version: 20080501-1
 
 
 Audio/MIDI data
@@ -55,7 +55,7 @@ differs according to the sampling rate: 0x268 at 1x rates (giving 8 blocks
 per iso data packet), 0x408 at 2x rates (giving 16 blocks per iso data
 packet) and 0x488 at 4x rates (giving 32 blocks per iso data packet).
 
-The traveler usually becomes the IRM on the firewire bus it is plugged into;
+The Traveler usually becomes the IRM on the firewire bus it is plugged into;
 when functioning as the IRM it also broadcasts "cycle start" packets on a
 regular basis as would be expected. These appear to be as per ieee1394-1995. 
 These broadcast a quadlet in the same form as the Traveler's cycle time
@@ -348,12 +348,22 @@ interfaces.  However, the unit directory version entry does appear to be set
 for particular models across firmware upgrades (0x00000003 for 828MkII,
 0x00000009 for Traveler).  Therefore the best bet at this stage appears to be 
 a probe for a vendor ID of 0x000001f2 with one of the above version values
-in the unit directory of the config ROM.
+in the unit directory of the config ROM.  Unit directory versions for MOTU
+hardware are as follows:
+
+  0x00000001 = The original 828
+  0x00000003 = 828 Mk 2
+  0x00000005 = 896HD
+  0x00000009 = Traveler
+  0x0000000d = Ultralite
+  0x0000000f = 8pre
 
 Alternatively one could probe for registers known to exist on only one of
-the interfaces.  The trim gain / 20 dB pad status register (0x0c1c) is an
-obvious choice since these features are only present on the Traveler.  At
-this stage however this seems to be unnecessary.
+the interfaces.  The trim gain / 20 dB pad status register (0x0c1c) for
+example can be used to differentiate a Traveler from an 828Mk2 since these
+features are only present on the Traveler.  At this stage however the unit
+version number is probably sufficient and far less complicated in the long
+run.
 
 
 Firmware updates
@@ -656,7 +666,8 @@ etc) - see below for details.
 
 Bits 9-8 specify the mode of the optical input port:
   00 = off, 01 = ADAT, 10 = TOSLink (numbers given are in binary)
-Register 0xb10 also plays a role in setting the optical input port mode.
+The "TOSLink" option is not available on the 896HD.  Register 0xb10 also
+plays a role in setting the optical input port mode.
 
 Bits 11-10 specify the mode of the optical output port in the same way
 as for the optical input port.  Again, register 0b10 seems to play a role
@@ -862,8 +873,8 @@ controls when channels are paired.  The "paired" flag is really just a hint
 to the mixer at the end of the day.
 
 
-Gain and pan value-dB mappings
-==============================
+Gain and pan value-dB mappings for the Traveler
+===============================================
 
 The following gain map runs from 0x00 (-inf) to 0x80 (0 dB).  The dB values
 were taken directly off the Cuemix console application.
