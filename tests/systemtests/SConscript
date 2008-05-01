@@ -43,6 +43,7 @@ apps = {
 	"test-isorecv-1" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
 	"test-isoxmit-1" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
 	"test-sysload" : ["test-sysload.cpp", "realtimetools.cpp"],
+	"test-clock_nanosleep" : ["test-clock_nanosleep.cpp", "realtimetools.cpp"],
 }
 
 for app in apps.keys():
