@@ -284,9 +284,6 @@ if __name__ == "__main__":
         # using.
         if vendorId == 0x1f2:
             thisdev=(vendorId, 0x00000000)
-            # At present the generic mixer doesn't give anything useful for
-            # MOTU devices.  We'll ignore it for now.
-            use_generic = False
 
         found_panel = False
         for dev in SupportedDevices:
