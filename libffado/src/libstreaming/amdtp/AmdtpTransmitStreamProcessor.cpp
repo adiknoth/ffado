@@ -198,30 +198,36 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
                         transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
             //debugShowBackLogLines(200);
-//             // however, if we can send this sufficiently before the presentation
-//             // time, it could be harmless.
-//             // NOTE: dangerous since the device has no way of reporting that it didn't get
-//             //       this packet on time.
-//             if(cycles_until_presentation >= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION)
-//             {
-//                 // we are not that late and can still try to transmit the packet
-//                 m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
-//                 m_last_timestamp = presentation_time;
-//                 return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
-//             }
-//             else   // definitely too late
-//             {
+            // however, if we can send this sufficiently before the presentation
+            // time, it could be harmless.
+            // NOTE: dangerous since the device has no way of reporting that it didn't get
+            //       this packet on time.
+            if(cycles_until_presentation >= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION)
+            {
+                // we are not that late and can still try to transmit the packet
+                m_dbc += fillDataPacketHeader(packet, length, presentation_time);
+                m_last_timestamp = presentation_time;
+                return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
+            }
+            else   // definitely too late
+            {
                 return eCRV_XRun;
-//             }
+            }
         }
         else if(cycles_until_transmit <= AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY)
         {
             // it's time send the packet
-            m_dbc += fillDataPacketHeader(packet, length, m_last_timestamp);
+            m_dbc += fillDataPacketHeader(packet, length, presentation_time);
             m_last_timestamp = presentation_time;
 
-            // FIXME: this should not be multiplied by 2
-            return (fc < (signed)(2*m_syt_interval) ? eCRV_Defer : eCRV_Packet);
+            // for timestamp tracing
+            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                               "XMIT PKT: TSP= %011llu (%04u) (%04u) (%04u)\n",
+                               presentation_time,
+                               (unsigned int)CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                               presentation_cycle, transmit_at_cycle);
+
+            return (fc < (signed)(m_syt_interval) ? eCRV_Defer : eCRV_Packet);
         }
         else
         {
@@ -255,14 +261,13 @@ AmdtpTransmitStreamProcessor::generatePacketData (
 {
     if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8)))
     {
-        debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                           "XMIT DATA: TSP=%011llu (%04u)\n",
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                           "XMIT DATA: TSP= %011llu (%04u)\n",
                            m_last_timestamp,
                            (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
         return eCRV_OK;
     }
     else return eCRV_XRun;
-
 }
 
 enum StreamProcessor::eChildReturnValue
@@ -347,7 +352,7 @@ unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader (
 
     // convert the timestamp to SYT format
     uint16_t timestamp_SYT = TICKS_TO_SYT ( ts );
-    packet->syt = ntohs ( timestamp_SYT );
+    packet->syt = htons ( timestamp_SYT );
 
     // FIXME: use a precomputed value here
     *length = m_syt_interval*sizeof ( quadlet_t ) *m_dimension + 8;
