@@ -215,7 +215,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
             if(cycles_until_presentation >= MOTU_MIN_CYCLES_BEFORE_PRESENTATION)
             {
                 // we are not that late and can still try to transmit the packet
-                m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+                m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
                 m_last_timestamp = presentation_time;
                 if (m_tx_dbc > 0xff)
                     m_tx_dbc -= 0x100;
@@ -229,7 +229,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
         else if(cycles_until_transmit <= MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY)
         {
             // it's time send the packet
-            m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+            m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
             m_last_timestamp = presentation_time;
             if (m_tx_dbc > 0xff)
                 m_tx_dbc -= 0x100;
