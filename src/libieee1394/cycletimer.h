@@ -201,7 +201,7 @@ static inline unsigned int addCycles(unsigned int x, unsigned int y) {
 static inline int diffCycles(unsigned int x, unsigned int y) {
     int diff = (int)x - (int)y;
 
-    // the maximal difference we allow (64secs)
+    // the maximal difference we allow (4000 cycles)
     const int max=CYCLES_PER_SECOND/2;
 
     if(diff > max) {

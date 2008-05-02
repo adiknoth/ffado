@@ -373,7 +373,30 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     // this means that we can preset 'now' before running iterate()
     uint32_t now_secs = CYCLE_TIMER_GET_SECS(m_last_now);
     // causality results in the fact that 'now' is always after 'cycle'
-    if(CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle) {
+    // except if additional packets are received between setting the
+    // m_last_now and the starting the iterate() loop.
+    // this causes the m_last_now to be set at a time before the last packet
+    // in this loop is received. however, it's not going to be >4000 cycles.
+    // hence:
+    // - if the m_last_now > cycle, there is no need to unwrap
+    //   both values are within the same second
+    // - if m_last_now < cycle it can mean two things:
+    //    * m_last_now has wrapped, but is still later than cycle
+    //      hence diffCycles(m_last_now, cycle) > 0. We should unwrap
+    //    * m_last_now has not wrapped, and cycle is ahead of m_last_now
+    //      this means that the cycle is more recent than the saved
+    //      m_last_now value
+    // . Hence if we calculate
+    // the unwrapped difference, and it's larger than 0, this means
+    // that m_last_now is after the current cycle. .
+    // it m_last_now is before the current cycle, we should not unwrap
+    // NOTE: another option is to reread the m_last_now
+    if( (CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle)
+        && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) >= 0) {
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                           "unwrapping %d => %d, %d\n",
+                           CYCLE_TIMER_GET_CYCLES(m_last_now),
+                           cycle);
         // the cycle field has wrapped, substract one second
         if(now_secs == 0) {
             now_secs = 127;
@@ -381,13 +404,25 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
             now_secs -= 1;
         }
     }
+    
+    #ifdef DEBUG
+    if( (CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle)
+        && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) < 0) {
+        debugWarning("Special non-unwrapping happened\n");
+    }    
+    #endif
+    
     pkt_ctr |= (now_secs & 0x7F) << 25;
+
+
 
     #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
     // add a seconds field
     uint32_t now = m_manager.get1394Service().getCycleTimer();
     uint32_t now_secs_ref = CYCLE_TIMER_GET_SECS(now);
     // causality results in the fact that 'now' is always after 'cycle'
+    // or at best, equal (if this handler was called within 125us after
+    // the packet was on the wire).
     if(CYCLE_TIMER_GET_CYCLES(now) < cycle) {
         // the cycle field has wrapped, substract one second
         if(now_secs_ref == 0) {
@@ -401,7 +436,8 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 
     if(pkt_ctr != pkt_ctr_ref) {
         debugWarning("reconstructed CTR counter discrepancy\n");
-        pkt_ctr=pkt_ctr_ref;
+        debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld\n",
+                       cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, now_secs);
     }
     #endif
 
@@ -460,7 +496,6 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 
     return RAW1394_ISO_OK;
 }
-
 
 enum raw1394_iso_disposition
 IsoHandler::getPacket(unsigned char *data, unsigned int *length,
