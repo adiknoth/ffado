@@ -78,8 +78,9 @@ void* PosixThread::ThreadHandler(void* arg)
     // If Init succeed start the thread loop
     bool res = true;
     while (obj->fRunning && res) {
+//         debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: run %p\n", obj);
         res = runnable->Execute();
-        //pthread_testcancel();
+        pthread_testcancel();
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: exit %p\n", obj);
@@ -151,11 +152,11 @@ int PosixThread::Start()
 int PosixThread::Kill()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Kill %p\n", this);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Kill %p (thread: %p)\n", this, fThread);
         void* status;
         pthread_cancel(fThread);
         pthread_join(fThread, &status);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Killed %p\n", this);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Killed %p (thread: %p)\n", this, fThread);
         return 0;
     } else {
         return -1;
@@ -165,11 +166,11 @@ int PosixThread::Kill()
 int PosixThread::Stop()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop %p\n", this);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stop %p (thread: %p)\n", this, fThread);
         void* status;
         fRunning = false; // Request for the thread to stop
         pthread_join(fThread, &status);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stopped %p\n", this);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "PosixThread::Stopped %p (thread: %p)\n", this, fThread);
         return 0;
     } else {
         return -1;
