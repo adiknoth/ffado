@@ -48,6 +48,7 @@ from mixer_mackie_generic import *
 from mixer_quatafire import *
 from mixer_motu import *
 from mixer_dummy import *
+from mixer_global import *
 
 use_generic = False
 try:
@@ -215,6 +216,27 @@ class ClockSelectInterface:
     def getAttributeName(self, idx):
         return self.iface.getAttributeName(idx)
 
+class TextInterface:
+    def __init__(self, servername, basepath):
+        self.basepath=basepath
+        self.servername=servername
+        self.bus=dbus.SessionBus()
+        self.dev = self.bus.get_object( self.servername, self.basepath )
+        self.iface = dbus.Interface( self.dev, dbus_interface="org.ffado.Control.Element.Text" )
+
+    def text(self):
+        return self.iface.getValue()
+
+    def setText(self,text):
+        self.iface.setValue(text)
+
+class HLine( QFrame ):
+	def __init__( self, parent ):
+		QFrame.__init__( self, parent )
+		self.setFrameShape( QFrame.HLine )
+		self.setLineWidth( 2 )
+		self.setMinimumHeight( 10 )
+
 if __name__ == "__main__":
     
     server='org.ffado.Control'
@@ -285,45 +307,72 @@ if __name__ == "__main__":
         if vendorId == 0x1f2:
             thisdev=(vendorId, 0x00000000)
 
-        found_panel = False
-        for dev in SupportedDevices:
-            if dev[0] == thisdev:
-                mixerapp = dev[1]
+        dev = None
+        for d in SupportedDevices:
+            if d[0] == thisdev:
+                dev = d
 
-                # hack for the focusrite devices
-                # Saffire:        0x130e010001????
-                # SaffireLE:    0x130e010004????
-                if thisdev == (0x00130e, 0x00000000):
-                    if int(GUID, 16) < 0x130e0100040000:
-                        mixerapp = "SaffireMixer"
-                    else:
-                        mixerapp = "SaffireLEMixer"
-                print mixerapp
-                exec('tmp = '+mixerapp+'( mw )')
-                mixersize = tmp.size()
-                mw.addTab( tmp, mixerapp )
-                tmp.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
-                tmp.configrom = cfgrom
-                tmp.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
-                tmp.initValues()
-                tmp.show()
-                found_panel = True
+        w = QWidget( mw )
+        l = QVBoxLayout( w )
 
-        if not found_panel:
-            tmp = DummyMixer( mw )
-            mw.addTab( tmp, modelName+" (Dummy)" )
-            tmp.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
-            tmp.configrom = cfgrom
-            tmp.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
-            tmp.initValues()
-            tmp.show()
+        #
+        # Generic elements for all mixers follow here:
+        #
 
+        tmp = GlobalMixer( w )
+        tmp.clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
+        tmp.nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
+        tmp.initValues()
+        l.addWidget( tmp, 1 )
+
+        #
+        # Line to separate
+        #
+        l.addWidget( HLine( w ) )
+
+        #
+        # Specific (or dummy) mixer widgets get loaded in the following
+        #
+        if dev != None:
+            mixerapp = dev[1]
+            # hack for the focusrite devices
+            # Saffire:        0x130e010001????
+            # SaffireLE:    0x130e010004????
+            if thisdev == (0x00130e, 0x00000000):
+                if int(GUID, 16) < 0x130e0100040000:
+                    mixerapp = "SaffireMixer"
+                else:
+                    mixerapp = "SaffireLEMixer"
+
+            exec( "mixerwidget = "+mixerapp+"( w )" )
+
+        else:
+            mixerwidget = DummyMixer( w )
+            mixerapp = modelName+" (Dummy)"
+
+        #
+        # The same for all mixers
+        #
+        l.addWidget( mixerwidget, 10 )
+        mixerwidget.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+        mixerwidget.configrom = cfgrom
+        mixerwidget.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
+        mixerwidget.initValues()
+        mw.addTab( w, mixerapp )
+
+    #
+    # Show the generic (development) mixer if it is available
+    #
     if nbDevices > 0 and use_generic:
         mw.addTab( GenericMixer( devmgr.bus, server, mw ), "Generic Mixer" )
 
+    #
+    # Only really show the mainwindow and start the mixer when at least on mixer is shown
+    #
     if mw.count() > 0:
         mw.show()
 
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
         app.exec_loop()
+

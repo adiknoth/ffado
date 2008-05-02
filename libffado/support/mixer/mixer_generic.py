@@ -28,13 +28,16 @@ class ContainerWidget( QFrame ):
 	def __init__( self, name, interface, parent ):
 		QFrame.__init__( self, parent )
 		self.interface = interface
-		self.setFrameStyle( QFrame.Raised|QFrame.StyledPanel )
-		self.setLineWidth( 2 )
+		self.setFrameStyle( QFrame.Plain|QFrame.StyledPanel )
+		self.setLineWidth( 1 )
+		self.setMargin( 5 )
 		l2 = QVBoxLayout( self )
+		l2.setMargin( 5 )
 		lbl = QLabel( "<qt><b>" + name + "</b></qt>", self )
 		l2.addWidget( lbl )
-		l2.setMargin( 2 )
-		self.l = QHBoxLayout( self )
+		self.l = QHBoxLayout( None )
+		self.l.setMargin( 0 )
+		self.l.setSpacing( 2 )
 		l2.addLayout( self.l )
 
 	def layout( self ):
@@ -96,10 +99,19 @@ class TextWidget( QWidget ):
 	def setText( self, text ):
 		self.interface.setValue( text.latin1() )
 
+class HLine( QFrame ):
+	def __init__( self, parent ):
+		QFrame.__init__( self, parent )
+		self.setFrameShape( QFrame.HLine )
+		self.setLineWidth( 2 )
+		self.setMinimumHeight( 10 )
+
 class GenericMixer( QWidget ):
 	def __init__( self, bus, session, parent=None ):
 		QWidget.__init__( self, parent )
-		QHBoxLayout( self )
+		QVBoxLayout( self )
+		self.layout().addWidget( QLabel( "<qt>This generic interface is only intended for developers. The controls shown here may or may not work and probably don't represent the devices real structure. This just displays the object-tree as exported by ffado-dbus-server.</qt>", self ) )
+		self.layout().addWidget( HLine( self ) )
 		self.introspect( bus, session, "/org/ffado/Control/DeviceManager", self )
 
 	def introspect( self, bus, session, path, parentwidget ):
