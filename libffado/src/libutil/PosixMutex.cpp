@@ -46,12 +46,14 @@ IMPL_DEBUG_MODULE( PosixMutex, PosixMutex, DEBUG_LEVEL_NORMAL );
 PosixMutex::PosixMutex()
 {
     pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
     #ifdef DEBUG
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
     #else
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_DEFAULT);
     #endif
     pthread_mutex_init(&m_mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
 
     #if DEBUG_LOCK_COLLISION_TRACING
     m_locked_by = NULL;
