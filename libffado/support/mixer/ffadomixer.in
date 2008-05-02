@@ -305,14 +305,6 @@ if __name__ == "__main__":
                 exec('tmp = '+mixerapp+'( mw )')
                 mixersize = tmp.size()
                 mw.addTab( tmp, mixerapp )
-                # At this point adjustSize() resizes the top level tab
-                # widget to the size of just the tab bar, curiously enough. 
-                # Exploit this to obtain the height of the tab bar so we can
-                # size the based on the mixer size but allowing for the
-                # top-level tab bar.
-                mw.adjustSize()
-                tabsize = mw.size()
-                mw.resize(mixersize + QSize(0, tabsize.height()))
                 tmp.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
                 tmp.configrom = cfgrom
                 tmp.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
