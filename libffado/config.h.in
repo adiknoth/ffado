@@ -46,6 +46,18 @@
 // number of messages in the debug messagebuffer (power of two)
 #define DEBUG_MB_BUFFERS                  1024
 
+// use an RT thread for reading out the messagebuffer.
+// can reduce the number of buffer xruns, but not
+// recommended
+#define DEBUG_MESSAGE_BUFFER_REALTIME        0
+#define DEBUG_MESSAGE_BUFFER_REALTIME_PRIO   1
+
+// When a write can't get the buffer lock, how many times
+// should it retry, and wait how long between retries?
+#define DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NTRIES      2
+#define DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NSEC    50000
+
+
 // support a debug backlog
 // note that this does not influence non-debug builds
 #define DEBUG_BACKLOG_SUPPORT                0
@@ -54,18 +66,18 @@
 
 // support backtrace debugging
 // note that this does not influence non-debug builds
-#define DEBUG_BACKTRACE_SUPPORT              1
+#define DEBUG_BACKTRACE_SUPPORT              0
 // max length of backtrace
 #define DEBUG_MAX_BACKTRACE_LENGTH           8
 // max amount of function pointers to keep track of
 #define DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN  64
 
 // lock debugging
-#define DEBUG_LOCK_COLLISION_TRACING         1
+#define DEBUG_LOCK_COLLISION_TRACING         0
 
 // make this zero to disable the most extreme
 // debug logging in the critical sections
-#define DEBUG_EXTREME_ENABLE        0
+#define DEBUG_EXTREME_ENABLE                 0
 
 // watchdog
 #define WATCHDOG_DEFAULT_CHECK_INTERVAL_USECS   (1000*1000*4)
@@ -80,33 +92,33 @@
 
 // we should be using absolute clock_nanosleep
 // but on my system it causes a problem on shutdown.
-#define USE_ABSOLUTE_NANOSLEEP 1
+#define USE_ABSOLUTE_NANOSLEEP              1
 
 // 1394 service constants 
-#define IEEE1394SERVICE_USE_CYCLETIMER_DLL  1
-#define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC 200000
-#define IEEE1394SERVICE_MAX_FIREWIRE_PORTS  4
+#define IEEE1394SERVICE_USE_CYCLETIMER_DLL                         1
+#define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC   200000
+#define IEEE1394SERVICE_MAX_FIREWIRE_PORTS                         4
 
-#define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME    1
-#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE  -10
+#define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME       1
+#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE    -10
 
 // The current version of libiec61883 doesn't seem to calculate
 // the bandwidth correctly. Defining this to non-zero skips
 // bandwidth allocation when doing CMP connections.
-#define IEEE1394SERVICE_SKIP_IEC61883_BANDWIDTH_ALLOCATION 1
+#define IEEE1394SERVICE_SKIP_IEC61883_BANDWIDTH_ALLOCATION   1
 
-#define MINIMUM_INTERRUPTS_PER_PERIOD       2U
+#define MINIMUM_INTERRUPTS_PER_PERIOD                       2U
 
 // These are the result of a lot of trial and error
 // due to weirdness in the kernel layer
-#define MAX_XMIT_PACKET_SIZE                (2048-16)
-#define MAX_XMIT_NB_BUFFERS                 200
+#define MAX_XMIT_PACKET_SIZE                         (2048-16)
+#define MAX_XMIT_NB_BUFFERS                                200
 
-#define ISOHANDLER_FLUSH_BEFORE_ITERATE     0
+#define ISOHANDLER_FLUSH_BEFORE_ITERATE                      0
 
-#define ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS    1000000LL
+#define ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS        1000000LL
 
-#define ISOHANDLER_CHECK_CTR_RECONSTRUCTION 0
+#define ISOHANDLER_CHECK_CTR_RECONSTRUCTION                  0
 
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
 #define ISOHANDLERMANAGER_MAX_STREAMS_PER_ISOTHREAD         16
@@ -170,8 +182,8 @@
 // the packet is transmitted ahead of the presentation time is
 // given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
 // packets early if we want to. (not completely according to spec)
-// (for spec compliance you need to specify a value of 1 or 2)
-#define AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY                  2
+// (for spec compliance you need to specify a value of 0)
+#define AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY                  0
 
 // ensure that the AMDTP SP clips all float values to [-1.0..1.0]
 #define AMDTP_CLIP_FLOATS                                   1
@@ -183,7 +195,7 @@
 // Default setting for the payload setting if
 // AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT is enabled. Devices can
 // explicity override this
-#define AMDTP_SEND_PAYLOAD_IN_NODATA_XMIT_BY_DEFAULT    true
+#define AMDTP_SEND_PAYLOAD_IN_NODATA_XMIT_BY_DEFAULT     true
 
 // -- MOTU options -- //
 
@@ -191,8 +203,6 @@
 // time to obtain a corrected presentation time. This values is
 // then used to stamp the packet and determine the transmission
 // time instant.
-//#define MOTU_TRANSMIT_TRANSFER_DELAY    (11776U)
-//#define MOTU_TRANSMIT_TRANSFER_DELAY    (3072U)
 #define MOTU_TRANSMIT_TRANSFER_DELAY    (0U)
 
 // the absolute minimum number of cycles we want to transmit
@@ -208,7 +218,6 @@
 // the packet is transmitted ahead of the presentation time is
 // given by MOTU_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
 // packets early if we want to.
-//#define MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY                  6
 #define MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY                  2
 
 // ensure that the MOTU tx SP clips all float values to [-1.0..1.0]
@@ -219,6 +228,6 @@
 // Use the information in the music plug instead of that in the
 // cluster info block for the stream configuration. Should not
 // be necessary
-#define AVC_STREAMCONFIG_USE_MUSICPLUG 0
+#define AVC_STREAMCONFIG_USE_MUSICPLUG                     0
 
 #endif // CONFIG_H

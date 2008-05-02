@@ -331,10 +331,56 @@ DebugModuleManager::init()
     pthread_cond_init(&mb_ready_cond, NULL);
 
     mb_overruns = 0;
-    mb_initialized = 1;
+    
+    #if DEBUG_MESSAGE_BUFFER_REALTIME
+    /* Get the client thread to run as an RT-FIFO
+        scheduled thread of appropriate priority.
+    */
+    pthread_attr_t attributes;
+    struct sched_param rt_param;
+    pthread_attr_init(&attributes);
+    int res;
+    if ((res = pthread_attr_setinheritsched(&attributes, PTHREAD_EXPLICIT_SCHED))) {
+        fprintf(stderr, "Cannot request explicit scheduling for RT thread  %d %s\n", res, strerror(res));
+        return -1;
+    }
+    if ((res = pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE))) {
+        fprintf(stderr, "Cannot request joinable thread creation for RT thread  %d %s\n", res, strerror(res));
+        return -1;
+    }
+    if ((res = pthread_attr_setscope(&attributes, PTHREAD_SCOPE_SYSTEM))) {
+        fprintf(stderr, "Cannot set scheduling scope for RT thread %d %s\n", res, strerror(res));
+        return -1;
+    }
 
-    if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0)
+    if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
+
+    //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
+        fprintf(stderr, "Cannot set FIFO scheduling class for RT thread  %d %s\n", res, strerror(res));
+        return -1;
+    }
+
+    memset(&rt_param, 0, sizeof(rt_param));
+    rt_param.sched_priority = DEBUG_MESSAGE_BUFFER_REALTIME_PRIO;
+
+    if ((res = pthread_attr_setschedparam(&attributes, &rt_param))) {
+        fprintf(stderr, "Cannot set scheduling priority for RT thread %d %s\n", res, strerror(res));
+        return -1;
+    }
+
+    if ((res = pthread_create(&mb_writer_thread, &attributes, mb_thread_func, (void *)this))) {
+        fprintf(stderr, "Cannot set create thread %d %s\n", res, strerror(res));
+        mb_initialized = 0;
+    } else {
+        mb_initialized = 1;
+    }
+    #else
+    if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0) {
          mb_initialized = 0;
+    } else {
+        mb_initialized = 1;
+    }
+    #endif
 #endif
 
 #if DEBUG_BACKTRACE_SUPPORT
@@ -537,9 +583,9 @@ void
 DebugModuleManager::backlog_print(const char *msg)
 {
     unsigned int ntries;
-    struct timespec wait = {0,50000};
+    struct timespec wait = {0, DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NSEC};
     // the backlog
-    ntries=1;
+    ntries=DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NTRIES;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&bl_mb_write_lock) == 0) {
             strncpy(bl_mb_buffers[bl_mb_inbuffer], msg, MB_BUFFERSIZE);
@@ -570,7 +616,7 @@ DebugModuleManager::print(const char *msg)
         return;
     }
 
-    ntries=1;
+    ntries=6;
     while (ntries) { // try a few times
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
