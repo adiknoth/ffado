@@ -78,7 +78,7 @@ void* PosixThread::ThreadHandler(void* arg)
     // If Init succeed start the thread loop
     bool res = true;
     while (obj->fRunning && res) {
-//         debugOutput( DEBUG_LEVEL_VERBOSE, "ThreadHandler: run %p\n", obj);
+        debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "ThreadHandler: run %p\n", obj);
         res = runnable->Execute();
         pthread_testcancel();
     }
