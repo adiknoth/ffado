@@ -85,6 +85,8 @@ DeviceManager::DeviceManager()
     , m_deviceStringParser( new DeviceStringParser() )
     , m_used_cache_last_time( false )
     , m_ignore_busreset( false )
+    , m_thread_realtime( false )
+    , m_thread_priority( 0 )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     addOption(Util::OptionContainer::Option("snoopMode",false));
