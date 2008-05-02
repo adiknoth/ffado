@@ -969,8 +969,8 @@ bool StreamProcessorManager::waitForPeriod() {
     #endif
 
     debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
-                        "transfer at %llu ticks...\n",
-                        m_time_of_transfer);
+                        "transfer period %d at %llu ticks...\n",
+                        m_nbperiods, m_time_of_transfer);
 
     // this is to notify the client of the delay that we introduced by waiting
     m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
