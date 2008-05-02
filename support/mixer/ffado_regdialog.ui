@@ -52,13 +52,6 @@
                 <height>230</height>
             </rect>
         </property>
-        <property name="paletteBackgroundColor">
-            <color>
-                <red>238</red>
-                <green>239</green>
-                <blue>242</blue>
-            </color>
-        </property>
         <property name="title">
             <string>Information being sent </string>
         </property>
@@ -355,13 +348,6 @@
                 <width>600</width>
                 <height>300</height>
             </rect>
-        </property>
-        <property name="paletteBackgroundColor">
-            <color>
-                <red>238</red>
-                <green>239</green>
-                <blue>242</blue>
-            </color>
         </property>
         <property name="vScrollBarMode">
             <enum>AlwaysOff</enum>
