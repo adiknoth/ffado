@@ -867,20 +867,18 @@ deserializeVector( Glib::ustring path,
                    VT& vec )
 {
     int i = 0;
-    bool bFinished = false;
+    T* ptr = 0;
     do {
         std::ostringstream strstrm;
         strstrm << path << i << "/";
-        T* ptr = T::deserialize( strstrm.str(),
-                                 deser,
-                                 unit );
+        ptr = T::deserialize( strstrm.str(),
+                              deser,
+                              unit );
         if ( ptr ) {
             vec.push_back( ptr );
-            i++;
-        } else {
-            bFinished = true;
         }
-    } while ( !bFinished );
+        i++;
+    } while ( ptr );
 
     return true;
 }
@@ -997,6 +995,15 @@ Unit::deserialize( Glib::ustring basePath,
     if ( !m_pPlugManager )
         return false;
 
+    // update the plug related stuff in the subunits. we have to
+    // do that in 2 steps because we have a circular dependency.
+    for ( SubunitVector::iterator it = m_subunits.begin();
+          it != m_subunits.end();
+          ++it )
+    {
+        result &= (*it)->deserializeUpdate( basePath + "Subunit", deser );
+    }
+
     // load path /PcrPlug0/global_id
     result &= deserializePlugVector( basePath + "PcrPlug", deser,
                                      getPlugManager(), m_pcrPlugs );
@@ -1012,16 +1019,17 @@ Unit::deserialize( Glib::ustring basePath,
     // and plug.m_outputConnnections list)
     m_pPlugManager->deserializeUpdate( basePath, deser );
 
-    unsigned int i;
-    result &= deser.read( basePath + "m_activeSyncInfo", i );
+    if ( deser.isExisting(basePath + "m_activeSyncInfo" ) ) {
+        // the sync info doesn't have to be there.
 
-    if ( result ) {
+        unsigned int i;
+        result &= deser.read( basePath + "m_activeSyncInfo", i );
         if ( i < m_syncInfos.size() ) {
             m_activeSyncInfo = &m_syncInfos[i];
         }
     }
 
-    return true;
+    return result;
 }
 
 } // end of namespace

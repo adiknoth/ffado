@@ -49,8 +49,8 @@ Plug::Plug( Unit* unit,
             EPlugAddressType plugAddressType,
             EPlugDirection plugDirection,
             plug_id_t plugId )
-    : m_unit(unit)
-    , m_subunit(subunit)
+    : m_unit( unit )
+    , m_subunit( subunit )
     , m_functionBlockType( functionBlockType )
     , m_functionBlockId( functionBlockId )
     , m_addressType( plugAddressType )
@@ -1641,26 +1641,36 @@ Plug::deserialize( Glib::ustring basePath,
                    Unit& unit,
                    PlugManager& plugManager )
 {
-    // FIXME: The derived class should be creating these, such that discover() can become pure virtual
+    ESubunitType          subunitType;
+    subunit_t             subunitId;
+    function_block_type_t functionBlockType;
+    function_block_id_t   functionBlockId;
+    EPlugAddressType      addressType;
+    EPlugDirection        direction;
+    plug_id_t             id;
+
     if ( !deser.isExisting( basePath + "m_subunitType" ) ) {
         return 0;
     }
-    Plug* pPlug = new Plug;
+
+    bool result=true;
+
+    result  = deser.read( basePath + "m_subunitType", subunitType );
+    result &= deser.read( basePath + "m_subunitId", subunitId );
+    Subunit* subunit = unit.getSubunit( subunitType, subunitId );
+
+    result &= deser.read( basePath + "m_functionBlockType", functionBlockType );
+    result &= deser.read( basePath + "m_functionBlockId", functionBlockId );
+    result &= deser.read( basePath + "m_addressType", addressType );
+    result &= deser.read( basePath + "m_direction", direction );
+    result &= deser.read( basePath + "m_id", id );
+
+    Plug* pPlug = unit.createPlug( &unit, subunit, functionBlockType, 
+                                   functionBlockId, addressType, direction, id);
     if ( !pPlug ) {
         return 0;
     }
 
-    pPlug->m_unit = &unit;
-
-    bool result=true;
-
-    result  = deser.read( basePath + "m_subunitType", pPlug->m_subunitType );
-    result &= deser.read( basePath + "m_subunitId", pPlug->m_subunitId );
-    result &= deser.read( basePath + "m_functionBlockType", pPlug->m_functionBlockType );
-    result &= deser.read( basePath + "m_functionBlockId", pPlug->m_functionBlockId );
-    result &= deser.read( basePath + "m_addressType", pPlug->m_addressType );
-    result &= deser.read( basePath + "m_direction", pPlug->m_direction );
-    result &= deser.read( basePath + "m_id", pPlug->m_id );
     result &= deser.read( basePath + "m_infoPlugType", pPlug->m_infoPlugType );
     result &= deser.read( basePath + "m_nrOfChannels", pPlug->m_nrOfChannels );
     result &= deser.read( basePath + "m_name", pPlug->m_name );
@@ -2171,23 +2181,21 @@ PlugManager::deserialize( Glib::ustring basePath,
     }
 
     int i = 0;
-    bool bFinished = false;
+    Plug* pPlug = 0;
     do {
         std::ostringstream strstrm;
         strstrm << basePath << i;
         // unit still holds a null pointer for the plug manager
         // therefore we have to *this as additional argument
-        Plug* pPlug = Plug::deserialize( strstrm.str() + "/",
-                                         deser,
-                                         unit,
-                                         *pMgr );
+        pPlug = Plug::deserialize( strstrm.str() + "/",
+                                   deser,
+                                   unit,
+                                   *pMgr );
         if ( pPlug ) {
             pMgr->m_plugs.push_back( pPlug );
             i++;
-        } else {
-            bFinished = true;
         }
-    } while ( !bFinished );
+    } while ( pPlug );
 
     return pMgr;
 }
@@ -2376,36 +2384,31 @@ deserializePlugVector( Glib::ustring basePath,
                        PlugVector& vec )
 {
     int i = 0;
-    bool bFinished = false;
-    bool result = true;
+    Plug* pPlug = 0;
     do {
         std::ostringstream strstrm;
+        unsigned int iPlugId;
+
         strstrm << basePath << i;
 
-        // check for one element to exist. when one exist the other elements
-        // must also be there. otherwise just return (last) result.
-        if ( deser.isExisting( strstrm.str() + "/global_id" ) ) {
-            unsigned int iPlugId;
-            result &= deser.read( strstrm.str() + "/global_id", iPlugId );
-
-            if ( result ) {
-                Plug* pPlug = plugManager.getPlug( iPlugId );
-                if ( pPlug ) {
-                    vec.push_back( pPlug );
-                } else {
-                    result = false;
-                    bFinished = true;
-                }
-                i++;
-            } else {
-                bFinished = true;
-            }
-        } else {
-            bFinished = true;
+        if ( !deser.isExisting( strstrm.str() + "/global_id" ) ) {
+            // no more plugs found, so this is the normal return point
+            return true;
         }
-    } while ( !bFinished );
 
-    return result;
+        if ( !deser.read( strstrm.str() + "/global_id", iPlugId ) ) {
+            return false;
+        }
+  
+        pPlug = plugManager.getPlug( iPlugId );
+        if ( pPlug ) {
+            vec.push_back( pPlug );
+            i++;
+        }
+    } while ( pPlug );
+
+    // if we reach here, the plug manager didn't find any plug with the id iPlugId.
+    return false;
 }
 
 }

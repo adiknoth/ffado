@@ -55,6 +55,8 @@ protected:
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice ) { return true; }
+    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+                                         Util::IODeserialize& deser ) { return true; }
 
 };
 

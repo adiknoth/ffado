@@ -385,6 +385,28 @@ BeBoB::SubunitAudio::deserializeChild( Glib::ustring basePath,
     return true;
 }
 
+bool
+BeBoB::SubunitAudio::deserializeUpdateChild( Glib::ustring basePath,
+                                             Util::IODeserialize& deser )
+{
+    bool result = true;
+    int i = 0;
+
+    for ( FunctionBlockVector::iterator it = m_functions.begin();
+          it != m_functions.end();
+          ++it )
+    {
+        std::ostringstream strstrm;
+        strstrm << basePath << "FunctionBlock" << i << "/";
+
+        result &= (*it)->deserializeUpdate( basePath, deser );
+        
+        i++;
+    }
+
+    return result;
+}
+
 ////////////////////////////////////////////
 
 BeBoB::SubunitMusic::SubunitMusic( AVC::Unit& avDevice,
@@ -454,6 +476,13 @@ bool
 BeBoB::SubunitMusic::deserializeChild( Glib::ustring basePath,
                                                Util::IODeserialize& deser,
                                                AVC::Unit& avDevice )
+{
+    return true;
+}
+
+bool 
+BeBoB::SubunitMusic::deserializeUpdateChild( Glib::ustring basePath,
+                                             Util::IODeserialize& deser )
 {
     return true;
 }
