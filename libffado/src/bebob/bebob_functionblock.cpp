@@ -187,6 +187,10 @@ FunctionBlock::deserialize( Glib::ustring basePath,
     function_block_type_t subtype;
     FunctionBlock* pFB = 0;
 
+    if ( !deser.isExisting( basePath + "m_type" ) ) {
+        return 0;
+    }
+
     result  = deser.read( basePath + "m_type", type );
     result &= deser.read( basePath + "m_subtype", subtype );
     if ( !result ) {
@@ -226,10 +230,24 @@ FunctionBlock::deserialize( Glib::ustring basePath,
     result &= deser.read( basePath + "m_purpose", pFB->m_purpose );
     result &= deser.read( basePath + "m_nrOfInputPlugs", pFB->m_nrOfInputPlugs );
     result &= deser.read( basePath + "m_nrOfOutputPlugs", pFB->m_nrOfOutputPlugs );
-    result &= deserializePlugVector( basePath + "m_plugs", deser,
-                                     unit.getPlugManager(), pFB->m_plugs );
 
-    return 0;
+    if ( !result ) {
+        delete pFB;
+        return 0;
+    }
+
+    return pFB;
+}
+
+bool 
+FunctionBlock::deserializeUpdate( Glib::ustring basePath,
+                                  Util::IODeserialize& deser )
+{
+    bool result;
+
+    result = deserializePlugVector( basePath + "m_plugs", deser,
+                                    m_subunit->getUnit().getPlugManager(), m_plugs );
+    return result;
 }
 
 ///////////////////////

@@ -79,9 +79,11 @@ public:
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
 
     static FunctionBlock* deserialize( Glib::ustring basePath,
-                       Util::IODeserialize& deser,
-                       AVC::Unit& unit,
-                       AVC::Subunit& subunit);
+                                       Util::IODeserialize& deser,
+                                       AVC::Unit& unit,
+                                       AVC::Subunit& subunit );
+    bool deserializeUpdate( Glib::ustring basePath,
+                            Util::IODeserialize& deser );
 protected:
     bool discoverPlugs( AVC::Plug::EPlugDirection plugDirection,
                         AVC::plug_id_t plugMaxId );

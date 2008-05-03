@@ -257,19 +257,7 @@ Subunit::deserialize( Glib::ustring basePath,
 
     result  = deser.read( basePath + "m_sbType", sbType );
 
-    Subunit* pSubunit = 0;
-
-    // FIXME: The derived class should be creating these, such that discover() can become pure virtual
-    switch( sbType ) {
-    case eST_Audio:
-        pSubunit = new SubunitAudio;
-        break;
-    case eST_Music:
-        pSubunit = new SubunitMusic;
-        break;
-    default:
-        pSubunit = 0;
-    }
+    Subunit* pSubunit = unit.createSubunit(unit, sbType, 0);
 
     if ( !pSubunit ) {
         return 0;
@@ -278,8 +266,6 @@ Subunit::deserialize( Glib::ustring basePath,
     pSubunit->m_unit = &unit;
     pSubunit->m_sbType = sbType;
     result &= deser.read( basePath + "m_sbId", pSubunit->m_sbId );
-    result &= deserializePlugVector( basePath + "m_plugs", deser,
-                                     unit.getPlugManager(), pSubunit->m_plugs );
     result &= pSubunit->deserializeChild( basePath, deser, unit );
 
     if ( !result ) {
@@ -288,6 +274,21 @@ Subunit::deserialize( Glib::ustring basePath,
     }
 
     return pSubunit;
+}
+
+bool
+Subunit::deserializeUpdate( Glib::ustring basePath,
+                            Util::IODeserialize& deser )
+{
+    bool result;
+    std::ostringstream strstrm;
+    strstrm << basePath << m_sbId << "/";
+
+    result  = deserializePlugVector( strstrm.str() + "m_plugs", deser,
+                                     m_unit->getPlugManager(), m_plugs );    
+    result &= deserializeUpdateChild( strstrm.str(), deser );
+    
+    return result;
 }
 
 }

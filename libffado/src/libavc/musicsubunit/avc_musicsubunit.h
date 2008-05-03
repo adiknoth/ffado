@@ -58,6 +58,8 @@ protected:
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice );
+    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+                                         Util::IODeserialize& deser );
 
     class AVCMusicStatusDescriptor*  m_status_descriptor;
 };

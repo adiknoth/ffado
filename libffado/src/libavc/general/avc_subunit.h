@@ -80,6 +80,9 @@ class Subunit {
     bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
     static Subunit* deserialize( Glib::ustring basePath,
 				 Util::IODeserialize& deser, Unit& avDevice );
+    bool deserializeUpdate( Glib::ustring basePath,
+                            Util::IODeserialize& deser );
+
  protected:
     Subunit();
 
@@ -88,6 +91,9 @@ class Subunit {
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice ) = 0;
+    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+                                         Util::IODeserialize& deser ) = 0;
+
     bool discoverPlugs();
     bool discoverPlugs(Plug::EPlugDirection plugDirection,
                        AVC::plug_id_t plugMaxId );

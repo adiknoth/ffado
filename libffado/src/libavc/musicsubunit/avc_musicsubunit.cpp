@@ -317,4 +317,11 @@ SubunitMusic::deserializeChild( Glib::ustring basePath,
     return true;
 }
 
+bool
+SubunitMusic::deserializeUpdateChild( Glib::ustring basePath,
+                                      Util::IODeserialize& deser )
+{
+    return true;
+}
+
 }

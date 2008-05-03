@@ -81,6 +81,8 @@ protected:
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
+    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+                                         Util::IODeserialize& deser );
 
 protected:
      FunctionBlockVector m_functions;
@@ -114,6 +116,8 @@ protected:
     virtual bool deserializeChild( Glib::ustring basePath,
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
+    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+                                         Util::IODeserialize& deser );
 
 };
 

@@ -247,7 +247,8 @@ AvDevice::getSupportedClockSources() {
         Plug::eAPD_Input,
         Plug::eAPT_Sync );
     if ( !syncMSUInputPlugs.size() ) {
-        debugWarning( "No sync input plug for MSU subunit found\n" );
+        // there exist devices which do not have a sync plug
+        // or their av/c model is broken. 
         return r;
     }
 
