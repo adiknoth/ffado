@@ -13,6 +13,7 @@
 0x00130e,	0x00000006,	"Focusrite"			,"Saffire Pro10IO"
 0x00130e,	0x00000000,	"Focusrite"			,"Saffire (LE)"
 0x0040ab,	0x00010049,	"EDIROL"			,"FA-66"
+0x0040ab,	0x00010048,	"EDIROL"			,"FA-101"
 0x000d6c,	0x00010062,	"M-Audio"			,"FW Solo"
 0x000d6c,	0x00010081,	"M-Audio"			,"NRV10"
 0x000d6c,       0x00010060,     "M-Audio"                       ,"FW Audiophile"
