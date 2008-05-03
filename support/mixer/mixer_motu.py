@@ -25,8 +25,8 @@ from qt import *
 from mixer_motuui import *
 
 class MotuMixer(MotuMixerUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        MotuMixerUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        MotuMixerUI.__init__(self,parent,name,fl)
 
     # public slot: channel/mix faders
     def updateFader(self, a0):

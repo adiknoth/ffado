@@ -24,8 +24,8 @@ from qt import *
 from mixer_mackie_genericui import *
 
 class MackieGenericControl(MackieGenericControlUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        MackieGenericControlUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        MackieGenericControlUI.__init__(self,parent,name,fl)
 
     # public slot
     def setFB1(self,a0):

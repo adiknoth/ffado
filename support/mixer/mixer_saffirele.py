@@ -24,8 +24,8 @@ from qt import *
 from mixer_saffireleui import *
 
 class SaffireLEMixer(SaffireLEMixerUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        SaffireLEMixerUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        SaffireLEMixerUI.__init__(self,parent,name,fl)
 
     def init(self):
             print "Init Saffire LE mixer window"

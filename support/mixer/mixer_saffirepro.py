@@ -24,8 +24,8 @@ from qt import *
 from mixer_saffireproui import *
 
 class SaffireProMixer(SaffireProMixerUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        SaffireProMixerUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        SaffireProMixerUI.__init__(self,parent,name,fl)
 
     def updateMatrixVolume(self,a0):
         sender = self.sender()
