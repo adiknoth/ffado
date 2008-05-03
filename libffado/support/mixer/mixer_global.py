@@ -30,6 +30,15 @@ class GlobalMixer( GlobalMixerUi ):
 	def clockChanged( self, clock ):
 		#print "updateClockSource( " + str(clock) + " )"
 		self.clockselect.select( clock )
+		selected = self.clockselect.selected()
+
+		if selected != clock:
+			clockname = self.clockselect.getEnumLabel( clock )
+			msg = QMessageBox()
+			msg.question( msg, "Failed to select clock source", \
+				"<qt>Could not select %s as clock source.</qt>" % clockname, \
+				QMessageBox.Ok )
+			self.clocksource.setCurrentItem( selected )
 
 	def nicknameChanged( self, name ):
 		#print "nicknameChanged( %s )" % name
