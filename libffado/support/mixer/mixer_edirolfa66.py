@@ -24,8 +24,8 @@ from qt import *
 from mixer_edirolfa66ui import *
 
 class EdirolFa66Control(EdirolFa66ControlUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        EdirolFa66ControlUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        EdirolFa66ControlUI.__init__(self,parent,name,fl)
 
     def setComboMixSource(self,a0):
             self.setSelector('line34source', a0)

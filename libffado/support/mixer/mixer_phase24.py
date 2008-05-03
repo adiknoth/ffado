@@ -24,8 +24,8 @@ from qt import *
 from mixer_phase24ui import *
 
 class PhaseX24Control(PhaseX24ControlUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        PhaseX24ControlUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        PhaseX24ControlUI.__init__(self,parent,name,fl)
         self.init()
 
     # public slot

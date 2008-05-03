@@ -24,8 +24,8 @@ from qt import *
 from mixer_af2ui import *
 
 class AudioFire2Mixer(AudioFire2MixerUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        AudioFire2MixerUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        AudioFire2MixerUI.__init__(self,parent,name,fl)
 
     def init(self):
             print "Init AF2 mixer window"

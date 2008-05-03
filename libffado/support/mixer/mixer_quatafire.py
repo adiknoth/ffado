@@ -24,8 +24,8 @@ from qt import *
 from mixer_quatafireui import *
 
 class QuataFireMixer(QuataFireMixerUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        QuataFireMixerUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        QuataFireMixerUI.__init__(self,parent,name,fl)
 
     def init(self):
             print "Init Quatafire mixer window"

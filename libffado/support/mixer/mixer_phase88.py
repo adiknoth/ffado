@@ -24,8 +24,8 @@ from qt import *
 from mixer_phase88ui import *
 
 class Phase88Control(Phase88ControlUI):
-    def __init__(self,parent = None,name = None,modal = 0,fl = 0):
-        Phase88ControlUI.__init__(self,parent,name,modal,fl)
+    def __init__(self,parent = None,name = None,fl = 0):
+        Phase88ControlUI.__init__(self,parent,name,fl)
 
     def switchFrontState(self,a0):
             self.setSelector('frontback', a0)
