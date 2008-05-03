@@ -170,6 +170,9 @@ class SaffireProMixer(SaffireProMixerUI):
                 self.chkAC3: ['/Control/AC3pass'], 
                 self.chkMidiThru: ['/Control/MidiTru'], 
                 self.chkHighVoltage: ['/Control/UseHighVoltageRail'], 
+                self.chkEnableADAT1: ['/Control/EnableAdat1'], 
+                self.chkEnableADAT2: ['/Control/EnableAdat2'],
+                self.chkEnableSPDIF1: ['/Control/EnableSPDIF1'],
                 # Mixer switches
                 self.chkMute12: ['/Mixer/Out12Mute'],
                 self.chkHwCtrl12: ['/Mixer/Out12HwCtrl'],
@@ -187,6 +190,15 @@ class SaffireProMixer(SaffireProMixerUI):
                 self.chkHwCtrl78: ['/Mixer/Out78HwCtrl'],
                 self.chkPad78: ['/Mixer/Out78Pad'],
                 self.chkDim78: ['/Mixer/Out78Dim'],
+                # direct monitoring
+                self.chkMonitor1: ['/Mixer/DirectMonitorCH1'],
+                self.chkMonitor2: ['/Mixer/DirectMonitorCH2'],
+                self.chkMonitor3: ['/Mixer/DirectMonitorCH3'],
+                self.chkMonitor4: ['/Mixer/DirectMonitorCH4'],
+                self.chkMonitor5: ['/Mixer/DirectMonitorCH5'],
+                self.chkMonitor6: ['/Mixer/DirectMonitorCH6'],
+                self.chkMonitor7: ['/Mixer/DirectMonitorCH7'],
+                self.chkMonitor8: ['/Mixer/DirectMonitorCH8'],
             }
 
             self.VolumeControlsLowRes={
@@ -203,10 +215,8 @@ class SaffireProMixer(SaffireProMixerUI):
             }
 
             self.TextControls={
-                self.txtDeviceName:        ['/Control/DeviceName'],
             }
             self.saveTextControls={
-                self.btnSaveName:        [self.txtDeviceName],
             }
 
     def updateValues(self):
@@ -240,28 +250,6 @@ class SaffireProMixer(SaffireProMixerUI):
             print "%s text is %s" % (ctrl.name() , text)
             ctrl.setText(text)
 
-        self.initClockSelector()
-
-    def updateClockSelection(self,a0):
-        #disable the combobox
-        self.comboClockSelect.setEnabled(False)
-        #change the clock source
-        self.clockselect.select(a0)
-        #refresh the clock source selection box
-        self.initClockSelector()
-        #make the box available again
-        self.comboClockSelect.setEnabled(True)
-
-    def initClockSelector(self):
-        self.comboClockSelect.clear()
-        nbsources = self.clockselect.count()
-        for idx in range(nbsources):
-            desc = self.clockselect.getEnumLabel(idx)
-            self.comboClockSelect.insertItem(desc)
-        active_idx = self.clockselect.selected();
-        if active_idx >= 0:
-            self.comboClockSelect.setCurrentItem(active_idx)
-
     def initValues(self):
         self.updateValues()
         for ctrl, info in self.VolumeControls.iteritems():
@@ -283,7 +271,3 @@ class SaffireProMixer(SaffireProMixerUI):
         for ctrl, info in self.saveTextControls.iteritems():
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('clicked()'), self.saveText)
-
-        self.initClockSelector()
-        # connect the clock selector UI element
-        QObject.connect(self.comboClockSelect, SIGNAL('activated(int)'), self.updateClockSelection)
