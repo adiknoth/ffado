@@ -91,10 +91,16 @@
         <receiver>GlobalMixerUi</receiver>
         <slot>clockChanged(int)</slot>
     </connection>
+    <connection>
+        <sender>txtNickname</sender>
+        <signal>textChanged(const QString&amp;)</signal>
+        <receiver>GlobalMixerUi</receiver>
+        <slot>nicknameChanged(const QString&amp;)</slot>
+    </connection>
 </connections>
 <slots>
     <slot>clockChanged( int )</slot>
-    <slot>nicknameChanged( QString )</slot>
+    <slot>nicknameChanged( const QString&amp; )</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
