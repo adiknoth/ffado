@@ -141,6 +141,40 @@ SaffireProDevice::buildMixer()
                 FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out78Dim", "Out7/8 Dim", "Output 7/8 Level Dim"));
 
+    // direct monitoring controls
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH1,
+                "DirectMonitorCH1", "Direct Monitor CH1", "Enable Direct Monitor on Channel 1"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH2,
+                "DirectMonitorCH2", "Direct Monitor CH2", "Enable Direct Monitor on Channel 2"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH3,
+                "DirectMonitorCH3", "Direct Monitor CH3", "Enable Direct Monitor on Channel 3"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH4,
+                "DirectMonitorCH4", "Direct Monitor CH4", "Enable Direct Monitor on Channel 4"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH5,
+                "DirectMonitorCH5", "Direct Monitor CH5", "Enable Direct Monitor on Channel 5"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH6,
+                "DirectMonitorCH6", "Direct Monitor CH6", "Enable Direct Monitor on Channel 6"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH7,
+                "DirectMonitorCH7", "Direct Monitor CH7", "Enable Direct Monitor on Channel 7"));
+    result &= m_MixerContainer->addElement(
+        new BinaryControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_BITFIELD, FR_SAFFIREPRO_CMD_ID_DIRECT_MONITORING_CH8,
+                "DirectMonitorCH8", "Direct Monitor CH8", "Enable Direct Monitor on Channel 8"));
+
     // output level controls
     result &= m_MixerContainer->addElement(
         new VolumeControlLowRes(*this, 
