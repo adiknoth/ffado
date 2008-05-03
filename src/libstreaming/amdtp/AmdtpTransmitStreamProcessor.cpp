@@ -192,7 +192,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         if(cycles_until_transmit < 0)
         {
             // we are too late
-            debugOutput(DEBUG_LEVEL_NORMAL,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
                         CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                         transmit_at_cycle, cycles_until_transmit,
