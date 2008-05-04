@@ -53,7 +53,8 @@ apps = {
 	"test-bufferops" : "test-bufferops.cpp",
 	"test-watchdog" : "test-watchdog.cpp",
 	"test-devicestringparser" : "test-devicestringparser.cpp",
-	"dumpiso_mod" : "dumpiso_mod.cpp"
+	"dumpiso_mod" : "dumpiso_mod.cpp",
+	"scan-devreg" : "scan-devreg.cpp"
 }
 
 if env['ENABLE_BEBOB']:
