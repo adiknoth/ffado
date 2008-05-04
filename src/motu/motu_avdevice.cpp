@@ -1281,7 +1281,7 @@ unsigned int MotuDevice::ReadRegister(unsigned int reg) {
 
   quadlet = 0;
   // Note: 1394Service::read() expects a physical ID, not the node id
-  if (get1394Service().read(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &quadlet) < 0) {
+  if (get1394Service().read(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &quadlet) <= 0) {
     debugError("Error doing motu read from register 0x%06x\n",reg);
   }
 
@@ -1297,7 +1297,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
   data = htonl(data);
 
   // Note: 1394Service::write() expects a physical ID, not the node id
-  if (get1394Service().write(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &data) < 0) {
+  if (get1394Service().write(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &data) <= 0) {
     err = 1;
     debugError("Error doing motu write to register 0x%06x\n",reg);
   }
