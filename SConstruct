@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.24"
+FFADO_VERSION="1.999.26"
 
 import os
 import re
@@ -411,6 +411,7 @@ env['VERSION'] = FFADO_VERSION
 env['LIBVERSION'] = "1.0.0"
 
 env['CONFIGDIR'] = "~/.ffado"
+env['CACHEDIR'] = "~/.ffado"
 
 env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
 
