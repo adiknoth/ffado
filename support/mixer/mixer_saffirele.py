@@ -91,10 +91,13 @@ class SaffireLEMixer(SaffireLEMixerUI):
                    }
 
             self.SelectorControls={
-                    self.chkOut1Mute:      ['/Mixer/Out1Mute'],
-                    self.chkOut2Mute:      ['/Mixer/Out2Mute'],
-                    self.chkOut3Mute:      ['/Mixer/Out3Mute'],
-                    self.chkOut4Mute:      ['/Mixer/Out4Mute'],
+                    self.chkOut12Mute:          ['/Mixer/Out12Mute'],
+                    self.chkOut34Mute:          ['/Mixer/Out34Mute'],
+                    self.chkOut56Mute:          ['/Mixer/Out56Mute'],
+                    self.chkSPDIFTransparent:   ['/Mixer/SpdifTransparent'],
+                    self.chkMIDITru:            ['/Mixer/MidiThru'],
+                    self.chkHighGain3:          ['/Mixer/HighGainLine3'],
+                    self.chkHighGain4:          ['/Mixer/HighGainLine4'],
                     }
 
             self.VolumeControlsLowRes={
@@ -131,26 +134,6 @@ class SaffireLEMixer(SaffireLEMixerUI):
                     state)
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
 
-    def updateClockSelection(self,a0):
-        #disable the combobox
-        self.comboClockSelect.setEnabled(False)
-        #change the clock source
-        self.clockselect.select(a0)
-        #refresh the clock source selection box
-        self.initClockSelector()
-        #make the box available again
-        self.comboClockSelect.setEnabled(True)
-
-    def initClockSelector(self):
-        self.comboClockSelect.clear()
-        nbsources = self.clockselect.count()
-        for idx in range(nbsources):
-            desc = self.clockselect.getEnumLabel(idx)
-            self.comboClockSelect.insertItem(desc)
-        active_idx = self.clockselect.selected();
-        if active_idx >= 0:
-            self.comboClockSelect.setCurrentItem(active_idx)
-
     def initValues(self):
             for ctrl, info in self.VolumeControls.iteritems():
                 vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
@@ -182,7 +165,3 @@ class SaffireLEMixer(SaffireLEMixerUI):
 
                 # connect the UI element
                 QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
-
-            self.initClockSelector()
-            # connect the clock selector UI element
-            QObject.connect(self.comboClockSelect, SIGNAL('activated(int)'), self.updateClockSelection)
