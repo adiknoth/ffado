@@ -180,9 +180,9 @@ public:
     /**
      * @brief Clock source identification struct
      */
-    class sClockSource {
+    class ClockSource {
         public:
-        sClockSource()
+        ClockSource()
             : type( eCT_Invalid )
             , id( 0 )
             , valid( false )
@@ -191,7 +191,6 @@ public:
             , slipping( false )
             , description( "" )
         {};
-        virtual ~sClockSource() {};
         /// indicates the type of the clock source (e.g. eCT_ADAT)
         enum eClockSourceType type;
         /// indicated the id of the clock source (e.g. id=1 => clocksource is ADAT_1)
@@ -207,11 +206,10 @@ public:
         /// description of the clock struct (optional)
         std::string description;
         
-        bool operator==(const sClockSource& x) {
+        bool operator==(const ClockSource& x) {
             return (type == x.type) && (id == x.id);
         }
     };
-    typedef struct sClockSource ClockSource;
 
     typedef std::vector< ClockSource > ClockSourceVector;
     typedef std::vector< ClockSource >::iterator ClockSourceVectorIterator;
