@@ -21,12 +21,17 @@
  *
  */
 
-#include "libavc/avc_function_block.h"
-#include "libavc/avc_serialize.h"
+#include "libavc/audiosubunit/avc_function_block.h"
+#include "libutil/serialize.h"
+#include "libutil/cmd_serialize.h"
 
 #include "libieee1394/ieee1394service.h"
 
 const bool bVerbose = false;
+
+using namespace AVC;
+using namespace Util;
+using namespace Util::Cmd;
 
 short int
 getVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id,
@@ -39,7 +44,9 @@ getVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id,
     fbCmd.setNodeId( node_id );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
-    fbCmd.m_pFBFeature->m_pVolume = new FunctionBlockFeatureVolume;
+    fbCmd.m_pFBFeature->m_audioChannelNumber = 0;
+    fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
+    fbCmd.m_pFBFeature->m_pVolume->m_volume = 0;
 
     fbCmd.setVerbose( bVerbose );
     if (bVerbose) {
@@ -68,7 +75,8 @@ setVolume( Ieee1394Service& ieee1394service, int node_id, int ffb_id, int vol )
     fbCmd.setNodeId( node_id );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Control );
-    fbCmd.m_pFBFeature->m_pVolume = new FunctionBlockFeatureVolume;
+    fbCmd.m_pFBFeature->m_audioChannelNumber = 0;
+    fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
     fbCmd.m_pFBFeature->m_pVolume->m_volume = vol;
 
     fbCmd.setVerbose( bVerbose );
