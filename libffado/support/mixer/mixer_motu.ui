@@ -25,7 +25,7 @@
     <property name="geometry">
         <rect>
             <x>0</x>
-            <y>2</y>
+            <y>0</y>
             <width>800</width>
             <height>750</height>
         </rect>
@@ -76,29 +76,6 @@
         </property>
         <widget class="QLabel">
             <property name="name">
-                <cstring>textLabel1_2_2_13</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>60</y>
-                    <width>31</width>
-                    <height>37</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                </font>
-            </property>
-            <property name="text">
-                <string>&lt;p align="center"&gt;Trim&lt;br&gt;gain&lt;/p&gt;</string>
-            </property>
-            <property name="alignment">
-                <set>WordBreak|AlignCenter</set>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
                 <cstring>textLabel1_2_2_13_2</cstring>
             </property>
             <property name="geometry">
@@ -114,7 +91,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;Trim&lt;br&gt;gain&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;Trim&lt;br&gt;gain&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -137,7 +114,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;Trim&lt;br&gt;gain&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;Trim&lt;br&gt;gain&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -160,7 +137,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;Trim&lt;br&gt;gain&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;Trim&lt;br&gt;gain&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -183,7 +160,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;-20dB&lt;br&gt;pad&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;-20dB&lt;br&gt;pad&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -206,7 +183,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;-20dB&lt;br&gt;pad&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;-20dB&lt;br&gt;pad&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -229,30 +206,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;-20dB&lt;br&gt;pad&lt;/p&gt;</string>
-            </property>
-            <property name="alignment">
-                <set>WordBreak|AlignCenter</set>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
-                <cstring>textLabel1_2_2_12</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>130</y>
-                    <width>37</width>
-                    <height>40</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                </font>
-            </property>
-            <property name="text">
-                <string>&lt;p align="center"&gt;-20dB&lt;br&gt;pad&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;-20dB&lt;br&gt;pad&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -658,29 +612,6 @@
         </widget>
         <widget class="QLabel">
             <property name="name">
-                <cstring>textLabel1_2_2_12_4_5</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>240</y>
-                    <width>37</width>
-                    <height>40</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                </font>
-            </property>
-            <property name="text">
-                <string>&lt;p align="center"&gt;+4&lt;br&gt;dBU&lt;/p&gt;</string>
-            </property>
-            <property name="alignment">
-                <set>WordBreak|AlignCenter</set>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
                 <cstring>textLabel1_2_2_12_4_5_2</cstring>
             </property>
             <property name="geometry">
@@ -696,7 +627,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;+4&lt;br&gt;dBU&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+4&lt;br&gt;dBU&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -719,7 +650,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;+4&lt;br&gt;dBU&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+4&lt;br&gt;dBU&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -742,7 +673,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;+4&lt;br&gt;dBU&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+4&lt;br&gt;dBU&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -862,29 +793,6 @@
         </widget>
         <widget class="QLabel">
             <property name="name">
-                <cstring>textLabel1_2_2_12_4</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>310</y>
-                    <width>37</width>
-                    <height>40</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                </font>
-            </property>
-            <property name="text">
-                <string>&lt;p align="center"&gt;+6dB&lt;br&gt;boost&lt;/p&gt;</string>
-            </property>
-            <property name="alignment">
-                <set>WordBreak|AlignCenter</set>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
                 <cstring>textLabel1_2_2_12_4_2</cstring>
             </property>
             <property name="geometry">
@@ -900,7 +808,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;+6dB&lt;br&gt;boost&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+6dB&lt;br&gt;boost&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -923,7 +831,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;+6dB&lt;br&gt;boost&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+6dB&lt;br&gt;boost&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -946,7 +854,7 @@
                 </font>
             </property>
             <property name="text">
-                <string>&lt;p align="center"&gt;+6dB&lt;br&gt;boost&lt;/p&gt;</string>
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+6dB&lt;br&gt;boost&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
             </property>
             <property name="alignment">
                 <set>WordBreak|AlignCenter</set>
@@ -1050,6 +958,121 @@
                 <enum>Horizontal</enum>
             </property>
         </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_13</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>60</y>
+                    <width>31</width>
+                    <height>37</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                </font>
+            </property>
+            <property name="text">
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;Trim&lt;br&gt;gain&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
+            </property>
+            <property name="alignment">
+                <set>WordBreak|AlignCenter</set>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_11_3_2_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>430</y>
+                    <width>100</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                </font>
+            </property>
+            <property name="text">
+                <string>&lt;qt&gt;&lt;small&gt;Optical in mode&lt;/small&gt;&lt;/qt&gt;</string>
+            </property>
+            <property name="alignment">
+                <set>WordBreak|AlignCenter</set>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_12</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>130</y>
+                    <width>37</width>
+                    <height>40</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                </font>
+            </property>
+            <property name="text">
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;-20dB&lt;br&gt;pad&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
+            </property>
+            <property name="alignment">
+                <set>WordBreak|AlignCenter</set>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_12_4_5</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>240</y>
+                    <width>37</width>
+                    <height>40</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                </font>
+            </property>
+            <property name="text">
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+4&lt;br&gt;dBU&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
+            </property>
+            <property name="alignment">
+                <set>WordBreak|AlignCenter</set>
+            </property>
+        </widget>
+        <widget class="QLabel">
+            <property name="name">
+                <cstring>textLabel1_2_2_12_4</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>310</y>
+                    <width>37</width>
+                    <height>40</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                </font>
+            </property>
+            <property name="text">
+                <string>&lt;p align="center"&gt;&lt;qt&gt;&lt;small&gt;+6dB&lt;br&gt;boost&lt;/small&gt;&lt;/qt&gt;&lt;/p&gt;</string>
+            </property>
+            <property name="alignment">
+                <set>WordBreak|AlignCenter</set>
+            </property>
+        </widget>
         <widget class="QComboBox">
             <item>
                 <property name="text">
@@ -1079,30 +1102,8 @@
             </property>
             <property name="font">
                 <font>
+                    <pointsize>9</pointsize>
                 </font>
-            </property>
-        </widget>
-        <widget class="QLabel">
-            <property name="name">
-                <cstring>textLabel1_2_11_3_2_2</cstring>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>10</x>
-                    <y>430</y>
-                    <width>87</width>
-                    <height>22</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                </font>
-            </property>
-            <property name="text">
-                <string>Optical in mode</string>
-            </property>
-            <property name="alignment">
-                <set>AlignCenter</set>
             </property>
         </widget>
     </widget>
@@ -1129,7 +1130,7 @@
                 <rect>
                     <x>10</x>
                     <y>50</y>
-                    <width>83</width>
+                    <width>90</width>
                     <height>22</height>
                 </rect>
             </property>
@@ -1138,10 +1139,10 @@
                 </font>
             </property>
             <property name="text">
-                <string>Phones assign</string>
+                <string>&lt;qt&gt;&lt;small&gt;Phones assign&lt;/small&gt;&lt;/qt&gt;</string>
             </property>
             <property name="alignment">
-                <set>AlignCenter</set>
+                <set>WordBreak|AlignCenter</set>
             </property>
         </widget>
         <widget class="QLabel">
@@ -1152,7 +1153,7 @@
                 <rect>
                     <x>10</x>
                     <y>110</y>
-                    <width>94</width>
+                    <width>100</width>
                     <height>22</height>
                 </rect>
             </property>
@@ -1161,10 +1162,10 @@
                 </font>
             </property>
             <property name="text">
-                <string>Optical out mode</string>
+                <string>&lt;qt&gt;&lt;small&gt;Optical out mode&lt;/small&gt;&lt;qt&gt;</string>
             </property>
             <property name="alignment">
-                <set>AlignCenter</set>
+                <set>WordBreak|AlignCenter</set>
             </property>
         </widget>
         <widget class="QComboBox">
@@ -1241,6 +1242,7 @@
             </property>
             <property name="font">
                 <font>
+                    <pointsize>9</pointsize>
                 </font>
             </property>
         </widget>
@@ -1273,6 +1275,7 @@
             </property>
             <property name="font">
                 <font>
+                    <pointsize>9</pointsize>
                 </font>
             </property>
         </widget>
@@ -1311,71 +1314,6 @@
                 <property name="title">
                     <string>Output</string>
                 </property>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2_2_11_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>40</x>
-                            <y>80</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Mute</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel2_2_3_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>20</x>
-                            <y>280</y>
-                            <width>79</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="text">
-                        <string>Mix output</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2_11_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>20</x>
-                            <y>130</y>
-                            <width>64</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Destination</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
                 <widget class="QSlider">
                     <property name="name">
                         <cstring>mix1_fader</cstring>
@@ -1439,6 +1377,71 @@
                     </property>
                     <property name="text">
                         <string></string>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_11_3</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>40</x>
+                            <y>80</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>WordBreak|AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_11_3</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>20</x>
+                            <y>130</y>
+                            <width>64</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Destination&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>WordBreak|AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel2_2_3_3</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>20</x>
+                            <y>280</y>
+                            <width>79</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="text">
+                        <string>Mix output</string>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignCenter</set>
                     </property>
                 </widget>
                 <widget class="QComboBox">
@@ -1515,6 +1518,7 @@
                     </property>
                     <property name="font">
                         <font>
+                            <pointsize>9</pointsize>
                         </font>
                     </property>
                 </widget>
@@ -1551,7 +1555,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1574,7 +1578,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1597,7 +1601,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1620,7 +1624,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1643,7 +1647,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1666,7 +1670,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1689,7 +1693,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1712,7 +1716,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1735,7 +1739,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1758,7 +1762,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1781,7 +1785,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1804,7 +1808,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1827,7 +1831,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1850,53 +1854,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2_2_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>40</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Solo</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2_2_2_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>40</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1919,7 +1877,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1942,7 +1900,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1965,7 +1923,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -1988,7 +1946,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -2011,7 +1969,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -2034,30 +1992,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>80</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3036,29 +2971,6 @@
                         <number>64</number>
                     </property>
                 </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>130</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Pan</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
                 <widget class="QSlider">
                     <property name="name">
                         <cstring>mix1ana1_fader</cstring>
@@ -3151,7 +3063,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3174,7 +3086,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3197,30 +3109,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
-                    </property>
-                    <property name="alignment">
-                        <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>textLabel1_2_2_14</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>30</x>
-                            <y>310</y>
-                            <width>30</width>
-                            <height>22</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3338,6 +3227,121 @@
                         <string></string>
                     </property>
                 </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_2</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>40</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>WordBreak|AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_2_2</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>40</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_2</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>80</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>WordBreak|AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>130</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>WordBreak|AlignCenter</set>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>textLabel1_2_2_14</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>30</x>
+                            <y>310</y>
+                            <width>30</width>
+                            <height>22</height>
+                        </rect>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
+                    </property>
+                    <property name="alignment">
+                        <set>WordBreak|AlignCenter</set>
+                    </property>
+                </widget>
             </widget>
             <widget class="QGroupBox">
                 <property name="name">
@@ -3399,7 +3403,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3422,7 +3426,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3464,7 +3468,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3571,7 +3575,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3594,7 +3598,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3617,7 +3621,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3771,7 +3775,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3866,7 +3870,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3889,7 +3893,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -3950,7 +3954,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4057,7 +4061,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4080,7 +4084,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4196,7 +4200,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4238,7 +4242,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4352,7 +4356,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4375,7 +4379,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4398,7 +4402,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4421,7 +4425,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pan</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4520,7 +4524,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4543,7 +4547,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4566,7 +4570,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4589,7 +4593,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Mute</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4808,7 +4812,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4831,7 +4835,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4854,7 +4858,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -4877,7 +4881,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Solo</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -5123,7 +5127,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Pan</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5165,7 +5169,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Mute</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5244,7 +5248,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Solo</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5491,7 +5495,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Pan</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5514,7 +5518,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Pan</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5537,7 +5541,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Pan</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Pan&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5617,7 +5621,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Mute</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5640,7 +5644,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Mute</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5663,7 +5667,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Mute</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Mute&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5854,7 +5858,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Solo</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5877,7 +5881,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Solo</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5900,7 +5904,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Solo</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5923,7 +5927,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Pair</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -5946,7 +5950,7 @@
                             </font>
                         </property>
                         <property name="text">
-                            <string>Pair</string>
+                            <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
@@ -6026,7 +6030,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
@@ -6049,7 +6053,7 @@
                         </font>
                     </property>
                     <property name="text">
-                        <string>Pair</string>
+                        <string>&lt;qt&gt;&lt;small&gt;Pair&lt;/small&gt;&lt;/qt&gt;</string>
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>

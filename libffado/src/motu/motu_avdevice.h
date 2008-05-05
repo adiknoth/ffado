@@ -60,6 +60,8 @@
 #define MOTU_CLKSRC_WORDCLOCK        4
 #define MOTU_CLKSRC_ADAT_9PIN        5
 #define MOTU_CLKSRC_AES_EBU          7
+#define MOTU_CLKSRC_NONE             0xffff
+#define MOTU_CLKSRC_UNCHANGED        MOTU_CLKSRC_NONE
 
 #define MOTU_DIR_IN          1
 #define MOTU_DIR_OUT         2
@@ -155,9 +157,11 @@ public:
 
     virtual void showDevice();
 
+    bool setClockCtrlRegister(signed int samplingFrequency, unsigned int clock_source);
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
 
+    FFADODevice::ClockSource clockIdToClockSource(unsigned int id);
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
     virtual ClockSource getActiveClockSource();
