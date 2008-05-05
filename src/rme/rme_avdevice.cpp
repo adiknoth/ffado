@@ -248,7 +248,7 @@ RmeDevice::readRegister(unsigned int reg) {
     quadlet_t quadlet;
     
     quadlet = 0;
-    if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) < 0) {
+    if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) <= 0) {
         debugError("Error doing RME read from register 0x%06x\n",reg);
     }
     return ntohl(quadlet);
@@ -259,7 +259,7 @@ RmeDevice::writeRegister(unsigned int reg, quadlet_t data) {
 
     unsigned int err = 0;
     data = htonl(data);
-    if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) < 0) {
+    if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) <= 0) {
         err = 1;
         debugError("Error doing RME write to register 0x%06x\n",reg);
     }
