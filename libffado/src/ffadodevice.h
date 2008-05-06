@@ -169,6 +169,7 @@ public:
         eCT_ADAT,      ///> SYT on ADAT input
         eCT_TDIF,      ///> SYT on TDIF input
         eCT_AES,       ///> SYT on AES input
+        eCT_SMTPE,     ///> SMTPE clock
     };
 
     /**
