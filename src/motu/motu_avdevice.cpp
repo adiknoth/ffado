@@ -835,7 +835,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
             s.description = "SPDIF/Toslink";
             break;
         case MOTU_CLKSRC_SMTPE:
-            s.type = eCT_Internal;
+            s.type = eCT_SMTPE;
             s.description = "SMPTE";
             // Since we don't currently know how to deal with SMPTE on these devices
             // make sure the SMPTE clock source is disabled.
