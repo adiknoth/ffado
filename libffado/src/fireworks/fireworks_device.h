@@ -33,6 +33,7 @@
 #include "efc/efc_cmds_hardware.h"
 
 #include <pthread.h>
+#include "libutil/Mutex.h"
 
 class ConfigRom;
 class Ieee1394Service;
@@ -116,7 +117,7 @@ private:
     EfcHardwareInfoCmd  m_HwInfo;
 
     bool updatePolledValues();
-    pthread_mutex_t     m_polled_mutex;
+    Util::Mutex*        m_poll_lock;
     EfcPolledValuesCmd  m_Polled;
 
     bool                m_efc_discovery_done;

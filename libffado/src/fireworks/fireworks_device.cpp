@@ -37,6 +37,8 @@
 
 #include "fireworks/fireworks_control.h"
 
+#include "libutil/PosixMutex.h"
+
 #include <sstream>
 using namespace std;
 
@@ -45,12 +47,12 @@ namespace FireWorks {
 
 Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : GenericAVC::AvDevice( d, configRom)
+    , m_poll_lock( new Util::PosixMutex() )
     , m_efc_discovery_done ( false )
     , m_MixerContainer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created FireWorks::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-    pthread_mutex_init( &m_polled_mutex, 0 );
 }
 
 Device::~Device()
@@ -70,7 +72,6 @@ Device::showDevice()
     m_HwInfo.showEfcCmd();
     GenericAVC::AvDevice::showDevice();
 }
-
 
 bool
 Device::probe( ConfigRom& configRom )
@@ -295,13 +296,8 @@ Device::destroyMixer()
 
 bool
 Device::updatePolledValues() {
-    bool retval;
-
-    pthread_mutex_lock( &m_polled_mutex );
-    retval = doEfcOverAVC(m_Polled);
-    pthread_mutex_unlock( &m_polled_mutex );
-
-    return retval;
+    Util::MutexLockHelper lock(*m_poll_lock);
+    return doEfcOverAVC(m_Polled);
 }
 
 FFADODevice::ClockSourceVector
