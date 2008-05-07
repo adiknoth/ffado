@@ -429,6 +429,9 @@ env.ScanReplace( "config.h.in" )
 env.Depends( "config.h", "SConstruct" )
 env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
 
+# update config.h whenever the SVN revision changes
+env.Depends( "config.h", env.Value(env['REVISION']))
+
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
