@@ -778,7 +778,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
                 else
                     src_name = "SPDIF           ";
                 break;
-            case MOTU_CLKSRC_SMTPE:
+            case MOTU_CLKSRC_SMPTE:
                 src_name = "SMPTE           ";
                 break;
             case MOTU_CLKSRC_WORDCLOCK:
@@ -834,8 +834,8 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
             s.type = eCT_SPDIF;
             s.description = "SPDIF/Toslink";
             break;
-        case MOTU_CLKSRC_SMTPE:
-            s.type = eCT_SMTPE;
+        case MOTU_CLKSRC_SMPTE:
+            s.type = eCT_SMPTE;
             s.description = "SMPTE";
             // Since we don't currently know how to deal with SMPTE on these devices
             // make sure the SMPTE clock source is disabled.
@@ -875,7 +875,7 @@ MotuDevice::getSupportedClockSources() {
     r.push_back(s);
     s = clockIdToClockSource(MOTU_CLKSRC_SPDIF_TOSLINK);
     r.push_back(s);
-    s = clockIdToClockSource(MOTU_CLKSRC_SMTPE);
+    s = clockIdToClockSource(MOTU_CLKSRC_SMPTE);
     r.push_back(s);
     s = clockIdToClockSource(MOTU_CLKSRC_WORDCLOCK);
     r.push_back(s);
