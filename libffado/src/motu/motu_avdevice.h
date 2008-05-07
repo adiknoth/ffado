@@ -56,7 +56,7 @@
 #define MOTU_CLKSRC_INTERNAL         0
 #define MOTU_CLKSRC_ADAT_OPTICAL     1
 #define MOTU_CLKSRC_SPDIF_TOSLINK    2
-#define MOTU_CLKSRC_SMTPE            3
+#define MOTU_CLKSRC_SMPTE            3
 #define MOTU_CLKSRC_WORDCLOCK        4
 #define MOTU_CLKSRC_ADAT_9PIN        5
 #define MOTU_CLKSRC_AES_EBU          7
