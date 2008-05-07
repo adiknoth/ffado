@@ -146,7 +146,7 @@ FFADODevice::getSyncState( ) {
 bool
 FFADODevice::setId( unsigned int id)
 {
-    m_DeviceMutex.Lock();
+    Util::MutexLockHelper lock(m_DeviceMutex);
     bool retval;
     // FIXME: decent ID system nescessary
     std::ostringstream idstr;
@@ -154,7 +154,6 @@ FFADODevice::setId( unsigned int id)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
 
     retval=setOption("id",idstr.str());
-    m_DeviceMutex.Unlock();
     return retval;
 }
 
@@ -178,10 +177,9 @@ FFADODevice::handleBusReset()
     // update the config rom node id
     sleep(1);
 
-    m_DeviceMutex.Lock();
+    Util::MutexLockHelper lock(m_DeviceMutex);
     getConfigRom().setVerboseLevel(getDebugLevel());
     getConfigRom().updatedNodeId();
-    m_DeviceMutex.Unlock();
 }
 
 void
