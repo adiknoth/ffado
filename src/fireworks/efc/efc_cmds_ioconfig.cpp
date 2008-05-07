@@ -24,7 +24,7 @@
 #include "efc_cmd.h"
 #include "efc_cmds_ioconfig.h"
 
-#include <netinet/in.h>
+#include <byteswap.h>
 #include <iostream>
 
 using namespace std;
@@ -59,7 +59,7 @@ EfcGenericIOConfigCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
 
-        result &= se.write(htonl(m_value), "Value" );
+        result &= se.write(bswap_32(m_value), "Value" );
     }
     return result;
 }

@@ -32,7 +32,7 @@
 #include "../general/avc_subunit.h"
 #include "../general/avc_unit.h"
 
-#include <netinet/in.h>
+#include <byteswap.h>
 
 // info block implementations
 
@@ -52,7 +52,7 @@ AVCMusicGeneralStatusInfoBlock::serialize( Util::Cmd::IOSSerialize& se )
     bool result=true;
     result &= AVCInfoBlock::serialize(se);
     
-    quadlet_t tmp=htonl(m_current_latency_capability);
+    quadlet_t tmp=bswap_32(m_current_latency_capability);
     
     result &= se.write(m_current_transmit_capability, "AVCMusicGeneralStatusInfoBlock m_current_transmit_capability");
     result &= se.write(m_current_receive_capability, "AVCMusicGeneralStatusInfoBlock m_current_receive_capability");
@@ -74,7 +74,7 @@ AVCMusicGeneralStatusInfoBlock::deserialize( Util::Cmd::IISDeserialize& de )
     result &= de.read(&m_current_transmit_capability);
     result &= de.read(&m_current_receive_capability);
     result &= de.read(&m_current_latency_capability);
-    m_current_latency_capability=ntohl(m_current_latency_capability);
+    m_current_latency_capability=bswap_32(m_current_latency_capability);
     
     return result;
 }

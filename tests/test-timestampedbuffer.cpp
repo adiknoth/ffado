@@ -34,7 +34,7 @@
 #include <signal.h>
 #include "src/debugmodule/debugmodule.h"
 
-#include <netinet/in.h>
+#include <byteswap.h>
 
 #include "src/libieee1394/cycletimer.h"
 

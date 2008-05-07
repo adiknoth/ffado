@@ -63,7 +63,7 @@ public:
     struct raw1394_arm_response *getResponse() {return &m_response;};
 
     nodeaddr_t getStart() {return m_start;};
-    nodeaddr_t getLength() {return m_length;};
+    size_t getLength() {return m_length;};
     unsigned int getAccessRights() {return m_access_rights;};
     unsigned int getNotificationOptions() {return m_notification_options;};
     unsigned int getClientTransactions() {return m_client_transactions;};

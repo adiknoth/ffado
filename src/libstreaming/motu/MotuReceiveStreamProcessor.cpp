@@ -35,7 +35,7 @@
 #include "libieee1394/cycletimer.h"
 
 #include <math.h>
-#include <netinet/in.h>
+#include <byteswap.h>
 #include <assert.h>
 
 /* Provide more intuitive access to GCC's branch predition built-ins */
@@ -130,8 +130,8 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // header followed by a number of events (8 for 1x rates, 16
         // for 2x rates, 32 for 4x rates).
         quadlet_t *quadlet = (quadlet_t *)data;
-        unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
-        unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
+        unsigned int dbs = get_bits(bswap_32(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
+        unsigned int fdf_size = get_bits(bswap_32(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
 
         // Don't even attempt to process a packet if it isn't what
         // we expect from a MOTU.  Yes, an FDF value of 32 bears
@@ -149,7 +149,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // Acquire the timestamp of the last frame in the packet just
         // received.  Since every frame from the MOTU has its own timestamp
         // we can just pick it straight from the packet.
-        uint32_t last_sph = ntohl(*(quadlet_t *)(data+8+(n_events-1)*event_length));
+        uint32_t last_sph = bswap_32(*(quadlet_t *)(data+8+(n_events-1)*event_length));
         m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
 
         return eCRV_OK;
@@ -173,8 +173,8 @@ enum StreamProcessor::eChildReturnValue
 MotuReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length) {
     quadlet_t* quadlet = (quadlet_t*) data;
 
-    unsigned int dbs = get_bits(ntohl(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
-    unsigned int fdf_size = get_bits(ntohl(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
+    unsigned int dbs = get_bits(bswap_32(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
+    unsigned int fdf_size = get_bits(bswap_32(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
     // this is only called for packets that return eCRV_OK on processPacketHeader
     // so event_length won't become 0
     unsigned int event_length = (fdf_size * dbs) / 8;       // Event size in bytes

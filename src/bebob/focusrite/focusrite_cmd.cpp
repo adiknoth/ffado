@@ -23,7 +23,7 @@
 
 #include "focusrite_cmd.h"
 
-#include <netinet/in.h>
+#include <byteswap.h>
 #include <iostream>
 
 using namespace std;
@@ -53,9 +53,9 @@ FocusriteVendorDependentCmd::serialize( Util::Cmd::IOSSerialize& se )
     result &= VendorDependentCmd::serialize( se );
     result &= se.write(m_arg1,"FocusriteVendorDependentCmd arg1");
     result &= se.write(m_arg2,"FocusriteVendorDependentCmd arg2");
-    // FIXME: this is not consistent, we should not have to care about ntohl here
-    result &= se.write(htonl(m_id),"FocusriteVendorDependentCmd ID");
-    result &= se.write(htonl(m_value),"FocusriteVendorDependentCmd value");
+    // FIXME: this is not consistent, we should not have to care about bswap_32 here
+    result &= se.write(bswap_32(m_id),"FocusriteVendorDependentCmd ID");
+    result &= se.write(bswap_32(m_value),"FocusriteVendorDependentCmd value");
     
     return result;
 }
@@ -68,9 +68,9 @@ FocusriteVendorDependentCmd::deserialize( Util::Cmd::IISDeserialize& de )
     result &= de.read(&m_arg1);
     result &= de.read(&m_arg2);
     result &= de.read(&m_id);
-    m_id=ntohl(m_id);
+    m_id=bswap_32(m_id);
     result &= de.read(&m_value);
-    m_value=ntohl(m_value);
+    m_value=bswap_32(m_value);
 
     return result;
 }
