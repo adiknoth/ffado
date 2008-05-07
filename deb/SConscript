@@ -35,7 +35,7 @@ else:
 
 DEBMAINT = "Pieter Palmers [pieter.palmers@ffado.org]"
 DEBARCH = "i386"
-DEBDEPENDS = "libraw1394-8 (>= 1.3.0), libasound2 (>= 1.0.0), libiec61883-0 (>= 1.1.0), libavc1394-0 (>= 0.5.3), dbus (>= 1.1.0)" # what are we dependent on?
+DEBDEPENDS = "libraw1394-8 (>= 1.3.0), libiec61883-0 (>= 1.1.0), libavc1394-0 (>= 0.5.3), dbus (>= 1.1.0)" # what are we dependent on?
 DEBDESC = "FFADO: FireWire audio for Linux (Development build SVN r%s)" % env['REVISION']
 
 DEBFILES = [
