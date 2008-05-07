@@ -24,7 +24,7 @@
 #include "efc_cmd.h"
 #include "efc_cmds_hardware.h"
 
-#include <netinet/in.h>
+#include <byteswap.h>
 #include <iostream>
 
 using namespace std;
@@ -109,7 +109,7 @@ EfcCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     
-    result &= se.write(htonl(m_length), "EFC length");
+    result &= se.write(bswap_32(m_length), "EFC length");
     
     unsigned int i=0;
     
@@ -122,11 +122,11 @@ EfcCmd::serialize( Util::Cmd::IOSSerialize& se )
     
     // serialize the header
     quadlet_t *header_as_quadlets=(quadlet_t *)&m_header;
-    result &= se.write(htonl(*(header_as_quadlets+i)), "EFC header version"); i++;
-    result &= se.write(htonl(*(header_as_quadlets+i)), "EFC header seqnum"); i++;
-    result &= se.write(htonl(*(header_as_quadlets+i)), "EFC header category"); i++;
-    result &= se.write(htonl(*(header_as_quadlets+i)), "EFC header command"); i++;
-    result &= se.write(htonl(*(header_as_quadlets+i)), "EFC header return value"); i++;
+    result &= se.write(bswap_32(*(header_as_quadlets+i)), "EFC header version"); i++;
+    result &= se.write(bswap_32(*(header_as_quadlets+i)), "EFC header seqnum"); i++;
+    result &= se.write(bswap_32(*(header_as_quadlets+i)), "EFC header category"); i++;
+    result &= se.write(bswap_32(*(header_as_quadlets+i)), "EFC header command"); i++;
+    result &= se.write(bswap_32(*(header_as_quadlets+i)), "EFC header return value"); i++;
     
     return result;
 }
@@ -137,13 +137,13 @@ EfcCmd::deserialize( Util::Cmd::IISDeserialize& de )
     bool result=true;
     
     result &= de.read(&m_length);
-    m_length=ntohl(m_length);
+    m_length=bswap_32(m_length);
     
     // read the EFC header
     quadlet_t *header_as_quadlets=(quadlet_t *)&m_header;
     for (unsigned int i=0; i<sizeof(m_header)/4; i++) {
         result &= de.read((header_as_quadlets+i));
-        *(header_as_quadlets+i)=ntohl(*(header_as_quadlets+i));
+        *(header_as_quadlets+i)=bswap_32(*(header_as_quadlets+i));
     }
 
     // check the EFC version

@@ -31,8 +31,9 @@
 
 #include <string>
 #include <stdint.h>
+#include <byteswap.h>
 #include <assert.h>
-#include <netinet/in.h>
+#include <byteswap.h>
 #include <libraw1394/csr.h>
 
 #include <iostream>
@@ -1257,7 +1258,7 @@ DiceAvDevice::getTxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_TX_NAMES_SIZE+1];
 
-    if (!readTxRegBlock(i, DICE_REGISTER_TX_NAMES_BASE,
+    if (!readTxRegBlockSwapped(i, DICE_REGISTER_TX_NAMES_BASE,
                         (fb_quadlet_t *)namestring, DICE_TX_NAMES_SIZE)) {
         debugError("Could not read TX name string \n");
         return names;
@@ -1272,7 +1273,7 @@ DiceAvDevice::getRxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_RX_NAMES_SIZE+1];
 
-    if (!readRxRegBlock(i, DICE_REGISTER_RX_NAMES_BASE,
+    if (!readRxRegBlockSwapped(i, DICE_REGISTER_RX_NAMES_BASE,
                         (fb_quadlet_t *)namestring, DICE_RX_NAMES_SIZE)) {
         debugError("Could not read RX name string \n");
         return names;
@@ -1287,8 +1288,8 @@ DiceAvDevice::getClockSourceNameString() {
     diceNameVector names;
     char namestring[DICE_CLOCKSOURCENAMES_SIZE+1];
 
-    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES,
-                        (fb_quadlet_t *)namestring, DICE_CLOCKSOURCENAMES_SIZE)) {
+    if (!readGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES,
+                     (fb_quadlet_t *)namestring, DICE_CLOCKSOURCENAMES_SIZE)) {
         debugError("Could not read CLOCKSOURCE name string \n");
         return names;
     }
@@ -1301,7 +1302,7 @@ std::string
 DiceAvDevice::getDeviceNickName() {
     char namestring[DICE_NICK_NAME_SIZE+1];
 
-    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
+    if (!readGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_NICK_NAME,
                         (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
         debugError("Could not read nickname string \n");
         return std::string("(unknown)");
@@ -1316,7 +1317,7 @@ DiceAvDevice::setDeviceNickName(std::string name) {
     char namestring[DICE_NICK_NAME_SIZE+1];
     strncpy(namestring, name.c_str(), DICE_NICK_NAME_SIZE);
 
-    if (!writeGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
+    if (!writeGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_NICK_NAME,
                         (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
         debugError("Could not write nickname string \n");
         return false;
@@ -1462,7 +1463,7 @@ DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
         return false;
     }
 
-    *result=ntohl(*result);
+    *result=bswap_32(*result);
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
 
@@ -1482,7 +1483,7 @@ DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!get1394Service().write_quadlet( nodeId, addr, htonl(data) ) ) {
+    if(!get1394Service().write_quadlet( nodeId, addr, bswap_32(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -1508,7 +1509,7 @@ DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     }
 
     for(unsigned int i=0;i<length/4;i++) {
-        *(data+i)=ntohl(*(data+i));
+        *(data+i)=bswap_32(*(data+i));
     }
 
     return true;
@@ -1530,7 +1531,59 @@ DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
     fb_quadlet_t data_out[length/4];
 
     for(unsigned int i=0;i<length/4;i++) {
-        data_out[i]=ntohl(*(data+i));
+        data_out[i]=bswap_32(*(data+i));
+    }
+
+    if(!get1394Service().write( nodeId, addr, length/4, data_out ) ) {
+        debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
+        return false;
+    }
+
+    return true;
+}
+
+bool
+DiceAvDevice::readRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
+        offset, length);
+
+    if(offset >= DICE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016llX\n", offset);
+        return false;
+    }
+
+    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
+
+    if(!get1394Service().read( nodeId, addr, length/4, data ) ) {
+        debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
+        return false;
+    }
+
+    for(unsigned int i=0;i<length/4;i++) {
+        *(data+i)=bswap_32(*(data+i));
+    }
+
+    return true;
+}
+
+bool
+DiceAvDevice::writeRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
+        offset, length);
+
+    if(offset >= DICE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016llX\n", offset);
+        return false;
+    }
+
+    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
+
+    fb_quadlet_t data_out[length/4];
+
+    for(unsigned int i=0;i<length/4;i++) {
+        data_out[i]=bswap_32(*(data+i));
     }
 
     if(!get1394Service().write( nodeId, addr, length/4, data_out ) ) {
@@ -1574,6 +1627,24 @@ DiceAvDevice::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size
 
     fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
     return writeRegBlock(m_global_reg_offset + offset_gl, data, length);
+}
+
+bool
+DiceAvDevice::readGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
+        offset, length);
+
+    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
+    return readRegBlockSwapped(m_global_reg_offset + offset_gl, data, length);
+}
+
+bool
+DiceAvDevice::writeGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
+        offset, length);
+
+    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
+    return writeRegBlockSwapped(m_global_reg_offset + offset_gl, data, length);
 }
 
 fb_nodeaddr_t
@@ -1627,6 +1698,15 @@ DiceAvDevice::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t
 
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
     return writeRegBlock(m_tx_reg_offset + offset_tx, data, length);
+}
+
+bool
+DiceAvDevice::readTxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
+        offset, length);
+
+    fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
+    return readRegBlockSwapped(m_tx_reg_offset + offset_tx, data, length);
 }
 
 fb_nodeaddr_t
@@ -1694,6 +1774,15 @@ DiceAvDevice::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
     return writeRegBlock(m_rx_reg_offset + offset_rx, data, length);
+}
+
+bool
+DiceAvDevice::readRxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
+        offset, length);
+
+    fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
+    return readRegBlockSwapped(m_rx_reg_offset + offset_rx, data, length);
 }
 
 fb_nodeaddr_t

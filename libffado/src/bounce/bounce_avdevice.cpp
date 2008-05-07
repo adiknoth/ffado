@@ -41,7 +41,7 @@
 #include <stdint.h>
 
 #include <string>
-#include <netinet/in.h>
+#include <byteswap.h>
 
 namespace Bounce {
 

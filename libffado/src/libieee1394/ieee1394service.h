@@ -344,8 +344,6 @@ private:
     typedef std::vector< ARMHandler * > arm_handler_vec_t;
     arm_handler_vec_t m_armHandlers;
 
-    fb_octlet_t byteSwap_octlet(fb_octlet_t value);
-
 public:
     void setVerboseLevel(int l);
     void show();

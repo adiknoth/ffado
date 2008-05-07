@@ -20,7 +20,7 @@
 #include "src/libieee1394/cycletimer.h"
 #include "src/debugmodule/debugmodule.h"
 #include "src/libstreaming/util/cip.h"
-#include <netinet/in.h>
+#include <byteswap.h>
 
 #define BUFFER 1000
 #define PACKET_MAX 4096
@@ -209,7 +209,7 @@ iso_handler(raw1394handle_t handle, unsigned char *data,
                     (packet->dbs > 0) &&
                     (length >= 2*sizeof(quadlet_t));
         if(ok) {
-            timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
+            timestamp = sytRecvToFullTicks((uint32_t)bswap_16(packet->syt),
                                     cycle, cycle_timer);
         }
         /* write header */

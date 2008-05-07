@@ -24,7 +24,7 @@
 #include "focusrite_saffirepro.h"
 #include "focusrite_cmd.h"
 
-#include <netinet/in.h>
+#include <byteswap.h>
 
 namespace BeBoB {
 namespace Focusrite {
@@ -139,7 +139,7 @@ FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
     fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
-    if(!get1394Service().write_quadlet( nodeId, addr, htonl(data) ) ) {
+    if(!get1394Service().write_quadlet( nodeId, addr, bswap_32(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -160,7 +160,7 @@ FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
         return false;
     }
 
-    result=ntohl(result);
+    result=bswap_32(result);
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08llX\n", result);
 
     *v = result;
