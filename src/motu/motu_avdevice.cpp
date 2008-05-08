@@ -256,6 +256,18 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Mix1/Ana6_", "Mix 1 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4014, },
     {"Mix1/Ana7_", "Mix 1 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4018, },
     {"Mix1/Ana8_", "Mix 1 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x401c, },
+    {"Mix1/Adat1_", "Mix 1 adat 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4030, },
+    {"Mix1/Adat2_", "Mix 1 adat 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4034, },
+    {"Mix1/Adat3_", "Mix 1 adat 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4038, },
+    {"Mix1/Adat4_", "Mix 1 adat 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x403c, },
+    {"Mix1/Adat5_", "Mix 1 adat 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4040, },
+    {"Mix1/Adat6_", "Mix 1 adat 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4044, },
+    {"Mix1/Adat7_", "Mix 1 adat 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4048, },
+    {"Mix1/Adat8_", "Mix 1 adat 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x404c, },
+    {"Mix1/Aes1_", "Mix 1 AES/EBU 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4020, },
+    {"Mix1/Aes2_", "Mix 1 AES/EBU 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4024, },
+    {"Mix1/Spdif1_", "Mix 1 SPDIF 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4028, },
+    {"Mix1/Spdif2_", "Mix 1 SPDIF 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x402c, },
 
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
 
