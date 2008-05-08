@@ -32,7 +32,7 @@
 #include <string>
 #include <stdint.h>
 #include <assert.h>
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <libraw1394/csr.h>
 
 #include <iostream>
@@ -1462,7 +1462,7 @@ DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
         return false;
     }
 
-    *result=ntohl(*result);
+    *result=CondSwap32(*result);
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
 
@@ -1482,7 +1482,7 @@ DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!get1394Service().write_quadlet( nodeId, addr, htonl(data) ) ) {
+    if(!get1394Service().write_quadlet( nodeId, addr, CondSwap32(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -1508,7 +1508,7 @@ DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     }
 
     for(unsigned int i=0;i<length/4;i++) {
-        *(data+i)=ntohl(*(data+i));
+        *(data+i)=CondSwap32(*(data+i));
     }
 
     return true;
@@ -1530,7 +1530,7 @@ DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
     fb_quadlet_t data_out[length/4];
 
     for(unsigned int i=0;i<length/4;i++) {
-        data_out[i]=ntohl(*(data+i));
+        data_out[i]=CondSwap32(*(data+i));
     }
 
     if(!get1394Service().write( nodeId, addr, length/4, data_out ) ) {

@@ -25,7 +25,7 @@
 #include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 
 #define NR_OF_PAGE_DATA 5
 #define SIZE_OF_PAGE_ENTRY 5

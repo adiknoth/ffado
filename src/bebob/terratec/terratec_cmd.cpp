@@ -23,7 +23,7 @@
 
 #include "terratec_cmd.h"
 
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <iostream>
 
 using namespace std;

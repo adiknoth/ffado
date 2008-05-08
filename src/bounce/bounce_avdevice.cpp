@@ -41,7 +41,7 @@
 #include <stdint.h>
 
 #include <string>
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 
 namespace Bounce {
 

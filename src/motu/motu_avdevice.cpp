@@ -43,7 +43,7 @@
 #include <string>
 #include <stdint.h>
 #include <assert.h>
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <iostream>
 #include <sstream>
 
@@ -1388,7 +1388,7 @@ unsigned int MotuDevice::ReadRegister(unsigned int reg) {
     debugError("Error doing motu read from register 0x%06x\n",reg);
   }
 
-  return ntohl(quadlet);
+  return CondSwap32(quadlet);
 }
 
 signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
@@ -1397,7 +1397,7 @@ signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
  */
 
   unsigned int err = 0;
-  data = htonl(data);
+  data = CondSwap32(data);
 
   // Note: 1394Service::write() expects a physical ID, not the node id
   if (get1394Service().write(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &data) <= 0) {

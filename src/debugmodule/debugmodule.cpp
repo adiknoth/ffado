@@ -26,7 +26,7 @@
 #include "config.h"
 
 #include <stdarg.h>
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 
 #include <iostream>
 
@@ -801,7 +801,7 @@ hexDumpQuadlets( quadlet_t *data, unsigned int length )
     }
     for (i = 0; i< length; i += 1) {
         printf( "%02d %04X: %08X (%08X)"
-                "\n", i, i*4, data[i],ntohl(data[i]));
+                "\n", i, i*4, data[i],CondSwap32(data[i]));
     }
 }
 
