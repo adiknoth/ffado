@@ -2971,43 +2971,6 @@
                         <number>64</number>
                     </property>
                 </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>mix1ana1_fader</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel2</cstring>
@@ -3342,6 +3305,43 @@
                         <set>WordBreak|AlignCenter</set>
                     </property>
                 </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1ana1_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
             </widget>
             <widget class="QGroupBox">
                 <property name="name">
@@ -3358,34 +3358,6 @@
                 <property name="title">
                     <string>AES/EBU</string>
                 </property>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_2_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>20</x>
-                            <y>20</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel1_2_11</cstring>
@@ -3432,25 +3404,6 @@
                         <set>AlignCenter</set>
                     </property>
                 </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_10</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel1_2_2_11</cstring>
@@ -3472,90 +3425,6 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_18</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>20</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_3_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>60</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_10_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>60</x>
-                            <y>20</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
                     </property>
                 </widget>
                 <widget class="QLabel">
@@ -3646,80 +3515,6 @@
                         <set>AlignCenter</set>
                     </property>
                 </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_10</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_2_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel2_2_3</cstring>
@@ -3737,25 +3532,6 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_2_3</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
                     </property>
                 </widget>
                 <widget class="QLabel">
@@ -3809,25 +3585,177 @@
                         <string></string>
                     </property>
                 </widget>
-            </widget>
-            <widget class="QGroupBox">
-                <property name="name">
-                    <cstring>mix1_spdif_group</cstring>
-                </property>
-                <property name="geometry">
-                    <rect>
-                        <x>360</x>
-                        <y>350</y>
-                        <width>100</width>
-                        <height>340</height>
-                    </rect>
-                </property>
-                <property name="title">
-                    <string>SPDIF</string>
-                </property>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1aes1_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1aes2_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1aes1_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1aes2_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
                 <widget class="QCheckBox">
                     <property name="name">
-                        <cstring>checkBox1_2_3_2</cstring>
+                        <cstring>mix1aes1_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>20</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1aes2_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>60</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1aes1_solo</cstring>
                     </property>
                     <property name="geometry">
                         <rect>
@@ -3853,6 +3781,50 @@
                         <string></string>
                     </property>
                 </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1aes2_solo</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>60</x>
+                            <y>20</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+            </widget>
+            <widget class="QGroupBox">
+                <property name="name">
+                    <cstring>mix1_spdif_group</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>360</x>
+                        <y>350</y>
+                        <width>100</width>
+                        <height>340</height>
+                    </rect>
+                </property>
+                <property name="title">
+                    <string>SPDIF</string>
+                </property>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel1_2_11_2</cstring>
@@ -3899,44 +3871,6 @@
                         <set>AlignCenter</set>
                     </property>
                 </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_10_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_2_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel1_2_2_11_2</cstring>
@@ -3958,90 +3892,6 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_18_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>20</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_3_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>60</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_10_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>60</x>
-                            <y>20</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
                     </property>
                 </widget>
                 <widget class="QLabel">
@@ -4107,80 +3957,6 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_10_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_2_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
                     </property>
                 </widget>
                 <widget class="QLabel">
@@ -4276,25 +4052,177 @@
                         <string></string>
                     </property>
                 </widget>
-            </widget>
-            <widget class="QGroupBox">
-                <property name="name">
-                    <cstring>mix1_adat_group</cstring>
-                </property>
-                <property name="geometry">
-                    <rect>
-                        <x>10</x>
-                        <y>350</y>
-                        <width>330</width>
-                        <height>340</height>
-                    </rect>
-                </property>
-                <property name="title">
-                    <string>ADAT</string>
-                </property>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1spdif1_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1spdif2_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1spdif1_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1spdif2_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
                 <widget class="QCheckBox">
                     <property name="name">
-                        <cstring>checkBox1_2_2</cstring>
+                        <cstring>mix1spdif1_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>20</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1spdif2_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>60</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1spdif1_solo</cstring>
                     </property>
                     <property name="geometry">
                         <rect>
@@ -4320,6 +4248,50 @@
                         <string></string>
                     </property>
                 </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1spdif2_solo</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>60</x>
+                            <y>20</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+            </widget>
+            <widget class="QGroupBox">
+                <property name="name">
+                    <cstring>mix1_adat_group</cstring>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>350</y>
+                        <width>330</width>
+                        <height>340</height>
+                    </rect>
+                </property>
+                <property name="title">
+                    <string>ADAT</string>
+                </property>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel2_9</cstring>
@@ -4431,82 +4403,6 @@
                         <set>AlignCenter</set>
                     </property>
                 </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_9</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_2_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>90</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
-                <widget class="QDial">
-                    <property name="name">
-                        <cstring>dial2_4_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>130</x>
-                            <y>100</y>
-                            <width>30</width>
-                            <height>30</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>-64</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>64</number>
-                    </property>
-                </widget>
                 <widget class="QLabel">
                     <property name="name">
                         <cstring>textLabel1_2_2_10</cstring>
@@ -4597,202 +4493,6 @@
                     </property>
                     <property name="alignment">
                         <set>AlignCenter</set>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_17</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>20</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>60</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_4_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>100</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_5_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>140</x>
-                            <y>60</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_10_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>60</x>
-                            <y>20</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_11_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>100</x>
-                            <y>20</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
-                    </property>
-                </widget>
-                <widget class="QCheckBox">
-                    <property name="name">
-                        <cstring>checkBox1_12_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>140</x>
-                            <y>20</y>
-                            <width>20</width>
-                            <height>26</height>
-                        </rect>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>1</hsizetype>
-                            <vsizetype>0</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="font">
-                        <font>
-                        </font>
-                    </property>
-                    <property name="text">
-                        <string></string>
                     </property>
                 </widget>
                 <widget class="QLabel">
@@ -4944,154 +4644,6 @@
                         <set>AlignCenter</set>
                     </property>
                 </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_2_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>50</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_3_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>90</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_4_2</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>130</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
-                <widget class="QSlider">
-                    <property name="name">
-                        <cstring>sldFB1_9</cstring>
-                    </property>
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>160</y>
-                            <width>30</width>
-                            <height>120</height>
-                        </rect>
-                    </property>
-                    <property name="minValue">
-                        <number>0</number>
-                    </property>
-                    <property name="maxValue">
-                        <number>128</number>
-                    </property>
-                    <property name="lineStep">
-                        <number>1</number>
-                    </property>
-                    <property name="pageStep">
-                        <number>10</number>
-                    </property>
-                    <property name="value">
-                        <number>128</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="tickmarks">
-                        <enum>Both</enum>
-                    </property>
-                    <property name="tickInterval">
-                        <number>10</number>
-                    </property>
-                </widget>
                 <widget class="QGroupBox">
                     <property name="name">
                         <cstring>mix1_adat58_group</cstring>
@@ -5133,25 +4685,6 @@
                             <set>AlignCenter</set>
                         </property>
                     </widget>
-                    <widget class="QDial">
-                        <property name="name">
-                            <cstring>dial2_8_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>122</x>
-                                <y>82</y>
-                                <width>30</width>
-                                <height>30</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>-64</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>64</number>
-                        </property>
-                    </widget>
                     <widget class="QLabel">
                         <property name="name">
                             <cstring>textLabel1_2_2_9_2</cstring>
@@ -5173,62 +4706,6 @@
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_9_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>132</x>
-                                <y>42</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_16_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>132</x>
-                                <y>2</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
                         </property>
                     </widget>
                     <widget class="QLabel">
@@ -5271,43 +4748,6 @@
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
-                        </property>
-                    </widget>
-                    <widget class="QSlider">
-                        <property name="name">
-                            <cstring>sldFB1_8_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>122</x>
-                                <y>142</y>
-                                <width>30</width>
-                                <height>120</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>0</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>128</number>
-                        </property>
-                        <property name="lineStep">
-                            <number>1</number>
-                        </property>
-                        <property name="pageStep">
-                            <number>10</number>
-                        </property>
-                        <property name="value">
-                            <number>128</number>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="tickmarks">
-                            <enum>Both</enum>
-                        </property>
-                        <property name="tickInterval">
-                            <number>10</number>
                         </property>
                     </widget>
                     <widget class="QLabel">
@@ -5365,117 +4805,6 @@
                         </property>
                         <property name="alignment">
                             <set>AlignCenter</set>
-                        </property>
-                    </widget>
-                    <widget class="QSlider">
-                        <property name="name">
-                            <cstring>sldFB1_5_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>2</x>
-                                <y>142</y>
-                                <width>30</width>
-                                <height>120</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>0</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>128</number>
-                        </property>
-                        <property name="lineStep">
-                            <number>1</number>
-                        </property>
-                        <property name="pageStep">
-                            <number>10</number>
-                        </property>
-                        <property name="value">
-                            <number>128</number>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="tickmarks">
-                            <enum>Both</enum>
-                        </property>
-                        <property name="tickInterval">
-                            <number>10</number>
-                        </property>
-                    </widget>
-                    <widget class="QSlider">
-                        <property name="name">
-                            <cstring>sldFB1_6_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>42</x>
-                                <y>142</y>
-                                <width>30</width>
-                                <height>120</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>0</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>128</number>
-                        </property>
-                        <property name="lineStep">
-                            <number>1</number>
-                        </property>
-                        <property name="pageStep">
-                            <number>10</number>
-                        </property>
-                        <property name="value">
-                            <number>128</number>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="tickmarks">
-                            <enum>Both</enum>
-                        </property>
-                        <property name="tickInterval">
-                            <number>10</number>
-                        </property>
-                    </widget>
-                    <widget class="QSlider">
-                        <property name="name">
-                            <cstring>sldFB1_7_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>82</x>
-                                <y>142</y>
-                                <width>30</width>
-                                <height>120</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>0</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>128</number>
-                        </property>
-                        <property name="lineStep">
-                            <number>1</number>
-                        </property>
-                        <property name="pageStep">
-                            <number>10</number>
-                        </property>
-                        <property name="value">
-                            <number>128</number>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="tickmarks">
-                            <enum>Both</enum>
-                        </property>
-                        <property name="tickInterval">
-                            <number>10</number>
                         </property>
                     </widget>
                     <widget class="QLabel">
@@ -5547,63 +4876,6 @@
                             <set>AlignCenter</set>
                         </property>
                     </widget>
-                    <widget class="QDial">
-                        <property name="name">
-                            <cstring>dial2_5_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>2</x>
-                                <y>82</y>
-                                <width>30</width>
-                                <height>30</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>-64</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>64</number>
-                        </property>
-                    </widget>
-                    <widget class="QDial">
-                        <property name="name">
-                            <cstring>dial2_6_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>42</x>
-                                <y>82</y>
-                                <width>30</width>
-                                <height>30</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>-64</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>64</number>
-                        </property>
-                    </widget>
-                    <widget class="QDial">
-                        <property name="name">
-                            <cstring>dial2_7_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>82</x>
-                                <y>82</y>
-                                <width>30</width>
-                                <height>30</height>
-                            </rect>
-                        </property>
-                        <property name="minValue">
-                            <number>-64</number>
-                        </property>
-                        <property name="maxValue">
-                            <number>64</number>
-                        </property>
-                    </widget>
                     <widget class="QLabel">
                         <property name="name">
                             <cstring>textLabel1_2_2_6_2</cstring>
@@ -5673,174 +4945,6 @@
                             <set>AlignCenter</set>
                         </property>
                     </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_6_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>12</x>
-                                <y>42</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_7_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>52</x>
-                                <y>42</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_8_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>92</x>
-                                <y>42</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_13_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>12</x>
-                                <y>2</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_14_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>52</x>
-                                <y>2</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>checkBox1_15_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>92</x>
-                                <y>2</y>
-                                <width>20</width>
-                                <height>26</height>
-                            </rect>
-                        </property>
-                        <property name="sizePolicy">
-                            <sizepolicy>
-                                <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                            </sizepolicy>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string></string>
-                        </property>
-                    </widget>
                     <widget class="QLabel">
                         <property name="name">
                             <cstring>textLabel1_2_2_2_5_2</cstring>
@@ -5871,29 +4975,6 @@
                         <property name="geometry">
                             <rect>
                                 <x>42</x>
-                                <y>22</y>
-                                <width>30</width>
-                                <height>22</height>
-                            </rect>
-                        </property>
-                        <property name="font">
-                            <font>
-                            </font>
-                        </property>
-                        <property name="text">
-                            <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
-                        </property>
-                        <property name="alignment">
-                            <set>AlignCenter</set>
-                        </property>
-                    </widget>
-                    <widget class="QLabel">
-                        <property name="name">
-                            <cstring>textLabel1_2_2_2_7_2</cstring>
-                        </property>
-                        <property name="geometry">
-                            <rect>
-                                <x>82</x>
                                 <y>22</y>
                                 <width>30</width>
                                 <height>22</height>
@@ -6012,6 +5093,477 @@
                             <string></string>
                         </property>
                     </widget>
+                    <widget class="QSlider">
+                        <property name="name">
+                            <cstring>mix1adat5_fader</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>2</x>
+                                <y>142</y>
+                                <width>30</width>
+                                <height>120</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>0</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>128</number>
+                        </property>
+                        <property name="lineStep">
+                            <number>1</number>
+                        </property>
+                        <property name="pageStep">
+                            <number>10</number>
+                        </property>
+                        <property name="value">
+                            <number>128</number>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="tickmarks">
+                            <enum>Both</enum>
+                        </property>
+                        <property name="tickInterval">
+                            <number>10</number>
+                        </property>
+                    </widget>
+                    <widget class="QSlider">
+                        <property name="name">
+                            <cstring>mix1adat6_fader</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>42</x>
+                                <y>142</y>
+                                <width>30</width>
+                                <height>120</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>0</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>128</number>
+                        </property>
+                        <property name="lineStep">
+                            <number>1</number>
+                        </property>
+                        <property name="pageStep">
+                            <number>10</number>
+                        </property>
+                        <property name="value">
+                            <number>128</number>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="tickmarks">
+                            <enum>Both</enum>
+                        </property>
+                        <property name="tickInterval">
+                            <number>10</number>
+                        </property>
+                    </widget>
+                    <widget class="QSlider">
+                        <property name="name">
+                            <cstring>mix1adat7_fader</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>82</x>
+                                <y>142</y>
+                                <width>30</width>
+                                <height>120</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>0</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>128</number>
+                        </property>
+                        <property name="lineStep">
+                            <number>1</number>
+                        </property>
+                        <property name="pageStep">
+                            <number>10</number>
+                        </property>
+                        <property name="value">
+                            <number>128</number>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="tickmarks">
+                            <enum>Both</enum>
+                        </property>
+                        <property name="tickInterval">
+                            <number>10</number>
+                        </property>
+                    </widget>
+                    <widget class="QSlider">
+                        <property name="name">
+                            <cstring>mix1adat8_fader</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>122</x>
+                                <y>142</y>
+                                <width>30</width>
+                                <height>120</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>0</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>128</number>
+                        </property>
+                        <property name="lineStep">
+                            <number>1</number>
+                        </property>
+                        <property name="pageStep">
+                            <number>10</number>
+                        </property>
+                        <property name="value">
+                            <number>128</number>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="tickmarks">
+                            <enum>Both</enum>
+                        </property>
+                        <property name="tickInterval">
+                            <number>10</number>
+                        </property>
+                    </widget>
+                    <widget class="QDial">
+                        <property name="name">
+                            <cstring>mix1adat5_pan</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>2</x>
+                                <y>82</y>
+                                <width>30</width>
+                                <height>30</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>-64</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>64</number>
+                        </property>
+                    </widget>
+                    <widget class="QDial">
+                        <property name="name">
+                            <cstring>mix1adat6_pan</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>40</x>
+                                <y>80</y>
+                                <width>30</width>
+                                <height>30</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>-64</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>64</number>
+                        </property>
+                    </widget>
+                    <widget class="QDial">
+                        <property name="name">
+                            <cstring>mix1adat7_pan</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>82</x>
+                                <y>82</y>
+                                <width>30</width>
+                                <height>30</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>-64</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>64</number>
+                        </property>
+                    </widget>
+                    <widget class="QDial">
+                        <property name="name">
+                            <cstring>mix1adat8_pan</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>122</x>
+                                <y>82</y>
+                                <width>30</width>
+                                <height>30</height>
+                            </rect>
+                        </property>
+                        <property name="minValue">
+                            <number>-64</number>
+                        </property>
+                        <property name="maxValue">
+                            <number>64</number>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat5_mute</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>12</x>
+                                <y>42</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat6_mute</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>52</x>
+                                <y>42</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat7_mute</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>92</x>
+                                <y>42</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat8_mute</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>132</x>
+                                <y>42</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat5_solo</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>12</x>
+                                <y>2</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat6_solo</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>52</x>
+                                <y>2</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>textLabel1_2_2_2_7_2</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>82</x>
+                                <y>22</y>
+                                <width>30</width>
+                                <height>22</height>
+                            </rect>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string>&lt;qt&gt;&lt;small&gt;Solo&lt;/small&gt;&lt;/qt&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>AlignCenter</set>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat7_solo</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>92</x>
+                                <y>2</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>mix1adat8_solo</cstring>
+                        </property>
+                        <property name="geometry">
+                            <rect>
+                                <x>132</x>
+                                <y>2</y>
+                                <width>20</width>
+                                <height>26</height>
+                            </rect>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="font">
+                            <font>
+                            </font>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                    </widget>
                 </widget>
                 <widget class="QLabel">
                     <property name="name">
@@ -6061,6 +5613,34 @@
                 </widget>
                 <widget class="QCheckBox">
                     <property name="name">
+                        <cstring>mix1adat3_4_pair</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>120</x>
+                            <y>290</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
                         <cstring>mix1adat1_2_pair</cstring>
                     </property>
                     <property name="geometry">
@@ -6087,14 +5667,434 @@
                         <string></string>
                     </property>
                 </widget>
-                <widget class="QCheckBox">
+                <widget class="QSlider">
                     <property name="name">
-                        <cstring>mix1adat3_4_pair</cstring>
+                        <cstring>mix1adat1_fader</cstring>
                     </property>
                     <property name="geometry">
                         <rect>
-                            <x>120</x>
-                            <y>290</y>
+                            <x>10</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1adat2_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1adat3_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>90</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QSlider">
+                    <property name="name">
+                        <cstring>mix1adat4_fader</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>130</x>
+                            <y>160</y>
+                            <width>30</width>
+                            <height>120</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>0</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>128</number>
+                    </property>
+                    <property name="lineStep">
+                        <number>1</number>
+                    </property>
+                    <property name="pageStep">
+                        <number>10</number>
+                    </property>
+                    <property name="value">
+                        <number>128</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                    <property name="tickmarks">
+                        <enum>Both</enum>
+                    </property>
+                    <property name="tickInterval">
+                        <number>10</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1adat2_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>50</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1adat1_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>10</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1adat3_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>90</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
+                <widget class="QDial">
+                    <property name="name">
+                        <cstring>mix1adat4_pan</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>130</x>
+                            <y>100</y>
+                            <width>30</width>
+                            <height>30</height>
+                        </rect>
+                    </property>
+                    <property name="minValue">
+                        <number>-64</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat1_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>20</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat2_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>60</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat3_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>100</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat4_mute</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>140</x>
+                            <y>60</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat1_solo</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>20</x>
+                            <y>20</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat2_solo</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>60</x>
+                            <y>20</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat3_solo</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>100</x>
+                            <y>20</y>
+                            <width>20</width>
+                            <height>26</height>
+                        </rect>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>1</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="font">
+                        <font>
+                        </font>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mix1adat4_solo</cstring>
+                    </property>
+                    <property name="geometry">
+                        <rect>
+                            <x>140</x>
+                            <y>20</y>
                             <width>20</width>
                             <height>26</height>
                         </rect>
