@@ -148,29 +148,23 @@ private: // register I/O routines
     bool writeReg(fb_nodeaddr_t, fb_quadlet_t);
     bool readRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
     bool writeRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-    bool readRegBlockSwapped(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-    bool writeRegBlockSwapped(fb_nodeaddr_t, fb_quadlet_t *, size_t);
 
     bool readGlobalReg(fb_nodeaddr_t, fb_quadlet_t *);
     bool writeGlobalReg(fb_nodeaddr_t, fb_quadlet_t);
     bool readGlobalRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
     bool writeGlobalRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-    bool readGlobalRegBlockSwapped(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-    bool writeGlobalRegBlockSwapped(fb_nodeaddr_t, fb_quadlet_t *, size_t);
     fb_nodeaddr_t globalOffsetGen(fb_nodeaddr_t, size_t);
 
     bool readTxReg(unsigned int i, fb_nodeaddr_t, fb_quadlet_t *);
     bool writeTxReg(unsigned int i, fb_nodeaddr_t, fb_quadlet_t);
     bool readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length);
     bool writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length);
-    bool readTxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length);
     fb_nodeaddr_t txOffsetGen(unsigned int, fb_nodeaddr_t, size_t);
 
     bool readRxReg(unsigned int i, fb_nodeaddr_t, fb_quadlet_t *);
     bool writeRxReg(unsigned int i, fb_nodeaddr_t, fb_quadlet_t);
     bool readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length);
     bool writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length);
-    bool readRxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length);
     fb_nodeaddr_t rxOffsetGen(unsigned int, fb_nodeaddr_t, size_t);
 
     fb_quadlet_t m_global_reg_offset;

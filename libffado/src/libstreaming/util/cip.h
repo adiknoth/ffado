@@ -41,20 +41,20 @@ extern "C" {
 
 struct iec61883_packet {
     /* First quadlet */
+    uint8_t dbs      : 8;
     uint8_t eoh0     : 2;
     uint8_t sid      : 6;
-    uint8_t dbs      : 8;
 
+    uint8_t dbc      : 8;
     uint8_t fn       : 2;
     uint8_t qpc      : 3;
     uint8_t sph      : 1;
     uint8_t reserved : 2;
-    uint8_t dbc      : 8;
 
     /* Second quadlet */
+    uint8_t fdf      : 8;
     uint8_t eoh1     : 2;
     uint8_t fmt      : 6;
-    uint8_t fdf      : 8;
 
     uint16_t syt      : 16;
 

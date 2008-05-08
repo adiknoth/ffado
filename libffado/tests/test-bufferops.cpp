@@ -64,7 +64,7 @@ testByteSwap(int nb_quadlets, int nb_tests) {
     // do reference conversion
     
     for (i=0; i<nb_quadlets; i++) {
-        buffer_ref[i] = bswap_32(buffer_1[i]);
+        buffer_ref[i] = htonl(buffer_1[i]);
     }
     
     printMessage( "Performing byte-swap...\n");

@@ -27,7 +27,7 @@
 #include "devicemanager.h"
 #include "libutil/Time.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 
 namespace BeBoB {
 namespace Focusrite {
@@ -756,7 +756,7 @@ SaffireProDevice::setDeviceName(std::string n) {
     for (i=0; i<4; i++) {
         char *ptr = (char *) &name[i*4];
         tmp = *((uint32_t *)ptr);
-        tmp = bswap_32(tmp);
+        tmp = htonl(tmp);
         if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_DEVICE_NAME_1 + i, tmp ) ) {
             debugError( "setSpecificValue failed\n" );
             return false;
@@ -775,7 +775,7 @@ SaffireProDevice::getDeviceName() {
             debugError( "getSpecificValue failed\n" );
             return "";
         }
-        tmp = bswap_32(tmp);
+        tmp = ntohl(tmp);
         unsigned int j;
         char *ptr = (char *) &tmp;
         for (j=0; j<4; j++) {

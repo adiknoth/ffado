@@ -366,7 +366,7 @@ BounceSlaveDevice::restore_config_rom(raw1394handle_t handle, struct BounceSlave
 //     for (i = 0; i < current_rom_size; i++)
 //     {
 //         if (i % 4 == 0) printf("\n0x%04x:", CSR_CONFIG_ROM+i*4);
-//         printf(" %08x", bswap_32(current_rom[i]));
+//         printf(" %08x", ntohl(current_rom[i]));
 //     }
 //     printf("\n");
 
@@ -390,7 +390,7 @@ BounceSlaveDevice::init_config_rom(raw1394handle_t handle)
 //     for (i = 0; i < rom_size; i++)
 //     {
 //         if (i % 4 == 0) printf("\n0x%04x:", CSR_CONFIG_ROM+i*4);
-//         printf(" %08x", bswap_32(rom[i]));
+//         printf(" %08x", ntohl(rom[i]));
 //     }
 //     printf("\n");
 
@@ -410,7 +410,7 @@ BounceSlaveDevice::init_config_rom(raw1394handle_t handle)
 //     for (i = 0; i < rom_size; i++)
 //     {
 //         if (i % 4 == 0) printf("\n0x%04x:", CSR_CONFIG_ROM+i*4);
-//         printf(" %08x", bswap_32(rom[i]));
+//         printf(" %08x", ntohl(rom[i]));
 //     }
 //     printf("\n");
 
@@ -434,7 +434,7 @@ BounceSlaveDevice::init_config_rom(raw1394handle_t handle)
 //     for (i = 0; i < rom_size; i++)
 //     {
 //         if (i % 4 == 0) printf("\n0x%04x:", CSR_CONFIG_ROM+i*4);
-//         printf(" %08x", bswap_32(rom[i]));
+//         printf(" %08x", ntohl(rom[i]));
 //     }
 //     printf("\n");
 //
@@ -448,7 +448,7 @@ BounceSlaveDevice::init_config_rom(raw1394handle_t handle)
 //     for (i = 0; i < rom_size; i++)
 //     {
 //         if (i % 4 == 0) printf("\n0x%04x:", CSR_CONFIG_ROM+i*4);
-//         printf(" %08x", bswap_32(rom[i]));
+//         printf(" %08x", ntohl(rom[i]));
 //     }
 //     printf("\n");
 

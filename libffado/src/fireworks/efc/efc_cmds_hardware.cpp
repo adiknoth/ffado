@@ -23,7 +23,7 @@
 
 #include "efc_cmds_hardware.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <iostream>
 
 using namespace std;

@@ -38,7 +38,7 @@
 #include <string>
 #include <stdint.h>
 #include <assert.h>
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <iostream>
 #include <sstream>
 

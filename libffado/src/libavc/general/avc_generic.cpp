@@ -29,7 +29,7 @@
 
 #include "libutil/Time.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 
 #define DEBUG_EXTRA_VERBOSE 5
 

@@ -99,7 +99,7 @@
 // util macro to do deserialization and byteswap
 #define EFC_DESERIALIZE_AND_SWAP(__de__, __value__, __result__) \
     { __result__ &= __de__.read(__value__); \
-      *(__value__)=bswap_32(*(__value__)); } \
+      *(__value__)=ntohl(*(__value__)); } \
 
 
 // specifiers for the flags field
