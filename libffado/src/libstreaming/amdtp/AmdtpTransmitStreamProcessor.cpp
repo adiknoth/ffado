@@ -496,7 +496,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
 
         for (j = 0;j < nevents; j += 1)
         {
-            *target_event = 0x00000040;
+            *target_event = CONDSWAPTOBUS32_CONST(0x40000000);
             target_event += m_dimension;
         }
     }
@@ -890,7 +890,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         } else {
             for (j = 0;j < nevents; j += 1)
             {
-                *target_event = 0x00000040;
+                *target_event = CONDSWAPTOBUS32_CONST(0x40000000);
                 target_event += m_dimension;
             }
         }
@@ -939,8 +939,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         } else {
             for (j = 0;j < nevents; j += 1)
             {
-                // hardcoded little endian
-                *target_event = 0x00000040;
+                *target_event = CONDSWAPTOBUS32_CONST(0x40000000);
                 target_event += m_dimension;
             }
         }
