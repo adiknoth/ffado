@@ -72,7 +72,7 @@ EfcGenericMixerCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
         
-        result &= se.write(CondSwap32(m_channel), "Channel" );
+        result &= se.write(CondSwapToBus32(m_channel), "Channel" );
         
     } else {
         // the length should be specified before
@@ -81,8 +81,8 @@ EfcGenericMixerCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
         
-        result &= se.write(CondSwap32(m_channel), "Channel" );
-        result &= se.write(CondSwap32(m_value), "Value" );
+        result &= se.write(CondSwapToBus32(m_channel), "Channel" );
+        result &= se.write(CondSwapToBus32(m_value), "Value" );
     }
 
     if(!result) {

@@ -251,14 +251,14 @@ RmeDevice::readRegister(unsigned int reg) {
     if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) <= 0) {
         debugError("Error doing RME read from register 0x%06x\n",reg);
     }
-    return CondSwap32(quadlet);
+    return CondSwapFromBus32(quadlet);
 }
 
 signed int
 RmeDevice::writeRegister(unsigned int reg, quadlet_t data) {
 
     unsigned int err = 0;
-    data = CondSwap32(data);
+    data = CondSwapToBus32(data);
     if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) <= 0) {
         err = 1;
         debugError("Error doing RME write to register 0x%06x\n",reg);

@@ -97,9 +97,9 @@ EfcSetClockCmd::serialize( Util::Cmd::IOSSerialize& se )
 
     result &= EfcCmd::serialize ( se );
 
-    result &= se.write(CondSwap32(m_clock), "Clock" );
-    result &= se.write(CondSwap32(m_samplerate), "Samplerate" );
-    result &= se.write(CondSwap32(m_index), "Index" );
+    result &= se.write(CondSwapToBus32(m_clock), "Clock" );
+    result &= se.write(CondSwapToBus32(m_samplerate), "Samplerate" );
+    result &= se.write(CondSwapToBus32(m_index), "Index" );
 
     return result;
 }

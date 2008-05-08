@@ -109,7 +109,7 @@ EfcCmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result=true;
     
-    result &= se.write(CondSwap32(m_length), "EFC length");
+    result &= se.write(CondSwapToBus32(m_length), "EFC length");
     
     unsigned int i=0;
     
@@ -122,11 +122,11 @@ EfcCmd::serialize( Util::Cmd::IOSSerialize& se )
     
     // serialize the header
     quadlet_t *header_as_quadlets=(quadlet_t *)&m_header;
-    result &= se.write(CondSwap32(*(header_as_quadlets+i)), "EFC header version"); i++;
-    result &= se.write(CondSwap32(*(header_as_quadlets+i)), "EFC header seqnum"); i++;
-    result &= se.write(CondSwap32(*(header_as_quadlets+i)), "EFC header category"); i++;
-    result &= se.write(CondSwap32(*(header_as_quadlets+i)), "EFC header command"); i++;
-    result &= se.write(CondSwap32(*(header_as_quadlets+i)), "EFC header return value"); i++;
+    result &= se.write(CondSwapToBus32(*(header_as_quadlets+i)), "EFC header version"); i++;
+    result &= se.write(CondSwapToBus32(*(header_as_quadlets+i)), "EFC header seqnum"); i++;
+    result &= se.write(CondSwapToBus32(*(header_as_quadlets+i)), "EFC header category"); i++;
+    result &= se.write(CondSwapToBus32(*(header_as_quadlets+i)), "EFC header command"); i++;
+    result &= se.write(CondSwapToBus32(*(header_as_quadlets+i)), "EFC header return value"); i++;
     
     return result;
 }
@@ -137,13 +137,13 @@ EfcCmd::deserialize( Util::Cmd::IISDeserialize& de )
     bool result=true;
     
     result &= de.read(&m_length);
-    m_length=CondSwap32(m_length);
+    m_length=CondSwapFromBus32(m_length);
     
     // read the EFC header
     quadlet_t *header_as_quadlets=(quadlet_t *)&m_header;
     for (unsigned int i=0; i<sizeof(m_header)/4; i++) {
         result &= de.read((header_as_quadlets+i));
-        *(header_as_quadlets+i)=CondSwap32(*(header_as_quadlets+i));
+        *(header_as_quadlets+i)=CondSwapFromBus32(*(header_as_quadlets+i));
     }
 
     // check the EFC version

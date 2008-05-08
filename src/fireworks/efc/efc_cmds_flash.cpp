@@ -47,7 +47,7 @@ EfcFlashEraseCmd::serialize( Util::Cmd::IOSSerialize& se )
     m_length=EFC_HEADER_LENGTH_QUADLETS + 1;
 
     result &= EfcCmd::serialize ( se );
-    result &= se.write(CondSwap32(m_address), "Address" );
+    result &= se.write(CondSwapToBus32(m_address), "Address" );
 
     return result;
 }
@@ -89,8 +89,8 @@ EfcFlashReadCmd::serialize( Util::Cmd::IOSSerialize& se )
 
     result &= EfcCmd::serialize ( se );
 
-    result &= se.write(CondSwap32(m_address), "Address" );
-    result &= se.write(CondSwap32(m_nb_quadlets), "Length (quadlets)" );
+    result &= se.write(CondSwapToBus32(m_address), "Address" );
+    result &= se.write(CondSwapToBus32(m_nb_quadlets), "Length (quadlets)" );
 
     return result;
 }
@@ -151,11 +151,11 @@ EfcFlashWriteCmd::serialize( Util::Cmd::IOSSerialize& se )
 
     result &= EfcCmd::serialize ( se );
 
-    result &= se.write(CondSwap32(m_address), "Address" );
-    result &= se.write(CondSwap32(m_nb_quadlets), "Length (quadlets)" );
+    result &= se.write(CondSwapToBus32(m_address), "Address" );
+    result &= se.write(CondSwapToBus32(m_nb_quadlets), "Length (quadlets)" );
 
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
-        result &= se.write(CondSwap32(m_data[i]), "Data");
+        result &= se.write(CondSwapToBus32(m_data[i]), "Data");
     }
     return result;
 }
@@ -199,7 +199,7 @@ EfcFlashLockCmd::serialize( Util::Cmd::IOSSerialize& se )
     m_length=EFC_HEADER_LENGTH_QUADLETS + 1;
 
     result &= EfcCmd::serialize ( se );
-    result &= se.write(CondSwap32(m_lock), "Locked" );
+    result &= se.write(CondSwapToBus32(m_lock), "Locked" );
 
     return result;
 }

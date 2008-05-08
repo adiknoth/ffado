@@ -283,7 +283,7 @@ main(int argc, char **argv)
                 present[pres_index] &= ~(1<<pres_bit);
                 continue;
             } else {
-                quadlet = CondSwap32(quadlet);
+                quadlet = CondSwapFromBus32(quadlet);
             }
             
             if (old_vals[reg_index] != quadlet) {

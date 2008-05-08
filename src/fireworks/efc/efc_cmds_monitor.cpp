@@ -105,8 +105,8 @@ EfcGenericMonitorCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
         
-        result &= se.write(CondSwap32(m_input), "Input" );
-        result &= se.write(CondSwap32(m_output), "Output" );
+        result &= se.write(CondSwapToBus32(m_input), "Input" );
+        result &= se.write(CondSwapToBus32(m_output), "Output" );
         
     } else {
         // the length should be specified before
@@ -115,9 +115,9 @@ EfcGenericMonitorCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
         
-        result &= se.write(CondSwap32(m_input), "Input" );
-        result &= se.write(CondSwap32(m_output), "Output" );
-        result &= se.write(CondSwap32(m_value), "Value" );
+        result &= se.write(CondSwapToBus32(m_input), "Input" );
+        result &= se.write(CondSwapToBus32(m_output), "Output" );
+        result &= se.write(CondSwapToBus32(m_value), "Value" );
     }
     return result;
 }

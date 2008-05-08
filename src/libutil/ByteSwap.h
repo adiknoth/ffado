@@ -34,24 +34,61 @@
 
 #include <stdio.h>
 
+static inline uint64_t
+ByteSwap64(uint64_t d)
+{
+    return bswap_64(d);
+}
+
+static inline uint32_t
+ByteSwap32(uint32_t d)
+{
+    return bswap_32(d);
+}
+
+static inline uint16_t
+ByteSwap16(uint16_t d)
+{
+    return bswap_16(d);
+}
+
+
 #if __BYTE_ORDER == __BIG_ENDIAN
 
 // no-op for big endian machines
 
 static inline uint64_t
-CondSwap64(uint64_t d)
+CondSwapToBus64(uint64_t d)
 {
     return d;
 }
 
 static inline uint32_t
-CondSwap32(uint32_t d)
+CondSwapToBus32(uint32_t d)
 {
     return d;
 }
 
 static inline uint16_t
-CondSwap16(uint16_t d)
+CondSwapToBus16(uint16_t d)
+{
+    return d;
+}
+
+static inline uint64_t
+CondSwapFromBus64(uint64_t d)
+{
+    return d;
+}
+
+static inline uint32_t
+CondSwapFromBus32(uint32_t d)
+{
+    return d;
+}
+
+static inline uint16_t
+CondSwapFromBus16(uint16_t d)
 {
     return d;
 }
@@ -71,21 +108,39 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 #else
 
 static inline uint64_t
-CondSwap64(uint64_t d)
+CondSwapToBus64(uint64_t d)
 {
-    return bswap_64(d);
+    return ByteSwap64(d);
 }
 
 static inline uint32_t
-CondSwap32(uint32_t d)
+CondSwapToBus32(uint32_t d)
 {
-    return bswap_32(d);
+    return ByteSwap32(d);
 }
 
 static inline uint16_t
-CondSwap16(uint16_t d)
+CondSwapToBus16(uint16_t d)
 {
-    return bswap_16(d);
+    return ByteSwap16(d);
+}
+
+static inline uint64_t
+CondSwapFromBus64(uint64_t d)
+{
+    return ByteSwap64(d);
+}
+
+static inline uint32_t
+CondSwapFromBus32(uint32_t d)
+{
+    return ByteSwap32(d);
+}
+
+static inline uint16_t
+CondSwapFromBus16(uint16_t d)
+{
+    return ByteSwap16(d);
 }
 
 #ifdef __SSE2__
@@ -98,7 +153,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
     while ((((unsigned long)data) & 0xF) && nb_elements > 0) {
-        *data = CondSwap32(*data);
+        *data = ByteSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -135,7 +190,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 
     // and do the remaining ones
     while (nb_elements > 0) {
-        *data = CondSwap32(*data);
+        *data = ByteSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -147,7 +202,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
     while ((((unsigned long)data) & 0xF) && nb_elements > 0) {
-        *data = CondSwap32(*data);
+        *data = ByteSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -181,7 +236,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 
     // and do the remaining ones
     while (nb_elements > 0) {
-        *data = CondSwap32(*data);
+        *data = ByteSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -194,7 +249,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     unsigned int i=0;
     for(; i<nb_elements; i++) {
-        *data = CondSwap32(*data);
+        *data = ByteSwap32(*data);
         data++;
     }
 }
@@ -204,7 +259,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     unsigned int i=0;
     for(; i<nb_elements; i++) {
-        *data = CondSwap32(*data);
+        *data = ByteSwap32(*data);
         data++;
     }
 }
