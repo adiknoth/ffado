@@ -34,6 +34,11 @@
 
 #include <stdio.h>
 
+#define BYTESWAP32_CONST(x) ((((x) & 0x000000FF) << 24) |   \
+                             (((x) & 0x0000FF00) << 8) |    \
+                             (((x) & 0x00FF0000) >> 8) |    \
+                             (((x) & 0xFF000000) >> 24))
+
 static inline uint64_t
 ByteSwap64(uint64_t d)
 {
@@ -56,6 +61,8 @@ ByteSwap16(uint16_t d)
 #if __BYTE_ORDER == __BIG_ENDIAN
 
 // no-op for big endian machines
+
+#define CONDSWAPTOBUS32_CONST(x) (x)
 
 static inline uint64_t
 CondSwapToBus64(uint64_t d)
@@ -106,6 +113,8 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 }
 
 #else
+
+#define CONDSWAPTOBUS32_CONST BYTESWAP32_CONST
 
 static inline uint64_t
 CondSwapToBus64(uint64_t d)
