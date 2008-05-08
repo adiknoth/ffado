@@ -24,7 +24,7 @@
 #include "efc_cmd.h"
 #include "efc_cmds_flash.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <iostream>
 
 using namespace std;
@@ -47,7 +47,7 @@ EfcFlashEraseCmd::serialize( Util::Cmd::IOSSerialize& se )
     m_length=EFC_HEADER_LENGTH_QUADLETS + 1;
 
     result &= EfcCmd::serialize ( se );
-    result &= se.write(bswap_32(m_address), "Address" );
+    result &= se.write(htonl(m_address), "Address" );
 
     return result;
 }
@@ -89,8 +89,8 @@ EfcFlashReadCmd::serialize( Util::Cmd::IOSSerialize& se )
 
     result &= EfcCmd::serialize ( se );
 
-    result &= se.write(bswap_32(m_address), "Address" );
-    result &= se.write(bswap_32(m_nb_quadlets), "Length (quadlets)" );
+    result &= se.write(htonl(m_address), "Address" );
+    result &= se.write(htonl(m_nb_quadlets), "Length (quadlets)" );
 
     return result;
 }
@@ -151,11 +151,11 @@ EfcFlashWriteCmd::serialize( Util::Cmd::IOSSerialize& se )
 
     result &= EfcCmd::serialize ( se );
 
-    result &= se.write(bswap_32(m_address), "Address" );
-    result &= se.write(bswap_32(m_nb_quadlets), "Length (quadlets)" );
+    result &= se.write(htonl(m_address), "Address" );
+    result &= se.write(htonl(m_nb_quadlets), "Length (quadlets)" );
 
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
-        result &= se.write(bswap_32(m_data[i]), "Data");
+        result &= se.write(htonl(m_data[i]), "Data");
     }
     return result;
 }
@@ -199,7 +199,7 @@ EfcFlashLockCmd::serialize( Util::Cmd::IOSSerialize& se )
     m_length=EFC_HEADER_LENGTH_QUADLETS + 1;
 
     result &= EfcCmd::serialize ( se );
-    result &= se.write(bswap_32(m_lock), "Locked" );
+    result &= se.write(htonl(m_lock), "Locked" );
 
     return result;
 }

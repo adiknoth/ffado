@@ -26,7 +26,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <byteswap.h>
+#include <netinet/in.h>
 
 
 namespace Util {

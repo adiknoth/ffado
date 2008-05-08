@@ -24,7 +24,7 @@
 #include "efc_cmd.h"
 #include "efc_cmds_mixer.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <iostream>
 
 using namespace std;
@@ -72,7 +72,7 @@ EfcGenericMixerCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
         
-        result &= se.write(bswap_32(m_channel), "Channel" );
+        result &= se.write(htonl(m_channel), "Channel" );
         
     } else {
         // the length should be specified before
@@ -81,8 +81,8 @@ EfcGenericMixerCmd::serialize( Util::Cmd::IOSSerialize& se )
 
         result &= EfcCmd::serialize ( se );
         
-        result &= se.write(bswap_32(m_channel), "Channel" );
-        result &= se.write(bswap_32(m_value), "Value" );
+        result &= se.write(htonl(m_channel), "Channel" );
+        result &= se.write(htonl(m_value), "Value" );
     }
 
     if(!result) {

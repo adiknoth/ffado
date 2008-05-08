@@ -24,7 +24,7 @@
 #ifndef __FFADO_BYTESWAP__
 #define __FFADO_BYTESWAP__
 
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <endian.h>
 #include <assert.h>
 
@@ -60,7 +60,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
     while ((((unsigned long)data) & 0xF) && nb_elements > 0) {
-        *data = bswap_32(*data);
+        *data = htonl(*data);
         data++;
         nb_elements--;
     }
@@ -97,7 +97,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 
     // and do the remaining ones
     while (nb_elements > 0) {
-        *data = bswap_32(*data);
+        *data = htonl(*data);
         data++;
         nb_elements--;
     }
@@ -109,7 +109,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
     while ((((unsigned long)data) & 0xF) && nb_elements > 0) {
-        *data = bswap_32(*data);
+        *data = htonl(*data);
         data++;
         nb_elements--;
     }
@@ -143,7 +143,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 
     // and do the remaining ones
     while (nb_elements > 0) {
-        *data = bswap_32(*data);
+        *data = htonl(*data);
         data++;
         nb_elements--;
     }
@@ -156,7 +156,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     unsigned int i=0;
     for(; i<nb_elements; i++) {
-        *data = bswap_32(*data);
+        *data = htonl(*data);
         data++;
     }
 }
@@ -166,7 +166,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     unsigned int i=0;
     for(; i<nb_elements; i++) {
-        *data = bswap_32(*data);
+        *data = ntohl(*data);
         data++;
     }
 }

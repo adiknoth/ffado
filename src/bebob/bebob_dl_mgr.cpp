@@ -31,7 +31,7 @@
 #include "libutil/cmd_serialize.h"
 #include "libutil/Time.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 
 #include <cstdio>
 

@@ -32,7 +32,7 @@
 #include <signal.h>
 #include "src/debugmodule/debugmodule.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 
 #include "src/libutil/PosixThread.h"
 

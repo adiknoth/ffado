@@ -33,7 +33,7 @@
 #include "libutil/PosixThread.h"
 
 #include <errno.h>
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>

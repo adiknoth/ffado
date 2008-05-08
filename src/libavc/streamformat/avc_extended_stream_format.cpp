@@ -25,7 +25,7 @@
 #include "libutil/cmd_serialize.h"
 #include "libieee1394/ieee1394service.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 
 namespace AVC {
 

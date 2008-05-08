@@ -24,7 +24,7 @@
 #include "efc_cmd.h"
 #include "efc_cmds_hardware_ctrl.h"
 
-#include <byteswap.h>
+#include <netinet/in.h>
 #include <iostream>
 
 using namespace std;
@@ -97,9 +97,9 @@ EfcSetClockCmd::serialize( Util::Cmd::IOSSerialize& se )
 
     result &= EfcCmd::serialize ( se );
 
-    result &= se.write(bswap_32(m_clock), "Clock" );
-    result &= se.write(bswap_32(m_samplerate), "Samplerate" );
-    result &= se.write(bswap_32(m_index), "Index" );
+    result &= se.write(htonl(m_clock), "Clock" );
+    result &= se.write(htonl(m_samplerate), "Samplerate" );
+    result &= se.write(htonl(m_index), "Index" );
 
     return result;
 }

@@ -38,7 +38,7 @@
 #include "libutil/PosixMutex.h"
 
 #include <errno.h>
-#include <byteswap.h>
+#include <netinet/in.h>
 
 #include <string.h>
 
@@ -387,7 +387,7 @@ Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
                 getLocalNodeId() | 0xFFC0,
                 CSR_REGISTER_BASE | CSR_CYCLE_TIME,
                 sizeof(uint32_t), cycle_timer ) == 0 ) {
-            *cycle_timer = bswap_32(*cycle_timer);
+            *cycle_timer = ntohl(*cycle_timer);
             return true;
         } else {
             return false;
@@ -480,6 +480,24 @@ Ieee1394Service::write_octlet( fb_nodeid_t nodeId,
                   reinterpret_cast<fb_quadlet_t*>( &data ) );
 }
 
+fb_octlet_t
+Ieee1394Service::byteSwap_octlet(fb_octlet_t value) {
+    #if __BYTE_ORDER == __BIG_ENDIAN
+        return value;
+    #elif __BYTE_ORDER == __LITTLE_ENDIAN
+        fb_quadlet_t in_hi = (value >> 32) & 0xFFFFFFFF;
+        fb_quadlet_t in_lo = value & 0xFFFFFFFF;
+        in_hi = htonl(in_hi);
+        in_lo = htonl(in_lo);
+        fb_octlet_t value_new = in_lo;
+        value_new <<= 32;
+        value_new |= in_hi;
+        return value_new;
+    #else
+        #error Unknown endiannes
+    #endif
+}
+
 bool
 Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
                         fb_nodeaddr_t addr,
@@ -501,8 +519,8 @@ Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
     #endif
 
     // do endiannes swapping
-    compare_value = bswap_64(compare_value);
-    swap_value    = bswap_64(swap_value);
+    compare_value = byteSwap_octlet(compare_value);
+    swap_value    = byteSwap_octlet(swap_value);
 
     // do separate locking here (no MutexLockHelper) since 
     // we use read_octlet in the DEBUG code in this function
@@ -524,7 +542,7 @@ Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
     }
     #endif
 
-    *result = bswap_64(*result);
+    *result = byteSwap_octlet(*result);
 
     return (retval == 0);
 }
@@ -538,7 +556,7 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
     // FIXME: this requires transactionBlockClose to unlock
     m_handle_lock->Lock();
     for (int i = 0; i < len; ++i) {
-        buf[i] = bswap_32( buf[i] );
+        buf[i] = ntohl( buf[i] );
     }
 
     fb_quadlet_t* result =
@@ -550,7 +568,7 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                     10 );
 
     for ( unsigned int i = 0; i < *resp_len; ++i ) {
-        result[i] = bswap_32( result[i] );
+        result[i] = htonl( result[i] );
     }
 
     return result;
@@ -1095,7 +1113,7 @@ signed int Ieee1394Service::getAvailableBandwidth() {
 
     if (result < 0)
         return -1;
-    return bswap_32(buffer);
+    return ntohl(buffer);
 }
 
 void
