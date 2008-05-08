@@ -209,7 +209,7 @@ iso_handler(raw1394handle_t handle, unsigned char *data,
                     (packet->dbs > 0) &&
                     (length >= 2*sizeof(quadlet_t));
         if(ok) {
-            timestamp = sytRecvToFullTicks((uint32_t)CondSwap16(packet->syt),
+            timestamp = sytRecvToFullTicks((uint32_t)CondSwapFromBus16(packet->syt),
                                     cycle, cycle_timer);
         }
         /* write header */

@@ -756,7 +756,7 @@ SaffireProDevice::setDeviceName(std::string n) {
     for (i=0; i<4; i++) {
         char *ptr = (char *) &name[i*4];
         tmp = *((uint32_t *)ptr);
-        tmp = CondSwap32(tmp);
+        tmp = CondSwapToBus32(tmp);
         if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_DEVICE_NAME_1 + i, tmp ) ) {
             debugError( "setSpecificValue failed\n" );
             return false;
@@ -775,7 +775,7 @@ SaffireProDevice::getDeviceName() {
             debugError( "getSpecificValue failed\n" );
             return "";
         }
-        tmp = CondSwap32(tmp);
+        tmp = CondSwapFromBus32(tmp);
         unsigned int j;
         char *ptr = (char *) &tmp;
         for (j=0; j<4; j++) {
