@@ -24,7 +24,7 @@
  */
 
 #include <libraw1394/raw1394.h>
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -283,7 +283,7 @@ main(int argc, char **argv)
                 present[pres_index] &= ~(1<<pres_bit);
                 continue;
             } else {
-                quadlet = ntohl(quadlet);
+                quadlet = CondSwap32(quadlet);
             }
             
             if (old_vals[reg_index] != quadlet) {

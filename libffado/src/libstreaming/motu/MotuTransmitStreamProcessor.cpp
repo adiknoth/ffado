@@ -34,7 +34,7 @@
 #include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <assert.h>
 
 // Set to 1 to enable the generation of a 1 kHz test tone in analog output 1.  Even with
@@ -292,7 +292,7 @@ MotuTransmitStreamProcessor::generatePacketData (
             // Each sample is 3 bytes with MSB in lowest address (ie: 
             // network byte order).  After byte order swap, the 24-bit
             // MSB is in the second byte of val.
-            signed int val = htonl(lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx)));
+            signed int val = CondSwap32(lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx)));
             memcpy(sample,((char *)&val)+1,3);
             if ((a_cx+=int_tpf) >= 24576000) {
                 a_cx -= 24576000;
@@ -308,7 +308,7 @@ MotuTransmitStreamProcessor::generatePacketData (
 //fprintf(stderr,"tpf=%f\n", ticks_per_frame);
         for (int i=0; i < n_events; i++, quadlet += dbs) {
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
-            *quadlet = htonl(fullTicksToSph(ts_frame));
+            *quadlet = CondSwap32(fullTicksToSph(ts_frame));
 //fprintf(stderr,"tx: %d/%d\n",
 //  CYCLE_TIMER_GET_CYCLES(fullTicksToSph(ts_frame)),
 //  CYCLE_TIMER_GET_OFFSET(fullTicksToSph(ts_frame)));
@@ -404,7 +404,7 @@ MotuTransmitStreamProcessor::generateSilentPacketData (
     // Set up each frames's SPH.
     for (int i=0; i < n_events; i++, quadlet += dbs) {
         int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
-        *quadlet = htonl(fullTicksToSph(ts_frame));
+        *quadlet = CondSwap32(fullTicksToSph(ts_frame));
     }
 
     return eCRV_OK;
@@ -427,9 +427,9 @@ unsigned int MotuTransmitStreamProcessor::fillDataPacketHeader (
     // packet the dbs field is still set as if there were data blocks
     // present.  For data-less packets the dbc is the same as the previously
     // transmitted block.
-    *quadlet = htonl(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
+    *quadlet = CondSwap32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
     quadlet++;
-    *quadlet = htonl(0x8222ffff);
+    *quadlet = CondSwap32(0x8222ffff);
     quadlet++;
     return n_events;
 }
@@ -444,9 +444,9 @@ unsigned int MotuTransmitStreamProcessor::fillNoDataPacketHeader (
     // packet the dbs field is still set as if there were data blocks
     // present.  For data-less packets the dbc is the same as the previously
     // transmitted block.
-    *quadlet = htonl(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
+    *quadlet = CondSwap32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
     quadlet++;
-    *quadlet = htonl(0x8222ffff);
+    *quadlet = CondSwap32(0x8222ffff);
     quadlet++;
     *length = 8;
     return 0;

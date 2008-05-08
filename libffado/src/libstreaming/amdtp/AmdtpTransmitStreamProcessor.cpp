@@ -34,7 +34,7 @@
 #include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <assert.h>
 
 #define AMDTP_FLOAT_MULTIPLIER 2147483392.0
@@ -352,7 +352,7 @@ unsigned int AmdtpTransmitStreamProcessor::fillDataPacketHeader (
 
     // convert the timestamp to SYT format
     uint16_t timestamp_SYT = TICKS_TO_SYT ( ts );
-    packet->syt = htons ( timestamp_SYT );
+    packet->syt = CondSwap16 ( timestamp_SYT );
 
     // FIXME: use a precomputed value here
     *length = m_syt_interval*sizeof ( quadlet_t ) *m_dimension + 8;
@@ -682,7 +682,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
                 unsigned int tmp = ((int) v);
                 tmp = ( tmp >> 8 ) | 0x40000000;
-                *target_event = htonl((quadlet_t)tmp);
+                *target_event = CondSwap32((quadlet_t)tmp);
                 buffer++;
                 target_event += m_dimension;
             }
@@ -838,7 +838,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
             // do the remainder of the events
             for(;j < nevents; j += 1) {
                 uint32_t in = (uint32_t)(*buffer);
-                *target_event = htonl((quadlet_t)((in & 0x00FFFFFF) | 0x40000000));
+                *target_event = CondSwap32((quadlet_t)((in & 0x00FFFFFF) | 0x40000000));
                 buffer++;
                 target_event += m_dimension;
             }
@@ -883,7 +883,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
             for (j = 0;j < nevents; j += 1)
             {
                 uint32_t in = (uint32_t)(*buffer);
-                *target_event = htonl((quadlet_t)((in & 0x00FFFFFF) | 0x40000000));
+                *target_event = CondSwap32((quadlet_t)((in & 0x00FFFFFF) | 0x40000000));
                 buffer++;
                 target_event += m_dimension;
             }
@@ -932,7 +932,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 unsigned int tmp = ((int) lrintf(v));
 
                 tmp = ( tmp >> 8 ) | 0x40000000;
-                *target_event = htonl((quadlet_t)tmp);
+                *target_event = CondSwap32((quadlet_t)tmp);
                 buffer++;
                 target_event += m_dimension;
             }
@@ -967,7 +967,7 @@ AmdtpTransmitStreamProcessor::encodeMidiPortsSilence(quadlet_t *data,
 
         for (j = p.location;j < nevents; j += 8) {
             target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
-            *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
+            *target_event = CondSwap32(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
         }
     }
 }
@@ -1000,7 +1000,7 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                     quadlet_t tmpval;
                     tmpval = ((*buffer)<<16) & 0x00FF0000;
                     tmpval = IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
-                    *target_event = htonl(tmpval);
+                    *target_event = CondSwap32(tmpval);
 
 //                     debugOutput ( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
 //                                p.port->getName().c_str(), p.position, p.location, nevents, m_dimension );
@@ -1010,7 +1010,7 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                     // can't send a byte, either because there is no byte,
                     // or because this would exceed the maximum rate
                     // FIXME: this can be ifdef optimized since it's a constant
-                    *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
+                    *target_event = CondSwap32(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
                 }
                 buffer+=8;
             }
@@ -1018,7 +1018,7 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
             for (j = p.location;j < nevents; j += 8) {
                 target_event = (quadlet_t *)(data + ((j * m_dimension) + p.position));
                 __builtin_prefetch(target_event, 1, 0); // prefetch events for write, no temporal locality
-                *target_event = htonl(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
+                *target_event = CondSwap32(IEC61883_AM824_SET_LABEL(0, IEC61883_AM824_LABEL_MIDI_NO_DATA));
             }
         }
     }

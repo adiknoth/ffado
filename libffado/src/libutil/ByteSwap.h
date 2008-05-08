@@ -24,7 +24,8 @@
 #ifndef __FFADO_BYTESWAP__
 #define __FFADO_BYTESWAP__
 
-#include <netinet/in.h>
+#include <byteswap.h>
+#include <inttypes.h>
 #include <endian.h>
 #include <assert.h>
 
@@ -36,6 +37,25 @@
 #if __BYTE_ORDER == __BIG_ENDIAN
 
 // no-op for big endian machines
+
+static inline uint64_t
+CondSwap64(uint64_t d)
+{
+    return d;
+}
+
+static inline uint32_t
+CondSwap32(uint32_t d)
+{
+    return d;
+}
+
+static inline uint16_t
+CondSwap16(uint16_t d)
+{
+    return d;
+}
+
 static inline void
 byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
@@ -50,6 +70,24 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 
 #else
 
+static inline uint64_t
+CondSwap64(uint64_t d)
+{
+    return bswap_64(d);
+}
+
+static inline uint32_t
+CondSwap32(uint32_t d)
+{
+    return bswap_32(d);
+}
+
+static inline uint16_t
+CondSwap16(uint16_t d)
+{
+    return bswap_16(d);
+}
+
 #ifdef __SSE2__
 #include <emmintrin.h>
 #warning SSE2 build
@@ -60,7 +98,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
     while ((((unsigned long)data) & 0xF) && nb_elements > 0) {
-        *data = htonl(*data);
+        *data = CondSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -97,7 +135,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 
     // and do the remaining ones
     while (nb_elements > 0) {
-        *data = htonl(*data);
+        *data = CondSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -109,7 +147,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
     while ((((unsigned long)data) & 0xF) && nb_elements > 0) {
-        *data = htonl(*data);
+        *data = CondSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -143,7 +181,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 
     // and do the remaining ones
     while (nb_elements > 0) {
-        *data = htonl(*data);
+        *data = CondSwap32(*data);
         data++;
         nb_elements--;
     }
@@ -156,7 +194,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     unsigned int i=0;
     for(; i<nb_elements; i++) {
-        *data = htonl(*data);
+        *data = CondSwap32(*data);
         data++;
     }
 }
@@ -166,7 +204,7 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     unsigned int i=0;
     for(; i<nb_elements; i++) {
-        *data = ntohl(*data);
+        *data = CondSwap32(*data);
         data++;
     }
 }

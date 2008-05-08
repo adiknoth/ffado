@@ -31,7 +31,7 @@
 #include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <assert.h>
 
 namespace Streaming {
@@ -101,13 +101,13 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
               (packet->dbs > 0) &&
               (length >= 2*sizeof(quadlet_t));
     if(ok) {
-        m_last_timestamp = sytRecvToFullTicks2((uint32_t)ntohs(packet->syt), pkt_ctr);
+        m_last_timestamp = sytRecvToFullTicks2((uint32_t)CondSwap16(packet->syt), pkt_ctr);
         //#ifdef DEBUG
         #if 0
         uint32_t now = m_1394service.getCycleTimer();
 
         //=> convert the SYT to a full timestamp in ticks
-        uint64_t old_last_timestamp = sytRecvToFullTicks((uint32_t)ntohs(packet->syt),
+        uint64_t old_last_timestamp = sytRecvToFullTicks((uint32_t)CondSwap16(packet->syt),
                                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), now);
         if(m_last_timestamp != old_last_timestamp) {
             debugWarning("discepancy between timestamp calculations\n");
@@ -223,7 +223,7 @@ AmdtpReceiveStreamProcessor::decodeAudioPortsInt24(quadlet_t *data,
             buffer += offset;
 
             for(j = 0; j < nevents; j += 1) {
-                *(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+                *(buffer)=(CondSwap32((*target_event) ) & 0x00FFFFFF);
                 buffer++;
                 target_event+=m_dimension;
             }
@@ -257,7 +257,7 @@ AmdtpReceiveStreamProcessor::decodeAudioPortsFloat(quadlet_t *data,
             buffer += offset;
 
             for(j = 0; j < nevents; j += 1) {
-                unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+                unsigned int v = CondSwap32(*target_event) & 0x00FFFFFF;
                 // sign-extend highest bit of 24-bit int
                 int tmp = (int)(v << 8) / 256;
                 *buffer = tmp * multiplier;
@@ -294,7 +294,7 @@ AmdtpReceiveStreamProcessor::decodeAudioPortsInt24(quadlet_t *data,
             buffer += offset;
 
             for(j = 0; j < nevents; j += 1) {
-                *(buffer)=(ntohl((*target_event) ) & 0x00FFFFFF);
+                *(buffer)=(CondSwap32((*target_event) ) & 0x00FFFFFF);
                 buffer++;
                 target_event+=m_dimension;
             }
@@ -328,7 +328,7 @@ AmdtpReceiveStreamProcessor::decodeAudioPortsFloat(quadlet_t *data,
             buffer += offset;
 
             for(j = 0; j < nevents; j += 1) {
-                unsigned int v = ntohl(*target_event) & 0x00FFFFFF;
+                unsigned int v = CondSwap32(*target_event) & 0x00FFFFFF;
                 // sign-extend highest bit of 24-bit int
                 int tmp = (int)(v << 8) / 256;
                 *buffer = tmp * multiplier;
@@ -364,7 +364,7 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
 
             for (j = p.location;j < nevents; j += 8) {
                 target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
-                sample_int=ntohl(*target_event);
+                sample_int=CondSwap32(*target_event);
                 // FIXME: this assumes that 2X and 3X speed isn't used,
                 // because only the 1X slot is put into the ringbuffer
                 if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {

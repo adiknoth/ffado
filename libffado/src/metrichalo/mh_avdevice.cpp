@@ -35,7 +35,7 @@
 #include <string>
 #include <stdint.h>
 #include <assert.h>
-#include <netinet/in.h>
+#include "libutil/ByteSwap.h"
 #include <iostream>
 #include <sstream>
 
