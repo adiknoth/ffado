@@ -89,6 +89,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
     struct arguments* arguments = ( struct arguments* ) state->input;
     char* tail;
 
+    errno = 0;
     switch (key) {
     PARSE_ARG_LONG('v', arguments->verbose, "verbose");
     PARSE_ARG_LONG('P', arguments->rtprio, "rtprio");

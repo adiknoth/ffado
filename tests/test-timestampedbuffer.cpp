@@ -104,6 +104,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
     struct arguments* arguments = ( struct arguments* ) state->input;
     char* tail;
 
+    errno = 0;
     switch (key) {
         case 'v':
             if (arg) {
