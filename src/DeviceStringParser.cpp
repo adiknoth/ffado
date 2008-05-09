@@ -59,7 +59,7 @@ DeviceStringParser::DeviceString::parse(std::string s)
     if(s.compare(0,3,"hw:")==0) {
         m_Type = eBusNode;
         std::string detail = s.substr(3);
-        size_t comma_pos = detail.find_first_of(",");
+        string::size_type comma_pos = detail.find_first_of(",");
         if(comma_pos == std::string::npos) {
             // node is unspecified
             m_node = -1;
@@ -121,7 +121,7 @@ DeviceStringParser::DeviceString::isValidString(std::string s)
     uint64_t tmp;
     if(s.compare(0,3,"hw:")==0) {
         std::string detail = s.substr(3);
-        size_t comma_pos = detail.find_first_of(",");
+        string::size_type comma_pos = detail.find_first_of(",");
         if(comma_pos == std::string::npos) {
             std::string port = detail;
             errno = 0;
@@ -245,7 +245,7 @@ DeviceStringParser::parseString(std::string s)
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "parse: %s\n", s.c_str());
 
-    size_t next_sep;
+    string::size_type next_sep;
     std::string tmp = s;
     do {
         debugOutput(DEBUG_LEVEL_VERBOSE, " left: %s\n", tmp.c_str());
