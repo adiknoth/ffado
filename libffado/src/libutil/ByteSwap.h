@@ -156,7 +156,8 @@ CondSwapFromBus16(uint16_t d)
 #include <emmintrin.h>
 #warning SSE2 build
 
-//static inline void
+static
+//inline void
 void
 byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
@@ -205,7 +206,8 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
     }
 }
 
-//static inline void
+static
+//inline void
 void
 byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
