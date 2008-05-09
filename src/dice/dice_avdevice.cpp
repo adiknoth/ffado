@@ -1329,11 +1329,11 @@ DiceAvDevice::splitNameString(std::string in) {
     diceNameVector names;
 
     // find the end of the string
-    unsigned int end=in.find(string("\\\\"));
+    string::size_type end=in.find(string("\\\\"));
     // cut the end
     in=in.substr(0,end);
 
-    unsigned int cut;
+    string::size_type cut;
     while( (cut = in.find(string("\\"))) != in.npos ) {
         if(cut > 0) {
             names.push_back(in.substr(0,cut));
