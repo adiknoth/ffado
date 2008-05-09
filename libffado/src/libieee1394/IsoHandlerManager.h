@@ -90,7 +90,7 @@ class IsoTask : public Util::RunnableInterface
         IsoHandlerManager& m_manager;
 
         // the event request structure
-        SInt32 request_update;
+        int32_t request_update;
 
         // static allocation due to RT constraints
         // this is the map used by the actual thread

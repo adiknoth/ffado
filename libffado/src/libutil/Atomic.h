@@ -50,16 +50,13 @@
 #ifndef __FFADOATOMIC__
 #define __FFADOATOMIC__
 
-typedef unsigned short UInt16;
-typedef unsigned long UInt32;
-typedef long SInt32;
-typedef unsigned long long UInt64;
+#include <stdint.h>
 
 #if defined(__APPLE__)
 
 #if defined(__ppc__)
 
-static inline int CAS(register UInt32 value, register UInt32 newvalue, register volatile void* addr)
+static inline int CAS(register uint32_t value, register uint32_t newvalue, register volatile void* addr)
 {
     register int result;
     asm volatile (
@@ -93,7 +90,7 @@ static inline int CAS(register UInt32 value, register UInt32 newvalue, register 
 #    define LOCK ""
 #endif
 
-static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* addr)
+static inline char CAS(volatile uint32_t value, uint32_t newvalue, volatile void* addr)
 {
     register char ret;
     __asm__ __volatile__ (
@@ -114,10 +111,10 @@ static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* ad
 
 #ifdef __PPC__
 
-static inline int CAS(register UInt32 value, register UInt32 newvalue, register volatile void* addr)
+static inline int CAS(register uint32_t value, register uint32_t newvalue, register volatile void* addr)
 {
     register int result;
-    register UInt32 tmp;
+    register uint32_t tmp;
     asm volatile (
         "# CAS                    \n"
         "    lwarx    %4, 0, %1    \n"         // creates a reservation on addr
@@ -148,7 +145,7 @@ static inline int CAS(register UInt32 value, register UInt32 newvalue, register 
 #    define LOCK ""
 #endif
 
-static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* addr)
+static inline char CAS(volatile uint32_t value, uint32_t newvalue, volatile void* addr)
 {
     register char ret;
     __asm__ __volatile__ (
@@ -165,45 +162,45 @@ static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* ad
 
 #endif
 
-static inline long INC_ATOMIC(volatile SInt32* val)
+static inline long INC_ATOMIC(volatile int32_t* val)
 {
-    SInt32 actual;
+    int32_t actual;
     do {
         actual = *val;
     } while (!CAS(actual, actual + 1, val));
     return actual;
 }
 
-static inline long DEC_ATOMIC(volatile SInt32* val)
+static inline long DEC_ATOMIC(volatile int32_t* val)
 {
-    SInt32 actual;
+    int32_t actual;
     do {
         actual = *val;
     } while (!CAS(actual, actual - 1, val));
     return actual;
 }
 
-static inline long ADD_ATOMIC(volatile SInt32* val, SInt32 addval)
+static inline long ADD_ATOMIC(volatile int32_t* val, int32_t addval)
 {
-    SInt32 actual;
+    int32_t actual;
     do {
         actual = *val;
     } while (!CAS(actual, actual + addval, val));
     return actual;
 }
 
-static inline long SUBSTRACT_ATOMIC(volatile SInt32* val, SInt32 addval)
+static inline long SUBSTRACT_ATOMIC(volatile int32_t* val, int32_t addval)
 {
-    SInt32 actual;
+    int32_t actual;
     do {
         actual = *val;
     } while (!CAS(actual, actual - addval, val));
     return actual;
 }
 
-static inline long ZERO_ATOMIC(volatile SInt32* val)
+static inline long ZERO_ATOMIC(volatile int32_t* val)
 {
-    SInt32 actual;
+    int32_t actual;
     do {
         actual = *val;
     } while (!CAS(actual, 0, val));
