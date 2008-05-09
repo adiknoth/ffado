@@ -106,7 +106,7 @@ class Thread
         virtual int AcquireRealTime(int priority) = 0;
         virtual int DropRealTime() = 0;
 
-        virtual void SetParams(UInt64 period, UInt64 computation, UInt64 constraint) // Empty implementation, will only make sense on OSX...
+        virtual void SetParams(uint64_t period, uint64_t computation, uint64_t constraint) // Empty implementation, will only make sense on OSX...
         {}
 
         virtual pthread_t GetThreadID() = 0;
