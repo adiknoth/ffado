@@ -610,7 +610,7 @@ StreamProcessorManager::alignReceivedStreams()
             if(!waitForPeriod()) {
                 debugWarning("xrun while aligning streams...\n");
                 return false;
-            };
+            }
 
             // before we do anything else, transfer
             if(!transferSilence()) {
