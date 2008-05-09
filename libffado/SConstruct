@@ -341,11 +341,13 @@ if env['DIST_TARGET'] == 'auto':
         env['DIST_TARGET'] = 'x86_64'
     elif re.search("i[0-5]86", config[config_cpu]) != None:
         env['DIST_TARGET'] = 'i386'
+    elif re.search("powerpc", config[config_cpu]) != None:
+        env['DIST_TARGET'] = 'powerpc'
     else:
         env['DIST_TARGET'] = 'i686'
     print "Detected DIST_TARGET = " + env['DIST_TARGET']
 
-if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64", config[config_cpu]) != None)):
+if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64", config[config_cpu]) != None) or (re.search ("powerpc", config[config_cpu]) != None)):
     
     build_host_supports_sse = 0
     build_host_supports_sse2 = 0
@@ -353,7 +355,7 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
 
     if config[config_kernel] == 'linux' :
         
-        if env['DIST_TARGET'] != 'i386':
+        if (env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64'):
             
             flag_line = os.popen ("cat /proc/cpuinfo | grep '^flags'").read()[:-1]
             x86_flags = flag_line.split (": ")[1:][0].split ()
@@ -373,6 +375,29 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
                 opt_flags.append ("-march=i586")
             elif config[config_cpu] == "i686":
                 opt_flags.append ("-march=i686")
+
+        elif env['DIST_TARGET'] == 'powerpc':
+
+            cpu_line = os.popen ("cat /proc/cpuinfo | grep '^cpu'").read()[:-1]
+
+            ppc_type = cpu_line.split (": ")[1]
+            if re.search ("altivec", ppc_type) != None:
+                opt_flags.append ("-maltivec")
+                opt_flags.append ("-mabi=altivec")
+
+            ppc_type = ppc_type.split (",")[0]
+            if re.match ("74[0145][0578]A?", ppc_type) != None:
+                opt_flags.append ("-mcpu=7400")
+                opt_flags.append ("-mtune=7400")
+            elif re.match ("750", ppc_type) != None:
+                opt_flags.append ("-mcpu=750")
+                opt_flags.append ("-mtune=750")
+            elif re.match ("970([FG]X)?", ppc_type) != None:
+                opt_flags.append ("-mcpu=970")
+                opt_flags.append ("-mtune=970")
+            elif re.match ("Cell Broadband Engine", ppc_type) != None:
+                opt_flags.append ("-mcpu=cell")
+                opt_flags.append ("-mtune=cell")
 
     if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) \
        and build_host_supports_sse and env['ENABLE_OPTIMIZATIONS']:
