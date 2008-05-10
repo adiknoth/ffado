@@ -23,6 +23,8 @@
 
 #include "Element.h"
 
+#include "libutil/PosixMutex.h"
+
 namespace Control {
 
 IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_NORMAL );
@@ -36,20 +38,62 @@ IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_NORMAL );
 // I guess we're safe.
 static uint64_t GlobalElementCounter=0;
 
-Element::Element()
-: m_Name ( "NoName" )
+Element::Element(Element *parent)
+: m_element_lock ( NULL )
+, m_parent( parent )
+, m_Name ( "NoName" )
 , m_Label ( "No Label" )
 , m_Description ( "No Description" )
 , m_id(GlobalElementCounter++)
 {
+    // no parent, we are the root of an independent control tree
+    // this means we have to create a lock
+    if(parent == NULL) {
+        m_element_lock = new Util::PosixMutex();
+    }
 }
 
-Element::Element(std::string n)
-: m_Name( n )
+Element::Element(Element *parent, std::string n)
+: m_element_lock ( NULL )
+, m_parent( parent )
+, m_Name( n )
 , m_Label ( "No Label" )
 , m_Description ( "No Description" )
 , m_id(GlobalElementCounter++)
 {
+    // no parent, we are the root of an independent control tree
+    // this means we have to create a lock
+    if(parent == NULL) {
+        m_element_lock = new Util::PosixMutex();
+    }
+}
+
+Element::~Element()
+{
+    if(m_element_lock) delete m_element_lock;
+}
+
+void
+Element::lockControl()
+{
+    getLock().Lock();
+}
+
+void
+Element::unlockControl()
+{
+    getLock().Unlock();
+}
+
+Util::Mutex&
+Element::getLock()
+{
+    assert(m_parent != NULL || m_element_lock != NULL);
+    if(m_parent) {
+        return m_parent->getLock();
+    } else {
+        return *m_element_lock;
+    }
 }
 
 void
@@ -63,23 +107,48 @@ void
 Element::setVerboseLevel(int l)
 {
     setDebugLevel(l);
+    if(m_element_lock) m_element_lock->setVerboseLevel(l);
+    if(m_element_lock) m_element_lock->setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 //// --- Container --- ////
-Container::Container()
-: Element()
+Container::Container(Element *p)
+: Element(p)
 {
 }
 
-Container::Container(std::string n)
-: Element(n)
+Container::Container(Element *p, std::string n)
+: Element(p, n)
 {
+}
+
+unsigned int
+Container::countElements()
+{
+    lockControl();
+    unsigned int s = m_Children.size();
+    unlockControl();
+    return s;
+}
+
+const ElementVector &
+Container::getElementVector()
+{
+    lockControl();
+    return m_Children;
+}
+
+void
+Container::releaseElementVector()
+{
+    unlockControl();
 }
 
 bool
 Container::addElement(Element *e)
 {
+    Util::MutexLockHelper lock(getLock());
     if (e==NULL) {
         debugWarning("Cannot add NULL element\n");
         return false;
@@ -107,7 +176,8 @@ Container::addElement(Element *e)
 bool
 Container::deleteElement(Element *e)
 {
-    assert(e);
+    Util::MutexLockHelper lock(getLock());
+    if(e == NULL) return false;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Deleting Element %s from %s\n",
         e->getName().c_str(), getName().c_str());
 
@@ -128,6 +198,7 @@ Container::deleteElement(Element *e)
 bool
 Container::clearElements(bool delete_pointers) 
 {
+    Util::MutexLockHelper lock(getLock());
     while(m_Children.size()) {
         Element *e=m_Children[0];
         deleteElement(e);
@@ -139,6 +210,7 @@ Container::clearElements(bool delete_pointers)
 void
 Container::show()
 {
+    Util::MutexLockHelper lock(getLock());
     debugOutput( DEBUG_LEVEL_NORMAL, "Container %s (%d Elements)\n",
         getName().c_str(), m_Children.size());
 
@@ -153,6 +225,7 @@ Container::show()
 void
 Container::setVerboseLevel(int l)
 {
+    Util::MutexLockHelper lock(getLock());
     setDebugLevel(l);
     for ( ElementVectorIterator it = m_Children.begin();
       it != m_Children.end();

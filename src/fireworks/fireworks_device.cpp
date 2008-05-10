@@ -199,7 +199,7 @@ Device::buildMixer()
     destroyMixer();
     
     // create the mixer object container
-    m_MixerContainer = new Control::Container("Mixer");
+    m_MixerContainer = new Control::Container(this, "Mixer");
 
     if (!m_MixerContainer) {
         debugError("Could not create mixer container...\n");

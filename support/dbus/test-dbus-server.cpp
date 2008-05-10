@@ -107,53 +107,53 @@ void start_server() {
     DBus::Connection conn = DBus::Connection::SessionBus();
     conn.request_name(SERVER_NAME);
     
-    Control::Continuous c0("test0");
-    c0.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    DBusControl::Continuous fader(conn, "/org/ffado/Control/Test/Fader", c0);
-
-    Control::Container cont("container1");
+//     Control::Continuous c0("test0");
+//     c0.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     DBusControl::Continuous fader(conn, "/org/ffado/Control/Test/Fader", c0);
+// 
+    Control::Container cont(NULL, "container1");
     cont.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    
-    Control::Container cont1("container2");
-    cont1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    
-    cont.addElement(&cont1);
-
-    Control::Continuous c1("test1");
-    c1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont.addElement(&c1);
-    
-    Control::Continuous c2("test2");
-    c2.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont.addElement(&c2);
-    
-    Control::Continuous c3("test3");
-    c3.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont.addElement(&c3);
-
-    Control::Continuous c4("test4");
-    c4.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont1.addElement(&c4);
-
-    Control::Continuous c5("test5");
-    c5.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont1.addElement(&c5);
-    
-    Control::Discrete d1("test_discr1");
-    d1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont1.addElement(&d1);
-    
-    Control::Enum e1("test_enum");
-    e1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont1.addElement(&e1);
-
-    Control::AttributeEnum a1("test_attrenum");
-    a1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont1.addElement(&a1);
-    
-    Control::Text t1("test_text");
-    t1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
-    cont1.addElement(&t1);
+//     
+//     Control::Container cont1("container2");
+//     cont1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     
+//     cont.addElement(&cont1);
+// 
+//     Control::Continuous c1("test1");
+//     c1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont.addElement(&c1);
+//     
+//     Control::Continuous c2("test2");
+//     c2.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont.addElement(&c2);
+//     
+//     Control::Continuous c3("test3");
+//     c3.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont.addElement(&c3);
+// 
+//     Control::Continuous c4("test4");
+//     c4.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont1.addElement(&c4);
+// 
+//     Control::Continuous c5("test5");
+//     c5.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont1.addElement(&c5);
+//     
+//     Control::Discrete d1("test_discr1");
+//     d1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont1.addElement(&d1);
+//     
+//     Control::Enum e1("test_enum");
+//     e1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont1.addElement(&e1);
+// 
+//     Control::AttributeEnum a1("test_attrenum");
+//     a1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont1.addElement(&a1);
+//     
+//     Control::Text t1("test_text");
+//     t1.setVerboseLevel(DEBUG_LEVEL_VERBOSE);
+//     cont1.addElement(&t1);
 
     // Note: create handlers AFTER all children are added
 

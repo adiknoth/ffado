@@ -37,14 +37,14 @@ using namespace std;
 namespace FireWorks {
 
 MonitorControl::MonitorControl(FireWorks::Device& p, enum eMonitorControl c)
-: Control::MatrixMixer("MonitorControl")
+: Control::MatrixMixer(&p, "MonitorControl")
 , m_control(c)
 , m_Parent(p)
 {
 }
 
 MonitorControl::MonitorControl(FireWorks::Device& p, enum eMonitorControl c, std::string n)
-: Control::MatrixMixer(n)
+: Control::MatrixMixer(&p, n)
 , m_control(c)
 , m_Parent(p)
 {
@@ -240,7 +240,7 @@ SimpleControl::SimpleControl(FireWorks::Device& p,
                              enum eMixerTarget t,
                              enum eMixerCommand c,
                              int channel)
-: Control::Continuous("SimpleControl")
+: Control::Continuous(&p, "SimpleControl")
 , m_Slave(new EfcGenericMixerCmd(t, c, channel))
 , m_Parent(p)
 {
@@ -251,7 +251,7 @@ SimpleControl::SimpleControl(FireWorks::Device& p,
                              enum eMixerCommand c,
                              int channel,
                              std::string n)
-: Control::Continuous(n)
+: Control::Continuous(&p, n)
 , m_Slave(new EfcGenericMixerCmd(t, c, channel))
 , m_Parent(p)
 {
@@ -311,7 +311,7 @@ BinaryControl::BinaryControl(FireWorks::Device& p,
                              enum eMixerTarget t,
                              enum eMixerCommand c,
                              int channel, int bit)
-: Control::Discrete("BinaryControl")
+: Control::Discrete(&p, "BinaryControl")
 , m_bit(bit)
 , m_Slave(new EfcGenericMixerCmd(t, c, channel))
 , m_Parent(p)
@@ -323,7 +323,7 @@ BinaryControl::BinaryControl(FireWorks::Device& p,
                              enum eMixerCommand c,
                              int channel, int bit,
                              std::string n)
-: Control::Discrete(n)
+: Control::Discrete(&p, n)
 , m_bit(bit)
 , m_Slave(new EfcGenericMixerCmd(t, c, channel))
 , m_Parent(p)
@@ -397,7 +397,7 @@ int BinaryControl::getValue( )
 
 IOConfigControl::IOConfigControl(FireWorks::Device& parent,
                                  enum eIOConfigRegister r)
-: Control::Discrete("IOConfigControl")
+: Control::Discrete(&parent, "IOConfigControl")
 , m_Slave(new EfcGenericIOConfigCmd(r))
 , m_Parent(parent)
 {
@@ -406,7 +406,7 @@ IOConfigControl::IOConfigControl(FireWorks::Device& parent,
 IOConfigControl::IOConfigControl(FireWorks::Device& parent,
                                  enum eIOConfigRegister r,
                                  std::string n)
-: Control::Discrete(n)
+: Control::Discrete(&parent, n)
 , m_Slave(new EfcGenericIOConfigCmd(r))
 , m_Parent(parent)
 {

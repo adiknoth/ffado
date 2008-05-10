@@ -28,7 +28,7 @@
 namespace Motu {
 
 MotuDiscreteCtrl::MotuDiscreteCtrl(MotuDevice &parent, unsigned int dev_reg)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_parent(parent)
 , m_register(dev_reg)
 {
@@ -36,7 +36,7 @@ MotuDiscreteCtrl::MotuDiscreteCtrl(MotuDevice &parent, unsigned int dev_reg)
 
 MotuDiscreteCtrl::MotuDiscreteCtrl(MotuDevice &parent, unsigned int dev_reg,
              std::string name, std::string label, std::string descr)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_parent(parent)
 , m_register(dev_reg)
 {

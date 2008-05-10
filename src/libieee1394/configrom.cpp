@@ -62,7 +62,7 @@ struct config_csr_info {
 //-------------------------------------------------------------
 
 ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
-    : Control::Element("ConfigRom")
+    : Control::Element(NULL, "ConfigRom")
     , m_1394Service( ieee1394service )
     , m_nodeId( nodeId )
     , m_avcDevice( false ) // FIXME: this does not seem veryu
@@ -89,7 +89,7 @@ ConfigRom::ConfigRom( Ieee1394Service& ieee1394service, fb_nodeid_t nodeId )
 }
 
 ConfigRom::ConfigRom()
-    : Control::Element("ConfigRom")
+    : Control::Element(NULL, "ConfigRom")
     , m_1394Service( *(new Ieee1394Service()) )
     , m_nodeId( -1 )
     , m_avcDevice( false ) // FIXME: this does not seem veryu

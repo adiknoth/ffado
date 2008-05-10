@@ -62,7 +62,7 @@ SaffireProDevice::buildMixer()
     destroyMixer();
     
     // create the mixer object container
-    m_MixerContainer = new Control::Container("Mixer");
+    m_MixerContainer = new Control::Container(this, "Mixer");
 
     if (!m_MixerContainer) {
         debugError("Could not create mixer container...\n");
@@ -225,7 +225,7 @@ SaffireProDevice::buildMixer()
     }
 
     // special controls
-    m_ControlContainer = new Control::Container("Control");
+    m_ControlContainer = new Control::Container(this, "Control");
     if (!m_ControlContainer) {
         debugError("Could not create mixer container...\n");
         return false;
@@ -306,7 +306,6 @@ SaffireProDevice::buildMixer()
         destroyMixer();
         return false;
     }
-
 
     return true;
 }
@@ -790,13 +789,13 @@ SaffireProDevice::getDeviceName() {
 
 // swiss army knife control element
 SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType t)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_type ( t )
 {}
 SaffireProMultiControl::SaffireProMultiControl(SaffireProDevice& parent, enum eMultiControlType t,
                 std::string name, std::string label, std::string descr)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_type ( t )
 {
@@ -842,12 +841,12 @@ SaffireProMultiControl::getValue()
 // -- device name
 
 SaffireProDeviceNameControl::SaffireProDeviceNameControl(SaffireProDevice& parent)
-: Control::Text()
+: Control::Text(&parent)
 , m_Parent(parent)
 {}
 SaffireProDeviceNameControl::SaffireProDeviceNameControl(SaffireProDevice& parent,
                 std::string name, std::string label, std::string descr)
-: Control::Text()
+: Control::Text(&parent)
 , m_Parent(parent)
 {
     setName(name);

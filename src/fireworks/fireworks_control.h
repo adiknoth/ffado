@@ -90,6 +90,13 @@ public:
 
     virtual bool setValue( const double );
     virtual double getValue( );
+    virtual bool setValue(int idx, double v)
+        {return setValue(v);};
+    virtual double getValue(int idx)
+        {return getValue();};
+
+    virtual double getMinimum() {return 0.0;};
+    virtual double getMaximum() {return 0.0;};
 
 protected:
     EfcGenericMixerCmd*         m_Slave;
@@ -114,7 +121,13 @@ public:
 
     virtual bool setValue( const int );
     virtual int getValue( );
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
 
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 1;};
 protected:
     int                         m_bit;
     EfcGenericMixerCmd*         m_Slave;
@@ -138,6 +151,13 @@ public:
 
     virtual bool setValue( const int );
     virtual int getValue( );
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0;};
 
 protected:
     int                         m_bit;

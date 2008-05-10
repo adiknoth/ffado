@@ -348,7 +348,7 @@ MotuDevice::buildMixer() {
     destroyMixer();
         
     // create the mixer object container
-    m_MixerContainer = new Control::Container("Mixer");
+    m_MixerContainer = new Control::Container(this, "Mixer");
     if (!m_MixerContainer) {
         debugError("Could not create mixer container...\n");
         return false;
@@ -523,7 +523,7 @@ MotuDevice::buildMixer() {
     }
 
     // Special controls
-    m_ControlContainer = new Control::Container("Control");
+    m_ControlContainer = new Control::Container(this, "Control");
     if (!m_ControlContainer) {
         debugError("Could not create control container...\n");
         return false;

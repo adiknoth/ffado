@@ -80,7 +80,7 @@ using namespace std;
 IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
-    : Control::Container("devicemanager")
+    : Control::Container(NULL, "devicemanager") // this is the control root node
     , m_processorManager( new Streaming::StreamProcessorManager() )
     , m_deviceStringParser( new DeviceStringParser() )
     , m_used_cache_last_time( false )
@@ -250,6 +250,8 @@ DeviceManager::busresetHandler()
         debugOutput( DEBUG_LEVEL_VERBOSE, " running notifier %p...\n", func );
         ( *func )();
     }
+    // display the new state
+    showDeviceInfo();
 }
 
 bool

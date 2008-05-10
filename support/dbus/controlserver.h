@@ -55,6 +55,7 @@ public:
     DBus::String getLabel( );
     DBus::String getDescription( );
 
+    void setVerboseLevel(int i) {setDebugLevel(i);};
 private:
     Control::Element &m_Slave;
 

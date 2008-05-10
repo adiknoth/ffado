@@ -56,7 +56,7 @@ bool from_string(T& t,
 IMPL_DEBUG_MODULE( Mixer, Mixer, DEBUG_LEVEL_NORMAL );
 
 Mixer::Mixer(AvDevice &d)
-    : Control::Container()
+    : Control::Container(&d)
     , m_device(d)
 {
     addElementForAllFunctionBlocks();
@@ -196,7 +196,7 @@ Mixer::addElementForAllFunctionBlocks() {
 // --- element implementation classes
 
 MixerFBFeature::MixerFBFeature(Mixer& parent, FunctionBlockFeature& s)
-: Control::Continuous()
+: Control::Continuous(&parent)
 , m_Parent(parent) 
 , m_Slave(s)
 {
@@ -247,7 +247,7 @@ MixerFBFeature::getValue(int idx)
 // --- element implementation classes
 
 EnhancedMixerFBFeature::EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer& s)
-: Control::Continuous()
+: Control::Continuous(&parent)
 , m_Parent(parent) 
 , m_Slave(s)
 {
@@ -286,7 +286,7 @@ EnhancedMixerFBFeature::getValue()
 // --- element implementation classes
 
 MixerFBSelector::MixerFBSelector(Mixer& parent, FunctionBlockSelector& s)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent) 
 , m_Slave(s)
 {

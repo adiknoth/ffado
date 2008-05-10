@@ -200,14 +200,14 @@ FocusriteDevice::convertSrToDef( int sr ) {
 // --- element implementation classes
 
 BinaryControl::BinaryControl(FocusriteDevice& parent, int id, int bit)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
 , m_cmd_bit ( bit )
 {}
 BinaryControl::BinaryControl(FocusriteDevice& parent, int id, int bit,
                 std::string name, std::string label, std::string descr)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
 , m_cmd_bit ( bit )
@@ -262,13 +262,13 @@ BinaryControl::getValue()
 // --- element implementation classes
 
 VolumeControl::VolumeControl(FocusriteDevice& parent, int id)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
 {}
 VolumeControl::VolumeControl(FocusriteDevice& parent, int id,
                 std::string name, std::string label, std::string descr)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
 {
@@ -309,12 +309,12 @@ VolumeControl::getValue()
 
 // reg control
 RegisterControl::RegisterControl(FocusriteDevice& parent)
-: Control::Register()
+: Control::Register(&parent)
 , m_Parent(parent)
 {}
 RegisterControl::RegisterControl(FocusriteDevice& parent,
                  std::string name, std::string label, std::string descr)
-: Control::Register()
+: Control::Register(&parent)
 , m_Parent(parent)
 {
     setName(name);
@@ -351,14 +351,14 @@ RegisterControl::getValue(uint64_t addr)
 
 // low resolution volume control
 VolumeControlLowRes::VolumeControlLowRes(FocusriteDevice& parent, int id, int shift)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
 , m_bit_shift( shift )
 {}
 VolumeControlLowRes::VolumeControlLowRes(FocusriteDevice& parent, int id, int shift,
                 std::string name, std::string label, std::string descr)
-: Control::Discrete()
+: Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
 , m_bit_shift( shift )
@@ -414,13 +414,13 @@ VolumeControlLowRes::getValue()
 
 // Saffire pro matrix mixer element
 FocusriteMatrixMixer::FocusriteMatrixMixer(FocusriteDevice& p)
-: Control::MatrixMixer("MatrixMixer")
+: Control::MatrixMixer(&p, "MatrixMixer")
 , m_Parent(p)
 {
 }
 
 FocusriteMatrixMixer::FocusriteMatrixMixer(FocusriteDevice& p,std::string n)
-: Control::MatrixMixer(n)
+: Control::MatrixMixer(&p, n)
 , m_Parent(p)
 {
 }

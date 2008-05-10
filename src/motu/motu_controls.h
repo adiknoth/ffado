@@ -90,6 +90,18 @@ public:
     MotuDiscreteCtrl(MotuDevice &parent, unsigned int dev_reg,
           std::string name, std::string label, std::string descr);
 
+    virtual bool setValue(int v) = 0;
+    virtual int getValue() = 0;
+
+    // default implementations
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0;};
+
 protected:
     MotuDevice    &m_parent;
     unsigned int  m_register;

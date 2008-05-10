@@ -40,8 +40,8 @@ namespace Control {
 class MatrixMixer : public Element
 {
 public:
-    MatrixMixer();
-    MatrixMixer(std::string n);
+    MatrixMixer(Element *p) : Element(p) {};
+    MatrixMixer(Element *p, std::string n) : Element(p, n) {};
     virtual ~MatrixMixer() {};
 
     virtual void show() = 0;
