@@ -26,22 +26,93 @@
 namespace BeBoB {
 namespace Terratec {
 
-PhaseSeriesDevice::PhaseSeriesDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Phase88Device::Phase88Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : BeBoB::AvDevice( d, configRom)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Terratec::PhaseSeriesDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Terratec::Phase88Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
+    updateClockSources();
 }
 
-PhaseSeriesDevice::~PhaseSeriesDevice()
+Phase88Device::~Phase88Device()
 {
 }
 
 void
-PhaseSeriesDevice::showDevice()
+Phase88Device::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Terratec::PhaseSeriesDevice\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Terratec::Phase88Device\n");
     BeBoB::AvDevice::showDevice();
+}
+/*                'externalsync': ['/Mixer/Selector_8', self.comboExtSync], 
+                'syncsource':   ['/Mixer/Selector_9', self.comboSyncSource], */
+void
+Phase88Device::updateClockSources() {
+    m_internal_clocksource.type = FFADODevice::eCT_Internal;
+    m_internal_clocksource.valid = true;
+    m_internal_clocksource.locked = true;
+    m_internal_clocksource.id = 0;
+    m_internal_clocksource.slipping = false;
+    m_internal_clocksource.description = "Internal";
+
+    m_spdif_clocksource.type = FFADODevice::eCT_SPDIF;
+    m_spdif_clocksource.valid = true;
+    m_spdif_clocksource.locked = false;
+    m_spdif_clocksource.id = 1;
+    m_spdif_clocksource.slipping = false;
+    m_spdif_clocksource.description = "S/PDIF";
+
+    m_wordclock_clocksource.type = FFADODevice::eCT_WordClock;
+    m_wordclock_clocksource.valid = true;
+    m_wordclock_clocksource.locked = false;
+    m_wordclock_clocksource.id = 2;
+    m_wordclock_clocksource.slipping = false;
+    m_wordclock_clocksource.description = "WordClock";
+}
+
+FFADODevice::ClockSource
+Phase88Device::getActiveClockSource() {
+    int fb_extsync_value = getSelectorFBValue(8);
+    int fb_syncsource_value = getSelectorFBValue(9);
+
+    if(fb_syncsource_value == 0) {
+        return m_internal_clocksource;
+    } else {
+        if(fb_extsync_value == 0) {
+            return m_spdif_clocksource;
+        } else {
+            return m_wordclock_clocksource;
+        }
+    }
+}
+
+bool
+Phase88Device::setActiveClockSource(ClockSource s) {
+    if(s.id == m_internal_clocksource.id) {
+        return setSelectorFBValue(9, 0);
+    }
+    if(s.id == m_spdif_clocksource.id) {
+        bool retval = true;
+        retval &= setSelectorFBValue(8, 0);
+        retval &= setSelectorFBValue(9, 0);
+        return retval;
+    }
+    if(s.id == m_wordclock_clocksource.id) {
+        bool retval = true;
+        retval &= setSelectorFBValue(8, 1);
+        retval &= setSelectorFBValue(9, 0);
+        return retval;
+    }
+    return false;
+}
+
+FFADODevice::ClockSourceVector
+Phase88Device::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    r.push_back(m_internal_clocksource);
+    r.push_back(m_spdif_clocksource);
+    r.push_back(m_wordclock_clocksource);
+    return r;
 }
 
 } // namespace Terratec

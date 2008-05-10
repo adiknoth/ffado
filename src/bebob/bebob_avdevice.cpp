@@ -102,7 +102,12 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
             }
             break;
         case FW_VENDORID_TERRATEC:
-            return new Terratec::PhaseSeriesDevice(d, configRom);
+            switch(modelId) {
+                case 0x00000003:
+                    return new Terratec::Phase88Device(d, configRom);
+                default: // return a plain BeBoB device
+                    return new AvDevice(d, configRom);
+            }
         case FW_VENDORID_FOCUSRITE:
             switch(modelId) {
                 case 0x00000003:
@@ -181,6 +186,130 @@ AvDevice::destroyMixer()
 {
     delete m_Mixer;
     return true;
+}
+
+bool
+AvDevice::setSelectorFBValue(int id, int value) {
+    FunctionBlockCmd fbCmd( get1394Service(),
+                            FunctionBlockCmd::eFBT_Selector,
+                            id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( getNodeId() );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Control );
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber = (value & 0xFF);
+    fbCmd.setVerboseLevel( getDebugLevel() );
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return false;
+    }
+
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
+//     
+    if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
+    }
+
+    return (fbCmd.getResponse() == AVCCommand::eR_Accepted);
+}
+
+int
+AvDevice::getSelectorFBValue(int id) {
+
+    FunctionBlockCmd fbCmd( get1394Service(),
+                            FunctionBlockCmd::eFBT_Selector,
+                            id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( getNodeId() );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Status );
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber=0;
+    fbCmd.setVerboseLevel( getDebugLevel() );
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return -1;
+    }
+    
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
+
+    if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
+    }
+    
+    return fbCmd.m_pFBSelector->m_inputFbPlugNumber;
+}
+
+bool
+AvDevice::setFeatureFBVolumeValue(int id, int channel, int v) {
+
+    FunctionBlockCmd fbCmd( get1394Service(),
+                            FunctionBlockCmd::eFBT_Feature,
+                            id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( getNodeId() );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Control );
+    fbCmd.m_pFBFeature->m_audioChannelNumber = channel;
+    fbCmd.m_pFBFeature->m_controlSelector = FunctionBlockFeature::eCSE_Feature_Volume;
+    fbCmd.m_pFBFeature->m_pVolume->m_volume = v;
+    fbCmd.setVerboseLevel( getDebugLevel() );
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return false;
+    }
+
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
+    
+    if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
+    }
+
+    return (fbCmd.getResponse() == AVCCommand::eR_Accepted);
+}
+
+int
+AvDevice::getFeatureFBVolumeValue(int id, int channel) {
+    FunctionBlockCmd fbCmd( get1394Service(),
+                            FunctionBlockCmd::eFBT_Feature,
+                            id,
+                            FunctionBlockCmd::eCA_Current );
+    fbCmd.setNodeId( getNodeId() );
+    fbCmd.setSubunitId( 0x00 );
+    fbCmd.setCommandType( AVCCommand::eCT_Status );
+    fbCmd.m_pFBFeature->m_audioChannelNumber = channel;
+    fbCmd.m_pFBFeature->m_controlSelector = FunctionBlockFeature::eCSE_Feature_Volume;
+    fbCmd.m_pFBFeature->m_pVolume->m_volume = 0;
+    fbCmd.setVerboseLevel( getDebugLevel() );
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return 0;
+    }
+    
+//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
+//         Util::CoutSerializer se;
+//         fbCmd.serialize( se );
+//     }
+
+    if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
+    }
+    
+    int16_t volume=(int16_t)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
+    
+    return volume;
 }
 
 void
