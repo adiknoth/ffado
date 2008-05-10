@@ -750,9 +750,26 @@ Unit::discoverSyncModes()
                                       syncMSUInputPlugs,
                                       "Digital Input Sync" );
 
+    return updateActiveSyncInfo();
+}
+
+bool
+Unit::updateActiveSyncInfo()
+{
+    PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
+        eST_Music,
+        0,
+        0xff,
+        0xff,
+        Plug::eAPA_SubunitPlug,
+        Plug::eAPD_Input,
+        Plug::eAPT_Sync );
+    if ( !syncMSUInputPlugs.size() ) {
+        debugWarning( "No sync input plug for MSU subunit found\n" );
+    }
+
     // Currently active connection signal source cmd, command type
     // status, source unknown, destination MSU sync input plug
-
     for ( PlugVector::const_iterator it = syncMSUInputPlugs.begin();
           it != syncMSUInputPlugs.end();
           ++it )
@@ -783,7 +800,6 @@ Unit::discoverSyncModes()
                          msuPlug->getName() );
         }
     }
-
     return true;
 }
 
@@ -816,7 +832,9 @@ Unit::checkSyncConnectionsAndAddToList( PlugVector& plhs,
 
 bool Unit::setActiveSync(const SyncInfo& syncInfo)
 {
-    return syncInfo.m_source->setConnection( *syncInfo.m_destination );
+    bool result = syncInfo.m_source->setConnection( *syncInfo.m_destination );
+    result &= updateActiveSyncInfo();
+    return result;
 }
 
 void
@@ -1028,6 +1046,7 @@ Unit::deserialize( std::string basePath,
         }
     }
 
+    result &= setActiveSync(*m_activeSyncInfo);
     return result;
 }
 

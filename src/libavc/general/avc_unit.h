@@ -129,6 +129,7 @@ protected:
                                 AVC::plug_id_t plugMaxId );
     virtual bool propagatePlugInfo();
     virtual bool discoverSyncModes();
+    virtual bool updateActiveSyncInfo();
     virtual bool checkSyncConnectionsAndAddToList( AVC::PlugVector& plhs,
                                            AVC::PlugVector& prhs,
                                            std::string syncDescription );
