@@ -36,8 +36,6 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include <glibmm/ustring.h>
-
 class Ieee1394Service;
 class ConfigRom;
 

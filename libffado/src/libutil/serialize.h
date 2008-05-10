@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2008 by Daniel Wagner
+ * Copyright (C) 2008 by Pieter Palmers
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -21,109 +21,15 @@
  *
  */
 
-#ifndef bebob_serialize_h
-#define bebob_serialize_h
+#ifndef __FFADO_UTIL_SERIALIZE_H__
+#define __FFADO_UTIL_SERIALIZE_H__
 
-#include "debugmodule/debugmodule.h"
+#include "config.h"
 
-#include <libxml++/libxml++.h>
-
-#include <iostream>
-
-namespace Util {
-
-     class IOSerialize {
-     public:
-         IOSerialize() {}
-         virtual ~IOSerialize() {}
-
-         virtual bool write( std::string strMemberName,
-                             long long value ) = 0;
-         virtual bool write( std::string strMemberName,
-                             Glib::ustring str) = 0;
-
-         template <typename T>  bool write( std::string strMemberName, T value );
-     };
-
-    class IODeserialize {
-    public:
-        IODeserialize() {}
-        virtual ~IODeserialize() {}
-
-        virtual bool read( std::string strMemberName,
-                           long long& value ) = 0;
-        virtual bool read( std::string strMemberName,
-                           Glib::ustring& str ) = 0;
-
-        template <typename T> bool read( std::string strMemberName, T& value );
-
-        virtual bool isExisting( std::string strMemberName ) = 0;
-    };
-
-    class XMLSerialize: public IOSerialize {
-    public:
-        XMLSerialize( Glib::ustring fileName );
-	XMLSerialize( Glib::ustring fileName, int verboseLevel );
-        virtual ~XMLSerialize();
-
-        virtual bool write( std::string strMemberName,
-                            long long value );
-        virtual bool write( std::string strMemberName,
-                            Glib::ustring str);
-    private:
-        void writeVersion();
-
-        Glib::ustring    m_filepath;
-        xmlpp::Document  m_doc;
-        int              m_verboseLevel;
-
-        DECLARE_DEBUG_MODULE;
-
-        xmlpp::Node* getNodePath( xmlpp::Node* pRootNode,
-                                  std::vector<std::string>& tokens );
-    };
-
-    class XMLDeserialize: public IODeserialize {
-    public:
-        XMLDeserialize( Glib::ustring fileName );
-	XMLDeserialize( Glib::ustring fileName, int verboseLevel );
-        virtual ~XMLDeserialize();
-
-        virtual bool read( std::string strMemberName,
-                           long long& value );
-        virtual bool read( std::string strMemberName,
-                           Glib::ustring& str );
-
-        virtual bool isExisting( std::string strMemberName );
-        bool isValid();
-        bool checkVersion();
-    private:
-        Glib::ustring    m_filepath;
-        xmlpp::DomParser m_parser;
-        int              m_verboseLevel;
-
-        DECLARE_DEBUG_MODULE;
-    };
-
-
-//////////////////////////////////////////
-
-    template <typename T> bool IOSerialize::write( std::string strMemberName,
-                                                   T value )
-    {
-        return write( strMemberName, static_cast<long long>( value ) );
-    }
-
-    template <typename T> bool IODeserialize::read( std::string strMemberName,
-                                                    T& value )
-    {
-        long long tmp;
-        bool result = read( strMemberName, tmp );
-        value = static_cast<T>( tmp );
-        return result;
-    }
-}
-
-void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters = " ");
+#if SERIALIZE_USE_EXPAT
+    #include "serialize_expat.h"
+#else
+    #include "serialize_libxml.h"
+#endif
 
 #endif

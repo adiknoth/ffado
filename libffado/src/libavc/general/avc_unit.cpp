@@ -844,7 +844,7 @@ Unit::showPlugs( PlugVector& plugs ) const
 
 template <typename T>
 bool
-serializeVector( Glib::ustring path,
+serializeVector( std::string path,
                  Util::IOSerialize& ser,
                  const T& vec )
 {
@@ -861,7 +861,7 @@ serializeVector( Glib::ustring path,
 
 template <typename T, typename VT>
 bool
-deserializeVector( Glib::ustring path,
+deserializeVector( std::string path,
                    Util::IODeserialize& deser,
                    Unit& unit,
                    VT& vec )
@@ -884,7 +884,7 @@ deserializeVector( Glib::ustring path,
 }
 
 bool
-Unit::serializeSyncInfoVector( Glib::ustring basePath,
+Unit::serializeSyncInfoVector( std::string basePath,
                                Util::IOSerialize& ser,
                                const SyncInfoVector& vec ) const
 {
@@ -902,7 +902,7 @@ Unit::serializeSyncInfoVector( Glib::ustring basePath,
 
         result &= ser.write( strstrm.str() + "m_source", info.m_source->getGlobalId() );
         result &= ser.write( strstrm.str() + "m_destination", info.m_destination->getGlobalId() );
-        result &= ser.write( strstrm.str() + "m_description", Glib::ustring( info.m_description ) );
+        result &= ser.write( strstrm.str() + "m_description", std::string( info.m_description ) );
 
         i++;
     }
@@ -911,7 +911,7 @@ Unit::serializeSyncInfoVector( Glib::ustring basePath,
 }
 
 bool
-Unit::deserializeSyncInfoVector( Glib::ustring basePath,
+Unit::deserializeSyncInfoVector( std::string basePath,
                                  Util::IODeserialize& deser,
                                  SyncInfoVector& vec )
 {
@@ -924,7 +924,7 @@ Unit::deserializeSyncInfoVector( Glib::ustring basePath,
 
         plug_id_t sourceId;
         plug_id_t destinationId;
-        Glib::ustring description;
+        std::string description;
 
         if ( deser.isExisting( strstrm.str() + "m_source" ) ) {
             result  = deser.read( strstrm.str() + "m_source", sourceId );
@@ -951,7 +951,7 @@ Unit::deserializeSyncInfoVector( Glib::ustring basePath,
 }
 
 bool
-Unit::serialize( Glib::ustring basePath,
+Unit::serialize( std::string basePath,
                  Util::IOSerialize& ser ) const
 {
     bool result;
@@ -979,7 +979,7 @@ Unit::serialize( Glib::ustring basePath,
 }
 
 bool
-Unit::deserialize( Glib::ustring basePath,
+Unit::deserialize( std::string basePath,
                    Util::IODeserialize& deser )
 {
     bool result = true;

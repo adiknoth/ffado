@@ -379,7 +379,7 @@ AvDevice::getConfigurationId()
 }
 
 bool
-AvDevice::serialize( Glib::ustring basePath,
+AvDevice::serialize( std::string basePath,
                      Util::IOSerialize& ser ) const
 {
     bool result;
@@ -388,7 +388,7 @@ AvDevice::serialize( Glib::ustring basePath,
 }
 
 bool
-AvDevice::deserialize( Glib::ustring basePath,
+AvDevice::deserialize( std::string basePath,
                        Util::IODeserialize& deser )
 {
     bool result;
@@ -396,10 +396,10 @@ AvDevice::deserialize( Glib::ustring basePath,
     return result;
 }
 
-Glib::ustring
+std::string
 AvDevice::getCachePath()
 {
-    Glib::ustring cachePath;
+    std::string cachePath;
     char* pCachePath;
 
     string path = CACHEDIR;
@@ -421,7 +421,7 @@ AvDevice::getCachePath()
 bool
 AvDevice::loadFromCache()
 {
-    Glib::ustring sDevicePath = getCachePath() + getConfigRom().getGuidString();
+    std::string sDevicePath = getCachePath() + getConfigRom().getGuidString();
 
     char* configId;
     asprintf(&configId, "%08x", getConfigurationId() );
@@ -430,7 +430,7 @@ AvDevice::loadFromCache()
         return false;
     }
 
-    Glib::ustring sFileName = sDevicePath + "/" + configId + ".xml";
+    std::string sFileName = sDevicePath + "/" + configId + ".xml";
     free( configId );
     debugOutput( DEBUG_LEVEL_NORMAL, "filename %s\n", sFileName.c_str() );
 

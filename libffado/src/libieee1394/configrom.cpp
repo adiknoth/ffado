@@ -397,19 +397,19 @@ ConfigRom::getGuid() const
     return m_guid;
 }
 
-const Glib::ustring
+const std::string
 ConfigRom::getGuidString() const
 {
     char* buf;
     asprintf( &buf, "%08x%08x",
               ( unsigned int ) ( getGuid() >> 32 ),
               ( unsigned int ) ( getGuid() & 0xffffffff ) );
-    Glib::ustring result = buf;
+    std::string result = buf;
     free( buf );
     return result;
 }
  
-const Glib::ustring
+const std::string
 ConfigRom::getModelName() const
 {
     // HACK:
@@ -438,7 +438,7 @@ ConfigRom::getModelName() const
     }
 }
 
-const Glib::ustring
+const std::string
 ConfigRom::getVendorName() const
 {
     // HACK:
@@ -598,14 +598,14 @@ ConfigRom::getAsyMaxPayload() const
 }
 
 bool
-ConfigRom::serialize( Glib::ustring path, Util::IOSerialize& ser )
+ConfigRom::serialize( std::string path, Util::IOSerialize& ser )
 {
     bool result;
     result  = ser.write( path + "m_nodeId", m_nodeId );
     result &= ser.write( path + "m_avcDevice",  m_avcDevice );
     result &= ser.write( path + "m_guid", m_guid );
-    result &= ser.write( path + "m_vendorName", Glib::ustring( m_vendorName ) );
-    result &= ser.write( path + "m_modelName", Glib::ustring( m_modelName ) );
+    result &= ser.write( path + "m_vendorName", std::string( m_vendorName ) );
+    result &= ser.write( path + "m_modelName", std::string( m_modelName ) );
     result &= ser.write( path + "m_vendorId", m_vendorId );
     result &= ser.write( path + "m_modelId", m_modelId );
     result &= ser.write( path + "m_unit_specifier_id", m_unit_specifier_id );
@@ -623,7 +623,7 @@ ConfigRom::serialize( Glib::ustring path, Util::IOSerialize& ser )
 }
 
 ConfigRom*
-ConfigRom::deserialize( Glib::ustring path, Util::IODeserialize& deser, Ieee1394Service& ieee1394Service )
+ConfigRom::deserialize( std::string path, Util::IODeserialize& deser, Ieee1394Service& ieee1394Service )
 {
     ConfigRom* pConfigRom = new ConfigRom;
     if ( !pConfigRom ) {

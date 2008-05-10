@@ -76,12 +76,12 @@ protected:
     FunctionBlock::ESpecialPurpose convertSpecialPurpose(
         AVC::function_block_special_purpose_t specialPurpose );
 
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
-    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+    virtual bool deserializeUpdateChild( std::string basePath,
                                          Util::IODeserialize& deser );
 
 protected:
@@ -111,12 +111,12 @@ class SubunitMusic : public AVC::SubunitMusic
     virtual const char* getName();
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AVC::Unit& unit );
-    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+    virtual bool deserializeUpdateChild( std::string basePath,
                                          Util::IODeserialize& deser );
 
 };

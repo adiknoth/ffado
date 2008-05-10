@@ -161,7 +161,7 @@ FunctionBlock::discoverConnections()
 }
 
 bool
-FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+FunctionBlock::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result;
 
@@ -177,7 +177,7 @@ FunctionBlock::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 }
 
 FunctionBlock*
-FunctionBlock::deserialize( Glib::ustring basePath,
+FunctionBlock::deserialize( std::string basePath,
                             Util::IODeserialize& deser,
                             AVC::Unit& unit,
                             AVC::Subunit& subunit )
@@ -240,7 +240,7 @@ FunctionBlock::deserialize( Glib::ustring basePath,
 }
 
 bool 
-FunctionBlock::deserializeUpdate( Glib::ustring basePath,
+FunctionBlock::deserializeUpdate( std::string basePath,
                                   Util::IODeserialize& deser )
 {
     bool result;
@@ -292,14 +292,14 @@ FunctionBlockSelector::getName()
 }
 
 bool
-FunctionBlockSelector::serializeChild( Glib::ustring basePath,
+FunctionBlockSelector::serializeChild( std::string basePath,
                                        Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-FunctionBlockSelector::deserializeChild( Glib::ustring basePath,
+FunctionBlockSelector::deserializeChild( std::string basePath,
                                          Util::IODeserialize& deser,
                                          AvDevice& unit )
 {
@@ -348,14 +348,14 @@ FunctionBlockFeature::getName()
 }
 
 bool
-FunctionBlockFeature::serializeChild( Glib::ustring basePath,
+FunctionBlockFeature::serializeChild( std::string basePath,
                                       Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-FunctionBlockFeature::deserializeChild( Glib::ustring basePath,
+FunctionBlockFeature::deserializeChild( std::string basePath,
                                         Util::IODeserialize& deser,
                                         AvDevice& unit )
 {
@@ -451,14 +451,14 @@ FunctionBlockEnhancedMixer::getName()
 }
 
 bool
-FunctionBlockEnhancedMixer::serializeChild( Glib::ustring basePath,
+FunctionBlockEnhancedMixer::serializeChild( std::string basePath,
                                             Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-FunctionBlockEnhancedMixer::deserializeChild( Glib::ustring basePath,
+FunctionBlockEnhancedMixer::deserializeChild( std::string basePath,
                                               Util::IODeserialize& deser,
                                               AvDevice& unit )
 {
@@ -507,14 +507,14 @@ FunctionBlockProcessing::getName()
 }
 
 bool
-FunctionBlockProcessing::serializeChild( Glib::ustring basePath,
+FunctionBlockProcessing::serializeChild( std::string basePath,
                                          Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-FunctionBlockProcessing::deserializeChild( Glib::ustring basePath,
+FunctionBlockProcessing::deserializeChild( std::string basePath,
                                            Util::IODeserialize& deser,
                                            AvDevice& unit )
 {
@@ -562,14 +562,14 @@ FunctionBlockCodec::getName()
 }
 
 bool
-FunctionBlockCodec::serializeChild( Glib::ustring basePath,
+FunctionBlockCodec::serializeChild( std::string basePath,
                                     Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-FunctionBlockCodec::deserializeChild( Glib::ustring basePath,
+FunctionBlockCodec::deserializeChild( std::string basePath,
                                       Util::IODeserialize& deser,
                                       AvDevice& unit )
 {

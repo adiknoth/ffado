@@ -365,7 +365,7 @@ bool
 U3_SerializeMe::serialize( IOSerialize& ser )
 {
     bool result;
-    result  = ser.write( "m_pString", Glib::ustring( m_pString ) );
+    result  = ser.write( "m_pString", std::string( m_pString ) );
     return result;
 }
 
@@ -373,7 +373,7 @@ bool
 U3_SerializeMe::deserialize( IODeserialize& deser )
 {
     bool result;
-    Glib::ustring str;
+    std::string str;
     result  = deser.read( "m_pString", str );
 
     m_pString = strdup( str.c_str() );

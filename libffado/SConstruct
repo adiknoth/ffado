@@ -73,6 +73,7 @@ Enable/Disable the the generic avc part (mainly used by apple).
   Note that disabling this option might be overwritten by other devices needing
   this code.""", False ),
 	BoolOption( "ENABLE_ALL", "Enable/Disable support for all devices.", False ),
+	BoolOption( "SERIALIZE_USE_EXPAT", "Use libexpat for XML serialization.", False ),
 	BoolOption( "BUILD_TESTS", """\
 Build the tests in their directory. As some contain quite some functionality,
   this is on by default.
@@ -161,6 +162,11 @@ conf = Configure( env,
 	conf_dir = "cache/" + build_base,
 	log_file = "cache/" + build_base + 'config.log' )
 
+if env['SERIALIZE_USE_EXPAT']:
+	env['SERIALIZE_USE_EXPAT']=1
+else:
+	env['SERIALIZE_USE_EXPAT']=0
+
 if not env.GetOption('clean'):
 	#
 	# Check if the environment can actually compile c-files by checking for a
@@ -181,6 +187,7 @@ if not env.GetOption('clean'):
 	# The following checks are for headers and libs and packages we need.
 	#
 	allpresent = 1;
+	# for DBUS C++ bindings
 	allpresent &= conf.CheckHeader( "expat.h" )
 	allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
 	
@@ -190,9 +197,11 @@ if not env.GetOption('clean'):
 		'libraw1394' : '1.3.0',
 		'libavc1394' : '0.5.3',
 		'libiec61883' : '1.1.0',
-		'libxml++-2.6' : '2.13.0',
 		'dbus-1' : '1.0',
 		}
+	if not env['SERIALIZE_USE_EXPAT']:
+		pkgs['libxml++-2.6'] = '2.13.0'
+
 	for pkg in pkgs:
 		name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
 		env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
