@@ -54,8 +54,8 @@ public:
     virtual bool discover();
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
 
-    virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    virtual bool deserialize( Glib::ustring basePath, Util::IODeserialize& deser );
+    virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    virtual bool deserialize( std::string basePath, Util::IODeserialize& deser );
 
     virtual void setVerboseLevel(int l);
     virtual void showDevice();

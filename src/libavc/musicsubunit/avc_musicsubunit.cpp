@@ -303,14 +303,14 @@ SubunitMusic::getName()
 }
 
 bool
-SubunitMusic::serializeChild( Glib::ustring basePath,
+SubunitMusic::serializeChild( std::string basePath,
                               Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-SubunitMusic::deserializeChild( Glib::ustring basePath,
+SubunitMusic::deserializeChild( std::string basePath,
                                 Util::IODeserialize& deser,
                                 Unit& unit )
 {
@@ -318,7 +318,7 @@ SubunitMusic::deserializeChild( Glib::ustring basePath,
 }
 
 bool
-SubunitMusic::deserializeUpdateChild( Glib::ustring basePath,
+SubunitMusic::deserializeUpdateChild( std::string basePath,
                                       Util::IODeserialize& deser )
 {
     return true;

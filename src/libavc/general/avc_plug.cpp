@@ -1427,7 +1427,7 @@ Plug::toggleDirection( EPlugDirection direction ) const
 }
 
 bool
-Plug::serializeChannelInfos( Glib::ustring basePath,
+Plug::serializeChannelInfos( std::string basePath,
                              Util::IOSerialize& ser,
                              const ClusterInfo& clusterInfo ) const
 {
@@ -1451,7 +1451,7 @@ Plug::serializeChannelInfos( Glib::ustring basePath,
 }
 
 bool
-Plug::deserializeChannelInfos( Glib::ustring basePath,
+Plug::deserializeChannelInfos( std::string basePath,
                                Util::IODeserialize& deser,
                                ClusterInfo& clusterInfo )
 {
@@ -1487,7 +1487,7 @@ Plug::deserializeChannelInfos( Glib::ustring basePath,
 
 
 bool
-Plug::serializeClusterInfos( Glib::ustring basePath,
+Plug::serializeClusterInfos( std::string basePath,
                              Util::IOSerialize& ser ) const
 {
     bool result = true;
@@ -1513,7 +1513,7 @@ Plug::serializeClusterInfos( Glib::ustring basePath,
 }
 
 bool
-Plug::deserializeClusterInfos( Glib::ustring basePath,
+Plug::deserializeClusterInfos( std::string basePath,
                                Util::IODeserialize& deser )
 {
     int i = 0;
@@ -1551,7 +1551,7 @@ Plug::deserializeClusterInfos( Glib::ustring basePath,
 
 
 bool
-Plug::serializeFormatInfos( Glib::ustring basePath,
+Plug::serializeFormatInfos( std::string basePath,
                             Util::IOSerialize& ser ) const
 {
     bool result = true;
@@ -1575,7 +1575,7 @@ Plug::serializeFormatInfos( Glib::ustring basePath,
 }
 
 bool
-Plug::deserializeFormatInfos( Glib::ustring basePath,
+Plug::deserializeFormatInfos( std::string basePath,
                               Util::IODeserialize& deser )
 {
     int i = 0;
@@ -1611,7 +1611,7 @@ Plug::deserializeFormatInfos( Glib::ustring basePath,
 }
 
 bool
-Plug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+Plug::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result=true;
     result &= ser.write( basePath + "m_subunitType", getSubunitType());
@@ -1636,7 +1636,7 @@ Plug::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 }
 
 Plug*
-Plug::deserialize( Glib::ustring basePath,
+Plug::deserialize( std::string basePath,
                    Util::IODeserialize& deser,
                    Unit& unit,
                    PlugManager& plugManager )
@@ -1691,7 +1691,7 @@ Plug::deserialize( Glib::ustring basePath,
 }
 
 bool
-Plug::deserializeConnections( Glib::ustring basePath,
+Plug::deserializeConnections( std::string basePath,
                               Util::IODeserialize& deser )
 {
     bool result;
@@ -2150,7 +2150,7 @@ PlugManager::getPlugsByType( ESubunitType subunitType,
 }
 
 bool
-PlugManager::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+PlugManager::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result = true;
     int i = 0;
@@ -2169,7 +2169,7 @@ PlugManager::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 }
 
 PlugManager*
-PlugManager::deserialize( Glib::ustring basePath,
+PlugManager::deserialize( std::string basePath,
                           Util::IODeserialize& deser,
                           Unit& unit )
 
@@ -2201,7 +2201,7 @@ PlugManager::deserialize( Glib::ustring basePath,
 }
 
 bool
-PlugManager::deserializeUpdate( Glib::ustring basePath,
+PlugManager::deserializeUpdate( std::string basePath,
                                 Util::IODeserialize& deser)
 {
     bool result = true;
@@ -2238,7 +2238,7 @@ PlugConnection::PlugConnection()
 }
 
 bool
-PlugConnection::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+PlugConnection::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result;
     result  = ser.write( basePath + "m_srcPlug", m_srcPlug->getGlobalId() );
@@ -2247,7 +2247,7 @@ PlugConnection::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) cons
 }
 
 PlugConnection*
-PlugConnection::deserialize( Glib::ustring basePath,
+PlugConnection::deserialize( std::string basePath,
                                Util::IODeserialize& deser,
                                Unit& unit )
 {
@@ -2357,7 +2357,7 @@ Plug::setPlugAddrToStreamFormatCmd(
 }
 
 bool
-serializePlugVector( Glib::ustring basePath,
+serializePlugVector( std::string basePath,
                      Util::IOSerialize& ser,
                      const PlugVector& vec)
 {
@@ -2378,7 +2378,7 @@ serializePlugVector( Glib::ustring basePath,
 }
 
 bool
-deserializePlugVector( Glib::ustring basePath,
+deserializePlugVector( std::string basePath,
                        Util::IODeserialize& deser,
                        const PlugManager& plugManager,
                        PlugVector& vec )

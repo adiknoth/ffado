@@ -107,11 +107,11 @@ void OptionContainer::Option::set(int64_t v)     { m_intValue = v; m_Type=EInt;}
 void OptionContainer::Option::set(uint64_t v)    { m_uintValue = v; m_Type=EUInt;}
 
 bool
-OptionContainer::Option::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+OptionContainer::Option::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result;
-    result  = ser.write( basePath + "m_Name", Glib::ustring(m_Name) );
-    result &= ser.write( basePath + "m_stringValue", Glib::ustring(m_stringValue) );
+    result  = ser.write( basePath + "m_Name", std::string(m_Name) );
+    result &= ser.write( basePath + "m_stringValue", std::string(m_stringValue) );
     result &= ser.write( basePath + "m_boolValue", m_boolValue );
     result &= ser.write( basePath + "m_doubleValue", m_doubleValue );
     result &= ser.write( basePath + "m_intValue", m_intValue );
@@ -123,12 +123,12 @@ OptionContainer::Option::serialize( Glib::ustring basePath, Util::IOSerialize& s
 
 
 OptionContainer::Option
-OptionContainer::Option::deserialize( Glib::ustring basePath,
+OptionContainer::Option::deserialize( std::string basePath,
                      Util::IODeserialize& deser )
 {
     bool result;
     Option op=Option();
-    Glib::ustring tmpstr;
+    std::string tmpstr;
 
     result  = deser.read( basePath + "m_Name", tmpstr );
     op.m_Name = tmpstr;
@@ -411,7 +411,7 @@ int OptionContainer::findOption(std::string name) {
 // serialization support
 
 bool
-OptionContainer::serializeOptions( Glib::ustring basePath,
+OptionContainer::serializeOptions( std::string basePath,
                                    Util::IOSerialize& ser) const
 {
     bool result = true;
@@ -433,7 +433,7 @@ OptionContainer::serializeOptions( Glib::ustring basePath,
 }
 
 bool
-OptionContainer::deserializeOptions( Glib::ustring basePath,
+OptionContainer::deserializeOptions( std::string basePath,
                                      Util::IODeserialize& deser,
                                      OptionContainer& container)
 {

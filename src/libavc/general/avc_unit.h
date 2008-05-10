@@ -92,8 +92,8 @@ public:
 
     virtual bool setActiveSync( const SyncInfo& syncInfo );
 
-    virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    virtual bool deserialize( Glib::ustring basePath, Util::IODeserialize& deser );
+    virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    virtual bool deserialize( std::string basePath, Util::IODeserialize& deser );
 
     SubunitAudio* getAudioSubunit( subunit_id_t subunitId )
         { return dynamic_cast<SubunitAudio*>(
@@ -151,10 +151,10 @@ protected:
     void showPlugs( PlugVector& plugs ) const;
 
 
-    bool serializeSyncInfoVector( Glib::ustring basePath,
+    bool serializeSyncInfoVector( std::string basePath,
                                   Util::IOSerialize& ser,
                                   const SyncInfoVector& vec ) const;
-    bool deserializeSyncInfoVector( Glib::ustring basePath,
+    bool deserializeSyncInfoVector( std::string basePath,
                                     Util::IODeserialize& deser,
                                     SyncInfoVector& vec );
 protected:

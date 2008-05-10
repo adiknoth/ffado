@@ -338,7 +338,7 @@ BeBoB::SubunitAudio::convertSpecialPurpose(
 }
 
 bool
-BeBoB::SubunitAudio::serializeChild( Glib::ustring basePath,
+BeBoB::SubunitAudio::serializeChild( std::string basePath,
                                      Util::IOSerialize& ser ) const
 {
     bool result = true;
@@ -361,7 +361,7 @@ BeBoB::SubunitAudio::serializeChild( Glib::ustring basePath,
 }
 
 bool
-BeBoB::SubunitAudio::deserializeChild( Glib::ustring basePath,
+BeBoB::SubunitAudio::deserializeChild( std::string basePath,
                                        Util::IODeserialize& deser,
                                        AVC::Unit& avDevice )
 {
@@ -386,7 +386,7 @@ BeBoB::SubunitAudio::deserializeChild( Glib::ustring basePath,
 }
 
 bool
-BeBoB::SubunitAudio::deserializeUpdateChild( Glib::ustring basePath,
+BeBoB::SubunitAudio::deserializeUpdateChild( std::string basePath,
                                              Util::IODeserialize& deser )
 {
     bool result = true;
@@ -466,14 +466,14 @@ BeBoB::SubunitMusic::getName()
 }
 
 bool
-BeBoB::SubunitMusic::serializeChild( Glib::ustring basePath,
+BeBoB::SubunitMusic::serializeChild( std::string basePath,
                                              Util::IOSerialize& ser ) const
 {
     return true;
 }
 
 bool
-BeBoB::SubunitMusic::deserializeChild( Glib::ustring basePath,
+BeBoB::SubunitMusic::deserializeChild( std::string basePath,
                                                Util::IODeserialize& deser,
                                                AVC::Unit& avDevice )
 {
@@ -481,7 +481,7 @@ BeBoB::SubunitMusic::deserializeChild( Glib::ustring basePath,
 }
 
 bool 
-BeBoB::SubunitMusic::deserializeUpdateChild( Glib::ustring basePath,
+BeBoB::SubunitMusic::deserializeUpdateChild( std::string basePath,
                                              Util::IODeserialize& deser )
 {
     return true;

@@ -31,7 +31,6 @@ env.PrependUnique( LIBS=["ffado"] )
 
 if not env.GetOption( "clean" ):
 	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
-	env.MergeFlags( env['LIBXML26_FLAGS'] )
 
 static_env = env.Copy()
 

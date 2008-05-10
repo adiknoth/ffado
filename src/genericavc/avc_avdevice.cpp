@@ -753,7 +753,7 @@ AvDevice::stopStreamByIndex(int i) {
 }
 
 bool
-AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
+AvDevice::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result;
     result  = AVC::Unit::serialize( basePath, ser );
@@ -762,7 +762,7 @@ AvDevice::serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const
 }
 
 bool
-AvDevice::deserialize( Glib::ustring basePath, Util::IODeserialize& deser )
+AvDevice::deserialize( std::string basePath, Util::IODeserialize& deser )
 {
     bool result;
     result = AVC::Unit::deserialize( basePath, deser );

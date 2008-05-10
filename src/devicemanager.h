@@ -35,8 +35,6 @@
 #include "libutil/OptionContainer.h"
 #include "libcontrol/BasicElements.h"
 
-#include <glibmm/ustring.h>
-
 #include "libutil/Functors.h"
 
 #include <vector>

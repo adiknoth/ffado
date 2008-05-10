@@ -30,7 +30,7 @@ using namespace std;
 IMPL_DEBUG_MODULE( Util::XMLSerialize,   XMLSerialize,   DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( Util::XMLDeserialize, XMLDeserialize, DEBUG_LEVEL_NORMAL );
 
-Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
+Util::XMLSerialize::XMLSerialize( std::string fileName )
     : IOSerialize()
     , m_filepath( fileName )
     , m_verboseLevel( DEBUG_LEVEL_NORMAL )
@@ -44,7 +44,7 @@ Util::XMLSerialize::XMLSerialize( Glib::ustring fileName )
     }
 }
 
-Util::XMLSerialize::XMLSerialize( Glib::ustring fileName, int verboseLevel )
+Util::XMLSerialize::XMLSerialize( std::string fileName, int verboseLevel )
     : IOSerialize()
     , m_filepath( fileName )
     , m_verboseLevel( verboseLevel )
@@ -110,7 +110,7 @@ Util::XMLSerialize::write( std::string strMemberName,
 
 bool
 Util::XMLSerialize::write( std::string strMemberName,
-                           Glib::ustring str)
+                           std::string str)
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "write %s = %s\n",
                  strMemberName.c_str(), str.c_str() );
@@ -175,7 +175,7 @@ Util::XMLSerialize::getNodePath( xmlpp::Node* pRootNode,
 
 /***********************************/
 
-Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName )
+Util::XMLDeserialize::XMLDeserialize( std::string fileName )
     : IODeserialize()
     , m_filepath( fileName )
     , m_verboseLevel( DEBUG_LEVEL_NORMAL )
@@ -191,7 +191,7 @@ Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName )
     }
 }
 
-Util::XMLDeserialize::XMLDeserialize( Glib::ustring fileName, int verboseLevel )
+Util::XMLDeserialize::XMLDeserialize( std::string fileName, int verboseLevel )
     : IODeserialize()
     , m_filepath( fileName )
     , m_verboseLevel( verboseLevel )
@@ -220,7 +220,7 @@ Util::XMLDeserialize::isValid()
 bool
 Util::XMLDeserialize::checkVersion()
 {
-    Glib::ustring savedVersion;
+    std::string savedVersion;
     if (read( "CacheVersion", savedVersion )) {
         Glib::ustring expectedVersion = CACHE_VERSION;
         debugOutput( DEBUG_LEVEL_NORMAL, "Cache version: %s, expected: %s.\n", savedVersion.c_str(), expectedVersion.c_str() );
@@ -275,7 +275,7 @@ Util::XMLDeserialize::read( std::string strMemberName,
 
 bool
 Util::XMLDeserialize::read( std::string strMemberName,
-                            Glib::ustring& str )
+                            std::string& str )
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "lookup %s\n", strMemberName.c_str() );
 

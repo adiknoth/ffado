@@ -30,6 +30,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include <string>
+
 namespace AVC {
     class Subunit;
 }
@@ -76,13 +78,13 @@ public:
     AVC::no_of_input_plugs_t getNrOfInputPlugs() {return m_nrOfInputPlugs;};
     AVC::no_of_output_plugs_t getNrOfOutputPlugs() {return m_nrOfOutputPlugs;};
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
+    bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
 
-    static FunctionBlock* deserialize( Glib::ustring basePath,
+    static FunctionBlock* deserialize( std::string basePath,
                                        Util::IODeserialize& deser,
                                        AVC::Unit& unit,
                                        AVC::Subunit& subunit );
-    bool deserializeUpdate( Glib::ustring basePath,
+    bool deserializeUpdate( std::string basePath,
                             Util::IODeserialize& deser );
 protected:
     bool discoverPlugs( AVC::Plug::EPlugDirection plugDirection,
@@ -123,9 +125,9 @@ public:
     virtual const char* getName();
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AvDevice& avDevice );
 };
@@ -165,9 +167,9 @@ public:
     };
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AvDevice& avDevice );
 };
@@ -192,9 +194,9 @@ public:
     virtual const char* getName();
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AvDevice& avDevice );
 };
@@ -217,9 +219,9 @@ public:
     virtual const char* getName();
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AvDevice& avDevice );
 };
@@ -242,9 +244,9 @@ public:
     virtual const char* getName();
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    AvDevice& avDevice );
 };

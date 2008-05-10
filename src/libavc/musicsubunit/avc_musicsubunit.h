@@ -53,12 +53,12 @@ class SubunitMusic: public Subunit {
     virtual void setVerboseLevel(int l);
     virtual const char* getName();
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice );
-    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+    virtual bool deserializeUpdateChild( std::string basePath,
                                          Util::IODeserialize& deser );
 
     class AVCMusicStatusDescriptor*  m_status_descriptor;

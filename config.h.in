@@ -37,6 +37,9 @@
 /* Define indicatin availability of lrintf() */
 #define HAVE_LRINTF $HAVE_LRINTF
 
+// serialization
+#define SERIALIZE_USE_EXPAT $SERIALIZE_USE_EXPAT
+
 // use a RT-safe message buffer for debug output
 // useful to disable this when the code aborts/segfaults to
 // not lose debug output. should be enabled though.

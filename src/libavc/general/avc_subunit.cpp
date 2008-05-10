@@ -230,7 +230,7 @@ Subunit::initPlugFromDescriptor( Plug& plug )
 }
 
 bool
-Subunit::serialize( Glib::ustring basePath,
+Subunit::serialize( std::string basePath,
                     Util::IOSerialize& ser ) const
 {
     bool result;
@@ -244,7 +244,7 @@ Subunit::serialize( Glib::ustring basePath,
 }
 
 Subunit*
-Subunit::deserialize( Glib::ustring basePath,
+Subunit::deserialize( std::string basePath,
                       Util::IODeserialize& deser,
                       Unit& unit )
 {
@@ -277,7 +277,7 @@ Subunit::deserialize( Glib::ustring basePath,
 }
 
 bool
-Subunit::deserializeUpdate( Glib::ustring basePath,
+Subunit::deserializeUpdate( std::string basePath,
                             Util::IODeserialize& deser )
 {
     bool result;

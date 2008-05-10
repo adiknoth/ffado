@@ -77,21 +77,21 @@ class Subunit {
 
     virtual void setVerboseLevel(int l);
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static Subunit* deserialize( Glib::ustring basePath,
+    bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    static Subunit* deserialize( std::string basePath,
 				 Util::IODeserialize& deser, Unit& avDevice );
-    bool deserializeUpdate( Glib::ustring basePath,
+    bool deserializeUpdate( std::string basePath,
                             Util::IODeserialize& deser );
 
  protected:
     Subunit();
 
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const = 0;
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice ) = 0;
-    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+    virtual bool deserializeUpdateChild( std::string basePath,
                                          Util::IODeserialize& deser ) = 0;
 
     bool discoverPlugs();

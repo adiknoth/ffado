@@ -77,7 +77,6 @@ ffado_source = env.Split( '\
 	libutil/PosixMutex.cpp \
 	libutil/PosixThread.cpp \
 	libutil/ringbuffer.c \
-	libutil/serialize.cpp \
 	libutil/StreamStatistics.cpp \
 	libutil/SystemTimeSource.cpp \
 	libutil/TimestampedBuffer.cpp \
@@ -88,6 +87,13 @@ ffado_source = env.Split( '\
 	libcontrol/ClockSelect.cpp \
 	libcontrol/Nickname.cpp \
 ')
+
+if env['SERIALIZE_USE_EXPAT']:
+	ffado_source.append('libutil/serialize_expat.cpp')
+	ffado_source.append('libutil/serialize_expat_xml.cpp')
+else:
+	ffado_source.append('libutil/serialize_libxml.cpp')
+
 
 bebob_source = env.Split( '\
 	bebob/bebob_avdevice.cpp \
@@ -215,7 +221,10 @@ if not env.GetOption( "clean" ):
 	libenv.MergeFlags( env['LIBRAW1394_FLAGS'] )
 	libenv.MergeFlags( env['LIBAVC1394_FLAGS'] )
 	libenv.MergeFlags( env['LIBIEC61883_FLAGS'] )
-	libenv.MergeFlags( env['LIBXML26_FLAGS'] )
+	if not env['SERIALIZE_USE_EXPAT']:
+		libenv.MergeFlags( env['LIBXML26_FLAGS'] )
+	else:
+		libenv.PrependUnique( LIBS=["expat"] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )

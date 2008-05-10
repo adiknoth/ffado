@@ -89,15 +89,15 @@ protected:
     virtual bool destroyMixer();
 
 public:
-    virtual bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    virtual bool deserialize( Glib::ustring basePath, Util::IODeserialize& deser );
+    virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    virtual bool deserialize( std::string basePath, Util::IODeserialize& deser );
 
     int getConfigurationIdSampleRate();
     int getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
     int getConfigurationIdSyncMode();
     int getConfigurationId();
 
-    Glib::ustring getCachePath();
+    std::string getCachePath();
 
 protected:
     Mixer*             m_Mixer;

@@ -34,7 +34,7 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include <glibmm/ustring.h>
+#include <string>
 
 class Ieee1394Service;
 class ConfigRom;
@@ -154,12 +154,12 @@ public:
 
     void showPlug() const;
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static Plug* deserialize( Glib::ustring basePath,
+    bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    static Plug* deserialize( std::string basePath,
                               Util::IODeserialize& deser,
                               Unit& avDevice,
                               PlugManager& plugManager );
-    bool deserializeConnections( Glib::ustring basePath, 
+    bool deserializeConnections( std::string basePath, 
                                  Util::IODeserialize& deser );
     bool deserializeUpdateSubunit();
 
@@ -167,14 +167,14 @@ public:
     struct ChannelInfo {
         stream_position_t          m_streamPosition;
         stream_position_location_t m_location;
-        Glib::ustring              m_name;
+        std::string              m_name;
     };
     typedef std::vector<ChannelInfo> ChannelInfoVector;
 
     struct ClusterInfo {
         int                 m_index;
         port_type_t         m_portType;
-        Glib::ustring       m_name;
+        std::string         m_name;
 
         nr_of_channels_t    m_nrOfChannels;
         ChannelInfoVector   m_channelInfos;
@@ -239,21 +239,21 @@ protected:
 
     const ClusterInfo* getClusterInfoByIndex( int index ) const;
 
-    bool serializeChannelInfos( Glib::ustring basePath,
+    bool serializeChannelInfos( std::string basePath,
                                 Util::IOSerialize& ser,
                                 const ClusterInfo& clusterInfo ) const;
-    bool deserializeChannelInfos( Glib::ustring basePath,
+    bool deserializeChannelInfos( std::string basePath,
                                   Util::IODeserialize& deser,
                                   ClusterInfo& clusterInfo );
 
-    bool serializeClusterInfos( Glib::ustring basePath,
+    bool serializeClusterInfos( std::string basePath,
                                 Util::IOSerialize& ser ) const;
-    bool deserializeClusterInfos( Glib::ustring basePath,
+    bool deserializeClusterInfos( std::string basePath,
                                   Util::IODeserialize& deser );
 
-    bool serializeFormatInfos( Glib::ustring basePath,
+    bool serializeFormatInfos( std::string basePath,
                                Util::IOSerialize& ser ) const;
-    bool deserializeFormatInfos( Glib::ustring basePath,
+    bool deserializeFormatInfos( std::string basePath,
                                  Util::IODeserialize& deser );
 
 protected:
@@ -286,7 +286,7 @@ protected:
     plug_id_t                   m_id;
     EPlugType                   m_infoPlugType;
     nr_of_channels_t            m_nrOfChannels;
-    Glib::ustring               m_name;
+    std::string                 m_name;
     ClusterInfoVector           m_clusterInfos;
     sampling_frequency_t        m_samplingFrequency;
     FormatInfoVector            m_formatInfos;
@@ -333,8 +333,8 @@ public:
 			       Plug::EPlugDirection plugDirection,
 			       Plug::EPlugType type) const;
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static  PlugManager* deserialize( Glib::ustring basePath,
+    bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    static  PlugManager* deserialize( std::string basePath,
 				      Util::IODeserialize& deser,
 				      Unit& avDevice );
     void setVerboseLevel( int i );
@@ -342,7 +342,7 @@ public:
 	{ return m_plugs; }
     bool tidyPlugConnections(PlugConnectionVector&);
 
-    bool deserializeUpdate( Glib::ustring basePath,  
+    bool deserializeUpdate( std::string basePath,  
                             Util::IODeserialize& deser );
 
 private:
@@ -361,8 +361,8 @@ public:
     Plug& getDestPlug() const
         { return *m_destPlug; }
 
-    bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-    static PlugConnection* deserialize( Glib::ustring basePath,
+    bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+    static PlugConnection* deserialize( std::string basePath,
 					Util::IODeserialize& deser,
 					Unit& avDevice );
 private:
@@ -376,11 +376,11 @@ private:
 typedef std::vector<PlugConnection> PlugConnectionOwnerVector;
 
 
-bool serializePlugVector( Glib::ustring basePath,
+bool serializePlugVector( std::string basePath,
                           Util::IOSerialize& ser,
                           const PlugVector& vec);
 
-bool deserializePlugVector( Glib::ustring basePath,
+bool deserializePlugVector( std::string basePath,
                             Util::IODeserialize& deser,
                             const PlugManager& plugManager,
                             PlugVector& vec );

@@ -73,8 +73,8 @@ protected:
         uint64_t getUInt() {return m_uintValue;};
 
     public: // serialization support
-        bool serialize( Glib::ustring basePath, Util::IOSerialize& ser ) const;
-        static Option deserialize( Glib::ustring basePath,
+        bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
+        static Option deserialize( std::string basePath,
                                     Util::IODeserialize& deser);
     private:
         std::string m_Name;
@@ -152,9 +152,9 @@ public: // provide an iterator interface
     }
 
 protected: // serialization support
-    bool serializeOptions( Glib::ustring basePath,
+    bool serializeOptions( std::string basePath,
                            Util::IOSerialize& ser) const;
-    static bool deserializeOptions( Glib::ustring basePath,
+    static bool deserializeOptions( std::string basePath,
                                     Util::IODeserialize& deser,
                                     OptionContainer& container);
 

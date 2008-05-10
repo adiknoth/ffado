@@ -53,9 +53,9 @@ class ConfigRom
 
     const fb_nodeid_t getNodeId() const;
     const fb_octlet_t getGuid() const;
-    const Glib::ustring getGuidString() const;
-    const Glib::ustring getModelName() const;
-    const Glib::ustring getVendorName() const;
+    const std::string getGuidString() const;
+    const std::string getModelName() const;
+    const std::string getVendorName() const;
 
     const unsigned int getModelId() const;
     // FIXME: isn't this the same as getNodeVendorId?
@@ -99,8 +99,8 @@ class ConfigRom
      */
     static bool compareGUID(  const ConfigRom& a, const ConfigRom& b );
 
-    bool serialize( Glib::ustring path, Util::IOSerialize& ser );
-    static ConfigRom* deserialize( Glib::ustring path,
+    bool serialize( std::string path, Util::IOSerialize& ser );
+    static ConfigRom* deserialize( std::string path,
                    Util::IODeserialize& deser,
                    Ieee1394Service& ieee1394Service );
 
@@ -122,8 +122,8 @@ class ConfigRom
     fb_nodeid_t      m_nodeId;
     bool             m_avcDevice;
     fb_octlet_t      m_guid;
-    Glib::ustring    m_vendorName;
-    Glib::ustring    m_modelName;
+    std::string    m_vendorName;
+    std::string    m_modelName;
     unsigned int     m_vendorId;
     unsigned int     m_modelId;
     unsigned int     m_unit_specifier_id;

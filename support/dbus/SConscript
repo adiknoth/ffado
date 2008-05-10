@@ -35,8 +35,10 @@ env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
 
 if not env.GetOption( "clean" ):
     env.MergeFlags( env["DBUS1_FLAGS"] )
-    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
-    env.MergeFlags( env['LIBXML26_FLAGS'] )
+    if not env['SERIALIZE_USE_EXPAT']:
+        env.MergeFlags( env['LIBXML26_FLAGS'] )
+    else:
+        env.PrependUnique( LIBS=["expat"] )
 
 env.Xml2Cpp_Proxy('controlclient-glue.h', 'control-interface.xml')
 env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')

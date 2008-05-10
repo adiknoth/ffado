@@ -50,12 +50,12 @@ class SubunitAudio: public Subunit {
     virtual const char* getName();
 
 protected:
-    virtual bool serializeChild( Glib::ustring basePath,
+    virtual bool serializeChild( std::string basePath,
                                  Util::IOSerialize& ser ) const { return true; }
-    virtual bool deserializeChild( Glib::ustring basePath,
+    virtual bool deserializeChild( std::string basePath,
                                    Util::IODeserialize& deser,
                                    Unit& avDevice ) { return true; }
-    virtual bool deserializeUpdateChild( Glib::ustring basePath,
+    virtual bool deserializeUpdateChild( std::string basePath,
                                          Util::IODeserialize& deser ) { return true; }
 
 };
