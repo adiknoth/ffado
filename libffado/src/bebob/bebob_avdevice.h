@@ -80,6 +80,11 @@ public:
                                    AVC::Plug::EPlugDirection plugDirection,
                                    AVC::plug_id_t plugId );
 
+    virtual int getSelectorFBValue(int id);
+    virtual bool setSelectorFBValue(int id, int v);
+    virtual int getFeatureFBVolumeValue(int id, int channel);
+    virtual bool setFeatureFBVolumeValue(int id, int channel, int v);
+
     virtual void showDevice();
     virtual void setVerboseLevel(int l);
 protected:

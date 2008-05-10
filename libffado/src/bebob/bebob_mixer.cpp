@@ -226,34 +226,7 @@ MixerFBFeature::setValue(int idx, double v)
     int volume=(int)v;
     debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
         m_Slave.getId(), volume);
-
-    FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
-                            FunctionBlockCmd::eFBT_Feature,
-                            m_Slave.getId(),
-                            FunctionBlockCmd::eCA_Current );
-    fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
-    fbCmd.setSubunitId( 0x00 );
-    fbCmd.setCommandType( AVCCommand::eCT_Control );
-    fbCmd.m_pFBFeature->m_audioChannelNumber=idx; // m_channel
-    fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume;
-    fbCmd.m_pFBFeature->m_pVolume->m_volume=volume;
-    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
-
-    if ( !fbCmd.fire() ) {
-        debugError( "cmd failed\n" );
-        return false;
-    }
-
-//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-//         Util::CoutSerializer se;
-//         fbCmd.serialize( se );
-//     }
-    
-    if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
-        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
-    }
-
-    return (fbCmd.getResponse() == AVCCommand::eR_Accepted);
+    return m_Parent.getParent().setFeatureFBVolumeValue(m_Slave.getId(), idx, volume);
 }
 
 double
@@ -268,35 +241,7 @@ MixerFBFeature::getValue(int idx)
     debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
         m_Slave.getId());
 
-    FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
-                            FunctionBlockCmd::eFBT_Feature,
-                            m_Slave.getId(),
-                            FunctionBlockCmd::eCA_Current );
-    fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
-    fbCmd.setSubunitId( 0x00 );
-    fbCmd.setCommandType( AVCCommand::eCT_Status );
-    fbCmd.m_pFBFeature->m_audioChannelNumber=idx;
-    fbCmd.m_pFBFeature->m_controlSelector=FunctionBlockFeature::eCSE_Feature_Volume; // FIXME
-    fbCmd.m_pFBFeature->m_pVolume->m_volume=0;
-    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
-
-    if ( !fbCmd.fire() ) {
-        debugError( "cmd failed\n" );
-        return 0;
-    }
-    
-//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-//         Util::CoutSerializer se;
-//         fbCmd.serialize( se );
-//     }
-
-    if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
-        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
-    }
-    
-    int16_t volume=(int16_t)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
-    
-    return volume;
+    return m_Parent.getParent().getFeatureFBVolumeValue(m_Slave.getId(), idx);
 }
 
 // --- element implementation classes
@@ -364,32 +309,7 @@ MixerFBSelector::setValue(int v)
 {
     debugOutput(DEBUG_LEVEL_NORMAL,"Set selector %d to %d...\n",
         m_Slave.getId(), v);
-
-    FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
-                            FunctionBlockCmd::eFBT_Selector,
-                            m_Slave.getId(),
-                            FunctionBlockCmd::eCA_Current );
-    fbCmd.setNodeId( m_Parent.getParent().getNodeId() );
-    fbCmd.setSubunitId( 0x00 );
-    fbCmd.setCommandType( AVCCommand::eCT_Control );
-    fbCmd.m_pFBSelector->m_inputFbPlugNumber=(v & 0xFF);
-    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
-
-    if ( !fbCmd.fire() ) {
-        debugError( "cmd failed\n" );
-        return false;
-    }
-
-//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-//         Util::CoutSerializer se;
-//         fbCmd.serialize( se );
-//     }
-//     
-    if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
-        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
-    }
-
-    return (fbCmd.getResponse() == AVCCommand::eR_Accepted);
+    return m_Parent.getParent().setSelectorFBValue(m_Slave.getId(), v);
 }
 
 int
@@ -397,32 +317,7 @@ MixerFBSelector::getValue()
 {
     debugOutput(DEBUG_LEVEL_NORMAL,"Get selector %d...\n",
         m_Slave.getId());
-
-    FunctionBlockCmd fbCmd( m_Parent.getParent().get1394Service(),
-                            FunctionBlockCmd::eFBT_Selector,
-                            m_Slave.getId(),
-                            FunctionBlockCmd::eCA_Current );
-    fbCmd.setNodeId( m_Parent.getParent().getNodeId()  );
-    fbCmd.setSubunitId( 0x00 );
-    fbCmd.setCommandType( AVCCommand::eCT_Status );
-    fbCmd.m_pFBSelector->m_inputFbPlugNumber=0;
-    fbCmd.setVerboseLevel( DEBUG_LEVEL_VERY_VERBOSE );
-
-    if ( !fbCmd.fire() ) {
-        debugError( "cmd failed\n" );
-        return 0;
-    }
-    
-//     if ( getDebugLevel() >= DEBUG_LEVEL_NORMAL ) {
-//         Util::CoutSerializer se;
-//         fbCmd.serialize( se );
-//     }
-
-    if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
-        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
-    }
-    
-    return fbCmd.m_pFBSelector->m_inputFbPlugNumber;
+    return m_Parent.getParent().getSelectorFBValue(m_Slave.getId());
 }
 
 

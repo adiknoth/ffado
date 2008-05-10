@@ -31,13 +31,24 @@
 namespace BeBoB {
 namespace Terratec {
 
-class PhaseSeriesDevice : public BeBoB::AvDevice {
+class Phase88Device : public BeBoB::AvDevice {
 public:
-    PhaseSeriesDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~PhaseSeriesDevice();
+    Phase88Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Phase88Device();
 
     virtual void showDevice();
 
+    // override these since the phase88 does not support
+    // the usual clock source selection mechanism
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
+private:
+    void updateClockSources();
+    ClockSource m_internal_clocksource;
+    ClockSource m_spdif_clocksource;
+    ClockSource m_wordclock_clocksource;
 };
 
 } // namespace Terratec
