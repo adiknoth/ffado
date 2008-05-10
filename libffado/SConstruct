@@ -79,7 +79,7 @@ Build the tests in their directory. As some contain quite some functionality,
   If you just want to use ffado with jack without the tools, you can disable this.\
 """, True ),
     BoolOption( "BUILD_STATIC_TOOLS", "Build a statically linked version of the FFADO tools.", False ),
-    EnumOption('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'none' ), ignorecase=2),
+    EnumOption('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'powerpc', 'powerpc64', 'none' ), ignorecase=2),
     BoolOption( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
 
 	)
@@ -341,6 +341,8 @@ if env['DIST_TARGET'] == 'auto':
         env['DIST_TARGET'] = 'x86_64'
     elif re.search("i[0-5]86", config[config_cpu]) != None:
         env['DIST_TARGET'] = 'i386'
+    elif re.search("powerpc64", config[config_cpu]) != None:
+        env['DIST_TARGET'] = 'powerpc64'
     elif re.search("powerpc", config[config_cpu]) != None:
         env['DIST_TARGET'] = 'powerpc'
     else:
@@ -376,7 +378,7 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
             elif config[config_cpu] == "i686":
                 opt_flags.append ("-march=i686")
 
-        elif env['DIST_TARGET'] == 'powerpc':
+        elif (env['DIST_TARGET'] == 'powerpc') or (env['DIST_TARGET'] == 'powerpc64'):
 
             cpu_line = os.popen ("cat /proc/cpuinfo | grep '^cpu'").read()[:-1]
 
@@ -385,7 +387,7 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
                 opt_flags.append ("-maltivec")
                 opt_flags.append ("-mabi=altivec")
 
-            ppc_type = ppc_type.split (",")[0]
+            ppc_type = ppc_type.split (", ")[0]
             if re.match ("74[0145][0578]A?", ppc_type) != None:
                 opt_flags.append ("-mcpu=7400")
                 opt_flags.append ("-mtune=7400")
@@ -413,6 +415,16 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
        #and build_host_supports_sse2 and env['ENABLE_OPTIMIZATIONS']:
         #opt_flags.extend (["-msse3"])
         #env['USE_SSE3'] = 1
+
+    # build for 64-bit userland? (TODO: add x86_64 here, too?)
+    if env['DIST_TARGET'] == "powerpc64":
+        print "Doing a 64-bit build"
+	env.AppendUnique( CCFLAGS=["-m64"] )
+	env.AppendUnique( CFLAGS=["-m64"] )
+    else:
+        print "Doing a 32-bit build"
+	env.AppendUnique( CCFLAGS=["-m32"] )
+	env.AppendUnique( CFLAGS=["-m32"] )
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
