@@ -108,7 +108,6 @@ Element::setVerboseLevel(int l)
 {
     setDebugLevel(l);
     if(m_element_lock) m_element_lock->setVerboseLevel(l);
-    if(m_element_lock) m_element_lock->setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 

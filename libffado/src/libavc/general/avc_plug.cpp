@@ -647,7 +647,6 @@ Plug::setConnection( Plug& plug )
     setDestPlugAddrToSignalCmd( signalSourceCmd, plug );
     signalSourceCmd.setCommandType( AVCCommand::eCT_Control );
     signalSourceCmd.setVerbose( getDebugLevel() );
-    signalSourceCmd.setVerbose( DEBUG_LEVEL_VERY_VERBOSE );
 
     if ( !signalSourceCmd.fire() ) {
         debugError( "Could not set connection between '%s' and '%s'\n",
