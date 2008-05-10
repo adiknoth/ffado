@@ -272,7 +272,7 @@ DebugModuleManager::~DebugModuleManager()
 #if DEBUG_USE_MESSAGE_BUFFER
     pthread_mutex_lock(&mb_write_lock);
     mb_initialized = 0;
-    pthread_cond_signal(&mb_ready_cond);
+    sem_post(&mb_writes);
     pthread_mutex_unlock(&mb_write_lock);
 
     pthread_join(mb_writer_thread, NULL);
@@ -303,7 +303,7 @@ DebugModuleManager::~DebugModuleManager()
         fprintf(stderr, "no message buffer overruns\n");
 
     pthread_mutex_destroy(&mb_write_lock);
-    pthread_cond_destroy(&mb_ready_cond);
+    sem_destroy(&mb_writes);
 #endif
 
 #if DEBUG_BACKTRACE_SUPPORT
@@ -325,13 +325,22 @@ DebugModuleManager::init()
         // if ( m_level >= eDL_VeryVerbose )
         //         cout << "DebugModuleManager init..." << endl;
 
+#if DEBUG_BACKTRACE_SUPPORT
+    pthread_mutex_init(&m_backtrace_lock, NULL);
+#endif
+
+#if DEBUG_BACKLOG_SUPPORT
+    pthread_mutex_init(&bl_mb_write_lock, NULL);
+#endif
+
 #if DEBUG_USE_MESSAGE_BUFFER
     pthread_mutex_init(&mb_flush_lock, NULL);
     pthread_mutex_init(&mb_write_lock, NULL);
-    pthread_cond_init(&mb_ready_cond, NULL);
+    sem_init(&mb_writes, 0, 0);
 
     mb_overruns = 0;
-    
+
+    int res;
     #if DEBUG_MESSAGE_BUFFER_REALTIME
     /* Get the client thread to run as an RT-FIFO
         scheduled thread of appropriate priority.
@@ -339,7 +348,6 @@ DebugModuleManager::init()
     pthread_attr_t attributes;
     struct sched_param rt_param;
     pthread_attr_init(&attributes);
-    int res;
     if ((res = pthread_attr_setinheritsched(&attributes, PTHREAD_EXPLICIT_SCHED))) {
         fprintf(stderr, "Cannot request explicit scheduling for RT thread  %d %s\n", res, strerror(res));
         return -1;
@@ -368,27 +376,18 @@ DebugModuleManager::init()
         return -1;
     }
 
+    mb_initialized = 1; // set to 1 otherwise the thread might exit (race condition)
     if ((res = pthread_create(&mb_writer_thread, &attributes, mb_thread_func, (void *)this))) {
-        fprintf(stderr, "Cannot set create thread %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot create thread %d %s\n", res, strerror(res));
         mb_initialized = 0;
-    } else {
-        mb_initialized = 1;
     }
     #else
-    if (pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this) != 0) {
-         mb_initialized = 0;
-    } else {
-        mb_initialized = 1;
+    mb_initialized = 1; // set to 1 otherwise the thread might exit (race condition)
+    if ((res = pthread_create(&mb_writer_thread, NULL, &mb_thread_func, (void *)this))) {
+        fprintf(stderr, "Cannot create thread %d %s\n", res, strerror(res));
+        mb_initialized = 0;
     }
     #endif
-#endif
-
-#if DEBUG_BACKTRACE_SUPPORT
-    pthread_mutex_init(&m_backtrace_lock, NULL);
-#endif
-
-#if DEBUG_BACKLOG_SUPPORT
-    pthread_mutex_init(&bl_mb_write_lock, NULL);
 #endif
 
     return true;
@@ -498,6 +497,7 @@ DebugModuleManager::mb_flush()
         fputs(mb_buffers[mb_outbuffer], stderr);
         mb_outbuffer = MB_NEXT(mb_outbuffer);
     }
+    fflush(stderr);
     pthread_mutex_unlock(&m->mb_flush_lock);
 }
 
@@ -507,20 +507,10 @@ DebugModuleManager::mb_thread_func(void *arg)
 
     DebugModuleManager *m=static_cast<DebugModuleManager *>(arg);
 
-    /* The mutex is only to eliminate collisions between multiple
-     * writer threads and protect the condition variable. */
-     pthread_mutex_lock(&m->mb_write_lock);
-
     while (m->mb_initialized) {
-         pthread_cond_wait(&m->mb_ready_cond, &m->mb_write_lock);
-
-         /* releasing the mutex reduces contention */
-         pthread_mutex_unlock(&m->mb_write_lock);
-         m->mb_flush();
-         pthread_mutex_lock(&m->mb_write_lock);
+        sem_wait(&m->mb_writes);
+        m->mb_flush();
     }
-
-     pthread_mutex_unlock(&m->mb_write_lock);
 
     return NULL;
 }
@@ -621,7 +611,7 @@ DebugModuleManager::print(const char *msg)
         if (pthread_mutex_trylock(&mb_write_lock) == 0) {
             strncpy(mb_buffers[mb_inbuffer], msg, MB_BUFFERSIZE);
             mb_inbuffer = MB_NEXT(mb_inbuffer);
-            pthread_cond_signal(&mb_ready_cond);
+            sem_post(&mb_writes);
             pthread_mutex_unlock(&mb_write_lock);
             break;
         } else {

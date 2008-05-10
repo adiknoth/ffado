@@ -32,6 +32,7 @@
 
 #include <vector>
 #include <iostream>
+#include <semaphore.h>
 
 typedef short debug_level_t;
 
@@ -364,7 +365,7 @@ private:
     pthread_t mb_writer_thread;
     pthread_mutex_t mb_write_lock;
     pthread_mutex_t mb_flush_lock;
-    pthread_cond_t mb_ready_cond;
+    sem_t        mb_writes;
 #endif
 
 #if DEBUG_BACKTRACE_SUPPORT
