@@ -28,7 +28,7 @@ namespace Control {
 
 //// --- Nickname --- ////
 Nickname::Nickname(FFADODevice &d)
-: Text()
+: Text(&d)
 , m_Device( d )
 {
     setName("Nickname");

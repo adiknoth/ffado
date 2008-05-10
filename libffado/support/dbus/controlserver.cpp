@@ -29,7 +29,7 @@
 
 namespace DBusControl {
 
-IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_NORMAL );
 
 // --- Element
 Element::Element( DBus::Connection& connection, std::string p, Control::Element &slave)
@@ -38,6 +38,7 @@ Element::Element( DBus::Connection& connection, std::string p, Control::Element 
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Element on '%s'\n",
                  path().c_str() );
+    setVerboseLevel(m_Slave.getVerboseLevel());
 }
 
 DBus::UInt64
@@ -73,8 +74,9 @@ Container::Container( DBus::Connection& connection, std::string p, Control::Cont
                  path().c_str() );
 
     // add children for the slave container
-    for ( Control::ConstElementVectorIterator it = slave.getElements().begin();
-      it != slave.getElements().end();
+    const Control::ElementVector elements = slave.getElementVector();
+    for ( Control::ConstElementVectorIterator it = elements.begin();
+      it != elements.end();
       ++it )
     {
         Element *e=createHandler(*(*it));
@@ -85,6 +87,7 @@ Container::Container( DBus::Connection& connection, std::string p, Control::Cont
                 (*it)->getName().c_str());
         }
     }
+    slave.releaseElementVector();
 }
 
 Container::~Container() {
@@ -105,7 +108,12 @@ DBus::String
 Container::getElementName( const DBus::Int32& i ) {
     int nbElements=m_Slave.countElements();
     if (i<nbElements) {
-        return m_Slave.getElements().at(i)->getName();
+        const Control::ElementVector elements = m_Slave.getElementVector();
+        Control::Element *e = elements.at(i);
+        std::string name;
+        if(e) name = e->getName();
+        m_Slave.releaseElementVector();
+        return name;
     } else return "";
 }
 

@@ -819,7 +819,6 @@ bool Unit::setActiveSync(const SyncInfo& syncInfo)
     return syncInfo.m_source->setConnection( *syncInfo.m_destination );
 }
 
-
 void
 Unit::show()
 {

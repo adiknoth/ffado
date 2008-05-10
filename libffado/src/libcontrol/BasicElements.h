@@ -40,21 +40,17 @@ class Continuous
 : public Element
 {
 public:
-    Continuous();
-    Continuous(std::string n);
+    Continuous(Element *p) : Element(p) {};
+    Continuous(Element *p, std::string n) : Element(p, n) {};
     virtual ~Continuous() {};
-    
-    virtual bool setValue(double v);
-    virtual double getValue();
-    virtual double getMinimum();
-    virtual double getMaximum();
-    virtual bool setValue(int idx, double v);
-    virtual double getValue(int idx);
 
-    virtual void show();
+    virtual bool setValue(double v) = 0;
+    virtual double getValue() = 0;
+    virtual bool setValue(int idx, double v) = 0;
+    virtual double getValue(int idx) = 0;
 
-private:
-    double m_Value;
+    virtual double getMinimum() = 0;
+    virtual double getMaximum() = 0;
 };
 
 /*!
@@ -64,19 +60,18 @@ class Discrete
 : public Element
 {
 public:
-    Discrete();
-    Discrete(std::string n);
+    Discrete(Element *p) : Element(p) {};
+    Discrete(Element *p, std::string n) : Element(p, n) {};
     virtual ~Discrete() {};
-    
-    virtual bool setValue(int v);
-    virtual int getValue();
-    virtual bool setValue(int idx, int v);
-    virtual int getValue(int idx);
 
-    virtual void show();
+    virtual bool setValue(int v) = 0;
+    virtual int getValue() = 0;
+    virtual bool setValue(int idx, int v) = 0;
+    virtual int getValue(int idx) = 0;
 
-private:
-    int m_Value;
+    virtual int getMinimum() = 0;
+    virtual int getMaximum() = 0;
+
 };
 
 /*!
@@ -86,17 +81,12 @@ class Text
 : public Element
 {
 public:
-    Text();
-    Text(std::string n);
+    Text(Element *p) : Element(p) {};
+    Text(Element *p, std::string n) : Element(p, n) {};
     virtual ~Text() {};
 
-    virtual bool setValue(std::string v);
-    virtual std::string getValue();
-
-    virtual void show();
-
-private:
-    std::string m_Value;
+    virtual bool setValue(std::string v) = 0;
+    virtual std::string getValue() = 0;
 };
 
 /*!
@@ -106,13 +96,12 @@ class Register
 : public Element
 {
 public:
-    Register() : Element() {};
-    Register(std::string n) : Element(n) {};
+    Register(Element *p) : Element(p) {};
+    Register(Element *p, std::string n) : Element(p, n) {};
     virtual ~Register() {};
 
     virtual bool setValue(uint64_t addr, uint64_t value) = 0;
     virtual uint64_t getValue(uint64_t addr) = 0;
-private:
 };
 
 /*!
@@ -122,18 +111,14 @@ class Enum
 : public Element
 {
 public:
-    Enum();
-    Enum(std::string n);
+    Enum(Element *p) : Element(p) {};
+    Enum(Element *p, std::string n) : Element(p, n) {};
     virtual ~Enum() {};
 
-    virtual bool select(int idx);
-    virtual int selected();
-    virtual int count();
-    virtual std::string getEnumLabel(int idx);
-
-    virtual void show();
-//private: // HACK
-    int m_selected;
+    virtual bool select(int idx) = 0;
+    virtual int selected() = 0;
+    virtual int count() = 0;
+    virtual std::string getEnumLabel(int idx) = 0;
 };
 
 /*!
@@ -158,18 +143,15 @@ class AttributeEnum
 : public Enum
 {
 public:
-    AttributeEnum();
-    AttributeEnum(std::string n);
+    AttributeEnum(Element *p) : Enum(p) {};
+    AttributeEnum(Element *p, std::string n) : Enum(p, n) {};
     virtual ~AttributeEnum() {};
 
-    virtual int attributeCount();
+    virtual int attributeCount() = 0;
     ///> get a specific attribute value for the selected enum 
-    virtual std::string getAttributeValue(int attridx);
+    virtual std::string getAttributeValue(int attridx) = 0;
     ///> get the name of the attribute with a certain index
-    virtual std::string getAttributeName(int attridx);
-
-    virtual void show();
-private:
+    virtual std::string getAttributeName(int attridx) = 0;
 };
 
 }; // namespace Control

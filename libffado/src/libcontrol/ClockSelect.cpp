@@ -28,7 +28,7 @@ namespace Control {
 
 //// --- ClockSelect --- ////
 ClockSelect::ClockSelect(FFADODevice &d)
-: AttributeEnum()
+: AttributeEnum(&d)
 , m_Device( d )
 {
     setName("ClockSelect");

@@ -29,6 +29,8 @@
 #include <vector>
 #include <string>
 
+#include "libutil/Mutex.h"
+
 namespace Control {
 
 /*!
@@ -39,9 +41,9 @@ namespace Control {
 class Element
 {
 public:
-    Element();
-    Element(std::string n);
-    virtual ~Element() {};
+    Element(Element *);
+    Element(Element *, std::string n);
+    virtual ~Element();
 
     virtual std::string getName() {return m_Name;};
     virtual bool setName( std::string n )
@@ -57,15 +59,26 @@ public:
 
     uint64_t getId()
         {return m_id;};
-    
+
+    // these allow to prevent external access to the control elements
+    // e.g. when the config tree is rebuilt
+    virtual void lockControl();
+    virtual void unlockControl();
+
     virtual void show();
 
     /**
      * set verbosity level
      */
     virtual void setVerboseLevel(int l);
+    virtual int getVerboseLevel() {return getDebugLevel();};
+
+protected:
+    Util::Mutex&    getLock();
 
 private:
+    Util::Mutex*    m_element_lock;
+    Element*        m_parent;
     std::string m_Name;
     std::string m_Label;
     std::string m_Description;
@@ -93,8 +106,8 @@ typedef std::vector<Element *>::const_iterator ConstElementVectorIterator;
 class Container : public Element
 {
 public:
-    Container();
-    Container(std::string n);
+    Container(Element *);
+    Container(Element *, std::string n);
     virtual ~Container() {};
     
     virtual bool addElement(Element *e);
@@ -103,11 +116,20 @@ public:
         {return clearElements(false);};
     virtual bool clearElements(bool delete_pointers);
 
-    unsigned int countElements()
-        {return m_Children.size();};
+    unsigned int countElements();
 
-    const ElementVector & getElements()
-        {return m_Children;};
+
+    /**
+     * Returns and locks the element vector. No changes will be made to the vector
+     * until releaseElementVector is called.
+     * @return 
+     */
+    const ElementVector & getElementVector();
+
+    /**
+     * Releases the lock on the element vector.
+     */
+    void releaseElementVector();
 
     virtual void show();
     virtual void setVerboseLevel(int l);

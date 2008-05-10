@@ -23,6 +23,7 @@
  */
 
 #include "ffadodevice.h"
+#include "devicemanager.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -39,7 +40,7 @@
 IMPL_DEBUG_MODULE( FFADODevice, FFADODevice, DEBUG_LEVEL_NORMAL );
 
 FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) )
-    : Control::Container()
+    : Control::Container(&d)
     , m_pConfigRom( configRom )
     , m_pDeviceManager( d )
 {
@@ -52,7 +53,7 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
         debugWarning("failed to add ConfigRom to Control::Container\n");
     }
 
-    m_genericContainer = new Control::Container("Generic");
+    m_genericContainer = new Control::Container(this, "Generic");
     if(m_genericContainer == NULL) {
         debugError("Could not create Control::Container for generic controls\n");
     } else {

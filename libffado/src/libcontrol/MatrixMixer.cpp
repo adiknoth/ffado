@@ -24,16 +24,5 @@
 #include "MatrixMixer.h"
 
 namespace Control {
-
-//// --- MatrixMixer --- ////
-MatrixMixer::MatrixMixer()
-: Element()
-{
-}
-
-MatrixMixer::MatrixMixer(std::string n)
-: Element(n)
-{
-}
-
+// no implementation
 } // namespace Control

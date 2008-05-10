@@ -122,6 +122,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
     struct arguments* arguments = ( struct arguments* ) state->input;
     char* tail;
 
+    errno = 0;
     switch (key) {
     case 'q': case 's':
         arguments->silent = 1;
@@ -204,6 +205,9 @@ int exitfunction( int retval ) {
 void
 busresetHandler()
 {
+    // this is a race condition: the control tree becomes invalid since we
+    // are redetecting the devices, but the dispatcher still allows access.
+    // at this point. This has to be split up in two.
     debugOutput( DEBUG_LEVEL_NORMAL, "notified of bus reset...\n" );
     dispatcher.leave();
 

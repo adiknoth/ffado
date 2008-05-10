@@ -48,7 +48,14 @@ public:
     
     virtual bool setValue(int v);
     virtual int getValue();
-    
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 1;};
+
 private:
     FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
@@ -62,10 +69,17 @@ public:
     VolumeControl(FocusriteDevice& parent, int id);
     VolumeControl(FocusriteDevice& parent, int id,
                   std::string name, std::string label, std::string descr);
-    
+
     virtual bool setValue(int v);
     virtual int getValue();
-    
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0x07FFF;};
+
 private:
     FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
@@ -96,7 +110,13 @@ public:
     
     virtual bool setValue(int v);
     virtual int getValue();
-    
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0x0FF;};
 private:
     FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
