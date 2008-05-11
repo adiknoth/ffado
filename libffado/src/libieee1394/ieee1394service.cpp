@@ -152,6 +152,11 @@ Ieee1394Service::detectNbPorts()
     return nb_detected_ports;
 }
 
+void
+Ieee1394Service::doBusReset() {
+    raw1394_reset_bus(m_handle);
+}
+
 bool
 Ieee1394Service::initialize( int port )
 {
