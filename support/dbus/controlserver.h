@@ -32,6 +32,7 @@
 
 #include "libcontrol/BasicElements.h"
 #include "libieee1394/configrom.h"
+#include "libutil/Mutex.h"
 
 namespace Control {
     class MatrixMixer;
@@ -39,15 +40,44 @@ namespace Control {
 
 namespace DBusControl {
 
+class Element;
+class Container;
+
+template< typename CalleePtr, typename MemFunPtr >
+class MemberSignalFunctor
+    : public Control::SignalFunctor
+{
+public:
+    MemberSignalFunctor( const CalleePtr& pCallee,
+            MemFunPtr pMemFun,
+            int pSignalId)
+        : Control::SignalFunctor( pSignalId )
+        , m_pCallee( pCallee )
+        , m_pMemFun( pMemFun )
+        {}
+
+    virtual ~MemberSignalFunctor()
+        {}
+
+    virtual void operator() (int value)
+        {
+            ( ( *m_pCallee ).*m_pMemFun )(value);
+        }
+private:
+    CalleePtr  m_pCallee;
+    MemFunPtr  m_pMemFun;
+};
+
 class Element
 : public org::ffado::Control::Element::Element
 , public DBus::IntrospectableAdaptor
 , public DBus::ObjectAdaptor
 {
+friend class Container; // This should not be necessary since Container derives from Element
 public:
 
     Element( DBus::Connection& connection,
-             std::string p,
+             std::string p, Element *,
              Control::Element &slave );
 
     DBus::UInt64 getId( );
@@ -55,10 +85,17 @@ public:
     DBus::String getLabel( );
     DBus::String getDescription( );
 
-    void setVerboseLevel(int i) {setDebugLevel(i);};
-private:
-    Control::Element &m_Slave;
+    void setVerboseLevel(int i);
 
+protected:
+    void Lock();
+    void Unlock();
+    Util::Mutex* getLock();
+
+    Element *           m_Parent;
+    Control::Element &  m_Slave;
+private:
+    Util::Mutex*        m_UpdateLock;
 protected:
     DECLARE_DEBUG_MODULE;
 };
@@ -72,18 +109,24 @@ class Container
 {
 public:
     Container( DBus::Connection& connection,
-                  std::string p,
+                  std::string p, Element *,
                   Control::Container &slave );
     virtual ~Container();
-    
-    Element *createHandler(Control::Element& e);
 
     DBus::Int32 getNbElements( );
     DBus::String getElementName( const DBus::Int32& );
 
+    void updated(int new_nb_elements);
+    void setVerboseLevel(int i);
 private:
-    Control::Container &m_Slave;
-    ElementVector m_Children;
+    Element *createHandler(Element *, Control::Element& e);
+    void updateTree();
+    Element * findElementForControl(Control::Element *e);
+    void removeElement(Element *e);
+
+    Control::Container &        m_Slave;
+    ElementVector               m_Children;
+    Control::SignalFunctor *    m_updateFunctor;
 };
 
 class Continuous
@@ -92,7 +135,7 @@ class Continuous
 {
 public:
     Continuous( DBus::Connection& connection,
-                  std::string p,
+                  std::string p, Element *,
                   Control::Continuous &slave );
     
     DBus::Double setValue( const DBus::Double & value );
@@ -113,7 +156,7 @@ class Discrete
 {
 public:
     Discrete( DBus::Connection& connection,
-              std::string p,
+              std::string p, Element *,
               Control::Discrete &slave );
     
     DBus::Int32 setValue( const DBus::Int32 & value );
@@ -132,7 +175,7 @@ class Text
 {
 public:
     Text( DBus::Connection& connection,
-          std::string p,
+          std::string p, Element *,
           Control::Text &slave );
 
     DBus::String setValue( const DBus::String & value );
@@ -148,7 +191,7 @@ class Register
 {
 public:
     Register( DBus::Connection& connection,
-              std::string p,
+              std::string p, Element *,
               Control::Register &slave );
     
     DBus::UInt64 setValue( const DBus::UInt64 & addr, const DBus::UInt64 & value );
@@ -164,7 +207,7 @@ class Enum
 {
 public:
     Enum( DBus::Connection& connection,
-          std::string p,
+          std::string p, Element *,
           Control::Enum &slave );
     
     DBus::Int32 select( const DBus::Int32 & idx );
@@ -182,7 +225,7 @@ class AttributeEnum
 {
 public:
     AttributeEnum( DBus::Connection& connection,
-                   std::string p,
+                   std::string p, Element *,
                    Control::AttributeEnum &slave );
     
     DBus::Int32 select( const DBus::Int32 & idx );
@@ -205,7 +248,7 @@ class ConfigRomX
 {
 public:
     ConfigRomX( DBus::Connection& connection,
-                  std::string p,
+                  std::string p, Element *,
                   ConfigRom &slave );
 
     DBus::String getGUID( );
@@ -225,7 +268,7 @@ class MatrixMixer
 {
 public:
     MatrixMixer(  DBus::Connection& connection,
-                  std::string p,
+                  std::string p, Element *,
                   Control::MatrixMixer &slave );
 
     DBus::String getRowName( const DBus::Int32& );

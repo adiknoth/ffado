@@ -160,7 +160,7 @@ void start_server() {
     // we do dynamic allocation such that we are sure
     // the container is deleted before the children become invalid
     DBusControl::Container *container
-        = new DBusControl::Container(conn, "/org/ffado/Control/Test/Container", cont);
+        = new DBusControl::Container(conn, "/org/ffado/Control/Test/Container", NULL, cont);
 
     dispatcher.enter();
 

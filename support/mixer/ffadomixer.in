@@ -32,6 +32,7 @@ from ffadomixer_config import FFADO_VERSION
 import os
 import time
 import dbus
+
 from qt import *
 
 from ffado_registration import *
@@ -169,11 +170,22 @@ class DeviceManagerInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object(self.servername, self.basepath)
         self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Container')
+        # signal reception does not work yet since we need a mainloop for that
+        # and qt3 doesn't provide one for python/dbus
+        #try:
+            #self.dev.connect_to_signal("Updated", self.updateSignal, \
+                                       #dbus_interface="org.ffado.Control.Element.Container", arg0=self)
+        #except dbus.DBusException:
+            #traceback.print_exc()
+
+    #def updateSignal(self):
+        #print ("Received update signal")
 
     def getNbDevices(self):
         return self.iface.getNbElements()
     def getDeviceName(self, idx):
-        return self.iface.getElementName(idx)  
+        return self.iface.getElementName(idx)
+
 
 class ConfigRomInterface:
     def __init__(self, servername, devicepath):

@@ -26,19 +26,65 @@
 #include "libcontrol/BasicElements.h"
 #include "libcontrol/MatrixMixer.h"
 #include "libutil/Time.h"
+#include "libutil/PosixMutex.h"
 
 namespace DBusControl {
 
 IMPL_DEBUG_MODULE( Element, Element, DEBUG_LEVEL_NORMAL );
 
 // --- Element
-Element::Element( DBus::Connection& connection, std::string p, Control::Element &slave)
+Element::Element( DBus::Connection& connection, std::string p, Element* parent, Control::Element &slave)
 : DBus::ObjectAdaptor(connection, p)
+, m_Parent(parent)
 , m_Slave(slave)
+, m_UpdateLock( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Element on '%s'\n",
                  path().c_str() );
+    // allocate a lock
+    if(parent == NULL) {
+        m_UpdateLock = new Util::PosixMutex();
+    } else {
+        m_UpdateLock = NULL;
+    }
+    // set verbose level AFTER allocating the lock
     setVerboseLevel(m_Slave.getVerboseLevel());
+}
+
+void Element::setVerboseLevel(int i)
+{
+    setDebugLevel(i);
+    if(m_UpdateLock) m_UpdateLock->setVerboseLevel(i);
+}
+
+void
+Element::Lock()
+{
+    if(m_Parent) {
+        m_Parent->Lock();
+    } else {
+        m_UpdateLock->Lock();
+    }
+}
+
+void
+Element::Unlock()
+{
+    if(m_Parent) {
+        m_Parent->Unlock();
+    } else {
+        m_UpdateLock->Unlock();
+    }
+}
+
+Util::Mutex*
+Element::getLock()
+{
+    if(m_Parent) {
+        return m_Parent->getLock();
+    } else {
+        return m_UpdateLock;
+    }
 }
 
 DBus::UInt64
@@ -66,36 +112,58 @@ Element::getDescription( )
 }
 
 // --- Container
-Container::Container( DBus::Connection& connection, std::string p, Control::Container &slave)
-: Element(connection, p, slave)
+Container::Container( DBus::Connection& connection, std::string p, Element* parent, Control::Container &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Container on '%s'\n",
                  path().c_str() );
 
-    // add children for the slave container
-    const Control::ElementVector elements = slave.getElementVector();
-    for ( Control::ConstElementVectorIterator it = elements.begin();
-      it != elements.end();
-      ++it )
-    {
-        Element *e=createHandler(*(*it));
-        if (e) {
-            m_Children.push_back(e);
-        } else {
-            debugWarning("Failed to create handler for Control::Element %s\n",
-                (*it)->getName().c_str());
+    setDebugLevel(slave.getVerboseLevel());
+
+    // register an update signal handler
+    m_updateFunctor = new MemberSignalFunctor< Container*,
+                      void (Container::*)(int) >
+                      ( this, &Container::updated, (int)Control::Container::eS_Updated );
+    if(m_updateFunctor) {
+        if(!slave.addSignalHandler(m_updateFunctor)) {
+            debugWarning("Could not add update signal functor\n");
         }
+    } else {
+        debugWarning("Could not create update signal functor\n");
     }
-    slave.releaseElementVector();
+
+    // build the initial tree
+    m_Slave = slave;
+    updateTree();
 }
 
 Container::~Container() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Deleting Container on '%s'\n",
+                 path().c_str() );
+    if(m_updateFunctor) {
+        if(!m_Slave.remSignalHandler(m_updateFunctor)) {
+            debugWarning("Could not remove update signal functor\n");
+        }
+    }
+    delete m_updateFunctor;
+
     for ( ElementVectorIterator it = m_Children.begin();
       it != m_Children.end();
       ++it )
     {
         delete (*it);
+    }
+}
+
+void
+Container::setVerboseLevel(int i)
+{
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        (*it)->setVerboseLevel(i);
     }
 }
 
@@ -116,13 +184,137 @@ Container::getElementName( const DBus::Int32& i ) {
         return name;
     } else return "";
 }
+//     Util::MutexLockHelper lock(*m_access_lock);
 
+// NOTE: call with access lock held!
+void
+Container::updateTree()
+{
+    bool something_changed = false;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Updating tree...\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Add handlers for elements...\n");
+    // add handlers for the slaves that don't have one yet
+    const Control::ElementVector elements = m_Slave.getElementVector();
+    for ( Control::ConstElementVectorIterator it = elements.begin();
+      it != elements.end();
+      ++it )
+    {
+        Element *e = findElementForControl((*it));
+        if(e == NULL) { // element not in tree
+            e = createHandler(this, *(*it));
+            if (e) {
+                e->setVerboseLevel(getDebugLevel());
+                m_Children.push_back(e);
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Created handler %p for Control::Element %s...\n",
+                            e, (*it)->getName().c_str());
+                something_changed = true;
+            } else {
+                debugWarning("Failed to create handler for Control::Element %s\n",
+                    (*it)->getName().c_str());
+            }
+        } else {
+            // element already present
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Already have handler (%p) for Control::Element %s...\n",
+                         e, (*it)->getName().c_str());
+        }
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Remove handlers without element...\n");
+    std::vector<Element *> to_remove;
+    // remove handlers that don't have a slave anymore
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        Element *e = *it;
+        bool found = false;
+        for ( Control::ConstElementVectorIterator it2 = elements.begin();
+              it2 != elements.end();
+              ++it2 )
+        {
+            if(&(e)->m_Slave == *it2) {
+                found = true;
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Slave for handler %p at %s is present: Control::Element %s...\n",
+                            e, e->path().c_str(), (*it)->getName().c_str());
+                break;
+            }
+        }
+
+        if (!found) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, 
+                        "going to remove handler %p on path %s since slave is gone\n",
+                        e, e->path().c_str());
+            // can't remove while iterating
+            to_remove.push_back(e);
+            something_changed = true;
+        }
+    }
+    // do the actual remove
+    while(to_remove.size()) {
+        Element * e = *(to_remove.begin());
+        removeElement(e);
+        to_remove.erase(to_remove.begin());
+    }
+    m_Slave.releaseElementVector();
+
+    if(something_changed) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, 
+                    "send dbus signal for path %s since something changed\n",
+                    path().c_str());
+        // send a dbus signal
+        Updated();
+    }
+}
+
+void
+Container::removeElement(Element *e)
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, 
+                "removing handler %p on path %s\n",
+                path().c_str(), e);
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        if(*it == e) {
+            m_Children.erase(it);
+            delete e;
+            return;
+        }
+    }
+    debugError("BUG: Element %p not found!\n", e);
+}
+
+// NOTE: call with access lock held!
+Element *
+Container::findElementForControl(Control::Element *e)
+{
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        if(&(*it)->m_Slave == e) return (*it);
+    }
+    return NULL;
+}
+
+void
+Container::updated(int new_nb_elements)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Got updated signal, new count='%d'\n",
+                 new_nb_elements );
+    // we lock the tree first
+    Lock();
+    // update our tree
+    updateTree();
+    Unlock();
+}
 
 /**
  * \brief create a correct DBusControl counterpart for a given Control::Element
  */
 Element *
-Container::createHandler(Control::Element& e) {
+Container::createHandler(Element *parent, Control::Element& e) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Creating handler for '%s'\n",
                  e.getName().c_str() );
                  
@@ -130,35 +322,35 @@ Container::createHandler(Control::Element& e) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Container\n");
         
         return new Container(conn(), std::string(path()+"/"+e.getName()), 
-            *dynamic_cast<Control::Container *>(&e));
+            parent, *dynamic_cast<Control::Container *>(&e));
     }
     
     if (dynamic_cast<Control::Continuous *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Continuous\n");
         
         return new Continuous(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::Continuous *>(&e));
+            parent, *dynamic_cast<Control::Continuous *>(&e));
     }
     
     if (dynamic_cast<Control::Discrete *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Discrete\n");
         
         return new Discrete(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::Discrete *>(&e));
+            parent, *dynamic_cast<Control::Discrete *>(&e));
     }
     
     if (dynamic_cast<Control::Text *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Text\n");
         
         return new Text(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::Text *>(&e));
+            parent, *dynamic_cast<Control::Text *>(&e));
     }
 
     if (dynamic_cast<Control::Register *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Register\n");
         
         return new Register(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::Register *>(&e));
+            parent, *dynamic_cast<Control::Register *>(&e));
     }
 
     // note that we have to check this before checking the Enum,
@@ -167,38 +359,38 @@ Container::createHandler(Control::Element& e) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::AttributeEnum\n");
         
         return new AttributeEnum(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::AttributeEnum *>(&e));
+            parent, *dynamic_cast<Control::AttributeEnum *>(&e));
     }
     
     if (dynamic_cast<Control::Enum *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Enum\n");
         
         return new Enum(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::Enum *>(&e));
+            parent, *dynamic_cast<Control::Enum *>(&e));
     }
     
     if (dynamic_cast<ConfigRom *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
         
         return new ConfigRomX(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<ConfigRom *>(&e));
+            parent, *dynamic_cast<ConfigRom *>(&e));
     }
     
     if (dynamic_cast<Control::MatrixMixer *>(&e) != NULL) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::MatrixMixer\n");
         
         return new MatrixMixer(conn(), std::string(path()+"/"+e.getName()),
-            *dynamic_cast<Control::MatrixMixer *>(&e));
+            parent, *dynamic_cast<Control::MatrixMixer *>(&e));
     }
     
     debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
-    return new Element(conn(), std::string(path()+"/"+e.getName()), e);
+    return new Element(conn(), std::string(path()+"/"+e.getName()), parent, e);
 }
 
 // --- Continuous
 
-Continuous::Continuous( DBus::Connection& connection, std::string p, Control::Continuous &slave)
-: Element(connection, p, slave)
+Continuous::Continuous( DBus::Connection& connection, std::string p, Element* parent, Control::Continuous &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Continuous on '%s'\n",
@@ -263,8 +455,8 @@ Continuous::getMaximum()
 
 // --- Discrete
 
-Discrete::Discrete( DBus::Connection& connection, std::string p, Control::Discrete &slave)
-: Element(connection, p, slave)
+Discrete::Discrete( DBus::Connection& connection, std::string p, Element* parent, Control::Discrete &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Discrete on '%s'\n",
@@ -313,8 +505,8 @@ Discrete::getValueIdx( const DBus::Int32& idx )
 
 // --- Text
 
-Text::Text( DBus::Connection& connection, std::string p, Control::Text &slave)
-: Element(connection, p, slave)
+Text::Text( DBus::Connection& connection, std::string p, Element* parent, Control::Text &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Text on '%s'\n",
@@ -343,8 +535,8 @@ Text::getValue()
 
 // --- Register
 
-Register::Register( DBus::Connection& connection, std::string p, Control::Register &slave)
-: Element(connection, p, slave)
+Register::Register( DBus::Connection& connection, std::string p, Element* parent, Control::Register &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Register on '%s'\n",
@@ -373,8 +565,8 @@ Register::getValue( const DBus::UInt64& addr )
 
 // --- Enum
 
-Enum::Enum( DBus::Connection& connection, std::string p, Control::Enum &slave)
-: Element(connection, p, slave)
+Enum::Enum( DBus::Connection& connection, std::string p, Element* parent, Control::Enum &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Enum on '%s'\n",
@@ -413,8 +605,8 @@ Enum::getEnumLabel( const DBus::Int32 & idx )
 }
 
 // --- AttributeEnum
-AttributeEnum::AttributeEnum( DBus::Connection& connection, std::string p, Control::AttributeEnum &slave)
-: Element(connection, p, slave)
+AttributeEnum::AttributeEnum( DBus::Connection& connection, std::string p, Element* parent, Control::AttributeEnum &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Enum on '%s'\n",
@@ -478,8 +670,8 @@ AttributeEnum::getAttributeName( const DBus::Int32 & idx )
 
 // --- ConfigRom
 
-ConfigRomX::ConfigRomX( DBus::Connection& connection, std::string p, ConfigRom &slave)
-: Element(connection, p, slave)
+ConfigRomX::ConfigRomX( DBus::Connection& connection, std::string p, Element* parent, ConfigRom &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created ConfigRomX on '%s'\n",
@@ -524,8 +716,8 @@ ConfigRomX::getUnitVersion( )
 
 // --- MatrixMixer
 
-MatrixMixer::MatrixMixer( DBus::Connection& connection, std::string p, Control::MatrixMixer &slave)
-: Element(connection, p, slave)
+MatrixMixer::MatrixMixer( DBus::Connection& connection, std::string p, Element* parent, Control::MatrixMixer &slave)
+: Element(connection, p, parent, slave)
 , m_Slave(slave)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created MatrixMixer on '%s'\n",

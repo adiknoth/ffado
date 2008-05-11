@@ -30,8 +30,29 @@
 #include <string>
 
 #include "libutil/Mutex.h"
+#include "libutil/Functors.h"
 
 namespace Control {
+
+class Element;
+
+/*!
+@brief Base class for control signal functors
+
+ This class should be subclassed to implement ffado control signal handlers.
+*/
+class SignalFunctor
+{
+    friend class Element;
+public:
+    SignalFunctor(int signal_id) 
+    : m_id(signal_id) {};
+    virtual ~SignalFunctor() {}
+
+    virtual void operator() (int arg) = 0;
+protected:
+    int m_id;
+};
 
 /*!
 @brief Base class for control elements
@@ -65,6 +86,12 @@ public:
     virtual void lockControl();
     virtual void unlockControl();
 
+    /**
+     * Update signal handler
+     */
+    bool addSignalHandler( SignalFunctor* functor );
+    bool remSignalHandler( SignalFunctor* functor );
+
     virtual void show();
 
     /**
@@ -74,6 +101,7 @@ public:
     virtual int getVerboseLevel() {return getDebugLevel();};
 
 protected:
+    bool            emitSignal(int id, int value);
     Util::Mutex&    getLock();
 
 private:
@@ -82,8 +110,9 @@ private:
     std::string m_Name;
     std::string m_Label;
     std::string m_Description;
-    
+
     uint64_t m_id;
+    std::vector< SignalFunctor* > m_signalHandlers;
 
 protected:
     DECLARE_DEBUG_MODULE;
@@ -133,6 +162,10 @@ public:
 
     virtual void show();
     virtual void setVerboseLevel(int l);
+
+    enum eSignals {
+        eS_Updated,
+    };
 
 protected:
     ElementVector m_Children;
