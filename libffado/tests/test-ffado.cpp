@@ -283,9 +283,7 @@ main( int argc, char **argv )
         delete m_deviceManager;
         return exitfunction(0);
     } else if ( strcmp( arguments.args[0], "BusReset" ) == 0 ) {
-        unsigned int nb_ports = Ieee1394Service::detectNbPorts();
-        
-
+        busreset(arguments.port);
     } else if ( strcmp( arguments.args[0], "ListDevices" ) == 0 ) {
         unsigned int nb_ports = Ieee1394Service::detectNbPorts();
         for (unsigned int i=0;i<nb_ports;i++) {
