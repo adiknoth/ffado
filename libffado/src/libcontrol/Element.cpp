@@ -111,6 +111,46 @@ Element::setVerboseLevel(int l)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
+bool
+Element::addSignalHandler( SignalFunctor* functor )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Adding signal handler (%p)\n", functor);
+    m_signalHandlers.push_back( functor );
+    return true;
+}
+
+bool
+Element::remSignalHandler( SignalFunctor* functor )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Removing signal handler (%p)\n", functor);
+
+    for ( std::vector< SignalFunctor* >::iterator it = m_signalHandlers.begin();
+          it != m_signalHandlers.end();
+          ++it )
+    {
+        if ( *it == functor ) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " found\n");
+            m_signalHandlers.erase( it );
+            return true;
+        }
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " not found\n");
+    return false;
+}
+
+bool
+Element::emitSignal(int id, int value)
+{
+    for ( std::vector< SignalFunctor* >::iterator it = m_signalHandlers.begin();
+          it != m_signalHandlers.end();
+          ++it )
+    {
+        SignalFunctor *f = *it;
+        if(f && f->m_id == id) (*f)(value);
+    }
+    return true;
+}
+
 //// --- Container --- ////
 Container::Container(Element *p)
 : Element(p)
@@ -169,6 +209,9 @@ Container::addElement(Element *e)
     }
 
     m_Children.push_back(e);
+    // unlock before emitting the signal
+    lock.earlyUnlock();
+    emitSignal(eS_Updated, m_Children.size());
     return true;
 }
 
@@ -186,6 +229,9 @@ Container::deleteElement(Element *e)
     {
         if(*it == e) {
             m_Children.erase(it);
+            // unlock before emitting the signal
+            lock.earlyUnlock();
+            emitSignal(eS_Updated, m_Children.size());
             return true;
         }
     }
@@ -203,6 +249,10 @@ Container::clearElements(bool delete_pointers)
         deleteElement(e);
         if (delete_pointers) delete e;
     }
+
+    // unlock before emitting the signal
+    lock.earlyUnlock();
+    emitSignal(eS_Updated, m_Children.size());
     return true;
 }
 

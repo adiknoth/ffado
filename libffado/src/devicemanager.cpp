@@ -36,6 +36,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "libutil/PosixMutex.h"
+
 #ifdef ENABLE_BEBOB
 #include "bebob/bebob_avdevice.h"
 #include "maudio/maudio_avdevice.h"
@@ -81,6 +83,8 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
     : Control::Container(NULL, "devicemanager") // this is the control root node
+    , m_avDevicesLock( new Util::PosixMutex() )
+    , m_BusResetLock( new Util::PosixMutex() )
     , m_processorManager( new Streaming::StreamProcessorManager() )
     , m_deviceStringParser( new DeviceStringParser() )
     , m_used_cache_last_time( false )
@@ -94,6 +98,7 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
+    m_avDevicesLock->Lock(); // make sure nobody is using this
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -103,8 +108,10 @@ DeviceManager::~DeviceManager()
         }
         delete *it;
     }
+    m_avDevicesLock->Unlock();
+    delete m_avDevicesLock;
 
-    // the SP's are automatically unregistered at the SPM
+    // the SP's are automatically unregistered from the SPM
     delete m_processorManager;
 
     for ( FunctorVectorIterator it = m_busreset_functors.begin();
@@ -113,6 +120,7 @@ DeviceManager::~DeviceManager()
     {
         delete *it;
     }
+    delete m_BusResetLock;
 
     for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
           it != m_1394Services.end();
@@ -213,6 +221,9 @@ DeviceManager::isSpecStringValid(std::string s) {
 void
 DeviceManager::busresetHandler()
 {
+    // serialize bus reset handling since it can be that a new one occurs while we're
+    // doing stuff.
+    Util::MutexLockHelper lock(*m_BusResetLock);
     debugOutput( DEBUG_LEVEL_VERBOSE, "Bus reset...\n" );
     if(m_ignore_busreset) {
         debugOutput( DEBUG_LEVEL_VERBOSE, " ignoring...\n" );
@@ -220,13 +231,16 @@ DeviceManager::busresetHandler()
     }
 
     // FIXME: what port was the bus reset on?
+    // FIXME: what if the devices are gone?
     // propagate the bus reset to all avDevices
+    m_avDevicesLock->Lock(); // make sure nobody is using this
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
         (*it)->handleBusReset();
     }
+    m_avDevicesLock->Unlock();
 
     // notify the streamprocessormanager of the busreset
     if(m_processorManager) {
@@ -242,25 +256,32 @@ DeviceManager::busresetHandler()
     }
 
     // notify any clients
-    for ( busreset_notif_vec_t::iterator it = m_busResetNotifiers.begin();
-          it != m_busResetNotifiers.end();
+    signalNotifiers(m_busResetNotifiers);
+
+    // display the new state
+    showDeviceInfo();
+}
+
+void
+DeviceManager::signalNotifiers(notif_vec_t& list)
+{
+    for ( notif_vec_t::iterator it = list.begin();
+          it != list.end();
           ++it )
     {
         Util::Functor* func = *it;
         debugOutput( DEBUG_LEVEL_VERBOSE, " running notifier %p...\n", func );
         ( *func )();
     }
-    // display the new state
-    showDeviceInfo();
 }
 
 bool
-DeviceManager::registerBusresetNotification(Util::Functor *handler)
+DeviceManager::registerNotification(notif_vec_t& list, Util::Functor *handler)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "register %p...\n", handler);
     assert(handler);
-    for ( busreset_notif_vec_t::iterator it = m_busResetNotifiers.begin();
-      it != m_busResetNotifiers.end();
+    for ( notif_vec_t::iterator it = list.begin();
+      it != list.end();
       ++it )
     {
         if ( *it == handler ) {
@@ -268,22 +289,22 @@ DeviceManager::registerBusresetNotification(Util::Functor *handler)
             return false;
         }
     }
-    m_busResetNotifiers.push_back(handler);
+    list.push_back(handler);
     return true;
 }
 
 bool
-DeviceManager::unregisterBusresetNotification(Util::Functor *handler)
+DeviceManager::unregisterNotification(notif_vec_t& list, Util::Functor *handler)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "unregister %p...\n", handler);
     assert(handler);
 
-    for ( busreset_notif_vec_t::iterator it = m_busResetNotifiers.begin();
-      it != m_busResetNotifiers.end();
+    for ( notif_vec_t::iterator it = list.begin();
+      it != list.end();
       ++it )
     {
         if ( *it == handler ) {
-            m_busResetNotifiers.erase(it);
+            list.erase(it);
             return true;
         }
     }
@@ -305,6 +326,8 @@ DeviceManager::discover( bool useCache, bool rediscover )
     }
 
     setVerboseLevel(getDebugLevel());
+
+    // FIXME: it could be that a 1394service has disappeared (cardbus)
 
     ConfigRomVector configRoms;
     // build a list of configroms on the bus.
@@ -341,7 +364,12 @@ DeviceManager::discover( bool useCache, bool rediscover )
         }
     }
 
+
+    // notify that we are going to manipulate the list
+    signalNotifiers(m_preUpdateNotifiers);
+    m_avDevicesLock->Lock(); // make sure nobody starts using the list
     if(rediscover) {
+
         FFADODeviceVector discovered_devices_on_bus;
         for ( FFADODeviceVectorIterator it = m_avDevices.begin();
             it != m_avDevices.end();
@@ -537,8 +565,10 @@ DeviceManager::discover( bool useCache, bool rediscover )
             }
         }
         showDeviceInfo();
-        return true;
+
     } else { // slave mode
+        // notify any clients
+        signalNotifiers(m_preUpdateNotifiers);
         Ieee1394Service *portService = m_1394Services.at(0);
         fb_nodeid_t nodeId = portService->getLocalNodeId();
         debugOutput( DEBUG_LEVEL_VERBOSE, "Starting in slave mode on node %d...\n", nodeId );
@@ -559,6 +589,20 @@ DeviceManager::discover( bool useCache, bool rediscover )
             return false;
         }
 
+        // remove any already present devices
+        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+            it != m_avDevices.end();
+            ++it )
+        {
+            if (!deleteElement(*it)) {
+                debugWarning("failed to remove AvDevice from Control::Container\n");
+            }
+            delete *it;
+        }
+
+        m_avDevices.clear();
+
+        // get the slave driver
         FFADODevice* avDevice = getSlaveDriver( configRom );
         if ( avDevice ) {
             debugOutput( DEBUG_LEVEL_NORMAL,
@@ -584,8 +628,12 @@ DeviceManager::discover( bool useCache, bool rediscover )
         }
 
         debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
-        return true;
     }
+
+    m_avDevicesLock->Unlock();
+    // notify any clients
+    signalNotifiers(m_postUpdateNotifiers);
+    return true;
 }
 
 bool

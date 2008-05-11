@@ -58,10 +58,20 @@ class MutexLockHelper
 public:
     MutexLockHelper(Mutex &m)
     : m_mutex( m )
+    , m_early_unlocked(false)
       {m.Lock();};
-    virtual ~MutexLockHelper() {m_mutex.Unlock();};
+    virtual ~MutexLockHelper()
+      {if(!m_early_unlocked) m_mutex.Unlock();};
+
+    /**
+     * Allows to unlock the mutex before the object is
+     * destroyed
+     */
+    void earlyUnlock()
+      {m_early_unlocked=true; m_mutex.Unlock();};
 private:
     Mutex &m_mutex;
+    bool   m_early_unlocked;
 };
 
 } // end of namespace

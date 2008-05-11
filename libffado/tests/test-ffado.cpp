@@ -185,7 +185,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 int exitfunction( int retval ) {
     debugOutput( DEBUG_LEVEL_NORMAL, "Debug output flushed...\n" );
     flushDebugOutput();
-    
+
     return retval;
 }
 

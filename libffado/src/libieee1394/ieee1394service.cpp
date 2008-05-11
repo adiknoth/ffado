@@ -154,6 +154,7 @@ Ieee1394Service::detectNbPorts()
 
 void
 Ieee1394Service::doBusReset() {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Issue bus reset on service %p (port %d).\n", this, getPort());
     raw1394_reset_bus(m_handle);
 }
 

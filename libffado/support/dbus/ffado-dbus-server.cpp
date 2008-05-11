@@ -203,25 +203,22 @@ int exitfunction( int retval ) {
 }
 
 void
-busresetHandler()
+preUpdateHandler()
 {
-    // this is a race condition: the control tree becomes invalid since we
-    // are redetecting the devices, but the dispatcher still allows access.
-    // at this point. This has to be split up in two.
-    debugOutput( DEBUG_LEVEL_NORMAL, "notified of bus reset...\n" );
+    debugOutput( DEBUG_LEVEL_NORMAL, "got pre-update notification...\n" );
+    // stop receiving dbus events since the control structure is going to
+    // be changed
     dispatcher.leave();
+}
 
-    // delete old container
-    delete container;
-    container = NULL;
+void
+postUpdateHandler()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "got post-update notification...\n" );
+    // the signal handlers registered by the elements should have taken
+    // care of updating the control tree
 
-    // build new one
-    if(m_deviceManager) {
-        container = new DBusControl::Container(*global_conn, "/org/ffado/Control/DeviceManager", *m_deviceManager);
-    } else {
-        debugError("no device manager, bailing out\n");
-        run=0;
-    }
+    // signal that we can start receiving dbus events again
     sem_post(&run_sem);
 }
 
@@ -271,15 +268,25 @@ main( int argc, char **argv )
             return exitfunction(-1);
         }
 
-        // add busreset handler
-        Util::Functor* tmp_busreset_functor = new Util::CallbackFunctor0< void (*)() >
-                    ( &busresetHandler, false );
-        if ( !tmp_busreset_functor ) {
-            debugFatal( "Could not create busreset handler\n" );
+        // add pre-update handler
+        Util::Functor* preupdate_functor = new Util::CallbackFunctor0< void (*)() >
+                    ( &preUpdateHandler, false );
+        if ( !preupdate_functor ) {
+            debugFatal( "Could not create pre-update handler\n" );
             return false;
         }
-        if(!m_deviceManager->registerBusresetNotification(tmp_busreset_functor)) {
-            debugError("could not register busreset notifier");
+        if(!m_deviceManager->registerPreUpdateNotification(preupdate_functor)) {
+            debugError("could not register pre-update notifier");
+        }
+        // add post-update handler
+        Util::Functor* postupdate_functor = new Util::CallbackFunctor0< void (*)() >
+                    ( &postUpdateHandler, false );
+        if ( !postupdate_functor ) {
+            debugFatal( "Could not create post-update handler\n" );
+            return false;
+        }
+        if(!m_deviceManager->registerPostUpdateNotification(postupdate_functor)) {
+            debugError("could not register post-update notifier");
         }
 
         signal (SIGINT, sighandler);
@@ -292,7 +299,8 @@ main( int argc, char **argv )
         global_conn = &conn;
         conn.request_name("org.ffado.Control");
 
-        container = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", *m_deviceManager);
+        container = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", 
+                                               NULL, *m_deviceManager);
         
         printMessage("DBUS test service running\n");
         printMessage("press ctrl-c to stop it & exit\n");
@@ -300,13 +308,19 @@ main( int argc, char **argv )
         while(run) {
             debugOutput( DEBUG_LEVEL_NORMAL, "dispatching...\n");
             dispatcher.enter();
+            debugOutput( DEBUG_LEVEL_NORMAL, " dispatcher exited...\n");
             sem_wait(&run_sem);
+            debugOutput( DEBUG_LEVEL_NORMAL, " activity handled...\n");
         }
         
-        if(!m_deviceManager->unregisterBusresetNotification(tmp_busreset_functor)) {
-            debugError("could not unregister busreset notifier");
+        if(!m_deviceManager->unregisterPreUpdateNotification(preupdate_functor)) {
+            debugError("could not unregister pre update notifier");
         }
-        delete tmp_busreset_functor;
+        delete preupdate_functor;
+        if(!m_deviceManager->unregisterPostUpdateNotification(postupdate_functor)) {
+            debugError("could not unregister post update notifier");
+        }
+        delete postupdate_functor;
         delete container;
 
         signal (SIGINT, SIG_DFL);

@@ -36,6 +36,7 @@
 #include "libcontrol/BasicElements.h"
 
 #include "libutil/Functors.h"
+#include "libutil/Mutex.h"
 
 #include <vector>
 #include <string>
@@ -104,8 +105,20 @@ public:
     Streaming::StreamProcessor *getSyncSource();
 
     void ignoreBusResets(bool b) {m_ignore_busreset = b;};
-    bool registerBusresetNotification(Util::Functor *);
-    bool unregisterBusresetNotification(Util::Functor *);
+    bool registerBusresetNotification(Util::Functor *f)
+        {return registerNotification(m_busResetNotifiers, f);};
+    bool unregisterBusresetNotification(Util::Functor *f)
+        {return unregisterNotification(m_busResetNotifiers, f);};
+
+    bool registerPreUpdateNotification(Util::Functor *f)
+        {return registerNotification(m_preUpdateNotifiers, f);};
+    bool unregisterPreUpdateNotification(Util::Functor *f)
+        {return unregisterNotification(m_preUpdateNotifiers, f);};
+
+    bool registerPostUpdateNotification(Util::Functor *f)
+        {return registerNotification(m_postUpdateNotifiers, f);};
+    bool unregisterPostUpdateNotification(Util::Functor *f)
+        {return unregisterNotification(m_postUpdateNotifiers, f);};
 
     void showDeviceInfo();
     void showStreamingInfo();
@@ -130,6 +143,11 @@ protected:
     FFADODeviceVector       m_avDevices;
     FunctorVector           m_busreset_functors;
 
+    // the lock protecting the device list
+    Util::Mutex*            m_avDevicesLock;
+    // the lock to serialize bus reset handling
+    Util::Mutex*            m_BusResetLock;
+
 public: // FIXME: this should be better
     Streaming::StreamProcessorManager&  getStreamProcessorManager() 
         {return *m_processorManager;};
@@ -139,8 +157,14 @@ private:
     bool                                m_used_cache_last_time;
     bool                                m_ignore_busreset;
 
-    typedef std::vector< Util::Functor* > busreset_notif_vec_t;
-    busreset_notif_vec_t                m_busResetNotifiers;
+    typedef std::vector< Util::Functor* > notif_vec_t;
+    notif_vec_t                           m_busResetNotifiers;
+    notif_vec_t                           m_preUpdateNotifiers;
+    notif_vec_t                           m_postUpdateNotifiers;
+
+    bool registerNotification(notif_vec_t&, Util::Functor *);
+    bool unregisterNotification(notif_vec_t&, Util::Functor *);
+    void signalNotifiers(notif_vec_t& list);
 
 protected:
     std::vector<std::string>            m_SpecStrings;
