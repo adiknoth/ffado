@@ -64,6 +64,7 @@ static char doc[] = "FFADO -- a driver for Firewire Audio devices (test applicat
                     "OPERATION: Discover\n"
                     "           SetSamplerate samplerate\n"
                     "           SetClockSource [id]\n"
+                    "           BusReset\n"
                     ;
 
 // A description of the arguments we accept.
@@ -214,6 +215,20 @@ printDeviceList(unsigned int port)
     }
 }
 
+void 
+busreset(unsigned int port)
+{
+    Ieee1394Service service;
+    // switch off all messages since they mess up the list
+    service.setVerboseLevel(0);
+    if ( !service.initialize( port ) ) {
+        printf("Could not initialize IEEE 1394 service on port %d\n", port);
+        exit(-1);
+    }
+
+    printf("Doing busreset on port %d\n", port);
+    service.doBusReset();
+}
 
 int
 main( int argc, char **argv )
@@ -267,6 +282,10 @@ main( int argc, char **argv )
         }
         delete m_deviceManager;
         return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "BusReset" ) == 0 ) {
+        unsigned int nb_ports = Ieee1394Service::detectNbPorts();
+        
+
     } else if ( strcmp( arguments.args[0], "ListDevices" ) == 0 ) {
         unsigned int nb_ports = Ieee1394Service::detectNbPorts();
         for (unsigned int i=0;i<nb_ports;i++) {

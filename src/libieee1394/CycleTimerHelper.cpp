@@ -206,7 +206,7 @@ CycleTimerHelper::Init()
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initialize %p...\n", this);
 
     // register a bus reset handler
-    Util::Functor* m_busreset_functor = new Util::MemberFunctor0< CycleTimerHelper*,
+    m_busreset_functor = new Util::MemberFunctor0< CycleTimerHelper*,
                 void (CycleTimerHelper::*)() >
                 ( this, &CycleTimerHelper::busresetHandler, false );
     if ( !m_busreset_functor ) {

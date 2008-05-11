@@ -234,6 +234,8 @@ public:
     bool addBusResetHandler( Util::Functor* functor );
     bool remBusResetHandler( Util::Functor* functor );
 
+    void doBusReset();
+
     /**
      * @brief get the current generation
      *
