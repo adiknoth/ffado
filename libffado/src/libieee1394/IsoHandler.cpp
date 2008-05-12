@@ -366,6 +366,25 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped, unsigned int skipped) {
 
+    // keep track of dropped cycles
+    int dropped_cycles = 0;
+    if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
+        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
+        #ifdef DEBUG
+        if (dropped_cycles < 0) {
+            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
+                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+        }
+        if (dropped_cycles > 0) {
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
+                        this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
+            m_dropped += dropped_cycles;
+        }
+        #endif
+    }
+    m_last_cycle = cycle;
+
     uint32_t pkt_ctr = cycle << 12;
 
     // if we assume that one iterate() loop doesn't take longer than 0.5 seconds,
@@ -407,14 +426,15 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     
     #ifdef DEBUG
     if( (CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle)
-        && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) < 0) {
-        debugWarning("Special non-unwrapping happened\n");
+        && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) < 0
+        // ignore this on dropped cycles, since it's normal
+        // that now is ahead on the received packets (as we miss packets)
+        && dropped_cycles == 0) 
+    {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Special non-unwrapping happened\n");
     }    
     #endif
-    
     pkt_ctr |= (now_secs & 0x7F) << 25;
-
-
 
     #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
     // add a seconds field
@@ -456,25 +476,6 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %u)\n", getTypeString(), this, cycle);
     }
     #endif
-
-    // keep track of dropped cycles
-    int dropped_cycles = 0;
-    if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
-        dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
-        #ifdef DEBUG
-        if (dropped_cycles < 0) {
-            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
-                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
-        }
-        if (dropped_cycles > 0) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
-                        "(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
-                        this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
-            m_dropped += dropped_cycles;
-        }
-        #endif
-    }
-    m_last_cycle = cycle;
 
     // iterate the client if required
     if(m_Client) {

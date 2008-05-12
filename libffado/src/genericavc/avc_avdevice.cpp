@@ -717,6 +717,12 @@ AvDevice::stopStreamByIndex(int i) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
 
+        // can't stop it if it's not running
+        if(p->getChannel() == -1) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SP %d not running\n",i);
+            return true;
+        }
+
         if(snoopMode) {
 
         } else {
@@ -733,6 +739,12 @@ AvDevice::stopStreamByIndex(int i) {
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
+
+        // can't stop it if it's not running
+        if(p->getChannel() == -1) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SP %d not running\n",i);
+            return true;
+        }
 
         if(snoopMode) {
 

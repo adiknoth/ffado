@@ -320,7 +320,9 @@ bool StreamProcessorManager::prepare() {
     return true;
 }
 
-bool StreamProcessorManager::startDryRunning() {
+bool
+StreamProcessorManager::startDryRunning()
+{
     debugOutput( DEBUG_LEVEL_VERBOSE, "Putting StreamProcessor streams into dry-running state...\n");
     debugOutput( DEBUG_LEVEL_VERBOSE, " Schedule start dry-running...\n");
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
