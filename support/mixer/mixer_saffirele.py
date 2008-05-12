@@ -92,8 +92,11 @@ class SaffireLEMixer(SaffireLEMixerUI):
 
             self.SelectorControls={
                     self.chkOut12Mute:          ['/Mixer/Out12Mute'],
+                    self.chkOut12HwCtrl:        ['/Mixer/Out12HwCtrl'],
                     self.chkOut34Mute:          ['/Mixer/Out34Mute'],
+                    self.chkOut34HwCtrl:        ['/Mixer/Out34HwCtrl'],
                     self.chkOut56Mute:          ['/Mixer/Out56Mute'],
+                    self.chkOut56HwCtrl:        ['/Mixer/Out56HwCtrl'],
                     self.chkSPDIFTransparent:   ['/Mixer/SpdifTransparent'],
                     self.chkMIDITru:            ['/Mixer/MidiThru'],
                     self.chkHighGain3:          ['/Mixer/HighGainLine3'],
@@ -101,6 +104,9 @@ class SaffireLEMixer(SaffireLEMixerUI):
                     }
 
             self.VolumeControlsLowRes={
+                    self.sldOut12Level:      ['/Mixer/Out12Level'],
+                    self.sldOut34Level:      ['/Mixer/Out34Level'],
+                    self.sldOut56Level:      ['/Mixer/Out56Level'],
                     }
 
     def updateMatrixVolume(self,a0):

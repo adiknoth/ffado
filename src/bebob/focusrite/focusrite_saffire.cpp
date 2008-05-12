@@ -98,6 +98,49 @@ SaffireDevice::buildMixer()
             new BinaryControl(*this, 
                     FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
                     "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
+
+        // output mute controls
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out12Mute", "Out1/2 Mute", "Output 1/2 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out34Mute", "Out3/4 Mute", "Output 3/4 Mute"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
+                    "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
+
+        // output front panel hw volume control
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out12HwCtrl", "Out1/2 HwCtrl", "Output 1/2 Front Panel Hardware volume control"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out34HwCtrl", "Out3/4 HwCtrl", "Output 3/4 Front Panel Hardware volume control"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_HWCTRL,
+                    "Out56HwCtrl", "Out5/6 HwCtrl", "Output 5/6 Front Panel Hardware volume control"));
+
+        // output level controls
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_DAC,
+                    "Out12Level", "Out1/2 Level", "Output 1/2 Level"));
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_DAC,
+                    "Out34Level", "Out3/4 Level", "Output 3/4 Level"));
+        result &= m_MixerContainer->addElement(
+            new VolumeControlLowRes(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_DAC,
+                    "Out56Level", "Out5/6 Level", "Output 5/6 Level"));
+
     } else {
         // create control objects for the saffire
         result &= m_MixerContainer->addElement(
@@ -154,19 +197,19 @@ SaffireDevice::buildMixer()
         // output level controls
         result &= m_MixerContainer->addElement(
             new VolumeControlLowRes(*this, 
-                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, 0,
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DAC,
                     "Out12Level", "Out1/2 Level", "Output 1/2 Level"));
         result &= m_MixerContainer->addElement(
             new VolumeControlLowRes(*this, 
-                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, 0,
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DAC,
                     "Out34Level", "Out3/4 Level", "Output 3/4 Level"));
         result &= m_MixerContainer->addElement(
             new VolumeControlLowRes(*this, 
-                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, 0,
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DAC,
                     "Out56Level", "Out5/6 Level", "Output 5/6 Level"));
         result &= m_MixerContainer->addElement(
             new VolumeControlLowRes(*this, 
-                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, 0,
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DAC,
                     "Out78Level", "Out7/8 Level", "Output 7/8 Level"));
     }
     
