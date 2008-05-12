@@ -275,7 +275,7 @@ if __name__ == "__main__":
                 sys.exit(-1)
             else:
                 os.spawnlp( os.P_NOWAIT, "ffado-dbus-server" )
-                nb_checks = 10
+                nb_checks = 20
                 while nb_checks > 0:
                     nb_checks = nb_checks - 1
                     try:
