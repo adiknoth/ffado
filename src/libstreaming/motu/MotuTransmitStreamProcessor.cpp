@@ -353,12 +353,17 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
     unsigned char *tag, unsigned char *sy,
     uint32_t pkt_ctr )
 {
+    unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
+
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u, TSP=%011llu (%04u)\n",
-                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp,
+                 cycle, m_last_timestamp,
                  ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
-    // A "silent" packet is identical to a regular data packet except
-    // all audio data is set to zero.
+    // A "silent" packet is identical to a regular data packet except all
+    // audio data is set to zero.  The MOTU expects valid timestamps and
+    // rate control in silent packets, so much of the timing logic from
+    // generatePacketHeader() is needed here too - the main difference being
+    // the source of the packet timestamp.
 
     // The number of events per packet expected by the MOTU is solely
     // dependent on the current sample rate.  An 'event' is one sample from
@@ -370,15 +375,62 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
     *sy = 0x00;
     *tag = 1;      // All MOTU packets have a CIP-like header
 
-    /* Assume the packet will have audio data.  This is not strictly valid
-     * but seems to work most of the time.  The MOTU data packets have
-     * either 8, 16 or 32 samples in them.  This is more than would normally
-     * be required in each cycle period and so every so often an empty
-     * packet must be sent to allow things to "catch up".
+    /* Assume the packet will have audio data.  If it turns out we need an empty packet
+     * the length will be overridden by fillNoDataPacketHeader().
      */
     *length = n_events*m_event_size + 8;
 
-    return eCRV_Packet;
+    uint64_t presentation_time;
+    unsigned int presentation_cycle;
+    int cycles_until_presentation;
+            
+    uint64_t transmit_at_time;
+    unsigned int transmit_at_cycle;
+    int cycles_until_transmit;
+
+    /* The sample buffer is not necessarily running when silent packets are
+     * needed, so use m_last_timestamp (the timestamp of the previously sent
+     * data packet) as the basis for the presentation time of the next
+     * packet.  Since we're only writing zeros we don't have to deal with
+     * buffer xruns.
+     */
+    float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
+    presentation_time = addTicks(m_last_timestamp, (unsigned int)lrintf(n_events * ticks_per_frame));
+
+    transmit_at_time = substractTicks(presentation_time, MOTU_TRANSMIT_TRANSFER_DELAY);
+    presentation_cycle = (unsigned int)(TICKS_TO_CYCLES(presentation_time));
+    transmit_at_cycle = (unsigned int)(TICKS_TO_CYCLES(transmit_at_time));
+    cycles_until_presentation = diffCycles(presentation_cycle, cycle);
+    cycles_until_transmit = diffCycles(transmit_at_cycle, cycle);
+
+    if (cycles_until_transmit < 0)
+    {
+        if (cycles_until_presentation >= MOTU_MIN_CYCLES_BEFORE_PRESENTATION)
+        {
+            m_last_timestamp = presentation_time;
+            m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+            if (m_tx_dbc > 0xff)
+                m_tx_dbc -= 0x100;
+            return eCRV_Packet;
+        }
+        else
+        {
+            return eCRV_XRun;
+        }
+    }
+    else if (cycles_until_transmit <= MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY)
+    {
+        m_last_timestamp = presentation_time;
+        m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+        if (m_tx_dbc > 0xff)
+            m_tx_dbc -= 0x100;
+        return eCRV_Packet;
+    }
+    else
+    {
+        return eCRV_EmptyPacket;
+    }
+    return eCRV_Invalid;
 }
 
 enum StreamProcessor::eChildReturnValue
@@ -406,7 +458,6 @@ MotuTransmitStreamProcessor::generateSilentPacketData (
         int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
         *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
     }
-
     return eCRV_OK;
 }
 
