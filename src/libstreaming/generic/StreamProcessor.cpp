@@ -326,7 +326,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     // check whether we are waiting for a stream to be enabled
-    else if(m_state == ePS_WaitingForStreamEnable) {
+    else if(m_state == ePS_WaitingForStreamEnable
+            && m_next_state == ePS_WaitingForStreamEnable) {
         // we then check whether we have to switch on this cycle
         if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to Running\n");
@@ -566,7 +567,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         }
     }
     // check whether we are waiting for a stream to be enabled
-    else if(m_state == ePS_WaitingForStreamEnable) {
+    else if(m_state == ePS_WaitingForStreamEnable
+            && m_next_state == ePS_WaitingForStreamEnable) {
         // we then check whether we have to switch on this cycle
         if (diffCycles(CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_cycle_to_switch_state) >= 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to Running\n");
@@ -1100,6 +1102,10 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
     } else if (m_state == ePS_DryRunning) {
         debugOutput(DEBUG_LEVEL_VERBOSE, " %p already in DryRunning state\n", this);
         return true;
+    } else if (m_state == ePS_WaitingForStreamEnable) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, " %p still waiting to switch to Running state\n", this);
+        // this will happen immediately
+        return scheduleStateTransition(ePS_DryRunning, tx);
     } else if (m_state == ePS_WaitingForStreamDisable) {
         debugOutput(DEBUG_LEVEL_VERBOSE, " %p already waiting to switch to DryRunning state\n", this);
         return true;

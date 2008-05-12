@@ -168,6 +168,8 @@ Watchdog::Watchdog(unsigned int interval_usec, bool realtime, unsigned int prior
 
 Watchdog::~Watchdog()
 {
+    // kill threads instead of stoping them since 
+    // they are sleeping
     if (m_CheckThread) {
         //m_CheckThread->Stop();
         m_CheckThread->Kill();
