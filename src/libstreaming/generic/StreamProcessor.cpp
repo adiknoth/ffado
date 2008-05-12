@@ -1607,7 +1607,7 @@ bool StreamProcessor::updateState() {
            (next_state != ePS_Running)) {
             goto updateState_exit_with_error;
         }
-        if (next_state == ePS_Stopped) {
+        if (next_state == ePS_DryRunning) {
             result = doDryRunning();
         } else {
             result = doRunning();
