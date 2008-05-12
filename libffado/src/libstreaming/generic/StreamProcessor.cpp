@@ -558,9 +558,10 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             // assumed not to xrun
             generateSilentPacketData(data, length);
             return RAW1394_ISO_OK;
-        // FIXME: PP: I think this should also be a possibility
-        //} else if (result == eCRV_EmptyPacket) {
-        //    goto send_empty_packet;
+        // FIXME: PP: I think this [empty packet] should also be a possibility
+        // JMW: yes, it should.  MOTU needs it for a clean shutdown.
+        } else if (result == eCRV_EmptyPacket) {
+            goto send_empty_packet;
         } else {
             debugError("Invalid return value: %d\n", result);
             return RAW1394_ISO_ERROR;
