@@ -99,20 +99,6 @@ SaffireDevice::buildMixer()
                     FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
                     "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
 
-        // output mute controls
-        result &= m_MixerContainer->addElement(
-            new BinaryControl(*this, 
-                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
-                    "Out12Mute", "Out1/2 Mute", "Output 1/2 Mute"));
-        result &= m_MixerContainer->addElement(
-            new BinaryControl(*this, 
-                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
-                    "Out34Mute", "Out3/4 Mute", "Output 3/4 Mute"));
-        result &= m_MixerContainer->addElement(
-            new BinaryControl(*this, 
-                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_MUTE,
-                    "Out56Mute", "Out5/6 Mute", "Output 5/6 Mute"));
-
         // output front panel hw volume control
         result &= m_MixerContainer->addElement(
             new BinaryControl(*this, 
