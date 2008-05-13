@@ -109,6 +109,10 @@ class SaffireLEMixer(SaffireLEMixerUI):
                     self.sldOut56Level:      ['/Mixer/Out56Level'],
                     }
 
+            self.TriggerButtonControls={
+                self.btnSaveSettings:        ['/Mixer/SaveSettings'],
+            }
+
     def updateMatrixVolume(self,a0):
         sender = self.sender()
         vol = 0x7FFF-a0
@@ -139,6 +143,12 @@ class SaffireLEMixer(SaffireLEMixerUI):
                     self.SelectorControls[sender][0],
                     state)
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
+
+    def triggerButton(self):
+        sender = self.sender()
+        print "trigger %s" % (
+                    self.TriggerButtonControls[sender][0])
+        self.hw.setDiscrete(self.TriggerButtonControls[sender][0], 1)
 
     def initValues(self):
             for ctrl, info in self.VolumeControls.iteritems():
@@ -171,3 +181,7 @@ class SaffireLEMixer(SaffireLEMixerUI):
 
                 # connect the UI element
                 QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
+
+            for ctrl, info in self.TriggerButtonControls.iteritems():
+                # connect the UI element
+                QObject.connect(ctrl,SIGNAL('clicked()'),self.triggerButton)
