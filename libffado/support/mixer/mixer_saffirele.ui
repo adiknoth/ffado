@@ -56,7 +56,7 @@
                     <cstring>chkOut56Mute</cstring>
                 </property>
                 <property name="text">
-                    <string>CH5/6</string>
+                    <string>CH5/&amp;6</string>
                 </property>
             </widget>
             <widget class="QCheckBox" row="0" column="1">
@@ -120,9 +120,9 @@
         </property>
         <property name="geometry">
             <rect>
-                <x>511</x>
-                <y>312</y>
-                <width>238</width>
+                <x>510</x>
+                <y>310</y>
+                <width>160</width>
                 <height>56</height>
             </rect>
         </property>
@@ -143,7 +143,10 @@
                     <cstring>chkMIDITru</cstring>
                 </property>
                 <property name="text">
-                    <string>MIDI Tru</string>
+                    <string>&amp;MIDI Tru</string>
+                </property>
+                <property name="accel">
+                    <string>Alt+M</string>
                 </property>
             </widget>
         </vbox>
@@ -2567,6 +2570,25 @@
                 </widget>
             </widget>
         </hbox>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>btnSaveSettings</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>680</x>
+                <y>330</y>
+                <width>90</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Save</string>
+        </property>
+        <property name="toolTip" stdset="0">
+            <string>Save settings to device</string>
+        </property>
     </widget>
 </widget>
 <slots>
