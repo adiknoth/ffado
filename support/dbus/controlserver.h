@@ -85,7 +85,8 @@ public:
     DBus::String getLabel( );
     DBus::String getDescription( );
 
-    void setVerboseLevel(int i);
+    void setVerboseLevel( const DBus::Int32 &);
+    DBus::Int32 getVerboseLevel();
 
 protected:
     void Lock();
@@ -117,7 +118,7 @@ public:
     DBus::String getElementName( const DBus::Int32& );
 
     void updated(int new_nb_elements);
-    void setVerboseLevel(int i);
+    void setVerboseLevel( const DBus::Int32 &);
 private:
     Element *createHandler(Element *, Control::Element& e);
     void updateTree();

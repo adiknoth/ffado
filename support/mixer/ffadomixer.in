@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
     if nbDevices == 0:
         print "No supported device found..."
-        msg.information( msg, "No mixer found", "Your device doesn't seem to have a supported mixer." )
+        msg.information( msg, "No mixer found", "No devices with mixer support discovered." )
         sys.exit( -1 )
 
     mw = QTabWidget()

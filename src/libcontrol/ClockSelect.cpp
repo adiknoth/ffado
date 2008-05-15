@@ -39,6 +39,8 @@ ClockSelect::ClockSelect(FFADODevice &d)
 bool
 ClockSelect::select(int idx)
 {
+    m_Device.setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Selecting clock idx: %d\n", idx);
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
     if(idx >= (int)v.size()) {
         debugError("index out of range\n");
@@ -48,18 +50,22 @@ ClockSelect::select(int idx)
         debugWarning("could not set active clocksource\n");
         return false;
     }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " clock id: %d\n", v.at(idx).id);
     return true;
 }
 
 int
 ClockSelect::selected()
 {
+    m_Device.setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Finding active clock\n");
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
     FFADODevice::ClockSource active = m_Device.getActiveClockSource();
     int i=0;
     for (i=0; i < (int)v.size(); i++) {
         FFADODevice::ClockSource c = v.at(i);
-        if(c == active) {
+        if(c.id == active.id) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " Active clock at %d, id %d\n", i, c.id);
             return i;
         }
     }
