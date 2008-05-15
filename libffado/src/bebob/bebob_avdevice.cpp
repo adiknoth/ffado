@@ -227,7 +227,7 @@ AvDevice::getSelectorFBValue(int id) {
     fbCmd.setNodeId( getNodeId() );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
-    fbCmd.m_pFBSelector->m_inputFbPlugNumber=0;
+    fbCmd.m_pFBSelector->m_inputFbPlugNumber = 0xFF;
     fbCmd.setVerboseLevel( getDebugLevel() );
 
     if ( !fbCmd.fire() ) {

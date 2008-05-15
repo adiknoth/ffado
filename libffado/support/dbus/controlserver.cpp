@@ -51,10 +51,16 @@ Element::Element( DBus::Connection& connection, std::string p, Element* parent, 
     setVerboseLevel(m_Slave.getVerboseLevel());
 }
 
-void Element::setVerboseLevel(int i)
+void Element::setVerboseLevel( const DBus::Int32 &i)
 {
     setDebugLevel(i);
+    m_Slave.setVerboseLevel(i);
     if(m_UpdateLock) m_UpdateLock->setVerboseLevel(i);
+}
+
+DBus::Int32 Element::getVerboseLevel()
+{
+    return getDebugLevel();
 }
 
 void
@@ -157,8 +163,9 @@ Container::~Container() {
 }
 
 void
-Container::setVerboseLevel(int i)
+Container::setVerboseLevel( const DBus::Int32 & i)
 {
+    Element::setVerboseLevel(i);
     for ( ElementVectorIterator it = m_Children.begin();
       it != m_Children.end();
       ++it )

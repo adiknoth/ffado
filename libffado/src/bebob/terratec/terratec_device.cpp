@@ -75,6 +75,11 @@ Phase88Device::getActiveClockSource() {
     int fb_extsync_value = getSelectorFBValue(8);
     int fb_syncsource_value = getSelectorFBValue(9);
 
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "Selectors: 0x%02X 0x%02X\n",
+                fb_extsync_value, fb_syncsource_value);
+
+
     if(fb_syncsource_value == 0) {
         return m_internal_clocksource;
     } else {
@@ -94,13 +99,13 @@ Phase88Device::setActiveClockSource(ClockSource s) {
     if(s.id == m_spdif_clocksource.id) {
         bool retval = true;
         retval &= setSelectorFBValue(8, 0);
-        retval &= setSelectorFBValue(9, 0);
+        retval &= setSelectorFBValue(9, 1);
         return retval;
     }
     if(s.id == m_wordclock_clocksource.id) {
         bool retval = true;
         retval &= setSelectorFBValue(8, 1);
-        retval &= setSelectorFBValue(9, 0);
+        retval &= setSelectorFBValue(9, 1);
         return retval;
     }
     return false;
