@@ -41,6 +41,8 @@ public:
     virtual bool TryLock() = 0;
     virtual void Unlock() = 0;
 
+    virtual bool isLocked() = 0;
+
     virtual void show() = 0;
     virtual void setVerboseLevel(int) = 0;
 };

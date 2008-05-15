@@ -55,6 +55,9 @@ apps = {
 	"test-streamdump" : "test-streamdump.cpp",
 	"test-bufferops" : "test-bufferops.cpp",
 	"test-watchdog" : "test-watchdog.cpp",
+	"test-messagequeue" : "test-messagequeue.cpp",
+	"test-shm" : "test-shm.cpp",
+	"test-ipcringbuffer" : "test-ipcringbuffer.cpp",
 	"test-devicestringparser" : "test-devicestringparser.cpp",
 	"dumpiso_mod" : "dumpiso_mod.cpp",
 	"scan-devreg" : "scan-devreg.cpp"

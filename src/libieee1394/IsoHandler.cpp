@@ -423,7 +423,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
             now_secs -= 1;
         }
     }
-    
+
     #ifdef DEBUG
     if( (CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle)
         && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) < 0
@@ -432,7 +432,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         && dropped_cycles == 0) 
     {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Special non-unwrapping happened\n");
-    }    
+    }
     #endif
     pkt_ctr |= (now_secs & 0x7F) << 25;
 

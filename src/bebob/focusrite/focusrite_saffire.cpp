@@ -226,7 +226,7 @@ SaffireDevice::buildMixer()
 
     if (!result) {
         debugWarning("One or more control elements could not be created.");
-        // clean up those that couldn't be created
+        // clean up those that were created
         destroyMixer();
         return false;
     }
@@ -241,7 +241,7 @@ SaffireDevice::buildMixer()
     // add a direct register access element
     if (!addElement(new RegisterControl(*this, "Register", "Register Access", "Direct register access"))) {
         debugWarning("Could not create register control element.");
-        // clean up those that couldn't be created
+        // clean up those that were created
         destroyMixer();
         return false;
     }

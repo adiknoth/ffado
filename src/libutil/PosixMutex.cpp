@@ -22,6 +22,7 @@
  */
 
 #include "PosixMutex.h"
+#include <errno.h>
 
 // disable collision tracing for non-debug builds
 #ifndef DEBUG
@@ -94,6 +95,22 @@ PosixMutex::TryLock()
 {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) trying to lock\n", this);
     return pthread_mutex_trylock(&m_mutex) == 0;
+}
+
+bool
+PosixMutex::isLocked()
+{
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) checking lock\n", this);
+    int res=pthread_mutex_trylock(&m_mutex);
+    if(res == 0) {
+        pthread_mutex_unlock(&m_mutex);
+        return false;
+    } else {
+        if(res != EBUSY) {
+            debugError("Bogus error code: %d\n", res);
+        }
+        return true;
+    }
 }
 
 void
