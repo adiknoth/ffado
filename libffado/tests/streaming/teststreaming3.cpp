@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    audiobuffers_out = (float **)calloc(nb_out_channels, sizeof(float));
+    audiobuffers_out = (float **)calloc(nb_out_channels, sizeof(float *));
     for (i=0; i < nb_out_channels; i++) {
         audiobuffers_out[i] = (float *)calloc(arguments.period+1, sizeof(float));
 

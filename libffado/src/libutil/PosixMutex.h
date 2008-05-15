@@ -48,6 +48,8 @@ public:
     virtual bool TryLock();
     virtual void Unlock();
 
+    virtual bool isLocked();
+
     virtual void show();
     virtual void setVerboseLevel(int l) {setDebugLevel(l);};
 

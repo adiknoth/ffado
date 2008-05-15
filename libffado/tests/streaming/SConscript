@@ -29,7 +29,7 @@ env.PrependUnique( CPPPATH=["#/src"] )
 env.PrependUnique( LIBPATH=["#/src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
-cppapps = "teststreaming3"
+cppapps = "teststreaming3 teststreaming-ipc test-ipcclient"
 
 for app in env.Split( cppapps ):
 	env.Program( target=app, source = [ app+".cpp" ] )

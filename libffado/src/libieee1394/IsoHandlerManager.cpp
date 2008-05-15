@@ -317,16 +317,16 @@ IsoTask::waitForActivity()
     if(result != 0) {
         if (errno == ETIMEDOUT) {
             debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "(%p) pthread_cond_timedwait() timed out (result=%d)\n",
+                        "(%p) sem_timedwait() timed out (result=%d)\n",
                         this, result);
             return eAR_Timeout;
         } else if (errno == EINTR) {
             debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "(%p) pthread_cond_[timed]wait() interrupted by signal (result=%d)\n",
+                        "(%p) sem_timedwait() interrupted by signal (result=%d)\n",
                         this, result);
             return eAR_Interrupted;
         } else {
-            debugError("(%p) pthread_cond_[timed]wait error (result=%d errno=%d)\n", 
+            debugError("(%p) sem_timedwait error (result=%d errno=%d)\n", 
                         this, result, errno);
             debugError("(%p) timeout_sec=%d timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
                        this, timeout_sec, timeout_nsec, ts.tv_sec, ts.tv_nsec);

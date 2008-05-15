@@ -72,8 +72,11 @@ ffado_source = env.Split( '\
 	libstreaming/generic/PortManager.cpp \
 	libutil/cmd_serialize.cpp \
 	libutil/DelayLockedLoop.cpp \
+	libutil/IpcRingBuffer.cpp \
 	libutil/PacketBuffer.cpp \
 	libutil/OptionContainer.cpp \
+	libutil/PosixMessageQueue.cpp \
+	libutil/PosixSharedMemory.cpp \
 	libutil/PosixMutex.cpp \
 	libutil/PosixThread.cpp \
 	libutil/ringbuffer.c \
