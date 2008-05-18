@@ -319,7 +319,7 @@ CycleTimerHelper::initDLL() {
 bool
 CycleTimerHelper::Execute()
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "Execute %p...\n", this);
+    debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "Execute %p...\n", this);
 
     #ifdef DEBUG
     uint64_t now = m_Parent.getCurrentTimeAsUsecs();
@@ -346,11 +346,11 @@ CycleTimerHelper::Execute()
         #ifdef DEBUG
         ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         int sleep_time = m_sleep_until - now;
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
                     this, m_sleep_until, m_next_time_usecs, now, sleep_time);
         #endif
         Util::SystemTimeSource::SleepUsecAbsolute(m_sleep_until);
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, " (%p) back...\n", this);
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " (%p) back...\n", this);
     }
 
     uint32_t cycle_timer;
@@ -365,7 +365,7 @@ CycleTimerHelper::Execute()
     // some host controllers return bogus values on some reads
     // (looks like a non-atomic update of the register)
     do {
-        debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "(%p) reading cycle timer register...\n", this);
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) reading cycle timer register...\n", this);
         if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
             debugError("Could not read cycle timer register\n");
             return false;
@@ -376,7 +376,7 @@ CycleTimerHelper::Execute()
 
         // check for unrealistic CTR reads (NEC controller does that sometimes)
         if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, 
+            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, 
                         "(%p) have to retry CTR read, diff unrealistic: diff: %f, max: %f (try: %d)\n", 
                         this, diff_ticks, -((double)TICKS_PER_HALFCYCLE), ntries);
         }
@@ -402,9 +402,9 @@ CycleTimerHelper::Execute()
         return true;
     }
 
-    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+    debugOutputExtreme( DEBUG_LEVEL_ULTRA_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
                         cycle_timer, local_time);
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                        "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
                        (uint32_t)cycle_timer, (uint64_t)cycle_timer_ticks,
                        (unsigned int)TICKS_TO_SECS( (uint64_t)cycle_timer_ticks ),
@@ -436,7 +436,7 @@ CycleTimerHelper::Execute()
         double diff_ticks_corr;
         if (ticks_late > 0) {
             diff_ticks_corr = diff_ticks - ticks_late;
-            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+            debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                                "diff_ticks_corr=%f, diff_ticks = %f, ticks_late = %lld\n",
                                diff_ticks_corr, diff_ticks, ticks_late);
         } else {
@@ -447,7 +447,7 @@ CycleTimerHelper::Execute()
 
         #ifdef DEBUG
         // makes no sense if not running realtime
-        if(m_realtime && usecs_late > 200) {
+        if(m_realtime && usecs_late > 1000) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Rather late wakeup: %lld usecs\n", usecs_late);
         }
         #endif
@@ -576,7 +576,7 @@ CycleTimerHelper::Execute()
         dll_time = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
     }
     int32_t ctr_diff = cycle_timer_ticks-dll_time;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "(%p) CTR DIFF: HW %010llu - DLL %010lu = %010ld (%s)\n", 
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) CTR DIFF: HW %010llu - DLL %010lu = %010ld (%s)\n", 
                 this, cycle_timer_ticks, dll_time, ctr_diff, (ctr_diff>0?"lag":"lead"));
 #endif
 

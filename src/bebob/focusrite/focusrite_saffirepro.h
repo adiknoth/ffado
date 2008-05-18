@@ -327,6 +327,24 @@ private:
     SaffireProDevice&          m_Parent;
 };
 
+// -- wrapper for the standalone config of the device
+class SaffireProDeviceStandaloneEnum
+    : public Control::Enum
+{
+public:
+    SaffireProDeviceStandaloneEnum(SaffireProDevice& parent);
+    SaffireProDeviceStandaloneEnum(SaffireProDevice& parent,
+                  std::string name, std::string label, std::string descr);
+
+    virtual bool select(int idx);
+    virtual int selected();
+    virtual int count();
+    virtual std::string getEnumLabel(int idx);
+
+private:
+    SaffireProDevice&          m_Parent;
+};
+
 // -- the actual device
 class SaffireProDevice : public FocusriteDevice
 {

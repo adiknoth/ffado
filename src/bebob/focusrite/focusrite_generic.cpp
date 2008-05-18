@@ -133,8 +133,8 @@ bool
 FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
 {
     fb_quadlet_t data=v;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing parameter address space id 0x%08lX, data: 0x%08llX\n",
-        id, data);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing parameter address space id 0x%08lX (%u), data: 0x%08lX\n",
+        id, id, data);
 
     fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;

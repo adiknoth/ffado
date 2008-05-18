@@ -169,10 +169,10 @@ main(int argc, char **argv)
     
     while(1) {
         for (int id=0; id<TOTAL_IDS_TO_SCAN;id++) {
-            if (id==64) continue; // metering
-            if (id==65) continue; // metering
-            if (id==66) continue; // metering
-            if (id==67) continue; // metering
+//             if (id==64) continue; // metering
+//             if (id==65) continue; // metering
+//             if (id==66) continue; // metering
+//             if (id==67) continue; // metering
             cmd.setCommandType( AVC::AVCCommand::eCT_Status );
             cmd.setNodeId( arguments.node  );
             cmd.setSubunitType( AVC::eST_Unit  );
