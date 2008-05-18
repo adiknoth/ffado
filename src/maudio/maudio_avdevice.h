@@ -60,7 +60,7 @@ public:
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
-    static int getConfigurationId( );
+    virtual uint64_t getConfigurationId( );
     
     virtual void showDevice();
 
