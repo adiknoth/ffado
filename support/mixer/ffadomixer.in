@@ -302,6 +302,7 @@ if __name__ == "__main__":
     while repeat > 0:
         try:
             devmgr=DeviceManagerInterface(server, basepath)
+            nbDevices=devmgr.getNbDevices()
             repeat -= 1
         except dbus.DBusException, ex:
             print "\n"
@@ -319,12 +320,11 @@ if __name__ == "__main__":
                     nb_checks = nb_checks - 1
                     try:
                         devmgr=DeviceManagerInterface(server, basepath)
+                        nbDevices=devmgr.getNbDevices()
                         nb_checks = 0
                         repeat = 0
                     except dbus.DBusException, ex:
                         time.sleep( 1 )
-
-    nbDevices=devmgr.getNbDevices()
 
     if nbDevices == 0:
         print "No supported device found..."
