@@ -1043,10 +1043,10 @@ Unit::deserialize( std::string basePath,
         result &= deser.read( basePath + "m_activeSyncInfo", i );
         if ( i < m_syncInfos.size() ) {
             m_activeSyncInfo = &m_syncInfos[i];
+            // but if it is we want it selected
+            result &= setActiveSync(*m_activeSyncInfo);
         }
     }
-
-    result &= setActiveSync(*m_activeSyncInfo);
     return result;
 }
 
