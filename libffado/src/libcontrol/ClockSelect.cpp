@@ -39,7 +39,6 @@ ClockSelect::ClockSelect(FFADODevice &d)
 bool
 ClockSelect::select(int idx)
 {
-    m_Device.setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
     debugOutput(DEBUG_LEVEL_VERBOSE, "Selecting clock idx: %d\n", idx);
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
     if(idx >= (int)v.size()) {
@@ -57,7 +56,6 @@ ClockSelect::select(int idx)
 int
 ClockSelect::selected()
 {
-    m_Device.setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
     debugOutput(DEBUG_LEVEL_VERBOSE, "Finding active clock\n");
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
     FFADODevice::ClockSource active = m_Device.getActiveClockSource();
