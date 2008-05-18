@@ -65,6 +65,7 @@ static char doc[] = "FFADO -- a driver for Firewire Audio devices (test applicat
                     "           SetSamplerate samplerate\n"
                     "           SetClockSource [id]\n"
                     "           BusReset\n"
+                    "           ListDevices\n"
                     ;
 
 // A description of the arguments we accept.

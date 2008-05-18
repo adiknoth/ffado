@@ -235,27 +235,39 @@ SaffireProDevice::buildMixer()
     result &= m_ControlContainer->addElement(
         new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM14, 0,
                  "Phantom_1to4", "Phantom 1-4", "Switch Phantom Power on channels 1-4"));
-    
+
     result &= m_ControlContainer->addElement(
         new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_PHANTOM58, 0,
                  "Phantom_5to8", "Phantom 5-8", "Switch Phantom Power on channels 5-8"));
-    
+
     result &= m_ControlContainer->addElement(
         new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT1, 0,
                 "Insert1", "Insert 1", "Switch Insert on Channel 1"));
-    
+
     result &= m_ControlContainer->addElement(
         new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_INSERT2, 0,
                 "Insert2", "Insert 2", "Switch Insert on Channel 2"));
-    
+
     result &= m_ControlContainer->addElement(
         new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_AC3_PASSTHROUGH, 0,
                 "AC3pass", "AC3 Passtrough", "Enable AC3 Passthrough"));
-    
+
     result &= m_ControlContainer->addElement(
         new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_MIDI_TRU, 0,
                 "MidiTru", "Midi Tru", "Enable Midi Tru"));
-    
+
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_AVC_MODEL, 0,
+                "ADATDisable", "ADAT Disable", "Disable the ADAT I/O's"));
+
+    result &= m_ControlContainer->addElement(
+        new BinaryControl(*this, FR_SAFFIREPRO_CMD_ID_AVC_MODEL_MIDI, 0,
+                "MIDIEnable", "MIDI Enable", "Enable the MIDI I/O's"));
+
+    result &= m_ControlContainer->addElement(
+        new SaffireProDeviceStandaloneEnum(*this,
+                "StandaloneConfig", "Standalone Config", "Choose Standalone Configuration"));
+
     result &= m_ControlContainer->addElement(
         new SaffireProMultiControl(*this, SaffireProMultiControl::eTCT_Reboot,
             "Reboot", "Reboot", "Reboot Device"));
@@ -864,6 +876,70 @@ std::string
 SaffireProDeviceNameControl::getValue()
 {
     return m_Parent.getDeviceName();
+}
+
+// -- standalone config
+SaffireProDeviceStandaloneEnum::SaffireProDeviceStandaloneEnum(SaffireProDevice& parent)
+: Control::Enum(&parent)
+, m_Parent(parent)
+{}
+SaffireProDeviceStandaloneEnum::SaffireProDeviceStandaloneEnum(SaffireProDevice& parent,
+                std::string name, std::string label, std::string descr)
+: Control::Enum(&parent)
+, m_Parent(parent)
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+bool
+SaffireProDeviceStandaloneEnum::select(int idx)
+{
+    if(idx>1) {
+        debugError("Index (%d) out of range\n", idx);
+        return false;
+    }
+    if(!m_Parent.setSpecificValue(FR_SAFFIREPRO_CMD_ID_STANDALONE_MODE, idx)) {
+        debugError("Could not set selected mode\n");
+        return false;
+    } else {
+        return true;
+    }
+}
+
+int
+SaffireProDeviceStandaloneEnum::selected()
+{
+    uint32_t sel=0;
+    if(!m_Parent.getSpecificValue(FR_SAFFIREPRO_CMD_ID_STANDALONE_MODE, &sel)) {
+        debugError("Could not get selected mode\n");
+        return -1;
+    } else {
+        return sel;
+    }
+}
+
+int
+SaffireProDeviceStandaloneEnum::count()
+{
+    return 2;
+}
+
+std::string
+SaffireProDeviceStandaloneEnum::getEnumLabel(int idx)
+{
+    if(idx>1) {
+        debugError("Index (%d) out of range\n", idx);
+        return false;
+    }
+    switch(idx) {
+        case 0: return "Mixing";
+        case 1: return "Tracking";
+        default:
+            debugError("Index (%d) out of range\n", idx);
+            return "Error";
+    }
 }
 
 // Saffire pro matrix mixer element

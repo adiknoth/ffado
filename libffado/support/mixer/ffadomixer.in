@@ -163,6 +163,45 @@ class ControlInterface:
             print "Failed to get MatrixMixer %s on server %s" % (path, self.servername)
             return 0
 
+    def enumSelect(self, subpath, v):
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
+            dev_cont.select(v)
+        except:
+            print "Failed to select %s on server %s" % (path, self.servername)
+
+    def enumSelected(self, subpath):
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
+            return dev_cont.selected()
+        except:
+            print "Failed to get selected enum %s on server %s" % (path, self.servername)
+            return 0
+
+    def enumGetLabel(self, subpath, v):
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
+            return dev_cont.getEnumLabel(v)
+        except:
+            print "Failed to get enum label %s on server %s" % (path, self.servername)
+            return 0
+
+    def enumCount(self, subpath):
+        try:
+            path = self.basepath + subpath
+            dev = self.bus.get_object(self.servername, path)
+            dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
+            return dev_cont.count()
+        except:
+            print "Failed to get enum count %s on server %s" % (path, self.servername)
+            return 0
+
 class DeviceManagerInterface:
     def __init__(self, servername, basepath):
         self.basepath=basepath + '/DeviceManager'

@@ -71,6 +71,10 @@ class SaffireProMixer(SaffireProMixerUI):
                     textbox.text().ascii())
         self.hw.setText(self.TextControls[textbox][0], textbox.text().ascii())
 
+    def selectStandaloneMode(self, mode):
+        self.hw.enumSelect('/Control/StandaloneConfig', mode)
+        self.comboStandalone.setCurrentItem( self.hw.enumSelected('/Control/StandaloneConfig') )
+
     def init(self):
             print "Init Saffire Pro mixer window"
 
@@ -170,9 +174,11 @@ class SaffireProMixer(SaffireProMixerUI):
                 self.chkAC3: ['/Control/AC3pass'], 
                 self.chkMidiThru: ['/Control/MidiTru'], 
                 self.chkHighVoltage: ['/Control/UseHighVoltageRail'], 
-                self.chkEnableADAT1: ['/Control/EnableAdat1'], 
-                self.chkEnableADAT2: ['/Control/EnableAdat2'],
-                self.chkEnableSPDIF1: ['/Control/EnableSPDIF1'],
+                #self.chkEnableADAT1: ['/Control/EnableAdat1'], 
+                #self.chkEnableADAT2: ['/Control/EnableAdat2'],
+                #self.chkEnableSPDIF1: ['/Control/EnableSPDIF1'],
+                self.chkMidiEnable: ['/Control/MIDIEnable'],
+                self.chkAdatDisable: ['/Control/ADATDisable'],
                 # Mixer switches
                 self.chkMute12: ['/Mixer/Out12Mute'],
                 self.chkHwCtrl12: ['/Mixer/Out12HwCtrl'],
@@ -250,6 +256,11 @@ class SaffireProMixer(SaffireProMixerUI):
             print "%s text is %s" % (ctrl.name() , text)
             ctrl.setText(text)
 
+        self.comboStandalone.clear()
+        for i in range( self.hw.enumCount('/Control/StandaloneConfig') ):
+            self.comboStandalone.insertItem( self.hw.enumGetLabel('/Control/StandaloneConfig', i) )
+        self.comboStandalone.setCurrentItem( self.hw.enumSelected('/Control/StandaloneConfig') )
+
     def initValues(self):
         self.updateValues()
         for ctrl, info in self.VolumeControls.iteritems():
@@ -271,3 +282,5 @@ class SaffireProMixer(SaffireProMixerUI):
         for ctrl, info in self.saveTextControls.iteritems():
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('clicked()'), self.saveText)
+
+        QObject.connect(self.comboStandalone, SIGNAL('activated(int)'), self.selectStandaloneMode)
