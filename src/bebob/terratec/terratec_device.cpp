@@ -120,5 +120,13 @@ Phase88Device::getSupportedClockSources() {
     return r;
 }
 
+uint8_t
+Phase88Device::getConfigurationIdSyncMode()
+{
+    uint8_t fb_extsync_value = getSelectorFBValue(8);
+    uint8_t fb_syncsource_value = getSelectorFBValue(9);
+    return fb_extsync_value & 0x01 | (fb_syncsource_value << 1) & 0x01;
+}
+
 } // namespace Terratec
 } // namespace BeBoB

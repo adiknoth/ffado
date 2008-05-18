@@ -380,7 +380,7 @@ AvDevice::propagatePlugInfo() {
 }
 
 
-int
+uint8_t
 AvDevice::getConfigurationIdSampleRate()
 {
     ExtendedStreamFormatCmd extStreamFormatCmd( get1394Service() );
@@ -413,7 +413,7 @@ AvDevice::getConfigurationIdSampleRate()
     return 0;
 }
 
-int
+uint8_t
 AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
 {
     ExtendedPlugInfoCmd extPlugInfoCmd( get1394Service() );
@@ -448,7 +448,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
     return 0;
 }
 
-int
+uint8_t
 AvDevice::getConfigurationIdSyncMode()
 {
     SignalSourceCmd signalSourceCmd( get1394Service() );
@@ -494,11 +494,11 @@ AvDevice::getConfigurationIdSyncMode()
     return 0;
 }
 
-int
+uint64_t
 AvDevice::getConfigurationId()
 {
     // create a unique configuration id.
-    int id = 0;
+    uint64_t id = 0;
     id = getConfigurationIdSampleRate();
     id |= ( getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input )
             + getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) ) << 8;
@@ -553,7 +553,7 @@ AvDevice::loadFromCache()
     std::string sDevicePath = getCachePath() + getConfigRom().getGuidString();
 
     char* configId;
-    asprintf(&configId, "%08x", getConfigurationId() );
+    asprintf(&configId, "%016llx", getConfigurationId() );
     if ( !configId ) {
         debugError( "could not create id string\n" );
         return false;
@@ -629,7 +629,7 @@ AvDevice::saveCache()
 
     // come up with an unique file name for the current settings
     char* configId;
-    asprintf(&configId, "%08x", BeBoB::AvDevice::getConfigurationId() );
+    asprintf(&configId, "%016llx", BeBoB::AvDevice::getConfigurationId() );
     if ( !configId ) {
         debugError( "Could not create id string\n" );
         return false;
