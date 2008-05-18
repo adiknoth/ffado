@@ -97,12 +97,14 @@ public:
     virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
     virtual bool deserialize( std::string basePath, Util::IODeserialize& deser );
 
-    int getConfigurationIdSampleRate();
-    int getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
-    int getConfigurationIdSyncMode();
-    int getConfigurationId();
+    virtual uint64_t getConfigurationId();
 
     std::string getCachePath();
+
+protected:
+    virtual uint8_t getConfigurationIdSampleRate();
+    virtual uint8_t getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
+    virtual uint8_t getConfigurationIdSyncMode();
 
 protected:
     Mixer*             m_Mixer;
