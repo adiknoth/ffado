@@ -105,6 +105,10 @@
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME       1
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE    -10
 
+// config rom read wait interval
+#define IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS         1000
+
+
 // The current version of libiec61883 doesn't seem to calculate
 // the bandwidth correctly. Defining this to non-zero skips
 // bandwidth allocation when doing CMP connections.

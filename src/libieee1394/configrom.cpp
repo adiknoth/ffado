@@ -28,6 +28,8 @@
 
 #include "vendor_model_ids.h"
 
+#include "libutil/SystemTimeSource.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -239,7 +241,9 @@ busRead( struct csr1212_csr* csr,
                                          (size_t)length/4,
                                          ( quadlet_t* )buffer)  )
     {// failed, retry
+        Util::SystemTimeSource::SleepUsecRelative(IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS);
     }
+    Util::SystemTimeSource::SleepUsecRelative(IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS);
 
     if (nb_retries > -1) return 0; // success
     else return -1; // failure
