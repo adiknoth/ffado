@@ -113,6 +113,20 @@ SaffireDevice::buildMixer()
                     FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_HWCTRL,
                     "Out56HwCtrl", "Out5/6 HwCtrl", "Output 5/6 Front Panel Hardware volume control"));
 
+        // dac ignore
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out12DacIgnore", "Out1/2 Dac Ignore", "Output 1/2 Dac Ignore"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out34DacIgnore", "Out3/4 Dac Ignore", "Output 3/4 Dac Ignore"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRELE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRELE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out56DacIgnore", "Out5/6 Dac Ignore", "Output 5/6 Dac Ignore"));
+
         // output level controls
         result &= m_MixerContainer->addElement(
             new VolumeControlLowRes(*this, 
@@ -179,6 +193,24 @@ SaffireDevice::buildMixer()
             new BinaryControl(*this, 
                     FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DIM,
                     "Out12Dim", "Out1/2 Dim", "Output 1/2 Level Dim"));
+
+        // dac ignore
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT12, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out12DacIgnore", "Out1/2 Dac Ignore", "Output 1/2 Dac Ignore"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT34, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out34DacIgnore", "Out3/4 Dac Ignore", "Output 3/4 Dac Ignore"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT56, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out56DacIgnore", "Out5/6 Dac Ignore", "Output 5/6 Dac Ignore"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DACIGNORE,
+                    "Out78DacIgnore", "Out7/8 Dac Ignore", "Output 7/8 Dac Ignore"));
 
         // output level controls
         result &= m_MixerContainer->addElement(
