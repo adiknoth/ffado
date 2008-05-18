@@ -149,10 +149,34 @@ def CheckForPyModule( context, module ):
 	context.Result( ret )
 	return ret
 
+def CompilerCheck( context ):
+	context.Message( "Checking for a working C-compiler " )
+	ret = context.TryLink( """
+#include <stdlib.h>
+
+int main() {
+	printf( "Hello World!" );
+	return 0;
+}""", '.c' )
+	context.Result( ret )
+	if ret == 0:
+		return False;
+	context.Message( "Checking for a working C++-compiler " )
+	ret = context.TryLink( """
+#include <iostream>
+
+int main() {
+	std::cout << "Hello World!" << std::endl;
+	return 0;
+}""", ".cpp" )
+	context.Result( ret )
+	return ret
+
 tests = {
 	"ConfigGuess" : ConfigGuess,
 	"CheckForApp" : CheckForApp,
 	"CheckForPyModule": CheckForPyModule,
+	"CompilerCheck" : CompilerCheck,
 }
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
@@ -168,19 +192,26 @@ else:
 	env['SERIALIZE_USE_EXPAT']=0
 
 if not env.GetOption('clean'):
+#	#
+#	# Check if the environment can actually compile c-files by checking for a
+#	# header shipped with gcc.
+#	#
+#	if not conf.CheckHeader( "stdio.h", language="C" ):
+#		print "It seems as if stdio.h is missing. This probably means that your build environment is broken, please make sure you have a working c-compiler and libstdc installed and usable."
+#		Exit( 1 )
+#	#
+#	# ... and do the same with a c++-header. Because some distributions have
+#	# distinct packages for gcc and g++.
+#	#
+#	if not conf.CheckHeader( "iostream", language="C++" ):
+#		print "It seems as if iostream is missing. This probably means that your build environment is broken, please make sure you have a working c++-compiler installed and usable."
+#		Exit( 1 )
+
 	#
-	# Check if the environment can actually compile c-files by checking for a
-	# header shipped with gcc.
+	# Seems as if the above tests don't really work. This one should do the trick!?
 	#
-	if not conf.CheckHeader( "stdio.h", language="C" ):
-		print "It seems as if stdio.h is missing. This probably means that your build environment is broken, please make sure you have a working c-compiler and libstdc installed and usable."
-		Exit( 1 )
-	#
-	# ... and do the same with a c++-header. Because some distributions have
-	# distinct packages for gcc and g++.
-	#
-	if not conf.CheckHeader( "iostream", language="C++" ):
-		print "It seems as if iostream is missing. This probably means that your build environment is broken, please make sure you have a working c++-compiler installed and usable."
+	if not conf.CompilerCheck():
+		print "It seems as if your system isn't even able to compile any C-/C++-programs. Probably you don't have gcc and g++ installed. Compiling a package from source without a working compiler is very hard to do, please install the needed packages (Hint: on *ubuntu you need both gcc- and g++-packages installed)."
 		Exit( 1 )
 
 	#
