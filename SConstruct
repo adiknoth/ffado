@@ -225,7 +225,10 @@ results above get rechecked.
 	# might not be the best way of testing for these but it's the only
 	# way which seems to work properly.  CheckFunc() fails due to
 	# argument count problems.
-	oldcf = env['CFLAGS']
+	if env.has_key( 'CFLAGS' ):
+		oldcf = env['CFLAGS']
+	else:
+		oldcf = ""
 	oldcf = env.Append(CFLAGS = '-std=c99')
 	if conf.CheckLibWithHeader( "m", "math.h", "c", "lrint(3.2);" ):
 		HAVE_LRINT = 1
