@@ -113,6 +113,7 @@ bebob_source = env.Split( '\
 	bebob/focusrite/focusrite_cmd.cpp \
 	bebob/terratec/terratec_device.cpp \
 	bebob/terratec/terratec_cmd.cpp \
+        bebob/edirol/edirol_fa101.cpp \
 	bebob/esi/quatafire610.cpp \
 	maudio/maudio_avdevice.cpp \
 ' )
