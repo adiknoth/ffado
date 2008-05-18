@@ -27,7 +27,7 @@ Import( 'env' )
 
 env.AppendUnique( CPPPATH=["#/", "#/src"] )
 
-libenv = env.Copy()
+libenv = env.Clone()
 
 ffado_source = env.Split( '\
 	devicemanager.cpp \
@@ -274,7 +274,7 @@ for data in pkgdata:
 #
 # For the debugging apps
 #
-env2 = libenv.Copy()
+env2 = libenv.Clone()
 env2.PrependUnique( LIBPATH=env['build_base']+"src" )
 env2.PrependUnique( LIBS="ffado" )
 
