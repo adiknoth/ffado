@@ -25,8 +25,8 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>861</width>
-            <height>718</height>
+            <width>720</width>
+            <height>582</height>
         </rect>
     </property>
     <property name="caption">
@@ -60,705 +60,6 @@
                     <property name="name">
                         <cstring>tabWidget2</cstring>
                     </property>
-                    <widget class="QWidget">
-                        <property name="name">
-                            <cstring>TabPage</cstring>
-                        </property>
-                        <attribute name="title">
-                            <string>ADAT2</string>
-                        </attribute>
-                        <grid>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QSlider" row="1" column="10">
-                                <property name="name">
-                                    <cstring>sldIMixADAT26L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="7">
-                                <property name="name">
-                                    <cstring>sldIMixADAT24R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="1">
-                                <property name="name">
-                                    <cstring>txtIMixADAT21R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="15">
-                                <property name="name">
-                                    <cstring>sldIMixADAT28R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="9">
-                                <property name="name">
-                                    <cstring>txtIMixADAT25R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="4" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT23</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>3</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="4">
-                                <property name="name">
-                                    <cstring>txtIMixADAT23L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="12" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT27</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>7</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="12">
-                                <property name="name">
-                                    <cstring>txtIMixADAT27L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="0">
-                                <property name="name">
-                                    <cstring>sldIMixADAT21L</cstring>
-                                </property>
-                                <property name="minimumSize">
-                                    <size>
-                                        <width>0</width>
-                                        <height>100</height>
-                                    </size>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="8">
-                                <property name="name">
-                                    <cstring>sldIMixADAT25L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="5">
-                                <property name="name">
-                                    <cstring>sldIMixADAT23R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="13">
-                                <property name="name">
-                                    <cstring>sldIMixADAT27R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="7">
-                                <property name="name">
-                                    <cstring>txtIMixADAT24R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="15">
-                                <property name="name">
-                                    <cstring>txtIMixADAT28R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="2" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT22</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>2</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT22L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="0">
-                                <property name="name">
-                                    <cstring>txtIMixADAT21L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="10" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT26</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>6</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="10">
-                                <property name="name">
-                                    <cstring>txtIMixADAT26L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="6">
-                                <property name="name">
-                                    <cstring>sldIMixADAT24L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="3">
-                                <property name="name">
-                                    <cstring>sldIMixADAT22R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="14">
-                                <property name="name">
-                                    <cstring>sldIMixADAT28L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="11">
-                                <property name="name">
-                                    <cstring>sldIMixADAT26R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="5">
-                                <property name="name">
-                                    <cstring>txtIMixADAT23R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="13">
-                                <property name="name">
-                                    <cstring>txtIMixADAT27R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="0" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT21</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>1</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="8" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT25</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>5</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="8">
-                                <property name="name">
-                                    <cstring>txtIMixADAT25L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="4">
-                                <property name="name">
-                                    <cstring>sldIMixADAT23L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="1">
-                                <property name="name">
-                                    <cstring>sldIMixADAT21R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="12">
-                                <property name="name">
-                                    <cstring>sldIMixADAT27L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="9">
-                                <property name="name">
-                                    <cstring>sldIMixADAT25R</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Below</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="3">
-                                <property name="name">
-                                    <cstring>txtIMixADAT22R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="11">
-                                <property name="name">
-                                    <cstring>txtIMixADAT26R</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>R</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="6" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT24</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>4</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="6">
-                                <property name="name">
-                                    <cstring>txtIMixADAT24L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="0" column="14" rowspan="1" colspan="2">
-                                <property name="name">
-                                    <cstring>txtIMixADAT28</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>8</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QLabel" row="2" column="14">
-                                <property name="name">
-                                    <cstring>txtIMixADAT28L</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>L</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>AlignCenter</set>
-                                </property>
-                            </widget>
-                            <widget class="QSlider" row="1" column="2">
-                                <property name="name">
-                                    <cstring>sldIMixADAT22L</cstring>
-                                </property>
-                                <property name="minValue">
-                                    <number>0</number>
-                                </property>
-                                <property name="maxValue">
-                                    <number>32767</number>
-                                </property>
-                                <property name="lineStep">
-                                    <number>10000</number>
-                                </property>
-                                <property name="pageStep">
-                                    <number>1000</number>
-                                </property>
-                                <property name="orientation">
-                                    <enum>Vertical</enum>
-                                </property>
-                                <property name="tickmarks">
-                                    <enum>Above</enum>
-                                </property>
-                                <property name="tickInterval">
-                                    <number>10000</number>
-                                </property>
-                            </widget>
-                        </grid>
-                    </widget>
                     <widget class="QWidget">
                         <property name="name">
                             <cstring>tab</cstring>
@@ -1618,6 +919,705 @@
                                 </property>
                                 <property name="alignment">
                                     <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                        </grid>
+                    </widget>
+                    <widget class="QWidget">
+                        <property name="name">
+                            <cstring>TabPage</cstring>
+                        </property>
+                        <attribute name="title">
+                            <string>ADAT2</string>
+                        </attribute>
+                        <grid>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QSlider" row="1" column="10">
+                                <property name="name">
+                                    <cstring>sldIMixADAT26L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="7">
+                                <property name="name">
+                                    <cstring>sldIMixADAT24R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="1">
+                                <property name="name">
+                                    <cstring>txtIMixADAT21R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="15">
+                                <property name="name">
+                                    <cstring>sldIMixADAT28R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="9">
+                                <property name="name">
+                                    <cstring>txtIMixADAT25R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="4" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT23</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>3</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="4">
+                                <property name="name">
+                                    <cstring>txtIMixADAT23L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="12" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT27</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>7</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="12">
+                                <property name="name">
+                                    <cstring>txtIMixADAT27L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="0">
+                                <property name="name">
+                                    <cstring>sldIMixADAT21L</cstring>
+                                </property>
+                                <property name="minimumSize">
+                                    <size>
+                                        <width>0</width>
+                                        <height>100</height>
+                                    </size>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="8">
+                                <property name="name">
+                                    <cstring>sldIMixADAT25L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="5">
+                                <property name="name">
+                                    <cstring>sldIMixADAT23R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="13">
+                                <property name="name">
+                                    <cstring>sldIMixADAT27R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="7">
+                                <property name="name">
+                                    <cstring>txtIMixADAT24R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="15">
+                                <property name="name">
+                                    <cstring>txtIMixADAT28R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="2" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT22</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>2</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT22L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="0">
+                                <property name="name">
+                                    <cstring>txtIMixADAT21L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="10" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT26</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>6</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="10">
+                                <property name="name">
+                                    <cstring>txtIMixADAT26L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="6">
+                                <property name="name">
+                                    <cstring>sldIMixADAT24L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="3">
+                                <property name="name">
+                                    <cstring>sldIMixADAT22R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="14">
+                                <property name="name">
+                                    <cstring>sldIMixADAT28L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="11">
+                                <property name="name">
+                                    <cstring>sldIMixADAT26R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="5">
+                                <property name="name">
+                                    <cstring>txtIMixADAT23R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="13">
+                                <property name="name">
+                                    <cstring>txtIMixADAT27R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="0" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT21</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>1</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="8" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT25</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>5</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="8">
+                                <property name="name">
+                                    <cstring>txtIMixADAT25L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="4">
+                                <property name="name">
+                                    <cstring>sldIMixADAT23L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="1">
+                                <property name="name">
+                                    <cstring>sldIMixADAT21R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="12">
+                                <property name="name">
+                                    <cstring>sldIMixADAT27L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="9">
+                                <property name="name">
+                                    <cstring>sldIMixADAT25R</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Below</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="3">
+                                <property name="name">
+                                    <cstring>txtIMixADAT22R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="11">
+                                <property name="name">
+                                    <cstring>txtIMixADAT26R</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>R</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="6" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT24</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>4</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="6">
+                                <property name="name">
+                                    <cstring>txtIMixADAT24L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="0" column="14" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>txtIMixADAT28</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>8</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="2" column="14">
+                                <property name="name">
+                                    <cstring>txtIMixADAT28L</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>L</string>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignCenter</set>
+                                </property>
+                            </widget>
+                            <widget class="QSlider" row="1" column="2">
+                                <property name="name">
+                                    <cstring>sldIMixADAT22L</cstring>
+                                </property>
+                                <property name="minValue">
+                                    <number>0</number>
+                                </property>
+                                <property name="maxValue">
+                                    <number>32767</number>
+                                </property>
+                                <property name="lineStep">
+                                    <number>10000</number>
+                                </property>
+                                <property name="pageStep">
+                                    <number>1000</number>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Vertical</enum>
+                                </property>
+                                <property name="tickmarks">
+                                    <enum>Above</enum>
+                                </property>
+                                <property name="tickInterval">
+                                    <number>10000</number>
                                 </property>
                             </widget>
                         </grid>
