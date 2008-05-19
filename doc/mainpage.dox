@@ -6,15 +6,15 @@
 /**
 @mainpage FFADO - Free Firewire (pro-)Audio Drivers for Linux
 
-@author Pieter Palmers <pieterpalmers@users.sourceforge.net>
+@author Pieter Palmers <pieter.palmers@ffado.org>
 
 @section intro Introduction
 
 FFADO is intended as an intermediate layer between the Linux1394 kernel/userspace layer, and the various audio API's (ALSA, jack, ...) present.
 
-\note this is a SVN version, therefore it is highly volatile. Certain parts of the documentation can be outdated. This documentation is also auto-generated, and it can occur that unused classes and interfaces appear in the documentation. This pollution will be cleaned up as we go along.
+\note Certain parts of the documentation can be outdated. This documentation is also auto-generated, and it can occur that unused classes and interfaces appear in the documentation.
 
-@see <http://ffado.sourceforge.net>
+@see <http://www.ffado.org>
 
 @section library Client side library
 
@@ -23,12 +23,5 @@ API's. Currently the best support is for the JACK backend. It is also intended t
 
 The library API's external C interface is defined in:
 	- @ref ffado.h "<libffado/ffado.h>" 
-
-@section devicesupport Adding support for unsupported devices
-
-Initial support by FreeBoB was for BeBoB devices only, however the FFADO framework 
-is usable for all FireWire audio devices.
-
-Take a look at the @ref adding_devices page for a detailed description.
 
 */

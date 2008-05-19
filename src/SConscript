@@ -57,7 +57,6 @@ ffado_source = env.Split( '\
 	libavc/general/avc_vendor_dependent_cmd.cpp \
 	libavc/avc_definitions.cpp \
 	libavc/ccm/avc_signal_source.cpp \
-	libieee1394/ARMHandler.cpp \
 	libieee1394/configrom.cpp \
 	libieee1394/csr1212.c \
 	libieee1394/CycleTimerHelper.cpp \
