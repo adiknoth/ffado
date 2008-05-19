@@ -194,34 +194,7 @@ ffadolib = libenv.SharedLibrary( "ffado", source )
 if libenv['BUILD_STATIC_LIB']:
     ffadolib_static = libenv.StaticLibrary( "ffado", source )
 
-#
-# All the following tries to emulate the versioning of installed libs as seen from libtool...
-#
-if False:
-	print "Trying to emulate libtools versioned install"
-	libenv.Alias( "install", libenv.InstallAs( os.path.join('$libdir','libffado.so.$LIBVERSION'), ffadolib ) )
-	libenv.Ignore( ffadolib, os.path.join('$libdir','libffado.so') )
-	#env.Ignore( os.path.join('$libdir','libffado.so'), ffadolib )
-	#env.Ignore( os.path.join('$libdir','libffado.so.0'), "install" )
-
-	libenv.Alias( "install", libenv.Command(
-		target="$libdir/libffado.so",
-		source=libenv['libdir']+"/libffado.so.$LIBVERSION",
-		action="ln -s $SOURCE $TARGET"
-		) )
-	libenv.Alias( "install", libenv.Command(
-		target="$libdir/libffado.so.%s" % str(libenv['LIBVERSION']).rsplit('.',1)[0],
-		source=libenv['libdir']+"/libffado.so.$LIBVERSION",
-		action="ln -s $SOURCE $TARGET"
-		) )
-	libenv.Alias( "install", libenv.Command(
-		target="$libdir/libffado.so.%s" % str(libenv['LIBVERSION']).rsplit('.',2)[0],
-		source=libenv['libdir']+"/libffado.so.$LIBVERSION",
-		action="ln -s $SOURCE $TARGET"
-		) )
-else:
-	#print "Doing simple install"
-	libenv.Install( "$libdir", ffadolib )
+libenv.Install( "$libdir", ffadolib )
 
 #
 # Install the pkgdata to $sharedir
