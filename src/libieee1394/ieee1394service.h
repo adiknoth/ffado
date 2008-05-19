@@ -39,7 +39,6 @@
 #include <vector>
 #include <string>
 
-class ARMHandler;
 class IsoHandlerManager;
 class CycleTimerHelper;
 
@@ -246,24 +245,6 @@ public:
         return raw1394_get_generation( m_handle );
     }
 
-    /**
-     * @brief register an AddressRangeMapping Handler
-     * @param h pointer to the handler to register
-     *
-     * @return true on success or false on failure
-     **/
-
-    bool registerARMHandler( ARMHandler *h );
-
-    /**
-     * @brief unregister ARM range
-     * @param h pointer to the handler to unregister
-     * @return true if successful, false otherwise
-     */
-    bool unregisterARMHandler( ARMHandler *h );
-
-    nodeaddr_t findFreeARMBlock( nodeaddr_t start, size_t length, size_t step );
-
 // ISO channel stuff
 public:
     signed int getAvailableBandwidth();
@@ -309,13 +290,6 @@ private:
                     unsigned int generation );
     bool resetHandler( unsigned int generation );
 
-    static int armHandlerLowLevel(raw1394handle_t handle, unsigned long arm_tag,
-                     byte_t request_type, unsigned int requested_length,
-                     void *data);
-    bool armHandler( unsigned long arm_tag,
-                     byte_t request_type, unsigned int requested_length,
-                     void *data);
-
     raw1394handle_t m_handle;
     Util::Mutex*    m_handle_lock;
     raw1394handle_t m_resetHandle;
@@ -339,12 +313,6 @@ private:
 
     typedef std::vector< Util::Functor* > reset_handler_vec_t;
     reset_handler_vec_t m_busResetHandlers;
-
-    // ARM stuff
-    arm_tag_handler_t m_default_arm_handler;
-
-    typedef std::vector< ARMHandler * > arm_handler_vec_t;
-    arm_handler_vec_t m_armHandlers;
 
 public:
     void setVerboseLevel(int l);

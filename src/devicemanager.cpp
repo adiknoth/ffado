@@ -40,7 +40,6 @@
 
 #ifdef ENABLE_BEBOB
 #include "bebob/bebob_avdevice.h"
-#include "maudio/maudio_avdevice.h"
 #endif
 
 #ifdef ENABLE_GENERICAVC
@@ -51,25 +50,8 @@
     #include "fireworks/fireworks_device.h"
 #endif
 
-#ifdef ENABLE_BOUNCE
-#include "bounce/bounce_avdevice.h"
-#include "bounce/bounce_slave_avdevice.h"
-#endif
-
 #ifdef ENABLE_MOTU
 #include "motu/motu_avdevice.h"
-#endif
-
-#ifdef ENABLE_RME
-#include "rme/rme_avdevice.h"
-#endif
-
-#ifdef ENABLE_DICE
-#include "dice/dice_avdevice.h"
-#endif
-
-#ifdef ENABLE_METRIC_HALO
-#include "metrichalo/mh_avdevice.h"
 #endif
 
 #include <iostream>
@@ -839,45 +821,10 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
     }
 #endif
 
-#ifdef ENABLE_BEBOB
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
-    if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
-        return MAudio::AvDevice::createDevice( *this, configRom );
-    }
-#endif
-
 #ifdef ENABLE_MOTU
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
     if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
         return Motu::MotuDevice::createDevice( *this, configRom );
-    }
-#endif
-
-#ifdef ENABLE_DICE
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Dice...\n" );
-    if ( Dice::DiceAvDevice::probe( *configRom.get() ) ) {
-        return Dice::DiceAvDevice::createDevice( *this, configRom );
-    }
-#endif
-
-#ifdef ENABLE_METRIC_HALO
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Metric Halo...\n" );
-    if ( MetricHalo::MHAvDevice::probe( *configRom.get() ) ) {
-        return MetricHalo::MHAvDevice::createDevice( *this, configRom );
-    }
-#endif
-
-#ifdef ENABLE_RME
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying RME...\n" );
-    if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
-        return Rme::RmeDevice::createDevice( *this, configRom );
-    }
-#endif
-
-#ifdef ENABLE_BOUNCE
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Bounce...\n" );
-    if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
-        return Bounce::BounceDevice::createDevice( *this, configRom );
     }
 #endif
 
@@ -887,13 +834,6 @@ DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
 FFADODevice*
 DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 {
-
-#ifdef ENABLE_BOUNCE
-    if ( Bounce::BounceSlaveDevice::probe( *configRom.get() ) ) {
-        return Bounce::BounceSlaveDevice::createDevice( configRom );
-    }
-#endif
-
     return 0;
 }
 
@@ -982,14 +922,6 @@ DeviceManager::getSyncSource() {
                     "Could not retrieve slaveMode parameter, defauling to false\n");
     }
     return device->getStreamProcessorByIndex(0);
-/*
-    #warning TEST CODE FOR BOUNCE DEVICE !!
-    // this makes the bounce slave use the xmit SP as sync source
-    if (slaveMode) {
-        return device->getStreamProcessorByIndex(1);
-    } else {
-        return device->getStreamProcessorByIndex(0);
-    }*/
 }
 
 bool

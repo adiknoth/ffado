@@ -35,7 +35,6 @@
 #include "libstreaming/motu/MotuTransmitStreamProcessor.h"
 #include "libstreaming/motu/MotuPort.h"
 
-#include "libutil/DelayLockedLoop.h"
 #include "libutil/Time.h"
 
 #include "libcontrol/BasicElements.h"

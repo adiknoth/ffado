@@ -1,4 +1,4 @@
-FFADO v2.x
+FFADO v2.0
 ==========
 
 The FFADO project aims to provide a free driver implemenation for FireWire 
@@ -39,6 +39,7 @@ The devices officially supported are:
 * ESI Quatafire 610
 * Terratec Producer Phase 88
 * Focusrite Saffire (original/white)
+* Focusrite Saffire LE (black)
 * Focusrite Saffire PRO10
 * Focusrite Saffire PRO26
 * ECHO AudioFire2
@@ -47,7 +48,7 @@ The devices officially supported are:
 
 The 'officially supported' label is only given to devices that fullfil the
 following:
-* at least one of the developers has the device
+* at least one of the developers has the device, or a closely related one
 * the vendor provides development support (access to information)
 * the device works
 
@@ -70,19 +71,24 @@ the ECHO FireWorks platform will work, at least to a certain extent.
 Devices that have been reported to (partially) work with the generic support:
 * Presonus FireBox
 * Presonus FirePod / FP10
-* Focusrite Saffire LE
 * ECHO AudioFire8
 * ECHO AudioFire12
+* Terratec Producer Phase 24
+* Terratec Producer Phase X24
 
-Usupported devices:
+Unsupported devices (non-functional):
 * Presonus FireStation
 * Presonus FireStudio (all variants)
 * TC Konnekt (all variants)
 * Alesis devices
 * Metric Halo devices
 * RME Firewire devices
+* M-Audio FireWire 410
+* M-Audio FireWire 1814
+* M-Audio ProFire 2626
 
-We constantly try to persuade vendors to help us extend our device support.
+We constantly try to persuade vendors to help us extend our device support. Don't
+hesitate to let a vendor know that you would like to have their device(s) supported.
 
 Dependencies
 ------------

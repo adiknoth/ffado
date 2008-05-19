@@ -28,7 +28,6 @@
 
 #include "PortManager.h"
 
-#include "libutil/StreamStatistics.h"
 #include "libutil/TimestampedBuffer.h"
 #include "libutil/OptionContainer.h"
 

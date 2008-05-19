@@ -24,7 +24,6 @@
 
 #include "config.h"
 #include "ieee1394service.h"
-#include "ARMHandler.h"
 #include "cycletimer.h"
 #include "IsoHandlerManager.h"
 #include "CycleTimerHelper.h"
@@ -106,17 +105,6 @@ Ieee1394Service::~Ieee1394Service()
     delete m_pIsoManager;
     delete m_pCTRHelper;
     stopRHThread();
-    for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
-          it != m_armHandlers.end();
-          ++it )
-    {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler for 0x%016llX\n", (*it)->getStart());
-        int err=raw1394_arm_unregister(m_resetHandle, (*it)->getStart());
-        if (err) {
-            debugError(" Failed to unregister ARM handler for 0x%016llX\n", (*it)->getStart());
-            debugError(" Error: %s\n", strerror(errno));
-        }
-    }
 
     delete m_pWatchdog;
     if ( m_handle ) {
@@ -264,9 +252,6 @@ Ieee1394Service::initialize( int port )
     raw1394_set_userdata( m_util_handle, this );
     raw1394_set_bus_reset_handler( m_resetHandle,
                                    this->resetHandlerLowLevel );
-
-    m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
-                                   this->armHandlerLowLevel );
 
     if(!m_pCTRHelper) {
         debugFatal("No CycleTimerHelper available, bad!\n");
@@ -639,147 +624,6 @@ Ieee1394Service::resetHandler( unsigned int generation )
         ( *func )();
     }
 
-    return true;
-}
-
-bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Registering ARM handler (%p) for 0x%016llX, length %u\n",
-        h, h->getStart(), h->getLength());
-
-    int err=raw1394_arm_register(m_resetHandle, h->getStart(),
-                                 h->getLength(), h->getBuffer(), (octlet_t)h,
-                                 h->getAccessRights(),
-                                 h->getNotificationOptions(),
-                                 h->getClientTransactions());
-    if (err) {
-        debugError("Failed to register ARM handler for 0x%016llX\n", h->getStart());
-        debugError(" Error: %s\n", strerror(errno));
-        return false;
-    }
-
-    m_armHandlers.push_back( h );
-
-    return true;
-}
-
-bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler (%p) for 0x%016llX\n",
-        h, h->getStart());
-
-    for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
-          it != m_armHandlers.end();
-          ++it )
-    {
-        if((*it) == h) {
-            int err=raw1394_arm_unregister(m_resetHandle, h->getStart());
-            if (err) {
-                debugError("Failed to unregister ARM handler (%p)\n", h);
-                debugError(" Error: %s\n", strerror(errno));
-            } else {
-                m_armHandlers.erase(it);
-                return true;
-            }
-        }
-    }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " handler not found!\n");
-
-    return false;
-}
-/**
- * @brief Tries to find a free ARM address range
- *
- * @param start  address to start with
- * @param length length of the block needed (bytes)
- * @param step   step to use when searching (bytes)
- * @return The base address that is free, and 0xFFFFFFFFFFFFFFFF when failed
- */
-nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, size_t step ) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Finding free ARM block of %d bytes, from 0x%016llX in steps of %d bytes\n",
-        length, start, step);
-
-    int cnt=0;
-    const int maxcnt=10;
-    int err=1;
-    while(err && cnt++ < maxcnt) {
-        // try to register
-        err=raw1394_arm_register(m_resetHandle, start, length, 0, 0, 0, 0, 0);
-
-        if (err) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, " -> cannot use 0x%016llX\n", start);
-            debugError("    Error: %s\n", strerror(errno));
-            start += step;
-        } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, " -> use 0x%016llX\n", start);
-            err=raw1394_arm_unregister(m_resetHandle, start);
-            if (err) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, " error unregistering test handler\n");
-                debugError("    Error: %s\n", strerror(errno));
-                return 0xFFFFFFFFFFFFFFFFLLU;
-            }
-            return start;
-        }
-    }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Could not find free block in %d tries\n",cnt);
-    return 0xFFFFFFFFFFFFFFFFLLU;
-}
-
-int
-Ieee1394Service::armHandlerLowLevel(raw1394handle_t handle,
-                     unsigned long arm_tag,
-                     byte_t request_type, unsigned int requested_length,
-                     void *data)
-{
-    Ieee1394Service* instance
-        = (Ieee1394Service*) raw1394_get_userdata( handle );
-    instance->armHandler( arm_tag, request_type, requested_length, data );
-
-    return 0;
-}
-
-bool
-Ieee1394Service::armHandler(  unsigned long arm_tag,
-                     byte_t request_type, unsigned int requested_length,
-                     void *data)
-{
-    for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
-          it != m_armHandlers.end();
-          ++it )
-    {
-        if((*it) == (ARMHandler *)arm_tag) {
-            struct raw1394_arm_request_response *arm_req_resp;
-            arm_req_resp  = (struct raw1394_arm_request_response *) data;
-            raw1394_arm_request_t arm_req=arm_req_resp->request;
-            raw1394_arm_response_t arm_resp=arm_req_resp->response;
-
-            debugOutput(DEBUG_LEVEL_VERBOSE,"ARM handler for address 0x%016llX called\n",
-                (*it)->getStart());
-            debugOutput(DEBUG_LEVEL_VERBOSE," request type   : 0x%02X\n",request_type);
-            debugOutput(DEBUG_LEVEL_VERBOSE," request length : %04d\n",requested_length);
-
-            switch(request_type) {
-                case RAW1394_ARM_READ:
-                    (*it)->handleRead(arm_req);
-                    *arm_resp=*((*it)->getResponse());
-                    break;
-                case RAW1394_ARM_WRITE:
-                    (*it)->handleWrite(arm_req);
-                    *arm_resp=*((*it)->getResponse());
-                    break;
-                case RAW1394_ARM_LOCK:
-                    (*it)->handleLock(arm_req);
-                    *arm_resp=*((*it)->getResponse());
-                    break;
-                default:
-                    debugWarning("Unknown request type received, ignoring...\n");
-            }
-
-            return true;
-        }
-    }
-
-    debugOutput(DEBUG_LEVEL_VERBOSE,"default ARM handler called\n");
-
-    m_default_arm_handler(m_resetHandle, arm_tag, request_type, requested_length, data );
     return true;
 }
 

@@ -71,16 +71,10 @@ ffado_source = env.Split( '\
 	libstreaming/generic/Port.cpp \
 	libstreaming/generic/PortManager.cpp \
 	libutil/cmd_serialize.cpp \
-	libutil/DelayLockedLoop.cpp \
-	libutil/IpcRingBuffer.cpp \
-	libutil/PacketBuffer.cpp \
 	libutil/OptionContainer.cpp \
-	libutil/PosixMessageQueue.cpp \
-	libutil/PosixSharedMemory.cpp \
 	libutil/PosixMutex.cpp \
 	libutil/PosixThread.cpp \
 	libutil/ringbuffer.c \
-	libutil/StreamStatistics.cpp \
 	libutil/SystemTimeSource.cpp \
 	libutil/TimestampedBuffer.cpp \
 	libutil/Watchdog.cpp \
@@ -113,14 +107,10 @@ bebob_source = env.Split( '\
 	bebob/focusrite/focusrite_cmd.cpp \
 	bebob/terratec/terratec_device.cpp \
 	bebob/terratec/terratec_cmd.cpp \
-        bebob/edirol/edirol_fa101.cpp \
+	bebob/edirol/edirol_fa101.cpp \
 	bebob/esi/quatafire610.cpp \
-	maudio/maudio_avdevice.cpp \
 ' )
 bebob_pkgdata = env.Split( '\
-	maudio/refdesign.xml \
-	maudio/fw410.xml \
-	maudio/fwap.xml \
 	bebob/ffado_driver_bebob.txt \
 ' )
 
@@ -130,7 +120,7 @@ genericavc_source =  env.Split( '\
 ' )
 
 genericavc_pkgdata = env.Split( '\
-        genericavc/ffado_driver_genericavc.txt \
+	genericavc/ffado_driver_genericavc.txt \
 ' )	
 
 fireworks_source =  env.Split( '\
@@ -149,7 +139,7 @@ fireworks_source =  env.Split( '\
 ' )
 
 fireworks_pkgdata =  env.Split( '\
-        fireworks/ffado_driver_fireworks.txt \
+	fireworks/ffado_driver_fireworks.txt \
 ' )
 
 motu_source = env.Split( '\
@@ -161,31 +151,12 @@ motu_source = env.Split( '\
 	libstreaming/motu/MotuTransmitStreamProcessor.cpp \
 ' )
 
-dice_source = env.Split( '\
-	dice/dice_avdevice.cpp \
-' )
-
-bounce_source = env.Split( '\
-	bounce/bounce_avdevice.cpp \
-	bounce/bounce_slave_avdevice.cpp \
-	libstreaming/AmdtpSlaveStreamProcessor.cpp \
-' )
-
-metric_halo_source = env.Split( '\
-	metrichalo/mh_avdevice.cpp \
-' )
-
-rme_source = env.Split( '\
-	rme/rme_avdevice.cpp \
-' )
-
 amdtp_source = env.Split( '\
 	libstreaming/amdtp/AmdtpPort.cpp \
 	libstreaming/amdtp/AmdtpPortInfo.cpp \
 	libstreaming/amdtp/AmdtpReceiveStreamProcessor.cpp \
 	libstreaming/amdtp/AmdtpTransmitStreamProcessor.cpp \
 ' )
-
 
 source = ffado_source
 pkgdata = []
@@ -200,18 +171,6 @@ if env['ENABLE_FIREWORKS']:
 if env['ENABLE_MOTU']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
 	source += motu_source
-if env['ENABLE_DICE']:
-	libenv.AppendUnique( CCFLAGS=["-DENABLE_DICE"] )
-	source += dice_source
-if env['ENABLE_METRIC_HALO']:
-	libenv.AppendUnique( CCFLAGS=["-DENABLE_METRIC_HALO"] )
-	source += metric_halo_source
-if env['ENABLE_RME']:
-	libenv.AppendUnique( CCFLAGS=["-DENABLE_RME"] )
-	source += rme_source
-if env['ENABLE_BOUNCE']:
-	libenv.AppendUnique( CCFLAGS=["-DENABLE_BOUNCE"] )
-	source += bounce_source
 
 # The list of devices needing GENERICAVC is controlled in ../SConstruct
 if env['ENABLE_GENERICAVC']:
@@ -279,10 +238,6 @@ env2.PrependUnique( LIBPATH=env['build_base']+"src" )
 env2.PrependUnique( LIBS="ffado" )
 
 apps = { \
-	"test-debugmodule" : "debugmodule/test_debugmodule.cpp", \
-	"test-dll" : "libutil/test-dll.cpp", \
-	"test-unittests-util" : "libutil/unittests.cpp", \
-	"test-cyclecalc" : "libieee1394/test-cyclecalc.cpp", \
 }
 
 installapps = []
