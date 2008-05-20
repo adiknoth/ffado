@@ -37,15 +37,6 @@
 #include "libutil/ByteSwap.h"
 #include <assert.h>
 
-// Set to 1 to enable the generation of a 1 kHz test tone in analog output 1.  Even with
-// this defined to 1 the test tone will now only be produced if run with a non-zero 
-// debug level.
-#define TESTTONE 1
-
-#if TESTTONE
-#include <math.h>
-#endif
-
 /* Provide more intuitive access to GCC's branch predition built-ins */
 #define likely(x)   __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
@@ -278,40 +269,9 @@ MotuTransmitStreamProcessor::generatePacketData (
     if (m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
         float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
-#if TESTTONE
-    /* Now things are beginning to stabilise, make things easier for others by only playing
-     * the test tone when run with a non-zero debug level.
-     */
-    if (getDebugLevel() > 0) {
-        // FIXME: remove this hacked in 1 kHz test signal to
-        // analog-1 when testing is complete.
-        signed int i, int_tpf = lrintf(ticks_per_frame);
-        unsigned char *sample = data+8+16;
-        for (i=0; i<n_events; i++, sample+=m_event_size) {
-            static signed int a_cx = 0;
-            // Each sample is 3 bytes with MSB in lowest address (ie: 
-            // network byte order).  After byte order swap, the 24-bit
-            // MSB is in the second byte of val.
-            signed int val = CondSwapToBus32(lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx)));
-            memcpy(sample,((char *)&val)+1,3);
-            if ((a_cx+=int_tpf) >= 24576000) {
-                a_cx -= 24576000;
-            }
-        }
-    }
-#endif
-
-//fprintf(stderr,"tx: %d/%d\n",
-//  TICKS_TO_CYCLES(fullTicksToSph(m_last_timestamp)),
-//  TICKS_TO_OFFSET(fullTicksToSph(m_last_timestamp)));
-        // Set up each frames's SPH.
-//fprintf(stderr,"tpf=%f\n", ticks_per_frame);
         for (int i=0; i < n_events; i++, quadlet += dbs) {
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
             *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
-//fprintf(stderr,"tx: %d/%d\n",
-//  CYCLE_TIMER_GET_CYCLES(fullTicksToSph(ts_frame)),
-//  CYCLE_TIMER_GET_OFFSET(fullTicksToSph(ts_frame)));
         }
 
         return eCRV_OK;

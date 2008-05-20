@@ -101,11 +101,6 @@ MotuReceiveStreamProcessor::getNominalFramesPerPacket() {
 bool
 MotuReceiveStreamProcessor::prepareChild() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
-
-    // prepare the framerate estimate
-    // FIXME: not needed anymore?
-    //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
-
     return true;
 }
 
