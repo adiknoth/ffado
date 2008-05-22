@@ -149,16 +149,11 @@ public:
 
 
     /**
-     * Returns and locks the element vector. No changes will be made to the vector
-     * until releaseElementVector is called.
+     * Returns the element vector. be sure to lock the tree while using
+     * the return value.
      * @return 
      */
     const ElementVector & getElementVector();
-
-    /**
-     * Releases the lock on the element vector.
-     */
-    void releaseElementVector();
 
     virtual void show();
     virtual void setVerboseLevel(int l);
@@ -166,6 +161,9 @@ public:
     enum eSignals {
         eS_Updated,
     };
+
+private:
+    bool deleteElementNoLock(Element *e);
 
 protected:
     ElementVector m_Children;

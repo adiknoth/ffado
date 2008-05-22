@@ -31,7 +31,13 @@
 #include <iostream>
 
 #include <time.h>
-#include <execinfo.h>
+
+#if DEBUG_BACKTRACE_SUPPORT
+    #include <execinfo.h>
+    #include <cxxabi.h>
+    #define GNU_SOURCE
+    #include <dlfcn.h>
+#endif
 
 #if DEBUG_USE_MESSAGE_BUFFER
 #else
@@ -287,8 +293,26 @@ DebugModuleManager::~DebugModuleManager()
     if (strings == NULL) {
         perror("backtrace_symbols");
     } else {
+        char* outbuf = NULL;
+        size_t length;
+        int status;
+        Dl_info info;
         for (int j = 0; j < m_backtrace_buffer_nb_seen; j++) {
-            fprintf(stderr, " %p => %s\n", m_backtrace_buffer_seen[j], strings[j]);
+            if (dladdr(m_backtrace_buffer_seen[j], &info) != 0) {
+                outbuf = __cxxabiv1::__cxa_demangle(info.dli_sname, outbuf, &length, &status);
+                if(outbuf && status == 0) {
+                    fprintf(stderr, " %p => %s\n", 
+                            m_backtrace_buffer_seen[j], outbuf);
+                    free(outbuf);
+                    outbuf = NULL;
+                } else {
+                    fprintf(stderr, " %p => %s (demangle status: %d)\n", 
+                            m_backtrace_buffer_seen[j], strings[j], status);
+                }
+            } else {
+                fprintf(stderr, " %p => %s\n", 
+                        m_backtrace_buffer_seen[j], strings[j]);
+            }
         }
         free(strings);
     }
@@ -645,7 +669,10 @@ DebugModuleManager::printBacktrace(int len)
     chars_written += snprintf(m_backtrace_strbuffer, MB_BUFFERSIZE-chars_written, "BACKTRACE (%d/%d): ", nptrs, len);
 
     for (int j = 0; j < nptrs; j++) {
-        chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "%p ", m_backtrace_buffer[j]);
+        char name[64];
+        name[0]=0;
+        getFunctionName(m_backtrace_buffer[j], name, 64);
+        chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "%s ", name);
     }
     chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "\n");
 
@@ -659,18 +686,19 @@ DebugModuleManager::printBacktrace(int len)
     for (int i=0; i<nptrs; i++) {
         seen = false;
         int j;
-        for (j=0; j<m_backtrace_buffer_nb_seen & j < DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN; j++) {
+        for (j=0; j<m_backtrace_buffer_nb_seen && j < DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN; j++) {
             if(m_backtrace_buffer_seen[j] == m_backtrace_buffer[i]) {
                 seen = true;
                 break;
             }
         }
-        if (!seen) {
+        if (!seen 
+           && j < DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN) {
             m_backtrace_buffer_seen[j] = m_backtrace_buffer[i];
             m_backtrace_buffer_nb_seen++;
         }
     }
-    
+
     print(m_backtrace_strbuffer);
 
     pthread_mutex_unlock(&m_backtrace_lock);
@@ -688,13 +716,54 @@ DebugModuleManager::getBacktracePtr(int id)
 
     pthread_mutex_lock(&m_backtrace_lock);
     nptrs = backtrace(m_backtrace_buffer, id+1);
-    if(id<nptrs) {
-        retval = m_backtrace_buffer[id];
+    if(id >= nptrs) {
+        id = nptrs-1;
+    }
+    retval = m_backtrace_buffer[id];
+    // save the pointers to the pointers-seen list such that we can
+    // dump their info later on
+    bool seen = false;
+    int j;
+    for (j=0; j<m_backtrace_buffer_nb_seen && j < DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN; j++) {
+        if(m_backtrace_buffer_seen[j] == m_backtrace_buffer[id]) {
+            seen = true;
+            break;
+        }
+    }
+    if (!seen
+       && j < DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN) {
+        m_backtrace_buffer_seen[j] = m_backtrace_buffer[id];
+        m_backtrace_buffer_nb_seen++;
     }
     pthread_mutex_unlock(&m_backtrace_lock);
-    
+
     return retval;
 }
+
+void
+DebugModuleManager::getFunctionName(void *ptr, char *buff, int len)
+{
+    char* outbuf = NULL;
+    size_t length;
+    int status;
+    Dl_info info;
+    if (dladdr(ptr, &info) != 0) {
+        outbuf = abi::__cxa_demangle(info.dli_sname, outbuf, &length, &status);
+        if(outbuf && status == 0) {
+            if(len < (int)length) {
+                strncpy(buff, outbuf, len);
+            } else {
+                strncpy(buff, outbuf, length);
+            }
+        } else {
+            snprintf(buff, len, "%p (%s)", ptr, info.dli_sname);
+        }
+    } else {
+        snprintf(buff, len, "%p (I-ERR)", ptr);
+    }
+    if (outbuf) free(outbuf);
+}
+
 #endif
 
 //----------------------------------------

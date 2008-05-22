@@ -299,15 +299,20 @@ main( int argc, char **argv )
         global_conn = &conn;
         conn.request_name("org.ffado.Control");
 
+        // lock the control tree such that it does not get modified while we build our view
+        m_deviceManager->lockControl();
         container = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", 
                                                NULL, *m_deviceManager);
-        
+        // unlock the control tree since the tree is built
+        m_deviceManager->unlockControl();
+
         printMessage("DBUS test service running\n");
         printMessage("press ctrl-c to stop it & exit\n");
         
         while(run) {
             debugOutput( DEBUG_LEVEL_NORMAL, "dispatching...\n");
             dispatcher.enter();
+
             debugOutput( DEBUG_LEVEL_NORMAL, " dispatcher exited...\n");
             sem_wait(&run_sem);
             debugOutput( DEBUG_LEVEL_NORMAL, " activity handled...\n");

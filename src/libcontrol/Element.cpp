@@ -76,12 +76,18 @@ Element::~Element()
 void
 Element::lockControl()
 {
+    if(!m_parent) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Locking tree...\n");
+    }
     getLock().Lock();
 }
 
 void
 Element::unlockControl()
 {
+    if(!m_parent) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Unlocking tree...\n");
+    }
     getLock().Unlock();
 }
 
@@ -174,14 +180,10 @@ Container::countElements()
 const ElementVector &
 Container::getElementVector()
 {
-    lockControl();
+    if(!getLock().isLocked()) {
+        debugWarning("called on unlocked tree!\n");
+    }
     return m_Children;
-}
-
-void
-Container::releaseElementVector()
-{
-    unlockControl();
 }
 
 bool
@@ -216,9 +218,8 @@ Container::addElement(Element *e)
 }
 
 bool
-Container::deleteElement(Element *e)
+Container::deleteElementNoLock(Element *e)
 {
-    Util::MutexLockHelper lock(getLock());
     if(e == NULL) return false;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Deleting Element %s from %s\n",
         e->getName().c_str(), getName().c_str());
@@ -229,9 +230,6 @@ Container::deleteElement(Element *e)
     {
         if(*it == e) {
             m_Children.erase(it);
-            // unlock before emitting the signal
-            lock.earlyUnlock();
-            emitSignal(eS_Updated, m_Children.size());
             return true;
         }
     }
@@ -241,12 +239,26 @@ Container::deleteElement(Element *e)
 }
 
 bool
+Container::deleteElement(Element *e)
+{
+    bool retval;
+    Util::MutexLockHelper lock(getLock());
+    retval = deleteElementNoLock(e);
+    if(retval) {
+        // unlock before emitting the signal
+        lock.earlyUnlock();
+        emitSignal(eS_Updated, m_Children.size());
+    }
+    return retval;
+}
+
+bool
 Container::clearElements(bool delete_pointers) 
 {
     Util::MutexLockHelper lock(getLock());
     while(m_Children.size()) {
         Element *e=m_Children[0];
-        deleteElement(e);
+        deleteElementNoLock(e);
         if (delete_pointers) delete e;
     }
 
@@ -274,7 +286,6 @@ Container::show()
 void
 Container::setVerboseLevel(int l)
 {
-    Util::MutexLockHelper lock(getLock());
     setDebugLevel(l);
     for ( ElementVectorIterator it = m_Children.begin();
       it != m_Children.end();
