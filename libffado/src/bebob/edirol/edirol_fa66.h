@@ -21,19 +21,19 @@
  *
  */
 
-#ifndef BEBOB_EDIROL_FA101_H
-#define BEBOB_EDIROL_FA101_H
+#ifndef BEBOB_EDIROL_FA66_H
+#define BEBOB_EDIROL_FA66_H
 
 #include "bebob/bebob_avdevice.h"
 
 namespace BeBoB {
 namespace Edirol {
 
-class EdirolFa101Device : public BeBoB::AvDevice {
+class EdirolFa66Device : public BeBoB::AvDevice {
 public:
-    EdirolFa101Device( DeviceManager& d,
+    EdirolFa66Device( DeviceManager& d,
                        std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~EdirolFa101Device();
+    virtual ~EdirolFa66Device();
 
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);

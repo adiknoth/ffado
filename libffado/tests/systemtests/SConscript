@@ -23,7 +23,7 @@
 
 Import( 'env' )
 
-env = env.Copy()
+env = env.Clone()
 
 env.PrependUnique( CPPPATH=["#/src"] )
 env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
@@ -32,7 +32,7 @@ env.PrependUnique( LIBS=["ffado"] )
 if not env.GetOption( "clean" ):
 	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
 
-static_env = env.Copy()
+static_env = env.Clone()
 
 #
 # deactivate as they don't seem ported to the new api: test-extplugcmd,

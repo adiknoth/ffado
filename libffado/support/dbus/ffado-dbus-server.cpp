@@ -103,7 +103,7 @@ static struct argp_option options[] = {
     {"silent",   's',       0,    OPTION_ALIAS },
 
     {"verbose",  'v', "level",    0,  "Produce verbose output" },
-    {"cache",    'c', "enable",   0,  "Use AVC model cache (default=disabled)" },
+    {"cache",    'c', "enable",   0,  "Use AVC model cache (default=enable)" },
 
 
     {"node",     'n',    "id",    0,  "Only expose mixer of a device on a specific node" },
@@ -230,7 +230,7 @@ main( int argc, char **argv )
     // Default values.
     arguments.silent      = 0;
     arguments.verbose     = DEBUG_LEVEL_NORMAL;
-    arguments.use_cache   = 0;
+    arguments.use_cache   = 1;
     arguments.port        = 0;
     arguments.node_id     = 0;
     arguments.node_id_set = 0; // if we don't specify a node, discover all

@@ -21,16 +21,16 @@
  *
  */
 
-#include "edirol_fa101.h"
+#include "edirol_fa66.h"
 
 namespace BeBoB {
 namespace Edirol {
 
-EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
+EdirolFa66Device::EdirolFa66Device( DeviceManager& d,
                                       std::auto_ptr<ConfigRom>( configRom ))
     : BeBoB::AvDevice( d , configRom)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Edirol::EdirolFa101Device (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Edirol::EdirolFa66Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
     m_fixed_clocksource.type = FFADODevice::eCT_Auto;
@@ -39,38 +39,34 @@ EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
     m_fixed_clocksource.id = 0;
     m_fixed_clocksource.slipping = false;
     m_fixed_clocksource.description = "Device Controlled";
-
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
-    }
 }
 
-EdirolFa101Device::~EdirolFa101Device()
+EdirolFa66Device::~EdirolFa66Device()
 {
 }
 
 FFADODevice::ClockSource
-EdirolFa101Device::getActiveClockSource() {
+EdirolFa66Device::getActiveClockSource() {
     return m_fixed_clocksource;
 }
 
 bool
-EdirolFa101Device::setActiveClockSource(ClockSource s) {
+EdirolFa66Device::setActiveClockSource(ClockSource s) {
     // can't change, hence only succeed when identical
     return s.id == m_fixed_clocksource.id;
 }
 
 FFADODevice::ClockSourceVector
-EdirolFa101Device::getSupportedClockSources() {
+EdirolFa66Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
     r.push_back(m_fixed_clocksource);
     return r;
 }
 
 void
-EdirolFa101Device::showDevice()
+EdirolFa66Device::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "This is a BeBoB::EdirolFa101::EdirolFa101Device\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "This is a BeBoB::EdirolFa66::EdirolFa66Device\n");
     BeBoB::AvDevice::showDevice();
 }
 
