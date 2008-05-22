@@ -31,6 +31,7 @@
 #include "bebob/focusrite/focusrite_saffirepro.h"
 #include "bebob/terratec/terratec_device.h"
 #include "bebob/edirol/edirol_fa101.h"
+#include "bebob/edirol/edirol_fa66.h"
 #include "bebob/esi/quatafire610.h"
 
 #include "libieee1394/configrom.h"
@@ -98,8 +99,13 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 
     switch (vendorId) {
         case FW_VENDORID_EDIROL:
-            if (modelId == 0x00010048 ) {
-                return new Edirol::EdirolFa101Device(d, configRom);
+            switch (modelId) {
+                case 0x00010048:
+                    return new Edirol::EdirolFa101Device(d, configRom);
+                case 0x00010049:
+                    return new Edirol::EdirolFa66Device(d, configRom);
+                default:
+                    return new AvDevice(d, configRom);
             }
         case FW_VENDORID_ESI:
             if (modelId == 0x00010064) {
