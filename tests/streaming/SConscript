@@ -23,7 +23,7 @@
 
 Import( 'env' )
 
-env = env.Copy()
+env = env.Clone()
 
 env.PrependUnique( CPPPATH=["#/src"] )
 env.PrependUnique( LIBPATH=["#/src"] )
