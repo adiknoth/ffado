@@ -24,7 +24,6 @@
 #ifndef BEBOB_EDIROL_FA101_H
 #define BEBOB_EDIROL_FA101_H
 
-#include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
 
 namespace BeBoB {
@@ -36,8 +35,14 @@ public:
                        std::auto_ptr<ConfigRom>( configRom ));
     virtual ~EdirolFa101Device();
 
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
     virtual void showDevice();
 
+private:
+    ClockSource m_fixed_clocksource;
 };
 
 }

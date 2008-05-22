@@ -33,6 +33,13 @@ EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Edirol::EdirolFa101Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
+    m_fixed_clocksource.type = FFADODevice::eCT_Auto;
+    m_fixed_clocksource.valid = true;
+    m_fixed_clocksource.locked = true;
+    m_fixed_clocksource.id = 0;
+    m_fixed_clocksource.slipping = false;
+    m_fixed_clocksource.description = "Device Controlled";
+
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
     }
@@ -40,6 +47,24 @@ EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
 
 EdirolFa101Device::~EdirolFa101Device()
 {
+}
+
+FFADODevice::ClockSource
+EdirolFa101Device::getActiveClockSource() {
+    return m_fixed_clocksource;
+}
+
+bool
+EdirolFa101Device::setActiveClockSource(ClockSource s) {
+    // can't change, hence only succeed when identical
+    return s.id == m_fixed_clocksource.id;
+}
+
+FFADODevice::ClockSourceVector
+EdirolFa101Device::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    r.push_back(m_fixed_clocksource);
+    return r;
 }
 
 void
