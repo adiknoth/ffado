@@ -324,7 +324,7 @@ if __name__ == "__main__":
                         nb_checks = 0
                         repeat = 0
                     except dbus.DBusException, ex:
-                        time.sleep( 1 )
+                        time.sleep( 2 )
 
     if nbDevices == 0:
         print "No supported device found..."
