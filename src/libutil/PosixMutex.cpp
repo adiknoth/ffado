@@ -119,8 +119,6 @@ PosixMutex::Lock()
         } else {
             debugError("Error locking the mutex: %d\n", err);
         }
-    } else {
-        debugWarning("(%p) lock collision\n", this);
     }
     #else
     pthread_mutex_lock(&m_mutex);
