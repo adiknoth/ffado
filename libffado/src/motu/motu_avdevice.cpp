@@ -691,7 +691,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
  * control register.  If samplingFrequency <= 0 it remains unchanged.  If
  * clock_source is MOTU_CLKSRC_UNCHANGED the clock source remains unchanged.
  */
-    char *src_name;
+    const char *src_name;
     quadlet_t q, new_rate=0xffffffff;
     int i, supported=true, cancel_adat=false;
     quadlet_t reg;
