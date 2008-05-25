@@ -82,6 +82,9 @@
 // debug logging in the critical sections
 #define DEBUG_EXTREME_ENABLE                 0
 
+// discovery
+#define ENABLE_DISCOVERY_CACHE               0
+
 // watchdog
 #define WATCHDOG_DEFAULT_CHECK_INTERVAL_USECS   (1000*1000*4)
 #define WATCHDOG_DEFAULT_RUN_REALTIME           1

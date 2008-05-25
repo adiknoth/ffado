@@ -315,6 +315,7 @@ DeviceManager::unregisterNotification(notif_vec_t& list, Util::Functor *handler)
 bool
 DeviceManager::discover( bool useCache, bool rediscover )
 {
+    useCache = useCache && ENABLE_DISCOVERY_CACHE;
     m_used_cache_last_time = useCache;
     bool slaveMode=false;
     if(!getOption("slaveMode", slaveMode)) {
