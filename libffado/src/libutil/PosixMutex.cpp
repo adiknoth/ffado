@@ -32,6 +32,8 @@
 
 // check whether backtracing is enabled
 #if DEBUG_LOCK_COLLISION_TRACING
+    #define DEBUG_LOCK_COLLISION_TRACING_INDEX 2
+    #define DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN 64
     #if DEBUG_BACKTRACE_SUPPORT
     // ok
     #else
@@ -69,24 +71,58 @@ PosixMutex::~PosixMutex()
 void
 PosixMutex::Lock()
 {
+    int err;
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) lock\n", this);
     #if DEBUG_LOCK_COLLISION_TRACING
     if(TryLock()) {
         // locking succeeded
-        m_locked_by = debugBacktraceGet(1);
+        m_locked_by = debugBacktraceGet( DEBUG_LOCK_COLLISION_TRACING_INDEX );
+
+        char name[ DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN ];
+        name[0] = 0;
+        debugGetFunctionNameFromAddr(m_locked_by, name, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
+
         debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
-                    "(%p) %p has lock\n",
-                    this, m_locked_by);
+                    "(%p) %s obtained lock\n",
+                    this, name);
         return;
     } else {
-        void *lock_try_by = debugBacktraceGet(1);
-        debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "(%p) lock collision: %p wants lock, %p has lock\n",
-                    this, lock_try_by, m_locked_by);
-        pthread_mutex_lock(&m_mutex);
+        void *lock_try_by = debugBacktraceGet( DEBUG_LOCK_COLLISION_TRACING_INDEX );
+
+        char name1[ DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN ];
+        name1[0] = 0;
+        debugGetFunctionNameFromAddr(lock_try_by, name1, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
+        char name2[ DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN ];
+        name2[0] = 0;
+        debugGetFunctionNameFromAddr(m_locked_by, name2, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
+
+        debugWarning("(%p) lock collision: %s wants lock, %s has lock\n",
+                    this, name1, name2);
+        if((err = pthread_mutex_lock(&m_mutex))) {
+            if (err == EDEADLK) {
+                debugError("Resource deadlock detected\n");
+                debugPrintBacktrace(10);
+            } else {
+                debugError("Error locking the mutex: %d\n", err);
+            }
+        } else {
+            debugWarning("(%p) lock collision: %s got lock (from %s?)\n",
+                        this, name1, name2);
+        }
+    }
+    #else
+    #ifdef DEBUG
+    if((err = pthread_mutex_lock(&m_mutex))) {
+        if (err == EDEADLK) {
+            debugError("Resource deadlock detected\n");
+            debugPrintBacktrace(10);
+        } else {
+            debugError("Error locking the mutex: %d\n", err);
+        }
     }
     #else
     pthread_mutex_lock(&m_mutex);
+    #endif
     #endif
 }
 
@@ -120,19 +156,29 @@ PosixMutex::Unlock()
     #if DEBUG_LOCK_COLLISION_TRACING
     // unlocking
     m_locked_by = NULL;
-    void *unlocker = debugBacktraceGet(1);
+    void *unlocker = debugBacktraceGet( DEBUG_LOCK_COLLISION_TRACING_INDEX );
+    char name[ DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN ];
+    name[0] = 0;
+    debugGetFunctionNameFromAddr(unlocker, name, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
-                "(%p) %p releases lock\n",
-                this, unlocker);
+                "(%p) %s releases lock\n",
+                this, name);
     #endif
 
+    #ifdef DEBUG
+    int err;
+    if((err = pthread_mutex_unlock(&m_mutex))) {
+        debugError("Error unlocking the mutex: %d\n", err);
+    }
+    #else
     pthread_mutex_unlock(&m_mutex);
+    #endif
 }
 
 void
 PosixMutex::show()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "(%p) mutex\n", this);
+    debugOutput(DEBUG_LEVEL_NORMAL, "(%p) mutex (%s)\n", this, (isLocked() ? "Locked" : "Unlocked"));
 }
 
 

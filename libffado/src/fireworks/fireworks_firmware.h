@@ -191,7 +191,7 @@ private:
         uint32_t    boxtype;
         uint32_t    minversion;
         int         count;
-        char        **filenames;
+        const char  **filenames;
     };
 
     struct dat_list m_datlists[ECHO_FIRMWARE_NUM_BOXTYPES];

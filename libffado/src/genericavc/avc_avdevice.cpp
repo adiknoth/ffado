@@ -245,20 +245,8 @@ AvDevice::getSupportedClockSources() {
     {
         const SyncInfo si=*it;
 
-        // check if the destination is a MSU input plug
-        bool found=false;
-        for ( PlugVector::const_iterator it2 = syncMSUInputPlugs.begin();
-              it2 != syncMSUInputPlugs.end();
-              ++it2 )
-        {
-            AVC::Plug* msuPlug = *it2;
-            found |= (msuPlug == si.m_destination);
-        }
-
-        if (found) {
-            ClockSource s=syncInfoToClockSource(*it);
-            r.push_back(s);
-        }
+        ClockSource s=syncInfoToClockSource(*it);
+        r.push_back(s);
     }
     return r;
 }

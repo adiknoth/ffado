@@ -714,17 +714,9 @@ Unit::discoverSyncModes()
     debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Output Plugs:\n" );
     showPlugs( syncMSUOutputPlugs );
 
-    // Check all possible PCR input to MSU input connections
-    // -> sync stream input
-    checkSyncConnectionsAndAddToList( syncPCRInputPlugs,
-                                      syncMSUInputPlugs,
-                                      "Sync Stream Input" );
-
-    // Check all possible MSU output to PCR output connections
-    // -> sync stream output
-    checkSyncConnectionsAndAddToList( syncMSUOutputPlugs,
-                                      syncPCROutputPlugs,
-                                      "Sync Stream Output" );
+    // Currently there is no usable setup for sync streams.
+    // There is no point in wasting time here. Let's skip
+    // 'sync stream input' and 'sync stream output'.
 
     // Check all PCR iso input to MSU input connections
     // -> SYT match
@@ -795,7 +787,8 @@ Unit::updateActiveSyncInfo()
                 }
             }
             debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Active Sync Connection: '%s' -> '%s'\n",
+                         "Active Sync Connection: %s, '%s' -> '%s'\n",
+                         m_activeSyncInfo->m_description.c_str(),
                          plug->getName(),
                          msuPlug->getName() );
         }
@@ -821,7 +814,8 @@ Unit::checkSyncConnectionsAndAddToList( PlugVector& plhs,
             if ( pl->inquireConnnection( *pr ) ) {
                 m_syncInfos.push_back( SyncInfo( *pl, *pr, syncDescription ) );
                 debugOutput( DEBUG_LEVEL_NORMAL,
-                             "Sync connection '%s' -> '%s'\n",
+                             "%s, sync connection '%s' -> '%s'\n",
+                             syncDescription.c_str(),
                              pl->getName(),
                              pr->getName() );
             }

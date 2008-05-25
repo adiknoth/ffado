@@ -251,9 +251,12 @@ typedef short debug_level_t;
         DebugModuleManager::instance()->printBacktrace( _SIZE_ );
     #define debugBacktraceGet( _ID_ )                       \
         DebugModuleManager::instance()->getBacktracePtr( _ID_ );
+    #define debugGetFunctionNameFromAddr( _ADDR_, _BUFF_, _MAX_SIZE_ )              \
+        DebugModuleManager::instance()->getFunctionName( _ADDR_, _BUFF_, _MAX_SIZE_ );
 #else
     #define debugPrintBacktrace( _SIZE_ )
     #define debugBacktraceGet( _ID_ )       NULL 
+    #define debugGetFunctionNameFromAddr( _ADDR_, _BUFF_, _MAX_SIZE_ )
 #endif
 
 /*
@@ -335,6 +338,7 @@ public:
 #if DEBUG_BACKTRACE_SUPPORT
     void printBacktrace(int len);
     void *getBacktracePtr(int id);
+    void getFunctionName( void *, char *, int );
 #endif
 
 protected:

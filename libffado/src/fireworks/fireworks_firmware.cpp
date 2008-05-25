@@ -414,17 +414,17 @@ Firmware::dumpData()
 
 
 // the firmware loader helper class
-char *Af2Dats[] = 
+const char *Af2Dats[] = 
 {
 	"Fireworks3"
 };
 
-char *Af4Dats[] = 
+const char *Af4Dats[] = 
 {
 	"Fireworks3"
 };
 
-char *Af8Dats[] = 
+const char *Af8Dats[] = 
 {
 	"bootstrap",
 	"audiofire8",
@@ -432,7 +432,7 @@ char *Af8Dats[] =
 	"FireworksARM"
 };
 
-char *Af12Dats[] = 
+const char *Af12Dats[] = 
 {
 	"bootstrap",
 	"audiofire12",

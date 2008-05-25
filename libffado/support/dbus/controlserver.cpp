@@ -183,17 +183,18 @@ DBus::String
 Container::getElementName( const DBus::Int32& i ) {
     int nbElements=m_Slave.countElements();
     if (i<nbElements) {
+        m_Slave.lockControl();
         const Control::ElementVector elements = m_Slave.getElementVector();
         Control::Element *e = elements.at(i);
         std::string name;
         if(e) name = e->getName();
-        m_Slave.releaseElementVector();
+        m_Slave.unlockControl();
         return name;
     } else return "";
 }
 //     Util::MutexLockHelper lock(*m_access_lock);
 
-// NOTE: call with access lock held!
+// NOTE: call with tree locked
 void
 Container::updateTree()
 {
@@ -262,7 +263,6 @@ Container::updateTree()
         removeElement(e);
         to_remove.erase(to_remove.begin());
     }
-    m_Slave.releaseElementVector();
 
     if(something_changed) {
         debugOutput(DEBUG_LEVEL_VERBOSE, 
@@ -278,7 +278,7 @@ Container::removeElement(Element *e)
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, 
                 "removing handler %p on path %s\n",
-                path().c_str(), e);
+                e, path().c_str());
     for ( ElementVectorIterator it = m_Children.begin();
       it != m_Children.end();
       ++it )
@@ -312,8 +312,17 @@ Container::updated(int new_nb_elements)
                  new_nb_elements );
     // we lock the tree first
     Lock();
+
+    // also lock the slave tree
+    m_Slave.lockControl();
+
     // update our tree
     updateTree();
+
+    // now unlock the slave tree
+    m_Slave.unlockControl();
+
+    // and unlock the access
     Unlock();
 }
 
