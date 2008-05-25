@@ -109,6 +109,7 @@ bebob_source = env.Split( '\
 	bebob/edirol/edirol_fa101.cpp \
 	bebob/edirol/edirol_fa66.cpp \
 	bebob/esi/quatafire610.cpp \
+	bebob/mackie/onyxmixer.cpp \
 ' )
 bebob_pkgdata = env.Split( '\
 	bebob/ffado_driver_bebob.txt \

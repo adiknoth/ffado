@@ -30,6 +30,7 @@
 #include "bebob/focusrite/focusrite_saffire.h"
 #include "bebob/focusrite/focusrite_saffirepro.h"
 #include "bebob/terratec/terratec_device.h"
+#include "bebob/mackie/onyxmixer.h"
 #include "bebob/edirol/edirol_fa101.h"
 #include "bebob/edirol/edirol_fa66.h"
 #include "bebob/esi/quatafire610.h"
@@ -98,6 +99,10 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     unsigned int modelId = configRom->getModelId();
 
     switch (vendorId) {
+        case FW_VENDORID_MACKIE:
+            if (modelId == 0x00010065 ) {
+                return new Mackie::OnyxMixerDevice(d, configRom);
+            }
         case FW_VENDORID_EDIROL:
             switch (modelId) {
                 case 0x00010048:
