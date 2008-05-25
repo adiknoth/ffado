@@ -39,9 +39,9 @@ from ffado_registration import *
 
 from mixer_phase88 import *
 from mixer_phase24 import *
-from mixer_saffirepro import *
 from mixer_saffire import *
 from mixer_saffirele import *
+from mixer_saffirepro import *
 from mixer_af2 import *
 from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
@@ -367,13 +367,16 @@ if __name__ == "__main__":
         w = QWidget( mw )
         l = QVBoxLayout( w )
 
+        # create a control object
+        hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+
         #
         # Generic elements for all mixers follow here:
         #
-
         tmp = GlobalMixer( w )
         tmp.clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
         tmp.nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
+        tmp.hw = hw
         tmp.initValues()
         l.addWidget( tmp, 1 )
 
@@ -387,14 +390,57 @@ if __name__ == "__main__":
         #
         if dev != None:
             mixerapp = dev[1]
-            # hack for the focusrite devices
-            # Saffire:        0x130e010001????
-            # SaffireLE:    0x130e010004????
-            if thisdev == (0x00130e, 0x00000000):
-                if int(GUID, 16) < 0x130e0100040000:
-                    mixerapp = "SaffireMixer"
+            if vendorId == 0x00130e:
+                is_saffirele = False
+                is_saffirepro = False
+
+                # hack for the focusrite devices
+                # Saffire:        0x130e010001????
+                # SaffireLE:    0x130e010004????
+                if modelId == 0x00000000:
+                    if int(GUID, 16) >= 0x130e0100040000:
+                        is_saffirele = True
+                        print "Found SaffireLE GUID"
+                    else:
+                        is_saffirele = False
+                        print "Found Saffire GUID"
+
+                # different panel for different clock frequency
+                samplerate = hw.getDiscrete('/Generic/SamplerateSelect')
+
+                # adat on PRO26 makes a difference
+                have_adat = False
+                if modelId == 0x00000003: # PRO26
+                    is_saffirepro = True
+                    state = hw.getDiscrete('/Control/ADATDisable')
+                    if state:
+                        have_adat = False
+                        print "detected PRO26, ADAT disabled"
+                    else:
+                        have_adat = True
+                        print "detected PRO26, ADAT enabled"
+                elif modelId == 0x00000006: # PRO10
+                    is_saffirepro = True
+
+                suffix = ''
+                if samplerate <= 48000:
+                    suffix = "Large"
+                # on the saffire pro 26, the large panel can be used
+                # at 96k when adat is disabled. pro10 = pro26 w/o ADAT
+                elif samplerate <= 96000 and is_saffirepro and have_adat:
+                    suffix = "Small"
+                elif samplerate <= 96000 and is_saffirepro:
+                    suffix = "Large"
+                # higher samplerates need the small panel
                 else:
-                    mixerapp = "SaffireLEMixer"
+                    suffix = "Small"
+
+                if is_saffirepro:
+                    mixerapp = "SaffireProMixer" + suffix
+                elif is_saffirele:
+                    mixerapp = "SaffireLEMixer" + suffix
+                else:
+                    mixerapp = "SaffireMixer"
 
             exec( "mixerwidget = "+mixerapp+"( w )" )
 
@@ -406,7 +452,7 @@ if __name__ == "__main__":
         # The same for all mixers
         #
         l.addWidget( mixerwidget, 10 )
-        mixerwidget.hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+        mixerwidget.hw = hw
         mixerwidget.configrom = cfgrom
         mixerwidget.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
         mixerwidget.initValues()

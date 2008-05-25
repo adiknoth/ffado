@@ -29,8 +29,11 @@ Import( 'env' )
 if env.has_key('PYUIC'):
     e = env.Clone()
 
-    e['MIXERAPPS'] = [ 'phase24', 'phase88', 'saffirepro', 'saffire',
-                       'saffirele', 'af2', 'bcoaudio5', 'edirolfa66',
+    e['MIXERAPPS'] = [ 'phase24', 'phase88',
+                       'saffire',
+                       'saffireprolarge', 'saffireprosmall',
+                       'saffirelelarge', 'saffirelesmall',
+                       'af2', 'bcoaudio5', 'edirolfa66',
                        'mackie_generic', 'quatafire', 'motu',
                        'global', 'dummy'
                      ]
