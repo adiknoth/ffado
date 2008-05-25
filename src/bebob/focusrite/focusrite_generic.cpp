@@ -25,6 +25,7 @@
 #include "focusrite_cmd.h"
 
 #include "libutil/ByteSwap.h"
+#include "libutil/SystemTimeSource.h"
 
 namespace BeBoB {
 namespace Focusrite {
@@ -141,8 +142,10 @@ FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
 
     if(!get1394Service().write_quadlet( nodeId, addr, CondSwapToBus32(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
+        Util::SystemTimeSource::SleepUsecRelative(AVC::AVCCommand::getSleepAfterAVCCommand());
         return false;
     }
+    Util::SystemTimeSource::SleepUsecRelative(AVC::AVCCommand::getSleepAfterAVCCommand());
     return true;
 }
 
@@ -157,6 +160,7 @@ FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
 
     if(!get1394Service().read_quadlet( nodeId, addr, &result ) ) {
         debugError("Could not read from node 0x%04llX addr 0x%012llX\n", nodeId, addr);
+        Util::SystemTimeSource::SleepUsecRelative(AVC::AVCCommand::getSleepAfterAVCCommand());
         return false;
     }
 
@@ -164,6 +168,7 @@ FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08llX\n", result);
 
     *v = result;
+    Util::SystemTimeSource::SleepUsecRelative(AVC::AVCCommand::getSleepAfterAVCCommand());
     return true;
 }
 

@@ -43,8 +43,8 @@ SaffireProDevice::SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( 
 
     addOption(Util::OptionContainer::Option("rebootOnSamplerateChange", true));
     // the saffire pro doesn't seem to like it if the commands are too fast
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
+    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
+        AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
     }
 }
 

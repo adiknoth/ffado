@@ -35,8 +35,8 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
                  getConfigRom().getNodeId() );
 
     // the saffire doesn't seem to like it if the commands are too fast
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
+    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 4000) {
+        AVC::AVCCommand::setSleepAfterAVCCommand( 4000 );
     }
 
     if(getConfigRom().getGuid() < 0x130e0100040000LL) {

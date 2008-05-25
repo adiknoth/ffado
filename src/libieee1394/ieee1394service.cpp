@@ -538,7 +538,7 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                     buf,
                                     len,
                                     resp_len,
-                                    10 );
+                                    1 );
 
     for ( unsigned int i = 0; i < *resp_len; ++i ) {
         result[i] = CondSwapToBus32( result[i] );
