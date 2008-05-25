@@ -65,6 +65,10 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
         if(!m_genericContainer->addElement(new Control::ClockSelect(*this))) {
             debugWarning("failed to add clock source control to container\n");
         }
+        // add a generic control for the sample rate selection
+        if(!m_genericContainer->addElement(new Control::SamplerateSelect(*this))) {
+            debugWarning("failed to add sample rate control to container\n");
+        }
         // add a generic control for the nickname
         if(!m_genericContainer->addElement(new Control::Nickname(*this))) {
             debugWarning("failed to add Nickname control to container\n");

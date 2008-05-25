@@ -1,0 +1,1135 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>SaffireLEMixerSmallUI</class>
+<comment>Copyright (C) 2005-2008 by Pieter Palmers
+	
+	This file is part of FFADO
+	FFADO = Free Firewire (pro-)audio drivers for linux
+	
+	FFADO is based upon FreeBoB.
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) version 3 of the License.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+</comment>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>SaffireLEMixerUI</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>688</width>
+            <height>381</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Focusrite Saffire LE Mixer</string>
+    </property>
+    <hbox>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <widget class="QLayoutWidget">
+            <property name="name">
+                <cstring>layout15</cstring>
+            </property>
+            <vbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout13</cstring>
+                    </property>
+                    <hbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QGroupBox">
+                            <property name="name">
+                                <cstring>groupOut14_2</cstring>
+                            </property>
+                            <property name="title">
+                                <string>Record Mix</string>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout8</cstring>
+                                    </property>
+                                    <grid>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QSlider" row="0" column="5">
+                                            <property name="name">
+                                                <cstring>sldSPDIF2RecMix</cstring>
+                                            </property>
+                                            <property name="minValue">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="maxValue">
+                                                <number>32767</number>
+                                            </property>
+                                            <property name="lineStep">
+                                                <number>10000</number>
+                                            </property>
+                                            <property name="pageStep">
+                                                <number>1000</number>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Vertical</enum>
+                                            </property>
+                                            <property name="tickmarks">
+                                                <enum>Below</enum>
+                                            </property>
+                                            <property name="tickInterval">
+                                                <number>10000</number>
+                                            </property>
+                                        </widget>
+                                        <widget class="QLabel" row="1" column="0" rowspan="1" colspan="2">
+                                            <property name="name">
+                                                <cstring>txtOut14In12</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>IN1/2</string>
+                                            </property>
+                                            <property name="alignment">
+                                                <set>AlignCenter</set>
+                                            </property>
+                                        </widget>
+                                        <widget class="QSlider" row="0" column="0">
+                                            <property name="name">
+                                                <cstring>sldIN1RecMix</cstring>
+                                            </property>
+                                            <property name="minValue">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="maxValue">
+                                                <number>32767</number>
+                                            </property>
+                                            <property name="lineStep">
+                                                <number>10000</number>
+                                            </property>
+                                            <property name="pageStep">
+                                                <number>1000</number>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Vertical</enum>
+                                            </property>
+                                            <property name="tickmarks">
+                                                <enum>Above</enum>
+                                            </property>
+                                            <property name="tickInterval">
+                                                <number>10000</number>
+                                            </property>
+                                        </widget>
+                                        <widget class="QSlider" row="0" column="1">
+                                            <property name="name">
+                                                <cstring>sldIN2RecMix</cstring>
+                                            </property>
+                                            <property name="minValue">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="maxValue">
+                                                <number>32767</number>
+                                            </property>
+                                            <property name="lineStep">
+                                                <number>10000</number>
+                                            </property>
+                                            <property name="pageStep">
+                                                <number>1000</number>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Vertical</enum>
+                                            </property>
+                                            <property name="tickmarks">
+                                                <enum>Below</enum>
+                                            </property>
+                                            <property name="tickInterval">
+                                                <number>10000</number>
+                                            </property>
+                                        </widget>
+                                        <widget class="QLabel" row="1" column="4" rowspan="1" colspan="2">
+                                            <property name="name">
+                                                <cstring>txtOut14In34_2</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>SPDIF</string>
+                                            </property>
+                                            <property name="alignment">
+                                                <set>AlignCenter</set>
+                                            </property>
+                                        </widget>
+                                        <widget class="QSlider" row="0" column="2">
+                                            <property name="name">
+                                                <cstring>sldIN3RecMix</cstring>
+                                            </property>
+                                            <property name="minValue">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="maxValue">
+                                                <number>32767</number>
+                                            </property>
+                                            <property name="lineStep">
+                                                <number>10000</number>
+                                            </property>
+                                            <property name="pageStep">
+                                                <number>1000</number>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Vertical</enum>
+                                            </property>
+                                            <property name="tickmarks">
+                                                <enum>Above</enum>
+                                            </property>
+                                            <property name="tickInterval">
+                                                <number>10000</number>
+                                            </property>
+                                        </widget>
+                                        <widget class="QSlider" row="0" column="3">
+                                            <property name="name">
+                                                <cstring>sldIN4RecMix</cstring>
+                                            </property>
+                                            <property name="minValue">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="maxValue">
+                                                <number>32767</number>
+                                            </property>
+                                            <property name="lineStep">
+                                                <number>10000</number>
+                                            </property>
+                                            <property name="pageStep">
+                                                <number>1000</number>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Vertical</enum>
+                                            </property>
+                                            <property name="tickmarks">
+                                                <enum>Below</enum>
+                                            </property>
+                                            <property name="tickInterval">
+                                                <number>10000</number>
+                                            </property>
+                                        </widget>
+                                        <widget class="QLabel" row="1" column="2" rowspan="1" colspan="2">
+                                            <property name="name">
+                                                <cstring>txtOut14In34</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>IN3/4</string>
+                                            </property>
+                                            <property name="alignment">
+                                                <set>AlignCenter</set>
+                                            </property>
+                                        </widget>
+                                        <widget class="QSlider" row="0" column="4">
+                                            <property name="name">
+                                                <cstring>sldSPDIF1RecMix</cstring>
+                                            </property>
+                                            <property name="minValue">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="maxValue">
+                                                <number>32767</number>
+                                            </property>
+                                            <property name="lineStep">
+                                                <number>10000</number>
+                                            </property>
+                                            <property name="pageStep">
+                                                <number>1000</number>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Vertical</enum>
+                                            </property>
+                                            <property name="tickmarks">
+                                                <enum>Above</enum>
+                                            </property>
+                                            <property name="tickInterval">
+                                                <number>10000</number>
+                                            </property>
+                                        </widget>
+                                    </grid>
+                                </widget>
+                            </hbox>
+                        </widget>
+                        <widget class="QTabWidget">
+                            <property name="name">
+                                <cstring>tabWidget4</cstring>
+                            </property>
+                            <widget class="QWidget">
+                                <property name="name">
+                                    <cstring>tab</cstring>
+                                </property>
+                                <attribute name="title">
+                                    <string>Out&amp;1</string>
+                                </attribute>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout7</cstring>
+                                        </property>
+                                        <grid>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QSlider" row="0" column="2">
+                                                <property name="name">
+                                                    <cstring>sldRecMixOut1</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="2">
+                                                <property name="name">
+                                                    <cstring>txtOut14PC78_2</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>REC</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="0">
+                                                <property name="name">
+                                                    <cstring>txtOut14PC12</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>1</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="1">
+                                                <property name="name">
+                                                    <cstring>txtOut14PC34</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>2</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="0">
+                                                <property name="name">
+                                                    <cstring>sldPC1Out1</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="1">
+                                                <property name="name">
+                                                    <cstring>sldPC2Out1</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                        </grid>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QWidget">
+                                <property name="name">
+                                    <cstring>tab</cstring>
+                                </property>
+                                <attribute name="title">
+                                    <string>Out&amp;2</string>
+                                </attribute>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout6</cstring>
+                                        </property>
+                                        <grid>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QSlider" row="0" column="1">
+                                                <property name="name">
+                                                    <cstring>sldPC2Out2</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="2">
+                                                <property name="name">
+                                                    <cstring>sldRecMixOut2</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="1">
+                                                <property name="name">
+                                                    <cstring>txtOut24PC34</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>2</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="0">
+                                                <property name="name">
+                                                    <cstring>sldPC1Out2</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="2">
+                                                <property name="name">
+                                                    <cstring>txtOut24PC78_2</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>REC</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="0">
+                                                <property name="name">
+                                                    <cstring>txtOut24PC12</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>1</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                        </grid>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QWidget">
+                                <property name="name">
+                                    <cstring>tab</cstring>
+                                </property>
+                                <attribute name="title">
+                                    <string>Out&amp;3</string>
+                                </attribute>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout5</cstring>
+                                        </property>
+                                        <grid>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QSlider" row="0" column="1">
+                                                <property name="name">
+                                                    <cstring>sldPC2Out3</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="1">
+                                                <property name="name">
+                                                    <cstring>txtOut34PC34</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>2</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="0">
+                                                <property name="name">
+                                                    <cstring>sldPC1Out3</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="2">
+                                                <property name="name">
+                                                    <cstring>sldRecMixOut3</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="0">
+                                                <property name="name">
+                                                    <cstring>txtOut34PC12</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>1</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="2">
+                                                <property name="name">
+                                                    <cstring>txtOut34PC56</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>REC</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                        </grid>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QWidget">
+                                <property name="name">
+                                    <cstring>tab</cstring>
+                                </property>
+                                <attribute name="title">
+                                    <string>Out&amp;4</string>
+                                </attribute>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout4</cstring>
+                                        </property>
+                                        <grid>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QSlider" row="0" column="2">
+                                                <property name="name">
+                                                    <cstring>sldRecMixOut4</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="1">
+                                                <property name="name">
+                                                    <cstring>txtOut44PC34</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>2</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="0">
+                                                <property name="name">
+                                                    <cstring>txtOut44PC12</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>1</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="1">
+                                                <property name="name">
+                                                    <cstring>sldPC2Out4</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QSlider" row="0" column="0">
+                                                <property name="name">
+                                                    <cstring>sldPC1Out4</cstring>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>0</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>32767</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>10000</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>1000</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Both</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>10000</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLabel" row="1" column="2">
+                                                <property name="name">
+                                                    <cstring>txtOut44PC56</cstring>
+                                                </property>
+                                                <property name="text">
+                                                    <string>REC</string>
+                                                </property>
+                                                <property name="alignment">
+                                                    <set>AlignCenter</set>
+                                                </property>
+                                            </widget>
+                                        </grid>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </widget>
+                        <widget class="QGroupBox">
+                            <property name="name">
+                                <cstring>groupBox11</cstring>
+                            </property>
+                            <property name="title">
+                                <string>Output Level</string>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout12</cstring>
+                                    </property>
+                                    <vbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLayoutWidget">
+                                            <property name="name">
+                                                <cstring>layout11</cstring>
+                                            </property>
+                                            <grid>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QLabel" row="1" column="1">
+                                                    <property name="name">
+                                                        <cstring>txtOut14In12_2_2</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>3/4</string>
+                                                    </property>
+                                                    <property name="alignment">
+                                                        <set>AlignCenter</set>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QLabel" row="1" column="0">
+                                                    <property name="name">
+                                                        <cstring>txtOut14In12_2</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>1/2</string>
+                                                    </property>
+                                                    <property name="alignment">
+                                                        <set>AlignCenter</set>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QSlider" row="0" column="2">
+                                                    <property name="name">
+                                                        <cstring>sldOut56Level</cstring>
+                                                    </property>
+                                                    <property name="minValue">
+                                                        <number>0</number>
+                                                    </property>
+                                                    <property name="maxValue">
+                                                        <number>255</number>
+                                                    </property>
+                                                    <property name="lineStep">
+                                                        <number>1</number>
+                                                    </property>
+                                                    <property name="pageStep">
+                                                        <number>4</number>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Vertical</enum>
+                                                    </property>
+                                                    <property name="tickmarks">
+                                                        <enum>Both</enum>
+                                                    </property>
+                                                    <property name="tickInterval">
+                                                        <number>32</number>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QSlider" row="0" column="1">
+                                                    <property name="name">
+                                                        <cstring>sldOut34Level</cstring>
+                                                    </property>
+                                                    <property name="minValue">
+                                                        <number>0</number>
+                                                    </property>
+                                                    <property name="maxValue">
+                                                        <number>255</number>
+                                                    </property>
+                                                    <property name="lineStep">
+                                                        <number>1</number>
+                                                    </property>
+                                                    <property name="pageStep">
+                                                        <number>4</number>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Vertical</enum>
+                                                    </property>
+                                                    <property name="tickmarks">
+                                                        <enum>Both</enum>
+                                                    </property>
+                                                    <property name="tickInterval">
+                                                        <number>32</number>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QSlider" row="0" column="0">
+                                                    <property name="name">
+                                                        <cstring>sldOut12Level</cstring>
+                                                    </property>
+                                                    <property name="minValue">
+                                                        <number>0</number>
+                                                    </property>
+                                                    <property name="maxValue">
+                                                        <number>255</number>
+                                                    </property>
+                                                    <property name="lineStep">
+                                                        <number>1</number>
+                                                    </property>
+                                                    <property name="pageStep">
+                                                        <number>4</number>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Vertical</enum>
+                                                    </property>
+                                                    <property name="tickmarks">
+                                                        <enum>Both</enum>
+                                                    </property>
+                                                    <property name="tickInterval">
+                                                        <number>32</number>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QLabel" row="1" column="2">
+                                                    <property name="name">
+                                                        <cstring>txtOut14In12_2_2_2</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>5/6</string>
+                                                    </property>
+                                                    <property name="alignment">
+                                                        <set>AlignCenter</set>
+                                                    </property>
+                                                </widget>
+                                            </grid>
+                                        </widget>
+                                        <widget class="QLayoutWidget">
+                                            <property name="name">
+                                                <cstring>layout10</cstring>
+                                            </property>
+                                            <vbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QLabel">
+                                                    <property name="name">
+                                                        <cstring>textLabel1</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>Ignore slider</string>
+                                                    </property>
+                                                    <property name="alignment">
+                                                        <set>AlignCenter</set>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QLayoutWidget">
+                                                    <property name="name">
+                                                        <cstring>layout9</cstring>
+                                                    </property>
+                                                    <hbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                        <widget class="QCheckBox">
+                                                            <property name="name">
+                                                                <cstring>chkOut12HwCtrl</cstring>
+                                                            </property>
+                                                            <property name="text">
+                                                                <string></string>
+                                                            </property>
+                                                        </widget>
+                                                        <widget class="QCheckBox">
+                                                            <property name="name">
+                                                                <cstring>chkOut34HwCtrl</cstring>
+                                                            </property>
+                                                            <property name="text">
+                                                                <string></string>
+                                                            </property>
+                                                        </widget>
+                                                        <widget class="QCheckBox">
+                                                            <property name="name">
+                                                                <cstring>chkOut56HwCtrl</cstring>
+                                                            </property>
+                                                            <property name="text">
+                                                                <string></string>
+                                                            </property>
+                                                        </widget>
+                                                    </hbox>
+                                                </widget>
+                                            </vbox>
+                                        </widget>
+                                    </vbox>
+                                </widget>
+                            </hbox>
+                        </widget>
+                    </hbox>
+                </widget>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout14</cstring>
+                    </property>
+                    <hbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QGroupBox">
+                            <property name="name">
+                                <cstring>groupBox13</cstring>
+                            </property>
+                            <property name="title">
+                                <string>Mute</string>
+                            </property>
+                            <grid>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QCheckBox" row="0" column="2">
+                                    <property name="name">
+                                        <cstring>chkOut56Mute</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>CH5/&amp;6</string>
+                                    </property>
+                                </widget>
+                                <widget class="QCheckBox" row="0" column="1">
+                                    <property name="name">
+                                        <cstring>chkOut34Mute</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>CH3/4</string>
+                                    </property>
+                                </widget>
+                                <widget class="QCheckBox" row="0" column="0">
+                                    <property name="name">
+                                        <cstring>chkOut12Mute</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>CH1/2</string>
+                                    </property>
+                                </widget>
+                            </grid>
+                        </widget>
+                        <widget class="QGroupBox">
+                            <property name="name">
+                                <cstring>groupBox13_2</cstring>
+                            </property>
+                            <property name="title">
+                                <string>High Gain</string>
+                            </property>
+                            <grid>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QCheckBox" row="0" column="0">
+                                    <property name="name">
+                                        <cstring>chkHighGain3</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>Input 3</string>
+                                    </property>
+                                </widget>
+                                <widget class="QCheckBox" row="0" column="1">
+                                    <property name="name">
+                                        <cstring>chkHighGain4</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>Input 4</string>
+                                    </property>
+                                </widget>
+                            </grid>
+                        </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout54</cstring>
+                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QCheckBox">
+                                    <property name="name">
+                                        <cstring>chkSPDIFTransparent</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>S/PDIF Transp</string>
+                                    </property>
+                                </widget>
+                                <widget class="QCheckBox">
+                                    <property name="name">
+                                        <cstring>chkMIDITru</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>&amp;MIDI Tru</string>
+                                    </property>
+                                    <property name="accel">
+                                        <string>Alt+M</string>
+                                    </property>
+                                </widget>
+                            </vbox>
+                        </widget>
+                        <widget class="QPushButton">
+                            <property name="name">
+                                <cstring>btnSaveSettings</cstring>
+                            </property>
+                            <property name="text">
+                                <string>Save</string>
+                            </property>
+                            <property name="toolTip" stdset="0">
+                                <string>Save settings to device</string>
+                            </property>
+                        </widget>
+                    </hbox>
+                </widget>
+            </vbox>
+        </widget>
+    </hbox>
+</widget>
+<slots>
+    <slot>updateMatrixVolume(int)</slot>
+    <slot>updateSelector(int)</slot>
+    <slot>init()</slot>
+</slots>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

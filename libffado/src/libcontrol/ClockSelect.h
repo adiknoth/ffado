@@ -63,6 +63,28 @@ protected:
     FFADODevice &m_Device;
 };
 
+/*!
+@brief Samplerate selection control element
+@note this is a workaround and should be done more elegant
+*/
+class SamplerateSelect
+: public Discrete
+{
+public:
+    SamplerateSelect(FFADODevice &);
+    virtual ~SamplerateSelect() {};
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+    virtual bool setValue(int idx, int v);
+    virtual int getValue(int idx);
+
+    virtual int getMinimum();
+    virtual int getMaximum();
+protected:
+    FFADODevice &m_Device;
+};
+
 }; // namespace Control
 
 #endif // CONTROL_CLOCK_SELECT_H

@@ -21,62 +21,18 @@
 #
 
 from qt import *
-from mixer_saffireproui import *
+from mixer_saffire_base import SaffireMixerBase
+from mixer_saffireprolargeui import SaffireProMixerLargeUI
+from mixer_saffireprosmallui import SaffireProMixerSmallUI
 
-class SaffireProMixer(SaffireProMixerUI):
+class SaffireProMixerLarge(SaffireProMixerLargeUI, SaffireMixerBase):
     def __init__(self,parent = None,name = None,fl = 0):
-        SaffireProMixerUI.__init__(self,parent,name,fl)
-
-    def updateMatrixVolume(self,a0):
-        sender = self.sender()
-        vol = 0x7FFF-a0
-        print "set %s %d %d to %d" % (
-                    self.VolumeControls[sender][0],
-                    self.VolumeControls[sender][1],
-                    self.VolumeControls[sender][2],
-                    vol)
-        self.hw.setMatrixMixerValue(self.VolumeControls[sender][0], 
-                                    self.VolumeControls[sender][1],
-                                    self.VolumeControls[sender][2],
-                                    vol)
-    def updateLowResVolume(self,a0):
-        sender = self.sender()
-        vol = a0
-        print "set %s to %d" % (
-                    self.VolumeControlsLowRes[sender][0],
-                    vol)
-        self.hw.setDiscrete(self.VolumeControlsLowRes[sender][0], vol)
-
-    def updateSelector(self,a0):
-        sender = self.sender()
-        if a0:
-            state = 1
-        else:
-            state = 0
-        print "set %s to %d" % (
-                    self.SelectorControls[sender][0],
-                    state)
-        self.hw.setDiscrete(self.SelectorControls[sender][0], state)
-
-    def triggerButton(self):
-        sender = self.sender()
-        print "trigger %s" % (
-                    self.TriggerButtonControls[sender][0])
-        self.hw.setDiscrete(self.TriggerButtonControls[sender][0], 1)
-
-    def saveText(self):
-        sender = self.sender()
-        textbox = self.saveTextControls[sender][0]
-        print "save %s" % (
-                    textbox.text().ascii())
-        self.hw.setText(self.TextControls[textbox][0], textbox.text().ascii())
-
-    def selectStandaloneMode(self, mode):
-        self.hw.enumSelect('/Control/StandaloneConfig', mode)
-        self.comboStandalone.setCurrentItem( self.hw.enumSelected('/Control/StandaloneConfig') )
+        SaffireProMixerLargeUI.__init__(self,parent,name,fl)
+        SaffireMixerBase.__init__(self)
+        self.have_adat = False
 
     def init(self):
-            print "Init Saffire Pro mixer window"
+            print "Init large Saffire Pro mixer window"
 
             self.VolumeControls={
                 self.sldIMixAnalog1L: ['/Mixer/InputMix', 0, 0], 
@@ -222,65 +178,181 @@ class SaffireProMixer(SaffireProMixerUI):
 
             self.TextControls={
             }
+
             self.saveTextControls={
             }
 
+            self.ComboControls={
+                self.comboStandalone:        ['/Control/StandaloneConfig'],
+            }
+
+    def updateMatrixVolume(self,a0):
+        SaffireMixerBase.updateMatrixVolume(self,a0)
+    def updateLowResVolume(self,a0):
+        SaffireMixerBase.updateLowResVolume(self,a0)
+    def updateSelector(self,a0):
+        SaffireMixerBase.updateSelector(self,a0)
+    def triggerButton(self):
+        SaffireMixerBase.triggerButton(self)
+    def saveText(self):
+        SaffireMixerBase.saveText(self)
+    def initCombo(self, combo):
+        SaffireMixerBase.initCombo(self,combo)
+    def selectCombo(self, mode):
+        SaffireMixerBase.selectCombo(self,mode)
+
     def updateValues(self):
-        for ctrl, info in self.VolumeControls.iteritems():
-            vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
-                                                self.VolumeControls[ctrl][1],
-                                                self.VolumeControls[ctrl][2])
-
-            print "%s volume is %d" % (ctrl.name() , 0x7FFF-vol)
-            ctrl.setValue(0x7FFF-vol)
-
-        for ctrl, info in self.VolumeControlsLowRes.iteritems():
-            vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
-
-            print "%s volume is %d" % (ctrl.name() , vol)
-            ctrl.setValue(vol)
-
-        for ctrl, info in self.SelectorControls.iteritems():
-            state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
-            print "%s state is %d" % (ctrl.name() , state)
+        self.samplerate = self.hw.getDiscrete('/Generic/SamplerateSelect')
+        self.modelId = self.configrom.getModelId()
+        if self.modelId == 0x00000003:
+            state = self.hw.getDiscrete('/Control/ADATDisable')
             if state:
-                ctrl.setChecked(True)
+                self.have_adat = False
+                print "detected PRO26 at %d, ADAT disabled" % self.samplerate
             else:
-                ctrl.setChecked(False)
+                self.have_adat = True
+                print "detected PRO26 at %d, ADAT enabled" % self.samplerate
+        else:
+            self.have_adat = False
+            print "detected PRO10 at %d, ADAT not available" % self.samplerate
 
-        for ctrl, info in self.TriggerButtonControls.iteritems():
-            pass
+        for i in range(self.tabInputMix.count()):
+            self.tabInputMix.setTabEnabled(self.tabInputMix.page(i), True)
 
-        for ctrl, info in self.TextControls.iteritems():
-            text = self.hw.getText(self.TextControls[ctrl][0])
-            print "%s text is %s" % (ctrl.name() , text)
-            ctrl.setText(text)
+        if not self.have_adat:
+            for i in range(self.tabInputMix.count()):
+                page = self.tabInputMix.page(i)
+                name = page.name()
+                if name[0:4] == "adat":
+                    self.tabInputMix.setTabEnabled(page, False)
+                else:
+                    self.tabInputMix.setTabEnabled(page, True)
 
-        self.comboStandalone.clear()
-        for i in range( self.hw.enumCount('/Control/StandaloneConfig') ):
-            self.comboStandalone.insertItem( self.hw.enumGetLabel('/Control/StandaloneConfig', i) )
-        self.comboStandalone.setCurrentItem( self.hw.enumSelected('/Control/StandaloneConfig') )
+        self.tabInputMix.setCurrentPage(0)
+        SaffireMixerBase.updateValues(self)
 
-    def initValues(self):
-        self.updateValues()
-        for ctrl, info in self.VolumeControls.iteritems():
-            # connect the UI element
-            QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateMatrixVolume)
+class SaffireProMixerSmall(SaffireProMixerSmallUI, SaffireMixerBase):
+    def __init__(self,parent = None,name = None,fl = 0):
+        SaffireProMixerSmallUI.__init__(self,parent,name,fl)
+        SaffireMixerBase.__init__(self)
 
-        for ctrl, info in self.VolumeControlsLowRes.iteritems():
-            # connect the UI element
-            QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updateLowResVolume)
+    def init(self):
+            print "Init small Saffire Pro mixer window"
 
-        for ctrl, info in self.SelectorControls.iteritems():
-            # connect the UI element
-            QObject.connect(ctrl,SIGNAL('stateChanged(int)'),self.updateSelector)
+            self.VolumeControls={
 
-        for ctrl, info in self.TriggerButtonControls.iteritems():
-            # connect the UI element
-            QObject.connect(ctrl,SIGNAL('clicked()'),self.triggerButton)
+                self.sldOMixPC1O1: ['/Mixer/OutputMix', 0, 0], 
+                self.sldOMixPC2O2: ['/Mixer/OutputMix', 1, 1], 
+                self.sldOMixPC3O3: ['/Mixer/OutputMix', 2, 2], 
+                self.sldOMixPC4O4: ['/Mixer/OutputMix', 3, 3], 
+                self.sldOMixPC5O5: ['/Mixer/OutputMix', 4, 4], 
+                self.sldOMixPC6O6: ['/Mixer/OutputMix', 5, 5], 
+                self.sldOMixPC7O7: ['/Mixer/OutputMix', 6, 6], 
+                self.sldOMixPC8O8: ['/Mixer/OutputMix', 7, 7], 
+                self.sldOMixPC9O9: ['/Mixer/OutputMix', 8, 8], 
+                self.sldOMixPC10O10: ['/Mixer/OutputMix', 9, 9],
+                
+                self.sldOMixPC1O3: ['/Mixer/OutputMix', 0, 2], 
+                self.sldOMixPC2O4: ['/Mixer/OutputMix', 1, 3], 
+                self.sldOMixPC1O5: ['/Mixer/OutputMix', 0, 4], 
+                self.sldOMixPC2O6: ['/Mixer/OutputMix', 1, 5], 
+                self.sldOMixPC1O7: ['/Mixer/OutputMix', 0, 6], 
+                self.sldOMixPC2O8: ['/Mixer/OutputMix', 1, 7], 
+                self.sldOMixPC1O9: ['/Mixer/OutputMix', 0, 8], 
+                self.sldOMixPC2O10: ['/Mixer/OutputMix', 1, 9], 
+                
+                self.sldOMixIMixO1: ['/Mixer/OutputMix', 10, 0], 
+                self.sldOMixIMixO2: ['/Mixer/OutputMix', 11, 1], 
+                self.sldOMixIMixO3: ['/Mixer/OutputMix', 10, 2], 
+                self.sldOMixIMixO4: ['/Mixer/OutputMix', 11, 3], 
+                self.sldOMixIMixO5: ['/Mixer/OutputMix', 10, 4], 
+                self.sldOMixIMixO6: ['/Mixer/OutputMix', 11, 5], 
+                self.sldOMixIMixO7: ['/Mixer/OutputMix', 10, 6], 
+                self.sldOMixIMixO8: ['/Mixer/OutputMix', 11, 7], 
+                self.sldOMixIMixO9: ['/Mixer/OutputMix', 10, 8], 
+                self.sldOMixIMixO10: ['/Mixer/OutputMix', 11, 9], 
+                }
 
-        for ctrl, info in self.saveTextControls.iteritems():
-            # connect the UI element
-            QObject.connect(ctrl,SIGNAL('clicked()'), self.saveText)
 
-        QObject.connect(self.comboStandalone, SIGNAL('activated(int)'), self.selectStandaloneMode)
+            self.SelectorControls={
+                # control elements
+                self.chkInsert1: ['/Control/Insert1'], 
+                self.chkInsert2: ['/Control/Insert2'], 
+                self.chkPhantom14: ['/Control/Phantom_1to4'], 
+                self.chkPhantom58: ['/Control/Phantom_5to8'], 
+                self.chkAC3: ['/Control/AC3pass'], 
+                self.chkMidiThru: ['/Control/MidiTru'], 
+                self.chkHighVoltage: ['/Control/UseHighVoltageRail'], 
+                #self.chkEnableADAT1: ['/Control/EnableAdat1'], 
+                #self.chkEnableADAT2: ['/Control/EnableAdat2'],
+                #self.chkEnableSPDIF1: ['/Control/EnableSPDIF1'],
+                self.chkMidiEnable: ['/Control/MIDIEnable'],
+                self.chkAdatDisable: ['/Control/ADATDisable'],
+                # Mixer switches
+                self.chkMute12: ['/Mixer/Out12Mute'],
+                self.chkHwCtrl12: ['/Mixer/Out12HwCtrl'],
+                self.chkPad12: ['/Mixer/Out12Pad'],
+                self.chkDim12: ['/Mixer/Out12Dim'],
+                self.chkMute34: ['/Mixer/Out34Mute'],
+                self.chkHwCtrl34: ['/Mixer/Out34HwCtrl'],
+                self.chkPad34: ['/Mixer/Out34Pad'],
+                self.chkDim34: ['/Mixer/Out34Dim'],
+                self.chkMute56: ['/Mixer/Out56Mute'],
+                self.chkHwCtrl56: ['/Mixer/Out56HwCtrl'],
+                self.chkPad56: ['/Mixer/Out56Pad'],
+                self.chkDim56: ['/Mixer/Out56Dim'],
+                self.chkMute78: ['/Mixer/Out78Mute'],
+                self.chkHwCtrl78: ['/Mixer/Out78HwCtrl'],
+                self.chkPad78: ['/Mixer/Out78Pad'],
+                self.chkDim78: ['/Mixer/Out78Dim'],
+                # direct monitoring
+                self.chkMonitor1: ['/Mixer/DirectMonitorCH1'],
+                self.chkMonitor2: ['/Mixer/DirectMonitorCH2'],
+                self.chkMonitor3: ['/Mixer/DirectMonitorCH3'],
+                self.chkMonitor4: ['/Mixer/DirectMonitorCH4'],
+                self.chkMonitor5: ['/Mixer/DirectMonitorCH5'],
+                self.chkMonitor6: ['/Mixer/DirectMonitorCH6'],
+                self.chkMonitor7: ['/Mixer/DirectMonitorCH7'],
+                self.chkMonitor8: ['/Mixer/DirectMonitorCH8'],
+            }
+
+            self.VolumeControlsLowRes={
+                self.sldOut12Level:      ['/Mixer/Out12Level'],
+                self.sldOut34Level:      ['/Mixer/Out34Level'],
+                self.sldOut56Level:      ['/Mixer/Out56Level'],
+                self.sldOut78Level:      ['/Mixer/Out78Level'],
+            }
+
+            self.TriggerButtonControls={
+                self.btnReboot:        ['/Control/Reboot'],
+                self.btnIdentify:      ['/Control/FlashLed'],
+                self.btnSaveSettings:  ['/Control/SaveSettings'],
+            }
+
+            self.TextControls={
+            }
+
+            self.saveTextControls={
+            }
+
+            self.ComboControls={
+                self.comboStandalone:        ['/Control/StandaloneConfig'],
+            }
+
+    def updateMatrixVolume(self,a0):
+        SaffireMixerBase.updateMatrixVolume(self,a0)
+    def updateLowResVolume(self,a0):
+        SaffireMixerBase.updateLowResVolume(self,a0)
+    def updateSelector(self,a0):
+        SaffireMixerBase.updateSelector(self,a0)
+    def triggerButton(self):
+        SaffireMixerBase.triggerButton(self)
+    def saveText(self):
+        SaffireMixerBase.saveText(self)
+    def initCombo(self, combo):
+        SaffireMixerBase.initCombo(self,combo)
+    def selectCombo(self, mode):
+        SaffireMixerBase.selectCombo(self,mode)
+
+    def updateValues(self):
+        SaffireMixerBase.updateValues(self)
