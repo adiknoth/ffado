@@ -134,7 +134,7 @@ def ConfigGuess( context ):
 	return ret
 
 def CheckForApp( context, app ):
-	context.Message( "Checking wether '" + app + "' executes " )
+	context.Message( "Checking whether '" + app + "' executes " )
 	ret = context.TryAction( app )
 	context.Result( ret[0] )
 	return ret[0]
