@@ -169,4 +169,51 @@ ClockSelect::show()
         getName().c_str(), m_Device.getActiveClockSource().description.c_str());
 }
 
+// --- samplerate selection ---
+
+SamplerateSelect::SamplerateSelect(FFADODevice &d)
+: Discrete(&d)
+, m_Device( d )
+{
+    setName("SamplerateSelect");
+    setLabel("Samplerate Select");
+    setDescription("Select the device sample rate");
+}
+
+bool
+SamplerateSelect::setValue(int v)
+{
+    return m_Device.setSamplingFrequency(v);
+}
+
+int
+SamplerateSelect::getValue()
+{
+    return m_Device.getSamplingFrequency();
+}
+
+bool
+SamplerateSelect::setValue(int idx, int v)
+{
+    return m_Device.setSamplingFrequency(v);
+}
+
+int
+SamplerateSelect::getValue(int idx)
+{
+    return m_Device.getSamplingFrequency();
+}
+
+int
+SamplerateSelect::getMinimum()
+{
+    return 32000;
+}
+
+int
+SamplerateSelect::getMaximum()
+{
+    return 192000;
+}
+
 } // namespace Control
