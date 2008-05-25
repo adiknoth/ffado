@@ -37,6 +37,7 @@
 #define FW_VENDORID_RME          0x000a35
 #define FW_VENDORID_MOTU         0x0001f2
 #define FW_VENDORID_TCAT         0x000166
+#define FW_VENDORID_ALESIS       0x000595
 
 // this is the one we assign ourselves
 // maybe once we can get a real one :)

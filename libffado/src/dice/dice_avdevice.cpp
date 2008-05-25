@@ -47,10 +47,11 @@ namespace Dice {
 static VendorModelEntry supportedDeviceList[] =
 {
     // vendor id, model id, vendor name, model name
-    {FW_VENDORID_TCAT, 0x00000002, "TCAT", "DiceII EVM"},
-    {FW_VENDORID_TCAT, 0x00000004, "TCAT", "DiceII EVM (vxx)"},
-    {FW_VENDORID_TCAT, 0x00000021, "TC Electronic", "Konnekt 8"},
-    {FW_VENDORID_TCAT, 0x00000023, "TC Electronic", "Konnekt Live"},
+    {FW_VENDORID_TCAT,   0x00000002, "TCAT", "DiceII EVM"},
+    {FW_VENDORID_TCAT,   0x00000004, "TCAT", "DiceII EVM (vxx)"},
+    {FW_VENDORID_TCAT,   0x00000021, "TC Electronic", "Konnekt 8"},
+    {FW_VENDORID_TCAT,   0x00000023, "TC Electronic", "Konnekt Live"},
+    {FW_VENDORID_ALESIS, 0x00000001, "Alesis", "io|14"},
 };
 
 DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -1427,6 +1428,16 @@ DiceAvDevice::initIoFunctions() {
         debugError("Could not initialize m_nb_rx\n");
         return false;
     }
+
+    // FIXME: verify this and clean it up.
+    /* special case for io14, which announces two receive transmitters,
+     * but only has one
+     */
+    if ((FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) &&
+            (0x00000001 == getConfigRom().getModelId())) {
+        m_nb_rx = 1;
+    }
+
     if(!readReg(m_tx_reg_offset + DICE_REGISTER_RX_SZ_RX, &m_rx_size)) {
         debugError("Could not initialize m_rx_size\n");
         return false;
