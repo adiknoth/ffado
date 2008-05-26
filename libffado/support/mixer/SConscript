@@ -29,7 +29,7 @@ Import( 'env' )
 if env.has_key('PYUIC'):
     e = env.Clone()
 
-    e['MIXERAPPS'] = [ 'phase24', 'phase88',
+    e['MIXERGUIS'] = [ 'phase24', 'phase88',
                        'saffire',
                        'saffireprolarge', 'saffireprosmall',
                        'saffirelelarge', 'saffirelesmall',
@@ -37,6 +37,15 @@ if env.has_key('PYUIC'):
                        'mackie_generic', 'quatafire', 'motu',
                        'global', 'dummy'
                      ]
+    e['MIXERAPPS'] = [ 'phase24', 'phase88',
+                       'saffire',
+                       'saffirepro',
+                       'saffirele',
+                       'af2', 'bcoaudio5', 'edirolfa66',
+                       'mackie_generic', 'quatafire', 'motu',
+                       'global', 'dummy'
+                     ]
+    e['OTHERGUIS'] = ['ffado_regdialog']
     e['OTHERAPPS'] = ['ffado_regdialog']
 
     #
@@ -45,17 +54,20 @@ if env.has_key('PYUIC'):
     # For the installation of the stuff
     e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
 
-    for m in e['MIXERAPPS']:
+    for m in e['MIXERGUIS']:
         app = "mixer_" + m
         if os.path.exists( app+".ui" ):
             e.PyUIC( source=app+".ui", target=app+"ui.py" )
             e.Install( "$pythondir", app+"ui.py" )
+    for m in e['MIXERAPPS']:
+        app = "mixer_" + m
         e.Install( "$pythondir", app+".py" )
 
-    for app in e['OTHERAPPS']:
+    for app in e['OTHERGUIS']:
         if os.path.exists( app+".ui" ):
             e.PyUIC( source=app+".ui", target=app+"ui.py" )
             e.Install( "$pythondir", app+"ui.py" )
+    for app in e['OTHERAPPS']:
         e.Install( "$pythondir", app+".py" )
 
     e.Install( "$pythondir", "ffado_registration.py" )
