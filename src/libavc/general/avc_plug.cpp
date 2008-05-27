@@ -78,6 +78,8 @@ Plug::Plug( Unit* unit,
 Plug::Plug( const Plug& rhs )
     : m_unit ( rhs.m_unit )
     , m_subunit ( rhs.m_subunit )
+    , m_subunitType ( rhs.m_subunitType )
+    , m_subunitId ( rhs.m_subunitId )
     , m_functionBlockType( rhs.m_functionBlockType )
     , m_functionBlockId( rhs.m_functionBlockId )
     , m_addressType( rhs.m_addressType )
@@ -88,6 +90,7 @@ Plug::Plug( const Plug& rhs )
     , m_name( rhs.m_name )
     , m_clusterInfos( rhs.m_clusterInfos )
     , m_formatInfos( rhs.m_formatInfos )
+
 {
     if ( getDebugLevel() ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -1670,6 +1673,11 @@ Plug::deserialize( std::string basePath,
     if ( !pPlug ) {
         return 0;
     }
+
+    // this is needed to allow for the update of the subunit pointer later on
+    // in the deserializeUpdateSubunit.
+    pPlug->m_subunitType = subunitType;
+    pPlug->m_subunitId = subunitId;
 
     result &= deser.read( basePath + "m_infoPlugType", pPlug->m_infoPlugType );
     result &= deser.read( basePath + "m_nrOfChannels", pPlug->m_nrOfChannels );

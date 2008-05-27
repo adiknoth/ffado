@@ -826,7 +826,12 @@ Unit::checkSyncConnectionsAndAddToList( PlugVector& plhs,
 
 bool Unit::setActiveSync(const SyncInfo& syncInfo)
 {
-    bool result = syncInfo.m_source->setConnection( *syncInfo.m_destination );
+    bool result = true;
+
+    if(!syncInfo.m_source->setConnection( *syncInfo.m_destination )) {
+        debugWarning("Could not set sync source connection.\n");
+    }
+
     result &= updateActiveSyncInfo();
     return result;
 }
@@ -1021,7 +1026,7 @@ Unit::deserialize( std::string basePath,
     // load path /ExternalPlug0/global_id
     result &= deserializePlugVector( basePath + "ExternalPlug", deser,
                                      getPlugManager(), m_externalPlugs );
-    result &= deserializeVector<PlugConnection>( basePath + "PlugConnnection", deser,
+    result &= deserializeVector<PlugConnection>( basePath + "PlugConnection", deser,
                                                  *this, m_plugConnections );
     result &= deserializeVector<Subunit>( basePath + "Subunit",  deser, *this, m_subunits );
     result &= deserializeSyncInfoVector( basePath + "SyncInfo", deser, m_syncInfos );
