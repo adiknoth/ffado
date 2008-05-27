@@ -130,7 +130,9 @@ public:
         { return false;};
 
 protected:
-    FFADODevice* getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
+    FFADODevice* getDriverForDeviceDo( ConfigRom *configRom,
+                                       int id, bool generic );
+    FFADODevice* getDriverForDevice( ConfigRom *configRom,
                                      int id );
     FFADODevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
 

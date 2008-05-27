@@ -50,7 +50,7 @@ public:
     AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
     
-    static bool probe( ConfigRom& configRom );
+    static bool probe( ConfigRom& configRom, bool generic = false );
     virtual bool discover();
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
 

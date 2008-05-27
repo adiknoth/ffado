@@ -62,7 +62,7 @@ public:
     AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
 
-    static bool probe( ConfigRom& configRom );
+    static bool probe( ConfigRom& configRom, bool generic = false );
     virtual bool loadFromCache();
     virtual bool saveCache();
     virtual bool discover();

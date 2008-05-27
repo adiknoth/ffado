@@ -786,11 +786,13 @@ Unit::updateActiveSyncInfo()
                     break;
                 }
             }
-            debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Active Sync Connection: %s, '%s' -> '%s'\n",
-                         m_activeSyncInfo->m_description.c_str(),
-                         plug->getName(),
-                         msuPlug->getName() );
+            if(m_activeSyncInfo) {
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                            "Active Sync Connection: %s, '%s' -> '%s'\n",
+                            m_activeSyncInfo->m_description.c_str(),
+                            plug->getName(),
+                            msuPlug->getName() );
+            }
         }
     }
     return true;

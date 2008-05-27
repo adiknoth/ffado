@@ -30,6 +30,7 @@
 #include "libavc/avc_definitions.h"
 #include "libavc/general/avc_plug_info.h"
 #include "libavc/general/avc_extended_plug_info.h"
+#include "libavc/general/avc_subunit_info.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -75,17 +76,37 @@ AvDevice::~AvDevice()
 }
 
 bool
-AvDevice::probe( ConfigRom& configRom )
+AvDevice::probe( ConfigRom& configRom, bool generic )
 {
-    unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    if(generic) {
+        // check if we have a music subunit
+        SubUnitInfoCmd subUnitInfoCmd( configRom.get1394Service() );
+        subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
+        subUnitInfoCmd.m_page = 0;
+        subUnitInfoCmd.setNodeId( configRom.getNodeId() );
+        subUnitInfoCmd.setVerbose( configRom.getVerboseLevel() );
+        if ( !subUnitInfoCmd.fire() ) {
+            debugError( "Subunit info command failed\n" );
+            return false;
+        }
+        for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
+            subunit_type_t subunit_type
+                = subUnitInfoCmd.m_table[i].m_subunit_type;
+            if (subunit_type == eST_Music) return true;
+        }
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
-    if ( vendorModel.parse() ) {
-        return vendorModel.isPresent( vendorId, modelId );
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
+
+        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
+        if ( vendorModel.parse() ) {
+            return vendorModel.isPresent( vendorId, modelId );
+        }
+        return false;
     }
-
-    return false;
 }
 
 FFADODevice *
@@ -110,10 +131,12 @@ AvDevice::discover()
         }
 
         if (!GenericAVC::VendorModel::isValid(m_model)) {
-            return false;
+            debugWarning("Using generic AV/C support for unsupported device '%s %s'\n",
+                        getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
+        } else {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                    m_model.vendor_name.c_str(), m_model.model_name.c_str());
         }
-        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model.vendor_name.c_str(), m_model.model_name.c_str());
     }
 
     if ( !Unit::discover() ) {
