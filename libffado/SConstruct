@@ -103,6 +103,10 @@ for var in vars_to_check:
 
 env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
+if os.environ.has_key('CC'):
+	env['CC'] = os.environ['CC']
+if os.environ.has_key('CXX'):
+	env['CXX'] = os.environ['CXX']
 
 Help( """
 For building ffado you can set different options as listed below. You have to
