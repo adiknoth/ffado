@@ -31,6 +31,7 @@
 #include <iostream>
 
 #include <time.h>
+#include <string.h>
 
 #if DEBUG_BACKTRACE_SUPPORT
     #include <execinfo.h>
