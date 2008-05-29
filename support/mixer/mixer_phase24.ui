@@ -1,5 +1,5 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>PhaseX24ControlUI</class>
+<class>Phase24ControlUI</class>
 <comment>Copyright (C) 2005-2008 by Pieter Palmers
 	
 	This file is part of FFADO
@@ -19,7 +19,7 @@
 </comment>
 <widget class="QWidget">
     <property name="name">
-        <cstring>PhaseX24ControlUI</cstring>
+        <cstring>Phase24ControlUI</cstring>
     </property>
     <property name="geometry">
         <rect>
@@ -624,73 +624,73 @@
     <connection>
         <sender>sldInput12</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setVolume12(int)</slot>
     </connection>
     <connection>
         <sender>sldInput34</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setVolume34(int)</slot>
     </connection>
     <connection>
         <sender>sldLineIn</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setVolumeLineIn(int)</slot>
     </connection>
     <connection>
         <sender>sldSPDIFOut</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setVolumeSPDIFOut(int)</slot>
     </connection>
     <connection>
         <sender>sldSPDIFIn</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setVolumeSPDIFIn(int)</slot>
     </connection>
     <connection>
         <sender>sldMaster</sender>
         <signal>valueChanged(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setVolumeMaster(int)</slot>
     </connection>
     <connection>
         <sender>cmbFrontLevel</sender>
         <signal>activated(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setFrontLevel(int)</slot>
     </connection>
     <connection>
         <sender>cmbSetSyncSource</sender>
         <signal>activated(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setSyncSource(int)</slot>
     </connection>
     <connection>
         <sender>cmbOutSourceSPDIF</sender>
         <signal>activated(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setOutSourceSPDIF(int)</slot>
     </connection>
     <connection>
         <sender>cmbOutSource12</sender>
         <signal>activated(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setOutSource12(int)</slot>
     </connection>
     <connection>
         <sender>cmbOutSource34</sender>
         <signal>activated(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setOutSource34(int)</slot>
     </connection>
     <connection>
         <sender>cmbLineLevel</sender>
         <signal>activated(int)</signal>
-        <receiver>PhaseX24ControlUI</receiver>
+        <receiver>Phase24ControlUI</receiver>
         <slot>setLineLevel(int)</slot>
     </connection>
 </connections>

@@ -23,9 +23,9 @@
 from qt import *
 from mixer_phase24ui import *
 
-class PhaseX24Control(PhaseX24ControlUI):
+class Phase24Control(Phase24ControlUI):
     def __init__(self,parent = None,name = None,fl = 0):
-        PhaseX24ControlUI.__init__(self,parent,name,fl)
+        Phase24ControlUI.__init__(self,parent,name,fl)
         self.init()
 
     # public slot
@@ -50,6 +50,8 @@ class PhaseX24Control(PhaseX24ControlUI):
 
     # public slot
     def setVolumeMaster(self,a0):
+        if self.isPhaseX24:
+            return
         self.setVolume('master', a0)
 
     # public slot
@@ -59,6 +61,8 @@ class PhaseX24Control(PhaseX24ControlUI):
 
     # public slot
     def setFrontLevel(self,a0):
+        if self.isPhaseX24:
+            return
         if(a0 == 0):
             print "setting front level to %d" % (0)
             self.hw.setContignuous('/Mixer/Feature_8', 0)
@@ -99,7 +103,6 @@ class PhaseX24Control(PhaseX24ControlUI):
             print "Init PhaseX24 mixer window"
 
             self.VolumeControls={
-                'master':         ['/Mixer/Feature_1', self.sldMaster], 
                 'analogin' :      ['/Mixer/Feature_6', self.sldLineIn],
                 'spdifin' :       ['/Mixer/Feature_7', self.sldSPDIFIn],
                 'out12' :         ['/Mixer/Feature_3', self.sldInput12],
@@ -115,6 +118,29 @@ class PhaseX24Control(PhaseX24ControlUI):
             }
 
     def initValues(self):
+            self.modelId = self.configrom.getModelId()
+            if self.modelId == 0x00000007:
+                self.isPhaseX24 = True
+            else:
+                self.isPhaseX24 = False
+
+            if self.isPhaseX24:
+                self.setCaption("Terratec Phase X24 Control")
+                self.cmbFrontLevel.setEnabled(False)
+                self.sldMaster.setEnabled(False)
+            else:
+                self.setCaption("Terratec Phase 24 Control")
+
+                self.VolumeControls['master'] = ['/Mixer/Feature_1', self.sldMaster]
+                self.sldMaster.setEnabled(True)
+
+                self.cmbFrontLevel.setEnabled(True)
+                val=self.hw.getContignuous('/Mixer/Feature_8')
+                if val>0:
+                    self.cmbFrontLevel.setCurrentItem(1)
+                else:
+                    self.cmbFrontLevel.setCurrentItem(0)
+
             for name, ctrl in self.VolumeControls.iteritems():
                 vol = self.hw.getContignuous(ctrl[0])
                 print "%s volume is %d" % (name , vol)
@@ -127,12 +153,6 @@ class PhaseX24Control(PhaseX24ControlUI):
 
             val=self.hw.getContignuous('/Mixer/Feature_2')/-768
             if val>4:
-                self.cmbFrontLevel.setCurrentItem(4)
+                self.cmbLineLevel.setCurrentItem(4)
             else:
-                self.cmbFrontLevel.setCurrentItem(val)
-
-            val=self.hw.getContignuous('/Mixer/Feature_8')
-            if val>0:
-                self.cmbFrontLevel.setCurrentItem(1)
-            else:
-                self.cmbFrontLevel.setCurrentItem(0)
+                self.cmbLineLevel.setCurrentItem(val)
