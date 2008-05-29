@@ -27,6 +27,7 @@
 #include <libraw1394/raw1394.h>
 
 #include <stdio.h>
+#include <cstring>
 
 using namespace Util;
 

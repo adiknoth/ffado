@@ -33,6 +33,8 @@
 #include "server_p.h"
 #include "connection_p.h"
 
+#include <cstring>
+
 using namespace DBus;
 
 Object::Object( Connection& conn, const Path& path, const char* service )

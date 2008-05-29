@@ -32,6 +32,7 @@
 #include <signal.h>
 
 #include <semaphore.h>
+#include <cstring>
 
 using namespace Util;
 

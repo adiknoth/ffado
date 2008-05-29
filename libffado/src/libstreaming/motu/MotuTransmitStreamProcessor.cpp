@@ -35,6 +35,8 @@
 #include "libieee1394/cycletimer.h"
 
 #include "libutil/ByteSwap.h"
+
+#include <cstring>
 #include <assert.h>
 
 // Set to 1 to enable the generation of a 1 kHz test tone in analog output 1.  Even with

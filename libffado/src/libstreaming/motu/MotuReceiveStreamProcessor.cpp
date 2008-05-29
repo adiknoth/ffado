@@ -34,8 +34,10 @@
 #include "libieee1394/IsoHandlerManager.h"
 #include "libieee1394/cycletimer.h"
 
-#include <math.h>
 #include "libutil/ByteSwap.h"
+
+#include <cstring>
+#include <math.h>
 #include <assert.h>
 
 /* Provide more intuitive access to GCC's branch predition built-ins */

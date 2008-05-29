@@ -29,16 +29,17 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include <string>
-#include <stdint.h>
-#include <assert.h>
 #include "libutil/ByteSwap.h"
 #include <libraw1394/csr.h>
 
+#include <stdint.h>
 #include <iostream>
 #include <sstream>
 
 #include <string>
+#include <cstring>
+#include <assert.h>
+
 using namespace std;
 
 namespace Dice {

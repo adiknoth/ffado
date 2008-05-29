@@ -36,6 +36,7 @@
 
 #include "libutil/ByteSwap.h"
 #include <assert.h>
+#include <cstring>
 
 #define AMDTP_FLOAT_MULTIPLIER 2147483392.0
 

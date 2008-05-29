@@ -196,7 +196,7 @@ public:
         eERV_Unspecified    = 0xFFFFFFFFL,
     };
 
-    typedef struct efc_header
+    struct efc_header
     {
         uint32_t    version;
         uint32_t    seqnum;

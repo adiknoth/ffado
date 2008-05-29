@@ -259,7 +259,7 @@ TestCmd::deserialize( Util::Cmd::IISDeserialize& de )
     
     bool tmpresult=true;
     nargs=0;
-    while(tmpresult=de.read(&args[nargs])) {
+    while((tmpresult=de.read(&args[nargs]))) {
         nargs++;
     }
     

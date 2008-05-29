@@ -27,6 +27,8 @@
 
 #include "libutil/ByteSwap.h"
 #include <iostream>
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 

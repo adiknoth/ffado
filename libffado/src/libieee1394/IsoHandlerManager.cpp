@@ -31,6 +31,7 @@
 #include "libutil/SystemTimeSource.h"
 #include "libutil/Watchdog.h"
 
+#include <cstring>
 #include <assert.h>
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );

@@ -30,6 +30,8 @@
 #include "assert.h"
 #include "errno.h"
 
+#include <cstdlib>
+#include <cstring>
 
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)

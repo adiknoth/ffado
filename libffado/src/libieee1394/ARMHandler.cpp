@@ -21,6 +21,9 @@
  *
  */
 
+#include <cstring>
+#include <cstdlib>
+
 #include "ARMHandler.h"
 
 IMPL_DEBUG_MODULE( ARMHandler, ARMHandler, DEBUG_LEVEL_NORMAL);

@@ -35,9 +35,9 @@
 #include "devicemanager.h"
 
 #include <iostream>
-
-#include <string.h>
 #include <string>
+#include <cstring>
+#include <cstdlib>
 
 #define MAGIC_THAT_SAYS_I_KNOW_WHAT_IM_DOING 0x001807198000LL
 

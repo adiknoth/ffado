@@ -31,6 +31,9 @@
 
 #include "libutil/ByteSwap.h"
 
+#include <cstring>
+#include <cstdlib>
+
 #define DEBUG_EXTRA_VERBOSE 5
 
 

@@ -28,6 +28,8 @@
 #include "PosixMutex.h"
 #include "Functors.h"
 
+#include <cstring>
+
 // FIXME: if we restrict the nb_blocks to a power of two, the overflows
 //        can be implemented using masks
 

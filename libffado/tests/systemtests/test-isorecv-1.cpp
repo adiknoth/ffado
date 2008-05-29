@@ -34,6 +34,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "realtimetools.h"
+#include <cstdlib>
 
 uint32_t count = 0;
 

@@ -31,6 +31,8 @@
 #include "libieee1394/ieee1394service.h"
 #include "libieee1394/configrom.h"
 
+#include <cstring>
+
 namespace AVC {
 
 AVCDescriptorSpecifier::AVCDescriptorSpecifier( enum EType type )

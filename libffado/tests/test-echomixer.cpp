@@ -39,8 +39,9 @@
 using namespace FireWorks;
 
 #include <argp.h>
-#include <stdlib.h>
 #include <iostream>
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 using namespace AVC;

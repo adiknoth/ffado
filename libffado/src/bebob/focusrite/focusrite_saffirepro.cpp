@@ -28,6 +28,7 @@
 #include "libutil/Time.h"
 
 #include "libutil/ByteSwap.h"
+#include <cstring>
 
 namespace BeBoB {
 namespace Focusrite {

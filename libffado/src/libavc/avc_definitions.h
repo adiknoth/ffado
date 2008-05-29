@@ -25,6 +25,8 @@
 #define AVCDEFINITIONS_H
 
 #include <libavc1394/avc1394.h>
+#include <cstring>
+#include <cstdlib>
 #include <ostream>
 
 

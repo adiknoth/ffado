@@ -29,6 +29,8 @@
 #include "internalerror.h"
 #include "message_p.h"
 
+#include <cstdlib>
+
 using namespace DBus;
 
 /*
