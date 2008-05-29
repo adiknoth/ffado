@@ -52,6 +52,8 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
+#include <cstdlib>
+#include <cstring>
 #include <sys/stat.h>
 
 using namespace AVC;

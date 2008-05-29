@@ -35,6 +35,8 @@
 #include "libieee1394/cycletimer.h"
 
 #include "libutil/ByteSwap.h"
+
+#include <cstring>
 #include <assert.h>
 
 /* Provide more intuitive access to GCC's branch predition built-ins */

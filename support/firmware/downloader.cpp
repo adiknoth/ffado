@@ -30,8 +30,8 @@
 #include "debugmodule/debugmodule.h"
 
 #include <iostream>
-
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 

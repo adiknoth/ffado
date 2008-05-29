@@ -34,6 +34,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 #define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
 

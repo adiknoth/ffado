@@ -34,6 +34,7 @@
 #include "libutil/ByteSwap.h"
 
 #include <cstdio>
+#include <cstring>
 
 namespace BeBoB {
     enum {

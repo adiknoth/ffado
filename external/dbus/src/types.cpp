@@ -30,6 +30,8 @@
 #include "message_p.h"
 #include "internalerror.h"
 
+#include <cstdlib>
+
 using namespace DBus;
 
 Variant::Variant()

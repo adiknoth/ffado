@@ -30,6 +30,8 @@
 #include "libieee1394/ieee1394service.h"
 
 #include <iostream>
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 
