@@ -91,6 +91,14 @@ public:
           EPlugAddressType plugAddressType,
           EPlugDirection plugDirection,
           plug_id_t plugId );
+    Plug( Unit* unit,
+          Subunit* subunit,
+          function_block_type_t functionBlockType,
+          function_block_type_t functionBlockId,
+          EPlugAddressType plugAddressType,
+          EPlugDirection plugDirection,
+          plug_id_t plugId,
+          int globalId );
     Plug( const Plug& rhs );
     virtual ~Plug();
 
@@ -293,7 +301,6 @@ protected:
     PlugVector                  m_inputConnections;
     PlugVector                  m_outputConnections;
     int                         m_globalId;
-    static int                  m_globalIdCounter;
 
     DECLARE_DEBUG_MODULE;
 };
@@ -316,6 +323,9 @@ public:
 
     int getPlugCount()
         { return m_plugs.size(); };
+
+    int requestNewGlobalId()
+        { return m_globalIdCounter++; };
 
     Plug* getPlug( ESubunitType subunitType,
                    subunit_id_t subunitId,
@@ -346,6 +356,7 @@ public:
                             Util::IODeserialize& deser );
 
 private:
+    int m_globalIdCounter;
 
     PlugVector   m_plugs;
 

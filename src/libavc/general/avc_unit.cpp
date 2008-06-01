@@ -65,7 +65,8 @@ Unit::createPlug( Unit* unit,
                   function_block_type_t functionBlockId,
                   Plug::EPlugAddressType plugAddressType,
                   Plug::EPlugDirection plugDirection,
-                  plug_id_t plugId )
+                  plug_id_t plugId,
+                  int globalId )
 {
 
     Plug *p= new Plug( unit,
@@ -74,7 +75,8 @@ Unit::createPlug( Unit* unit,
                        functionBlockId,
                        plugAddressType,
                        plugDirection,
-                       plugId );
+                       plugId,
+                       globalId );
     if (p) p->setVerboseLevel(getDebugLevel());
     return p;
 }

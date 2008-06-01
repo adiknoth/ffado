@@ -89,8 +89,9 @@ static struct argp_option options[] = {
     {"silent",   's',       0,    OPTION_ALIAS },
 
     {"verbose",  'v', "level",    0,  "Produce verbose output" },
-    {"cache",    'c', "enable",   0,  "Use AVC model cache (default=enabled)" },
-
+#if ENABLE_DISCOVERY_CACHE
+    {"cache",    'c', "enable",   0,  "Use AVC model cache" },
+#endif
 
     {"node",     'n',    "id",    0,  "Node to use" },
     {"port",     'p',    "nr",    0,  "IEEE1394 Port to use" },
@@ -130,7 +131,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
                 return ARGP_ERR_UNKNOWN;
             }
         }
-        break;      
+        break;
     case 'p':
         if (arg) {
             arguments->port = strtol( arg, &tail, 0 );
