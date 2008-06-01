@@ -198,9 +198,9 @@ private:
     sem_t               m_activity;       // to signal that async activity occurred
 
     IpcMessage          m_LastDataMessageReceived;
-    bool                m_block_requested_for_read;
+    Mutex&              m_block_requested_for_read;
     IpcMessage          m_LastDataMessageSent;
-    bool                m_block_requested_for_write;
+    Mutex&              m_block_requested_for_write;
 
 protected:
     DECLARE_DEBUG_MODULE;

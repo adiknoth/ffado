@@ -181,6 +181,53 @@ PosixMessageQueue::Close()
 }
 
 enum PosixMessageQueue::eResult
+PosixMessageQueue::Clear()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, 
+                "(%p, %s) clear\n",
+                this, m_name.c_str());
+    if(m_direction == eD_WriteOnly) {
+        debugError("Cannot clear write-only queue\n");
+        return eR_Error;
+    }
+
+    // ensure that we don't interfere with the notification handler
+    MutexLockHelper lock(m_notifyHandlerLock);
+    while(countMessages()) {
+        struct timespec timeout;
+        clock_gettime(CLOCK_REALTIME, &timeout);
+        timeout.tv_sec += m_timeout.tv_sec;
+        timeout.tv_nsec += m_timeout.tv_nsec;
+        if(timeout.tv_nsec >= 1000000000LL) {
+            timeout.tv_sec++;
+            timeout.tv_nsec -= 1000000000LL;
+        }
+    
+        signed int len;
+        unsigned prio;
+        if((len = mq_timedreceive(m_handle, m_tmp_buffer, m_attr.mq_msgsize, &prio, &timeout)) < 0) {
+            switch(errno) {
+                case EAGAIN:
+                    debugOutput(DEBUG_LEVEL_VERBOSE,
+                                "(%p, %s) empty\n",
+                                this, m_name.c_str());
+                    return eR_OK;
+                case ETIMEDOUT:
+                    debugOutput(DEBUG_LEVEL_VERBOSE,
+                                "(%p, %s) read timed out\n",
+                                this, m_name.c_str());
+                    return eR_Timeout;
+                default:
+                    debugError("(%p, %s) could not receive: %s\n", 
+                            this, m_name.c_str(), strerror(errno));
+                    return eR_Error;
+            }
+        }
+    }
+    return eR_OK;
+}
+
+enum PosixMessageQueue::eResult
 PosixMessageQueue::Send(PosixMessageQueue::Message &m)
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, 

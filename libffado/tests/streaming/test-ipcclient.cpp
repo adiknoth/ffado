@@ -50,7 +50,7 @@ static void sighandler (int sig)
 const char *argp_program_version = "test-ipcringbuffer 0.1";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
 static char doc[] = "test-avccmd -- test program to test the ipc ringbuffer class.";
-static char args_doc[] = "DIRECTION";
+static char args_doc[] = "";
 static struct argp_option options[] = {
     {"verbose",  'v', "level",    0,  "Produce verbose output" },
     {"playback", 'o', "count",    0,  "Number of playback channels" },
@@ -145,10 +145,10 @@ parse_opt( int key, char* arg, struct argp_state* state )
         arguments->nargs++;
         break;
     case ARGP_KEY_END:
-        if(arguments->nargs <= 0) {
-            printMessage("not enough arguments\n");
-            return -1;
-        }
+//         if(arguments->nargs <= 0) {
+//             printMessage("not enough arguments\n");
+//             return -1;
+//         }
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -167,6 +167,12 @@ main(int argc, char **argv)
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
 
+    arguments.verbose           = 6;
+    arguments.period            = 1024;
+    arguments.nb_buffers        = 3;
+    arguments.playback          = 0;
+    arguments.capture           = 0;
+
     // arg parsing
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
         fprintf( stderr, "Could not parse command line\n" );
@@ -181,13 +187,17 @@ main(int argc, char **argv)
     }
 
     printMessage("Testing shared memory streaming IPC\n");
+    printMessage(" period %d, nb_buffers %d, playback %d, capture %d\n",
+                 arguments.period, arguments.nb_buffers,
+                 arguments.playback,
+                 arguments.capture );
 
     // prepare the IPC buffers
     unsigned int capture_buffsize = arguments.capture * arguments.period * 4;
     unsigned int playback_buffsize = arguments.playback * arguments.period * 4;
     IpcRingBuffer* capturebuffer = NULL;
     IpcRingBuffer* playbackbuffer = NULL;
-    if(arguments.playback == 0) {
+    if(arguments.playback) {
         playbackbuffer = new IpcRingBuffer("playbackbuffer",
                               IpcRingBuffer::eBT_Slave,
                               IpcRingBuffer::eD_Outward,
@@ -230,43 +240,52 @@ main(int argc, char **argv)
     char playback_buff[playback_buffsize];
 
     int cnt = 0;
-
+    int pbkcnt = 0;
 
     run=1;
     while(run) {
         // write the data
         IpcRingBuffer::eResult res;
-        res = playbackbuffer->Write(playback_buff);
-        if(res != IpcRingBuffer::eR_OK && res != IpcRingBuffer::eR_Again) {
-            debugError("Could not write to segment\n");
-            goto out_err;
-        }
-        if(res == IpcRingBuffer::eR_Again) {
-            printMessage(" Try playback again on %d...\n", cnt);
-        }
-
-        res = capturebuffer->Read(capture_buff);
-        if(res != IpcRingBuffer::eR_OK && res != IpcRingBuffer::eR_Again) {
-            debugError("Could not receive from queue\n");
-            goto out_err;
-        }
-        if(res == IpcRingBuffer::eR_Again) {
-            printMessage(" Try again on %d...\n", cnt);
-        } else {
-            if(cnt%10==0) {
-                uint32_t *tmp = (uint32_t *)capture_buff;
-                for(int i=0;i<arguments.capture;i++) {
-                    printMessage(" channel %d: ", i);
-                    for(int j=0; j < 6;j+=1) {
-                        uint32_t tmp2 = tmp[j] << 8;
-                        int32_t *tmp3 = (int32_t *)&tmp2;
-                        printMessageShort("%10d ", *tmp3);
-                    }
-                    tmp += arguments.period;
-                    printMessageShort("\n");
-                }
+        if(playbackbuffer) {
+            res = playbackbuffer->Write(playback_buff);
+            if(res != IpcRingBuffer::eR_OK && res != IpcRingBuffer::eR_Again) {
+                debugError("Could not write to segment\n");
+                goto out_err;
             }
-            cnt++;
+            if(res == IpcRingBuffer::eR_Again) {
+                printMessage(" Try playback again on %d...\n", cnt);
+            } else {
+                if(pbkcnt%100==0) {
+                    printMessage(" Period %d...\n", pbkcnt);
+                }
+                pbkcnt++;
+            }
+        }
+        // read data
+        if (capturebuffer) {
+            res = capturebuffer->Read(capture_buff);
+            if(res != IpcRingBuffer::eR_OK && res != IpcRingBuffer::eR_Again) {
+                debugError("Could not receive from queue\n");
+                goto out_err;
+            }
+            if(res == IpcRingBuffer::eR_Again) {
+                printMessage(" Try again on %d...\n", cnt);
+            } else {
+                if(cnt%10==0) {
+                    uint32_t *tmp = (uint32_t *)capture_buff;
+                    for(int i=0;i<arguments.capture;i++) {
+                        printMessage(" channel %d: ", i);
+                        for(int j=0; j < 6;j+=1) {
+                            uint32_t tmp2 = tmp[j] << 8;
+                            int32_t *tmp3 = (int32_t *)&tmp2;
+                            printMessageShort("%10d ", *tmp3);
+                        }
+                        tmp += arguments.period;
+                        printMessageShort("\n");
+                    }
+                }
+                cnt++;
+            }
         }
     }
 

@@ -88,6 +88,8 @@ public:
     virtual enum eResult Send(Message &m);
     virtual enum eResult Receive(Message &m);
 
+    virtual enum eResult Clear();
+
     virtual int countMessages();
     virtual bool canSend();
     virtual bool canReceive();

@@ -281,23 +281,36 @@ results above get rechecked.
 	# Optional checks follow:
 	#
 
-if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
-	env['PYUIC'] = True
-
-	if conf.CheckForApp( "xdg-desktop-menu --help" ):
-		env['XDG_TOOLS'] = True
+	# PyQT checks
+	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
+		env['PYUIC'] = True
+	
+		if conf.CheckForApp( "xdg-desktop-menu --help" ):
+			env['XDG_TOOLS'] = True
+		else:
+			print """
+	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
+	"""
+	
 	else:
 		print """
-I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
-"""
+	I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
+	'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
+	Therefor the mixer won't get installed.
+	"""
 
-else:
-	print """
-I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
-'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
-Therefor the mixer won't get installed.
-"""
+	# ALSA checks
+	pkg = 'alsa'
+	name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
+	env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, '1.0.0' )
+	if env['%s_FLAGS'%name2] == 0:
+		env['HAVE_ALSA'] = False
+		print " ALSA not found, not building ALSA plugin."
+	else:
+		env['HAVE_ALSA'] = True
+		print " ALSA found, building ALSA plugin."
+
 
 config_guess = conf.ConfigGuess()
 

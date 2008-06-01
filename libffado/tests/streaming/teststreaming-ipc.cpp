@@ -309,6 +309,10 @@ int main(int argc, char *argv[])
     run=1;
 
     debugOutput(DEBUG_LEVEL_NORMAL, "FFADO streaming test application (3)\n");
+    printMessage(" period %d, nb_buffers %d, playback %d, capture %d\n",
+                 arguments.period, arguments.nb_buffers,
+                 arguments.playback,
+                 arguments.capture );
 
     signal (SIGINT, sighandler);
     signal (SIGPIPE, sighandler);
@@ -369,8 +373,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    printMessage("Channel count: %d capture, %d playback\n",
+    printMessage("Device channel count: %d capture, %d playback\n",
                  nb_in_channels, nb_out_channels);
+    printMessage("Requested channel count: %d capture, %d playback\n",
+                 arguments.capture, arguments.playback);
 
     if(arguments.playback > nb_out_channels) {
         debugError("Too many playback channels requested (want: %d, have:%d)\n", 
@@ -388,7 +394,6 @@ int main(int argc, char *argv[])
                   nb_out_channels*dev_options.period_size * 4);
 
     // allocate the IPC structures
-    #define NB_BUFFERS 4
     IpcRingBuffer* capturebuffer = NULL;
     IpcRingBuffer* playbackbuffer = NULL;
     if(arguments.capture) {
@@ -397,7 +402,8 @@ int main(int argc, char *argv[])
                                 IpcRingBuffer::eBT_Master,
                                 IpcRingBuffer::eD_Outward,
                                 IpcRingBuffer::eB_NonBlocking,
-                                NB_BUFFERS, dev_options.period_size * arguments.capture * 4);
+                                arguments.nb_buffers,
+                                dev_options.period_size * arguments.capture * 4);
         if(capturebuffer == NULL) {
             debugError("Could not create capture IPC buffer\n");
             exit(-1);
@@ -420,7 +426,8 @@ int main(int argc, char *argv[])
                                 IpcRingBuffer::eBT_Master,
                                 IpcRingBuffer::eD_Inward,
                                 IpcRingBuffer::eB_NonBlocking,
-                                NB_BUFFERS, dev_options.period_size * arguments.playback * 4);
+                                arguments.nb_buffers,
+                                dev_options.period_size * arguments.playback * 4);
         if(playbackbuffer == NULL) {
             debugError("Could not create playback IPC buffer\n");
             exit(-1);
@@ -504,6 +511,8 @@ int main(int argc, char *argv[])
                 need_silent = true;
                 debugOutput(DEBUG_LEVEL_NORMAL, "CAP: missed period %d\n", nb_periods);
             }
+        } else {
+            need_silent=true;
         }
         if(need_silent) {
             // if not, use the null buffer
@@ -527,7 +536,7 @@ int main(int argc, char *argv[])
         // transfer
         ffado_streaming_transfer_capture_buffers(dev);
 
-        if(!need_silent && msg_res == IpcRingBuffer::eR_OK) {
+        if(capturebuffer && !need_silent && msg_res == IpcRingBuffer::eR_OK) {
             // if we had a good block, release it
             // FIXME: we should check for errors here
             capturebuffer->releaseBlockForWrite();
@@ -591,10 +600,10 @@ int main(int argc, char *argv[])
         // transfer playback buffers
         ffado_streaming_transfer_playback_buffers(dev);
 
-        if(!need_silent && msg_res == IpcRingBuffer::eR_OK) {
+        if(playbackbuffer && !need_silent && msg_res == IpcRingBuffer::eR_OK) {
             // if we had a good block, release it
             // FIXME: we should check for errors here
-            capturebuffer->releaseBlockForRead();
+            playbackbuffer->releaseBlockForRead();
         }
 
         nb_periods++;

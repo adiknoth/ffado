@@ -59,8 +59,8 @@ IpcRingBuffer::IpcRingBuffer(std::string name,
 , m_access_lock( *(new PosixMutex()) )
 , m_notify_functor( *(new MemberFunctor0< IpcRingBuffer*, void (IpcRingBuffer::*)() >
                      ( this, &IpcRingBuffer::notificationHandler, false )) )
-, m_block_requested_for_read( false )
-, m_block_requested_for_write( false )
+, m_block_requested_for_read( *(new PosixMutex()) )
+, m_block_requested_for_write( *(new PosixMutex()) )
 {
     m_ping_queue.setVerboseLevel(getDebugLevel());
     m_pong_queue.setVerboseLevel(getDebugLevel());
@@ -95,6 +95,8 @@ IpcRingBuffer::init()
     }
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) init %s\n", this, m_name.c_str());
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) direction %d, %d blocks of %d bytes\n",
+                                     this, m_direction, m_blocks, m_blocksize);
     switch(m_type) {
         case eBT_Master:
             // a master creates and owns all of the shared memory structures
@@ -189,8 +191,15 @@ IpcRingBuffer::init()
         if(!m_pong_queue.enableNotification()) {
             debugError("Could not enable notification\n");
         }
+        // now clear the queue to eliminate messages that might be there
+        // from earlier runs
+        m_pong_queue.Clear();
+    } else {
+        // if we are on the receiving end, clear any waiting messages in the ping
+        // queue
+        m_ping_queue.Clear();
     }
-
+    
     m_initialized = true;
     return true;
 }
@@ -285,7 +294,7 @@ IpcRingBuffer::getBufferFill()
 enum IpcRingBuffer::eResult
 IpcRingBuffer::requestBlockForWrite(void **block)
 {
-    if(m_block_requested_for_write) {
+    if(!m_block_requested_for_write.TryLock()) {
         debugError("Already a block requested for write\n");
         return eR_Error;
     }
@@ -306,6 +315,7 @@ IpcRingBuffer::requestBlockForWrite(void **block)
         // there are no free data blocks, or there is no message space
         if(getBufferFill() >= m_blocks || !m_ping_queue.canSend()) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) full\n", this, m_name.c_str());
+            m_block_requested_for_write.Unlock();
             return eR_Again;
         }
     }
@@ -324,9 +334,10 @@ IpcRingBuffer::requestBlockForWrite(void **block)
     int offset = m_next_block * m_blocksize;
     *block = m_memblock.requestBlock(offset, m_blocksize);
     if(*block) {
-        m_block_requested_for_write = true;
+        // keep the lock, to be released by releaseBlockForWrite
         return eR_OK;
     } else {
+        m_block_requested_for_write.Unlock();
         return eR_Error;
     }
 }
@@ -334,7 +345,7 @@ IpcRingBuffer::requestBlockForWrite(void **block)
 enum IpcRingBuffer::eResult
 IpcRingBuffer::releaseBlockForWrite()
 {
-    if(!m_block_requested_for_write) {
+    if(!m_block_requested_for_write.isLocked()) {
         debugError("No block requested for write\n");
         return eR_Error;
     }
@@ -362,15 +373,15 @@ IpcRingBuffer::releaseBlockForWrite()
         case PosixMessageQueue::eR_Again:
             // this is a bug since we checked whether it was empty or not
             debugError("Bad response value\n");
-            m_block_requested_for_write = false;
+            m_block_requested_for_write.Unlock();
             return eR_Error; 
         case PosixMessageQueue::eR_Timeout:
             debugOutput(DEBUG_LEVEL_VERBOSE, "Timeout\n");
-            m_block_requested_for_write = false;
+            m_block_requested_for_write.Unlock();
             return eR_Timeout; // blocking and no space on time
         default:
             debugError("Could not send to ping queue\n");
-            m_block_requested_for_write = false;
+            m_block_requested_for_write.Unlock();
             return eR_Error;
     }
 
@@ -380,7 +391,7 @@ IpcRingBuffer::releaseBlockForWrite()
         m_next_block = 0;
     }
     m_idx++;
-    m_block_requested_for_write = false;
+    m_block_requested_for_write.Unlock();
     return eR_OK;
 }
 
@@ -408,7 +419,7 @@ IpcRingBuffer::Write(char *block)
 enum IpcRingBuffer::eResult
 IpcRingBuffer::requestBlockForRead(void **block)
 {
-    if(m_block_requested_for_read) {
+    if(!m_block_requested_for_read.TryLock()) {
         debugError("Already a block requested for read\n");
         return eR_Error;
     }
@@ -422,12 +433,15 @@ IpcRingBuffer::requestBlockForRead(void **block)
         case PosixMessageQueue::eR_OK:
             break;
         case PosixMessageQueue::eR_Again:
+            m_block_requested_for_read.Unlock();
             return eR_Again; // non-blocking and no message
         case PosixMessageQueue::eR_Timeout:
             debugOutput(DEBUG_LEVEL_VERBOSE, "Timeout\n");
+            m_block_requested_for_read.Unlock();
             return eR_Timeout; // blocking and no message on time
         default:
             debugError("Could not read from ping queue\n");
+            m_block_requested_for_read.Unlock();
             return eR_Error;
     }
 
@@ -448,13 +462,15 @@ IpcRingBuffer::requestBlockForRead(void **block)
         int offset = data->id * m_blocksize;
         *block = m_memblock.requestBlock(offset, m_blocksize);
         if(*block) {
-            m_block_requested_for_read = true;
+            // keep the mutex locked, we expect the thread that grabbed the block to also return it
             return eR_OK;
         } else {
+            m_block_requested_for_read.Unlock();
             return eR_Error;
         }
     } else {
         debugError("Invalid message received (type %d)\n", type);
+        m_block_requested_for_read.Unlock();
         return eR_Error;
     }
 }
@@ -462,7 +478,7 @@ IpcRingBuffer::requestBlockForRead(void **block)
 enum IpcRingBuffer::eResult
 IpcRingBuffer::releaseBlockForRead()
 {
-    if(!m_block_requested_for_read) {
+    if(!m_block_requested_for_read.isLocked()) {
         debugError("No block requested for read\n");
         return eR_Error;
     }
@@ -482,14 +498,16 @@ IpcRingBuffer::releaseBlockForRead()
         case PosixMessageQueue::eR_OK:
             break;
         case PosixMessageQueue::eR_Again:
+            m_block_requested_for_read.Unlock(); // FIXME: this is not very correct
             debugOutput(DEBUG_LEVEL_VERBOSE, "Again on ACK\n");
-//             return eR_Again; // non-blocking and no message
+            return eR_Again; // non-blocking and no message
         case PosixMessageQueue::eR_Timeout:
+            m_block_requested_for_read.Unlock();
             debugOutput(DEBUG_LEVEL_VERBOSE, "Timeout on ACK\n");
-//             return eR_Timeout; // blocking and no message on time
+            return eR_Timeout; // blocking and no message on time
         default:
             debugError("Could not write to pong queue\n");
-            m_block_requested_for_read = false;
+            m_block_requested_for_read.Unlock();
             return eR_Error;
     }
 
@@ -499,7 +517,8 @@ IpcRingBuffer::releaseBlockForRead()
         m_next_block = 0;
     }
     m_idx = data->idx + 1;
-    m_block_requested_for_read = false;
+
+    m_block_requested_for_read.Unlock();
     return eR_OK;
 }
 
