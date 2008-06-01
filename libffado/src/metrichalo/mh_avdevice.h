@@ -46,13 +46,13 @@ struct VendorModelEntry {
 
 class MHAvDevice : public FFADODevice {
 public:
-    MHAvDevice( Ieee1394Service& ieee1394Service,
+    MHAvDevice( DeviceManager& d,
                 std::auto_ptr<ConfigRom>( configRom ));
     virtual ~MHAvDevice();
 
-    static bool probe( ConfigRom& configRom );
-    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
-                                        std::auto_ptr<ConfigRom>( configRom ));
+    static bool probe( ConfigRom& configRom, bool generic = false );
+    static FFADODevice * createDevice( DeviceManager& d,
+                                       std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId();
     virtual bool discover();
 

@@ -49,9 +49,9 @@ static VendorModelEntry supportedDeviceList[] =
     {0x00000000, 0x0000, "Metric Halo", "XXX"},
 };
 
-MHAvDevice::MHAvDevice( Ieee1394Service& ieee1394Service,
+MHAvDevice::MHAvDevice( DeviceManager& d,
                         std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( ieee1394Service, configRom )
+    : FFADODevice( d, configRom )
     , m_model( NULL )
 
 {
@@ -65,8 +65,9 @@ MHAvDevice::~MHAvDevice()
 }
 
 bool
-MHAvDevice::probe( ConfigRom& configRom )
+MHAvDevice::probe( ConfigRom& configRom, bool generic )
 {
+    if (generic) return false;
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 
@@ -86,17 +87,17 @@ MHAvDevice::probe( ConfigRom& configRom )
 }
 
 FFADODevice *
-MHAvDevice::createDevice( Ieee1394Service& ieee1394Service,
+MHAvDevice::createDevice( DeviceManager& d,
                           std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new MHAvDevice(ieee1394Service, configRom );
+    return new MHAvDevice(d, configRom );
 }
 
 bool
 MHAvDevice::discover()
 {
-    unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
     for ( unsigned int i = 0;
           i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );

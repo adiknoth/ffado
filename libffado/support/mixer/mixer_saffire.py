@@ -124,3 +124,20 @@ class SaffireMixer(SaffireMixerUI, SaffireMixerBase):
         self.ComboControls={
         }
 
+    def updateMatrixVolume(self,a0):
+        SaffireMixerBase.updateMatrixVolume(self,a0)
+    def updateLowResVolume(self,a0):
+        SaffireMixerBase.updateLowResVolume(self,a0)
+    def updateSelector(self,a0):
+        SaffireMixerBase.updateSelector(self,a0)
+    def triggerButton(self):
+        SaffireMixerBase.triggerButton(self)
+    def saveText(self):
+        SaffireMixerBase.saveText(self)
+    def initCombo(self, combo):
+        SaffireMixerBase.initCombo(self,combo)
+    def selectCombo(self, mode):
+        SaffireMixerBase.selectCombo(self,mode)
+
+    def updateValues(self):
+        SaffireMixerBase.updateValues(self)

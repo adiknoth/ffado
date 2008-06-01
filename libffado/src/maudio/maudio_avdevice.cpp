@@ -58,8 +58,10 @@ static VendorModelEntry supportedDeviceList[] =
 };
 
 bool
-AvDevice::probe( ConfigRom& configRom )
+AvDevice::probe( ConfigRom& configRom, bool generic )
 {
+    if (generic) return false;
+
     unsigned int iVendorId = configRom.getNodeVendorId();
     unsigned int iModelId = configRom.getModelId();
 

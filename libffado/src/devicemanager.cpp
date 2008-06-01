@@ -453,8 +453,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
                     continue;
                 }
     
-                std::auto_ptr<ConfigRom> configRom =
-                    std::auto_ptr<ConfigRom>( new ConfigRom( *portService, nodeId ) );
+                ConfigRom *configRom = new ConfigRom( *portService, nodeId );
                 if ( !configRom->initialize() ) {
                     // \todo If a PHY on the bus is in power safe mode then
                     // the config rom is missing. So this might be just
@@ -495,7 +494,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
                 // if no (valid) spec strings are present, grab all
                 // supported devices.
                 if(m_deviceStringParser->countDeviceStrings() &&
-                  !m_deviceStringParser->match(*configRom.get())) {
+                  !m_deviceStringParser->match(*configRom)) {
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Device doesn't match any of the spec strings. skipping...\n");
                     continue;
                 }
@@ -545,6 +544,9 @@ DeviceManager::discover( bool useCache, bool rediscover )
                     }
 
                     debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d on port %d done...\n", nodeId, portService->getPort() );
+                } else {
+                    // we didn't get a device, hence we have to delete the configrom ptr manually
+                    delete configRom;
                 }
             }
         }
@@ -816,72 +818,87 @@ DeviceManager::setStreamingParams(unsigned int period, unsigned int rate, unsign
 }
 
 FFADODevice*
-DeviceManager::getDriverForDevice( std::auto_ptr<ConfigRom>( configRom ),
-                                   int id )
+DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
+                                   int id, bool generic )
 {
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
-    if ( BeBoB::AvDevice::probe( *configRom.get() ) ) {
-        return BeBoB::AvDevice::createDevice( *this, configRom );
-    }
-#endif
-
-#ifdef ENABLE_GENERICAVC
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
-    if ( GenericAVC::AvDevice::probe( *configRom.get() ) ) {
-        return GenericAVC::AvDevice::createDevice( *this, configRom );
+    if ( BeBoB::AvDevice::probe( *configRom, generic ) ) {
+        return BeBoB::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_FIREWORKS
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying ECHO Audio FireWorks...\n" );
-    if ( FireWorks::Device::probe( *configRom.get() ) ) {
-        return FireWorks::Device::createDevice( *this, configRom );
+    if ( FireWorks::Device::probe( *configRom, generic ) ) {
+        return FireWorks::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
-#ifdef ENABLE_BEBOB
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
-    if ( MAudio::AvDevice::probe( *configRom.get() ) ) {
-        return MAudio::AvDevice::createDevice( *this, configRom );
+// we want to try the non-generic AV/C platforms before trying the generic ones
+#ifdef ENABLE_GENERICAVC
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
+    if ( GenericAVC::AvDevice::probe( *configRom, generic ) ) {
+        return GenericAVC::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_MOTU
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
-    if ( Motu::MotuDevice::probe( *configRom.get() ) ) {
-        return Motu::MotuDevice::createDevice( *this, configRom );
+    if ( Motu::MotuDevice::probe( *configRom, generic ) ) {
+        return Motu::MotuDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_DICE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Dice...\n" );
-    if ( Dice::DiceAvDevice::probe( *configRom.get() ) ) {
-        return Dice::DiceAvDevice::createDevice( *this, configRom );
+    if ( Dice::DiceAvDevice::probe( *configRom, generic ) ) {
+        return Dice::DiceAvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_METRIC_HALO
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Metric Halo...\n" );
-    if ( MetricHalo::MHAvDevice::probe( *configRom.get() ) ) {
-        return MetricHalo::MHAvDevice::createDevice( *this, configRom );
+    if ( MetricHalo::MHAvDevice::probe( *configRom, generic ) ) {
+        return MetricHalo::MHAvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_RME
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying RME...\n" );
-    if ( Rme::RmeDevice::probe( *configRom.get() ) ) {
-        return Rme::RmeDevice::createDevice( *this, configRom );
+    if ( Rme::RmeDevice::probe( *configRom, generic ) ) {
+        return Rme::RmeDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_BOUNCE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Bounce...\n" );
-    if ( Bounce::BounceDevice::probe( *configRom.get() ) ) {
-        return Bounce::BounceDevice::createDevice( *this, configRom );
+    if ( Bounce::BounceDevice::probe( *configRom, generic ) ) {
+        return Bounce::BounceDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
+    return NULL;
+}
+
+FFADODevice*
+DeviceManager::getDriverForDevice( ConfigRom *configRom,
+                                   int id )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Probing for supported device...\n" );
+    FFADODevice* dev = getDriverForDeviceDo(configRom, id, false);
+    if(dev) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " found supported device...\n" );
+        return dev;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, " no supported device found, trying generic support...\n" );
+    dev = getDriverForDeviceDo(configRom, id, true);
+    if(dev) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, " found generic support for device...\n" );
+        return dev;
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, " device not supported...\n" );
     return 0;
 }
 

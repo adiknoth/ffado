@@ -37,8 +37,6 @@
 
 namespace AVC {
 
-int Plug::m_globalIdCounter = 0;
-
 IMPL_DEBUG_MODULE( Plug, Plug, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( PlugManager, PlugManager, DEBUG_LEVEL_NORMAL );
 
@@ -58,8 +56,46 @@ Plug::Plug( Unit* unit,
     , m_id( plugId )
     , m_infoPlugType( eAPT_Unknown )
     , m_nrOfChannels( 0 )
-    , m_globalId( m_globalIdCounter++ )
+    , m_globalId( unit->getPlugManager().requestNewGlobalId() )
 {
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "nodeId = %d, subunitType = %d, "
+                 "subunitId = %d, functionBlockType = %d, "
+                 "functionBlockId = %d, addressType = %d, "
+                 "direction = %d, id = %d\n",
+                 m_unit->getConfigRom().getNodeId(),
+                 getSubunitType(),
+                 getSubunitId(),
+                 m_functionBlockType,
+                 m_functionBlockId,
+                 m_addressType,
+                 m_direction,
+                 m_id );
+}
+
+Plug::Plug( Unit* unit,
+            Subunit* subunit,
+            function_block_type_t functionBlockType,
+            function_block_id_t functionBlockId,
+            EPlugAddressType plugAddressType,
+            EPlugDirection plugDirection,
+            plug_id_t plugId,
+            int globalId )
+    : m_unit( unit )
+    , m_subunit( subunit )
+    , m_functionBlockType( functionBlockType )
+    , m_functionBlockId( functionBlockId )
+    , m_addressType( plugAddressType )
+    , m_direction( plugDirection )
+    , m_id( plugId )
+    , m_infoPlugType( eAPT_Unknown )
+    , m_nrOfChannels( 0 )
+{
+    if(globalId < 0) {
+        m_globalId = unit->getPlugManager().requestNewGlobalId();
+    } else {
+        m_globalId = globalId;
+    }
     debugOutput( DEBUG_LEVEL_VERBOSE,
                  "nodeId = %d, subunitType = %d, "
                  "subunitId = %d, functionBlockType = %d, "
@@ -78,6 +114,8 @@ Plug::Plug( Unit* unit,
 Plug::Plug( const Plug& rhs )
     : m_unit ( rhs.m_unit )
     , m_subunit ( rhs.m_subunit )
+    , m_subunitType ( rhs.m_subunitType )
+    , m_subunitId ( rhs.m_subunitId )
     , m_functionBlockType( rhs.m_functionBlockType )
     , m_functionBlockId( rhs.m_functionBlockId )
     , m_addressType( rhs.m_addressType )
@@ -88,6 +126,7 @@ Plug::Plug( const Plug& rhs )
     , m_name( rhs.m_name )
     , m_clusterInfos( rhs.m_clusterInfos )
     , m_formatInfos( rhs.m_formatInfos )
+// FIXME: how about the global id?
 {
     if ( getDebugLevel() ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -573,14 +612,14 @@ Plug::getSignalSource()
     if((getPlugAddressType() == eAPA_PCR) ||
        (getPlugAddressType() == eAPA_ExternalPlug)) {
         if (getPlugDirection() != eAPD_Output) {
-            debugOutput(DEBUG_LEVEL_NORMAL, "Signal Source command not valid for non-output unit plugs...\n");
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Signal Source command not valid for non-output unit plugs...\n");
             return -1;
         }
     }
 
     if(getPlugAddressType() == eAPA_SubunitPlug) {
         if (getPlugDirection() != eAPD_Input) {
-            debugOutput(DEBUG_LEVEL_NORMAL, "Signal Source command not valid for non-input subunit plugs...\n");
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Signal Source command not valid for non-input subunit plugs...\n");
             return -1;
         }
     }
@@ -613,7 +652,10 @@ Plug::getSignalSource()
         Plug* p=NULL;
         if(dynamic_cast<SignalUnitAddress *>(src)) {
             SignalUnitAddress *usrc=dynamic_cast<SignalUnitAddress *>(src);
-            if (usrc->m_plugId & 0x80) {
+            if(usrc->m_plugId == 0xFE) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "No/Invalid connection...\n");
+                return -1;
+            } else if (usrc->m_plugId & 0x80) {
                 p=m_unit->getPlugManager().getPlug( eST_Unit, 0xFF,
                         0xFF, 0xFF, eAPA_ExternalPlug, eAPD_Input,
                         usrc->m_plugId & 0x7F );
@@ -624,13 +666,19 @@ Plug::getSignalSource()
             }
         } else if (dynamic_cast<SignalSubunitAddress *>(src)) {
             SignalSubunitAddress *susrc=dynamic_cast<SignalSubunitAddress *>(src);
-            p=m_unit->getPlugManager().getPlug( byteToSubunitType(susrc->m_subunitType),
-                    susrc->m_subunitId, 0xFF, 0xFF, eAPA_SubunitPlug,
-                    eAPD_Output, susrc->m_plugId);
+            if(susrc->m_plugId == 0xFE) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "No/Invalid connection...\n");
+                return -1;
+            } else {
+                p=m_unit->getPlugManager().getPlug( byteToSubunitType(susrc->m_subunitType),
+                        susrc->m_subunitId, 0xFF, 0xFF, eAPA_SubunitPlug,
+                        eAPD_Output, susrc->m_plugId);
+            }
         } else return -1;
 
         if (p==NULL) {
-            debugError("reported signal source plug not found\n");
+            debugError("reported signal source plug not found for '%s'\n",
+                       getName());
             return -1;
         }
 
@@ -1630,7 +1678,6 @@ Plug::serialize( std::string basePath, Util::IOSerialize& ser ) const
     result &= serializePlugVector( basePath + "m_inputConnections", ser, m_inputConnections );
     result &= serializePlugVector( basePath + "m_outputConnections", ser, m_outputConnections );
     result &= ser.write( basePath + "m_globalId", m_globalId);
-    result &= ser.write( basePath + "m_globalIdCounter", m_globalIdCounter );
 
     return result;
 }
@@ -1648,6 +1695,7 @@ Plug::deserialize( std::string basePath,
     EPlugAddressType      addressType;
     EPlugDirection        direction;
     plug_id_t             id;
+    int                   globalId;
 
     if ( !deser.isExisting( basePath + "m_subunitType" ) ) {
         return 0;
@@ -1664,12 +1712,19 @@ Plug::deserialize( std::string basePath,
     result &= deser.read( basePath + "m_addressType", addressType );
     result &= deser.read( basePath + "m_direction", direction );
     result &= deser.read( basePath + "m_id", id );
+    result &= deser.read( basePath + "m_globalId", globalId );
 
     Plug* pPlug = unit.createPlug( &unit, subunit, functionBlockType, 
-                                   functionBlockId, addressType, direction, id);
+                                   functionBlockId, addressType, direction, 
+                                   id, globalId);
     if ( !pPlug ) {
         return 0;
     }
+
+    // this is needed to allow for the update of the subunit pointer later on
+    // in the deserializeUpdateSubunit.
+    pPlug->m_subunitType = subunitType;
+    pPlug->m_subunitId = subunitId;
 
     result &= deser.read( basePath + "m_infoPlugType", pPlug->m_infoPlugType );
     result &= deser.read( basePath + "m_nrOfChannels", pPlug->m_nrOfChannels );
@@ -1679,8 +1734,6 @@ Plug::deserialize( std::string basePath,
     result &= pPlug->deserializeFormatInfos( basePath + "m_formatInfos", deser );
     // input and output connections can't be processed here because not all plugs might
     // deserialized at this point. so we do that in deserializeUpdate.
-    result &= deser.read( basePath + "m_globalId", pPlug->m_globalId );
-    result &= deser.read( basePath + "m_globalIdCounter", pPlug->m_globalIdCounter );
 
     if ( !result ) {
         delete pPlug;
@@ -1775,11 +1828,13 @@ const char* avPlugDirectionToString( Plug::EPlugDirection type )
 
 
 PlugManager::PlugManager(  )
+: m_globalIdCounter( 0 )
 {
 
 }
 
 PlugManager::PlugManager( const PlugManager& rhs )
+: m_globalIdCounter( rhs.m_globalIdCounter )
 {
     setDebugLevel( rhs.getDebugLevel() );
 }
@@ -2164,6 +2219,7 @@ PlugManager::serialize( std::string basePath, Util::IOSerialize& ser ) const
         result &= pPlug->serialize( strstrm.str() + "/", ser );
         i++;
     }
+    result &= ser.write( basePath + "m_globalIdCounter", m_globalIdCounter );
 
     return result;
 }
@@ -2178,6 +2234,10 @@ PlugManager::deserialize( std::string basePath,
 
     if ( !pMgr ) {
         return 0;
+    }
+
+    if(!deser.read( basePath + "m_globalIdCounter", pMgr->m_globalIdCounter )) {
+        pMgr->m_globalIdCounter = 0;
     }
 
     int i = 0;

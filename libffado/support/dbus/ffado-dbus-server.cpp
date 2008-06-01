@@ -103,8 +103,9 @@ static struct argp_option options[] = {
     {"silent",   's',       0,    OPTION_ALIAS },
 
     {"verbose",  'v', "level",    0,  "Produce verbose output" },
-    {"cache",    'c', "enable",   0,  "Use AVC model cache (default=enable)" },
-
+#if ENABLE_DISCOVERY_CACHE
+    {"cache",    'c', "enable",   0,  "Use AVC model cache" },
+#endif
 
     {"node",     'n',    "id",    0,  "Only expose mixer of a device on a specific node" },
     {"port",     'p',    "nr",    0,  "IEEE1394 Port to use" },

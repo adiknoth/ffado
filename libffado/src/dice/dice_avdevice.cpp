@@ -100,8 +100,9 @@ DiceAvDevice::~DiceAvDevice()
 }
 
 bool
-DiceAvDevice::probe( ConfigRom& configRom )
+DiceAvDevice::probe( ConfigRom& configRom, bool generic )
 {
+    if (generic) return false;
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int modelId = configRom.getModelId();
 

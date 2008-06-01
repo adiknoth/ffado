@@ -69,8 +69,9 @@ BounceDevice::~BounceDevice()
 }
 
 bool
-BounceDevice::probe( ConfigRom& configRom )
+BounceDevice::probe( ConfigRom& configRom, bool generic )
 {
+    if (generic) return false;
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "probing BounceDevice\n");
 //     unsigned int vendorId = configRom.getNodeVendorId();

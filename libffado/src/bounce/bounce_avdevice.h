@@ -73,7 +73,7 @@ public:
                   std::auto_ptr<ConfigRom>( configRom ));
     virtual ~BounceDevice();
 
-    static bool probe( ConfigRom& configRom );
+    static bool probe( ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
                                         std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );

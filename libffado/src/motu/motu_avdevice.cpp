@@ -587,8 +587,10 @@ MotuDevice::destroyMixer() {
 }
 
 bool
-MotuDevice::probe( ConfigRom& configRom )
+MotuDevice::probe( ConfigRom& configRom, bool generic)
 {
+    if(generic) return false;
+
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int unitVersion = configRom.getUnitVersion();
     unsigned int unitSpecifierId = configRom.getUnitSpecifierId();

@@ -46,7 +46,7 @@ if env.has_key('PYUIC'):
                        'global', 'dummy'
                      ]
     e['OTHERGUIS'] = ['ffado_regdialog']
-    e['OTHERAPPS'] = ['ffado_regdialog']
+    e['OTHERAPPS'] = ['ffado_regdialog', 'mixer_saffire_base']
 
     #
     # For the ffadomixer.in

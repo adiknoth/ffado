@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.27"
+FFADO_VERSION="2.0.900"
 
 import os
 import re
@@ -67,7 +67,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
 	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),
-	BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE part.", False ),
+	#BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE part.", False ),
 	BoolOption( "ENABLE_GENERICAVC", """\
 Enable/Disable the the generic avc part (mainly used by apple).
   Note that disabling this option might be overwritten by other devices needing
@@ -333,6 +333,9 @@ if env['ENABLE_ALL']:
 	env['ENABLE_METRIC_HALO'] = True
 	env['ENABLE_RME'] = True
 	env['ENABLE_BOUNCE'] = True
+
+# HACK: when the bounce device gets fixed, remove this
+env['ENABLE_BOUNCE'] = False
 
 if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
 	env['ENABLE_GENERICAVC'] = True

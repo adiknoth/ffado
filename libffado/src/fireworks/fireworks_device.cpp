@@ -74,16 +74,44 @@ Device::showDevice()
 }
 
 bool
-Device::probe( ConfigRom& configRom )
+Device::probe( ConfigRom& configRom, bool generic )
 {
-    unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    if(generic) {
+        // try an EFC command
+        EfcOverAVCCmd cmd( configRom.get1394Service() );
+        cmd.setCommandType( AVC::AVCCommand::eCT_Control );
+        cmd.setNodeId( configRom.getNodeId() );
+        cmd.setSubunitType( AVC::eST_Unit  );
+        cmd.setSubunitId( 0xff );
+        cmd.setVerbose( configRom.getVerboseLevel() );
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
-    if ( vendorModel.parse() ) {
-        return vendorModel.isPresent( vendorId, modelId );
+        EfcHardwareInfoCmd hwInfo;
+        hwInfo.setVerboseLevel(configRom.getVerboseLevel());
+        cmd.m_cmd = &hwInfo;
+
+        if ( !cmd.fire()) {
+            return false;
+        }
+
+        if ( cmd.getResponse() != AVC::AVCCommand::eR_Accepted) {
+            return false;
+        }
+        if ( hwInfo.m_header.retval != EfcCmd::eERV_Ok
+             && hwInfo.m_header.retval != EfcCmd::eERV_FlashBusy) {
+             debugError( "EFC command failed\n" );
+             return false;
+        }
+        return true;
+    } else {
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
+    
+        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
+        if ( vendorModel.parse() ) {
+            return vendorModel.isPresent( vendorId, modelId );
+        }
+        return false;
     }
-    return false;
 }
 
 bool
@@ -98,10 +126,12 @@ Device::discover()
     }
 
     if (!GenericAVC::VendorModel::isValid(m_model)) {
-        return false;
+        debugWarning("Using generic ECHO Audio FireWorks support for unsupported device '%s %s'\n",
+            getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
+    } else {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                m_model.vendor_name.c_str(), m_model.model_name.c_str());
     }
-    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-            m_model.vendor_name.c_str(), m_model.model_name.c_str());
 
     // get the info from the EFC
     if ( !discoverUsingEFC() ) {

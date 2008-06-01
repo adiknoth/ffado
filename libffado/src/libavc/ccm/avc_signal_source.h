@@ -71,6 +71,14 @@ public:
 class SignalSourceCmd: public AVCCommand
 {
 public:
+    enum eOutputStatus {
+        eOS_Effective = 0,
+        eOS_NotEffective = 1,
+        eOS_InsufficientResource = 2,
+        eOS_Ready = 3,
+        eOS_Output = 4,
+    };
+public:
     SignalSourceCmd( Ieee1394Service& ieee1394service );
     virtual ~SignalSourceCmd();
 

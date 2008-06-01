@@ -113,7 +113,8 @@ public:
                                    AVC::function_block_type_t functionBlockId,
                                    AVC::Plug::EPlugAddressType plugAddressType,
                                    AVC::Plug::EPlugDirection plugDirection,
-                                   AVC::plug_id_t plugId );
+                                   AVC::plug_id_t plugId,
+                                   int globalId = -1 );
 
 protected:
     /// cleans the internal data structures that are created by discovery

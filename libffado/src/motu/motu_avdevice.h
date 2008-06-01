@@ -150,7 +150,7 @@ public:
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
-    static bool probe( ConfigRom& configRom );
+    static bool probe( ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );
     virtual bool discover();

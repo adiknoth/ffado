@@ -67,8 +67,9 @@ RmeDevice::~RmeDevice()
 }
 
 bool
-RmeDevice::probe( ConfigRom& configRom )
+RmeDevice::probe( ConfigRom& configRom, bool generic )
 {
+    if (generic) return false;
     unsigned int vendorId = configRom.getNodeVendorId();
     unsigned int unitVersion = configRom.getUnitVersion();
 

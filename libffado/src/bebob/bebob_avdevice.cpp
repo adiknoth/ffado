@@ -81,17 +81,48 @@ AvDevice::~AvDevice()
 }
 
 bool
-AvDevice::probe( ConfigRom& configRom )
+AvDevice::probe( ConfigRom& configRom, bool generic )
 {
-    unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    if(generic) {
+        return false;
+        // try a bebob-specific command to check for the firmware
+        ExtendedPlugInfoCmd extPlugInfoCmd( configRom.get1394Service() );
+        UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                         configRom.getNodeId() );
+        extPlugInfoCmd.setPlugAddress( PlugAddress( PlugAddress::ePD_Input,
+                                                    PlugAddress::ePAM_Unit,
+                                                    unitPlugAddress ) );
+        extPlugInfoCmd.setNodeId( configRom.getNodeId() );
+        extPlugInfoCmd.setCommandType( AVCCommand::eCT_Status );
+        extPlugInfoCmd.setVerbose( configRom.getVerboseLevel() );
+        ExtendedPlugInfoInfoType extendedPlugInfoInfoType(
+            ExtendedPlugInfoInfoType::eIT_NoOfChannels );
+        extendedPlugInfoInfoType.initialize();
+        extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
+    
+        if ( !extPlugInfoCmd.fire() ) {
+            debugError( "Number of channels command failed\n" );
+            return false;
+        }
+    
+        ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
+        if ( infoType
+            && infoType->m_plugNrOfChns )
+        {
+            return true;
+        }
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
-    if ( vendorModel.parse() ) {
-        return vendorModel.isPresent( vendorId, modelId );
+        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
+        if ( vendorModel.parse() ) {
+            return vendorModel.isPresent( vendorId, modelId );
+        }
+        return false;
     }
-
-    return false;
 }
 
 FFADODevice *
@@ -157,7 +188,10 @@ AvDevice::discover()
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
                      m_model.vendor_name.c_str(),
                      m_model.model_name.c_str());
-    } else return false;
+    } else {
+        debugWarning("Using generic BeBoB support for unsupported device '%s %s'\n", 
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
+    }
 
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
