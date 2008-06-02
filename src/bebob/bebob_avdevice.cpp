@@ -409,7 +409,8 @@ AvDevice::createPlug( AVC::Unit* unit,
                       AVC::function_block_type_t functionBlockId,
                       AVC::Plug::EPlugAddressType plugAddressType,
                       AVC::Plug::EPlugDirection plugDirection,
-                      AVC::plug_id_t plugId )
+                      AVC::plug_id_t plugId,
+                      int globalId )
 {
 
     Plug *p= new BeBoB::Plug( unit,
@@ -418,7 +419,8 @@ AvDevice::createPlug( AVC::Unit* unit,
                               functionBlockId,
                               plugAddressType,
                               plugDirection,
-                              plugId );
+                              plugId,
+                              globalId );
     if (p) p->setVerboseLevel(getDebugLevel());
     return p;
 }

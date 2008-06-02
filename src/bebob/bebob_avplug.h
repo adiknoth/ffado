@@ -54,6 +54,14 @@ public:
           AVC::Plug::EPlugAddressType plugAddressType,
           AVC::Plug::EPlugDirection plugDirection,
           AVC::plug_id_t plugId );
+    Plug( AVC::Unit* unit,
+          AVC::Subunit* subunit,
+          AVC::function_block_type_t functionBlockType,
+          AVC::function_block_type_t functionBlockId,
+          AVC::Plug::EPlugAddressType plugAddressType,
+          AVC::Plug::EPlugDirection plugDirection,
+          AVC::plug_id_t plugId,
+          int globalId );
     Plug( const Plug& rhs );
     virtual ~Plug();
 

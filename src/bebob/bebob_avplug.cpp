@@ -64,6 +64,38 @@ Plug::Plug( AVC::Unit* unit,
                  plugId );
 }
 
+Plug::Plug( AVC::Unit* unit,
+            AVC::Subunit* subunit,
+            AVC::function_block_type_t functionBlockType,
+            AVC::function_block_type_t functionBlockId,
+            AVC::Plug::EPlugAddressType plugAddressType,
+            AVC::Plug::EPlugDirection plugDirection,
+            AVC::plug_id_t plugId,
+            int globalId )
+    : AVC::Plug( unit,
+                 subunit,
+                 functionBlockType,
+                 functionBlockId,
+                 plugAddressType,
+                 plugDirection,
+                 plugId,
+                 globalId )
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "nodeId = %d, subunitType = %d, "
+                 "subunitId = %d, functionBlockType = %d, "
+                 "functionBlockId = %d, addressType = %d, "
+                 "direction = %d, id = %d\n",
+                 unit->getConfigRom().getNodeId(),
+                 getSubunitType(),
+                 getSubunitId(),
+                 functionBlockType,
+                 functionBlockId,
+                 plugAddressType,
+                 plugDirection,
+                 plugId );
+}
+
 Plug::Plug( const Plug& rhs )
     : AVC::Plug( rhs )
 {
