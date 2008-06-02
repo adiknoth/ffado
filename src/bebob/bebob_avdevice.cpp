@@ -472,7 +472,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 {
     ExtendedPlugInfoCmd extPlugInfoCmd( get1394Service() );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     getNodeId() );
+                                     0 );
     extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
                                                 PlugAddress::ePAM_Unit,
                                                 unitPlugAddress ) );
