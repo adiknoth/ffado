@@ -554,10 +554,9 @@ AvDevice::getConfigurationId()
     // create a unique configuration id.
     uint64_t id = 0;
     id = getConfigurationIdSampleRate();
-    id |= ( getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input )
-            + getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) ) << 8;
-    id |= getConfigurationIdSyncMode() << 16;
-
+    id |= getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input ) << 8;
+    id |= getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) << 16;
+    id |= getConfigurationIdSyncMode() << 24;
     return id;
 }
 
