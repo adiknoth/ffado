@@ -105,7 +105,7 @@ public:
 protected:
     virtual uint8_t getConfigurationIdSampleRate();
     virtual uint8_t getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
-    virtual uint8_t getConfigurationIdSyncMode();
+    virtual uint16_t getConfigurationIdSyncMode();
 
 protected:
     Mixer*             m_Mixer;

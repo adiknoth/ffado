@@ -449,7 +449,7 @@ AvDevice::getConfigurationIdSampleRate()
 
     if ( !extStreamFormatCmd.fire() ) {
         debugError( "Stream format command failed\n" );
-        return false;
+        return 0;
     }
 
     FormatInformation* formatInfo =
@@ -486,7 +486,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "Number of channels command failed\n" );
-        return false;
+        return 0;
     }
 
     ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
@@ -502,7 +502,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
     return 0;
 }
 
-uint8_t
+uint16_t
 AvDevice::getConfigurationIdSyncMode()
 {
     SignalSourceCmd signalSourceCmd( get1394Service() );
@@ -518,7 +518,7 @@ AvDevice::getConfigurationIdSyncMode()
 
     if ( !signalSourceCmd.fire() ) {
         debugError( "Signal source command failed\n" );
-        return false;
+        return 0;
     }
 
     SignalAddress* pSyncPlugSignalAddress = signalSourceCmd.getSignalSource();
@@ -556,7 +556,7 @@ AvDevice::getConfigurationId()
     id = getConfigurationIdSampleRate();
     id |= getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input ) << 8;
     id |= getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) << 16;
-    id |= getConfigurationIdSyncMode() << 24;
+    id |= ((uint64_t)getConfigurationIdSyncMode()) << 24;
     return id;
 }
 
