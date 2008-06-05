@@ -78,7 +78,8 @@ public:
                                    AVC::function_block_type_t functionBlockId,
                                    AVC::Plug::EPlugAddressType plugAddressType,
                                    AVC::Plug::EPlugDirection plugDirection,
-                                   AVC::plug_id_t plugId );
+                                   AVC::plug_id_t plugId,
+                                   int globalId = -1 );
 
     virtual int getSelectorFBValue(int id);
     virtual bool setSelectorFBValue(int id, int v);
@@ -104,7 +105,7 @@ public:
 protected:
     virtual uint8_t getConfigurationIdSampleRate();
     virtual uint8_t getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
-    virtual uint8_t getConfigurationIdSyncMode();
+    virtual uint16_t getConfigurationIdSyncMode();
 
 protected:
     Mixer*             m_Mixer;

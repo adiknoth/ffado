@@ -120,7 +120,7 @@ Phase88Device::getSupportedClockSources() {
     return r;
 }
 
-uint8_t
+uint16_t
 Phase88Device::getConfigurationIdSyncMode()
 {
     uint8_t fb_extsync_value = getSelectorFBValue(8);

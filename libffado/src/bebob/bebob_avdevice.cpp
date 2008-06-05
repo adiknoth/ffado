@@ -409,7 +409,8 @@ AvDevice::createPlug( AVC::Unit* unit,
                       AVC::function_block_type_t functionBlockId,
                       AVC::Plug::EPlugAddressType plugAddressType,
                       AVC::Plug::EPlugDirection plugDirection,
-                      AVC::plug_id_t plugId )
+                      AVC::plug_id_t plugId,
+                      int globalId )
 {
 
     Plug *p= new BeBoB::Plug( unit,
@@ -418,7 +419,8 @@ AvDevice::createPlug( AVC::Unit* unit,
                               functionBlockId,
                               plugAddressType,
                               plugDirection,
-                              plugId );
+                              plugId,
+                              globalId );
     if (p) p->setVerboseLevel(getDebugLevel());
     return p;
 }
@@ -447,7 +449,7 @@ AvDevice::getConfigurationIdSampleRate()
 
     if ( !extStreamFormatCmd.fire() ) {
         debugError( "Stream format command failed\n" );
-        return false;
+        return 0;
     }
 
     FormatInformation* formatInfo =
@@ -470,7 +472,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 {
     ExtendedPlugInfoCmd extPlugInfoCmd( get1394Service() );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
-                                     getNodeId() );
+                                     0 );
     extPlugInfoCmd.setPlugAddress( PlugAddress( ePlugDirection,
                                                 PlugAddress::ePAM_Unit,
                                                 unitPlugAddress ) );
@@ -484,7 +486,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 
     if ( !extPlugInfoCmd.fire() ) {
         debugError( "Number of channels command failed\n" );
-        return false;
+        return 0;
     }
 
     ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
@@ -500,7 +502,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
     return 0;
 }
 
-uint8_t
+uint16_t
 AvDevice::getConfigurationIdSyncMode()
 {
     SignalSourceCmd signalSourceCmd( get1394Service() );
@@ -516,7 +518,7 @@ AvDevice::getConfigurationIdSyncMode()
 
     if ( !signalSourceCmd.fire() ) {
         debugError( "Signal source command failed\n" );
-        return false;
+        return 0;
     }
 
     SignalAddress* pSyncPlugSignalAddress = signalSourceCmd.getSignalSource();
@@ -552,10 +554,9 @@ AvDevice::getConfigurationId()
     // create a unique configuration id.
     uint64_t id = 0;
     id = getConfigurationIdSampleRate();
-    id |= ( getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input )
-            + getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) ) << 8;
-    id |= getConfigurationIdSyncMode() << 16;
-
+    id |= getConfigurationIdNumberOfChannel( PlugAddress::ePD_Input ) << 8;
+    id |= getConfigurationIdNumberOfChannel( PlugAddress::ePD_Output ) << 16;
+    id |= ((uint64_t)getConfigurationIdSyncMode()) << 24;
     return id;
 }
 

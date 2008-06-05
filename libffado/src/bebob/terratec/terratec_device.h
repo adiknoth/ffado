@@ -45,7 +45,7 @@ public:
     virtual ClockSource getActiveClockSource();
 
 protected:
-    virtual uint8_t getConfigurationIdSyncMode();
+    virtual uint16_t getConfigurationIdSyncMode();
 
 private:
     void updateClockSources();
