@@ -23,7 +23,7 @@
 from qt import *
 
 # the class that holds all actual control code
-class SaffireMixerBase():
+class SaffireMixerBase:
     def __init__(self):
         pass
 
