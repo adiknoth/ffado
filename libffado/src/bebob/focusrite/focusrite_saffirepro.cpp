@@ -47,6 +47,8 @@ SaffireProDevice::SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( 
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
     }
+
+    updateClockSources();
 }
 
 SaffireProDevice::~SaffireProDevice()
@@ -360,6 +362,109 @@ SaffireProDevice::destroyMixer()
     m_ControlContainer = NULL;
 
     return true;
+}
+
+void
+SaffireProDevice::updateClockSources() {
+    m_internal_clocksource.type = FFADODevice::eCT_Internal;
+    m_internal_clocksource.valid = true;
+    m_internal_clocksource.locked = true;
+    m_internal_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL;
+    m_internal_clocksource.slipping = false;
+    m_internal_clocksource.description = "Internal";
+
+    m_spdif_clocksource.type = FFADODevice::eCT_SPDIF;
+    m_spdif_clocksource.valid = true;
+    m_spdif_clocksource.locked = false;
+    m_spdif_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF;
+    m_spdif_clocksource.slipping = false;
+    m_spdif_clocksource.description = "S/PDIF";
+
+    m_wordclock_clocksource.type = FFADODevice::eCT_WordClock;
+    m_wordclock_clocksource.valid = true;
+    m_wordclock_clocksource.locked = false;
+    m_wordclock_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK;
+    m_wordclock_clocksource.slipping = false;
+    m_wordclock_clocksource.description = "WordClock";
+
+    if(isPro26()) {
+        m_adat1_clocksource.type = FFADODevice::eCT_ADAT;
+        m_adat1_clocksource.valid = true;
+        m_adat1_clocksource.locked = false;
+        m_adat1_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1;
+        m_adat1_clocksource.slipping = false;
+        m_adat1_clocksource.description = "ADAT 1";
+
+        m_adat2_clocksource.type = FFADODevice::eCT_ADAT;
+        m_adat2_clocksource.valid = true;
+        m_adat2_clocksource.locked = false;
+        m_adat2_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2;
+        m_adat2_clocksource.slipping = false;
+        m_adat2_clocksource.description = "ADAT 2";
+    }
+}
+
+FFADODevice::ClockSource
+SaffireProDevice::getActiveClockSource()
+{
+    uint32_t sync;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG, &sync ) ){
+        debugError( "getSpecificValue failed\n" );
+        return ClockSource();
+    }
+
+    updateClockSources(); // make sure the current state is reflected in the clocksources
+
+    switch(sync) {
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
+            return m_internal_clocksource;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF:
+            return m_spdif_clocksource;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
+            return m_adat1_clocksource;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
+            return m_adat2_clocksource;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            return m_wordclock_clocksource;
+        default:
+            debugWarning( "Unexpected SYNC_CONFIG field value: %08lX\n", sync );
+            return ClockSource();
+    }
+}
+
+bool
+SaffireProDevice::setActiveClockSource(ClockSource s)
+{
+    if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG, s.id ) ){
+        debugError( "detSpecificValue failed\n" );
+        return false;
+    }
+    return true;
+}
+
+FFADODevice::ClockSourceVector
+SaffireProDevice::getSupportedClockSources()
+{
+    FFADODevice::ClockSourceVector r;
+    r.push_back(m_internal_clocksource);
+    r.push_back(m_spdif_clocksource);
+    r.push_back(m_wordclock_clocksource);
+    if(isPro26()) {
+        r.push_back(m_adat1_clocksource);
+        r.push_back(m_adat2_clocksource);
+    }
+    return r;
+}
+
+uint16_t
+SaffireProDevice::getConfigurationIdSyncMode()
+{
+    uint32_t sync;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG, &sync ) ){
+        debugError( "getSpecificValue failed\n" );
+        return 0xFFFF;
+    }
+    return sync & 0xFFFF;
 }
 
 bool
