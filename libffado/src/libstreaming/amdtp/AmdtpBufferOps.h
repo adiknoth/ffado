@@ -26,7 +26,7 @@
 
 #include <assert.h>
 // to check for SSE etc...
-#include "config.h"
+
 
 #include <stdio.h>
 

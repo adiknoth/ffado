@@ -24,7 +24,7 @@
 #ifndef __POSIX_MUTEX__
 #define __POSIX_MUTEX__
 
-#include "config.h"
+
 
 #include "Mutex.h"
 #include <pthread.h>

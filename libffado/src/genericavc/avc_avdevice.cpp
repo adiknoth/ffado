@@ -22,6 +22,8 @@
  *
  */
 
+#include "config.h"
+
 #include "genericavc/avc_avdevice.h"
 
 #include "libieee1394/configrom.h"
@@ -33,8 +35,6 @@
 #include "libavc/general/avc_subunit_info.h"
 
 #include "debugmodule/debugmodule.h"
-
-#include "config.h"
 
 #include <string>
 #include <stdint.h>

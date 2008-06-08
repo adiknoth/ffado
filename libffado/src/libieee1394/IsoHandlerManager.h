@@ -25,6 +25,7 @@
 #define __FFADO_ISOHANDLERMANAGER__
 
 #include "config.h"
+
 #include "debugmodule/debugmodule.h"
 
 #include "libutil/Thread.h"

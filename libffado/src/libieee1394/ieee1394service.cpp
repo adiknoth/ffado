@@ -23,6 +23,7 @@
  */
 
 #include "config.h"
+
 #include "ieee1394service.h"
 #include "ARMHandler.h"
 #include "cycletimer.h"

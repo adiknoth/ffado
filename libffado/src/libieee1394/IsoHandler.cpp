@@ -21,7 +21,7 @@
  *
  */
 
-#include "config.h"
+
 
 #include "IsoHandler.h"
 #include "ieee1394service.h" 

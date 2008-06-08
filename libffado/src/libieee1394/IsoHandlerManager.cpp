@@ -22,6 +22,7 @@
  */
 
 #include "config.h"
+
 #include "IsoHandlerManager.h"
 #include "ieee1394service.h"
 #include "cycletimer.h"

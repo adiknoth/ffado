@@ -20,7 +20,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "config.h" // FOR CACHE_VERSION
+
+#include "version.h" // FOR CACHE_VERSION
 
 #include "serialize.h"
 
@@ -28,7 +29,6 @@
 #include <cstdlib>
 
 using namespace std;
-
 
 IMPL_DEBUG_MODULE( Util::XMLSerialize,   XMLSerialize,   DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( Util::XMLDeserialize, XMLDeserialize, DEBUG_LEVEL_NORMAL );

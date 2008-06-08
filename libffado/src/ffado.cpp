@@ -26,7 +26,7 @@
  * Implementation of the FFADO external C API
  */
 
-#include "config.h"
+#include "version.h"
 
 #include "../libffado/ffado.h"
 #include "libstreaming/generic/StreamProcessor.h"

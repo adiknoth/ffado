@@ -23,6 +23,7 @@
  */
 
 #include "config.h"
+
 #include "libutil/float_cast.h"
 
 #include "MotuTransmitStreamProcessor.h"

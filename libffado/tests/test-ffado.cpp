@@ -26,7 +26,7 @@
  * This version uses the CPP API
  */
 
-#include <config.h>
+#include "version.h"
 
 #include "libffado/ffado.h"
 

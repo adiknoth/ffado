@@ -24,7 +24,7 @@
 #ifndef __FFADO_UTIL_SERIALIZE_H__
 #define __FFADO_UTIL_SERIALIZE_H__
 
-#include "config.h"
+
 
 #if SERIALIZE_USE_EXPAT
     #include "serialize_expat.h"

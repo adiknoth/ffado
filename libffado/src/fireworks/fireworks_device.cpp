@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include "fireworks_device.h"
 #include "efc/efc_avc_cmd.h"
 #include "efc/efc_cmd.h"
@@ -32,8 +34,6 @@
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
-
-#include "config.h"
 
 #include "fireworks/fireworks_control.h"
 
@@ -105,7 +105,7 @@ Device::probe( ConfigRom& configRom, bool generic )
     } else {
         unsigned int vendorId = configRom.getNodeVendorId();
         unsigned int modelId = configRom.getModelId();
-    
+
         GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
         if ( vendorModel.parse() ) {
             return vendorModel.isPresent( vendorId, modelId );

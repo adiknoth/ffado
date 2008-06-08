@@ -22,6 +22,7 @@
  */
 
 #include "config.h"
+
 #include "AmdtpTransmitStreamProcessor.h"
 #include "AmdtpPort.h"
 #include "../StreamProcessorManager.h"

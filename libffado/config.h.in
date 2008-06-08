@@ -2,31 +2,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* Name of package */
-#define PACKAGE $PACKAGE
-
-/* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "<ffado-devel@lists.sf.net>"
-
-/* Define to the full name of this package. */
-#define PACKAGE_NAME "$PACKAGE"
-
-/* Define to the full name and version of this package. */
-#define PACKAGE_STRING "$PACKAGE $VERSION-$REVISION"
-
-/* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "$PACKAGE"
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "$VERSION-$REVISION"
-
-/* Define to the version of the cace. */
-#define CACHE_VERSION "$VERSION-$REVISION"
-#define CACHEDIR "$CACHEDIR"
-
-/* Define to the api version */
-#define FFADO_API_VERSION $FFADO_API_VERSION
-
 #define BINDIR "$BINDIR"
 #define LIBDIR "$LIBDIR"
 #define SHAREDIR "$SHAREDIR"
@@ -40,47 +15,7 @@
 // serialization
 #define SERIALIZE_USE_EXPAT $SERIALIZE_USE_EXPAT
 
-// use a RT-safe message buffer for debug output
-// useful to disable this when the code aborts/segfaults to
-// not lose debug output. should be enabled though.
-#define DEBUG_USE_MESSAGE_BUFFER             1
-// max message length in the debug messagebuffer
-#define DEBUG_MAX_MESSAGE_LENGTH           512
-// number of messages in the debug messagebuffer (power of two)
-#define DEBUG_MB_BUFFERS                  1024
-
-// use an RT thread for reading out the messagebuffer.
-// can reduce the number of buffer xruns, but not
-// recommended
-#define DEBUG_MESSAGE_BUFFER_REALTIME        0
-#define DEBUG_MESSAGE_BUFFER_REALTIME_PRIO   1
-
-// When a write can't get the buffer lock, how many times
-// should it retry, and wait how long between retries?
-#define DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NTRIES      2
-#define DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NSEC    50000
-
-
-// support a debug backlog
-// note that this does not influence non-debug builds
-#define DEBUG_BACKLOG_SUPPORT                0
-// number of messages in the backlog buffer (power of two)
-#define DEBUG_BACKLOG_MB_BUFFERS            64
-
-// support backtrace debugging
-// note that this does not influence non-debug builds
-#define DEBUG_BACKTRACE_SUPPORT              0
-// max length of backtrace
-#define DEBUG_MAX_BACKTRACE_LENGTH           8
-// max amount of function pointers to keep track of
-#define DEBUG_MAX_BACKTRACE_FUNCTIONS_SEEN  64
-
-// lock debugging
-#define DEBUG_LOCK_COLLISION_TRACING         0
-
-// make this zero to disable the most extreme
-// debug logging in the critical sections
-#define DEBUG_EXTREME_ENABLE                 0
+#define CACHEDIR "$CACHEDIR"
 
 // discovery
 #define ENABLE_DISCOVERY_CACHE               1

@@ -524,13 +524,17 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 # Start building
 #
 env.ScanReplace( "config.h.in" )
-# ensure that the config.h is updated with the version
-
+# ensure that the config.h is updated
 env.Depends( "config.h", "SConstruct" )
 env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
 
-# update config.h whenever the SVN revision changes
-env.Depends( "config.h", env.Value(env['REVISION']))
+env.ScanReplace( "config_debug.h.in" )
+
+env.ScanReplace( "version.h.in" )
+env.Depends( "version.h", "SConstruct" )
+env.Depends( "version.h", 'cache/' + build_base + "options.cache" )
+# update version.h whenever the SVN revision changes
+env.Depends( "version.h", env.Value(env['REVISION']))
 
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )

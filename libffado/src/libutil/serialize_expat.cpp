@@ -21,7 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "config.h" // FOR CACHE_VERSION
+ // FOR CACHE_VERSION
 
 #include "serialize.h"
 

@@ -32,7 +32,7 @@ using namespace Util;
 
 extern "C" {
 
-#include "config.h"
+#include "version.h"
 
 #include <byteswap.h>
 #include <sys/shm.h>

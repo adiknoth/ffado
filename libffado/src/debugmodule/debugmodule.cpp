@@ -23,7 +23,6 @@
  */
 
 #include "debugmodule.h"
-#include "config.h"
 
 #include <stdarg.h>
 #include "libutil/ByteSwap.h"

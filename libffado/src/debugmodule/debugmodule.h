@@ -25,7 +25,7 @@
 #ifndef DEBUGMODULE_H
 #define DEBUGMODULE_H
 
-#include "config.h"
+#include "config_debug.h"
 
 #include "../fbtypes.h"
 #include <assert.h>

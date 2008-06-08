@@ -23,6 +23,8 @@
  *
  */
 
+#include "config.h"
+
 #include "configrom.h"
 #include "ieee1394service.h"
 

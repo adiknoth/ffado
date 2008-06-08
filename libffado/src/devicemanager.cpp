@@ -22,6 +22,7 @@
  *
  */
 
+#include "config.h"
 #include "fbtypes.h"
 
 #include "devicemanager.h"

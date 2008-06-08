@@ -27,7 +27,7 @@
 #include "debugmodule/debugmodule.h"
 #include <string>
 
-#include "config.h"
+
 
 #define FFADO_IPC_RINGBUFFER_MAGIC   0x57439812
 #define FFADO_IPC_RINGBUFFER_VERSION 0

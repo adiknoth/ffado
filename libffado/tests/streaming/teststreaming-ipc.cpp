@@ -26,8 +26,6 @@
  * Test application for the IPC audio server
  */
 
-#include "config.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

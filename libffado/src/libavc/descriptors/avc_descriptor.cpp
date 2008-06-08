@@ -297,12 +297,12 @@ AVCDescriptor::load()
         debugOutput(DEBUG_LEVEL_VERBOSE, " Could not parse descriptor\n");
         return false;
     }
-    
+
 #ifdef DEBUG
     if(getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
         Util::Cmd::StringSerializer se_dbg;
         serialize( se_dbg );
-        
+
         // output the debug message in smaller chunks to avoid problems
         // with a max message size
         unsigned int chars_to_write=se_dbg.getString().size();

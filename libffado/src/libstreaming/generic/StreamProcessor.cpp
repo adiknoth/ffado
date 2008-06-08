@@ -21,7 +21,7 @@
  *
  */
 
-#include "config.h"
+
 
 #include "StreamProcessor.h"
 #include "../StreamProcessorManager.h"
