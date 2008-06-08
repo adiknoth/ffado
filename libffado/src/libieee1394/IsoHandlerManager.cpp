@@ -23,7 +23,8 @@
 
 #include "config.h"
 #include "IsoHandlerManager.h"
-#include "ieee1394service.h" 
+#include "ieee1394service.h"
+#include "cycletimer.h"
 #include "libstreaming/generic/StreamProcessor.h"
 
 #include "libutil/Atomic.h"
@@ -222,6 +223,7 @@ IsoTask::Execute()
                 case IsoTask::eAR_Timeout:
                     // FIXME: what to do here?
                     debugWarning("Timeout while waiting for activity\n");
+                    no_one_to_poll = false; // exit the loop to be able to detect failing handlers
                     break;
                 case IsoTask::eAR_Activity:
                     // do nothing
@@ -236,6 +238,7 @@ IsoTask::Execute()
     // Use a shadow map of the fd's such that we don't have to update
     // the fd map everytime we run poll().
     err = poll (m_poll_fds_shadow, m_poll_nfds_shadow, m_poll_timeout);
+    uint32_t ctr_at_poll_return = m_manager.get1394Service().getCycleTimer();
 
     if (err < 0) {
         if (errno == EINTR) {
@@ -246,6 +249,37 @@ IsoTask::Execute()
         return false;
     }
 
+    // find handlers that have died
+    uint64_t ctr_at_poll_return_ticks = CYCLE_TIMER_TO_TICKS(ctr_at_poll_return);
+    bool handler_died = false;
+    for (i = 0; i < m_poll_nfds_shadow; i++) {
+        // figure out if a handler has died
+        // all handlers in the poll() are active, so they should be iterated
+        // now and then. If they aren't, the handler has died.
+        uint32_t last_call = m_IsoHandler_map_shadow[i]->getLastIterateTime();
+        if (last_call == 0xFFFFFFFF) {
+            // this was not iterated yet, so can't be dead
+            continue;
+        }
+
+        uint64_t last_call_ticks = CYCLE_TIMER_TO_TICKS(last_call);
+        // we use 4 seconds since that should not cause issues with startup
+        int64_t max_diff_ticks = TICKS_PER_SECOND * 4;
+        int64_t measured_diff_ticks = diffTicks(ctr_at_poll_return_ticks, last_call_ticks);
+
+        if(measured_diff_ticks > max_diff_ticks) {
+            debugFatal("(%p, %s) Handler died: now: %08lX, last: %08lX, diff: %lld (max: %lld)\n",
+                       this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"),
+                       ctr_at_poll_return, last_call, measured_diff_ticks, max_diff_ticks);
+            m_IsoHandler_map_shadow[i]->notifyOfDeath();
+            handler_died = true;
+        }
+    }
+    if(handler_died) {
+        return false; // one or more handlers have died
+    }
+
+    // iterate the handlers
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         #ifdef DEBUG
         if(m_poll_fds_shadow[i].revents) {
@@ -263,7 +297,7 @@ IsoTask::Execute()
         // 1) the kernel can accept or provide packets (poll returned POLLIN)
         // 2) the client can provide or accept packets (since we enabled polling)
         if(m_poll_fds_shadow[i].revents & (POLLIN)) {
-            m_IsoHandler_map_shadow[i]->iterate();
+            m_IsoHandler_map_shadow[i]->iterate(ctr_at_poll_return);
         } else {
             // there might be some error condition
             if (m_poll_fds_shadow[i].revents & POLLERR) {
@@ -273,17 +307,6 @@ IsoTask::Execute()
                 debugWarning("(%p) hangup on fd for %d\n", this, i);
             }
         }
-
-//         #ifdef DEBUG
-//         // check if the handler is still alive
-//         if(m_IsoHandler_map_shadow[i]->isDead()) {
-//             debugError("Iso handler (%p, %s) is dead!\n",
-//                        m_IsoHandler_map_shadow[i],
-//                        m_IsoHandler_map_shadow[i]->getTypeString());
-//             return false; // shutdown the system
-//         }
-//         #endif
-
     }
     return true;
 }

@@ -80,8 +80,19 @@ private: // the ISO callback interface
                     int cycle, unsigned int dropped, unsigned int skipped);
 
 public:
-    // runnable interface
+
+    /**
+     * Iterate the handler, transporting ISO packets to the client(s)
+     * @return true if success
+     */
     bool iterate();
+
+    /**
+     * Iterate the handler, transporting ISO packets to the client(s)
+     * @param  ctr_now the CTR time at which the iterate call is done.
+     * @return true if success
+     */
+    bool iterate(uint32_t ctr_now);
 
     int getFileDescriptor() { return raw1394_get_fd(m_handle);};
 
@@ -144,6 +155,13 @@ public:
      */
     int getLastCycle() {return m_last_cycle;};
 
+    /**
+     * @brief returns the CTR value saved at the last iterate() call
+     * @return CTR value saved at last iterate() call
+     */
+    uint32_t getLastIterateTime() {return m_last_now;};
+
+    void notifyOfDeath();
 private:
     IsoHandlerManager& m_manager;
     enum EHandlerType m_type;

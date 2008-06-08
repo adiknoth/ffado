@@ -45,6 +45,12 @@
 #define CYCLE_TIMER_GET_SECS(x)   ((((x) & 0xFE000000UL) >> 25))
 #define CYCLE_TIMER_GET_CYCLES(x) ((((x) & 0x01FFF000UL) >> 12))
 #define CYCLE_TIMER_GET_OFFSET(x)  ((((x) & 0x00000FFFUL)))
+
+#define CYCLE_TIMER_SET_SECS(v, x)   (((v) & ~0xFE000000UL) | (((x) & 0x7F) << 25))
+#define CYCLE_TIMER_SET_CYCLES(v, x) ((((v) & ~0x01FFF000UL) | (((x) & 0x1FFF) << 12)))
+#define CYCLE_TIMER_SET_OFFSET(v, x)  ((((v) & ~0x00000FFFUL) | ((x) & 0xFFF)))
+
+
 #define CYCLE_TIMER_TO_TICKS(x) ((CYCLE_TIMER_GET_SECS(x)   * TICKS_PER_SECOND) +\
                                    (CYCLE_TIMER_GET_CYCLES(x) * TICKS_PER_CYCLE ) +\
                                    (CYCLE_TIMER_GET_OFFSET(x)            ))
