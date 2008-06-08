@@ -394,9 +394,32 @@ protected:
     unsigned int getEnableDigitalChannel(enum eDigitalChannel);
     void setEnableDigitalChannel(enum eDigitalChannel, unsigned int);
 
+    bool isPro10()
+            {return getConfigRom().getModelId() == 0x00000006;};
+    bool isPro26()
+            {return getConfigRom().getModelId() == 0x00000003;};
+
+public:
+    // override these since we want to use the focusrite way of setting
+    // the clock
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
+protected:
+    virtual uint16_t getConfigurationIdSyncMode();
+
 private:
     virtual bool setSamplingFrequencyDo( uint32_t );
     virtual bool setSamplingFrequencyDoNoReboot( uint32_t );
+
+private:
+    void updateClockSources();
+    ClockSource m_internal_clocksource;
+    ClockSource m_spdif_clocksource;
+    ClockSource m_wordclock_clocksource;
+    ClockSource m_adat1_clocksource;
+    ClockSource m_adat2_clocksource;
 
     Control::Container *m_MixerContainer;
     Control::Container *m_ControlContainer;
