@@ -277,23 +277,24 @@ results above get rechecked.
 	# Optional checks follow:
 	#
 
-if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
-	env['PYUIC'] = True
-
-	if conf.CheckForApp( "xdg-desktop-menu --help" ):
-		env['XDG_TOOLS'] = True
+	# PyQT checks
+	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
+		env['PYUIC'] = True
+	
+		if conf.CheckForApp( "xdg-desktop-menu --help" ):
+			env['XDG_TOOLS'] = True
+		else:
+			print """
+	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
+	"""
+	
 	else:
 		print """
-I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
-"""
-
-else:
-	print """
-I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
-'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
-Therefor the mixer won't get installed.
-"""
+	I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
+	'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
+	Therefor the mixer won't get installed.
+	"""
 
 config_guess = conf.ConfigGuess()
 

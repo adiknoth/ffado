@@ -183,13 +183,18 @@ IsoHandler::canIterateClient()
 
 bool
 IsoHandler::iterate() {
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler...\n",
-                this, getTypeString());
+    return iterate(m_manager.get1394Service().getCycleTimer());
+}
+
+bool
+IsoHandler::iterate(uint32_t cycle_timer_now) {
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler at %08X...\n",
+                       this, getTypeString(), cycle_timer_now);
+    m_last_now = cycle_timer_now;
     if(m_State == E_Running) {
 #if ISOHANDLER_FLUSH_BEFORE_ITERATE
         flush();
 #endif
-        m_last_now = m_manager.get1394Service().getCycleTimer();
         if(raw1394_loop_iterate(m_handle)) {
             debugError( "IsoHandler (%p): Failed to iterate handler: %s\n",
                         this, strerror(errno));
@@ -293,6 +298,17 @@ IsoHandler::handleBusReset(unsigned int generation)
     // request the manager to update it's shadow map
     m_manager.requestShadowMapUpdate();
     return 0;
+}
+
+/**
+ * Call this if you find out that this handler has died for some
+ * external reason.
+ */
+void
+IsoHandler::notifyOfDeath()
+{
+    // notify the client of the fact that we have died
+    m_Client->handlerDied();
 }
 
 void IsoHandler::dumpInfo()
@@ -716,6 +732,10 @@ bool IsoHandler::enable(int cycle)
 #ifdef DEBUG
     m_min_ahead = 7999;
 #endif
+
+    // indicate that the first iterate() still has to occur.
+    m_last_now = 0xFFFFFFFF;
+
     m_State = E_Running;
     return true;
 }
