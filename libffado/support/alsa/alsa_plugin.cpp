@@ -46,10 +46,10 @@ extern "C" {
 #include <alsa/asoundlib.h>
 #include <alsa/pcm_external.h>
 
-#define FFADO_PLUGIN_VERSION "0.0.1"
+#define FFADO_PLUGIN_VERSION "0.0.2"
 
-// #define PRINT_FUNCTION_ENTRY (printMessage("entering %s\n",__FUNCTION__))
-#define PRINT_FUNCTION_ENTRY
+#define PRINT_FUNCTION_ENTRY (printMessage("entering %s\n",__FUNCTION__))
+// #define PRINT_FUNCTION_ENTRY
 
 typedef struct {
     snd_pcm_ioplug_t io;
@@ -58,7 +58,6 @@ typedef struct {
     int activated;
 
     unsigned int hw_ptr;
-    unsigned int period_size;
     unsigned int channels;
     snd_pcm_channel_area_t *areas;
 
@@ -72,7 +71,7 @@ typedef struct {
 
     // options
     long int verbose;
-    long int period;
+    snd_pcm_uframes_t period;
     long int nb_buffers;
 
 } snd_pcm_ffado_t;
@@ -93,6 +92,127 @@ static int snd_pcm_ffado_hw_params(snd_pcm_ioplug_t *io, snd_pcm_hw_params_t *pa
     return 0;
 }
 
+// static snd_pcm_sframes_t snd_pcm_ffado_write(snd_pcm_ioplug_t *io,
+//                    const snd_pcm_channel_area_t *areas,
+//                    snd_pcm_uframes_t offset,
+//                    snd_pcm_uframes_t size)
+// {
+//     PRINT_FUNCTION_ENTRY;
+//     snd_pcm_ffado_t *ffado = (snd_pcm_ffado_t *)io->private_data;
+//     IpcRingBuffer::eResult res;
+//     unsigned int i;
+// 
+//     do {
+//         uint32_t *audiobuffers_raw;
+//         res = ffado->buffer->requestBlockForWrite((void**) &audiobuffers_raw); // pointer voodoo
+//         if(res == IpcRingBuffer::eR_OK) {
+//             memset(audiobuffers_raw, 0, ffado->channels * ffado->period * 4);
+//             for (i = 0; i < ffado->channels; i++) {
+//                 uint32_t *alsa_data_ptr = (uint32_t *)((char *)areas[i].addr + (areas[i].step * offset / 8));
+//                 uint32_t *ffado_data_ptr = audiobuffers_raw + i*ffado->period;
+//                 memcpy(ffado_data_ptr, alsa_data_ptr, ffado->period * 4);
+//             }
+//             // release the block
+//             res = ffado->buffer->releaseBlockForWrite();
+//             if(res != IpcRingBuffer::eR_OK) {
+//                 debugOutput(DEBUG_LEVEL_NORMAL, "PBK: error committing memory block\n");
+//                 break;
+//             }
+//         } else if(res != IpcRingBuffer::eR_Again) {
+//             debugOutput(DEBUG_LEVEL_NORMAL, "PBK: error getting memory block\n");
+//         }
+//     } while (res == IpcRingBuffer::eR_Again);
+// 
+//     ffado->hw_ptr += ffado->period;
+//     ffado->hw_ptr %= io->buffer_size;
+// 
+//     if(size != ffado->period) {
+//         debugWarning("size %d, period %d, offset %d\n", size, ffado->period, offset);
+//     } else {
+//         debugOutput(DEBUG_LEVEL_NORMAL, "size %d, period %d, offset %d\n", size, ffado->period, offset);
+//     }
+// 
+//     if(res == IpcRingBuffer::eR_OK) {
+//         return ffado->period;
+//     } else {
+//         debugOutput(DEBUG_LEVEL_NORMAL, "error happened\n");
+//         return -1;
+//     }
+// }
+// 
+// static snd_pcm_sframes_t snd_pcm_ffado_read(snd_pcm_ioplug_t *io,
+//                   const snd_pcm_channel_area_t *areas,
+//                   snd_pcm_uframes_t offset,
+//                   snd_pcm_uframes_t size)
+// {
+//     PRINT_FUNCTION_ENTRY;
+//     snd_pcm_ffado_t *ffado = (snd_pcm_ffado_t *)io->private_data;
+//     IpcRingBuffer::eResult res;
+//     unsigned int i;
+// 
+//     do {
+//         uint32_t *audiobuffers_raw;
+//         res = ffado->buffer->requestBlockForRead((void**) &audiobuffers_raw); // pointer voodoo
+//         if(res == IpcRingBuffer::eR_OK) {
+//             for (i = 0; i < ffado->channels; i++) {
+//                 uint32_t *alsa_data_ptr = (uint32_t *)((char *)areas[i].addr + (areas[i].step * offset / 8));
+//                 uint32_t *ffado_data_ptr = audiobuffers_raw + i*ffado->period;
+//                 memcpy(alsa_data_ptr, ffado_data_ptr, ffado->period * 4);
+//             }
+//             // release the block
+//             res = ffado->buffer->releaseBlockForRead();
+//             if(res != IpcRingBuffer::eR_OK) {
+//                 debugOutput(DEBUG_LEVEL_NORMAL, "CAP: error committing memory block\n");
+//                 break;
+//             }
+//         } else if(res != IpcRingBuffer::eR_Again) {
+//             debugOutput(DEBUG_LEVEL_NORMAL, "CAP: error getting memory block\n");
+//         }
+//     } while (res == IpcRingBuffer::eR_Again);
+// 
+//     ffado->hw_ptr += ffado->period;
+//     ffado->hw_ptr %= io->buffer_size;
+// 
+//     if(res == IpcRingBuffer::eR_OK) {
+//         return ffado->period;
+//     } else {
+//         debugOutput(DEBUG_LEVEL_NORMAL, "error happened\n");
+//         return -1;
+//     }
+// }
+
+//     if (io->state != SND_PCM_STATE_RUNNING) {
+//         if (io->stream == SND_PCM_STREAM_PLAYBACK) {
+//             for (channel = 0; channel < io->channels; channel++)
+//                 snd_pcm_area_silence(&jack->areas[channel], 0, nframes, io->format);
+//             return 0;
+//         }
+//     }
+//     
+//     areas = snd_pcm_ioplug_mmap_areas(io);
+// 
+//     while (xfer < nframes) {
+//         snd_pcm_uframes_t frames = nframes - xfer;
+//         snd_pcm_uframes_t offset = jack->hw_ptr;
+//         snd_pcm_uframes_t cont = io->buffer_size - offset;
+// 
+//         if (cont < frames)
+//             frames = cont;
+// 
+//         for (channel = 0; channel < io->channels; channel++) {
+//             if (io->stream == SND_PCM_STREAM_PLAYBACK)
+//                 snd_pcm_area_copy(&jack->areas[channel], xfer, &areas[channel], offset, frames, io->format);
+//             else
+//                 snd_pcm_area_copy(&areas[channel], offset, &jack->areas[channel], xfer, frames, io->format);
+//         }
+//         
+//         jack->hw_ptr += frames;
+//         jack->hw_ptr %= io->buffer_size;
+//         xfer += frames;
+//     }
+// 
+//     write(jack->fd, buf, 1); /* for polling */
+
 static int
 snd_pcm_ffado_pollfunction(snd_pcm_ffado_t *ffado)
 {
@@ -101,66 +221,121 @@ snd_pcm_ffado_pollfunction(snd_pcm_ffado_t *ffado)
     static char buf[1];
     snd_pcm_ioplug_t *io = &ffado->io;
     const snd_pcm_channel_area_t *areas;
-    unsigned int i;
 
     assert(ffado);
     assert(ffado->buffer);
 
-    // wait for data to become available
-    // FIXME
-
-    // get the data address everything should go to/come from
-    areas = snd_pcm_ioplug_mmap_areas(io);
-
-    // get the current offset
-    snd_pcm_uframes_t offset = ffado->hw_ptr;
-
     IpcRingBuffer::eResult res;
     if (ffado->stream == SND_PCM_STREAM_PLAYBACK) {
-        do {
-            uint32_t *audiobuffers_raw;
-            res = ffado->buffer->requestBlockForWrite((void**) &audiobuffers_raw); // pointer voodoo
-            if(res == IpcRingBuffer::eR_OK) {
-                memset(audiobuffers_raw, 0, ffado->channels * ffado->period * 4);
-                for (i = 0; i < ffado->channels; i++) {
-                    uint32_t *alsa_data_ptr = (uint32_t *)((char *)areas[i].addr + (areas[i].step * offset / 8));
-                    uint32_t *ffado_data_ptr = audiobuffers_raw + i*ffado->period;
-                    memcpy(ffado_data_ptr, alsa_data_ptr, ffado->period * 4);
-                }
-                // release the block
-                res = ffado->buffer->releaseBlockForWrite();
-                if(res != IpcRingBuffer::eR_OK) {
-                    debugOutput(DEBUG_LEVEL_NORMAL, "PBK: error committing memory block\n");
-                    break;
-                }
-            } else if(res != IpcRingBuffer::eR_Again) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "PBK: error getting memory block\n");
-            }
-        } while (res == IpcRingBuffer::eR_Again);
-    } else {
-        do {
-            uint32_t *audiobuffers_raw;
-            res = ffado->buffer->requestBlockForRead((void**) &audiobuffers_raw); // pointer voodoo
-            if(res == IpcRingBuffer::eR_OK) {
-                for (i = 0; i < ffado->channels; i++) {
-                    uint32_t *alsa_data_ptr = (uint32_t *)((char *)areas[i].addr + (areas[i].step * offset / 8));
-                    uint32_t *ffado_data_ptr = audiobuffers_raw + i*ffado->period;
-                    memcpy(alsa_data_ptr, ffado_data_ptr, ffado->period * 4);
-                }
-                // release the block
-                res = ffado->buffer->releaseBlockForRead();
-                if(res != IpcRingBuffer::eR_OK) {
-                    debugOutput(DEBUG_LEVEL_NORMAL, "CAP: error committing memory block\n");
-                    break;
-                }
-            } else if(res != IpcRingBuffer::eR_Again) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "CAP: error getting memory block\n");
-            }
-        } while (res == IpcRingBuffer::eR_Again);
-    }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "PBK: wait\n");
+        res = ffado->buffer->waitForWrite();
+        debugOutput(DEBUG_LEVEL_VERBOSE, "PBK: done, fill: %d\n", ffado->buffer->getBufferFill());
 
-    ffado->hw_ptr += ffado->period;
-    ffado->hw_ptr %= io->buffer_size;
+        if(res == IpcRingBuffer::eR_OK) {
+            do {
+                uint32_t *audiobuffers_raw;
+                res = ffado->buffer->requestBlockForWrite((void**) &audiobuffers_raw); // pointer voodoo
+                if(res == IpcRingBuffer::eR_OK) {
+                    // we have the memory block, do the actual transfer
+                    // silence the block
+                    memset(audiobuffers_raw, 0, ffado->channels * ffado->period * 4);
+                    if(io->state == SND_PCM_STATE_RUNNING) {
+                        // get the data address the data comes from
+                        areas = snd_pcm_ioplug_mmap_areas(io);
+
+                        // create the list of areas where the data goes to
+                        unsigned int channel = 0;
+                        for (channel = 0; channel < ffado->channels; channel++) {
+                            uint32_t *target = (audiobuffers_raw + channel*ffado->period);
+                            ffado->areas[channel].addr = target;
+                            ffado->areas[channel].first = 0;
+                            ffado->areas[channel].step = 4*8; // FIXME: hardcoded sample size
+                        }
+                        snd_pcm_uframes_t xfer = 0;
+                        while (xfer < ffado->period) {
+                            snd_pcm_uframes_t frames = ffado->period - xfer;
+                            snd_pcm_uframes_t offset = ffado->hw_ptr;
+                            snd_pcm_uframes_t cont = io->buffer_size - offset;
+
+                            if (cont < frames)
+                                frames = cont;
+
+                            for (channel = 0; channel < ffado->channels; channel++) {
+                                snd_pcm_area_copy(&ffado->areas[channel], xfer, &areas[channel], offset, frames, io->format);
+                            }
+
+                            ffado->hw_ptr += frames;
+                            ffado->hw_ptr %= io->buffer_size;
+                            xfer += frames;
+                        }
+                    }
+                    // release the block
+                    res = ffado->buffer->releaseBlockForWrite();
+                    if(res != IpcRingBuffer::eR_OK) {
+                        debugOutput(DEBUG_LEVEL_NORMAL, "PBK: error committing memory block\n");
+                        break;
+                    }
+                } else if(res != IpcRingBuffer::eR_Again) {
+                    debugOutput(DEBUG_LEVEL_NORMAL, "PBK: error getting memory block\n");
+                }
+                if (res == IpcRingBuffer::eR_Again) {
+                    debugWarning("Again\n");
+                }
+            } while (res == IpcRingBuffer::eR_Again);
+        } else {
+            debugError("Error while waiting\n");
+        }
+    } else {
+        res = ffado->buffer->waitForRead();
+        if(res == IpcRingBuffer::eR_OK) {
+            do {
+                uint32_t *audiobuffers_raw;
+                res = ffado->buffer->requestBlockForRead((void**) &audiobuffers_raw); // pointer voodoo
+                if(res == IpcRingBuffer::eR_OK) {
+                    // we have the memory block, do the actual transfer
+                    if(io->state == SND_PCM_STATE_RUNNING) {
+                        // get the data address the data goes to
+                        areas = snd_pcm_ioplug_mmap_areas(io);
+
+                        // create the list of areas where the data comes from
+                        unsigned int channel = 0;
+                        for (channel = 0; channel < io->channels; channel++) {
+                            ffado->areas[channel].addr = audiobuffers_raw + channel*ffado->period;
+                            ffado->areas[channel].first = 0;
+                            ffado->areas[channel].step = 4*8; // FIXME: hardcoded sample size
+                        }
+                        snd_pcm_uframes_t xfer = 0;
+                        while (xfer < ffado->period) {
+                            snd_pcm_uframes_t frames = ffado->period - xfer;
+                            snd_pcm_uframes_t offset = ffado->hw_ptr;
+                            snd_pcm_uframes_t cont = io->buffer_size - offset;
+
+                            if (cont < frames)
+                                frames = cont;
+
+                            for (channel = 0; channel < io->channels; channel++) {
+                                snd_pcm_area_copy(&areas[channel], offset, &ffado->areas[channel], xfer, frames, io->format);
+                            }
+
+                            ffado->hw_ptr += frames;
+                            ffado->hw_ptr %= io->buffer_size;
+                            xfer += frames;
+                        }
+                    }
+                    // release the block
+                    res = ffado->buffer->releaseBlockForRead();
+                    if(res != IpcRingBuffer::eR_OK) {
+                        debugOutput(DEBUG_LEVEL_NORMAL, "CAP: error committing memory block\n");
+                        break;
+                    }
+                } else if(res != IpcRingBuffer::eR_Again) {
+                    debugOutput(DEBUG_LEVEL_NORMAL, "CAP: error getting memory block\n");
+                }
+            } while (res == IpcRingBuffer::eR_Again);
+        } else {
+            debugError("Error while waiting\n");
+        }
+    }
 
     write(ffado->fd, buf, 1); /* for polling */
 
@@ -172,6 +347,26 @@ snd_pcm_ffado_pollfunction(snd_pcm_ffado_t *ffado)
     }
 }
 
+// static int
+// snd_pcm_ffado_pollfunction(snd_pcm_ffado_t *ffado)
+// {
+//     // wait for a period
+//     IpcRingBuffer::eResult res;
+//     if(ffado->stream == SND_PCM_STREAM_PLAYBACK) {
+//         res = ffado->buffer->waitForWrite();
+//     } else {
+//         res = ffado->buffer->waitForRead();
+//     }
+// 
+//     if(res == IpcRingBuffer::eR_OK) {
+//         char buf[1];
+//         write(ffado->fd, buf, 1); /* for polling */
+//         return 0;
+//     } else {
+//         return -1;
+//     }
+// }
+
 static void * ffado_workthread(void *arg)
 {
     PRINT_FUNCTION_ENTRY;
@@ -181,11 +376,10 @@ static void * ffado_workthread(void *arg)
 
     pthread_setcancelstate (PTHREAD_CANCEL_DEFERRED, &oldstate);
 
-    while (1) {
-        snd_pcm_ffado_pollfunction(ffado);
+    while (snd_pcm_ffado_pollfunction(ffado) == 0) {
         pthread_testcancel();
     }
-
+    return 0;
 }
 
 static int snd_pcm_ffado_poll_revents(snd_pcm_ioplug_t *io,
@@ -204,8 +398,9 @@ static void snd_pcm_ffado_free(snd_pcm_ffado_t *ffado)
 {
     PRINT_FUNCTION_ENTRY;
     if (ffado) {
-        close(ffado->fd);
-        close(ffado->io.poll_fd);
+        if (ffado->fd >= 0) close(ffado->fd);
+        if (ffado->io.poll_fd >= 0) close(ffado->io.poll_fd);
+        free(ffado->areas);
         free(ffado);
     }
 }
@@ -338,12 +533,18 @@ static int snd_pcm_ffado_open(snd_pcm_t **pcmp, const char *name,
     ffado_pcm_callback.hw_params = snd_pcm_ffado_hw_params;
     ffado_pcm_callback.prepare = snd_pcm_ffado_prepare;
     ffado_pcm_callback.poll_revents = snd_pcm_ffado_poll_revents;
+//     if (stream == SND_PCM_STREAM_PLAYBACK) {
+//         ffado_pcm_callback.transfer = snd_pcm_ffado_write;
+//     } else {
+//         ffado_pcm_callback.transfer = snd_pcm_ffado_read;
+//     }
 
     // prepare io struct
     ffado->io.version = SND_PCM_IOPLUG_VERSION;
     ffado->io.name = "FFADO PCM Plugin";
     ffado->io.callback = &ffado_pcm_callback;
     ffado->io.private_data = ffado;
+//     ffado->io.mmap_rw = 0;
     ffado->io.mmap_rw = 1;
     ffado->io.poll_fd = fd[1];
     ffado->io.poll_events = stream == SND_PCM_STREAM_PLAYBACK ? POLLOUT : POLLIN;
@@ -369,6 +570,12 @@ static int snd_pcm_ffado_open(snd_pcm_t **pcmp, const char *name,
     ffado->nb_buffers = 5;
 
     setDebugLevel(ffado->verbose);
+
+    ffado->areas = (snd_pcm_channel_area_t *)calloc(ffado->channels, sizeof(snd_pcm_channel_area_t));
+    if (!ffado->areas) {
+        snd_pcm_ffado_free(ffado);
+        return -ENOMEM;
+    }
 
     // prepare the IPC buffer
     unsigned int buffsize = ffado->channels * ffado->period * 4;

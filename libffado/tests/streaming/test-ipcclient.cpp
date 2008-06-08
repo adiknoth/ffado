@@ -31,6 +31,8 @@
 #include <iostream>
 #include <signal.h>
 
+#include <math.h>
+
 using namespace Util;
 
 DECLARE_GLOBAL_DEBUG_MODULE;
@@ -78,6 +80,8 @@ struct arguments
     long int capture;
     long int period;
     long int nb_buffers;
+    long int test_tone;
+    float test_tone_freq;
 } arguments;
 
 // Parse a single option.
@@ -172,6 +176,8 @@ main(int argc, char **argv)
     arguments.nb_buffers        = 3;
     arguments.playback          = 0;
     arguments.capture           = 0;
+    arguments.test_tone_freq    = 0.01;
+    arguments.test_tone         = 1;
 
     // arg parsing
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
@@ -242,8 +248,31 @@ main(int argc, char **argv)
     int cnt = 0;
     int pbkcnt = 0;
 
+    float frame_counter = 0.0;
+    float sine_advance = 0.0;
+    float amplitude = 0.97;
+    sine_advance = 2.0*M_PI*arguments.test_tone_freq;
+    uint32_t sine_buff[arguments.period];
+
     run=1;
     while(run) {
+        // test tone generation
+        if (arguments.test_tone) {
+            // generate the test tone
+            for (int i=0; i < arguments.period; i++) {
+                float v = amplitude * sin(sine_advance * (frame_counter + (float)i));
+                v = (v * 2147483392.0);
+                int32_t tmp = ((int) v);
+                tmp = tmp >> 8;
+                memcpy(&sine_buff[i], &tmp, 4);
+            }
+            for(int j=0; j<arguments.playback; j++) {
+                uint32_t *target = (uint32_t *)(playback_buff + j*arguments.period*4);
+                memcpy(target, &sine_buff, arguments.period*4);
+            }
+        }
+        frame_counter += arguments.period;
+
         // write the data
         IpcRingBuffer::eResult res;
         if(playbackbuffer) {

@@ -170,6 +170,9 @@ public:
     // release the requested block.
     enum IpcRingBuffer::eResult releaseBlockForWrite();
 
+    enum IpcRingBuffer::eResult waitForRead();
+    enum IpcRingBuffer::eResult waitForWrite();
+
     void show();
     void setVerboseLevel(int l);
     // only makes sense for outward buffers

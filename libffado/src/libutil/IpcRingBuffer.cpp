@@ -416,6 +416,19 @@ IpcRingBuffer::Write(char *block)
     return msg_res;
 }
 
+// wait for a block of space to be available
+enum IpcRingBuffer::eResult
+IpcRingBuffer::waitForWrite()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p,  %s) IpcRingBuffer\n", this, m_name.c_str());
+    while(getBufferFill() >= m_blocks-1) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) full\n", this, m_name.c_str());
+        // wait
+        sem_wait(&m_activity);
+    }
+    return eR_OK;
+}
+
 enum IpcRingBuffer::eResult
 IpcRingBuffer::requestBlockForRead(void **block)
 {
@@ -541,6 +554,18 @@ IpcRingBuffer::Read(char *block)
         releaseBlockForRead();
     }
     return msg_res;
+}
+
+// wait for a block of data to be available
+enum IpcRingBuffer::eResult
+IpcRingBuffer::waitForRead()
+{
+    while(getBufferFill() == 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p, %s) empty\n", this, m_name.c_str());
+        // FIXME: this will work only when no non-data messages are sent
+        m_ping_queue.Wait();
+    }
+    return eR_OK;
 }
 
 void

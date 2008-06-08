@@ -99,6 +99,8 @@ public:
     virtual bool enableNotification();
     virtual bool disableNotification();
 
+    virtual bool Wait();
+
     virtual unsigned int getMaxMessageLength()
         {return m_attr.mq_msgsize;};
 

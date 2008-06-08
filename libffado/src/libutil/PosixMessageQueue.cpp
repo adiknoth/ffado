@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
 
 #define MQ_INVALID_ID ((mqd_t) -1)
 // one second
@@ -327,6 +328,27 @@ PosixMessageQueue::Receive(PosixMessageQueue::Message &m)
     return eR_OK;
 }
 
+bool
+PosixMessageQueue::Wait()
+{
+    int err;
+    struct pollfd poll_fds[1];
+    poll_fds[0].fd = m_handle; // NOTE: not portable, Linux only
+    poll_fds[0].events = POLLIN;
+
+    err = poll (poll_fds, 1, -1);
+
+    if (err < 0) {
+        if (errno == EINTR) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Ignoring poll return due to signal\n");
+            return true;
+        }
+        debugFatal("poll error: %s\n", strerror (errno));
+        return false;
+    }
+
+    return true;
+}
 
 int
 PosixMessageQueue::countMessages()
