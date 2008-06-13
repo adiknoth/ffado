@@ -29,6 +29,7 @@
 #include <argp.h>
 #include <stdlib.h>
 #include <iostream>
+#include <cstring>
 #include <signal.h>
 
 #include <math.h>
