@@ -300,16 +300,16 @@ results above get rechecked.
 	Therefor the mixer won't get installed.
 	"""
 
-	# ALSA checks
-	pkg = 'alsa'
-	name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
-	env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, '1.0.0' )
-	if env['%s_FLAGS'%name2] == 0:
-		env['HAVE_ALSA'] = False
-		print " ALSA not found, not building ALSA plugin."
-	else:
-		env['HAVE_ALSA'] = True
-		print " ALSA found, building ALSA plugin."
+# ALSA checks
+pkg = 'alsa'
+name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
+env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, '1.0.0' )
+if env['%s_FLAGS'%name2] == 0:
+	env['HAVE_ALSA'] = False
+	print " ALSA not found, not building ALSA plugin."
+else:
+	env['HAVE_ALSA'] = True
+	print " ALSA found, building ALSA plugin."
 
 
 config_guess = conf.ConfigGuess()
