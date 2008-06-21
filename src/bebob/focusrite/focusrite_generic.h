@@ -45,7 +45,7 @@ public:
     BinaryControl(FocusriteDevice& parent, int id, int bit);
     BinaryControl(FocusriteDevice& parent, int id, int bit,
                   std::string name, std::string label, std::string descr);
-    
+
     virtual bool setValue(int v);
     virtual int getValue();
     virtual bool setValue(int idx, int v)

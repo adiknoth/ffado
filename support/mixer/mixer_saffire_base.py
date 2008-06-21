@@ -58,6 +58,16 @@ class SaffireMixerBase:
                     state)
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
 
+        # if there are linked selector controls, update them
+        if len(self.SelectorControls[sender]) >= 2:
+            linked = self.SelectorControls[sender][1]
+            for ctl in linked:
+                if ctl.state():
+                    state = 1
+                else:
+                    state = 0
+                self.hw.setDiscrete(self.SelectorControls[ctl][0], state)
+
     def triggerButton(self):
         sender = self.sender()
         print "trigger %s" % (

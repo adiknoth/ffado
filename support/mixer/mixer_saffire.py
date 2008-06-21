@@ -91,16 +91,19 @@ class SaffireMixer(SaffireMixerUI, SaffireMixerBase):
                 }
 
 
+        # First column is the DBUS subpath of the control.
+        # Second column is a list of linked controls that should
+        # be rewritten whenever this control is updated
         self.SelectorControls={
                 self.chkSpdifSwitch:    ['/Mixer/SpdifSwitch'],
-                self.chkOut12Mute:      ['/Mixer/Out12Mute'],
+                self.chkOut12Mute:      ['/Mixer/Out12Mute', [self.chkOut12HwCtrl]],
                 self.chkOut12HwCtrl:    ['/Mixer/Out12HwCtrl'],
                 self.chkOut12Dim:       ['/Mixer/Out12Dim'],
-                self.chkOut34Mute:      ['/Mixer/Out34Mute'],
+                self.chkOut34Mute:      ['/Mixer/Out34Mute', [self.chkOut34HwCtrl]],
                 self.chkOut34HwCtrl:    ['/Mixer/Out34HwCtrl'],
-                self.chkOut56Mute:      ['/Mixer/Out56Mute'],
+                self.chkOut56Mute:      ['/Mixer/Out56Mute', [self.chkOut56HwCtrl]],
                 self.chkOut56HwCtrl:    ['/Mixer/Out56HwCtrl'],
-                self.chkOut78Mute:      ['/Mixer/Out78Mute'],
+                self.chkOut78Mute:      ['/Mixer/Out78Mute', [self.chkOut78HwCtrl]],
                 self.chkOut78HwCtrl:    ['/Mixer/Out78HwCtrl'],
                 self.chkOut910Mute:     ['/Mixer/Out910Mute'],
                 }
