@@ -408,7 +408,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                          this, dropped_cycles, cycle, m_last_cycle, dropped);
         }
         if (dropped_cycles > 0) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "(%p) dropped %d packets on cycle %u, 'dropped'=%u, cycle=%d, m_last_cycle=%d\n",
                         this, dropped_cycles, cycle, dropped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
@@ -608,7 +608,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
 
         #ifdef DEBUG
         if(skipped) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
                         this, skipped, cycle, m_last_cycle, dropped);
             m_skipped += skipped;
@@ -618,7 +618,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                          this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
         }
         if (dropped_cycles > 0) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d, skipped: %d)\n",
                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
             m_dropped += dropped_cycles - skipped;
