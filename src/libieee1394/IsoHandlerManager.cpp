@@ -319,22 +319,18 @@ IsoTask::waitForActivity()
                        this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
     struct timespec ts;
     int result;
+    long long int timeout_nsec = ISOHANDLERMANAGER_ISO_TASK_WAIT_TIMEOUT_USECS * 1000LL;
 
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
         debugError("clock_gettime failed\n");
         return eAR_Error;
     }
-    long long int timeout_nsec=0;
-    int timeout_sec = 0;
 
-    timeout_nsec = ISOHANDLERMANAGER_ISO_TASK_WAIT_TIMEOUT_USECS * 1000LL;
-    timeout_sec = 0;
-    while(timeout_nsec >= 1000000000LL) {
-        timeout_sec += 1;
-        timeout_nsec -= 1000000000LL;
-    }
     ts.tv_nsec += timeout_nsec;
-    ts.tv_sec += timeout_sec;
+    while(ts.tv_nsec >= 1000000000LL) {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000000000LL;
+    }
 
     result = sem_timedwait(&m_activity_semaphore, &ts);
 
@@ -349,11 +345,17 @@ IsoTask::waitForActivity()
                         "(%p) sem_timedwait() interrupted by signal (result=%d)\n",
                         this, result);
             return eAR_Interrupted;
+        } else if (errno == EINVAL) {
+            debugError("(%p) sem_timedwait error (result=%d errno=EINVAL)\n", 
+                        this, result);
+            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
+                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            return eAR_Error;
         } else {
             debugError("(%p) sem_timedwait error (result=%d errno=%d)\n", 
                         this, result, errno);
-            debugError("(%p) timeout_sec=%d timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, timeout_sec, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
+                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
             return eAR_Error;
         }
     }

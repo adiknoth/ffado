@@ -122,21 +122,19 @@ StreamProcessorManager::waitForActivity()
     struct timespec ts;
     int result;
 
-    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
-        debugError("clock_gettime failed\n");
-        return eAR_Error;
-    }
     long long int timeout_nsec=0;
-    int timeout_sec = 0;
     if (m_activity_wait_timeout_usec >= 0) {
         timeout_nsec = m_activity_wait_timeout_usec * 1000LL;
-        timeout_sec = 0;
-        while(timeout_nsec >= 1000000000LL) {
-            timeout_sec += 1;
-            timeout_nsec -= 1000000000LL;
+
+        if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+            debugError("clock_gettime failed\n");
+            return eAR_Error;
         }
         ts.tv_nsec += timeout_nsec;
-        ts.tv_sec += timeout_sec;
+        while(ts.tv_nsec >= 1000000000LL) {
+            ts.tv_sec += 1;
+            ts.tv_nsec -= 1000000000LL;
+        }
     }
 
     if (m_activity_wait_timeout_usec >= 0) {
@@ -156,11 +154,17 @@ StreamProcessorManager::waitForActivity()
                         "(%p) sem_[timed]wait() interrupted by signal (result=%d)\n",
                         this, result);
             return eAR_Interrupted;
+        } else if (errno == EINVAL) {
+            debugError("(%p) sem_[timed]wait error (result=%d errno=EINVAL)\n", 
+                        this, result);
+            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
+                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            return eAR_Error;
         } else {
             debugError("(%p) sem_[timed]wait error (result=%d errno=%d)\n", 
                         this, result, errno);
-            debugError("(%p) timeout_sec=%d timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, timeout_sec, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
+                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
             return eAR_Error;
         }
     }
@@ -317,6 +321,14 @@ bool StreamProcessorManager::prepare() {
         debugFatal("No stream processors registered, can't do anything usefull\n");
         return false;
     }
+
+    // set the activity timeout value to two periods worth of usecs.
+    // since we can expect activity once every period, but we might have some
+    // offset, the safe value is two periods.
+    int timeout_usec = 2*1000LL * 1000LL * m_period / m_nominal_framerate;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setting activity timeout to %d\n", timeout_usec);
+    setActivityWaitTimeoutUsec(timeout_usec);
+
     return true;
 }
 

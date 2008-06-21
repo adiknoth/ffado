@@ -94,8 +94,15 @@ public:
 
     void setNbBuffers(unsigned int nb_buffers)
             {m_nb_buffers = nb_buffers;};
-    int getNbBuffers() 
+    unsigned int getNbBuffers() 
             {return m_nb_buffers;};
+
+    // this is the amount of usecs we wait before an activity
+    // timeout occurs.
+    void setActivityWaitTimeoutUsec(int usec)
+            {m_activity_wait_timeout_usec = usec;};
+    int getActivityWaitTimeoutUsec() 
+            {return m_activity_wait_timeout_usec;};
 
     int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
     int getPortCount(enum Port::E_Direction);
