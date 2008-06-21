@@ -108,6 +108,7 @@ void StreamProcessor::handlerDied()
     debugWarning("Handler died for %p\n", this);
     m_state = ePS_Stopped;
     m_in_xrun = true;
+    SIGNAL_ACTIVITY_ALL;
 }
 
 uint64_t StreamProcessor::getTimeNow() {
@@ -286,7 +287,7 @@ enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
                            uint32_t pkt_ctr,
-                           unsigned int dropped_cycles, unsigned int skipped) {
+                           unsigned int dropped_cycles) {
     // bypass based upon state
 #ifdef DEBUG
     if (m_state == ePS_Invalid) {
@@ -1792,7 +1793,14 @@ StreamProcessor::dumpInfo()
 {
     #ifdef DEBUG
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p, %s:\n", this, ePTToString(m_processor_type));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_1394service.getPort(), m_channel);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel    : %d, %d\n", m_1394service.getPort(), m_channel);
+    IsoHandler *h = m_IsoHandlerManager.getHandlerForStream(this);
+    if (h) {
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packets, Dropped, Skipped : %d, %d, %d\n",
+                                              h->m_packets, h->m_dropped, h->m_skipped);
+    } else {
+        debugError("No handler for stream??\n");
+    }
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
                         now,

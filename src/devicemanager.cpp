@@ -67,7 +67,7 @@ DeviceManager::DeviceManager()
     : Control::Container(NULL, "devicemanager") // this is the control root node
     , m_avDevicesLock( new Util::PosixMutex() )
     , m_BusResetLock( new Util::PosixMutex() )
-    , m_processorManager( new Streaming::StreamProcessorManager() )
+    , m_processorManager( new Streaming::StreamProcessorManager( *this ) )
     , m_deviceStringParser( new DeviceStringParser() )
     , m_used_cache_last_time( false )
     , m_ignore_busreset( false )
@@ -954,7 +954,6 @@ DeviceManager::deinitialize()
 {
     return true;
 }
-
 
 void
 DeviceManager::setVerboseLevel(int l)

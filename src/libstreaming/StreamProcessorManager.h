@@ -35,6 +35,8 @@
 #include <vector>
 #include <semaphore.h>
 
+class DeviceManager;
+
 namespace Streaming {
 
 class StreamProcessor;
@@ -55,8 +57,9 @@ public:
         eADT_Float,
     };
 
-    StreamProcessorManager();
-    StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
+    StreamProcessorManager(DeviceManager &parent);
+    StreamProcessorManager(DeviceManager &parent, unsigned int period,
+                           unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
 
     void handleBusReset();
@@ -155,6 +158,9 @@ public:
         {return *m_SyncSource;};
 
 protected: // FIXME: private?
+
+    // parent device manager
+    DeviceManager &m_parent;
 
     // thread related vars
     bool m_xrun_happened;

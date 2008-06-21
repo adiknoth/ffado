@@ -41,7 +41,6 @@ class Ieee1394Service;
 
 namespace Streaming {
     class StreamProcessor;
-    class StreamProcessorManager;
 }
 
 namespace Control {

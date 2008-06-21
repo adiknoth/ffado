@@ -42,7 +42,6 @@ class Ieee1394Service;
 
 namespace Streaming {
     class StreamProcessor;
-    class StreamProcessorManager;
     typedef std::vector<StreamProcessor *> StreamProcessorVector;
     typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 }
@@ -112,6 +111,8 @@ class IsoTask : public Util::RunnableInterface
         sem_t m_activity_semaphore;
 
         enum IsoHandler::EHandlerType m_handlerType;
+        bool m_running;
+
         // debug stuff
         DECLARE_DEBUG_MODULE;
 };
@@ -179,6 +180,7 @@ class IsoHandlerManager
         int getPacketLatencyForStream(Streaming::StreamProcessor *);
 
         void flushHandlerForStream(Streaming::StreamProcessor *stream);
+        IsoHandler * getHandlerForStream(Streaming::StreamProcessor *stream);
 
         Ieee1394Service& get1394Service() {return m_service;};
 

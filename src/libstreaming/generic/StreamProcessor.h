@@ -151,7 +151,7 @@ public: // the public receive/transmit functions
     enum raw1394_iso_disposition
         putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  uint32_t pkt_ctr, unsigned int dropped, unsigned int skipped);
+                  uint32_t pkt_ctr, unsigned int dropped);
 
     enum raw1394_iso_disposition
     getPacket(unsigned char *data, unsigned int *length,

@@ -27,6 +27,8 @@
 #include "generic/Port.h"
 #include "libieee1394/cycletimer.h"
 
+#include "devicemanager.h"
+
 #include "libutil/Time.h"
 
 #include <errno.h>
@@ -37,9 +39,10 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_VERBOSE );
 
-StreamProcessorManager::StreamProcessorManager()
+StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
     : m_is_slave( false )
     , m_SyncSource(NULL)
+    , m_parent( p )
     , m_xrun_happened( false )
     , m_activity_wait_timeout_usec( 1000*1000 )
     , m_nb_buffers( 0 )
@@ -55,9 +58,11 @@ StreamProcessorManager::StreamProcessorManager()
     sem_init(&m_activity_semaphore, 0, 0);
 }
 
-StreamProcessorManager::StreamProcessorManager(unsigned int period, unsigned int framerate, unsigned int nb_buffers)
+StreamProcessorManager::StreamProcessorManager(DeviceManager &p, unsigned int period,
+                                               unsigned int framerate, unsigned int nb_buffers)
     : m_is_slave( false )
     , m_SyncSource(NULL)
+    , m_parent( p )
     , m_xrun_happened( false )
     , m_activity_wait_timeout_usec( 1000*1000 )
     , m_nb_buffers(nb_buffers)
@@ -697,13 +702,17 @@ bool StreamProcessorManager::start() {
             break;
         } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Sync start try %d failed...\n", ntries);
+            if(m_shutdown_needed) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Some fatal error occurred, stop trying.\n");
+                return false;
+            }
         }
     }
     if (!start_result) {
         debugFatal("Could not syncStartAll...\n");
         return false;
     }
-
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Started...\n");
     return true;
 }
 
@@ -814,6 +823,7 @@ bool StreamProcessorManager::stop() {
         }
         return false;
     }
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Stopped...\n");
     return true;
 }
 
@@ -899,15 +909,24 @@ bool StreamProcessorManager::waitForPeriod() {
         switch(waitForActivity()) {
             case eAR_Error:
                 debugError("Error while waiting for activity\n");
+                m_shutdown_needed = true;
                 return false;
             case eAR_Interrupted:
                 // FIXME: what to do here?
                 debugWarning("Interrupted while waiting for activity\n");
                 break;
             case eAR_Timeout:
-                // FIXME: what to do here?
                 debugWarning("Timeout while waiting for activity\n");
-                break;
+                #ifdef DEBUG
+                setVerboseLevel(DEBUG_LEVEL_ULTRA_VERBOSE);
+                m_parent.setVerboseLevel(DEBUG_LEVEL_ULTRA_VERBOSE);
+                // sleep for a brief moment, such that we can see what is happening in the other threads
+                SleepRelativeUsec(1000*100);
+                #endif
+                // this is a serious error since apparently there was not
+                // enough activity. This means one of the streams died.
+                m_shutdown_needed = true;
+                return false;
             case eAR_Activity:
                 // do nothing
                 break;
@@ -1214,24 +1233,21 @@ void StreamProcessorManager::dumpInfo() {
 }
 
 void StreamProcessorManager::setVerboseLevel(int l) {
-    setDebugLevel(l);
     if(m_WaitLock) m_WaitLock->setVerboseLevel(l);
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Receive processors...\n");
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
         it != m_ReceiveProcessors.end();
         ++it ) {
         (*it)->setVerboseLevel(l);
     }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Transmit processors...\n");
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
         it != m_TransmitProcessors.end();
         ++it ) {
         (*it)->setVerboseLevel(l);
     }
+    setDebugLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
-
 
 int StreamProcessorManager::getPortCount(enum Port::E_PortType type, enum Port::E_Direction direction) {
     int count=0;
@@ -1272,7 +1288,6 @@ int StreamProcessorManager::getPortCount(enum Port::E_Direction direction) {
 }
 
 // TODO: implement a port map here, instead of the loop
-
 Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
     int count=0;
     int prevcount=0;

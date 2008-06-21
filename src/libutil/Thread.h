@@ -112,7 +112,9 @@ class Thread
         virtual pthread_t GetThreadID() = 0;
 
         virtual void setVerboseLevel(int l)
-            {setDebugLevel(l);};
+            {   setDebugLevel(l);
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
+            };
     protected:
             DECLARE_DEBUG_MODULE;
 

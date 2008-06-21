@@ -46,6 +46,7 @@ IsoTask::IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType t)
     : m_manager( manager )
     , m_SyncIsoHandler ( NULL )
     , m_handlerType( t )
+    , m_running( false )
 {
 }
 
@@ -72,6 +73,7 @@ IsoTask::Init()
     #endif
 
     sem_init(&m_activity_semaphore, 0, 0);
+    m_running = true;
     return true;
 }
 
@@ -80,6 +82,17 @@ IsoTask::requestShadowMapUpdate()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) enter\n", this);
     INC_ATOMIC(&request_update);
+
+    if (m_running) {
+        int timeout = 1000;
+        while(request_update && timeout--) {
+            Util::SystemTimeSource::SleepUsecRelative(1000);
+        }
+        if(timeout == 0) {
+            debugError("timeout waiting for shadow map update\n");
+        }
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) exit\n", this);
     return true;
 }
 
@@ -138,9 +151,9 @@ IsoTask::updateShadowMapHelper()
 bool
 IsoTask::Execute()
 {
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "(%p, %s) Execute\n",
-                       this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "(%p, %s) Execute\n",
+                this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
     int err;
     unsigned int i;
     unsigned int m_poll_timeout = 10;
@@ -156,6 +169,7 @@ IsoTask::Execute()
         m_successive_short_loops++;
         if(m_successive_short_loops > 10000) {
             debugError("Shutting down runaway thread\n");
+            m_running = false;
             return false;
         }
     } else {
@@ -208,9 +222,9 @@ IsoTask::Execute()
         }
 
         if(no_one_to_poll) {
-            debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                               "(%p, %s) No one to poll, waiting for something to happen\n",
-                               this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
+            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                        "(%p, %s) No one to poll, waiting for something to happen\n",
+                        this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
             // wait for something to happen
             switch(waitForActivity()) {
                 case IsoTask::eAR_Error:
@@ -246,6 +260,7 @@ IsoTask::Execute()
             return true;
         }
         debugFatal("poll error: %s\n", strerror (errno));
+        m_running = false;
         return false;
     }
 
@@ -254,28 +269,36 @@ IsoTask::Execute()
     bool handler_died = false;
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         // figure out if a handler has died
-        // all handlers in the poll() are active, so they should be iterated
-        // now and then. If they aren't, the handler has died.
-        uint32_t last_call = m_IsoHandler_map_shadow[i]->getLastIterateTime();
-        if (last_call == 0xFFFFFFFF) {
+
+        // this is the time of the last packet we saw in the iterate() handler
+        uint32_t last_packet_seen = m_IsoHandler_map_shadow[i]->getLastPacketTime();
+        if (last_packet_seen == 0xFFFFFFFF) {
             // this was not iterated yet, so can't be dead
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                        "(%p, %s) handler %d didn't see any packets yet\n",
+                        this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"), i);
             continue;
         }
 
-        uint64_t last_call_ticks = CYCLE_TIMER_TO_TICKS(last_call);
-        // we use 4 seconds since that should not cause issues with startup
-        int64_t max_diff_ticks = TICKS_PER_SECOND * 4;
-        int64_t measured_diff_ticks = diffTicks(ctr_at_poll_return_ticks, last_call_ticks);
+        uint64_t last_packet_seen_ticks = CYCLE_TIMER_TO_TICKS(last_packet_seen);
+        // we use a relatively large value to distinguish between "death" and xrun
+        int64_t max_diff_ticks = TICKS_PER_SECOND * 1;
+        int64_t measured_diff_ticks = diffTicks(ctr_at_poll_return_ticks, last_packet_seen_ticks);
 
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                           "(%p, %s) check handler %d: diff = %lld, max = %lld, now: %08lX, last: %08lX\n",
+                           this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"), 
+                           i, measured_diff_ticks, max_diff_ticks, ctr_at_poll_return, last_packet_seen);
         if(measured_diff_ticks > max_diff_ticks) {
             debugFatal("(%p, %s) Handler died: now: %08lX, last: %08lX, diff: %lld (max: %lld)\n",
                        this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"),
-                       ctr_at_poll_return, last_call, measured_diff_ticks, max_diff_ticks);
+                       ctr_at_poll_return, last_packet_seen, measured_diff_ticks, max_diff_ticks);
             m_IsoHandler_map_shadow[i]->notifyOfDeath();
             handler_died = true;
         }
     }
     if(handler_died) {
+        m_running = false;
         return false; // one or more handlers have died
     }
 
@@ -360,9 +383,9 @@ IsoTask::waitForActivity()
         }
     }
 
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                       "(%p, %s) got activity\n",
-                       this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "(%p, %s) got activity\n",
+                this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
     return eAR_Activity;
 }
 
@@ -371,13 +394,14 @@ IsoTask::signalActivity()
 {
     // signal the activity cond var
     sem_post(&m_activity_semaphore);
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                       "(%p, %s) activity\n",
-                       this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "(%p, %s) activity\n",
+                this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
 }
 
 void IsoTask::setVerboseLevel(int i) {
     setDebugLevel(i);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", i );
 }
 
 // -- the ISO handler manager -- //
@@ -642,7 +666,7 @@ bool IsoHandlerManager::unregisterHandler(IsoHandler *handler)
  */
 bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Registering stream %p\n",stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Registering %s stream %p\n", stream->getTypeString(), stream);
     assert(stream);
 
     IsoHandler* h = NULL;
@@ -767,7 +791,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
 bool IsoHandlerManager::unregisterStream(StreamProcessor *stream)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering stream %p\n",stream);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Unregistering %s stream %p\n", stream->getTypeString(), stream);
     assert(stream);
 
     // make sure the stream isn't attached to a handler anymore
@@ -895,11 +919,25 @@ IsoHandlerManager::flushHandlerForStream(Streaming::StreamProcessor *stream) {
       ++it )
     {
         if((*it)->isStreamRegistered(stream)) {
-            return (*it)->flush();
+            (*it)->flush();
         }
     }
     debugError("Stream %p has no attached handler\n", stream);
     return;
+}
+
+IsoHandler *
+IsoHandlerManager::getHandlerForStream(Streaming::StreamProcessor *stream) {
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+      it != m_IsoHandlers.end();
+      ++it )
+    {
+        if((*it)->isStreamRegistered(stream)) {
+            return (*it);
+        }
+    }
+    debugError("Stream %p has no attached handler\n", stream);
+    return NULL;
 }
 
 bool
@@ -1005,6 +1043,8 @@ void IsoHandlerManager::setVerboseLevel(int i) {
     if(m_IsoTaskTransmit)   m_IsoTaskTransmit->setVerboseLevel(i);
     if(m_IsoThreadReceive)  m_IsoThreadReceive->setVerboseLevel(i);
     if(m_IsoTaskReceive)    m_IsoTaskReceive->setVerboseLevel(i);
+    setDebugLevel(i);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", i );
 }
 
 void IsoHandlerManager::dumpInfo() {

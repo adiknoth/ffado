@@ -68,7 +68,7 @@ private: // the ISO callback interface
     enum raw1394_iso_disposition
             putPacket(unsigned char *data, unsigned int length,
                         unsigned char channel, unsigned char tag, unsigned char sy,
-                        unsigned int cycle, unsigned int dropped, unsigned int skipped);
+                        unsigned int cycle, unsigned int dropped);
 
     static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
                     unsigned char *data, unsigned int *length,
@@ -161,6 +161,12 @@ public:
      */
     uint32_t getLastIterateTime() {return m_last_now;};
 
+    /**
+     * @brief returns the CTR value saved at the last iterate handler call
+     * @return CTR value saved at last iterate handler call
+     */
+    uint32_t getLastPacketTime() {return m_last_packet_handled_at;};
+
     void notifyOfDeath();
 private:
     IsoHandlerManager& m_manager;
@@ -171,6 +177,7 @@ private:
     int             m_irq_interval;
     int             m_last_cycle;
     uint32_t        m_last_now;
+    uint32_t        m_last_packet_handled_at;
 
     Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
 
@@ -188,16 +195,19 @@ private:
         E_Initialized,
         E_Prepared,
         E_Running,
-        E_Error
+        E_Error,
     };
     enum EHandlerStates m_State;
 
+public:
     #ifdef DEBUG
     unsigned int    m_packets;
     unsigned int    m_dropped;
+    unsigned int    m_skipped;
     int             m_min_ahead;
     #endif
 
+protected:
     DECLARE_DEBUG_MODULE;
 };
 
