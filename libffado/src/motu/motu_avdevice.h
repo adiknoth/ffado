@@ -129,17 +129,40 @@ struct MixerCtrl {
     unsigned int dev_register;
 };
 
+struct MatrixMixBus {
+    const char *name;
+    unsigned int address;
+};
+
+struct MatrixMixChannel {
+    const char *name;
+    unsigned int flags;
+    unsigned int addr_ofs;
+};
+
+struct MotuMixer {
+    const MixerCtrl *mixer_ctrl;
+    unsigned int n_mixer_ctrls;
+    const MatrixMixBus *mixer_buses;
+    unsigned int n_mixer_buses;
+    const MatrixMixChannel *mixer_channels;
+    unsigned int n_mixer_channels;
+};
+
 struct DevicePropertyEntry {
     const PortEntry* port_entry;
     unsigned int n_port_entries;
     signed int MaxSampleRate;
-    const MixerCtrl *mixer_ctrl;
-    unsigned int n_mixer_ctrls;
+    const struct MotuMixer *mixer;
     // Others features can be added here like MIDI port presence.
 };
 
 /* Macro to calculate the size of an array */
 #define N_ELEMENTS(_array) (sizeof(_array) / sizeof((_array)[0]))
+
+/* Macro to define a MotuMixer structure succintly */
+#define MOTUMIXER(_ctrls, _buses, _channels) \
+    { _ctrls, N_ELEMENTS(_ctrls), _buses, N_ELEMENTS(_buses), _channels, N_ELEMENTS(_channels), }
 
 class MotuDevice : public FFADODevice {
 public:

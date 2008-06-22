@@ -247,91 +247,37 @@ const PortEntry Ports_8PRE[] =
 };
 
 // Mixer registers
+const MatrixMixBus MixerBuses_Traveler[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_Traveler[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"AES/EBU 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"AES/EBU 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0028, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x002c, },
+    {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0030, },
+    {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x0034, },
+    {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0038, },
+    {"ADAT 4", MOTU_CTRL_STD_CHANNEL, 0x003c, },
+    {"ADAT 5", MOTU_CTRL_STD_CHANNEL, 0x0040, },
+    {"ADAT 6", MOTU_CTRL_STD_CHANNEL, 0x0044, },
+    {"ADAT 7", MOTU_CTRL_STD_CHANNEL, 0x0048, },
+    {"ADAT 8", MOTU_CTRL_STD_CHANNEL, 0x004c, },
+};
+
 const MixerCtrl MixerCtrls_Traveler[] = {
-    {"Mix1/Ana1_", "Mix 1 analog 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4000, },
-    {"Mix1/Ana2_", "Mix 1 analog 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4004, },
-    {"Mix1/Ana3_", "Mix 1 analog 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4008, },
-    {"Mix1/Ana4_", "Mix 1 analog 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x400c, },
-    {"Mix1/Ana5_", "Mix 1 analog 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4010, },
-    {"Mix1/Ana6_", "Mix 1 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4014, },
-    {"Mix1/Ana7_", "Mix 1 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4018, },
-    {"Mix1/Ana8_", "Mix 1 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x401c, },
-    {"Mix1/Adat1_", "Mix 1 adat 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4030, },
-    {"Mix1/Adat2_", "Mix 1 adat 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4034, },
-    {"Mix1/Adat3_", "Mix 1 adat 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4038, },
-    {"Mix1/Adat4_", "Mix 1 adat 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x403c, },
-    {"Mix1/Adat5_", "Mix 1 adat 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4040, },
-    {"Mix1/Adat6_", "Mix 1 adat 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4044, },
-    {"Mix1/Adat7_", "Mix 1 adat 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4048, },
-    {"Mix1/Adat8_", "Mix 1 adat 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x404c, },
-    {"Mix1/Aes1_", "Mix 1 AES/EBU 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4020, },
-    {"Mix1/Aes2_", "Mix 1 AES/EBU 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4024, },
-    {"Mix1/Spdif1_", "Mix 1 SPDIF 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4028, },
-    {"Mix1/Spdif2_", "Mix 1 SPDIF 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x402c, },
-
-    {"Mix2/Ana1_", "Mix 2 analog 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4100, },
-    {"Mix2/Ana2_", "Mix 2 analog 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4104, },
-    {"Mix2/Ana3_", "Mix 2 analog 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4108, },
-    {"Mix2/Ana4_", "Mix 2 analog 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x410c, },
-    {"Mix2/Ana5_", "Mix 2 analog 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4110, },
-    {"Mix2/Ana6_", "Mix 2 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4114, },
-    {"Mix2/Ana7_", "Mix 2 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4118, },
-    {"Mix2/Ana8_", "Mix 2 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x411c, },
-    {"Mix2/Adat1_", "Mix 2 adat 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4130, },
-    {"Mix2/Adat2_", "Mix 2 adat 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4134, },
-    {"Mix2/Adat3_", "Mix 2 adat 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4138, },
-    {"Mix2/Adat4_", "Mix 2 adat 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x413c, },
-    {"Mix2/Adat5_", "Mix 2 adat 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4140, },
-    {"Mix2/Adat6_", "Mix 2 adat 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4144, },
-    {"Mix2/Adat7_", "Mix 2 adat 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4148, },
-    {"Mix2/Adat8_", "Mix 2 adat 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x414c, },
-    {"Mix2/Aes1_", "Mix 2 AES/EBU 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4120, },
-    {"Mix2/Aes2_", "Mix 2 AES/EBU 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4124, },
-    {"Mix2/Spdif1_", "Mix 2 SPDIF 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4128, },
-    {"Mix2/Spdif2_", "Mix 2 SPDIF 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x412c, },
-
-    {"Mix3/Ana1_", "Mix 3 analog 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4200, },
-    {"Mix3/Ana2_", "Mix 3 analog 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4204, },
-    {"Mix3/Ana3_", "Mix 3 analog 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4208, },
-    {"Mix3/Ana4_", "Mix 3 analog 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x420c, },
-    {"Mix3/Ana5_", "Mix 3 analog 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4210, },
-    {"Mix3/Ana6_", "Mix 3 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4214, },
-    {"Mix3/Ana7_", "Mix 3 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4218, },
-    {"Mix3/Ana8_", "Mix 3 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x421c, },
-    {"Mix3/Adat1_", "Mix 3 adat 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4230, },
-    {"Mix3/Adat2_", "Mix 3 adat 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4234, },
-    {"Mix3/Adat3_", "Mix 3 adat 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4238, },
-    {"Mix3/Adat4_", "Mix 3 adat 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x423c, },
-    {"Mix3/Adat5_", "Mix 3 adat 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4240, },
-    {"Mix3/Adat6_", "Mix 3 adat 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4244, },
-    {"Mix3/Adat7_", "Mix 3 adat 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4248, },
-    {"Mix3/Adat8_", "Mix 3 adat 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x424c, },
-    {"Mix3/Aes1_", "Mix 3 AES/EBU 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4220, },
-    {"Mix3/Aes2_", "Mix 3 AES/EBU 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4224, },
-    {"Mix3/Spdif1_", "Mix 3 SPDIF 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4228, },
-    {"Mix3/Spdif2_", "Mix 3 SPDIF 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x422c, },
-
-    {"Mix4/Ana1_", "Mix 4 analog 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4300, },
-    {"Mix4/Ana2_", "Mix 4 analog 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4304, },
-    {"Mix4/Ana3_", "Mix 4 analog 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4308, },
-    {"Mix4/Ana4_", "Mix 4 analog 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x430c, },
-    {"Mix4/Ana5_", "Mix 4 analog 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4310, },
-    {"Mix4/Ana6_", "Mix 4 analog 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4314, },
-    {"Mix4/Ana7_", "Mix 4 analog 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4318, },
-    {"Mix4/Ana8_", "Mix 4 analog 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x431c, },
-    {"Mix4/Adat1_", "Mix 4 adat 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4330, },
-    {"Mix4/Adat2_", "Mix 4 adat 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4334, },
-    {"Mix4/Adat3_", "Mix 4 adat 3 ", "", MOTU_CTRL_STD_CHANNEL, 0x4338, },
-    {"Mix4/Adat4_", "Mix 4 adat 4 ", "", MOTU_CTRL_STD_CHANNEL, 0x433c, },
-    {"Mix4/Adat5_", "Mix 4 adat 5 ", "", MOTU_CTRL_STD_CHANNEL, 0x4340, },
-    {"Mix4/Adat6_", "Mix 4 adat 6 ", "", MOTU_CTRL_STD_CHANNEL, 0x4344, },
-    {"Mix4/Adat7_", "Mix 4 adat 7 ", "", MOTU_CTRL_STD_CHANNEL, 0x4348, },
-    {"Mix4/Adat8_", "Mix 4 adat 8 ", "", MOTU_CTRL_STD_CHANNEL, 0x434c, },
-    {"Mix4/Aes1_", "Mix 4 AES/EBU 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4320, },
-    {"Mix4/Aes2_", "Mix 4 AES/EBU 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x4324, },
-    {"Mix4/Spdif1_", "Mix 4 SPDIF 1 ", "", MOTU_CTRL_STD_CHANNEL, 0x4328, },
-    {"Mix4/Spdif2_", "Mix 4 SPDIF 2 ", "", MOTU_CTRL_STD_CHANNEL, 0x432c, },
-
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
@@ -347,30 +293,35 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
     {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
 
+    /* For phones source control, "register" is currently unused */
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
 
+    /* For optical mode controls, the "register" is used to indicate direction */
     {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
 };
+
+const MotuMixer Mixer_Traveler = MOTUMIXER(
+    MixerCtrls_Traveler, MixerBuses_Traveler, MixerChannels_Traveler);
 
 // For convenience during initial testing, just make the 828MkII and 896HD
 // use the Traveler's mixer definition.  Separate definitions for these 
 // models will come once the final mixer structure is in place.  For now
 // it's in a state of flux and subject to significant change.
-#define MixerCtrls_828MkII MixerCtrls_Traveler
-#define MixerCtrls_896HD   MixerCtrls_Traveler
+#define Mixer_828MkII Mixer_Traveler
+#define Mixer_896HD   Mixer_Traveler
 
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
  */
 const DevicePropertyEntry DevicesProperty[] = {
-//  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR },
-    { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, MixerCtrls_828MkII, N_ELEMENTS(MixerCtrls_828MkII), },
-    { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, MixerCtrls_Traveler, N_ELEMENTS(MixerCtrls_Traveler), },
+//  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR, MixerDescrPtr },
+    { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, &Mixer_828MkII, },
+    { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, &Mixer_Traveler, },
     { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000 },
     { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
     { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
-    { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, MixerCtrls_896HD, N_ELEMENTS(MixerCtrls_896HD),  },
+    { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, &Mixer_896HD, },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -409,6 +360,11 @@ bool
 MotuDevice::buildMixer() {
     unsigned int i;
     bool result = true;
+    MotuMatrixMixer *fader_mmixer = NULL;
+    MotuMatrixMixer *pan_mmixer = NULL;
+    MotuMatrixMixer *solo_mmixer = NULL;
+    MotuMatrixMixer *mute_mmixer = NULL;
+    unsigned int bus, ch;
     debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
 
     destroyMixer();
@@ -420,148 +376,155 @@ MotuDevice::buildMixer() {
         return false;
     }
 
-    // Mixer controls get added here
-    for (i=0; i<DevicesProperty[m_motu_model-1].n_mixer_ctrls; i++) {
-        unsigned int type = DevicesProperty[m_motu_model-1].mixer_ctrl[i].type;
+    /* Create the matrix mixers and populate them */
+    fader_mmixer = new ChannelFaderMatrixMixer(*this, "fader");
+    result &= m_MixerContainer->addElement(fader_mmixer);
+    pan_mmixer = new ChannelPanMatrixMixer(*this, "pan");
+    result &= m_MixerContainer->addElement(pan_mmixer);
+    solo_mmixer = new ChannelBinSwMatrixMixer(*this, "solo", 
+        MOTU_CTRL_MASK_SOLO_VALUE, MOTU_CTRL_MASK_SOLO_SETENABLE);
+    result &= m_MixerContainer->addElement(solo_mmixer);
+    mute_mmixer = new ChannelBinSwMatrixMixer(*this, "mute",
+        MOTU_CTRL_MASK_MUTE_VALUE, MOTU_CTRL_MASK_MUTE_SETENABLE);
+    result &= m_MixerContainer->addElement(mute_mmixer);
+    const struct MatrixMixBus *buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
+    for (bus=0; bus<DevicesProperty[m_motu_model-1].mixer->n_mixer_buses; bus++) {
+        fader_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
+        pan_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
+        solo_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
+        mute_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
+    }
+    const struct MatrixMixChannel *channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
+    for (ch=0; ch<DevicesProperty[m_motu_model-1].mixer->n_mixer_channels; ch++) {
+        uint32_t flags = channels[ch].flags;
+        if (flags & MOTU_CTRL_CHANNEL_FADER)
+            fader_mmixer->addColInfo(channels[ch].name, 0, channels[ch].addr_ofs);
+        if (flags & MOTU_CTRL_CHANNEL_PAN)
+            pan_mmixer->addColInfo(channels[ch].name, 0, channels[ch].addr_ofs);
+        if (flags & MOTU_CTRL_CHANNEL_SOLO)
+            solo_mmixer->addColInfo(channels[ch].name, 0, channels[ch].addr_ofs);
+        if (flags & MOTU_CTRL_CHANNEL_MUTE)
+            mute_mmixer->addColInfo(channels[ch].name, 0, channels[ch].addr_ofs);
+        flags &= ~(MOTU_CTRL_CHANNEL_FADER|MOTU_CTRL_CHANNEL_PAN|MOTU_CTRL_CHANNEL_SOLO|MOTU_CTRL_CHANNEL_MUTE);
+        if (flags) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Control %s: unknown flag bits 0x%08x\n", channels[ch].name, flags);
+        }
+    }
+
+    // Single non-matrixed mixer controls get added here.  Channel controls are supported
+    // here, but usually these will be a part of a matrix mixer.
+    for (i=0; i<DevicesProperty[m_motu_model-1].mixer->n_mixer_ctrls; i++) {
+        const struct MixerCtrl *ctrl = &DevicesProperty[m_motu_model-1].mixer->mixer_ctrl[i];
+        unsigned int type = ctrl->type;
         char name[100];
         char label[100];
         if (type & MOTU_CTRL_CHANNEL_FADER) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "fader");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"fader");
+            snprintf(name, 100, "%s%s", ctrl->name, "fader");
+            snprintf(label,100, "%s%s", ctrl->label,"fader");
             result &= m_MixerContainer->addElement(
-                new ChannelFader(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
-                    name, label, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new ChannelFader(*this, ctrl->dev_register, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_CHANNEL_FADER;
         }
         if (type & MOTU_CTRL_CHANNEL_PAN) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "pan");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"pan");
+            snprintf(name, 100, "%s%s", ctrl->name, "pan");
+            snprintf(label,100, "%s%s", ctrl->label,"pan");
             result &= m_MixerContainer->addElement(
                 new ChannelPan(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                    ctrl->dev_register,
                     name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                    ctrl->desc));
             type &= ~MOTU_CTRL_CHANNEL_PAN;
         }
         if (type & MOTU_CTRL_CHANNEL_MUTE) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "mute");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"mute");
+            snprintf(name, 100, "%s%s", ctrl->name, "mute");
+            snprintf(label,100, "%s%s", ctrl->label,"mute");
             result &= m_MixerContainer->addElement(
-                new MotuBinarySwitch(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                new MotuBinarySwitch(*this, ctrl->dev_register,
                     MOTU_CTRL_MASK_MUTE_VALUE, MOTU_CTRL_MASK_MUTE_SETENABLE,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                    name, label, ctrl->desc));
             type &= ~MOTU_CTRL_CHANNEL_MUTE;
         }
         if (type & MOTU_CTRL_CHANNEL_SOLO) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "solo");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"solo");
+            snprintf(name, 100, "%s%s", ctrl->name, "solo");
+            snprintf(label,100, "%s%s", ctrl->label,"solo");
             result &= m_MixerContainer->addElement(
-                new MotuBinarySwitch(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
+                new MotuBinarySwitch(*this, ctrl->dev_register,
                     MOTU_CTRL_MASK_SOLO_VALUE, MOTU_CTRL_MASK_SOLO_SETENABLE,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                    name, label, ctrl->desc));
             type &= ~MOTU_CTRL_CHANNEL_SOLO;
         }
 
         if (type & MOTU_CTRL_MIX_FADER) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "fader");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"fader");
+            snprintf(name, 100, "%s%s", ctrl->name, "fader");
+            snprintf(label,100, "%s%s", ctrl->label,"fader");
             result &= m_MixerContainer->addElement(
-                new MixFader(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
-                    name, label, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new MixFader(*this, ctrl->dev_register, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_MIX_FADER;
         }
         if (type & MOTU_CTRL_MIX_MUTE) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "mute");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"mute");
+            snprintf(name, 100, "%s%s", ctrl->name, "mute");
+            snprintf(label,100, "%s%s", ctrl->label,"mute");
             result &= m_MixerContainer->addElement(
-                new MixMute(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new MixMute(*this, ctrl->dev_register, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_MIX_MUTE;
         }
         if (type & MOTU_CTRL_MIX_DEST) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "dest");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"dest");
+            snprintf(name, 100, "%s%s", ctrl->name, "dest");
+            snprintf(label,100, "%s%s", ctrl->label,"dest");
             result &= m_MixerContainer->addElement(
-                new MixDest(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new MixDest(*this, ctrl->dev_register, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_MIX_DEST;
         }
 
         if (type & MOTU_CTRL_INPUT_TRIMGAIN) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "trimgain");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"trimgain");
+            snprintf(name, 100, "%s%s", ctrl->name, "trimgain");
+            snprintf(label,100, "%s%s", ctrl->label,"trimgain");
             result &= m_MixerContainer->addElement(
-                new InputGainPad(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, MOTU_CTRL_MODE_TRIMGAIN,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new InputGainPad(*this, ctrl->dev_register, MOTU_CTRL_MODE_TRIMGAIN,
+                    name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_TRIMGAIN;
         }
         if (type & MOTU_CTRL_INPUT_PAD) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "pad");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"pad");
+            snprintf(name, 100, "%s%s", ctrl->name, "pad");
+            snprintf(label,100, "%s%s", ctrl->label,"pad");
             result &= m_MixerContainer->addElement(
-                new InputGainPad(*this, 
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, MOTU_CTRL_MODE_PAD,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new InputGainPad(*this, ctrl->dev_register, MOTU_CTRL_MODE_PAD,
+                    name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_PAD;
         }
 
         if (type & MOTU_CTRL_INPUT_LEVEL) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "level");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"level");
+            snprintf(name, 100, "%s%s", ctrl->name, "level");
+            snprintf(label,100, "%s%s", ctrl->label,"level");
             result &= m_MixerContainer->addElement(
-                new MotuBinarySwitch(*this, 
-                    MOTU_REG_INPUT_LEVEL,
-                    1<<DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, 0,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new MotuBinarySwitch(*this, MOTU_REG_INPUT_LEVEL,
+                    1<<ctrl->dev_register, 0, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_LEVEL;
         }
         if (type & MOTU_CTRL_INPUT_BOOST) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "boost");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"boost");
+            snprintf(name, 100, "%s%s", ctrl->name, "boost");
+            snprintf(label,100, "%s%s", ctrl->label,"boost");
             result &= m_MixerContainer->addElement(
-                new MotuBinarySwitch(*this, 
-                    MOTU_REG_INPUT_BOOST,
-                    1<<DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register, 0,
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new MotuBinarySwitch(*this, MOTU_REG_INPUT_BOOST,
+                    1<<ctrl->dev_register, 0, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_BOOST;
         }
         if (type & MOTU_CTRL_PHONES_SRC) {
-            snprintf(name, 100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].name, "src");
-            snprintf(label,100, "%s%s", DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,"src");
+            snprintf(name, 100, "%s%s", ctrl->name, "src");
+            snprintf(label,100, "%s%s", ctrl->label,"src");
             result &= m_MixerContainer->addElement(
-                new PhonesSrc(*this, 
-                    name, label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new PhonesSrc(*this, name, label, ctrl->desc));
             type &= ~MOTU_CTRL_PHONES_SRC;
         }
         if (type & MOTU_CTRL_OPTICAL_MODE) {
             result &= m_MixerContainer->addElement(
-                new OpticalMode(*this, DevicesProperty[m_motu_model-1].mixer_ctrl[i].dev_register,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].name,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].label,
-                    DevicesProperty[m_motu_model-1].mixer_ctrl[i].desc));
+                new OpticalMode(*this, ctrl->dev_register,
+                    ctrl->name, ctrl->label, ctrl->desc));
             type &= ~MOTU_CTRL_OPTICAL_MODE;
         }
 
         if (type) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", DevicesProperty[m_motu_model-1].mixer_ctrl[i].type);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", ctrl->type);
         }
     }
 

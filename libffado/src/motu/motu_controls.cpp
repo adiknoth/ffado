@@ -186,6 +186,207 @@ ChannelPan::getValue()
     return ((val >> 8) & 0xff) - 0x40;
 }
 
+
+MotuMatrixMixer::MotuMatrixMixer(MotuDevice &parent)
+: Control::MatrixMixer(&parent, "MatrixMixer")
+, m_parent(parent)
+{
+}
+
+MotuMatrixMixer::MotuMatrixMixer(MotuDevice &parent, std::string name)
+: Control::MatrixMixer(&parent, name)
+, m_parent(parent)
+{
+}
+
+void MotuMatrixMixer::addRowInfo(std::string name, unsigned int flags, 
+  unsigned int address)
+{
+    struct sSignalInfo s;
+    s.name = name;
+    s.flags = flags;
+    s.address = address;
+    m_RowInfo.push_back(s);
+}
+
+void MotuMatrixMixer::addColInfo(std::string name, unsigned int flags, 
+  unsigned int address)
+{
+    struct sSignalInfo s;
+    s.name = name;
+    s.flags = flags;
+    s.address = address;
+    m_ColInfo.push_back(s);
+}
+
+uint32_t MotuMatrixMixer::getCellRegister(const unsigned int row, const unsigned int col)
+{
+    return m_RowInfo.at(row).address + m_ColInfo.at(col).address;
+}
+
+void MotuMatrixMixer::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "MOTU matrix mixer\n");
+}
+
+std::string MotuMatrixMixer::getRowName(const int row)
+{
+    return m_RowInfo.at(row).name;
+}
+
+std::string MotuMatrixMixer::getColName(const int col)
+{
+    return m_ColInfo.at(col).name;
+}
+
+int MotuMatrixMixer::getRowCount()
+{
+    return m_RowInfo.size();
+}
+
+int MotuMatrixMixer::getColCount()
+{
+    return m_ColInfo.size();
+}
+
+ChannelFaderMatrixMixer::ChannelFaderMatrixMixer(MotuDevice &parent)
+: MotuMatrixMixer(parent, "ChannelFaderMatrixMixer")
+{
+}
+
+ChannelFaderMatrixMixer::ChannelFaderMatrixMixer(MotuDevice &parent, std::string name)
+: MotuMatrixMixer(parent, name)
+{
+}
+
+double ChannelFaderMatrixMixer::setValue(const int row, const int col, const double val)
+{
+    uint32_t v;
+    v = val<0?0:(uint32_t)val;
+    if (v > 0x80)
+      v = 0x80;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader setValue for row %d col %d to %lf (%ld)\n",
+      row, col, val, v);
+
+    // Bit 30 indicates that the channel fader is being set
+    v |= 0x40000000;
+    m_parent.WriteRegister(getCellRegister(row,col), v);
+
+    return true;
+}
+
+double ChannelFaderMatrixMixer::getValue(const int row, const int col)
+{
+    uint32_t val;
+    // FIXME: we could just read the appropriate mixer status field from the
+    // receive stream processor once we work out an efficient way to do this.
+    val = m_parent.ReadRegister(getCellRegister(row,col)) & 0xff;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader getValue for row %d col %d = %lu\n",
+      row, col, val);
+    return val;
+}
+
+ChannelPanMatrixMixer::ChannelPanMatrixMixer(MotuDevice &parent)
+: MotuMatrixMixer(parent, "ChannelPanMatrixMixer")
+{
+}
+
+ChannelPanMatrixMixer::ChannelPanMatrixMixer(MotuDevice &parent, std::string name)
+: MotuMatrixMixer(parent, name)
+{
+}
+
+double ChannelPanMatrixMixer::setValue(const int row, const int col, const double val)
+{
+    uint32_t v;
+    v = ((val<-64?-64:(int32_t)val)+64) & 0xff;
+    if (v > 0x80)
+      v = 0x80;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan setValue for row %d col %d to %lf (%ld)\n",
+      row, col, val, v);
+
+    // Bit 31 indicates that pan is being set
+    v = (v << 8) | 0x80000000;
+    m_parent.WriteRegister(getCellRegister(row,col), v);
+
+    return true;
+}
+
+double ChannelPanMatrixMixer::getValue(const int row, const int col)
+{
+    int32_t val;
+    // FIXME: we could just read the appropriate mixer status field from the
+    // receive stream processor once we work out an efficient way to do this.
+    val = m_parent.ReadRegister(getCellRegister(row,col));
+    val = ((val >> 8) & 0xff) - 0x40;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan getValue for row %d col %d = %lu\n",
+      row, col, val);
+    return val;
+}
+
+ChannelBinSwMatrixMixer::ChannelBinSwMatrixMixer(MotuDevice &parent)
+: MotuMatrixMixer(parent, "ChannelPanMatrixMixer")
+, m_value_mask(0)
+, m_setenable_mask(0)
+{
+}
+
+/* If no "write enable" is implemented for a given switch it's safe to 
+ * pass zero in to setenable_mask.
+ */
+ChannelBinSwMatrixMixer::ChannelBinSwMatrixMixer(MotuDevice &parent, std::string name,
+  unsigned int val_mask, unsigned int setenable_mask)
+: MotuMatrixMixer(parent, name)
+, m_value_mask(val_mask)
+, m_setenable_mask(setenable_mask)
+{
+}
+
+double ChannelBinSwMatrixMixer::setValue(const int row, const int col, const double val)
+{
+    uint32_t v;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw setValue for row %d col %d to %lf (%ld)\n",
+      row, col, val, val==0?0:1);
+
+    // Set the value
+    if (m_setenable_mask) {
+      v = (val==0)?0:m_value_mask;
+      // Set the "write enable" bit for the value being set
+      v |= m_setenable_mask;
+    } else {
+      // It would be good to utilise the cached value from the receive
+      // processor (if running) later on.  For now we'll just fetch the
+      // current register value directly when needed.
+      v = m_parent.ReadRegister(getCellRegister(row,col));
+      if (v==0)
+        v &= ~m_value_mask;
+      else
+        v |= m_value_mask;
+    }
+    m_parent.WriteRegister(getCellRegister(row,col), v);
+
+    return true;
+}
+
+double ChannelBinSwMatrixMixer::getValue(const int row, const int col)
+{
+    uint32_t val;
+
+    // FIXME: we could just read the appropriate mixer status field from the 
+    // receive stream processor once we work out an efficient way to do this.
+    val = m_parent.ReadRegister(getCellRegister(row,col));
+    val = (val & m_value_mask) != 0;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw getValue for row %d col %d = %lu\n",
+      row, col, val);
+    return val;
+}
+
+
 MixFader::MixFader(MotuDevice &parent, unsigned int dev_reg)
 : MotuDiscreteCtrl(parent, dev_reg)
 {

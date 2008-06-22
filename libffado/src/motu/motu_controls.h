@@ -149,6 +149,72 @@ public:
     virtual int getValue();
 };
 
+class MotuMatrixMixer : public Control::MatrixMixer
+{
+public:
+    MotuMatrixMixer(MotuDevice &parent);
+    MotuMatrixMixer(MotuDevice &parent, std::string name);
+    virtual ~MotuMatrixMixer() {};
+
+    void addRowInfo(std::string name, unsigned int flags, unsigned int address);
+    void addColInfo(std::string name, unsigned int flags, unsigned int address);
+    uint32_t getCellRegister(const unsigned int row, const unsigned int col);
+
+    virtual void show();
+
+    virtual std::string getRowName(const int row);
+    virtual std::string getColName(const int col);
+    virtual int canWrite( const int, const int ) { return true; }
+    virtual int getRowCount();
+    virtual int getColCount();
+
+protected:
+     struct sSignalInfo {
+         std::string name;
+         unsigned int flags;
+         unsigned int address;
+     };
+
+     std::vector<struct sSignalInfo> m_RowInfo;
+     std::vector<struct sSignalInfo> m_ColInfo;
+
+     MotuDevice& m_parent;
+};
+
+class ChannelFaderMatrixMixer : public MotuMatrixMixer
+{
+public:
+    ChannelFaderMatrixMixer(MotuDevice &parent);
+    ChannelFaderMatrixMixer(MotuDevice &parent, std::string name);
+    virtual double setValue(const int row, const int col, const double val);
+    virtual double getValue(const int row, const int col);
+};
+
+class ChannelPanMatrixMixer : public MotuMatrixMixer
+{
+public:
+    ChannelPanMatrixMixer(MotuDevice &parent);
+    ChannelPanMatrixMixer(MotuDevice &parent, std::string name);
+    virtual double setValue(const int row, const int col, const double val);
+    virtual double getValue(const int row, const int col);
+};
+
+class ChannelBinSwMatrixMixer : public MotuMatrixMixer
+{
+public:
+    ChannelBinSwMatrixMixer(MotuDevice &parent);
+    ChannelBinSwMatrixMixer(MotuDevice &parent, std::string name, 
+      unsigned int val_mask, unsigned int setenable_mask);
+    virtual double setValue(const int row, const int col, const double val);
+    virtual double getValue(const int row, const int col);
+
+protected:
+    unsigned int m_value_mask;
+    unsigned int m_setenable_mask;
+};
+
+
+
 class MixFader
     : public MotuDiscreteCtrl
 {
