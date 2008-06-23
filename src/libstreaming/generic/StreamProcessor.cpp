@@ -1842,6 +1842,7 @@ StreamProcessor::setVerboseLevel(int l) {
     setDebugLevel(l);
     PortManager::setVerboseLevel(l);
     m_data_buffer->setVerboseLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 } // end of namespace

@@ -75,6 +75,7 @@ int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation
     debugOutput( DEBUG_LEVEL_VERBOSE, "Busreset happened, generation %d...\n", generation);
 
     IsoHandler *handler = static_cast<IsoHandler *>(raw1394_get_userdata(handle));
+    // FIXME: we should update the generation.
     assert(handler);
     return handler->handleBusReset(generation);
 }
@@ -288,7 +289,7 @@ bool IsoHandler::disable()
 int
 IsoHandler::handleBusReset(unsigned int generation)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
+    debugOutput( DEBUG_LEVEL_NORMAL, "bus reset...\n");
 
     #define CSR_CYCLE_TIME            0x200
     #define CSR_REGISTER_BASE  0xfffff0000000ULL
@@ -496,11 +497,11 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 
     // leave the offset field (for now?)
 
-    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "received packet: length=%d, channel=%d, cycle=%d, at %08X\n",
-                       length, channel, cycle, pkt_ctr);
-    #ifdef DEBUG
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "received packet: length=%d, channel=%d, cycle=%d, at %08X\n",
+                length, channel, cycle, pkt_ctr);
     m_packets++;
+    #ifdef DEBUG
     if (length > m_max_packet_size) {
         debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
                      this, getTypeString(), length, m_max_packet_size);
@@ -587,12 +588,13 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     } else {
         m_last_packet_handled_at = pkt_ctr;
     }
-    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "sending packet: length=%d, cycle=%d, at %08X\n",
-                       *length, cycle, pkt_ctr);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "sending packet: length=%d, cycle=%d, at %08X\n",
+                *length, cycle, pkt_ctr);
+
+    m_packets++;
 
     #ifdef DEBUG
-    m_packets++;
     if(m_last_cycle == -1) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
     }

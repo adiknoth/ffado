@@ -200,8 +200,8 @@ private:
     enum EHandlerStates m_State;
 
 public:
-    #ifdef DEBUG
     unsigned int    m_packets;
+    #ifdef DEBUG
     unsigned int    m_dropped;
     unsigned int    m_skipped;
     int             m_min_ahead;
