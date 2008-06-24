@@ -137,12 +137,18 @@ bool
 PosixMutex::isLocked()
 {
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) checking lock\n", this);
-    int res=pthread_mutex_trylock(&m_mutex);
+    int res = pthread_mutex_trylock(&m_mutex);
     if(res == 0) {
         pthread_mutex_unlock(&m_mutex);
         return false;
     } else {
-        if(res != EBUSY) {
+        if (res == EDEADLK) {
+            // this means that the current thread already has the lock,
+            // iow it's locked.
+            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) lock taken by current thread\n", this);
+        } else if(res == EBUSY) {
+            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) lock taken\n", this);
+        } else {
             debugError("Bogus error code: %d\n", res);
         }
         return true;
