@@ -288,7 +288,7 @@ unsigned int TimestampedBuffer::getBufferSpace() {
  * \brief Resets the TimestampedBuffer
  *
  * Resets the TimestampedBuffer, clearing the buffers and counters.
- * (not true yet: Also resets the DLL to the nominal values.)
+ * Also resets the DLL to the nominal values.
  *
  * \note when this is called, you should make sure that the buffer
  *       tail timestamp gets set before continuing
@@ -299,6 +299,12 @@ bool TimestampedBuffer::clearBuffer() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Clearing buffer\n");
     ffado_ringbuffer_reset(m_event_buffer);
     resetFrameCounter();
+
+    m_current_rate = m_nominal_rate;
+    m_dll_e2=m_nominal_rate * (float)m_update_period;
+    // this will init the internal timestamps to a sensible value
+    setBufferTailTimestamp(m_buffer_tail_timestamp);
+
     return true;
 }
 
