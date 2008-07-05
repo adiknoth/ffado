@@ -637,9 +637,17 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
         #endif
     }
 
+    #ifdef DEBUG
+    if (dropped > 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) OHCI issue on cycle %u (dropped_cycles=%d, last_cycle=%u, dropped=%d, skipped: %d)\n",
+                    this, cycle, dropped_cycles, m_last_cycle, dropped, skipped);
+    }
+    #endif
+
     if(m_Client) {
         enum raw1394_iso_disposition retval;
-        retval = m_Client->getPacket(data, length, tag, sy, pkt_ctr, dropped, skipped, m_max_packet_size);
+        retval = m_Client->getPacket(data, length, tag, sy, pkt_ctr, dropped_cycles, skipped, m_max_packet_size);
         #ifdef DEBUG
         if (*length > m_max_packet_size) {
             debugWarning("(%p, %s) packet too large: len=%u max=%u\n",

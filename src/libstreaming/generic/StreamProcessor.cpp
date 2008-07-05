@@ -498,7 +498,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         m_in_xrun = true;
         if(m_state == ePS_Running) {
             debugShowBackLogLines(200);
-            debugOutput(DEBUG_LEVEL_NORMAL, "dropped packets xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "dropped packets xrun (%u)\n", dropped_cycles);
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
             m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1;
             m_next_state = ePS_WaitingForStreamDisable;
