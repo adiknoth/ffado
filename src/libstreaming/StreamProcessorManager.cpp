@@ -917,16 +917,9 @@ bool StreamProcessorManager::waitForPeriod() {
                 break;
             case eAR_Timeout:
                 debugWarning("Timeout while waiting for activity\n");
-                #ifdef DEBUG
-                setVerboseLevel(DEBUG_LEVEL_ULTRA_VERBOSE);
-                m_parent.setVerboseLevel(DEBUG_LEVEL_ULTRA_VERBOSE);
-                // sleep for a brief moment, such that we can see what is happening in the other threads
-                SleepRelativeUsec(1000*100);
-                #endif
-                // this is a serious error since apparently there was not
-                // enough activity. This means one of the streams died.
-                m_shutdown_needed = true;
-                return false;
+                // ignore this since it can also be due to some other hardware
+                // or high-prio software that preempts us. hence only an xrun should
+                // be generated (if necessary)
             case eAR_Activity:
                 // do nothing
                 break;
