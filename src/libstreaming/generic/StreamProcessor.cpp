@@ -554,7 +554,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         if (result == eCRV_Packet) {
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                "XMIT SILENT: CY=%04u TS=%011llu\n",
-                               cycle, m_last_timestamp);
+                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
 
             // assumed not to xrun
             generateSilentPacketData(data, length);
@@ -605,7 +605,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         if (result == eCRV_Packet || result == eCRV_Defer) {
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                                "XMIT: CY=%04u TS=%011llu\n",
-                               cycle, m_last_timestamp);
+                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
 
             // valid packet timestamp
             m_last_timestamp2 = prev_timestamp;

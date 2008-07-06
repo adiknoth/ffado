@@ -165,9 +165,9 @@ void TimestampedBuffer::setRate(float rate) {
     EXIT_CRITICAL_SECTION;
 
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "for (%p) to "TIMESTAMP_FORMAT_SPEC" => "TIMESTAMP_FORMAT_SPEC", "
+                       "for (%p) "
                        "NTS="TIMESTAMP_FORMAT_SPEC", DLL2=%f, RATE=%f\n",
-                       this, new_timestamp, ts, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
+                       this, m_buffer_next_tail_timestamp, m_dll_e2, getRate());
 }
 
 /**
