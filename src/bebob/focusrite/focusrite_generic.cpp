@@ -56,7 +56,9 @@ FocusriteDevice::setVerboseLevel(int l)
 bool
 FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
 {
-    bool use_avc=false;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Writing parameter address space id 0x%08lX (%u), data: 0x%08lX\n",
+        id, id, v);
+    bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
         debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
     }
@@ -70,15 +72,18 @@ FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
 bool
 FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
 {
-    bool use_avc=false;
+    bool retval;
+    bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
         debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
     }
     if (use_avc) {
-        return getSpecificValueAvc(id, v);
+        retval = getSpecificValueAvc(id, v);
     } else {
-        return getSpecificValueARM(id, v);
+        retval = getSpecificValueARM(id, v);
     }
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Read parameter address space id 0x%08lX (%u): %08lX\n", id, id, *v);
+    return retval;
 }
 
 // The AV/C methods to set parameters
