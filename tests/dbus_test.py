@@ -302,8 +302,22 @@ FFADO DBUS TEST TOOL
     clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
     nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
 
+    import time
+    register = range(60)
     # do whatever you have to do
-    
-    print hw.getRegister("/Register", 110)
-    hw.setRegister("/Register", 110, 1)
+    for i in range(60):
+        for regid in range(60):
+            newval = hw.getRegister("/Register", regid)
+            oldval = register[regid]
+            if newval != oldval:
+                print "%04d: from %8d | %08X to %8d | %08X" % (regid, oldval, oldval, newval, newval)
+                register[regid] = newval
+            time.sleep(0.2)
+        print "--- %d ---" % i
+        #time.sleep(1)
+
+    #regid=eval(sys.argv[1])
+    #val=eval(sys.argv[2])
+    #print hw.getRegister("/Register", regid)
+    #hw.setRegister("/Register", regid, val)
     
