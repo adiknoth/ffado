@@ -754,6 +754,10 @@ InfoElement::getValue()
     signed int res = 0;
 
     switch (m_register) {
+        case MOTU_INFO_MODEL:
+            res = m_parent.m_motu_model;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Model: %d\n", res);
+            break;
         case MOTU_INFO_IS_STREAMING:
             val = m_parent.ReadRegister(MOTU_REG_ISOCTRL);
             /* Streaming is active if either bit 22 (Motu->PC streaming

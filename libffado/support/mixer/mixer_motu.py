@@ -24,6 +24,15 @@
 from qt import *
 from mixer_motuui import *
 
+# Model defines.  These must agree with what is used in motu_avdevice.h.
+MOTU_MODEL_NONE     = 0x0000
+MOTU_MODEL_828mkII  = 0x0001
+MOTU_MODEL_TRAVELER = 0x0002
+MOTU_MODEL_ULTRALITE= 0x0003
+MOTU_MODEL_8PRE     = 0x0004
+MOTU_MODEL_828MkI   = 0x0005
+MOTU_MODEL_896HD    = 0x0006
+                            
 class MotuMixer(MotuMixerUI):
     def __init__(self,parent = None,name = None,fl = 0):
         MotuMixerUI.__init__(self,parent,name,fl)
@@ -92,6 +101,11 @@ class MotuMixer(MotuMixerUI):
         state = a1
         print "setting %s state to %d" % (name, state)
         self.hw.setDiscrete(self.SelectorControls[name][0], state)
+
+    # Hide and disable a control
+    def disable_hide(self,widget):
+        widget.hide()
+        widget.setEnabled(False)
 
     def init(self):
         print "Init MOTU mixer window"
@@ -471,6 +485,17 @@ class MotuMixer(MotuMixerUI):
             self.ana6_boost:     ['/Mixer/Control/Ana6_boost'],
             self.ana7_boost:     ['/Mixer/Control/Ana7_boost'],
             self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
+
+            # Some interfaces have level/boost on analog 1-4 in place of trimgain/pad
+            self.ana1_level:     ['/Mixer/Control/Ana1_level'],
+            self.ana2_level:     ['/Mixer/Control/Ana2_level'],
+            self.ana3_level:     ['/Mixer/Control/Ana3_level'],
+            self.ana4_level:     ['/Mixer/Control/Ana4_level'],
+            self.ana1_boost:     ['/Mixer/Control/Ana1_boost'],
+            self.ana2_boost:     ['/Mixer/Control/Ana2_boost'],
+            self.ana3_boost:     ['/Mixer/Control/Ana3_boost'],
+            self.ana4_boost:     ['/Mixer/Control/Ana4_boost'],
+
         }
 
         # Ultimately these may be rolled into the BinarySwitches controls,
@@ -543,6 +568,7 @@ class MotuMixer(MotuMixerUI):
         # Other mixer variables
         self.is_streaming = 0
         self.sample_rate = 0
+        self.model = MOTU_MODEL_NONE
 
     def initValues(self):
         # Is the device streaming?
@@ -550,6 +576,8 @@ class MotuMixer(MotuMixerUI):
         print "device streaming flag: %d" % (self.is_streaming)
 
         # Retrieve other device settings as needed
+        self.model = self.hw.getDiscrete('/Mixer/Info/Model')
+        print "device model identifier: %d" % (self.model)
         self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
         print "device sample rate: %d" % (self.sample_rate)
         self.has_mic_inputs = self.hw.getDiscrete('/Mixer/Info/HasMicInputs')
@@ -584,6 +612,14 @@ class MotuMixer(MotuMixerUI):
             self.mix3_spdif_group.setEnabled(False)
             self.mix4_spdif_group.setEnabled(False)
 
+        # Devices without AES/EBU inputs/outputs have dedicated "MainOut"
+        # outputs instead.
+        if (not(self.has_aesebu_inputs)):
+            self.mix1_dest.changeItem("MainOut", 6)
+            self.mix2_dest.changeItem("MainOut", 6)
+            self.mix3_dest.changeItem("MainOut", 6)
+            self.mix4_dest.changeItem("MainOut", 6)
+
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
         if (not(self.has_optical_spdif)):
@@ -617,6 +653,42 @@ class MotuMixer(MotuMixerUI):
             self.mix2_adat58_group.setEnabled(False)
             self.mix3_adat58_group.setEnabled(False)
             self.mix4_adat58_group.setEnabled(False)
+
+        # Ensure the correct input controls are active for a given interface
+        if (self.model == MOTU_MODEL_TRAVELER):
+            self.disable_hide(self.ana1_level)
+            self.disable_hide(self.ana1_level_label)
+            self.disable_hide(self.ana2_level)
+            self.disable_hide(self.ana2_level_label)
+            self.disable_hide(self.ana3_level)
+            self.disable_hide(self.ana3_level_label)
+            self.disable_hide(self.ana4_level)
+            self.disable_hide(self.ana4_level_label)
+            self.disable_hide(self.ana1_boost)
+            self.disable_hide(self.ana1_boost_label)
+            self.disable_hide(self.ana2_boost)
+            self.disable_hide(self.ana2_boost_label)
+            self.disable_hide(self.ana3_boost)
+            self.disable_hide(self.ana3_boost_label)
+            self.disable_hide(self.ana4_boost)
+            self.disable_hide(self.ana4_boost_label)
+        else:
+            self.disable_hide(self.ana1_trimgain)
+            self.disable_hide(self.ana1_trimgain_label)
+            self.disable_hide(self.ana2_trimgain)
+            self.disable_hide(self.ana2_trimgain_label)
+            self.disable_hide(self.ana3_trimgain)
+            self.disable_hide(self.ana3_trimgain_label)
+            self.disable_hide(self.ana4_trimgain)
+            self.disable_hide(self.ana4_trimgain_label)
+            self.disable_hide(self.ana1_pad)
+            self.disable_hide(self.ana1_pad_label)
+            self.disable_hide(self.ana2_pad)
+            self.disable_hide(self.ana2_pad_label)
+            self.disable_hide(self.ana3_pad)
+            self.disable_hide(self.ana3_pad_label)
+            self.disable_hide(self.ana4_pad)
+            self.disable_hide(self.ana4_pad_label)
 
         # Now fetch the current values into the respective controls.  Don't
         # bother fetching controls which are disabled.

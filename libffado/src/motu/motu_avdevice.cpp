@@ -301,14 +301,40 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
 };
 
+const MixerCtrl MixerCtrls_828Mk2[] = {
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+    {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
+    {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
+    {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+
+    /* For mic/line input controls, the "register" is the zero-based channel number */
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 3},
+    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
+    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
+    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
+    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+
+    /* For phones source control, "register" is currently unused */
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+};
+
 const MotuMixer Mixer_Traveler = MOTUMIXER(
     MixerCtrls_Traveler, MixerBuses_Traveler, MixerChannels_Traveler);
 
-// For convenience during initial testing, just make the 828MkII and 896HD
-// use the Traveler's mixer definition.  Separate definitions for these 
-// models will come once the final mixer structure is in place.  For now
-// it's in a state of flux and subject to significant change.
-#define Mixer_828MkII Mixer_Traveler
+const MotuMixer Mixer_828Mk2 = MOTUMIXER(
+    MixerCtrls_828Mk2, MixerBuses_Traveler, MixerChannels_Traveler);
+
+// For convenience during initial testing, just make the 896HD use the
+// Traveler's mixer definition.  Separate definitions for these models will
+// come once the final mixer structure is in place.  For now it's in a state
+// of flux and subject to significant change.
 #define Mixer_896HD   Mixer_Traveler
 
 /* The order of DevicesProperty entries must match the numeric order of the
@@ -316,7 +342,7 @@ const MotuMixer Mixer_Traveler = MOTUMIXER(
  */
 const DevicePropertyEntry DevicesProperty[] = {
 //  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR, MixerDescrPtr },
-    { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, &Mixer_828MkII, },
+    { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, &Mixer_828Mk2, },
     { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, &Mixer_Traveler, },
     { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000 },
     { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
@@ -531,6 +557,8 @@ MotuDevice::buildMixer() {
     /* Now add some general device information controls.  These may yet
      * become device-specific if it turns out to be easier that way.
      */
+    result &= m_MixerContainer->addElement(
+        new InfoElement(*this, MOTU_INFO_MODEL, "Info/Model", "Model identifier", ""));
     result &= m_MixerContainer->addElement(
         new InfoElement(*this, MOTU_INFO_IS_STREAMING, "Info/IsStreaming", "Is device streaming", ""));
     result &= m_MixerContainer->addElement(
