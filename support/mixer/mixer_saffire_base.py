@@ -128,6 +128,11 @@ class SaffireMixerBase:
         for ctrl, info in self.ComboControls.iteritems():
             self.initCombo(ctrl)
 
+    def polledUpdateVolumeLowRes(self, srcpath, ctrl):
+        vol = self.hw.getDiscrete(srcpath)
+        #print "polledUpdateVolumeLowRes: vol = %s" % vol
+        ctrl.setValue(255-vol)
+
     def initValues(self):
         self.updateValues()
         for ctrl, info in self.VolumeControls.iteritems():

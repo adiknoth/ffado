@@ -30,7 +30,7 @@ if env.has_key('PYUIC'):
     e = env.Clone()
 
     e['MIXERGUIS'] = [ 'phase24', 'phase88',
-                       'saffire',
+                       'saffire_mono', 'saffire_stereo',
                        'saffireprolarge', 'saffireprosmall',
                        'saffirelelarge', 'saffirelesmall',
                        'af2', 'bcoaudio5', 'edirolfa66',

@@ -1,5 +1,5 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>SaffireMixerMonoUI</class>
+<class>SaffireMixerStereoUI</class>
 <comment>Copyright (C) 2005-2008 by Pieter Palmers
 	
 	This file is part of FFADO
@@ -19,15 +19,23 @@
 </comment>
 <widget class="QWidget">
     <property name="name">
-        <cstring>SaffireMixerMonoUI</cstring>
+        <cstring>SaffireMixerStereoUI</cstring>
     </property>
     <property name="geometry">
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>757</width>
+            <width>747</width>
             <height>397</height>
         </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>7</hsizetype>
+            <vsizetype>7</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
     </property>
     <property name="caption">
         <string>Focusrite Saffire Mixer</string>
@@ -2774,7 +2782,7 @@
                         </property>
                         <widget class="QLayoutWidget">
                             <property name="name">
-                                <cstring>layout57</cstring>
+                                <cstring>layout113</cstring>
                             </property>
                             <hbox>
                                 <property name="name">
@@ -2800,11 +2808,33 @@
                                     </property>
                                     <property name="sizeHint">
                                         <size>
-                                            <width>270</width>
+                                            <width>240</width>
                                             <height>21</height>
                                         </size>
                                     </property>
                                 </spacer>
+                                <widget class="QPushButton">
+                                    <property name="name">
+                                        <cstring>btnSwitchStereoMode</cstring>
+                                    </property>
+                                    <property name="enabled">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>1</hsizetype>
+                                            <vsizetype>0</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="text">
+                                        <string>Mono Mode</string>
+                                    </property>
+                                    <property name="toolTip" stdset="0">
+                                        <string>Save settings to device</string>
+                                    </property>
+                                </widget>
                                 <widget class="QPushButton">
                                     <property name="name">
                                         <cstring>btnRefresh</cstring>
@@ -2832,7 +2862,7 @@
                                         <cstring>btnSaveSettings</cstring>
                                     </property>
                                     <property name="enabled">
-                                        <bool>false</bool>
+                                        <bool>true</bool>
                                     </property>
                                     <property name="sizePolicy">
                                         <sizepolicy>

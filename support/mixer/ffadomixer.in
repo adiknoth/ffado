@@ -75,6 +75,8 @@ SupportedDevices=[
     [(0x0001f2, 0x00000000),'MotuMixer'],
     ]
 
+POLL_SLEEP_TIME_MSEC = 100 # 100ms
+
 class ControlInterface:
     def __init__(self, servername, basepath):
         self.basepath=basepath
@@ -289,6 +291,19 @@ class HLine( QFrame ):
         self.setLineWidth( 2 )
         self.setMinimumHeight( 10 )
 
+class PollUpdateWidgets(QObject):
+    def __init__(self, widgets):
+        QObject.__init__(self)
+        self.widgets = widgets
+
+    def updateWidgets(self):
+        for w in self.widgets:
+            if 'polledUpdate' in dir(w):
+                try:
+                    w.polledUpdate()
+                except:
+                    print "error in polled update"
+
 if __name__ == "__main__":
 
     server='org.ffado.Control'
@@ -332,6 +347,8 @@ if __name__ == "__main__":
         sys.exit( -1 )
 
     mw = QTabWidget()
+
+    mixerwidgets = []
 
     for idx in range(nbDevices):
         path=devmgr.getDeviceName(idx)
@@ -456,6 +473,7 @@ if __name__ == "__main__":
         mixerwidget.configrom = cfgrom
         mixerwidget.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
         mixerwidget.initValues()
+        mixerwidgets.append(mixerwidget)
         mw.addTab( w, mixerapp )
 
     #
@@ -468,9 +486,13 @@ if __name__ == "__main__":
     # Only really show the mainwindow and start the mixer when at least on mixer is shown
     #
     if mw.count() > 0:
+        puw = PollUpdateWidgets(mixerwidgets)
+        timer = QTimer(puw)
+        QObject.connect( timer, SIGNAL('timeout()'), puw.updateWidgets );
+        timer.start( POLL_SLEEP_TIME_MSEC );
+
         mw.show()
 
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
         app.exec_loop()
-
