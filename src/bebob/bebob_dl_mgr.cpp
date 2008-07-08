@@ -159,6 +159,8 @@ BeBoB::BootloaderManager::cacheInfoRegisters( int retries )
             return true;
         }
         sleep( 1 );
+        printf(".");
+        fflush(stdout);
     }
 
     return false;
@@ -386,11 +388,12 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
 
     // bootloader erases the flash, have to wait until is ready
     // to answer our next request
-    printf( "wait until flash erasing has terminated\n " );
+    printf( "wait until flash erasing has terminated\n" );
     int cnt = 30;
     while(cnt--) {
         sleep( 1 );
         printf(".");
+        fflush(stdout);
     }
     printf("\n");
 
@@ -466,8 +469,9 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
 
         downloadedBytes += blockSize;
         if ( ( i % 100 ) == 0 ) {
-           printf( "%10d/%d bytes downloaded\n",
+           printf( "%10d/%d bytes downloaded\r",
                    downloadedBytes, totalBytes );
+           fflush(stdout);
         }
 
         imageLength -= blockSize;
@@ -490,11 +494,12 @@ BeBoB::BootloaderManager::downloadObject( BCD& bcd, EObjectType eObject )
         debugError( "downloadObject: (end) command write failed\n" );
     }
 
-    printf( "wait for transaction completion\n " );
+    printf( "wait for transaction completion\n" );
     cnt = 10;
     while(cnt--) {
         sleep( 1 );
         printf(".");
+        fflush(stdout);
     }
     printf("\n");
 
@@ -554,7 +559,15 @@ BeBoB::BootloaderManager::busresetHandler()
 void
 BeBoB::BootloaderManager::waitForBusReset()
 {
-    pthread_cond_wait( &m_cond, &m_mutex );
+    struct timespec timeout;
+    int retcode;
+    clock_gettime(CLOCK_REALTIME, &timeout);
+    do {
+        printf(".");
+        fflush(stdout);
+        timeout.tv_sec = timeout.tv_sec + 1;
+        retcode = pthread_cond_timedwait( &m_cond, &m_mutex, &timeout );
+    } while (retcode == ETIMEDOUT);
 }
 
 bool
@@ -651,6 +664,13 @@ BeBoB::BootloaderManager::startBootloaderCmd()
     // wait for bootloader finish startup sequence
     // there is no way to find out when it has finished
     sleep( 10 );
+    int cnt = 10;
+    while(cnt--) {
+        sleep( 1 );
+        printf(".");
+        fflush(stdout);
+    }
+    printf("\n");
 
     return true;
 }
@@ -706,6 +726,13 @@ BeBoB::BootloaderManager::initializeConfigToFactorySettingCmd()
     }
 
     sleep( 5 );
+    int cnt = 5;
+    while(cnt--) {
+        sleep( 1 );
+        printf(".");
+        fflush(stdout);
+    }
+    printf("\n");
 
     return true;
 }
