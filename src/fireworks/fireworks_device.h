@@ -94,6 +94,7 @@ public:
      * @return true if successful
      */
     bool eraseFlash(uint32_t addr);
+    bool eraseFlashBlocks(uint32_t start_address, unsigned int nb_quads);
 
     /**
      * @brief wait until the device indicates the flash memory is ready
@@ -101,6 +102,12 @@ public:
      * @return true if the flash is ready, false if timeout
      */
     bool waitForFlash(unsigned int msecs);
+
+    /**
+     * @brief get the flash address of the session block
+     * @return session block base address
+     */
+    uint32_t getSessionBase();
 
 // Echo specific stuff
 private:

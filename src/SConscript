@@ -136,6 +136,7 @@ fireworks_source =  env.Split( '\
 	fireworks/efc/efc_cmds_mixer.cpp \
 	fireworks/efc/efc_cmds_monitor.cpp \
 	fireworks/efc/efc_cmds_ioconfig.cpp \
+	fireworks/fireworks_session_block.cpp \
 	fireworks/audiofire/audiofire_device.cpp \
 ' )
 

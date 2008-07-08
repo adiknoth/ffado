@@ -36,20 +36,18 @@
 #include <fstream>
 #include <cstring>
 
-#define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
-
 #define DAT_EXTENSION "dat"
 
 // device id's
-#define AUDIOFIRE2			0x000af2
-#define AUDIOFIRE4			0x000af4
-#define AUDIOFIRE8			0x000af8
-#define AUDIOFIRE12			0x00af12
-#define AUDIOFIRE12HD		0x0af12d
-#define FWHDMI				0x00afd1
-#define ONYX400F			0x00400f 
-#define ONYX1200F			0x01200f
-#define FIREWORKS8			0x0000f8
+#define AUDIOFIRE2          0x000af2
+#define AUDIOFIRE4          0x000af4
+#define AUDIOFIRE8          0x000af8
+#define AUDIOFIRE12         0x00af12
+#define AUDIOFIRE12HD       0x0af12d
+#define FWHDMI              0x00afd1
+#define ONYX400F            0x00400f 
+#define ONYX1200F           0x01200f
+#define FIREWORKS8          0x0000f8
 
 using namespace std;
 
@@ -417,28 +415,28 @@ Firmware::dumpData()
 // the firmware loader helper class
 const char *Af2Dats[] = 
 {
-	"Fireworks3"
+    "Fireworks3"
 };
 
 const char *Af4Dats[] = 
 {
-	"Fireworks3"
+    "Fireworks3"
 };
 
 const char *Af8Dats[] = 
 {
-	"bootstrap",
-	"audiofire8",
-	"audiofire8_E",
-	"FireworksARM"
+    "bootstrap",
+    "audiofire8",
+    "audiofire8_E",
+    "FireworksARM"
 };
 
 const char *Af12Dats[] = 
 {
-	"bootstrap",
-	"audiofire12",
-	"audiofire12_E",
-	"FireworksARM"
+    "bootstrap",
+    "audiofire12",
+    "audiofire12_E",
+    "FireworksARM"
 };
 
 FirmwareUtil::FirmwareUtil(FireWorks::Device& p)
@@ -447,10 +445,10 @@ FirmwareUtil::FirmwareUtil(FireWorks::Device& p)
 
     struct dat_list datlists[4] =
     {
-            { FW_VENDORID_ECHO, AUDIOFIRE2,	0x04010000, 1, Af2Dats },
-            { FW_VENDORID_ECHO, AUDIOFIRE4,	0x04010000, 1, Af4Dats },
-            { FW_VENDORID_ECHO, AUDIOFIRE8,	0x04010000, 4, Af8Dats },
-            { FW_VENDORID_ECHO, AUDIOFIRE12,	0x04010000, 4, Af12Dats }
+            { FW_VENDORID_ECHO, AUDIOFIRE2,    0x04010000, 1, Af2Dats },
+            { FW_VENDORID_ECHO, AUDIOFIRE4,    0x04010000, 1, Af4Dats },
+            { FW_VENDORID_ECHO, AUDIOFIRE8,    0x04010000, 4, Af8Dats },
+            { FW_VENDORID_ECHO, AUDIOFIRE12,    0x04010000, 4, Af12Dats }
     };
 
     assert(sizeof(datlists) <= sizeof(m_datlists));
@@ -533,72 +531,7 @@ FirmwareUtil::writeFirmwareToDevice(Firmware f)
 bool
 FirmwareUtil::eraseBlocks(uint32_t start_address, unsigned int nb_quads)
 {
-    uint32_t blocksize_bytes;
-    uint32_t blocksize_quads;
-    unsigned int quads_left = nb_quads;
-    bool success = true;
-
-    const unsigned int max_nb_tries = 10;
-    unsigned int nb_tries = 0;
-
-    do {
-        // the erase block size is fixed by the HW, and depends
-        // on the flash section we're in
-        if (start_address < MAINBLOCKS_BASE_OFFSET_BYTES)
-                blocksize_bytes = PROGRAMBLOCK_SIZE_BYTES;
-        else
-                blocksize_bytes = MAINBLOCK_SIZE_BYTES;
-        start_address &= ~(blocksize_bytes - 1);
-        blocksize_quads = blocksize_bytes / 4;
-
-        uint32_t verify[blocksize_quads];
-
-        // corner case: requested to erase less than one block
-        if (blocksize_quads > quads_left) {
-            blocksize_quads = quads_left;
-        }
-
-        // do the actual erase
-        if (!m_Parent.eraseFlash(start_address)) {
-            debugWarning("Could not erase flash block at 0x%08X\n", start_address);
-            success = false;
-        } else {
-            // wait for the flash to become ready again
-            if (!m_Parent.waitForFlash(ECHO_FLASH_ERASE_TIMEOUT_MILLISECS)) {
-                debugError("Wait for flash timed out at address 0x%08X\n", start_address);
-                return false;
-            }
-
-            // verify that the block is empty as an extra precaution
-            if (!m_Parent.readFlash(start_address, blocksize_quads, verify)) {
-                debugError("Could not read flash block at 0x%08X\n", start_address);
-                return false;
-            }
-
-            // everything should be 0xFFFFFFFF if the erase was successful
-            for (unsigned int i = 0; i < blocksize_quads; i++) {
-                if (0xFFFFFFFF != verify[i]) {
-                    debugWarning("Flash erase verification failed.\n");
-                    success = false;
-                    break;
-                }
-            }
-        }
-
-        if (success) {
-            start_address += blocksize_bytes;
-            quads_left -= blocksize_quads;
-            nb_tries = 0;
-        } else {
-            nb_tries++;
-        }
-        if (nb_tries > max_nb_tries) {
-            debugError("Needed too many tries to erase flash at 0x%08X\n", start_address);
-            return false;
-        }
-    } while (quads_left > 0);
-    
-    return true;
+    return m_Parent.eraseFlashBlocks(start_address, nb_quads);
 }
 
 void

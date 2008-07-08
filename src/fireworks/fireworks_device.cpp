@@ -39,6 +39,10 @@
 
 #include "libutil/PosixMutex.h"
 
+#include "IntelFlashMap.h"
+
+#define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
+
 #include <sstream>
 using namespace std;
 
@@ -648,6 +652,77 @@ Device::eraseFlash(uint32_t addr) {
 }
 
 bool
+Device::eraseFlashBlocks(uint32_t start_address, unsigned int nb_quads)
+{
+    uint32_t blocksize_bytes;
+    uint32_t blocksize_quads;
+    unsigned int quads_left = nb_quads;
+    bool success = true;
+
+    const unsigned int max_nb_tries = 10;
+    unsigned int nb_tries = 0;
+
+    do {
+        // the erase block size is fixed by the HW, and depends
+        // on the flash section we're in
+        if (start_address < MAINBLOCKS_BASE_OFFSET_BYTES)
+                blocksize_bytes = PROGRAMBLOCK_SIZE_BYTES;
+        else
+                blocksize_bytes = MAINBLOCK_SIZE_BYTES;
+        start_address &= ~(blocksize_bytes - 1);
+        blocksize_quads = blocksize_bytes / 4;
+
+        uint32_t verify[blocksize_quads];
+
+        // corner case: requested to erase less than one block
+        if (blocksize_quads > quads_left) {
+            blocksize_quads = quads_left;
+        }
+
+        // do the actual erase
+        if (!eraseFlash(start_address)) {
+            debugWarning("Could not erase flash block at 0x%08X\n", start_address);
+            success = false;
+        } else {
+            // wait for the flash to become ready again
+            if (!waitForFlash(ECHO_FLASH_ERASE_TIMEOUT_MILLISECS)) {
+                debugError("Wait for flash timed out at address 0x%08X\n", start_address);
+                return false;
+            }
+
+            // verify that the block is empty as an extra precaution
+            if (!readFlash(start_address, blocksize_quads, verify)) {
+                debugError("Could not read flash block at 0x%08X\n", start_address);
+                return false;
+            }
+
+            // everything should be 0xFFFFFFFF if the erase was successful
+            for (unsigned int i = 0; i < blocksize_quads; i++) {
+                if (0xFFFFFFFF != verify[i]) {
+                    debugWarning("Flash erase verification failed.\n");
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        if (success) {
+            start_address += blocksize_bytes;
+            quads_left -= blocksize_quads;
+            nb_tries = 0;
+        } else {
+            nb_tries++;
+        }
+        if (nb_tries > max_nb_tries) {
+            debugError("Needed too many tries to erase flash at 0x%08X\n", start_address);
+            return false;
+        }
+    } while (quads_left > 0);
+
+    return true;
+}
+
+bool
 Device::waitForFlash(unsigned int msecs)
 {
     bool ready;
@@ -675,6 +750,17 @@ Device::waitForFlash(unsigned int msecs)
     }
 
     return ready;
+}
+
+uint32_t
+Device::getSessionBase()
+{
+    EfcFlashGetSessionBaseCmd cmd;
+    if(!doEfcOverAVC(cmd)) {
+        debugError("Could not get session base address\n");
+        return 0; // FIXME: arbitrary
+    }
+    return cmd.m_address;
 }
 
 } // FireWorks
