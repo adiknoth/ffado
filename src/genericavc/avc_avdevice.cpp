@@ -241,6 +241,58 @@ AvDevice::setSamplingFrequency( int s )
 
 }
 
+bool
+AvDevice::supportsSamplingFrequency( int s )
+{
+    Util::MutexLockHelper lock(m_DeviceMutex);
+
+    AVC::Plug* plug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+    if ( !plug ) {
+        debugError( "Could not retrieve iso input plug 0\n" );
+        return false;
+    }
+
+    if ( !plug->supportsSampleRate( s ) )
+    {
+        debugError( "sample rate not supported by input plug\n" );
+        return false;
+    }
+
+    plug = getPlugById( m_pcrPlugs, Plug::eAPD_Output,  0 );
+    if ( !plug ) {
+        debugError( "Could not retrieve iso output plug 0\n" );
+        return false;
+    }
+
+    if ( !plug->supportsSampleRate( s ) )
+    {
+        debugError( "sample rate not supported by output plug\n" );
+        return false;
+    }
+    return true;
+}
+
+#define GENERICAVC_CHECK_AND_ADD_SR(v, x) \
+    { if(supportsSamplingFrequency(x)) \
+      v.push_back(x); }
+
+std::vector<int>
+AvDevice::getSupportedSamplingFrequencies()
+{
+    if (m_supported_frequencies_cache.size() == 0) {
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 22050);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 24000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 32000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 44100);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 48000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 88200);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 96000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 176400);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 192000);
+    }
+    return m_supported_frequencies_cache;
+}
+
 FFADODevice::ClockSourceVector
 AvDevice::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;

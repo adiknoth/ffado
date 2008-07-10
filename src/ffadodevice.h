@@ -139,6 +139,12 @@ public:
     virtual int getSamplingFrequency( ) = 0;
 
     /**
+     * @brief get the supported sampling frequencies
+     * @return a vector containing the supported sampling frequencies
+     */
+    virtual std::vector<int> getSupportedSamplingFrequencies( ) = 0;
+
+    /**
      * @brief sync state enum
      */
     enum eSyncState {

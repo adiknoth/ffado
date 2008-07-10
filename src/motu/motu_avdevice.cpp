@@ -824,6 +824,19 @@ MotuDevice::setSamplingFrequency( int samplingFrequency )
     return setClockCtrlRegister(samplingFrequency, MOTU_CLKSRC_UNCHANGED);
 }
 
+std::vector<int>
+MotuDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    frequencies.push_back(44100);
+    frequencies.push_back(48000);
+    frequencies.push_back(88200);
+    frequencies.push_back(96000);
+    frequencies.push_back(176400);
+    frequencies.push_back(192000);
+    return frequencies;
+}
+
 FFADODevice::ClockSource
 MotuDevice::clockIdToClockSource(unsigned int id) {
     ClockSource s;

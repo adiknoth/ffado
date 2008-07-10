@@ -426,6 +426,25 @@ Device::updatePolledValues() {
     return doEfcOverAVC(m_Polled);
 }
 
+#define ECHO_CHECK_AND_ADD_SR(v, x) \
+    { if(x >= m_HwInfo.m_min_sample_rate && x <= m_HwInfo.m_max_sample_rate) \
+      v.push_back(x); }
+std::vector<int>
+Device::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    ECHO_CHECK_AND_ADD_SR(frequencies, 22050);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 24000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 32000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 44100);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 48000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 88200);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 96000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 176400);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 192000);
+    return frequencies;
+}
+
 FFADODevice::ClockSourceVector
 Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;

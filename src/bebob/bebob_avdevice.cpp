@@ -173,6 +173,9 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     return NULL;
 }
 
+#define BEBOB_CHECK_AND_ADD_SR(v, x) \
+    { if(supportsSamplingFrequency(x)) \
+      v.push_back(x); }
 bool
 AvDevice::discover()
 {
@@ -432,7 +435,6 @@ AvDevice::propagatePlugInfo() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Skip plug info propagation\n");
     return true;
 }
-
 
 uint8_t
 AvDevice::getConfigurationIdSampleRate()

@@ -61,7 +61,9 @@ public:
     virtual void showDevice();
 
     virtual bool setSamplingFrequency( int );
+    virtual bool supportsSamplingFrequency( int s );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
@@ -102,6 +104,7 @@ protected:
 
 private:
     ClockSource syncInfoToClockSource(const SyncInfo& si);
+    std::vector<int> m_supported_frequencies_cache;
 };
 
 }

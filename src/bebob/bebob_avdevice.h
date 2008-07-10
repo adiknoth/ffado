@@ -107,6 +107,7 @@ protected:
     virtual uint8_t getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
     virtual uint16_t getConfigurationIdSyncMode();
 
+    std::vector<int> m_supported_frequencies;
 protected:
     Mixer*             m_Mixer;
 

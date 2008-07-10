@@ -273,6 +273,22 @@ class ClockSelectInterface:
     def getAttributeName(self, idx):
         return self.iface.getAttributeName(idx)
 
+class SamplerateSelectInterface:
+    def __init__(self, servername, devicepath):
+        self.basepath=devicepath + '/Generic/SamplerateSelect'
+        self.servername=servername
+        self.bus=dbus.SessionBus()
+        self.dev = self.bus.get_object(self.servername, self.basepath)
+        self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Enum')
+    def count(self):
+        return self.iface.count()
+    def select(self, idx):
+        return self.iface.select(idx)
+    def selected(self):
+        return self.iface.selected()
+    def getEnumLabel(self, idx):
+        return self.iface.getEnumLabel(idx)
+
 class TextInterface:
     def __init__(self, servername, basepath):
         self.basepath=basepath
@@ -395,6 +411,7 @@ if __name__ == "__main__":
         #
         tmp = GlobalMixer( w )
         tmp.clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
+        tmp.samplerateselect = SamplerateSelectInterface( server, basepath+"/DeviceManager/"+path )
         tmp.nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
         tmp.hw = hw
         tmp.initValues()

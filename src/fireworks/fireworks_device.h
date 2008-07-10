@@ -60,6 +60,8 @@ public:
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
+    virtual std::vector<int> getSupportedSamplingFrequencies();
+
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
     virtual ClockSource getActiveClockSource();

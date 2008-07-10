@@ -160,6 +160,7 @@ public:
     bool setClockCtrlRegister(signed int samplingFrequency, unsigned int clock_source);
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     FFADODevice::ClockSource clockIdToClockSource(unsigned int id);
     virtual ClockSourceVector getSupportedClockSources();
