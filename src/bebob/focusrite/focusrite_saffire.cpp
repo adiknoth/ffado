@@ -334,7 +334,9 @@ SaffireDevice::buildMixer()
                     "Swap41_96", "Swap41_96", "Swap41_96"));
     } else {
         result &= m_MixerContainer->addElement(
-            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_SaffireMatrixMix, "MatrixMixer"));
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_SaffireStereoMatrixMix, "MatrixMixerStereo"));
+        result &= m_MixerContainer->addElement(
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_SaffireMonoMatrixMix, "MatrixMixerMono"));
     }
 
     if (!result) {
@@ -422,7 +424,7 @@ SaffireMatrixMixer::SaffireMatrixMixer(SaffireDevice& p,
 
 void SaffireMatrixMixer::init()
 {
-    if (m_type==eMMT_SaffireMatrixMix) {
+    if (m_type==eMMT_SaffireStereoMatrixMix) {
         m_RowInfo.clear();
         addSignalInfo(m_RowInfo, "PC910", "PC 9/10", "PC Channel 9/10");
         addSignalInfo(m_RowInfo, "PC12", "PC 1/2", "PC Channel 1/2");
@@ -441,12 +443,12 @@ void SaffireMatrixMixer::init()
         addSignalInfo(m_ColInfo, "OUT78", "OUT 7/8", "Output 7/8 (HP2)");
         
         // init the cell matrix
-        #define FOCUSRITE_SAFFIRE_MATRIXMIX_NB_COLS 5
-        #define FOCUSRITE_SAFFIRE_MATRIXMIX_NB_ROWS 8
-        #define FOCUSRITE_SAFFIRE_MATRIXMIX_OFFSET 0
+        #define FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS 5
+        #define FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_ROWS 8
+        #define FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_OFFSET 0
 
-        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_MATRIXMIX_NB_COLS );
-        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_MATRIXMIX_NB_ROWS, tmp_cols);
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_ROWS, tmp_cols);
         m_CellInfo = tmp_all;
     
         struct sCellInfo c;
@@ -456,17 +458,63 @@ void SaffireMatrixMixer::init()
         c.address=0;
         
         // all cells are valid
-        for (int i=0; i < FOCUSRITE_SAFFIRE_MATRIXMIX_NB_ROWS; i++) {
-            for (int j=0; j < FOCUSRITE_SAFFIRE_MATRIXMIX_NB_COLS; j++) {
+        for (int i=0; i < FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_ROWS; i++) {
+            for (int j=0; j < FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS; j++) {
                 c.row = i;
                 c.col = j;
                 c.valid = true;
-                c.address = FOCUSRITE_SAFFIRE_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_MATRIXMIX_NB_COLS + c.col;
+                c.address = FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS + c.col;
                 debugOutput(DEBUG_LEVEL_NORMAL, "Add row %d col %d, address %d\n", c.row, c.col, c.address);
                 m_CellInfo.at(i).at(j) =  c;
             }
         }
+    } else if (m_type==eMMT_SaffireMonoMatrixMix) {
+        m_RowInfo.clear();
+        addSignalInfo(m_RowInfo, "IN1", "Input 1", "Hardware Inputs 1");
+        addSignalInfo(m_RowInfo, "IN3", "Input 3", "Hardware Inputs 3");
+        addSignalInfo(m_RowInfo, "FX1", "Effect return 1", "Effect return 1");
+        addSignalInfo(m_RowInfo, "IN2", "Input 2", "Hardware Inputs 2");
+        addSignalInfo(m_RowInfo, "IN4", "Input 4", "Hardware Inputs 4");
+        addSignalInfo(m_RowInfo, "FX2", "Effect return 2", "Effect return 2");
+        addSignalInfo(m_RowInfo, "PC910", "PC 9/10", "PC Channel 9/10");
+        addSignalInfo(m_RowInfo, "PC12", "PC 1/2", "PC Channel 1/2");
+        addSignalInfo(m_RowInfo, "PC34", "PC 3/4", "PC Channel 3/4");
+        addSignalInfo(m_RowInfo, "PC56", "PC 5/6", "PC Channel 5/6");
+        addSignalInfo(m_RowInfo, "PC78", "PC 7/8", "PC Channel 7/8");
 
+        m_ColInfo.clear();
+        addSignalInfo(m_ColInfo, "OUT910", "OUT 9/10", "Output 9/10");
+        addSignalInfo(m_ColInfo, "OUT12", "OUT 1/2", "Output 1/2");
+        addSignalInfo(m_ColInfo, "OUT34", "OUT 3/4", "Output 3/4");
+        addSignalInfo(m_ColInfo, "OUT56", "OUT 5/6", "Output 5/6 (HP1)");
+        addSignalInfo(m_ColInfo, "OUT78", "OUT 7/8", "Output 7/8 (HP2)");
+        
+        // init the cell matrix
+        #define FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS 5
+        #define FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_ROWS 11
+        #define FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_OFFSET 0
+
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_ROWS, tmp_cols);
+        m_CellInfo = tmp_all;
+    
+        struct sCellInfo c;
+        c.row=-1;
+        c.col=-1;
+        c.valid=false;
+        c.address=0;
+        
+        // all cells are valid
+        for (int i=0; i < FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_ROWS; i++) {
+            for (int j=0; j < FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS; j++) {
+                c.row = i;
+                c.col = j;
+                c.valid = true;
+                c.address = FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS + c.col;
+                debugOutput(DEBUG_LEVEL_NORMAL, "Add row %d col %d, address %d\n", c.row, c.col, c.address);
+                m_CellInfo.at(i).at(j) =  c;
+            }
+        }
     } else if (m_type == eMMT_LEMix48) {
         addSignalInfo(m_RowInfo, "IN1", "Input 1", "Analog Input 1");
         addSignalInfo(m_RowInfo, "IN2", "Input 2", "Analog Input 2");

@@ -250,7 +250,8 @@ class SaffireMatrixMixer : public FocusriteMatrixMixer
 {
 public:
     enum eMatrixMixerType {
-        eMMT_SaffireMatrixMix,
+        eMMT_SaffireStereoMatrixMix,
+        eMMT_SaffireMonoMatrixMix,
         eMMT_LEMix48,
         eMMT_LEMix96,
     };
