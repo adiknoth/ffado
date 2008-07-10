@@ -521,7 +521,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     float * client_buffers[4];
     float tmp_values[4] __attribute__ ((aligned (16)));
@@ -541,7 +541,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 
     // this assumes that audio ports are sorted by position,
     // and that there are no gaps
-    for (i = 0; i < m_nb_audio_ports-4; i += 4) {
+    for (i = 0; i < ((int)m_nb_audio_ports)-4; i += 4) {
         struct _MBLA_port_cache *p;
 
         // get the port buffers
@@ -613,7 +613,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 
     // do remaining ports
     // NOTE: these can be time-SSE'd
-    for (; i < m_nb_audio_ports; i++) {
+    for (; i < (int)m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
@@ -713,7 +713,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     uint32_t *client_buffers[4];
     uint32_t tmp_values[4] __attribute__ ((aligned (16)));
@@ -727,7 +727,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 
     // this assumes that audio ports are sorted by position,
     // and that there are no gaps
-    for (i = 0; i < m_nb_audio_ports-4; i += 4) {
+    for (i = 0; i < ((int)m_nb_audio_ports)-4; i += 4) {
         struct _MBLA_port_cache *p;
 
         // get the port buffers
@@ -787,7 +787,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 
     // do remaining ports
     // NOTE: these can be time-SSE'd
-    for (; i < m_nb_audio_ports; i++) {
+    for (; i < ((int)m_nb_audio_ports); i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
