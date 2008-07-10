@@ -79,6 +79,8 @@ Session::saveToDevice(Device &d)
         return false;
     }
 
+    debugWarning("CRC update not implemented, will fail\n");
+
     uint32_t data[len/4];
     if(!saveToMemory(data, len)) {
         debugError("Could not save session to memory block\n");
@@ -219,6 +221,13 @@ Session::saveToMemory(void *buff, size_t max_len)
 #endif
 
     return true;
+}
+
+uint32_t
+Session::calculateCRC()
+{
+    debugWarning("unimplemented\n");
+    return 0;
 }
 
 void

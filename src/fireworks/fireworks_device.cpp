@@ -263,6 +263,8 @@ Device::buildMixer()
         result &= m_MixerContainer->addElement(
             new BinaryControl(*this, eMT_PlaybackMix, eMC_Mute, ch, 0, node_name.str()+"Mute"));
         result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PlaybackMix, eMC_Solo, ch, 0, node_name.str()+"Solo"));
+        result &= m_MixerContainer->addElement(
             new SimpleControl(*this, eMT_PlaybackMix, eMC_Gain, ch, node_name.str()+"Gain"));
     }
     
@@ -279,13 +281,53 @@ Device::buildMixer()
             new SimpleControl(*this, eMT_PhysicalOutputMix, eMC_Gain, ch, node_name.str()+"Gain"));
     }
     
+    // Physical input mix controls
+    for (unsigned int ch=0;ch<m_HwInfo.m_nb_phys_audio_in;ch++) {
+        std::ostringstream node_name;
+        node_name << "IN" << ch;
+        
+        // result &= m_MixerContainer->addElement(
+        //     new BinaryControl(*this, eMT_PhysicalInputMix, eMC_Pad, ch, 0, node_name.str()+"Pad"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PhysicalInputMix, eMC_Nominal, ch, 1, node_name.str()+"Nominal"));
+    }
+
+    // add hardware information controls
+    m_HwInfoContainer = new Control::Container(this, "HwInfo");
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_PhysicalAudioOutCount, "PhysicalAudioOutCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_PhysicalAudioInCount, "PhysicalAudioInCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_1394PlaybackCount, "1394PlaybackCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_1394RecordCount, "1394RecordCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_GroupOutCount, "GroupOutCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_GroupInCount, "GroupInCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_PhantomPower, "PhantomPower"));
+
+    // add a save settings control
+    result &= this->addElement(
+        new MultiControl(*this, MultiControl::eT_SaveSession, "SaveSettings"));
+
+    // add an identify control
+    result &= this->addElement(
+        new MultiControl(*this, MultiControl::eT_Identify, "Identify"));
+
+    // spdif mode control
+    result &= this->addElement(
+        new SpdifModeControl(*this, "SpdifMode"));
+
     // check for IO config controls and add them if necessary
     if(m_HwInfo.hasMirroring()) {
-        result &= m_MixerContainer->addElement(
+        result &= this->addElement(
             new IOConfigControl(*this, eCR_Mirror, "ChannelMirror"));
     }
     if(m_HwInfo.hasSoftwarePhantom()) {
-        result &= m_MixerContainer->addElement(
+        result &= this->addElement(
             new IOConfigControl(*this, eCR_Phantom, "PhantomPower"));
     }
 
@@ -303,6 +345,18 @@ Device::buildMixer()
         return false;
     }
 
+    if (!addElement(m_HwInfoContainer)) {
+        debugWarning("Could not register hwinfo to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    // load the session block
+    if (!loadSession()) {
+        debugWarning("Could not load session\n");
+    }
+
     return true;
 }
 
@@ -313,20 +367,58 @@ Device::destroyMixer()
 
     if (m_MixerContainer == NULL) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
-        return true;
+    } else {
+        if (!deleteElement(m_MixerContainer)) {
+            debugError("Mixer present but not registered to the avdevice\n");
+            return false;
+        }
+
+        // remove and delete (as in free) child control elements
+        m_MixerContainer->clearElements(true);
+        delete m_MixerContainer;
+        m_MixerContainer = NULL;
     }
 
-    if (!deleteElement(m_MixerContainer)) {
-        debugError("Mixer present but not registered to the avdevice\n");
-        return false;
-    }
+    if (m_HwInfoContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no hwinfo to destroy...\n");
+    } else {
+        if (!deleteElement(m_HwInfoContainer)) {
+            debugError("HwInfo present but not registered to the avdevice\n");
+            return false;
+        }
 
-    // remove and delete (as in free) child control elements
-    m_MixerContainer->clearElements(true);
-    delete m_MixerContainer;
+        // remove and delete (as in free) child control elements
+        m_HwInfoContainer->clearElements(true);
+        delete m_HwInfoContainer;
+        m_HwInfoContainer = NULL;
+    }
     return true;
 }
 
+bool
+Device::saveSession()
+{
+    // save the session block
+//     if ( !updateSession() ) {
+//         debugError( "Could not update session\n" );
+//     } else {
+        if ( !m_session.saveToDevice(*this) ) {
+            debugError( "Could not save session block\n" );
+        }
+//     }
+
+    return true;
+}
+
+bool
+Device::loadSession()
+{
+    if ( !m_session.loadFromDevice(*this) ) {
+        debugError( "Could not load session block\n" );
+        return false;
+    }
+    return true;
+}
 
 bool
 Device::updatePolledValues() {

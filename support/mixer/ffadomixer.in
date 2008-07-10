@@ -42,7 +42,7 @@ from mixer_phase24 import *
 from mixer_saffire import *
 from mixer_saffirele import *
 from mixer_saffirepro import *
-from mixer_af2 import *
+from mixer_audiofire import *
 from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
 from mixer_mackie_generic import *
@@ -67,7 +67,10 @@ SupportedDevices=[
     [(0x00130e, 0x00000003),'SaffireProMixer'],
     [(0x00130e, 0x00000006),'SaffireProMixer'],
     [(0x00130e, 0x00000000),'SaffireMixer'],
-    [(0x001486, 0x00000af2),'AudioFire2Mixer'],
+    [(0x001486, 0x00000af2),'AudioFireMixer'],
+    [(0x001486, 0x00000af4),'AudioFireMixer'],
+    [(0x001486, 0x00000af8),'AudioFireMixer'],
+    [(0x001486, 0x0000af12),'AudioFireMixer'],
     [(0x0007f5, 0x00010049),'BCoAudio5Control'],
     [(0x0040AB, 0x00010049),'EdirolFa66Control'],
     [(0x00000f, 0x00010067),'MackieGenericControl'],
@@ -472,7 +475,10 @@ if __name__ == "__main__":
         mixerwidget.hw = hw
         mixerwidget.configrom = cfgrom
         mixerwidget.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
-        mixerwidget.initValues()
+        if 'buildMixer' in dir(mixerwidget):
+            mixerwidget.buildMixer()
+        if 'initValues' in dir(mixerwidget):
+            mixerwidget.initValues()
         mixerwidgets.append(mixerwidget)
         mw.addTab( w, mixerapp )
 

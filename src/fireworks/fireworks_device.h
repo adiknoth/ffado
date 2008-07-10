@@ -31,6 +31,7 @@
 
 #include "efc/efc_cmd.h"
 #include "efc/efc_cmds_hardware.h"
+#include "fireworks_session_block.h"
 
 #include <pthread.h>
 #include "libutil/Mutex.h"
@@ -41,6 +42,11 @@ class Ieee1394Service;
 namespace FireWorks {
 
 class Device : public GenericAVC::AvDevice {
+    friend class MonitorControl;
+    friend class SimpleControl;
+    friend class BinaryControl;
+    friend class IOConfigControl;
+    
 public:
     Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );
     virtual ~Device();
@@ -109,6 +115,17 @@ public:
      */
     uint32_t getSessionBase();
 
+    /**
+     * load the session block from the device
+     * @return true if successful
+     */
+    bool loadSession();
+    /**
+     * save the session block to the device
+     * @return true if successful
+     */
+    bool saveSession();
+
 // Echo specific stuff
 private:
     
@@ -129,8 +146,11 @@ private:
 
     bool                m_efc_discovery_done;
 
+protected:
+    Session             m_session;
 private:
     Control::Container *m_MixerContainer;
+    Control::Container *m_HwInfoContainer;
 
 };
 

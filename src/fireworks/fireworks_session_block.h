@@ -21,6 +21,9 @@
  *
  */
 
+#ifndef FIREWORKS_SESSION_BLOCK_H
+#define FIREWORKS_SESSION_BLOCK_H
+
 #include "debugmodule/debugmodule.h"
 #include <string>
 
@@ -123,7 +126,8 @@ public:
     void dumpData();
     void show();
 
-private:
+    uint32_t calculateCRC();
+
     SessionHeader h;
     SubSession    s;
 
@@ -132,3 +136,5 @@ private:
 };
 
 } // FireWorks
+
+#endif //FIREWORKS_SESSION_BLOCK_H
