@@ -300,7 +300,7 @@ bool SimpleControl::setValue( const double val )
         // update the session block
         switch(m_Slave->getTarget()) {
         case eMT_PlaybackMix:
-            switch(m_Slave->getType()) {
+            switch(m_Slave->getCommand()) {
             case eMC_Gain:
                 m_ParentDevice.m_session.h.playbackgains[m_Slave->m_channel] = m_Slave->m_value;
                 break;
@@ -309,7 +309,7 @@ bool SimpleControl::setValue( const double val )
             }
             break;
         case eMT_PhysicalOutputMix:
-            switch(m_Slave->getType()) {
+            switch(m_Slave->getCommand()) {
             case eMC_Gain:
                 m_ParentDevice.m_session.h.outputgains[m_Slave->m_channel] = m_Slave->m_value;
                 break;
@@ -411,7 +411,7 @@ bool BinaryControl::setValue( const int val )
         // update the session block
         switch(m_Slave->getTarget()) {
         case eMT_PlaybackMix:
-            switch(m_Slave->getType()) {
+            switch(m_Slave->getCommand()) {
             case eMC_Mute:
                 m_ParentDevice.m_session.s.playbacks[m_Slave->m_channel].mute = m_Slave->m_value;
                 break;
@@ -423,7 +423,7 @@ bool BinaryControl::setValue( const int val )
             }
             break;
         case eMT_PhysicalOutputMix:
-            switch(m_Slave->getType()) {
+            switch(m_Slave->getCommand()) {
             case eMC_Mute:
                 m_ParentDevice.m_session.s.outputs[m_Slave->m_channel].mute = m_Slave->m_value;
                 break;
@@ -435,7 +435,7 @@ bool BinaryControl::setValue( const int val )
             }
             break;
         case eMT_PhysicalInputMix:
-            switch(m_Slave->getType()) {
+            switch(m_Slave->getCommand()) {
             //case eMC_Pad:
             //    m_ParentDevice.m_session.s.inputs[m_Slave->m_channel].pad = m_Slave->m_value;
             //    break;
@@ -462,6 +462,14 @@ bool BinaryControl::setValue( const int val )
 int BinaryControl::getValue( )
 {
     if(m_Slave) {
+        // workaround for the failing get nominal command for input channels
+        // get it from the session block
+        if ((m_Slave->getTarget() == eMT_PhysicalInputMix)
+            && (m_Slave->getCommand() == eMC_Nominal)) {
+            int val = m_ParentDevice.m_session.s.inputs[m_Slave->m_channel].shift;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "input pad workaround: %08X\n", val);
+            return val;
+        }
         m_Slave->setType(eCT_Get);
         if (!m_ParentDevice.doEfcOverAVC(*m_Slave)) 
         {
