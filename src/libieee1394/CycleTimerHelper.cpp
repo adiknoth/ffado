@@ -417,6 +417,14 @@ CycleTimerHelper::Execute()
             return false;
         }
         m_first_run = false;
+    } else if (diff_ticks > 20.0*m_ticks_per_update) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "re-init dll due to too large tick diff: %f >> %f\n",
+                    diff_ticks, (float)(20.0*m_ticks_per_update));
+        if(!initDLL()) {
+            debugError("(%p) Could not init DLL\n", this);
+            return false;
+        }
     } else {
         // calculate next sleep time
         m_sleep_until += m_usecs_per_update;
