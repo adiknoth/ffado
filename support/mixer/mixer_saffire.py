@@ -185,6 +185,7 @@ class SaffireMixerStereo(SaffireMixerStereoUI, SaffireMixerBase):
                 }
 
         self.TriggerButtonControls={
+                self.btnSaveSettings:      ['/Mixer/SaveSettings'],
         }
 
         self.TextControls={
@@ -330,6 +331,7 @@ class SaffireMixerMono(SaffireMixerMonoUI, SaffireMixerBase):
                 }
 
         self.TriggerButtonControls={
+                self.btnSaveSettings:      ['/Mixer/SaveSettings'],
         }
 
         self.TextControls={
