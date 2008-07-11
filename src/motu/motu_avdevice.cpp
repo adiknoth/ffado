@@ -828,12 +828,20 @@ std::vector<int>
 MotuDevice::getSupportedSamplingFrequencies()
 {
     std::vector<int> frequencies;
+    signed int max_freq = DevicesProperty[m_motu_model-1].MaxSampleRate;
+
+    /* All MOTUs support 1x rates.  All others must be conditional. */
     frequencies.push_back(44100);
     frequencies.push_back(48000);
-    frequencies.push_back(88200);
-    frequencies.push_back(96000);
-    frequencies.push_back(176400);
-    frequencies.push_back(192000);
+
+    if (88200 <= max_freq)
+        frequencies.push_back(88200);
+    if (96000 <= max_freq)
+        frequencies.push_back(96000);
+    if (176400 <= max_freq)
+        frequencies.push_back(176400);
+    if (192000 <= max_freq)
+        frequencies.push_back(192000);
     return frequencies;
 }
 
