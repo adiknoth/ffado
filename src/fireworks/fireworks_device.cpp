@@ -642,6 +642,12 @@ Device::setClock(uint32_t id) {
 
 bool
 Device::lockFlash(bool lock) {
+    // some hardware doesn't need/support flash lock
+    if (m_HwInfo.hasDSP()) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "flash lock not needed\n");
+        return true;
+    }
+
     EfcFlashLockCmd cmd;
     cmd.m_lock = lock;
 

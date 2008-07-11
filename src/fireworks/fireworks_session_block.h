@@ -31,9 +31,6 @@
 
 namespace FireWorks {
 
-#define ECHO_SESSION_CRC_START_OFFSET_BYTES    ( sizeof(uint32_t) * 2 )
-#define ECHO_SESSION_CRC_START_OFFSET_QUADS    ( ECHO_SESSION_CRC_START_OFFSET_BYTES/sizeof(uint32_t) )
-
 #define ECHO_SESSION_FILE_START_OFFSET 0x0040
 
 // we only support version 2
@@ -52,6 +49,12 @@ namespace FireWorks {
 // Phantom power bit is set in the "flags"
 #define ECHO_SESSION_FLAG_PHANTOM_POWER_BIT        31
 #define ECHO_SESSION_FLAG_PHANTOM_POWER            (1 << ECHO_SESSION_FLAG_PHANTOM_POWER_BIT)
+
+// CRC codes
+#define ECHO_SESSION_CRC_START_OFFSET_BYTES    ( sizeof(uint32_t) * 2 )
+#define ECHO_SESSION_CRC_START_OFFSET_QUADS    ( ECHO_SESSION_CRC_START_OFFSET_BYTES/sizeof(uint32_t) )
+#define ECHO_SESSION_CRC_INITIAL_REMAINDER   0xFFFFFFFF
+#define ECHO_SESSION_CRC_FINAL_XOR_VALUE     0xFFFFFFFF
 
 class Device;
 
@@ -127,6 +130,7 @@ public:
     void show();
 
     uint32_t calculateCRC();
+    uint32_t calculateCRC(void *memblock, size_t max_len);
 
     SessionHeader h;
     SubSession    s;
