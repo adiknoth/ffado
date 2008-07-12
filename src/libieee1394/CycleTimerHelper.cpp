@@ -72,7 +72,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
-    , m_update_lock( new Util::PosixMutex() )
+    , m_update_lock( new Util::PosixMutex("CTRUPD") )
     , m_busreset_functor ( NULL)
     , m_unhandled_busreset ( false )
 {
@@ -98,7 +98,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
-    , m_update_lock( new Util::PosixMutex() )
+    , m_update_lock( new Util::PosixMutex("CTRUPD") )
     , m_busreset_functor ( NULL)
     , m_unhandled_busreset ( false )
 {
@@ -130,7 +130,7 @@ CycleTimerHelper::Start()
         return false;
     }
 
-    m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
+    m_Thread = new Util::PosixThread(this, "CTRHLP", m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
         debugFatal("No thread\n");

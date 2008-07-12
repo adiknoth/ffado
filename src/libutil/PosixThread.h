@@ -86,6 +86,16 @@ class PosixThread : public Thread
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
         {}
 
+        PosixThread(RunnableInterface* runnable, std::string id, bool real_time, int priority, int cancellation)
+                : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
+        {}
+        PosixThread(RunnableInterface* runnable, std::string id)
+                : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
+        {}
+        PosixThread(RunnableInterface* runnable, std::string id, int cancellation)
+                : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
+        {}
+
         virtual ~PosixThread()
         {}
 

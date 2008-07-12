@@ -26,6 +26,8 @@
 
 #include <libraw1394/raw1394.h>
 
+#define INVALID_NODE_ID 0xFF
+
 typedef quadlet_t   fb_quadlet_t;
 typedef byte_t      fb_byte_t;
 typedef octlet_t    fb_octlet_t;

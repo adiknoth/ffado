@@ -84,6 +84,11 @@ class IsoTask : public Util::RunnableInterface
          */
         enum eActivityResult waitForActivity();
 
+        /**
+         * @brief This should be called when a busreset has happened.
+         */
+        bool handleBusReset();
+
         void setVerboseLevel(int i);
     protected:
         IsoHandlerManager& m_manager;
@@ -112,6 +117,7 @@ class IsoTask : public Util::RunnableInterface
 
         enum IsoHandler::EHandlerType m_handlerType;
         bool m_running;
+        bool m_in_busreset;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;
@@ -186,6 +192,10 @@ class IsoHandlerManager
 
         void requestShadowMapUpdate();
 
+        /**
+         * This should be called when a busreset has happened.
+         */
+        bool handleBusReset();
     // the state machine
     private:
         enum eHandlerStates {

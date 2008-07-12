@@ -70,16 +70,6 @@ IsoHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data,
     return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped);
 }
 
-int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation)
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Busreset happened, generation %d...\n", generation);
-
-    IsoHandler *handler = static_cast<IsoHandler *>(raw1394_get_userdata(handle));
-    // FIXME: we should update the generation.
-    assert(handler);
-    return handler->handleBusReset(generation);
-}
-
 IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    : m_manager( manager )
    , m_type ( t )
@@ -239,16 +229,6 @@ IsoHandler::init()
     }
     raw1394_set_userdata(m_handle, static_cast<void *>(this));
 
-    // bus reset handling
-    if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
-        debugWarning("Could not enable busreset notification.\n");
-        debugWarning(" Error message: %s\n",strerror(errno));
-        debugWarning("Continuing without bus reset support.\n");
-    } else {
-        // apparently this cannot fail
-        raw1394_set_bus_reset_handler(m_handle, busreset_handler);
-    }
-
     // update the internal state
     m_State=E_Initialized;
     return true;
@@ -266,15 +246,20 @@ bool IsoHandler::disable()
         return false;
     }
 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) wake up handle...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+
     // wake up any waiting reads/polls
     raw1394_wake_up(m_handle);
 
     // this is put here to try and avoid the
     // Runaway context problem
     // don't know if it will help though.
-    if(m_State != E_Error) { // if the handler is dead, this might block forever
+/*    if(m_State != E_Error) { // if the handler is dead, this might block forever
         raw1394_iso_xmit_sync(m_handle);
-    }
+    }*/
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) stop...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
     raw1394_iso_stop(m_handle);
     m_State = E_Prepared;
     return true;
@@ -286,10 +271,11 @@ bool IsoHandler::disable()
  * @return ?
  */
 
-int
-IsoHandler::handleBusReset(unsigned int generation)
+bool
+IsoHandler::handleBusReset()
 {
     debugOutput( DEBUG_LEVEL_NORMAL, "bus reset...\n");
+    m_last_packet_handled_at = 0xFFFFFFFF;
 
     #define CSR_CYCLE_TIME            0x200
     #define CSR_REGISTER_BASE  0xfffff0000000ULL
@@ -299,16 +285,7 @@ IsoHandler::handleBusReset(unsigned int generation)
     raw1394_read(m_handle, raw1394_get_local_id(m_handle),
                  CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
 
-    // notify the client of the fact that we have died
-    m_Client->handlerDied();
-
-    if(!disable()) {
-        debugError("(%p) Could not disable IsoHandler\n", this);
-    }
-
-    // request the manager to update it's shadow map
-    m_manager.requestShadowMapUpdate();
-    return 0;
+    return m_Client->handleBusReset();
 }
 
 /**

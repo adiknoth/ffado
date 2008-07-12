@@ -52,7 +52,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
     , m_xruns(0)
     , m_shutdown_needed(false)
     , m_nbperiods(0)
-    , m_WaitLock( new Util::PosixMutex )
+    , m_WaitLock( new Util::PosixMutex("SPMWAIT") )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     sem_init(&m_activity_semaphore, 0, 0);
@@ -72,7 +72,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p, unsigned int pe
     , m_xruns(0)
     , m_shutdown_needed(false)
     , m_nbperiods(0)
-    , m_WaitLock( new Util::PosixMutex )
+    , m_WaitLock( new Util::PosixMutex("SPMWAIT") )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     sem_init(&m_activity_semaphore, 0, 0);
@@ -84,34 +84,55 @@ StreamProcessorManager::~StreamProcessorManager() {
     delete m_WaitLock;
 }
 
-void
-StreamProcessorManager::handleBusReset()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Handle bus reset...\n", this);
-
-    // FIXME: we request shutdown for now.
-    m_shutdown_needed=true;
-
-    // note that all receive streams are gone once a device is unplugged
-
-    // synchronize with the wait lock
-    Util::MutexLockHelper lock(*m_WaitLock);
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) got wait lock...\n", this);
-    // cause all SP's to bail out
-    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-          it != m_ReceiveProcessors.end();
-          ++it )
-    {
-        (*it)->handleBusReset();
-    }
-    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-          it != m_TransmitProcessors.end();
-          ++it )
-    {
-        (*it)->handleBusReset();
-    }
-}
+// void
+// StreamProcessorManager::handleBusReset(Ieee1394Service &s)
+// {
+// //     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) Handle bus reset on service %p...\n", this, &s);
+// // 
+// //     bool handled_at_least_one = false;
+// //     // note that all receive streams are gone once a device is unplugged
+// // 
+// //     // synchronize with the wait lock
+// //     Util::MutexLockHelper lock(*m_WaitLock);
+// // 
+// //     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) got wait lock...\n", this);
+// //     // cause all SP's to bail out
+// //     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+// //           it != m_ReceiveProcessors.end();
+// //           ++it )
+// //     {
+// //         if(&s == &((*it)->getParent().get1394Service())) {
+// //             debugOutput(DEBUG_LEVEL_NORMAL,
+// //                         "issue busreset on receive SPM on channel %d\n",
+// //                         (*it)->getChannel());
+// //             (*it)->handleBusReset();
+// //             handled_at_least_one = true;
+// //         } else {
+// //             debugOutput(DEBUG_LEVEL_NORMAL,
+// //                         "skipping receive SPM on channel %d since not on service %p\n",
+// //                         (*it)->getChannel(), &s);
+// //         }
+// //     }
+// //     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+// //           it != m_TransmitProcessors.end();
+// //           ++it )
+// //     {
+// //         if(&s == &((*it)->getParent().get1394Service())) {
+// //             debugOutput(DEBUG_LEVEL_NORMAL,
+// //                         "issue busreset on transmit SPM on channel %d\n",
+// //                         (*it)->getChannel());
+// //             (*it)->handleBusReset();
+// //             handled_at_least_one = true;
+// //         } else {
+// //             debugOutput(DEBUG_LEVEL_NORMAL,
+// //                         "skipping transmit SPM on channel %d since not on service %p\n",
+// //                         (*it)->getChannel(), &s);
+// //         }
+// //     }
+// // 
+// //     // FIXME: we request shutdown for now.
+// //     m_shutdown_needed = handled_at_least_one;
+// }
 
 void
 StreamProcessorManager::signalActivity()
@@ -345,6 +366,10 @@ StreamProcessorManager::startDryRunning()
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
+        if ((*it)->inError()) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SP %p in error state\n", *it);
+            return false;
+        }
         if (!(*it)->isDryRunning()) {
             if(!(*it)->scheduleStartDryRunning(-1)) {
                 debugError("Could not put SP %p into the dry-running state\n", *it);
@@ -357,6 +382,10 @@ StreamProcessorManager::startDryRunning()
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
+        if ((*it)->inError()) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SP %p in error state\n", *it);
+            return false;
+        }
         if (!(*it)->isDryRunning()) {
             if(!(*it)->scheduleStartDryRunning(-1)) {
                 debugError("Could not put SP %p into the dry-running state\n", *it);
@@ -749,12 +778,12 @@ bool StreamProcessorManager::stop() {
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-            ready &= ((*it)->isDryRunning() || (*it)->isStopped() || (*it)->isWaitingForStream());
+            ready &= ((*it)->isDryRunning() || (*it)->isStopped() || (*it)->isWaitingForStream() || (*it)->inError());
         }
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-            ready &= ((*it)->isDryRunning() || (*it)->isStopped() || (*it)->isWaitingForStream());
+            ready &= ((*it)->isDryRunning() || (*it)->isStopped() || (*it)->isWaitingForStream() || (*it)->inError());
         }
         SleepRelativeUsec(125);
         cnt--;
@@ -778,7 +807,9 @@ bool StreamProcessorManager::stop() {
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
           it != m_ReceiveProcessors.end();
           ++it ) {
-        if(!(*it)->scheduleStopDryRunning(-1)) {
+        if ((*it)->inError()) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SP %p in error state\n", *it);
+        } else if(!(*it)->scheduleStopDryRunning(-1)) {
             debugError("%p->scheduleStopDryRunning(-1) failed\n", *it);
             return false;
         }
@@ -786,7 +817,9 @@ bool StreamProcessorManager::stop() {
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
           it != m_TransmitProcessors.end();
           ++it ) {
-        if(!(*it)->scheduleStopDryRunning(-1)) {
+        if ((*it)->inError()) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "SP %p in error state\n", *it);
+        } else if(!(*it)->scheduleStopDryRunning(-1)) {
             debugError("%p->scheduleStopDryRunning(-1) failed\n", *it);
             return false;
         }
@@ -799,12 +832,12 @@ bool StreamProcessorManager::stop() {
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
-            ready &= (*it)->isStopped();
+            ready &= ((*it)->isStopped() || (*it)->inError());
         }
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
-            ready &= (*it)->isStopped();
+            ready &= ((*it)->isStopped() || (*it)->inError());
         }
         SleepRelativeUsec(125);
         cnt--;
@@ -894,6 +927,7 @@ bool StreamProcessorManager::waitForPeriod() {
     if(m_SyncSource == NULL) return false;
     if(m_shutdown_needed) return false;
     bool xrun_occurred = false;
+    bool in_error = false;
     bool period_not_ready = true;
 
     // grab the wait lock
@@ -946,29 +980,31 @@ bool StreamProcessorManager::waitForPeriod() {
         }
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " period not ready? %d...\n", period_not_ready);
 
-        // check for underruns on the ISO side,
+        // check for underruns/errors on the ISO side,
         // those should make us bail out of the wait loop
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
             ++it ) {
             // a xrun has occurred on the Iso side
             xrun_occurred |= (*it)->xrunOccurred();
+            in_error |= (*it)->inError();
         }
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
             // a xrun has occurred on the Iso side
             xrun_occurred |= (*it)->xrunOccurred();
+            in_error |= (*it)->inError();
         }
-        if(xrun_occurred) break;
-        // FIXME: make sure we also exit this loop when something else happens (e.g. signal, iso error)
-
-        // if we have to shutdown due to some async event (busreset), do so
-        if(m_shutdown_needed) break;
+        if(xrun_occurred | in_error | m_shutdown_needed) break;
     }
 
     if(xrun_occurred) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "exit due to xrun...\n");
+    }
+    if(in_error) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "exit due to error...\n");
+        m_shutdown_needed = true;
     }
 
     // we save the 'ideal' time of the transfer at this point,

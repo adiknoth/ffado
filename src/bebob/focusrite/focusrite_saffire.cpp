@@ -464,7 +464,6 @@ void SaffireMatrixMixer::init()
                 c.col = j;
                 c.valid = true;
                 c.address = FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS + c.col;
-                debugOutput(DEBUG_LEVEL_NORMAL, "Add row %d col %d, address %d\n", c.row, c.col, c.address);
                 m_CellInfo.at(i).at(j) =  c;
             }
         }
@@ -511,7 +510,6 @@ void SaffireMatrixMixer::init()
                 c.col = j;
                 c.valid = true;
                 c.address = FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS + c.col;
-                debugOutput(DEBUG_LEVEL_NORMAL, "Add row %d col %d, address %d\n", c.row, c.col, c.address);
                 m_CellInfo.at(i).at(j) =  c;
             }
         }

@@ -49,7 +49,7 @@ Element::Element(Element *parent)
     // no parent, we are the root of an independent control tree
     // this means we have to create a lock
     if(parent == NULL) {
-        m_element_lock = new Util::PosixMutex();
+        m_element_lock = new Util::PosixMutex("CTLEL");
     }
 }
 
@@ -64,7 +64,7 @@ Element::Element(Element *parent, std::string n)
     // no parent, we are the root of an independent control tree
     // this means we have to create a lock
     if(parent == NULL) {
-        m_element_lock = new Util::PosixMutex();
+        m_element_lock = new Util::PosixMutex("CTLEL");
     }
 }
 

@@ -47,6 +47,7 @@ IsoTask::IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType t)
     , m_SyncIsoHandler ( NULL )
     , m_handlerType( t )
     , m_running( false )
+    , m_in_busreset( false )
 {
 }
 
@@ -83,6 +84,9 @@ IsoTask::requestShadowMapUpdate()
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) enter\n", this);
     INC_ATOMIC(&request_update);
 
+    // get the thread going again
+    signalActivity();
+
     if (m_running) {
         int timeout = 1000;
         while(request_update && timeout--) {
@@ -96,6 +100,42 @@ IsoTask::requestShadowMapUpdate()
     return true;
 }
 
+bool
+IsoTask::handleBusReset()
+{
+    bool retval = true;
+    m_in_busreset = true;
+    requestShadowMapUpdate();
+    if(request_update) {
+        debugError("shadow map update request not honored\n");
+        return false;
+    }
+
+    unsigned int i, max;
+    max = m_manager.m_IsoHandlers.size();
+    for (i = 0; i < max; i++) {
+        IsoHandler *h = m_manager.m_IsoHandlers.at(i);
+        assert(h);
+
+        // skip the handlers not intended for us
+        if(h->getType() != m_handlerType) continue;
+
+        if (!h->handleBusReset()) {
+            debugWarning("Failed to handle busreset on %p\n");
+            retval = false;
+        }
+    }
+
+    // re-enable processing
+    m_in_busreset = false;
+    requestShadowMapUpdate();
+    if(request_update) {
+        debugError("shadow map update request not honored\n");
+        return false;
+    }
+    return retval;
+}
+
 // updates the internal stream map
 // note that this should be executed with the guarantee that
 // nobody will modify the parent data structures
@@ -103,6 +143,11 @@ void
 IsoTask::updateShadowMapHelper()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) updating shadow vars...\n", this);
+    // we are handling a busreset
+    if(m_in_busreset) {
+        m_poll_nfds_shadow = 0;
+        return;
+    }
     unsigned int i, cnt, max;
     max = m_manager.m_IsoHandlers.size();
     m_SyncIsoHandler = NULL;
@@ -282,7 +327,7 @@ IsoTask::Execute()
 
         uint64_t last_packet_seen_ticks = CYCLE_TIMER_TO_TICKS(last_packet_seen);
         // we use a relatively large value to distinguish between "death" and xrun
-        int64_t max_diff_ticks = TICKS_PER_SECOND * 1;
+        int64_t max_diff_ticks = TICKS_PER_SECOND * 2;
         int64_t measured_diff_ticks = diffTicks(ctr_at_poll_return_ticks, last_packet_seen_ticks);
 
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
@@ -450,6 +495,31 @@ IsoHandlerManager::~IsoHandlerManager()
     }
 }
 
+bool
+IsoHandlerManager::handleBusReset()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "bus reset...\n");
+    // A few things can happen on bus reset:
+    // 1) no devices added/removed => streams are still valid, but might have to be restarted
+    // 2) a device was removed => some streams become invalid
+    // 3) a device was added => same as 1, new device is ignored
+    if (!m_IsoTaskTransmit) {
+        debugError("No xmit task\n");
+        return false;
+    }
+    if (!m_IsoTaskReceive) {
+        debugError("No receive task\n");
+        return false;
+    }
+    if (!m_IsoTaskTransmit->handleBusReset()) {
+        debugWarning("could no handle busreset on xmit\n");
+    }
+    if (!m_IsoTaskReceive->handleBusReset()) {
+        debugWarning("could no handle busreset on recv\n");
+    }
+    return true;
+}
+
 void
 IsoHandlerManager::requestShadowMapUpdate()
 {
@@ -503,7 +573,7 @@ bool IsoHandlerManager::init()
         return false;
     }
     m_IsoTaskTransmit->setVerboseLevel(getDebugLevel());
-    m_IsoThreadTransmit = new Util::PosixThread(m_IsoTaskTransmit, m_realtime,
+    m_IsoThreadTransmit = new Util::PosixThread(m_IsoTaskTransmit, "ISOXMT", m_realtime,
                                                 m_priority + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
                                                 + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT,
                                                 PTHREAD_CANCEL_DEFERRED);
@@ -521,7 +591,7 @@ bool IsoHandlerManager::init()
         return false;
     }
     m_IsoTaskReceive->setVerboseLevel(getDebugLevel());
-    m_IsoThreadReceive = new Util::PosixThread(m_IsoTaskReceive, m_realtime,
+    m_IsoThreadReceive = new Util::PosixThread(m_IsoTaskReceive, "ISORCV", m_realtime,
                                                m_priority + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
                                                + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV,
                                                PTHREAD_CANCEL_DEFERRED);

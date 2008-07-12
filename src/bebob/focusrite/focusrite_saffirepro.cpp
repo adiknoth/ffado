@@ -570,12 +570,16 @@ SaffireProDevice::setSamplingFrequency( int s )
 
         const int max_tries = 2;
         int ntries = max_tries+1;
-        
-        // FIXME: not very clean
-        getDeviceManager().ignoreBusResets(true);
-        
+
+        // the device behaves like a pig when changing samplerate,
+        // generating a bunch of bus-resets.
+        // we don't want the busreset handler to run while we are
+        // changing the samplerate. however it has to run after the
+        // device finished, since the bus resets might have influenced
+        // other attached devices.
+        getDeviceManager().lockBusResetHandler();
         unsigned int gen_before = get1394Service().getGeneration();
-        
+
         while(--ntries) {
             if (rebootOnSamplerateChange) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Setting samplerate with reboot\n");
@@ -613,6 +617,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                     }
                     if (!timeout) {
                         debugError( "Device did not reset itself after forced reboot...\n");
+                        getDeviceManager().unlockBusResetHandler();
                         return false;
                     }
                 }
@@ -632,6 +637,7 @@ SaffireProDevice::setSamplingFrequency( int s )
 
                 if (!timeout) {
                     debugError( "Device did not recover from reboot...\n");
+                    getDeviceManager().unlockBusResetHandler();
                     return false;
                 }
 
@@ -650,7 +656,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                 }
             }
 
-            int verify=getSamplingFrequency();
+            int verify = getSamplingFrequency();
             debugOutput( DEBUG_LEVEL_VERBOSE,
                         "setSampleRate (try %d): requested samplerate %d, device now has %d\n", 
                         max_tries-ntries, s, verify );
@@ -661,8 +667,8 @@ SaffireProDevice::setSamplingFrequency( int s )
             debugOutput( DEBUG_LEVEL_VERBOSE, "setSampleRate (try %d) failed. Try again...\n" );
         }
 
-        // FIXME: not very clean
-        getDeviceManager().ignoreBusResets(false);
+        // make the busreset handlers run
+        getDeviceManager().unlockBusResetHandler();
 
         if (ntries==0) {
             debugError("Setting samplerate failed...\n");

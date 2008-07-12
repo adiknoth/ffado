@@ -92,15 +92,34 @@ StreamProcessor::~StreamProcessor() {
     if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
 
-void
+bool
+StreamProcessor::handleBusResetDo()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handling busreset\n", this);
+    m_state = ePS_Error;
+    // this will result in the SPM dying
+    m_in_xrun = true;
+    SIGNAL_ACTIVITY_ALL;
+    return true;
+}
+
+bool
 StreamProcessor::handleBusReset()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handling busreset\n", this);
-    // for now, we try and make sure everything is cleanly shutdown
-    if(!stopRunning(-1)) {
-        debugError("Failed to stop SP\n");
-    }
-    SIGNAL_ACTIVITY_ALL;
+
+    // we are sure that we're not iterated since this is called from within the ISO manager thread
+
+    // lock the wait loop of the SPM, such that the client leaves us alone
+    m_StreamProcessorManager.lockWaitLoop();
+
+    // pass on to the implementing classes
+    bool retval = handleBusResetDo();
+
+    // resume wait loop
+    m_StreamProcessorManager.unlockWaitLoop();
+
+    return retval;
 }
 
 void StreamProcessor::handlerDied()
@@ -300,6 +319,11 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         return RAW1394_ISO_DEFER;
     }
 
+    if (m_state == ePS_Error) {
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "skip due to error state\n");
+        return RAW1394_ISO_OK;
+    }
+
     // store the previous timestamp
     m_last_timestamp2 = m_last_timestamp;
 
@@ -488,8 +512,13 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         *length = 0;
         return RAW1394_ISO_OK;
     }
-    uint64_t prev_timestamp;
 
+    if (m_state == ePS_Error) {
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "skip due to error state\n");
+        return RAW1394_ISO_OK;
+    }
+
+    uint64_t prev_timestamp;
     // note that we can ignore skipped cycles since
     // the protocol will take care of that
     if (dropped_cycles > 0) {
@@ -1767,6 +1796,7 @@ StreamProcessor::ePSToString(enum eProcessorState s) {
         case ePS_WaitingForStreamEnable: return "ePS_WaitingForStreamEnable";
         case ePS_Running: return "ePS_Running";
         case ePS_WaitingForStreamDisable: return "ePS_WaitingForStreamDisable";
+        case ePS_Error: return "ePS_Error";
         default: return "error: unknown state";
     }
 }

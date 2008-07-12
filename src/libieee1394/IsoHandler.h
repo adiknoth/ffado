@@ -168,6 +168,8 @@ public:
     uint32_t getLastPacketTime() {return m_last_packet_handled_at;};
 
     void notifyOfDeath();
+    bool handleBusReset();
+
 private:
     IsoHandlerManager& m_manager;
     enum EHandlerType m_type;
@@ -180,10 +182,6 @@ private:
     uint32_t        m_last_packet_handled_at;
 
     Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
-
-    int handleBusReset(unsigned int generation);
-
-    static int busreset_handler(raw1394handle_t handle, unsigned int generation);
 
     enum raw1394_iso_speed m_speed;
     unsigned int m_prebuffers;

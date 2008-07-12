@@ -51,7 +51,7 @@ namespace FireWorks {
 
 Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : GenericAVC::AvDevice( d, configRom)
-    , m_poll_lock( new Util::PosixMutex() )
+    , m_poll_lock( new Util::PosixMutex("DEVPOLL") )
     , m_efc_discovery_done ( false )
     , m_MixerContainer ( NULL )
     , m_HwInfoContainer ( NULL )

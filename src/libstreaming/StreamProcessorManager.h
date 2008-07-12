@@ -62,8 +62,6 @@ public:
                            unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
 
-    void handleBusReset();
-
     bool prepare(); ///< to be called after the processors are registered
 
     bool start();
@@ -115,6 +113,11 @@ public:
     bool waitForPeriod();
     bool transfer();
     bool transfer(enum StreamProcessor::eProcessorType);
+
+    // for bus reset handling
+    void lockWaitLoop() {m_WaitLock->Lock();};
+    void unlockWaitLoop() {m_WaitLock->Unlock();};
+
 private:
     bool transferSilence();
     bool transferSilence(enum StreamProcessor::eProcessorType);

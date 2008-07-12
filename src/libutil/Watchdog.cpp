@@ -204,7 +204,7 @@ Watchdog::start()
         debugFatal("No hartbeat task\n");
         return false;
     }
-    m_HartbeatThread = new Util::PosixThread(m_HartbeatTask, false,
+    m_HartbeatThread = new Util::PosixThread(m_HartbeatTask, "WDGHBT", false,
                                              0, PTHREAD_CANCEL_ASYNCHRONOUS);
     if(!m_HartbeatThread) {
         debugFatal("No hartbeat thread\n");
@@ -220,7 +220,7 @@ Watchdog::start()
         debugFatal("No check task\n");
         return false;
     }
-    m_CheckThread = new Util::PosixThread(m_CheckTask, false,
+    m_CheckThread = new Util::PosixThread(m_CheckTask,"WDGCHK", false,
                                           0, PTHREAD_CANCEL_ASYNCHRONOUS);
     if(!m_CheckThread) {
         debugFatal("No check thread\n");

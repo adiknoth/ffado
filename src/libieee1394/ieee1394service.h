@@ -225,8 +225,6 @@ public:
                     unsigned int* resp_len );
 
     bool transactionBlockClose();
-// FIXME: private for thread safety !!
-    raw1394handle_t getHandle() {return m_handle;};
 
     int getVerboseLevel();
 
@@ -277,8 +275,11 @@ private:
     bool unregisterIsoChannel(unsigned int c);
     bool registerIsoChannel(unsigned int c, struct ChannelInfo cinfo);
 
-private:
+public:
+// FIXME: should be private, but is used to do the PCR control in GenericAVC::AvDevice
+    raw1394handle_t getHandle() {return m_handle;};
 
+private:
     bool startRHThread();
     void stopRHThread();
     static void* rHThread( void* arg );
@@ -287,7 +288,7 @@ private:
     void printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const;
 
     static int resetHandlerLowLevel( raw1394handle_t handle,
-                    unsigned int generation );
+                                     unsigned int generation );
     bool resetHandler( unsigned int generation );
 
     raw1394handle_t m_handle;

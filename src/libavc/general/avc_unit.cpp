@@ -843,7 +843,9 @@ bool Unit::setActiveSync(const SyncInfo& syncInfo)
 void
 Unit::show()
 {
-    m_pPlugManager->showPlugs();
+    if (getDebugLevel() >= DEBUG_LEVEL_VERY_VERBOSE) {
+        m_pPlugManager->showPlugs();
+    }
     //SubunitMusic* s=getMusicSubunit(0);
     //if(s) s->showMusicPlugs();
 }
