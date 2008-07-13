@@ -37,6 +37,7 @@
 
 #include "libutil/Functors.h"
 #include "libutil/Mutex.h"
+#include "libutil/Configuration.h"
 
 #include <vector>
 #include <string>
@@ -127,6 +128,9 @@ public:
     bool unregisterPostUpdateNotification(Util::Functor *f)
         {return unregisterNotification(m_postUpdateNotifiers, f);};
 
+
+    Util::Configuration& getConfiguration() {return *m_configuration;};
+
     void showDeviceInfo();
     void showStreamingInfo();
 
@@ -163,6 +167,7 @@ public: // FIXME: this should be better
 private:
     Streaming::StreamProcessorManager*  m_processorManager;
     DeviceStringParser*                 m_deviceStringParser;
+    Util::Configuration*                m_configuration;
     bool                                m_used_cache_last_time;
 
     typedef std::vector< Util::Functor* > notif_vec_t;

@@ -51,7 +51,7 @@ public:
     Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );
     virtual ~Device();
     
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 

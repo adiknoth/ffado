@@ -70,6 +70,7 @@ DeviceManager::DeviceManager()
     , m_BusResetLock( new Util::PosixMutex("DEVBR") )
     , m_processorManager( new Streaming::StreamProcessorManager( *this ) )
     , m_deviceStringParser( new DeviceStringParser() )
+    , m_configuration ( new Util::Configuration() )
     , m_used_cache_last_time( false )
     , m_thread_realtime( false )
     , m_thread_priority( 0 )
@@ -80,6 +81,11 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
+    // save configuration
+    if(!m_configuration->save()) {
+        debugWarning("could not save configuration\n");
+    }
+
     m_BusResetLock->Lock(); // make sure we are not handling a busreset.
     m_DeviceListLock->Lock(); // make sure nobody is using this
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
@@ -145,6 +151,10 @@ DeviceManager::initialize()
 {
     assert(m_1394Services.size() == 0);
     assert(m_busreset_functors.size() == 0);
+
+    m_configuration->openFile( "temporary", Util::Configuration::eFM_Temporary );
+    m_configuration->openFile( USER_CONFIG_FILE, Util::Configuration::eFM_ReadWrite );
+    m_configuration->openFile( SYSTEM_CONFIG_FILE, Util::Configuration::eFM_ReadOnly );
 
     int nb_detected_ports = Ieee1394Service::detectNbPorts();
     if (nb_detected_ports < 0) {
@@ -824,14 +834,14 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
 {
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
-    if ( BeBoB::AvDevice::probe( *configRom, generic ) ) {
+    if ( BeBoB::AvDevice::probe( getConfiguration(), *configRom, generic ) ) {
         return BeBoB::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_FIREWORKS
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying ECHO Audio FireWorks...\n" );
-    if ( FireWorks::Device::probe( *configRom, generic ) ) {
+    if ( FireWorks::Device::probe( getConfiguration(), *configRom, generic ) ) {
         return FireWorks::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
@@ -839,14 +849,14 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
 // we want to try the non-generic AV/C platforms before trying the generic ones
 #ifdef ENABLE_GENERICAVC
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
-    if ( GenericAVC::AvDevice::probe( *configRom, generic ) ) {
+    if ( GenericAVC::AvDevice::probe( getConfiguration(), *configRom, generic ) ) {
         return GenericAVC::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_MOTU
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
-    if ( Motu::MotuDevice::probe( *configRom, generic ) ) {
+    if ( Motu::MotuDevice::probe( getConfiguration(), *configRom, generic ) ) {
         return Motu::MotuDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
@@ -981,6 +991,7 @@ DeviceManager::setVerboseLevel(int l)
     Control::Element::setVerboseLevel(l);
     m_processorManager->setVerboseLevel(l);
     m_deviceStringParser->setVerboseLevel(l);
+    m_configuration->setVerboseLevel(l);
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )

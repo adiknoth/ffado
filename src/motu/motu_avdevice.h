@@ -94,6 +94,10 @@
 class ConfigRom;
 class Ieee1394Service;
 
+namespace Util {
+    class Configuration;
+}
+
 namespace Motu {
 
 enum EMotuModel {
@@ -150,7 +154,7 @@ public:
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );
     virtual bool discover();

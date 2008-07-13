@@ -31,6 +31,10 @@
 #define LIBDIR "$LIBDIR"
 #define SHAREDIR "$SHAREDIR"
 
+/* configuration file locations */
+#define USER_CONFIG_FILE    "$USER_CONFIG_FILE"
+#define SYSTEM_CONFIG_FILE  "$SYSTEM_CONFIG_FILE"
+
 /* Define indicating availability of lrint() */
 #define HAVE_LRINT $HAVE_LRINT
 

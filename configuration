@@ -1,0 +1,205 @@
+device_definitions = ( 
+{
+    vendorid    = 0x00000f;
+    modelid     = 0x00010065;
+    vendorname  = "Mackie";
+    modelname   = "Onyx Firewire";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x0003db;
+    modelid     = 0x00010048;
+    vendorname  = "Apogee Electronics";
+    modelname   = "Rosetta 200";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x0007f5;
+    modelid     = 0x00010048;
+    vendorname  = "BridgeCo";
+    modelname   = "RD Audio1";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x0007f5;
+    modelid     = 0x00010049;
+    vendorname  = "BridgeCo";
+    modelname   = "Audio 5";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000a92;
+    modelid     = 0x00010000;
+    vendorname  = "PreSonus";
+    modelname   = "FIREBOX";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000a92;
+    modelid     = 0x00010066;
+    vendorname  = "PreSonus";
+    modelname   = "FirePOD";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000aac;
+    modelid     = 0x00000003;
+    vendorname  = "TerraTec Electronic GmbH";
+    modelname   = "Phase 88 FW";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000aac;
+    modelid     = 0x00000004;
+    vendorname  = "TerraTec Electronic GmbH";
+    modelname   = "Phase X24 FW (model version 4)";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000aac;
+    modelid     = 0x00000007;
+    vendorname  = "TerraTec Electronic GmbH";
+    modelname   = "Phase X24 FW (model version 7)";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000f1b;
+    modelid     = 0x00010064;
+    vendorname  = "ESI";
+    modelname   = "Quatafire 610";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x00130e;
+    modelid     = 0x00000003;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire Pro26IO";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x00130e;
+    modelid     = 0x00000006;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire Pro10IO";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x00130e;
+    modelid     = 0x00000000;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire (LE)";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x0040ab;
+    modelid     = 0x00010049;
+    vendorname  = "EDIROL";
+    modelname   = "FA-66";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x0040ab;
+    modelid     = 0x00010048;
+    vendorname  = "EDIROL";
+    modelname   = "FA-101";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000d6c;
+    modelid     = 0x00010062;
+    vendorname  = "M-Audio";
+    modelname   = "FW Solo";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000d6c;
+    modelid     = 0x00010081;
+    vendorname  = "M-Audio";
+    modelname   = "NRV10";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000d6c;
+    modelid     = 0x00010060;
+    vendorname  = "M-Audio";
+    modelname   = "FW Audiophile";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000d6c;
+    modelid     = 0x000100A1;
+    vendorname  = "M-Audio";
+    modelname   = "ProFire Lightbridge";
+    driver      = 1; # BeBoB
+},
+{
+    vendorid    = 0x000aac;
+    modelid     = 0x00000002;
+    vendorname  = "Acoustic Reality";
+    modelname   = "eAR Master One";
+    driver      = 1; # BeBoB
+},
+ {
+    vendorid = 0x1486;
+    modelid = 0xAF2;
+    vendorname = "Echo";
+    modelname = "AudioFire2";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0x1486;
+    modelid = 0xAF4;
+    vendorname = "Echo";
+    modelname = "AudioFire4";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0x1486;
+    modelid = 0xAF8;
+    vendorname = "Echo";
+    modelname = "AudioFire8";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0x1486;
+    modelid = 0xAF12;
+    vendorname = "Echo";
+    modelname = "AudioFire12";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0x1486;
+    modelid = 0xAF12D;
+    vendorname = "Echo";
+    modelname = "AudioFire12HD";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0x1486;
+    modelid = 0xF8;
+    vendorname = "Echo";
+    modelname = "Fireworks 8";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0x1486;
+    modelid = 0xAFD1;
+    vendorname = "Echo";
+    modelname = "FW HDMI";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0xFF2;
+    modelid = 0x400F;
+    vendorname = "Mackie";
+    modelname = "Onyx 400F";
+    driver = 2;
+  }, 
+  {
+    vendorid = 0xFF2;
+    modelid = 0x1200F;
+    vendorname = "Mackie";
+    modelname = "Onyx 1200F";
+    driver = 2;
+  }
+);

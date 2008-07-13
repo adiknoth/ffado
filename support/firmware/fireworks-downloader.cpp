@@ -24,12 +24,15 @@
 
 #include "downloader.h"
 
+#include "config.h"
+
 #include "src/fireworks/fireworks_device.h"
 #include "src/fireworks/fireworks_firmware.h"
 #include "src/fireworks/fireworks_session_block.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
+#include "libutil/Configuration.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -219,13 +222,17 @@ main( int argc, char** argv )
         return -1;
     }
 
-    if ( !FireWorks::Device::probe(*configRom) ) {
+    Util::Configuration c;
+    c.openFile( USER_CONFIG_FILE, Util::Configuration::eFM_ReadOnly );
+    c.openFile( SYSTEM_CONFIG_FILE, Util::Configuration::eFM_ReadOnly );
+
+    if ( !FireWorks::Device::probe(c, *configRom) ) {
         printMessage( "Device with node id %d is not an ECHO FireWorks device.\n",
                     node_id );
         delete configRom;
         return -1;
     }
-    
+
     DeviceManager d = DeviceManager();
     Device *dev = new Device(d, std::auto_ptr<ConfigRom>(configRom) );
     if (dev == NULL) {

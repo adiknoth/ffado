@@ -70,6 +70,7 @@ ffado_source = env.Split( '\
 	libstreaming/generic/Port.cpp \
 	libstreaming/generic/PortManager.cpp \
 	libutil/cmd_serialize.cpp \
+	libutil/Configuration.cpp \
 	libutil/OptionContainer.cpp \
 	libutil/PosixMutex.cpp \
 	libutil/PosixThread.cpp \
@@ -112,16 +113,13 @@ bebob_source = env.Split( '\
 	bebob/mackie/onyxmixer.cpp \
 ' )
 bebob_pkgdata = env.Split( '\
-	bebob/ffado_driver_bebob.txt \
 ' )
 
 genericavc_source =  env.Split( '\
 	genericavc/avc_avdevice.cpp \
-	genericavc/avc_vendormodel.cpp \
 ' )
 
 genericavc_pkgdata = env.Split( '\
-	genericavc/ffado_driver_genericavc.txt \
 ' )	
 
 fireworks_source =  env.Split( '\
@@ -141,7 +139,6 @@ fireworks_source =  env.Split( '\
 ' )
 
 fireworks_pkgdata =  env.Split( '\
-	fireworks/ffado_driver_fireworks.txt \
 ' )
 
 motu_source = env.Split( '\
@@ -190,6 +187,11 @@ if not env.GetOption( "clean" ):
 		libenv.MergeFlags( env['LIBXML26_FLAGS'] )
 	else:
 		libenv.PrependUnique( LIBS=["expat"] )
+
+# add the libconfig
+env.AppendUnique( CPPPATH=["#/external/libconfig"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"external/libconfig"] )
+env.PrependUnique( LIBS=["libconfigpp"] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )

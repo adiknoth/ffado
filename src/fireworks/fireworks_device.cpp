@@ -21,6 +21,7 @@
  *
  */
 
+#include "devicemanager.h"
 #include "fireworks_device.h"
 #include "efc/efc_avc_cmd.h"
 #include "efc/efc_cmd.h"
@@ -32,8 +33,6 @@
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
-
-#include "config.h"
 
 #include "fireworks/fireworks_control.h"
 
@@ -79,7 +78,7 @@ Device::showDevice()
 }
 
 bool
-Device::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // try an EFC command
@@ -110,12 +109,9 @@ Device::probe( ConfigRom& configRom, bool generic )
     } else {
         unsigned int vendorId = configRom.getNodeVendorId();
         unsigned int modelId = configRom.getModelId();
-    
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
-        if ( vendorModel.parse() ) {
-            return vendorModel.isPresent( vendorId, modelId );
-        }
-        return false;
+
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_FireWorks;
     }
 }
 
@@ -125,17 +121,16 @@ Device::discover()
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
-    if ( vendorModel.parse() ) {
-        m_model = vendorModel.find( vendorId, modelId );
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (!GenericAVC::VendorModel::isValid(m_model)) {
-        debugWarning("Using generic ECHO Audio FireWorks support for unsupported device '%s %s'\n",
-            getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
-    } else {
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_FireWorks) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model.vendor_name.c_str(), m_model.model_name.c_str());
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic ECHO Audio FireWorks support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
     // get the info from the EFC
@@ -145,7 +140,7 @@ Device::discover()
     }
 
     // discover AVC-wise
-    if ( !GenericAVC::AvDevice::discover() ) {
+    if ( !GenericAVC::AvDevice::discoverGeneric() ) {
         debugError( "Could not discover GenericAVC::AvDevice\n" );
         return false;
     }

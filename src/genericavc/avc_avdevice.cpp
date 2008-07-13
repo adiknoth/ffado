@@ -22,6 +22,7 @@
  *
  */
 
+#include "devicemanager.h"
 #include "genericavc/avc_avdevice.h"
 
 #include "libieee1394/configrom.h"
@@ -33,8 +34,6 @@
 #include "libavc/general/avc_subunit_info.h"
 
 #include "debugmodule/debugmodule.h"
-
-#include "config.h"
 
 #include <string>
 #include <stdint.h>
@@ -76,7 +75,7 @@ AvDevice::~AvDevice()
 }
 
 bool
-AvDevice::probe( ConfigRom& configRom, bool generic )
+AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // check if we have a music subunit
@@ -101,10 +100,8 @@ AvDevice::probe( ConfigRom& configRom, bool generic )
         unsigned int vendorId = configRom.getNodeVendorId();
         unsigned int modelId = configRom.getModelId();
 
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
-        if ( vendorModel.parse() ) {
-            return vendorModel.isPresent( vendorId, modelId );
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_GenericAVC;
         return false;
     }
 }
@@ -119,26 +116,27 @@ bool
 AvDevice::discover()
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
-    // check if we already have a valid VendorModel entry
-    // e.g. because a subclass called this function
-    if (!GenericAVC::VendorModel::isValid(m_model)) {
-        unsigned int vendorId = getConfigRom().getNodeVendorId();
-        unsigned int modelId = getConfigRom().getModelId();
 
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
-        if ( vendorModel.parse() ) {
-            m_model = vendorModel.find( vendorId, modelId );
-        }
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
-        if (!GenericAVC::VendorModel::isValid(m_model)) {
-            debugWarning("Using generic AV/C support for unsupported device '%s %s'\n",
-                        getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
-        } else {
-            debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                    m_model.vendor_name.c_str(), m_model.model_name.c_str());
-        }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_GenericAVC) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic AV/C support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
+    return discoverGeneric();
+}
 
+bool
+AvDevice::discoverGeneric()
+{
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
         return false;
@@ -152,7 +150,6 @@ AvDevice::discover()
         debugError( "Unit doesn't have a Music subunit.\n");
         return false;
     }
-
     return true;
 }
 

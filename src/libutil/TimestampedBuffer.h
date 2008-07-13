@@ -24,7 +24,7 @@
 #ifndef __FFADO_TIMESTAMPEDBUFFER__
 #define __FFADO_TIMESTAMPEDBUFFER__
 
-#include "../debugmodule/debugmodule.h"
+#include "debugmodule/debugmodule.h"
 #include "libutil/ringbuffer.h"
 #include <pthread.h>
 

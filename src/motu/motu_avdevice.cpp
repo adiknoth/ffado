@@ -36,6 +36,7 @@
 #include "libstreaming/motu/MotuPort.h"
 
 #include "libutil/Time.h"
+#include "libutil/Configuration.h"
 
 #include "libcontrol/BasicElements.h"
 
@@ -586,7 +587,7 @@ MotuDevice::destroyMixer() {
 }
 
 bool
-MotuDevice::probe( ConfigRom& configRom, bool generic)
+MotuDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic)
 {
     if(generic) return false;
 
