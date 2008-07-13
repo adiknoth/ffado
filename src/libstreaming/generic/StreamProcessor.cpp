@@ -389,7 +389,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     if (result == eCRV_OK) {
-        #ifdef DEBUG
+//         #ifdef DEBUG
         int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
         int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
         // display message if the difference between two successive tick
@@ -400,13 +400,39 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                         "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
                         CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                         m_last_timestamp, diff, ticks_per_packet);
+            // !!!HACK!!! FIXME: this is the result of a failure in wrapping/unwrapping somewhere
+            // it's definitely a bug.
+            // try to fix up the timestamp
+            int64_t last_timestamp_fixed;
+            // first try to add one second
+            last_timestamp_fixed = m_last_timestamp + TICKS_PER_SECOND;
+            diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
+            if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
+                debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                             CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                             m_last_timestamp, diff, ticks_per_packet);
+                debugWarning("HACK: fixed by adding one second of ticks. This is a bug being run-time fixed.\n");
+                m_last_timestamp = last_timestamp_fixed;
+            }
+            // then try to subtract one second
+            last_timestamp_fixed = m_last_timestamp - TICKS_PER_SECOND;
+            if(last_timestamp_fixed >= 0) {
+                diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
+                if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
+                    debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                m_last_timestamp, diff, ticks_per_packet);
+                    debugWarning("HACK: fixed by subtracing one second of ticks. This is a bug being run-time fixed.\n");
+                    m_last_timestamp = last_timestamp_fixed;
+                }
+            }
         }
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            "%04u %011llu %011llu %d %d\n",
                            CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                            m_last_timestamp2, m_last_timestamp, 
                            diff, ticks_per_packet);
-        #endif
+//         #endif
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                           "RECV: CY=%04u TS=%011llu\n",
@@ -905,20 +931,27 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::shiftStream(int nbframes)
 {
+    // FIXME: this is not a good idea since the ISO thread is also writing the buffer
+    // resulting in multiple writers (not supported)
     bool result;
     if(nbframes == 0) return true;
     if(nbframes > 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) dropping %d frames\n",
+                    this, nbframes);
         result = m_data_buffer->dropFrames(nbframes);
-        SIGNAL_ACTIVITY_ALL;
-        return result;
     } else {
-        result = true;
+        result = false;
+        return result;
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) adding %d frames\n",
+                    this, nbframes);
         while(nbframes++) {
             result &= m_data_buffer->writeDummyFrame();
         }
-        SIGNAL_ACTIVITY_ALL;
-        return result;
     }
+    SIGNAL_ACTIVITY_ALL;
+    return result;
 }
 
 /**
