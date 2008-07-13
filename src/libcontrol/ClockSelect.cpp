@@ -45,6 +45,10 @@ ClockSelect::select(int idx)
         debugError("index out of range\n");
         return false;
     }
+    if(idx < 0) {
+        debugError("index < 0\n");
+        return false;
+    }
     if(!m_Device.setActiveClockSource(v.at(idx))) {
         debugWarning("could not set active clocksource\n");
         return false;
@@ -83,7 +87,11 @@ ClockSelect::getEnumLabel(int idx)
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
     if(idx >= (int)v.size()) {
         debugError("index out of range\n");
-        return false;
+        return "Error";
+    }
+    if(idx < 0) {
+        debugError("index < 0\n");
+        return "Error";
     }
     return v.at(idx).description;
 }
@@ -184,7 +192,7 @@ bool
 SamplerateSelect::select(int idx)
 {
     std::vector<int> freqs = m_Device.getSupportedSamplingFrequencies();
-    if (idx < (int)freqs.size()) {
+    if (idx >= 0 && idx < (int)freqs.size()) {
         if(!m_Device.setSamplingFrequency(freqs.at(idx))) {
             debugWarning("Could not select samplerate\n");
             return false;
@@ -220,9 +228,9 @@ std::string
 SamplerateSelect::getEnumLabel(int idx)
 {
     char tmp[16];
-    std::string retval = "bad attr index";
+    std::string retval = "Error";
     std::vector<int> freqs = m_Device.getSupportedSamplingFrequencies();
-    if (idx < (int)freqs.size()) {
+    if (idx >= 0 && idx < (int)freqs.size()) {
         snprintf(tmp, 16, "%u", freqs.at(idx));
         retval = tmp;
     } else {

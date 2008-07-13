@@ -49,7 +49,8 @@ public:
     : m_id(signal_id) {};
     virtual ~SignalFunctor() {}
 
-    virtual void operator() (int arg) = 0;
+    virtual void operator() () = 0;
+    virtual void operator() (int) = 0;
 protected:
     int m_id;
 };
@@ -102,6 +103,7 @@ public:
 
 protected:
     bool            emitSignal(int id, int value);
+    bool            emitSignal(int id);
     Util::Mutex&    getLock();
 
 private:
@@ -137,8 +139,8 @@ class Container : public Element
 public:
     Container(Element *);
     Container(Element *, std::string n);
-    virtual ~Container() {};
-    
+    virtual ~Container();
+
     virtual bool addElement(Element *e);
     virtual bool deleteElement(Element *e);
     virtual bool clearElements()
