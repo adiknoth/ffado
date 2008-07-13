@@ -43,7 +43,7 @@ Element::Element( DBus::Connection& connection, std::string p, Element* parent, 
                  path().c_str() );
     // allocate a lock
     if(parent == NULL) {
-        m_UpdateLock = new Util::PosixMutex();
+        m_UpdateLock = new Util::PosixMutex("CTLSVEL");
     } else {
         m_UpdateLock = NULL;
     }
@@ -128,7 +128,7 @@ Container::Container( DBus::Connection& connection, std::string p, Element* pare
     setDebugLevel(slave.getVerboseLevel());
 
     // register an update signal handler
-    m_updateFunctor = new MemberSignalFunctor< Container*,
+    m_updateFunctor = new MemberSignalFunctor1< Container*,
                       void (Container::*)(int) >
                       ( this, &Container::updated, (int)Control::Container::eS_Updated );
     if(m_updateFunctor) {
@@ -147,6 +147,9 @@ Container::Container( DBus::Connection& connection, std::string p, Element* pare
 Container::~Container() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Deleting Container on '%s'\n",
                  path().c_str() );
+
+    Destroyed(); //send dbus signal
+
     if(m_updateFunctor) {
         if(!m_Slave.remSignalHandler(m_updateFunctor)) {
             debugWarning("Could not remove update signal functor\n");
@@ -200,6 +203,8 @@ Container::updateTree()
 {
     bool something_changed = false;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Updating tree...\n");
+    // send a pre update signal
+    PreUpdate();
     debugOutput( DEBUG_LEVEL_VERBOSE, "Add handlers for elements...\n");
     // add handlers for the slaves that don't have one yet
     const Control::ElementVector elements = m_Slave.getElementVector();
@@ -271,6 +276,8 @@ Container::updateTree()
         // send a dbus signal
         Updated();
     }
+    // send a post update signal
+    PostUpdate();
 }
 
 void

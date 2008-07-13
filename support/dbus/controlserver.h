@@ -44,11 +44,11 @@ class Element;
 class Container;
 
 template< typename CalleePtr, typename MemFunPtr >
-class MemberSignalFunctor
+class MemberSignalFunctor0
     : public Control::SignalFunctor
 {
 public:
-    MemberSignalFunctor( const CalleePtr& pCallee,
+    MemberSignalFunctor0( const CalleePtr& pCallee,
             MemFunPtr pMemFun,
             int pSignalId)
         : Control::SignalFunctor( pSignalId )
@@ -56,8 +56,36 @@ public:
         , m_pMemFun( pMemFun )
         {}
 
-    virtual ~MemberSignalFunctor()
+    virtual ~MemberSignalFunctor0()
         {}
+
+    virtual void operator() ()
+        {
+            ( ( *m_pCallee ).*m_pMemFun )();
+        }
+    virtual void operator() (int) {}
+private:
+    CalleePtr  m_pCallee;
+    MemFunPtr  m_pMemFun;
+};
+
+template< typename CalleePtr, typename MemFunPtr >
+class MemberSignalFunctor1
+    : public Control::SignalFunctor
+{
+public:
+    MemberSignalFunctor1( const CalleePtr& pCallee,
+            MemFunPtr pMemFun,
+            int pSignalId)
+        : Control::SignalFunctor( pSignalId )
+        , m_pCallee( pCallee )
+        , m_pMemFun( pMemFun )
+        {}
+
+    virtual ~MemberSignalFunctor1()
+        {}
+
+    virtual void operator() () {}
 
     virtual void operator() (int value)
         {
@@ -118,6 +146,8 @@ public:
     DBus::String getElementName( const DBus::Int32& );
 
     void updated(int new_nb_elements);
+    void destroyed();
+
     void setVerboseLevel( const DBus::Int32 &);
 private:
     Element *createHandler(Element *, Control::Element& e);

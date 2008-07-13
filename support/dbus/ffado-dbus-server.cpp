@@ -332,9 +332,9 @@ main( int argc, char **argv )
     }
     delete postupdate_functor;
     delete container;
+    delete m_deviceManager;
 
     signal (SIGINT, SIG_DFL);
-    delete m_deviceManager;
 
     printMessage(" Bye.\n");
     return exitfunction(0);
