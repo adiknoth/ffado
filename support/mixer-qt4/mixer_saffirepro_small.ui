@@ -1,0 +1,1890 @@
+<ui version="4.0" >
+ <comment>Copyright (C) 2005-2008 by Pieter Palmers
+	
+	This file is part of FFADO
+	FFADO = Free Firewire (pro-)audio drivers for linux
+	
+	FFADO is based upon FreeBoB.
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) version 3 of the License.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+</comment>
+ <class>SaffireProMixerSmallUI</class>
+ <widget class="QWidget" name="SaffireProMixerSmallUI" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>840</width>
+    <height>379</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Focusrite Saffire Pro (10/26) Mixer</string>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <layout class="QVBoxLayout" >
+     <item>
+      <layout class="QHBoxLayout" >
+       <item>
+        <widget class="QGroupBox" name="groupBox14" >
+         <property name="title" >
+          <string>Output Mix</string>
+         </property>
+         <layout class="QGridLayout" >
+          <item row="0" column="0" >
+           <widget class="QTabWidget" name="tabWidget14" >
+            <widget class="QWidget" name="tab" >
+             <attribute name="title" >
+              <string>Out1/&amp;2</string>
+             </attribute>
+             <layout class="QGridLayout" >
+              <item row="1" column="0" colspan="4" >
+               <layout class="QGridLayout" >
+                <item row="1" column="0" >
+                 <widget class="QCheckBox" name="chkMute12" >
+                  <property name="text" >
+                   <string>Mute</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor2" >
+                  <property name="text" >
+                   <string>CH2 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QCheckBox" name="chkDim12" >
+                  <property name="text" >
+                   <string>&amp;Level Dim</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string>Alt+L</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor1" >
+                  <property name="text" >
+                   <string>CH1 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QCheckBox" name="chkHwCtrl12" >
+                  <property name="text" >
+                   <string>Front dial control</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QCheckBox" name="chkPad12" >
+                  <property name="text" >
+                   <string>&amp;Monitor Pad</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string>Alt+M</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="0" >
+               <layout class="QGridLayout" >
+                <item row="2" column="0" colspan="2" >
+                 <widget class="QLabel" name="txtOmixO1" >
+                  <property name="text" >
+                   <string>Out1</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC1O1" >
+                  <property name="text" >
+                   <string>PC1</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC1O1" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixIMixO1" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixIMixO1" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="1" >
+               <layout class="QGridLayout" >
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixIMixO2" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="2" >
+                 <widget class="QLabel" name="txtOmixO2" >
+                  <property name="text" >
+                   <string>Out2</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC2O2" >
+                  <property name="text" >
+                   <string>PC2</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC2O2" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixIMixO2" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="2" >
+               <widget class="QGroupBox" name="groupLevel12" >
+                <property name="title" >
+                 <string>Level</string>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignHCenter</set>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <widget class="QSlider" name="sldOut12Level" >
+                   <property name="minimumSize" >
+                    <size>
+                     <width>0</width>
+                     <height>80</height>
+                    </size>
+                   </property>
+                   <property name="minimum" >
+                    <number>0</number>
+                   </property>
+                   <property name="maximum" >
+                    <number>255</number>
+                   </property>
+                   <property name="singleStep" >
+                    <number>2</number>
+                   </property>
+                   <property name="pageStep" >
+                    <number>16</number>
+                   </property>
+                   <property name="orientation" >
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="tickInterval" >
+                    <number>32</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="0" column="3" >
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType" >
+                 <enum>QSizePolicy::Expanding</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>71</width>
+                  <height>31</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="TabPage" >
+             <attribute name="title" >
+              <string>Out3/&amp;4</string>
+             </attribute>
+             <layout class="QGridLayout" >
+              <item row="1" column="0" colspan="4" >
+               <layout class="QGridLayout" >
+                <item row="0" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor3" >
+                  <property name="text" >
+                   <string>CH3 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QCheckBox" name="chkHwCtrl34" >
+                  <property name="text" >
+                   <string>Front dial control</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor4" >
+                  <property name="text" >
+                   <string>CH4 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QCheckBox" name="chkMute34" >
+                  <property name="text" >
+                   <string>Mute</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QCheckBox" name="chkPad34" >
+                  <property name="text" >
+                   <string>Monitor Pad</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QCheckBox" name="chkDim34" >
+                  <property name="text" >
+                   <string>Level Dim</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="0" >
+               <layout class="QGridLayout" >
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO3" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC1O3" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO3" >
+                  <property name="text" >
+                   <string>Out3</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC3O3" >
+                  <property name="text" >
+                   <string>PC3</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC1O3" >
+                  <property name="text" >
+                   <string>PC1</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC3O3" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO3" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="1" >
+               <layout class="QGridLayout" >
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC4O4" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC4O4" >
+                  <property name="text" >
+                   <string>PC4</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO4" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO4" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC2O4" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC2O4" >
+                  <property name="text" >
+                   <string>PC2</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO4" >
+                  <property name="text" >
+                   <string>Out4</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="2" >
+               <widget class="QGroupBox" name="groupLevel34" >
+                <property name="title" >
+                 <string>Level</string>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignHCenter</set>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <widget class="QSlider" name="sldOut34Level" >
+                   <property name="minimum" >
+                    <number>0</number>
+                   </property>
+                   <property name="maximum" >
+                    <number>255</number>
+                   </property>
+                   <property name="singleStep" >
+                    <number>2</number>
+                   </property>
+                   <property name="pageStep" >
+                    <number>16</number>
+                   </property>
+                   <property name="orientation" >
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="tickInterval" >
+                    <number>32</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="0" column="3" >
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType" >
+                 <enum>QSizePolicy::Expanding</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>101</width>
+                  <height>21</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="TabPage" >
+             <attribute name="title" >
+              <string>Out5/&amp;6</string>
+             </attribute>
+             <layout class="QGridLayout" >
+              <item row="1" column="0" colspan="4" >
+               <layout class="QGridLayout" >
+                <item row="1" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor6" >
+                  <property name="text" >
+                   <string>CH6 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor5" >
+                  <property name="text" >
+                   <string>CH5 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QCheckBox" name="chkDim56" >
+                  <property name="text" >
+                   <string>Level Dim</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QCheckBox" name="chkHwCtrl56" >
+                  <property name="text" >
+                   <string>Front dial control</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QCheckBox" name="chkPad56" >
+                  <property name="text" >
+                   <string>&amp;Monitor Pad</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string>Alt+M</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QCheckBox" name="chkMute56" >
+                  <property name="text" >
+                   <string>Mute</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="0" >
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC1O5" >
+                  <property name="text" >
+                   <string>PC1</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO5" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC1O5" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC5O5" >
+                  <property name="text" >
+                   <string>PC5</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC5O5" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO5" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO5" >
+                  <property name="text" >
+                   <string>Out5</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="1" >
+               <layout class="QGridLayout" >
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC6O6" >
+                  <property name="text" >
+                   <string>PC6</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC2O6" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO6" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC2O6" >
+                  <property name="text" >
+                   <string>PC2</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO6" >
+                  <property name="text" >
+                   <string>Out6</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO6" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC6O6" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="2" >
+               <widget class="QGroupBox" name="groupLevel56" >
+                <property name="title" >
+                 <string>Level</string>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignHCenter</set>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <widget class="QSlider" name="sldOut56Level" >
+                   <property name="minimum" >
+                    <number>0</number>
+                   </property>
+                   <property name="maximum" >
+                    <number>255</number>
+                   </property>
+                   <property name="singleStep" >
+                    <number>2</number>
+                   </property>
+                   <property name="pageStep" >
+                    <number>16</number>
+                   </property>
+                   <property name="orientation" >
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="tickInterval" >
+                    <number>32</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="0" column="3" >
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType" >
+                 <enum>QSizePolicy::Expanding</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>61</width>
+                  <height>21</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="TabPage" >
+             <attribute name="title" >
+              <string>Out7/&amp;8</string>
+             </attribute>
+             <layout class="QGridLayout" >
+              <item row="1" column="0" colspan="4" >
+               <layout class="QGridLayout" >
+                <item row="1" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor8" >
+                  <property name="text" >
+                   <string>CH8 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QCheckBox" name="chkDim78" >
+                  <property name="text" >
+                   <string>Level Dim</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QCheckBox" name="chkMute78" >
+                  <property name="text" >
+                   <string>Mute</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QCheckBox" name="chkPad78" >
+                  <property name="text" >
+                   <string>&amp;Monitor Pad</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string>Alt+M</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QCheckBox" name="chkMonitor7" >
+                  <property name="text" >
+                   <string>CH7 Direct Mon</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QCheckBox" name="chkHwCtrl78" >
+                  <property name="text" >
+                   <string>Front dial control</string>
+                  </property>
+                  <property name="shortcut" >
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="0" >
+               <layout class="QGridLayout" >
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC1O7" >
+                  <property name="text" >
+                   <string>PC1</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO7" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC7O7" >
+                  <property name="text" >
+                   <string>PC7</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC7O7" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO7" >
+                  <property name="text" >
+                   <string>Out7</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO7" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC1O7" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="1" >
+               <layout class="QGridLayout" >
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO8" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO8" >
+                  <property name="text" >
+                   <string>Out8</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO8" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC8O8" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC2O8" >
+                  <property name="text" >
+                   <string>PC2</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC8O8" >
+                  <property name="text" >
+                   <string>PC8</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC2O8" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="2" >
+               <widget class="QGroupBox" name="groupLevel78" >
+                <property name="title" >
+                 <string>Level</string>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignHCenter</set>
+                </property>
+                <layout class="QGridLayout" >
+                 <item row="0" column="0" >
+                  <widget class="QSlider" name="sldOut78Level" >
+                   <property name="minimum" >
+                    <number>0</number>
+                   </property>
+                   <property name="maximum" >
+                    <number>255</number>
+                   </property>
+                   <property name="singleStep" >
+                    <number>2</number>
+                   </property>
+                   <property name="pageStep" >
+                    <number>16</number>
+                   </property>
+                   <property name="orientation" >
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="tickInterval" >
+                    <number>32</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="0" column="3" >
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType" >
+                 <enum>QSizePolicy::Expanding</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>81</width>
+                  <height>21</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="TabPage" >
+             <attribute name="title" >
+              <string>Out9/&amp;10</string>
+             </attribute>
+             <layout class="QHBoxLayout" >
+              <item>
+               <layout class="QGridLayout" >
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO9" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC1O9" >
+                  <property name="text" >
+                   <string>PC1</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC9O9" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO9" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO9" >
+                  <property name="text" >
+                   <string>Out9</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC9O9" >
+                  <property name="text" >
+                   <string>PC9</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC1O9" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QGridLayout" >
+                <item row="1" column="2" >
+                 <widget class="QSlider" name="sldOMixIMixO10" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" colspan="3" >
+                 <widget class="QLabel" name="txtOmixO10" >
+                  <property name="text" >
+                   <string>Out10</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="txtOMixPC2O10" >
+                  <property name="text" >
+                   <string>PC2</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QSlider" name="sldOMixPC10O10" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QLabel" name="txtOMixPC10O10" >
+                  <property name="text" >
+                   <string>PC10</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" >
+                 <widget class="QLabel" name="txtOMixIMixO10" >
+                  <property name="text" >
+                   <string>IMixL</string>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="wordWrap" >
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QSlider" name="sldOMixPC2O10" >
+                  <property name="minimum" >
+                   <number>0</number>
+                  </property>
+                  <property name="maximum" >
+                   <number>32767</number>
+                  </property>
+                  <property name="singleStep" >
+                   <number>10000</number>
+                  </property>
+                  <property name="pageStep" >
+                   <number>1000</number>
+                  </property>
+                  <property name="orientation" >
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="tickInterval" >
+                   <number>10000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox21" >
+         <property name="title" >
+          <string>Device Control</string>
+         </property>
+         <layout class="QVBoxLayout" >
+          <item>
+           <layout class="QHBoxLayout" >
+            <item>
+             <widget class="QLabel" name="textLabel1" >
+              <property name="text" >
+               <string>Phantom:</string>
+              </property>
+              <property name="wordWrap" >
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkPhantom14" >
+              <property name="text" >
+               <string>IN 1-4</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkPhantom58" >
+              <property name="text" >
+               <string>IN 5-8</string>
+              </property>
+              <property name="shortcut" >
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" >
+            <item>
+             <widget class="QLabel" name="textLabel2" >
+              <property name="text" >
+               <string>Insert:</string>
+              </property>
+              <property name="wordWrap" >
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkInsert1" >
+              <property name="text" >
+               <string>CH1</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkInsert2" >
+              <property name="text" >
+               <string>CH2</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chkAdatDisable" >
+            <property name="text" >
+             <string>Disable ADAT I/O</string>
+            </property>
+            <property name="shortcut" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chkMidiEnable" >
+            <property name="text" >
+             <string>Enable MIDI</string>
+            </property>
+            <property name="shortcut" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboStandalone" />
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chkAC3" >
+            <property name="enabled" >
+             <bool>false</bool>
+            </property>
+            <property name="text" >
+             <string>AC&amp;3 Passthrough</string>
+            </property>
+            <property name="shortcut" >
+             <string>Alt+3</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chkMidiThru" >
+            <property name="text" >
+             <string>&amp;MIDI Thru</string>
+            </property>
+            <property name="shortcut" >
+             <string>Alt+M</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chkHighVoltage" >
+            <property name="text" >
+             <string>Use high voltage supply</string>
+            </property>
+            <property name="shortcut" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType" >
+             <enum>QSizePolicy::Expanding</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>20</width>
+              <height>21</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QGridLayout" >
+            <item row="0" column="1" >
+             <widget class="QPushButton" name="btnSaveSettings" >
+              <property name="text" >
+               <string>&amp;Save Settings</string>
+              </property>
+              <property name="shortcut" >
+               <string>Alt+S</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" >
+             <widget class="QPushButton" name="btnIdentify" >
+              <property name="text" >
+               <string>Identif&amp;y Device</string>
+              </property>
+              <property name="shortcut" >
+               <string>Alt+Y</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" >
+             <widget class="QPushButton" name="btnReboot" >
+              <property name="text" >
+               <string>Re&amp;boot Device</string>
+              </property>
+              <property name="shortcut" >
+               <string>Alt+B</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1" >
+             <widget class="QPushButton" name="btnRefresh" >
+              <property name="text" >
+               <string>Refresh</string>
+              </property>
+              <property name="shortcut" >
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11" />
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>btnRefresh</sender>
+   <signal>clicked()</signal>
+   <receiver>SaffireProMixerSmallUI</receiver>
+   <slot>updateValues()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

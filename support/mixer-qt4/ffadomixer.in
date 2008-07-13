@@ -1,0 +1,97 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2005-2008 by Pieter Palmers
+#               2007-2008 by Arnold Krille
+#
+# This file is part of FFADO
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# QT 4 version
+#
+
+import sys
+
+# Add the path of the installed ffado-mixer-modules
+sys.path.append( "$PYTHONDIR" )
+
+from ffadomixer_config import POLL_SLEEP_TIME_MSEC, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
+
+import os
+import time
+
+from PyQt4.QtCore import SIGNAL, SLOT, QObject, QTimer
+from PyQt4.QtGui import QApplication, QMessageBox
+
+from ffado_dbus_util import *
+
+from ffado_panelmanager import PanelManager
+
+if __name__ == "__main__":
+
+    app = QApplication(sys.argv)
+
+    msg = QMessageBox()
+
+    repeat = 1
+    while repeat > 0:
+        try:
+            devmgr = DeviceManagerInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH)
+            nbDevices = devmgr.getNbDevices()
+            repeat -= 1
+        except dbus.DBusException, ex:
+            print "\n"
+            print "==========================================================="
+            print "ERROR: Could not communicate with the FFADO DBus service..."
+            print "==========================================================="
+            print "\n"
+            tmp = msg.question( msg, "FFADO-DBus not found", "<qt><b>The connection to FFADOs DBus service could not be established.</b><p>Probably you didn't start the ffado-dbus-server. Should I try this now?</qt>", QMessageBox.Yes, QMessageBox.No )
+            if tmp == QMessageBox.No:
+                sys.exit(-1)
+            else:
+                os.spawnlp( os.P_NOWAIT, "ffado-dbus-server" )
+                nb_checks = 20
+                while nb_checks > 0:
+                    nb_checks = nb_checks - 1
+                    try:
+                        devmgr = DeviceManagerInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH)
+                        nbDevices = devmgr.getNbDevices()
+                        nb_checks = 0
+                        repeat = 0
+                    except dbus.DBusException, ex:
+                        time.sleep( 1 )
+
+    manager = PanelManager(None, devmgr)
+
+    # create a timer to poll the panels
+    polltimer = QTimer()
+    QObject.connect( polltimer, SIGNAL('timeout()'), manager.pollPanels )
+    polltimer.start( POLL_SLEEP_TIME_MSEC )
+
+    # create a timer to initialize the panel after the main form is shown
+    # since initialization can take a while
+    showtimer = QTimer()
+    QObject.connect( showtimer, SIGNAL('timeout()'), manager.updatePanels )
+    showtimer.setSingleShot(True)
+    showtimer.start( POLL_SLEEP_TIME_MSEC )
+
+    # rock & roll
+    manager.show()
+    QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
+    app.exec_()

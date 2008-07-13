@@ -97,7 +97,7 @@ for var in vars_to_check:
 	else:
 		buildenv[var]=''
 
-env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
+env = Environment( tools=['default','scanreplace','pyuic','pyuic4','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
 if os.environ.has_key('CC'):
 	env['CC'] = os.environ['CC']
@@ -180,6 +180,7 @@ tests = {
 }
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
+tests.update( env['PYUIC4_TESTS'] )
 
 conf = Configure( env,
 	custom_tests = tests,
@@ -278,8 +279,21 @@ results above get rechecked.
 	#
 
 	# PyQT checks
+        build_mixer = False
 	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 		env['PYUIC'] = True
+		build_mixer = True
+	
+		if conf.CheckForApp( "xdg-desktop-menu --help" ):
+			env['XDG_TOOLS'] = True
+		else:
+			print """
+	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
+	"""
+	elif conf.CheckForApp( "which pyuic4" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ):
+		env['PYUIC4'] = True
+		build_mixer = True
 	
 		if conf.CheckForApp( "xdg-desktop-menu --help" ):
 			env['XDG_TOOLS'] = True
@@ -289,9 +303,9 @@ results above get rechecked.
 	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
 	"""
 	
-	else:
+	if not build_mixer:
 		print """
-	I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
+	I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
 	'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
 	Therefor the mixer won't get installed.
 	"""
@@ -490,6 +504,9 @@ env['LIBVERSION'] = "1.0.0"
 env['CONFIGDIR'] = "~/.ffado"
 env['CACHEDIR'] = "~/.ffado"
 
+env['USER_CONFIG_FILE'] = env['CONFIGDIR'] + "/configuration"
+env['SYSTEM_CONFIG_FILE'] = env['SHAREDIR'] + "/configuration"
+
 env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
 
 #
@@ -512,6 +529,8 @@ env.Depends( "config.h", env.Value(env['REVISION']))
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
+
+env.Install( env['SYSTEM_CONFIG_FILE'], 'configuration' )
 
 subdirs=['external','src','libffado','tests','support','doc']
 if build_base:
@@ -569,5 +588,6 @@ findcommand = "find . \( -path \"*.h\" -o -path \"*.cpp\" -o -path \"*.c\" \) \!
 env.Command( "tags", "", findcommand + " |xargs ctags" )
 env.Command( "TAGS", "", findcommand + " |xargs etags" )
 env.AlwaysBuild( "tags", "TAGS" )
-env.NoCache( "tags", "TAGS" )
+if 'NoCache' in dir(env):
+    env.NoCache( "tags", "TAGS" )
 
