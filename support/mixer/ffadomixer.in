@@ -405,14 +405,18 @@ if __name__ == "__main__":
 
         # create a control object
         hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+        clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
+        samplerateselect = SamplerateSelectInterface( server, basepath+"/DeviceManager/"+path )
+        nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
 
         #
         # Generic elements for all mixers follow here:
         #
         tmp = GlobalMixer( w )
-        tmp.clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
-        tmp.samplerateselect = SamplerateSelectInterface( server, basepath+"/DeviceManager/"+path )
-        tmp.nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
+        tmp.configrom = cfgrom
+        tmp.clockselect = clockselect
+        tmp.samplerateselect = samplerateselect
+        tmp.nickname = nickname
         tmp.hw = hw
         tmp.initValues()
         l.addWidget( tmp, 1 )
@@ -443,7 +447,8 @@ if __name__ == "__main__":
                         print "Found Saffire GUID"
 
                 # different panel for different clock frequency
-                samplerate = hw.getDiscrete('/Generic/SamplerateSelect')
+                selected = samplerateselect.selected()
+                samplerate = int(samplerateselect.getEnumLabel( selected ))
 
                 # adat on PRO26 makes a difference
                 have_adat = False
@@ -489,9 +494,11 @@ if __name__ == "__main__":
         # The same for all mixers
         #
         l.addWidget( mixerwidget, 10 )
-        mixerwidget.hw = hw
         mixerwidget.configrom = cfgrom
-        mixerwidget.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
+        mixerwidget.clockselect = clockselect
+        mixerwidget.samplerateselect = samplerateselect
+        mixerwidget.nickname = nickname
+        mixerwidget.hw = hw
         if 'buildMixer' in dir(mixerwidget):
             mixerwidget.buildMixer()
         if 'initValues' in dir(mixerwidget):
