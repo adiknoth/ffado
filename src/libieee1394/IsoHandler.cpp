@@ -441,7 +441,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         // that now is ahead on the received packets (as we miss packets)
         && dropped_cycles == 0) 
     {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Special non-unwrapping happened\n");
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Special non-unwrapping happened\n");
     }
     #endif
     pkt_ctr |= (now_secs & 0x7F) << 25;

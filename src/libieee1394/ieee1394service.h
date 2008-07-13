@@ -232,6 +232,7 @@ public:
     bool remBusResetHandler( Util::Functor* functor );
 
     void doBusReset();
+    bool waitForBusResetStormToEnd( int nb_tries, int sleep_time_ms );
 
     /**
      * @brief get the current generation

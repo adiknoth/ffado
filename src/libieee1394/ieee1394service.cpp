@@ -148,6 +148,30 @@ Ieee1394Service::doBusReset() {
     raw1394_reset_bus(m_handle);
 }
 
+/**
+ * This function waits until there are no bus resets generated in a sleep_time_ms interval
+ * @param nb_tries number of tries to take
+ * @param sleep_time_ms sleep between tries
+ * @return true if the storm passed
+ */
+bool
+Ieee1394Service::waitForBusResetStormToEnd( int nb_tries, int sleep_time_ms ) {
+    unsigned int gen_current;
+    do {
+        gen_current = getGeneration();
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Waiting... (gen: %u)\n", gen_current);
+
+        // wait for a while
+        Util::SystemTimeSource::SleepUsecRelative( sleep_time_ms * 1000);
+    } while (gen_current != getGeneration() && --nb_tries);
+
+    if (!nb_tries) {
+        debugError( "Bus reset storm did not stop on time...\n");
+        return false;
+    }
+    return true;
+}
+
 bool
 Ieee1394Service::initialize( int port )
 {

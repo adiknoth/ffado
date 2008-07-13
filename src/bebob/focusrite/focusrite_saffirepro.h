@@ -420,6 +420,7 @@ private:
     ClockSource m_wordclock_clocksource;
     ClockSource m_adat1_clocksource;
     ClockSource m_adat2_clocksource;
+    ClockSource *m_active_clocksource;
 
     Control::Container *m_MixerContainer;
     Control::Container *m_ControlContainer;
