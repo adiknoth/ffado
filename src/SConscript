@@ -189,9 +189,9 @@ if not env.GetOption( "clean" ):
 		libenv.PrependUnique( LIBS=["expat"] )
 
 # add the libconfig
-env.AppendUnique( CPPPATH=["#/external/libconfig"] )
-env.PrependUnique( LIBPATH=[env['build_base']+"external/libconfig"] )
-env.PrependUnique( LIBS=["libconfigpp"] )
+libenv.AppendUnique( CPPPATH=["#/external/libconfig"] )
+libenv.PrependUnique( LIBPATH=[env['build_base']+"external/libconfig"] )
+libenv.PrependUnique( LIBS=["libconfigpp"] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )
