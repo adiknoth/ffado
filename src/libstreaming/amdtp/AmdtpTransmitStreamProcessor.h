@@ -149,7 +149,7 @@ private: // local port caching for performance
 #endif
     };
     std::vector<struct _MBLA_port_cache> m_audio_ports;
-    unsigned int m_nb_audio_ports;
+    int m_nb_audio_ports;
 
     struct _MIDI_port_cache {
         AmdtpMidiPort*      port;
@@ -162,7 +162,7 @@ private: // local port caching for performance
 #endif
     };
     std::vector<struct _MIDI_port_cache> m_midi_ports;
-    unsigned int m_nb_midi_ports;
+    int m_nb_midi_ports;
 
     bool initPortCache();
     void updatePortCache();

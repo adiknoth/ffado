@@ -490,7 +490,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         target_event = (quadlet_t *)(data + i);
@@ -870,7 +870,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
@@ -911,7 +911,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
@@ -960,7 +960,8 @@ AmdtpTransmitStreamProcessor::encodeMidiPortsSilence(quadlet_t *data,
                                                      unsigned int nevents)
 {
     quadlet_t *target_event;
-    unsigned int i,j;
+    int i;
+    unsigned int j;
 
     for (i = 0; i < m_nb_midi_ports; i++) {
         struct _MIDI_port_cache &p = m_midi_ports.at(i);
@@ -984,7 +985,8 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                                               unsigned int nevents)
 {
     quadlet_t *target_event;
-    unsigned int i,j;
+    int i;
+    unsigned int j;
 
     for (i = 0; i < m_nb_midi_ports; i++) {
         struct _MIDI_port_cache &p = m_midi_ports.at(i);
@@ -1060,7 +1062,7 @@ AmdtpTransmitStreamProcessor::initPortCache() {
         }
     }
 
-    unsigned int idx;
+    int idx;
     for (idx = 0; idx < m_nb_audio_ports; idx++) {
         for(PortVectorIterator it = m_Ports.begin();
             it != m_Ports.end();
@@ -1070,7 +1072,7 @@ AmdtpTransmitStreamProcessor::initPortCache() {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "idx %u: looking at port %s at position %u\n",
                         idx, (*it)->getName().c_str(), pinfo->getPosition());
-            if(pinfo->getPosition() == idx) {
+            if(pinfo->getPosition() == (unsigned int)idx) {
                 struct _MBLA_port_cache p;
                 p.port = dynamic_cast<AmdtpAudioPort *>(*it);
                 if(p.port == NULL) {
@@ -1129,7 +1131,7 @@ next_index:
 
 void
 AmdtpTransmitStreamProcessor::updatePortCache() {
-    unsigned int idx;
+    int idx;
     for (idx = 0; idx < m_nb_audio_ports; idx++) {
         struct _MBLA_port_cache& p = m_audio_ports.at(idx);
         AmdtpAudioPort *port = p.port;
