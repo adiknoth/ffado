@@ -619,6 +619,7 @@ class MotuMixer(MotuMixerUI):
             self.mix2_dest.changeItem("MainOut", 6)
             self.mix3_dest.changeItem("MainOut", 6)
             self.mix4_dest.changeItem("MainOut", 6)
+            self.phones_src.changeItem("MainOut", 6)
 
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
