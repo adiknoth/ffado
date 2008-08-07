@@ -1,0 +1,411 @@
+RME Fireface800 protocol notes
+==============================
+
+Author: Jonathan Woithe
+Date: 24 March 2008
+
+Introduction
+------------
+
+This document contains random notes made while observing the protocol used
+by the RME Fireface 800 interface.  This document is not necessarily all
+that coherent but fully documents what is seen on the bus when various
+actions are carried out.  For a distilled version of our current knowledge
+of the protocol please refer to rme_config_register_map.txt.
+
+The information contained here was observed from a Fireface 800 device:
+  RME vendor ID: 0x000a35
+  GUID: 0x0093e1daf1
+  Node capabilities: 0x0083c0
+  Unit spec ID: 0x0a35
+  Sw version number: 0x0001
+  Model ID: 0x101800
+
+
+Setting device configuration options in general
+-----------------------------------------------
+
+It seems that generally device configuration is effected by writing 0x0c
+bytes to register 0xfc88f014.  However, the existing drivers do much
+more than just this.  For example, when setting DDS inactive (which doesn't
+appear significantly different to setting it active):
+
+  Read 0x10 @ 0x801c0000: 01c000b1 a0001001 ffffffff  ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read  @ 0xfffff000040c: 0xa3500
+  Write 0xfc88f000: 0000ac44
+  Read 0x10 @ 0x801c0000: 01c000b1 80001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b1 80001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 80001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 80001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b1 80001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+
+When setting to 48k:
+
+  Read 0x10 @ 0x801c0000: 01c000b0 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b0 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000b1 a0001001 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read  @ 0xfffff000040c: 0xa3500
+  Write 0xfc88f000: 0000bb80
+  Read 0x10 @ 0x801c0000: 01c000c0 a0001007 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000c0 a0001007 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000c0 a0001007 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000bf a0001007 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000c0 80001007 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+  Read 0x10 @ 0x801c0000: 01c000c0 a0001007 ffffffff ffffffff
+  Read  @ 0xfffff0000410: 0x93e1daf1
+
+When using the "course" control, the frequency seems to be set by:
+  Read quadlet @ 0xfffff000040c: 0xa3500
+  Write @ 0xfc88f000
+
+Each write to 0xfc88f000 seems to be preceeded by a read of 0xfffff000040c,
+resulting in a value of 0xa3500.  Before and after this is a variable number
+of repeats of the sequence
+  block read of 0x10 bytes (4 quadlets) at 0x801c0000
+  quadlet read at 0xfffff0000410
+
+These reads seem to be some kind of status check on the device.  However,
+there doesn't seem to be any consistent pattern as to when the write is
+performed relative to changes in these registers, nor does the process
+terminate in response to a particular setting of these registers.  It seems
+that most if not all parameter settings are done with this pattern of reads
+above and below the actual write which (presumedly) activates the respective
+change.
+
+Looking for patterns, consider the settings of quadlets 0 and 1 in the last block
+from 0x801c0000 before the respective set operation finishes:
+
+  32k:    01c00080 80001003
+  44.056: 01c000b1 a0001001
+  44.144: 01c000b0 80001001
+  44.1:   01c000b1 80001001
+  45.937: 01c000b8 a0001001
+  46.080: 01c000b8 80001007
+  47.952: 01c000c0 a0001007
+  48:     01c000c0 a0001007
+  48.048: 01c000c0 a0001007
+
+mult 2x-1x:
+  t=866835 01c0017f 8000100f
+    876846 01c00180 8000100f
+    377579 01c00180 8000100f
+  t=512691 write
+  t=868285 01c000c0 80001007
+    878299 01c000c0 80001007
+    379027 01c000c0 80001007
+
+mult 2x-4x:
+  t=278863 01c00180 a000100f
+    769567 01c00180 a000100f
+    779580 01c00180 a000100f
+    280315 01c00180 a000100f
+  t=536803 write
+  t=771004 01c002ff a0001017
+    781034 01c00300 a0001017
+    281784 01c00300 a0001017
+
+mult 4x-1x:
+  t=784082 01c00300 a0001017
+    794099 01c00300 a0001017
+    294837 01c00300 a0001017
+  t=753719 write
+  t=785530 01c000c0 a0001007
+    795553 01c000c0 a0001007
+    296297 01c000c0 a0001007
+    786993 01c000c0 a0001007
+    797001 01c000c0 a0001007
+
+mult 4x-2x:
+  01c00300 80001017
+  01c00300 80001017
+  write
+  01c00180 8000100f
+  01c00180 a000100f
+  01c00180 a000100f
+  01c00180 a000100f
+
+DDS active:
+  01c000b1 a0001001
+  01c000b1 a0001001
+  01c000b0 a0001001
+  write
+  01c000b0 a0001001
+  01c000b0 80001001
+  01c000b1 a0001001
+  01c000b0 80001001
+  01c000b1 80001001
+  01c000b1 80001001
+
+DDS inactive:
+  01c000b1 a0001001
+  01c000b0 a0001001
+  01c000b0 a0001001
+  write
+  01c000b1 80001001
+  01c000b1 80001001
+  01c000b0 80001001
+  01c000b0 80001001
+  01c000b1 80001001
+
+Before and after settings:
+x - 32k:                     - 01c00080 80001003
+32-44.1:   01c00080 80001003 - 01c000b1 80001001
+44.1-48:   01c000b0 a0001001 - 01c000c0 a0001007
+48-96:     01c000c0 a0001007 - 01c00180 8000100f
+48-192:    01c000c0 a0001007 - 01c00300 80001017
+96-192:    01c00180 a000100f - 01c00300 a0001017
+
+96-48:     01c00180 8000100f - 01c000c0 80001007
+192-48:    01c00300 a0001017 - 01c000c0 a0001007
+192-96:    01c00300 80001017 - 01c00180 a000100f
+
+(jitter in bit 0 of 1st quadlet, and possibly bit 29 of 2nd quadlet)
+
+For now there's little we can do - we'll ignore these additional reads (or
+maybe just do a few token ones of our own) and see how far we get.  It seems
+that some clock rate information is included in here, but not the complete
+picture.  Perhaps the base rate is available here, but little else.  In fact
+there doesn't appear to be anywhere which conveys the device's rate back to
+the PC; the PC seemingly sets the rate to its desired rate and then
+effectively caches the sample rate.
+
+
+Buffer sizes
+------------
+All settings: 0xfc88f014 = 00000810 0000035e c400101f
+It seems that device configuration is not affected by this setting. 
+Obviously *some* setting is sent to the device whenever the buffer size is
+changed though.
+
+
+Clock mode
+----------
+Master:   0xfc88f014 = 00000810 0000035e c400101f
+Autosync: 0xfc88f014 = 00000810 0000035e c400101e
+
+
+DDS (Frequency setting)
+-----------------------
+
+32k:    0xfc88f000 = 00007d00 (32000)
+44.056: 0xfc88f000 = 0000ac18 (44056)
+44.144: 0xfc88f000 = 0000ac70 (44144)
+44.1k:  0xfc88f000 = 0000ac44 (44100)
+45.937: 0xfc88f000 = 0000b371 (45937)
+46.080: 0xfc88f000 = 0000b400 (46080)
+47.952: 0xfc88f000 = 0000bb50 (47952)
+48k:    0xfc88f000 = 0000bb80 (48000)
+48.048: 0xfc88f000 = 0000bbb0 (48048)
+
+Multiplier (base freq of 48k):
+
+ 1-2: 0xfc88f000 = 00017700 (96000)
+ 2-1: 0xfc88f000 = 0000bb80 (48000)
+ 2-4: 0xfc88f000 = 0002ee00 (192000)
+ 1-4: 0xfc88f000 = 0002ee00 (192000)
+ 4-2: 0xfc88f000 = 00017700 (96000)
+ 4-1: 0xfc88f000 = 0000bb80 (48000)
+
+Set DDS active:   0xfc88f000 = 0000ac44
+Set DDS inactive: 0xfc88f000 = 0000ac44
+
+To set the RME Fireface800 frequency, write the actual frequency to register
+0xfc88f000.
+
+Setting DDS active doesn't appear to make any changes to the actual
+hardware.
+
+
+Input level
+-----------
++4dBU:   0xfc88f014 = 00000810 0000035e c400101f
+-10dBV:  0xfc88f014 = 00000820 0000035f c400101f
+lo-gain: 0xfc88f014 = 00000808 0000035c c400101f
+
+
+Inputs
+------
+#1 set front:      0xfc88f014 = 00000810 00000b5a c400101f
+#1 set front+rear: 0xfc88f014 = 00000810 00000b5e c400101f
+#1 set rear:       0xfc88f014 = 00000810 0000035e c400101f
+
+#7 set front:      0xfc88f014 = 00010810 0000033e c400101f
+#7 set front+rear: 0xfc88f014 = 00020810 0000037e c400101f
+#7 set rear:       0xfc88f014 = 00000810 0000035e c400101f
+
+#8 set front:      0xfc88f014 = 00000810 000002de c400101f
+#8 set front+rear: 0xfc88f014 = 00000810 000003de c400101f
+#8 set rear:       0xfc88f014 = 00000810 0000035e c400101f
+
+
+Instrument options
+------------------
+none-drive:  0xfc88f014 = 00000a10 0000015e c400101f
+none-lim:    0xfc88f014 = 00000810 0000035e c400101f
+none-sp_emu: 0xfc88f014 = 00000814 0000035e c400101f
+*-none:      0xfc88f014 = 00000810 0000035e c400101f
+
+"Lim" would appear to be a software setting since the hardware setting
+for "lim" seems to be the same as for "none".
+
+
+Output level
+------------
++4dBU:   0xfc88f014 = 00000810 0000035e c400101f
+-10dBV:  0xfc88f014 = 00001010 0000034e c400101f
+hi-gain: 0xfc88f014 = 00000410 00000356 c400101f
+
+
+Phantom
+-------
+mic 7 on:  0xfc88f014 = 00000811 0000035e c400101f
+mic 8 on:  0xfc88f014 = 00000890 0000035e c400101f
+mic 9 on:  0xfc88f014 = 00000812 0000035e c400101f
+mic 10 on: 0xfc88f014 = 00000910 0000035e c400101f
+
+
+SPDIF in
+--------
+coax:  0xfc88f014 = 00000810 0000035e c400101f
+ADAT2: 0xfc88f014 = 00000810 0000035e c400121f
+
+
+SPDIF out
+---------
+ADAT2:        0xfc88f014 = 00000810 0000035e c400111f
+emphasis:     0xfc88f014 = 00000810 0000035e c400105f
+non-audio:    0xfc88f014 = 00000810 0000035e c400109f
+professional: 0xfc88f014 = 00000810 0000035e c400103f
+
+
+Sync reference source
+---------------------
+ADAT1:     0xfc88f014 = 00000810 0000035e c400001f
+ADAT2:     0xfc88f014 = 00000810 0000035e c400041f
+SPDIF:     0xfc88f014 = 00000810 0000035e c4000c1f
+TCO:       0xfc88f014 = 00000810 0000035e c400141f
+Wordclock: 0xfc88f014 = 00000810 0000035e c400101f
+
+
+Unit options
+------------
+Start with all options on.  Turn each of separately:
+-checkinput:  0xfc88f014 = 00000810 0000035e c400101f
+-interleaved: 0xfc88f014 = 00000810 0000035e c400101f
+-syncalign:   0xfc88f014 = 00000810 0000035e c400101f
+-tms:         0xfc88f014 = 00000810 0000035e 8400101f
+
+This tends to indicate that TMS is the only "unit option" which affects
+the hardware.  All the others would appear to be software features.
+
+
+Word clock
+----------
+Single speed on:  0xfc88f014 = 00000810 0000035e c400301f
+Single speed off: 0xfc88f014 = 00000810 0000035e c400101f
+
+
+Streaming start
+---------------
+Frequency was 44100 Hz.
+
+Playback:
+
+Read from 0xfffff000040c: 0xa3500
+Read from 0xfffff000040c: 0xa3500
+Write 0x0c bytes to 0x20000001c: 0000ac44 0000e000 0000001c
+Read 0x10 bytes from 0x801c0000: 81c000b0 80001001 00000001 00000001
+Write quadlet to 0x200000028: 0x1c000000
+Write 0x70 bytes to 0x801c0000:
+  00000001 00000001 00000001 00000001 00000001 00000001 00000001 00000001 
+  00000000 00000000 00000001 00000001 00000001 00000001 00000001 00000001 
+  00000001 00000001 00000001 00000001 00000001 00000001 00000001 00000001 
+  00000001 00000001 00000001 00000001
+
+Recording:
+
+Reads from 0x801c0000 and 0xfffff0000410 as for parameter setting.
+  0x801c0000 = 81c000b0 80001001 00000001 00000001
+  0xfffff0000410 = 0x93e1daf1
+Read from 0xfffff000040c: 0xa3500
+Read quadlet from 0x801c0000: 81c000b1
+Read from 0xfffff000040c: 0xa3500
+Read quadlet from 0x801c0000: 81c000b1
+Read from 0xfffff000040c: 0xa3500
+Read from 0xfffff000040c: 0xa3500
+Write 0x0c bytes to 0x20000001c: 0000ac44 0000e000 0000001c
+Read 0x10 bytes from 0x801c0000: 81c000b0 a0001001 00000001 00000001
+Write quadlet to 0x200000028: 0x1c000000
+Read 0x10 bytes from 0x801c0000: 81c000b0 80001001 00000001 00000001
+Read from 0xfffff0000410: 0x93e1daf1
+...
+
+
+Streaming end
+-------------
+Frequency was 44100 Hz.
+
+Playback:
+
+Write 0x0c bytes to 0x200000034: 00000000 00000000 00000000
+Write 0x70 bytes to 0x801c0000:
+  00000001 00000001 00000001 00000001 00000001 00000001 00000001 00000001 
+  00000001 00000001 00000001 00000001 00000001 00000001 00000001 00000001 
+  00000001 00000001 00000001 00000001 00000001 00000001 00000001 00000001 
+  00000001 00000001 00000001 00000001
+Read quadlet from 0xfffff000040c: 0xa3500
+
+Recording:
+
+Reads from:
+  0x801c0000 = 81c000b1 80001001 00000001 00000001
+  0xfffff0000410 = 0x93e1daf1
+Write 0x0c bytes to 0x200000034: 00000000 00000000 00000000
+More reads from 0x801c0000 and 0xfffff0000410
+
+
+Streaming data format
+---------------------
+The PC functions as the IRM and thus provides the cycle timer.  The packets
+do not contain an SPH.  It is not clear how device synchronisation is done.
+
+Channels are sent in Fireface numeric order: Analog 1-10, spdif, ADAT1 1-8,
+ADAT2 1-8 (a total of 28 channels).
+
+Each sample is 32 bits, seemingly ordered least significant byte first.
+
+By default ISO channel 0 is for PC->Fireface800 data and channel 1 carries
+Fireface800->PC audio data.
+
+In an example capture, packets carrying 6 frames were observed, reportedly
+at 44.1 kHz.  Packets of varying lengths were observed (0x230, 0x2a0 from
+the PC, a constant 0x310 from the Fireface800).  It is not known how the
+device maintains the correct flow of packets for the various odd-ball
+frequencies it supports.  It appears that in certain iso cycles an ISO
+packet is simply not sent in order to resync, but how either side knows when
+to do this is a mystery at present.
+
+The quadlets in a packet normally used by a CIP header seem to correspond to
+analog1+2.

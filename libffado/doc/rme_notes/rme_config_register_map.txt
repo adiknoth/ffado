@@ -1,0 +1,203 @@
+RME Fireface-800 register map
+=============================
+
+Version: 0.1
+Author: Jonathan Woithe
+Date: 24 March 2008
+
+
+Controlling sample rate (DDS)
+-----------------------------
+
+Sample rate is controlled by writing the desired sample rate in Hz to the
+sample rate control register (0xfc88f000).  Rates which have been observed
+are 32k, 44.056k, 44.144k, 44.1k, 45.937k, 46.080k, 47.952k, 48k and
+48.048k, along with corresponding 2x and 4x rates.
+
+Nowhere is there any evidence of register 0xfc88f000 being read by the PC. 
+It seems that the PC explicitly sets the device to its desired sample rate
+and then caches the sample rate locally.
+
+
+Configuration registers 1, 2 and 3
+----------------------------------
+
+Most RME device configuration is done using configuration registers 1, 2
+and 3.  These are:
+
+  config1 = configuration register 1 (0xfc88f014)
+  config2 = configuration register 2 (0xfc88f018)
+  config3 = configuration register 3 (0xfc88f01c)
+
+When making a configuration change these registers are always written in a
+block of 12 bytes starting at 0xfc88f014 with a block write operation.
+
+Configuration register 1 (0xfc88f014):
+
+  bits 31-8: unknown, set to 0
+  bits 17-16: Input #7 plug switch (part 1 of 2):
+    00 = rear only
+    01 = front only
+    10 = front+rear
+  bits 15-14: unknown, set to 0
+  bits 13-11: Output level control (part 1 of 2):
+    001 = hi-gain
+    010 = +4dBU
+    100 = -10dBV
+  bit 10: Instrument option: Drive (part 1 of 2) (active = 1)
+  bit 9: unknown, set to 0
+  bit 8: Phantom power, mic 10 (active = 1)
+  bit 7: Phantom power, mic 8 (active = 1)
+  bit 6: unknown, set to 0
+  bits 5-3: Input level control (part 1 of 2):
+    001 = lo-gain
+    010 = +4dBU
+    100 = -10dbV
+  bit 2: Instrument option: speaker emulation (active = 1)
+  bit 1: Phantom power, mic 9 (active = 1)
+  bit 0: Phantom power, mic 7 (active = 1)
+
+Configuration register 2 (0xfc88f018):
+
+  bits 31-12: unknown, set to 0
+  bit 11: Input #1 front switch (active = 1)
+  bit 10: unknown, set to 0
+  bit 9: Instrument option: Drive (part 2 of 2) (active = 0)
+  bit 8: Input #8 rear switch (active = 1)
+  bit 7: Input #8 front switch (active = 1)
+  bit 6: Input #7 rear switch (active = 1)
+  bit 5: Input #7 front switch (active = 1)
+  bits 4-3: Output level control (part 2 of 2):
+    00 = undefined
+    01 = -10dBV
+    10 = hi-gain
+    11 = +4dBU
+  bit 2: Input #1 rear switch (active = 1)
+  bits 1-0: Input level control (part 2 of 2):
+    00 = lo-gain
+    01 = undefined
+    10 = +4dBU
+    11 = -10dbV
+
+Configuration register 3 (0xfc88f01c):
+  bit 31: unknown, set to 1
+  bit 30: Unit option: TMS (active = 1)
+  bits 29-14: unknown, set to 10-0100-0000-00
+  bit 13: Word clock single speed: 0 = off, 1 = on
+  bits 12-10: Sync reference source:
+    000 = ADAT1
+    001 = ADAT2
+    011 = SPDIF
+    100 = Word clock
+    101 = TCO
+  bit 9: SPDIF input source: 0 = coax, 1 = ADAT2 port
+  bit 8: SPDIF output option: ADAT2
+  bit 7: SPDIF output option: non-audio
+  bit 6: SPDIF output option: emphasis
+  bit 5: SPDIF output option: professional
+  bits 4-1: unknown, set to 1111
+  bit 0: Clock mode: 0 = Master, 1 = Autosync
+
+
+Streaming control registers
+---------------------------
+
+There appears to be a number of registers involved in the setup of device
+streaming.
+
+Streaming start parameter register (0x20000001c):
+
+This register comprises the 3 quadlets starting at address 0x20000001c.  The
+first quadlet contains the sample rate in Hz.  The second and third quadlets
+were always observed to take the values 0x0000e000 and 0x0000001c
+respectively.
+
+After this register is configured, 4 quadlets are read starting from
+0x801c0000.  The numbers returned don't appear to bear any relationship to
+those written to this same location later on.
+
+Streaming start ready register (0x200000028):
+
+A value of 0x1c000000 is written to this register after the streaming start
+parameter register has been written to.
+
+Streaming channel setup register (0x801c0000):
+
+After writing to the streaming start ready register, 0x70 bytes (28
+quadlets) are written starting at 0x801c0000.  Each quadlet appears to
+represent one channel on the Fireface800.  On closing down streaming each
+quadlet is set to 1, while during startup some values are set to zero
+(although they are probably not the channels being opened for playback, more
+testing is needed).  Irrespective of the setting of these registers it
+appears that data for all channels is always sent to/from the Fireface-800.
+
+This register is also read during streaming setup but the returned value
+bears little relationship to that which is written to it.  The purpose of
+this read and/or the meaning of the returned value is as yet unknown.
+
+Streaming end register (0x200000034):
+
+3 zero quadlets are written starting at address 0x200000034 to stop
+streaming.
+
+
+Mixer controls
+--------------
+
+The matrix mixer on the Fireface-800 is controlled using a block of
+registers starting at 0x80080000.  A 28x28 matrix mixer is implemented
+allowing any device input to be sent to any device output.  The pan controls
+are synthesised by manipulating the "left/right" controls.
+
+In each sub-block, the order of channels is in fireface numeric order.  That
+is, Analog 1-10, SPDIF, ADAT1 1-8, ADAT2 1-8.
+
+0x80080000 - 0x8008006c: input channel sends to Analog 1 output.
+0x80080080 - 0x800800ec: playback channel sends to Analog 1 output.
+0x80080100 - 0x8008016c: input channel sends to Analog 2 output.
+0x80080180 - 0x800801ec: playback channel sends to Analog 2 output.
+:
+0x80081b00 - 0x80081b6c: input channel sends to ADAT2-8 output.
+0x80081b80 - 0x80081bec: playback channel sends to ADAT2-8 output.
+
+0x80081f80: matrix mixer analog 1 output fader
+0x80081f84: matrix mixer analog 2 output fader
+:
+0x80081fec: maxtrix mixer ADAT2-8 output fader
+
+Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0dB)
+and up to a maximum setting of 0x00010000 (+6.5dB).
+
+Mute is synthesised by setting the respective send value to -inf (0). 
+Conversely, solo is synthesised by muting all sends to the selected bus
+except the send being soloed.
+
+
+Metering values
+---------------
+
+The Fireface-800 appears to provide hardware support for metering.  The RME
+mixer application periodically sends block read requests for register
+0x80100000 with a size of 0x3f8.  What is returned is a set of two
+datablocks with data in little-endian (least significant bit/word first)
+format.  The first block contains arrays of 64-bit floating point numbers
+representing channel amplitude with decay, presumedly useful for metering
+display.  Arrays are:
+
+  28-element array for input channel amplitude with decay
+  28-element array for playback amplitudes with decay (educated guess)
+  28-element array for output amplitudes with decay
+
+The second data block contains signed 32 bit integers representing the input
+amplitudes without decay.  Valid range is 0 - 0x7ffffff.  Again there are 3
+arrays:
+
+  28-element array for input channel ampltude
+  28-element array for playback amplitudes (educated guess)
+  28-element array for output amplitudes
+
+At the end of this second block are two zero quadlets.  Their purpose is
+unknown at this stage.
+
+In each 28-element array the channel data appears in standard fireface
+order.
