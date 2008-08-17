@@ -593,24 +593,24 @@ class MotuMixer(MotuMixerUI):
         if (self.has_mic_inputs):
             # Mic input controls displace AES/EBU since no current device
             # has both.
-            self.mix1_tab.page(1).setTabLabel("Mic  inputs");
-            #self.mix2_tab.page(1).setTabLabel("Mic  inputs");
-            #self.mix3_tab.page(1).setTabLabel("Mic  inputs");
-            #self.mix4_tab.page(1).setTabLabel("Mic  inputs");
+            self.mix1_tab.page(1).setTabLabel("Mic inputs");
+            self.mix2_tab.page(1).setTabLabel("Mic inputs");
+            self.mix3_tab.page(1).setTabLabel("Mic inputs");
+            self.mix4_tab.page(1).setTabLabel("Mic inputs");
             # FIXME: when implmented, will mic channels just reuse the AES/EBU
             # dbus path?  If not we'll have to reset the respective values in
             # the control arrays (self.ChannelFaders etc).
         else:
             if (not(self.has_aesebu_inputs)):
                 self.mix1_tab.page(1).setEnabled(False)
-                #self.mix2_tab.page(1).setEnabled(False)
-                #self.mix3_tab.page(1).setEnabled(False)
-                #self.mix4_tab.page(1).setEnabled(False)
+                self.mix2_tab.page(1).setEnabled(False)
+                self.mix3_tab.page(1).setEnabled(False)
+                self.mix4_tab.page(1).setEnabled(False)
         if (not(self.has_spdif_inputs)):
             self.mix1_tab.page(2).setEnabled(False);
-            #self.mix2_tab.page(2).setEnabled(False);
-            #self.mix3_tab.page(2).setEnabled(False);
-            #self.mix4_tab.page(2).setEnabled(False);
+            self.mix2_tab.page(2).setEnabled(False);
+            self.mix3_tab.page(2).setEnabled(False);
+            self.mix4_tab.page(2).setEnabled(False);
 
         # Devices without AES/EBU inputs/outputs have dedicated "MainOut"
         # outputs instead.
@@ -639,33 +639,33 @@ class MotuMixer(MotuMixerUI):
             self.mix1_tab.page(3).setEnabled(False)  # ADAT
             self.mix1_tab.page(2).setEnabled(False)  # SPDIF
             self.mix1_tab.page(1).setEnabled(False)  # AES/EBU
-            #self.mix2_tab.page(3).setEnabled(False)  # ADAT
-            #self.mix2_tab.page(2).setEnabled(False)  # SPDIF
-            #self.mix2_tab.page(1).setEnabled(False)  # AES/EBU
-            #self.mix3_tab.page(3).setEnabled(False)  # ADAT
-            #self.mix3_tab.page(2).setEnabled(False)  # SPDIF
-            #self.mix3_tab.page(1).setEnabled(False)  # AES/EBU
-            #self.mix4_tab.page(3).setEnabled(False)  # ADAT
-            #self.mix4_tab.page(2).setEnabled(False)  # SPDIF
-            #self.mix4_tab.page(1).setEnabled(False)  # AES/EBU
+            self.mix2_tab.page(3).setEnabled(False)  # ADAT
+            self.mix2_tab.page(2).setEnabled(False)  # SPDIF
+            self.mix2_tab.page(1).setEnabled(False)  # AES/EBU
+            self.mix3_tab.page(3).setEnabled(False)  # ADAT
+            self.mix3_tab.page(2).setEnabled(False)  # SPDIF
+            self.mix3_tab.page(1).setEnabled(False)  # AES/EBU
+            self.mix4_tab.page(3).setEnabled(False)  # ADAT
+            self.mix4_tab.page(2).setEnabled(False)  # SPDIF
+            self.mix4_tab.page(1).setEnabled(False)  # AES/EBU
         if (self.sample_rate > 48000):
             print "Disabling controls not present above 48 kHz"
             self.mix1_adat5.setEnabled(False)
             self.mix1_adat6.setEnabled(False)
             self.mix1_adat7.setEnabled(False)
             self.mix1_adat8.setEnabled(False)
-            #self.mix2_adat5.setEnabled(False)
-            #self.mix2_adat6.setEnabled(False)
-            #self.mix2_adat7.setEnabled(False)
-            #self.mix2_adat8.setEnabled(False)
-            #self.mix3_adat5.setEnabled(False)
-            #self.mix3_adat6.setEnabled(False)
-            #self.mix3_adat7.setEnabled(False)
-            #self.mix3_adat8.setEnabled(False)
-            #self.mix4_adat5.setEnabled(False)
-            #self.mix4_adat6.setEnabled(False)
-            #self.mix4_adat7.setEnabled(False)
-            #self.mix4_adat8.setEnabled(False)
+            self.mix2_adat5.setEnabled(False)
+            self.mix2_adat6.setEnabled(False)
+            self.mix2_adat7.setEnabled(False)
+            self.mix2_adat8.setEnabled(False)
+            self.mix3_adat5.setEnabled(False)
+            self.mix3_adat6.setEnabled(False)
+            self.mix3_adat7.setEnabled(False)
+            self.mix3_adat8.setEnabled(False)
+            self.mix4_adat5.setEnabled(False)
+            self.mix4_adat6.setEnabled(False)
+            self.mix4_adat7.setEnabled(False)
+            self.mix4_adat8.setEnabled(False)
 
         # Ensure the correct input controls are active for a given interface
         if (self.model == MOTU_MODEL_TRAVELER):
