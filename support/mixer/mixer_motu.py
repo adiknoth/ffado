@@ -620,6 +620,14 @@ class MotuMixer(MotuMixerUI):
             self.mix3_dest.changeItem("MainOut", 6)
             self.mix4_dest.changeItem("MainOut", 6)
             self.phones_src.changeItem("MainOut", 6)
+        # The 896HD doesn't have SPDIF outputs but instead uses that "slot"
+        # for its MainOut.  There's no conflict with the previous setting
+        # here because the 896HD has AES/EBU outputs.
+        if (self.model == MOTU_MODEL_896HD):
+            self.mix1_dest.changeItem("MainOut", 7)
+            self.mix2_dest.changeItem("MainOut", 7)
+            self.mix3_dest.changeItem("MainOut", 7)
+            self.mix4_dest.changeItem("MainOut", 7)
 
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
