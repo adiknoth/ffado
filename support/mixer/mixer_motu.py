@@ -504,49 +504,49 @@ class MotuMixer(MotuMixerUI):
         # dbus path for these is yet to be finalised too - for example we
         # may end up using a matrix mixer.
         self.PairSwitches={
-            self.mix1ana1_2_pair:   ['Mixer/Mix1/Ana1_2_pair'],
-            self.mix1ana3_4_pair:   ['Mixer/Mix1/Ana3_4_pair'],
-            self.mix1ana5_6_pair:   ['Mixer/Mix1/Ana5_6_pair'],
-            self.mix1ana7_8_pair:   ['Mixer/Mix1/Ana7_8_pair'],
-            self.mix1aes1_2_pair:   ['Mixer/Mix1/Aes1_2_pair'],
-            self.mix1adat1_2_pair:  ['Mixer/Mix1/Adat1_2_pair'],
-            self.mix1adat3_4_pair:  ['Mixer/Mix1/Adat3_4_pair'],
-            self.mix1adat5_6_pair:  ['Mixer/Mix1/Adat5_6_pair'],
-            self.mix1adat7_8_pair:  ['Mixer/Mix1/Adat7_8_pair'],
-            self.mix1spdif1_2_pair: ['Mixer/Mix1/Spdif1_2_pair'],
+#            self.mix1ana1_2_pair:   ['Mixer/Mix1/Ana1_2_pair'],
+#            self.mix1ana3_4_pair:   ['Mixer/Mix1/Ana3_4_pair'],
+#            self.mix1ana5_6_pair:   ['Mixer/Mix1/Ana5_6_pair'],
+#            self.mix1ana7_8_pair:   ['Mixer/Mix1/Ana7_8_pair'],
+#            self.mix1aes1_2_pair:   ['Mixer/Mix1/Aes1_2_pair'],
+#            self.mix1adat1_2_pair:  ['Mixer/Mix1/Adat1_2_pair'],
+#            self.mix1adat3_4_pair:  ['Mixer/Mix1/Adat3_4_pair'],
+#            self.mix1adat5_6_pair:  ['Mixer/Mix1/Adat5_6_pair'],
+#            self.mix1adat7_8_pair:  ['Mixer/Mix1/Adat7_8_pair'],
+#            self.mix1spdif1_2_pair: ['Mixer/Mix1/Spdif1_2_pair'],
 
-            self.mix2ana1_2_pair:   ['Mixer/Mix2/Ana1_2_pair'],
-            self.mix2ana3_4_pair:   ['Mixer/Mix2/Ana3_4_pair'],
-            self.mix2ana5_6_pair:   ['Mixer/Mix2/Ana5_6_pair'],
-            self.mix2ana7_8_pair:   ['Mixer/Mix2/Ana7_8_pair'],
-            self.mix2aes1_2_pair:   ['Mixer/Mix2/Aes1_2_pair'],
-            self.mix2adat1_2_pair:  ['Mixer/Mix2/Adat1_2_pair'],
-            self.mix2adat3_4_pair:  ['Mixer/Mix2/Adat3_4_pair'],
-            self.mix2adat5_6_pair:  ['Mixer/Mix2/Adat5_6_pair'],
-            self.mix2adat7_8_pair:  ['Mixer/Mix2/Adat7_8_pair'],
-            self.mix2spdif1_2_pair: ['Mixer/Mix2/Spdif1_2_pair'],
+#            self.mix2ana1_2_pair:   ['Mixer/Mix2/Ana1_2_pair'],
+#            self.mix2ana3_4_pair:   ['Mixer/Mix2/Ana3_4_pair'],
+#            self.mix2ana5_6_pair:   ['Mixer/Mix2/Ana5_6_pair'],
+#            self.mix2ana7_8_pair:   ['Mixer/Mix2/Ana7_8_pair'],
+#            self.mix2aes1_2_pair:   ['Mixer/Mix2/Aes1_2_pair'],
+#            self.mix2adat1_2_pair:  ['Mixer/Mix2/Adat1_2_pair'],
+#            self.mix2adat3_4_pair:  ['Mixer/Mix2/Adat3_4_pair'],
+#            self.mix2adat5_6_pair:  ['Mixer/Mix2/Adat5_6_pair'],
+#            self.mix2adat7_8_pair:  ['Mixer/Mix2/Adat7_8_pair'],
+#            self.mix2spdif1_2_pair: ['Mixer/Mix2/Spdif1_2_pair'],
 
-            self.mix3ana1_2_pair:   ['Mixer/Mix3/Ana1_2_pair'],
-            self.mix3ana3_4_pair:   ['Mixer/Mix3/Ana3_4_pair'],
-            self.mix3ana5_6_pair:   ['Mixer/Mix3/Ana5_6_pair'],
-            self.mix3ana7_8_pair:   ['Mixer/Mix3/Ana7_8_pair'],
-            self.mix3aes1_2_pair:   ['Mixer/Mix3/Aes1_2_pair'],
-            self.mix3adat1_2_pair:  ['Mixer/Mix3/Adat1_2_pair'],
-            self.mix3adat3_4_pair:  ['Mixer/Mix3/Adat3_4_pair'],
-            self.mix3adat5_6_pair:  ['Mixer/Mix3/Adat5_6_pair'],
-            self.mix3adat7_8_pair:  ['Mixer/Mix3/Adat7_8_pair'],
-            self.mix3spdif1_2_pair: ['Mixer/Mix3/Spdif1_2_pair'],
+#            self.mix3ana1_2_pair:   ['Mixer/Mix3/Ana1_2_pair'],
+#            self.mix3ana3_4_pair:   ['Mixer/Mix3/Ana3_4_pair'],
+#            self.mix3ana5_6_pair:   ['Mixer/Mix3/Ana5_6_pair'],
+#            self.mix3ana7_8_pair:   ['Mixer/Mix3/Ana7_8_pair'],
+#            self.mix3aes1_2_pair:   ['Mixer/Mix3/Aes1_2_pair'],
+#            self.mix3adat1_2_pair:  ['Mixer/Mix3/Adat1_2_pair'],
+#            self.mix3adat3_4_pair:  ['Mixer/Mix3/Adat3_4_pair'],
+#            self.mix3adat5_6_pair:  ['Mixer/Mix3/Adat5_6_pair'],
+#            self.mix3adat7_8_pair:  ['Mixer/Mix3/Adat7_8_pair'],
+#            self.mix3spdif1_2_pair: ['Mixer/Mix3/Spdif1_2_pair'],
 
-            self.mix4ana1_2_pair:   ['Mixer/Mix4/Ana1_2_pair'],
-            self.mix4ana3_4_pair:   ['Mixer/Mix4/Ana3_4_pair'],
-            self.mix4ana5_6_pair:   ['Mixer/Mix4/Ana5_6_pair'],
-            self.mix4ana7_8_pair:   ['Mixer/Mix4/Ana7_8_pair'],
-            self.mix4aes1_2_pair:   ['Mixer/Mix4/Aes1_2_pair'],
-            self.mix4adat1_2_pair:  ['Mixer/Mix4/Adat1_2_pair'],
-            self.mix4adat3_4_pair:  ['Mixer/Mix4/Adat3_4_pair'],
-            self.mix4adat5_6_pair:  ['Mixer/Mix4/Adat5_6_pair'],
-            self.mix4adat7_8_pair:  ['Mixer/Mix4/Adat7_8_pair'],
-            self.mix4spdif1_2_pair: ['Mixer/Mix4/Spdif1_2_pair'],
+#            self.mix4ana1_2_pair:   ['Mixer/Mix4/Ana1_2_pair'],
+#            self.mix4ana3_4_pair:   ['Mixer/Mix4/Ana3_4_pair'],
+#            self.mix4ana5_6_pair:   ['Mixer/Mix4/Ana5_6_pair'],
+#            self.mix4ana7_8_pair:   ['Mixer/Mix4/Ana7_8_pair'],
+#            self.mix4aes1_2_pair:   ['Mixer/Mix4/Aes1_2_pair'],
+#            self.mix4adat1_2_pair:  ['Mixer/Mix4/Adat1_2_pair'],
+#            self.mix4adat3_4_pair:  ['Mixer/Mix4/Adat3_4_pair'],
+#            self.mix4adat5_6_pair:  ['Mixer/Mix4/Adat5_6_pair'],
+#            self.mix4adat7_8_pair:  ['Mixer/Mix4/Adat7_8_pair'],
+#            self.mix4spdif1_2_pair: ['Mixer/Mix4/Spdif1_2_pair'],
         }
 
         self.MixDests={
@@ -593,24 +593,24 @@ class MotuMixer(MotuMixerUI):
         if (self.has_mic_inputs):
             # Mic input controls displace AES/EBU since no current device
             # has both.
-            self.mix1_aes_group.setTitle("Mic inputs")
-            self.mix2_aes_group.setTitle("Mic inputs")
-            self.mix3_aes_group.setTitle("Mic inputs")
-            self.mix4_aes_group.setTitle("Mic inputs")
+            self.mix1_tab.page(1).setTabLabel("Mic  inputs");
+            #self.mix2_tab.page(1).setTabLabel("Mic  inputs");
+            #self.mix3_tab.page(1).setTabLabel("Mic  inputs");
+            #self.mix4_tab.page(1).setTabLabel("Mic  inputs");
             # FIXME: when implmented, will mic channels just reuse the AES/EBU
             # dbus path?  If not we'll have to reset the respective values in
             # the control arrays (self.ChannelFaders etc).
         else:
             if (not(self.has_aesebu_inputs)):
-                self.mix1_aes_group.setEnabled(False)
-                self.mix2_aes_group.setEnabled(False)
-                self.mix3_aes_group.setEnabled(False)
-                self.mix4_aes_group.setEnabled(False)
+                self.mix1_tab.page(1).setEnabled(False)
+                #self.mix2_tab.page(1).setEnabled(False)
+                #self.mix3_tab.page(1).setEnabled(False)
+                #self.mix4_tab.page(1).setEnabled(False)
         if (not(self.has_spdif_inputs)):
-            self.mix1_spdif_group.setEnabled(False)
-            self.mix2_spdif_group.setEnabled(False)
-            self.mix3_spdif_group.setEnabled(False)
-            self.mix4_spdif_group.setEnabled(False)
+            self.mix1_tab.page(2).setEnabled(False);
+            #self.mix2_tab.page(2).setEnabled(False);
+            #self.mix3_tab.page(2).setEnabled(False);
+            #self.mix4_tab.page(2).setEnabled(False);
 
         # Devices without AES/EBU inputs/outputs have dedicated "MainOut"
         # outputs instead.
@@ -636,43 +636,59 @@ class MotuMixer(MotuMixerUI):
         # Some channels aren't available at higher sampling rates
         if (self.sample_rate > 96000):
             print "Disabling controls not present above 96 kHz"
-            self.mix1_adat_group.setEnabled(False)
-            self.mix1_aes_group.setEnabled(False)
-            self.mix1_spdif_group.setEnabled(False)
-            self.mix2_adat_group.setEnabled(False)
-            self.mix2_aes_group.setEnabled(False)
-            self.mix2_spdif_group.setEnabled(False)
-            self.mix3_adat_group.setEnabled(False)
-            self.mix3_aes_group.setEnabled(False)
-            self.mix3_spdif_group.setEnabled(False)
-            self.mix4_adat_group.setEnabled(False)
-            self.mix4_aes_group.setEnabled(False)
-            self.mix4_spdif_group.setEnabled(False)
+            self.mix1_tab.page(3).setEnabled(False)  # ADAT
+            self.mix1_tab.page(2).setEnabled(False)  # SPDIF
+            self.mix1_tab.page(1).setEnabled(False)  # AES/EBU
+            #self.mix2_tab.page(3).setEnabled(False)  # ADAT
+            #self.mix2_tab.page(2).setEnabled(False)  # SPDIF
+            #self.mix2_tab.page(1).setEnabled(False)  # AES/EBU
+            #self.mix3_tab.page(3).setEnabled(False)  # ADAT
+            #self.mix3_tab.page(2).setEnabled(False)  # SPDIF
+            #self.mix3_tab.page(1).setEnabled(False)  # AES/EBU
+            #self.mix4_tab.page(3).setEnabled(False)  # ADAT
+            #self.mix4_tab.page(2).setEnabled(False)  # SPDIF
+            #self.mix4_tab.page(1).setEnabled(False)  # AES/EBU
         if (self.sample_rate > 48000):
             print "Disabling controls not present above 48 kHz"
-            self.mix1_adat58_group.setEnabled(False)
-            self.mix2_adat58_group.setEnabled(False)
-            self.mix3_adat58_group.setEnabled(False)
-            self.mix4_adat58_group.setEnabled(False)
+            self.mix1_adat5.setEnabled(False)
+            self.mix1_adat6.setEnabled(False)
+            self.mix1_adat7.setEnabled(False)
+            self.mix1_adat8.setEnabled(False)
+            #self.mix2_adat5.setEnabled(False)
+            #self.mix2_adat6.setEnabled(False)
+            #self.mix2_adat7.setEnabled(False)
+            #self.mix2_adat8.setEnabled(False)
+            #self.mix3_adat5.setEnabled(False)
+            #self.mix3_adat6.setEnabled(False)
+            #self.mix3_adat7.setEnabled(False)
+            #self.mix3_adat8.setEnabled(False)
+            #self.mix4_adat5.setEnabled(False)
+            #self.mix4_adat6.setEnabled(False)
+            #self.mix4_adat7.setEnabled(False)
+            #self.mix4_adat8.setEnabled(False)
 
         # Ensure the correct input controls are active for a given interface
         if (self.model == MOTU_MODEL_TRAVELER):
             self.disable_hide(self.ana1_level)
-            self.disable_hide(self.ana1_level_label)
             self.disable_hide(self.ana2_level)
-            self.disable_hide(self.ana2_level_label)
             self.disable_hide(self.ana3_level)
-            self.disable_hide(self.ana3_level_label)
             self.disable_hide(self.ana4_level)
-            self.disable_hide(self.ana4_level_label)
             self.disable_hide(self.ana1_boost)
-            self.disable_hide(self.ana1_boost_label)
             self.disable_hide(self.ana2_boost)
-            self.disable_hide(self.ana2_boost_label)
             self.disable_hide(self.ana3_boost)
-            self.disable_hide(self.ana3_boost_label)
             self.disable_hide(self.ana4_boost)
-            self.disable_hide(self.ana4_boost_label)
+            self.disable_hide(self.ana5_trimgain)
+            self.disable_hide(self.ana5_trimgain_label)
+            self.disable_hide(self.ana6_trimgain)
+            self.disable_hide(self.ana6_trimgain_label)
+            self.disable_hide(self.ana7_trimgain)
+            self.disable_hide(self.ana7_trimgain_label)
+            self.disable_hide(self.ana8_trimgain)
+            self.disable_hide(self.ana8_trimgain_label)
+            self.disable_hide(self.ana5_pad)
+            self.disable_hide(self.ana6_pad)
+            self.disable_hide(self.ana7_pad)
+            self.disable_hide(self.ana8_pad)
         else:
             self.disable_hide(self.ana1_trimgain)
             self.disable_hide(self.ana1_trimgain_label)
@@ -683,13 +699,21 @@ class MotuMixer(MotuMixerUI):
             self.disable_hide(self.ana4_trimgain)
             self.disable_hide(self.ana4_trimgain_label)
             self.disable_hide(self.ana1_pad)
-            self.disable_hide(self.ana1_pad_label)
             self.disable_hide(self.ana2_pad)
-            self.disable_hide(self.ana2_pad_label)
             self.disable_hide(self.ana3_pad)
-            self.disable_hide(self.ana3_pad_label)
             self.disable_hide(self.ana4_pad)
-            self.disable_hide(self.ana4_pad_label)
+            self.disable_hide(self.ana5_trimgain)
+            self.disable_hide(self.ana5_trimgain_label)
+            self.disable_hide(self.ana6_trimgain)
+            self.disable_hide(self.ana6_trimgain_label)
+            self.disable_hide(self.ana7_trimgain)
+            self.disable_hide(self.ana7_trimgain_label)
+            self.disable_hide(self.ana8_trimgain)
+            self.disable_hide(self.ana8_trimgain_label)
+            self.disable_hide(self.ana5_pad)
+            self.disable_hide(self.ana6_pad)
+            self.disable_hide(self.ana7_pad)
+            self.disable_hide(self.ana8_pad)
 
         # Now fetch the current values into the respective controls.  Don't
         # bother fetching controls which are disabled.
@@ -735,7 +759,7 @@ class MotuMixer(MotuMixerUI):
                 continue
             val = self.hw.getMatrixMixerValue(info[0], info[1], info[2])
             print "%s for mix %d channel %d is %d" % (info[0] , info[1], info[2], val)
-            ctrl.setChecked(val)
+            ctrl.setOn(val)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateChannelBinarySwitch)
 
         for ctrl, info in self.BinarySwitches.iteritems():
@@ -743,7 +767,7 @@ class MotuMixer(MotuMixerUI):
                 continue
             val = self.hw.getDiscrete(info[0])
             print "%s switch is %d" % (info[0] , val)
-            ctrl.setChecked(val)
+            ctrl.setOn(val)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateBinarySwitch)
 
         for ctrl, info in self.MixDests.iteritems():
