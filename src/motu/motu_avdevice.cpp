@@ -301,6 +301,25 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
 };
 
+const MixerCtrl MixerCtrls_896HD[] = {
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+    {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
+    {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
+    {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+
+    /* For phones source control, "register" is currently unused */
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+
+    /* For meter controls the "register" indicates which meter controls are available */
+    {"Control/Meter_", "Meter ", "", MOTU_CTRL_METER,
+      MOTU_CTRL_METER_PEAKHOLD | MOTU_CTRL_METER_CLIPHOLD | MOTU_CTRL_METER_AESEBU_SRC | 
+      MOTU_CTRL_METER_PROG_SRC},
+};
+
 const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
@@ -331,11 +350,8 @@ const MotuMixer Mixer_Traveler = MOTUMIXER(
 const MotuMixer Mixer_828Mk2 = MOTUMIXER(
     MixerCtrls_828Mk2, MixerBuses_Traveler, MixerChannels_Traveler);
 
-// For convenience during initial testing, just make the 896HD use the
-// Traveler's mixer definition.  Separate definitions for these models will
-// come once the final mixer structure is in place.  For now it's in a state
-// of flux and subject to significant change.
-#define Mixer_896HD   Mixer_Traveler
+const MotuMixer Mixer_896HD = MOTUMIXER(
+    MixerCtrls_896HD, MixerBuses_Traveler, MixerChannels_Traveler);
 
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
@@ -547,6 +563,37 @@ MotuDevice::buildMixer() {
                 new OpticalMode(*this, ctrl->dev_register,
                     ctrl->name, ctrl->label, ctrl->desc));
             type &= ~MOTU_CTRL_OPTICAL_MODE;
+        }
+        if (type & MOTU_CTRL_METER) {
+            if (ctrl->dev_register & MOTU_CTRL_METER_PEAKHOLD) {
+                snprintf(name, 100, "%s%s", ctrl->name, "peakhold_time");
+                snprintf(label,100, "%s%s", ctrl->label,"peakhold time");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_PEAKHOLD_MASK,
+                        MOTU_METER_PEAKHOLD_SHIFT, name, label, ctrl->desc));
+            }
+            if (ctrl->dev_register & MOTU_CTRL_METER_CLIPHOLD) {
+                snprintf(name, 100, "%s%s", ctrl->name, "cliphold_time");
+                snprintf(label,100, "%s%s", ctrl->label,"cliphold time");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_CLIPHOLD_MASK,
+                        MOTU_METER_CLIPHOLD_SHIFT, name, label, ctrl->desc));
+            }
+            if (ctrl->dev_register & MOTU_CTRL_METER_AESEBU_SRC) {
+                snprintf(name, 100, "%s%s", ctrl->name, "aesebu_src");
+                snprintf(label,100, "%s%s", ctrl->label,"AESEBU source");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_AESEBU_SRC_MASK,
+                        MOTU_METER_AESEBU_SRC_SHIFT, name, label, ctrl->desc));
+            }
+            if (ctrl->dev_register & MOTU_CTRL_METER_PROG_SRC) {
+                snprintf(name, 100, "%s%s", ctrl->name, "src");
+                snprintf(label,100, "%s%s", ctrl->label,"source");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_PROG_SRC_MASK,
+                        MOTU_METER_PROG_SRC_SHIFT, name, label, ctrl->desc));
+            }
+            type &= ~MOTU_CTRL_METER;
         }
 
         if (type) {

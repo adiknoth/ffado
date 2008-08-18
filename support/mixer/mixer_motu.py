@@ -559,6 +559,11 @@ class MotuMixer(MotuMixerUI):
 
             self.optical_in_mode:   ['/Mixer/Control/OpticalIn_mode'],
             self.optical_out_mode:  ['/Mixer/Control/OpticalOut_mode'],
+
+            self.meter_src_ctrl:    ['/Mixer/Control/Meter_src'],
+            self.aesebu_meter_ctrl: ['/Mixer/Control/Meter_aesebu_src'],
+            self.peakhold_time_ctrl:['/Mixer/Control/Meter_peakhold_time'],
+            self.cliphold_time_ctrl:['/Mixer/Control/Meter_cliphold_time'],
         }
 
         self.SelectorControls={
@@ -635,6 +640,13 @@ class MotuMixer(MotuMixerUI):
         if (not(self.has_optical_spdif)):
             self.optical_in_mode.removeItem(2)
             self.optical_out_mode.removeItem(2)
+
+        # Only the 896HD has meter controls
+        if (self.model != MOTU_MODEL_896HD):
+            self.disable_hide(self.meter_src)
+            self.disable_hide(self.aesebu_meter)
+            self.disable_hide(self.peakhold_time)
+            self.disable_hide(self.cliphold_time)
 
         # Some controls must be disabled if the device is streaming
         if (self.is_streaming):

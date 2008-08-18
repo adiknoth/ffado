@@ -726,6 +726,64 @@ InputGainPad::getValue()
     return val;
 }
 
+MeterControl::MeterControl(MotuDevice &parent, unsigned int ctrl_mask, unsigned int ctrl_shift)
+: MotuDiscreteCtrl(parent, ctrl_mask)
+{
+    m_shift = ctrl_shift;
+    validate();
+}
+
+MeterControl::MeterControl(MotuDevice &parent, unsigned int ctrl_mask, unsigned int ctrl_shift,
+             std::string name, std::string label, std::string descr)
+: MotuDiscreteCtrl(parent, ctrl_mask, name, label, descr)
+{
+    m_shift = ctrl_shift;
+    validate();
+}
+
+void MeterControl::validate(void) {
+    if (m_register & (1<< m_shift) == 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Inconsistent mask/shift: 0x%08x/%d\n", m_register, m_shift);
+    }
+}
+
+bool
+MeterControl::setValue(int v)
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for meter control 0x%08x/%d: %d\n", 
+        m_register, m_shift, v);
+
+    // Need to get current register setting so we can preserve the parts not
+    // being controlled by this object.  m_register holds the mask for the 
+    // parts we're changing.
+    val = m_parent.ReadRegister(MOTU_REG_896HD_METER_CONF) & ~m_register;
+    val |= (v << m_shift) & m_register;
+
+    m_parent.WriteRegister(MOTU_REG_896HD_METER_CONF, val);
+
+    // Drivers under other OSes set MOTU_REG_896HD_METER_REG (0x0b1c) to
+    // 0x0400 whenever MOTU_REG_896HD_METER_CONF (0x0b24) is changed. 
+    // There's no obvious reason why they do this, but since it's no hassle
+    // we might as well do the same.
+    m_parent.WriteRegister(MOTU_REG_896HD_METER_REG, 0x0400);
+
+    return true;
+}
+
+int
+MeterControl::getValue()
+{
+    unsigned int val;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for meter control 0x%08x/%d\n", 
+        m_register, m_shift);
+
+    // m_register holds the mask of the part of interest
+    val = (m_parent.ReadRegister(MOTU_REG_896HD_METER_CONF) & m_register) >> m_shift;
+
+    return val;
+}
+
 InfoElement::InfoElement(MotuDevice &parent, unsigned infotype)
 : MotuDiscreteCtrl(parent, infotype)
 {

@@ -26,7 +26,7 @@ GNU General Public License for more details.
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>958</width>
+            <width>992</width>
             <height>693</height>
         </rect>
     </property>
@@ -251,6 +251,249 @@ GNU General Public License for more details.
                         </widget>
                     </vbox>
                 </widget>
+                <widget class="Line">
+                    <property name="name">
+                        <cstring>line2_2</cstring>
+                    </property>
+                    <property name="frameShape">
+                        <enum>HLine</enum>
+                    </property>
+                    <property name="frameShadow">
+                        <enum>Sunken</enum>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                </widget>
+                <widget class="QGroupBox">
+                    <property name="name">
+                        <cstring>meter_src</cstring>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <pointsize>10</pointsize>
+                        </font>
+                    </property>
+                    <property name="frameShape">
+                        <enum>NoFrame</enum>
+                    </property>
+                    <property name="title">
+                        <string>Meter source</string>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QComboBox">
+                            <item>
+                                <property name="text">
+                                    <string>Analog out</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>ADAT in</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>ADAT out</string>
+                                </property>
+                            </item>
+                            <property name="name">
+                                <cstring>meter_src_ctrl</cstring>
+                            </property>
+                            <property name="font">
+                                <font>
+                                    <pointsize>9</pointsize>
+                                </font>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <widget class="QGroupBox">
+                    <property name="name">
+                        <cstring>aesebu_meter</cstring>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <pointsize>10</pointsize>
+                        </font>
+                    </property>
+                    <property name="frameShape">
+                        <enum>NoFrame</enum>
+                    </property>
+                    <property name="title">
+                        <string>AES/EBU Meter</string>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QComboBox">
+                            <item>
+                                <property name="text">
+                                    <string>AES/EBU out</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>AES/EBU in</string>
+                                </property>
+                            </item>
+                            <property name="name">
+                                <cstring>aesebu_meter_ctrl</cstring>
+                            </property>
+                            <property name="font">
+                                <font>
+                                    <pointsize>9</pointsize>
+                                </font>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <widget class="QGroupBox">
+                    <property name="name">
+                        <cstring>peakhold_time</cstring>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <pointsize>10</pointsize>
+                        </font>
+                    </property>
+                    <property name="frameShape">
+                        <enum>NoFrame</enum>
+                    </property>
+                    <property name="title">
+                        <string>Peakhold time</string>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QComboBox">
+                            <item>
+                                <property name="text">
+                                    <string>Off</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>2 sec</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>4 sec</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>10 sec</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>1 min</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>5 min</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>8 min</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>infinite</string>
+                                </property>
+                            </item>
+                            <property name="name">
+                                <cstring>peakhold_time_ctrl</cstring>
+                            </property>
+                            <property name="font">
+                                <font>
+                                    <pointsize>9</pointsize>
+                                </font>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <widget class="QGroupBox">
+                    <property name="name">
+                        <cstring>cliphold_time</cstring>
+                    </property>
+                    <property name="font">
+                        <font>
+                            <pointsize>10</pointsize>
+                        </font>
+                    </property>
+                    <property name="frameShape">
+                        <enum>NoFrame</enum>
+                    </property>
+                    <property name="title">
+                        <string>Cliphold time</string>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QComboBox">
+                            <item>
+                                <property name="text">
+                                    <string>Off</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>2 sec</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>4 sec</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>10 sec</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>1 min</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>5 min</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>8 min</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>infinite</string>
+                                </property>
+                            </item>
+                            <property name="name">
+                                <cstring>cliphold_time_ctrl</cstring>
+                            </property>
+                            <property name="font">
+                                <font>
+                                    <pointsize>9</pointsize>
+                                </font>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
                 <spacer>
                     <property name="name">
                         <cstring>spacer183</cstring>
@@ -264,7 +507,7 @@ GNU General Public License for more details.
                     <property name="sizeHint">
                         <size>
                             <width>20</width>
-                            <height>321</height>
+                            <height>220</height>
                         </size>
                     </property>
                 </spacer>
