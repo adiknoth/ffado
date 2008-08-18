@@ -2,11 +2,16 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20080501-1
+Document version: 20080818-1
 
 
 Audio/MIDI data
 ---------------
+
+Note: while this section focuses on the Traveler, the same basic data format
+is utilised for the 828Mk2, 896HD and possibly other MOTU interfaces.  The
+differences lie in the number of discrete audio channels sent and perhaps
+the order of some channels within a data block.
 
 Audio data is sent via iso packets.  With nothing else present on the
 firewire bus Iso channel 0 is used by the PC to send data to the MOTU while
@@ -413,7 +418,8 @@ MOTU registers currently known.  The base address is 0xfffff0000000.
 0x0b08 - Device initialisation/discovery?
 0x0b10 - Optical port control?
 0x0b14 - clock control register
-0x0b24 - non-existent register probed during discovery/initialisation
+0x0b1c - 896HD register possibly related to programmable meters
+0x0b24 - 896HD programmable meter register (always probed during discovery/init)
 0x0b28 - copy of model_id unit directory
 0x0b2c - something related to selections in mixer application
 0x0c00 - firmware programming control
@@ -547,7 +553,11 @@ the MOTU is turned off or the MOTU is unplugged from the computer.
 
 The details of the clock control register are summarised below.
 
-  bits 31-28: unknown at present.  Seem to always be set to 0.
+  bits 31-29: unknown at present.  Seem to always be set to 0.
+
+  bit 28: unknown at present.  For 896HD this seems to be set to 1 whenever
+    the sample rate, sample rate conversion or clock mode is changed.  For other
+    interfaces it appears to always be set to 0.
 
   bit 27: in 2x or 4x clock mode, this bit indicates whether word clock out
     should follow the system clock (bit 27 set to 1) or should be forced to
@@ -557,6 +567,15 @@ The details of the clock control register are summarised below.
     this register.  Bits 25 and 24 are toggled at various stages when the
     rate is changed and seem to both be set at times when iso data streaming
     is enabled.  Other bits appear to always be set to zero.
+
+  bit 9-8: Sample rate conversion setting (896HD only, always 0 on other
+    interfaces):
+      0 = off
+      1 = AES/EBU in
+      2 = AES/EBU out slave
+      3 = AES/EBU out 2x
+
+  bits 7-6: unknown at present.  Always observered to be 0.
 
   bit 5: 4x rate multiplier selector
     Enables the 4x clock multiplier (giving access to 176000 Hz and 192000 Hz
@@ -603,12 +622,56 @@ as the source in the Audio console appears to use the "internal" setting for
 bits 0-3.
 
 
-0x0b24 - non-existent register probed during discovery/initialisation
+0x0b1c - 896HD register associated with programmable meters
 
-Register 0x0b24 doesn't exist in the MOTU hardware, but a read request is
-sent to it twice during device discovery/initialisation.  In response the
-MOTU returns "type_error" with data equal to 0x40000.  The precise purpose
-of this is not known.
+The role of this register is currently unknown.  Whenever the programmable
+meters are configured via register 0x0b24, 0x0400 is written to this register
+after the write to register 0x0b24.
+
+
+0x0b24 - 896HD programmable meter register
+
+Register 0x0b24 doesn't exist in the MOTU Traveler/828Mk2 hardware, but a
+read request is always sent to it twice during device
+discovery/initialisation.  In response these interfaces return "type_error"
+with data equal to 0x40000.  The precise purpose of this is not known but it
+could be part of the device probing sequence.
+
+Register 0xb24 does however exist on the 896HD and appears to control the
+programmable meters:
+
+  bits 31-14: Unknown at present.  Always observed to be set to 0.
+
+  bits 13-11: Peak hold time:
+                000 = off
+                001 = 2 sec
+                010 = 4 sec
+                011 = 10 sec
+                100 = 1 minute
+                101 = 5 minutes
+                110 = 8 minutes
+                111 = infinite
+
+  bits 10-8: Clip hold time:
+                000 = off
+                001 = 2 sec
+                010 = 4 sec
+                011 = 10 sec
+                100 = 1 minute
+                101 = 5 minutes
+                110 = 8 minutes
+                111 = infinite
+
+  bits 7-3: Unknown at present.  Always observed to be set to 0.
+
+  bit 2: AES/EBU meter source:
+          0 = AES/EBU out
+          1 = AES/EBU in
+
+  bits 1-0: Programmable meter source:
+              0 = Analog out
+              1 = ADAT in
+              2 = ADAT out
 
 
 0x0b28 - copy of model_id unit directory
@@ -785,8 +848,8 @@ The output destination is defined as follows:
   0x3 = analog 3-4
   0x4 = analog 5-6
   0x5 = analog 7-8
-  0x6 = AES-EBU
-  0x7 = SPDIF
+  0x6 = AES-EBU (Main-out on 896HD)
+  0x7 = SPDIF (AES-EBU on 896HD)
   0x8 = ADAT 1-2
   0x9 = ADAT 3-4
   0xa = ADAT 5-6
