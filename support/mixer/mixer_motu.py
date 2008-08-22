@@ -598,10 +598,10 @@ class MotuMixer(MotuMixerUI):
         if (self.has_mic_inputs):
             # Mic input controls displace AES/EBU since no current device
             # has both.
-            self.mix1_tab.page(1).setTabLabel("Mic inputs");
-            self.mix2_tab.page(1).setTabLabel("Mic inputs");
-            self.mix3_tab.page(1).setTabLabel("Mic inputs");
-            self.mix4_tab.page(1).setTabLabel("Mic inputs");
+            self.mix1_tab.setTabLabel(self.mix1_tab.page(1), "Mic inputs");
+            self.mix2_tab.setTabLabel(self.mix1_tab.page(1), "Mic inputs");
+            self.mix3_tab.setTabLabel(self.mix1_tab.page(1), "Mic inputs");
+            self.mix4_tab.setTabLabel(self.mix1_tab.page(1), "Mic inputs");
             # FIXME: when implmented, will mic channels just reuse the AES/EBU
             # dbus path?  If not we'll have to reset the respective values in
             # the control arrays (self.ChannelFaders etc).
