@@ -26,7 +26,7 @@ GNU General Public License for more details.
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>992</width>
+            <width>1004</width>
             <height>693</height>
         </rect>
     </property>
@@ -640,6 +640,12 @@ GNU General Public License for more details.
                                     <property name="text">
                                         <string>+4dBu</string>
                                     </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
+                                    </property>
                                 </widget>
                                 <widget class="QLabel">
                                     <property name="name">
@@ -754,6 +760,12 @@ GNU General Public License for more details.
                                     </property>
                                     <property name="text">
                                         <string>+4dBu</string>
+                                    </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
                                     </property>
                                 </widget>
                                 <widget class="QLabel">
@@ -870,6 +882,12 @@ GNU General Public License for more details.
                                     <property name="text">
                                         <string>+4dBu</string>
                                     </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
+                                    </property>
                                 </widget>
                                 <widget class="QLabel">
                                     <property name="name">
@@ -984,6 +1002,12 @@ GNU General Public License for more details.
                                     </property>
                                     <property name="text">
                                         <string>+4dBu</string>
+                                    </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
                                     </property>
                                 </widget>
                                 <widget class="QLabel">
@@ -1100,6 +1124,12 @@ GNU General Public License for more details.
                                     <property name="text">
                                         <string>+4dBu</string>
                                     </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
+                                    </property>
                                 </widget>
                                 <widget class="QLabel">
                                     <property name="name">
@@ -1214,6 +1244,12 @@ GNU General Public License for more details.
                                     </property>
                                     <property name="text">
                                         <string>+4dBu</string>
+                                    </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
                                     </property>
                                 </widget>
                                 <widget class="QLabel">
@@ -1330,6 +1366,12 @@ GNU General Public License for more details.
                                     <property name="text">
                                         <string>+4dBu</string>
                                     </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
+                                    </property>
                                 </widget>
                                 <widget class="QLabel">
                                     <property name="name">
@@ -1445,6 +1487,12 @@ GNU General Public License for more details.
                                     <property name="text">
                                         <string>+4dBu</string>
                                     </property>
+                                    <property name="toggleButton">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="on">
+                                        <bool>false</bool>
+                                    </property>
                                 </widget>
                                 <widget class="QLabel">
                                     <property name="name">
@@ -1542,6 +1590,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -1557,6 +1608,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -1714,6 +1768,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -1729,6 +1786,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -1886,6 +1946,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -1901,6 +1964,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -2058,6 +2124,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -2073,6 +2142,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -2230,6 +2302,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -2245,6 +2320,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -2402,6 +2480,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -2417,6 +2498,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -2574,6 +2658,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -2589,6 +2676,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -2746,6 +2836,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -2761,6 +2854,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -2934,6 +3030,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -2949,6 +3048,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -3106,6 +3208,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -3121,6 +3226,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -3311,6 +3419,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -3326,6 +3437,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -3483,6 +3597,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -3498,6 +3615,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -3688,6 +3808,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -3703,6 +3826,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -3860,6 +3986,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -3875,6 +4004,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -4032,6 +4164,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -4047,6 +4182,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -4204,6 +4342,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -4219,6 +4360,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -4376,6 +4520,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -4391,6 +4538,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -4548,6 +4698,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -4563,6 +4716,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -4720,6 +4876,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -4735,6 +4894,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -4892,6 +5054,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -4907,6 +5072,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -5167,6 +5335,9 @@ GNU General Public License for more details.
                                         <property name="text">
                                             <string>Solo</string>
                                         </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
+                                        </property>
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
@@ -5182,6 +5353,9 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="accel">
                                             <string></string>
+                                        </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
                                         </property>
                                     </widget>
                                     <widget class="QSpinBox">
@@ -5354,6 +5528,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -5369,6 +5546,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -5526,6 +5706,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -5541,6 +5724,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -5698,6 +5884,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -5713,6 +5902,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -5870,6 +6062,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -5885,6 +6080,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -6042,6 +6240,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -6057,6 +6258,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -6214,6 +6418,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -6229,6 +6436,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -6386,6 +6596,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -6401,6 +6614,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -6558,6 +6774,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -6573,6 +6792,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -6746,6 +6968,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -6761,6 +6986,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -6918,6 +7146,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -6933,6 +7164,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -7123,6 +7357,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -7138,6 +7375,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -7295,6 +7535,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -7310,6 +7553,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -7500,6 +7746,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -7515,6 +7764,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -7672,6 +7924,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -7687,6 +7942,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -7844,6 +8102,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -7859,6 +8120,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -8016,6 +8280,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -8031,6 +8298,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -8188,6 +8458,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -8203,6 +8476,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -8360,6 +8636,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -8375,6 +8654,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -8532,6 +8814,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -8547,6 +8832,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -8704,6 +8992,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -8719,6 +9010,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -8979,6 +9273,9 @@ GNU General Public License for more details.
                                         <property name="text">
                                             <string>Solo</string>
                                         </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
+                                        </property>
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
@@ -8994,6 +9291,9 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="accel">
                                             <string></string>
+                                        </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
                                         </property>
                                     </widget>
                                     <widget class="QSpinBox">
@@ -9166,6 +9466,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -9181,6 +9484,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -9338,6 +9644,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -9353,6 +9662,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -9510,6 +9822,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -9525,6 +9840,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -9682,6 +10000,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -9697,6 +10018,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -9854,6 +10178,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -9869,6 +10196,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -10026,6 +10356,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -10041,6 +10374,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -10198,6 +10534,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -10213,6 +10552,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -10370,6 +10712,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -10385,6 +10730,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -10558,6 +10906,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -10573,6 +10924,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -10730,6 +11084,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -10745,6 +11102,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -10935,6 +11295,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -10950,6 +11313,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -11107,6 +11473,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -11122,6 +11491,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -11312,6 +11684,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -11327,6 +11702,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -11484,6 +11862,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -11499,6 +11880,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -11656,6 +12040,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -11671,6 +12058,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -11828,6 +12218,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -11843,6 +12236,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -12000,6 +12396,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -12015,6 +12414,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -12172,6 +12574,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -12187,6 +12592,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -12344,6 +12752,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -12359,6 +12770,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -12516,6 +12930,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -12531,6 +12948,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -12791,6 +13211,9 @@ GNU General Public License for more details.
                                         <property name="text">
                                             <string>Solo</string>
                                         </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
+                                        </property>
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
@@ -12806,6 +13229,9 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="accel">
                                             <string></string>
+                                        </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
                                         </property>
                                     </widget>
                                     <widget class="QSpinBox">
@@ -12978,6 +13404,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -12993,6 +13422,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -13150,6 +13582,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -13165,6 +13600,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -13322,6 +13760,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -13337,6 +13778,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -13494,6 +13938,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -13509,6 +13956,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -13666,6 +14116,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -13681,6 +14134,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -13838,6 +14294,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -13853,6 +14312,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -14010,6 +14472,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -14025,6 +14490,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -14182,6 +14650,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -14197,6 +14668,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -14370,6 +14844,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -14385,6 +14862,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -14542,6 +15022,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -14557,6 +15040,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -14747,6 +15233,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -14762,6 +15251,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -14919,6 +15411,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -14934,6 +15429,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -15124,6 +15622,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -15139,6 +15640,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -15296,6 +15800,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -15311,6 +15818,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -15468,6 +15978,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -15483,6 +15996,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -15640,6 +16156,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -15655,6 +16174,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -15812,6 +16334,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -15827,6 +16352,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -15984,6 +16512,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -15999,6 +16530,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -16156,6 +16690,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -16171,6 +16708,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -16328,6 +16868,9 @@ GNU General Public License for more details.
                                                     <property name="text">
                                                         <string>Solo</string>
                                                     </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
+                                                    </property>
                                                 </widget>
                                                 <widget class="QToolButton">
                                                     <property name="name">
@@ -16343,6 +16886,9 @@ GNU General Public License for more details.
                                                     </property>
                                                     <property name="accel">
                                                         <string></string>
+                                                    </property>
+                                                    <property name="toggleButton">
+                                                        <bool>true</bool>
                                                     </property>
                                                 </widget>
                                                 <widget class="QSpinBox">
@@ -16603,6 +17149,9 @@ GNU General Public License for more details.
                                         <property name="text">
                                             <string>Solo</string>
                                         </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
+                                        </property>
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
@@ -16618,6 +17167,9 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="accel">
                                             <string></string>
+                                        </property>
+                                        <property name="toggleButton">
+                                            <bool>true</bool>
                                         </property>
                                     </widget>
                                     <widget class="QSpinBox">
