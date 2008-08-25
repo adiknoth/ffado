@@ -60,7 +60,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -120,7 +119,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -166,7 +164,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -271,7 +268,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -317,7 +313,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -358,7 +353,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -429,7 +423,6 @@ GNU General Public License for more details.
                     </property>
                     <property name="font">
                         <font>
-                            <pointsize>10</pointsize>
                         </font>
                     </property>
                     <property name="frameShape">
@@ -5325,22 +5318,6 @@ GNU General Public License for more details.
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
-                                            <cstring>mix1_solo</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Solo</string>
-                                        </property>
-                                        <property name="toggleButton">
-                                            <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QToolButton">
-                                        <property name="name">
                                             <cstring>mix1_mute</cstring>
                                         </property>
                                         <property name="font">
@@ -5356,38 +5333,6 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="toggleButton">
                                             <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QSpinBox">
-                                        <property name="name">
-                                            <cstring>mix1_pan</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="maxValue">
-                                            <number>64</number>
-                                        </property>
-                                        <property name="minValue">
-                                            <number>-64</number>
-                                        </property>
-                                    </widget>
-                                    <widget class="QLabel">
-                                        <property name="name">
-                                            <cstring>textLabel1_2</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Pan</string>
-                                        </property>
-                                        <property name="alignment">
-                                            <set>AlignCenter</set>
                                         </property>
                                     </widget>
                                     <widget class="QFrame">
@@ -9263,22 +9208,6 @@ GNU General Public License for more details.
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
-                                            <cstring>mix2_solo</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Solo</string>
-                                        </property>
-                                        <property name="toggleButton">
-                                            <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QToolButton">
-                                        <property name="name">
                                             <cstring>mix2_mute</cstring>
                                         </property>
                                         <property name="font">
@@ -9294,38 +9223,6 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="toggleButton">
                                             <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QSpinBox">
-                                        <property name="name">
-                                            <cstring>mix2_pan</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="maxValue">
-                                            <number>64</number>
-                                        </property>
-                                        <property name="minValue">
-                                            <number>-64</number>
-                                        </property>
-                                    </widget>
-                                    <widget class="QLabel">
-                                        <property name="name">
-                                            <cstring>textLabel1_2</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Pan</string>
-                                        </property>
-                                        <property name="alignment">
-                                            <set>AlignCenter</set>
                                         </property>
                                     </widget>
                                     <widget class="QFrame">
@@ -13201,22 +13098,6 @@ GNU General Public License for more details.
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
-                                            <cstring>mix3_solo</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Solo</string>
-                                        </property>
-                                        <property name="toggleButton">
-                                            <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QToolButton">
-                                        <property name="name">
                                             <cstring>mix3_mute</cstring>
                                         </property>
                                         <property name="font">
@@ -13232,38 +13113,6 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="toggleButton">
                                             <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QSpinBox">
-                                        <property name="name">
-                                            <cstring>mix3_pan</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="maxValue">
-                                            <number>64</number>
-                                        </property>
-                                        <property name="minValue">
-                                            <number>-64</number>
-                                        </property>
-                                    </widget>
-                                    <widget class="QLabel">
-                                        <property name="name">
-                                            <cstring>textLabel1_2</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Pan</string>
-                                        </property>
-                                        <property name="alignment">
-                                            <set>AlignCenter</set>
                                         </property>
                                     </widget>
                                     <widget class="QFrame">
@@ -17139,22 +16988,6 @@ GNU General Public License for more details.
                                     </widget>
                                     <widget class="QToolButton">
                                         <property name="name">
-                                            <cstring>mix4_solo</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Solo</string>
-                                        </property>
-                                        <property name="toggleButton">
-                                            <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QToolButton">
-                                        <property name="name">
                                             <cstring>mix4_mute</cstring>
                                         </property>
                                         <property name="font">
@@ -17170,38 +17003,6 @@ GNU General Public License for more details.
                                         </property>
                                         <property name="toggleButton">
                                             <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                    <widget class="QSpinBox">
-                                        <property name="name">
-                                            <cstring>mix4_pan</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="maxValue">
-                                            <number>64</number>
-                                        </property>
-                                        <property name="minValue">
-                                            <number>-64</number>
-                                        </property>
-                                    </widget>
-                                    <widget class="QLabel">
-                                        <property name="name">
-                                            <cstring>textLabel1_2</cstring>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <pointsize>9</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>Pan</string>
-                                        </property>
-                                        <property name="alignment">
-                                            <set>AlignCenter</set>
                                         </property>
                                     </widget>
                                     <widget class="QFrame">
