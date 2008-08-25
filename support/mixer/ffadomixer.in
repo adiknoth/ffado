@@ -521,6 +521,9 @@ if __name__ == "__main__":
         QObject.connect( timer, SIGNAL('timeout()'), puw.updateWidgets );
         timer.start( POLL_SLEEP_TIME_MSEC );
 
+        # Adjust size of mixer window to the requirements of the selected device mixer(s) 
+        mw.adjustSize()
+
         mw.show()
 
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
