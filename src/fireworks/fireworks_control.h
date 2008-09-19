@@ -95,8 +95,8 @@ public:
     virtual double getValue(int idx)
         {return getValue();};
 
-    virtual double getMinimum() {return 0.0;};
-    virtual double getMaximum() {return 0.0;};
+    virtual double getMinimum() {return -100.0;};
+    virtual double getMaximum() {return 10.0;};
 
 protected:
     EfcGenericMixerCmd*         m_Slave;

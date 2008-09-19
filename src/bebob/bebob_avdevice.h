@@ -36,6 +36,7 @@
 #include "libavc/general/avc_unit.h"
 #include "libavc/general/avc_subunit.h"
 #include "libavc/general/avc_plug.h"
+#include "libavc/audiosubunit/avc_function_block.h"
 
 #include "bebob/bebob_avplug.h"
 #include "bebob/bebob_avdevice_subunit.h"
@@ -83,8 +84,10 @@ public:
 
     virtual int getSelectorFBValue(int id);
     virtual bool setSelectorFBValue(int id, int v);
-    virtual int getFeatureFBVolumeValue(int id, int channel);
-    virtual bool setFeatureFBVolumeValue(int id, int channel, int v);
+    virtual int getFeatureFBVolumeMinimum(int id, int channel);
+    virtual int getFeatureFBVolumeMaximum(int id, int channel);
+    virtual int getFeatureFBVolumeCurrent(int id, int channel);
+    virtual bool setFeatureFBVolumeCurrent(int id, int channel, int v);
 
     virtual void showDevice();
     virtual void setVerboseLevel(int l);
@@ -93,6 +96,8 @@ protected:
 
     virtual bool buildMixer();
     virtual bool destroyMixer();
+
+    virtual int getFeatureFBVolumeValue(int id, int channel, AVC::FunctionBlockCmd::EControlAttribute controlAttribute);
 
 public:
     virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
