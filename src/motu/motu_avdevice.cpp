@@ -1075,6 +1075,14 @@ MotuDevice::prepare() {
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
+    // Explicitly set the optical mode, primarily to ensure that the
+    // MOTU_REG_OPTICAL_CTRL register is initialised.  We need to do this to
+    // because some interfaces (the Ultralite for example) appear to power
+    // up without this set to anything sensible.  In this case, writes to
+    // MOTU_REG_ISOCTRL fail more often than not, which is bad.
+    setOpticalMode(MOTU_DIR_IN, optical_in_mode);
+    setOpticalMode(MOTU_DIR_OUT, optical_out_mode);
+
     // Allocate bandwidth if not previously done.
     // FIXME: The bandwidth allocation calculation can probably be
     // refined somewhat since this is currently based on a rudimentary
@@ -1142,7 +1150,7 @@ MotuDevice::prepare() {
     // retrieve the ID
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
-        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
 
     // Add audio capture ports
@@ -1377,7 +1385,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
     if ((reg & MOTU_OPTICAL_OUT_MODE_MASK) != (MOTU_OPTICAL_MODE_ADAT<<10))
         opt_ctrl |= 0x00000040;
 
-    if (mode & MOTU_DIR_IN) {
+    if (dir & MOTU_DIR_IN) {
         reg &= ~MOTU_OPTICAL_IN_MODE_MASK;
         reg |= (mode << 8) & MOTU_OPTICAL_IN_MODE_MASK;
         if (mode != MOTU_OPTICAL_MODE_ADAT)
@@ -1385,7 +1393,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
         else
             opt_ctrl &= ~0x00000080;
     }
-    if (mode & MOTU_DIR_OUT) {
+    if (dir & MOTU_DIR_OUT) {
         reg &= ~MOTU_OPTICAL_OUT_MODE_MASK;
         reg |= (mode <<10) & MOTU_OPTICAL_OUT_MODE_MASK;
         if (mode != MOTU_OPTICAL_MODE_ADAT)
